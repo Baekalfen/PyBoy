@@ -37,7 +37,8 @@ class Interaction():
         if P14 == 1 and P15 == 1:
             pass
         elif P14 == 0 and P15 == 0:
-            raise CoreDump.CoreDump("Undefined behavior")
+            pass
+            # raise CoreDump.CoreDump("Undefined behavior")
         elif P14 == 0:
             for key in self.stack:
                 if key == WindowEvent.ArrowRight:

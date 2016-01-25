@@ -30,11 +30,7 @@ def CPU_HALT(self):
     # If interrupts are disabled (DI) then halt doesn't suspend operation but it does cause
     # the program counter to stop counting for one instruction on the GB,GBP, and SGB as mentioned below.
 
-    if self.interruptMasterEnable:
-        self.halted = True
-    else:
-        # "it does cause the program counter to stop counting for one instruction on the GB,GBP, and SGB as mentioned below"
-        pass
+    self.halted = True
 
 
 def CPU_LDD(self, r0, r1):

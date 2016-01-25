@@ -36,8 +36,25 @@ class RAM():
             with open(bootROMFile, "rb") as bootROMFileHandle:
                 self.bootROM = [struct.unpack('B', byte)[0]
                                 for byte in bootROMFileHandle.read()]
+
+            if __debug__:
+                # Inject jump to 0xFC where the boot-ROM is disabled
+                self.bootROM[0x03] = 0xC3
+                self.bootROM[0x04] = 0xFC
+                self.bootROM[0x05] = 0x00
         else:
             self.bootROM = self.allocateRAM(256)
+            # Set stack pointer
+            self.bootROM[0x00] = 0x31
+            self.bootROM[0x01] = 0xFE
+            self.bootROM[0x02] = 0xFF
+
+            # Inject jump to 0xFC
+            self.bootROM[0x03] = 0xC3
+            self.bootROM[0x04] = 0xFC
+            self.bootROM[0x05] = 0x00
+
+            # Inject code to disable boot-ROM
             self.bootROM[0xFC] = 0x3E
             self.bootROM[0xFD] = 0x01
             self.bootROM[0xFE] = 0xE0
@@ -150,16 +167,16 @@ class RAM():
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF04:
                 # http://problemkaputt.de/pandocs.htm#timeranddividerregisters
-                print "get DIV",
+                # print "get DIV",
                 return self.timer.DIV
             elif i == 0xFF05:
                 # print "get TIMA"
                 return self.timer.TIMA
             elif i == 0xFF06:
-                print "get TMA"
+                # print "get TMA"
                 return self.timer.TMA
             elif i == 0xFF07:
-                print "get TAC"
+                # print "get TAC"
                 return self.timer.TAC
             return self.IOPorts[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -186,8 +203,8 @@ class RAM():
             # Redirect to internal RAM
             self[i - 0x2000] = value
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
-            if value != 0:
-                print "OAM! write",hex(i),hex(value)
+            # if value != 0:
+            #     print "OAM! write",hex(i),hex(value)
             self.spriteAttributeMemory[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             self.nonIOInternalRAM0[i - 0xFEA0] = value
@@ -195,7 +212,7 @@ class RAM():
             if i == 0xFF00:
                 self.IOPorts[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF04:
-                print "DIV", hex(value)
+                # print "DIV", hex(value)
                 # http://problemkaputt.de/pandocs.htm#timeranddividerregisters
                 # "Writing any value to this register resets it to 00h."
                 self.timer.DIV = 0
@@ -203,14 +220,14 @@ class RAM():
                 # print "TIMA", hex(value)
                 self.timer.TIMA = value
             elif i == 0xFF06:
-                print "TMA", hex(value)
+                # print "TMA", hex(value)
                 self.timer.TMA = value
             elif i == 0xFF07:
-                print "TAC", hex(value)
+                # print "TAC", hex(value)
                 self.timer.TAC = value
             else:
                 if i == 0xFF46:
-                    print "DMA transfer :",hex(i),"value:",hex(value)
+                    # print "DMA transfer :",hex(i),"value:",hex(value)
                     self.transferDMAtoOAM(value)
                 self.IOPorts[i - 0xFF00] = value
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O

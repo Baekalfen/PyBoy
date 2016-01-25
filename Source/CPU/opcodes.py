@@ -150,7 +150,7 @@ opcode_3x = [(2, (12, 8), lambda s, v, e: (not s.testFlag(flagC) and (s.setPC(e+
              (1, (4,), inc(A)),  # 3C - "Increment A" ("INC A")
              (1, (4,), dec(A)),  # 3D - "Decrement A" ("DEC A")
              (2, (8,), lambda s, v, e: s.setReg(A, v) or s.setPC(e)),       # 3E - "Load 8-bit immediate into A" ("LD A,v")
-             (1, (4,), lambda s, e: s.clearFlag(flagN) or s.setFlag(flagH, s.testFlag(flagC)) or s.setFlag(flagC, not s.testFlag(flagC)))]  # 3F - "Clear carry flag" ("CCF")
+             (1, (4,), lambda s, e: s.clearFlag(flagN) or s.setFlag(flagH, s.testFlag(flagC)) or s.setFlag(flagC, not s.testFlag(flagC)) or s.setPC(e))]  # 3F - "Clear carry flag" ("CCF")
 
 exeLD = lambda a, b: lambda s, e: s.setReg(a, s.reg[b]) or s.setPC(e)
 exeLDaddr = lambda b: lambda s, e: s.ram.__setitem__(s.getHL(), s.reg[b]) or s.setPC(e)
@@ -216,7 +216,7 @@ opcode_7x = [(1, (8,), exeLDaddr(B)),  # 70 - "Copy B to address pointed by HL" 
              (1, (8,), exeLDaddr(H)),  # 74 - "Copy H to address pointed by HL" ("LD (HL),H")
              (1, (8,), exeLDaddr(L)),  # 75 - "Copy L to address pointed by HL" ("LD (HL),L")
              #TODO: Implement HALT bug. If master interrupt is disabled, the intruction following HALT is skipped
-             (1, (4,), lambda s, e: s.CPU_HALT()),                          # 76 - "Halt processor" ("HALT")
+             (1, (4,), lambda s, e: s.CPU_HALT() if s.interruptMasterEnable else s.setPC(e)), # 76 - "Halt processor" ("HALT")
              (1, (8,), exeLDaddr(A)),  # 77 - "Copy A to address pointed by HL" ("LD (HL),A")
              (1, (4,), exeLD(A, B)),        # 78 - "Copy B to A" ("LD A,B")
              (1, (4,), exeLD(A, C)),        # 79 - "Copy C to A" ("LD A,C")

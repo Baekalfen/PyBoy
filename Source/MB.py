@@ -15,7 +15,6 @@ from Timer import Timer
 from CPU.flags import VBlank
 import CoreDump
 
-
 class Motherboard():
     def __init__(self, gameROMFile, bootROMFile, window):
         self.timer = Timer()
@@ -99,6 +98,7 @@ class Motherboard():
 
             # 80 + 170 + 206 = 456 "A complete cycle through these states takes 456 clks"
 
+        self.cpu.setInterruptFlag(self.cpu.VBlank)
         # Wait for next frame
         for y in xrange(144,154):
             self.ram[LY] = y

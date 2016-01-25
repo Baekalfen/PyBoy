@@ -92,8 +92,13 @@ if __name__ == "__main__":
     bootROM = "DMG_ROM.bin"
     # try:
         # start("TestROMs/instr_timing/instr_timing.gb")
-        # start("pokemon_blue.gb")
+    # start("pokemon_blue.gb")
     start("SuperMarioLand.gb")
+
+
+    # filename = raw_input("Write the name of a ROM:\n")
+    # start(filename)
+
         # start("TestROMs/instr_timing/instr_timing.gb")
         # start("TestROMs/mem_timing/mem_timing.gb")
         # start("Tetris.gb")

@@ -10,6 +10,8 @@ from time import time
 import CoreDump
 
 
+# TODO: Refactor all of this
+
 class Cartridge:
 
     def __init__(self, filename):
@@ -183,7 +185,23 @@ class Cartridge:
             else:
                 raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
         elif self.ROMBankController == 'MBC3':
-            if 0x4000 <= address < 0x5FFF:
+            if 0x0000 <= address < 0x2000:
+                if self.memoryModel == 1:
+                    if (value & 0b00001111) == 0b1010:
+                        self.RAMBankEnabled = True
+                        self.RAMBanks = initRAMBanks(4)
+                    else:
+                        self.RAMBanks = None
+                        self.RAMBankEnabled = False
+                else:
+                    raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (address,value))
+
+            elif 0x2000 <= address < 0x4000:
+                if value == 0:
+                    value = 1
+                self.ROMBankSelected = (self.ROMBankSelected & 0b11100000) | (
+                    value & 0b00011111)  # sets 5LSB of ROM bank address
+            elif 0x4000 <= address < 0x5FFF:
                 # MBC3 is always 16/8 mode
                 self.ROMBankSelected = self.ROMBankSelected & 0b01111111
             elif 0xA000 <= address < 0xC000:

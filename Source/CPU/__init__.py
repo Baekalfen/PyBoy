@@ -37,7 +37,7 @@ class CPU():
         self.breakOn = False
         self.breakNext = None
 
-        # self.breakNext = 0x0050
+        # self.breakNext = 0x20b3
         # 0x1C9  Zeroing some internal RAM?
         # 0x1CC  Escaping?
         # 0x01D8 Zeroing TileView 2
@@ -61,8 +61,8 @@ class CPU():
 
         # Program Counter (PC) is not assumed initialized to 0
         self.reg[PC] = 0
-        if __debug__:
-            self.reg[PC] = 0xFC # Disable boot-ROM
+        # if __debug__:
+        #     self.reg[PC] = 0xFC # Disable boot-ROM
 
         #debug
         self.oldPC = -1
@@ -173,12 +173,13 @@ class CPU():
             #     instruction = self.fetchInstruction(self.reg[PC+1])
             #     self.reg[PC] += instruction[0]+1  # Skip next instruction
 
+            # self.reg[PC] += 1
             instruction = self.fetchInstruction(self.reg[PC])
                 
         elif self.halted and not didInterrupt:
             operation = opcodes.opcodes[0x00] #Fetch NOP to still run timers and such
             instruction = (operation[2], operation[1], (self, self.reg[PC]))
-            self.oldPC = -1
+            self.oldPC = -1 # Avoid detection of being stuck
         else:
             instruction = self.fetchInstruction(self.reg[PC])
 
@@ -199,6 +200,7 @@ class CPU():
 
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
                 self.breakOn = True
+                print "PC DIDN'T CHANGE! Can't continue!"
                 # CoreDump.windowHandle.dump(self.ram.cartridge.filename+"_dump.bmp")
                 # raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
