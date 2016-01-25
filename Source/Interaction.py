@@ -6,18 +6,53 @@
 #
 from WindowEvent import WindowEvent
 import CoreDump
+from MathUint8 import  resetBit, setBit
 # from PrimitiveTypes import uint8
 
+P10, P11, P12, P13, P14, P15 = range(0,6)
 
 class Interaction():
     def __init__(self):
-        self.stack = []
+        self.directional = 0xF
+        self.standard = 0xF
 
-    def keyPressed(self, key):
-        self.stack.append(key)
+    def keyEvent(self, key):
+        if key == WindowEvent.PressArrowRight:
+            self.directional = setBit(self.directional, P10)
+        elif key == WindowEvent.PressArrowLeft:
+            self.directional = setBit(self.directional, P11)
+        elif key == WindowEvent.PressArrowUp:
+            self.directional = setBit(self.directional, P12)
+        elif key == WindowEvent.PressArrowDown:
+            self.directional = setBit(self.directional, P13)
 
-    def flush(self):
-        self.stack = []
+        elif key == WindowEvent.PressButtonA:
+            self.standard = setBit(self.standard, P10)
+        elif key == WindowEvent.PressButtonB:
+            self.standard = setBit(self.standard, P11)
+        elif key == WindowEvent.PressButtonSelect:
+            self.standard = setBit(self.standard, P12)
+        elif key == WindowEvent.PressButtonStart:
+            self.standard = setBit(self.standard, P13)
+
+
+        elif key == WindowEvent.ReleaseArrowRight:
+            self.directional = resetBit(self.directional, P10)
+        elif key == WindowEvent.ReleaseArrowLeft:
+            self.directional = resetBit(self.directional, P11)
+        elif key == WindowEvent.ReleaseArrowUp:
+            self.directional = resetBit(self.directional, P12)
+        elif key == WindowEvent.ReleaseArrowDown:
+            self.directional = resetBit(self.directional, P13)
+
+        elif key == WindowEvent.ReleaseButtonA:
+            self.standard = resetBit(self.standard, P10)
+        elif key == WindowEvent.ReleaseButtonB:
+            self.standard = resetBit(self.standard, P11)
+        elif key == WindowEvent.ReleaseButtonSelect:
+            self.standard = resetBit(self.standard, P12)
+        elif key == WindowEvent.ReleaseButtonStart:
+            self.standard = resetBit(self.standard, P13)
 
     def pull(self, joystickByte):
         P14 = (joystickByte >> 4) & 1
@@ -38,26 +73,9 @@ class Interaction():
             pass
         elif P14 == 0 and P15 == 0:
             pass
-            # raise CoreDump.CoreDump("Undefined behavior")
         elif P14 == 0:
-            for key in self.stack:
-                if key == WindowEvent.ArrowRight:
-                    joystickByte ^= 1<<0 # P10
-                elif key == WindowEvent.ArrowLeft:
-                    joystickByte ^= 1<<1 # P11
-                elif key == WindowEvent.ArrowUp:
-                    joystickByte ^= 1<<2 # P12
-                elif key == WindowEvent.ArrowDown:
-                    joystickByte ^= 1<<3 # P13
+            joystickByte &= self.directional
         elif P15 == 0:
-            for key in self.stack:
-                if key == WindowEvent.ButtonA:
-                    joystickByte ^= 1<<0 # P10
-                elif key == WindowEvent.ButtonB:
-                    joystickByte ^= 1<<1 # P11
-                elif key == WindowEvent.ButtonSelect:
-                    joystickByte ^= 1<<2 # P12
-                elif key == WindowEvent.ButtonStart:
-                    joystickByte ^= 1<<3 # P13
+            joystickByte &= self.standard
 
         return joystickByte

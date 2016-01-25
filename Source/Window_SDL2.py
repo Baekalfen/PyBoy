@@ -104,51 +104,39 @@ class Window():
 
             if event.type == sdl2.SDL_KEYDOWN:
                 if event.key.keysym.sym == sdl2.SDLK_UP:
-                    events.append(WindowEvent.ArrowUp)
+                    events.append(WindowEvent.PressArrowUp)
                 elif event.key.keysym.sym == sdl2.SDLK_DOWN:
-                    events.append(WindowEvent.ArrowDown)
+                    events.append(WindowEvent.PressArrowDown)
                 elif event.key.keysym.sym == sdl2.SDLK_RIGHT:
-                    events.append(WindowEvent.ArrowRight)
+                    events.append(WindowEvent.PressArrowRight)
                 elif event.key.keysym.sym == sdl2.SDLK_LEFT:
-                    events.append(WindowEvent.ArrowLeft)
+                    events.append(WindowEvent.PressArrowLeft)
                 elif event.key.keysym.sym == sdl2.SDLK_a:
-                    events.append(WindowEvent.ButtonA)
+                    events.append(WindowEvent.PressButtonA)
                 elif event.key.keysym.sym == sdl2.SDLK_s:
-                    events.append(WindowEvent.ButtonB)
+                    events.append(WindowEvent.PressButtonB)
                 elif event.key.keysym.sym == sdl2.SDLK_RETURN:
-                    events.append(WindowEvent.ButtonStart)
+                    events.append(WindowEvent.PressButtonStart)
                 elif event.key.keysym.sym == sdl2.SDLK_BACKSPACE:
-                    events.append(WindowEvent.ButtonSelect)
-                
+                    events.append(WindowEvent.PressButtonSelect)
+            elif event.type == sdl2.SDL_KEYUP:
+                if event.key.keysym.sym == sdl2.SDLK_UP:
+                    events.append(WindowEvent.ReleaseArrowUp)
+                elif event.key.keysym.sym == sdl2.SDLK_DOWN:
+                    events.append(WindowEvent.ReleaseArrowDown)
+                elif event.key.keysym.sym == sdl2.SDLK_RIGHT:
+                    events.append(WindowEvent.ReleaseArrowRight)
+                elif event.key.keysym.sym == sdl2.SDLK_LEFT:
+                    events.append(WindowEvent.ReleaseArrowLeft)
+                elif event.key.keysym.sym == sdl2.SDLK_a:
+                    events.append(WindowEvent.ReleaseButtonA)
+                elif event.key.keysym.sym == sdl2.SDLK_s:
+                    events.append(WindowEvent.ReleaseButtonB)
+                elif event.key.keysym.sym == sdl2.SDLK_RETURN:
+                    events.append(WindowEvent.ReleaseButtonStart)
+                elif event.key.keysym.sym == sdl2.SDLK_BACKSPACE:
+                    events.append(WindowEvent.ReleaseButtonSelect)
 
-            # elif event.type == sdl2.SDL_KEYUP:
-            #     if event.key.keysym.sym in (sdl2.SDLK_UP, sdl2.SDLK_DOWN):
-            #         player1.velocity.vy = 0
-
-
-            #     if event.key == pygame.K_LEFT:
-            #         events.append(WindowEvent.ArrowLeft)
-            #     elif event.key == pygame.K_RIGHT:
-            #         events.append(WindowEvent.ArrowRight)
-            #     elif event.key == pygame.K_UP:
-            #         events.append(WindowEvent.ArrowUp)
-            #     elif event.key == pygame.K_DOWN:
-            #         events.append(WindowEvent.ArrowDown)
-            #     # The following should be configurable
-            #     elif event.key == pygame.K_a:
-            #         events.append(WindowEvent.ButtonA)
-            #     elif event.key == pygame.K_s:
-            #         events.append(WindowEvent.ButtonB)
-            #     elif event.key == pygame.K_z:
-            #         events.append(WindowEvent.ButtonA)
-            #     elif event.key == pygame.K_x:
-            #         events.append(WindowEvent.ButtonB)
-            #     elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-            #         events.append(WindowEvent.ButtonStart)
-            #     elif event.key == pygame.K_BACKSPACE:
-            #         events.append(WindowEvent.ButtonSelect)
-            #     elif event.key == pygame.K_w:
-            #         events.append(WindowEvent.DebugNext)
         return events
 
     def updateDisplay(self):

@@ -6,4 +6,4 @@
 #
 
 class WindowEvent:
-    Quit, ArrowUp, ArrowDown, ArrowRight, ArrowLeft, ButtonA, ButtonB, ButtonSelect, ButtonStart, DebugNext = range(10)
+    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugNext = range(18)

@@ -70,7 +70,7 @@ def start(ROM, bootROM = None):
             elif event == WindowEvent.DebugNext:
                 stepOnce = True
             else:  # Right now, everything else is a button press
-                mb.buttonPressed(event)
+                mb.buttonEvent(event)
 
         mb.tick()
         tt = time.time()

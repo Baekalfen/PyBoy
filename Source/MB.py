@@ -113,14 +113,13 @@ class Motherboard():
 
             # VBlank lasts 4560 clks.
 
-        self.interaction.flush()
         self.lcd.tick() # Refreshes the host display
 
     def loadCartridge(self, filename):
         self.cartridge = Cartridge(filename)
 
-    def buttonPressed(self, key):
-        self.interaction.keyPressed(key)
+    def buttonEvent(self, key):
+        self.interaction.keyEvent(key)
         self.cpu.setInterruptFlag(self.cpu.HightoLow)
 
 

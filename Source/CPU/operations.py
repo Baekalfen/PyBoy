@@ -10,7 +10,7 @@ import warnings
 import CoreDump
 from flags import flagZ, flagN, flagH, flagC
 from registers import SP, A  # No need to use as self.<reg>
-from MathUint8 import AND, OR, XOR, add, sub, setBit, getBit, clear, swap, lshift, rshift, lrotate_inC, lrotate_thruC, rrotate_inC, rrotate_thruC, eq, getSignedInt8
+from MathUint8 import resetBit, setBit, getBit, swap, lshift, rshift, lrotate_inC, lrotate_thruC, rrotate_inC, rrotate_thruC, getSignedInt8
 
 
 def CPU_EI(self):
