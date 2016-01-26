@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from MathUint8 import getSignedInt8
+from MathUint8 import getSignedInt8, getBit
 
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 
@@ -76,13 +76,16 @@ class LCD():
     def getViewPort(self):
         return self.ram[SCX],self.ram[SCY]
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey = colorPalette[0]):
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey = colorPalette[0], xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
         x2,y2 = toXY
 
         for y in xrange(8):
             for x in xrange(8):
-                pixel = fromBuffer[x1+x, y1+y]
+                xx = x1 + ((8-x) if xFlip == 1 else x)
+                yy = y1 + ((8-y) if yFlip == 1 else y)
+
+                pixel = fromBuffer[xx, yy]
                 if not colorKey == pixel and x2+x < 160 and y2+y < 144:
                     toBuffer[x2+x, y2+y] = pixel
 
@@ -153,12 +156,14 @@ class LCD():
             x = self.ram[n+1] - 8
             tileIndex = self.ram[n+2]
             attributes = self.ram[n+3]
+            xFlip = getBit(attributes, 5)
+            yFlip = getBit(attributes, 6)
 
             fromXY = ((tileIndex*8)%self.window.tileDataWidth, ((tileIndex*8)/self.window.tileDataWidth)*8)
             toXY = (x, y)
 
             if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window._screenBuffer)
+                self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window._screenBuffer, xFlip = xFlip, yFlip = yFlip)
                 # self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window.spriteBuffer, 0)
             # self.copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey):
 
