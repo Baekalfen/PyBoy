@@ -76,7 +76,7 @@ class LCD():
     def getViewPort(self):
         return self.ram[SCX],self.ram[SCY]
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey):
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey = colorPalette[0]):
         x1,y1 = fromXY
         x2,y2 = toXY
 
@@ -158,7 +158,7 @@ class LCD():
             toXY = (x, y)
 
             if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window._screenBuffer, 1)
+                self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window._screenBuffer)
                 # self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window.spriteBuffer, 0)
             # self.copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey):
 

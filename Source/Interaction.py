@@ -18,41 +18,41 @@ class Interaction():
 
     def keyEvent(self, key):
         if key == WindowEvent.PressArrowRight:
-            self.directional = setBit(self.directional, P10)
+            self.directional = resetBit(self.directional, P10)
         elif key == WindowEvent.PressArrowLeft:
-            self.directional = setBit(self.directional, P11)
+            self.directional = resetBit(self.directional, P11)
         elif key == WindowEvent.PressArrowUp:
-            self.directional = setBit(self.directional, P12)
+            self.directional = resetBit(self.directional, P12)
         elif key == WindowEvent.PressArrowDown:
-            self.directional = setBit(self.directional, P13)
+            self.directional = resetBit(self.directional, P13)
 
         elif key == WindowEvent.PressButtonA:
-            self.standard = setBit(self.standard, P10)
+            self.standard = resetBit(self.standard, P10)
         elif key == WindowEvent.PressButtonB:
-            self.standard = setBit(self.standard, P11)
+            self.standard = resetBit(self.standard, P11)
         elif key == WindowEvent.PressButtonSelect:
-            self.standard = setBit(self.standard, P12)
+            self.standard = resetBit(self.standard, P12)
         elif key == WindowEvent.PressButtonStart:
-            self.standard = setBit(self.standard, P13)
+            self.standard = resetBit(self.standard, P13)
 
 
         elif key == WindowEvent.ReleaseArrowRight:
-            self.directional = resetBit(self.directional, P10)
+            self.directional = setBit(self.directional, P10)
         elif key == WindowEvent.ReleaseArrowLeft:
-            self.directional = resetBit(self.directional, P11)
+            self.directional = setBit(self.directional, P11)
         elif key == WindowEvent.ReleaseArrowUp:
-            self.directional = resetBit(self.directional, P12)
+            self.directional = setBit(self.directional, P12)
         elif key == WindowEvent.ReleaseArrowDown:
-            self.directional = resetBit(self.directional, P13)
+            self.directional = setBit(self.directional, P13)
 
         elif key == WindowEvent.ReleaseButtonA:
-            self.standard = resetBit(self.standard, P10)
+            self.standard = setBit(self.standard, P10)
         elif key == WindowEvent.ReleaseButtonB:
-            self.standard = resetBit(self.standard, P11)
+            self.standard = setBit(self.standard, P11)
         elif key == WindowEvent.ReleaseButtonSelect:
-            self.standard = resetBit(self.standard, P12)
+            self.standard = setBit(self.standard, P12)
         elif key == WindowEvent.ReleaseButtonStart:
-            self.standard = resetBit(self.standard, P13)
+            self.standard = setBit(self.standard, P13)
 
     def pull(self, joystickByte):
         P14 = (joystickByte >> 4) & 1
