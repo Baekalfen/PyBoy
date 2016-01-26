@@ -6,6 +6,7 @@
 #
 
 from MathUint8 import getSignedInt8, getBit
+import numpy
 
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 
@@ -45,7 +46,7 @@ class LCD():
         return self.ram[register]
 
     def tick(self):
-        #TODO: Cache the all of this. The TileData and TileViews are rarely cleared completely between frames
+        #TODO: Cache all of this. The TileData and TileViews are rarely cleared completely between frames
         self.refreshTileData()
         self.refreshTileView1()
         self.refreshTileView2()
@@ -56,13 +57,16 @@ class LCD():
         # Check LCDC to see if display is on
         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
         if self.ram[LCDC] >> 7 == 1:
-            xx, yy = self.getViewPort()
-            wx, wy = self.getWindowPos()
-            for x in xrange(gameboyResolution[0]):
-                for y in xrange(gameboyResolution[1]):
-                    self.window._screenBuffer[x, y] = self.window.tileView1Buffer[(x+xx)%0xFF, (y+yy)%0xFF]
-                    if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
-                        self.window._screenBuffer[x, y] = self.window.tileView2Buffer[x-wx+7, y-wy] # -7 is just a specification
+            # xx, yy = self.getViewPort()
+            # wx, wy = self.getWindowPos()
+            # for x in xrange(gameboyResolution[0]):
+            #     for y in xrange(gameboyResolution[1]):
+            #         self.window._screenBuffer[x, y] = self.window.tileView1Buffer[(x+xx)%0xFF, (y+yy)%0xFF]
+            #         if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
+            #             self.window._screenBuffer[x, y] = self.window.tileView2Buffer[x-wx+7, y-wy] # -7 is just a specification
+
+            # for y in xrange(144):
+            #     self.scanline(y)
 
             self.refreshSpriteData()
             self.window.blitBuffer(self.window._windowSurfaceBuffer,self.window._screenBuffer)
@@ -75,6 +79,54 @@ class LCD():
 
     def getViewPort(self):
         return self.ram[SCX],self.ram[SCY]
+
+    def scanline(self, y):
+        xx, yy = self.getViewPort()
+        wx, wy = self.getWindowPos()
+
+        if yy != 0:
+            print "Implement yy in scanline!"
+        # lineBuffer = numpy.ndarray((160,1),dtype='int32') # 160 pixel LCD
+
+        xFloored = xx / 32 # Get address for first tile index
+
+        backgroundViewAddress = 0x9800 if getBit(self.ram[LCDC], 6) == 0 else 0x9C00
+        windowViewAddress = 0x9800 if getBit(self.ram[LCDC], 3) == 0 else 0x9C00
+        tileDataAddress = 0x8800 if getBit(self.ram[LCDC], 4) == 0 else 0x8000
+
+        windowTileIndex = self.ram[windowViewAddress + xFloored] # TODO: Find and load only if necessary
+
+        for x in xrange(160):
+            self.window._screenBuffer[x, y] = self.window.tileView1Buffer[(x + xx) % 0xFF, (y + yy) & 0xFF]
+
+        # for x in xrange((gameboyResolution[0]/8)+1): # For the 20 (+2 overlaps) tiles on a line
+        #     x += xFloored*8
+        #     backgroundTileIndex = self.ram[backgroundViewAddress + x]
+
+        #     byte1 = self.ram[tileDataAddress + backgroundTileIndex * 16 + y%8]
+        #     byte2 = self.ram[tileDataAddress + backgroundTileIndex * 16 + y%8]
+
+        #     tileLine = [colorPalette[(getBit(byte2, n) << 1) + getBit(byte1, n)] for n in xrange(8)]
+
+        #     for n in xrange(8): # For the 8 pixels in each tile
+        #         self.window._screenBuffer[x+n,y] = tileLine[n]
+                # if xx <= x < 160:
+                #     self.window._screenBuffer[x + n, y] = pixel
+
+#def getColor(byte1,byte2,offset):
+#    # The colors are 2 bit and are found like this:
+#    # 
+#    # Color of the first pixel is 0b10
+#    # | Color of the second pixel is 0b01
+#    # v v
+#    # 1 0 0 1 0 0 0 1 <- byte1
+#    # 0 1 1 1 1 1 0 0 <- byte2
+#    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
+
+        # for x in xrange(gameboyResolution[0]):
+        #     self.window._screenBuffer[x, y] = self.window.tileView1Buffer[(x+xx)%0xFF, (y+yy)%0xFF]
+        #     if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
+        #         self.window._screenBuffer[x, y] = self.window.tileView2Buffer[x-wx+7, y-wy] # -7 is just a specification
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey = colorPalette[0], xFlip = 0, yFlip = 0):
         x1,y1 = fromXY

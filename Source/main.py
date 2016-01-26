@@ -81,6 +81,8 @@ def start(ROM, bootROM = None):
         tt = time.time()
 
         mb.lcd.tick()
+        # for y in xrange(144):
+        #     mb.lcd.scanline(y)
         window.updateDisplay()
 
         ############

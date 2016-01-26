@@ -78,7 +78,7 @@ class Motherboard():
         # Timing the LCD
         #
 
-        t = time.time()
+        # t = time.time()
         # TODO: the 19, 41 and 49 ticks should correct for longer instructions
         # Iterate the 144 lines on screen
         for y in xrange(144):
@@ -94,15 +94,18 @@ class Motherboard():
             # Mode 3
             self.setSTATMode(3)
             self.calculateCycles(170)
+            
+            self.lcd.scanline(y)
+
             # Mode 0
             self.setSTATMode(0)
             self.calculateCycles(206)
 
             # 80 + 170 + 206 = 456 "A complete cycle through these states takes 456 clks"
-        return t - time.time()
+        # return t - time.time()
 
     def tickVblank(self):
-        t = time.time()
+        # t = time.time()
         self.cpu.setInterruptFlag(self.cpu.VBlank)
         # Wait for next frame
         for y in xrange(144,154):
@@ -119,7 +122,7 @@ class Motherboard():
             # VBlank lasts 4560 clks.
 
         # self.lcd.tick() # Refreshes the host display
-        return t-time.time()
+        # return t-time.time()
 
     def loadCartridge(self, filename):
         self.cartridge = Cartridge(filename)
