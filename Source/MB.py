@@ -10,10 +10,14 @@ from RAM import RAM
 from Cartridge import Cartridge
 from LCD import LCD
 from Interaction import Interaction
-from time import time
+import time
 from Timer import Timer
 from CPU.flags import VBlank
 import CoreDump
+
+STAT = 0xFF41
+LY = 0xFF44
+LYC = 0xFF45
 
 class Motherboard():
     def __init__(self, gameROMFile, bootROMFile, window):
@@ -39,7 +43,7 @@ class Motherboard():
         if self.cpu.testSTATFlag(mode+3):
             self.cpu.setInterruptFlag(self.cpu.LCDC)
 
-    def tick(self):
+    def tickFrame(self):
         # TODO: Refactor this by moving most of this logic to LCD (LCD is current part of host) and a central oscillator/timer (maybe refactor this file)
 
         # http://problemkaputt.de/pandocs.htm#lcdstatusregister
@@ -73,10 +77,8 @@ class Motherboard():
         #
         # Timing the LCD
         #
-        STAT = 0xFF41
-        LY = 0xFF44
-        LYC = 0xFF45
 
+        t = time.time()
         # TODO: the 19, 41 and 49 ticks should correct for longer instructions
         # Iterate the 144 lines on screen
         for y in xrange(144):
@@ -97,7 +99,10 @@ class Motherboard():
             self.calculateCycles(206)
 
             # 80 + 170 + 206 = 456 "A complete cycle through these states takes 456 clks"
+        return t - time.time()
 
+    def tickVblank(self):
+        t = time.time()
         self.cpu.setInterruptFlag(self.cpu.VBlank)
         # Wait for next frame
         for y in xrange(144,154):
@@ -113,7 +118,8 @@ class Motherboard():
 
             # VBlank lasts 4560 clks.
 
-        self.lcd.tick() # Refreshes the host display
+        # self.lcd.tick() # Refreshes the host display
+        return t-time.time()
 
     def loadCartridge(self, filename):
         self.cartridge = Cartridge(filename)

@@ -49,37 +49,50 @@ class Window():
 
         self.tileDataWidth = 0x100
         self.tileDataHeight = 0x60
-        self.tileDataBuffer = numpy.ndarray((self.tileDataWidth,self.tileDataHeight),dtype='int32')
 
         self.tileView1Width = 0x100
         self.tileView1Height = 0x100        
-        self.tileView1Buffer = numpy.ndarray((self.tileView1Width,self.tileView1Height),dtype='int32')
         
         self.tileView2Width = 0x100
         self.tileView2Height = 0x100
-        self.tileView2Buffer = numpy.ndarray((self.tileView2Width,self.tileView2Height),dtype='int32')
+
+        self.spriteWidth = 160
+        self.spriteHeight = 144
 
         if __debug__:
             # Tile Data
             sdl2.ext.Window.DEFAULTPOS = (0, 0)
             self.tileDataWindow = sdl2.ext.Window("Tile Data", size=(self.tileDataWidth, self.tileDataHeight))
             self.tileDataWindowSurface = self.tileDataWindow.get_surface()
-            self.tileDataWindowSurfaceBuffer = sdl2.ext.pixels2d(self.tileDataWindowSurface)
+            self.tileDataBuffer = sdl2.ext.pixels2d(self.tileDataWindowSurface)
             self.tileDataWindow.show()
 
             # Background View 1
             sdl2.ext.Window.DEFAULTPOS = (self.tileDataWidth, 0)
             self.tileView1Window = sdl2.ext.Window("Tile View 1", size=(self.tileView1Width, self.tileView1Height))
             self.tileView1WindowSurface = self.tileView1Window.get_surface()
-            self.tileView1WindowSurfaceBuffer = sdl2.ext.pixels2d(self.tileView1WindowSurface)
+            self.tileView1Buffer = sdl2.ext.pixels2d(self.tileView1WindowSurface)
             self.tileView1Window.show()
 
             # Background View 2
             sdl2.ext.Window.DEFAULTPOS = (self.tileDataWidth + self.tileView1Width, 0)
             self.tileView2Window = sdl2.ext.Window("Tile View 2", size=(self.tileView2Width, self.tileView2Height))
             self.tileView2WindowSurface = self.tileView2Window.get_surface()
-            self.tileView2WindowSurfaceBuffer = sdl2.ext.pixels2d(self.tileView2WindowSurface)
+            self.tileView2Buffer = sdl2.ext.pixels2d(self.tileView2WindowSurface)
             self.tileView2Window.show()
+            
+
+            # Sprite view
+            sdl2.ext.Window.DEFAULTPOS = (self.tileDataWidth + self.tileView1Width + self.tileView2Width, 0)
+            self.spriteWindow = sdl2.ext.Window("Sprite view", size=(self.spriteWidth, self.spriteHeight))
+            self.spriteWindowSurface = self.spriteWindow.get_surface()
+            self.spriteBuffer = sdl2.ext.pixels2d(self.spriteWindowSurface)
+            self.spriteWindow.show()
+        else:
+            self.tileDataBuffer = numpy.ndarray((self.tileDataWidth,self.tileDataHeight),dtype='int32')
+            self.tileView1Buffer = numpy.ndarray((self.tileView1Width,self.tileView1Height),dtype='int32')
+            self.tileView2Buffer = numpy.ndarray((self.tileView2Width,self.tileView2Height),dtype='int32')
+            self.spriteBuffer = numpy.ndarray((self.spriteWidth,self.spriteHeight),dtype='int32')
 
     def dump(self,filename, tiles=False):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface_temp,filename+".bmp")
@@ -145,6 +158,7 @@ class Window():
             self.tileDataWindow.refresh()
             self.tileView1Window.refresh()
             self.tileView2Window.refresh()
+            self.spriteWindow.refresh()
         self._window.refresh()
 
     def blitBuffer(self,b1,b2,scale=1):

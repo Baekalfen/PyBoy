@@ -49,30 +49,42 @@ class LCD():
         self.refreshTileData()
         self.refreshTileView1()
         self.refreshTileView2()
+        # self.refreshSpriteData()
         if __debug__:
-            
-            self.window.blitBuffer(self.window.tileDataWindowSurfaceBuffer, self.window.tileDataBuffer)
-            self.window.blitBuffer(self.window.tileView1WindowSurfaceBuffer, self.window.tileView1Buffer)
-            self.window.blitBuffer(self.window.tileView2WindowSurfaceBuffer, self.window.tileView2Buffer)
-
             self.drawTileView1ScreenPort()
 
         # Check LCDC to see if display is on
         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
         if self.ram[LCDC] >> 7 == 1:
             xx, yy = self.getViewPort()
+            wx, wy = self.getWindowPos()
             for x in xrange(gameboyResolution[0]):
                 for y in xrange(gameboyResolution[1]):
                     self.window._screenBuffer[x, y] = self.window.tileView1Buffer[(x+xx)%0xFF, (y+yy)%0xFF]
-                    # self._screenBuffer[x, y] = self.tileView2Buffer[x+xx, y+yy]
+                    if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
+                        self.window._screenBuffer[x, y] = self.window.tileView2Buffer[x-wx+7, y-wy] # -7 is just a specification
 
+            self.refreshSpriteData()
             self.window.blitBuffer(self.window._windowSurfaceBuffer,self.window._screenBuffer)
         else:
             self.window._windowSurfaceBuffer.fill(0x00403245)
 
 
+    def getWindowPos(self):
+        return self.ram[WX],self.ram[WY]
+
     def getViewPort(self):
         return self.ram[SCX],self.ram[SCY]
+
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey):
+        x1,y1 = fromXY
+        x2,y2 = toXY
+
+        for y in xrange(8):
+            for x in xrange(8):
+                pixel = fromBuffer[x1+x, y1+y]
+                if not colorKey == pixel and x2+x < 160 and y2+y < 144:
+                    toBuffer[x2+x, y2+y] = pixel
 
     def copyTile(self, fromXY, toXY, fromBuffer, toBuffer):
         x1,y1 = fromXY
@@ -86,7 +98,7 @@ class LCD():
         pass
 
     def refreshTileView1(self):
-        self.window.tileView1Buffer.fill(0x00ABC4FF)
+        # self.window.tileView1Buffer.fill(0x00ABC4FF)
         
         tileSize = 8
         winHorTileView1Limit = 32
@@ -110,7 +122,7 @@ class LCD():
             self.copyTile(fromXY, toXY, self.window.tileDataBuffer, self.window.tileView1Buffer)
 
     def refreshTileView2(self):
-        self.window.tileView2Buffer.fill(0x00ABC4FF)
+        # self.window.tileView2Buffer.fill(0x00ABC4FF)
          
         tileSize = 8
         winHorTileView2Limit = 32
@@ -133,12 +145,28 @@ class LCD():
 
             self.copyTile(fromXY, toXY, self.window.tileDataBuffer, self.window.tileView2Buffer)
 
+    def refreshSpriteData(self):
+        # Doesn't restrict 10 sprite pr. scan line.
+        # Prioritizes sprite in inverted order
+        for n in xrange(0xFE00,0xFEA0,4):
+            y = self.ram[n] - 16
+            x = self.ram[n+1] - 8
+            tileIndex = self.ram[n+2]
+            attributes = self.ram[n+3]
+
+            fromXY = ((tileIndex*8)%self.window.tileDataWidth, ((tileIndex*8)/self.window.tileDataWidth)*8)
+            toXY = (x, y)
+
+            if x < 160 and y < 144:
+                self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window._screenBuffer, 1)
+                # self.copySprite(fromXY, toXY, self.window.tileDataBuffer, self.window.spriteBuffer, 0)
+            # self.copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey):
 
 
     def refreshTileData(self):
         # http://gameboy.mongenel.com/dmg/asmmemmap.html
-        if __debug__:
-            self.window.tileDataBuffer.fill(0x00ABC4FF)
+        # if __debug__:
+        #     self.window.tileDataBuffer.fill(0x00ABC4FF)
         tileSize = 16 #Tile is 16 bytes
         horTileLimit = 32#self.window.tileDataWidth/8
         verTileLimit = 32#self.window.tileDataHeight/8
@@ -163,11 +191,11 @@ class LCD():
         width = gameboyResolution[0]
         height = gameboyResolution[1]
 
-        self.drawHorLine(xx       , yy        ,width  , self.window.tileView1WindowSurfaceBuffer)
-        self.drawHorLine(xx       , yy+height ,width  , self.window.tileView1WindowSurfaceBuffer)
+        self.drawHorLine(xx       , yy        ,width  , self.window.tileView1Buffer)
+        self.drawHorLine(xx       , yy+height ,width  , self.window.tileView1Buffer)
 
-        self.drawVerLine(xx       , yy        ,height , self.window.tileView1WindowSurfaceBuffer)
-        self.drawVerLine(xx+width , yy        ,height , self.window.tileView1WindowSurfaceBuffer)
+        self.drawVerLine(xx       , yy        ,height , self.window.tileView1Buffer)
+        self.drawVerLine(xx+width , yy        ,height , self.window.tileView1Buffer)
 
     def drawHorLine(self,xx,yy,length,screen,color = 0):
         for x in xrange(length):

@@ -160,7 +160,7 @@ class RAM():
             # Redirect to internal RAM
             return self[i - 0x2000]
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
-            print "OAM! read",hex(i),hex(value)
+            # print "OAM! read",hex(i),self.spriteAttributeMemory[i - 0xFE00]
             return self.spriteAttributeMemory[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.nonIOInternalRAM0[i - 0xFEA0]

@@ -21,6 +21,7 @@ from WindowEvent import WindowEvent
 from Debugger import Debugger
 import time
 import os.path
+from multiprocessing import Process
 
 if len(sys.argv) < 2:
     from Window_SDL2 import Window
@@ -45,16 +46,14 @@ def start(ROM, bootROM = None):
     else:
         mb = Motherboard(ROM, None, window)
 
-    if __debug__:
-        debugger = Debugger(mb)
+    # if __debug__:
+        # debugger = Debugger(mb)
 
     done = False
     stepOnce = False
     exp_avg_cpu = 0
     exp_avg_gpu = 0
     while not done:
-        # t = time.clock()
-        t = time.time()
         # GPCPUman.pdf p. 6
         # Nintendo documents describe the CPU&instructions speed i n machi ne cycl es whi l e t hi s document descri bes them in clock cycles. Here is the translation:
         # 1 machine cycle = 4 clock cycles
@@ -72,27 +71,51 @@ def start(ROM, bootROM = None):
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
 
-        mb.tick()
+        ############
+        # Normal
+        
+        t = time.time()
+        mb.tickFrame()
+        mb.tickVblank()
+
         tt = time.time()
 
-        window.updateDisplay() 
-        tt2 = time.time()
-        # time.sleep(max(0, SPF-tt))
-        # tt = time.clock()-t
-        # while (time.clock()-t < SPF):
-        #     pass
+        mb.lcd.tick()
+        window.updateDisplay()
 
+        ############
+        # Multihreaded
+
+        # tt = time.time()
+
+        # lcdUpdate = Process(target=mb.lcd.tick())
+        # lcdUpdate.daemon = True
+        # lcdUpdate.start()
+        # mb.tickFrame()
+        
+        # lcdUpdate.join()
+
+        # SDLUpdate = Process(target=window.updateDisplay())
+        # SDLUpdate.daemon = True
+        # SDLUpdate.start()
+        # mb.tickVblank()
+
+        # SDLUpdate.join()
+
+        tt2 = time.time()
         
         if __debug__:
-            exp_avg_cpu = int(0.9 * exp_avg_cpu + 0.1 * int((SPF/(tt-t))*100))
-            exp_avg_gpu = int(0.9 * exp_avg_gpu + 0.1 * int((SPF/(tt2-tt))*100))
-            window._window.title = "C" + str(exp_avg_cpu) + "%" + " G" + str(exp_avg_gpu)+ "%"
+            exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (tt2-tt)
+            exp_avg_gpu = 0.9 * exp_avg_gpu + 0.1 * (tt-t)
+            window._window.title = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
+            # window._window.title = "C" + str(int((SPF/exp_avg_cpu)*100)) + "%" # + " G" + str(int(exp_avg_gpu/SPF*100))+ "%"
 
 if __name__ == "__main__":
     bootROM = "DMG_ROM.bin"
     # try:
         # start("TestROMs/instr_timing/instr_timing.gb")
     # start("pokemon_blue.gb")
+    # start("Tetris.gb")
     start("SuperMarioLand.gb")
 
 
