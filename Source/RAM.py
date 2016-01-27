@@ -32,39 +32,40 @@ class RAM():
         if random:
             raise Exception("Random RAM not implemented")
 
-        if bootROMFile is not None:
-            with open(bootROMFile, "rb") as bootROMFileHandle:
-                self.bootROM = [struct.unpack('B', byte)[0]
-                                for byte in bootROMFileHandle.read()]
+        # if bootROMFile is not None:
+        with open(bootROMFile, "rb") as bootROMFileHandle:
+            self.bootROM = [struct.unpack('B', byte)[0]
+                            for byte in bootROMFileHandle.read()]
 
-            if __debug__:
-                # Inject jump to 0xFC where the boot-ROM is disabled
-                self.bootROM[0x03] = 0xC3
-                self.bootROM[0x04] = 0xFC
-                self.bootROM[0x05] = 0x00
-        else:
-            self.bootROM = self.allocateRAM(256)
-            # Set stack pointer
-            self.bootROM[0x00] = 0x31
-            self.bootROM[0x01] = 0xFE
-            self.bootROM[0x02] = 0xFF
+            # if __debug__:
+            #     # Inject jump to 0xFC where the boot-ROM is disabled
+            #     self.bootROM[0x03] = 0xC3
+            #     self.bootROM[0x04] = 0xFC
+            #     self.bootROM[0x05] = 0x00
+        # else:
+            # self.bootROM = self.allocateRAM(256)
+            # # Set stack pointer
+            # self.bootROM[0x00] = 0x31
+            # self.bootROM[0x01] = 0xFE
+            # self.bootROM[0x02] = 0xFF
 
-            # Inject jump to 0xFC
-            self.bootROM[0x03] = 0xC3
-            self.bootROM[0x04] = 0xFC
-            self.bootROM[0x05] = 0x00
+            # # Inject jump to 0xFC
+            # self.bootROM[0x03] = 0xC3
+            # self.bootROM[0x04] = 0xFC
+            # self.bootROM[0x05] = 0x00
 
-            # Inject code to disable boot-ROM
-            self.bootROM[0xFC] = 0x3E
-            self.bootROM[0xFD] = 0x01
-            self.bootROM[0xFE] = 0xE0
-            self.bootROM[0xFF] = 0x50
+            # # Inject code to disable boot-ROM
+            # self.bootROM[0xFC] = 0x3E
+            # self.bootROM[0xFD] = 0x01
+            # self.bootROM[0xFE] = 0xE0
+            # self.bootROM[0xFF] = 0x50
 
         self.bootROMEnabled = True
 
         self.cartridge = cartridge
         self.interaction = interaction
         self.timer = timer
+        self.updateVRAMCache = True
         self.videoRAM = self.allocateRAM(VIDEO_RAM)
         self.internalRAM0 = self.allocateRAM(INTERNAL_RAM_0)
         self.spriteAttributeMemory = self.allocateRAM(SPRITE_ATTRIB_MEMORY)
@@ -194,6 +195,8 @@ class RAM():
             self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
             # TODO: Set a flag for when the Video RAM has changed. This can be used for caching the tile data/view
+            if i < 0x9800:
+                self.updateVRAMCache = True
             self.videoRAM[i - 0x8000] = value
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
             self.cartridge[i] = value

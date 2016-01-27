@@ -8,6 +8,7 @@
 # from PrimitiveTypes import uint8
 from time import time
 import CoreDump
+import warnings
 
 
 # TODO: Refactor all of this
@@ -222,7 +223,9 @@ class Cartridge:
         elif 0xA000 <= address < 0xC000:
             if not self.RAMBanks:
                 raise Exception("RAMBanks not initialized: %s" % hex(address))
-            raise Exception("Not implemented")
+            warnings.warn("Cartridge RAM implementation not verified!")
+            return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
+            # raise Exception("Not implemented")
         else:
             raise CoreDump.CoreDump("Reading address invalid: %s" % address)
 

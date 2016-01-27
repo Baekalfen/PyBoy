@@ -42,6 +42,7 @@ def start(ROM, bootROM = None):
 
     window = Window(scale=1, debug=False)
     if bootROM is not None and os.path.isfile(bootROM):
+        print "Starting with boot ROM"
         mb = Motherboard(ROM, bootROM, window)
     else:
         mb = Motherboard(ROM, None, window)
@@ -53,6 +54,7 @@ def start(ROM, bootROM = None):
     stepOnce = False
     exp_avg_cpu = 0
     exp_avg_gpu = 0
+    counter = 0
     while not done:
         # GPCPUman.pdf p. 6
         # Nintendo documents describe the CPU&instructions speed i n machi ne cycl es whi l e t hi s document descri bes them in clock cycles. Here is the translation:
@@ -70,9 +72,6 @@ def start(ROM, bootROM = None):
                 stepOnce = True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
-
-        ############
-        # Normal
         
         t = time.time()
         mb.tickFrame()
@@ -81,36 +80,15 @@ def start(ROM, bootROM = None):
         tt = time.time()
 
         mb.lcd.tick()
-        # for y in xrange(144):
-        #     mb.lcd.scanline(y)
         window.updateDisplay()
-
-        ############
-        # Multihreaded
-
-        # tt = time.time()
-
-        # lcdUpdate = Process(target=mb.lcd.tick())
-        # lcdUpdate.daemon = True
-        # lcdUpdate.start()
-        # mb.tickFrame()
-        
-        # lcdUpdate.join()
-
-        # SDLUpdate = Process(target=window.updateDisplay())
-        # SDLUpdate.daemon = True
-        # SDLUpdate.start()
-        # mb.tickVblank()
-
-        # SDLUpdate.join()
-
         tt2 = time.time()
         
-        if __debug__:
+        if __debug__ and counter % 16 == 0:
             exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (tt2-tt)
             exp_avg_gpu = 0.9 * exp_avg_gpu + 0.1 * (tt-t)
             window._window.title = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
-            # window._window.title = "C" + str(int((SPF/exp_avg_cpu)*100)) + "%" # + " G" + str(int(exp_avg_gpu/SPF*100))+ "%"
+            counter = 0
+        counter += 1
 
 if __name__ == "__main__":
     bootROM = "DMG_ROM.bin"
@@ -118,7 +96,7 @@ if __name__ == "__main__":
         # start("TestROMs/instr_timing/instr_timing.gb")
     # start("pokemon_blue.gb")
     # start("Tetris.gb")
-    start("SuperMarioLand.gb")
+    start("SuperMarioLand.gb", bootROM)
 
 
     # filename = raw_input("Write the name of a ROM:\n")

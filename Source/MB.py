@@ -85,8 +85,11 @@ class Motherboard():
             self.ram[LY] = y
             if self.ram[LYC] == y and self.cpu.testSTATFlag(self.cpu.LYCFlagEnable):
                 #LYC interrupt
+                # self.cpu.ram[STAT] |= 0b100 # Sets the LYC flag
                 if self.cpu.testSTATFlag(self.cpu.LYCFlag):
                     self.cpu.setInterruptFlag(self.cpu.LCDC)
+            # else:
+            #     self.cpu.ram[STAT] &= 0b11111011
 
             # Mode 2
             self.setSTATMode(2)

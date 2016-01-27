@@ -31,13 +31,13 @@ class CPU():
         self.debugger = debugger
         self.timer = timer
         self.ram = ram
-        self.interruptMasterEnable = True  # TODO: What is it initialized as?
-        self.interruptMasterEnableLatch = True
+        self.interruptMasterEnable = False  # TODO: What is it initialized as?
+        self.interruptMasterEnableLatch = False
 
         self.breakOn = False
         self.breakNext = None
 
-        # self.breakNext = 0x20b3
+        # self.breakNext = 0xE6
         # 0x1C9  Zeroing some internal RAM?
         # 0x1CC  Escaping?
         # 0x01D8 Zeroing TileView 2
@@ -194,6 +194,10 @@ class CPU():
                 print hex(self.reg[PC])[2:]        
 
         if __debug__:
+            # if self.reg[PC] > 0xA:
+            #     self.breakOn = True
+
+
             if self.reg[PC] == self.breakNext:
                 self.breakNext = None
                 self.breakOn = True
