@@ -37,7 +37,7 @@ class CPU():
         self.breakOn = False
         self.breakNext = None
 
-        # self.breakNext = 0xE6
+        # self.breakNext = 0x6c84
         # 0x1C9  Zeroing some internal RAM?
         # 0x1CC  Escaping?
         # 0x01D8 Zeroing TileView 2
@@ -153,6 +153,20 @@ class CPU():
             print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
         print "Call Stack", self.debugCallStack
         print "Active ROM and RAM bank", self.ram.cartridge.ROMBankSelected , self.ram.cartridge.RAMBankSelected
+        print "Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch
+        print "Waiting Interrupts",
+        flags = ""
+        if self.testInterruptFlag(self.VBlank):
+            flags += " VBlank"
+        if self.testInterruptFlag(self.LCDC):
+            flags += " LCDC"
+        if self.testInterruptFlag(self.TIMER):
+            flags += " Timer"
+        if self.testInterruptFlag(self.Serial):
+            flags += " Serial"
+        if self.testInterruptFlag(self.HightoLow):
+            flags += " HightoLow"
+        print flags
 
     def tick(self):
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
@@ -183,7 +197,15 @@ class CPU():
         else:
             instruction = self.fetchInstruction(self.reg[PC])
 
-
+        # if not self.ram.bootROMEnabled:
+        #     if self.reg[PC] == 0x7c:
+        #         self.breakOn = True
+        #     if (self.ram[self.reg[PC]]) != 0xCB:
+        #         l = self.opcodes[self.ram[self.reg[PC]]][0]
+        #         print "Op:", "0x%0.2X" % self.ram[self.reg[PC]], "Name:", CPU_COMMANDS[self.ram[self.reg[PC]]], "Len:", l, ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
+        #     else:
+        #         print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
+            
         # if self.reg[PC] == 0x100:
         #     self.lala = True
 
@@ -194,7 +216,7 @@ class CPU():
                 print hex(self.reg[PC])[2:]        
 
         if __debug__:
-            # if self.reg[PC] > 0xA:
+            # if self.reg[PC] == 0x48 and not self.ram.bootROMEnabled and self.ram[0xFF45] != 0:
             #     self.breakOn = True
 
 
