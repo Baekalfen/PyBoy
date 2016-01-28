@@ -84,19 +84,20 @@ def start(ROM, bootROM = None):
         tt2 = time.time()
         
         if __debug__ and counter % 16 == 0:
-            exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (tt2-tt)
-            exp_avg_gpu = 0.9 * exp_avg_gpu + 0.1 * (tt-t)
+            exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (tt-t)
+            exp_avg_gpu = 0.9 * exp_avg_gpu + 0.1 * (tt2-tt)
             window._window.title = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
             counter = 0
         counter += 1
 
 if __name__ == "__main__":
-    bootROM = "DMG_ROM.bin"
+    bootROM = "ROMs/DMG_ROM.bin"
     # try:
         # start("TestROMs/instr_timing/instr_timing.gb")
-    # start("pokemon_blue.gb")
-    # start("Tetris.gb")
-    start("SuperMarioLand.gb", bootROM)
+    # start("ROMs/pokemon_blue.gb")
+    # start("ROMs/Tetris.gb")
+    # start("ROMs/Mr. Do!.gb", bootROM)
+    start("ROMs/SuperMarioLand.gb", bootROM)
 
 
     # filename = raw_input("Write the name of a ROM:\n")
