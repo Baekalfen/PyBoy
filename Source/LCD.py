@@ -49,7 +49,7 @@ class LCD():
                 self.ram.updateVRAMCache = False
             self.renderSprites()
         else:
-            self.window._windowSurfaceBuffer.fill(0x00403245)
+            self.window._screenBuffer.fill(0x00403245)
 
 
     def getWindowPos(self):
@@ -96,7 +96,7 @@ class LCD():
                 yy = (7-y) if yFlip == 1 else y
 
                 pixel = fromBuffer[xx, yy]
-                if not colorKey == pixel and x2+x < 160 and y2+y < 144:
+                if not colorKey == pixel and 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     toBuffer[x2+x, y2+y] = pixel
 
 
@@ -134,10 +134,9 @@ class LCD():
                     x = tileCount*8 + 7-pixelOnLine
                     self.tileCache[x, y] = colorPalette[getColor(byte1, byte2, pixelOnLine)]
 
-            # self.window.tileDataWindow.refresh()
-            # self.window._window.refresh()
-            # raw_input()
             tileCount += 1
 
         if __debug__:
-            self.window.tileDataBuffer[:] = self.tileCache[:]
+            for n in xrange(self.window.tileDataHeight/8):
+                self.window.tileDataBuffer[0:self.window.tileDataWidth,n*8:(n+1)*8] = self.tileCache[n*self.window.tileDataWidth:(n+1)*self.window.tileDataWidth,0:8]
+

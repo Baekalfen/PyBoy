@@ -37,20 +37,20 @@ class Window():
         scaledResolution = tuple(x * scale for x in gameboyResolution)
 
         self._window = sdl2.ext.Window("PyBoy", size=scaledResolution)
-        self._windowSurface_temp = self._window.get_surface()
+        self._windowSurface = self._window.get_surface()
 
-        self.win = sdl2.SDL_CreateWindow("Hello World", 0, 0, 10, 10, 0);
+        # Only used for VSYNC
+        self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, sdl2.SDL_WINDOW_HIDDEN);
         self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC);
 
-        self._windowSurface = sdl2.ext.subsurface(self._windowSurface_temp,(0,0)+scaledResolution)
-        self._windowSurfaceBuffer = sdl2.ext.pixels2d(self._windowSurface)
-        self._screenBuffer = self._windowSurfaceBuffer# numpy.ndarray(gameboyResolution,dtype='int32')
+        self._screenBuffer = sdl2.ext.pixels2d(self._windowSurface)
         self._screenBuffer.fill(0x00558822)
         self._window.show()
         self.fonts = {}
 
-        self.tileDataWidth = 384*8
-        self.tileDataHeight = 8
+        tiles = 384
+        self.tileDataWidth = 16*8
+        self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
 
         if __debug__:
             # Tile Data
@@ -59,8 +59,8 @@ class Window():
             self.tileDataWindowSurface = self.tileDataWindow.get_surface()
             self.tileDataBuffer = sdl2.ext.pixels2d(self.tileDataWindowSurface)
             self.tileDataWindow.show()
-        else:
-            self.tileDataBuffer = numpy.ndarray((self.tileDataWidth,self.tileDataHeight),dtype='int32')
+        # else:
+        #     self.tileDataBuffer = numpy.ndarray((self.tileDataWidth,self.tileDataHeight),dtype='int32')
 
     def dump(self,filename, tiles=False):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface_temp,filename+".bmp")
@@ -123,7 +123,9 @@ class Window():
         if __debug__:
             self.tileDataWindow.refresh()
         self._window.refresh()
-        sdl2.SDL_RenderPresent(self.renderer);
+
+        #Only used for VSYNC
+        sdl2.SDL_RenderPresent(self.renderer)
 
     def stop(self):
         # self._window.stop()
