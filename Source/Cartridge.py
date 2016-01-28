@@ -159,7 +159,7 @@ class Cartridge:
                         self.RAMBanks = None
                         self.RAMBankEnabled = False
                 else:
-                    raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (address,value))
+                    raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (hex(address),hex(value)))
 
             elif 0x2000 <= address < 0x4000:
                 if value == 0:
