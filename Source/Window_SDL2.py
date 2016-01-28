@@ -40,8 +40,8 @@ class Window():
         self._windowSurface = self._window.get_surface()
 
         # Only used for VSYNC
-        self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, sdl2.SDL_WINDOW_HIDDEN);
-        self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC);
+        self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
+        self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
 
         self._screenBuffer = sdl2.ext.pixels2d(self._windowSurface)
         self._screenBuffer.fill(0x00558822)
@@ -49,7 +49,7 @@ class Window():
         self.fonts = {}
 
         tiles = 384
-        self.tileDataWidth = 16*8
+        self.tileDataWidth = 16*8 # Change the 16 to whatever wide you want the tile window
         self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
 
         if __debug__:
@@ -124,7 +124,9 @@ class Window():
             self.tileDataWindow.refresh()
         self._window.refresh()
 
-        #Only used for VSYNC
+        # self.VSync()
+
+    def VSync(self):
         sdl2.SDL_RenderPresent(self.renderer)
 
     def stop(self):
