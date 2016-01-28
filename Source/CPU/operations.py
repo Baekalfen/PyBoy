@@ -253,6 +253,9 @@ def CPU_DAA(self, r0):
         corr |= 0x60 if a > 0x99 else 0x00
         a += corr
 
+    # Mads: Not having this, caused >0xFF values to appear in reg a
+    a &= 0xFF
+
     self.setFlag(flagC, corr & 0x60)
     self.clearFlag(flagH)
     self.setFlag(flagZ, a == 0)
