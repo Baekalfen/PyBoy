@@ -39,6 +39,8 @@ class Window():
         self._window = sdl2.ext.Window("PyBoy", size=scaledResolution)
         self._windowSurface_temp = self._window.get_surface()
 
+        self.win = sdl2.SDL_CreateWindow("Hello World", 0, 0, 10, 10, 0);
+        self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC);
 
         self._windowSurface = sdl2.ext.subsurface(self._windowSurface_temp,(0,0)+scaledResolution)
         self._windowSurfaceBuffer = sdl2.ext.pixels2d(self._windowSurface)
@@ -121,6 +123,7 @@ class Window():
         if __debug__:
             self.tileDataWindow.refresh()
         self._window.refresh()
+        sdl2.SDL_RenderPresent(self.renderer);
 
     def stop(self):
         # self._window.stop()
