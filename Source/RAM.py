@@ -32,33 +32,27 @@ class RAM():
         if random:
             raise Exception("Random RAM not implemented")
 
-        # if bootROMFile is not None:
-        with open(bootROMFile, "rb") as bootROMFileHandle:
-            self.bootROM = [struct.unpack('B', byte)[0]
-                            for byte in bootROMFileHandle.read()]
+        if bootROMFile is not None:
+            with open(bootROMFile, "rb") as bootROMFileHandle:
+                self.bootROM = [struct.unpack('B', byte)[0]
+                                for byte in bootROMFileHandle.read()]
+        else:
+            self.bootROM = self.allocateRAM(256)
+            # Set stack pointer
+            self.bootROM[0x00] = 0x31
+            self.bootROM[0x01] = 0xFE
+            self.bootROM[0x02] = 0xFF
 
-            # if __debug__:
-            #     # Inject jump to 0xFC where the boot-ROM is disabled
-            #     self.bootROM[0x03] = 0xC3
-            #     self.bootROM[0x04] = 0xFC
-            #     self.bootROM[0x05] = 0x00
-        # else:
-            # self.bootROM = self.allocateRAM(256)
-            # # Set stack pointer
-            # self.bootROM[0x00] = 0x31
-            # self.bootROM[0x01] = 0xFE
-            # self.bootROM[0x02] = 0xFF
+            # Inject jump to 0xFC
+            self.bootROM[0x03] = 0xC3
+            self.bootROM[0x04] = 0xFC
+            self.bootROM[0x05] = 0x00
 
-            # # Inject jump to 0xFC
-            # self.bootROM[0x03] = 0xC3
-            # self.bootROM[0x04] = 0xFC
-            # self.bootROM[0x05] = 0x00
-
-            # # Inject code to disable boot-ROM
-            # self.bootROM[0xFC] = 0x3E
-            # self.bootROM[0xFD] = 0x01
-            # self.bootROM[0xFE] = 0xE0
-            # self.bootROM[0xFF] = 0x50
+            # Inject code to disable boot-ROM
+            self.bootROM[0xFC] = 0x3E
+            self.bootROM[0xFD] = 0x01
+            self.bootROM[0xFE] = 0xE0
+            self.bootROM[0xFF] = 0x50
 
         self.bootROMEnabled = True
 
