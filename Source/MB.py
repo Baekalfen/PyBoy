@@ -14,6 +14,7 @@ import time
 from Timer import Timer
 from CPU.flags import VBlank
 import CoreDump
+from MathUint8 import getBit
 
 STAT = 0xFF41
 LY = 0xFF44
@@ -40,8 +41,17 @@ class Motherboard():
         self.cpu.ram[0xFF41] &= 0b11111100 # Clearing 2 LSB
         self.cpu.ram[0xFF41] |= mode # Apply mode to LSB
 
-        if self.cpu.testSTATFlag(mode+3):
+        if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
             self.cpu.setInterruptFlag(self.cpu.LCDC)
+
+    def checkLYC(self, y):
+        self.ram[LY] = y
+        if self.ram[LYC] == y:
+            self.cpu.ram[STAT] |= 0b100 # Sets the LYC flag
+            if getBit(self.cpu.ram[0xFF41], 6) == 1:
+                self.cpu.setInterruptFlag(self.cpu.LCDC)
+        else:
+            self.cpu.ram[STAT] &= 0b11111011
 
     def tickFrame(self):
         # TODO: Refactor this by moving most of this logic to LCD (LCD is current part of host) and a central oscillator/timer (maybe refactor this file)
@@ -82,14 +92,7 @@ class Motherboard():
         # TODO: the 19, 41 and 49 ticks should correct for longer instructions
         # Iterate the 144 lines on screen
         for y in xrange(144):
-            self.ram[LY] = y
-            if self.ram[LYC] == y and self.cpu.testSTATFlag(self.cpu.LYCFlagEnable):
-                #LYC interrupt
-                # self.cpu.ram[STAT] |= 0b100 # Sets the LYC flag
-                if self.cpu.testSTATFlag(self.cpu.LYCFlag):
-                    self.cpu.setInterruptFlag(self.cpu.LCDC)
-            # else:
-            #     self.cpu.ram[STAT] &= 0b11111011
+            self.checkLYC(y)
 
             # Mode 2
             self.setSTATMode(2)
@@ -112,11 +115,7 @@ class Motherboard():
         self.cpu.setInterruptFlag(self.cpu.VBlank)
         # Wait for next frame
         for y in xrange(144,154):
-            self.ram[LY] = y
-            if self.ram[LYC] == y and self.cpu.testSTATFlag(self.cpu.LYCFlagEnable):
-                #LYC interrupt
-                if self.cpu.testSTATFlag(self.cpu.LYCFlag):
-                    self.cpu.setInterruptFlag(self.cpu.LCDC)
+            self.checkLYC(y)
 
             # Mode 1
             self.setSTATMode(1)

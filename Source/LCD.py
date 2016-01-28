@@ -47,7 +47,7 @@ class LCD():
             if self.ram.updateVRAMCache:
                 self.refreshTileData()
                 self.ram.updateVRAMCache = False
-            self.refreshSpriteData()
+            self.renderSprites()
         else:
             self.window._windowSurfaceBuffer.fill(0x00403245)
 
@@ -74,7 +74,7 @@ class LCD():
             for n in xrange(8): # For the 8 pixels in each tile
                 # self.window._screenBuffer[x+n,y] = self.tileCache[backgroundTileIndex + offset + n, y%8]
                 screenX = (x * 8) + n - offset
-                if 0 <= screenX < 160:
+                if screenX < 160:
                     tileIndex = backgroundTileIndex if tileDataSelect == 1 else (getSignedInt8(backgroundTileIndex)+256)
                     self.window._screenBuffer[screenX,y] = self.tileCache[tileIndex*8 + n, (y+yy)%8]
                     # if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
@@ -100,7 +100,7 @@ class LCD():
                     toBuffer[x2+x, y2+y] = pixel
 
 
-    def refreshSpriteData(self):
+    def renderSprites(self):
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
         for n in xrange(0xFE00,0xFEA0,4):

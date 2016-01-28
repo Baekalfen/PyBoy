@@ -189,6 +189,11 @@ class RAM():
         raise CoreDump.CoreDump("Memory access violation. Tried to accessed: %s" % hex(i))
 
     def __setitem__(self,i,value):
+        if value > 0x100:
+            print "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
+            CoreDump.CoreDump("Memory write error! Can't write %s to %s" % (hex(value),hex(i)))
+            exit(1)
+
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
             self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
