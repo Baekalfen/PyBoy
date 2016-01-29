@@ -77,33 +77,22 @@ class LCD():
 
         offset = (xx - (xx & 0b11111000)) # Difference between absolute xx and rounded down to nearest tile
 
-        for x in xrange(-offset, gameboyResolution[0]): # For the 20 (+1 overlap) tiles on a line
-            tileX = x+offset
-            if tileX % 8 == 0:
+        for x in xrange(gameboyResolution[0]): # For the 20 (+1 overlap) tiles on a line
+            tileX = x#+offset
+            if x % 8 == 0:
                 backgroundTileIndex = self.ram[backgroundViewAddress + ((xx)/8 + tileX/8)%32 + ((y+yy)/8)*32]
-                windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + x/8)%32 + ((y-wy)/8)*32]
+                windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + tileX/8)%32 + ((y-wy)/8)*32]
 
                 if tileDataSelect == 0: # If using signed tile indices
                     backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
                     windowTileIndex = getSignedInt8(windowTileIndex)+256
 
+            #TODO: Check if background is turned on
+            self.window._screenBuffer[x-offset,y] = self.tileCache[backgroundTileIndex*8 + tileX%8, (y+yy)%8]
 
-            # if screenX < 160:#TODO: Check if background is turned on
-            self.window._screenBuffer[x,y] = self.tileCache[backgroundTileIndex*8 + tileX%8, (y+yy)%8]
-
-            if wy <= y and wx <= x and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
-                self.window._screenBuffer[x, y] = self.tileCache[windowTileIndex*8 + (x+offset)%8, (y+wy)%8]
-
-
-        # if wy <= y and (self.ram[LCDC] >> 5) & 1 == 1:
-        #     for x in xrange(wx,gameboyResolution[0]):
-        #         print x
-        #         if x % 8 == 0:
-        #             windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + x/8)%32 + ((y-wy)/8)*32]
-        #             windowTileIndex = getSignedInt8(windowTileIndex)+256
-        #         self.window._screenBuffer[x, y] = self.tileCache[windowTileIndex*8 + (x)%8, (y+wy)%8]
-
-
+            windowX = x
+            if 0 < x and wy <= y and wx <= windowX and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
+                self.window._screenBuffer[windowX, y] = self.tileCache[windowTileIndex*8 + (x+offset)%8, (y+wy)%8]
         # for x in xrange((gameboyResolution[0]/8)+1): # For the 20 (+1 overlap) tiles on a line
         #     backgroundTileIndex = self.ram[backgroundViewAddress + ((xx)/8 + x)%32 + ((y+yy)/8)*32]
         #     windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + x)%32 + ((y-wy)/8)*32]
