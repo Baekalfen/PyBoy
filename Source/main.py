@@ -30,6 +30,7 @@ elif sys.argv[1] == "SDL2":
 elif sys.argv[1] == "pygame":
     from Window_pygame import Window
 else:
+    print "Invalid arguments!"
     exit(1)
 
 window = None
@@ -40,55 +41,61 @@ SPF = 1/60. # inverse FPS (frame-per-second)
 def start(ROM, bootROM = None):
     global window, mb
 
+    print bootROM
     window = Window(scale=1, debug=False)
-    if bootROM is not None and os.path.isfile(bootROM):
+    if bootROM is not None:
         print "Starting with boot ROM"
         mb = Motherboard(ROM, bootROM, window)
     else:
         mb = Motherboard(ROM, None, window)
 
-    # if __debug__:
-        # debugger = Debugger(mb)
-
     done = False
-    stepOnce = False
     exp_avg_cpu = 0
     exp_avg_gpu = 0
     counter = 0
+    t = time.time()
     while not done:
-        # GPCPUman.pdf p. 6
-        # Nintendo documents describe the CPU&instructions speed i n machi ne cycl es whi l e t hi s document descri bes them in clock cycles. Here is the translation:
-        # 1 machine cycle = 4 clock cycles
-
-        #                  GB CPU Speed  NOP Instruction
-        # Machine Cycles   1.05MHz       1 cycle
-        # Clock Cycles     4.19MHz       4 cycles
-
         for event in window.getEvents():
             if event == WindowEvent.Quit:
                 window.stop()
                 done = True
-            elif event == WindowEvent.DebugNext:
-                stepOnce = True
+            # elif event == WindowEvent.DebugNext:
+            #     pass
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
         
-        t = time.time()
+        # t = time.time()
+        # if mb.cpu.ram[0xFF40] >> 7 == 1: # Check if LCD is on
+        #     if mb.cpu.ram.updateVRAMCache:
+        #         mb.lcd.refreshTileData()
+        #         mb.cpu.ram.updateVRAMCache = False
         mb.tickFrame()
         mb.tickVblank()
 
-        tt = time.time()
+        # tt = time.time()
 
         mb.lcd.tick()
         window.updateDisplay()
-        tt2 = time.time()
+        # tt2 = time.time()
         
-        if __debug__ and counter % 16 == 0:
-            exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (tt-t)
-            exp_avg_gpu = 0.9 * exp_avg_gpu + 0.1 * (tt2-tt)
-            window._window.title = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
+        if counter % 60 == 0:
+            text = str(int(((time.time()-t)/SPF*100)/60)) + "%"
+            t=time.time()
+            # exp_avg_cpu = 0.5 * exp_avg_cpu + 0.5 * (tt-t)
+            # exp_avg_gpu = 0.5 * exp_avg_gpu + 0.5 * (tt2-tt)
+            # text = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
+            window._window.title = text
+            # print text
             counter = 0
         counter += 1
+
+        # if tt2-t < SPF:
+            # Trying to avoid VSync'ing on a frame, if we are out of time
+        # window.VSync()
+
+    print "###########################"
+    print "# Emulator is turning off #"
+    print "###########################"
 
 if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
@@ -103,8 +110,8 @@ if __name__ == "__main__":
     # filename = raw_input("Write the name of a ROM:\n")
     # start(filename)
 
-        # start("TestROMs/instr_timing/instr_timing.gb")
-        # start("TestROMs/mem_timing/mem_timing.gb")
+    # start("TestROMs/instr_timing/instr_timing.gb", bootROM)
+    # start("TestROMs/mem_timing/mem_timing.gb")
         # start("Tetris.gb")
     # except Exception as ex:
     #     print ""

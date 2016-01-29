@@ -28,6 +28,8 @@ class Motherboard():
         self.ram = RAM(bootROMFile, self.cartridge, self.interaction, self.timer, random=False)
         self.cpu = CPU(self.ram, self.timer)
         self.lcd = LCD(self.ram, window)
+        if __debug__:
+            self.ram.lcd = self.lcd
 
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
@@ -38,8 +40,8 @@ class Motherboard():
         return x
 
     def setSTATMode(self,mode):
-        self.cpu.ram[0xFF41] &= 0b11111100 # Clearing 2 LSB
-        self.cpu.ram[0xFF41] |= mode # Apply mode to LSB
+        self.ram[STAT] &= 0b11111100 # Clearing 2 LSB
+        self.ram[STAT] |= mode # Apply mode to LSB
 
         if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
             self.cpu.setInterruptFlag(self.cpu.LCDC)
@@ -47,11 +49,11 @@ class Motherboard():
     def checkLYC(self, y):
         self.ram[LY] = y
         if self.ram[LYC] == y:
-            self.cpu.ram[STAT] |= 0b100 # Sets the LYC flag
-            if getBit(self.cpu.ram[0xFF41], 6) == 1:
+            self.ram[STAT] |= 0b100 # Sets the LYC flag
+            if getBit(self.ram[STAT], 6) == 1:
                 self.cpu.setInterruptFlag(self.cpu.LCDC)
         else:
-            self.cpu.ram[STAT] &= 0b11111011
+            self.ram[STAT] &= 0b11111011
 
     def tickFrame(self):
         # TODO: Refactor this by moving most of this logic to LCD (LCD is current part of host) and a central oscillator/timer (maybe refactor this file)

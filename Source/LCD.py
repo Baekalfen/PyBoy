@@ -38,53 +38,81 @@ class LCD():
         self.window = window
         self.tileCache = numpy.ndarray((384 * 8, 8), dtype='int32')
 
-        self.offsetOld = -1
-
     def tick(self):
+        if __debug__:
+            self.refreshTileView1()
+            self.refreshTileView2()
+            self.drawTileView1ScreenPort()
+            self.drawTileView2WindowPort()
+
         # Check LCDC to see if display is on
         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+        # print "LCD Tick",bin(self.ram[LCDC]),hex(self.ram[LCDC])
         if self.ram[LCDC] >> 7 == 1:
             if self.ram.updateVRAMCache:
                 self.refreshTileData()
                 self.ram.updateVRAMCache = False
             self.renderSprites()
         else:
+            # If the screen is off, fill it with a color.
+            # Currently, it's dark purple, but the Game Boy had a white screen
             self.window._screenBuffer.fill(0x00403245)
 
 
     def getWindowPos(self):
-        return self.ram[WX],self.ram[WY]
+        return self.ram[WX]-7, self.ram[WY]
 
     def getViewPort(self):
-        return self.ram[SCX],self.ram[SCY]
+        return self.ram[SCX], self.ram[SCY]
 
     def scanline(self, y):
+        backgroundViewAddress = 0x9800 if getBit(self.ram[LCDC], 3) == 0 else 0x9C00
+        windowViewAddress = 0x9800 if getBit(self.ram[LCDC], 6) == 0 else 0x9C00
+        tileDataSelect = getBit(self.ram[LCDC], 4)
+
         xx, yy = self.getViewPort()
         wx, wy = self.getWindowPos()
+        wx -= 7
+        wy -= 1
 
         offset = (xx - (xx & 0b11111000)) # Difference between absolute xx and rounded down to nearest tile
 
-        backgroundViewAddress = 0x9800 if getBit(self.ram[LCDC], 6) == 0 else 0x9C00
-        windowViewAddress = 0x9800 if getBit(self.ram[LCDC], 3) == 0 else 0x9C00
-        tileDataSelect = getBit(self.ram[LCDC], 4)
+        for x in xrange(-offset, gameboyResolution[0]): # For the 20 (+1 overlap) tiles on a line
+            tileX = x+offset
+            if tileX % 8 == 0:
+                backgroundTileIndex = self.ram[backgroundViewAddress + ((xx)/8 + tileX/8)%32 + ((y+yy)/8)*32]
+                windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + tileX/8)%32 + ((y-wy)/8)*32]
 
-        for x in xrange((gameboyResolution[0]/8)+1): # For the 20 (+2 overlaps) tiles on a line
-            backgroundTileIndex = self.ram[0x9800 + ((xx)/8 + x)%32 + ((y+yy)/8)*32]
-            # windowTileIndex = self.ram[0x9C00 + (xx)/8 + x + ((y+yy)/8)*32] # TODO: Find and load only if necessary
-            for n in xrange(8): # For the 8 pixels in each tile
-                # self.window._screenBuffer[x+n,y] = self.tileCache[backgroundTileIndex + offset + n, y%8]
-                screenX = (x * 8) + n - offset
-                if screenX < 160:
-                    tileIndex = backgroundTileIndex if tileDataSelect == 1 else (getSignedInt8(backgroundTileIndex)+256)
-                    self.window._screenBuffer[screenX,y] = self.tileCache[tileIndex*8 + n, (y+yy)%8]
-                    # if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
-                    #     windowTileIndex = self.ram[0x9C00 + (xx) / 8 + x + ((y + yy) / 8) * 32]
-                    #     self.window._screenBuffer[x, y] = self.tileCache[windowTileIndex*8 + n, (y+wy)%8] # -7 is just a specification
+                if tileDataSelect == 0: # If using signed tile indices
+                    backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
+                    windowTileIndex = getSignedInt8(windowTileIndex)+256
 
-        # for x in xrange(gameboyResolution[0]):
-        #     slef.window.window._screenBuffer[x, y] = self.window.tileView1Buffer[(x+xx)%0xFF, (y+yy)%0xFF]
-        #     if wy <= y and wx <= x+7 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
-        #         self.window._screenBuffer[x, y] = self.window.tileView2Buffer[x-wx+7, y-wy] # -7 is just a specification
+            screenX = x #- offset
+
+            # if screenX < 160:#TODO: Check if background is turned on
+            self.window._screenBuffer[screenX,y] = self.tileCache[backgroundTileIndex*8 + tileX%8, (y+yy)%8]
+
+            windowX = x
+            if wy <= y and wx <= windowX and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
+                self.window._screenBuffer[windowX, y] = self.tileCache[windowTileIndex*8 + (x+offset)%8, (y+wy)%8]
+        # for x in xrange((gameboyResolution[0]/8)+1): # For the 20 (+1 overlap) tiles on a line
+        #     backgroundTileIndex = self.ram[backgroundViewAddress + ((xx)/8 + x)%32 + ((y+yy)/8)*32]
+        #     windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + x)%32 + ((y-wy)/8)*32]
+
+        #     if tileDataSelect == 0: # If using signed tile indices
+        #         backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
+        #         windowTileIndex = getSignedInt8(windowTileIndex)+256
+
+        #     for n in xrange(8): # For the 8 pixels in each tile
+        #         screenX = (x * 8) + n - offset
+
+        #         if screenX < 160:#TODO: Check if background is turned on
+        #             self.window._screenBuffer[screenX,y] = self.tileCache[backgroundTileIndex*8 + n, (y+yy)%8]
+
+        #         windowX = x*8+n
+        #         if wy <= y and wx <= windowX and windowX < 160 and (self.ram[LCDC] >> 5) & 1 == 1: # Check if Window is on
+        #             self.window._screenBuffer[windowX, y] = self.tileCache[windowTileIndex*8 + n, (y+wy)%8]
+
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey = colorPalette[0], xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
@@ -103,6 +131,7 @@ class LCD():
     def renderSprites(self):
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
+        # print "Rendering Sprites"
         for n in xrange(0xFE00,0xFEA0,4):
             y = self.ram[n] - 16
             x = self.ram[n+1] - 8
@@ -123,6 +152,7 @@ class LCD():
         print "Updating tile Data"
         tileCount = 0
         for n in xrange(0x8000,0x9800,16): #Tile is 16 bytes
+            #TODO: -0x8000 is unnecessary
             n -= 0x8000
 
             for k in xrange(0, 16 ,2): #2 bytes for each line
@@ -140,3 +170,103 @@ class LCD():
             for n in xrange(self.window.tileDataHeight/8):
                 self.window.tileDataBuffer[0:self.window.tileDataWidth,n*8:(n+1)*8] = self.tileCache[n*self.window.tileDataWidth:(n+1)*self.window.tileDataWidth,0:8]
 
+
+
+
+    #################################################################
+    #
+    # Drawing debug tile views
+    #
+    #################################################################
+
+    def copyTile(self, fromXY, toXY, fromBuffer, toBuffer):
+        x1,y1 = fromXY
+        x2,y2 = toXY
+
+        for y in xrange(8):
+            for x in xrange(8):
+                toBuffer[x2+x, y2+y] = fromBuffer[x1+x, y1+y]
+
+    def refreshTileView1(self):
+        # self.window.tileView1Buffer.fill(0x00ABC4FF)
+        
+        tileSize = 8
+        winHorTileView1Limit = 32
+        winVerTileView1Limit = 32
+
+        for n in xrange(0x9800,0x9C00):
+            tileIndex = self.ram[n]
+
+            # Check the tile source and add offset
+            # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+            # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+            if (self.ram[LCDC] >> 4) & 1 == 0:
+                tileIndex = 256 + getSignedInt8(tileIndex)
+
+            tileColumn = (n-0x9800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
+            tileRow = (n-0x9800)/winVerTileView1Limit # Vertical time number based on tileColumn
+            
+            fromXY = ((tileIndex*8)%self.window.tileDataWidth, ((tileIndex*8)/self.window.tileDataWidth)*8)
+            toXY = (tileColumn*8, tileRow*8)
+
+            self.copyTile(fromXY, toXY, self.window.tileDataBuffer, self.window.tileView1Buffer)
+
+    def refreshTileView2(self):
+        # self.window.tileView2Buffer.fill(0x00ABC4FF)
+         
+        tileSize = 8
+        winHorTileView2Limit = 32
+        winVerTileView2Limit = 32
+
+        for n in xrange(0x9C00,0xA000):
+            tileIndex = self.ram[n]
+
+            # Check the tile source and add offset
+            # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+            # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+            if (self.ram[LCDC] >> 4) & 1 == 0:
+                tileIndex = 256 + getSignedInt8(tileIndex)
+
+            tileColumn = (n-0x9C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
+            tileRow = (n-0x9C00)/winVerTileView2Limit # Vertical time number based on tileColumn
+            
+            fromXY = ((tileIndex*8)%self.window.tileDataWidth, ((tileIndex*8)/self.window.tileDataWidth)*8)
+            toXY = (tileColumn*8, tileRow*8)
+
+            self.copyTile(fromXY, toXY, self.window.tileDataBuffer, self.window.tileView2Buffer)
+
+    def drawTileView1ScreenPort(self):
+        xx, yy = self.getViewPort()
+
+        width = gameboyResolution[0]
+        height = gameboyResolution[1]
+
+        self.drawHorLine(xx       , yy        ,width  , self.window.tileView1Buffer)
+        self.drawHorLine(xx       , yy+height ,width  , self.window.tileView1Buffer)
+
+        self.drawVerLine(xx       , yy        ,height , self.window.tileView1Buffer)
+        self.drawVerLine(xx+width , yy        ,height , self.window.tileView1Buffer)
+
+    def drawTileView2WindowPort(self):
+        xx, yy = self.getWindowPos()
+
+        xx = -xx
+        yy = -yy
+
+        width = gameboyResolution[0]
+        height = gameboyResolution[1]
+
+        self.drawHorLine(xx       , yy        ,width  , self.window.tileView2Buffer)
+        self.drawHorLine(xx       , yy+height ,width  , self.window.tileView2Buffer)
+
+        self.drawVerLine(xx       , yy        ,height , self.window.tileView2Buffer)
+        self.drawVerLine(xx+width , yy        ,height , self.window.tileView2Buffer)
+
+
+    def drawHorLine(self,xx,yy,length,screen,color = 0):
+        for x in xrange(length):
+            screen[(xx+x)%0xFF,yy&0xFF] = color
+
+    def drawVerLine(self,xx,yy,length,screen,color = 0):
+        for y in xrange(length):
+            screen[xx&0xFF,(yy+y)&0xFF] = color
