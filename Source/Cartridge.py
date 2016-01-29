@@ -63,7 +63,8 @@ class Cartridge:
 
         # TODO: Make MBCs into classes
         if self.cartType == 0x00:  # ROM only:
-            pass
+            self.ROMBankController = "ROM-only"
+            self.RAMBanks = initRAMBanks(0)
         elif self.cartType == 0x01:  # -ROM+MBC1
             self.ROMBankController = "MBC1"
             self.memoryModel = 0
@@ -210,6 +211,14 @@ class Cartridge:
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
             else:
                 raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
+        elif self.ROMBankController == 'ROM-only':
+            if 0x2000 <= address < 0x4000:
+                if value == 0:
+                    value = 1
+                self.ROMBankSelected = (self.ROMBankSelected & 0b11111110)  # sets 5LSB of ROM bank address
+                print "Switching bank", hex(address), hex(value)
+            else:
+                raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
         else:
             raise CoreDump.CoreDump("Memory bank invalid: %s" % self.ROMBankController)
 
@@ -222,6 +231,7 @@ class Cartridge:
             return self.ROMBanks[self.ROMBankSelected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.RAMBanks:
+                # return 0
                 raise Exception("RAMBanks not initialized: %s" % hex(address))
             warnings.warn("Cartridge RAM implementation not verified!")
             return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
@@ -265,11 +275,13 @@ def initRAMBanks(n):
     return banks
 
 if __name__ == "__main__":
-    cartridge = Cartridge("SuperMarioLand.gb")
+    cartridge = Cartridge("ROMs/SuperMarioLand.gb")
     print cartridge
     cartridge = Cartridge("TestROMs/cpu_instrs/individual/01-special.gb")
     print cartridge
-    cartridge = Cartridge("pokemon_blue.gb")
+    cartridge = Cartridge("ROMs/pokemon_blue.gb")
     print cartridge
-    cartridge = Cartridge("pokemon_gold.gbc")
+    cartridge = Cartridge("ROMs/pokemon_gold.gbc")
+    print cartridge
+    cartridge = Cartridge("ROMs/Tetris.gb")
     print cartridge
