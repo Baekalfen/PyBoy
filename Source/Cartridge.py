@@ -190,24 +190,29 @@ class Cartridge:
                 raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
         elif self.ROMBankController == 'MBC3':
             if 0x0000 <= address < 0x2000:
-                if self.memoryModel == 1:
-                    if (value & 0b00001111) == 0b1010:
-                        self.RAMBankEnabled = True
-                        self.RAMBanks = initRAMBanks(4)
-                    else:
-                        self.RAMBanks = None
-                        self.RAMBankEnabled = False
+                # if self.memoryModel == 1:
+                if (value & 0b00001111) == 0b1010:
+                    self.RAMBankEnabled = True
+                    self.RAMBanks = initRAMBanks(4)
+                elif value == 0:
+                    # self.RAMBanks = None
+                    self.RAMBankEnabled = False
+                    print "Disabling RAMBanks/RTC (not fully implemented)"
                 else:
-                    raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (address,value))
+                    raise CoreDump.CoreDump("Invalid command for MBC: Address: %s, Value: %s" % (address, value))
+                # else:
+                #     raise CoreDump.CoreDump("Memory model not defined. Model: %s, Address: %s, Value: %s" % (self.memoryModel, address,value))
 
             elif 0x2000 <= address < 0x4000:
                 if value == 0:
                     value = 1
                 self.ROMBankSelected = (self.ROMBankSelected & 0b11100000) | (
                     value & 0b00011111)  # sets 5LSB of ROM bank address
-            elif 0x4000 <= address < 0x5FFF:
+            elif 0x4000 <= address < 0x6000:
                 # MBC3 is always 16/8 mode
                 self.ROMBankSelected = self.ROMBankSelected & 0b01111111
+            elif 0x6000 <= address < 0x8000:
+                print "Latch RTC"
             elif 0xA000 <= address < 0xC000:
                 # print self.RAMBankSelected, value, len(self.RAMBanks)
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
