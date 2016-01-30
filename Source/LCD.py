@@ -73,7 +73,7 @@ class LCD():
         xx, yy = self.getViewPort()
         wx, wy = self.getWindowPos()
         wx -= 7
-        wy -= 1
+        # wy -= 1
 
         offset = (xx - (xx & 0b11111000)) # Difference between absolute xx and rounded down to nearest tile
 
