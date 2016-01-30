@@ -13,7 +13,10 @@ def checkForInterrupts(self):
     # If an interrupt occours, the PC is pushed to the stack.
     # It is up to the interrupt routine to return it.
 
-    if self.interruptMasterEnable:
+    anyInterrupts = not ((self.ram[0xFF0F] & 0b11111) & (self.ram[0xFFFF] & 0b11111)) == 0
+
+    # Better to make a long check, than run through 5 if statements
+    if anyInterrupts and self.interruptMasterEnable:
         # flags = self.ram[0xFF0F]
 
         # 0xFF0F (IF) - Bit 0-4 Showing an interrupt occoured
@@ -51,7 +54,7 @@ def checkForInterrupts(self):
             self.reg[PC] = 0x0058
             return True
         elif self.testInterruptFlagEnabled(HightoLow) and self.testInterruptFlag(HightoLow): # High-to-low P10-P13
-            # print "High-to-low P10-P13 Interrupt"
+            print "High-to-low P10-P13 Interrupt"
             self.clearInterruptFlag(HightoLow)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
@@ -59,8 +62,10 @@ def checkForInterrupts(self):
             return True
 
 
-    return (self.testInterruptFlag(VBlank) or
-            self.testInterruptFlag(LCDC) or
-            self.testInterruptFlag(TIMER) or
-            self.testInterruptFlag(Serial) or
-            self.testInterruptFlag(HightoLow))
+    # Check if both enable and trigger flags are enabled for any interrupts
+    return anyInterrupts
+    # return (self.testInterruptFlag(VBlank) or
+    #         self.testInterruptFlag(LCDC) or
+    #         self.testInterruptFlag(TIMER) or
+    #         self.testInterruptFlag(Serial) or
+    #         self.testInterruptFlag(HightoLow))
