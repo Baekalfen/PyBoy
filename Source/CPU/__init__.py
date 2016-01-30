@@ -154,6 +154,19 @@ class CPU():
         print "Call Stack", self.debugCallStack
         print "Active ROM and RAM bank", self.ram.cartridge.ROMBankSelected , self.ram.cartridge.RAMBankSelected
         print "Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch
+        print "Enabled Interrupts",
+        flags = ""
+        if self.testInterruptFlagEnabled(self.VBlank):
+            flags += " VBlank"
+        if self.testInterruptFlagEnabled(self.LCDC):
+            flags += " LCDC"
+        if self.testInterruptFlagEnabled(self.TIMER):
+            flags += " Timer"
+        if self.testInterruptFlagEnabled(self.Serial):
+            flags += " Serial"
+        if self.testInterruptFlagEnabled(self.HightoLow):
+            flags += " HightoLow"
+        print flags
         print "Waiting Interrupts",
         flags = ""
         if self.testInterruptFlag(self.VBlank):
@@ -166,6 +179,8 @@ class CPU():
             flags += " Serial"
         if self.testInterruptFlag(self.HightoLow):
             flags += " HightoLow"
+        if self.halted:
+            flags += "\nHALTED"
         print flags
 
     def tick(self):
@@ -192,6 +207,7 @@ class CPU():
 
             # self.reg[PC] += 1
             instruction = self.fetchInstruction(self.reg[PC])
+            # print hex(self.reg[PC])
                 
         elif self.halted and not didInterrupt:
             operation = opcodes.opcodes[0x00] #Fetch NOP to still run timers and such
@@ -228,9 +244,9 @@ class CPU():
                 self.breakNext = None
                 self.breakOn = True
 
-            # if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
-            #     self.breakOn = True
-            #     print "PC DIDN'T CHANGE! Can't continue!"
+            if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
+                self.breakOn = True
+                print "PC DIDN'T CHANGE! Can't continue!"
                 # CoreDump.windowHandle.dump(self.ram.cartridge.filename+"_dump.bmp")
                 # raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
