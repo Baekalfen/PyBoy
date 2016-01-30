@@ -64,7 +64,9 @@ class Cartridge:
         # TODO: Make MBCs into classes
         if self.cartType == 0x00:  # ROM only:
             self.ROMBankController = "ROM-only"
-            self.RAMBanks = initRAMBanks(0)
+            # Optionally up to 8KByte of RAM could be connected at A000-BFFF, even though
+            # that could require a tiny MBC-like circuit, but no real MBC chip
+            self.RAMBanks = initRAMBanks(1)
         elif self.cartType == 0x01:  # -ROM+MBC1
             self.ROMBankController = "MBC1"
             self.memoryModel = 0
@@ -215,7 +217,7 @@ class Cartridge:
             if 0x2000 <= address < 0x4000:
                 if value == 0:
                     value = 1
-                self.ROMBankSelected = (self.ROMBankSelected & 0b11111110)  # sets 5LSB of ROM bank address
+                self.ROMBankSelected = (value & 0b1)
                 print "Switching bank", hex(address), hex(value)
             else:
                 raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
@@ -232,7 +234,7 @@ class Cartridge:
         elif 0xA000 <= address < 0xC000:
             if not self.RAMBanks:
                 # return 0
-                raise Exception("RAMBanks not initialized: %s" % hex(address))
+                raise CoreDump.CoreDump("RAMBanks not initialized: %s" % hex(address))
             warnings.warn("Cartridge RAM implementation not verified!")
             return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
             # raise Exception("Not implemented")
