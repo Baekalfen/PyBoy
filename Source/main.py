@@ -18,7 +18,6 @@ if __pypy__ is not None:
 
 from MB import Motherboard
 from WindowEvent import WindowEvent
-from Debugger import Debugger
 import time
 import os.path
 from multiprocessing import Process
@@ -100,7 +99,7 @@ def start(ROM, bootROM = None):
 if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
     # try:
-        # start("TestROMs/instr_timing/instr_timing.gb")
+    # start("TestROMs/instr_timing/instr_timing.gb")
     # start("ROMs/pokemon_blue.gb")
     # start("ROMs/Tetris.gb")
     # start("ROMs/Mr. Do!.gb", bootROM)
@@ -112,14 +111,13 @@ if __name__ == "__main__":
 
     # start("TestROMs/instr_timing/instr_timing.gb", bootROM)
     # start("TestROMs/mem_timing/mem_timing.gb")
-        # start("Tetris.gb")
-    # except Exception as ex:
+    # except KeyboardInterrupt as ex:
     #     print ""
     #     print ex
     #     print ""
     #     mb.cpu.getDump()
-    #     if raw_input() != "":
-    #         window.dump("dump",True)
+        # if raw_input() != "":
+        #     window.dump("dump",True)
 
     # SPF = 0
     # for rom in [

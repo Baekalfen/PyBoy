@@ -37,7 +37,7 @@ class CPU():
         self.breakOn = False
         self.breakNext = None
 
-        # self.breakNext = 0x6c84
+        # self.breakNext = 0x2882
         # 0x1C9  Zeroing some internal RAM?
         # 0x1CC  Escaping?
         # 0x01D8 Zeroing TileView 2
@@ -172,6 +172,9 @@ class CPU():
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
         didInterrupt = self.checkForInterrupts()
 
+        # if self.reg[PC] == 0x2880 or self.reg[PC] == 0x2882:
+        #     print "LY", hex(self.ram[0xFF44]), didInterrupt
+
         instruction = None
         if self.halted and didInterrupt:
             self.halted = False
@@ -205,6 +208,7 @@ class CPU():
         #         print "Op:", "0x%0.2X" % self.ram[self.reg[PC]], "Name:", CPU_COMMANDS[self.ram[self.reg[PC]]], "Len:", l, ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
         #     else:
         #         print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
+
             
         # if self.reg[PC] == 0x100:
         #     self.lala = True
@@ -224,9 +228,9 @@ class CPU():
                 self.breakNext = None
                 self.breakOn = True
 
-            if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
-                self.breakOn = True
-                print "PC DIDN'T CHANGE! Can't continue!"
+            # if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
+            #     self.breakOn = True
+            #     print "PC DIDN'T CHANGE! Can't continue!"
                 # CoreDump.windowHandle.dump(self.ram.cartridge.filename+"_dump.bmp")
                 # raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]

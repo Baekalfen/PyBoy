@@ -15,6 +15,7 @@ from MathUint8 import resetBit, setBit, getBit, swap, lshift, rshift, lrotate_in
 
 def CPU_EI(self):
     # Enable interrupts. This intruction enables interrupts but not immediately. Interrupts are enabled after instruction after EI is executed
+    # print "Enabling interrupts"
     self.interruptMasterEnableLatch = True
 
 
@@ -300,6 +301,7 @@ def CPU_RET(self):
 def CPU_DI(self):
     # "Enable interrupts. This intruction enables interrupts but not immediately.
     # Interrupts are enabled after instruction after EI is executed"
+    # print "Disabling interrupts"
     self.interruptMasterEnableLatch = False
 
 

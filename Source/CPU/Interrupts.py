@@ -23,6 +23,7 @@ def checkForInterrupts(self):
         #NOTE: Previous versions checked if IF was set, not IE. This made an infinite loop in the boot ROM (logo scrolling).
         if self.testInterruptFlagEnabled(VBlank) and self.testInterruptFlag(VBlank): # Vertical Blank
             # print "Vertical Blank Interrupt"
+            # print "Interrupt enable", bin(self.ram[0xFFFF])
             self.clearInterruptFlag(VBlank)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])

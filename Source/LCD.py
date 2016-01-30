@@ -88,6 +88,7 @@ class LCD():
                     windowTileIndex = getSignedInt8(windowTileIndex)+256
 
 
+            #TODO: Possibly utilize NumPy to copy 8 pixels at a time?
             # if screenX < 160:#TODO: Check if background is turned on
             self.window._screenBuffer[x,y] = self.tileCache[backgroundTileIndex*8 + tileX%8, (y+yy)%8]
 
