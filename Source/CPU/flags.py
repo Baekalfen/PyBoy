@@ -46,7 +46,7 @@ def clearInterruptFlag(self, flag):
 
 def testInterruptFlagEnabled(self, flag):
     # return (self.ram[0xFFFF] & (1 << flag)) != 0
-    return self.testRAMRegisterFlagEnabled(0xFF0F,flag)
+    return self.testRAMRegisterFlagEnabled(0xFFFF,flag)
     
 
 
