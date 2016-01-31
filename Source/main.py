@@ -49,11 +49,17 @@ def start(ROM, bootROM = None):
         mb = Motherboard(ROM, None, window)
 
     done = False
+    exp_avg_emu = 0
     exp_avg_cpu = 0
-    exp_avg_gpu = 0
+    t_start = 0
+    t_VSynced = 0
+    t_frameDone = 0
     counter = 0
-    t = time.time()
     while not done:
+        exp_avg_emu = 0.9 * exp_avg_emu + 0.1 * (t_VSynced-t_start)
+        exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (t_frameDone-t_start)
+
+        t_start = time.clock()
         for event in window.getEvents():
             if event == WindowEvent.Quit:
                 window.stop()
@@ -63,34 +69,34 @@ def start(ROM, bootROM = None):
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
         
-        # t = time.time()
-        # if mb.cpu.ram[0xFF40] >> 7 == 1: # Check if LCD is on
-        #     if mb.cpu.ram.updateVRAMCache:
-        #         mb.lcd.refreshTileData()
-        #         mb.cpu.ram.updateVRAMCache = False
         mb.tickFrame()
         mb.tickVblank()
 
-        # tt = time.time()
-
         mb.lcd.tick()
         window.updateDisplay()
-        # tt2 = time.time()
-        
+
+        t_frameDone = time.clock()
+
+        # Trying to avoid VSync'ing on a frame, if we are out of time
+        if (time.clock()-t_start < SPF):
+            # This one fixes the time.clock(), but uses much more CPU
+            # while (time.clock()-t_start < SPF):
+            #     pass
+
+            # This one makes time and frame syncing work, but messes with time.clock()
+            window.VSync()
+
+        t_VSynced = time.clock()
+
         if counter % 60 == 0:
-            text = str(int(((time.time()-t)/SPF*100)/60)) + "%"
-            t=time.time()
-            # exp_avg_cpu = 0.5 * exp_avg_cpu + 0.5 * (tt-t)
-            # exp_avg_gpu = 0.5 * exp_avg_gpu + 0.5 * (tt2-tt)
+            text = "E:"+str(int(((exp_avg_emu)/SPF*100))) + "%"+ "C:"+ str(int(((exp_avg_cpu)/SPF*100))) + "%"
             # text = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
             window._window.title = text
             # print text
             counter = 0
         counter += 1
 
-        # if tt2-t < SPF:
-            # Trying to avoid VSync'ing on a frame, if we are out of time
-        # window.VSync()
+
 
     print "###########################"
     print "# Emulator is turning off #"
