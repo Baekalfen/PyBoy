@@ -238,10 +238,11 @@ def CPU_RR(self, r0):  # WARN: There are is one more in CB
     return result
 
 
-def CPU_DAA(self, r0):
+def CPU_DAA(self):
     # http://stackoverflow.com/a/29990058/3831206
     # http://forums.nesdev.com/viewtopic.php?t=9088
     a = self.reg[A]
+
 
     corr = 0
     corr |= 0x06 if self.testFlag(flagH) else 0x00
@@ -255,9 +256,9 @@ def CPU_DAA(self, r0):
         a += corr
 
     # Mads: Not having this, caused >0xFF values to appear in reg a
-    a &= 0xFF
 
     self.setFlag(flagC, corr & 0x60)
+    a &= 0xFF
     self.clearFlag(flagH)
     self.setFlag(flagZ, a == 0)
 

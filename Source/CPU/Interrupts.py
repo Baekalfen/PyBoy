@@ -13,10 +13,11 @@ def checkForInterrupts(self):
     # If an interrupt occours, the PC is pushed to the stack.
     # It is up to the interrupt routine to return it.
 
-    anyInterrupts = not ((self.ram[0xFF0F] & 0b11111) & (self.ram[0xFFFF] & 0b11111)) == 0
+    triggeredInterrupts = self.ram[0xFF0F] & 0b11111
+    anyInterruptToHandle = not (triggeredInterrupts & (self.ram[0xFFFF] & 0b11111)) == 0
 
     # Better to make a long check, than run through 5 if statements
-    if anyInterrupts and self.interruptMasterEnable:
+    if anyInterruptToHandle and self.interruptMasterEnable:
         # flags = self.ram[0xFF0F]
 
         # 0xFF0F (IF) - Bit 0-4 Showing an interrupt occoured
@@ -63,7 +64,7 @@ def checkForInterrupts(self):
 
 
     # Check if both enable and trigger flags are enabled for any interrupts
-    return anyInterrupts
+    return not triggeredInterrupts == 0
     # return (self.testInterruptFlag(VBlank) or
     #         self.testInterruptFlag(LCDC) or
     #         self.testInterruptFlag(TIMER) or

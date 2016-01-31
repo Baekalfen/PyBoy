@@ -37,7 +37,7 @@ class CPU():
         self.breakOn = False
         self.breakNext = None
 
-        # self.breakNext = 0x2882
+        # self.breakNext = 0xc36f
         # 0x1C9  Zeroing some internal RAM?
         # 0x1CC  Escaping?
         # 0x01D8 Zeroing TileView 2
@@ -142,8 +142,8 @@ class CPU():
         print "SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC]
         # print "0xC000", "0x%0.2X" % self.ram[0xc000]
         # print "(HL-1)", "0x%0.2X" % self.ram[self.getHL()-1]
-        # print "(HL)", "0x%0.2X" % self.ram[self.getHL()]
-        # print "(HL+1)", "0x%0.2X" % self.ram[self.getHL()+1]
+        print "(HL)", "0x%0.2X" % self.ram[self.getHL()], "(HL+1)", "0x%0.2X" % self.ram[self.getHL()+1]
+        print "Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.ram[0xFF04], self.ram[0xFF05], self.ram[0xFF06],bin(self.ram[0xFF07]))
         
 
         if (self.ram[self.reg[PC]]) != 0xCB:
@@ -189,6 +189,8 @@ class CPU():
 
         # if self.reg[PC] == 0x2880 or self.reg[PC] == 0x2882:
         #     print "LY", hex(self.ram[0xFF44]), didInterrupt
+        # if self.halted:
+        #     exit()
 
         instruction = None
         if self.halted and didInterrupt:
@@ -197,17 +199,12 @@ class CPU():
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
 
-            # FIXME: Skips the first instruction after RST 48, it should be next on return...
-            # See FIXME in operation under CPU_PUSH
-            # if self.interruptMasterEnable:
-            #     self.reg[PC] += 1  # Byte-length of HALT
-            # else:
-            #     instruction = self.fetchInstruction(self.reg[PC+1])
-            #     self.reg[PC] += instruction[0]+1  # Skip next instruction
+            # If halted, but interrupts are disabled.
+            # Otherwise, we go directly into HALT again
+            if not self.interruptMasterEnable:
+                self.reg[PC] += 1  # Byte-length of HALT
 
-            # self.reg[PC] += 1
             instruction = self.fetchInstruction(self.reg[PC])
-            # print hex(self.reg[PC])
                 
         elif self.halted and not didInterrupt:
             operation = opcodes.opcodes[0x00] #Fetch NOP to still run timers and such
@@ -226,8 +223,8 @@ class CPU():
         #         print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
 
             
-        # if self.reg[PC] == 0x100:
-        #     self.lala = True
+        if self.reg[PC] == 0x100:
+            self.lala = True
 
         if self.lala and not self.halted:
             if (self.ram[self.reg[PC]]) == 0xCB:
@@ -239,7 +236,6 @@ class CPU():
             # if self.reg[PC] == 0x48 and not self.ram.bootROMEnabled and self.ram[0xFF45] != 0:
             #     self.breakOn = True
 
-
             if self.reg[PC] == self.breakNext:
                 self.breakNext = None
                 self.breakOn = True
@@ -247,8 +243,8 @@ class CPU():
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
                 self.breakOn = True
                 print "PC DIDN'T CHANGE! Can't continue!"
-                # CoreDump.windowHandle.dump(self.ram.cartridge.filename+"_dump.bmp")
-                # raise Exception("Escape to main.py")
+                CoreDump.windowHandle.dump(self.ram.cartridge.filename+"_dump.bmp")
+                raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
 
             if self.breakOn:

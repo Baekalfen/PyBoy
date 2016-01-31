@@ -125,7 +125,7 @@ opcode_2x = [(2, (12, 8), lambda s, v, e: s.setPC(e+getSignedInt8(v)) if not s.t
              (1, (4,), inc(H)),     # 24 - "Increment H" ("INC H")
              (1, (4,), dec(H)),     # 25 - "Decrement H" ("DEC H")
              (2, (8,), exeLDi(H)),  # 26 - "Load 8-bit immediate into H" ("LD H,v")
-             (1, (4,), lambda s, e: s.CPU_DAA(e) or s.setPC(e)),  # 27 - "Adjust A for BCD addition" ("DAA")
+             (1, (4,), lambda s, e: s.CPU_DAA() or s.setPC(e)),  # 27 - "Adjust A for BCD addition" ("DAA")
              (2, (12, 8), lambda s, v, e: (s.testFlag(flagZ) and (s.setPC((e)+getSignedInt8(v)) or True)) or s.setPC(e)),       # 28 - "Relative jump by signed immediate if last result was zero" ("JR Z,r8")
              (1, (8,), lambda s, e: s.setHL(s.CPU_ADD16(s.getHL(), s.getHL())) or s.setPC(e)),     # 29 - "Add 16-bit HL to HL" ("ADD HL,HL")
              (1, (8,), lambda s, e: s.setReg(A, s.ram[s.getHL()]) or(s.setHL(s.getHL() + 1) or s.setPC(e))),   # 2A - "Load A from address pointed to by HL, and increment HL ("LDI A,(HL)")
@@ -216,7 +216,8 @@ opcode_7x = [(1, (8,), exeLDaddr(B)),  # 70 - "Copy B to address pointed by HL" 
              (1, (8,), exeLDaddr(H)),  # 74 - "Copy H to address pointed by HL" ("LD (HL),H")
              (1, (8,), exeLDaddr(L)),  # 75 - "Copy L to address pointed by HL" ("LD (HL),L")
              #TODO: Implement HALT bug. If master interrupt is disabled, the intruction following HALT is skipped
-             (1, (4,), lambda s, e: s.CPU_HALT() if s.interruptMasterEnable else s.setPC(e)), # 76 - "Halt processor" ("HALT")
+             (1, (4,), lambda s, e: s.CPU_HALT()), # 76 - "Halt processor" ("HALT")
+             # (1, (4,), lambda s, e: s.CPU_HALT() if s.interruptMasterEnable else s.setPC(e)), # 76 - "Halt processor" ("HALT")
              (1, (8,), exeLDaddr(A)),  # 77 - "Copy A to address pointed by HL" ("LD (HL),A")
              (1, (4,), exeLD(A, B)),        # 78 - "Copy B to A" ("LD A,B")
              (1, (4,), exeLD(A, C)),        # 79 - "Copy C to A" ("LD A,C")
