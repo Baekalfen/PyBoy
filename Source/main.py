@@ -64,6 +64,8 @@ def start(ROM, bootROM = None):
             if event == WindowEvent.Quit:
                 window.stop()
                 done = True
+
+                mb.cpu.getDump()
             # elif event == WindowEvent.DebugNext:
             #     pass
             else:  # Right now, everything else is a button press
@@ -78,7 +80,7 @@ def start(ROM, bootROM = None):
         t_frameDone = time.clock()
 
         # Trying to avoid VSync'ing on a frame, if we are out of time
-        if (time.clock()-t_start < SPF):
+        if (time.clock()-t_start < SPF) and not (__debug__ and mb.cpu.ram.bootROMEnabled):
             # This one fixes the time.clock(), but uses much more CPU
             # while (time.clock()-t_start < SPF):
             #     pass
@@ -105,44 +107,45 @@ def start(ROM, bootROM = None):
 if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
     # try:
-    # start("TestROMs/instr_timing/instr_timing.gb")
-    # start("ROMs/pokemon_blue.gb")
-    # start("ROMs/Tetris.gb")
-    # start("ROMs/Mr. Do!.gb", bootROM)
-    start("ROMs/SuperMarioLand.gb", bootROM)
+    #     # start("TestROMs/instr_timing/instr_timing.gb")
+    # start("ROMs/pokemon_blue.gb", bootROM)
+    #     # start("ROMs/Tetris.gb")
+    #     # start("ROMs/Mr. Do!.gb", bootROM)
+    #     start("ROMs/SuperMarioLand.gb", bootROM)
 
 
-    # filename = raw_input("Write the name of a ROM:\n")
-    # start(filename)
+    #     # filename = raw_input("Write the name of a ROM:\n")
+    #     # start(filename)
 
-    # start("TestROMs/instr_timing/instr_timing.gb", bootROM)
-    # start("TestROMs/mem_timing/mem_timing.gb")
+    #     # start("TestROMs/instr_timing/instr_timing.gb", bootROM)
+    #     # start("TestROMs/mem_timing/mem_timing.gb")
     # except KeyboardInterrupt as ex:
     #     print ""
     #     print ex
     #     print ""
     #     mb.cpu.getDump()
-        # if raw_input() != "":
-        #     window.dump("dump",True)
+    #     if raw_input() != "":
+    #         window.dump("dump",True)
 
     # SPF = 0
-    # for rom in [
-    #             "TestROMs/cpu_instrs/individual/01-special.gb",
-    #             "TestROMs/cpu_instrs/individual/02-interrupts.gb",
-    #             "TestROMs/cpu_instrs/individual/03-op sp,hl.gb",
-    #             "TestROMs/cpu_instrs/individual/04-op r,imm.gb",
-    #             "TestROMs/cpu_instrs/individual/05-op rp.gb",
-    #             "TestROMs/cpu_instrs/individual/06-ld r,r.gb",
-    #             "TestROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
-    #             # "TestROMs/cpu_instrs/individual/08-misc instrs.gb", #Generates Seg. fault
-    #             "TestROMs/cpu_instrs/individual/09-op r,r.gb",
-    #             "TestROMs/cpu_instrs/individual/10-bit ops.gb",
-    #             "TestROMs/cpu_instrs/individual/11-op a,(hl).gb"
-    #             ]:
-    #     try:
-    #         print rom
-    #         start(rom)
-    #     except:
-    #         time.sleep(1)
-    #         window.stop()
-    #         time.sleep(1)
+    for rom in [
+                # "TestROMs/cpu_instrs/individual/01-special.gb",
+                "TestROMs/cpu_instrs/individual/02-interrupts.gb",
+                # "TestROMs/cpu_instrs/individual/03-op sp,hl.gb",
+                # "TestROMs/cpu_instrs/individual/04-op r,imm.gb",
+                # "TestROMs/cpu_instrs/individual/05-op rp.gb",
+                # "TestROMs/cpu_instrs/individual/06-ld r,r.gb",
+                # "TestROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
+                # "TestROMs/cpu_instrs/individual/08-misc instrs.gb", #Generates Seg. fault
+                # "TestROMs/cpu_instrs/individual/09-op r,r.gb",
+                # "TestROMs/cpu_instrs/individual/10-bit ops.gb",
+                # "TestROMs/cpu_instrs/individual/11-op a,(hl).gb"
+                ]:
+        try:
+            print rom
+            start(rom)
+        except Exception as ex:
+            print ex
+            time.sleep(1)
+            window.stop()
+            time.sleep(1)
