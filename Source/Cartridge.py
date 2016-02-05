@@ -154,15 +154,15 @@ class Cartridge:
     def __setitem__(self, address, value):
         if self.ROMBankController == 'MBC1':
             if 0x0000 <= address < 0x2000:
-                if self.memoryModel == 1:
-                    if (value & 0b00001111) == 0b1010:
-                        self.RAMBankEnabled = True
-                        self.RAMBanks = initRAMBanks(4)
-                    else:
-                        self.RAMBanks = None
-                        self.RAMBankEnabled = False
+                # if self.memoryModel == 1:
+                if (value & 0b00001111) == 0b1010:
+                    self.RAMBankEnabled = True
+                    self.RAMBanks = initRAMBanks(4)
                 else:
-                    raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (hex(address),hex(value)))
+                    self.RAMBanks = None
+                    self.RAMBankEnabled = False
+                # else:
+                #     raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (hex(address),hex(value)))
 
             elif 0x2000 <= address < 0x4000:
                 if value == 0:
@@ -291,4 +291,6 @@ if __name__ == "__main__":
     cartridge = Cartridge("ROMs/pokemon_gold.gbc")
     print cartridge
     cartridge = Cartridge("ROMs/Tetris.gb")
+    print cartridge
+    cartridge = Cartridge("TestROMs/oam_bug/rom_singles/1-lcd_sync.gb")
     print cartridge
