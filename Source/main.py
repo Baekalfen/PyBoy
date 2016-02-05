@@ -20,6 +20,7 @@ from MB import Motherboard
 from WindowEvent import WindowEvent
 import time
 import os.path
+import os
 from multiprocessing import Process
 
 if len(sys.argv) < 2:
@@ -106,31 +107,32 @@ def start(ROM, bootROM = None):
 
 if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
-    # try:
-    #     # start("TestROMs/instr_timing/instr_timing.gb")
-    # start("ROMs/pokemon_blue.gb", bootROM)
-    #     # start("ROMs/Tetris.gb")
-    #     # start("ROMs/Mr. Do!.gb", bootROM)
-    #     start("ROMs/SuperMarioLand.gb", bootROM)
+    directory = "ROMs/"
+    try:
+        found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
+        for i,f in enumerate(found_files):
+            print "%s\t%s" % (i+1,f)
+        filename = raw_input("Write the name or number of the ROM file:\n")
 
+        try:
+            filename = directory + found_files[int(filename)-1]
+        except:
+            filename = directory + filename
+        
+        start(filename, bootROM)
+    except Exception as ex:
+        mb.cpu.getDump()
+        raw_input("Continue?")
+        raise ex
+        # if raw_input() != "":
+        #     window.dump("dump",True)
 
-    #     # filename = raw_input("Write the name of a ROM:\n")
-    #     # start(filename)
-
-    #     # start("TestROMs/instr_timing/instr_timing.gb", bootROM)
-    #     # start("TestROMs/mem_timing/mem_timing.gb")
-    # except KeyboardInterrupt as ex:
-    #     print ""
-    #     print ex
-    #     print ""
-    #     mb.cpu.getDump()
-    #     if raw_input() != "":
-    #         window.dump("dump",True)
-
-    # SPF = 0
     for rom in [
+                # "TestROMs/instr_timing/instr_timing.gb",
+                # "TestROMs/mem_timing/mem_timing.gb",
+                # "TestROMs/oam_bug/rom_singles/1-lcd_sync.gb",
                 # "TestROMs/cpu_instrs/individual/01-special.gb",
-                "TestROMs/cpu_instrs/individual/02-interrupts.gb",
+                # "TestROMs/cpu_instrs/individual/02-interrupts.gb",
                 # "TestROMs/cpu_instrs/individual/03-op sp,hl.gb",
                 # "TestROMs/cpu_instrs/individual/04-op r,imm.gb",
                 # "TestROMs/cpu_instrs/individual/05-op rp.gb",
