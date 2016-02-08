@@ -13,6 +13,7 @@ import CoreDump
 import warnings
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC # Only debugging
+from Interrupts import InterruptVector, NonEnabledInterrupt, NoInterrupt
 
 
 class CPU():
@@ -31,7 +32,7 @@ class CPU():
         self.debugger = debugger
         self.timer = timer
         self.ram = ram
-        self.interruptMasterEnable = False  # TODO: What is it initialized as?
+        self.interruptMasterEnable = False
         self.interruptMasterEnableLatch = False
 
         self.breakOn = False
@@ -193,16 +194,15 @@ class CPU():
         #     exit()
 
         instruction = None
+        # InterruptVector, NonEnabledInterrupt, NoInterrupt
         if self.halted and didInterrupt:
             self.halted = False
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
 
-            # If halted, but interrupts are disabled.
-            # Otherwise, we go directly into HALT again
-            if not self.interruptMasterEnable:
-                self.reg[PC] += 1  # Byte-length of HALT
+            if didInterrupt == NonEnabledInterrupt:
+                self.reg[PC] += 1  # +1 to escape HALT, when interrupt didn't
 
             instruction = self.fetchInstruction(self.reg[PC])
                 
@@ -223,8 +223,8 @@ class CPU():
         #         print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
 
             
-        if self.reg[PC] == 0x100:
-            self.lala = True
+        # if self.reg[PC] == 0x100:
+        #     self.lala = True
 
         if self.lala and not self.halted:
             if (self.ram[self.reg[PC]]) == 0xCB:

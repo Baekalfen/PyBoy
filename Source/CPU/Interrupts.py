@@ -8,6 +8,9 @@
 from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from registers import PC
 
+# Order important. NoInterrupt evaluates to False in if statements
+NoInterrupt, InterruptVector, NonEnabledInterrupt = range(0,3)
+
 def checkForInterrupts(self):
     #GPCPUman.pdf p. 40 about priorities
     # If an interrupt occours, the PC is pushed to the stack.
@@ -32,39 +35,39 @@ def checkForInterrupts(self):
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0040
-            return True
+            return InterruptVector
         elif self.testInterruptFlagEnabled(LCDC) and self.testInterruptFlag(LCDC): # LCDC Status
             # print "LCDC Status Interrupt"
             self.clearInterruptFlag(LCDC)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0048
-            return True
+            return InterruptVector
         elif self.testInterruptFlagEnabled(TIMER) and self.testInterruptFlag(TIMER): # TIMER Overflow
             # print "TIMER Overflow Interrupt"
             self.clearInterruptFlag(TIMER)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0050
-            return True
+            return InterruptVector
         elif self.testInterruptFlagEnabled(Serial) and self.testInterruptFlag(Serial): # Serial Transfer
             print "Serial Transfer Interrupt"
             self.clearInterruptFlag(Serial)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0058
-            return True
+            return InterruptVector
         elif self.testInterruptFlagEnabled(HightoLow) and self.testInterruptFlag(HightoLow): # High-to-low P10-P13
             print "High-to-low P10-P13 Interrupt"
             self.clearInterruptFlag(HightoLow)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0060
-            return True
+            return InterruptVector
 
 
     # Check if both enable and trigger flags are enabled for any interrupts
-    return not triggeredInterrupts == 0
+    return NoInterrupt if not triggeredInterrupts == 0 else NonEnabledInterrupt
     # return (self.testInterruptFlag(VBlank) or
     #         self.testInterruptFlag(LCDC) or
     #         self.testInterruptFlag(TIMER) or
