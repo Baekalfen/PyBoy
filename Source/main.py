@@ -112,8 +112,11 @@ if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
     directory = "ROMs/"
     try:
+        if not os.path.exists(bootROM):
+            print "Boot-ROM not found. Please copy the Boot-ROM to '%s'" % bootROM
+            exit()
         if not os.path.exists(directory):
-            print "ROM folder not found"
+            print "ROM folder not found. Please copy the Game-ROM to '%s'" % directory
             exit()
 
         found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
