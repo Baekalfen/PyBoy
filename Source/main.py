@@ -104,8 +104,6 @@ def start(ROM, bootROM = None):
             counter = 0
         counter += 1
 
-
-
     print "###########################"
     print "# Emulator is turning off #"
     print "###########################"
@@ -114,16 +112,20 @@ if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
     directory = "ROMs/"
     try:
+        if not os.path.exists(directory):
+            print "ROM folder not found"
+            exit()
+
         found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
-        for i,f in enumerate(found_files):
-            print "%s\t%s" % (i+1,f)
+        for i, f in enumerate(found_files):
+            print "%s\t%s" % (i+1, f)
         filename = raw_input("Write the name or number of the ROM file:\n")
 
         try:
             filename = directory + found_files[int(filename)-1]
         except:
             filename = directory + filename
-        
+
         start(filename, bootROM)
     except Exception as ex:
         mb.cpu.getDump()
@@ -132,8 +134,7 @@ if __name__ == "__main__":
         # if raw_input() != "":
         #     window.dump("dump",True)
 
-    for rom in [
-                # "TestROMs/instr_timing/instr_timing.gb",
+    for rom in [# "TestROMs/instr_timing/instr_timing.gb",
                 # "TestROMs/mem_timing/mem_timing.gb",
                 # "TestROMs/oam_bug/rom_singles/1-lcd_sync.gb",
                 # "TestROMs/cpu_instrs/individual/01-special.gb",
