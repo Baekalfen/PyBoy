@@ -128,7 +128,8 @@ if __name__ == "__main__":
 
         start(filename, bootROM)
     except Exception as ex:
-        mb.cpu.getDump()
+        # Can't make CoreDump, when mb.cpu hasn't been init'ed
+        # mb.cpu.getDump()
         raw_input("Continue?")
         raise ex
         # if raw_input() != "":
