@@ -35,10 +35,11 @@ class CPU():
         self.interruptMasterEnable = False
         self.interruptMasterEnableLatch = False
 
+        self.breakAllow = True
         self.breakOn = False
         self.breakNext = None
 
-        # self.breakNext = 0xc36f
+        self.breakNext = 0x2024
         # 0x1C9  Zeroing some internal RAM?
         # 0x1CC  Escaping?
         # 0x01D8 Zeroing TileView 2
@@ -236,8 +237,9 @@ class CPU():
             # if self.reg[PC] == 0x48 and not self.ram.bootROMEnabled and self.ram[0xFF45] != 0:
             #     self.breakOn = True
 
-            if self.reg[PC] == self.breakNext:
-                self.breakNext = None
+            if self.breakAllow and self.reg[PC] == self.breakNext:
+                # self.breakNext = None
+                self.breakAllow = False
                 self.breakOn = True
 
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
@@ -258,10 +260,12 @@ class CPU():
                     CoreDump.CoreDump("Debug")
                 elif action == 'r':
                     self.breakOn = False
+                    self.breakAllow = False
                 elif action[:2] == "0x":
                     print "Breaking on next", hex(int(action,16)), "\n" #Checking parser
                     self.breakNext = int(action,16)
                     self.breakOn = False
+                    self.breakAllow = True
                 else:
                     pass
 

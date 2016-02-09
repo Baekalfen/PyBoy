@@ -56,6 +56,7 @@ def start(ROM, bootROM = None):
     t_VSynced = 0
     t_frameDone = 0
     counter = 0
+    limitEmulationSpeed = True
     while not done:
         exp_avg_emu = 0.9 * exp_avg_emu + 0.1 * (t_VSynced-t_start)
         exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (t_frameDone-t_start)
@@ -67,8 +68,12 @@ def start(ROM, bootROM = None):
                 done = True
 
                 mb.cpu.getDump()
-            # elif event == WindowEvent.DebugNext:
-            #     pass
+            elif event == WindowEvent.ReleaseSpeedUp:
+                limitEmulationSpeed = True
+            elif event == WindowEvent.PressSpeedUp:
+                limitEmulationSpeed = False
+            elif event == WindowEvent.DebugNext:
+                mb.cpu.breakAllow = True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
         
@@ -81,7 +86,7 @@ def start(ROM, bootROM = None):
         t_frameDone = time.clock()
 
         # Trying to avoid VSync'ing on a frame, if we are out of time
-        if (time.clock()-t_start < SPF) and not (__debug__ and mb.cpu.ram.bootROMEnabled):
+        if limitEmulationSpeed or (not (__debug__ and mb.cpu.ram.bootROMEnabled) and (time.clock()-t_start < SPF)):
             # This one fixes the time.clock(), but uses much more CPU
             # while (time.clock()-t_start < SPF):
             #     pass

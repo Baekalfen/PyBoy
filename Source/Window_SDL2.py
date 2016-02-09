@@ -120,6 +120,10 @@ class Window():
                     events.append(WindowEvent.PressButtonSelect)
                 elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     events.append(WindowEvent.Quit)
+                elif event.key.keysym.sym == sdl2.SDLK_d:
+                    events.append(WindowEvent.DebugNext)
+                elif event.key.keysym.sym == sdl2.SDLK_SPACE:
+                    events.append(WindowEvent.PressSpeedUp)
             elif event.type == sdl2.SDL_KEYUP:
                 if event.key.keysym.sym == sdl2.SDLK_UP:
                     events.append(WindowEvent.ReleaseArrowUp)
@@ -137,6 +141,8 @@ class Window():
                     events.append(WindowEvent.ReleaseButtonStart)
                 elif event.key.keysym.sym == sdl2.SDLK_BACKSPACE:
                     events.append(WindowEvent.ReleaseButtonSelect)
+                elif event.key.keysym.sym == sdl2.SDLK_SPACE:
+                    events.append(WindowEvent.ReleaseSpeedUp)
 
         return events
 
