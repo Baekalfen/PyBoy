@@ -79,3 +79,4 @@ dump*.bmp
 *.bin
 TestROMs/
 ROMs/
+diffDump.txt
