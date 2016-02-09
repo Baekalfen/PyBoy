@@ -131,14 +131,13 @@ if __name__ == "__main__":
 
         start(filename, bootROM)
     except Exception as ex:
-        # Can't make CoreDump, when mb.cpu hasn't been init'ed
-        # mb.cpu.getDump()
+        if mb is not None:
+            mb.cpu.getDump()
         raw_input("Continue?")
         raise ex
-        # if raw_input() != "":
-        #     window.dump("dump",True)
 
-    for rom in [# "TestROMs/instr_timing/instr_timing.gb",
+    for rom in [
+                # "TestROMs/instr_timing/instr_timing.gb",
                 # "TestROMs/mem_timing/mem_timing.gb",
                 # "TestROMs/oam_bug/rom_singles/1-lcd_sync.gb",
                 # "TestROMs/cpu_instrs/individual/01-special.gb",
@@ -151,7 +150,7 @@ if __name__ == "__main__":
                 # "TestROMs/cpu_instrs/individual/08-misc instrs.gb", #Generates Seg. fault
                 # "TestROMs/cpu_instrs/individual/09-op r,r.gb",
                 # "TestROMs/cpu_instrs/individual/10-bit ops.gb",
-                # "TestROMs/cpu_instrs/individual/11-op a,(hl).gb"
+                # "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",
                 ]:
         try:
             print rom
