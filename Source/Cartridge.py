@@ -165,6 +165,7 @@ class Cartridge:
                 #     raise CoreDump.CoreDump("Memory model not defined. Address: %s, Value: %s" % (hex(address),hex(value)))
 
             elif 0x2000 <= address < 0x4000:
+                # But (when using the register below to specify the upper ROM Bank bits), the same happens for Bank 20h, 40h, and 60h. Any attempt to address these ROM Banks will select Bank 21h, 41h, and 61h instead
                 if value == 0:
                     value = 1
                 self.ROMBankSelected = (self.ROMBankSelected & 0b11100000) | (
@@ -206,8 +207,8 @@ class Cartridge:
             elif 0x2000 <= address < 0x4000:
                 if value == 0:
                     value = 1
-                self.ROMBankSelected = (self.ROMBankSelected & 0b11100000) | (
-                    value & 0b00011111)  # sets 5LSB of ROM bank address
+                # Same as for MBC1, except that the whole 7 bits of the RAM Bank Number are written directly to this address
+                self.ROMBankSelected = value & 0b01111111  # sets 7LSB of ROM bank address
             elif 0x4000 <= address < 0x6000:
                 # MBC3 is always 16/8 mode
                 self.ROMBankSelected = self.ROMBankSelected & 0b01111111
@@ -262,7 +263,7 @@ class Cartridge:
         string += "Game name: %s\n" % [chr(x)
                                        for x in self.ROMBanks[0][0x0134:0x0142]]
         string += "GB Color: %s\n" % str(self.ROMBanks[0][0x143] == 0x80)
-        string += "Cartridge type: %s\n" % self.cartType
+        string += "Cartridge type: %s\n" % hex(self.cartType)
         string += "Number of ROM banks: %s\n" % len(self.ROMBanks)
         string += "Active ROM bank: %s\n" % self.ROMBankSelected
         string += "Memory bank type: %s\n" % self.ROMBankController
