@@ -49,6 +49,7 @@ class Motherboard():
             f.write(chr(self.cpu.interruptMasterEnableLatch))
             f.write(chr(self.cpu.halted))
             f.write(chr(self.cpu.stopped))
+            f.write(chr(self.ram.bootROMEnabled))
 
             # Save debug vars
 
@@ -75,6 +76,11 @@ class Motherboard():
 
             for n in self.ram.interruptRegister:
                 f.write(chr(n))
+
+            # Save cartridge RAM
+            for n in self.ram.cartridge.RAMBanks:
+                for m in n:
+                    f.write(chr(m))
         print "State saved."
 
 
@@ -92,6 +98,7 @@ class Motherboard():
             self.cpu.interruptMasterEnableLatch = ord(f.read(1))
             self.cpu.halted = ord(f.read(1))
             self.cpu.stopped = ord(f.read(1))
+            self.ram.bootROMEnabled = ord(f.read(1))
 
             for n in xrange(VIDEO_RAM):
                 self.ram.VRAM[n] = ord(f.read(1))
@@ -116,6 +123,11 @@ class Motherboard():
 
             for n in xrange(INTERRUPT_ENABLE_REGISTER):
                 self.ram.interruptRegister[n] = ord(f.read(1))
+
+            # Loading RAMBanks to cartridge
+            for i in xrange(len(self.ram.cartridge.RAMBanks)):
+                for j in xrange(len(self.ram.cartridge.RAMBanks[i])):
+                    self.ram.cartridge.RAMBanks[i][j] = ord(f.read(1))
         print "State loaded."
         self.lcd.refreshTileData()
 
