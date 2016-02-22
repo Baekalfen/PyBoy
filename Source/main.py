@@ -21,6 +21,7 @@ from WindowEvent import WindowEvent
 import time
 import os.path
 import os
+import sys
 from multiprocessing import Process
 
 if len(sys.argv) < 2:
@@ -116,6 +117,10 @@ if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
     directory = "ROMs/"
     try:
+        if len(sys.argv) > 2: # First arg is SDL2/PyGame
+            start(sys.argv[2], bootROM)
+            exit(0)
+
         if not os.path.exists(bootROM):
             print "Boot-ROM not found. Please copy the Boot-ROM to '%s'" % bootROM
             exit()
