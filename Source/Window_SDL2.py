@@ -141,6 +141,10 @@ class Window():
                     events.append(WindowEvent.ReleaseButtonStart)
                 elif event.key.keysym.sym == sdl2.SDLK_BACKSPACE:
                     events.append(WindowEvent.ReleaseButtonSelect)
+                elif event.key.keysym.sym == sdl2.SDLK_z:
+                    events.append(WindowEvent.SaveState)
+                elif event.key.keysym.sym == sdl2.SDLK_x:
+                    events.append(WindowEvent.LoadState)
                 elif event.key.keysym.sym == sdl2.SDLK_SPACE:
                     events.append(WindowEvent.ReleaseSpeedUp)
 

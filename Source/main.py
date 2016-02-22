@@ -69,9 +69,13 @@ def start(ROM, bootROM = None):
 
                 mb.cpu.getDump()
             elif event == WindowEvent.ReleaseSpeedUp:
-                limitEmulationSpeed = True
-            elif event == WindowEvent.PressSpeedUp:
-                limitEmulationSpeed = False
+                limitEmulationSpeed ^= limitEmulationSpeed
+            # elif event == WindowEvent.PressSpeedUp:
+            #     limitEmulationSpeed = False
+            elif event == WindowEvent.SaveState:
+                mb.saveState()
+            elif event == WindowEvent.LoadState:
+                mb.loadState()
             elif event == WindowEvent.DebugNext:
                 mb.cpu.breakAllow = True
             else:  # Right now, everything else is a button press
@@ -130,6 +134,10 @@ if __name__ == "__main__":
             filename = directory + filename
 
         start(filename, bootROM)
+    except KeyboardInterrupt:
+        if mb is not None:
+            mb.cpu.getDump()
+        print "Interrupted by keyboard"
     except Exception as ex:
         if mb is not None:
             mb.cpu.getDump()

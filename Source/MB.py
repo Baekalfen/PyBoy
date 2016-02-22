@@ -7,6 +7,7 @@
 
 from CPU import CPU
 from RAM import RAM
+from RAM import VIDEO_RAM, INTERNAL_RAM_0, OBJECT_ATTRIBUTE_MEMORY, NON_IO_INTERNAL_RAM0, IO_PORTS, NON_IO_INTERNAL_RAM1, INTERNAL_RAM_1, INTERRUPT_ENABLE_REGISTER
 from Cartridge import Cartridge
 from LCD import LCD
 from Interaction import Interaction
@@ -33,6 +34,90 @@ class Motherboard():
 
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
+
+    def saveState(self, filename = "state"):
+        print "Saving state..."
+        with open(filename, "w") as f:
+            for n in self.cpu.reg[:-2]:
+                f.write(chr(n))
+
+            for n in self.cpu.reg[-2:]:
+                f.write(chr(n&0xFF))
+                f.write(chr((n&0xFF00)>>8))
+
+            f.write(chr(self.cpu.interruptMasterEnable))
+            f.write(chr(self.cpu.interruptMasterEnableLatch))
+            f.write(chr(self.cpu.halted))
+            f.write(chr(self.cpu.stopped))
+
+            # Save debug vars
+
+            for n in self.ram.VRAM:
+                f.write(chr(n))
+
+            for n in self.ram.internalRAM0:
+                f.write(chr(n))
+
+            for n in self.ram.OAM:
+                f.write(chr(n))
+
+            for n in self.ram.nonIOInternalRAM0:
+                f.write(chr(n))
+
+            for n in self.ram.IOPorts:
+                f.write(chr(n))
+
+            for n in self.ram.internalRAM1:
+                f.write(chr(n))
+
+            for n in self.ram.nonIOInternalRAM1:
+                f.write(chr(n))
+
+            for n in self.ram.interruptRegister:
+                f.write(chr(n))
+        print "State saved."
+
+
+    def loadState(self, filename = "state"):
+        print "Loading state..."
+        with open(filename, "r") as f:
+            for n in xrange(len(self.cpu.reg)-2):
+                self.cpu.reg[n] = ord(f.read(1))
+
+            for n in xrange(len(self.cpu.reg)-2,len(self.cpu.reg)):
+                self.cpu.reg[n] = ord(f.read(1))
+                self.cpu.reg[n] += ord(f.read(1)) << 8
+
+            self.cpu.interruptMasterEnable = ord(f.read(1))
+            self.cpu.interruptMasterEnableLatch = ord(f.read(1))
+            self.cpu.halted = ord(f.read(1))
+            self.cpu.stopped = ord(f.read(1))
+
+            for n in xrange(VIDEO_RAM):
+                self.ram.VRAM[n] = ord(f.read(1))
+
+            for n in xrange(INTERNAL_RAM_0):
+                self.ram.internalRAM0[n] = ord(f.read(1))
+
+            for n in xrange(OBJECT_ATTRIBUTE_MEMORY):
+                self.ram.OAM[n] = ord(f.read(1))
+
+            for n in xrange(NON_IO_INTERNAL_RAM0):
+                self.ram.nonIOInternalRAM0[n] = ord(f.read(1))
+
+            for n in xrange(IO_PORTS):
+                self.ram.IOPorts[n] = ord(f.read(1))
+
+            for n in xrange(INTERNAL_RAM_1):
+                self.ram.internalRAM1[n] = ord(f.read(1))
+
+            for n in xrange(NON_IO_INTERNAL_RAM1):
+                self.ram.nonIOInternalRAM1[n] = ord(f.read(1))
+
+            for n in xrange(INTERRUPT_ENABLE_REGISTER):
+                self.ram.interruptRegister[n] = ord(f.read(1))
+        print "State loaded."
+        self.lcd.refreshTileData()
 
     def calculateCycles(self, x):
         while x > 0:
