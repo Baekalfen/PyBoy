@@ -31,7 +31,7 @@ class Cartridge:
         # print "Loaded ROM in %s seconds" % (time() - start)
         # print "Amount of ROM banks is: %s" % len(self.ROMBanks)
 
-        # self.gameName = None
+        self.gameName = "".join([chr(x) for x in self.ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
         self.battery = False
         self.cartType = self[0x0147]
         self.filename = filename
@@ -260,8 +260,7 @@ class Cartridge:
         string = "Cartridge:\n"
         string += "Filename: %s\n" % self.filename
         # Defined constant
-        string += "Game name: %s\n" % [chr(x)
-                                       for x in self.ROMBanks[0][0x0134:0x0142]]
+        string += "Game name: %s\n" % self.gameName
         string += "GB Color: %s\n" % str(self.ROMBanks[0][0x143] == 0x80)
         string += "Cartridge type: %s\n" % hex(self.cartType)
         string += "Number of ROM banks: %s\n" % len(self.ROMBanks)

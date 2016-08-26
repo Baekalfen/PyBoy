@@ -74,9 +74,9 @@ def start(ROM, bootROM = None):
             # elif event == WindowEvent.PressSpeedUp:
             #     limitEmulationSpeed = False
             elif event == WindowEvent.SaveState:
-                mb.saveState()
+                mb.saveState(mb.ram.cartridge.gameName+".state")
             elif event == WindowEvent.LoadState:
-                mb.loadState()
+                mb.loadState(mb.ram.cartridge.gameName+".state")
             elif event == WindowEvent.DebugNext:
                 mb.cpu.breakAllow = True
             else:  # Right now, everything else is a button press
