@@ -38,33 +38,14 @@ class CPU():
         self.breakAllow = True
         self.breakOn = False
         self.breakNext = None
-
-        self.breakNext = 0x2024
-        # 0x1C9  Zeroing some internal RAM?
-        # 0x1CC  Escaping?
-        # 0x01D8 Zeroing TileView 2
-        # 0x01DB Zeroing some of upper internal RAM (0xFEFF to 0xFE00?)
-        # 0x01E2 Zeroing some of upper internal RAM (0xFFFE to 0xFF7E?)
-        # 0x0221 Changing bank
-
-
-        # Between 0x0221 and 0x0243, alot of random LD's - Why?
-
-        # What happens at 0x47F2?
-        # It's called from 0x0243
-
-        # What happens at 0x7C3?
-        # It's called from 0x0252
+        # self.breakNext = 0x2024
 
         self.halted = False
         self.stopped = False
 
         self.debugCallStack = []
 
-        # Program Counter (PC) is not assumed initialized to 0
         self.reg[PC] = 0
-        # if __debug__:
-        #     self.reg[PC] = 0xFC # Disable boot-ROM
 
         #debug
         self.oldPC = -1
@@ -189,11 +170,6 @@ class CPU():
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
         didInterrupt = self.checkForInterrupts()
 
-        # if self.reg[PC] == 0x2880 or self.reg[PC] == 0x2882:
-        #     print "LY", hex(self.ram[0xFF44]), didInterrupt
-        # if self.halted:
-        #     exit()
-
         instruction = None
         # InterruptVector, NonEnabledInterrupt, NoInterrupt
         if self.halted and didInterrupt:
@@ -214,15 +190,6 @@ class CPU():
         else:
             instruction = self.fetchInstruction(self.reg[PC])
 
-        # if not self.ram.bootROMEnabled:
-        #     if self.reg[PC] == 0x7c:
-        #         self.breakOn = True
-        #     if (self.ram[self.reg[PC]]) != 0xCB:
-        #         l = self.opcodes[self.ram[self.reg[PC]]][0]
-        #         print "Op:", "0x%0.2X" % self.ram[self.reg[PC]], "Name:", CPU_COMMANDS[self.ram[self.reg[PC]]], "Len:", l, ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
-        #     else:
-        #         print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
-
             
         # if self.reg[PC] == 0x100:
         #     self.lala = True
@@ -234,8 +201,6 @@ class CPU():
                 print hex(self.reg[PC])[2:]        
 
         if __debug__:
-            # if self.reg[PC] == 0x48 and not self.ram.bootROMEnabled and self.ram[0xFF45] != 0:
-            #     self.breakOn = True
 
             if self.breakAllow and self.reg[PC] == self.breakNext:
                 # self.breakNext = None
@@ -251,9 +216,6 @@ class CPU():
 
             if self.breakOn:
                 self.getDump(instruction)
-
-                if self.reg[PC] == 0xc325:
-                    print self.testFlag(flagZ),"\n"
 
                 action = raw_input()
                 if action == 'd':

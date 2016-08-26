@@ -111,14 +111,14 @@ def CPU_DEC16(self, r0):
 
 
 def CPU_ADD8(self, r0, r1):
-    c = r0 + r1
+    result = r0 + r1
 
-    self.setFlag(flagZ, c & 0xFF == 0)
+    self.setFlag(flagZ, result & 0xFF == 0)
     self.setFlag(flagN, 0)
-    self.setFlag(flagH, (getBit(r0, 3) == 1) and (getBit(c, 3) == 0))
-    self.setFlag(flagC, c > 0xFF)
+    self.setFlag(flagH, ((r0 & 0xF) + (r1 & 0xF)) > 0xF)
+    self.setFlag(flagC, result > 0xFF)
 
-    return c & 0xFF
+    return result & 0xFF
 
 
 def CPU_ADC8(self, r0, r1):
@@ -136,25 +136,27 @@ def CPU_ADD16(self, r0, r1):
 
 
 def CPU_SUB8(self, r0, r1):
-    result = (r0 + (self.testFlag(flagC) << 8)) - r1
+    # result = (r0 + (self.testFlag(flagC) << 8)) - r1
+    result = r0 - r1
 
-    self.setFlag(flagC, r0 < r1)
+    self.setFlag(flagC, result < 0)
     self.setFlag(flagZ, result & 0xFF == 0)
     self.setFlag(flagN, True)
-    self.setFlag(flagH, getBit(r0, 4) == 1 and getBit(result, 4) == 0)
+    self.setFlag(flagH, ((r0 & 0xF) - (r1 & 0xF)) < 0)
 
     return result & 0xFF
 
 
 def CPU_SBC8(self, r0, r1):
-    result = r0 - r1 - self.testFlag(flagC)
+    return self.CPU_SUB8(r0 - self.testFlag(flagC), r1)
+    # result = r0 - r1 - self.testFlag(flagC)
 
-    self.setFlag(flagC, r0 < r1)
-    self.setFlag(flagZ, result & 0xFF == 0)
-    self.setFlag(flagN, True)
-    self.setFlag(flagH, getBit(r0, 4) == 1 and getBit(result, 4) == 0)
+    # self.setFlag(flagC, result < 0) # Proven correct
+    # self.setFlag(flagZ, result & 0xFF == 0)
+    # self.setFlag(flagN, True)
+    # self.setFlag(flagH, ((r0 & 0xF) - (r1 & 0xF) - self.testFlag(flagC)) < 0)
 
-    return result & 0xFF
+    # return result & 0xFF
 
 
 def CPU_AND8(self, r0, r1):
