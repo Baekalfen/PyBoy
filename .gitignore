@@ -80,3 +80,5 @@ dump*.bmp
 TestROMs/
 ROMs/
 diffDump.txt
+Core_Dump_*
+*.state
