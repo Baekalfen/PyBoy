@@ -6,6 +6,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import traceback
 import sys
 
 try:
@@ -113,21 +114,56 @@ def start(ROM, bootROM = None):
     print "# Emulator is turning off #"
     print "###########################"
 
+
+def runBlarggsTest():
+    for rom in [
+                "TestROMs/instr_timing/instr_timing.gb",
+                ## "TestROMs/mem_timing/mem_timing.gb",
+                "TestROMs/oam_bug/rom_singles/1-lcd_sync.gb",
+                "TestROMs/cpu_instrs/individual/01-special.gb",
+                "TestROMs/cpu_instrs/individual/02-interrupts.gb",
+                "TestROMs/cpu_instrs/individual/03-op sp,hl.gb",
+                "TestROMs/cpu_instrs/individual/04-op r,imm.gb",
+                "TestROMs/cpu_instrs/individual/05-op rp.gb",
+                "TestROMs/cpu_instrs/individual/06-ld r,r.gb",
+                "TestROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
+                "TestROMs/cpu_instrs/individual/08-misc instrs.gb", #Generates Seg. fault
+                "TestROMs/cpu_instrs/individual/09-op r,r.gb",
+                "TestROMs/cpu_instrs/individual/10-bit ops.gb",
+                "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",
+                ]:
+        try:
+            print rom
+            start(rom)
+        except Exception as ex:
+            print ex
+            time.sleep(1)
+            window.stop()
+            time.sleep(2)
+
 if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
+
+
     directory = "ROMs/"
     try:
-        if len(sys.argv) > 2: # First arg is SDL2/PyGame
-            start(sys.argv[2], bootROM)
-            exit(0)
-
-        if not os.path.exists(bootROM):
-            print "Boot-ROM not found. Please copy the Boot-ROM to '%s'" % bootROM
-            exit()
-        if not os.path.exists(directory):
+        # Verify directories
+        if not bootROM is None and not os.path.exists(bootROM):
+            print "Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM
+            bootROM = None
+        if not os.path.exists(directory) and len(sys.argv) < 2:
             print "ROM folder not found. Please copy the Game-ROM to '%s'" % directory
             exit()
 
+        # Check if the ROM is given through argv
+        if len(sys.argv) > 2: # First arg is SDL2/PyGame
+            if sys.argv[2] == "blargg":
+                runBlarggsTest()
+                exit(0)
+            start(sys.argv[2], bootROM)
+            exit(0)
+        # else:
+        #Give a list of ROMs to start
         found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
         for i, f in enumerate(found_files):
             print "%s\t%s" % (i+1, f)
@@ -146,30 +182,6 @@ if __name__ == "__main__":
     except Exception as ex:
         if mb is not None:
             mb.cpu.getDump()
-        raw_input("Continue?")
-        raise ex
+        # print ex
+        traceback.print_exc()
 
-    for rom in [
-                # "TestROMs/instr_timing/instr_timing.gb",
-                # "TestROMs/mem_timing/mem_timing.gb",
-                # "TestROMs/oam_bug/rom_singles/1-lcd_sync.gb",
-                # "TestROMs/cpu_instrs/individual/01-special.gb",
-                # "TestROMs/cpu_instrs/individual/02-interrupts.gb",
-                # "TestROMs/cpu_instrs/individual/03-op sp,hl.gb",
-                # "TestROMs/cpu_instrs/individual/04-op r,imm.gb",
-                # "TestROMs/cpu_instrs/individual/05-op rp.gb",
-                # "TestROMs/cpu_instrs/individual/06-ld r,r.gb",
-                # "TestROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
-                # "TestROMs/cpu_instrs/individual/08-misc instrs.gb", #Generates Seg. fault
-                # "TestROMs/cpu_instrs/individual/09-op r,r.gb",
-                # "TestROMs/cpu_instrs/individual/10-bit ops.gb",
-                # "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",
-                ]:
-        try:
-            print rom
-            start(rom)
-        except Exception as ex:
-            print ex
-            time.sleep(1)
-            window.stop()
-            time.sleep(1)
