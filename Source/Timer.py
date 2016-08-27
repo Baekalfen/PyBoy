@@ -29,28 +29,21 @@ class Timer():
         self.dividers = [1024, 16, 64, 256] #4^(1+n) = 4<<2*n ???
 
     def tick(self,cycles):
+        self.DIVcounter += cycles
+        self.DIV += (self.DIVcounter >> 8) # Add the overflown bits to DIV
+        self.DIVcounter &= 0xFF # Remove the overflown bits
+        self.DIV &= 0xFF
+
         if self.TAC & 0b100 == 0: # Check if timer is enabled
             return False
 
-        self.DIVcounter += cycles
-        if self.DIVcounter >= 256:
-            self.DIVcounter -= 256 # Keeps possible remainder
-            self.DIV += 1
-            self.DIV &= 0xFF
-
-        TIMAOverFlow = False
+        # TIMAOverFlow = False
 
         self.TIMAcounter += cycles
         divider = self.dividers[self.TAC & 0b11]
-        if self.TIMAcounter >= divider:
-            self.TIMAcounter -= divider # Keeps possible remainder
-            self.TIMA += 1
-            if self.TIMA > 0xFF:
-                self.TIMA = self.TMA
-                TIMAOverFlow = True # Send yes, to interrupt
-            self.TIMA &= 0xFF
 
-        return TIMAOverFlow
-
-    def getDIV(self):
-        return (self.counter/256) & 0xFF
+        self.TIMA += self.TIMAcounter & divider
+        if self.TIMA > 0xFF:
+            self.TIMA = self.TMA
+            return True
+        return False
