@@ -17,14 +17,14 @@ BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, Win
 # ModeFlag0, ModeFlag1, Coincidence, Mode00, Mode01, Mode10, LYC_LY = range(7)
 
 gameboyResolution = (160, 144)
-colorPalette = (0x00FFFFFF,0x00777777,0x00333333,0x00000000)
-# colorPalette = (0x00FFFFFF,0x00777777,0x00555555,0x00303030)
+# colorPalette = (0x00FFFFFF,0x00777777,0x00333333,0x00000000)
+colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
 # colorPalette = (0x00FF0000,0x000000FF,0x0000FFFF,0x00777777)
 
 
 def getColor(byte1,byte2,offset):
     # The colors are 2 bit and are found like this:
-    # 
+    #
     # Color of the first pixel is 0b10
     # | Color of the second pixel is 0b01
     # v v
@@ -80,8 +80,8 @@ class LCD():
         for x in xrange(-offset, gameboyResolution[0]): # For the 20 (+1 overlap) tiles on a line
             tileX = x+offset
             if tileX % 8 == 0:
-                backgroundTileIndex = self.ram[backgroundViewAddress + ((xx)/8 + tileX/8)%32 + ((y+yy)/8)*32]
-                windowTileIndex = self.ram[windowViewAddress + ((-wx)/8 + x/8)%32 + ((y-wy)/8)*32]
+                backgroundTileIndex = self.ram[backgroundViewAddress + (((xx)/8 + tileX/8)%32 + ((y+yy)/8)*32)%0x400]
+                windowTileIndex = self.ram[windowViewAddress + (((-wx)/8 + x/8)%32 + ((y-wy)/8)*32)%0x400]
 
                 if tileDataSelect == 0: # If using signed tile indices
                     backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
