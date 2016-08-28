@@ -34,16 +34,20 @@ class Timer():
         self.DIVcounter &= 0xFF # Remove the overflown bits
         self.DIV &= 0xFF
 
-        if self.TAC & 0b100 == 0: # Check if timer is enabled
+        if self.TAC & 0b100 == 0: # Check if timer is not enabled
             return False
 
-        # TIMAOverFlow = False
 
         self.TIMAcounter += cycles
         divider = self.dividers[self.TAC & 0b11]
 
-        self.TIMA += self.TIMAcounter & divider
-        if self.TIMA > 0xFF:
-            self.TIMA = self.TMA
-            return True
+        if self.TIMAcounter >= divider: # Can't do the AND-trick because of 1024
+            self.TIMAcounter -= divider # Keeps possible remainder
+            self.TIMA += 1
+
+            if self.TIMA > 0xFF:
+                self.TIMA = self.TMA
+                self.TIMA &= 0xFF
+                return True
+
         return False
