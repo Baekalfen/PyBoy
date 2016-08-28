@@ -24,13 +24,14 @@ class CoreDump(Exception):
         instruction = None
         try:
             instruction = CPU.fetchInstruction(CPU.reg[PC])
+
+            if (CPU.ram[CPU.reg[PC]]) != 0xCB:
+                l = CPU.opcodes[CPU.ram[CPU.reg[PC]]][0]
+                dump += "Op:" + " " + "0x%0.2X" % CPU.ram[CPU.reg[PC]] + " " + "Name:" + " " + CPU_COMMANDS[CPU.ram[CPU.reg[PC]]] + " " + "Len:" + " " + str(l) + " " + ("val:" + " " + "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
+            else:
+                dump += "CB op:" + " " + "0x%0.2X" % CPU.ram[CPU.reg[PC]+1] + " " + "CB name:" + " " + CPU_COMMANDS_EXT[CPU.ram[CPU.reg[PC]+1]]
         except Exception as ex:
             traceback.print_exc()
-        if (CPU.ram[CPU.reg[PC]]) != 0xCB:
-            l = CPU.opcodes[CPU.ram[CPU.reg[PC]]][0]
-            dump += "Op:" + " " + "0x%0.2X" % CPU.ram[CPU.reg[PC]] + " " + "Name:" + " " + CPU_COMMANDS[CPU.ram[CPU.reg[PC]]] + " " + "Len:" + " " + str(l) + " " + ("val:" + " " + "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
-        else:
-            dump += "CB op:" + " " + "0x%0.2X" % CPU.ram[CPU.reg[PC]+1] + " " + "CB name:" + " " + CPU_COMMANDS_EXT[CPU.ram[CPU.reg[PC]+1]]
 
         dump += "\n"
 
@@ -41,7 +42,11 @@ class CoreDump(Exception):
 
         import datetime
         fname = ("Core Dump " + str(RAM.cartridge.filename.split('/')[-1]) + " " + str(datetime.datetime.now()) + ".dump"). replace(" ", "_")
-        with open(fname, "wb") as dumpfile:
-            dumpfile.write(dump)
 
-        windowHandle.dump(fname)
+        if raw_input("Create dump files?") == "yes":
+            with open(fname, "wb") as dumpfile:
+                dumpfile.write(dump)
+
+            windowHandle.dump(fname)
+
+        exit(1)
