@@ -1,3 +1,4 @@
+import traceback
 
 RAM = None
 CPU = None
@@ -19,7 +20,12 @@ class CoreDump(Exception):
         dump += "CPU.breakOn: " + str(CPU.breakOn) + "\n"
         dump += "CPU.debugCallStack: " + str(CPU.debugCallStack) + "\n"
 
-        instruction = CPU.fetchInstruction(CPU.reg[PC])
+
+        instruction = None
+        try:
+            instruction = CPU.fetchInstruction(CPU.reg[PC])
+        except Exception as ex:
+            traceback.print_exc()
         if (CPU.ram[CPU.reg[PC]]) != 0xCB:
             l = CPU.opcodes[CPU.ram[CPU.reg[PC]]][0]
             dump += "Op:" + " " + "0x%0.2X" % CPU.ram[CPU.reg[PC]] + " " + "Name:" + " " + CPU_COMMANDS[CPU.ram[CPU.reg[PC]]] + " " + "Len:" + " " + str(l) + " " + ("val:" + " " + "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
