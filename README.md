@@ -8,12 +8,6 @@ Abstract
 ========
 This project is covering an emulation of the Nintendo Game Boy (DMG-01) from 1989. The Game Boy has been emulated many times before, but this project will emulate it in the programming language Python 2.7. The implementation is not based on any existing emulator, but is made from scratch. The emulation has proven to be fast enough, to run software from cartridge dumps, with the same speed as the Game Boy. Most essential components of the Game Boy, are part of the emulation, but sound and serial port are not included in this project. The implementation runs in almost pure Python, but with dependencies for drawing graphics and getting user interactions through SDL2 and NumPy.
 
-
-License
-=======
-Creative Commons BY-NC-SA 4.0
-http://creativecommons.org/licenses/by-nc-sa/4.0/
-
 ![alt tag](https://github.com/Baekalfen/PyBoy/raw/master/README/1.png)
 ![alt tag](https://github.com/Baekalfen/PyBoy/raw/master/README/2.png)
 ![alt tag](https://github.com/Baekalfen/PyBoy/raw/master/README/3.png)
@@ -39,4 +33,9 @@ When brew is installed, the depencencies can be installed with the following fou
 
 
 That's it! Now, create a directory at `Source/ROMs` and place your ROMs in this diretory. Then run `pypy main.py` from the `Source` directory and choose a ROM to start.
+
+License
+=======
+Creative Commons BY-NC-SA 4.0
+http://creativecommons.org/licenses/by-nc-sa/4.0/
 
