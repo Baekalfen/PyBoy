@@ -32,7 +32,9 @@ When brew is installed, the depencencies can be installed with the following fou
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
 
 
-That's it! Now, create a directory at `Source/ROMs` and place your ROMs in this diretory. Then run `pypy main.py` from the `Source` directory and choose a ROM to start.
+Now, create a directory at `Source/ROMs` and place your ROMs in this directory -- which you of course dumped yourself with [PyBoyCartridge](https://github.com/Baekalfen/PyBoyCartridge)
+
+Then run `pypy main.py` from the `Source` directory and choose a ROM to start.
 
 License
 =======
