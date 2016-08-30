@@ -127,11 +127,15 @@ class CPU():
         # print "(HL-1)", "0x%0.2X" % self.ram[self.getHL()-1]
         print "(HL)", "0x%0.2X" % self.ram[self.getHL()], "(HL+1)", "0x%0.2X" % self.ram[self.getHL()+1]
         print "Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.ram[0xFF04], self.ram[0xFF05], self.ram[0xFF06],bin(self.ram[0xFF07]))
-        
 
         if (self.ram[self.reg[PC]]) != 0xCB:
             l = self.opcodes[self.ram[self.reg[PC]]][0]
-            print "Op:", "0x%0.2X" % self.ram[self.reg[PC]], "Name:", CPU_COMMANDS[self.ram[self.reg[PC]]], "Len:", l, ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
+            print "Op:",
+            print "0x%0.2X" % self.ram[self.reg[PC]],
+            print "Name:", CPU_COMMANDS[self.ram[self.reg[PC]]],
+            print "Len:", l,
+            if instruction:
+                print ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
         else:
             print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
         print "Call Stack", self.debugCallStack
