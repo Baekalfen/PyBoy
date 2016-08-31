@@ -178,40 +178,43 @@ class Window():
     def scanline(self, y):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
-        backgroundViewAddress = 0x1800 if getBit(self.lcd.LCDC, 3) == 0 else 0x1C00
-        windowViewAddress = 0x1800 if getBit(self.lcd.LCDC, 6) == 0 else 0x1C00
-        tileDataSelect = getBit(self.lcd.LCDC, 4)
+        backgroundViewAddress = 0x1800 if self.lcd.LCDC_backgroundMapSelect == 0 else 0x1C00
+        windowViewAddress = 0x1800 if self.lcd.LCDC_windowMapSelect == 0 else 0x1C00
 
         xx, yy = self.lcd.getViewPort()
         wx, wy = self.lcd.getWindowPos()
 
         offset = xx & 0b111 # Used for the half tile at the left side when scrolling
-        ioffset = xx & 0b11111000
 
-        # offset = 6
-        # print list(xrange(-offset, gameboyResolution[0]))
-        # backgroundTileIndex = self.vram[backgroundViewAddress + (((xx)/8 + tileX/8)%32 + ((y+yy)/8)*32)%0x400]
-        # windowTileIndex = self.vram[windowViewAddress + (((-wx)/8 + x/8)%32 + ((y-wy)/8)*32)%0x400]
+        if self.debug:
+            print bin(self.lcd.LCDC)
 
-        # for tile in xrange(20):
-        #     for x in xrange(8):
+            print self.lcd.LCDC_enabled             # value & (1 << 0)
+            print self.lcd.LCDC_windowMapSelect     # value & (1 << 1)
+            print self.lcd.LCDC_windowEnabled       # value & (1 << 2)
+            print self.lcd.LCDC_tileSelect          # value & (1 << 3)
+            print self.lcd.LCDC_backgroundMapSelect # value & (1 << 4)
+            print self.lcd.LCDC_spriteSize          # value & (1 << 5)
+            print self.lcd.LCDC_spriteEnable        # value & (1 << 6)
+            print self.lcd.LCDC_backgroundEnable    # value & (1 << 7)
         for x in range(gameboyResolution[0]):
-            if True: # TODO: Check background is on
+            if self.lcd.LCDC_backgroundEnable:
                 backgroundTileIndex = self.vram[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
-                if tileDataSelect == 0: # If using signed tile indices
+
+                if self.lcd.LCDC_tileSelect == 0: # If using signed tile indices
                     backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
 
                 self._screenBuffer[x,y] = self.lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
 
-            if wy <= y and wx <= x and (self.lcd.LCDC >> 5) & 1 == 1: # Check if Window is on
+            if self.lcd.LCDC_windowEnabled and wy <= y and wx <= x:
                 windowTileIndex = self.vram[windowViewAddress + (((-wx)/8 + x/8)%32 + ((y-wy)/8)*32)%0x400]
-                if tileDataSelect == 0: # If using signed tile indices
+
+                if self.lcd.LCDC_tileSelect == 0: # If using signed tile indices
                     windowTileIndex = getSignedInt8(windowTileIndex)+256
 
                 self._screenBuffer[x,y] = self.lcd.tileCache[windowTileIndex*8 + x%8, y%8]
 
 
-    # TODO: Move to GFX implementation
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey, xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
         x2,y2 = toXY
@@ -226,7 +229,6 @@ class Window():
                     toBuffer[x2+x, y2+y] = pixel
 
 
-    # TODO: Move to GFX implementation
     def renderSprites(self):
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
@@ -254,7 +256,6 @@ class Window():
     #################################################################
     #
     # Drawing debug tile views
-    # TODO: Move to GFX implementation
     #
     #################################################################
 

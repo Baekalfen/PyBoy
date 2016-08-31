@@ -130,7 +130,7 @@ class Motherboard():
             for n in xrange(INTERRUPT_ENABLE_REGISTER):
                 self.ram.interruptRegister[n] = ord(f.read(1))
 
-            self.lcd.LCDC = ord(f.read(1))
+            self.lcd.setLCDC(ord(f.read(1)))
             print "LCDC",self.lcd.LCDC
 
             # # Loading RAMBanks to cartridge

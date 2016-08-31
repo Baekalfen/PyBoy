@@ -73,7 +73,7 @@ class LCD():
         # Check LCDC to see if display is on
         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
         # print "LCD Tick",bin(self.ram[LCDC]),hex(self.ram[LCDC])
-        if self.isDisplayOn():
+        if self.LCDC_enabled:
             if self.ram.updateVRAMCache:
                 self.refreshTileData()
                 self.ram.updateVRAMCache = False
@@ -85,17 +85,14 @@ class LCD():
         self.LCDC = value
 
         # No need to convert to bool. Any non-zero value is evaluated as True
-        self.LCDC_enabled             = value & (1 << 0)
-        self.LCDC_windowMapSelect     = value & (1 << 1)
-        self.LCDC_windowEnabled       = value & (1 << 2)
-        self.LCDC_tileSelect          = value & (1 << 3)
-        self.LCDC_backgroundMapSelect = value & (1 << 4)
-        self.LCDC_spriteSize          = value & (1 << 5)
-        self.LCDC_spriteEnable        = value & (1 << 6)
-        self.LCDC_backgroundEnable    = value & (1 << 7)
-
-    def isDisplayOn(self):
-        return self.ram[LCDC] >> 7 == 1
+        self.LCDC_enabled             = value & (1 << 7)
+        self.LCDC_windowMapSelect     = value & (1 << 6)
+        self.LCDC_windowEnabled       = value & (1 << 5)
+        self.LCDC_tileSelect          = value & (1 << 4)
+        self.LCDC_backgroundMapSelect = value & (1 << 3)
+        self.LCDC_spriteSize          = value & (1 << 2)
+        self.LCDC_spriteEnable        = value & (1 << 1)
+        self.LCDC_backgroundEnable    = value & (1 << 0)
 
     def getWindowPos(self):
         return self.ram[WX]-7, self.ram[WY]
