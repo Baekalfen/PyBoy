@@ -65,8 +65,9 @@ class RAM():
         self.cartridge = cartridge
         self.interaction = interaction
         self.timer = timer
-        if __debug__:
-            self.lcd = None # IMPORTANT!!! ONLY FOR DEBUGGING!!!
+
+        # WARNING: Cyclic reference
+        self.lcd = None # IMPORTANT!!! ONLY FOR DEBUGGING!!!
         self.updateVRAMCache = True
         self.tilesChanged = set([])
         self.VRAM = allocateRAM(VIDEO_RAM)

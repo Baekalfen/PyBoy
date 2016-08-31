@@ -29,8 +29,9 @@ class Motherboard():
         self.ram = RAM(bootROMFile, self.cartridge, self.interaction, self.timer, random=False)
         self.cpu = CPU(self.ram, self.timer)
         self.lcd = LCD(self.ram, window)
-        if __debug__:
-            self.ram.lcd = self.lcd
+
+        # WARNING: Cyclic reference
+        self.ram.lcd = self.lcd
 
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
