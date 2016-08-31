@@ -14,7 +14,9 @@ import numpy
 import CoreDump
 import time
 
+from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
+from LCD import colorPalette
 import colors
 # from Display import SCX, SCY
 
@@ -24,17 +26,22 @@ black = sdl2.ext.Color(*colors.black)
 gameboyResolution = (160, 144)
 
 class Window():
-
-    def __init__(self, scale=1, debug=False):
+    def __init__(self, scale=1):
         assert isinstance(scale, int), "Window scale has to be an integer!"
+        self._scale = scale
+
+    def init(self, lcd, vram, oam):
+        self.debug = False
+        self.lcd = lcd
+        self.vram = vram
+        self.oam = oam
 
         CoreDump.windowHandle = self
 
         print "SDL initialization"
         sdl2.ext.init()
 
-        self._scale = scale
-        scaledResolution = tuple(x * scale for x in gameboyResolution)
+        scaledResolution = tuple(x * self._scale for x in gameboyResolution)
 
         self._window = sdl2.ext.Window("PyBoy", size=scaledResolution)
         self._windowSurface = self._window.get_surface()
@@ -60,8 +67,8 @@ class Window():
             self.tileDataWindow.show()
 
             self.tileView1Width = 0x100
-            self.tileView1Height = 0x100        
-            
+            self.tileView1Height = 0x100
+
             self.tileView2Width = 0x100
             self.tileView2Height = 0x100
 
@@ -120,6 +127,8 @@ class Window():
                     events.append(WindowEvent.PressButtonSelect)
                 elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     events.append(WindowEvent.Quit)
+                elif event.key.keysym.sym == sdl2.SDLK_e:
+                    self.debug = True
                 elif event.key.keysym.sym == sdl2.SDLK_d:
                     events.append(WindowEvent.DebugNext)
                 elif event.key.keysym.sym == sdl2.SDLK_SPACE:
@@ -166,3 +175,182 @@ class Window():
         # self._window.stop()
         sdl2.ext.quit()
 
+    def scanline(self, y):
+        # All VRAM addresses are offset by 0x8000
+        # Following addresses are 0x9800 and 0x9C00
+        backgroundViewAddress = 0x1800 if getBit(self.lcd.LCDC, 3) == 0 else 0x1C00
+        windowViewAddress = 0x1800 if getBit(self.lcd.LCDC, 6) == 0 else 0x1C00
+        tileDataSelect = getBit(self.lcd.LCDC, 4)
+
+        xx, yy = self.lcd.getViewPort()
+        wx, wy = self.lcd.getWindowPos()
+
+        offset = xx & 0b111 # Used for the half tile at the left side when scrolling
+        ioffset = xx & 0b11111000
+
+        # offset = 6
+        # print list(xrange(-offset, gameboyResolution[0]))
+        # backgroundTileIndex = self.vram[backgroundViewAddress + (((xx)/8 + tileX/8)%32 + ((y+yy)/8)*32)%0x400]
+        # windowTileIndex = self.vram[windowViewAddress + (((-wx)/8 + x/8)%32 + ((y-wy)/8)*32)%0x400]
+
+        # for tile in xrange(20):
+        #     for x in xrange(8):
+        for x in range(gameboyResolution[0]):
+            if True: # TODO: Check background is on
+                backgroundTileIndex = self.vram[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
+                if tileDataSelect == 0: # If using signed tile indices
+                    backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
+
+                self._screenBuffer[x,y] = self.lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+
+            if wy <= y and wx <= x and (self.lcd.LCDC >> 5) & 1 == 1: # Check if Window is on
+                windowTileIndex = self.vram[windowViewAddress + (((-wx)/8 + x/8)%32 + ((y-wy)/8)*32)%0x400]
+                if tileDataSelect == 0: # If using signed tile indices
+                    windowTileIndex = getSignedInt8(windowTileIndex)+256
+
+                self._screenBuffer[x,y] = self.lcd.tileCache[windowTileIndex*8 + x%8, y%8]
+
+
+    # TODO: Move to GFX implementation
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey, xFlip = 0, yFlip = 0):
+        x1,y1 = fromXY
+        x2,y2 = toXY
+
+        for y in xrange(8):
+            for x in xrange(8):
+                xx = x1 + ((7-x) if xFlip == 1 else x)
+                yy = (7-y) if yFlip == 1 else y
+
+                pixel = fromBuffer[xx, yy]
+                if not colorKey == pixel and 0 <= x2+x < 160 and 0 <= y2+y < 144:
+                    toBuffer[x2+x, y2+y] = pixel
+
+
+    # TODO: Move to GFX implementation
+    def renderSprites(self):
+        # Doesn't restrict 10 sprite pr. scan line.
+        # Prioritizes sprite in inverted order
+        # print "Rendering Sprites"
+        for n in xrange(0x00,0xA0,4):
+            y = self.oam[n] - 16
+            x = self.oam[n+1] - 8
+            tileIndex = self.oam[n+2]
+            attributes = self.oam[n+3]
+            xFlip = getBit(attributes, 5)
+            yFlip = getBit(attributes, 6)
+
+            fromXY = (tileIndex * 8, 0)
+            toXY = (x, y)
+
+            if x < 160 and y < 144:
+                self.copySprite(fromXY, toXY, self.lcd.tileCache, self._screenBuffer, colorKey = colorPalette[0], xFlip = xFlip, yFlip = yFlip)
+
+
+    def blankScreen(self):
+        # If the screen is off, fill it with a color.
+        # Currently, it's dark purple, but the Game Boy had a white screen
+        self._screenBuffer.fill(0x00403245)
+
+    #################################################################
+    #
+    # Drawing debug tile views
+    # TODO: Move to GFX implementation
+    #
+    #################################################################
+
+    def copyTile(self, fromXY, toXY, fromBuffer, toBuffer):
+        x1,y1 = fromXY
+        x2,y2 = toXY
+
+        for y in xrange(8):
+            for x in xrange(8):
+                toBuffer[x2+x, y2+y] = fromBuffer[x1+x, y1+y]
+
+    def refreshTileView1(self):
+        # self.tileView1Buffer.fill(0x00ABC4FF)
+        
+        tileSize = 8
+        winHorTileView1Limit = 32
+        winVerTileView1Limit = 32
+
+        for n in xrange(0x1800,0x1C00):
+            tileIndex = self.vram[n]
+
+            # Check the tile source and add offset
+            # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+            # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+            if (self.lcd.LCDC >> 4) & 1 == 0:
+                tileIndex = 256 + getSignedInt8(tileIndex)
+
+            tileColumn = (n-0x1800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
+            tileRow = (n-0x1800)/winVerTileView1Limit # Vertical time number based on tileColumn
+            
+            fromXY = ((tileIndex*8)%self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
+            toXY = (tileColumn*8, tileRow*8)
+
+            self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView1Buffer)
+
+    def refreshTileView2(self):
+        # self.tileView2Buffer.fill(0x00ABC4FF)
+         
+        tileSize = 8
+        winHorTileView2Limit = 32
+        winVerTileView2Limit = 32
+
+        for n in xrange(0x1C00,0x2000):
+            tileIndex = self.vram[n]
+
+            # Check the tile source and add offset
+            # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+            # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+            if (self.lcd.LCDC >> 4) & 1 == 0:
+                tileIndex = 256 + getSignedInt8(tileIndex)
+
+            tileColumn = (n-0x1C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
+            tileRow = (n-0x1C00)/winVerTileView2Limit # Vertical time number based on tileColumn
+            
+            fromXY = ((tileIndex*8)%self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
+            toXY = (tileColumn*8, tileRow*8)
+
+            self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView2Buffer)
+
+
+    def drawTileCacheView(self):
+        for n in xrange(self.tileDataHeight/8):
+            self.tileDataBuffer[0:self.tileDataWidth,n*8:(n+1)*8] = self.lcd.tileCache[n*self.tileDataWidth:(n+1)*self.tileDataWidth,0:8]
+
+    def drawTileView1ScreenPort(self):
+        xx, yy = self.lcd.getViewPort()
+
+        width = gameboyResolution[0]
+        height = gameboyResolution[1]
+
+        self.drawHorLine(xx       , yy        ,width  , self.tileView1Buffer)
+        self.drawHorLine(xx       , yy+height ,width  , self.tileView1Buffer)
+
+        self.drawVerLine(xx       , yy        ,height , self.tileView1Buffer)
+        self.drawVerLine(xx+width , yy        ,height , self.tileView1Buffer)
+
+    def drawTileView2WindowPort(self):
+        xx, yy = self.lcd.getWindowPos()
+
+        xx = -xx
+        yy = -yy
+
+        width = gameboyResolution[0]
+        height = gameboyResolution[1]
+
+        self.drawHorLine(xx       , yy        ,width  , self.tileView2Buffer)
+        self.drawHorLine(xx       , yy+height ,width  , self.tileView2Buffer)
+
+        self.drawVerLine(xx       , yy        ,height , self.tileView2Buffer)
+        self.drawVerLine(xx+width , yy        ,height , self.tileView2Buffer)
+
+
+    def drawHorLine(self,xx,yy,length,screen,color = 0):
+        for x in xrange(length):
+            screen[(xx+x)%0xFF,yy&0xFF] = color
+
+    def drawVerLine(self,xx,yy,length,screen,color = 0):
+        for y in xrange(length):
+            screen[xx&0xFF,(yy+y)&0xFF] = color

@@ -77,16 +77,22 @@ class Motherboard():
             for n in self.ram.interruptRegister:
                 f.write(chr(n))
 
-            # Save cartridge RAM
-            for n in self.ram.cartridge.RAMBanks:
-                for m in n:
-                    f.write(chr(m))
+            f.write(chr(self.lcd.LCDC))
+            print "LCDC",self.lcd.LCDC
+            
+            # # Save cartridge RAM
+            # for n in self.ram.cartridge.RAMBanks:
+            #     for m in n:
+            #         f.write(chr(m))
+
         print "State saved."
 
 
     def loadState(self, filename = "state"):
         print "Loading state..."
         with open(filename, "r") as f:
+            self.cpu.oldPC = None
+
             for n in xrange(len(self.cpu.reg)-2):
                 self.cpu.reg[n] = ord(f.read(1))
 
@@ -124,10 +130,14 @@ class Motherboard():
             for n in xrange(INTERRUPT_ENABLE_REGISTER):
                 self.ram.interruptRegister[n] = ord(f.read(1))
 
-            # Loading RAMBanks to cartridge
-            for i in xrange(len(self.ram.cartridge.RAMBanks)):
-                for j in xrange(len(self.ram.cartridge.RAMBanks[i])):
-                    self.ram.cartridge.RAMBanks[i][j] = ord(f.read(1))
+            self.lcd.LCDC = ord(f.read(1))
+            print "LCDC",self.lcd.LCDC
+
+            # # Loading RAMBanks to cartridge
+            # for i in xrange(len(self.ram.cartridge.RAMBanks)):
+            #     for j in xrange(len(self.ram.cartridge.RAMBanks[i])):
+            #         self.ram.cartridge.RAMBanks[i][j] = ord(f.read(1))
+
         print "State loaded."
         self.lcd.refreshTileData()
 

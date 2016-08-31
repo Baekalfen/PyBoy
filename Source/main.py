@@ -44,7 +44,7 @@ def start(ROM, bootROM = None):
     global window, mb
 
     print bootROM
-    window = Window(scale=1, debug=False)
+    window = Window(scale=1)
     if bootROM is not None:
         print "Starting with boot ROM"
         mb = Motherboard(ROM, bootROM, window)

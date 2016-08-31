@@ -170,8 +170,8 @@ class RAM():
                 return self.timer.TMA
             elif i == 0xFF07:
                 return self.timer.TAC
-            # elif i == 0xFF40:
-            #     return self.lcd.LCDC
+            elif i == 0xFF40:
+                return self.lcd.LCDC
             # elif i == 0xFF41:
             #     return self.lcd.STAT
             # elif i == 0xFF42:
@@ -241,14 +241,15 @@ class RAM():
                 self.timer.TMA = value
             elif i == 0xFF07:
                 self.timer.TAC = value
-            # elif i == 0xFF40:
+            elif i == 0xFF40:
             #     if (value >> 7) & 1 == 1 and self.updateVRAMCache:
             #         # If LCD was off, and gets turned on
             #         if self.updateVRAMCache:
             #             self.lcd.refreshTileData()
             #             self.updateVRAMCache = False
 
-            #     self.lcd.LCDC = value
+                self.lcd.setLCDC(value)
+                # self.lcd.LCDC = value
             # elif i == 0xFF41:
             #     self.lcd.STAT = value
             # elif i == 0xFF42:
@@ -278,9 +279,9 @@ class RAM():
                 # print "DMA transfer :",hex(i),"value:",hex(value)
                 self.transferDMAtoOAM(value)
             else:
-                if __debug__ and i == 0xFF43:
-                    self.lcd.drawTileView2WindowPort()
-                    self.lcd.window.tileView1Window.refresh()
+                # if __debug__ and i == 0xFF43:
+                #     self.lcd.drawTileView2WindowPort()
+                #     self.lcd.window.tileView1Window.refresh()
                 self.IOPorts[i - 0xFF00] = value
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
             if self.bootROMEnabled and i == 0xFF50 and value == 1:
