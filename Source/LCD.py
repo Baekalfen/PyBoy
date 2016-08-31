@@ -70,12 +70,10 @@ class LCD():
             self.window.drawTileView1ScreenPort()
             self.window.drawTileView2WindowPort()
 
-        # Check LCDC to see if display is on
-        # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
-        # print "LCD Tick",bin(self.ram[LCDC]),hex(self.ram[LCDC])
         if self.LCDC_enabled:
             if self.ram.updateVRAMCache:
-                self.refreshTileData()
+                self.refreshTileDataAdaptive()
+                # self.refreshTileData()
                 self.ram.updateVRAMCache = False
             self.window.renderSprites()
         else:
@@ -118,5 +116,21 @@ class LCD():
                     self.tileCache[x, y] = colorPalette[getColor(byte1, byte2, pixelOnLine)]
 
             tileCount += 1
+        self.ram.tilesChanged.clear()
 
+    def refreshTileDataAdaptive(self):
+        # print "Updating tile data for :", [hex(x) for x in self.ram.tilesChanged]
+
+        for t in self.ram.tilesChanged:
+            for k in xrange(0, 16 ,2): #2 bytes for each line
+                byte1 = self.ram[t+k]
+                byte2 = self.ram[t+k+1]
+
+                for pixelOnLine in xrange(7,-1,-1):
+                    y = k/2
+                    x = (t - 0x8000)/2 + 7-pixelOnLine
+
+                    self.tileCache[x, y] = colorPalette[getColor(byte1, byte2, pixelOnLine)]
+
+        self.ram.tilesChanged.clear()
 

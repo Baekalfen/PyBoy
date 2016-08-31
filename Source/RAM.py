@@ -68,6 +68,7 @@ class RAM():
         if __debug__:
             self.lcd = None # IMPORTANT!!! ONLY FOR DEBUGGING!!!
         self.updateVRAMCache = True
+        self.tilesChanged = set([])
         self.VRAM = allocateRAM(VIDEO_RAM)
         self.internalRAM0 = allocateRAM(INTERNAL_RAM_0)
         self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
@@ -214,8 +215,9 @@ class RAM():
             self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
             # TODO: Set a flag for when the Video RAM has changed. This can be used for caching the tile data/view
-            if i < 0x9800:
+            if i < 0x9800: # Is within tile data -- not tile maps
                 self.updateVRAMCache = True
+                self.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
             self.VRAM[i - 0x8000] = value
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
             self.cartridge[i] = value
@@ -242,12 +244,6 @@ class RAM():
             elif i == 0xFF07:
                 self.timer.TAC = value
             elif i == 0xFF40:
-            #     if (value >> 7) & 1 == 1 and self.updateVRAMCache:
-            #         # If LCD was off, and gets turned on
-            #         if self.updateVRAMCache:
-            #             self.lcd.refreshTileData()
-            #             self.updateVRAMCache = False
-
                 self.lcd.setLCDC(value)
                 # self.lcd.LCDC = value
             # elif i == 0xFF41:
