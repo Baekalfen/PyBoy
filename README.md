@@ -16,22 +16,50 @@ This project is covering an emulation of the Nintendo Game Boy (DMG-01) from 198
 
 Starting the Emulator
 =====================
-It should be noted, that the emulator is not ready for use, but is still in development.
+It should be noted, that the emulator is not ready for use, and is still in development.
 
-The code has a few dependencies, but it should be fairly easy to get it up and running. The code is only tested on Mac OS X, but will likely be easy to run on Linux and Windows too.
+CPython is no where fast enough to run the emulator (see [Report.pdf](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) about performance). It is therefore required to use PyPy.
 
-CPython is no where fast enough to run the emulator (see `Report.pdf` about performance). It is therefore required to use Pypy.
+The code has a few dependencies, but it should be fairly easy to get it up and running. The code developed on Mac OS X, but has been tested to run on Ubuntu 16.04.
 
+macOS
+-----
 The easiest way to get started, is to first install [brew](https://www.brew.sh).
 
-When brew is installed, the depencencies can be installed with the following four commands in the terminal:
+When brew is installed, the depencencies can be installed with the following five commands in the terminal:
 
+    brew update
     brew install pypy sdl2
     brew link sdl2
     brew install sdl2 sdl2_gfx sdl2_image
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
+    hg clone https://bitbucket.org/marcusva/py-sdl2 && cd py-sdl2/ && pypy setup.py install
 
+Ubuntu/Linux
+------------
+Ubuntu some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy in a virtualenv.
 
+Git and Mercurial is not strictly needed for the emulator. You can choose not to install them, if you download and install PySDL2 and NumPy manually.
+
+    sudo apt update
+    sudo apt install git mercurial
+    sudo apt install pypy pypy-dev virtualenv libsdl2-dev
+
+Now move to the `PyBoy/Source` directory before creating the virtual environment:
+
+    virtualenv . -p `which pypy`
+    source ./bin/activate
+
+    pip install git+https://bitbucket.org/pypy/numpy.git
+
+    hg clone https://bitbucket.org/marcusva/py-sdl2
+    cd py-sdl2/
+    pypy setup.py install
+    cd ..
+    rm -rf py-sdl2/
+
+Setup and Run
+-------------
 Now, create a directory at `Source/ROMs` and place your ROMs in this directory -- which you of course dumped yourself with [PyBoyCartridge](https://github.com/Baekalfen/PyBoyCartridge)
 
 Then run `pypy main.py` from the `Source` directory and choose a ROM to start.
