@@ -37,7 +37,7 @@ When brew is installed, the depencencies can be installed with the following fiv
 
 Ubuntu/Linux
 ------------
-Ubuntu some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy in a virtualenv.
+Ubuntu has some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy and PySDL2 in a virtualenv.
 
 Git and Mercurial is not strictly needed for the emulator. You can choose not to install them, if you download and install PySDL2 and NumPy manually.
 
