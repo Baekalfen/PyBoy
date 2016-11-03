@@ -66,6 +66,7 @@ class LCD():
         if __debug__:
             self.window.refreshTileView1()
             self.window.refreshTileView2()
+            self.window.refreshSpriteView()
             self.window.drawTileCacheView()
             self.window.drawTileView1ScreenPort()
             self.window.drawTileView2WindowPort()
