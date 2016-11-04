@@ -247,11 +247,12 @@ class Window():
         x1,y1 = fromXY
         x2,y2 = toXY
 
-        for y in xrange(16 if self.lcd.LCDC_spriteSize else 8):
+        spriteSize = 16 if self.lcd.LCDC_spriteSize else 8
+        for y in xrange(spriteSize):
+            yy = ((spriteSize-1)-y) if yFlip else y
+            yy %= 8
             for x in xrange(8):
-                xx = x1 + ((7-x) if xFlip == 1 else x) + (y&~0b111) # When second part of the sprite starts, we switch to the next tile
-                yy = (7-y) if yFlip == 1 else y
-                yy %= 8
+                xx = x1 + ((7-x) if xFlip == 1 else x) + (y&0b1000)^(yFlip<<3) # When second part of the sprite starts, we switch to the next tile
 
                 pixel = fromBuffer[xx, yy]
                 if not colorKey == pixel and 0 <= x2+x < 160 and 0 <= y2+y < 144:
