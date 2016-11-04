@@ -30,6 +30,36 @@ class Window():
         assert isinstance(scale, int), "Window scale has to be an integer!"
         self._scale = scale
 
+        # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
+        # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
+        self.windowEventsDown = {
+                sdl2.SDLK_UP : WindowEvent.PressArrowUp,
+                sdl2.SDLK_DOWN: WindowEvent.PressArrowDown,
+                sdl2.SDLK_RIGHT: WindowEvent.PressArrowRight,
+                sdl2.SDLK_LEFT: WindowEvent.PressArrowLeft,
+                sdl2.SDLK_a: WindowEvent.PressButtonA,
+                sdl2.SDLK_s: WindowEvent.PressButtonB,
+                sdl2.SDLK_RETURN: WindowEvent.PressButtonStart,
+                sdl2.SDLK_BACKSPACE: WindowEvent.PressButtonSelect,
+                sdl2.SDLK_ESCAPE: WindowEvent.Quit,
+                # sdl2.SDLK_e: self.debug = True
+                sdl2.SDLK_d: WindowEvent.DebugNext,
+                sdl2.SDLK_SPACE: WindowEvent.PressSpeedUp,
+        }
+        self.windowEventsUp = {
+                sdl2.SDLK_UP: WindowEvent.ReleaseArrowUp,
+                sdl2.SDLK_DOWN: WindowEvent.ReleaseArrowDown,
+                sdl2.SDLK_RIGHT: WindowEvent.ReleaseArrowRight,
+                sdl2.SDLK_LEFT: WindowEvent.ReleaseArrowLeft,
+                sdl2.SDLK_a: WindowEvent.ReleaseButtonA,
+                sdl2.SDLK_s: WindowEvent.ReleaseButtonB,
+                sdl2.SDLK_RETURN: WindowEvent.ReleaseButtonStart,
+                sdl2.SDLK_BACKSPACE: WindowEvent.ReleaseButtonSelect,
+                sdl2.SDLK_z: WindowEvent.SaveState,
+                sdl2.SDLK_x: WindowEvent.LoadState,
+                sdl2.SDLK_SPACE: WindowEvent.ReleaseSpeedUp,
+        }
+
     def init(self, lcd, vram, oam):
         self.debug = False
         self.lcd = lcd
@@ -118,64 +148,19 @@ class Window():
         sdl2.ext.title(self._window,title)
         # sdl2.SDL_SetWindowTitle(self._window,title)
 
+
+
     def getEvents(self):
         events = []
 
-        # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
-        # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
 
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
                 events.append(WindowEvent.Quit)
-
-            if event.type == sdl2.SDL_KEYDOWN:
-                if event.key.keysym.sym == sdl2.SDLK_UP:
-                    events.append(WindowEvent.PressArrowUp)
-                elif event.key.keysym.sym == sdl2.SDLK_DOWN:
-                    events.append(WindowEvent.PressArrowDown)
-                elif event.key.keysym.sym == sdl2.SDLK_RIGHT:
-                    events.append(WindowEvent.PressArrowRight)
-                elif event.key.keysym.sym == sdl2.SDLK_LEFT:
-                    events.append(WindowEvent.PressArrowLeft)
-                elif event.key.keysym.sym == sdl2.SDLK_a:
-                    events.append(WindowEvent.PressButtonA)
-                elif event.key.keysym.sym == sdl2.SDLK_s:
-                    events.append(WindowEvent.PressButtonB)
-                elif event.key.keysym.sym == sdl2.SDLK_RETURN:
-                    events.append(WindowEvent.PressButtonStart)
-                elif event.key.keysym.sym == sdl2.SDLK_BACKSPACE:
-                    events.append(WindowEvent.PressButtonSelect)
-                elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
-                    events.append(WindowEvent.Quit)
-                elif event.key.keysym.sym == sdl2.SDLK_e:
-                    self.debug = True
-                elif event.key.keysym.sym == sdl2.SDLK_d:
-                    events.append(WindowEvent.DebugNext)
-                elif event.key.keysym.sym == sdl2.SDLK_SPACE:
-                    events.append(WindowEvent.PressSpeedUp)
+            elif event.type == sdl2.SDL_KEYDOWN:
+                events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
             elif event.type == sdl2.SDL_KEYUP:
-                if event.key.keysym.sym == sdl2.SDLK_UP:
-                    events.append(WindowEvent.ReleaseArrowUp)
-                elif event.key.keysym.sym == sdl2.SDLK_DOWN:
-                    events.append(WindowEvent.ReleaseArrowDown)
-                elif event.key.keysym.sym == sdl2.SDLK_RIGHT:
-                    events.append(WindowEvent.ReleaseArrowRight)
-                elif event.key.keysym.sym == sdl2.SDLK_LEFT:
-                    events.append(WindowEvent.ReleaseArrowLeft)
-                elif event.key.keysym.sym == sdl2.SDLK_a:
-                    events.append(WindowEvent.ReleaseButtonA)
-                elif event.key.keysym.sym == sdl2.SDLK_s:
-                    events.append(WindowEvent.ReleaseButtonB)
-                elif event.key.keysym.sym == sdl2.SDLK_RETURN:
-                    events.append(WindowEvent.ReleaseButtonStart)
-                elif event.key.keysym.sym == sdl2.SDLK_BACKSPACE:
-                    events.append(WindowEvent.ReleaseButtonSelect)
-                elif event.key.keysym.sym == sdl2.SDLK_z:
-                    events.append(WindowEvent.SaveState)
-                elif event.key.keysym.sym == sdl2.SDLK_x:
-                    events.append(WindowEvent.LoadState)
-                elif event.key.keysym.sym == sdl2.SDLK_SPACE:
-                    events.append(WindowEvent.ReleaseSpeedUp)
+                events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
 
         return events
 
