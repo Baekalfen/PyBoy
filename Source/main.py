@@ -61,7 +61,6 @@ def start(ROM, bootROM = None):
     limitEmulationSpeed = True
     while not done:
         exp_avg_emu = 0.9 * exp_avg_emu + 0.1 * (t_VSynced-t_start)
-        exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (t_frameDone-t_start)
 
         t_start = time.clock()
         for event in window.getEvents():
@@ -82,29 +81,23 @@ def start(ROM, bootROM = None):
                 mb.cpu.breakAllow = True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
-        
+
         mb.tickFrame()
         mb.tickVblank()
 
         mb.lcd.tick()
         window.updateDisplay()
 
-        t_frameDone = time.clock()
 
         # Trying to avoid VSync'ing on a frame, if we are out of time
-        if limitEmulationSpeed or (not (__debug__ and mb.cpu.ram.bootROMEnabled) and (time.clock()-t_start < SPF)):
-            # This one fixes the time.clock(), but uses much more CPU
-            # while (time.clock()-t_start < SPF):
-            #     pass
-
+        if limitEmulationSpeed or (time.clock()-t_start < SPF):
             # This one makes time and frame syncing work, but messes with time.clock()
             window.VSync()
 
         t_VSynced = time.clock()
 
         if counter % 60 == 0:
-            text = "E:"+str(int(((exp_avg_emu)/SPF*100))) + "%"+ "C:"+ str(int(((exp_avg_cpu)/SPF*100))) + "%"
-            # text = "C" + str(int((exp_avg_cpu/SPF)*100)) + "%" + " G" + str(int((exp_avg_gpu/SPF)*100))+ "%"
+            text = str(int(((exp_avg_emu)/SPF*100))) + "%"
             window._window.title = text
             # print text
             counter = 0
