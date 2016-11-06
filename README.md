@@ -4,12 +4,17 @@ It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.png" width="160">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.png" width="160"><br>
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.png" width="160">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.png" width="160">
+
 Table of Contents
 =================
 * [Abstract](#abstract)
 * [Starting the Emulator](#starting-the-emulator)
     * [macOS](#macos)
-    * [Ubuntu/Linux](#ubuntu/linux)
+    * [Ubuntu/Linux](#ubuntulinux)
     * [Setup and Run](#setup-and-run)
 * [Contribute](#contribute)
 * [License](#license)
@@ -18,11 +23,6 @@ Table of Contents
 Abstract
 ========
 This project is covering an emulation of the Nintendo Game Boy (DMG-01) from 1989. The Game Boy has been emulated many times before, but this project will emulate it in the programming language Python 2.7. The implementation is not based on any existing emulator, but is made from scratch. The emulation has proven to be fast enough, to run software from cartridge dumps, with the same speed as the Game Boy. Most essential components of the Game Boy, are part of the emulation, but sound and serial port are not included in this project. The implementation runs in almost pure Python, but with dependencies for drawing graphics and getting user interactions through SDL2 and NumPy.
-
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.png" width="160">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.png" width="160"><br>
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.png" width="160">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.png" width="160">
 
 Starting the Emulator
 =====================
