@@ -64,6 +64,17 @@ Now, create a directory at `Source/ROMs` and place your ROMs in this directory -
 
 Then run `pypy main.py` from the `Source` directory and choose a ROM to start.
 
+Contribute
+==========
+Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
+
+For the more major features, there are three that you can give a try:
+* Sound
+* Color
+* Link Cable
+
+If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
+
 License
 =======
 Creative Commons BY-NC-SA 4.0
