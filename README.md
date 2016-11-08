@@ -36,14 +36,20 @@ macOS
 -----
 The easiest way to get started, is to first install [brew](https://www.brew.sh).
 
-When brew is installed, the depencencies can be installed with the following five commands in the terminal:
+When brew is installed, the depencencies can be installed with the following commands in the terminal:
 
     brew update
     brew install pypy sdl2
     brew link sdl2
     brew install sdl2 sdl2_gfx sdl2_image
+
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
-    hg clone https://bitbucket.org/marcusva/py-sdl2 && cd py-sdl2/ && pypy setup.py install
+
+    hg clone https://bitbucket.org/marcusva/py-sdl2
+    cd py-sdl2/
+    pypy setup.py install
+    cd ..
+    rm -rf py-sdl2/
 
 Ubuntu/Linux
 ------------
@@ -78,10 +84,11 @@ Contribute
 ==========
 Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
 
-For the more major features, there are three that you can give a try:
+For the more major features, there are four that you can give a try:
 * Sound
 * Color
 * Link Cable
+* Unit tests and/or test ROM
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
 
