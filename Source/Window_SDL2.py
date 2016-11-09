@@ -237,7 +237,11 @@ class Window():
             yy = ((spriteSize-1)-y) if yFlip else y
             yy %= 8
             for x in xrange(8):
-                xx = x1 + ((7-x) if xFlip == 1 else x) + (y&0b1000)^(yFlip<<3) # When second part of the sprite starts, we switch to the next tile
+                xx = x1 # Base coordinate
+                xx += ((7-x) if xFlip == 1 else x) # Reverse order, if sprite is x-flipped
+                if spriteSize == 16: # If y-flipped on 8x16 sprites, we will have to load the sprites in reverse order
+                    xx += (y&0b1000)^(yFlip<<3) # Shifting tile, when iteration past 8th line
+
 
                 pixel = fromBuffer[xx, yy]
                 if not colorKey == pixel and 0 <= x2+x < 160 and 0 <= y2+y < 144:
