@@ -195,21 +195,8 @@ class Window():
         windowViewAddress = 0x1800 if self.lcd.LCDC_windowMapSelect == 0 else 0x1C00
 
         xx, yy = self.lcd.getViewPort()
-        wx, wy = self.lcd.getWindowPos()
-
         offset = xx & 0b111 # Used for the half tile at the left side when scrolling
 
-        if self.debug:
-            print bin(self.lcd.LCDC)
-
-            print self.lcd.LCDC_enabled             # value & (1 << 0)
-            print self.lcd.LCDC_windowMapSelect     # value & (1 << 1)
-            print self.lcd.LCDC_windowEnabled       # value & (1 << 2)
-            print self.lcd.LCDC_tileSelect          # value & (1 << 3)
-            print self.lcd.LCDC_backgroundMapSelect # value & (1 << 4)
-            print self.lcd.LCDC_spriteSize          # value & (1 << 5)
-            print self.lcd.LCDC_spriteEnable        # value & (1 << 6)
-            print self.lcd.LCDC_backgroundEnable    # value & (1 << 7)
         for x in range(gameboyResolution[0]):
             if self.lcd.LCDC_backgroundEnable:
                 backgroundTileIndex = self.vram[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
@@ -219,13 +206,15 @@ class Window():
 
                 self._screenBuffer[x,y] = self.lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
 
-            if self.lcd.LCDC_windowEnabled and wy <= y and wx <= x:
-                windowTileIndex = self.vram[windowViewAddress + (((-wx)/8 + x/8)%32 + ((y-wy)/8)*32)%0x400]
+            if self.lcd.LCDC_windowEnabled:
+                wx, wy = self.lcd.getWindowPos()
+                if wy <= y and wx <= x:
+                    windowTileIndex = self.vram[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
-                if self.lcd.LCDC_tileSelect == 0: # If using signed tile indices
-                    windowTileIndex = getSignedInt8(windowTileIndex)+256
+                    if self.lcd.LCDC_tileSelect == 0: # If using signed tile indices
+                        windowTileIndex = getSignedInt8(windowTileIndex)+256
 
-                self._screenBuffer[x,y] = self.lcd.tileCache[windowTileIndex*8 + x%8, y%8]
+                    self._screenBuffer[x,y] = self.lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey, xFlip = 0, yFlip = 0):
