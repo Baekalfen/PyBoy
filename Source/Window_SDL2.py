@@ -17,11 +17,6 @@ import time
 from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
 from LCD import colorPalette
-import colors
-# from Display import SCX, SCY
-
-white = sdl2.ext.Color(*colors.white)
-black = sdl2.ext.Color(*colors.black)
 
 gameboyResolution = (160, 144)
 
