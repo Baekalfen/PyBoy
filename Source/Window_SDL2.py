@@ -55,11 +55,7 @@ class Window():
                 sdl2.SDLK_SPACE: WindowEvent.ReleaseSpeedUp,
         }
 
-    def init(self, lcd, vram, oam):
         self.debug = False
-        self.lcd = lcd
-        self.vram = vram
-        self.oam = oam
 
         CoreDump.windowHandle = self
 
@@ -143,11 +139,8 @@ class Window():
         sdl2.ext.title(self._window,title)
         # sdl2.SDL_SetWindowTitle(self._window,title)
 
-
-
     def getEvents(self):
         events = []
-
 
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
@@ -183,40 +176,39 @@ class Window():
         # self._window.stop()
         sdl2.ext.quit()
 
-    def scanline(self, y):
+    def scanline(self, y, lcd):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
-        backgroundViewAddress = 0x1800 if self.lcd.LCDC_backgroundMapSelect == 0 else 0x1C00
-        windowViewAddress = 0x1800 if self.lcd.LCDC_windowMapSelect == 0 else 0x1C00
+        backgroundViewAddress = 0x1800 if lcd.LCDC.backgroundMapSelect == 0 else 0x1C00
+        windowViewAddress = 0x1800 if lcd.LCDC.windowMapSelect == 0 else 0x1C00
 
-        xx, yy = self.lcd.getViewPort()
+        xx, yy = lcd.getViewPort()
         offset = xx & 0b111 # Used for the half tile at the left side when scrolling
 
         for x in range(gameboyResolution[0]):
-            if self.lcd.LCDC_backgroundEnable:
-                backgroundTileIndex = self.vram[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
+            if lcd.LCDC.backgroundEnable:
+                backgroundTileIndex = lcd.MB.ram.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
-                if self.lcd.LCDC_tileSelect == 0: # If using signed tile indices
+                if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                     backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
 
-                self._screenBuffer[x,y] = self.lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+                self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
 
-            if self.lcd.LCDC_windowEnabled:
-                wx, wy = self.lcd.getWindowPos()
+            if lcd.LCDC.windowEnabled:
+                wx, wy = lcd.getWindowPos()
                 if wy <= y and wx <= x:
-                    windowTileIndex = self.vram[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
+                    windowTileIndex = lcd.MB.ram.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
-                    if self.lcd.LCDC_tileSelect == 0: # If using signed tile indices
+                    if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                         windowTileIndex = getSignedInt8(windowTileIndex)+256
 
-                    self._screenBuffer[x,y] = self.lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
+                    self._screenBuffer[x,y] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, colorKey, xFlip = 0, yFlip = 0):
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, colorKey, xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
         x2,y2 = toXY
 
-        spriteSize = 16 if self.lcd.LCDC_spriteSize else 8
         for y in xrange(spriteSize):
             yy = ((spriteSize-1)-y) if yFlip else y
             yy %= 8
@@ -232,15 +224,17 @@ class Window():
                     toBuffer[x2+x, y2+y] = pixel
 
 
-    def renderSprites(self):
+    def renderSprites(self, lcd):
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
         # print "Rendering Sprites"
+        spriteSize = 16 if lcd.LCDC.spriteSize else 8
+
         for n in xrange(0x00,0xA0,4):
-            y = self.oam[n] - 16
-            x = self.oam[n+1] - 8
-            tileIndex = self.oam[n+2]
-            attributes = self.oam[n+3]
+            y = lcd.MB.ram.OAM[n] - 16 #TODO: Simplify reference
+            x = lcd.MB.ram.OAM[n+1] - 8
+            tileIndex = lcd.MB.ram.OAM[n+2]
+            attributes = lcd.MB.ram.OAM[n+3]
             xFlip = getBit(attributes, 5)
             yFlip = getBit(attributes, 6)
 
@@ -248,7 +242,7 @@ class Window():
             toXY = (x, y)
 
             if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, self.lcd.tileCache, self._screenBuffer, colorKey = colorPalette[0], xFlip = xFlip, yFlip = yFlip)
+                self.copySprite(fromXY, toXY, lcd.tileCache, self._screenBuffer, spriteSize, colorKey = colorPalette[0], xFlip = xFlip, yFlip = yFlip)
 
 
     def blankScreen(self):
@@ -270,7 +264,7 @@ class Window():
             for x in xrange(8):
                 toBuffer[x2+x, y2+y] = fromBuffer[x1+x, y1+y]
 
-    def refreshTileView1(self):
+    def refreshTileView1(self, lcd):
         # self.tileView1Buffer.fill(0x00ABC4FF)
 
         tileSize = 8
@@ -278,12 +272,12 @@ class Window():
         winVerTileView1Limit = 32
 
         for n in xrange(0x1800,0x1C00):
-            tileIndex = self.vram[n]
+            tileIndex = lcd.MB.ram.VRAM[n] #TODO: Simplify this reference -- and reoccurences
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if (self.lcd.LCDC >> 4) & 1 == 0:
+            if (lcd.LCDC.value >> 4) & 1 == 0: #TODO: use correct flag
                 tileIndex = 256 + getSignedInt8(tileIndex)
 
             tileColumn = (n-0x1800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
@@ -294,7 +288,7 @@ class Window():
 
             self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView1Buffer)
 
-    def refreshTileView2(self):
+    def refreshTileView2(self, lcd):
         # self.tileView2Buffer.fill(0x00ABC4FF)
 
         tileSize = 8
@@ -302,12 +296,12 @@ class Window():
         winVerTileView2Limit = 32
 
         for n in xrange(0x1C00,0x2000):
-            tileIndex = self.vram[n]
+            tileIndex = lcd.MB.ram.VRAM[n]
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if (self.lcd.LCDC >> 4) & 1 == 0:
+            if (lcd.LCDC.value >> 4) & 1 == 0:
                 tileIndex = 256 + getSignedInt8(tileIndex)
 
             tileColumn = (n-0x1C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
@@ -319,12 +313,12 @@ class Window():
             self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView2Buffer)
 
 
-    def drawTileCacheView(self):
+    def drawTileCacheView(self, lcd):
         for n in xrange(self.tileDataHeight/8):
-            self.tileDataBuffer[0:self.tileDataWidth,n*8:(n+1)*8] = self.lcd.tileCache[n*self.tileDataWidth:(n+1)*self.tileDataWidth,0:8]
+            self.tileDataBuffer[0:self.tileDataWidth,n*8:(n+1)*8] = lcd.tileCache[n*self.tileDataWidth:(n+1)*self.tileDataWidth,0:8]
 
-    def drawTileView1ScreenPort(self):
-        xx, yy = self.lcd.getViewPort()
+    def drawTileView1ScreenPort(self, lcd):
+        xx, yy = lcd.getViewPort()
 
         width = gameboyResolution[0]
         height = gameboyResolution[1]
@@ -335,8 +329,8 @@ class Window():
         self.drawVerLine(xx       , yy        ,height , self.tileView1Buffer)
         self.drawVerLine(xx+width , yy        ,height , self.tileView1Buffer)
 
-    def drawTileView2WindowPort(self):
-        xx, yy = self.lcd.getWindowPos()
+    def drawTileView2WindowPort(self, lcd):
+        xx, yy = lcd.getWindowPos()
 
         xx = -xx
         yy = -yy
@@ -360,14 +354,14 @@ class Window():
             screen[xx&0xFF,(yy+y)&0xFF] = color
 
 
-    def refreshSpriteView(self):
+    def refreshSpriteView(self, lcd):
         self.spriteBuffer.fill(0x00ABC4FF)
         for n in xrange(0x00,0xA0,4):
-            tileIndex = self.oam[n+2]
-            attributes = self.oam[n+3]
+            tileIndex = lcd.MB.ram.OAM[n+2] # TODO: Simplify this reference
+            attributes = lcd.MB.ram.OAM[n+3]
             fromXY = (tileIndex * 8, 0)
 
             i = n*2
-            self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), self.lcd.tileCache, self.spriteBuffer)
-            if self.lcd.LCDC_spriteSize:
-                self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), self.lcd.tileCache, self.spriteBuffer)
+            self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), lcd.tileCache, self.spriteBuffer)
+            if lcd.LCDC.spriteSize:
+                self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), lcd.tileCache, self.spriteBuffer)

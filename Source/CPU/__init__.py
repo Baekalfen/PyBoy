@@ -28,10 +28,9 @@ class CPU():
     from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
     from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_LDI, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
 
-    def __init__(self, ram, timer, debugger=None):
-        self.debugger = debugger
-        self.timer = timer
-        self.ram = ram
+    def __init__(self, MB):
+        self.MB = MB
+
         self.interruptMasterEnable = False
         self.interruptMasterEnableLatch = False
 
@@ -69,12 +68,12 @@ class CPU():
             return instruction[1][0]
 
     def fetchInstruction(self, pc):
-        opcode = self.ram[pc]
+        opcode = self.MB[pc]
         # if __debug__:
         #     print "opcode:", hex(opcode), "\tPC:", hex(self.reg[PC])
         if opcode == 0xCB:  # Extension code
             pc += 1
-            opcode = self.ram[pc]
+            opcode = self.MB[pc]
             # if __debug__:
             #     print "Shifted opcode:", hex(opcode)
             opcode += 0x100  # Internally shifting look-up table
@@ -93,7 +92,7 @@ class CPU():
             return (
                 operation[2],
                 operation[1],
-                (self, self.ram[pc+1], pc+operation[0])
+                (self, self.MB[pc+1], pc+operation[0])
             )
         elif operation[0] == 3:
             # 16-bit immediate
@@ -101,8 +100,8 @@ class CPU():
             return (
                 operation[2],
                 operation[1],
-                (self, (self.ram[pc+2] << 8) +
-                 self.ram[pc+1], pc+operation[0])
+                (self, (self.MB[pc+2] << 8) +
+                 self.MB[pc+1], pc+operation[0])
             )
         else:
             raise CoreDump.CoreDump("Unexpected opcode length: %s" % operation[0])
@@ -123,23 +122,23 @@ class CPU():
         print "D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E]
         print "H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L]
         print "SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC]
-        # print "0xC000", "0x%0.2X" % self.ram[0xc000]
-        # print "(HL-1)", "0x%0.2X" % self.ram[self.getHL()-1]
-        print "(HL)", "0x%0.2X" % self.ram[self.getHL()], "(HL+1)", "0x%0.2X" % self.ram[self.getHL()+1]
-        print "Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.ram[0xFF04], self.ram[0xFF05], self.ram[0xFF06],bin(self.ram[0xFF07]))
+        # print "0xC000", "0x%0.2X" % self.MB[0xc000]
+        # print "(HL-1)", "0x%0.2X" % self.MB[self.getHL()-1]
+        print "(HL)", "0x%0.2X" % self.MB[self.getHL()], "(HL+1)", "0x%0.2X" % self.MB[self.getHL()+1]
+        print "Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.MB[0xFF04], self.MB[0xFF05], self.MB[0xFF06],bin(self.MB[0xFF07]))
 
-        if (self.ram[self.reg[PC]]) != 0xCB:
-            l = self.opcodes[self.ram[self.reg[PC]]][0]
+        if (self.MB[self.reg[PC]]) != 0xCB:
+            l = self.opcodes[self.MB[self.reg[PC]]][0]
             print "Op:",
-            print "0x%0.2X" % self.ram[self.reg[PC]],
-            print "Name:", CPU_COMMANDS[self.ram[self.reg[PC]]],
+            print "0x%0.2X" % self.MB[self.reg[PC]],
+            print "Name:", CPU_COMMANDS[self.MB[self.reg[PC]]],
             print "Len:", l,
             if instruction:
                 print ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
         else:
-            print "CB op:", "0x%0.2X" % self.ram[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.ram[self.reg[PC]+1]]
+            print "CB op:", "0x%0.2X" % self.MB[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.MB[self.reg[PC]+1]]
         print "Call Stack", self.debugCallStack
-        print "Active ROM and RAM bank", self.ram.cartridge.ROMBankSelected , self.ram.cartridge.RAMBankSelected
+        print "Active ROM and RAM bank", self.MB.cartridge.ROMBankSelected , self.MB.cartridge.RAMBankSelected
         print "Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch
         print "Enabled Interrupts",
         flags = ""
@@ -186,7 +185,7 @@ class CPU():
                 self.reg[PC] += 1  # +1 to escape HALT, when interrupt didn't
 
             instruction = self.fetchInstruction(self.reg[PC])
-                
+
         elif self.halted and not didInterrupt:
             operation = opcodes.opcodes[0x00] #Fetch NOP to still run timers and such
             instruction = (operation[2], operation[1], (self, self.reg[PC]))
@@ -194,15 +193,15 @@ class CPU():
         else:
             instruction = self.fetchInstruction(self.reg[PC])
 
-            
+
         # if self.reg[PC] == 0x100:
         #     self.lala = True
 
         if self.lala and not self.halted:
-            if (self.ram[self.reg[PC]]) == 0xCB:
+            if (self.MB[self.reg[PC]]) == 0xCB:
                 print hex(self.reg[PC]+1)[2:]
             else:
-                print hex(self.reg[PC])[2:]        
+                print hex(self.reg[PC])[2:]
 
         if __debug__:
 
@@ -214,7 +213,7 @@ class CPU():
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
                 self.breakOn = True
                 print "PC DIDN'T CHANGE! Can't continue!"
-                CoreDump.windowHandle.dump(self.ram.cartridge.filename+"_dump.bmp")
+                CoreDump.windowHandle.dump(self.MB.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
 
@@ -240,9 +239,9 @@ class CPU():
 
         cycles = self.executeInstruction(instruction)
 
-        if self.timer.tick(cycles):
+        if self.MB.timer.tick(cycles):
             self.setInterruptFlag(self.TIMER)
-        
+
         return cycles
 
     def error(self, message):

@@ -47,9 +47,7 @@ def start(ROM, bootROM = None):
     window = Window(scale=1)
     if bootROM is not None:
         print "Starting with boot ROM"
-        mb = Motherboard(ROM, bootROM, window)
-    else:
-        mb = Motherboard(ROM, None, window)
+    mb = Motherboard(ROM, bootROM, window)
 
     done = False
     exp_avg_emu = 0
@@ -74,17 +72,16 @@ def start(ROM, bootROM = None):
             # elif event == WindowEvent.PressSpeedUp:
             #     limitEmulationSpeed = False
             elif event == WindowEvent.SaveState:
-                mb.saveState(mb.ram.cartridge.gameName+".state")
+                mb.saveState(mb.cartridge.gameName+".state")
             elif event == WindowEvent.LoadState:
-                mb.loadState(mb.ram.cartridge.gameName+".state")
+                mb.loadState(mb.cartridge.gameName+".state")
             elif event == WindowEvent.DebugNext:
                 mb.cpu.breakAllow = True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
 
+        mb.lcd.prepareFrame()
         mb.tickFrame()
-        mb.tickVblank()
-
         mb.lcd.tick()
         window.updateDisplay()
 

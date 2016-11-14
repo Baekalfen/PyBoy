@@ -9,7 +9,7 @@
 # http://problemkaputt.de/pandocs.htm#gameboytechnicaldata
 # Unless the oscillator frequency is multiplied or divided before it gets to the CPU,
 # it must be running at 4.194304MHz (or if the CPU has an internal oscillator).
-# 
+#
 # http://problemkaputt.de/pandocs.htm#timeranddividerregisters
 # Depending on the TAC register, the timer can run at one of four frequencies
 # 00:   4096 Hz (OSC/1024)
@@ -23,7 +23,7 @@ class Timer():
         self.DIV = 0 # Always showing self.counter with mode 3 divider
         self.TIMA = 0 # Can be set from RAM 0xFF05
         self.DIVcounter = 0
-        self.TIMAcounter = 0 
+        self.TIMAcounter = 0
         self.TMA = 0
         self.TAC = 0
         self.dividers = [1024, 16, 64, 256] #4^(1+n) = 4<<2*n ???
