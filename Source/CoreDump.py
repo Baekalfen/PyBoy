@@ -6,6 +6,8 @@ windowHandle = None
 
 class CoreDump(Exception):
     def __init__(self, message):
+        print "TODO: Fix CoreDump.\n",message
+        exit(1)
         super(CoreDump, self).__init__(message)
 
         from CPU.registers import A, F, B, C, D, E, H, L, SP, PC

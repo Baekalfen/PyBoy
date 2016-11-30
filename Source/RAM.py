@@ -76,17 +76,17 @@ class RAM():
 
     def dump(self):
         dump = "Dump of ROM:\n"
-        dump += "self.bootROMEnabled: " + str(self.bootROMEnabled) + "\n"
-        dump += "self.bootROM:\n"
-        dump += self.listToHex(self.bootROM) + "\n"
-        dump += "self.cartridge:\n"
-        dump += str(self.cartridge) + "\n"
-        dump += "self.cartridge.ROMBanks\n"
-        for i,bank in enumerate(self.cartridge.ROMBanks):
-            dump += "Bank: %s" % i
-            dump += self.listToHex(bank,offset=i*16*1024) + "\n" #Offset of 16KB
-        dump += "self.interaction:\n"
-        dump += str(self.interaction) + "\n"
+        # dump += "self.bootROMEnabled: " + str(self.bootROMEnabled) + "\n"
+        # dump += "self.bootROM:\n"
+        # dump += self.listToHex(self.MB.bootROM) + "\n"
+        # dump += "self.cartridge:\n"
+        # dump += str(self.cartridge) + "\n"
+        # dump += "self.cartridge.ROMBanks\n"
+        # for i,bank in enumerate(self.cartridge.ROMBanks):
+        #     dump += "Bank: %s" % i
+        #     dump += self.listToHex(bank,offset=i*16*1024) + "\n" #Offset of 16KB
+        # dump += "self.interaction:\n"
+        # dump += str(self.interaction) + "\n"
         dump += "self.VRAM:\n"
         dump += self.listToHex(self.VRAM) + "\n"
         dump += "self.internalRAM0:\n"

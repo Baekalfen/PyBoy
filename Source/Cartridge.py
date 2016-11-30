@@ -15,6 +15,7 @@ import CoreDump
 class Cartridge:
 
     def __init__(self, logger, filename):
+        self.logger = logger
         self.ROMBanks = None
         start = time()
         with open(filename, 'rb') as ROMFile:
@@ -240,7 +241,7 @@ class Cartridge:
             if not self.RAMBanks:
                 # return 0
                 raise CoreDump.CoreDump("RAMBanks not initialized: %s" % hex(address))
-            self.logger("Cartridge RAM implementation not verified!")
+            # self.logger("Cartridge RAM implementation not verified!")
             return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
             # raise Exception("Not implemented")
         else:

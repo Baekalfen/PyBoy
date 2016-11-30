@@ -267,7 +267,8 @@ def addPopToStack(s):
     try:
         s.debugCallStack.pop()
     except IndexError:
-        self.logger("Tried to pop from empty call stack")
+        pass
+        # s.logger("Tried to pop from empty call stack")
 
 opcode_Cx = [(1, (20, 8), lambda s, e: (addPopToStack(s) or s.setPC(s.CPU_RET())) if not s.testFlag(flagZ) else s.setPC(e)),                   # C0 -  "Return if last result was not zero" ("RET NZ")
              (1, (12,), lambda s, e: s.setBC(s.CPU_POP()) or s.setPC(e)),                # C1 -  "Pop 16-bit value from stack into BC" ("POP BC")
