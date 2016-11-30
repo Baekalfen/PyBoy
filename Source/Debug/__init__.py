@@ -6,45 +6,55 @@
 #
 
 import curses
-from Window import Window
+from MainWindow import MainWindow
 from Pad import Pad
 from UIPads import ProgramPad, ConsolePad, RegistersPad, FlagPad
 
 
 class Debug():
     def __init__(self):
-        window = Window()
+        self.window = MainWindow()
 
-        height, width = window._screen.getmaxyx()
+        height, width = self.window._screen.getmaxyx()
 
         registers_width = 9
         console_height = 20
         console_width = min(80,width-registers_width)-1
 
-        program = ProgramPad((2, 1),(height-console_height-2-1, width-30))
-        console = ConsolePad((height-console_height, 1),(console_height, console_width))
+        self.program = ProgramPad((2, 1),(height-console_height-2-1, width-30))
+        self.console = ConsolePad((height-console_height, 1),(console_height, console_width))
         registers = RegistersPad((height-console_height, console_width+2),(7, registers_width))
         flags = FlagPad((height-console_height, console_width+registers_width+3),(7, 7))
 
-        pads = [program, console, registers, flags]
+        self.pads = [self.program, self.console, registers, flags]
+        self.running = False
+        self.console.switch()
 
     def tick(self):
-        try:
-            c = window.getKey()
-            if c == -1:
-                program.updatePad()
-            elif c == ord("q"):
-                self.quit()
-            elif c == curses.KEY_UP:
-                if program.scroll_line > 0:
-                    program.scroll_line -= 1
-            elif c == curses.KEY_DOWN:
-                program.scroll_line += 1
+        if self.running:
+            self.console.switch()
+            try:
+                c = self.window.getKey()
+                if c == -1:
+                    self.program.updatePad()
+                elif c == ord("q"):
+                    raise KeyboardInterrupt()
+                elif c == curses.KEY_UP:
+                    if self.program.scroll_line > 0:
+                        self.program.scroll_line -= 1
+                elif c == curses.KEY_DOWN:
+                    self.program.scroll_line += 1
 
-            map(lambda p: p.updatePad(), pads)
-        except KeyboardInterrupt:
-            self.quit()
+                #TODO: Don't update everything when not necesarry
+                map(lambda p: p.updatePad(), self.pads)
+            except KeyboardInterrupt:
+                self.quit()
+                return False
+        else:
+            self.console.updatePad()
+            self.program.switch()
+        return True
 
     def quit(self):
-        window._screen.move(0, 0)
-        window.quit()
+        self.window._screen.move(0, 0)
+        self.window.quit()

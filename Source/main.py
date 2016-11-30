@@ -48,11 +48,13 @@ def printLine(*args):
 logger = printLine
 
 def start(ROM, bootROM = None):
-    global window, mb
+    global window, mb, logger
 
-    # if "debug" in sys.argv:
-    #     debugger = Debug()
-    #     logger = lambda line: debugger.console.writeLine(line)
+    debugger = None
+    if "debug" in sys.argv:
+        debugger = Debug()
+        debugger.tick()
+        logger = debugger.console.writeLine
 
     window = Window(logger, scale=1)
     if bootROM is not None:
@@ -78,18 +80,21 @@ def start(ROM, bootROM = None):
 
                 mb.cpu.getDump()
             elif event == WindowEvent.ReleaseSpeedUp:
-                limitEmulationSpeed ^= limitEmulationSpeed
+                limitEmulationSpeed ^= True
             # elif event == WindowEvent.PressSpeedUp:
             #     limitEmulationSpeed = False
             elif event == WindowEvent.SaveState:
                 mb.saveState(mb.cartridge.gameName+".state")
             elif event == WindowEvent.LoadState:
                 mb.loadState(mb.cartridge.gameName+".state")
-            elif event == WindowEvent.DebugNext:
-                mb.cpu.breakAllow = True
+            elif event == WindowEvent.DebugToggle:
+                # mb.cpu.breakAllow = True
+                debugger.running ^= True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
 
+        if not debugger is None:
+            debugger.tick()
         mb.lcd.prepareFrame()
         mb.tickFrame()
         mb.lcd.tick()

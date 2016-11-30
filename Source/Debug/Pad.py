@@ -7,7 +7,7 @@
 import GenericScreen
 import curses
 
-class Pad(GenericScreen.Screen):
+class Pad(GenericScreen.GenericScreen):
     def __init__(self, (win_line, win_column), (height, width), cell_data=None, cell_widths=None):
         self.win_line = win_line
         self.win_column = win_column

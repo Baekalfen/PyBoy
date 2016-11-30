@@ -13,12 +13,18 @@ import sdl2.ext
 import numpy
 import CoreDump
 import time
+import warnings
 
 from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
 from LCD import colorPalette
 
 gameboyResolution = (160, 144)
+
+def pixels2dWithoutWarning(surface):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return sdl2.ext.pixels2d(surface)
 
 class Window():
     def __init__(self, logger, scale=1):
@@ -39,7 +45,7 @@ class Window():
                 sdl2.SDLK_BACKSPACE: WindowEvent.PressButtonSelect,
                 sdl2.SDLK_ESCAPE: WindowEvent.Quit,
                 # sdl2.SDLK_e: self.debug = True
-                sdl2.SDLK_d: WindowEvent.DebugNext,
+                sdl2.SDLK_d: WindowEvent.DebugToggle,
                 sdl2.SDLK_SPACE: WindowEvent.PressSpeedUp,
         }
         self.windowEventsUp = {
@@ -68,7 +74,7 @@ class Window():
         self._window = sdl2.ext.Window("PyBoy", size=scaledResolution)
         self._windowSurface = self._window.get_surface()
 
-        self._screenBuffer = sdl2.ext.pixels2d(self._windowSurface)
+        self._screenBuffer = pixels2dWithoutWarning(self._windowSurface)
         self._screenBuffer.fill(0x00558822)
         self._window.show()
 
@@ -89,7 +95,7 @@ class Window():
 
             self.tileDataWindow = sdl2.ext.Window("Tile Data", size=(self.tileDataWidth, self.tileDataHeight))
             self.tileDataWindowSurface = self.tileDataWindow.get_surface()
-            self.tileDataBuffer = sdl2.ext.pixels2d(self.tileDataWindowSurface)
+            self.tileDataBuffer = pixels2dWithoutWarning(self.tileDataWindowSurface)
             self.tileDataWindow.show()
 
             # # Background View 1
@@ -101,7 +107,7 @@ class Window():
 
             self.tileView1Window = sdl2.ext.Window("Tile View 1", size=(self.tileView1Width, self.tileView1Height))
             self.tileView1WindowSurface = self.tileView1Window.get_surface()
-            self.tileView1Buffer = sdl2.ext.pixels2d(self.tileView1WindowSurface)
+            self.tileView1Buffer = pixels2dWithoutWarning(self.tileView1WindowSurface)
             self.tileView1Window.show()
 
             # # Background View 2
@@ -113,7 +119,7 @@ class Window():
 
             self.tileView2Window = sdl2.ext.Window("Tile View 2", size=(self.tileView2Width, self.tileView2Height))
             self.tileView2WindowSurface = self.tileView2Window.get_surface()
-            self.tileView2Buffer = sdl2.ext.pixels2d(self.tileView2WindowSurface)
+            self.tileView2Buffer = pixels2dWithoutWarning(self.tileView2WindowSurface)
             self.tileView2Window.show()
 
             # # Sprite View
@@ -125,7 +131,7 @@ class Window():
 
             self.spriteWindow = sdl2.ext.Window("Sprite View", size=(self.spriteWidth, self.spriteHeight))
             self.spriteWindowSurface = self.spriteWindow.get_surface()
-            self.spriteBuffer = sdl2.ext.pixels2d(self.spriteWindowSurface)
+            self.spriteBuffer = pixels2dWithoutWarning(self.spriteWindowSurface)
             self.spriteWindow.show()
 
 

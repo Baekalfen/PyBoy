@@ -6,7 +6,7 @@
 #
 import curses
 
-class Screen(object):
+class GenericScreen(object):
     def addLabelsInColumns(self, line, column, labels, cell_widths):
         assert len(labels) == len(cell_widths)
 
