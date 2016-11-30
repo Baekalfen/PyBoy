@@ -29,36 +29,36 @@ def checkForInterrupts(self):
 
         #NOTE: Previous versions checked if IF was set, not IE. This made an infinite loop in the boot ROM (logo scrolling).
         if self.testInterruptFlagEnabled(VBlank) and self.testInterruptFlag(VBlank): # Vertical Blank
-            # print "Vertical Blank Interrupt"
-            # print "Interrupt enable", bin(self.MB[0xFFFF])
+            # logger("Vertical Blank Interrupt")
+            # logger("Interrupt enable", bin(self.MB[0xFFFF]))
             self.clearInterruptFlag(VBlank)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0040
             return InterruptVector
         elif self.testInterruptFlagEnabled(LCDC) and self.testInterruptFlag(LCDC): # LCDC Status
-            # print "LCDC Status Interrupt"
+            # logger("LCDC Status Interrupt")
             self.clearInterruptFlag(LCDC)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0048
             return InterruptVector
         elif self.testInterruptFlagEnabled(TIMER) and self.testInterruptFlag(TIMER): # TIMER Overflow
-            # print "TIMER Overflow Interrupt"
+            # logger("TIMER Overflow Interrupt")
             self.clearInterruptFlag(TIMER)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0050
             return InterruptVector
         elif self.testInterruptFlagEnabled(Serial) and self.testInterruptFlag(Serial): # Serial Transfer
-            print "Serial Transfer Interrupt"
+            logger("Serial Transfer Interrupt")
             self.clearInterruptFlag(Serial)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0058
             return InterruptVector
         elif self.testInterruptFlagEnabled(HightoLow) and self.testInterruptFlag(HightoLow): # High-to-low P10-P13
-            print "High-to-low P10-P13 Interrupt"
+            logger("High-to-low P10-P13 Interrupt")
             self.clearInterruptFlag(HightoLow)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])

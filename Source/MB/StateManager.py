@@ -7,7 +7,7 @@
 
 
 def saveState(self, filename = "state"):
-    print "Saving state..."
+    self.logger("Saving state...")
     with open(filename, "w") as f:
         for n in self.cpu.reg[:-2]:
             f.write(chr(n))
@@ -49,18 +49,18 @@ def saveState(self, filename = "state"):
             f.write(chr(n))
 
         f.write(chr(self.lcd.LCDC))
-        print "LCDC",self.lcd.LCDC.value
+        self.logger("LCDC",self.lcd.LCDC.value)
 
         # # Save cartridge RAM
         # for n in self.ram.cartridge.RAMBanks:
         #     for m in n:
         #         f.write(chr(m))
 
-    print "State saved."
+    self.logger("State saved.")
 
 
 def loadState(self, filename = "state"):
-    print "Loading state..."
+    self.logger("Loading state...")
     with open(filename, "r") as f:
         self.cpu.oldPC = None
 
@@ -102,12 +102,12 @@ def loadState(self, filename = "state"):
             self.ram.interruptRegister[n] = ord(f.read(1))
 
         self.lcd.LCDC.set(ord(f.read(1)))
-        print "LCDC",self.lcd.LCDC.value
+        self.logger("LCDC",self.lcd.LCDC.value)
 
         # # Loading RAMBanks to cartridge
         # for i in xrange(len(self.ram.cartridge.RAMBanks)):
         #     for j in xrange(len(self.ram.cartridge.RAMBanks[i])):
         #         self.ram.cartridge.RAMBanks[i][j] = ord(f.read(1))
 
-    print "State loaded."
+    self.logger("State loaded.")
     self.lcd.refreshTileData()

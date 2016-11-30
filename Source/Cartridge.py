@@ -8,14 +8,13 @@
 # from PrimitiveTypes import uint8
 from time import time
 import CoreDump
-import warnings
 
 
 # TODO: Refactor all of this
 
 class Cartridge:
 
-    def __init__(self, filename):
+    def __init__(self, logger, filename):
         self.ROMBanks = None
         start = time()
         with open(filename, 'rb') as ROMFile:
@@ -28,8 +27,8 @@ class Cartridge:
                 self.ROMBanks[i / (16 * 1024)][i %
                                                (16 * 1024)] = ord(byte)
 
-        # print "Loaded ROM in %s seconds" % (time() - start)
-        # print "Amount of ROM banks is: %s" % len(self.ROMBanks)
+        # logger("Loaded ROM in %s seconds" % (time() - start))
+        # logger("Amount of ROM banks is: %s" % len(self.ROMBanks))
 
         self.gameName = "".join([chr(x) for x in self.ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
         self.battery = False
@@ -198,7 +197,7 @@ class Cartridge:
                 elif value == 0:
                     # self.RAMBanks = None
                     self.RAMBankEnabled = False
-                    print "Disabling RAMBanks/RTC (not fully implemented)"
+                    logger("Disabling RAMBanks/RTC (not fully implemented)")
                 else:
                     raise CoreDump.CoreDump("Invalid command for MBC: Address: %s, Value: %s" % (address, value))
                 # else:
@@ -213,9 +212,9 @@ class Cartridge:
                 # MBC3 is always 16/8 mode
                 self.ROMBankSelected = self.ROMBankSelected & 0b01111111
             elif 0x6000 <= address < 0x8000:
-                print "Latch RTC"
+                logger("Latch RTC")
             elif 0xA000 <= address < 0xC000:
-                # print self.RAMBankSelected, value, len(self.RAMBanks)
+                # logger(self.RAMBankSelected, value, len(self.RAMBanks))
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
             else:
                 raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
@@ -224,7 +223,7 @@ class Cartridge:
                 if value == 0:
                     value = 1
                 self.ROMBankSelected = (value & 0b1)
-                print "Switching bank", hex(address), hex(value)
+                logger("Switching bank", hex(address), hex(value))
             else:
                 raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
         else:
@@ -235,13 +234,13 @@ class Cartridge:
         if 0x0000 <= address < 0x4000:
             return self.ROMBanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            # print "ROM Bank ACCESS!",hex(address),self.ROMBankSelected,self.ROMBankController
+            # logger("ROM Bank ACCESS!",hex(address),self.ROMBankSelected,self.ROMBankController)
             return self.ROMBanks[self.ROMBankSelected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.RAMBanks:
                 # return 0
                 raise CoreDump.CoreDump("RAMBanks not initialized: %s" % hex(address))
-            warnings.warn("Cartridge RAM implementation not verified!")
+            self.logger("Cartridge RAM implementation not verified!")
             return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
             # raise Exception("Not implemented")
         else:
@@ -283,14 +282,14 @@ def initRAMBanks(n):
 
 if __name__ == "__main__":
     cartridge = Cartridge("ROMs/SuperMarioLand.gb")
-    print cartridge
+    logger(cartridge)
     cartridge = Cartridge("TestROMs/cpu_instrs/individual/01-special.gb")
-    print cartridge
+    logger(cartridge)
     cartridge = Cartridge("ROMs/pokemon_blue.gb")
-    print cartridge
+    logger(cartridge)
     cartridge = Cartridge("ROMs/pokemon_gold.gbc")
-    print cartridge
+    logger(cartridge)
     cartridge = Cartridge("ROMs/Tetris.gb")
-    print cartridge
+    logger(cartridge)
     cartridge = Cartridge("TestROMs/oam_bug/rom_singles/1-lcd_sync.gb")
-    print cartridge
+    logger(cartridge)

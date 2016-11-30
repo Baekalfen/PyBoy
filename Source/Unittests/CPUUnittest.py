@@ -83,7 +83,7 @@ def setAllRegTo(v):
 
 def printAllRegisters():
     for r, v in zip([A, B, C, D, E, H, L], ["A", "B", "C", "D", "E", "H", "L"]):
-        print v, mb.cpu.reg[r]
+        logger(v, mb.cpu.reg[r])
 
 
 def getInstruction(self, operation, value, newPC):
@@ -2978,7 +2978,7 @@ class Test_CPU(unittest.TestCase):
         self.assertEqual(mb.cpu.reg[PC], 0x15+3)
 
         # Do jump
-        mb.cpu.setFlag(flagC)        
+        mb.cpu.setFlag(flagC)
         mb.cpu.reg[PC] = 0x10
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xD0], 0x00, 0x0011)
         mb.cpu.executeInstruction(inst)
@@ -3151,7 +3151,7 @@ class Test_CPU(unittest.TestCase):
         self.assertEqual(mb.cpu.reg[PC], 0x15+3)
 
         # Do jump
-        mb.cpu.clearFlag(flagC)        
+        mb.cpu.clearFlag(flagC)
         mb.cpu.reg[PC] = 0x10
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xD8], 0x00, 0x0011)
         mb.cpu.executeInstruction(inst)

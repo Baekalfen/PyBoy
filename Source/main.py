@@ -17,6 +17,7 @@ except ImportError:
 if __pypy__ is not None:
     sys.path.insert(0, "/usr/local/Cellar/pypy/4.0.1/libexec/site-packages")
 
+from Debug import Debug
 from MB import Motherboard
 from WindowEvent import WindowEvent
 import time
@@ -40,14 +41,23 @@ mb = None
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
+def printLine(*args):
+    print "#", " ".join([str(x) for x in args])
+
+# global logger
+logger = printLine
+
 def start(ROM, bootROM = None):
     global window, mb
 
-    print bootROM
-    window = Window(scale=1)
+    # if "debug" in sys.argv:
+    #     debugger = Debug()
+    #     logger = lambda line: debugger.console.writeLine(line)
+
+    window = Window(logger, scale=1)
     if bootROM is not None:
-        print "Starting with boot ROM"
-    mb = Motherboard(ROM, bootROM, window)
+        logger("Starting with boot ROM")
+    mb = Motherboard(logger, ROM, bootROM, window)
 
     done = False
     exp_avg_emu = 0
@@ -96,13 +106,13 @@ def start(ROM, bootROM = None):
         if counter % 60 == 0:
             text = str(int(((exp_avg_emu)/SPF*100))) + "%"
             window._window.title = text
-            # print text
+            # logger(text)
             counter = 0
         counter += 1
 
-    print "###########################"
-    print "# Emulator is turning off #"
-    print "###########################"
+    logger("###########################")
+    logger("# Emulator is turning off #")
+    logger("###########################")
 
 
 def runBlarggsTest():
@@ -123,10 +133,10 @@ def runBlarggsTest():
                 "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",
                 ]:
         try:
-            print rom
+            logger(rom)
             start(rom)
         except Exception as ex:
-            print ex
+            logger(ex)
             time.sleep(1)
             window.stop()
             time.sleep(2)
@@ -139,10 +149,10 @@ if __name__ == "__main__":
     try:
         # Verify directories
         if not bootROM is None and not os.path.exists(bootROM):
-            print "Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM
+            logger("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
             bootROM = None
         if not os.path.exists(directory) and len(sys.argv) < 2:
-            print "ROM folder not found. Please copy the Game-ROM to '%s'" % directory
+            logger("ROM folder not found. Please copy the Game-ROM to '%s'" % directory)
             exit()
 
         # Check if the ROM is given through argv
@@ -156,7 +166,7 @@ if __name__ == "__main__":
         #Give a list of ROMs to start
         found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
         for i, f in enumerate(found_files):
-            print "%s\t%s" % (i+1, f)
+            logger("%s\t%s" % (i+1, f))
         filename = raw_input("Write the name or number of the ROM file:\n")
 
         try:
@@ -168,10 +178,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         if mb is not None:
             mb.cpu.getDump()
-        print "Interrupted by keyboard"
+        logger("Interrupted by keyboard")
     except Exception as ex:
         if mb is not None:
             mb.cpu.getDump()
-        # print ex
         traceback.print_exc()
 

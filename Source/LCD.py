@@ -31,7 +31,8 @@ def getColor(byte1,byte2,offset):
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
 
 class LCD():
-    def __init__(self, MB):
+    def __init__(self, logger, MB):
+        self.logger = logger
         self.MB = MB
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
@@ -81,7 +82,7 @@ class LCD():
         # http://gameboy.mongenel.com/dmg/asmmemmap.html
         # TODO: Can this be merged with the adaptive function,
         # by just providing refreshTileDataAdaptive(xrange(0x8000,0x9800,16))?
-        print "Updating tile Data"
+        self.logger("Updating tile Data")
         tileCount = 0
         for n in xrange(0x8000,0x9800,16): #Tile is 16 bytes
             for k in xrange(0, 16 ,2): #2 bytes for each line

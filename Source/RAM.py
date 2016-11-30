@@ -30,7 +30,8 @@ def allocateRAM(size, rand=False):
 
 class RAM():
 
-    def __init__(self, random=False):
+    def __init__(self, logger, random=False):
+        self.logger = logger
         if random: #NOTE: In real life, the RAM is scrambled with random data on boot.
             raise Exception("Random RAM not implemented")
 
@@ -113,12 +114,3 @@ class RAM():
                 string += self[j+i]
             string += "\n"
         return string
-
-
-
-if __name__ == "__main__":
-    ram = RAM(None, None)
-
-    ram[0xFF40] = 123
-
-    print ram[0xFF40]

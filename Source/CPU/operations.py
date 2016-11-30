@@ -6,7 +6,6 @@
 #
 
 # from opcodes import Z, NZ, NC, N
-import warnings
 import CoreDump
 from flags import flagZ, flagN, flagH, flagC
 from registers import SP, A  # No need to use as self.<reg>
@@ -15,7 +14,7 @@ from MathUint8 import resetBit, setBit, getBit, swap, lshift, rshift, lrotate_in
 
 def CPU_EI(self):
     # Enable interrupts. This intruction enables interrupts but not immediately. Interrupts are enabled after instruction after EI is executed
-    # print "Enabling interrupts"
+    # logger("Enabling interrupts")
     self.interruptMasterEnableLatch = True
 
 
@@ -54,7 +53,7 @@ def CPU_LDI(self):
     operands = inst.operands
     variable = inst.variable
 
-    # print "(Will be split into LD (HL), A and - INC HL)"
+    # logger("(Will be split into LD (HL), A and - INC HL)")
 
     # Split instruction into two parts (LD (HL),A and INC HL)
     instA = Instruction(opcode,
@@ -80,7 +79,7 @@ def CPU_LDI(self):
 def CPU_INC8(self, r0):
     result = (r0 + 1) & 0xFF
 
-    # print flagZ, result == 0
+    # logger(flagZ, result == 0)
     self.setFlag(flagZ, result == 0)
     self.setFlag(flagN, False)
     self.setFlag(flagH, (getBit(r0, 3) == 1) and (getBit(result, 3) == 0))
@@ -199,7 +198,7 @@ def CPU_CP(self, r0, r1):
     # try:
     self.CPU_SUB8(r0, r1)
     # except CoreDump.CoreDump:
-    #     warnings.warn("CP called SUB8 that caused CoreDump")
+    #     self.logger("CP called SUB8 that caused CoreDump")
 
 
 def CPU_RLC(self, r0):  # WARN: There are is one more in CB
@@ -304,7 +303,7 @@ def CPU_RET(self):
 def CPU_DI(self):
     # "Enable interrupts. This intruction enables interrupts but not immediately.
     # Interrupts are enabled after instruction after EI is executed"
-    # print "Disabling interrupts"
+    # logger("Disabling interrupts")
     self.interruptMasterEnableLatch = False
 
 

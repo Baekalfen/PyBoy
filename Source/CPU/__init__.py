@@ -10,7 +10,6 @@
 from registers import A, F, B, C, D, E, H, L, SP, PC
 from MathUint8 import getBit
 import CoreDump
-import warnings
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC # Only debugging
 from Interrupts import InterruptVector, NonEnabledInterrupt, NoInterrupt
@@ -28,7 +27,8 @@ class CPU():
     from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
     from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_LDI, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
 
-    def __init__(self, MB):
+    def __init__(self, logger, MB):
+        self.logger = logger
         self.MB = MB
 
         self.interruptMasterEnable = False
@@ -69,13 +69,9 @@ class CPU():
 
     def fetchInstruction(self, pc):
         opcode = self.MB[pc]
-        # if __debug__:
-        #     print "opcode:", hex(opcode), "\tPC:", hex(self.reg[PC])
         if opcode == 0xCB:  # Extension code
             pc += 1
             opcode = self.MB[pc]
-            # if __debug__:
-            #     print "Shifted opcode:", hex(opcode)
             opcode += 0x100  # Internally shifting look-up table
 
         operation = opcodes.opcodes[opcode]
@@ -117,30 +113,30 @@ class CPU():
         if self.testFlag(flagN):
             flags += " N"
 
-        print "A:", "0x%0.2X" % self.reg[A], "F:", "0x%0.2X" % self.reg[F],flags
-        print "B:", "0x%0.2X" % self.reg[B], "C:", "0x%0.2X" % self.reg[C]
-        print "D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E]
-        print "H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L]
-        print "SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC]
-        # print "0xC000", "0x%0.2X" % self.MB[0xc000]
-        # print "(HL-1)", "0x%0.2X" % self.MB[self.getHL()-1]
-        print "(HL)", "0x%0.2X" % self.MB[self.getHL()], "(HL+1)", "0x%0.2X" % self.MB[self.getHL()+1]
-        print "Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.MB[0xFF04], self.MB[0xFF05], self.MB[0xFF06],bin(self.MB[0xFF07]))
+        self.logger("A:", "0x%0.2X" % self.reg[A], "F:", "0x%0.2X" % self.reg[F],flags)
+        self.logger("B:", "0x%0.2X" % self.reg[B], "C:", "0x%0.2X" % self.reg[C])
+        self.logger("D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E])
+        self.logger("H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L])
+        self.logger("SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC])
+        # self.logger("0xC000", "0x%0.2X" % self.MB[0xc000])
+        # self.logger("(HL-1)", "0x%0.2X" % self.MB[self.getHL()-1])
+        self.logger("(HL)", "0x%0.2X" % self.MB[self.getHL()], "(HL+1)", "0x%0.2X" % self.MB[self.getHL()+1])
+        self.logger("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.MB[0xFF04], self.MB[0xFF05], self.MB[0xFF06],bin(self.MB[0xFF07])))
 
         if (self.MB[self.reg[PC]]) != 0xCB:
             l = self.opcodes[self.MB[self.reg[PC]]][0]
-            print "Op:",
-            print "0x%0.2X" % self.MB[self.reg[PC]],
-            print "Name:", CPU_COMMANDS[self.MB[self.reg[PC]]],
-            print "Len:", l,
+            self.logger("Op:",)
+            self.logger("0x%0.2X" % self.MB[self.reg[PC]],)
+            self.logger("Name:", CPU_COMMANDS[self.MB[self.reg[PC]]],)
+            self.logger("Len:", l,)
             if instruction:
-                print ("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else ""
+                self.logger(("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else "")
         else:
-            print "CB op:", "0x%0.2X" % self.MB[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.MB[self.reg[PC]+1]]
-        print "Call Stack", self.debugCallStack
-        print "Active ROM and RAM bank", self.MB.cartridge.ROMBankSelected , self.MB.cartridge.RAMBankSelected
-        print "Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch
-        print "Enabled Interrupts",
+            self.logger("CB op:", "0x%0.2X" % self.MB[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.MB[self.reg[PC]+1]])
+        self.logger("Call Stack", self.debugCallStack)
+        self.logger("Active ROM and RAM bank", self.MB.cartridge.ROMBankSelected , self.MB.cartridge.RAMBankSelected)
+        self.logger("Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch)
+        self.logger("Enabled Interrupts",)
         flags = ""
         if self.testInterruptFlagEnabled(self.VBlank):
             flags += " VBlank"
@@ -152,8 +148,8 @@ class CPU():
             flags += " Serial"
         if self.testInterruptFlagEnabled(self.HightoLow):
             flags += " HightoLow"
-        print flags
-        print "Waiting Interrupts",
+        self.logger(flags)
+        self.logger("Waiting Interrupts",)
         flags = ""
         if self.testInterruptFlag(self.VBlank):
             flags += " VBlank"
@@ -167,7 +163,7 @@ class CPU():
             flags += " HightoLow"
         if self.halted:
             flags += "\nHALTED"
-        print flags
+        self.logger(flags)
 
     def tick(self):
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
@@ -199,9 +195,9 @@ class CPU():
 
         if self.lala and not self.halted:
             if (self.MB[self.reg[PC]]) == 0xCB:
-                print hex(self.reg[PC]+1)[2:]
+                self.logger(hex(self.reg[PC]+1)[2:])
             else:
-                print hex(self.reg[PC])[2:]
+                self.logger(hex(self.reg[PC])[2:])
 
         if __debug__:
 
@@ -212,7 +208,7 @@ class CPU():
 
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
                 self.breakOn = True
-                print "PC DIDN'T CHANGE! Can't continue!"
+                self.logger("PC DIDN'T CHANGE! Can't continue!")
                 CoreDump.windowHandle.dump(self.MB.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
@@ -227,7 +223,7 @@ class CPU():
                     self.breakOn = False
                     self.breakAllow = False
                 elif action[:2] == "0x":
-                    print "Breaking on next", hex(int(action,16)), "\n" #Checking parser
+                    self.logger("Breaking on next", hex(int(action,16)), "\n") #Checking parser
                     self.breakNext = int(action,16)
                     self.breakOn = False
                     self.breakAllow = True

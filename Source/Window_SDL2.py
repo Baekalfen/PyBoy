@@ -21,7 +21,8 @@ from LCD import colorPalette
 gameboyResolution = (160, 144)
 
 class Window():
-    def __init__(self, scale=1):
+    def __init__(self, logger, scale=1):
+        self.logger = logger
         assert isinstance(scale, int), "Window scale has to be an integer!"
         self._scale = scale
 
@@ -59,7 +60,7 @@ class Window():
 
         CoreDump.windowHandle = self
 
-        print "SDL initialization"
+        self.logger("SDL initialization")
         sdl2.ext.init()
 
         scaledResolution = tuple(x * self._scale for x in gameboyResolution)
@@ -153,9 +154,9 @@ class Window():
         return events
 
     def updateDisplay(self):
-        # print "Updating Display"
-        # print self._screenBuffer.shape
-        # print self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]].shape
+        # self.logger("Updating Display")
+        # self.logger(self._screenBuffer.shape)
+        # self.logger(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]].shape)
         # self._screenBuffer = numpy.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale,axis=1)
         # self._screenBuffer[200:200+gameboyResolution[0],200:200+gameboyResolution[1]] = self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]]
         # self._screenBuffer[:,:] = numpy.repeat(numpy.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale, axis=0), self._scale, axis=1)
@@ -227,7 +228,7 @@ class Window():
     def renderSprites(self, lcd):
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
-        # print "Rendering Sprites"
+        # self.logger("Rendering Sprites")
         spriteSize = 16 if lcd.LCDC.spriteSize else 8
 
         for n in xrange(0x00,0xA0,4):
