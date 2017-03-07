@@ -4,9 +4,9 @@ It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="162">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="160"><br>
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.png" width="162">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="160">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="158"><br>
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.gif" width="158">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.png" width="162">
 
 Table of Contents
