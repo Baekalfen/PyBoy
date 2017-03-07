@@ -83,7 +83,7 @@ def setAllRegTo(v):
 
 def printAllRegisters():
     for r, v in zip([A, B, C, D, E, H, L], ["A", "B", "C", "D", "E", "H", "L"]):
-        logger(v, mb.cpu.reg[r])
+        print v, mb.cpu.reg[r]
 
 
 def getInstruction(self, operation, value, newPC):
