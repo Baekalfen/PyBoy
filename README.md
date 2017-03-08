@@ -7,7 +7,7 @@ If you've read the report and want more explicit details, have a look at the [Pa
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="160">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="158"><br>
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.gif" width="158">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.png" width="162">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.gif" width="160">
 
 Table of Contents
 =================
