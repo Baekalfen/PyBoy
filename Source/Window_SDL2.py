@@ -10,7 +10,7 @@ from random import randint
 import time
 import sdl2
 import sdl2.ext
-import numpy
+import numpy as np
 import CoreDump
 import time
 import warnings
@@ -81,6 +81,8 @@ class Window():
         # Only used for VSYNC
         self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
         self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
+
+        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
         if __debug__:
             windowOffset = 0
@@ -183,33 +185,38 @@ class Window():
         # self._window.stop()
         sdl2.ext.quit()
 
-    def scanline(self, y, lcd):
+    def scanline(self, y, viewPos, windowPos):
+        self.scanlineParameters[y] = viewPos + windowPos
+
+    def renderScreen(self, lcd):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
         backgroundViewAddress = 0x1800 if lcd.LCDC.backgroundMapSelect == 0 else 0x1C00
         windowViewAddress = 0x1800 if lcd.LCDC.windowMapSelect == 0 else 0x1C00
 
-        xx, yy = lcd.getViewPort()
-        offset = xx & 0b111 # Used for the half tile at the left side when scrolling
+        for y in xrange(gameboyResolution[1]):
+            xx, yy, wx, wy = self.scanlineParameters[y]
+            # xx, yy = lcd.getViewPort()
+            offset = xx & 0b111 # Used for the half tile at the left side when scrolling
 
-        for x in range(gameboyResolution[0]):
-            if lcd.LCDC.backgroundEnable:
-                backgroundTileIndex = lcd.MB.ram.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
-
-                if lcd.LCDC.tileSelect == 0: # If using signed tile indices
-                    backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
-
-                self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
-
-            if lcd.LCDC.windowEnabled:
-                wx, wy = lcd.getWindowPos()
-                if wy <= y and wx <= x:
-                    windowTileIndex = lcd.MB.ram.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
+            for x in xrange(gameboyResolution[0]):
+                if lcd.LCDC.backgroundEnable:
+                    backgroundTileIndex = lcd.MB.ram.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tileSelect == 0: # If using signed tile indices
-                        windowTileIndex = getSignedInt8(windowTileIndex)+256
+                        backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
 
-                    self._screenBuffer[x,y] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
+                    self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+
+                if lcd.LCDC.windowEnabled:
+                    # wx, wy = lcd.getWindowPos()
+                    if wy <= y and wx <= x:
+                        windowTileIndex = lcd.MB.ram.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
+
+                        if lcd.LCDC.tileSelect == 0: # If using signed tile indices
+                            windowTileIndex = getSignedInt8(windowTileIndex)+256
+
+                        self._screenBuffer[x,y] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, colorKey, xFlip = 0, yFlip = 0):
@@ -267,9 +274,8 @@ class Window():
         x1,y1 = fromXY
         x2,y2 = toXY
 
-        for y in xrange(8):
-            for x in xrange(8):
-                toBuffer[x2+x, y2+y] = fromBuffer[x1+x, y1+y]
+        tileSize = 8
+        toBuffer[x2:x2+tileSize, y2:y2+tileSize] = fromBuffer[x1:x1+tileSize, y1:y1+tileSize]
 
     def refreshTileView1(self, lcd):
         # self.tileView1Buffer.fill(0x00ABC4FF)

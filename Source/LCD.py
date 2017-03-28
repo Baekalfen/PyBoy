@@ -75,9 +75,6 @@ class LCD():
     def getViewPort(self):
         return self.MB[SCX], self.MB[SCY]
 
-    def scanline(self, y):
-        self.MB.MainWindow.scanline(y, self)
-
     def refreshTileData(self):
         # http://gameboy.mongenel.com/dmg/asmmemmap.html
         # TODO: Can this be merged with the adaptive function,

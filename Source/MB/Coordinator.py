@@ -44,13 +44,15 @@ def tickFrame(self):
         self.setSTATMode(3)
         self.calculateCycles(170)
 
-        self.lcd.scanline(y)
+        self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos()) # Just recording states of LCD registers
 
         # Mode 0
         self.setSTATMode(0)
         self.calculateCycles(206)
 
     self.cpu.setInterruptFlag(self.cpu.VBlank)
+    self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+
     # Wait for next frame
     for y in xrange(144,154):
         self.checkLYC(y)
