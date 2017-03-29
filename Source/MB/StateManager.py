@@ -48,7 +48,7 @@ def saveState(self, filename = "state"):
         for n in self.ram.interruptRegister:
             f.write(chr(n))
 
-        f.write(chr(self.lcd.LCDC))
+        f.write(chr(self.lcd.LCDC.value))
         self.logger("LCDC",self.lcd.LCDC.value)
 
         # # Save cartridge RAM
