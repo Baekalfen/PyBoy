@@ -68,6 +68,7 @@ class LCD():
             self.tilesChanged.clear()
             for x in xrange(0x8000,0x9800,16):
                 self.tilesChanged.add(x)
+            self.clearCache = False
 
         for t in self.tilesChanged:
             for k in xrange(0, 16 ,2): #2 bytes for each line
@@ -93,15 +94,15 @@ class LCD():
 class PaletteRegister():
     def __init__(self, value, lcd):
         self.lcd = lcd
+        self.value = None
         self.set(value)
 
     def set(self, value):
+        if self.value == value: # Pokemon Blue continously sets this without changing the value
+            return
+
         self.value = value
-
-         # (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
         self.lookup = [(value >> x) & 0b11 for x in xrange(0,8,2)]
-
-        # print "palette set to", hex(value)
         self.lcd.clearCache = True
 
     def getColor(self, i):
