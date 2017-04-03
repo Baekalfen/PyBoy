@@ -165,10 +165,10 @@ class Window():
         # self.logger("Updating Display")
         # self.logger(self._screenBuffer.shape)
         # self.logger(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]].shape)
-        # self._screenBuffer = numpy.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale,axis=1)
+        # self._screenBuffer = np.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale,axis=1)
         # self._screenBuffer[200:200+gameboyResolution[0],200:200+gameboyResolution[1]] = self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]]
-        # self._screenBuffer[:,:] = numpy.repeat(numpy.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale, axis=0), self._scale, axis=1)
-        # self._screenBuffer[:,:] = numpy.kron(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]], [[1,1],[1,1]])
+        # self._screenBuffer[:,:] = np.repeat(np.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale, axis=0), self._scale, axis=1)
+        # self._screenBuffer[:,:] = np.kron(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]], [[1,1],[1,1]])
 
         self._window.refresh()
         if __debug__:
@@ -207,6 +207,9 @@ class Window():
                         backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
 
                     self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+                else:
+                    # If background is disabled, it becomes white
+                    self._screenBuffer[x,y] = 0x00FFFFFF
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
@@ -231,8 +234,6 @@ class Window():
                 xx += ((7-x) if xFlip == 1 else x) # Reverse order, if sprite is x-flipped
                 if spriteSize == 16: # If y-flipped on 8x16 sprites, we will have to load the sprites in reverse order
                     xx += (y&0b1000)^(yFlip<<3) # Shifting tile, when iteration past 8th line
-
-
                 pixel = fromBuffer[xx, yy]
                 if not colorKey == pixel and 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     toBuffer[x2+x, y2+y] = pixel
