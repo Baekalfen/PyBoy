@@ -51,48 +51,11 @@ class LCD():
         # self.WY = 0x00
         # self.WX = 0x00
 
-    def prepareFrame(self):
-        self.refreshTileDataAdaptive(self.tilesChanged)
-
-        if __debug__:
-            self.MB.MainWindow.refreshTileView1(self)
-            self.MB.MainWindow.refreshTileView2(self)
-            self.MB.MainWindow.refreshSpriteView(self)
-            self.MB.MainWindow.drawTileCacheView(self)
-            self.MB.MainWindow.drawTileView1ScreenPort(self)
-            self.MB.MainWindow.drawTileView2WindowPort(self)
-
-
-    def tick(self):
-        if self.LCDC.enabled:
-            self.MB.MainWindow.renderSprites(self)
-        else:
-            self.MB.MainWindow.blankScreen()
-
     def getWindowPos(self):
         return self.MB[WX]-7, self.MB[WY]
 
     def getViewPort(self):
         return self.MB[SCX], self.MB[SCY]
-
-    def refreshTileData(self):
-        # http://gameboy.mongenel.com/dmg/asmmemmap.html
-        # TODO: Can this be merged with the adaptive function,
-        # by just providing refreshTileDataAdaptive(xrange(0x8000,0x9800,16))?
-        self.logger("Updating tile Data")
-        tileCount = 0
-        for n in xrange(0x8000,0x9800,16): #Tile is 16 bytes
-            for k in xrange(0, 16 ,2): #2 bytes for each line
-                byte1 = self.MB[n+k]
-                byte2 = self.MB[n+k+1]
-
-                for pixelOnLine in xrange(7,-1,-1):
-                    y = k/2
-                    x = tileCount*8 + 7-pixelOnLine
-                    self.tileCache[x, y] = colorPalette[getColor(byte1, byte2, pixelOnLine)]
-
-            tileCount += 1
-        self.tilesChanged.clear()
 
     def refreshTileDataAdaptive(self, updatedTiles):
         for t in updatedTiles:

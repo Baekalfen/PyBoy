@@ -32,6 +32,14 @@ def checkLYC(self, y):
         self[STAT] &= 0b11111011
 
 def tickFrame(self):
+    if __debug__:
+        self.MainWindow.refreshTileView1(self.lcd)
+        self.MainWindow.refreshTileView2(self.lcd)
+        self.MainWindow.refreshSpriteView(self.lcd)
+        self.MainWindow.drawTileCacheView(self.lcd)
+        self.MainWindow.drawTileView1ScreenPort(self.lcd)
+        self.MainWindow.drawTileView2WindowPort(self.lcd)
+
     # TODO: the 19, 41 and 49 ticks should correct for longer instructions
     # Iterate the 144 lines on screen
     for y in xrange(144):

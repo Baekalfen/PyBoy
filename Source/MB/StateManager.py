@@ -110,4 +110,7 @@ def loadState(self, filename = "state"):
         #         self.ram.cartridge.RAMBanks[i][j] = ord(f.read(1))
 
     self.logger("State loaded.")
-    self.lcd.refreshTileData()
+
+    for x in xrange(0x8000,0x9800,16):
+        self.lcd.tilesChanged.add(x)
+    self.lcd.refreshTileDataAdaptive(self.lcd.tilesChanged)
