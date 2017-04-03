@@ -61,6 +61,9 @@ def start(ROM, bootROM = None):
         logger("Starting with boot ROM")
     mb = Motherboard(logger, ROM, bootROM, window)
 
+    if "loadState" in sys.argv:
+        mb.loadState(mb.cartridge.gameName+".state")
+
     done = False
     exp_avg_emu = 0
     exp_avg_cpu = 0

@@ -20,7 +20,7 @@ def saveState(self, filename = "state"):
         f.write(chr(self.cpu.interruptMasterEnableLatch))
         f.write(chr(self.cpu.halted))
         f.write(chr(self.cpu.stopped))
-        f.write(chr(self.ram.bootROMEnabled))
+        f.write(chr(self.bootROMEnabled))
 
         # Save debug vars
 
@@ -75,7 +75,7 @@ def loadState(self, filename = "state"):
         self.cpu.interruptMasterEnableLatch = ord(f.read(1))
         self.cpu.halted = ord(f.read(1))
         self.cpu.stopped = ord(f.read(1))
-        self.ram.bootROMEnabled = ord(f.read(1))
+        self.bootROMEnabled = ord(f.read(1))
 
         for n in xrange(len(self.ram.VRAM)):
             self.ram.VRAM[n] = ord(f.read(1))
