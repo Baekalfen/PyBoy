@@ -93,12 +93,19 @@ def start(ROM, bootROM = None):
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
 
-        if not debugger is None:
-            debugger.tick()
-        mb.lcd.prepareFrame()
-        mb.tickFrame()
-        mb.lcd.tick()
-        window.updateDisplay()
+        if not debugger is None and debugger.running:
+            action = debugger.tick(mb)
+
+            # Avoiding the window hanging
+            window.updateDisplay()
+        else:
+            mb.lcd.refreshTileDataAdaptive(mb.lcd.tilesChanged)
+            mb.tickFrame()
+            if mb.lcd.LCDC.enabled:
+                mb.MainWindow.renderSprites(mb.lcd)
+            else:
+                mb.MainWindow.blankScreen()
+            window.updateDisplay()
 
 
         # Trying to avoid VSync'ing on a frame, if we are out of time
