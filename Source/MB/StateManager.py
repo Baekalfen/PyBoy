@@ -22,7 +22,7 @@ def saveState(self, filename = "state"):
         f.write(chr(self.cpu.stopped))
         f.write(chr(self.bootROMEnabled))
 
-        # Save debug vars
+        # TODO: Save debug vars
 
         for n in self.ram.VRAM:
             f.write(chr(n))
@@ -111,6 +111,5 @@ def loadState(self, filename = "state"):
 
     self.logger("State loaded.")
 
-    for x in xrange(0x8000,0x9800,16):
-        self.lcd.tilesChanged.add(x)
-    self.lcd.refreshTileDataAdaptive(self.lcd.tilesChanged)
+    self.lcd.clearCache = True
+    self.lcd.refreshTileDataAdaptive()

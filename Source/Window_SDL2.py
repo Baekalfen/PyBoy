@@ -162,21 +162,12 @@ class Window():
         return events
 
     def updateDisplay(self):
-        # self.logger("Updating Display")
-        # self.logger(self._screenBuffer.shape)
-        # self.logger(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]].shape)
-        # self._screenBuffer = np.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale,axis=1)
-        # self._screenBuffer[200:200+gameboyResolution[0],200:200+gameboyResolution[1]] = self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]]
-        # self._screenBuffer[:,:] = np.repeat(np.repeat(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]],self._scale, axis=0), self._scale, axis=1)
-        # self._screenBuffer[:,:] = np.kron(self._screenBuffer[:gameboyResolution[0],:gameboyResolution[1]], [[1,1],[1,1]])
-
         self._window.refresh()
         if __debug__:
             self.tileDataWindow.refresh()
             self.tileView1Window.refresh()
             self.tileView2Window.refresh()
             self.spriteWindow.refresh()
-        # self.VSync()
 
     def VSync(self):
         sdl2.SDL_RenderPresent(self.renderer)
@@ -222,7 +213,7 @@ class Window():
                         self._screenBuffer[x,y] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, colorKey, xFlip = 0, yFlip = 0):
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
         x2,y2 = toXY
 
@@ -235,7 +226,7 @@ class Window():
                 if spriteSize == 16: # If y-flipped on 8x16 sprites, we will have to load the sprites in reverse order
                     xx += (y&0b1000)^(yFlip<<3) # Shifting tile, when iteration past 8th line
                 pixel = fromBuffer[xx, yy]
-                if not colorKey == pixel and 0 <= x2+x < 160 and 0 <= y2+y < 144:
+                if not (pixel & 0xFF000000) and 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     toBuffer[x2+x, y2+y] = pixel
 
 
@@ -256,8 +247,10 @@ class Window():
             fromXY = (tileIndex * 8, 0)
             toXY = (x, y)
 
+            spriteCache = lcd.spriteCacheOBP1 if attributes & 0b10000 else lcd.spriteCacheOBP0
+
             if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, lcd.tileCache, self._screenBuffer, spriteSize, colorKey = colorPalette[0], xFlip = xFlip, yFlip = yFlip)
+                self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, xFlip, yFlip)
 
 
     def blankScreen(self):
@@ -376,6 +369,6 @@ class Window():
             fromXY = (tileIndex * 8, 0)
 
             i = n*2
-            self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), lcd.tileCache, self.spriteBuffer)
+            self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), lcd.spriteCacheOBP0, self.spriteBuffer)
             if lcd.LCDC.spriteSize:
-                self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), lcd.tileCache, self.spriteBuffer)
+                self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), lcd.spriteCacheOBP0, self.spriteBuffer)

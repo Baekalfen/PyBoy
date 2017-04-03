@@ -36,6 +36,12 @@ def __getitem__(self, i):
             return self.timer.TAC
         elif i == 0xFF40:
             return self.lcd.LCDC.value
+        elif i == 0xFF47:
+            return self.lcd.BGP.value
+        elif i == 0xFF48:
+            return self.lcd.OBP0.value
+        elif i == 0xFF49:
+            return self.lcd.OBP1.value
         else:
             return self.ram.IOPorts[i - 0xFF00]
     elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -44,7 +50,8 @@ def __getitem__(self, i):
         return self.ram.internalRAM1[i-0xFF80]
     elif i == 0xFFFF:  # Interrupt Enable Register
         return self.ram.interruptRegister[0]
-    raise CoreDump.CoreDump("Memory access violation. Tried to accessed: %s" % hex(i))
+    else:
+        raise CoreDump.CoreDump("Memory access violation. Tried to read: %s" % hex(i))
 
 def __setitem__(self,i,value):
     assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
@@ -84,6 +91,12 @@ def __setitem__(self,i,value):
             self.lcd.LCDC.set(value)
         elif i == 0xFF46:
             self.transferDMAtoOAM(value)
+        elif i == 0xFF47:
+            self.lcd.BGP.set(value)
+        elif i == 0xFF48:
+            self.lcd.OBP0.set(value)
+        elif i == 0xFF49:
+            self.lcd.OBP1.set(value)
         else:
             self.ram.IOPorts[i - 0xFF00] = value
     elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -95,7 +108,7 @@ def __setitem__(self,i,value):
     elif i == 0xFFFF:  # Interrupt Enable Register
         self.ram.interruptRegister[0] = value
     else:
-        raise CoreDump.CoreDump("Memory access violation. Tried to accessed: %s" % hex(i))
+        raise CoreDump.CoreDump("Memory access violation. Tried to write: %s" % hex(i))
 
 def transferDMAtoOAM(self,src,dst=0xFE00):
     # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers

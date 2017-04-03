@@ -102,7 +102,7 @@ def start(ROM, bootROM = None):
             # Avoiding the window hanging
             window.updateDisplay()
         else:
-            mb.lcd.refreshTileDataAdaptive(mb.lcd.tilesChanged)
+            mb.lcd.refreshTileDataAdaptive()
             mb.tickFrame()
             if mb.lcd.LCDC.enabled:
                 mb.MainWindow.renderSprites(mb.lcd)

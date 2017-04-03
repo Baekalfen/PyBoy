@@ -20,7 +20,7 @@ gameboyResolution = (160, 144)
 colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
 
 
-def getColor(byte1,byte2,offset):
+def getColorCode(byte1,byte2,offset):
     # The colors are 2 bit and are found like this:
     #
     # Color of the first pixel is 0b10
@@ -34,20 +34,26 @@ class LCD():
     def __init__(self, logger, MB):
         self.logger = logger
         self.MB = MB
+        self.clearCache = False
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
 
         self.tileCache = numpy.ndarray((384 * 8, 8), dtype='int32')
-        self.LCDC = LCDCRegister()
+
+        # TODO: Find a more optimal way to do this
+        self.spriteCacheOBP0 = numpy.ndarray((384 * 8, 8), dtype='int32')
+        self.spriteCacheOBP1 = numpy.ndarray((384 * 8, 8), dtype='int32')
+
+        self.LCDC = LCDCRegister(0)
+        self.BGP = PaletteRegister(0xFC, self)
+        self.OBP0 = PaletteRegister(0xFF, self)
+        self.OBP1 = PaletteRegister(0xFF, self)
         # self.STAT = 0x00
         # self.SCY = 0x00
         # self.SCX = 0x00
         # self.LY = 0x00
         # self.LYC = 0x00
         # self.DMA = 0x00
-        # self.BGPalette = 0x00
-        # self.OBP0 = 0x00
-        # self.OBP1 = 0x00
         # self.WY = 0x00
         # self.WX = 0x00
 
@@ -57,8 +63,13 @@ class LCD():
     def getViewPort(self):
         return self.MB[SCX], self.MB[SCY]
 
-    def refreshTileDataAdaptive(self, updatedTiles):
-        for t in updatedTiles:
+    def refreshTileDataAdaptive(self):
+        if self.clearCache:
+            self.tilesChanged.clear()
+            for x in xrange(0x8000,0x9800,16):
+                self.tilesChanged.add(x)
+
+        for t in self.tilesChanged:
             for k in xrange(0, 16 ,2): #2 bytes for each line
                 byte1 = self.MB[t+k]
                 byte2 = self.MB[t+k+1]
@@ -67,25 +78,42 @@ class LCD():
                     y = k/2
                     x = (t - 0x8000)/2 + 7-pixelOnLine
 
-                    self.tileCache[x, y] = colorPalette[getColor(byte1, byte2, pixelOnLine)]
+                    colorCode = getColorCode(byte1, byte2, pixelOnLine)
 
-        updatedTiles.clear()
+                    self.tileCache[x, y] = self.BGP.getColor(colorCode)
+                    # TODO: Find a more optimal way to do this
+                    alpha = 0x00000000
+                    if colorCode == 0:
+                        alpha = 0xFF000000 # Add alpha channel
+                    self.spriteCacheOBP0[x, y] = self.OBP0.getColor(colorCode) + alpha
+                    self.spriteCacheOBP1[x, y] = self.OBP1.getColor(colorCode) + alpha
+
+        self.tilesChanged.clear()
+
+class PaletteRegister():
+    def __init__(self, value, lcd):
+        self.lcd = lcd
+        self.set(value)
+
+    def set(self, value):
+        self.value = value
+
+         # (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
+        self.lookup = [(value >> x) & 0b11 for x in xrange(0,8,2)]
+
+        # print "palette set to", hex(value)
+        self.lcd.clearCache = True
+
+    def getColor(self, i):
+        return colorPalette[self.lookup[i]]
+        # return colorPalette[i]
+
+    def getCode(self, i):
+        return self.lookup[i]
 
 class LCDCRegister():
-    def __init__(self):
-        self.value = 0x00
-
-        # For optimizing LCDC access in Window. LCDC is rarely changed,
-        # but bits are checked several times every frame
-        self.enabled = 0
-        self.windowMapSelect = 0
-        self.windowEnabled = 0
-        self.tileSelect = 0
-        self.backgroundMapSelect = 0
-        self.spriteSize = 0
-        self.spriteEnable = 0
-        self.backgroundEnable = 0
-
+    def __init__(self, value):
+        self.set(value)
 
     def set(self, value):
         self.value = value
