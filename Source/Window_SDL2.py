@@ -140,9 +140,9 @@ class Window():
     def dump(self,filename):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface,filename+".bmp")
         if __debug__:
-            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileDataWindowSurface,filename+"tileData.bmp")
-            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView2WindowSurface,filename+"tileView1.bmp")
-            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"tileView2.bmp")
+            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileDataWindowSurface,filename+"_tileData.bmp")
+            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView2WindowSurface,filename+"_tileView1.bmp")
+            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"_tileView2.bmp")
 
     def setTitle(self,title):
         sdl2.ext.title(self._window,title)
@@ -200,7 +200,7 @@ class Window():
                     self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenBuffer[x,y] = 0x00FFFFFF
+                    self._screenBuffer[x,y] = lcd.colorPalette[0]
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
@@ -255,8 +255,13 @@ class Window():
 
     def blankScreen(self):
         # If the screen is off, fill it with a color.
-        # Currently, it's dark purple, but the Game Boy had a white screen
-        self._screenBuffer.fill(0x00403245)
+        if __debug__:
+            # Currently, it's dark purple
+            self._screenBuffer.fill(0x00403245)
+        else:
+            # Pan docs says it should be white, but it does fit with Pokemon?
+            # self._screenBuffer.fill(0x00FFFFFF)
+            self._screenBuffer.fill(0x00000000)
 
     #################################################################
     #

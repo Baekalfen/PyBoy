@@ -102,12 +102,7 @@ def start(ROM, bootROM = None):
             # Avoiding the window hanging
             window.updateDisplay()
         else:
-            mb.lcd.refreshTileDataAdaptive()
             mb.tickFrame()
-            if mb.lcd.LCDC.enabled:
-                mb.MainWindow.renderSprites(mb.lcd)
-            else:
-                mb.MainWindow.blankScreen()
             window.updateDisplay()
 
 
@@ -172,7 +167,7 @@ if __name__ == "__main__":
 
         # Check if the ROM is given through argv
         if len(sys.argv) > 2: # First arg is SDL2/PyGame
-            if sys.argv[2] == "blargg":
+            if "blargg" in sys.argv:
                 runBlarggsTest()
                 exit(0)
             start(sys.argv[2], bootROM)
