@@ -5,11 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import struct
-import CoreDump
-import random
-import math
-
 # MEMORY SIZES
 VIDEO_RAM = 8 * 1024  # 8KB
 INTERNAL_RAM_0 = 8 * 1024  # 8KB
