@@ -12,8 +12,8 @@ class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:
             with open(bootROMFile, "rb") as bootROMFileHandle:
-                self.bootROM = [struct.unpack('B', byte)[0]
-                                for byte in bootROMFileHandle.read()]
+                rom = bootROMFileHandle.read()
+                self.bootROM = struct.unpack('%iB' % len(rom), rom)
         else:
             self.bootROM = [0 for x in range(256)]
             # Set stack pointer
