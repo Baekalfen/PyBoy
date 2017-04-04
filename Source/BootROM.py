@@ -5,6 +5,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import struct
+
+
 class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:
@@ -31,4 +34,3 @@ class BootROM():
 
     def __getitem__(self, i):
         return self.bootROM[i]
-
