@@ -200,7 +200,7 @@ class Window():
                     self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenBuffer[x,y] = lcd.colorPalette[0]
+                    self._screenBuffer[x,y] = colorPalette[0]
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
