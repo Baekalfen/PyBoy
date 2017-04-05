@@ -10,7 +10,7 @@ import os
 
 
 #                cart,  ROM,        RAM,   RAMbanks,  batt,   RTC
-cartridgeTable = {0x00: ("RAM-only",  None,        1, False, False),  # ROM
+cartridgeTable = {0x00: ("ROM-only",  None,        1, False, False),  # ROM
                   0x01: ("MBC1",      None,        1, False, False),  # ROM+MBC1
                   0x02: ("MBC1",     "RAM",        1, False, False),  # ROM+MBC1+RAM
                   0x03: ("MBC1",     "RAM",        1,  True, False),  # ROM+MBC1+RAM+BATT
