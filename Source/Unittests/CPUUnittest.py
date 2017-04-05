@@ -12,7 +12,7 @@ from CPU.opcodes import *
 from CPU import *
 import unittest
 
-mb = Motherboard("pokemon_blue.gb", "DMG_ROM.bin", None)
+mb = Motherboard(None, "ROMs/POKEMON BLUE.gb", None, None)
 
 
 def clearFlag():
@@ -57,7 +57,7 @@ def clearRegisters():
 
 def clearStack100():
     for n in range(0xFFFF, 0xFF9B, -1):
-        mb.cpu.ram[n] = 0x00
+        mb[n] = 0x00
 
 
 def registerName(n):
@@ -67,7 +67,7 @@ def registerName(n):
 def offsetToRegister(n):
     n = n % 8
     if n == 0x6:
-        return mb.cpu.ram[0xCB01]
+        return mb[0xCB01]
     else:
         return mb.cpu.reg[[B, C, D, E, H, L, None, A][n]]
 
@@ -159,14 +159,14 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[A] = 0x0002
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x02], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[mb.cpu.getBC()], 0x0002)
+        self.assertEqual(mb[mb.cpu.getBC()], 0x0002)
         testFlags(self, False, False, False, False)
 
         setFlag()
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x02], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[mb.cpu.getBC()], 0x0002)
+        self.assertEqual(mb[mb.cpu.getBC()], 0x0002)
         testFlags(self, True, True, True, True)
 
     def test_opcode03(self):  # INC 16-bit BC
@@ -323,7 +323,7 @@ class Test_CPU(unittest.TestCase):
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x08], 0xCB01, 0x0000)
         mb.cpu.executeInstruction(inst)
 
-        self.assertEqual(mb.cpu.ram[0xCB01], mb.cpu.reg[SP])
+        self.assertEqual(mb[0xCB01], mb.cpu.reg[SP])
 
     def test_opcode09(self):  # ADD BC to HL
         clearRegisters()
@@ -367,7 +367,7 @@ class Test_CPU(unittest.TestCase):
         clearRegisters()
         clearFlag()
         clearStack100()
-        mb.cpu.ram[0xcb01] = 0xF1
+        mb[0xcb01] = 0xF1
         mb.cpu.setBC(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x0A], None, 0x0000)
@@ -531,7 +531,7 @@ class Test_CPU(unittest.TestCase):
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x12], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[mb.cpu.getDE()], 0x10)
+        self.assertEqual(mb[mb.cpu.getDE()], 0x10)
 
     def test_opcode13(self):  # INC DE
         clearRegisters()
@@ -703,7 +703,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setDE(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x1A], None, 0x0000)
@@ -883,7 +883,7 @@ class Test_CPU(unittest.TestCase):
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x22], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[mb.cpu.getHL()-1], 0x10)
+        self.assertEqual(mb[mb.cpu.getHL()-1], 0x10)
 
     def test_opcode23(self):  # INC HL
         # Check increment
@@ -1016,9 +1016,11 @@ class Test_CPU(unittest.TestCase):
         ### Addition test
 
         # Simulate the conditions after an addition
-        mb.cpu.reg[A] = 0b00100111  # 27
-        mb.cpu.reg[B] = 0b00010101  # 15
-        inst = getInstruction(mb.cpu, opcodes.opcodes[0x80], None, 0x0000)
+        mb.cpu.reg[A] = 0x27 # Interpreted as decimal 27
+        mb.cpu.reg[B] = 0x15 # Interpreted as decimal 15
+        additionResult = 0x42 # Interpreted as decimal after DAA
+
+        inst = getInstruction(mb.cpu, opcodes.opcodes[0x80], None, 0x0000) # ADD A,B
         mb.cpu.executeInstruction(inst)
 
         # Do BCD correction
@@ -1033,8 +1035,10 @@ class Test_CPU(unittest.TestCase):
         clearRegisters()
 
         # Simulate the conditions after a subtraction
-        mb.cpu.reg[A] = 0b00100111  # 27
-        mb.cpu.reg[B] = 0b00010101  # 15
+        mb.cpu.reg[A] = 0x27 # Interpreted as decimal 27
+        mb.cpu.reg[B] = 0x15 # Interpreted as decimal 15
+        subtractResult = 0x12 # Interpreted as decimal after DAA
+
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x90], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
@@ -1091,12 +1095,12 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x2A], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[mb.cpu.getHL()-1], 0x10)
+        self.assertEqual(mb[mb.cpu.getHL()-1], 0x10)
 
     def test_opcode2B(self):  # DEC HL
         clearRegisters()
@@ -1255,7 +1259,7 @@ class Test_CPU(unittest.TestCase):
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x32], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x10)
+        self.assertEqual(mb[0xcb01], 0x10)
         self.assertEqual(mb.cpu.getHL(),0xcb00)
 
     def test_opcode33(self):  # INC 16 SP
@@ -1302,36 +1306,36 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x34], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x11)
+        self.assertEqual(mb[0xcb01], 0x11)
 
     def test_opcode35(self):  # DEC (HL)
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x35], None, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x0F)
+        self.assertEqual(mb[0xcb01], 0x0F)
 
     def test_opcode36(self):  # LD (HL), d8
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x00
+        mb[0xcb01] = 0x00
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x36], 0x10, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x10)
+        self.assertEqual(mb[0xcb01], 0x10)
 
     def test_opcode37(self):  # SCF
         clearRegisters()
@@ -1399,7 +1403,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x3A], None, 0x0000)
@@ -1620,7 +1624,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x46], 0x00, 0x0000)
@@ -1709,7 +1713,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x4E], 0x00, 0x0000)
@@ -1798,7 +1802,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x05
+        mb[0xcb01] = 0x05
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x56], 0x00, 0x0000)
@@ -1887,7 +1891,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x05
+        mb[0xcb01] = 0x05
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x5E], 0x00, 0x0000)
@@ -1976,7 +1980,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x05
+        mb[0xCB01] = 0x05
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x66], 0x00, 0x0000)
@@ -2065,7 +2069,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x05
+        mb[0xCB01] = 0x05
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x6E], 0x00, 0x0000)
@@ -2089,12 +2093,12 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[B] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x70], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x05)
+        self.assertEqual(mb[0xcb01], 0x05)
 
     def test_opcode71(self):  # LD (HL),C
         clearRegisters()
@@ -2102,12 +2106,12 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[C] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x71], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x05)
+        self.assertEqual(mb[0xcb01], 0x05)
 
     def test_opcode72(self):  # LD (HL),D
         clearRegisters()
@@ -2115,12 +2119,12 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[D] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x72], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x05)
+        self.assertEqual(mb[0xcb01], 0x05)
 
     def test_opcode73(self):  # LD (HL),E
         clearRegisters()
@@ -2128,12 +2132,12 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[E] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x73], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x05)
+        self.assertEqual(mb[0xcb01], 0x05)
 
     def test_opcode74(self):  # LD (HL),H
         clearRegisters()
@@ -2141,12 +2145,12 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         # mb.cpu.reg[H] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x74], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0xcb)
+        self.assertEqual(mb[0xcb01], 0xcb)
 
     def test_opcode75(self):  # LD (HL),L
         clearRegisters()
@@ -2154,21 +2158,21 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         # mb.cpu.reg[L] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x75], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x01)
+        self.assertEqual(mb[0xcb01], 0x01)
 
     def test_opcode76(self):  # HALT
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xC000] = 0x76
+        mb[0xC000] = 0x76
         for n in range(10):
-            mb.cpu.ram[0xC001+n] = 0x00
+            mb[0xC001+n] = 0x00
 
         mb.cpu.reg[PC] = 0xC000
         mb.cpu.interruptMasterEnable = True
@@ -2179,7 +2183,7 @@ class Test_CPU(unittest.TestCase):
             self.assertEqual(mb.cpu.reg[PC], 0xC000)
 
         # Cause interrupt
-        mb.cpu.ram[0xFF0F] = 0xFF
+        mb[0xFF0F] = 0xFF
 
         for n in range(10): # Make sure we don't go anywhere
             mb.cpu.tick()
@@ -2196,12 +2200,12 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[A] = 0x05
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x77], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x05)
+        self.assertEqual(mb[0xcb01], 0x05)
 
     def test_opcode78(self):  # LD A,B
         clearRegisters()
@@ -2274,12 +2278,12 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xcb01] = 0x10
+        mb[0xcb01] = 0x10
         mb.cpu.setHL(0xcb01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x7E], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xcb01], 0x10)
+        self.assertEqual(mb[0xcb01], 0x10)
 
     def test_opcode7F(self):  # LD A,A
         clearRegisters()
@@ -2322,7 +2326,7 @@ class Test_CPU(unittest.TestCase):
 
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x86], None, 0x0000)
             mb.cpu.executeInstruction(inst)
@@ -2349,7 +2353,7 @@ class Test_CPU(unittest.TestCase):
             mb.cpu.clearFlag(flagC)
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x8E], None, 0x0000)
             mb.cpu.executeInstruction(inst)
@@ -2362,7 +2366,7 @@ class Test_CPU(unittest.TestCase):
             mb.cpu.setFlag(flagC)
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x8E], None, 0x0000)
             mb.cpu.executeInstruction(inst)
@@ -2384,14 +2388,14 @@ class Test_CPU(unittest.TestCase):
 
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x96], None, 0x0000)
             mb.cpu.executeInstruction(inst)
 
             testFlags(self, True, True, False, False)
             self.assertEqual(mb.cpu.reg[A], 0x0)
-            self.assertEqual(mb.cpu.ram[0xCB01], 0x3)
+            self.assertEqual(mb[0xCB01], 0x3)
 
     def test_opcode98(self):  # SBC A,B
         ###########
@@ -2456,7 +2460,7 @@ class Test_CPU(unittest.TestCase):
 
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0xA6], None, 0x0000)
             mb.cpu.executeInstruction(inst)
@@ -2477,7 +2481,7 @@ class Test_CPU(unittest.TestCase):
 
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0xAE], None, 0x0000)
             mb.cpu.executeInstruction(inst)
@@ -2498,7 +2502,7 @@ class Test_CPU(unittest.TestCase):
 
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0xB6], None, 0x0000)
             mb.cpu.executeInstruction(inst)
@@ -2518,14 +2522,14 @@ class Test_CPU(unittest.TestCase):
 
             mb.cpu.reg[A] = 0x3
             mb.cpu.setHL(0xCB01)
-            mb.cpu.ram[0xCB01] = 0x3
+            mb[0xCB01] = 0x3
 
             inst = getInstruction(mb.cpu, opcodes.opcodes[0xBE], None, 0x0000)
             mb.cpu.executeInstruction(inst)
 
             testFlags(self, True, True, False, False)
             self.assertEqual(mb.cpu.reg[A], 0x3)
-            self.assertEqual(mb.cpu.ram[0xCB01], 0x3)
+            self.assertEqual(mb[0xCB01], 0x3)
 
         for flagOp in (clearFlag, setFlag):
             clearRegisters()
@@ -2656,16 +2660,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xC4], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x1512+3)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE)
-        self.assertEqual(mb.cpu.ram[0xFFFE], 0x00)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x00)
+        self.assertEqual(mb[0xFFFE], 0x00)
+        self.assertEqual(mb[0xFFFD], 0x00)
 
         # Do jump
         clearRegisters()
@@ -2675,16 +2679,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFC] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFC] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xC4], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0xFE21)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFC)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x15)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x15)
+        self.assertEqual(mb[0xFFFD], 0x15)
+        self.assertEqual(mb[0xFFFC], 0x15)
 
     def test_opcodeC5(self):  # PUSH BC ...and... POP BC (opcode C1)
         clearRegisters()
@@ -2777,16 +2781,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xC7], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0000)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
 
     def test_opcodeC9(self):  # RET
         clearRegisters()
@@ -2835,16 +2839,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xCC], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x1512+3)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE)
-        self.assertEqual(mb.cpu.ram[0xFFFE], 0x00)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x00)
+        self.assertEqual(mb[0xFFFE], 0x00)
+        self.assertEqual(mb[0xFFFD], 0x00)
 
         # Do jump
         clearRegisters()
@@ -2856,16 +2860,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xCC], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0xFE21)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFC)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x15)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x15)
+        self.assertEqual(mb[0xFFFD], 0x15)
+        self.assertEqual(mb[0xFFFC], 0x15)
 
     def test_opcodeCE(self):  # ADC A, d8
         clearRegisters()
@@ -2927,16 +2931,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xCF], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0008)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
 
     def test_opcodeCD(self):  # CALL v
         clearRegisters()
@@ -2946,16 +2950,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xCD], 0xFE21, 0x4376)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0xFE21)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFC)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x43)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x76)
+        self.assertEqual(mb[0xFFFD], 0x43)
+        self.assertEqual(mb[0xFFFC], 0x76)
 
     def test_opcodeD0(self):  # RET NC
         clearRegisters()
@@ -3042,16 +3046,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xD4], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x1512+3)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE)
-        self.assertEqual(mb.cpu.ram[0xFFFE], 0x00)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x00)
+        self.assertEqual(mb[0xFFFE], 0x00)
+        self.assertEqual(mb[0xFFFD], 0x00)
 
         # Do jump
         clearRegisters()
@@ -3061,16 +3065,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xD4], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0xFE21)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFC)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x15)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x15)
+        self.assertEqual(mb[0xFFFD], 0x15)
+        self.assertEqual(mb[0xFFFC], 0x15)
 
     def test_opcodeD6(self):  # SUB A, d8
         clearRegisters()
@@ -3119,16 +3123,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xD7], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0010)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
 
     def test_opcodeD8(self):  # RET C
         clearRegisters()
@@ -3176,8 +3180,8 @@ class Test_CPU(unittest.TestCase):
 
         mb.cpu.reg[SP] = 0xFFFE-2
 
-        mb.cpu.ram[0xFFFC] = 0x01
-        mb.cpu.ram[0xFFFD] = 0x05
+        mb[0xFFFC] = 0x01
+        mb[0xFFFD] = 0x05
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xD9], 0x0000, 0x0000)
         mb.cpu.executeInstruction(inst)
@@ -3213,16 +3217,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xDC], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x1512+3)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE)
-        self.assertEqual(mb.cpu.ram[0xFFFE], 0x00)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x00)
+        self.assertEqual(mb[0xFFFE], 0x00)
+        self.assertEqual(mb[0xFFFD], 0x00)
 
         # Do jump
         clearRegisters()
@@ -3234,16 +3238,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.reg[PC] = 0x1512
         mb.cpu.reg[SP] = 0xFFFE
 
-        mb.cpu.ram[0xFFFE] = 0x00
-        mb.cpu.ram[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xDC], 0xFE21, 0x1512+3)  # CALL
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0xFE21)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFC)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0x15)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x15)
+        self.assertEqual(mb[0xFFFD], 0x15)
+        self.assertEqual(mb[0xFFFC], 0x15)
 
     def test_opcodeDE(self):  # SBC A, d8
         clearRegisters()
@@ -3279,16 +3283,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xDF], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0018)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
 
     def test_opcodeE0(self):  # LD (v), A
         # First address
@@ -3297,16 +3301,16 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[A] = 0x19
-        mb.cpu.ram[0xFF01] = 0x00
+        mb[0xFF01] = 0x00
 
         self.assertEqual(mb.cpu.reg[A], 0x19)
-        self.assertEqual(mb.cpu.ram[0xFF01], 0x00)
+        self.assertEqual(mb[0xFF01], 0x00)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xE0], 0x01, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[A], 0x19)
-        self.assertEqual(mb.cpu.ram[0xFF01], 0x19)
+        self.assertEqual(mb[0xFF01], 0x19)
 
         # Second address
         clearRegisters()
@@ -3314,16 +3318,16 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[A] = 0x45
-        mb.cpu.ram[0xFFDE] = 0x00
+        mb[0xFFDE] = 0x00
 
         self.assertEqual(mb.cpu.reg[A], 0x45)
-        self.assertEqual(mb.cpu.ram[0xFFDE], 0x00)
+        self.assertEqual(mb[0xFFDE], 0x00)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xE0], 0xDE, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[A], 0x45)
-        self.assertEqual(mb.cpu.ram[0xFFDE], 0x45)
+        self.assertEqual(mb[0xFFDE], 0x45)
 
     def test_opcodeE2(self):  # LDH(s.C),A
         clearRegisters()
@@ -3335,7 +3339,7 @@ class Test_CPU(unittest.TestCase):
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xE2], 0x00, 0x0000)
         mb.cpu.executeInstruction(inst)
-        self.assertEqual(mb.cpu.ram[0xFF05], 0x10)
+        self.assertEqual(mb[0xFF05], 0x10)
 
     def test_opcodeE5(self):  # PUSH HL ...and... POP HL (opcode E1)
         clearRegisters()
@@ -3399,16 +3403,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xE7], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0020)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
 
     def test_opcodeE8(self):  # ADC A, B
         clearRegisters()  # test simpel addition
@@ -3472,7 +3476,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xCAAA
+        mb[0xCB01] = 0xCAAA
         mb.cpu.setHL(0xCB01)
         mb.cpu.reg[PC] = 0xABCD
 
@@ -3489,16 +3493,16 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[A] = 0x19
-        mb.cpu.ram[0x9910] = 0x00
+        mb[0x9910] = 0x00
 
         self.assertEqual(mb.cpu.reg[A], 0x19)
-        self.assertEqual(mb.cpu.ram[0x9910], 0x00)
+        self.assertEqual(mb[0x9910], 0x00)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xEA], 0x9910, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[A], 0x19)
-        self.assertEqual(mb.cpu.ram[0x9910], 0x19)
+        self.assertEqual(mb[0x9910], 0x19)
 
     def test_opcodeEE(self):  # XOR A, d8
         clearRegisters()
@@ -3555,16 +3559,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xEF], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0028)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
 
     def test_opcodeF0(self):  # LD (v), A
         # First address
@@ -3573,16 +3577,16 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[A] = 0x00
-        mb.cpu.ram[0xFF01] = 0x35
+        mb[0xFF01] = 0x35
 
         self.assertEqual(mb.cpu.reg[A], 0x00)
-        self.assertEqual(mb.cpu.ram[0xFF01], 0x35)
+        self.assertEqual(mb[0xFF01], 0x35)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xF0], 0x01, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[A], 0x35)
-        self.assertEqual(mb.cpu.ram[0xFF01], 0x35)
+        self.assertEqual(mb[0xFF01], 0x35)
 
         # Second address
         clearRegisters()
@@ -3590,16 +3594,16 @@ class Test_CPU(unittest.TestCase):
         clearStack100()
 
         mb.cpu.reg[A] = 0x00
-        mb.cpu.ram[0xFFDE] = 0x37
+        mb[0xFFDE] = 0x37
 
         self.assertEqual(mb.cpu.reg[A], 0x00)
-        self.assertEqual(mb.cpu.ram[0xFFDE], 0x37)
+        self.assertEqual(mb[0xFFDE], 0x37)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xF0], 0xDE, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[A], 0x37)
-        self.assertEqual(mb.cpu.ram[0xFFDE], 0x37)
+        self.assertEqual(mb[0xFFDE], 0x37)
 
     def test_opcodeF3(self):  # DI
         # Disabling already disabled
@@ -3723,23 +3727,23 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xF7], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0030)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
 
     def test_opcodeF8(self):  # LDHL SP,v
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xFFFD] = 0x05
+        mb[0xFFFD] = 0x05
         mb.cpu.reg[SP] = 0xFFFA
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xF8], 0x03, 0x0000)
@@ -3750,7 +3754,7 @@ class Test_CPU(unittest.TestCase):
         clearRegisters()
         setFlag()
 
-        mb.cpu.ram[0xFFFD] = 0x05
+        mb[0xFFFD] = 0x05
         mb.cpu.reg[SP] = 0xFFFA
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xF8], 0x03, 0x0000)
@@ -3761,7 +3765,7 @@ class Test_CPU(unittest.TestCase):
         clearRegisters()
         setFlag()
 
-        mb.cpu.ram[0xFFF9] = 0x05
+        mb[0xFFF9] = 0x05
         mb.cpu.reg[SP] = 0xFFFA
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xF8], 0b11111111, 0x0000)
@@ -3785,7 +3789,7 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x10
+        mb[0xCB01] = 0x10
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xFA], 0xCB01, 0x0000)
         mb.cpu.executeInstruction(inst)
@@ -3887,16 +3891,16 @@ class Test_CPU(unittest.TestCase):
         mb.cpu.setBC(0x00FF)
         mb.cpu.reg[SP] = 0xFFFE
         mb.cpu.reg[PC] = 0xbb02
-        mb.cpu.ram[0xFFFD] = 0x00
-        mb.cpu.ram[0xFFFE] = 0x00
+        mb[0xFFFD] = 0x00
+        mb[0xFFFE] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0xFF], 0x00, 0xCB01)
         mb.cpu.executeInstruction(inst)
 
         self.assertEqual(mb.cpu.reg[PC], 0x0038)
         self.assertEqual(mb.cpu.reg[SP], 0xFFFE-2)
-        self.assertEqual(mb.cpu.ram[0xFFFC], 0x01)
-        self.assertEqual(mb.cpu.ram[0xFFFD], 0xCB)
+        self.assertEqual(mb[0xFFFC], 0x01)
+        self.assertEqual(mb[0xFFFD], 0xCB)
 
     def test_opcodeCB00(self):  # RLC B
         clearRegisters()
@@ -3960,35 +3964,35 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xF0
+        mb[0xCB01] = 0xF0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x06], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xE1)
+        self.assertEqual(mb[0xCB01], 0xE1)
 
         setFlag()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x06], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearFlag()
 
-        mb.cpu.ram[0xCB01] = 0x00
+        mb[0xCB01] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x06], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
 
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x00)
+        self.assertEqual(mb[0xCB01], 0x00)
 
     def test_opcodeCB08(self):  # RRC B
         clearRegisters()
@@ -4052,35 +4056,35 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xF0
+        mb[0xCB01] = 0xF0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x0E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x78)
+        self.assertEqual(mb[0xCB01], 0x78)
 
         setFlag()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x0E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearFlag()
 
-        mb.cpu.ram[0xCB01] = 0x00
+        mb[0xCB01] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x0E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
 
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x00)
+        self.assertEqual(mb[0xCB01], 0x00)
 
     def test_opcodeCB10(self):  # RL B
         clearRegisters()
@@ -4144,47 +4148,47 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xF0
+        mb[0xCB01] = 0xF0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x16], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xE0)
+        self.assertEqual(mb[0xCB01], 0xE0)
 
         setFlag()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x16], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearFlag()
 
-        mb.cpu.ram[0xCB01] = 0x00
+        mb[0xCB01] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x16], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
 
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x00)
+        self.assertEqual(mb[0xCB01], 0x00)
 
         clearFlag()
         mb.cpu.setFlag(flagC)
 
-        mb.cpu.ram[0xCB01] = 0x00
+        mb[0xCB01] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x16], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
 
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x01)
+        self.assertEqual(mb[0xCB01], 0x01)
 
     def test_opcodeCB18(self):  # RR B
         clearRegisters()
@@ -4261,35 +4265,35 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xF0
+        mb[0xCB01] = 0xF0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x1E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x78)
+        self.assertEqual(mb[0xCB01], 0x78)
 
         setFlag()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x1E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearFlag()
 
-        mb.cpu.ram[0xCB01] = 0x00
+        mb[0xCB01] = 0x00
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x1E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
 
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x00)
+        self.assertEqual(mb[0xCB01], 0x00)
 
     def test_opcodeCB20(self):  # SLA B
         clearRegisters()
@@ -4359,53 +4363,53 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x26], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFE)
+        self.assertEqual(mb[0xCB01], 0xFE)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x7F
+        mb[0xCB01] = 0x7F
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x26], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFE)
+        self.assertEqual(mb[0xCB01], 0xFE)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x80
+        mb[0xCB01] = 0x80
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x26], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x0)
+        self.assertEqual(mb[0xCB01], 0x0)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x0
+        mb[0xCB01] = 0x0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x26], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x0)
+        self.assertEqual(mb[0xCB01], 0x0)
 
     def test_opcodeCB28(self):  # SRA B
         clearRegisters()
@@ -4471,53 +4475,53 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x2E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xFE
+        mb[0xCB01] = 0xFE
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x2E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x1
+        mb[0xCB01] = 0x1
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x2E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x00)
+        self.assertEqual(mb[0xCB01], 0x00)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x0
+        mb[0xCB01] = 0x0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x2E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x0)
+        self.assertEqual(mb[0xCB01], 0x0)
 
     def test_opcodeCB30(self):  # SWAP B
         clearRegisters()
@@ -4572,40 +4576,40 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x36], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xFF)
+        self.assertEqual(mb[0xCB01], 0xFF)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xF0
+        mb[0xCB01] = 0xF0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x36], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x0F)
+        self.assertEqual(mb[0xCB01], 0x0F)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x0F
+        mb[0xCB01] = 0x0F
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x36], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0xF0)
+        self.assertEqual(mb[0xCB01], 0xF0)
 
     def test_opcodeCB38(self):  # SRL B
         clearRegisters()
@@ -4674,53 +4678,53 @@ class Test_CPU(unittest.TestCase):
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xFF
+        mb[0xCB01] = 0xFF
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x3E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x7F)
+        self.assertEqual(mb[0xCB01], 0x7F)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0xFE
+        mb[0xCB01] = 0xFE
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x3E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, False, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x7F)
+        self.assertEqual(mb[0xCB01], 0x7F)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x1
+        mb[0xCB01] = 0x1
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x3E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, True)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x00)
+        self.assertEqual(mb[0xCB01], 0x00)
 
         clearRegisters()
         clearFlag()
         clearStack100()
 
-        mb.cpu.ram[0xCB01] = 0x0
+        mb[0xCB01] = 0x0
         mb.cpu.setHL(0xCB01)
 
         inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x3E], None, 0x0000)
         mb.cpu.executeInstruction(inst)
 
         testFlags(self, True, False, False, False)
-        self.assertEqual(mb.cpu.ram[0xCB01], 0x0)
+        self.assertEqual(mb[0xCB01], 0x0)
 
     def test_opcodeCB40(self):  # BIT x, R
         for n in range(8):
@@ -4768,7 +4772,7 @@ class Test_CPU(unittest.TestCase):
 
     def test_opcodeCB46(self):  # BIT x, (HL)
         for n in range(4):
-            mb.cpu.ram[0xCB01] = 0xFF
+            mb[0xCB01] = 0xFF
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
@@ -4777,7 +4781,7 @@ class Test_CPU(unittest.TestCase):
             testFlags(self, False, False, True, False)
 
         for n in range(4):
-            mb.cpu.ram[0xCB01] = 0x00
+            mb[0xCB01] = 0x00
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
@@ -4786,7 +4790,7 @@ class Test_CPU(unittest.TestCase):
             testFlags(self, True, False, True, False)
 
         for n in range(4):
-            mb.cpu.ram[0xCB01] = 0xFF
+            mb[0xCB01] = 0xFF
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
@@ -4842,27 +4846,27 @@ class Test_CPU(unittest.TestCase):
 
     def test_opcodeCB86(self):  # RES x, (HL)
         for n in [0x6, 0xE, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E]:
-            mb.cpu.ram[0xCB01] = 0xFF
+            mb[0xCB01] = 0xFF
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x80+n], None, 0x0000)
             mb.cpu.executeInstruction(inst)
-            self.assertEqual(mb.cpu.ram[0xCB01],  [254, 253, 251, 247, 239, 223, 191, 127][n/8])
+            self.assertEqual(mb[0xCB01],  [254, 253, 251, 247, 239, 223, 191, 127][n/8])
             testFlags(self, False, False, False, False)
 
         for n in [0x6, 0xE, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E]:
-            mb.cpu.ram[0xCB01] = 0x00
+            mb[0xCB01] = 0x00
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x80+n], None, 0x0000)
             mb.cpu.executeInstruction(inst)
-            self.assertEqual(mb.cpu.ram[0xCB01],  0)
+            self.assertEqual(mb[0xCB01],  0)
             testFlags(self, False, False, False, False)
 
         for n in [0x6, 0xE, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E]:
-            mb.cpu.ram[0xCB01] = 0xFF
+            mb[0xCB01] = 0xFF
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
@@ -4870,7 +4874,7 @@ class Test_CPU(unittest.TestCase):
             mb.cpu.setFlag(flagC)  # Not affected
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0x80+n], None, 0x0000)
             mb.cpu.executeInstruction(inst)
-            self.assertEqual(mb.cpu.ram[0xCB01],  [254, 253, 251, 247, 239, 223, 191, 127][n/8])
+            self.assertEqual(mb[0xCB01],  [254, 253, 251, 247, 239, 223, 191, 127][n/8])
             testFlags(self, False, True, False, True)
 
     def test_opcodeCBC0(self):  # SET x, R
@@ -4910,27 +4914,27 @@ class Test_CPU(unittest.TestCase):
 
     def test_opcodeCBC6(self):  # SET x, (HL)
         for n in [0x6, 0xE, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E]:
-            mb.cpu.ram[0xCB01] = 0x00
+            mb[0xCB01] = 0x00
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0xC0+n], None, 0x0000)
             mb.cpu.executeInstruction(inst)
-            self.assertEqual(mb.cpu.ram[0xCB01], [1, 2, 4, 8, 16, 32, 64, 128][n/8])
+            self.assertEqual(mb[0xCB01], [1, 2, 4, 8, 16, 32, 64, 128][n/8])
             testFlags(self, False, False, False, False)
 
         for n in [0x6, 0xE, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E]:
-            mb.cpu.ram[0xCB01] = 0xFF
+            mb[0xCB01] = 0xFF
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0xC0+n], None, 0x0000)
             mb.cpu.executeInstruction(inst)
-            self.assertEqual(mb.cpu.ram[0xCB01],  0xFF)
+            self.assertEqual(mb[0xCB01],  0xFF)
             testFlags(self, False, False, False, False)
 
         for n in [0x6, 0xE, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E]:
-            mb.cpu.ram[0xCB01] = 0x00
+            mb[0xCB01] = 0x00
             mb.cpu.setHL(0xCB01)
 
             clearFlag()
@@ -4938,7 +4942,7 @@ class Test_CPU(unittest.TestCase):
             mb.cpu.setFlag(flagC)  # Not affected
             inst = getInstruction(mb.cpu, opcodes.opcodes[0x100+0xC0+n], None, 0x0000)
             mb.cpu.executeInstruction(inst)
-            self.assertEqual(mb.cpu.ram[0xCB01], [1, 2, 4, 8, 16, 32, 64, 128][n/8])
+            self.assertEqual(mb[0xCB01], [1, 2, 4, 8, 16, 32, 64, 128][n/8])
             testFlags(self, False, True, False, True)
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ class Test_RAM(unittest.TestCase):
 
     def test_internalRAM(self):
         funky(self,RAM,0xC000,0xE000)
-        
+
     def test_ECHOinternalRAM0(self):
         funky(self,RAM,0xE000,0xFE00)
 
