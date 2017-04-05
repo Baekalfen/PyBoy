@@ -29,7 +29,7 @@ class CPU():
 
     def __init__(self, logger, MB):
         self.logger = logger
-        self.MB = MB
+        self.mb = MB
 
         self.interruptMasterEnable = False
         self.interruptMasterEnableLatch = False
@@ -37,7 +37,6 @@ class CPU():
         self.breakAllow = True
         self.breakOn = False
         self.breakNext = None
-        # self.breakNext = 0x2024
 
         self.halted = False
         self.stopped = False
@@ -68,10 +67,10 @@ class CPU():
             return instruction[1][0]
 
     def fetchInstruction(self, pc):
-        opcode = self.MB[pc]
+        opcode = self.mb[pc]
         if opcode == 0xCB:  # Extension code
             pc += 1
-            opcode = self.MB[pc]
+            opcode = self.mb[pc]
             opcode += 0x100  # Internally shifting look-up table
 
         operation = opcodes.opcodes[opcode]
@@ -88,7 +87,7 @@ class CPU():
             return (
                 operation[2],
                 operation[1],
-                (self, self.MB[pc+1], pc+operation[0])
+                (self, self.mb[pc+1], pc+operation[0])
             )
         elif operation[0] == 3:
             # 16-bit immediate
@@ -96,8 +95,7 @@ class CPU():
             return (
                 operation[2],
                 operation[1],
-                (self, (self.MB[pc+2] << 8) +
-                 self.MB[pc+1], pc+operation[0])
+                (self, (self.mb[pc+2] << 8) + self.mb[pc+1], pc+operation[0])
             )
         else:
             raise CoreDump.CoreDump("Unexpected opcode length: %s" % operation[0])
@@ -118,23 +116,23 @@ class CPU():
         self.logger("D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E])
         self.logger("H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L])
         self.logger("SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC])
-        # self.logger("0xC000", "0x%0.2X" % self.MB[0xc000])
-        # self.logger("(HL-1)", "0x%0.2X" % self.MB[self.getHL()-1])
-        self.logger("(HL)", "0x%0.2X" % self.MB[self.getHL()], "(HL+1)", "0x%0.2X" % self.MB[self.getHL()+1])
-        self.logger("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.MB[0xFF04], self.MB[0xFF05], self.MB[0xFF06],bin(self.MB[0xFF07])))
+        # self.logger("0xC000", "0x%0.2X" % self.mb[0xc000])
+        # self.logger("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
+        self.logger("(HL)", "0x%0.2X" % self.mb[self.getHL()], "(HL+1)", "0x%0.2X" % self.mb[self.getHL()+1])
+        self.logger("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
 
-        if (self.MB[self.reg[PC]]) != 0xCB:
-            l = self.opcodes[self.MB[self.reg[PC]]][0]
+        if (self.mb[self.reg[PC]]) != 0xCB:
+            l = self.opcodes[self.mb[self.reg[PC]]][0]
             self.logger("Op:",)
-            self.logger("0x%0.2X" % self.MB[self.reg[PC]],)
-            self.logger("Name:", CPU_COMMANDS[self.MB[self.reg[PC]]],)
+            self.logger("0x%0.2X" % self.mb[self.reg[PC]],)
+            self.logger("Name:", CPU_COMMANDS[self.mb[self.reg[PC]]],)
             self.logger("Len:", l,)
             if instruction:
                 self.logger(("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else "")
         else:
-            self.logger("CB op:", "0x%0.2X" % self.MB[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.MB[self.reg[PC]+1]])
+            self.logger("CB op:", "0x%0.2X" % self.mb[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])
         self.logger("Call Stack", self.debugCallStack)
-        self.logger("Active ROM and RAM bank", self.MB.cartridge.ROMBankSelected , self.MB.cartridge.RAMBankSelected)
+        self.logger("Active ROM and RAM bank", self.mb.cartridge.ROMBankSelected , self.mb.cartridge.RAMBankSelected)
         self.logger("Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch)
         self.logger("Enabled Interrupts",)
         flags = ""
@@ -189,12 +187,10 @@ class CPU():
         else:
             instruction = self.fetchInstruction(self.reg[PC])
 
-
-        # if self.reg[PC] == 0x100:
         #     self.lala = True
 
         if self.lala and not self.halted:
-            if (self.MB[self.reg[PC]]) == 0xCB:
+            if (self.mb[self.reg[PC]]) == 0xCB:
                 self.logger(hex(self.reg[PC]+1)[2:])
             else:
                 self.logger(hex(self.reg[PC])[2:])
@@ -202,14 +198,13 @@ class CPU():
         if __debug__:
 
             if self.breakAllow and self.reg[PC] == self.breakNext:
-                # self.breakNext = None
                 self.breakAllow = False
                 self.breakOn = True
 
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
                 self.breakOn = True
                 self.logger("PC DIDN'T CHANGE! Can't continue!")
-                CoreDump.windowHandle.dump(self.MB.cartridge.filename+"_dump.bmp")
+                CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
 
@@ -227,6 +222,12 @@ class CPU():
                     self.breakNext = int(action,16)
                     self.breakOn = False
                     self.breakAllow = True
+                elif action == 'o':
+                    targetPC = instruction[-1][-1]
+                    self.logger("Stepping over for", hex(targetPC), "\n") #Checking parser
+                    self.breakNext = targetPC
+                    self.breakOn = False
+                    self.breakAllow = True
                 else:
                     pass
 
@@ -235,7 +236,7 @@ class CPU():
 
         cycles = self.executeInstruction(instruction)
 
-        if self.MB.timer.tick(cycles):
+        if self.mb.timer.tick(cycles):
             self.setInterruptFlag(self.TIMER)
 
         return cycles
