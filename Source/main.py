@@ -158,8 +158,12 @@ def loadRAMSparse(romFile, cartridge):
         logger("Loading non-volatile memory is not supported on %s" % cartridge.ROMBankController)
         return
 
-    logger("Loading non-volatile memory")
     romPath, ext = os.path.splitext(romFile)
+    if not os.path.exists(romPath+".ram"):
+        logger("No RAM file found. Skipping load of non-volatile memory")
+        return
+
+    logger("Loading non-volatile memory")
 
     with open(romPath+".ram", "rb") as loadRAM:
         data = map(lambda x: x.split(","), loadRAM.read().split("\n"))
