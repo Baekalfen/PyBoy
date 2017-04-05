@@ -28,24 +28,24 @@ VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
 
 def testInterruptFlag(self, flag):
-    # return (self.MB[0xFF0F] & (1 << flag)) != 0
+    # return (self.mb[0xFF0F] & (1 << flag)) != 0
     return self.testRAMRegisterFlag(0xFF0F,flag)
 
 
 def setInterruptFlag(self, flag, value=True):
-    # self.MB[0xFF0F] = (self.MB[0xFF0F] & (0xFF - (1 << flag)))
+    # self.mb[0xFF0F] = (self.mb[0xFF0F] & (0xFF - (1 << flag)))
     # if value:
-    #     self.MB[0xFF0F] = (self.MB[0xFF0F] + (1 << flag))
+    #     self.mb[0xFF0F] = (self.mb[0xFF0F] + (1 << flag))
     return self.setRAMRegisterFlag(0xFF0F,flag,value)
 
 
 def clearInterruptFlag(self, flag):
-    # self.MB[0xFF0F] = (self.MB[0xFF0F] & (0xFF - (1 << flag)))
+    # self.mb[0xFF0F] = (self.mb[0xFF0F] & (0xFF - (1 << flag)))
     self.clearRAMRegisterFlag(0xFF0F,flag)
 
 
 def testInterruptFlagEnabled(self, flag):
-    # return (self.MB[0xFFFF] & (1 << flag)) != 0
+    # return (self.mb[0xFFFF] & (1 << flag)) != 0
     return self.testRAMRegisterFlagEnabled(0xFFFF,flag)
 
 
@@ -79,16 +79,16 @@ def testSTATFlagEnabled(self, flag):
 
 
 def testRAMRegisterFlag(self, address, flag):
-    return (self.MB[address] & (1 << flag)) != 0
+    return (self.mb[address] & (1 << flag)) != 0
 
 def setRAMRegisterFlag(self, address, flag, value=True):
     self.clearRAMRegisterFlag(address, flag)
-    # self.MB[address] = (self.MB[address] & (0xFF - (1 << flag)))
+    # self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
     # if value:
-    self.MB[address] = (self.MB[address] + (value << flag))
+    self.mb[address] = (self.mb[address] + (value << flag))
 
 def clearRAMRegisterFlag(self, address, flag):
-    self.MB[address] = (self.MB[address] & (0xFF - (1 << flag)))
+    self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
 
 def testRAMRegisterFlagEnabled(self, address, flag):
-    return (self.MB[address] & (1 << flag)) != 0
+    return (self.mb[address] & (1 << flag)) != 0

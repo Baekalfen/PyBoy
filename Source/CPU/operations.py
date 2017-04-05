@@ -269,8 +269,8 @@ def CPU_POP(self):
     corresponding adjacent memory location are loaded to the high-order portion of qq and the SP is
     now incremented again. """
 
-    high = self.MB[self.reg[SP]+1]
-    low = self.MB[self.reg[SP]]
+    high = self.mb[self.reg[SP]+1]
+    low = self.mb[self.reg[SP]]
 
     self.reg[SP] += 2
 
@@ -286,8 +286,8 @@ def CPU_PUSH(self, r0):
     if self.halted:
         r0 += 1 # Byte-length of HALT
 
-    self.MB[self.reg[SP]-1] = (r0 & 0xFF00) >> 8  # High
-    self.MB[self.reg[SP]-2] = r0 & 0x00FF  # Low
+    self.mb[self.reg[SP]-1] = (r0 & 0xFF00) >> 8  # High
+    self.mb[self.reg[SP]-2] = r0 & 0x00FF  # Low
 
     # DEC
     self.reg[SP] -= 2

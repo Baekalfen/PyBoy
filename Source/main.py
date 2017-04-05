@@ -97,7 +97,7 @@ def start(ROM, bootROM = None):
                 mb.buttonEvent(event)
 
         if not debugger is None and debugger.running:
-            action = debugger.tick(mb)
+            action = debugger.tick()
 
             # Avoiding the window hanging
             window.updateDisplay()
