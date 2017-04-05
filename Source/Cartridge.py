@@ -39,6 +39,7 @@ class Cartridge:
         self.RAMBankController = None
         self.RAMBankEnabled = False
         self.RAMBanks = None
+        self.RAMRange = (None, None)
         self.RAMBankSelected = 0 # TODO: Check this, not documented
         self.ROMBankController = None
         self.ROMBankSelected = 1 # TODO: Check this, not documented #NOTE: TestROM 01-special.gb assumes initial value of 1
@@ -69,15 +70,18 @@ class Cartridge:
             self.RAMBanks = initRAMBanks(1)
         elif self.cartType == 0x01:  # -ROM+MBC1
             self.ROMBankController = "MBC1"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.memoryModel = 0
             self.RAMBanks = initRAMBanks(1)
         elif self.cartType == 0x02:  # -ROM+MBC1+RAM
             self.ROMBankController = "MBC1"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.memoryModel = 0
             self.RAMBankController = "RAM"
             self.RAMBanks = initRAMBanks(1)
         elif self.cartType == 0x03:  # -ROM+MBC1+RAM+BATT
             self.ROMBankController = "MBC1"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.memoryModel = 0
             self.RAMBankController = "RAM"
             self.battery = True
@@ -103,24 +107,29 @@ class Cartridge:
             raise Exception("Cartridge type not supported")
         elif self.cartType == 0x0F:  # -ROM+MBC3+TIMER+BATT
             self.ROMBankController = "MBC3"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.RAMBanks = initRAMBanks(1)
             self.battery = True
             self.RTC = True
         elif self.cartType == 0x10:  # -ROM+MBC3+TIMER+RAM+BATT
             self.ROMBankController = "MBC3"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.RAMBanks = initRAMBanks(1)
             self.RAMBankController = "RAM"
             self.battery = True
             self.RTC = True
         elif self.cartType == 0x11:  # -ROM+MBC3
             self.ROMBankController = "MBC3"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.RAMBanks = initRAMBanks(1)
         elif self.cartType == 0x12:  # -ROM+MBC3+RAM
             self.ROMBankController = "MBC3"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.RAMBanks = initRAMBanks(1)
             self.RAMBankController = "RAM"
         elif self.cartType == 0x13:  # -ROM+MBC3+RAM+BATT
             self.ROMBankController = "MBC3"
+            self.RAMRange = (0xA000, 0xBFFF)
             self.RAMBanks = initRAMBanks(1)
             self.RAMBankController = "RAM"
             self.battery = True
