@@ -32,6 +32,10 @@ def checkLYC(self, y):
         self[STAT] &= 0b11111011
 
 def tickFrame(self):
+    lcdEnabled = self.lcd.LCDC.enabled
+    if lcdEnabled:
+        self.lcd.refreshTileDataAdaptive()
+
     if __debug__:
         self.MainWindow.refreshTileView1(self.lcd)
         self.MainWindow.refreshTileView2(self.lcd)
@@ -59,7 +63,12 @@ def tickFrame(self):
         self.calculateCycles(206)
 
     self.cpu.setInterruptFlag(self.cpu.VBlank)
-    self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+
+    if lcdEnabled:
+        self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+        self.MainWindow.renderSprites(self.lcd)
+    else:
+        self.MainWindow.blankScreen()
 
     # Wait for next frame
     for y in xrange(144,154):

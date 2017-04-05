@@ -49,7 +49,9 @@ def saveState(self, filename = "state"):
             f.write(chr(n))
 
         f.write(chr(self.lcd.LCDC.value))
-        self.logger("LCDC",self.lcd.LCDC.value)
+        f.write(chr(self.lcd.BGP.value))
+        f.write(chr(self.lcd.OBP0.value))
+        f.write(chr(self.lcd.OBP1.value))
 
         # # Save cartridge RAM
         # for n in self.ram.cartridge.RAMBanks:
@@ -102,7 +104,9 @@ def loadState(self, filename = "state"):
             self.ram.interruptRegister[n] = ord(f.read(1))
 
         self.lcd.LCDC.set(ord(f.read(1)))
-        self.logger("LCDC",self.lcd.LCDC.value)
+        self.lcd.BGP.set(ord(f.read(1)))
+        self.lcd.OBP0.set(ord(f.read(1)))
+        self.lcd.OBP1.set(ord(f.read(1)))
 
         # # Loading RAMBanks to cartridge
         # for i in xrange(len(self.ram.cartridge.RAMBanks)):
