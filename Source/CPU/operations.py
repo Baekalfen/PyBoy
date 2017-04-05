@@ -244,23 +244,20 @@ def CPU_DAA(self):
     # http://forums.nesdev.com/viewtopic.php?t=9088
     a = self.reg[A]
 
-
     corr = 0
     corr |= 0x06 if self.testFlag(flagH) else 0x00
     corr |= 0x60 if self.testFlag(flagC) else 0x00
 
-    if self.testFlag(flagZ):
+    if self.testFlag(flagN):
         a -= corr
     else:
         corr |= 0x06 if (a & 0x0F) > 0x09 else 0x00
         corr |= 0x60 if a > 0x99 else 0x00
         a += corr
 
-    # Mads: Not having this, caused >0xFF values to appear in reg a
-
+    self.clearFlag(flagH)
     self.setFlag(flagC, corr & 0x60)
     a &= 0xFF
-    self.clearFlag(flagH)
     self.setFlag(flagZ, a == 0)
 
     self.reg[A] = a
