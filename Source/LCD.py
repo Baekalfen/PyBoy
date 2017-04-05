@@ -33,7 +33,7 @@ def getColorCode(byte1,byte2,offset):
 class LCD():
     def __init__(self, logger, MB):
         self.logger = logger
-        self.MB = MB
+        self.mb = MB
         self.clearCache = False
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
@@ -58,10 +58,10 @@ class LCD():
         # self.WX = 0x00
 
     def getWindowPos(self):
-        return self.MB[WX]-7, self.MB[WY]
+        return self.mb[WX]-7, self.mb[WY]
 
     def getViewPort(self):
-        return self.MB[SCX], self.MB[SCY]
+        return self.mb[SCX], self.mb[SCY]
 
     def refreshTileDataAdaptive(self):
         if self.clearCache:
@@ -72,8 +72,8 @@ class LCD():
 
         for t in self.tilesChanged:
             for k in xrange(0, 16 ,2): #2 bytes for each line
-                byte1 = self.MB[t+k]
-                byte2 = self.MB[t+k+1]
+                byte1 = self.mb[t+k]
+                byte2 = self.mb[t+k+1]
 
                 for pixelOnLine in xrange(7,-1,-1):
                     y = k/2

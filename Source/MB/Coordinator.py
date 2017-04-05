@@ -66,7 +66,6 @@ def tickFrame(self):
 
     if lcdEnabled:
         self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
-        self.MainWindow.renderSprites(self.lcd)
     else:
         self.MainWindow.blankScreen()
 

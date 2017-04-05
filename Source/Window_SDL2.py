@@ -192,7 +192,7 @@ class Window():
 
             for x in xrange(gameboyResolution[0]):
                 if lcd.LCDC.backgroundEnable:
-                    backgroundTileIndex = lcd.MB.ram.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
+                    backgroundTileIndex = lcd.mb.ram.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                         backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
@@ -205,15 +205,38 @@ class Window():
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
                     if wy <= y and wx <= x:
-                        windowTileIndex = lcd.MB.ram.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
+                        windowTileIndex = lcd.mb.ram.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
                         if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                             windowTileIndex = getSignedInt8(windowTileIndex)+256
 
                         self._screenBuffer[x,y] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
+        ### RENDER SPRITES
+        # Doesn't restrict 10 sprite pr. scan line.
+        # Prioritizes sprite in inverted order
+        # self.logger("Rendering Sprites")
+        spriteSize = 16 if lcd.LCDC.spriteSize else 8
+        BGPkey = lcd.BGP.getColor(0)
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, xFlip = 0, yFlip = 0):
+        for n in xrange(0x00,0xA0,4):
+            y = lcd.mb.ram.OAM[n] - 16 #TODO: Simplify reference
+            x = lcd.mb.ram.OAM[n+1] - 8
+            tileIndex = lcd.mb.ram.OAM[n+2]
+            attributes = lcd.mb.ram.OAM[n+3]
+            xFlip = getBit(attributes, 5)
+            yFlip = getBit(attributes, 6)
+            spritePriority = getBit(attributes, 7)
+
+            fromXY = (tileIndex * 8, 0)
+            toXY = (x, y)
+
+            spriteCache = lcd.spriteCacheOBP1 if attributes & 0b10000 else lcd.spriteCacheOBP0
+
+            if x < 160 and y < 144:
+                self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
+
+    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, spritePriority, BGPkey, xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
         x2,y2 = toXY
 
@@ -223,34 +246,17 @@ class Window():
             for x in xrange(8):
                 xx = x1 # Base coordinate
                 xx += ((7-x) if xFlip == 1 else x) # Reverse order, if sprite is x-flipped
+
                 if spriteSize == 16: # If y-flipped on 8x16 sprites, we will have to load the sprites in reverse order
                     xx += (y&0b1000)^(yFlip<<3) # Shifting tile, when iteration past 8th line
+
                 pixel = fromBuffer[xx, yy]
+
+                if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
+                    pixel += 0xFF000000 # Add a fake alphachannel to the sprite for BG pixels
+
                 if not (pixel & 0xFF000000) and 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     toBuffer[x2+x, y2+y] = pixel
-
-
-    def renderSprites(self, lcd):
-        # Doesn't restrict 10 sprite pr. scan line.
-        # Prioritizes sprite in inverted order
-        # self.logger("Rendering Sprites")
-        spriteSize = 16 if lcd.LCDC.spriteSize else 8
-
-        for n in xrange(0x00,0xA0,4):
-            y = lcd.MB.ram.OAM[n] - 16 #TODO: Simplify reference
-            x = lcd.MB.ram.OAM[n+1] - 8
-            tileIndex = lcd.MB.ram.OAM[n+2]
-            attributes = lcd.MB.ram.OAM[n+3]
-            xFlip = getBit(attributes, 5)
-            yFlip = getBit(attributes, 6)
-
-            fromXY = (tileIndex * 8, 0)
-            toXY = (x, y)
-
-            spriteCache = lcd.spriteCacheOBP1 if attributes & 0b10000 else lcd.spriteCacheOBP0
-
-            if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, xFlip, yFlip)
 
 
     def blankScreen(self):
@@ -284,7 +290,7 @@ class Window():
         winVerTileView1Limit = 32
 
         for n in xrange(0x1800,0x1C00):
-            tileIndex = lcd.MB.ram.VRAM[n] #TODO: Simplify this reference -- and reoccurences
+            tileIndex = lcd.mb.ram.VRAM[n] #TODO: Simplify this reference -- and reoccurences
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
@@ -308,7 +314,7 @@ class Window():
         winVerTileView2Limit = 32
 
         for n in xrange(0x1C00,0x2000):
-            tileIndex = lcd.MB.ram.VRAM[n]
+            tileIndex = lcd.mb.ram.VRAM[n]
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
@@ -369,8 +375,8 @@ class Window():
     def refreshSpriteView(self, lcd):
         self.spriteBuffer.fill(0x00ABC4FF)
         for n in xrange(0x00,0xA0,4):
-            tileIndex = lcd.MB.ram.OAM[n+2] # TODO: Simplify this reference
-            attributes = lcd.MB.ram.OAM[n+3]
+            tileIndex = lcd.mb.ram.OAM[n+2] # TODO: Simplify this reference
+            attributes = lcd.mb.ram.OAM[n+3]
             fromXY = (tileIndex * 8, 0)
 
             i = n*2

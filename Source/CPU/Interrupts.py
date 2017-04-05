@@ -58,7 +58,6 @@ def checkForInterrupts(self):
             self.reg[PC] = 0x0058
             return InterruptVector
         elif self.testInterruptFlagEnabled(HightoLow) and self.testInterruptFlag(HightoLow): # High-to-low P10-P13
-            self.logger("High-to-low P10-P13 Interrupt")
             self.clearInterruptFlag(HightoLow)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
