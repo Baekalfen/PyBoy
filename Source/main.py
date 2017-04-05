@@ -64,7 +64,7 @@ def start(ROM, bootROM = None):
     if "loadState" in sys.argv:
         mb.loadState(mb.cartridge.gameName+".state")
 
-    loadRAMSparse(ROM, mb.cartridge)
+    mb.cartridge.loadRAMSparse()
 
     done = False
     exp_avg_emu = 0
@@ -126,54 +126,7 @@ def start(ROM, bootROM = None):
     logger("# Emulator is turning off #")
     logger("###########################")
 
-    saveRAMSparse(ROM, mb.cartridge)
-
-
-def saveRAMSparse(romFile, cartridge):
-    minIdx, maxIdx = cartridge.RAMRange
-
-    if minIdx is None or maxIdx is None:
-        logger("Saving non-volatile memory is not supported on %s" % cartridge.ROMBankController)
-        return
-
-    logger("Saving non-volatile memory")
-    romPath, ext = os.path.splitext(romFile)
-
-    writeBuffer = ""
-    for bank in range(len(cartridge.RAMBanks)):
-        cartridge.RAMBankSelected = bank
-
-        for i in range(minIdx, maxIdx+1):
-            if mb[i] != 0:
-                writeBuffer += "%i,%s,%s\n" % (bank, hex(i)[2:], hex(mb[i])[2:])
-
-    with open(romPath+".ram", "wb") as saveRAM:
-        saveRAM.write(writeBuffer)
-
-
-def loadRAMSparse(romFile, cartridge):
-    minIdx, maxIdx = cartridge.RAMRange
-
-    if minIdx is None or maxIdx is None:
-        logger("Loading non-volatile memory is not supported on %s" % cartridge.ROMBankController)
-        return
-
-    romPath, ext = os.path.splitext(romFile)
-    if not os.path.exists(romPath+".ram"):
-        logger("No RAM file found. Skipping load of non-volatile memory")
-        return
-
-    logger("Loading non-volatile memory")
-
-    with open(romPath+".ram", "rb") as loadRAM:
-        data = map(lambda x: x.split(","), loadRAM.read().split("\n"))
-
-        for line in data:
-            if 1 < len(line):  # Ignore empty lines (typically the last line)
-                bank, idx, value = map(lambda v: int(v, 16), line)
-
-                cartridge.RAMBankSelected = bank
-                cartridge[idx] = value
+    mb.cartridge.saveRAMSparse()
 
 
 def runBlarggsTest():

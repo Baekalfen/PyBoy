@@ -6,6 +6,7 @@
 #
 
 import CoreDump
+import os
 
 
 #                cart,  ROM,        RAM,   RAMbanks,  batt,   RTC
@@ -101,6 +102,51 @@ class GenericMBC:
         self.RAMBankSelected = 0  # TODO: Check this, not documented
         self.ROMBankSelected = 1  # TODO: Check this, not documented #NOTE: TestROM 01-special.gb
                                   # assumes initial value of 1
+
+    def saveRAMSparse(self):
+        minIdx, maxIdx = self.RAMRange
+
+        if minIdx is None or maxIdx is None:
+            self.logger("Saving non-volatile memory is not supported on %s" % self.ROMBankController)
+            return
+
+        self.logger("Saving non-volatile memory")
+        romPath, ext = os.path.splitext(self.filename)
+
+        writeBuffer = ""
+        for bank in range(len(self.RAMBanks)):
+            self.RAMBankSelected = bank
+
+            for i in range(minIdx, maxIdx+1):
+                if self[i] != 0:
+                    writeBuffer += "%i,%s,%s\n" % (bank, hex(i)[2:], hex(self[i])[2:])
+
+        with open(romPath+".ram", "wb") as saveRAM:
+            saveRAM.write(writeBuffer)
+
+    def loadRAMSparse(self):
+        minIdx, maxIdx = self.RAMRange
+
+        if minIdx is None or maxIdx is None:
+            self.logger("Loading non-volatile memory is not supported on %s" % self.ROMBankController)
+            return
+
+        romPath, ext = os.path.splitext(self.filename)
+        if not os.path.exists(romPath+".ram"):
+            self.logger("No RAM file found. Skipping load of non-volatile memory")
+            return
+
+        self.logger("Loading non-volatile memory")
+
+        with open(romPath+".ram", "rb") as loadRAM:
+            data = map(lambda x: x.split(","), loadRAM.read().split("\n"))
+
+            for line in data:
+                if 1 < len(line):  # Ignore empty lines (typically the last line)
+                    bank, idx, value = map(lambda v: int(v, 16), line)
+
+                    self.RAMBankSelected = bank
+                    self[idx] = value
 
     def initRAMBanks(self, n):
         if n is None:
