@@ -7,25 +7,33 @@
 
 import CoreDump
 import os
-
+import time
+import struct
 
 #                cart,  ROM,        RAM,   RAMbanks,  batt,   RTC
 cartridgeTable = {0x00: ("ROM-only",  None,        1, False, False),  # ROM
+
                   0x01: ("MBC1",      None,        1, False, False),  # ROM+MBC1
-                  0x02: ("MBC1",     "RAM",        1, False, False),  # ROM+MBC1+RAM
-                  0x03: ("MBC1",     "RAM",        1,  True, False),  # ROM+MBC1+RAM+BATT
+                  0x02: ("MBC1",     "RAM",        4, False, False),  # ROM+MBC1+RAM
+                  0x03: ("MBC1",     "RAM",        4,  True, False),  # ROM+MBC1+RAM+BATT
+
                   0x05: ("MBC2",      None,     None, False, False),  # ROM+MBC2
                   0x06: ("MBC2",      None,     None,  True, False),  # ROM+MBC2+BATTERY
+
                   0x08: ("RAM",      "RAM",     None, False, False),  # ROM+RAM
                   0x09: ("RAM",      "RAM",     None,  True, False),  # ROM+RAM+BATTERY
+
                   0x0B: None,                                         # ROM+MMM01
                   0x0C: None,                                         # ROM+MMM01+SRAM
                   0x0D: None,                                         # ROM+MMM01+SRAM+BATT
-                  0x0F: ("MBC3",      None,        1,  True,  True),  # ROM+MBC3+TIMER+BATT
-                  0x10: ("MBC3",     "RAM",        1,  True,  True),  # ROM+MBC3+TIMER+RAM+BATT
-                  0x11: ("MBC3",      None,        1, False, False),  # ROM+MBC3
-                  0x12: ("MBC3",     "RAM",        1, False, False),  # ROM+MBC3+RAM
-                  0x13: ("MBC3",     "RAM",        1, False, False),  # ROM+MBC3+RAM+BATT
+
+                  # Pan docs seems to be wrong. All MBC3's should have RTC according to the official programmers guide
+                  0x0F: ("MBC3",      None,        4,  True,  True),  # ROM+MBC3+TIMER+BATT
+                  0x10: ("MBC3",     "RAM",        4,  True,  True),  # ROM+MBC3+TIMER+RAM+BATT
+                  0x11: ("MBC3",      None,        4, False,  True),  # ROM+MBC3
+                  0x12: ("MBC3",     "RAM",        4, False,  True),  # ROM+MBC3+RAM
+                  0x13: ("MBC3",     "RAM",        4, False,  True),  # ROM+MBC3+RAM+BATT
+
                   0x19: ("MBC5",      None,     None, False, False),  # ROM+MBC5
                   0x1A: ("MBC5",     "RAM",     None, False, False),  # ROM+MBC5+RAM
                   0x1B: ("MBC5",     "RAM",     None,  True, False),  # ROM+MBC5+RAM+BATT
@@ -83,7 +91,7 @@ def validateCartType(cartType):
 class GenericMBC:
     def __init__(self, logger, filename, ROMBanks, cartType):
         self.logger = logger
-        self.filename = filename  # For debugging
+        self.filename = filename  # For debugging and saving
         self.ROMBanks = ROMBanks
         self.cartType = cartType
 
@@ -91,7 +99,11 @@ class GenericMBC:
          self.RAMBankController,
          self.RAMBanks,
          self.battery,
-         self.RTC) = cartridgeTable[self.cartType]
+         self.rtcEnabled) = cartridgeTable[self.cartType]
+
+        if self.rtcEnabled:
+            self.rtc = RTC(logger)
+
         self.RAMBanks = self.initRAMBanks(self.RAMBanks)
 
         self.gameName = self.getGameName(ROMBanks)
@@ -170,7 +182,10 @@ class GenericMBC:
             if not self.RAMBanks:
                 raise CoreDump.CoreDump("RAMBanks not initialized: %s" % hex(address))
 
-            return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
+            if self.rtcEnabled and 0x08 <= self.RAMBankSelected <= 0x0C:
+                return self.rtc.getRegister(self.RAMBankSelected)
+            else:
+                return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
         else:
             raise CoreDump.CoreDump("Reading address invalid: %s" % address)
 
@@ -253,6 +268,116 @@ class MBC2(GenericMBC):
     def __setitem__(self, address, value):
         raise Exception("Not implemented")
 
+class RTC():
+    def __init__(self, logger):
+        self.logger = logger
+        self.latchEnabled = False
+
+        self.timeZero = time.time()
+
+        self.secLatch = 0
+        self.minLatch = 0
+        self.hourLatch = 0
+        self.dayLatchLow = 0
+
+        self.dayLatchHigh = 0
+        self.dayCarry = 0
+        self.halt = 0
+
+    def save(self, filename):
+        self.logger("Saving RTC...")
+        romPath, ext = os.path.splitext(filename)
+        with open(romPath + ".rtc", "wb") as f:
+            f.write(struct.pack('f', self.timeZero))
+            f.write(chr(self.halt))
+            f.write(chr(self.dayCarry))
+        self.logger("RTC saved.")
+
+    def load(self, filename):
+        self.logger("Loading RTC...")
+        try:
+            romPath, ext = os.path.splitext(filename)
+            with open(romPath + ".rtc", "rb") as f:
+                # import pdb; pdb.set_trace()
+                self.timeZero = struct.unpack('f',f.read(4))[0]
+                self.halt = ord(f.read(1))
+                self.dayCarry = ord(f.read(1))
+            self.logger("RTC loaded.")
+        except Exception as ex:
+            self.logger("Couldn't read RTC for cartridge:", ex)
+
+    def latchRTC(self):
+        t = time.time() - self.timeZero
+        self.secLatch = int(t % 60)
+        self.minLatch = int(t / 60 % 60)
+        self.hourLatch = int(t / 3600 % 24)
+        days = int(t / 3600 / 24)
+        self.dayLatchLow = days & 0xFF
+        self.dayLatchHigh = days >> 8
+
+        if self.dayLatchHigh > 1:
+            self.dayCarry = 1
+            self.dayLatchHigh &= 0b1
+            self.timeZero += 0x200 * 3600 * 24 # Add 0x200 (512) days to "reset" the day counter to zero
+
+    def writeCommand(self, value):
+        if value == 0x00:
+            self.latchEnabled = False
+        elif value == 0x01:
+            if not self.latchEnabled:
+                self.latchRTC()
+            self.latchEnabled = True
+        else:
+            raise CoreDump.CoreDump("Invalid RTC command: %s" % hex(value))
+
+    def getRegister(self, register):
+        if not self.latchEnabled:
+            self.logger("RTC: Get register, but nothing is latched!", register, value)
+
+        if register == 0x08:
+            return self.secLatch
+        elif register == 0x09:
+            return self.minLatch
+        elif register == 0x0A:
+            return self.hourLatch
+        elif register == 0x0B:
+            return self.dayLatchLow
+        elif register == 0x0C:
+            dayHigh = self.dayLatchHigh & 0b1
+            halt = self.halt << 6
+            dayCarry = self.dayCarry << 7
+            return dayHigh + halt + dayCarry
+        else:
+            raise CoreDump.CoreDump("Invalid RTC register: %s" % hex(register))
+
+    def setRegister(self, register, value):
+        if not self.latchEnabled:
+            self.logger("RTC: Set register, but nothing is latched!", register, value)
+
+        t = time.time() - self.timeZero
+        if register == 0x08:
+            self.timeZero -= int(t % 60) - value # TODO: What happens, when these value are larger than allowed?
+        elif register == 0x09:
+            self.timeZero -= int(t / 60 % 60) - value
+        elif register == 0x0A:
+            self.timeZero -= int(t / 3600 % 24) - value
+        elif register == 0x0B:
+            self.timeZero -= int(t / 3600 / 24) - value
+        elif register == 0x0C:
+            dayHigh = value & 0b1
+            halt = (value & 0b1000000) >> 6
+            dayCarry = (value & 0b10000000) >> 7
+
+            self.halt = halt
+            if self.halt == 0:
+                pass # TODO: Start the timer
+            else:
+                raise CoreDump.CoreDump("Stopping RTC is not implemented!")
+
+            self.timeZero -= int(t / 3600 / 24) - (dayHigh<<8)
+            self.dayCarry = dayCarry
+        else:
+            raise CoreDump.CoreDump("Invalid RTC register: %s" % hex(register))
 
 class MBC3(GenericMBC):
     def __setitem__(self, address, value):
@@ -261,9 +386,8 @@ class MBC3(GenericMBC):
                 self.RAMBankEnabled = True
             elif value == 0:
                 self.RAMBankEnabled = False
-                self.logger("Disabling RAMBanks/RTC (not fully implemented)")
             else:
-                raise CoreDump.CoreDump("Invalid command for MBC: Address: %s, Value: %s" % (address, value))
+                raise CoreDump.CoreDump("Invalid command for MBC: Address: %s, Value: %s" % (hex(address), hex(value)))
 
         elif 0x2000 <= address < 0x4000:
             if value == 0:
@@ -273,11 +397,16 @@ class MBC3(GenericMBC):
             self.ROMBankSelected = value & 0b01111111  # sets 7LSB of ROM bank address
         elif 0x4000 <= address < 0x6000:
             # MBC3 is always 16/8 mode
-            self.ROMBankSelected = self.ROMBankSelected & 0b01111111
+            self.RAMBankSelected = value # TODO: Should this has a mask?
         elif 0x6000 <= address < 0x8000:
-            self.logger("Latch RTC")
+            self.rtc.writeCommand(value)
         elif 0xA000 <= address < 0xC000:
-            self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
+            if self.RAMBankSelected <= 0x03:
+                self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
+            elif 0x08 <= self.RAMBankSelected <= 0x0C:
+                self.rtc.setRegister(self.RAMBankSelected, value)
+            else:
+                raise CoreDump.CoreDump("Invalid RAM bank selected: %s" % hex(self.RAMBankSelected))
         else:
             raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
 

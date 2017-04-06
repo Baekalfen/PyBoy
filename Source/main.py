@@ -65,6 +65,8 @@ def start(ROM, bootROM = None):
         mb.loadState(mb.cartridge.gameName+".state")
 
     mb.cartridge.loadRAMSparse()
+    if mb.cartridge.rtcEnabled:
+        mb.cartridge.rtc.load(mb.cartridge.filename)
 
     done = False
     exp_avg_emu = 0
@@ -82,8 +84,6 @@ def start(ROM, bootROM = None):
             if event == WindowEvent.Quit:
                 window.stop()
                 done = True
-
-                mb.cpu.getDump()
             elif event == WindowEvent.ReleaseSpeedUp:
                 limitEmulationSpeed ^= True
             # elif event == WindowEvent.PressSpeedUp:
@@ -127,6 +127,8 @@ def start(ROM, bootROM = None):
     logger("###########################")
 
     mb.cartridge.saveRAMSparse()
+    if mb.cartridge.rtcEnabled:
+        mb.cartridge.rtc.save(mb.cartridge.filename)
 
 
 def runBlarggsTest():
