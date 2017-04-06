@@ -115,7 +115,7 @@ class GenericMBC:
         self.ROMBankSelected = 1  # TODO: Check this, not documented #NOTE: TestROM 01-special.gb
                                   # assumes initial value of 1
 
-    def saveRAMSparse(self):
+    def saveRAMSparse(self, filename = None):
         minIdx, maxIdx = self.RAMRange
 
         if minIdx is None or maxIdx is None:
@@ -123,7 +123,10 @@ class GenericMBC:
             return
 
         self.logger("Saving non-volatile memory")
-        romPath, ext = os.path.splitext(self.filename)
+        if filename is None:
+            romPath, ext = os.path.splitext(self.filename)
+        else:
+            romPath = filename
 
         writeBuffer = ""
         for bank in range(len(self.RAMBanks)):
@@ -136,14 +139,18 @@ class GenericMBC:
         with open(romPath+".ram", "wb") as saveRAM:
             saveRAM.write(writeBuffer)
 
-    def loadRAMSparse(self):
+    def loadRAMSparse(self, filename = None):
         minIdx, maxIdx = self.RAMRange
 
         if minIdx is None or maxIdx is None:
             self.logger("Loading non-volatile memory is not supported on %s" % self.ROMBankController)
             return
 
-        romPath, ext = os.path.splitext(self.filename)
+        if filename is None:
+            romPath, ext = os.path.splitext(self.filename)
+        else:
+            romPath = filename
+
         if not os.path.exists(romPath+".ram"):
             self.logger("No RAM file found. Skipping load of non-volatile memory")
             return

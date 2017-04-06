@@ -6,9 +6,9 @@
 #
 
 
-def saveState(self, filename = "state"):
+def saveState(self, filename):
     self.logger("Saving state...")
-    with open(filename, "w") as f:
+    with open(filename, "wb") as f:
         for n in self.cpu.reg[:-2]:
             f.write(chr(n))
 
@@ -53,17 +53,17 @@ def saveState(self, filename = "state"):
         f.write(chr(self.lcd.OBP0.value))
         f.write(chr(self.lcd.OBP1.value))
 
-        # # Save cartridge RAM
-        # for n in self.ram.cartridge.RAMBanks:
-        #     for m in n:
-        #         f.write(chr(m))
+
+        self.cartridge.saveRAMSparse(filename)
+        if self.cartridge.rtcEnabled:
+            self.cartridge.rtc.save(filename + ".rtc")
 
     self.logger("State saved.")
 
 
-def loadState(self, filename = "state"):
+def loadState(self, filename):
     self.logger("Loading state...")
-    with open(filename, "r") as f:
+    with open(filename, "rb") as f:
         self.cpu.oldPC = None
 
         for n in xrange(len(self.cpu.reg)-2):
@@ -108,10 +108,10 @@ def loadState(self, filename = "state"):
         self.lcd.OBP0.set(ord(f.read(1)))
         self.lcd.OBP1.set(ord(f.read(1)))
 
-        # # Loading RAMBanks to cartridge
-        # for i in xrange(len(self.ram.cartridge.RAMBanks)):
-        #     for j in xrange(len(self.ram.cartridge.RAMBanks[i])):
-        #         self.ram.cartridge.RAMBanks[i][j] = ord(f.read(1))
+
+        self.cartridge.loadRAMSparse(filename)
+        if self.cartridge.rtcEnabled:
+            self.cartridge.rtc.load(filename + ".rtc")
 
     self.logger("State loaded.")
 

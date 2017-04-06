@@ -62,7 +62,7 @@ def start(ROM, bootROM = None):
     mb = Motherboard(logger, ROM, bootROM, window)
 
     if "loadState" in sys.argv:
-        mb.loadState(mb.cartridge.gameName+".state")
+        mb.loadState(mb.cartridge.filename+".state")
 
     mb.cartridge.loadRAMSparse()
     if mb.cartridge.rtcEnabled:
@@ -89,9 +89,9 @@ def start(ROM, bootROM = None):
             # elif event == WindowEvent.PressSpeedUp:
             #     limitEmulationSpeed = False
             elif event == WindowEvent.SaveState:
-                mb.saveState(mb.cartridge.gameName+".state")
+                mb.saveState(mb.cartridge.filename+".state")
             elif event == WindowEvent.LoadState:
-                mb.loadState(mb.cartridge.gameName+".state")
+                mb.loadState(mb.cartridge.filename+".state")
             elif event == WindowEvent.DebugToggle:
                 # mb.cpu.breakAllow = True
                 debugger.running ^= True
