@@ -252,11 +252,14 @@ class Window():
 
                 pixel = fromBuffer[xx, yy]
 
-                if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
-                    pixel += 0xFF000000 # Add a fake alphachannel to the sprite for BG pixels
+                if 0 <= x2+x < 160 and 0 <= y2+y < 144:
+                    if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
+                        pixel += 0xFF000000 # Add a fake alphachannel to the sprite for BG pixels.
+                                            # We can't just merge this with the next if, as
+                                            # sprites can have an alpha channel in other ways
 
-                if not (pixel & 0xFF000000) and 0 <= x2+x < 160 and 0 <= y2+y < 144:
-                    toBuffer[x2+x, y2+y] = pixel
+                    if not (pixel & 0xFF000000):
+                        toBuffer[x2+x, y2+y] = pixel
 
 
     def blankScreen(self):
