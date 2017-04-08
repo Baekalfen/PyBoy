@@ -108,10 +108,10 @@ def start(ROM, bootROM = None):
             window.updateDisplay()
 
 
-        # Trying to avoid VSync'ing on a frame, if we are out of time
-        if limitEmulationSpeed or (time.clock()-t_start < SPF):
-            # This one makes time and frame syncing work, but messes with time.clock()
-            window.VSync()
+        # # Trying to avoid VSync'ing on a frame, if we are out of time
+        # if limitEmulationSpeed or (time.clock()-t_start < SPF):
+        #     # This one makes time and frame syncing work, but messes with time.clock()
+        #     window.VSync()
 
         t_VSynced = time.clock()
 
