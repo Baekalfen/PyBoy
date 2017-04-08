@@ -64,7 +64,7 @@ def start(ROM, bootROM = None):
     if "loadState" in sys.argv:
         mb.loadState(mb.cartridge.filename+".state")
 
-    mb.cartridge.loadRAMSparse()
+    mb.cartridge.loadRAM()
     if mb.cartridge.rtcEnabled:
         mb.cartridge.rtc.load(mb.cartridge.filename)
 
@@ -126,7 +126,7 @@ def start(ROM, bootROM = None):
     logger("# Emulator is turning off #")
     logger("###########################")
 
-    mb.cartridge.saveRAMSparse()
+    mb.cartridge.saveRAM()
     if mb.cartridge.rtcEnabled:
         mb.cartridge.rtc.save(mb.cartridge.filename)
 

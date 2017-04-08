@@ -10,70 +10,31 @@ import os
 import time
 import struct
 
-#                cart,  ROM,        RAM,   RAMbanks,  batt,   RTC
-cartridgeTable = {0x00: ("ROM-only",  None,        1, False, False),  # ROM
-
-                  0x01: ("MBC1",      None,        1, False, False),  # ROM+MBC1
-                  0x02: ("MBC1",     "RAM",        4, False, False),  # ROM+MBC1+RAM
-                  0x03: ("MBC1",     "RAM",        4,  True, False),  # ROM+MBC1+RAM+BATT
-
-                  0x05: ("MBC2",      None,     None, False, False),  # ROM+MBC2
-                  0x06: ("MBC2",      None,     None,  True, False),  # ROM+MBC2+BATTERY
-
-                  0x08: ("RAM",      "RAM",     None, False, False),  # ROM+RAM
-                  0x09: ("RAM",      "RAM",     None,  True, False),  # ROM+RAM+BATTERY
-
-                  0x0B: None,                                         # ROM+MMM01
-                  0x0C: None,                                         # ROM+MMM01+SRAM
-                  0x0D: None,                                         # ROM+MMM01+SRAM+BATT
-
-                  # Pan docs seems to be wrong. All MBC3's should have RTC according to the official programmers guide
-                  0x0F: ("MBC3",      None,        4,  True,  True),  # ROM+MBC3+TIMER+BATT
-                  0x10: ("MBC3",     "RAM",        4,  True,  True),  # ROM+MBC3+TIMER+RAM+BATT
-                  0x11: ("MBC3",      None,        4, False,  True),  # ROM+MBC3
-                  0x12: ("MBC3",     "RAM",        4, False,  True),  # ROM+MBC3+RAM
-                  0x13: ("MBC3",     "RAM",        4, False,  True),  # ROM+MBC3+RAM+BATT
-
-                  0x19: ("MBC5",      None,     None, False, False),  # ROM+MBC5
-                  0x1A: ("MBC5",     "RAM",     None, False, False),  # ROM+MBC5+RAM
-                  0x1B: ("MBC5",     "RAM",     None,  True, False),  # ROM+MBC5+RAM+BATT
-                  0x1C: ("MBC5",      None,     None, False, False),  # ROM+MBC5+RUMBLE
-                  0x1D: ("MBC5",     "SRAM",    None, False, False),  # ROM+MBC5+RUMBLE+SRAM
-                  0x1E: ("MBC5",     "SRAM",    None,  True, False),  # ROM+MBC5+RUMBLE+SRAM+BATT
-                  0x1F: None,                                         # Pocket Camera
-                  0xFD: None,                                         # Bandai TAMA5/FE Hudson HuC-3
-                  0xFF: None}                                         # Hudson HuC-1
-
 
 def Cartridge(logger, filename):
     ROMBanks = loadROMfile(filename)
     cartType = ROMBanks[0][0x0147]
+    logger(hex(ROMBanks[0][0x0146]), hex(ROMBanks[0][0x0148]))
+    logger("Cartridge type:", hex(cartType))
+    # ROMSize = ROMBanks[0][0x0148]
+    # WARN: The following table doesn't work for MBC2! See Pan Docs
+    exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]
 
     validateCartType(cartType)
     ROMBankController = cartridgeTable[cartType][0]
 
-    if ROMBankController == "ROM-only":
-        return ROM_only(logger, filename, ROMBanks, cartType)
-    elif ROMBankController == "MBC1":
-        return MBC1(logger, filename, ROMBanks, cartType)
-    elif ROMBankController == "MBC2":
-        return MBC2(logger, filename, ROMBanks, cartType)
-    elif ROMBankController == "MBC3":
-        return MBC3(logger, filename, ROMBanks, cartType)
-    elif ROMBankController == "MBC5":
-        return MBC5(logger, filename, ROMBanks, cartType)
-    else:
-        raise CoreDump.CoreDump("Memory bank invalid: %s" % str(ROMBankController))
+    return ROMBankController(logger, filename, ROMBanks, exRAMCount, cartType)
 
 
 def loadROMfile(filename):
     with open(filename, 'rb') as ROMFile:
         ROMData = ROMFile.read()
 
-        ROMBanks = [[0] * (16 * 1024) for n in xrange(len(ROMData) / (16 * 1024))]
+        bankSize = (16 * 1024)
+        ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
 
         for i, byte in enumerate(ROMData):
-            ROMBanks[i / (16 * 1024)][i % (16 * 1024)] = ord(byte)
+            ROMBanks[i / bankSize][i % bankSize] = ord(byte)
 
     return ROMBanks
 
@@ -89,36 +50,32 @@ def validateCartType(cartType):
 
 
 class GenericMBC:
-    def __init__(self, logger, filename, ROMBanks, cartType):
+    def __init__(self, logger, filename, ROMBanks, exRAMCount, cartType):
         self.logger = logger
         self.filename = filename  # For debugging and saving
         self.ROMBanks = ROMBanks
         self.cartType = cartType
 
         (self.ROMBankController,
-         self.RAMBankController,
-         self.RAMBanks,
+         _, # True/False if cartridge RAM is present
          self.battery,
          self.rtcEnabled) = cartridgeTable[self.cartType]
 
         if self.rtcEnabled:
             self.rtc = RTC(logger)
 
-        self.RAMBanks = self.initRAMBanks(self.RAMBanks)
-
+        self.initRAMBanks(exRAMCount)
         self.gameName = self.getGameName(ROMBanks)
 
-        self.memoryModel = 0  # Should not be hardcoded, but no other model is implemented
-        self.RAMRange = (0xA000, 0xBFFF)
+        self.memoryModel = 0
+        # self.RAMRange = (0xA000, 0xC000)
         self.RAMBankEnabled = False
         self.RAMBankSelected = 0  # TODO: Check this, not documented
         self.ROMBankSelected = 1  # TODO: Check this, not documented #NOTE: TestROM 01-special.gb
                                   # assumes initial value of 1
 
-    def saveRAMSparse(self, filename = None):
-        minIdx, maxIdx = self.RAMRange
-
-        if minIdx is None or maxIdx is None:
+    def saveRAM(self, filename = None):
+        if self.RAMBanks is None:
             self.logger("Saving non-volatile memory is not supported on %s" % self.ROMBankController)
             return
 
@@ -128,21 +85,13 @@ class GenericMBC:
         else:
             romPath = filename
 
-        writeBuffer = ""
-        for bank in range(len(self.RAMBanks)):
-            self.RAMBankSelected = bank
-
-            for i in range(minIdx, maxIdx+1):
-                if self[i] != 0:
-                    writeBuffer += "%i,%s,%s\n" % (bank, hex(i)[2:], hex(self[i])[2:])
-
         with open(romPath+".ram", "wb") as saveRAM:
-            saveRAM.write(writeBuffer)
+            for bank in self.RAMBanks:
+                for byte in bank:
+                    saveRAM.write(chr(byte))
 
-    def loadRAMSparse(self, filename = None):
-        minIdx, maxIdx = self.RAMRange
-
-        if minIdx is None or maxIdx is None:
+    def loadRAM(self, filename = None):
+        if self.RAMBanks is None:
             self.logger("Loading non-volatile memory is not supported on %s" % self.ROMBankController)
             return
 
@@ -158,24 +107,18 @@ class GenericMBC:
         self.logger("Loading non-volatile memory")
 
         with open(romPath+".ram", "rb") as loadRAM:
-            data = map(lambda x: x.split(","), loadRAM.read().split("\n"))
-
-            for line in data:
-                if 1 < len(line):  # Ignore empty lines (typically the last line)
-                    bank, idx, value = map(lambda v: int(v, 16), line)
-
-                    self.RAMBankSelected = bank
-                    self[idx] = value
+            for bank in xrange(len(self.RAMBanks)):
+                for byte in xrange(8*1024):
+                    self.RAMBanks[bank][byte] = ord(loadRAM.read(1))
 
     def initRAMBanks(self, n):
         if n is None:
             return None
 
-        banks = []
+        self.RAMBanks = []
         for n in range(n):
-            # In real life the RAM is scrambled on initialization
-            banks.append([0 for x in xrange(8 * 1024)])
-        return banks
+            # In real life the values in RAM are scrambled on initialization
+            self.RAMBanks.append([0 for x in xrange(8 * 1024)])
 
     def getGameName(self, ROMBanks):
         return "".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
@@ -215,7 +158,6 @@ class GenericMBC:
         string += "Number of ROM banks: %s\n" % len(self.ROMBanks)
         string += "Active ROM bank: %s\n" % self.ROMBankSelected
         string += "Memory bank type: %s\n" % self.ROMBankController
-        string += "RAM bank: %s\n" % self.RAMBankController
         string += "Number of RAM banks: %s\n" % len(self.RAMBanks)
         string += "Active RAM bank: %s\n" % self.RAMBankSelected
         string += "Battery: %s\n" % self.battery
@@ -406,7 +348,12 @@ class MBC3(GenericMBC):
             # MBC3 is always 16/8 mode
             self.RAMBankSelected = value # TODO: Should this has a mask?
         elif 0x6000 <= address < 0x8000:
-            self.rtc.writeCommand(value)
+            if self.rtcEnabled:
+                self.rtc.writeCommand(value)
+            else:
+                # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
+                # https://github.com/pret/pokered/issues/155
+                self.logger("RTC not present. Game tried to issue RTC command:", hex(address), hex(value))
         elif 0xA000 <= address < 0xC000:
             if self.RAMBankSelected <= 0x03:
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
@@ -421,3 +368,33 @@ class MBC3(GenericMBC):
 class MBC5(GenericMBC):
     def __setitem__(self, address, value):
         raise Exception("Not implemented")
+
+
+
+cartridgeTable = {
+#          cart     , SRAM  , Battery , RTC
+    0x00: (ROM_only , False , False   , False) , # ROM
+    0x01: (MBC1     , False , False   , False) , # MBC1
+    0x02: (MBC1     , True  , False   , False) , # MBC1+RAM
+    0x03: (MBC1     , True  , True    , False) , # MBC1+RAM+BATT
+    0x05: (MBC2     , False , False   , False) , # MBC2
+    0x06: (MBC2     , False , True    , False) , # MBC2+BATTERY
+    0x08: (ROM_only , True  , False   , False) , # ROM+RAM
+    0x09: (ROM_only , True  , True    , False) , # ROM+RAM+BATTERY
+    0x0F: (MBC3     , False , True    , True)  , # MBC3+TIMER+BATT
+    0x10: (MBC3     , True  , True    , True)  , # MBC3+TIMER+RAM+BATT
+    0x11: (MBC3     , False , False   , False) , # MBC3
+    0x12: (MBC3     , True  , False   , False) , # MBC3+RAM
+    0x13: (MBC3     , True  , True    , False) , # MBC3+RAM+BATT
+    0x19: (MBC5     , False , False   , False) , # MBC5
+    0x1A: (MBC5     , True  , False   , False) , # MBC5+RAM
+    0x1B: (MBC5     , True  , True    , False) , # MBC5+RAM+BATT
+}
+
+# ROMTable = {}
+ExRAMTable = {
+    0x00 : None,
+    0x02 : 1, # Number of 8KB banks
+    0x03 : 4, # Number of 8KB banks
+    0x04 : 16, # Number of 8KB banks
+}

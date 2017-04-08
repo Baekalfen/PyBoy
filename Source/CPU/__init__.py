@@ -5,8 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# http://stackoverflow.com/questions/9638446/is-there-any-python-equivalent-to-partial-classes
-
 from registers import A, F, B, C, D, E, H, L, SP, PC
 from MathUint8 import getBit
 import CoreDump
@@ -49,18 +47,11 @@ class CPU():
         self.oldPC = -1
         self.lala = False
 
-    def split16to8(self, variable):
-        return ((variable & 0xFF00) >> 8, variable & 0x00FF)
-
-    def combine8to16(self, a, b):
-        return (a.getInt() << 8) + b.getInt()
-
     def executeInstruction(self, instruction):
         self.interruptMasterEnable = self.interruptMasterEnableLatch
 
         # '*' unpacks tuple into arguments
         success = instruction[0](*instruction[2])
-        # assert (type(success) is bool or success is None), "Check opcodes"
         if success:
             return instruction[1][1]  # Select correct cycles for jumps
         else:

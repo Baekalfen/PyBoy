@@ -22,8 +22,6 @@ def saveState(self, filename):
         f.write(chr(self.cpu.stopped))
         f.write(chr(self.bootROMEnabled))
 
-        # TODO: Save debug vars
-
         for n in self.ram.VRAM:
             f.write(chr(n))
 
@@ -54,7 +52,11 @@ def saveState(self, filename):
         f.write(chr(self.lcd.OBP1.value))
 
 
-        self.cartridge.saveRAMSparse(filename)
+        f.write(chr(self.cartridge.ROMBankSelected))
+        f.write(chr(self.cartridge.RAMBankSelected))
+        f.write(chr(self.cartridge.RAMBankEnabled))
+        f.write(chr(self.cartridge.memoryModel))
+        self.cartridge.saveRAM(filename)
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.save(filename + ".rtc")
 
@@ -109,7 +111,12 @@ def loadState(self, filename):
         self.lcd.OBP1.set(ord(f.read(1)))
 
 
-        self.cartridge.loadRAMSparse(filename)
+
+        self.cartridge.ROMBankSelected = ord(f.read(1))
+        self.cartridge.RAMBankSelected = ord(f.read(1))
+        self.cartridge.RAMBankEnabled = ord(f.read(1))
+        self.cartridge.memoryModel = ord(f.read(1))
+        self.cartridge.loadRAM(filename)
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.load(filename + ".rtc")
 
