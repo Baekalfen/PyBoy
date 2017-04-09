@@ -4,6 +4,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+import CoreDump
 from GenericMBC import GenericMBC
 
 class MBC3(GenericMBC):

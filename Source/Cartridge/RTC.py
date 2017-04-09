@@ -4,6 +4,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+import CoreDump
 import time
 import os
 import struct
@@ -72,7 +73,7 @@ class RTC():
 
     def getRegister(self, register):
         if not self.latchEnabled:
-            self.logger("RTC: Get register, but nothing is latched!", register, value)
+            self.logger("RTC: Get register, but nothing is latched!", register)
 
         if register == 0x08:
             return self.secLatch

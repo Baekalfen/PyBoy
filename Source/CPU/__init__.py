@@ -91,69 +91,6 @@ class CPU():
         else:
             raise CoreDump.CoreDump("Unexpected opcode length: %s" % operation[0])
 
-    def getDump(self, instruction = None):
-        flags = ""
-        if self.testFlag(flagZ):
-            flags += " Z"
-        if self.testFlag(flagH):
-            flags += " H"
-        if self.testFlag(flagC):
-            flags += " C"
-        if self.testFlag(flagN):
-            flags += " N"
-
-        self.logger("A:", "0x%0.2X" % self.reg[A], "F:", "0x%0.2X" % self.reg[F],flags)
-        self.logger("B:", "0x%0.2X" % self.reg[B], "C:", "0x%0.2X" % self.reg[C])
-        self.logger("D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E])
-        self.logger("H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L])
-        self.logger("SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC])
-        # self.logger("0xC000", "0x%0.2X" % self.mb[0xc000])
-        # self.logger("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
-        self.logger("(HL)", "0x%0.2X" % self.mb[self.getHL()], "(HL+1)", "0x%0.2X" % self.mb[self.getHL()+1])
-        self.logger("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
-
-        if (self.mb[self.reg[PC]]) != 0xCB:
-            l = self.opcodes[self.mb[self.reg[PC]]][0]
-            self.logger("Op:",)
-            self.logger("0x%0.2X" % self.mb[self.reg[PC]],)
-            self.logger("Name:", CPU_COMMANDS[self.mb[self.reg[PC]]],)
-            self.logger("Len:", l,)
-            if instruction:
-                self.logger(("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else "")
-        else:
-            self.logger("CB op:", "0x%0.2X" % self.mb[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])
-        self.logger("Call Stack", self.debugCallStack)
-        self.logger("Active ROM and RAM bank", self.mb.cartridge.ROMBankSelected , self.mb.cartridge.RAMBankSelected)
-        self.logger("Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch)
-        self.logger("Enabled Interrupts",)
-        flags = ""
-        if self.testInterruptFlagEnabled(self.VBlank):
-            flags += " VBlank"
-        if self.testInterruptFlagEnabled(self.LCDC):
-            flags += " LCDC"
-        if self.testInterruptFlagEnabled(self.TIMER):
-            flags += " Timer"
-        if self.testInterruptFlagEnabled(self.Serial):
-            flags += " Serial"
-        if self.testInterruptFlagEnabled(self.HightoLow):
-            flags += " HightoLow"
-        self.logger(flags)
-        self.logger("Waiting Interrupts",)
-        flags = ""
-        if self.testInterruptFlag(self.VBlank):
-            flags += " VBlank"
-        if self.testInterruptFlag(self.LCDC):
-            flags += " LCDC"
-        if self.testInterruptFlag(self.TIMER):
-            flags += " Timer"
-        if self.testInterruptFlag(self.Serial):
-            flags += " Serial"
-        if self.testInterruptFlag(self.HightoLow):
-            flags += " HightoLow"
-        if self.halted:
-            flags += "\nHALTED"
-        self.logger(flags)
-
     def tick(self):
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
         didInterrupt = self.checkForInterrupts()
@@ -234,3 +171,66 @@ class CPU():
 
     def error(self, message):
         raise CoreDump.CoreDump(message)
+
+    def getDump(self, instruction = None):
+        flags = ""
+        if self.testFlag(flagZ):
+            flags += " Z"
+        if self.testFlag(flagH):
+            flags += " H"
+        if self.testFlag(flagC):
+            flags += " C"
+        if self.testFlag(flagN):
+            flags += " N"
+
+        self.logger("A:", "0x%0.2X" % self.reg[A], "F:", "0x%0.2X" % self.reg[F],flags)
+        self.logger("B:", "0x%0.2X" % self.reg[B], "C:", "0x%0.2X" % self.reg[C])
+        self.logger("D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E])
+        self.logger("H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L])
+        self.logger("SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC])
+        # self.logger("0xC000", "0x%0.2X" % self.mb[0xc000])
+        # self.logger("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
+        self.logger("(HL)", "0x%0.2X" % self.mb[self.getHL()], "(HL+1)", "0x%0.2X" % self.mb[self.getHL()+1])
+        self.logger("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
+
+        if (self.mb[self.reg[PC]]) != 0xCB:
+            l = self.opcodes[self.mb[self.reg[PC]]][0]
+            self.logger("Op:",)
+            self.logger("0x%0.2X" % self.mb[self.reg[PC]],)
+            self.logger("Name:", CPU_COMMANDS[self.mb[self.reg[PC]]],)
+            self.logger("Len:", l,)
+            if instruction:
+                self.logger(("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else "")
+        else:
+            self.logger("CB op:", "0x%0.2X" % self.mb[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])
+        self.logger("Call Stack", self.debugCallStack)
+        self.logger("Active ROM and RAM bank", self.mb.cartridge.ROMBankSelected , self.mb.cartridge.RAMBankSelected)
+        self.logger("Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch)
+        self.logger("Enabled Interrupts",)
+        flags = ""
+        if self.testInterruptFlagEnabled(self.VBlank):
+            flags += " VBlank"
+        if self.testInterruptFlagEnabled(self.LCDC):
+            flags += " LCDC"
+        if self.testInterruptFlagEnabled(self.TIMER):
+            flags += " Timer"
+        if self.testInterruptFlagEnabled(self.Serial):
+            flags += " Serial"
+        if self.testInterruptFlagEnabled(self.HightoLow):
+            flags += " HightoLow"
+        self.logger(flags)
+        self.logger("Waiting Interrupts",)
+        flags = ""
+        if self.testInterruptFlag(self.VBlank):
+            flags += " VBlank"
+        if self.testInterruptFlag(self.LCDC):
+            flags += " LCDC"
+        if self.testInterruptFlag(self.TIMER):
+            flags += " Timer"
+        if self.testInterruptFlag(self.Serial):
+            flags += " Serial"
+        if self.testInterruptFlag(self.HightoLow):
+            flags += " HightoLow"
+        if self.halted:
+            flags += "\nHALTED"
+        self.logger(flags)

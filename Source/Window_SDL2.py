@@ -35,31 +35,31 @@ class Window():
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
         self.windowEventsDown = {
-                sdl2.SDLK_UP : WindowEvent.PressArrowUp,
-                sdl2.SDLK_DOWN: WindowEvent.PressArrowDown,
-                sdl2.SDLK_RIGHT: WindowEvent.PressArrowRight,
-                sdl2.SDLK_LEFT: WindowEvent.PressArrowLeft,
-                sdl2.SDLK_a: WindowEvent.PressButtonA,
-                sdl2.SDLK_s: WindowEvent.PressButtonB,
-                sdl2.SDLK_RETURN: WindowEvent.PressButtonStart,
-                sdl2.SDLK_BACKSPACE: WindowEvent.PressButtonSelect,
-                sdl2.SDLK_ESCAPE: WindowEvent.Quit,
-                # sdl2.SDLK_e: self.debug = True
-                sdl2.SDLK_d: WindowEvent.DebugToggle,
-                sdl2.SDLK_SPACE: WindowEvent.PressSpeedUp,
+                sdl2.SDLK_UP        : WindowEvent.PressArrowUp,
+                sdl2.SDLK_DOWN      : WindowEvent.PressArrowDown,
+                sdl2.SDLK_RIGHT     : WindowEvent.PressArrowRight,
+                sdl2.SDLK_LEFT      : WindowEvent.PressArrowLeft,
+                sdl2.SDLK_a         : WindowEvent.PressButtonA,
+                sdl2.SDLK_s         : WindowEvent.PressButtonB,
+                sdl2.SDLK_RETURN    : WindowEvent.PressButtonStart,
+                sdl2.SDLK_BACKSPACE : WindowEvent.PressButtonSelect,
+                sdl2.SDLK_ESCAPE    : WindowEvent.Quit,
+                # sdl2.SDLK_e       : self.debug = True
+                sdl2.SDLK_d         : WindowEvent.DebugToggle,
+                sdl2.SDLK_SPACE     : WindowEvent.PressSpeedUp,
         }
         self.windowEventsUp = {
-                sdl2.SDLK_UP: WindowEvent.ReleaseArrowUp,
-                sdl2.SDLK_DOWN: WindowEvent.ReleaseArrowDown,
-                sdl2.SDLK_RIGHT: WindowEvent.ReleaseArrowRight,
-                sdl2.SDLK_LEFT: WindowEvent.ReleaseArrowLeft,
-                sdl2.SDLK_a: WindowEvent.ReleaseButtonA,
-                sdl2.SDLK_s: WindowEvent.ReleaseButtonB,
-                sdl2.SDLK_RETURN: WindowEvent.ReleaseButtonStart,
-                sdl2.SDLK_BACKSPACE: WindowEvent.ReleaseButtonSelect,
-                sdl2.SDLK_z: WindowEvent.SaveState,
-                sdl2.SDLK_x: WindowEvent.LoadState,
-                sdl2.SDLK_SPACE: WindowEvent.ReleaseSpeedUp,
+                sdl2.SDLK_UP        : WindowEvent.ReleaseArrowUp,
+                sdl2.SDLK_DOWN      : WindowEvent.ReleaseArrowDown,
+                sdl2.SDLK_RIGHT     : WindowEvent.ReleaseArrowRight,
+                sdl2.SDLK_LEFT      : WindowEvent.ReleaseArrowLeft,
+                sdl2.SDLK_a         : WindowEvent.ReleaseButtonA,
+                sdl2.SDLK_s         : WindowEvent.ReleaseButtonB,
+                sdl2.SDLK_RETURN    : WindowEvent.ReleaseButtonStart,
+                sdl2.SDLK_BACKSPACE : WindowEvent.ReleaseButtonSelect,
+                sdl2.SDLK_z         : WindowEvent.SaveState,
+                sdl2.SDLK_x         : WindowEvent.LoadState,
+                sdl2.SDLK_SPACE     : WindowEvent.ReleaseSpeedUp,
         }
 
         self.debug = False
@@ -91,51 +91,43 @@ class Window():
             self.tileDataWidth = 16*8 # Change the 16 to whatever wide you want the tile window
             self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
 
-            # TODO: Make a function to DRY. makeWindowAndGetBuffer(etc..) or something like that
-            sdl2.ext.Window.DEFAULTPOS = (windowOffset, 0)
+            self.tileDataWindow, self.tileDataWindowSurface, self.tileDataBuffer = \
+                    self.makeWindowAndGetBuffer(self.tileDataWidth, self.tileDataHeight, windowOffset, 0, "Tile Data")
             windowOffset += self.tileDataWidth
 
-            self.tileDataWindow = sdl2.ext.Window("Tile Data", size=(self.tileDataWidth, self.tileDataHeight))
-            self.tileDataWindowSurface = self.tileDataWindow.get_surface()
-            self.tileDataBuffer = pixels2dWithoutWarning(self.tileDataWindowSurface)
-            self.tileDataWindow.show()
-
-            # # Background View 1
+            # Background View 1
             self.tileView1Width = 0x100
             self.tileView1Height = 0x100
 
-            sdl2.ext.Window.DEFAULTPOS = (windowOffset, 0)
+            self.tileView1Window, self.tileView1WindowSurface, self.tileView1Buffer = \
+                    self.makeWindowAndGetBuffer(self.tileView1Width, self.tileView1Height, windowOffset, 0, "Tile View 1")
             windowOffset += self.tileView1Width
 
-            self.tileView1Window = sdl2.ext.Window("Tile View 1", size=(self.tileView1Width, self.tileView1Height))
-            self.tileView1WindowSurface = self.tileView1Window.get_surface()
-            self.tileView1Buffer = pixels2dWithoutWarning(self.tileView1WindowSurface)
-            self.tileView1Window.show()
-
-            # # Background View 2
+            # Background View 2
             self.tileView2Width = 0x100
             self.tileView2Height = 0x100
 
-            sdl2.ext.Window.DEFAULTPOS = (windowOffset, 0)
+            self.tileView2Window, self.tileView2WindowSurface, self.tileView2Buffer = \
+                    self.makeWindowAndGetBuffer(self.tileView2Width, self.tileView2Height, windowOffset, 0, "Tile View 2")
             windowOffset += self.tileView2Width
 
-            self.tileView2Window = sdl2.ext.Window("Tile View 2", size=(self.tileView2Width, self.tileView2Height))
-            self.tileView2WindowSurface = self.tileView2Window.get_surface()
-            self.tileView2Buffer = pixels2dWithoutWarning(self.tileView2WindowSurface)
-            self.tileView2Window.show()
-
-            # # Sprite View
+            # Sprite View
             self.spriteWidth = 0x40
             self.spriteHeight = 0x28*2
 
-            sdl2.ext.Window.DEFAULTPOS = (windowOffset, 0)
-            # windowOffset += self.spriteWidth # Not necessary yet
+            self.spriteWindow, self.spriteWindowSurface, self.spriteBuffer = \
+                    self.makeWindowAndGetBuffer(self.spriteWidth, self.spriteHeight, windowOffset, 0, "Sprite View")
+            windowOffset += self.spriteWidth
 
-            self.spriteWindow = sdl2.ext.Window("Sprite View", size=(self.spriteWidth, self.spriteHeight))
-            self.spriteWindowSurface = self.spriteWindow.get_surface()
-            self.spriteBuffer = pixels2dWithoutWarning(self.spriteWindowSurface)
-            self.spriteWindow.show()
+    def makeWindowAndGetBuffer(self, width, height, pos_x, pos_y, window_name):
+        sdl2.ext.Window.DEFAULTPOS = (pos_x, pos_y)
 
+        window = sdl2.ext.Window(window_name, size=(width, height))
+        windowSurface = window.get_surface()
+        windowBuffer = pixels2dWithoutWarning(windowSurface)
+        window.show()
+
+        return window, windowSurface, windowBuffer
 
     def dump(self,filename):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface,filename+".bmp")
@@ -192,7 +184,7 @@ class Window():
 
             for x in xrange(gameboyResolution[0]):
                 if lcd.LCDC.backgroundEnable:
-                    backgroundTileIndex = lcd.mb.ram.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
+                    backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                         backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
@@ -205,7 +197,7 @@ class Window():
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
                     if wy <= y and wx <= x:
-                        windowTileIndex = lcd.mb.ram.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
+                        windowTileIndex = lcd.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
                         if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                             windowTileIndex = getSignedInt8(windowTileIndex)+256
@@ -220,10 +212,10 @@ class Window():
         BGPkey = lcd.BGP.getColor(0)
 
         for n in xrange(0x00,0xA0,4):
-            y = lcd.mb.ram.OAM[n] - 16 #TODO: Simplify reference
-            x = lcd.mb.ram.OAM[n+1] - 8
-            tileIndex = lcd.mb.ram.OAM[n+2]
-            attributes = lcd.mb.ram.OAM[n+3]
+            y = lcd.OAM[n] - 16 #TODO: Simplify reference
+            x = lcd.OAM[n+1] - 8
+            tileIndex = lcd.OAM[n+2]
+            attributes = lcd.OAM[n+3]
             xFlip = getBit(attributes, 5)
             yFlip = getBit(attributes, 6)
             spritePriority = getBit(attributes, 7)
@@ -293,7 +285,7 @@ class Window():
         winVerTileView1Limit = 32
 
         for n in xrange(0x1800,0x1C00):
-            tileIndex = lcd.mb.ram.VRAM[n] #TODO: Simplify this reference -- and reoccurences
+            tileIndex = lcd.VRAM[n] #TODO: Simplify this reference -- and reoccurences
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
@@ -317,7 +309,7 @@ class Window():
         winVerTileView2Limit = 32
 
         for n in xrange(0x1C00,0x2000):
-            tileIndex = lcd.mb.ram.VRAM[n]
+            tileIndex = lcd.VRAM[n]
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
@@ -378,8 +370,8 @@ class Window():
     def refreshSpriteView(self, lcd):
         self.spriteBuffer.fill(0x00ABC4FF)
         for n in xrange(0x00,0xA0,4):
-            tileIndex = lcd.mb.ram.OAM[n+2] # TODO: Simplify this reference
-            attributes = lcd.mb.ram.OAM[n+3]
+            tileIndex = lcd.OAM[n+2] # TODO: Simplify this reference
+            attributes = lcd.OAM[n+3]
             fromXY = (tileIndex * 8, 0)
 
             i = n*2

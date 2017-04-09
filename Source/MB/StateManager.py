@@ -22,35 +22,19 @@ def saveState(self, filename):
         f.write(chr(self.cpu.stopped))
         f.write(chr(self.bootROMEnabled))
 
-        for n in self.ram.VRAM:
-            f.write(chr(n))
-
-        for n in self.ram.internalRAM0:
-            f.write(chr(n))
-
-        for n in self.ram.OAM:
-            f.write(chr(n))
-
-        for n in self.ram.nonIOInternalRAM0:
-            f.write(chr(n))
-
-        for n in self.ram.IOPorts:
-            f.write(chr(n))
-
-        for n in self.ram.internalRAM1:
-            f.write(chr(n))
-
-        for n in self.ram.nonIOInternalRAM1:
-            f.write(chr(n))
-
-        for n in self.ram.interruptRegister:
-            f.write(chr(n))
+        f.write(bytearray([chr(n) for n in self.lcd.VRAM]))
+        f.write(bytearray([chr(n) for n in self.ram.internalRAM0]))
+        f.write(bytearray([chr(n) for n in self.lcd.OAM]))
+        f.write(bytearray([chr(n) for n in self.ram.nonIOInternalRAM0]))
+        f.write(bytearray([chr(n) for n in self.ram.IOPorts]))
+        f.write(bytearray([chr(n) for n in self.ram.internalRAM1]))
+        f.write(bytearray([chr(n) for n in self.ram.nonIOInternalRAM1]))
+        f.write(bytearray([chr(n) for n in self.ram.interruptRegister]))
 
         f.write(chr(self.lcd.LCDC.value))
         f.write(chr(self.lcd.BGP.value))
         f.write(chr(self.lcd.OBP0.value))
         f.write(chr(self.lcd.OBP1.value))
-
 
         f.write(chr(self.cartridge.ROMBankSelected))
         f.write(chr(self.cartridge.RAMBankSelected))
@@ -68,12 +52,8 @@ def loadState(self, filename):
     with open(filename, "rb") as f:
         self.cpu.oldPC = None
 
-        for n in xrange(len(self.cpu.reg)-2):
-            self.cpu.reg[n] = ord(f.read(1))
-
-        for n in xrange(len(self.cpu.reg)-2,len(self.cpu.reg)):
-            self.cpu.reg[n] = ord(f.read(1))
-            self.cpu.reg[n] += ord(f.read(1)) << 8
+        self.cpu.reg[:-2] = [ord(f.read(1)) for _ in xrange(len(self.cpu.reg)-2)]
+        self.cpu.reg[-2:] = [ord(f.read(1)) + (ord(f.read(1))<<8) for _ in xrange(2)]
 
         self.cpu.interruptMasterEnable = ord(f.read(1))
         self.cpu.interruptMasterEnableLatch = ord(f.read(1))
@@ -81,36 +61,19 @@ def loadState(self, filename):
         self.cpu.stopped = ord(f.read(1))
         self.bootROMEnabled = ord(f.read(1))
 
-        for n in xrange(len(self.ram.VRAM)):
-            self.ram.VRAM[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.internalRAM0)):
-            self.ram.internalRAM0[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.OAM)):
-            self.ram.OAM[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.nonIOInternalRAM0)):
-            self.ram.nonIOInternalRAM0[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.IOPorts)):
-            self.ram.IOPorts[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.internalRAM1)):
-            self.ram.internalRAM1[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.nonIOInternalRAM1)):
-            self.ram.nonIOInternalRAM1[n] = ord(f.read(1))
-
-        for n in xrange(len(self.ram.interruptRegister)):
-            self.ram.interruptRegister[n] = ord(f.read(1))
+        self.lcd.VRAM[:]              = [ord(f.read(1)) for _ in self.lcd.VRAM]
+        self.ram.internalRAM0[:]      = [ord(f.read(1)) for _ in self.ram.internalRAM0]
+        self.lcd.OAM[:]               = [ord(f.read(1)) for _ in self.lcd.OAM]
+        self.ram.nonIOInternalRAM0[:] = [ord(f.read(1)) for _ in self.ram.nonIOInternalRAM0]
+        self.ram.IOPorts[:]           = [ord(f.read(1)) for _ in self.ram.IOPorts]
+        self.ram.internalRAM1[:]      = [ord(f.read(1)) for _ in self.ram.internalRAM1]
+        self.ram.nonIOInternalRAM1[:] = [ord(f.read(1)) for _ in self.ram.nonIOInternalRAM1]
+        self.ram.interruptRegister[:] = [ord(f.read(1)) for _ in self.ram.interruptRegister]
 
         self.lcd.LCDC.set(ord(f.read(1)))
         self.lcd.BGP.set(ord(f.read(1)))
         self.lcd.OBP0.set(ord(f.read(1)))
         self.lcd.OBP1.set(ord(f.read(1)))
-
-
 
         self.cartridge.ROMBankSelected = ord(f.read(1))
         self.cartridge.RAMBankSelected = ord(f.read(1))

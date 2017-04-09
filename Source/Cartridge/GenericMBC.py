@@ -4,6 +4,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+import CoreDump
 import os
 from RTC import RTC
 

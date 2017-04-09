@@ -13,7 +13,7 @@ def __getitem__(self, i):
     elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
         return self.cartridge[i]
     elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
-        return self.ram.VRAM[i - 0x8000]
+        return self.lcd.VRAM[i - 0x8000]
     elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
         return self.cartridge[i]
     elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
@@ -22,7 +22,7 @@ def __getitem__(self, i):
         # Redirect to internal RAM
         return self[i - 0x2000]
     elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
-        return self.ram.OAM[i - 0xFE00]
+        return self.lcd.OAM[i - 0xFE00]
     elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
         return self.ram.nonIOInternalRAM0[i - 0xFEA0]
     elif 0xFF00 <= i < 0xFF4C:  # I/O ports
@@ -64,7 +64,7 @@ def __setitem__(self,i,value):
     elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
         if i < 0x9800: # Is within tile data -- not tile maps
             self.lcd.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
-        self.ram.VRAM[i - 0x8000] = value
+        self.lcd.VRAM[i - 0x8000] = value
     elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
         self.cartridge[i] = value
     elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
@@ -73,7 +73,7 @@ def __setitem__(self,i,value):
         # Redirect to internal RAM
         self[i - 0x2000] = value
     elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
-        self.ram.OAM[i - 0xFE00] = value
+        self.lcd.OAM[i - 0xFE00] = value
     elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
         self.ram.nonIOInternalRAM0[i - 0xFEA0] = value
     elif 0xFF00 <= i < 0xFF4C:  # I/O ports

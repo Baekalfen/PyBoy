@@ -30,9 +30,7 @@ class RAM():
         if random: #NOTE: In real life, the RAM is scrambled with random data on boot.
             raise Exception("Random RAM not implemented")
 
-        self.VRAM = allocateRAM(VIDEO_RAM)
         self.internalRAM0 = allocateRAM(INTERNAL_RAM_0)
-        self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
         self.nonIOInternalRAM0 = allocateRAM(NON_IO_INTERNAL_RAM0)
         self.IOPorts = allocateRAM(IO_PORTS)
         self.internalRAM1 = allocateRAM(INTERNAL_RAM_1)

@@ -5,6 +5,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import CoreDump
+from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 from MathUint8 import getSignedInt8, getBit
 import numpy
 
@@ -40,6 +42,9 @@ class LCD():
 
         self.tileCache = numpy.ndarray((384 * 8, 8), dtype='int32')
 
+        self.VRAM = allocateRAM(VIDEO_RAM)
+        self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
+
         # TODO: Find a more optimal way to do this
         self.spriteCacheOBP0 = numpy.ndarray((384 * 8, 8), dtype='int32')
         self.spriteCacheOBP1 = numpy.ndarray((384 * 8, 8), dtype='int32')
@@ -67,6 +72,7 @@ class LCD():
         if self.clearCache:
             self.tilesChanged.clear()
             for x in xrange(0x8000,0x9800,16):
+
                 self.tilesChanged.add(x)
             self.clearCache = False
 

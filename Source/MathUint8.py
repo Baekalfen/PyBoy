@@ -52,7 +52,7 @@ def rrotate_thruC(x, c):
 
 
 def getSignedInt8(x):
-    if x & 0b10000000 == 0b10000000:  # Test MSB for negative
+    if x & 0b10000000:  # Test MSB for negative
         return -(~x & 0xFF)-1
     else:
         return x & 0xFF
