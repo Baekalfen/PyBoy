@@ -17,7 +17,9 @@ except ImportError:
 if __pypy__ is not None:
     sys.path.insert(0, "/usr/local/Cellar/pypy/4.0.1/libexec/site-packages")
 
-from Debug import Debug
+import platform
+if platform.system() != "Windows":
+    from Debug import Debug
 from MB import Motherboard
 from WindowEvent import WindowEvent
 import time
@@ -51,7 +53,7 @@ def start(ROM, bootROM = None):
     global window, mb, logger
 
     debugger = None
-    if "debug" in sys.argv:
+    if "debug" in sys.argv and platform.system() != "Windows":
         debugger = Debug()
         debugger.tick()
         logger = debugger.console.writeLine
@@ -199,4 +201,5 @@ if __name__ == "__main__":
         if mb is not None:
             mb.cpu.getDump()
         traceback.print_exc()
+
 

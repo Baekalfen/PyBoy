@@ -20,7 +20,7 @@ BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, Win
 
 gameboyResolution = (160, 144)
 colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
-
+alphaMask = 0x7F000000
 
 def getColorCode(byte1,byte2,offset):
     # The colors are 2 bit and are found like this:
@@ -91,7 +91,7 @@ class LCD():
                     # TODO: Find a more optimal way to do this
                     alpha = 0x00000000
                     if colorCode == 0:
-                        alpha = 0xFF000000 # Add alpha channel
+                        alpha = alphaMask # Add alpha channel
                     self.spriteCacheOBP0[x, y] = self.OBP0.getColor(colorCode) + alpha
                     self.spriteCacheOBP1[x, y] = self.OBP1.getColor(colorCode) + alpha
 

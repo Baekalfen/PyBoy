@@ -17,6 +17,7 @@ Table of Contents
 * [Starting the Emulator](#starting-the-emulator)
     * [macOS](#macos)
     * [Ubuntu/Linux](#ubuntulinux)
+    * [Windows](#windows)
     * [Setup and Run](#setup-and-run)
 * [Contribute](#contribute)
 * [License](#license)
@@ -46,12 +47,7 @@ When brew is installed, the depencencies can be installed with the following com
     brew install sdl2 sdl2_gfx sdl2_image
 
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
-
-    hg clone https://bitbucket.org/marcusva/py-sdl2
-    cd py-sdl2/
-    pypy setup.py install
-    cd ..
-    rm -rf py-sdl2/
+    pip_pypy install hg+https://bitbucket.org/marcusva/py-sdl2
 
 Ubuntu/Linux
 ------------
@@ -69,12 +65,41 @@ Now move to the `PyBoy/Source` directory before creating the virtual environment
     source ./bin/activate
 
     pip install git+https://bitbucket.org/pypy/numpy.git
+    pip install hg+https://bitbucket.org/marcusva/py-sdl2
 
-    hg clone https://bitbucket.org/marcusva/py-sdl2
-    cd py-sdl2/
-    pypy setup.py install
-    cd ..
-    rm -rf py-sdl2/
+Windows
+-------
+First, install Git, Mercurial, vcredist and VCForPython27:
+
+    https://git-scm.com/download/win
+    https://www.mercurial-scm.org/wiki/Download#Windows
+    http://www.microsoft.com/en-us/download/details.aspx?id=5582
+    https://www.microsoft.com/en-us/download/details.aspx?id=44266
+
+Then download the latest Pypy 32-bit (64-bit pre-built isn't available). At the time of writing the newest version is `pypy2-v5.7.1-win32.zip`:
+
+    https://bitbucket.org/pypy/pypy/downloads/
+
+Unzip it, and place the contents somewhere like: `C:\pypy2\`.
+
+Search from "Edit the system environment varibles" from the start menu. Add `C:\pypy2;` at the beginning of the value of the `Path` variable.
+
+Start a Command Prompt and run the following:
+
+    pypy -m ensurepip
+    pypy -m pip install -U pip wheel
+    pypy -m pip install git+https://bitbucket.org/pypy/numpy.git
+    pypy -m pip install hg+https://bitbucket.org/marcusva/py-sdl2
+
+
+Download SDL2 Runtime Binaries for 32-bit Windows:
+
+    https://www.libsdl.org/download-2.0.php
+
+Place it somewhere you can locate it. I chose `C:\pypy2\SDL2.dll`. Then set the variable from the Command Prompt.
+
+    set PYSDL2_DLL_PATH=C:\pypy2\SDL2.dll
+
 
 Setup and Run
 -------------
