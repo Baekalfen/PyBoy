@@ -49,7 +49,7 @@ def printLine(*args):
 # global logger
 logger = printLine
 
-def start(ROM, bootROM = None):
+def start(ROM, bootROM = None, scale=4):
     global window, mb, logger
 
     debugger = None
@@ -58,7 +58,7 @@ def start(ROM, bootROM = None):
         debugger.tick()
         logger = debugger.console.writeLine
 
-    window = Window(logger, scale=1)
+    window = Window(logger, scale=scale)
     if bootROM is not None:
         logger("Starting with boot ROM")
     mb = Motherboard(logger, ROM, bootROM, window)
