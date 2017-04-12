@@ -20,39 +20,10 @@ import operator
 from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
 from LCD import colorPalette, alphaMask
+from FrameBuffer import FrameBuffer, SimpleFrameBuffer
 
 gameboyResolution = (160, 144)
 
-class ScaledArray(object):
-
-    def __init__(self, array, scaleFactor=1):
-        if not hasattr(array, '__getitem__') or not hasattr(array, '__setitem__'):
-            raise AttributeError('Input array is missing attributes __getitem__'\
-                    'and __setitem__')
-        if not isinstance(scaleFactor, int):
-            raise TypeError('ScaleFactor must be an integer')
-        self._array = array
-        self._scaleFactor = scaleFactor
-
-    def fill(self, val):
-        self._array.fill(val)
-
-    def __getitem__(self, key):
-        if type(key) is tuple:
-            offset = tuple([self._scaleFactor * x for x in key])
-        else:
-            offset = self._scaleFactor * key
-        return self._array[offset]
-
-    def __setitem__(self, key, item):
-        if type(key) is tuple:
-            for i in range(self._scaleFactor):
-                for j in range(self._scaleFactor):
-                    self._array[self._scaleFactor * key[0] + i, self._scaleFactor*key[1] + j] = item
-
-        else:
-            offset = self._scaleFactor * key
-            self._array[offset] = item
 
 def pixels2dWithoutWarning(surface):
     with warnings.catch_warnings():
@@ -108,7 +79,7 @@ class Window():
         self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
         self._windowSurface = self._window.get_surface()
 
-        self._screenBuffer = ScaledArray(pixels2dWithoutWarning(self._windowSurface), self._scale)
+        self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
         self._screenBuffer.fill(0x00558822)
         self._window.show()
 
@@ -194,6 +165,7 @@ class Window():
             self.tileView1Window.refresh()
             self.tileView2Window.refresh()
             self.spriteWindow.refresh()
+            self._screenBuffer.update()
 
     def VSync(self):
         sdl2.SDL_RenderPresent(self.renderer)
