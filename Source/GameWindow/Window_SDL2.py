@@ -163,12 +163,12 @@ class SdlGameWindow(AbstractGameWindow):
 
     def updateDisplay(self):
         self._window.refresh()
+        self._screenBuffer.update()
         if __debug__:
             self.tileDataWindow.refresh()
             self.tileView1Window.refresh()
             self.tileView2Window.refresh()
             self.spriteWindow.refresh()
-            self._screenBuffer.update()
 
     def VSync(self):
         sdl2.SDL_RenderPresent(self.renderer)
