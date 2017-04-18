@@ -49,6 +49,10 @@ When brew is installed, the depencencies can be installed with the following com
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
     pip_pypy install hg+https://bitbucket.org/marcusva/py-sdl2
 
+Now move to the `PyBoy/Source` directory before installing the dependencies:
+
+    pip_pypy install -r requirements.txt
+
 Ubuntu/Linux
 ------------
 Ubuntu has some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy and PySDL2 in a virtualenv.
@@ -66,6 +70,7 @@ Now move to the `PyBoy/Source` directory before creating the virtual environment
 
     pip install git+https://bitbucket.org/pypy/numpy.git
     pip install hg+https://bitbucket.org/marcusva/py-sdl2
+    pip install -r requirements.txt
 
 Windows
 -------
@@ -90,6 +95,10 @@ Start a Command Prompt and run the following:
     pypy -m pip install -U pip wheel
     pypy -m pip install git+https://bitbucket.org/pypy/numpy.git
     pypy -m pip install hg+https://bitbucket.org/marcusva/py-sdl2
+
+Now move to the `PyBoy/Source` directory before installing the dependencies:
+
+    pypy -m pip install -r requirements.txt
 
 
 Download SDL2 Runtime Binaries for 32-bit Windows:
