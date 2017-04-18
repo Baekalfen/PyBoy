@@ -7,4 +7,4 @@
 #
 
 from .abstract_game_window import AbstractGameWindow
-from .Window_SDL2 import SdlGameWindow
+from .GameWindow_SDL2 import SdlGameWindow
