@@ -49,7 +49,7 @@ def printLine(*args):
 # global logger
 logger = printLine
 
-def start(ROM, bootROM = None, scale=4):
+def start(ROM, bootROM = None, scale=1):
     global window, mb, logger
 
     debugger = None
