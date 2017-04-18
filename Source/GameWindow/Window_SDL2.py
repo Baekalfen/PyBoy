@@ -20,7 +20,7 @@ import operator
 from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
 from LCD import colorPalette, alphaMask
-from FrameBuffer import SimpleFrameBuffer
+from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from abstract_game_window import AbstractGameWindow
 
 gameboyResolution = (160, 144)
@@ -79,7 +79,10 @@ class SdlGameWindow(AbstractGameWindow):
         self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
         self._windowSurface = self._window.get_surface()
 
-        self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
+        if self._scale == 1:
+            self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface))
+        else:
+            self._screenBuffer = ScaledFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
         self._screenBuffer.fill(0x00558822)
         self._window.show()
 

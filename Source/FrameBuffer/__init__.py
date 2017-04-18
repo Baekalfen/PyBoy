@@ -1,1 +1,1 @@
-from .framebuffer import FrameBuffer, SimpleFrameBuffer
+from .framebuffer import FrameBuffer, SimpleFrameBuffer, ScaledFrameBuffer

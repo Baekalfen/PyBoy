@@ -36,9 +36,22 @@ class FrameBuffer(object):
         """Set FrameBuffer item at index"""
         self._cache[key] = item
 
-class SimpleFrameBuffer(FrameBuffer):
+class ScaledFrameBuffer(FrameBuffer):
 
     def update(self):
         for (x, y),_ in np.ndenumerate(self._array):
             self._array[x, y] = self._cache[x/self._scaleFactor,
                     y/self._scaleFactor]
+
+class SimpleFrameBuffer(FrameBuffer):
+
+    SCALE = 1
+
+    def __init__(self, array):
+        """
+        """
+        super(self.__class__, self).__init__(array, self.SCALE)
+
+    def update(self):
+        for (x, y),_ in np.ndenumerate(self._array):
+            self._array[x, y] = self._cache[x, y]
