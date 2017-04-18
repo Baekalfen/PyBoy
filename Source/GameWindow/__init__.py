@@ -6,5 +6,5 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from .abstract_game_window import AbstractGameWindow
+from .AbstractGameWindow import AbstractGameWindow
 from .GameWindow_SDL2 import SdlGameWindow
