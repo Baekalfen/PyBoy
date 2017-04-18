@@ -21,7 +21,7 @@ from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
 from LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
-from abstract_game_window import AbstractGameWindow
+from GameWindow import AbstractGameWindow
 
 gameboyResolution = (160, 144)
 
