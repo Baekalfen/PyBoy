@@ -21,7 +21,7 @@ import platform
 if platform.system() != "Windows":
     from Debug import Debug
 from MB import Motherboard
-from WindowEvent import WindowEvent
+from GbEvent.WindowEvent import WindowEvent
 import time
 import os.path
 import os
@@ -103,11 +103,10 @@ def start(ROM, bootROM = None, scale=1):
         if not debugger is None and debugger.running:
             action = debugger.tick()
 
-            # Avoiding the window hanging
-            window.updateDisplay()
         else:
             mb.tickFrame()
-            window.updateDisplay()
+
+        window.updateDisplay()
 
 
         # # Trying to avoid VSync'ing on a frame, if we are out of time

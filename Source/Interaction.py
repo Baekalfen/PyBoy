@@ -4,7 +4,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from WindowEvent import WindowEvent
+from GbEvent.WindowEvent import WindowEvent
 import CoreDump
 from MathUint8 import  resetBit, setBit
 # from PrimitiveTypes import uint8
