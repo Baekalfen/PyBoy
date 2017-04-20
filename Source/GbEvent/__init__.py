@@ -6,3 +6,4 @@
 #
 
 from WindowEvent import WindowEvent
+from EventHandler import EventHandler

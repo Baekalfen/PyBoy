@@ -21,7 +21,8 @@ import platform
 if platform.system() != "Windows":
     from Debug import Debug
 from MB import Motherboard
-from GbEvent.WindowEvent import WindowEvent
+from GbEvent import WindowEvent
+from GbEvent import EventHandler
 import time
 import os.path
 import os
@@ -41,7 +42,6 @@ else:
 window = None
 mb = None
 
-SPF = 1/60. # inverse FPS (frame-per-second)
 
 def printLine(*args):
     print "#", " ".join([str(x) for x in args])
@@ -70,58 +70,11 @@ def start(ROM, bootROM = None, scale=1):
     if mb.cartridge.rtcEnabled:
         mb.cartridge.rtc.load(mb.cartridge.filename)
 
-    done = False
-    exp_avg_emu = 0
-    exp_avg_cpu = 0
-    t_start = 0
-    t_VSynced = 0
-    t_frameDone = 0
-    counter = 0
-    limitEmulationSpeed = True
-    while not done:
-        exp_avg_emu = 0.9 * exp_avg_emu + 0.1 * (t_VSynced-t_start)
+    eventHandler = EventHandler(window, mb)
 
-        t_start = time.clock()
-        for event in window.getEvents():
-            if event == WindowEvent.Quit:
-                window.stop()
-                done = True
-            elif event == WindowEvent.ReleaseSpeedUp:
-                limitEmulationSpeed ^= True
-            # elif event == WindowEvent.PressSpeedUp:
-            #     limitEmulationSpeed = False
-            elif event == WindowEvent.SaveState:
-                mb.saveState(mb.cartridge.filename+".state")
-            elif event == WindowEvent.LoadState:
-                mb.loadState(mb.cartridge.filename+".state")
-            elif event == WindowEvent.DebugToggle:
-                # mb.cpu.breakAllow = True
-                debugger.running ^= True
-            else:  # Right now, everything else is a button press
-                mb.buttonEvent(event)
-
-        if not debugger is None and debugger.running:
-            action = debugger.tick()
-
-        else:
-            mb.tickFrame()
-
-        window.updateDisplay()
-
-
-        # # Trying to avoid VSync'ing on a frame, if we are out of time
-        # if limitEmulationSpeed or (time.clock()-t_start < SPF):
-        #     # This one makes time and frame syncing work, but messes with time.clock()
-        #     window.VSync()
-
-        t_VSynced = time.clock()
-
-        if counter % 60 == 0:
-            text = str(int(((exp_avg_emu)/SPF*100))) + "%"
-            window._window.title = text
-            # logger(text)
-            counter = 0
-        counter += 1
+    # Main event loop
+    while not eventHandler.hasExitCondition():
+        eventHandler.cycle(debugger)
 
     logger("###########################")
     logger("# Emulator is turning off #")
