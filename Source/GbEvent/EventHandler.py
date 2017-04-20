@@ -38,6 +38,7 @@ class EventHandler(object):
             if event == WindowEvent.Quit:
                 self.window.stop()
                 self.exitCondition = True
+                return
             elif event == WindowEvent.ReleaseSpeedUp:
                 self.limitemulationspeed ^= True
             # elif event == WindowEvent.PressSpeedUp:
