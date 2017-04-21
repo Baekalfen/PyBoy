@@ -40,9 +40,9 @@ class EventHandler(object):
                 self.exitCondition = True
                 return
             elif event == WindowEvent.ReleaseSpeedUp:
-                self.limitemulationspeed ^= True
+                self.limitEmulationSpeed ^= True
             # elif event == WindowEvent.PressSpeedUp:
-            #     self.limitemulationspeed = False
+            #     self.limitEmulationSpeed = False
             elif event == WindowEvent.SaveState:
                 self.mb.saveState(self.mb.cartridge.filename+".state")
             elif event == WindowEvent.LoadState:
@@ -63,7 +63,7 @@ class EventHandler(object):
 
 
         # # Trying to avoid VSync'ing on a frame, if we are out of time
-        # if self.limitemulationspeed or (time.clock()-self.t_start < SPF):
+        # if self.limitEmulationSpeed or (time.clock()-self.t_start < SPF):
         #     # This one makes time and frame syncing work, but messes with time.clock()
         #     self.window.VSync()
 
