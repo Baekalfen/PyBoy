@@ -23,6 +23,7 @@ if platform.system() != "Windows":
 from MB import Motherboard
 from GbEvent import WindowEvent
 from GbEvent import EventHandler
+from PyBoy import PyBoy
 import time
 import os.path
 import os
@@ -39,8 +40,8 @@ else:
     print "Invalid arguments!"
     exit(1)
 
-window = None
-mb = None
+# window = None
+# mb = None
 
 
 def printLine(*args):
@@ -49,40 +50,10 @@ def printLine(*args):
 # global logger
 logger = printLine
 
-def start(ROM, bootROM = None, scale=1):
-    global window, mb, logger
+def start(ROM, bootROM = None, debug=False, scale=1):
+    # global window, mb, logger
+    global logger
 
-    debugger = None
-    if "debug" in sys.argv and platform.system() != "Windows":
-        debugger = Debug()
-        debugger.tick()
-        logger = debugger.console.writeLine
-
-    window = Window(logger, scale=scale)
-    if bootROM is not None:
-        logger("Starting with boot ROM")
-    mb = Motherboard(logger, ROM, bootROM, window)
-
-    if "loadState" in sys.argv:
-        mb.loadState(mb.cartridge.filename+".state")
-
-    mb.cartridge.loadRAM()
-    if mb.cartridge.rtcEnabled:
-        mb.cartridge.rtc.load(mb.cartridge.filename)
-
-    eventHandler = EventHandler(window, mb)
-
-    # Main event loop
-    while not eventHandler.hasExitCondition():
-        eventHandler.cycle(debugger)
-
-    logger("###########################")
-    logger("# Emulator is turning off #")
-    logger("###########################")
-
-    mb.cartridge.saveRAM()
-    if mb.cartridge.rtcEnabled:
-        mb.cartridge.rtc.save(mb.cartridge.filename)
 
 
 def runBlarggsTest():
@@ -115,6 +86,7 @@ if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
 
 
+    pb = None
     directory = "ROMs/"
     try:
         # Verify directories
@@ -144,14 +116,24 @@ if __name__ == "__main__":
         except:
             filename = directory + filename
 
-        start(filename, bootROM)
+
+        if "debug" in sys.argv and platform.system() != "Windows":
+            debug=True
+        else:
+            debug=False
+
+        scale = 1
+
+        window = Window(logger, scale=scale)
+        pb = PyBoy(bootROM, filename, window, logger, False, debug, scale)
+        pb.start()
     except KeyboardInterrupt:
-        if mb is not None:
-            mb.cpu.getDump()
+        if pb is not None:
+            pb.getDump()
         logger("Interrupted by keyboard")
     except Exception as ex:
-        if mb is not None:
-            mb.cpu.getDump()
+        if pb is not None:
+            pb.getDump()
         traceback.print_exc()
 
 
