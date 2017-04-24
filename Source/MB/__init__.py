@@ -12,17 +12,16 @@ class Motherboard():
     from StateManager import saveState, loadState
     from Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
 
-    def __init__(self, logger, gameROMFile, bootROMFile, window):
-        self.logger = logger
+    def __init__(self, gameROMFile, bootROMFile, window):
         self.MainWindow = window
 
         self.timer = Timer.Timer()
-        self.interaction = Interaction.Interaction(logger)
-        self.cartridge = Cartridge.Cartridge(logger, gameROMFile)
+        self.interaction = Interaction.Interaction()
+        self.cartridge = Cartridge.Cartridge(gameROMFile)
         self.bootROM = BootROM.BootROM(bootROMFile)
-        self.ram = RAM.RAM(logger, random=False)
-        self.cpu = CPU.CPU(logger, self)
-        self.lcd = LCD.LCD(logger, self)
+        self.ram = RAM.RAM(random=False)
+        self.cpu = CPU.CPU(self)
+        self.lcd = LCD.LCD(self)
 
         self.bootROMEnabled = True
 

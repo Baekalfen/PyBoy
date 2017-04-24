@@ -16,10 +16,12 @@ from MBC2 import MBC2
 from MBC3 import MBC3
 from MBC5 import MBC5
 
-def Cartridge(logger, filename):
+import logging
+
+def Cartridge(filename):
     ROMBanks = loadROMfile(filename)
     cartType = ROMBanks[0][0x0147]
-    logger("Cartridge type:", hex(cartType))
+    logging.debug("Cartridge type: " + hex(cartType))
     # ROMSize = ROMBanks[0][0x0148]
     # WARN: The following table doesn't work for MBC2! See Pan Docs
     exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]
@@ -27,7 +29,7 @@ def Cartridge(logger, filename):
     validateCartType(cartType)
     ROMBankController = cartridgeTable[cartType]
 
-    return ROMBankController[0](logger, filename, ROMBanks, exRAMCount, cartType, *ROMBankController[1:])
+    return ROMBankController[0](filename, ROMBanks, exRAMCount, cartType, *ROMBankController[1:])
 
 
 def loadROMfile(filename):

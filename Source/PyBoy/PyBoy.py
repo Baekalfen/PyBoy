@@ -9,11 +9,12 @@ from MB import Motherboard
 from GbEvent import WindowEvent
 from GbEvent import EventHandler
 
+import logging
+
 
 class PyBoy(object):
 
-    def __init__(self, bootROM, rom, window, logger, loadState=False, debug=False, scale=1):
-        self.logger = logger
+    def __init__(self, bootROM, rom, window, loadState=False, debug=False, scale=1):
         self.debug = debug
         self.scale = scale
         self.bootRom = bootROM
@@ -24,11 +25,10 @@ class PyBoy(object):
         if self.debug:
             self.debugger = Debug()
             self.debugger.tick()
-            self.logger = debugger.console.writeLine
 
         if self.bootRom is not None:
-            self.logger("Starting with boot ROM")
-        self.mb = Motherboard(self.logger, self.rom, self.bootRom, self.window)
+            logging.debug("Starting with boot ROM")
+        self.mb = Motherboard(self.rom, self.bootRom, self.window)
 
         if loadState:
             self.mb.loadState(self.mb.cartridge.filename+".state")
@@ -43,12 +43,10 @@ class PyBoy(object):
         while not self.eventHandler.hasExitCondition():
             self.eventHandler.cycle(self.debugger)
 
-        self.__on_stop(self)
+        self.__on_stop()
 
     def __on_stop(self):
-        self.logger("###########################")
-        self.logger("# Emulator is turning off #")
-        self.logger("###########################")
+        logging.info("# Emulator is turning off #")
 
         self.mb.cartridge.saveRAM()
         if self.mb.cartridge.rtcEnabled:

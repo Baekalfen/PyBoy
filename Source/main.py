@@ -30,6 +30,9 @@ import os
 import sys
 from multiprocessing import Process
 
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y%I:%M:%S%p', level=logging.DEBUG)
+
 if len(sys.argv) < 2:
     from GameWindow import SdlGameWindow as Window
 elif sys.argv[1] == "SDL2":
@@ -42,18 +45,6 @@ else:
 
 # window = None
 # mb = None
-
-
-def printLine(*args):
-    print "#", " ".join([str(x) for x in args])
-
-# global logger
-logger = printLine
-
-def start(ROM, bootROM = None, debug=False, scale=1):
-    # global window, mb, logger
-    global logger
-
 
 
 def runBlarggsTest():
@@ -74,10 +65,10 @@ def runBlarggsTest():
                 "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",
                 ]:
         try:
-            logger(rom)
+            logging.info(rom)
             start(rom)
         except Exception as ex:
-            logger(ex)
+            logging.info(ex)
             time.sleep(1)
             window.stop()
             time.sleep(2)
@@ -91,10 +82,10 @@ if __name__ == "__main__":
     try:
         # Verify directories
         if not bootROM is None and not os.path.exists(bootROM):
-            logger("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
+            logging.info("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
             bootROM = None
         if not os.path.exists(directory) and len(sys.argv) < 2:
-            logger("ROM folder not found. Please copy the Game-ROM to '%s'" % directory)
+            logging.info("ROM folder not found. Please copy the Game-ROM to '%s'" % directory)
             exit()
 
         # Check if the ROM is given through argv
@@ -108,7 +99,7 @@ if __name__ == "__main__":
         #Give a list of ROMs to start
         found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
         for i, f in enumerate(found_files):
-            logger("%s\t%s" % (i+1, f))
+            logging.info("%s\t%s" % (i+1, f))
         filename = raw_input("Write the name or number of the ROM file:\n")
 
         try:
@@ -124,13 +115,13 @@ if __name__ == "__main__":
 
         scale = 1
 
-        window = Window(logger, scale=scale)
-        pb = PyBoy(bootROM, filename, window, logger, False, debug, scale)
+        window = Window(scale=scale)
+        pb = PyBoy(bootROM, filename, window, False, debug, scale)
         pb.start()
     except KeyboardInterrupt:
         if pb is not None:
             pb.getDump()
-        logger("Interrupted by keyboard")
+        logging.info("Interrupted by keyboard")
     except Exception as ex:
         if pb is not None:
             pb.getDump()

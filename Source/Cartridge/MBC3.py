@@ -32,7 +32,7 @@ class MBC3(GenericMBC):
             else:
                 # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
                 # https://github.com/pret/pokered/issues/155
-                self.logger("RTC not present. Game tried to issue RTC command:", hex(address), hex(value))
+                logging.info("RTC not present. Game tried to issue RTC command:", hex(address), hex(value))
         elif 0xA000 <= address < 0xC000:
             if self.RAMBankSelected <= 0x03:
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value

@@ -5,9 +5,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
 
 def saveState(self, filename):
-    self.logger("Saving state...")
+    logging.info("Saving state...")
     with open(filename, "wb") as f:
         for n in self.cpu.reg[:-2]:
             f.write(chr(n))
@@ -44,11 +45,11 @@ def saveState(self, filename):
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.save(filename + ".rtc")
 
-    self.logger("State saved.")
+    logging.info("State saved.")
 
 
 def loadState(self, filename):
-    self.logger("Loading state...")
+    logging.info("Loading state...")
     with open(filename, "rb") as f:
         self.cpu.oldPC = None
 
@@ -83,7 +84,7 @@ def loadState(self, filename):
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.load(filename + ".rtc")
 
-    self.logger("State loaded.")
+    logging.info("State loaded.")
 
     self.lcd.clearCache = True
     self.lcd.refreshTileDataAdaptive()
