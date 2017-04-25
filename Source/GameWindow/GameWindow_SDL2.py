@@ -14,23 +14,27 @@ import numpy as np
 import CoreDump
 import time
 import warnings
+import itertools
+import operator
 
 from MathUint8 import getSignedInt8, getBit
 from WindowEvent import WindowEvent
 from LCD import colorPalette, alphaMask
+from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
+from GameWindow import AbstractGameWindow
 
 gameboyResolution = (160, 144)
+
 
 def pixels2dWithoutWarning(surface):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return sdl2.ext.pixels2d(surface)
 
-class Window():
+class SdlGameWindow(AbstractGameWindow):
     def __init__(self, logger, scale=1):
+        super(self.__class__, self).__init__(scale)
         self.logger = logger
-        assert isinstance(scale, int), "Window scale has to be an integer!"
-        self._scale = scale
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
@@ -69,12 +73,16 @@ class Window():
         self.logger("SDL initialization")
         sdl2.ext.init()
 
-        scaledResolution = tuple(x * self._scale for x in gameboyResolution)
+        self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
+        logger('scale = ' + str(self._scaledResolution))
 
-        self._window = sdl2.ext.Window("PyBoy", size=scaledResolution)
+        self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
         self._windowSurface = self._window.get_surface()
 
-        self._screenBuffer = pixels2dWithoutWarning(self._windowSurface)
+        if self._scale == 1:
+            self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface))
+        else:
+            self._screenBuffer = ScaledFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
         self._screenBuffer.fill(0x00558822)
         self._window.show()
 
@@ -85,39 +93,7 @@ class Window():
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
         if __debug__:
-            windowOffset = 0
-            # Tile Data
-            tiles = 384
-            self.tileDataWidth = 16*8 # Change the 16 to whatever wide you want the tile window
-            self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
-
-            self.tileDataWindow, self.tileDataWindowSurface, self.tileDataBuffer = \
-                    self.makeWindowAndGetBuffer(self.tileDataWidth, self.tileDataHeight, windowOffset, 0, "Tile Data")
-            windowOffset += self.tileDataWidth
-
-            # Background View 1
-            self.tileView1Width = 0x100
-            self.tileView1Height = 0x100
-
-            self.tileView1Window, self.tileView1WindowSurface, self.tileView1Buffer = \
-                    self.makeWindowAndGetBuffer(self.tileView1Width, self.tileView1Height, windowOffset, 0, "Tile View 1")
-            windowOffset += self.tileView1Width
-
-            # Background View 2
-            self.tileView2Width = 0x100
-            self.tileView2Height = 0x100
-
-            self.tileView2Window, self.tileView2WindowSurface, self.tileView2Buffer = \
-                    self.makeWindowAndGetBuffer(self.tileView2Width, self.tileView2Height, windowOffset, 0, "Tile View 2")
-            windowOffset += self.tileView2Width
-
-            # Sprite View
-            self.spriteWidth = 0x40
-            self.spriteHeight = 0x28*2
-
-            self.spriteWindow, self.spriteWindowSurface, self.spriteBuffer = \
-                    self.makeWindowAndGetBuffer(self.spriteWidth, self.spriteHeight, windowOffset, 0, "Sprite View")
-            windowOffset += self.spriteWidth
+            self.__setDebug()
 
     def makeWindowAndGetBuffer(self, width, height, pos_x, pos_y, window_name):
         sdl2.ext.Window.DEFAULTPOS = (pos_x, pos_y)
@@ -140,6 +116,41 @@ class Window():
         sdl2.ext.title(self._window,title)
         # sdl2.SDL_SetWindowTitle(self._window,title)
 
+    def __setDebug(self):
+        windowOffset = 0
+        # Tile Data
+        tiles = 384
+        self.tileDataWidth = 16*8 # Change the 16 to whatever wide you want the tile window
+        self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
+
+        self.tileDataWindow, self.tileDataWindowSurface, self.tileDataBuffer = \
+                self.makeWindowAndGetBuffer(self.tileDataWidth, self.tileDataHeight, windowOffset, 0, "Tile Data")
+        windowOffset += self.tileDataWidth
+
+        # Background View 1
+        self.tileView1Width = 0x100
+        self.tileView1Height = 0x100
+
+        self.tileView1Window, self.tileView1WindowSurface, self.tileView1Buffer = \
+                self.makeWindowAndGetBuffer(self.tileView1Width, self.tileView1Height, windowOffset, 0, "Tile View 1")
+        windowOffset += self.tileView1Width
+
+        # Background View 2
+        self.tileView2Width = 0x100
+        self.tileView2Height = 0x100
+
+        self.tileView2Window, self.tileView2WindowSurface, self.tileView2Buffer = \
+                self.makeWindowAndGetBuffer(self.tileView2Width, self.tileView2Height, windowOffset, 0, "Tile View 2")
+        windowOffset += self.tileView2Width
+
+        # Sprite View
+        self.spriteWidth = 0x40
+        self.spriteHeight = 0x28*2
+
+        self.spriteWindow, self.spriteWindowSurface, self.spriteBuffer = \
+                self.makeWindowAndGetBuffer(self.spriteWidth, self.spriteHeight, windowOffset, 0, "Sprite View")
+        windowOffset += self.spriteWidth
+
     def getEvents(self):
         events = []
 
@@ -155,6 +166,7 @@ class Window():
 
     def updateDisplay(self):
         self._window.refresh()
+        self._screenBuffer.update()
         if __debug__:
             self.tileDataWindow.refresh()
             self.tileView1Window.refresh()
@@ -227,6 +239,7 @@ class Window():
 
             if x < 160 and y < 144:
                 self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
+
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, spritePriority, BGPkey, xFlip = 0, yFlip = 0):
         x1,y1 = fromXY
