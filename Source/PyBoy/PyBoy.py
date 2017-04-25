@@ -9,7 +9,7 @@ from MB import Motherboard
 from GbEvent import WindowEvent
 from GbEvent import EventHandler
 
-import logging
+from GbLogger import gblogger
 
 
 class PyBoy(object):
@@ -27,7 +27,7 @@ class PyBoy(object):
             self.debugger.tick()
 
         if self.bootRom is not None:
-            logging.debug("Starting with boot ROM")
+            gblogger.debug("Starting with boot ROM")
         self.mb = Motherboard(self.rom, self.bootRom, self.window)
 
         if loadState:
@@ -46,7 +46,7 @@ class PyBoy(object):
         self.__on_stop()
 
     def __on_stop(self):
-        logging.info("# Emulator is turning off #")
+        gblogger.info("# Emulator is turning off #")
 
         self.mb.cartridge.saveRAM()
         if self.mb.cartridge.rtcEnabled:

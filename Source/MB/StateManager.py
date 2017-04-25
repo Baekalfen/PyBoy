@@ -5,10 +5,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
+from GbLogger import gblogger
 
 def saveState(self, filename):
-    logging.info("Saving state...")
+    gblogger.info("Saving state...")
     with open(filename, "wb") as f:
         for n in self.cpu.reg[:-2]:
             f.write(chr(n))
@@ -45,11 +45,11 @@ def saveState(self, filename):
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.save(filename + ".rtc")
 
-    logging.info("State saved.")
+    gblogger.info("State saved.")
 
 
 def loadState(self, filename):
-    logging.info("Loading state...")
+    gblogger.info("Loading state...")
     with open(filename, "rb") as f:
         self.cpu.oldPC = None
 
@@ -84,7 +84,7 @@ def loadState(self, filename):
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.load(filename + ".rtc")
 
-    logging.info("State loaded.")
+    gblogger.info("State loaded.")
 
     self.lcd.clearCache = True
     self.lcd.refreshTileDataAdaptive()

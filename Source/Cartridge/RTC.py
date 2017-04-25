@@ -8,7 +8,7 @@ import CoreDump
 import time
 import os
 import struct
-import logging
+from GbLogger import gblogger
 
 class RTC():
     def __init__(self):
@@ -26,16 +26,16 @@ class RTC():
         self.halt = 0
 
     def save(self, filename):
-        logging.info("Saving RTC...")
+        gblogger.info("Saving RTC...")
         romPath, ext = os.path.splitext(filename)
         with open(romPath + ".rtc", "wb") as f:
             f.write(struct.pack('f', self.timeZero))
             f.write(chr(self.halt))
             f.write(chr(self.dayCarry))
-        logging.info("RTC saved.")
+        gblogger.info("RTC saved.")
 
     def load(self, filename):
-        logging.info("Loading RTC...")
+        gblogger.info("Loading RTC...")
         try:
             romPath, ext = os.path.splitext(filename)
             with open(romPath + ".rtc", "rb") as f:
@@ -43,9 +43,9 @@ class RTC():
                 self.timeZero = struct.unpack('f',f.read(4))[0]
                 self.halt = ord(f.read(1))
                 self.dayCarry = ord(f.read(1))
-            logging.info("RTC loaded.")
+            gblogger.info("RTC loaded.")
         except Exception as ex:
-            logging.info("Couldn't read RTC for cartridge:", ex)
+            gblogger.info("Couldn't read RTC for cartridge:", ex)
 
     def latchRTC(self):
         t = time.time() - self.timeZero
@@ -73,7 +73,7 @@ class RTC():
 
     def getRegister(self, register):
         if not self.latchEnabled:
-            logging.info("RTC: Get register, but nothing is latched!", register)
+            gblogger.info("RTC: Get register, but nothing is latched!", register)
 
         if register == 0x08:
             return self.secLatch
@@ -93,7 +93,7 @@ class RTC():
 
     def setRegister(self, register, value):
         if not self.latchEnabled:
-            logging.info("RTC: Set register, but nothing is latched!", register, value)
+            gblogger.info("RTC: Set register, but nothing is latched!", register, value)
 
         t = time.time() - self.timeZero
         if register == 0x08:

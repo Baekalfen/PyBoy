@@ -5,7 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
 
 # MEMORY SIZES
 VIDEO_RAM = 8 * 1024  # 8KB
