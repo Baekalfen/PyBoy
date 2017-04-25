@@ -7,6 +7,9 @@
 
 from GbEnum import AutoEnum
 
+
+
+
 class WindowEvent(AutoEnum):
 
     Quit = ()
