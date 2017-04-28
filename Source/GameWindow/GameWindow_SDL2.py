@@ -169,7 +169,8 @@ class SdlGameWindow(AbstractGameWindow):
             else:
                 continue
 
-            buttons.append((button, state))
+            if not button is None:
+                buttons.append((button, state))
 
         return buttons
 

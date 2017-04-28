@@ -54,8 +54,16 @@ class InputEvent(GbEvent):
 
     def updateButton(self, button, state):
 
-        gblogger.debug('Input update: [{}][{}]'.format(str(button),
-            str(state)))
+        if False:
+            gblogger.debug('Input update: [{}][{}]'.format(str(button),
+                str(state)))
+
+        if GbButtonId.isEmu(button):
+            return self.__handleEmuButton(button, state)
+        else:
+            self.__handleGbButtons(button, state)
+
+    def __handleGbButtons(self, button, state):
 
         if button == GbButtonId.DPAD_RIGHT:
             reg_offset = REG_DPAD_RIGHT_OFFSET
@@ -76,24 +84,31 @@ class InputEvent(GbEvent):
         else:
             raise RuntimeError('Unrecognized button ID: {}'.format(button))
 
+
         if GbButtonId.isDpad(button):
             # Signal MB that an input has updated
             self._mb.buttonEvent(button, state)
 
             # Resolve register
             if state == GbButtonState.PRESSED:
-                self._system.dpadControl = setBit(self._system.dpadControl, reg_offset)
-            elif state == GbButtonState.RELEASED:
                 self._system.dpadControl = resetBit(self._system.dpadControl, reg_offset)
+
+            elif state == GbButtonState.RELEASED:
+                self._system.dpadControl = setBit(self._system.dpadControl, reg_offset)
+
         elif GbButtonId.isButton(button):
             # Signal MB that an input has updated
             self._mb.buttonEvent(button, state)
 
             # Resolve register
             if state == GbButtonState.PRESSED:
-                self._system.buttonControl = setBit(self._system.buttonControl, reg_offset)
-            elif state == GbButtonState.RELEASED:
                 self._system.buttonControl = resetBit(self._system.buttonControl, reg_offset)
+            elif state == GbButtonState.RELEASED:
+                self._system.buttonControl = setBit(self._system.buttonControl, reg_offset)
         else:
             pass
 
+    def __handleEmuButton(self, button, state):
+
+        if button == GbButtonId.EMU_QUIT:
+            self._eventHandler.registerEvent(GbEventId.QUIT)

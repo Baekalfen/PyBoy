@@ -55,3 +55,15 @@ class GbButtonId(AutoEnum):
             raise TypeError('Did not receive a GbButtonId-instance')
 
         return button == NONE
+
+    @staticmethod
+    def isEmu(button):
+        """Assert whether button is an Emulator-button"""
+
+        if button is None:
+            return True
+        elif not isinstance(button, GbButtonId):
+            raise TypeError('Did not receive a GbButtonId-instance')
+
+        return button in (GbButtonId.EMU_DEBUG, GbButtonId.EMU_SPEED,
+                GbButtonId.EMU_QUIT, GbButtonId.EMU_SAVE, GbButtonId.EMU_LOAD)
