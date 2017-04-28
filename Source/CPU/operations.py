@@ -11,8 +11,6 @@ from flags import flagZ, flagN, flagH, flagC
 from registers import SP, A  # No need to use as self.<reg>
 from MathUint8 import resetBit, setBit, getBit, swap, lshift, rshift, lrotate_inC, lrotate_thruC, rrotate_inC, rrotate_thruC, getSignedInt8
 
-from GbLogger import gblogger
-
 
 def CPU_EI(self):
     # Enable interrupts. This intruction enables interrupts but not immediately. Interrupts are enabled after instruction after EI is executed
