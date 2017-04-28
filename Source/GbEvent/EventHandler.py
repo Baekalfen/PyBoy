@@ -15,8 +15,13 @@ from GbLogger import gblogger
 from . import Events
 
 class EventLoop(object):
+    """System event loop"""
 
     def __init__(self, window):
+        """Initialize system and event-handler
+
+        :param window: Game window
+        """
 
         self.window = window
 
@@ -25,12 +30,17 @@ class EventLoop(object):
 
 
     def hasExitCondition(self):
+        """True if system has reach an exit-state, false otherwise"""
         return self.system.quit
 
     def cycle(self, mb):
+        """Single loop cycle
 
-        # 1. Handle events
-        # 2. Tick MB/debugger
+        :param mb: System motherboard-object
+        """
+
+        # 1. Route input-events from game-window to event-handler
+        # 2. Handle events
         # 3. Update display
 
         self.system.update()
@@ -53,4 +63,5 @@ class EventLoop(object):
         self.system.t_VSynced = time.clock()
 
     def getEventHandler(self):
+        """Returns current event-handler object"""
         return self.eventHandler

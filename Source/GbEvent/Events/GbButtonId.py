@@ -10,6 +10,7 @@ from GbEnum import AutoEnum
 
 class GbButtonId(AutoEnum):
     """GB Button ID enum"""
+
     NONE = ()           # NULL-button
     START = ()          # START-button
     SELECT = ()         # SELECT-button

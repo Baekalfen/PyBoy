@@ -10,7 +10,8 @@ from GbEnum import AutoEnum
 
 class GbButtonState(AutoEnum):
     """GB buttom state enum"""
-    PRESSED = ()
-    RELEASED = ()
+
+    PRESSED = ()   # Button pressed
+    RELEASED = ()  # Button released
 
 

@@ -13,14 +13,22 @@ from GbLogger import gblogger
 SPF = 1/60. # inverse FPS (frame-per-second)
 
 class FrameUpdateEvent(GbEvent):
+    """Event for handling frame update"""
 
     _ID = GbEventId.FRAME_UPDATE
 
     def __init__(self, system, eventHandler, window):
+        """
+        :param system: GB System state
+        :param eventHandler: Input handler
+        :param window:
+        """
         super(self.__class__, self).__init__(system, eventHandler)
         self._window = window
 
     def do_call(self):
+        """Event callback"""
+
         self._system.updateFrame = True
         self._system.t_VSynced = time.clock()
 

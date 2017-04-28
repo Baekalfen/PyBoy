@@ -9,6 +9,10 @@ import time
 
 
 class GbSystemState(object):
+    """GB system state
+
+    Simplified system state
+    """
 
     def __init__(self):
         self._quit = False

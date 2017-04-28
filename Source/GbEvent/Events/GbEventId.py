@@ -9,11 +9,13 @@ from GbEnum import AutoEnum
 
 
 class GbEventId(AutoEnum):
-    NULL_EVENT = ()
-    QUIT = ()
-    STATE_IO = ()
-    SPEED_CHANGED = ()
-    DEBUG_TOGGLE = ()
-    INPUT_UPDATE = ()
-    FRAME_UPDATE = ()
-    MB_TICK = ()
+    """GB event enum"""
+
+    NULL_EVENT = ()     # NULL-event : do not use
+    QUIT = ()           # Quit/clean exit-event
+    STATE_IO = ()       # Motherboard save/load-state event
+    SPEED_CHANGED = ()  # Motherboard tick-speed update event
+    DEBUG_TOGGLE = ()   # Debug-mode enabled-state update event
+    INPUT_UPDATE = ()   # Input update event
+    FRAME_UPDATE = ()   # Frame update event
+    MB_TICK = ()        # Motherboard tick event

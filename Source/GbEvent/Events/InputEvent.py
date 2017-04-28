@@ -36,23 +36,36 @@ REG_BUTTON_B_OFFSET = P11
 
 
 class InputEvent(GbEvent):
+    """Event for handling user input"""
 
     _ID = GbEventId.INPUT_UPDATE
 
     def __init__(self, system, eventHandler, mb, buttons):
+        """
+        :param system: GB System state
+        :param eventHandler: Input handler
+        :param mb: Motherboard-object
+        :param buttons: List of button-actions
+        """
         super(self.__class__, self).__init__(system, eventHandler)
         self._buttons = buttons
         self._system = system
         self._mb = mb
 
     def do_call(self):
+        """Event callback"""
 
         ref_offset = 0
 
         for button, state in self._buttons:
-            self.updateButton(button, state)
+            self._updateButton(button, state)
 
-    def updateButton(self, button, state):
+    def _updateButton(self, button, state):
+        """Update Motherboard with button state
+
+        :param button:
+        :param state: Button state
+        """
 
         if False:
             gblogger.debug('Input update: [{}][{}]'.format(str(button),
@@ -64,6 +77,11 @@ class InputEvent(GbEvent):
             self.__handleGbButtons(button, state)
 
     def __handleGbButtons(self, button, state):
+        """Handle GB buttons
+
+        :param button:
+        :param state: Button state
+        """
 
         if button == GbButtonId.DPAD_RIGHT:
             reg_offset = REG_DPAD_RIGHT_OFFSET
@@ -109,6 +127,11 @@ class InputEvent(GbEvent):
             pass
 
     def __handleEmuButton(self, button, state):
+        """Handle EMU buttons
+
+        :param button:
+        :param state: Button state
+        """
 
         if button == GbButtonId.EMU_QUIT:
             self._eventHandler.registerEvent(GbEventId.QUIT)
