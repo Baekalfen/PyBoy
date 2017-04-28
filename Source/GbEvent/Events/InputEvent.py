@@ -110,5 +110,15 @@ class InputEvent(GbEvent):
 
     def __handleEmuButton(self, button, state):
 
+        fname = 'filename'
+
         if button == GbButtonId.EMU_QUIT:
             self._eventHandler.registerEvent(GbEventId.QUIT)
+        elif button == GbButtonId.EMU_DEBUG:
+            self._eventHandler.registerEvent(GbEventId.DEBUG_TOGGLE)
+        elif button == GbButtonId.EMU_SPEED:
+            self._eventHandler.registerEvent(GbEventId.SPEED_CHANGED)
+        elif button == GbButtonId.EMU_SAVE:
+            self._eventHandler.registerEvent(GbEventId.STATE_IO, fname, 'save')
+        elif button == GbButtonId.EMU_LOAD:
+            self._eventHandler.registerEvent(GbEventId.STATE_IO, fname, 'load')

@@ -12,9 +12,12 @@ class SaveStateEvent(GbEvent):
 
     _ID = GbEventId.STATE_IO
 
-    def __init__(self, system, eventHandler, fname):
+    def __init__(self, system, eventHandler, fname, operation):
         super(self.__class__, self).__init__(system, eventHandler)
         self._fname = fname
+        if not operation in ('save', 'load'):
+            raise RuntimeError('Invalid IO operation')
+        self._operation = operation
 
     def do_call(self):
         pass
