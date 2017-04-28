@@ -32,7 +32,8 @@ class GbButtonId(AutoEnum):
         if not isinstance(button, GbButtonId):
             raise TypeError('Did not receive a GbButtonId-intance')
 
-        return button in (START, SELECT, A, B)
+        return button in (GbButtonId.START, GbButtonId.SELECT,
+                GbButtonId.A, GbButtonId.B)
 
     @staticmethod
     def isDpad(button):
@@ -41,7 +42,8 @@ class GbButtonId(AutoEnum):
         if not isinstance(button, GbButtonId):
             raise TypeError('Did not receive a GbButtonId-instance')
 
-        return button in (DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN)
+        return button in (GbButtonId.DPAD_LEFT, GbButtonId.DPAD_RIGHT,
+                GbButtonId.DPAD_UP, GbButtonId.DPAD_DOWN)
 
     @staticmethod
     def isNone(button):

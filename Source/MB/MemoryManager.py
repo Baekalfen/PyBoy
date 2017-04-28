@@ -80,7 +80,7 @@ def __setitem__(self,i,value):
         self.ram.nonIOInternalRAM0[i - 0xFEA0] = value
     elif 0xFF00 <= i < 0xFF4C:  # I/O ports
         if i == 0xFF00:
-            self.ram.IOPorts[i - 0xFF00] = self.interaction.pull(value)
+            self.ram.IOPorts[i - 0xFF00] = self.interaction.getInputState(value)
         elif i == 0xFF04:
             self.timer.DIV = 0
         elif i == 0xFF05:

@@ -32,9 +32,12 @@ class PyBoy(object):
             self.debugger = Debug()
             self.debugger.tick()
 
+        self.eventLoop = EventLoop(self.window)
+
         if self.bootRom is not None:
             gblogger.debug("Starting with boot ROM")
-        self.mb = Motherboard(self.rom, self.bootRom, self.window)
+        self.mb = Motherboard(self.rom, self.bootRom, self.window,
+                self.eventLoop.system)
 
         if loadState:
             self.mb.loadState(self.mb.cartridge.filename+".state")
@@ -43,7 +46,6 @@ class PyBoy(object):
         if self.mb.cartridge.rtcEnabled:
             self.mb.cartridge.rtc.load(self.mb.cartridge.filename)
 
-        self.eventLoop = EventLoop(self.window)
         self.__registerEventHandlers()
 
     def __registerEventHandlers(self):
@@ -62,7 +64,7 @@ class PyBoy(object):
 
         try:
             while not self.eventLoop.hasExitCondition():
-                self.eventLoop.cycle()
+                self.eventLoop.cycle(self.mb)
 
                 eventHandler.registerEvent(GbEventId.MB_TICK, self.mb,
                         self.debugger)

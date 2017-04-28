@@ -8,6 +8,7 @@
 import time
 from GbSystemState import GbSystemState
 from GbEventLoop import GbEventLoop
+from GbEvent.Events import GbEventId
 
 from GbLogger import gblogger
 
@@ -26,7 +27,7 @@ class EventLoop(object):
     def hasExitCondition(self):
         return self.system.quit
 
-    def cycle(self):
+    def cycle(self, mb):
 
         # 1. Handle events
         # 2. Tick MB/debugger
@@ -38,7 +39,7 @@ class EventLoop(object):
 
         # FIXME: This registerEvent-call does not belong here
         if len(buttons) > 0:
-            self.eventHandler.registerEvent(GbEventId.INPUT_UPDATE, buttons)
+            self.eventHandler.registerEvent(GbEventId.INPUT_UPDATE, mb, buttons)
 
         self.eventHandler.cycle()
 
