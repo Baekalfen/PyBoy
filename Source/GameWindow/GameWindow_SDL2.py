@@ -24,6 +24,7 @@ from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from GameWindow import AbstractGameWindow
 
 from GbLogger import gblogger
+from GbEvent.Events import GbButtonId, GbButtonState
 
 gameboyResolution = (160, 144)
 
@@ -40,31 +41,31 @@ class SdlGameWindow(AbstractGameWindow):
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
         self.windowEventsDown = {
-                sdl2.SDLK_UP        : WindowEvent.PressArrowUp,
-                sdl2.SDLK_DOWN      : WindowEvent.PressArrowDown,
-                sdl2.SDLK_RIGHT     : WindowEvent.PressArrowRight,
-                sdl2.SDLK_LEFT      : WindowEvent.PressArrowLeft,
-                sdl2.SDLK_a         : WindowEvent.PressButtonA,
-                sdl2.SDLK_s         : WindowEvent.PressButtonB,
-                sdl2.SDLK_RETURN    : WindowEvent.PressButtonStart,
-                sdl2.SDLK_BACKSPACE : WindowEvent.PressButtonSelect,
-                sdl2.SDLK_ESCAPE    : WindowEvent.Quit,
+                sdl2.SDLK_UP        : GbButtonId.DPAD_UP,
+                sdl2.SDLK_DOWN      : GbButtonId.DPAD_DOWN,
+                sdl2.SDLK_RIGHT     : GbButtonId.DPAD_RIGHT,
+                sdl2.SDLK_LEFT      : GbButtonId.DPAD_LEFT,
+                sdl2.SDLK_a         : GbButtonId.A,
+                sdl2.SDLK_s         : GbButtonId.B,
+                sdl2.SDLK_RETURN    : GbButtonId.START,
+                sdl2.SDLK_BACKSPACE : GbButtonId.SELECT,
+                sdl2.SDLK_ESCAPE    : GbButtonId.EMU_QUIT,
                 # sdl2.SDLK_e       : self.debug = True
-                sdl2.SDLK_d         : WindowEvent.DebugToggle,
-                sdl2.SDLK_SPACE     : WindowEvent.PressSpeedUp,
+                sdl2.SDLK_d         : GbButtonId.EMU_DEBUG,
+                sdl2.SDLK_SPACE     : GbButtonId.EMU_SPEED,
         }
         self.windowEventsUp = {
-                sdl2.SDLK_UP        : WindowEvent.ReleaseArrowUp,
-                sdl2.SDLK_DOWN      : WindowEvent.ReleaseArrowDown,
-                sdl2.SDLK_RIGHT     : WindowEvent.ReleaseArrowRight,
-                sdl2.SDLK_LEFT      : WindowEvent.ReleaseArrowLeft,
-                sdl2.SDLK_a         : WindowEvent.ReleaseButtonA,
-                sdl2.SDLK_s         : WindowEvent.ReleaseButtonB,
-                sdl2.SDLK_RETURN    : WindowEvent.ReleaseButtonStart,
-                sdl2.SDLK_BACKSPACE : WindowEvent.ReleaseButtonSelect,
-                sdl2.SDLK_z         : WindowEvent.SaveState,
-                sdl2.SDLK_x         : WindowEvent.LoadState,
-                sdl2.SDLK_SPACE     : WindowEvent.ReleaseSpeedUp,
+                sdl2.SDLK_UP        : GbButtonId.DPAD_UP,
+                sdl2.SDLK_DOWN      : GbButtonId.DPAD_DOWN,
+                sdl2.SDLK_RIGHT     : GbButtonId.DPAD_RIGHT,
+                sdl2.SDLK_LEFT      : GbButtonId.DPAD_LEFT,
+                sdl2.SDLK_a         : GbButtonId.A,
+                sdl2.SDLK_s         : GbButtonId.B,
+                sdl2.SDLK_RETURN    : GbButtonId.START,
+                sdl2.SDLK_BACKSPACE : GbButtonId.SELECT,
+                sdl2.SDLK_z         : GbButtonId.EMU_SAVE,
+                sdl2.SDLK_x         : GbButtonId.EMU_LOAD,
+                sdl2.SDLK_SPACE     : GbButtonId.EMU_SPEED,
         }
 
         self.debug = False
@@ -153,17 +154,24 @@ class SdlGameWindow(AbstractGameWindow):
         windowOffset += self.spriteWidth
 
     def getEvents(self):
-        events = []
+        buttons = []
 
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
-                events.append(WindowEvent.Quit)
+                state = GbButtonState.PRESSED
+                button = GbButtonId.EMU_QUIT
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
+                state = GbButtonState.PRESSED
+                button = self.windowEventsDown.get(event.key.keysym.sym, None)
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
+                state = GbButtonState.RELEASED
+                button = self.windowEventsUp.get(event.key.keysym.sym, None)
+            else:
+                continue
 
-        return events
+            buttons.append((button, state))
+
+        return buttons
 
     def updateDisplay(self):
         self._window.refresh()

@@ -9,9 +9,11 @@ from GbEnum import AutoEnum
 
 
 class GbEventId(AutoEnum):
-    NULL_EVENT = 0
+    NULL_EVENT = ()
     QUIT = ()
     STATE_IO = ()
     SPEED_CHANGED = ()
     DEBUG_TOGGLE = ()
     INPUT_UPDATE = ()
+    FRAME_UPDATE = ()
+    MB_TICK = ()

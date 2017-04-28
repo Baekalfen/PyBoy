@@ -6,4 +6,7 @@
 #
 
 from WindowEvent import WindowEvent
-from EventHandler import EventHandler
+from EventHandler import EventLoop
+
+from GbEventLoop import GbEventLoop
+from GbSystemState import GbSystemState

@@ -8,12 +8,12 @@
 from . import GbEvent, GbEventId
 
 
-def SaveStateEvent(GbEvent):
+class SaveStateEvent(GbEvent):
 
     _ID = GbEventId.STATE_IO
 
-    def __init__(self, system, fname):
-        super(self.__class__, self).__init__(system)
+    def __init__(self, system, eventHandler, fname):
+        super(self.__class__, self).__init__(system, eventHandler)
         self._fname = fname
 
     def do_call(self):

@@ -6,71 +6,50 @@
 #
 
 import time
-from . import WindowEvent
+from GbSystemState import GbSystemState
+from GbEventLoop import GbEventLoop
 
-SPF = 1/60. # inverse FPS (frame-per-second)
+from GbLogger import gblogger
 
-class EventHandler(object):
+from . import Events
 
-    def __init__(self, window, mb):
+class EventLoop(object):
+
+    def __init__(self, window):
 
         self.window = window
-        self.mb = mb
-        self.exp_avg_emu = 0
-        self.exp_avg_cpu = 0
-        self.t_start = 0
-        self.t_VSynced = 0
-        self.t_frameDone = 0
-        self.counter = 0
-        self.limitEmulationSpeed = True
 
-        self.exitCondition = False
+        self.system = GbSystemState()
+        self.eventHandler = GbEventLoop(self.system)
+
 
     def hasExitCondition(self):
-        return self.exitCondition
+        return self.system.quit
 
-    def cycle(self, debugger=None):
+    def cycle(self):
 
-        self.exp_avg_emu = 0.9 * self.exp_avg_emu + 0.1 * (self.t_VSynced-self.t_start)
+        # 1. Handle events
+        # 2. Tick MB/debugger
+        # 3. Update display
 
-        self.t_start = time.clock()
-        for event in self.window.getEvents():
-            if event == WindowEvent.Quit:
-                self.window.stop()
-                self.exitCondition = True
-                return
-            elif event == WindowEvent.ReleaseSpeedUp:
-                self.limitEmulationSpeed ^= True
-            # elif event == WindowEvent.PressSpeedUp:
-            #     self.limitEmulationSpeed = False
-            elif event == WindowEvent.SaveState:
-                self.mb.saveState(self.mb.cartridge.filename+".state")
-            elif event == WindowEvent.LoadState:
-                self.mb.loadState(self.mb.cartridge.filename+".state")
-            elif event == WindowEvent.DebugToggle and debugger is not None:
-                # self.mb.cpu.breakAllow = True
-                debugger.running ^= True
-            else:  # Right now, everything else is a button press
-                self.mb.buttonEvent(event)
+        self.system.update()
 
-        if not debugger is None and debugger.running:
-            action = debugger.tick()
+        buttons = self.window.getEvents()
 
-        else:
-            self.mb.tickFrame()
+        # FIXME: This registerEvent-call does not belong here
+        if len(buttons) > 0:
+            self.eventHandler.registerEvent(GbEventId.INPUT_UPDATE, buttons)
 
-        self.window.updateDisplay()
+        self.eventHandler.cycle()
 
+        if self.system.updateFrame:
+            self.window.updateDisplay()
+            self.system.updateFrame = False
 
-        # # Trying to avoid VSync'ing on a frame, if we are out of time
-        # if self.limitEmulationSpeed or (time.clock()-self.t_start < SPF):
-        #     # This one makes time and frame syncing work, but messes with time.clock()
-        #     self.window.VSync()
+        if self.system.windowText[0]:
+            self.window._window.title = self.system.windowText[1]
 
-        self.t_VSynced = time.clock()
+        self.system.t_VSynced = time.clock()
 
-        if self.counter % 60 == 0:
-            text = str(int(((self.exp_avg_emu)/SPF*100))) + "%"
-            self.window._window.title = text
-            counter = 0
-        self.counter += 1
+    def getEventHandler(self):
+        return self.eventHandler

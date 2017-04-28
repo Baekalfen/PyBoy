@@ -8,7 +8,9 @@
 from GbEnum import AutoEnum
 
 
-class GbButtomState(AutoEnum):
+class GbButtonState(AutoEnum):
     """GB buttom state enum"""
     PRESSED = ()
     RELEASED = ()
+
+

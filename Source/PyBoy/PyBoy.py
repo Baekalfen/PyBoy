@@ -7,10 +7,16 @@
 
 from MB import Motherboard
 from GbEvent import WindowEvent
-from GbEvent import EventHandler
+from GbEvent import EventLoop
 
 from GbLogger import gblogger
 
+from GbEvent import Events
+from GbEvent.Events import GbEventId
+
+from GbEvent import EventLoop
+
+import time
 
 class PyBoy(object):
 
@@ -37,11 +43,34 @@ class PyBoy(object):
         if self.mb.cartridge.rtcEnabled:
             self.mb.cartridge.rtc.load(self.mb.cartridge.filename)
 
-        self.eventHandler = EventHandler(self.window, self.mb)
+        self.eventLoop = EventLoop(self.window)
+        self.__registerEventHandlers()
+
+    def __registerEventHandlers(self):
+        eventHandler = self.eventLoop.getEventHandler()
+
+        eventHandler.registerEventHandler(Events.DebugToggleEvent)
+        eventHandler.registerEventHandler(Events.FrameUpdateEvent)
+        eventHandler.registerEventHandler(Events.InputEvent)
+        eventHandler.registerEventHandler(Events.MbTickEvent)
+        eventHandler.registerEventHandler(Events.QuitEvent)
+        eventHandler.registerEventHandler(Events.SaveStateEvent)
+        eventHandler.registerEventHandler(Events.SpeedChangedEvent)
 
     def start(self):
-        while not self.eventHandler.hasExitCondition():
-            self.eventHandler.cycle(self.debugger)
+        eventHandler = self.eventLoop.getEventHandler()
+
+        try:
+            while not self.eventLoop.hasExitCondition():
+                self.eventLoop.cycle()
+
+                eventHandler.registerEvent(GbEventId.MB_TICK, self.mb,
+                        self.debugger)
+                eventHandler.registerEvent(GbEventId.FRAME_UPDATE,
+                        self.window)
+
+        except Exception:
+            gblogger.exception('An error occured in the PyBoy main event loop')
 
         self.__on_stop()
 

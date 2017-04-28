@@ -6,7 +6,7 @@
 #
 
 from . import GbEvent, GbEventId
-from . import GbButtonId, GbButtomState
+from . import GbButtonId, GbButtonState
 
 from MathUint8 import  resetBit, setBit
 
@@ -33,19 +33,23 @@ REG_BUTTON_A_OFFSET = P10
 REG_BUTTON_B_OFFSET = P11
 
 
-def InputEvent(GbEvent):
+class InputEvent(GbEvent):
 
     _ID = GbEventId.INPUT_UPDATE
 
-    def __init__(self, system, button, state):
-        super(self.__class__, self).__init__(system)
-        self._button = button
+    def __init__(self, system, eventHandler, buttons, state):
+        super(self.__class__, self).__init__(system, eventHandler)
+        self._buttons = buttons
         self._state = state
 
     def do_call(self):
 
         ref_offset = 0
 
+        for button in self._buttons:
+            self.updateButton(button)
+
+    def updateButton(self, button):
         if button == GbButtonId.DPAD_RIGHT:
             reg_offset = REG_DPAD_RIGHT_OFFSET
         elif button == GbButtonId.DPAD_LEFT:
@@ -63,7 +67,7 @@ def InputEvent(GbEvent):
         elif button == GbButtonId.START:
             reg_offset = REG_BUTTON_START_OFFSET
         else:
-            raise RuntimeError('Unrecognized button ID')
+            raise RuntimeError('Unrecognized button ID: {}'.format(button))
 
         if GbButtonId.isDpad(button):
             if self._state == GbButtonState.PRESSED:

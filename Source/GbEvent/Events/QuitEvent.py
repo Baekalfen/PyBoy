@@ -8,12 +8,12 @@
 from . import GbEvent, GbEventId
 
 
-def QuitEvent(GbEvent):
+class QuitEvent(GbEvent):
 
     _ID = GbEventId.QUIT
 
-    def __init__(self, system, saveState=False, stateFileName=None):
-        super(self.__class__, self).__init__(system)
+    def __init__(self, system, eventHandler, saveState=False, stateFileName=None):
+        super(self.__class__, self).__init__(system, eventHandler)
 
         self._saveState = saveState
         self._stateFileName = stateFileName

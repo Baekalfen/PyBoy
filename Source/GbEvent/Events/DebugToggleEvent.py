@@ -8,12 +8,12 @@
 from . import GbEvent, GbEventId
 
 
-def DebugToggleEvent(GbEvent):
+class DebugToggleEvent(GbEvent):
 
     _ID = GbEventId.DEBUG_TOGGLE
 
-    def __init__(self, system, debugEnable=None):
-        super(self.__class__, self).__init__(system)
+    def __init__(self, system, eventHandler, debugEnable=None):
+        super(self.__class__, self).__init__(system, eventHandler)
         self._debugEnable = debugEnable
 
     def do_call(self):

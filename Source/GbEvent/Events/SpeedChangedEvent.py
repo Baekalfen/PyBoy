@@ -8,12 +8,12 @@
 from . import GbEvent, GbEventId
 
 
-def SpeedChangedEvent(GbEvent):
+class SpeedChangedEvent(GbEvent):
 
     _ID = GbEventId.SPEED_CHANGED
 
-    def __init__(self, system, speedMultiplier=1.0):
-        super(self.__class__, self).__init__(system)
+    def __init__(self, system, eventHandler, speedMultiplier=1.0):
+        super(self.__class__, self).__init__(system, eventHandler)
 
         self._speedMultiplier = speedMultiplier
 

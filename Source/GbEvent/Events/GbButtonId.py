@@ -10,7 +10,7 @@ from GbEnum import AutoEnum
 
 class GbButtonId(AutoEnum):
     """GB Button ID enum"""
-    NONE = 0            # NULL-button
+    NONE = ()           # NULL-button
     START = ()          # START-button
     SELECT = ()         # SELECT-button
     A = ()              # A-button
@@ -19,6 +19,11 @@ class GbButtonId(AutoEnum):
     DPAD_RIGHT = ()     # DPAD-right
     DPAD_UP = ()        # DPAD-up
     DPAD_DOWN = ()      # DPAD-down
+    EMU_DEBUG = ()      # Emulator debug toggle
+    EMU_SPEED = ()      # Emulator speed toggle
+    EMU_QUIT = ()       # Emulator quit
+    EMU_LOAD = ()       # Emulator load state
+    EMU_SAVE = ()       # Emulator save state
 
     @staticmethod
     def isButton(button):

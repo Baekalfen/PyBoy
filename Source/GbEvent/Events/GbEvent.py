@@ -10,11 +10,13 @@ from . import GbEventId
 
 
 class GbEvent(object):
+    """Abstract GB event-class"""
 
     _ID = GbEventId.NULL_EVENT
 
-    def __init__(self, system):
+    def __init__(self, system, eventHandler):
         self._system = system
+        self._eventHandler = eventHandler
 
     @classmethod
     def getId(cls):
