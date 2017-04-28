@@ -112,13 +112,13 @@ class InputEvent(GbEvent):
 
         if button == GbButtonId.EMU_QUIT:
             self._eventHandler.registerEvent(GbEventId.QUIT)
-        elif button == GbButtonId.EMU_DEBUG:
+        elif button == GbButtonId.EMU_DEBUG and state == GbButtonState.PRESSED:
             self._eventHandler.registerEvent(GbEventId.DEBUG_TOGGLE)
         elif button == GbButtonId.EMU_SPEED:
             self._eventHandler.registerEvent(GbEventId.SPEED_CHANGED)
-        elif button == GbButtonId.EMU_SAVE:
+        elif button == GbButtonId.EMU_SAVE and state == GbButtonState.PRESSED:
             self._eventHandler.registerEvent(GbEventId.STATE_IO,
                     '{}.state'.format(self._mb.cartridge.filename), 'save')
-        elif button == GbButtonId.EMU_LOAD:
+        elif button == GbButtonId.EMU_LOAD and state == GbButtonState.PRESSED:
             self._eventHandler.registerEvent(GbEventId.STATE_IO,
                     '{}.state'.format(self._mb.cartridge.filename), 'load')
