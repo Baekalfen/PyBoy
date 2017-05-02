@@ -9,15 +9,15 @@ from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from registers import PC
 
 # Order important. NoInterrupt evaluates to False in if statements
-NoInterrupt, InterruptVector, NonEnabledInterrupt = range(0,3)
+NoInterrupt, InterruptVector = range(0,2)
 
 def checkForInterrupts(self):
     #GPCPUman.pdf p. 40 about priorities
     # If an interrupt occours, the PC is pushed to the stack.
     # It is up to the interrupt routine to return it.
 
-    triggeredInterrupts = self.mb[0xFF0F] & 0b11111
-    anyInterruptToHandle = not (triggeredInterrupts & (self.mb[0xFFFF] & 0b11111)) == 0
+    requestedInterrupts = self.mb[0xFF0F] & 0b11111
+    anyInterruptToHandle = (requestedInterrupts & (self.mb[0xFFFF] & 0b11111)) != 0
 
     # Better to make a long check, than run through 5 if statements
     if anyInterruptToHandle and self.interruptMasterEnable:
@@ -66,9 +66,4 @@ def checkForInterrupts(self):
 
 
     # Check if both enable and trigger flags are enabled for any interrupts
-    return NoInterrupt if not triggeredInterrupts == 0 else NonEnabledInterrupt
-    # return (self.testInterruptFlag(VBlank) or
-    #         self.testInterruptFlag(LCDC) or
-    #         self.testInterruptFlag(TIMER) or
-    #         self.testInterruptFlag(Serial) or
-    #         self.testInterruptFlag(HightoLow))
+    return NoInterrupt

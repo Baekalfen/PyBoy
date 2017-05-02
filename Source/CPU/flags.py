@@ -64,6 +64,7 @@ def testInterruptFlagEnabled(self, flag):
 
 LYCFlag, _, _, _, LYCFlagEnable = range(2,7)
 
+# TODO: Replace STAT flag references with generic methods or register class
 def testSTATFlag(self, flag):
     return self.testRAMRegisterFlag(0xFF41,flag)
 

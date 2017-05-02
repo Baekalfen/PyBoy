@@ -10,11 +10,6 @@ STAT = 0xFF41
 LY = 0xFF44
 LYC = 0xFF45
 
-def calculateCycles(self, x):
-    while x > 0:
-        x -= self.cpu.tick()
-    return x
-
 def setSTATMode(self,mode):
     self[STAT] &= 0b11111100 # Clearing 2 LSB
     self[STAT] |= mode # Apply mode to LSB
@@ -30,6 +25,32 @@ def checkLYC(self, y):
             self.cpu.setInterruptFlag(self.cpu.LCDC)
     else:
         self[STAT] &= 0b11111011
+
+def calculateCycles(self, x):
+    while x > 0:
+        cycles = self.cpu.tick()
+
+        # TODO: Benchmark whether 'if' and 'try/except' is better
+        if cycles == -1: # CPU has HALTED
+            # Fast-forward to next interrupt:
+            # VBLANK and LCDC are covered by just returning.
+            # Timer has to be determined.
+            # As we are halted, we are guaranteed, that
+            # our state cannot be altered by other factors
+            # than time.
+            # For HiToLo interrupt it is indistinguishable
+            # whether it gets triggered mid-frame or by next
+            # frame
+            # Serial is not implemented, so this isn't a concern
+            cycles = min(self.timer.cyclesToInterrupt(), x)
+
+            # Profiling
+            if self.cpu.profiling:
+                self.cpu.hitRate[0x76] += cycles/4
+
+        x -= cycles
+        if self.timer.tick(cycles):
+            self.cpu.setInterruptFlag(self.TIMER)
 
 def tickFrame(self):
     lcdEnabled = self.lcd.LCDC.enabled

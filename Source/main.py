@@ -28,6 +28,10 @@ import os
 import sys
 from multiprocessing import Process
 
+#Profiling
+import numpy as np
+from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+
 if len(sys.argv) < 2:
     from Window_SDL2 import Window
 elif sys.argv[1] == "SDL2":
@@ -127,6 +131,12 @@ def start(ROM, bootROM = None):
     logger("###########################")
     logger("# Emulator is turning off #")
     logger("###########################")
+
+    if mb.cpu.profiling:
+        np.set_printoptions(threshold=np.inf)
+        argMax = np.argsort(mb.cpu.hitRate)
+        for n in argMax[::-1]:
+            print "%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], mb.cpu.hitRate[n])
 
     mb.cartridge.saveRAM()
     if mb.cartridge.rtcEnabled:
