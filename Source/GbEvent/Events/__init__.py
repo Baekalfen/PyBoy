@@ -5,7 +5,6 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from GbEventId import GbEventId
 from GbButtonId import GbButtonId
 from GbButtonState import GbButtonState
 

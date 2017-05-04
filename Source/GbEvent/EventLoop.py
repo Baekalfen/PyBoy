@@ -8,7 +8,7 @@
 import time
 from GbSystemState import GbSystemState
 from GbEventLoop import GbEventLoop
-from GbEvent.Events import GbEventId
+from . import GbEventId
 
 from GbLogger import gblogger
 

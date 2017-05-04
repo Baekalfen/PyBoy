@@ -12,7 +12,7 @@ from GbEvent import EventLoop
 from GbLogger import gblogger
 
 from GbEvent import Events
-from GbEvent.Events import GbEventId
+from GbEvent import GbEventId
 
 from GbEvent import EventLoop
 

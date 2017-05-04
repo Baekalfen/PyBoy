@@ -5,7 +5,7 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from . import GbEventId
+from .. import GbEventId
 
 
 

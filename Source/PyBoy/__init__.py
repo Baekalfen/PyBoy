@@ -6,3 +6,4 @@
 #
 
 from PyBoy import PyBoy
+

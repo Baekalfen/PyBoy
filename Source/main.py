@@ -22,7 +22,7 @@ if platform.system() != "Windows":
     from Debug import Debug
 from MB import Motherboard
 from GbEvent import WindowEvent
-from GbEvent import EventHandler
+from GbEvent import EventLoop
 from PyBoy import PyBoy
 from GbLogger import gblogger
 import time

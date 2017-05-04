@@ -5,8 +5,9 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from . import GbEvent, GbEventId
 from . import GbButtonId, GbButtonState
+from . import GbEvent
+from .. import GbEventId
 
 from GbLogger import gblogger
 
