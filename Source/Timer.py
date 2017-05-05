@@ -26,7 +26,7 @@ class Timer():
         self.TIMAcounter = 0
         self.TMA = 0
         self.TAC = 0
-        self.dividers = [1024, 16, 64, 256] #4^(1+n) = 4<<2*n ???
+        self.dividers = [1024, 16, 64, 256]
 
     def tick(self,cycles):
         self.DIVcounter += cycles
@@ -39,9 +39,9 @@ class Timer():
 
 
         self.TIMAcounter += cycles
-        divider = self.dividers[self.TAC & 0b11]
+        divider = self.dividers[self.TAC] # NOTE: self.TAC should be AND'ed with 0b11, but this is done when writing
 
-        if self.TIMAcounter >= divider: # Can't do the AND-trick because of 1024
+        if self.TIMAcounter >= divider:
             self.TIMAcounter -= divider # Keeps possible remainder
             self.TIMA += 1
 
@@ -51,3 +51,13 @@ class Timer():
                 return True
 
         return False
+
+    def cyclesToInterrupt(self):
+        if self.TAC & 0b100 == 0: # Check if timer is not enabled
+            return 2**16 # Large enough, that 'calculateCycles' will choose 'x'
+
+        divider = self.dividers[self.TAC] # NOTE: self.TAC should be AND'ed with 0b11, but this is done when writing
+
+        cyclesLeft = ((0x100 - self.TIMA) * divider) - self.TIMAcounter
+
+        return cyclesLeft

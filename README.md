@@ -29,11 +29,11 @@ This project is covering an emulation of the Nintendo Game Boy (DMG-01) from 198
 
 Starting the Emulator
 =====================
-It should be noted, that the emulator is not ready for use, and is still in development.
+*It should be noted, that the emulator is still under development. Eventhough games might work flawlessly now, be prepared, that saved games may be lost without any further notice.*
 
 CPython is no where fast enough to run the emulator (see [Report.pdf](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) about performance). It is therefore required to use PyPy.
 
-The code has a few dependencies, but it should be fairly easy to get it up and running. The code developed on macOS, but has been tested to run on Ubuntu 16.04.
+The code has a few dependencies, but it should be fairly easy to get it up and running. The code is developed on macOS, but has been tested to run on Ubuntu 16.04 and Windows 10.
 
 macOS
 -----
@@ -76,14 +76,14 @@ Windows
 -------
 First, install Git, Mercurial, vcredist and VCForPython27:
 
-    https://git-scm.com/download/win
-    https://www.mercurial-scm.org/wiki/Download#Windows
-    http://www.microsoft.com/en-us/download/details.aspx?id=5582
-    https://www.microsoft.com/en-us/download/details.aspx?id=44266
+* https://git-scm.com/download/win
+* https://www.mercurial-scm.org/wiki/Download#Windows
+* https://www.microsoft.com/en-us/download/details.aspx?id=5582
+* https://www.microsoft.com/en-us/download/details.aspx?id=44266
 
 Then download the latest Pypy 32-bit (64-bit pre-built isn't available). At the time of writing the newest version is `pypy2-v5.7.1-win32.zip`:
 
-    https://bitbucket.org/pypy/pypy/downloads/
+* https://bitbucket.org/pypy/pypy/downloads/
 
 Unzip it, and place the contents somewhere like: `C:\pypy2\`.
 
@@ -103,7 +103,7 @@ Now move to the `PyBoy/Source` directory before installing the dependencies:
 
 Download SDL2 Runtime Binaries for 32-bit Windows:
 
-    https://www.libsdl.org/download-2.0.php
+* https://www.libsdl.org/download-2.0.php
 
 Place it somewhere you can locate it. I chose `C:\pypy2\SDL2.dll`. Then set the variable from the Command Prompt.
 

@@ -42,7 +42,6 @@ else:
     print "Invalid arguments!"
     exit(1)
 
-
 def runBlarggsTest():
     for rom in [
                 "TestROMs/instr_timing/instr_timing.gb",

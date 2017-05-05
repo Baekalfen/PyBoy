@@ -10,10 +10,9 @@ from MathUint8 import getBit
 import CoreDump
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC # Only debugging
-from Interrupts import InterruptVector, NonEnabledInterrupt, NoInterrupt
-
+from Interrupts import InterruptVector, NoInterrupt
+import numpy as np
 from GbLogger import gblogger
-
 
 class CPU():
     #  A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL, pointer, Flag
@@ -48,6 +47,10 @@ class CPU():
         self.oldPC = -1
         self.lala = False
 
+        # Profiling
+        self.profiling = False
+        self.hitRate = np.zeros(shape=(512,), dtype=int)
+
     def executeInstruction(self, instruction):
         self.interruptMasterEnable = self.interruptMasterEnableLatch
 
@@ -64,6 +67,12 @@ class CPU():
             pc += 1
             opcode = self.mb[pc]
             opcode += 0x100  # Internally shifting look-up table
+
+        #Profiling
+        if self.profiling:
+            self.hitRate[opcode] += 1
+        # if opcode == 0xf0:
+        #     print "F0", hex(self.mb[pc+1])
 
         operation = opcodes.opcodes[opcode]
 
@@ -97,32 +106,26 @@ class CPU():
         didInterrupt = self.checkForInterrupts()
 
         instruction = None
-        # InterruptVector, NonEnabledInterrupt, NoInterrupt
         if self.halted and didInterrupt:
             self.halted = False
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
 
-            if didInterrupt == NonEnabledInterrupt:
-                self.reg[PC] += 1  # +1 to escape HALT, when interrupt didn't
-
             instruction = self.fetchInstruction(self.reg[PC])
 
-        elif self.halted and not didInterrupt:
-            operation = opcodes.opcodes[0x00] #Fetch NOP to still run timers and such
-            instruction = (operation[2], operation[1], (self, self.reg[PC]))
-            self.oldPC = -1 # Avoid detection of being stuck
+        elif self.halted:# and not didInterrupt:
+            return -1 # Signal, that we want to fast-forward to interrupt
         else:
             instruction = self.fetchInstruction(self.reg[PC])
 
         #     self.lala = True
 
-        if self.lala and not self.halted:
-            if (self.mb[self.reg[PC]]) == 0xCB:
-                gblogger.info('{}'.format(hex(self.reg[PC]+1)[2:]))
-            else:
-                gblogger.info('{}'.format(hex(self.reg[PC])[2:]))
+        # if self.lala and not self.halted:
+        #     if (self.mb[self.reg[PC]]) == 0xCB:
+        #         self.logger(hex(self.reg[PC]+1)[2:])
+        #     else:
+        #         self.logger(hex(self.reg[PC])[2:])
 
         if __debug__:
 
@@ -137,6 +140,8 @@ class CPU():
                 raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
 
+            #TODO: Make better CoreDump print out. Where is 0xC000?
+            #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
             if self.breakOn:
                 self.getDump(instruction)
 
@@ -160,15 +165,7 @@ class CPU():
                 else:
                     pass
 
-        #TODO: Make better CoreDump print out. Where is 0xC000?
-        #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
-
-        cycles = self.executeInstruction(instruction)
-
-        if self.mb.timer.tick(cycles):
-            self.setInterruptFlag(self.TIMER)
-
-        return cycles
+        return self.executeInstruction(instruction)
 
     def error(self, message):
         raise CoreDump.CoreDump(message)
