@@ -5,10 +5,6 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from GbButtonId import GbButtonId
-from GbButtonState import GbButtonState
-
-from GbEvent import GbEvent
 from DebugToggleEvent import DebugToggleEvent
 from FrameUpdateEvent import FrameUpdateEvent
 from InputEvent import InputEvent

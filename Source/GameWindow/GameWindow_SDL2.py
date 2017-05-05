@@ -24,7 +24,7 @@ from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from GameWindow import AbstractGameWindow
 
 from GbLogger import gblogger
-from GbEvent.Events import GbButtonId, GbButtonState
+from GbControls import GbButtonId, GbButtonState
 
 gameboyResolution = (160, 144)
 

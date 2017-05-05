@@ -5,10 +5,8 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from . import GbEvent
+from GbEvent.GbEvent import GbEvent
 from .. import GbEventId
-
-from GbLogger import gblogger
 
 
 class MbTickEvent(GbEvent):

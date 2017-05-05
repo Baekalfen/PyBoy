@@ -5,11 +5,10 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from . import GbEvent
-from .. import GbEventId
 import time
 
-from GbLogger import gblogger
+from GbEvent.GbEvent import GbEvent
+from .. import GbEventId
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 

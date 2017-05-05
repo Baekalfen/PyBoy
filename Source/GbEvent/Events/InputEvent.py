@@ -5,15 +5,13 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from . import GbButtonId, GbButtonState
-from . import GbEvent
+from GbControls import GbButtonId, GbButtonState
+from GbEvent.GbEvent import GbEvent
+from GbLogger import gblogger
+from MathUint8 import resetBit, setBit
 from .. import GbEventId
 
-from GbLogger import gblogger
-
-from MathUint8 import  resetBit, setBit
-
-        # Bit 7 - Not used (No$GMB)
+# Bit 7 - Not used (No$GMB)
         # Bit 6 - Not used (No$GMB)
         # Bit 5 - P15 out port
         # Bit 4 - P14 out port

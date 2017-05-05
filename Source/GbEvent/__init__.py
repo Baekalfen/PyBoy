@@ -7,6 +7,8 @@
 
 from GbEventId import GbEventId
 
+from GbEvent import GbEvent
+
 from EventLoop import EventLoop
 from WindowEvent import WindowEvent
 
