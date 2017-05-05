@@ -8,13 +8,16 @@
 from GbEvent.GbEvent import GbEvent
 from .. import GbEventId
 
+from GbLogger import gblogger
+
+
 
 class SaveStateEvent(GbEvent):
     """Event to handle motherboard save/load"""
 
     _ID = GbEventId.STATE_IO
 
-    def __init__(self, system, eventHandler, fname, operation):
+    def __init__(self, system, eventHandler, mb, fname, operation):
         """
         :param system: GB System state
         :param eventHandler: Input handler
@@ -26,8 +29,12 @@ class SaveStateEvent(GbEvent):
         if not operation in ('save', 'load'):
             raise RuntimeError('Invalid IO operation')
         self._operation = operation
+        self._mb = mb
 
     def do_call(self):
         """Event callback"""
-        pass
 
+        if self._operation == 'save':
+            self._mb.saveState(self._fname)
+        elif self._operation == 'load':
+            self._mb.loadState(self._fname)

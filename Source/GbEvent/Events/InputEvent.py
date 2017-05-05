@@ -7,9 +7,9 @@
 
 from GbControls import GbButtonId, GbButtonState
 from GbEvent.GbEvent import GbEvent
-from GbLogger import gblogger
 from MathUint8 import resetBit, setBit
 from .. import GbEventId
+from GbLogger import gblogger
 
 # Bit 7 - Not used (No$GMB)
         # Bit 6 - Not used (No$GMB)
@@ -65,10 +65,6 @@ class InputEvent(GbEvent):
         :param button:
         :param state: Button state
         """
-
-        if False:
-            gblogger.debug('Input update: [{}][{}]'.format(str(button),
-                str(state)))
 
         if GbButtonId.isEmu(button):
             return self.__handleEmuButton(button, state)
@@ -138,9 +134,9 @@ class InputEvent(GbEvent):
             self._eventHandler.registerEvent(GbEventId.DEBUG_TOGGLE)
         elif button == GbButtonId.EMU_SPEED:
             self._eventHandler.registerEvent(GbEventId.SPEED_CHANGED)
-        elif button == GbButtonId.EMU_SAVE and state == GbButtonState.PRESSED:
-            self._eventHandler.registerEvent(GbEventId.STATE_IO,
+        elif button == GbButtonId.EMU_SAVE:
+            self._eventHandler.registerEvent(GbEventId.STATE_IO, self._mb,
                     '{}.state'.format(self._mb.cartridge.filename), 'save')
-        elif button == GbButtonId.EMU_LOAD and state == GbButtonState.PRESSED:
-            self._eventHandler.registerEvent(GbEventId.STATE_IO,
+        elif button == GbButtonId.EMU_LOAD:
+            self._eventHandler.registerEvent(GbEventId.STATE_IO, self._mb,
                     '{}.state'.format(self._mb.cartridge.filename), 'load')
