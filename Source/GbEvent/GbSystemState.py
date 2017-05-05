@@ -15,6 +15,7 @@ class GbSystemState(object):
     """
 
     def __init__(self):
+        self._frameCount = 0
         self._quit = False
         self._debug = False
         self._updateFrame = False
@@ -25,6 +26,14 @@ class GbSystemState(object):
         self._t_start = 0
         self._t_VSynced = 0
         self._windowText = (False, '[PyBoy]')
+
+    @property
+    def frameCount(self):
+        return self._frameCount
+
+    @frameCount.setter
+    def frameCount(self, val):
+        self._frameCount = val
 
     @property
     def quit(self):

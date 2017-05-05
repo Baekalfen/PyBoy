@@ -32,8 +32,11 @@ class FrameUpdateEvent(GbEvent):
         self._system.updateFrame = True
         self._system.t_VSynced = time.clock()
 
-        if True:
+        self._system.frameCount += 1
+
+        if self._system.frameCount % 60 == 0:
             text = str(int(((self._system.exp_avg_emu)/SPF*100))) + "%"
             self._system.windowText = (True, text)
+            self._system.frameCount = 0
 
 
