@@ -5,6 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 # MEMORY SIZES
 VIDEO_RAM = 8 * 1024  # 8KB
 INTERNAL_RAM_0 = 8 * 1024  # 8KB
@@ -25,8 +26,7 @@ def allocateRAM(size, rand=False):
 
 class RAM():
 
-    def __init__(self, logger, random=False):
-        self.logger = logger
+    def __init__(self, random=False):
         if random: #NOTE: In real life, the RAM is scrambled with random data on boot.
             raise Exception("Random RAM not implemented")
 
