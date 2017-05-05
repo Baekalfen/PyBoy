@@ -8,6 +8,8 @@
 from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from registers import PC
 
+from GbLogger import gblogger
+
 # Order important. NoInterrupt evaluates to False in if statements
 NoInterrupt, InterruptVector = range(0,2)
 
@@ -29,29 +31,29 @@ def checkForInterrupts(self):
 
         #NOTE: Previous versions checked if IF was set, not IE. This made an infinite loop in the boot ROM (logo scrolling).
         if self.testInterruptFlagEnabled(VBlank) and self.testInterruptFlag(VBlank): # Vertical Blank
-            # self.logger("Vertical Blank Interrupt")
-            # self.logger("Interrupt enable", bin(self.mb[0xFFFF]))
+            # gblogger.info("Vertical Blank Interrupt")
+            # gblogger.info("Interrupt enable", bin(self.mb[0xFFFF]))
             self.clearInterruptFlag(VBlank)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0040
             return InterruptVector
         elif self.testInterruptFlagEnabled(LCDC) and self.testInterruptFlag(LCDC): # LCDC Status
-            # self.logger("LCDC Status Interrupt")
+            # gblogger.info("LCDC Status Interrupt")
             self.clearInterruptFlag(LCDC)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0048
             return InterruptVector
         elif self.testInterruptFlagEnabled(TIMER) and self.testInterruptFlag(TIMER): # TIMER Overflow
-            # self.logger("TIMER Overflow Interrupt")
+            # gblogger.info("TIMER Overflow Interrupt")
             self.clearInterruptFlag(TIMER)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])
             self.reg[PC] = 0x0050
             return InterruptVector
         elif self.testInterruptFlagEnabled(Serial) and self.testInterruptFlag(Serial): # Serial Transfer
-            self.logger("Serial Transfer Interrupt")
+            gblogger.info("Serial Transfer Interrupt")
             self.clearInterruptFlag(Serial)
             self.interruptMasterEnableLatch = False
             self.CPU_PUSH(self.reg[PC])

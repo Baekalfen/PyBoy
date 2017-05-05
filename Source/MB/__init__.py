@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import CPU, RAM, Cartridge, BootROM, LCD, Interaction, Timer, CoreDump
+import CPU, RAM, Cartridge, BootROM, LCD, Timer, CoreDump
 
 class Motherboard():
     from MemoryManager import __getitem__, __setitem__, transferDMAtoOAM
@@ -13,24 +13,23 @@ class Motherboard():
     from Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
     from CPU.flags import TIMER
 
-    def __init__(self, logger, gameROMFile, bootROMFile, window):
-        self.logger = logger
+    def __init__(self, gameROMFile, bootROMFile, window, interaction):
         self.MainWindow = window
 
         self.timer = Timer.Timer()
-        self.interaction = Interaction.Interaction(logger)
-        self.cartridge = Cartridge.Cartridge(logger, gameROMFile)
+        self.interaction = interaction
+        self.cartridge = Cartridge.Cartridge(gameROMFile)
         self.bootROM = BootROM.BootROM(bootROMFile)
-        self.ram = RAM.RAM(logger, random=False)
-        self.cpu = CPU.CPU(logger, self)
-        self.lcd = LCD.LCD(logger, self)
+        self.ram = RAM.RAM(random=False)
+        self.cpu = CPU.CPU(self)
+        self.lcd = LCD.LCD(self)
 
         self.bootROMEnabled = True
 
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
 
-    def buttonEvent(self, key):
-        self.interaction.keyEvent(key)
+    def buttonEvent(self, key, state):
+        #self.interaction.keyEvent(key)
         self.cpu.setInterruptFlag(self.cpu.HightoLow)
 

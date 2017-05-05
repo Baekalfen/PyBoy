@@ -12,6 +12,7 @@ from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC # Only debugging
 from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
+from GbLogger import gblogger
 
 class CPU():
     #  A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL, pointer, Flag
@@ -25,8 +26,7 @@ class CPU():
     from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
     from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_LDI, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
 
-    def __init__(self, logger, MB):
-        self.logger = logger
+    def __init__(self, MB):
         self.mb = MB
 
         self.interruptMasterEnable = False
@@ -135,7 +135,7 @@ class CPU():
 
             if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
                 self.breakOn = True
-                self.logger("PC DIDN'T CHANGE! Can't continue!")
+                gblogger.info("PC DIDN'T CHANGE! Can't continue!")
                 CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
@@ -152,13 +152,13 @@ class CPU():
                     self.breakOn = False
                     self.breakAllow = False
                 elif action[:2] == "0x":
-                    self.logger("Breaking on next", hex(int(action,16)), "\n") #Checking parser
+                    gblogger.info("Breaking on next {}".format(hex(int(action,16)))) #Checking parser
                     self.breakNext = int(action,16)
                     self.breakOn = False
                     self.breakAllow = True
                 elif action == 'o':
                     targetPC = instruction[-1][-1]
-                    self.logger("Stepping over for", hex(targetPC), "\n") #Checking parser
+                    gblogger.info("Stepping over for {}".format(hex(targetPC))) #Checking parser
                     self.breakNext = targetPC
                     self.breakOn = False
                     self.breakAllow = True
@@ -181,54 +181,58 @@ class CPU():
         if self.testFlag(flagN):
             flags += " N"
 
-        self.logger("A:", "0x%0.2X" % self.reg[A], "F:", "0x%0.2X" % self.reg[F],flags)
-        self.logger("B:", "0x%0.2X" % self.reg[B], "C:", "0x%0.2X" % self.reg[C])
-        self.logger("D:", "0x%0.2X" % self.reg[D], "E:", "0x%0.2X" % self.reg[E])
-        self.logger("H:", "0x%0.2X" % self.reg[H], "L:", "0x%0.2X" % self.reg[L])
-        self.logger("SP:", "0x%0.4X" % self.reg[SP], "PC:", "0x%0.4X" % self.reg[PC])
-        # self.logger("0xC000", "0x%0.2X" % self.mb[0xc000])
-        # self.logger("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
-        self.logger("(HL)", "0x%0.2X" % self.mb[self.getHL()], "(HL+1)", "0x%0.2X" % self.mb[self.getHL()+1])
-        self.logger("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
+        gblogger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.reg[A], self.reg[F]))
+        gblogger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.reg[B], self.reg[C]))
+        gblogger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.reg[D], self.reg[E]))
+        gblogger.info("H:   0x%0.2X   L: 0x%0.2X" % (self.reg[H], self.reg[L]))
+        gblogger.info("SP:  0x%0.4X   PC: 0x%0.4X"% (self.reg[SP], self.reg[PC]))
+        # gblogger.info("0xC000", "0x%0.2X" % self.mb[0xc000])
+        # gblogger.info("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
+        gblogger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb[self.getHL()],
+            self.mb[self.getHL()+1]))
+        gblogger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
 
         if (self.mb[self.reg[PC]]) != 0xCB:
             l = self.opcodes[self.mb[self.reg[PC]]][0]
-            self.logger("Op:",)
-            self.logger("0x%0.2X" % self.mb[self.reg[PC]],)
-            self.logger("Name:", CPU_COMMANDS[self.mb[self.reg[PC]]],)
-            self.logger("Len:", l,)
+            gblogger.info("Op: 0x%0.2X" % self.mb[self.reg[PC]])
+            gblogger.info("Name: " + str(CPU_COMMANDS[self.mb[self.reg[PC]]]))
+            gblogger.info("Len:" + str(l))
             if instruction:
-                self.logger(("val:", "0x%0.2X" % instruction[2][1]) if not l == 1 else "")
+                gblogger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
         else:
-            self.logger("CB op:", "0x%0.2X" % self.mb[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])
-        self.logger("Call Stack", self.debugCallStack)
-        self.logger("Active ROM and RAM bank", self.mb.cartridge.ROMBankSelected , self.mb.cartridge.RAMBankSelected)
-        self.logger("Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch)
-        self.logger("Enabled Interrupts",)
+            gblogger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.reg[PC]+1],
+                   + str(CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])))
+        gblogger.info("Call Stack " + str(self.debugCallStack))
+        gblogger.info("Active ROM and RAM bank " +
+                str(self.mb.cartridge.ROMBankSelected) + ' ' +
+                str(self.mb.cartridge.RAMBankSelected))
+        gblogger.info("Master Interrupt" + str(self.interruptMasterEnable) + ' '
+                +str(self.interruptMasterEnableLatch))
+        gblogger.info("Enabled Interrupts")
         flags = ""
         if self.testInterruptFlagEnabled(self.VBlank):
-            flags += " VBlank"
+            flags += "VBlank "
         if self.testInterruptFlagEnabled(self.LCDC):
-            flags += " LCDC"
+            flags += "LCDC "
         if self.testInterruptFlagEnabled(self.TIMER):
-            flags += " Timer"
+            flags += "Timer "
         if self.testInterruptFlagEnabled(self.Serial):
-            flags += " Serial"
+            flags += "Serial "
         if self.testInterruptFlagEnabled(self.HightoLow):
-            flags += " HightoLow"
-        self.logger(flags)
-        self.logger("Waiting Interrupts",)
+            flags += "HightoLow "
+        gblogger.info('{}'.format(flags))
+        gblogger.info("Waiting Interrupts")
         flags = ""
         if self.testInterruptFlag(self.VBlank):
-            flags += " VBlank"
+            flags += "VBlank "
         if self.testInterruptFlag(self.LCDC):
-            flags += " LCDC"
+            flags += "LCDC "
         if self.testInterruptFlag(self.TIMER):
-            flags += " Timer"
+            flags += "Timer "
         if self.testInterruptFlag(self.Serial):
-            flags += " Serial"
+            flags += "Serial "
         if self.testInterruptFlag(self.HightoLow):
-            flags += " HightoLow"
+            flags += "HightoLow "
         if self.halted:
-            flags += "\nHALTED"
-        self.logger(flags)
+            flags += " **HALTED**"
+        gblogger.info(flags)
