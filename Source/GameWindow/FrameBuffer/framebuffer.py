@@ -51,7 +51,20 @@ class SimpleFrameBuffer(FrameBuffer):
         """
         """
         super(self.__class__, self).__init__(array, self.SCALE)
+        self._cache = None
+
+    def fill(self, val):
+        self._array.fill(val)
 
     def update(self):
-        for (x, y),_ in np.ndenumerate(self._array):
-            self._array[x, y] = self._cache[x, y]
+        pass
+        # for (x, y),_ in np.ndenumerate(self._array):
+        #     self._array[x, y] = self._cache[x, y]
+
+    def __getitem__(self, key):
+        """Get FrameBuffer item at index"""
+        return self._array[key]
+
+    def __setitem__(self, key, item):
+        """Set FrameBuffer item at index"""
+        self._array[key] = item
