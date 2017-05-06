@@ -62,10 +62,12 @@ def start(ROM, bootROM = None):
         debugger.tick()
         logger = debugger.console.writeLine
 
+    profiling = "profiling" in sys.argv
+
     window = Window(logger, scale=1)
     if bootROM is not None:
         logger("Starting with boot ROM")
-    mb = Motherboard(logger, ROM, bootROM, window)
+    mb = Motherboard(logger, ROM, bootROM, window, profiling = profiling)
 
     if "loadState" in sys.argv:
         mb.loadState(mb.cartridge.filename+".state")
@@ -136,7 +138,8 @@ def start(ROM, bootROM = None):
         np.set_printoptions(threshold=np.inf)
         argMax = np.argsort(mb.cpu.hitRate)
         for n in argMax[::-1]:
-            print "%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], mb.cpu.hitRate[n])
+            if mb.cpu.hitRate[n] != 0:
+                print "%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], mb.cpu.hitRate[n])
 
     mb.cartridge.saveRAM()
     if mb.cartridge.rtcEnabled:

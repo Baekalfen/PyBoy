@@ -25,7 +25,7 @@ class CPU():
     from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
     from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_LDI, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
 
-    def __init__(self, logger, MB):
+    def __init__(self, logger, MB, profiling=False):
         self.logger = logger
         self.mb = MB
 
@@ -48,7 +48,7 @@ class CPU():
         self.lala = False
 
         # Profiling
-        self.profiling = False
+        self.profiling = profiling
         self.hitRate = np.zeros(shape=(512,), dtype=int)
 
     def executeInstruction(self, instruction):

@@ -13,7 +13,7 @@ class Motherboard():
     from Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
     from CPU.flags import TIMER
 
-    def __init__(self, logger, gameROMFile, bootROMFile, window):
+    def __init__(self, logger, gameROMFile, bootROMFile, window, profiling = False):
         self.logger = logger
         self.MainWindow = window
 
@@ -22,7 +22,7 @@ class Motherboard():
         self.cartridge = Cartridge.Cartridge(logger, gameROMFile)
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(logger, random=False)
-        self.cpu = CPU.CPU(logger, self)
+        self.cpu = CPU.CPU(logger, self, profiling = profiling)
         self.lcd = LCD.LCD(logger, self)
 
         self.bootROMEnabled = True
