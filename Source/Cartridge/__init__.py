@@ -19,7 +19,7 @@ from MBC5 import MBC5
 def Cartridge(logger, filename):
     ROMBanks = loadROMfile(filename)
     cartType = ROMBanks[0][0x0147]
-    logger("Cartridge type:", hex(cartType))
+    # logger("Cartridge type:", hex(cartType))
     # ROMSize = ROMBanks[0][0x0148]
     # WARN: The following table doesn't work for MBC2! See Pan Docs
     exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]

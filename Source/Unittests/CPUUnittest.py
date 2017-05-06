@@ -2169,30 +2169,74 @@ class Test_CPU(unittest.TestCase):
         clearRegisters()
         clearFlag()
         clearStack100()
+        mb.bootROMEnabled = False
 
-        mb[0xC000] = 0x76
+        entryPoint = 0xC000
+
+        mb.cartridge.ROMBanks[0][0x50] = 0x00 # NOP
+        mb.cartridge.ROMBanks[0][0x51] = 0xD9 # RETI
+        mb[entryPoint] = 0x76
         for n in range(10):
-            mb[0xC001+n] = 0x00
+            mb[entryPoint+1+n] = 0x00
 
-        mb.cpu.reg[PC] = 0xC000
+        ## FIRST TEST -- Simple HALT, interrupt
+
         mb.cpu.interruptMasterEnable = True
-        mb.cpu.interruptMasterEnableLatch = True
+        mb[0xFFFF] = 0x00 # Disable all interrupt vectors
+        mb.cpu.reg[SP] = 0xD000
+        mb.cpu.reg[PC] = entryPoint
 
-        for n in range(10):  # Make sure we don't go anywhere
+        for n in range(2**16):  # Make sure we don't go anywhere
             mb.cpu.tick()
-            self.assertEqual(mb.cpu.reg[PC], 0xC000)
+            self.assertEqual(mb.cpu.reg[PC], entryPoint)
 
-        # Cause interrupt
-        mb[0xFF0F] = 0xFF
+        # Request timer interrupt, while interrupt disabled
+        mb[0xFF0F] = 0b00100
 
-        for n in range(10): # Make sure we don't go anywhere
+        for n in range(2**16): # Make sure we don't go anywhere
             mb.cpu.tick()
-            self.assertEqual(mb.cpu.reg[PC], 0xC000 + n + 2)
+            self.assertEqual(mb.cpu.reg[PC], entryPoint)
 
+        # Enable timer interrupt
+        mb[0xFFFF] = 0b00100
 
+        self.assertEqual(mb.cpu.reg[PC], entryPoint)
+        mb.cpu.tick() # Interrupt triggers
+        self.assertEqual(mb.cpu.reg[PC], 0x51) # Check the PC ends up at interrupt vector for timer
+        self.assertEqual(mb.cpu.interruptMasterEnable, False)
 
+        # Returning
+        print hex(mb[0x50]), hex(mb[0x51]), hex(mb.cpu.reg[SP]), hex(mb[mb.cpu.reg[SP]] + (mb[mb.cpu.reg[SP]+1]<<8))
+        mb.cpu.tick() # Interrupt triggers
+        self.assertEqual(mb.cpu.reg[PC], entryPoint+1) # Check the PC ends up at interrupt vector for timer
+        self.assertEqual(mb.cpu.interruptMasterEnable, True)
 
+        ## SECOND TEST -- Multiple interrupts priority
 
+        mb.cpu.interruptMasterEnable = True
+        mb[0xFFFF] = 0x00 # Disable all interrupt vectors
+        mb.cartridge.ROMBanks[0][0x40] = 0x00 # NOP
+        mb.cpu.reg[SP] = 0xD000
+        mb.cpu.reg[PC] = entryPoint
+
+        for n in range(2**16):  # Make sure we don't go anywhere
+            mb.cpu.tick()
+            self.assertEqual(mb.cpu.reg[PC], entryPoint)
+
+        # Request timer and VBlank interrupt, while interrupt disabled
+        mb[0xFF0F] = 0b00101
+
+        for n in range(2**16): # Make sure we don't go anywhere
+            mb.cpu.tick()
+            self.assertEqual(mb.cpu.reg[PC], entryPoint)
+
+        # Enable timer and VBlank interrupt
+        mb[0xFFFF] = 0b00101
+
+        self.assertEqual(mb.cpu.reg[PC], entryPoint)
+        mb.cpu.tick() # Interrupt triggers
+        self.assertEqual(mb.cpu.reg[PC], 0x41) # Check the PC ends up at interrupt vector for timer
+        self.assertEqual(mb.cpu.interruptMasterEnable, False)
 
     def test_opcode77(self):  # LD (HL),A
         clearRegisters()

@@ -33,9 +33,9 @@ import numpy as np
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 
 if len(sys.argv) < 2:
-    from Window_SDL2 import Window
+    from GameWindow import SdlGameWindow as Window
 elif sys.argv[1] == "SDL2":
-    from Window_SDL2 import Window
+    from GameWindow import SdlGameWindow as Window
 elif sys.argv[1] == "pygame":
     from Window_pygame import Window
 else:
@@ -53,7 +53,7 @@ def printLine(*args):
 # global logger
 logger = printLine
 
-def start(ROM, bootROM = None):
+def start(ROM, bootROM = None, scale=1):
     global window, mb, logger
 
     debugger = None
@@ -64,7 +64,7 @@ def start(ROM, bootROM = None):
 
     profiling = "profiling" in sys.argv
 
-    window = Window(logger, scale=1)
+    window = Window(logger, scale=scale)
     if bootROM is not None:
         logger("Starting with boot ROM")
     mb = Motherboard(logger, ROM, bootROM, window, profiling = profiling)

@@ -10,60 +10,42 @@ from registers import PC
 
 # Order important. NoInterrupt evaluates to False in if statements
 NoInterrupt, InterruptVector = range(0,2)
+IF = 0xFF0F
+IE = 0xFFFF
 
 def checkForInterrupts(self):
     #GPCPUman.pdf p. 40 about priorities
     # If an interrupt occours, the PC is pushed to the stack.
     # It is up to the interrupt routine to return it.
 
-    requestedInterrupts = self.mb[0xFF0F] & 0b11111
-    anyInterruptToHandle = (requestedInterrupts & (self.mb[0xFFFF] & 0b11111)) != 0
+    # 0xFF0F (IF) - Bit 0-4 Requested interrupts
+    # 0xFFFF (IE) - Bit 0-4 Enabling interrupt vectors
+    anyInterruptToHandle = ((self.mb[IF] & 0b11111) & (self.mb[IE] & 0b11111)) != 0
 
     # Better to make a long check, than run through 5 if statements
     if anyInterruptToHandle and self.interruptMasterEnable:
-        # flags = self.mb[0xFF0F]
 
-        # 0xFF0F (IF) - Bit 0-4 Showing an interrupt occoured
-        # 0xFFFF (IE) - Bit 0-4 Enabling the same interrupts
-        # "When an interrupt is used, a '0' should be stored in the IF register before the IE register is set"
+        return (
+            self.testAndTriggerInterrupt(VBlank, 0x0040) or
+            self.testAndTriggerInterrupt(LCDC, 0x0048) or
+            self.testAndTriggerInterrupt(TIMER, 0x0050) or
+            self.testAndTriggerInterrupt(Serial, 0x0058) or
+            self.testAndTriggerInterrupt(HightoLow, 0x0060)
+            )
 
-        #NOTE: Previous versions checked if IF was set, not IE. This made an infinite loop in the boot ROM (logo scrolling).
-        if self.testInterruptFlagEnabled(VBlank) and self.testInterruptFlag(VBlank): # Vertical Blank
-            # self.logger("Vertical Blank Interrupt")
-            # self.logger("Interrupt enable", bin(self.mb[0xFFFF]))
-            self.clearInterruptFlag(VBlank)
-            self.interruptMasterEnableLatch = False
-            self.CPU_PUSH(self.reg[PC])
-            self.reg[PC] = 0x0040
-            return InterruptVector
-        elif self.testInterruptFlagEnabled(LCDC) and self.testInterruptFlag(LCDC): # LCDC Status
-            # self.logger("LCDC Status Interrupt")
-            self.clearInterruptFlag(LCDC)
-            self.interruptMasterEnableLatch = False
-            self.CPU_PUSH(self.reg[PC])
-            self.reg[PC] = 0x0048
-            return InterruptVector
-        elif self.testInterruptFlagEnabled(TIMER) and self.testInterruptFlag(TIMER): # TIMER Overflow
-            # self.logger("TIMER Overflow Interrupt")
-            self.clearInterruptFlag(TIMER)
-            self.interruptMasterEnableLatch = False
-            self.CPU_PUSH(self.reg[PC])
-            self.reg[PC] = 0x0050
-            return InterruptVector
-        elif self.testInterruptFlagEnabled(Serial) and self.testInterruptFlag(Serial): # Serial Transfer
-            self.logger("Serial Transfer Interrupt")
-            self.clearInterruptFlag(Serial)
-            self.interruptMasterEnableLatch = False
-            self.CPU_PUSH(self.reg[PC])
-            self.reg[PC] = 0x0058
-            return InterruptVector
-        elif self.testInterruptFlagEnabled(HightoLow) and self.testInterruptFlag(HightoLow): # High-to-low P10-P13
-            self.clearInterruptFlag(HightoLow)
-            self.interruptMasterEnableLatch = False
-            self.CPU_PUSH(self.reg[PC])
-            self.reg[PC] = 0x0060
-            return InterruptVector
+    return NoInterrupt
 
 
-    # Check if both enable and trigger flags are enabled for any interrupts
+def testAndTriggerInterrupt(self, flag, vector):
+    if self.testInterruptFlagEnabled(flag) and self.testInterruptFlag(flag):
+
+        self.clearInterruptFlag(flag)
+        self.interruptMasterEnable = False
+        if self.halted:
+            self.CPU_PUSH(self.reg[PC]+1) # Escape HALT
+        else:
+            self.CPU_PUSH(self.reg[PC])
+        self.reg[PC] = vector
+
+        return InterruptVector
     return NoInterrupt
