@@ -17,7 +17,7 @@ class CPU():
     #  A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL, pointer, Flag
     from opcodes import opcodes
     from registers import reg, setReg, setAF, setBC, setDE, setHL, setPC, incPC, getAF, getBC, getDE, getHL
-    from Interrupts import checkForInterrupts
+    from Interrupts import checkForInterrupts, testAndTriggerInterrupt
     from flags import VBlank, LCDC, TIMER, Serial, HightoLow, LYCFlag, LYCFlagEnable
     from flags import testFlag, setFlag, clearFlag
     from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled
@@ -30,7 +30,6 @@ class CPU():
         self.mb = MB
 
         self.interruptMasterEnable = False
-        self.interruptMasterEnableLatch = False
 
         self.breakAllow = True
         self.breakOn = False
@@ -52,8 +51,6 @@ class CPU():
         self.hitRate = np.zeros(shape=(512,), dtype=int)
 
     def executeInstruction(self, instruction):
-        self.interruptMasterEnable = self.interruptMasterEnableLatch
-
         # '*' unpacks tuple into arguments
         success = instruction[0](*instruction[2])
         if success:
@@ -76,7 +73,7 @@ class CPU():
 
         operation = opcodes.opcodes[opcode]
 
-        # #OPTIMIZE: Can this be improved?
+        # OPTIMIZE: Can this be improved?
         if operation[0] == 1:
             return (
                 operation[2],
@@ -107,33 +104,27 @@ class CPU():
 
         instruction = None
         if self.halted and didInterrupt:
-            self.halted = False
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
-
-            instruction = self.fetchInstruction(self.reg[PC])
-
-        elif self.halted:# and not didInterrupt:
-            return -1 # Signal, that we want to fast-forward to interrupt
-        else:
-            instruction = self.fetchInstruction(self.reg[PC])
-
-        #     self.lala = True
-
-        # if self.lala and not self.halted:
-        #     if (self.mb[self.reg[PC]]) == 0xCB:
-        #         self.logger(hex(self.reg[PC]+1)[2:])
-        #     else:
-        #         self.logger(hex(self.reg[PC])[2:])
+            self.halted = False
+        instruction = self.fetchInstruction(self.reg[PC])
 
         if __debug__:
+            # if self.reg[PC] == 0x50:
+            # self.lala = True
+
+            if self.lala and not self.halted:
+                if (self.mb[self.reg[PC]]) == 0xCB:
+                    self.logger(hex(self.reg[PC]+1)[2:], hex(self.mb[self.reg[PC]]))
+                else:
+                    self.logger(hex(self.reg[PC])[2:], hex(self.mb[self.reg[PC]]))
 
             if self.breakAllow and self.reg[PC] == self.breakNext:
                 self.breakAllow = False
                 self.breakOn = True
 
-            if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
+            if self.oldPC == self.reg[PC] and not self.halted:
                 self.breakOn = True
                 self.logger("PC DIDN'T CHANGE! Can't continue!")
                 CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
@@ -156,6 +147,8 @@ class CPU():
                     self.breakNext = int(action,16)
                     self.breakOn = False
                     self.breakAllow = True
+                elif action == 'ei':
+                    self.interruptMasterEnable = True
                 elif action == 'o':
                     targetPC = instruction[-1][-1]
                     self.logger("Stepping over for", hex(targetPC), "\n") #Checking parser
@@ -203,7 +196,7 @@ class CPU():
             self.logger("CB op:", "0x%0.2X" % self.mb[self.reg[PC]+1], "CB name:", CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])
         self.logger("Call Stack", self.debugCallStack)
         self.logger("Active ROM and RAM bank", self.mb.cartridge.ROMBankSelected , self.mb.cartridge.RAMBankSelected)
-        self.logger("Master Interrupt",self.interruptMasterEnable, self.interruptMasterEnableLatch)
+        self.logger("Master Interrupt",self.interruptMasterEnable)
         self.logger("Enabled Interrupts",)
         flags = ""
         if self.testInterruptFlagEnabled(self.VBlank):

@@ -16,7 +16,6 @@ class CoreDump(Exception):
         dump = ""
         dump += "Error message: " + str(message) + "\n\n"
         dump += "CPU.interruptMasterEnable: " + str(CPU.interruptMasterEnable) + "\n"
-        dump += "CPU.interruptMasterEnableLatch: " + str(CPU.interruptMasterEnableLatch) + "\n"
         dump += "CPU.halted: " + str(CPU.halted) + "\n"
         dump += "CPU.stopped: " + str(CPU.stopped) + "\n"
         dump += "CPU.breakOn: " + str(CPU.breakOn) + "\n"
