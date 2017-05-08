@@ -35,7 +35,7 @@ class GenericMBC:
 
     def saveRAM(self, filename = None):
         if self.RAMBanks is None:
-            gblogger.info("Saving non-volatile memory is not supported on 0x%x" % self.cartType)
+            gblogger.info("Saving non-volatile memory is not supported on {}".format(self.cartType))
             return
 
         gblogger.info("Saving non-volatile memory")
@@ -51,7 +51,7 @@ class GenericMBC:
 
     def loadRAM(self, filename = None):
         if self.RAMBanks is None:
-            gblogger.info("Loading non-volatile memory is not supported on 0x%x" % self.cartType)
+	    gblogger.info("Loading non-volatile memory is not supported on {}".format(self.cartType))
             return
 
         if filename is None:
@@ -130,6 +130,6 @@ class ROM_only(GenericMBC):
             if value == 0:
                 value = 1
             self.ROMBankSelected = (value & 0b1)
-            gblogger.info("Switching bank", hex(address), hex(value))
+	    gblogger.info("Switching bank %s, %s" (hex(address), hex(value)))
         else:
             raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))

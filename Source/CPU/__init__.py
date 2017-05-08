@@ -120,9 +120,9 @@ class CPU():
 
         if self.lala and not self.halted:
             if (self.mb[self.reg[PC]]) == 0xCB:
-                gblogger.info(hex(self.reg[PC]+1)[2:])
+                gblogger.info('{}'.format(hex(self.reg[PC]+1)[2:]))
             else:
-                gblogger.info(hex(self.reg[PC])[2:])
+                gblogger.info('{}'.format(hex(self.reg[PC])[2:]))
 
         if __debug__:
 
@@ -147,13 +147,13 @@ class CPU():
                     self.breakOn = False
                     self.breakAllow = False
                 elif action[:2] == "0x":
-                    gblogger.info("Breaking on next", hex(int(action,16)), "\n") #Checking parser
+                    gblogger.info("Breaking on next {}".format(hex(int(action,16)))) #Checking parser
                     self.breakNext = int(action,16)
                     self.breakOn = False
                     self.breakAllow = True
                 elif action == 'o':
                     targetPC = instruction[-1][-1]
-                    gblogger.info("Stepping over for", hex(targetPC), "\n") #Checking parser
+                    gblogger.info("Stepping over for {}".format(hex(targetPC))) #Checking parser
                     self.breakNext = targetPC
                     self.breakOn = False
                     self.breakAllow = True
@@ -211,7 +211,7 @@ class CPU():
                 str(self.mb.cartridge.RAMBankSelected))
         gblogger.info("Master Interrupt" + str(self.interruptMasterEnable) + ' '
                 +str(self.interruptMasterEnableLatch))
-        gblogger.info("Enabled Interrupts",)
+        gblogger.info("Enabled Interrupts")
         flags = ""
         if self.testInterruptFlagEnabled(self.VBlank):
             flags += "VBlank "
@@ -223,7 +223,7 @@ class CPU():
             flags += "Serial "
         if self.testInterruptFlagEnabled(self.HightoLow):
             flags += "HightoLow "
-        gblogger.info(flags)
+	gblogger.info('{}'.format(flags))
         gblogger.info("Waiting Interrupts")
         flags = ""
         if self.testInterruptFlag(self.VBlank):
