@@ -19,3 +19,4 @@ class GbEventId(AutoEnum):
     INPUT_UPDATE = ()   # Input update event
     FRAME_UPDATE = ()   # Frame update event
     MB_TICK = ()        # Motherboard tick event
+    RUN_SCRIPT = ()     # Run script

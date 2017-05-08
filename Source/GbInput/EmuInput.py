@@ -20,6 +20,7 @@ class EmuInput(AutoEnum):
     BUTTON_E = ()
     BUTTON_Z = ()
     BUTTON_X = ()
+    BUTTON_N = ()
     RETURN = ()
     BACKSPACE = ()
     ESCAPE = ()

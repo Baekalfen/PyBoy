@@ -140,3 +140,6 @@ class InputEvent(GbEvent):
         elif button == GbButtonId.EMU_LOAD:
             self._eventHandler.registerEvent(GbEventId.STATE_IO, self._mb,
                     '{}.state'.format(self._mb.cartridge.filename), 'load')
+        elif button == GbButtonId.EMU_RUN_SCRIPT:
+            self._eventHandler.registerEvent(GbEventId.RUN_SCRIPT,
+                    'pyboy_quickload.py')

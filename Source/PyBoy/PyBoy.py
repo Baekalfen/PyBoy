@@ -58,6 +58,7 @@ class PyBoy(object):
         eventHandler.registerEventHandler(Events.QuitEvent)
         eventHandler.registerEventHandler(Events.SaveStateEvent)
         eventHandler.registerEventHandler(Events.SpeedChangedEvent)
+        eventHandler.registerEventHandler(Events.RunScriptEvent)
 
     def start(self):
         eventHandler = self.eventLoop.getEventHandler()

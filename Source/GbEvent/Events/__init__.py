@@ -10,6 +10,7 @@ from FrameUpdateEvent import FrameUpdateEvent
 from InputEvent import InputEvent
 from MbTickEvent import MbTickEvent
 from QuitEvent import QuitEvent
+from RunScriptEvent import RunScriptEvent
 from SaveStateEvent import SaveStateEvent
 from SpeedChangedEvent import SpeedChangedEvent
 

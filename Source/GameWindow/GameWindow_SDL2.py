@@ -52,6 +52,7 @@ class SdlGameWindow(AbstractGameWindow):
                 sdl2.SDLK_ESCAPE    : GbButtonId.EMU_QUIT,
                 # sdl2.SDLK_e       : self.debug = True
                 sdl2.SDLK_d         : GbButtonId.EMU_DEBUG,
+                sdl2.SDLK_n         : GbButtonId.EMU_RUN_SCRIPT,
                 sdl2.SDLK_SPACE     : GbButtonId.EMU_SPEED,
         }
         self.windowEventsUp = {

@@ -20,6 +20,7 @@ class SdlInput(EmuInput):
     BUTTON_E = sdl2.SDLK_e
     BUTTON_Z = sdl2.SDLK_z
     BUTTON_X = sdl2.SDLK_x
+    BUTTON_N = sdl2.SDLK_n
     RETURN = sdl2.SDLK_RETURN
     BACKSPACE = sdl2.SDLK_BACKSPACE
     ESCAPE = sdl2.SDLK_ESCAPE
