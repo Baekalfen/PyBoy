@@ -21,9 +21,7 @@ import platform
 if platform.system() != "Windows":
     from Debug import Debug
 from MB import Motherboard
-from GbEvent import WindowEvent
-from GbEvent import EventHandler
-from PyBoy import PyBoy
+from WindowEvent import WindowEvent
 from GbLogger import gblogger
 import time
 import os.path
@@ -213,8 +211,7 @@ if __name__ == "__main__":
         scale = 1
 
         window = Window(scale=scale)
-        pb = PyBoy(bootROM, filename, window, False, debug, scale)
-        pb.start()
+        start(bootROM, filename, window, False, debug, scale)
     except KeyboardInterrupt:
         if pb is not None:
             pb.getDump()

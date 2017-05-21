@@ -18,7 +18,7 @@ import itertools
 import operator
 
 from MathUint8 import getSignedInt8, getBit
-from GbEvent.WindowEvent import WindowEvent
+from WindowEvent import WindowEvent
 from LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from GameWindow import AbstractGameWindow
