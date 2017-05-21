@@ -51,27 +51,21 @@ mb = None
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
-def printLine(*args):
-    print "#", " ".join([str(x) for x in args])
-
-# global logger
-logger = printLine
 
 def start(ROM, bootROM = None, scale=1):
-    global window, mb, logger
+    global window, mb
 
     debugger = None
     if "debug" in sys.argv and platform.system() != "Windows":
         debugger = Debug()
         debugger.tick()
-        logger = debugger.console.writeLine
 
     profiling = "profiling" in sys.argv
 
-    window = Window(logger, scale=scale)
+    window = Window(scale=scale)
     if bootROM is not None:
-        logger("Starting with boot ROM")
-    mb = Motherboard(logger, ROM, bootROM, window, profiling = profiling)
+        gblogger.info("Starting with boot ROM")
+    mb = Motherboard(ROM, bootROM, window, profiling = profiling)
 
     if "loadState" in sys.argv:
         mb.loadState(mb.cartridge.filename+".state")
@@ -130,13 +124,13 @@ def start(ROM, bootROM = None, scale=1):
         if counter % 60 == 0:
             text = str(int(((exp_avg_emu)/SPF*100))) + "%"
             window._window.title = text
-            # logger(text)
+            # gblogger.info(text)
             counter = 0
         counter += 1
 
-    logger("###########################")
-    logger("# Emulator is turning off #")
-    logger("###########################")
+    gblogger.info("###########################")
+    gblogger.info("# Emulator is turning off #")
+    gblogger.info("###########################")
 
     if mb.cpu.profiling:
         np.set_printoptions(threshold=np.inf)
