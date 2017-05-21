@@ -35,14 +35,13 @@ def checkForInterrupts(self):
 
     return NoInterrupt
 
-
 def testAndTriggerInterrupt(self, flag, vector):
     if self.testInterruptFlagEnabled(flag) and self.testInterruptFlag(flag):
 
         self.clearInterruptFlag(flag)
         self.interruptMasterEnable = False
         if self.halted:
-            self.CPU_PUSH(self.reg[PC]+1) # Escape HALT
+            self.CPU_PUSH(self.reg[PC]+1) # Escape HALT on return
         else:
             self.CPU_PUSH(self.reg[PC])
         self.reg[PC] = vector

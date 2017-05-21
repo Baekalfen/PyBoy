@@ -17,7 +17,6 @@ def CPU_EI(self):
     # self.logger("Enabling interrupts")
     self.interruptMasterEnable = True
 
-
 def CPU_STOP(self):
     self.stopped = True
     coredump(Exception("STOP is not implemented yet"))
@@ -57,7 +56,7 @@ def CPU_LDI(self):
     operands = inst.operands
     variable = inst.variable
 
-    # self.logger("(Will be split into LD (HL), A and - INC HL)")
+    # logger.info("(Will be split into LD (HL), A and - INC HL)")
 
     # Split instruction into two parts (LD (HL),A and INC HL)
     instA = Instruction(opcode,
@@ -83,7 +82,7 @@ def CPU_LDI(self):
 def CPU_INC8(self, r0):
     result = (r0 + 1) & 0xFF
 
-    # self.logger(flagZ, result == 0)
+    # logger.info(flagZ, result == 0)
     self.setFlag(flagZ, result == 0)
     self.setFlag(flagN, False)
     self.setFlag(flagH, (getBit(r0, 3) == 1) and (getBit(result, 3) == 0))
@@ -202,7 +201,7 @@ def CPU_CP(self, r0, r1):
     # try:
     self.CPU_SUB8(r0, r1)
     # except CoreDump.CoreDump:
-    #     self.logger("CP called SUB8 that caused CoreDump")
+    #     logger.info("CP called SUB8 that caused CoreDump")
 
 
 def CPU_RLC(self, r0):  # WARN: There are is one more in CB

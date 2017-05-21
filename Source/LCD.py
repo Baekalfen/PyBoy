@@ -33,8 +33,7 @@ def getColorCode(byte1,byte2,offset):
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
 
 class LCD():
-    def __init__(self, logger, MB):
-        self.logger = logger
+    def __init__(self, MB):
         self.mb = MB
         self.clearCache = False
         self.tilesChanged = set([])
