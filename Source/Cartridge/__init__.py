@@ -21,7 +21,8 @@ from GbLogger import gblogger
 def Cartridge(filename):
     ROMBanks = loadROMfile(filename)
     cartType = ROMBanks[0][0x0147]
-    gblogger.debug("Cartridge type: " + hex(cartType))
+
+    # gblogger.debug("Cartridge type: " + hex(cartType))
     # ROMSize = ROMBanks[0][0x0148]
     # WARN: The following table doesn't work for MBC2! See Pan Docs
     exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]

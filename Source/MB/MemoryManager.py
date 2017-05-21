@@ -88,7 +88,7 @@ def __setitem__(self,i,value):
         elif i == 0xFF06:
             self.timer.TMA = value
         elif i == 0xFF07:
-            self.timer.TAC = value
+            self.timer.TAC = value & 0b11
         elif i == 0xFF40:
             self.lcd.LCDC.set(value)
         elif i == 0xFF46:

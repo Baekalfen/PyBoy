@@ -14,23 +14,26 @@ from MathUint8 import resetBit, setBit, getBit, swap, lshift, rshift, lrotate_in
 
 def CPU_EI(self):
     # Enable interrupts. This intruction enables interrupts but not immediately. Interrupts are enabled after instruction after EI is executed
-    # gblogger.info("Enabling interrupts")
-    self.interruptMasterEnableLatch = True
-
+    # self.logger("Enabling interrupts")
+    self.interruptMasterEnable = True
 
 def CPU_STOP(self):
     self.stopped = True
     coredump(Exception("STOP is not implemented yet"))
 
 
-def CPU_HALT(self):
+def CPU_HALT(self, e):
     # GPCPUman.pdf p. 19
     # The CPU will remain suspended until an interrupt occurs, at which point the interrupt
     # is serviced and then the instruction immediately following the HALT is executed.
     # If interrupts are disabled (DI) then halt doesn't suspend operation but it does cause
     # the program counter to stop counting for one instruction on the GB,GBP, and SGB as mentioned below.
 
-    self.halted = True
+    if self.interruptMasterEnable:
+        self.halted = True
+    else:
+        #TODO: Implement HALT bug. If master interrupt is disabled, the intruction following HALT is skipped
+        self.setPC(e)
 
 
 def CPU_LDD(self, r0, r1):
@@ -282,10 +285,6 @@ def CPU_PUSH(self, r0):
     memory address specified by the SP. The SP is decremented again and loads the low-order byte of
     qq to the memory location corresponding to this new address in the SP."""
 
-    #FIXME: Quick hack to make interrupts during halt to work
-    if self.halted:
-        r0 += 1 # Byte-length of HALT
-
     self.mb[self.reg[SP]-1] = (r0 & 0xFF00) >> 8  # High
     self.mb[self.reg[SP]-2] = r0 & 0x00FF  # Low
 
@@ -300,8 +299,8 @@ def CPU_RET(self):
 def CPU_DI(self):
     # "Enable interrupts. This intruction enables interrupts but not immediately.
     # Interrupts are enabled after instruction after EI is executed"
-    # gblogger.info("Disabling interrupts")
-    self.interruptMasterEnableLatch = False
+    # self.logger("Disabling interrupts")
+    self.interruptMasterEnable = False
 
 
 def CPU_EXT_SLA(self, r0):

@@ -10,16 +10,15 @@ from MathUint8 import getBit
 import CoreDump
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC # Only debugging
-from Interrupts import InterruptVector, NonEnabledInterrupt, NoInterrupt
-
 from GbLogger import gblogger
-
+from Interrupts import InterruptVector, NoInterrupt
+import numpy as np
 
 class CPU():
     #  A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL, pointer, Flag
     from opcodes import opcodes
     from registers import reg, setReg, setAF, setBC, setDE, setHL, setPC, incPC, getAF, getBC, getDE, getHL
-    from Interrupts import checkForInterrupts
+    from Interrupts import checkForInterrupts, testAndTriggerInterrupt
     from flags import VBlank, LCDC, TIMER, Serial, HightoLow, LYCFlag, LYCFlagEnable
     from flags import testFlag, setFlag, clearFlag
     from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled
@@ -27,11 +26,10 @@ class CPU():
     from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
     from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_LDI, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
 
-    def __init__(self, MB):
+    def __init__(self, MB, profiling=False):
         self.mb = MB
 
         self.interruptMasterEnable = False
-        self.interruptMasterEnableLatch = False
 
         self.breakAllow = True
         self.breakOn = False
@@ -48,9 +46,11 @@ class CPU():
         self.oldPC = -1
         self.lala = False
 
-    def executeInstruction(self, instruction):
-        self.interruptMasterEnable = self.interruptMasterEnableLatch
+        # Profiling
+        self.profiling = profiling
+        self.hitRate = np.zeros(shape=(512,), dtype=int)
 
+    def executeInstruction(self, instruction):
         # '*' unpacks tuple into arguments
         success = instruction[0](*instruction[2])
         if success:
@@ -65,9 +65,15 @@ class CPU():
             opcode = self.mb[pc]
             opcode += 0x100  # Internally shifting look-up table
 
+        #Profiling
+        if self.profiling:
+            self.hitRate[opcode] += 1
+        # if opcode == 0xf0:
+        #     print "F0", hex(self.mb[pc+1])
+
         operation = opcodes.opcodes[opcode]
 
-        # #OPTIMIZE: Can this be improved?
+        # OPTIMIZE: Can this be improved?
         if operation[0] == 1:
             return (
                 operation[2],
@@ -97,46 +103,36 @@ class CPU():
         didInterrupt = self.checkForInterrupts()
 
         instruction = None
-        # InterruptVector, NonEnabledInterrupt, NoInterrupt
         if self.halted and didInterrupt:
-            self.halted = False
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
-
-            if didInterrupt == NonEnabledInterrupt:
-                self.reg[PC] += 1  # +1 to escape HALT, when interrupt didn't
-
-            instruction = self.fetchInstruction(self.reg[PC])
-
-        elif self.halted and not didInterrupt:
-            operation = opcodes.opcodes[0x00] #Fetch NOP to still run timers and such
-            instruction = (operation[2], operation[1], (self, self.reg[PC]))
-            self.oldPC = -1 # Avoid detection of being stuck
-        else:
-            instruction = self.fetchInstruction(self.reg[PC])
-
-        #     self.lala = True
-
-        if self.lala and not self.halted:
-            if (self.mb[self.reg[PC]]) == 0xCB:
-                gblogger.info('{}'.format(hex(self.reg[PC]+1)[2:]))
-            else:
-                gblogger.info('{}'.format(hex(self.reg[PC])[2:]))
+            self.halted = False
+        instruction = self.fetchInstruction(self.reg[PC])
 
         if __debug__:
+            # if self.reg[PC] == 0x50:
+            # self.lala = True
+
+            if self.lala and not self.halted:
+                if (self.mb[self.reg[PC]]) == 0xCB:
+                    self.logger(hex(self.reg[PC]+1)[2:], hex(self.mb[self.reg[PC]]))
+                else:
+                    self.logger(hex(self.reg[PC])[2:], hex(self.mb[self.reg[PC]]))
 
             if self.breakAllow and self.reg[PC] == self.breakNext:
                 self.breakAllow = False
                 self.breakOn = True
 
-            if self.oldPC == self.reg[PC]:# and self.reg[PC] != 0x40: #Ignore VBLANK interrupt
+            if self.oldPC == self.reg[PC] and not self.halted:
                 self.breakOn = True
                 gblogger.info("PC DIDN'T CHANGE! Can't continue!")
                 CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
             self.oldPC = self.reg[PC]
 
+            #TODO: Make better CoreDump print out. Where is 0xC000?
+            #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
             if self.breakOn:
                 self.getDump(instruction)
 
@@ -151,6 +147,8 @@ class CPU():
                     self.breakNext = int(action,16)
                     self.breakOn = False
                     self.breakAllow = True
+                elif action == 'ei':
+                    self.interruptMasterEnable = True
                 elif action == 'o':
                     targetPC = instruction[-1][-1]
                     gblogger.info("Stepping over for {}".format(hex(targetPC))) #Checking parser
@@ -160,15 +158,7 @@ class CPU():
                 else:
                     pass
 
-        #TODO: Make better CoreDump print out. Where is 0xC000?
-        #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
-
-        cycles = self.executeInstruction(instruction)
-
-        if self.mb.timer.tick(cycles):
-            self.setInterruptFlag(self.TIMER)
-
-        return cycles
+        return self.executeInstruction(instruction)
 
     def error(self, message):
         raise CoreDump.CoreDump(message)
@@ -203,15 +193,16 @@ class CPU():
             if instruction:
                 gblogger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
         else:
+
             gblogger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.reg[PC]+1],
                    + str(CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])))
         gblogger.info("Call Stack " + str(self.debugCallStack))
         gblogger.info("Active ROM and RAM bank " +
                 str(self.mb.cartridge.ROMBankSelected) + ' ' +
                 str(self.mb.cartridge.RAMBankSelected))
-        gblogger.info("Master Interrupt" + str(self.interruptMasterEnable) + ' '
-                +str(self.interruptMasterEnableLatch))
+        gblogger.info("Master Interrupt" + str(self.interruptMasterEnable))
         gblogger.info("Enabled Interrupts")
+
         flags = ""
         if self.testInterruptFlagEnabled(self.VBlank):
             flags += "VBlank "

@@ -11,8 +11,9 @@ class Motherboard():
     from MemoryManager import __getitem__, __setitem__, transferDMAtoOAM
     from StateManager import saveState, loadState
     from Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
+    from CPU.flags import TIMER
 
-    def __init__(self, gameROMFile, bootROMFile, window):
+    def __init__(self, gameROMFile, bootROMFile, window, profiling = False):
         self.MainWindow = window
 
         self.timer = Timer.Timer()
