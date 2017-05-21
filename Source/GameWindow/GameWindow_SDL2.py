@@ -23,7 +23,7 @@ from LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from GameWindow import AbstractGameWindow
 
-from GbLogger import gblogger
+from Logger import logger
 
 gameboyResolution = (160, 144)
 
@@ -71,11 +71,11 @@ class SdlGameWindow(AbstractGameWindow):
 
         CoreDump.windowHandle = self
 
-        gblogger.debug("SDL initialization")
+        logger.debug("SDL initialization")
         sdl2.ext.init()
 
         self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
-        gblogger.debug('scale = ' + str(self._scaledResolution))
+        logger.debug('scale = ' + str(self._scaledResolution))
 
         self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
         self._windowSurface = self._window.get_surface()
@@ -220,7 +220,7 @@ class SdlGameWindow(AbstractGameWindow):
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
-        # gblogger.debug("Rendering Sprites")
+        # logger.debug("Rendering Sprites")
         spriteSize = 16 if lcd.LCDC.spriteSize else 8
         BGPkey = lcd.BGP.getColor(0)
 

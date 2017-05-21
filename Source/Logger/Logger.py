@@ -50,4 +50,4 @@ class ColoredFormatter(logging.Formatter):
 SOURCE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 fileConfig(os.path.join(SOURCE_PATH, 'logging_config.ini'))
-GbLogger = logging.getLogger()
+Logger = logging.getLogger()

@@ -7,7 +7,7 @@
 import CoreDump
 import os
 from RTC import RTC
-from GbLogger import gblogger
+from Logger import logger
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):
@@ -35,10 +35,10 @@ class GenericMBC:
 
     def saveRAM(self, filename = None):
         if self.RAMBanks is None:
-            gblogger.info("Saving non-volatile memory is not supported on {}".format(self.cartType))
+            logger.info("Saving non-volatile memory is not supported on {}".format(self.cartType))
             return
 
-        gblogger.info("Saving non-volatile memory")
+        logger.info("Saving non-volatile memory")
         if filename is None:
             romPath, ext = os.path.splitext(self.filename)
         else:
@@ -51,7 +51,7 @@ class GenericMBC:
 
     def loadRAM(self, filename = None):
         if self.RAMBanks is None:
-	    gblogger.info("Loading non-volatile memory is not supported on {}".format(self.cartType))
+	    logger.info("Loading non-volatile memory is not supported on {}".format(self.cartType))
             return
 
         if filename is None:
@@ -60,10 +60,10 @@ class GenericMBC:
             romPath = filename
 
         if not os.path.exists(romPath+".ram"):
-            gblogger.info("No RAM file found. Skipping load of non-volatile memory")
+            logger.info("No RAM file found. Skipping load of non-volatile memory")
             return
 
-        gblogger.info("Loading non-volatile memory")
+        logger.info("Loading non-volatile memory")
 
         with open(romPath+".ram", "rb") as loadRAM:
             for bank in xrange(len(self.RAMBanks)):
@@ -130,6 +130,6 @@ class ROM_only(GenericMBC):
             if value == 0:
                 value = 1
             self.ROMBankSelected = (value & 0b1)
-	    gblogger.info("Switching bank %s, %s" (hex(address), hex(value)))
+	    logger.info("Switching bank %s, %s" (hex(address), hex(value)))
         else:
             raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))

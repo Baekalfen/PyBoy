@@ -16,13 +16,13 @@ from MBC2 import MBC2
 from MBC3 import MBC3
 from MBC5 import MBC5
 
-from GbLogger import gblogger
+from Logger import logger
 
 def Cartridge(filename):
     ROMBanks = loadROMfile(filename)
     cartType = ROMBanks[0][0x0147]
 
-    # gblogger.debug("Cartridge type: " + hex(cartType))
+    # logger.debug("Cartridge type: " + hex(cartType))
     # ROMSize = ROMBanks[0][0x0148]
     # WARN: The following table doesn't work for MBC2! See Pan Docs
     exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]

@@ -8,8 +8,6 @@
 from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from registers import PC
 
-from GbLogger import gblogger
-
 # Order important. NoInterrupt evaluates to False in if statements
 NoInterrupt, InterruptVector = range(0,2)
 IF = 0xFF0F

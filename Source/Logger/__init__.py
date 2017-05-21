@@ -5,4 +5,4 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from GbLogger import GbLogger as gblogger
+from Logger import Logger as logger

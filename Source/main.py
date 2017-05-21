@@ -22,7 +22,7 @@ if platform.system() != "Windows":
     from Debug import Debug
 from MB import Motherboard
 from WindowEvent import WindowEvent
-from GbLogger import gblogger
+from Logger import logger
 import time
 import os.path
 import os
@@ -62,7 +62,7 @@ def start(ROM, bootROM = None, scale=1):
 
     window = Window(scale=scale)
     if bootROM is not None:
-        gblogger.info("Starting with boot ROM")
+        logger.info("Starting with boot ROM")
     mb = Motherboard(ROM, bootROM, window, profiling = profiling)
 
     if "loadState" in sys.argv:
@@ -122,13 +122,13 @@ def start(ROM, bootROM = None, scale=1):
         if counter % 60 == 0:
             text = str(int(((exp_avg_emu)/SPF*100))) + "%"
             window._window.title = text
-            # gblogger.info(text)
+            # logger.info(text)
             counter = 0
         counter += 1
 
-    gblogger.info("###########################")
-    gblogger.info("# Emulator is turning off #")
-    gblogger.info("###########################")
+    logger.info("###########################")
+    logger.info("# Emulator is turning off #")
+    logger.info("###########################")
 
     if mb.cpu.profiling:
         np.set_printoptions(threshold=np.inf)
@@ -160,10 +160,10 @@ def runBlarggsTest():
                 "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",
                 ]:
         try:
-            gblogger.info(rom)
+            logger.info(rom)
             start(rom)
         except Exception as ex:
-            gblogger.info(ex)
+            logger.info(ex)
             time.sleep(1)
             window.stop()
             time.sleep(2)
@@ -177,10 +177,10 @@ if __name__ == "__main__":
     try:
         # Verify directories
         if not bootROM is None and not os.path.exists(bootROM):
-            gblogger.info("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
+            logger.info("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
             bootROM = None
         if not os.path.exists(directory) and len(sys.argv) < 2:
-            gblogger.info("ROM folder not found. Please copy the Game-ROM to '%s'" % directory)
+            logger.info("ROM folder not found. Please copy the Game-ROM to '%s'" % directory)
             exit()
 
         # Check if the ROM is given through argv
@@ -194,7 +194,7 @@ if __name__ == "__main__":
         #Give a list of ROMs to start
         found_files = filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(directory))
         for i, f in enumerate(found_files):
-            gblogger.info("%s\t%s" % (i+1, f))
+            logger.info("%s\t%s" % (i+1, f))
         filename = raw_input("Write the name or number of the ROM file:\n")
 
         try:
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         if pb is not None:
             pb.getDump()
-        gblogger.info("Interrupted by keyboard")
+        logger.info("Interrupted by keyboard")
     except Exception as ex:
         if pb is not None:
             pb.getDump()
