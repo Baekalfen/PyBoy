@@ -4,6 +4,8 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
+
 def __getitem__(self, i):
     if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
         if i <= 0xFF and self.bootROMEnabled:

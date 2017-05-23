@@ -23,6 +23,8 @@ from LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from GameWindow import AbstractGameWindow
 
+from Logger import logger
+
 gameboyResolution = (160, 144)
 
 
@@ -32,9 +34,8 @@ def pixels2dWithoutWarning(surface):
         return sdl2.ext.pixels2d(surface)
 
 class SdlGameWindow(AbstractGameWindow):
-    def __init__(self, logger, scale=1):
+    def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
-        self.logger = logger
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
@@ -70,11 +71,11 @@ class SdlGameWindow(AbstractGameWindow):
 
         CoreDump.windowHandle = self
 
-        self.logger("SDL initialization")
+        logger.debug("SDL initialization")
         sdl2.ext.init()
 
         self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
-        logger('scale = ' + str(self._scaledResolution))
+        logger.debug('scale = ' + str(self._scaledResolution))
 
         self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
         self._windowSurface = self._window.get_surface()
@@ -219,7 +220,7 @@ class SdlGameWindow(AbstractGameWindow):
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
-        # self.logger("Rendering Sprites")
+        # logger.debug("Rendering Sprites")
         spriteSize = 16 if lcd.LCDC.spriteSize else 8
         BGPkey = lcd.BGP.getColor(0)
 

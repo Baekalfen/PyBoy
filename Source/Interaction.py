@@ -12,8 +12,7 @@ from MathUint8 import  resetBit, setBit
 P10, P11, P12, P13, P14, P15 = range(0,6)
 
 class Interaction():
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         self.directional = 0xF
         self.standard = 0xF
 
