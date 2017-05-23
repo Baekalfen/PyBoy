@@ -49,37 +49,6 @@ def CPU_LDHL(self, r0, r1):
     self.executeInstruction((self.opcodes[0x2B][2], (0,), (self, None, newPC)))
 
 
-def CPU_LDI(self):
-    # LD A,(HL) - INC HL
-    # LD (HL),A - INC HL
-
-    opcode = hex(0)  # The opcode is irrelevant
-    operands = inst.operands
-    variable = inst.variable
-
-    # self.logger("(Will be split into LD (HL), A and - INC HL)")
-
-    # Split instruction into two parts (LD (HL),A and INC HL)
-    instA = Instruction(opcode,
-                        opcodes.LD,
-                        operands,
-                        variable,
-                        0,
-                        0,
-                        0x77)
-
-    instB = Instruction(opcode,
-                        opcodes.INC,
-                        (operands[1],),
-                        variable,
-                        0,
-                        0,
-                        0x2C)
-
-    self.executeToken(instA)
-    self.executeToken(instB)
-
-
 def CPU_INC8(self, r0):
     result = (r0 + 1) & 0xFF
 
