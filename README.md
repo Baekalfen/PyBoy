@@ -39,12 +39,15 @@ macOS
 -----
 The easiest way to get started, is to first install [brew](https://www.brew.sh).
 
+Git and Mercurial is not strictly needed for the emulator. You can choose not to install them, if you download and install PySDL2 and NumPy manually.
+
 When brew is installed, the depencencies can be installed with the following commands in the terminal:
 
     brew update
+    brew install git mercurial
     brew install pypy sdl2
     brew link sdl2
-    brew install sdl2 sdl2_gfx sdl2_image
+    brew install sdl2_gfx sdl2_image
 
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
     pip_pypy install hg+https://bitbucket.org/marcusva/py-sdl2
