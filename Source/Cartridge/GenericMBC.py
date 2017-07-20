@@ -20,7 +20,7 @@ class GenericMBC:
         self.rtcEnabled = rtcEnabled
 
         if self.rtcEnabled:
-            self.rtc = RTC(logger)
+            self.rtc = RTC()
 
 
         self.RAMBanks = None
