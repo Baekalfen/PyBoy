@@ -18,7 +18,6 @@ def saveState(self, filename):
             f.write(chr((n&0xFF00)>>8))
 
         f.write(chr(self.cpu.interruptMasterEnable))
-        f.write(chr(self.cpu.interruptMasterEnableLatch))
         f.write(chr(self.cpu.halted))
         f.write(chr(self.cpu.stopped))
         f.write(chr(self.bootROMEnabled))
@@ -57,7 +56,6 @@ def loadState(self, filename):
         self.cpu.reg[-2:] = [ord(f.read(1)) + (ord(f.read(1))<<8) for _ in xrange(2)]
 
         self.cpu.interruptMasterEnable = ord(f.read(1))
-        self.cpu.interruptMasterEnableLatch = ord(f.read(1))
         self.cpu.halted = ord(f.read(1))
         self.cpu.stopped = ord(f.read(1))
         self.bootROMEnabled = ord(f.read(1))

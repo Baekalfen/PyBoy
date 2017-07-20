@@ -17,7 +17,7 @@ class MBC3(GenericMBC):
             elif value == 0:
                 self.RAMBankEnabled = False
             else:
-                raise CoreDump.CoreDump("Invalid command for MBC: Address: %s, Value: %s" % (hex(address), hex(value)))
+                logger.warn("Invalid command for MBC: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
 
         elif 0x2000 <= address < 0x4000:
             if value == 0:
@@ -34,7 +34,7 @@ class MBC3(GenericMBC):
             else:
                 # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
                 # https://github.com/pret/pokered/issues/155
-                logger.info("RTC not present. Game tried to issue RTC command: {}, {}".format(hex(address), hex(value)))
+                logger.warn("RTC not present. Game tried to issue RTC command: {}, {}".format(hex(address), hex(value)))
         elif 0xA000 <= address < 0xC000:
             if self.RAMBankSelected <= 0x03:
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value

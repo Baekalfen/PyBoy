@@ -28,6 +28,8 @@ def Cartridge(filename):
     exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]
 
     validateCartType(cartType)
+    logger.info("Cartridge type: 0x%0.2x - %s" % (cartType, cartridgeTable[cartType][0].__name__))
+    logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" % (len(ROMBanks), ExRAMTable.get(exRAMCount,None)))
     ROMBankController = cartridgeTable[cartType]
 
     return ROMBankController[0](filename, ROMBanks, exRAMCount, cartType, *ROMBankController[1:])

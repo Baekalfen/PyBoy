@@ -42,8 +42,8 @@ class MBC1(GenericMBC):
         elif 0xA000 <= address < 0xC000:
             if self.RAMBanks == None:
                 from . import ExRAMTable
-                logger.warn("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x04]))
-                self.initRAMBanks(ExRAMTable[0x04])
+                logger.warn("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
+                self.initRAMBanks(ExRAMTable[0x02])
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
             raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
