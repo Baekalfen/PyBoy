@@ -51,7 +51,7 @@ class GenericMBC:
 
     def loadRAM(self, filename = None):
         if self.RAMBanks is None:
-	    logger.info("Loading non-volatile memory is not supported on {}".format(self.cartType))
+            logger.info("Loading non-volatile memory is not supported on {}".format(self.cartType))
             return
 
         if filename is None:
