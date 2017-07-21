@@ -26,7 +26,6 @@ class RTC():
         self.halt = 0
 
     def save(self, filename):
-        logger.info("Saving RTC...")
         romPath, ext = os.path.splitext(filename)
         with open(romPath + ".rtc", "wb") as f:
             f.write(struct.pack('f', self.timeZero))
@@ -35,17 +34,18 @@ class RTC():
         logger.info("RTC saved.")
 
     def load(self, filename):
-        logger.info("Loading RTC...")
-        try:
-            romPath, ext = os.path.splitext(filename)
-            with open(romPath + ".rtc", "rb") as f:
-                # import pdb; pdb.set_trace()
-                self.timeZero = struct.unpack('f',f.read(4))[0]
-                self.halt = ord(f.read(1))
-                self.dayCarry = ord(f.read(1))
-            logger.info("RTC loaded.")
-        except Exception as ex:
-            logger.info("Couldn't read RTC for cartridge:", ex)
+        romPath, ext = os.path.splitext(filename)
+
+        rtcFile = romPath + ".rtc"
+        if not os.path.exists(rtcFile):
+            logger.info("No RTC file found. Skipping.")
+            return
+
+        with open(rtcFile, "rb") as f:
+            self.timeZero = struct.unpack('f',f.read(4))[0]
+            self.halt = ord(f.read(1))
+            self.dayCarry = ord(f.read(1))
+        logger.info("RTC loaded.")
 
     def latchRTC(self):
         t = time.time() - self.timeZero
@@ -69,11 +69,11 @@ class RTC():
                 self.latchRTC()
             self.latchEnabled = True
         else:
-            raise CoreDump.CoreDump("Invalid RTC command: %s" % hex(value))
+            raise CoreDump.CoreDump("Invalid RTC command: 0x%0.2x", value)
 
     def getRegister(self, register):
         if not self.latchEnabled:
-            logger.info("RTC: Get register, but nothing is latched!", register)
+            logger.info("RTC: Get register, but nothing is latched! 0x%0.2x", register)
 
         if register == 0x08:
             return self.secLatch

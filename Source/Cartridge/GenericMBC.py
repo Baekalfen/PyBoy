@@ -35,10 +35,9 @@ class GenericMBC:
 
     def saveRAM(self, filename = None):
         if self.RAMBanks is None:
-            logger.info("Saving non-volatile memory is not supported on {}".format(self.cartType))
+            logger.info("Saving RAM is not supported on {}".format(self.cartType))
             return
 
-        logger.info("Saving non-volatile memory")
         if filename is None:
             romPath, ext = os.path.splitext(self.filename)
         else:
@@ -49,9 +48,11 @@ class GenericMBC:
                 for byte in bank:
                     saveRAM.write(chr(byte))
 
+        logger.info("RAM saved.")
+
     def loadRAM(self, filename = None):
         if self.RAMBanks is None:
-            logger.info("Loading non-volatile memory is not supported on {}".format(self.cartType))
+            logger.info("Loading RAM is not supported on {}".format(self.cartType))
             return
 
         if filename is None:
@@ -60,15 +61,15 @@ class GenericMBC:
             romPath = filename
 
         if not os.path.exists(romPath+".ram"):
-            logger.info("No RAM file found. Skipping load of non-volatile memory")
+            logger.info("No RAM file found. Skipping.")
             return
-
-        logger.info("Loading non-volatile memory")
 
         with open(romPath+".ram", "rb") as loadRAM:
             for bank in xrange(len(self.RAMBanks)):
                 for byte in xrange(8*1024):
                     self.RAMBanks[bank][byte] = ord(loadRAM.read(1))
+
+        logger.info("RAM loaded.")
 
     def initRAMBanks(self, n):
         if n is None:
@@ -89,7 +90,7 @@ class GenericMBC:
             return self.ROMBanks[self.ROMBankSelected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.RAMBanks:
-                raise CoreDump.CoreDump("RAMBanks not initialized: %s" % hex(address))
+                raise CoreDump.CoreDump("RAM banks not initialized: %s" % hex(address))
 
             if self.rtcEnabled and 0x08 <= self.RAMBankSelected <= 0x0C:
                 return self.rtc.getRegister(self.RAMBankSelected)
@@ -99,13 +100,9 @@ class GenericMBC:
             raise CoreDump.CoreDump("Reading address invalid: %s" % address)
 
     def __getslice__(self, a, b):
-        #TODO: Optimize this
         if b-a < 0:
             raise CoreDump.CoreDump("Negative slice not allowed")
-        chunk = []
-        for n in xrange(b-a):
-            chunk.append(self.__getitem__(a+n))
-        return chunk
+        return [self.__getitem__(a+n) for n in xrange(b-a)]
 
     def __str__(self):
         string = "Cartridge:\n"
@@ -130,6 +127,6 @@ class ROM_only(GenericMBC):
             if value == 0:
                 value = 1
             self.ROMBankSelected = (value & 0b1)
-	    logger.info("Switching bank %s, %s" (hex(address), hex(value)))
+            logger.info("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
         else:
-            raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
+            raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
