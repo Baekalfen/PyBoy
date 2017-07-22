@@ -116,9 +116,9 @@ class CPU():
 
             if self.lala and not self.halted:
                 if (self.mb[self.reg[PC]]) == 0xCB:
-                    self.logger(hex(self.reg[PC]+1)[2:], hex(self.mb[self.reg[PC]]))
+                    print hex(self.reg[PC]+1)[2:], hex(self.mb[self.reg[PC]])
                 else:
-                    self.logger(hex(self.reg[PC])[2:], hex(self.mb[self.reg[PC]]))
+                    print hex(self.reg[PC])[2:], hex(self.mb[self.reg[PC]])
 
             if self.breakAllow and self.reg[PC] == self.breakNext:
                 self.breakAllow = False
@@ -139,6 +139,9 @@ class CPU():
                 action = raw_input()
                 if action == 'd':
                     CoreDump.CoreDump("Debug")
+                elif action == 'c':
+                    self.breakOn = False
+                    self.breakAllow = True
                 elif action == 'r':
                     self.breakOn = False
                     self.breakAllow = False
@@ -158,7 +161,14 @@ class CPU():
                 else:
                     pass
 
-        return self.executeInstruction(instruction)
+        if __debug__:
+            try:
+                return self.executeInstruction(instruction)
+            except:
+                self.getDump(instruction)
+                exit(1)
+        else:
+            return self.executeInstruction(instruction)
 
     def error(self, message):
         raise CoreDump.CoreDump(message)
@@ -194,8 +204,7 @@ class CPU():
                 logger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
         else:
 
-            logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.reg[PC]+1],
-                   + str(CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])))
+            logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.reg[PC]+1], str(CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])))
         logger.info("Call Stack " + str(self.debugCallStack))
         logger.info("Active ROM and RAM bank " +
                 str(self.mb.cartridge.ROMBankSelected) + ' ' +

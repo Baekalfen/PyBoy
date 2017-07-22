@@ -100,7 +100,8 @@ def CPU_ADD16(self, r0, r1):
     result = r0 + r1
 
     self.setFlag(flagN, False)
-    self.setFlag(flagH, (getBit(r0, 11) == 1) and (getBit(result, 11) == 0))
+    self.setFlag(flagH, ((r0 & 0xFFF) + (r1 & 0xFFF)) > 0xFFF)
+    # self.setFlag(flagH, (getBit(r0, 11) == 1) and (getBit(result, 11) == 0))
     self.setFlag(flagC, result > 0xFFFF)
 
     return result & 0xFFFF

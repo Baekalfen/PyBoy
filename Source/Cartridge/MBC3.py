@@ -17,31 +17,30 @@ class MBC3(GenericMBC):
             elif value == 0:
                 self.RAMBankEnabled = False
             else:
-                logger.warn("Invalid command for MBC: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
-
+                # Pan Docs: "Practically any value with 0Ah in the lower 4 bits enables RAM, and any other value disables RAM."
+                self.RAMBankEnabled = False
+                logger.warn("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
         elif 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1
-            # Same as for MBC1, except that the whole 7 bits of the RAM Bank Number are written
-            # directly to this address
+            # print "ROM Bank switch:", value & 0b01111111
             self.ROMBankSelected = value & 0b01111111  # sets 7LSB of ROM bank address
         elif 0x4000 <= address < 0x6000:
-            # MBC3 is always 16/8 mode
-            self.RAMBankSelected = value # TODO: Should this has a mask?
+            self.RAMBankSelected = value
         elif 0x6000 <= address < 0x8000:
             if self.rtcEnabled:
                 self.rtc.writeCommand(value)
             else:
                 # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
                 # https://github.com/pret/pokered/issues/155
-                logger.warn("RTC not present. Game tried to issue RTC command: {}, {}".format(hex(address), hex(value)))
+                logger.warn("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
             if self.RAMBankSelected <= 0x03:
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
             elif 0x08 <= self.RAMBankSelected <= 0x0C:
                 self.rtc.setRegister(self.RAMBankSelected, value)
             else:
-                raise CoreDump.CoreDump("Invalid RAM bank selected: %s" % hex(self.RAMBankSelected))
+                raise CoreDump.CoreDump("Invalid RAM bank selected: 0x%0.2x" % self.RAMBankSelected)
         else:
-            raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
+            raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x" % address)
 

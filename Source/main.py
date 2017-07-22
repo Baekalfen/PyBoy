@@ -98,7 +98,8 @@ def start(ROM, bootROM = None, scale=1):
                 mb.loadState(mb.cartridge.filename+".state")
             elif event == WindowEvent.DebugToggle:
                 # mb.cpu.breakAllow = True
-                debugger.running ^= True
+                # debugger.running ^= True
+                mb.cpu.breakOn ^= True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
 
