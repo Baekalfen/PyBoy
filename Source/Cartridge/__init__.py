@@ -20,21 +20,29 @@ from Logger import logger
 
 def Cartridge(filename):
     ROMBanks = loadROMfile(filename)
-    cartType = ROMBanks[0][0x0147]
+    if not validateCheckSum(ROMBanks):
+        raise Exception("Cartridge header checksum mismatch!")
 
-    # logger.debug("Cartridge type: " + hex(cartType))
-    # ROMSize = ROMBanks[0][0x0148]
     # WARN: The following table doesn't work for MBC2! See Pan Docs
     exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]
 
-    validateCartType(cartType)
-    cartInfo = cartridgeTable[cartType]
+    cartType = ROMBanks[0][0x0147]
+    cartInfo = cartridgeTable.get(cartType, None)
+    if cartType is None:
+        raise Exception("Catridge type invalid: %s" % cartType)
+
     logger.info("Cartridge type: 0x%0.2x - %s, %s" % (cartType, cartInfo[0].__name__, ", ".join([x for x,y in zip(["SRAM", "Battery", "RTC"], cartInfo[1:]) if y == True])))
     logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" % (len(ROMBanks), ExRAMTable.get(exRAMCount,None)))
     ROMBankController = cartridgeTable[cartType]
 
     return ROMBankController[0](filename, ROMBanks, exRAMCount, cartType, *ROMBankController[1:])
 
+def validateCheckSum(ROMBanks):
+    x = 0
+    for m in range(0x134, 0x14D):
+        x = x - ROMBanks[0][m] - 1
+        x &= 0xff
+    return ROMBanks[0][0x14D] == x
 
 def loadROMfile(filename):
     with open(filename, 'rb') as ROMFile:
@@ -48,15 +56,6 @@ def loadROMfile(filename):
 
     return ROMBanks
 
-
-def validateCartType(cartType):
-    try:
-        cartridgeInfo = cartridgeTable[cartType]
-    except KeyError:
-        raise Exception("Catridge type invalid: %s" % cartType)
-
-    if cartridgeInfo is None:
-        raise Exception("Cartridge type not supported")
 
 cartridgeTable = {
 #          MBC      , SRAM  , Battery , RTC
