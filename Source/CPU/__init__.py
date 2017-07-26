@@ -6,7 +6,6 @@
 #
 
 from registers import A, F, B, C, D, E, H, L, SP, PC
-from MathUint8 import getBit
 import CoreDump
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC # Only debugging
@@ -17,12 +16,11 @@ import numpy as np
 class CPU():
     #  A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL, pointer, Flag
     from opcodes import opcodes
-    from registers import reg, setReg, setAF, setBC, setDE, setHL, setPC, incPC, getAF, getBC, getDE, getHL
+    from registers import reg, setReg, setAF, setBC, setDE, setHL, setPC, getAF, getBC, getDE, getHL
     from Interrupts import checkForInterrupts, testAndTriggerInterrupt
-    from flags import VBlank, LCDC, TIMER, Serial, HightoLow, LYCFlag, LYCFlagEnable
+    from flags import VBlank, LCDC, TIMER, Serial, HightoLow
     from flags import testFlag, setFlag, clearFlag
     from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled
-    from flags import testSTATFlag, setSTATFlag, clearSTATFlag, testSTATFlagEnabled
     from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
     from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
 

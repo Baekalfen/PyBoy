@@ -20,11 +20,6 @@ def setReg(self, x, value):
 def setPC(self, x):
     self.reg[PC] = x
 
-
-def incPC(self, x):
-    self.reg[PC] += x
-
-
 def setAF(self, x):
     self.reg[A] = (x & 0xFF00) >> 8
     self.reg[F] = (x & 0x00F0) # Lower nibble of F is always zero!
@@ -61,6 +56,3 @@ def getDE(self):
 def getHL(self):
     return (self.reg[H] << 8) + self.reg[L]
 
-
-def clearBit(self):
-    raise Exception("Not implemented")

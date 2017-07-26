@@ -6,10 +6,15 @@
 #
 from WindowEvent import WindowEvent
 import CoreDump
-from MathUint8 import  resetBit, setBit
-# from PrimitiveTypes import uint8
 
 P10, P11, P12, P13, P14, P15 = range(0,6)
+
+
+def resetBit(x, bit):
+    return x & ~(1 << bit)
+
+def setBit(x, bit):
+    return x | (1 << bit)
 
 class Interaction():
     def __init__(self):

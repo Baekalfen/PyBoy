@@ -62,23 +62,6 @@ def testInterruptFlagEnabled(self, flag):
 #         2: During Searching OAM-RAM
 #         3: During Transfering Data to LCD Driver
 
-LYCFlag, _, _, _, LYCFlagEnable = range(2,7)
-
-# TODO: Replace STAT flag references with generic methods or register class
-def testSTATFlag(self, flag):
-    return self.testRAMRegisterFlag(0xFF41,flag)
-
-def setSTATFlag(self, flag, value=True):
-    return self.setRAMRegisterFlag(0xFF41,flag,value)
-
-def clearSTATFlag(self, flag):
-    self.clearRAMRegisterFlag(0xFF41,flag)
-
-def testSTATFlagEnabled(self, flag):
-    return self.testRAMRegisterFlagEnabled(0xFF41,flag)
-
-
-
 def testRAMRegisterFlag(self, address, flag):
     return (self.mb[address] & (1 << flag)) != 0
 

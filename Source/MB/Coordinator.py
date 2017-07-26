@@ -4,7 +4,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from MathUint8 import getBit
 
 STAT = 0xFF41
 LY = 0xFF44
@@ -14,14 +13,15 @@ def setSTATMode(self,mode):
     self[STAT] &= 0b11111100 # Clearing 2 LSB
     self[STAT] |= mode # Apply mode to LSB
 
-    if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
+    if self.cpu.testRAMRegisterFlag(STAT,mode+3) and mode != 3: # Mode "3" is not interruptable
+    # if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
         self.cpu.setInterruptFlag(self.cpu.LCDC)
 
 def checkLYC(self, y):
     self[LY] = y
     if self[LYC] == y:
         self[STAT] |= 0b100 # Sets the LYC flag
-        if getBit(self[STAT], 6) == 1:
+        if self[STAT] & 0b01000000:
             self.cpu.setInterruptFlag(self.cpu.LCDC)
     else:
         self[STAT] &= 0b11111011

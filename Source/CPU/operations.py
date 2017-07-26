@@ -9,7 +9,7 @@
 import CoreDump
 from flags import flagZ, flagN, flagH, flagC
 from registers import SP, A  # No need to use as self.<reg>
-from MathUint8 import resetBit, setBit, getBit, swap, lshift, rshift, lrotate_inC, lrotate_thruC, rrotate_inC, rrotate_thruC, getSignedInt8
+from MathUint8 import lshift, rshift, lrotate_inC, lrotate_thruC, rrotate_inC, rrotate_thruC, getSignedInt8
 
 
 def CPU_EI(self):
@@ -54,7 +54,7 @@ def CPU_INC8(self, r0):
     # logger.info(flagZ, result == 0)
     self.setFlag(flagZ, result == 0)
     self.setFlag(flagN, False)
-    self.setFlag(flagH, (getBit(r0, 3) == 1) and (getBit(result, 3) == 0))
+    self.setFlag(flagH, ((r0 & 0xF) + 1) > 0xF)
 
     return result
 
@@ -70,7 +70,7 @@ def CPU_DEC8(self, r0):
 
     self.setFlag(flagZ, result & 0xFF == 0)
     self.setFlag(flagN, True)
-    self.setFlag(flagH, getBit(r0, 4) == 1 and getBit(result, 4) == 0)
+    self.setFlag(flagH, ((r0 & 0xF) - 1) < 0)
 
     return result & 0xFF
 
@@ -101,14 +101,12 @@ def CPU_ADD16(self, r0, r1):
 
     self.setFlag(flagN, False)
     self.setFlag(flagH, ((r0 & 0xFFF) + (r1 & 0xFFF)) > 0xFFF)
-    # self.setFlag(flagH, (getBit(r0, 11) == 1) and (getBit(result, 11) == 0))
     self.setFlag(flagC, result > 0xFFFF)
 
     return result & 0xFFFF
 
 
 def CPU_SUB8(self, r0, r1):
-    # result = (r0 + (self.testFlag(flagC) << 8)) - r1
     result = r0 - r1
 
     self.setFlag(flagC, result < 0)
@@ -121,14 +119,6 @@ def CPU_SUB8(self, r0, r1):
 
 def CPU_SBC8(self, r0, r1):
     return self.CPU_SUB8(r0 - self.testFlag(flagC), r1)
-    # result = r0 - r1 - self.testFlag(flagC)
-
-    # self.setFlag(flagC, result < 0) # Proven correct
-    # self.setFlag(flagZ, result & 0xFF == 0)
-    # self.setFlag(flagN, True)
-    # self.setFlag(flagH, ((r0 & 0xF) - (r1 & 0xF) - self.testFlag(flagC)) < 0)
-
-    # return result & 0xFF
 
 
 def CPU_AND8(self, r0, r1):
@@ -168,10 +158,7 @@ def CPU_CP(self, r0, r1):
     # GBCPUman.pdf
     # Compare A with n. This is basically an A - n subtraction instruction
     # but the results are thrown away.
-    # try:
     self.CPU_SUB8(r0, r1)
-    # except CoreDump.CoreDump:
-    #     logger.info("CP called SUB8 that caused CoreDump")
 
 
 def CPU_RLC(self, r0):  # WARN: There are is one more in CB
@@ -302,7 +289,7 @@ def CPU_EXT_SRL(self, r0):
 
 
 def CPU_EXT_SWAP(self, r0):
-    r0 = swap(r0)
+    r0 = (r0 & 0xF0) >> 4 | (r0 & 0x0F) << 4 # Swap high/low nibble
     self.setFlag(flagZ, r0 == 0)
     self.setFlag(flagN, False)
     self.setFlag(flagH, False)

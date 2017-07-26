@@ -17,7 +17,7 @@ import warnings
 import itertools
 import operator
 
-from MathUint8 import getSignedInt8, getBit
+from MathUint8 import getSignedInt8
 from WindowEvent import WindowEvent
 from LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
@@ -88,8 +88,8 @@ class SdlGameWindow(AbstractGameWindow):
         self._window.show()
 
         # Only used for VSYNC
-        self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
-        self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
+        # self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
+        # self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
 
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
@@ -229,9 +229,9 @@ class SdlGameWindow(AbstractGameWindow):
             x = lcd.OAM[n+1] - 8
             tileIndex = lcd.OAM[n+2]
             attributes = lcd.OAM[n+3]
-            xFlip = getBit(attributes, 5)
-            yFlip = getBit(attributes, 6)
-            spritePriority = getBit(attributes, 7)
+            xFlip = bool(attributes & 0b100000)
+            yFlip = bool(attributes & 0b1000000)
+            spritePriority = bool(attributes & 0b10000000)
 
             fromXY = (tileIndex * 8, 0)
             toXY = (x, y)
@@ -251,7 +251,7 @@ class SdlGameWindow(AbstractGameWindow):
             yy %= 8
             for x in xrange(8):
                 xx = x1 # Base coordinate
-                xx += ((7-x) if xFlip == 1 else x) # Reverse order, if sprite is x-flipped
+                xx += ((7-x) if xFlip else x) # Reverse order, if sprite is x-flipped
 
                 if spriteSize == 16: # If y-flipped on 8x16 sprites, we will have to load the sprites in reverse order
                     xx += (y&0b1000)^(yFlip<<3) # Shifting tile, when iteration past 8th line
