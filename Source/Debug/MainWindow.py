@@ -13,13 +13,13 @@ class MainWindow(GenericScreen.GenericScreen):
         curses.noecho()
         curses.cbreak()
         self._screen.keypad(1)
-        self._screen.timeout(100) #ms
+        self._screen.timeout(1000) #ms
 
 
         height, width = self._screen.getmaxyx()
         self.fill(0,0,height,width,126)
         self.addLabelsInColumns(0,0, ["Break", "menu1", "menu2"], [6,6,6])
-        self.addLabelsInColumns(1,0, ["Address", "Op-code", "Description"], [8,8,12])
+        self.addLabelsInColumns(1,1, ["Info", "Addr", "Op", "Description"], [8, 6, 4, 10])
         self._screen.refresh()
 
     def getKey(self):

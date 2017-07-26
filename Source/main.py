@@ -6,6 +6,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from time import sleep
 import traceback
 import sys
 
@@ -22,7 +23,7 @@ if platform.system() != "Windows":
     from Debug import Debug
 from MB import Motherboard
 from WindowEvent import WindowEvent
-from Logger import logger
+from Logger import logger, addConsoleHandler
 import time
 import os.path
 import os
@@ -50,13 +51,15 @@ mb = None
 SPF = 1/60. # inverse FPS (frame-per-second)
 
 
+debugger = None
 def start(ROM, bootROM = None, scale=1):
-    global window, mb
+    global window, mb, debugger
 
-    debugger = None
     if "debug" in sys.argv and platform.system() != "Windows":
         debugger = Debug()
         debugger.tick()
+    else:
+        addConsoleHandler()
 
     profiling = "profiling" in sys.argv
 
@@ -71,6 +74,9 @@ def start(ROM, bootROM = None, scale=1):
     mb.cartridge.loadRAM()
     if mb.cartridge.rtcEnabled:
         mb.cartridge.rtc.load(mb.cartridge.filename)
+
+    if not debugger is None:
+        debugger.mb = mb
 
     done = False
     exp_avg_emu = 0
@@ -98,19 +104,20 @@ def start(ROM, bootROM = None, scale=1):
                 mb.loadState(mb.cartridge.filename+".state")
             elif event == WindowEvent.DebugToggle:
                 # mb.cpu.breakAllow = True
-                # debugger.running ^= True
-                mb.cpu.breakOn ^= True
+                debugger.running ^= True
+                # mb.cpu.breakOn ^= True
             else:  # Right now, everything else is a button press
                 mb.buttonEvent(event)
 
-        if not debugger is None and debugger.running:
-            action = debugger.tick()
-
-            # Avoiding the window hanging
-            window.updateDisplay()
-        else:
+        if debugger is None:
             mb.tickFrame()
-            window.updateDisplay()
+        else:
+            if not debugger.tick(): # Returns false on keyboard interrupt
+                return
+
+            if not debugger.running:
+                mb.tickFrame()
+        window.updateDisplay()
 
 
         # # Trying to avoid VSync'ing on a frame, if we are out of time
@@ -143,6 +150,7 @@ def start(ROM, bootROM = None, scale=1):
         mb.cartridge.rtc.save(mb.cartridge.filename)
 
 
+
 def runBlarggsTest():
     for rom in [
                 "TestROMs/instr_timing/instr_timing.gb",
@@ -173,7 +181,6 @@ if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"
 
 
-    pb = None
     directory = "ROMs/"
     try:
         # Verify directories
@@ -214,12 +221,12 @@ if __name__ == "__main__":
         window = Window(scale=scale)
         start(bootROM, filename, window, False, debug, scale)
     except KeyboardInterrupt:
-        if pb is not None:
-            pb.getDump()
         logger.info("Interrupted by keyboard")
     except Exception as ex:
-        if pb is not None:
-            pb.getDump()
         traceback.print_exc()
-
+        sleep(10)
+    finally:
+        if debugger:
+            logger.info("Debugger ready for shutdown")
+            debugger.quit()
 

@@ -4,6 +4,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+from Logger import logger
 import GenericScreen
 import curses
 
@@ -16,20 +17,30 @@ class Pad(GenericScreen.GenericScreen):
         self.height = height
         self.width = width
         self._screen = curses.newpad(height, width)
-        self.setData(cell_data, cell_widths)
+        self.cell_data = None
+        self.cell_widths = None
+        if not cell_data is None:
+            self.setData(cell_data, cell_widths)
 
     def setData(self, data, widths):
-        assert (len(data) == len(widths)) if not (data is None) else True
+        assert not data is None and not widths is None
+        assert (len(data[0]) == len(widths))
         self.cell_data = data
         self.cell_widths = widths
 
     def updatePad(self):
         if not (self.cell_data is None):
-            for i in range(self.scroll_line, self.scroll_line + self.height):
-                n = self.cell_data[i]
+            for i in range(min(len(self.cell_data), self.height)):
+                # print ("%s %s %s" % (len(self.cell_data), i, self.scroll_line)), '\r'
+                # if len(self.cell_data) >= i+self.scroll_line:
+                #     break
+                n = self.cell_data[i+self.scroll_line]
+                # else:
+                #     n = ['~' for _ in self.cell_widths]
                 self._screen.move(i, 0)
                 self._screen.clrtoeol()
 
-                self.addLabelsInColumns(i, 0, [str(i), n], [3,5])
-        self._screen.refresh(self.scroll_line, self.scroll_column, self.win_line, self.win_column,self.height+self.win_line, self.width+self.win_column)
+                self.addLabelsInColumns(i, 0, n, self.cell_widths)
+        self._screen.refresh(0, 0, self.win_line, self.win_column,self.height+self.win_line, self.width+self.win_column)
+        # self._screen.refresh(self.scroll_line, self.scroll_column, self.win_line, self.win_column,self.height+self.win_line, self.width+self.win_column)
 
