@@ -6,7 +6,6 @@
 #
 
 from flags import VBlank, LCDC, TIMER, Serial, HightoLow
-from registers import PC
 
 # Order important. NoInterrupt evaluates to False in if statements
 NoInterrupt, InterruptVector = range(0,2)
@@ -41,10 +40,16 @@ def testAndTriggerInterrupt(self, flag, vector):
         self.clearInterruptFlag(flag)
         self.interruptMasterEnable = False
         if self.halted:
-            self.CPU_PUSH(self.reg[PC]+1) # Escape HALT on return
-        else:
-            self.CPU_PUSH(self.reg[PC])
-        self.reg[PC] = vector
+            self.PC += 1 # Escape HALT on return
+            # self.CPU_PUSH(self.PC+1)
+        # else:
+            # self.CPU_PUSH(self.PC)
+
+        self.mb[self.SP-1] = self.PC >> 8 # High
+        self.mb[self.SP-2] = self.PC & 0xFF # Low
+        self.SP -= 2
+
+        self.PC = vector
 
         return InterruptVector
     return NoInterrupt

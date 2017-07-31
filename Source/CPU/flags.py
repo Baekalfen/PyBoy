@@ -7,46 +7,36 @@
 
 ### CPU Flags
 flagC, flagH, flagN, flagZ = range(4, 8)
-from registers import F
-
 
 def testFlag(self, flag):
-    return (self.reg[F] & (1 << flag)) != 0
-
+    return (self.F & (1 << flag)) != 0
 
 def setFlag(self, flag, value=True):
-    self.reg[F] = (self.reg[F] & (0xFF - (1 << flag)))
+    self.F = (self.F & (0xFF - (1 << flag)))
     if value:
-        self.reg[F] = (self.reg[F] + (1 << flag))
-
+        self.F = (self.F + (1 << flag))
 
 def clearFlag(self, flag):
-    self.reg[F] = (self.reg[F] & (0xFF - (1 << flag)))
+    self.F = (self.F & (0xFF - (1 << flag)))
 
 ### Interrupt flags
 VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
 
 def testInterruptFlag(self, flag):
-    # return (self.mb[0xFF0F] & (1 << flag)) != 0
-    return self.testRAMRegisterFlag(0xFF0F,flag)
+    return (self.mb[0xFF0F] & (1 << flag)) != 0
 
 
-def setInterruptFlag(self, flag, value=True):
-    # self.mb[0xFF0F] = (self.mb[0xFF0F] & (0xFF - (1 << flag)))
-    # if value:
-    #     self.mb[0xFF0F] = (self.mb[0xFF0F] + (1 << flag))
-    return self.setRAMRegisterFlag(0xFF0F,flag,value)
+def setInterruptFlag(self, flag):
+    self.mb[0xFF0F] |= (1 << flag)
 
 
 def clearInterruptFlag(self, flag):
-    # self.mb[0xFF0F] = (self.mb[0xFF0F] & (0xFF - (1 << flag)))
-    self.clearRAMRegisterFlag(0xFF0F,flag)
+    self.mb[0xFF0F] &= (0xFF - (1 << flag))
 
 
 def testInterruptFlagEnabled(self, flag):
-    # return (self.mb[0xFFFF] & (1 << flag)) != 0
-    return self.testRAMRegisterFlagEnabled(0xFFFF,flag)
+    return (self.mb[0xFFFF] & (1 << flag)) != 0
 
 
 

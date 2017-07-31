@@ -1,646 +1,4704 @@
 # -*- encoding: utf-8 -*-
-#
-# Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
-# License: See LICENSE file
-# GitHub: https://github.com/Baekalfen/PyBoy
-#
+# THIS FILE IS AUTO-GENERATED!!!
+# DO NOT MODIFY THIS FILE.
+# CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
 
-import CoreDump
-#http://stackoverflow.com/questions/8294618/define-a-lambda-expression-that-raises-an-exception
-def coredump(ex):
-    raise CoreDump.CoreDump(ex)
-
-from registers import A, B, C, D, E, H, L, SP, PC
 from flags import flagZ, flagN, flagH, flagC
+from MathUint8 import getSignedInt8
 
-import sys
-sys.path.append("..")
-from MathUint8 import *
+def NOP_00(self): # 00 NOP
+    self.PC += 1
+    return 0
 
-# Python evaluates 'None or None to None', but 'None or True to True'
-# successful jumps do 'setPC(...) or True' to adjust the cycles
-# 'if None' is evaluated as 'if False'
+def LD_01(self, v): # 01 LD BC,d16
+    self.BC = v
+    self.PC += 3
+    return 0
 
-opcode_0x = [(1, (4,), lambda s, e: s.setPC(e)),                      # 00 - "No Operation" ("NOP")
-             (3, (12,), lambda s, v, e: s.setBC(v) or s.setPC(e)),  # 01 - "Load 16-bit immediate into BC" ("LD BC,d16")
-             (1, (8,), lambda s, e: s.mb.__setitem__(s.getBC(), s.reg[A]) or s.setPC(e)),  # 02 - "Save A to address pointed by BC" ("LD(s.BC),A")
-             (1, (8,), lambda s, e: s.setBC(s.getBC()+1) or s.setPC(e)),  # 03 - "Increment 16-bit BC" ("INC BC")
-             (1, (4,), lambda s, e: s.setReg(B, s.CPU_INC8(s.reg[B])) or s.setPC(e)),         # 04 - "Increment B" ("INC B")
-             (1, (4,), lambda s, e: s.setReg(B, s.CPU_DEC8(s.reg[B])) or s.setPC(e)),         # 05 - "Decrement B" ("DEC B")
-             (2, (8,), lambda s, v, e: s.setReg(B, v) or s.setPC(e)),      # 06 - "Load 8-bit immediate into B" ("LD B,v")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_RLC(s.reg[A])) or s.setPC(e)),  # 07 - "Rotate A left with carry" ("RLC A")
-             (3, (20,), lambda s, v, e: s.mb.__setitem__(v, s.reg[SP] & 0xFF) or s.mb.__setitem__(v+1, (s.reg[SP] & 0xFF00) >> 8) or s.setPC(e)),  # 08 - "Save SP to given address" ("LD (v), s.SP")
-             (1, (8,), lambda s, e: s.setHL(s.CPU_ADD16(s.getHL(), s.getBC())) or s.setPC(e)),    # 09 - "Add 16-bit BC to HL" ("ADD HL,BC")
-             (1, (8,), lambda s, e: s.setReg(A, s.mb[s.getBC()]) or s.setPC(e)),   # 0A - "Load A from address pointed to by BC" ("LD A,(s.BC)")
-             (1, (8,), lambda s, e: s.setBC(s.getBC()-1) or s.setPC(e)),                 # 0B - "Decrement 16-bit BC" ("DEC BC")
-             (1, (4,), lambda s, e: s.setReg(C, s.CPU_INC8(s.reg[C])) or s.setPC(e)),                  # 0C - "Increment C" ("INC C")
-             (1, (4,), lambda s, e: s.setReg(C, s.CPU_DEC8(s.reg[C])) or s.setPC(e)),                  # 0D - "Decrement C" ("DEC C")
-             (2, (8,), lambda s, v, e: s.setReg(C, v) or s.setPC(e)),      # 0E - "Load 8-bit immediate into C" ("LD C,v")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_RRC(s.reg[A])) or s.setPC(e))]  # 0F - "Rotate A right with carry" ("RRC A")
+def LD_02(self): # 02 LD (BC),A
+    self.mb[self.BC] = self.A
+    self.PC += 1
+    return 0
 
-opcode_1x = [(1, (4,), lambda s, e: s.CPU_STOP(e)),                           # 10 - "Stop processor" ("STOP")
-             (3, (12,), lambda s, v, e: s.setDE(v) or s.setPC(e)),     # 11 - "Load 16-bit immediate into DE" ("LD DE,d16")
-             (1, (8,), lambda s, e: s.mb.__setitem__(s.getDE(), s.reg[A]) or s.setPC(e)),   # 12 - "Save A to address pointed by DE" ("LD(s.DE),A")
-             (1, (8,), lambda s, e: s.setDE(s.getDE()+1) or s.setPC(e)),                 # 13 - "Increment 16-bit DE" ("INC DE")
-             (1, (4,), lambda s, e: s.setReg(D, s.CPU_INC8(s.reg[D])) or s.setPC(e)),                  # 14 - "Increment D" ("INC D")
-             (1, (4,), lambda s, e: s.setReg(D, s.CPU_DEC8(s.reg[D])) or s.setPC(e)),                  # 15 - "Decrement D" ("DEC D")
-             (2, (8,), lambda s, v, e: s.setReg(D, v) or s.setPC(e)),       # 16 - "Load 8-bit immediate into D" ("LD D,v")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_RL(s.reg[A])) or s.setPC(e)),                   # 17 - "Rotate A left" ("RL A")
-             (2, (12,), lambda s, v, e: s.setPC(e+getSignedInt8(v))),                  # 18 - "Relative jump by signed immediate" ("JR r8")
-             (1, (8,), lambda s, e: s.setHL(s.CPU_ADD16(s.getHL(), s.getDE())) or s.setPC(e)),     # 19 - "Add 16-bit DE to HL" ("ADD HL,DE")
-             (1, (8,), lambda s, e: s.setReg(A, s.mb[s.getDE()]) or s.setPC(e)),   # 1A - "Load A from address pointed to by DE" ("LD A, s.DE")
-             (1, (8,), lambda s, e: s.setDE(s.getDE()-1) or s.setPC(e)),                 # 1B - "Decrement 16-bit DE" ("DEC DE")
-             (1, (4,), lambda s, e: s.setReg(E, s.CPU_INC8(s.reg[E])) or s.setPC(e)),                  # 1C - "Increment E" ("INC E")
-             (1, (4,), lambda s, e: s.setReg(E, s.CPU_DEC8(s.reg[E])) or s.setPC(e)),                  # 1D - "Decrement E" ("DEC E")
-             (2, (8,), lambda s, v, e: s.setReg(E, v) or s.setPC(e)),       # 1E - "Load 8-bit immediate into E" ("LD E,v")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_RR(s.reg[A])) or s.setPC(e))]                   # 1F - "Rotate A right" ("RR A")
+def INC_03(self): # 03 INC BC
+    t = self.BC+1
+    # No flag operations
+    t &= 0xFFFF
+    self.BC = t
+    self.PC += 1
+    return 0
 
+def INC_04(self): # 04 INC B
+    t = self.B+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.B & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 1
+    return 0
 
-opcode_2x = [(2, (12, 8), lambda s, v, e: s.setPC(e+getSignedInt8(v)) if not s.testFlag(flagZ) else s.setPC(e)),      # 20 - "Relative jump by signed immediate if last result was not zero" ("JR NZ,r8")
-             (3, (12,), lambda s, v, e: s.setHL(v) or s.setPC(e)),     # 21 - "Load 16-bit immediate into HL" ("LD HL,d16")
-             (1, (8,), lambda s, e: s.mb.__setitem__(s.getHL(), s.reg[A]) or (s.setHL(s.getHL() + 1) or s.setPC(e))),  # 22 - "Save A to address pointed by HL, and increment HL" ("LDI (HL),A")
-             (1, (8,), lambda s, e: s.setHL(s.getHL()+1) or s.setPC(e)),                 # 23 - "Increment 16-bit HL" ("INC HL")
-             (1, (4,), lambda s, e: s.setReg(H, s.CPU_INC8(s.reg[H])) or s.setPC(e)),     # 24 - "Increment H" ("INC H")
-             (1, (4,), lambda s, e: s.setReg(H, s.CPU_DEC8(s.reg[H])) or s.setPC(e)),     # 25 - "Decrement H" ("DEC H")
-             (2, (8,), lambda s, v, e: s.setReg(H, v) or s.setPC(e)),  # 26 - "Load 8-bit immediate into H" ("LD H,v")
-             (1, (4,), lambda s, e: s.CPU_DAA() or s.setPC(e)),  # 27 - "Adjust A for BCD addition" ("DAA")
-             (2, (12, 8), lambda s, v, e: (s.testFlag(flagZ) and (s.setPC((e)+getSignedInt8(v)) or True)) or s.setPC(e)),       # 28 - "Relative jump by signed immediate if last result was zero" ("JR Z,r8")
-             (1, (8,), lambda s, e: s.setHL(s.CPU_ADD16(s.getHL(), s.getHL())) or s.setPC(e)),     # 29 - "Add 16-bit HL to HL" ("ADD HL,HL")
-             (1, (8,), lambda s, e: s.setReg(A, s.mb[s.getHL()]) or(s.setHL(s.getHL() + 1) or s.setPC(e))),   # 2A - "Load A from address pointed to by HL, and increment HL ("LDI A,(HL)")
-             (1, (8,), lambda s, e: s.setHL(s.getHL()-1) or s.setPC(e)),                 # 2B - "Decrement 16-bit HL" ("DEC HL")
-             (1, (4,), lambda s, e: s.setReg(L, s.CPU_INC8(s.reg[L])) or s.setPC(e)),                  # 2C - "Increment L" ("INC L")
-             (1, (4,), lambda s, e: s.setReg(L, s.CPU_DEC8(s.reg[L])) or s.setPC(e)),                  # 2D - "Decrement L" ("DEC L")
-             (2, (8,), lambda s, v, e: s.setReg(L, v) or s.setPC(e)),       # 2E - "Load 8-bit immediate into L" ("LD L,v")
-             (1, (4,), lambda s, e: s.setReg(A, ~s.reg[A] & 0xFF) or s.setPC(e))]                          # 2F - "Complement (logical NOT) on A" ("CPL")
+def DEC_05(self): # 05 DEC B
+    t = self.B-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.B & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 1
+    return 0
 
-opcode_3x = [(2, (12, 8), lambda s, v, e: (not s.testFlag(flagC) and (s.setPC(e+getSignedInt8(v)) or True)) or s.setPC(e)),      # 30 - "Relative jump by signed immediate if last result caused no carry" ("JR NC,r8")
-             (3, (12,), lambda s, v, e: s.setReg(SP, v) or s.setPC(e)),      # 31 - "Load 16-bit immediate into SP" ("LD SP,d16")
-             (1, (8,), lambda s, e:(s.mb.__setitem__(s.getHL(), s.reg[A]) or s.setHL(s.getHL()-1)) or s.setPC(e)),  # 32 - "Save A to address pointed by HL, and decrement HL" ("LDD (HL),A")
-             (1, (8,), lambda s, e: s.setReg(SP, s.CPU_INC16(s.reg[SP])) or s.setPC(e)),                 # 33 - "Increment 16-bit HL" ("INC SP")
-             (1, (12,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_INC8(s.mb[s.getHL()])) or s.setPC(e)),  # 34 - "Increment value pointed by HL" ("INC (HL)
-             (1, (12,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_DEC8(s.mb[s.getHL()])) or s.setPC(e)),  # 35 - "Decrement value pointed by HL" ("DEC (HL)
-             (2, (12,), lambda s, v, e: s.mb.__setitem__(s.getHL(), v) or s.setPC(e)),  # 36 - "Load 8-bit immediate into address pointed by HL" ("LD (HL),v")
-             (1, (4,), lambda s, e: s.setFlag(flagC) or s.clearFlag(flagH) or s.clearFlag(flagN) or s.setPC(e)),  # 37 - "Set carry flag" ("SCF")
-             (2, (12, 8), lambda s, v, e: (s.testFlag(flagC) and (s.setPC((e)+getSignedInt8(v)) or True)) or s.setPC(e)),  # 38 - "Relative jump by signed immediate if last result caused carry" ("JR C,r8")
-             (1, (8,), lambda s, e: s.setHL(s.CPU_ADD16(s.getHL(), s.reg[SP])) or s.setPC(e)),  # 39 - "Add 16-bit SP to HL" ("ADD HL, s.SP")
-             (1, (8,), lambda s, e: (s.setReg(A, s.mb[s.getHL()]) or s.setHL(s.getHL()-1)) or s.setPC(e)),  # 3A - "Load A from address pointed to by HL, and decrement HL" ("LDD A,(HL)
-             (1, (8,), lambda s, e: s.setReg(SP, s.CPU_DEC16(s.reg[SP])) or s.setPC(e)),  # 3B - "Decrement 16-bit SP" ("DEC SP")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_INC8(s.reg[A])) or s.setPC(e)),  # 3C - "Increment A" ("INC A")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_DEC8(s.reg[A])) or s.setPC(e)),  # 3D - "Decrement A" ("DEC A")
-             (2, (8,), lambda s, v, e: s.setReg(A, v) or s.setPC(e)),       # 3E - "Load 8-bit immediate into A" ("LD A,v")
-             (1, (4,), lambda s, e: s.clearFlag(flagN) or s.setFlag(flagH, s.testFlag(flagC)) or s.setFlag(flagC, not s.testFlag(flagC)) or s.setPC(e))]  # 3F - "Clear carry flag" ("CCF")
+def LD_06(self, v): # 06 LD B,d8
+    self.B = v
+    self.PC += 2
+    return 0
 
-exeLD = lambda a, b: lambda s, e: s.setReg(a, s.reg[b]) or s.setPC(e)
-exeLDaddr = lambda b: lambda s, e: s.mb.__setitem__(s.getHL(), s.reg[b]) or s.setPC(e)
+def RLCA_07(self): # 07 RLCA
+    t = (self.A << 1) + (self.A >> 7)
+    flag = 0b00000000
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
 
-opcode_4x = [(1, (4,), exeLD(B, B)),        # 40 - "Copy B to B" ("LD B,B")
-             (1, (4,), exeLD(B, C)),        # 41 - "Copy C to B" ("LD B,C")
-             (1, (4,), exeLD(B, D)),        # 42 - "Copy D to B" ("LD B,D")
-             (1, (4,), exeLD(B, E)),        # 43 - "Copy E to B" ("LD B,E")
-             (1, (4,), exeLD(B, H)),        # 44 - "Copy H to B" ("LD B,H")
-             (1, (4,), exeLD(B, L)),        # 45 - "Copy L to B" ("LD B,L")
-             (1, (8,), lambda s, e: s.setReg(B, s.mb[s.getHL()]) or s.setPC(e)),  # 46 - "Copy value pointed by HL to B" ("LD B,(HL)
-             (1, (4,), exeLD(B, A)),        # 47 - "Copy A to B" ("LD B,A")
-             (1, (4,), exeLD(C, B)),        # 48 - "Copy B to C" ("LD C,B")
-             (1, (4,), exeLD(C, C)),        # 49 - "Copy C to C" ("LD C,C")
-             (1, (4,), exeLD(C, D)),        # 4A - "Copy D to C" ("LD C,D")
-             (1, (4,), exeLD(C, E)),        # 4B - "Copy E to C" ("LD C,E")
-             (1, (4,), exeLD(C, H)),        # 4C - "Copy H to C" ("LD C,H")
-             (1, (4,), exeLD(C, L)),        # 4D - "Copy L to C" ("LD C,L")
-             (1, (8,), lambda s, e: s.setReg(C, s.mb[s.getHL()]) or s.setPC(e)),  # 4E - "Copy value pointed by HL to C" ("LD C,(HL)
-             (1, (4,), exeLD(C, A))]        # 4F - "Copy A to C" ("LD C,A")
+def LD_08(self, v): # 08 LD (a16),SP
+    self.mb[v] = self.SP & 0xFF
+    self.mb[v+1] = self.SP >> 8
+    self.PC += 3
+    return 0
 
+def ADD_09(self): # 09 ADD HL,BC
+    t = self.HL+self.BC
+    flag = 0b00000000
+    flag += (((self.HL & 0xFFF) + (self.BC & 0xFFF)) > 0xFFF) << flagH
+    flag += (t > 0xFFFF) << flagC
+    self.F &= 0b10000000
+    self.F |= flag
+    t &= 0xFFFF
+    self.HL = t
+    self.PC += 1
+    return 0
 
-opcode_5x = [(1, (4,), exeLD(D, B)),        # 50 - "Copy B to D" ("LD D,B")
-             (1, (4,), exeLD(D, C)),        # 51 - "Copy C to D" ("LD D,C")
-             (1, (4,), exeLD(D, D)),        # 52 - "Copy D to D" ("LD D,D")
-             (1, (4,), exeLD(D, E)),        # 53 - "Copy E to D" ("LD D,E")
-             (1, (4,), exeLD(D, H)),        # 54 - "Copy H to D" ("LD D,H")
-             (1, (4,), exeLD(D, L)),        # 55 - "Copy L to D" ("LD D,L")
-             (1, (8,), lambda s, e: s.setReg(D, s.mb[s.getHL()]) or s.setPC(e)),  # 56 - "Copy value pointed by HL to D" ("LD D,(HL)
-             (1, (4,), exeLD(D, A)),        # 57 - "Copy A to D" ("LD D,A")
-             (1, (4,), exeLD(E, B)),        # 58 - "Copy B to E" ("LD E,B")
-             (1, (4,), exeLD(E, C)),        # 59 - "Copy C to E" ("LD E,C")
-             (1, (4,), exeLD(E, D)),        # 5A - "Copy D to E" ("LD E,D")
-             (1, (4,), exeLD(E, E)),        # 5B - "Copy E to E" ("LD E,E")
-             (1, (4,), exeLD(E, H)),        # 5C - "Copy H to E" ("LD E,H")
-             (1, (4,), exeLD(E, L)),        # 5D - "Copy L to E" ("LD E,L")
-             (1, (8,), lambda s, e: s.setReg(E, s.mb[s.getHL()]) or s.setPC(e)),  # 5E - "Copy value pointed by HL to E" ("LD E,(HL)
-             (1, (4,), exeLD(E, A))]        # 5F - "Copy A to E" ("LD E,A")
+def LD_0a(self): # 0a LD A,(BC)
+    self.A = self.mb[self.BC]
+    self.PC += 1
+    return 0
 
+def DEC_0b(self): # 0b DEC BC
+    t = self.BC-1
+    # No flag operations
+    t &= 0xFFFF
+    self.BC = t
+    self.PC += 1
+    return 0
 
-opcode_6x = [(1, (4,), exeLD(H, B)),        # 60 - "Copy B to H" ("LD H,B")
-             (1, (4,), exeLD(H, C)),        # 61 - "Copy C to H" ("LD H,C")
-             (1, (4,), exeLD(H, D)),        # 62 - "Copy D to H" ("LD H,D")
-             (1, (4,), exeLD(H, E)),        # 63 - "Copy E to H" ("LD H,E")
-             (1, (4,), exeLD(H, H)),        # 64 - "Copy H to H" ("LD H,H")
-             (1, (4,), exeLD(H, L)),        # 65 - "Copy L to H" ("LD H,L")
-             (1, (8,), lambda s, e: s.setReg(H, s.mb[s.getHL()]) or s.setPC(e)),  # 66 - "Copy value pointed by HL to H" ("LD H,(s.H)
-             (1, (4,), exeLD(H, A)),        # 67 - "Copy A to H" ("LD H,A")
-             (1, (4,), exeLD(L, B)),        # 68 - "Copy B to L" ("LD L,B")
-             (1, (4,), exeLD(L, C)),        # 69 - "Copy C to L" ("LD L,C")
-             (1, (4,), exeLD(L, D)),        # 6A - "Copy D to L" ("LD L,D")
-             (1, (4,), exeLD(L, E)),        # 6B - "Copy E to L" ("LD L,E")
-             (1, (4,), exeLD(L, H)),        # 6C - "Copy H to L" ("LD L,H")
-             (1, (4,), exeLD(L, L)),        # 6D - "Copy L to L" ("LD L,L")
-             (1, (8,), lambda s, e: s.setReg(L, s.mb[s.getHL()]) or s.setPC(e)),  # 6E - "Copy value pointed by HL to L" ("LD L,(s.H)
-             (1, (4,), exeLD(L, A))]        # 6F - "Copy A to L" ("LD L,A")
+def INC_0c(self): # 0c INC C
+    t = self.C+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.C & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 1
+    return 0
 
+def DEC_0d(self): # 0d DEC C
+    t = self.C-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.C & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 1
+    return 0
 
-opcode_7x = [(1, (8,), exeLDaddr(B)),  # 70 - "Copy B to address pointed by HL" ("LD (HL),B")
-             (1, (8,), exeLDaddr(C)),  # 71 - "Copy C to address pointed by HL" ("LD (HL),C")
-             (1, (8,), exeLDaddr(D)),  # 72 - "Copy D to address pointed by HL" ("LD (HL),D")
-             (1, (8,), exeLDaddr(E)),  # 73 - "Copy E to address pointed by HL" ("LD (HL),E")
-             (1, (8,), exeLDaddr(H)),  # 74 - "Copy H to address pointed by HL" ("LD (HL),H")
-             (1, (8,), exeLDaddr(L)),  # 75 - "Copy L to address pointed by HL" ("LD (HL),L")
-             (1, (4,), lambda s, e: s.CPU_HALT(e)), # 76 - "Halt processor" ("HALT")
-             (1, (8,), exeLDaddr(A)),  # 77 - "Copy A to address pointed by HL" ("LD (HL),A")
-             (1, (4,), exeLD(A, B)),        # 78 - "Copy B to A" ("LD A,B")
-             (1, (4,), exeLD(A, C)),        # 79 - "Copy C to A" ("LD A,C")
-             (1, (4,), exeLD(A, D)),        # 7A - "Copy D to A" ("LD A,D")
-             (1, (4,), exeLD(A, E)),        # 7B - "Copy E to A" ("LD A,E")
-             (1, (4,), exeLD(A, H)),        # 7C - "Copy H to A" ("LD A,H")
-             (1, (4,), exeLD(A, L)),        # 7D - "Copy L to A" ("LD A,L")
-             (1, (8,), lambda s, e: s.setReg(A, s.mb[s.getHL()]) or s.setPC(e)),  # 7E - "Copy value pointed by HL to A" ("LD A,(HL)
-             (1, (4,), lambda s, e: s.setReg(A, s.reg[A]) or s.setPC(e))]        # 7F - "Copy A to A" ("LD A,A")
+def LD_0e(self, v): # 0e LD C,d8
+    self.C = v
+    self.PC += 2
+    return 0
 
-#exeALU = lambda f, a, b: lambda s, e: s.setReg(A, s.ALU8(s.reg[a], s.reg[b], f, (True, True, True, True))) or s.setPC(e)
-#exeALUC = lambda f, a, b: lambda s, e: s.setReg(A, s.ALU8(s.reg[a], s.reg[b], f, (True, True, True, True), carry=s.testCarryFlag())) or s.setPC(e)  # Mayby not so good.. always negative?
-exeALUSubC = lambda a, b: lambda s, e: s.setReg(A, s.CPU_SBC8(s.reg[a], s.reg[b])) or s.setPC(e)
-exeALUSub = lambda a, b: lambda s, e: s.setReg(A, s.CPU_SUB8(s.reg[a], s.reg[b])) or s.setPC(e)
+def RRCA_0f(self): # 0f RRCA
+    t = (self.A >> 1) + ((self.A & 1) << 7)+ ((self.A & 1) << 8)
+    flag = 0b00000000
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
 
-LocAND = lambda a, b: a & b
-LocXOR = lambda a, b: a ^ b
-# sub = lambda a, b: a - b
-# add = lambda a, b: a + b
+def STOP_10(self, v): # 10 STOP 0
+    raise Exception('STOP not implemented!')
+    self.PC += 2
+    return 0
 
-opcode_8x = [(1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[B])) or s.setPC(e)),                     # 80 - "Add B to A" ("ADD A,B")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[C])) or s.setPC(e)),                     # 81 - "Add C to A" ("ADD A,C")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[D])) or s.setPC(e)),                     # 82 - "Add D to A" ("ADD A,D")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[E])) or s.setPC(e)),                     # 83 - "Add E to A" ("ADD A,E")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[H])) or s.setPC(e)),                     # 84 - "Add H to A" ("ADD A,H")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[L])) or s.setPC(e)),                     # 85 - "Add L to A" ("ADD A,L")
-             (1, (8,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),  # 86 - "Add value pointed by HL to A" ("ADD A,(HL)
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADD8(s.reg[A], s.reg[A])) or s.setPC(e)),                     # 87 - "Add A to A" ("ADD A,A")
+def LD_11(self, v): # 11 LD DE,d16
+    self.DE = v
+    self.PC += 3
+    return 0
 
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[B])) or s.setPC(e)),                    # 88 - "Add B and carry flag to A" ("ADC A,B")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[C])) or s.setPC(e)),                    # 89 - "Add C and carry flag to A" ("ADC A,C")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[D])) or s.setPC(e)),                    # 8A - "Add D and carry flag to A" ("ADC A,D")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[E])) or s.setPC(e)),                    # 8B - "Add E and carry flag to A" ("ADC A,E")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[H])) or s.setPC(e)),                    # 8C - "Add H and carry flag to A" ("ADC A,H")
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[L])) or s.setPC(e)),                    # 8D - "Add and carry flag L to A" ("ADC A,L")
-             (1, (8,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),  # 8E - "Add value pointed by HL and carry flag to A" ("ADC A,(HL)
-             (1, (4,), lambda s, e: s.setReg(A,s.CPU_ADC8(s.reg[A], s.reg[A])) or s.setPC(e))]                    # 8F - "Add A and carry flag to A" ("ADC A,A")
+def LD_12(self): # 12 LD (DE),A
+    self.mb[self.DE] = self.A
+    self.PC += 1
+    return 0
 
+def INC_13(self): # 13 INC DE
+    t = self.DE+1
+    # No flag operations
+    t &= 0xFFFF
+    self.DE = t
+    self.PC += 1
+    return 0
 
-opcode_9x = [(1, (4,), exeALUSub(A, B)),                  # 90 -  "Subtract B from A" ("SUB A,B")
-             (1, (4,), exeALUSub(A, C)),                  # 91 -  "Subtract C from A" ("SUB A,C")
-             (1, (4,), exeALUSub(A, D)),                  # 92 -  "Subtract D from A" ("SUB A,D")
-             (1, (4,), exeALUSub(A, E)),                  # 93 -  "Subtract E from A" ("SUB A,E")
-             (1, (4,), exeALUSub(A, H)),                  # 94 -  "Subtract H from A" ("SUB A,H")
-             (1, (4,), exeALUSub(A, L)),                  # 95 -  "Subtract L from A" ("SUB A,L")
-             (1, (8,), lambda s, e: s.setReg(A, s.CPU_SUB8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),  # 96 -  "Subtract value pointed by HL from A" ("SUB A,(HL)
-             (1, (4,), exeALUSub(A, A)),                 # 97 -  "Subtract A from A" ("SUB A,A")
+def INC_14(self): # 14 INC D
+    t = self.D+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.D & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 1
+    return 0
 
-             (1, (4,), exeALUSubC(A, B)),                 # 98 -  "Subtract B and carry flag from A" ("SBC A,B")
-             (1, (4,), exeALUSubC(A, C)),                 # 99 -  "Subtract C and carry flag from A" ("SBC A,C")
-             (1, (4,), exeALUSubC(A, D)),                 # 9A -  "Subtract D and carry flag from A" ("SBC A,D")
-             (1, (4,), exeALUSubC(A, E)),                 # 9B -  "Subtract E and carry flag from A" ("SBC A,E")
-             (1, (4,), exeALUSubC(A, H)),                 # 9C -  "Subtract H and carry flag from A" ("SBC A,H")
-             (1, (4,), exeALUSubC(A, L)),                 # 9D -  "Subtract L and carry flag from A" ("SBC A,L")
-             (1, (8,), lambda s, e: s.setReg(A, s.CPU_SBC8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),  # 9E -  "Subtract value pointed by HL and carry flag from A" ("SBC A,(HL)
-             (1, (4,), exeALUSubC(A, A))]                  # 9F -  "Subtract A and carry flag from A" ("SBC A,A")
+def DEC_15(self): # 15 DEC D
+    t = self.D-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.D & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 1
+    return 0
 
+def LD_16(self, v): # 16 LD D,d8
+    self.D = v
+    self.PC += 2
+    return 0
 
-opcode_Ax = [(1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[B])) or s.setPC(e)),                  # A0 -  "Logical AND B against A" ("AND B")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[C])) or s.setPC(e)),                  # A1 -  "Logical AND C against A" ("AND C")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[D])) or s.setPC(e)),                  # A2 -  "Logical AND D against A" ("AND D")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[E])) or s.setPC(e)),                  # A3 -  "Logical AND E against A" ("AND E")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[H])) or s.setPC(e)),                  # A4 -  "Logical AND H against A" ("AND H")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[L])) or s.setPC(e)),                  # A5 -  "Logical AND L against A" ("AND L")
-             (1, (8,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),                 # A6 -  "Logical AND value pointed by HL against A" ("AND (HL)
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_AND8(s.reg[A], s.reg[A])) or s.setPC(e)),                  # A7 -  "Logical AND A against A" ("AND A")
+def RLA_17(self): # 17 RLA
+    t = (self.A << 1)+ self.fC
+    flag = 0b00000000
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
 
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[B])) or s.setPC(e)),                  # A8 -  "Logical XOR B against A" ("XOR B")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[C])) or s.setPC(e)),                  # A9 -  "Logical XOR C against A" ("XOR C")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[D])) or s.setPC(e)),                  # AA -  "Logical XOR D against A" ("XOR D")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[E])) or s.setPC(e)),                  # AB -  "Logical XOR E against A" ("XOR E")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[H])) or s.setPC(e)),                  # AC -  "Logical XOR H against A" ("XOR H")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[L])) or s.setPC(e)),                  # AD -  "Logical XOR L against A" ("XOR L")
-             (1, (8,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),                 # AE -  "Logical XOR value pointed by HL against A" ("XOR (HL)
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_XOR8(s.reg[A], s.reg[A])) or s.setPC(e))]                  # AF -  "Logical XOR A against A" ("XOR A")
+def JR_18(self, v): # 18 JR r8
+    self.PC += 2 + getSignedInt8(v)
+    return 0
 
-opcode_Bx = [(1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[B])) or s.setPC(e)),                   # B0 -  "Logical OR B against A" ("OR B")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[C])) or s.setPC(e)),                   # B1 -  "Logical OR C against A" ("OR C")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[D])) or s.setPC(e)),                   # B2 -  "Logical OR D against A" ("OR D")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[E])) or s.setPC(e)),                   # B3 -  "Logical OR E against A" ("OR E")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[H])) or s.setPC(e)),                   # B4 -  "Logical OR H against A" ("OR H")
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[L])) or s.setPC(e)),                   # B5 -  "Logical OR L against A" ("OR L")
-             (1, (8,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.mb[s.getHL()])) or s.setPC(e)),           # B6 -  "Logical OR value pointed by HL against A" ("OR (HL)
-             (1, (4,), lambda s, e: s.setReg(A, s.CPU_OR8(s.reg[A], s.reg[A])) or s.setPC(e)),                   # B7 -  "Logical OR A against A" ("OR A")
+def ADD_19(self): # 19 ADD HL,DE
+    t = self.HL+self.DE
+    flag = 0b00000000
+    flag += (((self.HL & 0xFFF) + (self.DE & 0xFFF)) > 0xFFF) << flagH
+    flag += (t > 0xFFFF) << flagC
+    self.F &= 0b10000000
+    self.F |= flag
+    t &= 0xFFFF
+    self.HL = t
+    self.PC += 1
+    return 0
 
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[B]) or s.setPC(e)),                           # B8 -  "Compare B against A" ("CP B")
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[C]) or s.setPC(e)),                           # B9 -  "Compare C against A" ("CP C")
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[D]) or s.setPC(e)),                           # BA -  "Compare D against A" ("CP D")
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[E]) or s.setPC(e)),                           # BB -  "Compare E against A" ("CP E")
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[H]) or s.setPC(e)),                           # BC -  "Compare H against A" ("CP H")
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[L]) or s.setPC(e)),                           # BD -  "Compare L against A" ("CP L")
-             (1, (8,), lambda s, e: s.CPU_CP(s.reg[A], s.mb[s.getHL()]) or s.setPC(e)),  # BE -  "Compare value pointed by HL against A" ("CP (HL)
-             (1, (4,), lambda s, e: s.CPU_CP(s.reg[A], s.reg[A]) or s.setPC(e))]                           # BF -  "Compare A against A" ("CP A")
+def LD_1a(self): # 1a LD A,(DE)
+    self.A = self.mb[self.DE]
+    self.PC += 1
+    return 0
 
+def DEC_1b(self): # 1b DEC DE
+    t = self.DE-1
+    # No flag operations
+    t &= 0xFFFF
+    self.DE = t
+    self.PC += 1
+    return 0
 
-opcode_Cx = [(1, (20, 8), lambda s, e: s.setPC(s.CPU_RET()) if not s.testFlag(flagZ) else s.setPC(e)),                   # C0 -  "Return if last result was not zero" ("RET NZ")
-             (1, (12,), lambda s, e: s.setBC(s.CPU_POP()) or s.setPC(e)),                # C1 -  "Pop 16-bit value from stack into BC" ("POP BC")
-             (3, (16, 12), lambda s, v, e: s.setPC(v) if not s.testFlag(flagZ) else s.setPC(e)),     # C2 -  "Absolute jump to 16-bit location if last result was not zero" ("JP NZ,v")
-             (3, (16,), lambda s, v, e: s.setPC(v)),               # C3 -  "Absolute jump to 16-bit location" ("JP v")
-             (3, (24, 12), lambda s, v, e: (s.CPU_PUSH(e) or s.setPC(v)) if not s.testFlag(flagZ) else s.setPC(e)),#not s.testFlag(flagZ) and (s.CPU_PUSH(e) or s.setPC(v))),   # C4 -  "Call routine at 16-bit location if last result was not zero" ("CALL NZ,v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(s.getBC()) or s.setPC(e)),               # C5 -  "Push 16-bit BC onto stack" ("PUSH BC")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_ADD8(s.reg[A], v)) or s.setPC(e)),   # C6 -  "Add 8-bit immediate to A" ("ADD A,v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0000)),                  # C7 -  "Call routine at address 0000h" ("RST 0")
-             (1, (20, 8), lambda s, e: s.setPC(s.CPU_RET()) if s.testFlag(flagZ) else s.setPC(e)),                    # C8 -  "Return if last result was zero" ("RET Z")
-             (1, (16,), lambda s, e: s.setPC(s.CPU_RET())),                           # C9 -  "Return to calling routine" ("RET")
-             (3, (16, 12), lambda s, v, e: s.setPC(v) if s.testFlag(flagZ) else s.setPC(e)),      # CA -  "Absolute jump to 16-bit location if last result was zero" ("JP Z,v")
-             (1, (4,), lambda s, e: coredump(Exception("CB should never be called"))),                           # CB -  "Extended operations (two-byte instruction code)" ("Ext ops")
-             (3, (24, 12), lambda s, v, e: (s.CPU_PUSH(e) or s.setPC(v)) if s.testFlag(flagZ) else s.setPC(e)),    # CC -  "Call routine at 16-bit location if last result was zero" ("CALL Z,v")
-             (3, (24,), lambda s, v, e: s.CPU_PUSH(e) or s.setPC(v)),             # CD -  "Call routine at 16-bit location" ("CALL v")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_ADD8(s.reg[A], v + s.testFlag(flagC))) or s.setPC(e)),   # CE -  "Add 8-bit immediate and carry to A" ("ADC A,v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0008))]                # CF -  "Call routine at address 0008h" ("RST 8")
+def INC_1c(self): # 1c INC E
+    t = self.E+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.E & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 1
+    return 0
 
-opcode_Dx = [(1, (20, 8), lambda s, e: s.setPC(s.CPU_RET()) if not s.testFlag(flagC) else s.setPC(e)),                   # D0 -  "Return if last result caused no carry" ("RET NC")
-             (1, (12,), lambda s, e: s.setDE(s.CPU_POP()) or s.setPC(e)),                # D1 -  "Pop 16-bit value from stack into DE" ("POP DE")
-             (3, (16, 12), lambda s, v, e: s.setPC(v) if not s.testFlag(flagC) else s.setPC(e)),     # D2 -  "Absolute jump to 16-bit location if last result caused no carry" ("JP NC,v")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # D3 -  "Operation removed in this CPU" ("XX")
-             (3, (24, 12), lambda s, v, e: (s.CPU_PUSH(e) or s.setPC(v)) if not s.testFlag(flagC) else s.setPC(e)),   # D4 -  "Call routine at 16-bit location if last result caused no carry" ("CALL NC,v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(s.getDE()) or s.setPC(e)),               # D5 -  "Push 16-bit DE onto stack" ("PUSH DE")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_SUB8(s.reg[A], v)) or s.setPC(e)),   # D6 -  "Subtract 8-bit immediate from A" ("SUB A,v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0010)),                  # D7 -  "Call routine at address 0010h" ("RST 10")
-             (1, (20, 8), lambda s, e: (s.setPC(s.CPU_RET())) if s.testFlag(flagC) else s.setPC(e)),                 # D8 -  "Return if last result caused carry" ("RET C")
-             (1, (16,), lambda s, _: s.CPU_EI() or s.setPC(s.CPU_RET())),                          # D9 -  "Enable interrupts and return to calling routine" ("RETI")
-             (3, (16, 12), lambda s, v, e: s.setPC(v) if s.testFlag(flagC) else s.setPC(e)),   # DA -  "Absolute jump to 16-bit location if last result caused carry" ("JP C,v")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # DB -  "Operation removed in this CPU" ("XX")
-             (3, (24, 12), lambda s, v, e: (s.CPU_PUSH(e) or s.setPC(v)) if s.testFlag(flagC) else s.setPC(e)),  # DC -  "Call routine at 16-bit location if last result caused carry" ("CALL C,v")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # DD -  "Operation removed in this CPU" ("XX")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_SBC8(s.reg[A], v)) or s.setPC(e)),   # DE -  "Subtract 8-bit immediate and carry from A" ("SBC A,v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0018))]             # DF -  "Call routine at address 0018h" ("RST 18")
+def DEC_1d(self): # 1d DEC E
+    t = self.E-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.E & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 1
+    return 0
 
-opcode_Ex = [(2, (12,), lambda s, v, e: s.mb.__setitem__(0xFF00+v, s.reg[A]) or s.setPC(e)),  # E0 -  "Save A at address pointed to by (FF00h + 8-bit immediate)" ("LDH (a8),A")
-             (1, (12,), lambda s, e: s.setHL(s.CPU_POP()) or s.setPC(e)),                # E1 -  "Pop 16-bit value from stack into HL" ("POP HL")
-             (1, (8,), lambda s, e: s.mb.__setitem__(0xFF00+s.reg[C], s.reg[A]) or s.setPC(e)),  # E2 -  "Save A at address pointed to by (FF00h + s.C)" ("LDH(s.C),A")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # E3 -  "Operation removed in this CPU" ("XX")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # E4 -  "Operation removed in this CPU" ("XX")
-             (1, (16,), lambda s, e: s.CPU_PUSH(s.getHL()) or s.setPC(e)),               # E5 -  "Push 16-bit HL onto stack" ("PUSH HL")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_AND8(s.reg[A], v)) or s.setPC(e)),  # E6 -  "Logical AND 8-bit immediate against A" ("AND v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0020)),               # E7 -  "Call routine at address 0020h" ("RST 20")
-             (2, (16,), lambda s, v, e: s.setReg(SP, s.CPU_ADD16(s.reg[SP], getSignedInt8(v))) or s.clearFlag(flagZ) or s.setPC(e)),  # E8 -  "Add signed 8-bit immediate to SP" ("ADD SP,r8")
-             (1, (4,), lambda s, e: s.setPC(s.getHL())),  # E9 -  "Jump to 16-bit value pointed by HL" ("JP(s.getHL())
-             (3, (16,), lambda s, v, e: s.mb.__setitem__(v, s.reg[A]) or s.setPC(e)),  # EA -  "Save A at given 16-bit address" ("LD (v),A")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # EB -  "Operation removed in this CPU" ("XX")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # EC -  "Operation removed in this CPU" ("XX")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # ED -  "Operation removed in this CPU" ("XX")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_XOR8(s.reg[A], v)) or s.setPC(e)),  # EE -  "Logical XOR 8-bit immediate against A" ("XOR v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0028))]          # EF -  "Call routine at address 0028h" ("RST 28")
+def LD_1e(self, v): # 1e LD E,d8
+    self.E = v
+    self.PC += 2
+    return 0
 
-opcode_Fx = [(2, (12,), lambda s, v, e: s.setReg(A, s.mb[v+0xFF00]) or s.setPC(e)),  # F0 -  "Load A from address pointed to by (FF00h + 8-bit immediate)" ("LDH A,(a8)
-             (1, (12,), lambda s, e: s.setAF(s.CPU_POP()) or s.setPC(e)),                # F1 -  "Pop 16-bit value from stack into AF" ("POP AF")
-             #WARN: This one seems wrong:
-             # (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # F2 -  "Operation removed in this CPU" ("XX")
-             (2, (12,), lambda s, v, e: s.setReg(A, s.mb[0xFF00+s.reg[C]]) or s.setPC(e)),  # F2 - no$gmb says LD a, (0xFF00+c)
-             (1, (4,), lambda s, e: s.CPU_DI() or s.setPC(e)),                            # F3 -  "DIsable interrupts" ("DI")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # F4 -  "Operation removed in this CPU" ("XX")
-             (1, (16,), lambda s, e: s.CPU_PUSH(s.getAF()) or s.setPC(e)),               # F5 -  "Push 16-bit AF onto stack" ("PUSH AF")
-             (2, (8,), lambda s, v, e: s.setReg(A, s.CPU_OR8(s.reg[A], v)) or s.setPC(e)),  # F6 -  "Logical OR 8-bit immediate against A" ("OR v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0030)),               # F7 -  "Call routine at address 0030h" ("RST 30")
-             (2, (12,), lambda s, v, e: (s.setHL(s.CPU_ADD16(s.reg[SP], getSignedInt8(v))) or s.clearFlag(flagZ)) or s.setPC(e)),  # F8 -  "Add signed 8-bit immediate to SP and save result in HL" ("LDHL SP,v")
-             (1, (8,), lambda s, e: s.setReg(SP, s.getHL()) or s.setPC(e)),    # F9 -  "Copy HL to SP" ("LD SP,HL")
-             (3, (16,), lambda s, v, e: s.setReg(A, s.mb[v]) or s.setPC(e)),  # FA -  "Load A from given 16-bit address" ("LD A,(v)
-             (1, (4,), lambda s, e: s.CPU_EI() or s.setPC(e)),                            # FB -  "Enable interrupts" ("EI")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # FC -  "Operation removed in this CPU" ("XX")
-             (1, (0,), lambda s, e: coredump(Exception("opcode not supported by Z80"))),                            # FD -  "Operation removed in this CPU" ("XX")
-             (2, (8,), lambda s, v, e: s.CPU_CP(s.reg[A], v) or s.setPC(e)),                # FE -  "Compare 8-bit immediate against A" ("CP v")
-             (1, (16,), lambda s, e: s.CPU_PUSH(e) or s.setPC(0x0038))]          # FF -  "Call routine at address 0038h" ("RST 38")
+def RRA_1f(self): # 1f RRA
+    t = (self.A >> 1)+ (self.fC << 7)+ ((self.A & 1) << 8)
+    flag = 0b00000000
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
 
+def JR_20(self, v): # 20 JR NZ,r8
+    self.PC += 2
+    if self.fNZ:
+        self.PC += getSignedInt8(v)
+        return 0
+    else:
+        return 1
 
-rlc = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_RLC(s.reg[r])) or s.setPC(e)
-rrc = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_RRC(s.reg[r])) or s.setPC(e)
+def LD_21(self, v): # 21 LD HL,d16
+    self.HL = v
+    self.PC += 3
+    return 0
 
-# CB_prefix = []
-CB_prefix_0x = [(1, (8,), rlc(B)),          # 00 - "Rotate B left with carry"
-                (1, (8,), rlc(C)),          # 01 - "Rotate C left with carry"
-                (1, (8,), rlc(D)),          # 02 - "Rotate D left with carry"
-                (1, (8,), rlc(E)),          # 03 - "Rotate E left with carry"
-                (1, (8,), rlc(H)),          # 04 - "Rotate H left with carry"
-                (1, (8,), rlc(L)),          # 05 - "Rotate L left with carry"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RLC(s.mb[s.getHL()])) or s.setPC(e)),  # 06 - "Rotate value pointed by HL left with carry"
-                (1, (8,), rlc(A)),          # 07 - "Rotate A left with carry"
-                (1, (8,), rrc(B)),          # 08 - "Rotate B right with carry"
-                (1, (8,), rrc(C)),          # 09 - "Rotate C right with carry"
-                (1, (8,), rrc(D)),          # 0A - "Rotate D right with carry"
-                (1, (8,), rrc(E)),          # 0B - "Rotate E right with carry"
-                (1, (8,), rrc(H)),          # 0C - "Rotate H right with carry"
-                (1, (8,), rrc(L)),          # 0D - "Rotate L right with carry"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RRC(s.mb[s.getHL()])) or s.setPC(e)),  # 0E - "Rotate value pointed by HL right with carry"
-                (1, (8,), rrc(A))]          # 0F - "Rotate A right with carry"
+def LD_22(self): # 22 LD (HL+),A
+    self.mb[self.HL] = self.A
+    self.HL += 1
+    self.PC += 1
+    return 0
 
-rr = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_RR(s.reg[r])) or s.setPC(e)
-rl = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_RL(s.reg[r])) or s.setPC(e)
-CB_prefix_1x = [(1, (8,), rl(B)),           # 10 - "Rotate B left"
-                (1, (8,), rl(C)),           # 11 - "Rotate C left"
-                (1, (8,), rl(D)),           # 12 - "Rotate D left"
-                (1, (8,), rl(E)),           # 13 - "Rotate E left"
-                (1, (8,), rl(H)),           # 14 - "Rotate H left"
-                (1, (8,), rl(L)),           # 15 - "Rotate L left"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RL(s.mb[s.getHL()])) or s.setPC(e)),  # 16 - "Rotate value pointed by HL left"
-                (1, (8,), rl(A)),           # 17 - "Rotate A left"
-                (1, (8,), rr(B)),           # 18 - "Rotate B right"
-                (1, (8,), rr(C)),           # 19 - "Rotate C right"
-                (1, (8,), rr(D)),           # 1A - "Rotate D right"
-                (1, (8,), rr(E)),           # 1B - "Rotate E right"
-                (1, (8,), rr(H)),           # 1C - "Rotate H right"
-                (1, (8,), rr(L)),           # 1D - "Rotate L right"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RR(s.mb[s.getHL()])) or s.setPC(e)),  # 1E - "Rotate value pointed by HL right"
-                (1, (8,), rr(A))]           # 1F - "Rotate A right"
+def INC_23(self): # 23 INC HL
+    t = self.HL+1
+    # No flag operations
+    t &= 0xFFFF
+    self.HL = t
+    self.PC += 1
+    return 0
 
-ext_sla = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_SLA(s.reg[r])) or s.setPC(e)
-ext_sra = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_SRA(s.reg[r])) or s.setPC(e)
+def INC_24(self): # 24 INC H
+    t = self.H+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.H & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 1
+    return 0
 
-CB_prefix_2x = [(1, (8,), ext_sla(B)),          # 20 - "Shift B left preserving sign"
-                (1, (8,), ext_sla(C)),          # 21 - "Shift C left preserving sign"
-                (1, (8,), ext_sla(D)),          # 22 - "Shift D left preserving sign"
-                (1, (8,), ext_sla(E)),          # 23 - "Shift E left preserving sign"
-                (1, (8,), ext_sla(H)),          # 24 - "Shift H left preserving sign"
-                (1, (8,), ext_sla(L)),          # 25 - "Shift L left preserving sign"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SLA(s.mb[s.getHL()])) or s.setPC(e)),  # 26 - "Shift value pointed by HL left preserving sign"
-                (1, (8,), ext_sla(A)),          # 27 - "Shift A left preserving sign"
-                (1, (8,), ext_sra(B)),          # 28 - "Shift B right preserving sign"
-                (1, (8,), ext_sra(C)),          # 29 - "Shift C right preserving sign"
-                (1, (8,), ext_sra(D)),          # 2A - "Shift D right preserving sign"
-                (1, (8,), ext_sra(E)),          # 2B - "Shift E right preserving sign"
-                (1, (8,), ext_sra(H)),          # 2C - "Shift H right preserving sign"
-                (1, (8,), ext_sra(L)),          # 2D - "Shift L right preserving sign"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SRA(s.mb[s.getHL()])) or s.setPC(e)),  # 2E - "Shift value pointed by HL right preserving sign"
-                (1, (8,), ext_sra(A))]           # 2F - "Shift A right preserving sign"
+def DEC_25(self): # 25 DEC H
+    t = self.H-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.H & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 1
+    return 0
 
-ext_swap = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_SWAP(s.reg[r])) or s.setPC(e)
-ext_srl = lambda r: lambda s, e: s.setReg(r, s.CPU_EXT_SRL(s.reg[r])) or s.setPC(e)
+def LD_26(self, v): # 26 LD H,d8
+    self.H = v
+    self.PC += 2
+    return 0
 
-CB_prefix_3x = [(1, (8,), ext_swap(B)),         # 30 - "Swap nibbles in B"
-                (1, (8,), ext_swap(C)),         # 31 - "Swap nibbles in C"
-                (1, (8,), ext_swap(D)),         # 32 - "Swap nibbles in D"
-                (1, (8,), ext_swap(E)),         # 33 - "Swap nibbles in E"
-                (1, (8,), ext_swap(H)),         # 34 - "Swap nibbles in H"
-                (1, (8,), ext_swap(L)),         # 35 - "Swap nibbles in L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SWAP(s.mb[s.getHL()])) or s.setPC(e)),  # 36 - "Swap nibbles in value pointed by HL"
-                (1, (8,), ext_swap(A)),         # 37 - "Swap nibbles in A"
-                (1, (8,), ext_srl(B)),          # 38 - "Shift B right"
-                (1, (8,), ext_srl(C)),          # 39 - "Shift C right"
-                (1, (8,), ext_srl(D)),          # 3A - "Shift D right"
-                (1, (8,), ext_srl(E)),          # 3B - "Shift E right"
-                (1, (8,), ext_srl(H)),          # 3C - "Shift H right"
-                (1, (8,), ext_srl(L)),          # 3D - "Shift L right"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SRL(s.mb[s.getHL()])) or s.setPC(e)),  # 3E - "Shift value pointed by HL right"
-                (1, (8,), ext_srl(A))]          # 3F - "Shift A right"
+def DAA_27(self): # 27 DAA
+    t = self.A
+    corr = 0
+    corr |= 0x06 if self.fH else 0x00
+    corr |= 0x60 if self.fC else 0x00
+    if self.fN:
+        t -= corr
+    else:
+        corr |= 0x06 if (t & 0x0F) > 0x09 else 0x00
+        corr |= 0x60 if t > 0x99 else 0x00
+        t += corr
+    flag = 0
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (corr & 0x60 != 0) << flagC
+    self.F &= 0b01000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
 
-ext_bit = lambda b, r: lambda s, e: s.CPU_EXT_BIT(b, s.reg[r]) or s.setPC(e)
+def JR_28(self, v): # 28 JR Z,r8
+    self.PC += 2
+    if self.fZ:
+        self.PC += getSignedInt8(v)
+        return 0
+    else:
+        return 1
 
-CB_prefix_4x = [(1, (8,), ext_bit(0, B)),        # 40 - "Test bit 0 of B"
-                (1, (8,), ext_bit(0, C)),        # 41 - "Test bit 0 of C"
-                (1, (8,), ext_bit(0, D)),        # 42 - "Test bit 0 of D"
-                (1, (8,), ext_bit(0, E)),        # 43 - "Test bit 0 of E"
-                (1, (8,), ext_bit(0, H)),        # 44 - "Test bit 0 of H"
-                (1, (8,), ext_bit(0, L)),        # 45 - "Test bit 0 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(0, s.mb[s.getHL()]) or s.setPC(e)),  # 46 - "Test bit 0 of value pointed by HL"
-                (1, (8,), ext_bit(0, A)),        # 47 - "Test bit 0 of A"
-                (1, (8,), ext_bit(1, B)),        # 48 - "Test bit 1 of B"
-                (1, (8,), ext_bit(1, C)),        # 49 - "Test bit 1 of C"
-                (1, (8,), ext_bit(1, D)),        # 4A - "Test bit 1 of D"
-                (1, (8,), ext_bit(1, E)),        # 4B - "Test bit 1 of E"
-                (1, (8,), ext_bit(1, H)),        # 4C - "Test bit 1 of H"
-                (1, (8,), ext_bit(1, L)),        # 4D - "Test bit 1 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(1, s.mb[s.getHL()]) or s.setPC(e)),  # 4E - "Test bit 1 of value pointed by HL"
-                (1, (8,), ext_bit(1, A))]        # 4F - "Test bit 1 of A"
+def ADD_29(self): # 29 ADD HL,HL
+    t = self.HL+self.HL
+    flag = 0b00000000
+    flag += (((self.HL & 0xFFF) + (self.HL & 0xFFF)) > 0xFFF) << flagH
+    flag += (t > 0xFFFF) << flagC
+    self.F &= 0b10000000
+    self.F |= flag
+    t &= 0xFFFF
+    self.HL = t
+    self.PC += 1
+    return 0
 
-CB_prefix_5x = [(1, (8,), ext_bit(2, B)),        # 50 - "Test bit 2 of B"
-                (1, (8,), ext_bit(2, C)),        # 51 - "Test bit 2 of C"
-                (1, (8,), ext_bit(2, D)),        # 52 - "Test bit 2 of D"
-                (1, (8,), ext_bit(2, E)),        # 53 - "Test bit 2 of E"
-                (1, (8,), ext_bit(2, H)),        # 54 - "Test bit 2 of H"
-                (1, (8,), ext_bit(2, L)),        # 55 - "Test bit 2 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(2, s.mb[s.getHL()]) or s.setPC(e)),  # 56 - "Test bit 2 of value pointed by HL"
-                (1, (8,), ext_bit(2, A)),        # 57 - "Test bit 2 of A"
-                (1, (8,), ext_bit(3, B)),        # 58 - "Test bit 3 of B"
-                (1, (8,), ext_bit(3, C)),        # 59 - "Test bit 3 of C"
-                (1, (8,), ext_bit(3, D)),        # 5A - "Test bit 3 of D"
-                (1, (8,), ext_bit(3, E)),        # 5B - "Test bit 3 of E"
-                (1, (8,), ext_bit(3, H)),        # 5C - "Test bit 3 of H"
-                (1, (8,), ext_bit(3, L)),        # 5D - "Test bit 3 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(3, s.mb[s.getHL()]) or s.setPC(e)),  # 5E - "Test bit 3 of value pointed by HL"
-                (1, (8,), ext_bit(3, A))]        # 5F - "Test bit 3 of A"
+def LD_2a(self): # 2a LD A,(HL+)
+    self.A = self.mb[self.HL]
+    self.HL += 1
+    self.PC += 1
+    return 0
 
-CB_prefix_6x = [(1, (8,), ext_bit(4, B)),        # 60 - "Test bit 4 of B"
-                (1, (8,), ext_bit(4, C)),        # 61 - "Test bit 4 of C"
-                (1, (8,), ext_bit(4, D)),        # 62 - "Test bit 4 of D"
-                (1, (8,), ext_bit(4, E)),        # 63 - "Test bit 4 of E"
-                (1, (8,), ext_bit(4, H)),        # 64 - "Test bit 4 of H"
-                (1, (8,), ext_bit(4, L)),        # 65 - "Test bit 4 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(4, s.mb[s.getHL()]) or s.setPC(e)),  # 66 - "Test bit 4 of value pointed by HL"
-                (1, (8,), ext_bit(4, A)),        # 67 - "Test bit 4 of A"
-                (1, (8,), ext_bit(5, B)),        # 68 - "Test bit 5 of B"
-                (1, (8,), ext_bit(5, C)),        # 69 - "Test bit 5 of C"
-                (1, (8,), ext_bit(5, D)),        # 6A - "Test bit 5 of D"
-                (1, (8,), ext_bit(5, E)),        # 6B - "Test bit 5 of E"
-                (1, (8,), ext_bit(5, H)),        # 6C - "Test bit 5 of H"
-                (1, (8,), ext_bit(5, L)),        # 6D - "Test bit 5 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(5, s.mb[s.getHL()]) or s.setPC(e)),  # 6E - "Test bit 5 of value pointed by HL"
-                (1, (8,), ext_bit(5, A))]        # 6F - "Test bit 5 of A"
+def DEC_2b(self): # 2b DEC HL
+    t = self.HL-1
+    # No flag operations
+    t &= 0xFFFF
+    self.HL = t
+    self.PC += 1
+    return 0
 
-CB_prefix_7x = [(1, (8,), ext_bit(6, B)),        # 70 - "Test bit 6 of B"
-                (1, (8,), ext_bit(6, C)),        # 71 - "Test bit 6 of C"
-                (1, (8,), ext_bit(6, D)),        # 72 - "Test bit 6 of D"
-                (1, (8,), ext_bit(6, E)),        # 73 - "Test bit 6 of E"
-                (1, (8,), ext_bit(6, H)),        # 74 - "Test bit 6 of H"
-                (1, (8,), ext_bit(6, L)),        # 75 - "Test bit 6 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(6, s.mb[s.getHL()]) or s.setPC(e)),  # 76 - "Test bit 6 of value pointed by HL"
-                (1, (8,), ext_bit(6, A)),        # 77 - "Test bit 6 of A"
-                (1, (8,), ext_bit(7, B)),        # 78 - "Test bit 7 of B"
-                (1, (8,), ext_bit(7, C)),        # 79 - "Test bit 7 of C"
-                (1, (8,), ext_bit(7, D)),        # 7A - "Test bit 7 of D"
-                (1, (8,), ext_bit(7, E)),        # 7B - "Test bit 7 of E"
-                (1, (8,), ext_bit(7, H)),        # 7C - "Test bit 7 of H"
-                (1, (8,), ext_bit(7, L)),        # 7D - "Test bit 7 of L"
-                (1, (16,), lambda s, e: s.CPU_EXT_BIT(7, s.mb[s.getHL()]) or s.setPC(e)),  # 7E - "Test bit 7 of value pointed by HL"
-                (1, (8,), ext_bit(7, A))]        # 7F - "Test bit 7 of A"
+def INC_2c(self): # 2c INC L
+    t = self.L+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.L & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 1
+    return 0
 
+def DEC_2d(self): # 2d DEC L
+    t = self.L-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.L & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 1
+    return 0
 
-ext_clr = lambda b, r: lambda s, e: s.setReg(r, s.CPU_EXT_RES(b, s.reg[r])) or s.setPC(e)
+def LD_2e(self, v): # 2e LD L,d8
+    self.L = v
+    self.PC += 2
+    return 0
 
-CB_prefix_8x = [(1, (8,), ext_clr(0, B)),        # 80 - "Clear (reset) bit 0 of B"
-                (1, (8,), ext_clr(0, C)),        # 81 - "Clear (reset) bit 0 of C"
-                (1, (8,), ext_clr(0, D)),        # 82 - "Clear (reset) bit 0 of D"
-                (1, (8,), ext_clr(0, E)),        # 83 - "Clear (reset) bit 0 of E"
-                (1, (8,), ext_clr(0, H)),        # 84 - "Clear (reset) bit 0 of H"
-                (1, (8,), ext_clr(0, L)),        # 85 - "Clear (reset) bit 0 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(0, s.mb[s.getHL()])) or s.setPC(e)),  # 86 - "Clear (reset) bit 0 of value pointed by HL"
-                (1, (8,), ext_clr(0, A)),        # 87 - "Clear (reset) bit 0 of A"
-                (1, (8,), ext_clr(1, B)),        # 88 - "Clear (reset) bit 1 of B"
-                (1, (8,), ext_clr(1, C)),        # 89 - "Clear (reset) bit 1 of C"
-                (1, (8,), ext_clr(1, D)),        # 8A - "Clear (reset) bit 1 of D"
-                (1, (8,), ext_clr(1, E)),        # 8B - "Clear (reset) bit 1 of E"
-                (1, (8,), ext_clr(1, H)),        # 8C - "Clear (reset) bit 1 of H"
-                (1, (8,), ext_clr(1, L)),        # 8D - "Clear (reset) bit 1 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(1, s.mb[s.getHL()])) or s.setPC(e)),  # 8E - "Clear (reset) bit 1 of value pointed by HL"
-                (1, (8,), ext_clr(1, A))]        # 8F - "Clear (reset) bit 1 of A"
+def CPL_2f(self): # 2f CPL
+    self.A = ~self.A
+    flag = 0b01100000
+    self.F &= 0b10010000
+    self.F |= flag
+    self.PC += 1
+    return 0
 
-CB_prefix_9x = [(1, (8,), ext_clr(2, B)),        # 90 - "Clear (reset) bit 2 of B"
-                (1, (8,), ext_clr(2, C)),        # 91 - "Clear (reset) bit 2 of C"
-                (1, (8,), ext_clr(2, D)),        # 92 - "Clear (reset) bit 2 of D"
-                (1, (8,), ext_clr(2, E)),        # 93 - "Clear (reset) bit 2 of E"
-                (1, (8,), ext_clr(2, H)),        # 94 - "Clear (reset) bit 2 of H"
-                (1, (8,), ext_clr(2, L)),        # 95 - "Clear (reset) bit 2 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(2, s.mb[s.getHL()])) or s.setPC(e)),  # 96 - "Clear (reset) bit 2 of value pointed by HL"
-                (1, (8,), ext_clr(2, A)),        # 97 - "Clear (reset) bit 2 of A"
-                (1, (8,), ext_clr(3, B)),        # 98 - "Clear (reset) bit 3 of B"
-                (1, (8,), ext_clr(3, C)),        # 99 - "Clear (reset) bit 3 of C"
-                (1, (8,), ext_clr(3, D)),        # 9A - "Clear (reset) bit 3 of D"
-                (1, (8,), ext_clr(3, E)),        # 9B - "Clear (reset) bit 3 of E"
-                (1, (8,), ext_clr(3, H)),        # 9C - "Clear (reset) bit 3 of H"
-                (1, (8,), ext_clr(3, L)),        # 9D - "Clear (reset) bit 3 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(3, s.mb[s.getHL()])) or s.setPC(e)),  # 9E - "Clear (reset) bit 3 of value pointed by HL"
-                (1, (8,), ext_clr(3, A))]        # 9F - "Clear (reset) bit 3 of A"
+def JR_30(self, v): # 30 JR NC,r8
+    self.PC += 2
+    if self.fNC:
+        self.PC += getSignedInt8(v)
+        return 0
+    else:
+        return 1
 
-CB_prefix_Ax = [(1, (8,), ext_clr(4, B)),        # A0 - "Clear (reset) bit 4 of B"
-                (1, (8,), ext_clr(4, C)),        # A1 - "Clear (reset) bit 4 of C"
-                (1, (8,), ext_clr(4, D)),        # A2 - "Clear (reset) bit 4 of D"
-                (1, (8,), ext_clr(4, E)),        # A3 - "Clear (reset) bit 4 of E"
-                (1, (8,), ext_clr(4, H)),        # A4 - "Clear (reset) bit 4 of H"
-                (1, (8,), ext_clr(4, L)),        # A5 - "Clear (reset) bit 4 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(4, s.mb[s.getHL()])) or s.setPC(e)),  # A6 - "Clear (reset) bit 4 of value pointed by HL"
-                (1, (8,), ext_clr(4, A)),        # A7 - "Clear (reset) bit 4 of A"
-                (1, (8,), ext_clr(5, B)),        # A8 - "Clear (reset) bit 5 of B"
-                (1, (8,), ext_clr(5, C)),        # A9 - "Clear (reset) bit 5 of C"
-                (1, (8,), ext_clr(5, D)),        # AA - "Clear (reset) bit 5 of D"
-                (1, (8,), ext_clr(5, E)),        # AB - "Clear (reset) bit 5 of E"
-                (1, (8,), ext_clr(5, H)),        # AC - "Clear (reset) bit 5 of H"
-                (1, (8,), ext_clr(5, L)),        # AD - "Clear (reset) bit 5 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(5, s.mb[s.getHL()])) or s.setPC(e)),  # AE - "Clear (reset) bit 5 of value pointed by HL"
-                (1, (8,), ext_clr(5, A))]        # AF - "Clear (reset) bit 5 of A"
+def LD_31(self, v): # 31 LD SP,d16
+    self.SP = v
+    self.PC += 3
+    return 0
 
-CB_prefix_Bx = [(1, (8,), ext_clr(6, B)),        # B0 - "Clear (reset) bit 6 of B"
-                (1, (8,), ext_clr(6, C)),        # B1 - "Clear (reset) bit 6 of C"
-                (1, (8,), ext_clr(6, D)),        # B2 - "Clear (reset) bit 6 of D"
-                (1, (8,), ext_clr(6, E)),        # B3 - "Clear (reset) bit 6 of E"
-                (1, (8,), ext_clr(6, H)),        # B4 - "Clear (reset) bit 6 of H"
-                (1, (8,), ext_clr(6, L)),        # B5 - "Clear (reset) bit 6 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(6, s.mb[s.getHL()])) or s.setPC(e)),  # B6 - "Clear (reset) bit 6 of value pointed by HL"
-                (1, (8,), ext_clr(6, A)),        # B7 - "Clear (reset) bit 6 of A"
-                (1, (8,), ext_clr(7, B)),        # B8 - "Clear (reset) bit 7 of B"
-                (1, (8,), ext_clr(7, C)),        # B9 - "Clear (reset) bit 7 of C"
-                (1, (8,), ext_clr(7, D)),        # BA - "Clear (reset) bit 7 of D"
-                (1, (8,), ext_clr(7, E)),        # BB - "Clear (reset) bit 7 of E"
-                (1, (8,), ext_clr(7, H)),        # BC - "Clear (reset) bit 7 of H"
-                (1, (8,), ext_clr(7, L)),        # BD - "Clear (reset) bit 7 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_RES(7, s.mb[s.getHL()])) or s.setPC(e)),  # BE - "Clear (reset) bit 7 of value pointed by HL"
-                (1, (8,), ext_clr(7, A))]        # BF - "Clear (reset) bit 7 of A"
+def LD_32(self): # 32 LD (HL-),A
+    self.mb[self.HL] = self.A
+    self.HL -= 1
+    self.PC += 1
+    return 0
 
-ext_set = lambda b, r: lambda s, e: s.setReg(r, s.CPU_EXT_SET(b, s.reg[r])) or s.setPC(e)
+def INC_33(self): # 33 INC SP
+    t = self.SP+1
+    # No flag operations
+    t &= 0xFFFF
+    self.SP = t
+    self.PC += 1
+    return 0
 
-CB_prefix_Cx = [(1, (8,), ext_set(0, B)),        # C0 - "Set bit 0 of B"
-                (1, (8,), ext_set(0, C)),        # C1 - "Set bit 0 of C"
-                (1, (8,), ext_set(0, D)),        # C2 - "Set bit 0 of D"
-                (1, (8,), ext_set(0, E)),        # C3 - "Set bit 0 of E"
-                (1, (8,), ext_set(0, H)),        # C4 - "Set bit 0 of H"
-                (1, (8,), ext_set(0, L)),        # C5 - "Set bit 0 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(0, s.mb[s.getHL()])) or s.setPC(e)),  # C6 - "Set bit 0 of value pointed by HL"
-                (1, (8,), ext_set(0, A)),        # C7 - "Set bit 0 of A"
-                (1, (8,), ext_set(1, B)),        # C8 - "Set bit 1 of B"
-                (1, (8,), ext_set(1, C)),        # C9 - "Set bit 1 of C"
-                (1, (8,), ext_set(1, D)),        # CA - "Set bit 1 of D"
-                (1, (8,), ext_set(1, E)),        # CB - "Set bit 1 of E"
-                (1, (8,), ext_set(1, H)),        # CC - "Set bit 1 of H"
-                (1, (8,), ext_set(1, L)),        # CD - "Set bit 1 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(1, s.mb[s.getHL()])) or s.setPC(e)),  # CE - "Set bit 1 of value pointed by HL"
-                (1, (8,), ext_set(1, A))]        # CF - "Set bit 1 of A"
+def INC_34(self): # 34 INC (HL)
+    t = self.mb[self.HL]+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.mb[self.HL] & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 1
+    return 0
 
-CB_prefix_Dx = [(1, (8,), ext_set(2, B)),        # D0 - "Set bit 2 of B"
-                (1, (8,), ext_set(2, C)),        # D1 - "Set bit 2 of C"
-                (1, (8,), ext_set(2, D)),        # D2 - "Set bit 2 of D"
-                (1, (8,), ext_set(2, E)),        # D3 - "Set bit 2 of E"
-                (1, (8,), ext_set(2, H)),        # D4 - "Set bit 2 of H"
-                (1, (8,), ext_set(2, L)),        # D5 - "Set bit 2 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(2, s.mb[s.getHL()])) or s.setPC(e)),  # D6 - "Set bit 2 of value pointed by HL"
-                (1, (8,), ext_set(2, A)),        # D7 - "Set bit 2 of A"
-                (1, (8,), ext_set(3, B)),        # D8 - "Set bit 3 of B"
-                (1, (8,), ext_set(3, C)),        # D9 - "Set bit 3 of C"
-                (1, (8,), ext_set(3, D)),        # DA - "Set bit 3 of D"
-                (1, (8,), ext_set(3, E)),        # DB - "Set bit 3 of E"
-                (1, (8,), ext_set(3, H)),        # DC - "Set bit 3 of H"
-                (1, (8,), ext_set(3, L)),        # DD - "Set bit 3 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(3, s.mb[s.getHL()])) or s.setPC(e)),  # DE - "Set bit 3 of value pointed by HL"
-                (1, (8,), ext_set(3, A))]        # DF - "Set bit 3 of A"
+def DEC_35(self): # 35 DEC (HL)
+    t = self.mb[self.HL]-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.mb[self.HL] & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 1
+    return 0
 
-CB_prefix_Ex = [(1, (8,), ext_set(4, B)),        # E0 - "Set bit 4 of B"
-                (1, (8,), ext_set(4, C)),        # E1 - "Set bit 4 of C"
-                (1, (8,), ext_set(4, D)),        # E2 - "Set bit 4 of D"
-                (1, (8,), ext_set(4, E)),        # E3 - "Set bit 4 of E"
-                (1, (8,), ext_set(4, H)),        # E4 - "Set bit 4 of H"
-                (1, (8,), ext_set(4, L)),        # E5 - "Set bit 4 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(4, s.mb[s.getHL()])) or s.setPC(e)),  # E6 - "Set bit 4 of value pointed by HL"
-                (1, (8,), ext_set(4, A)),        # E7 - "Set bit 4 of A"
-                (1, (8,), ext_set(5, B)),        # E8 - "Set bit 5 of B"
-                (1, (8,), ext_set(5, C)),        # E9 - "Set bit 5 of C"
-                (1, (8,), ext_set(5, D)),        # EA - "Set bit 5 of D"
-                (1, (8,), ext_set(5, E)),        # EB - "Set bit 5 of E"
-                (1, (8,), ext_set(5, H)),        # EC - "Set bit 5 of H"
-                (1, (8,), ext_set(5, L)),        # ED - "Set bit 5 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(5, s.mb[s.getHL()])) or s.setPC(e)),  # EE - "Set bit 5 of value pointed by HL"
-                (1, (8,), ext_set(5, A))]        # EF - "Set bit 5 of A"
+def LD_36(self, v): # 36 LD (HL),d8
+    self.mb[self.HL] = v
+    self.PC += 2
+    return 0
 
-CB_prefix_Fx = [(1, (8,), ext_set(6, B)),        # F0 - "Set bit 6 of B"
-                (1, (8,), ext_set(6, C)),        # F1 - "Set bit 6 of C"
-                (1, (8,), ext_set(6, D)),        # F2 - "Set bit 6 of D"
-                (1, (8,), ext_set(6, E)),        # F3 - "Set bit 6 of E"
-                (1, (8,), ext_set(6, H)),        # F4 - "Set bit 6 of H"
-                (1, (8,), ext_set(6, L)),        # F5 - "Set bit 6 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(6, s.mb[s.getHL()])) or s.setPC(e)),  # F6 - "Set bit 6 of value pointed by HL"
-                (1, (8,), ext_set(6, A)),        # F7 - "Set bit 6 of A"
-                (1, (8,), ext_set(7, B)),        # F8 - "Set bit 7 of B"
-                (1, (8,), ext_set(7, C)),        # F9 - "Set bit 7 of C"
-                (1, (8,), ext_set(7, D)),        # FA - "Set bit 7 of D"
-                (1, (8,), ext_set(7, E)),        # FB - "Set bit 7 of E"
-                (1, (8,), ext_set(7, H)),        # FC - "Set bit 7 of H"
-                (1, (8,), ext_set(7, L)),        # FD - "Set bit 7 of L"
-                (1, (16,), lambda s, e: s.mb.__setitem__(s.getHL(), s.CPU_EXT_SET(7, s.mb[s.getHL()])) or s.setPC(e)),  # FE - "Set bit 7 of value pointed by HL"
-                (1, (8,), ext_set(7, A))]        # FF - "Set bit 7 of A"
+def SCF_37(self): # 37 SCF
+    flag = 0b00010000
+    self.F &= 0b10000000
+    self.F |= flag
+    self.PC += 1
+    return 0
 
-opcodes = []
-opcodes.extend(opcode_0x)
-opcodes.extend(opcode_1x)
-opcodes.extend(opcode_2x)
-opcodes.extend(opcode_3x)
-opcodes.extend(opcode_4x)
-opcodes.extend(opcode_5x)
-opcodes.extend(opcode_6x)
-opcodes.extend(opcode_7x)
-opcodes.extend(opcode_8x)
-opcodes.extend(opcode_9x)
-opcodes.extend(opcode_Ax)
-opcodes.extend(opcode_Bx)
-opcodes.extend(opcode_Cx)
-opcodes.extend(opcode_Dx)
-opcodes.extend(opcode_Ex)
-opcodes.extend(opcode_Fx)
-opcodes.extend(CB_prefix_0x)
-opcodes.extend(CB_prefix_1x)
-opcodes.extend(CB_prefix_2x)
-opcodes.extend(CB_prefix_3x)
-opcodes.extend(CB_prefix_4x)
-opcodes.extend(CB_prefix_5x)
-opcodes.extend(CB_prefix_6x)
-opcodes.extend(CB_prefix_7x)
-opcodes.extend(CB_prefix_8x)
-opcodes.extend(CB_prefix_9x)
-opcodes.extend(CB_prefix_Ax)
-opcodes.extend(CB_prefix_Bx)
-opcodes.extend(CB_prefix_Cx)
-opcodes.extend(CB_prefix_Dx)
-opcodes.extend(CB_prefix_Ex)
-opcodes.extend(CB_prefix_Fx)
+def JR_38(self, v): # 38 JR C,r8
+    self.PC += 2
+    if self.fC:
+        self.PC += getSignedInt8(v)
+        return 0
+    else:
+        return 1
+
+def ADD_39(self): # 39 ADD HL,SP
+    t = self.HL+self.SP
+    flag = 0b00000000
+    flag += (((self.HL & 0xFFF) + (self.SP & 0xFFF)) > 0xFFF) << flagH
+    flag += (t > 0xFFFF) << flagC
+    self.F &= 0b10000000
+    self.F |= flag
+    t &= 0xFFFF
+    self.HL = t
+    self.PC += 1
+    return 0
+
+def LD_3a(self): # 3a LD A,(HL-)
+    self.A = self.mb[self.HL]
+    self.HL -= 1
+    self.PC += 1
+    return 0
+
+def DEC_3b(self): # 3b DEC SP
+    t = self.SP-1
+    # No flag operations
+    t &= 0xFFFF
+    self.SP = t
+    self.PC += 1
+    return 0
+
+def INC_3c(self): # 3c INC A
+    t = self.A+1
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (1 & 0xF)) > 0xF) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def DEC_3d(self): # 3d DEC A
+    t = self.A-1
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (1 & 0xF)) < 0) << flagH
+    self.F &= 0b00010000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def LD_3e(self, v): # 3e LD A,d8
+    self.A = v
+    self.PC += 2
+    return 0
+
+def CCF_3f(self): # 3f CCF
+    flag = (self.F & 0b00010000) ^ 0b00010000
+    self.F &= 0b10000000
+    self.F |= flag
+    self.PC += 1
+    return 0
+
+def LD_40(self): # 40 LD B,B
+    self.B = self.B
+    self.PC += 1
+    return 0
+
+def LD_41(self): # 41 LD B,C
+    self.B = self.C
+    self.PC += 1
+    return 0
+
+def LD_42(self): # 42 LD B,D
+    self.B = self.D
+    self.PC += 1
+    return 0
+
+def LD_43(self): # 43 LD B,E
+    self.B = self.E
+    self.PC += 1
+    return 0
+
+def LD_44(self): # 44 LD B,H
+    self.B = self.H
+    self.PC += 1
+    return 0
+
+def LD_45(self): # 45 LD B,L
+    self.B = self.L
+    self.PC += 1
+    return 0
+
+def LD_46(self): # 46 LD B,(HL)
+    self.B = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_47(self): # 47 LD B,A
+    self.B = self.A
+    self.PC += 1
+    return 0
+
+def LD_48(self): # 48 LD C,B
+    self.C = self.B
+    self.PC += 1
+    return 0
+
+def LD_49(self): # 49 LD C,C
+    self.C = self.C
+    self.PC += 1
+    return 0
+
+def LD_4a(self): # 4a LD C,D
+    self.C = self.D
+    self.PC += 1
+    return 0
+
+def LD_4b(self): # 4b LD C,E
+    self.C = self.E
+    self.PC += 1
+    return 0
+
+def LD_4c(self): # 4c LD C,H
+    self.C = self.H
+    self.PC += 1
+    return 0
+
+def LD_4d(self): # 4d LD C,L
+    self.C = self.L
+    self.PC += 1
+    return 0
+
+def LD_4e(self): # 4e LD C,(HL)
+    self.C = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_4f(self): # 4f LD C,A
+    self.C = self.A
+    self.PC += 1
+    return 0
+
+def LD_50(self): # 50 LD D,B
+    self.D = self.B
+    self.PC += 1
+    return 0
+
+def LD_51(self): # 51 LD D,C
+    self.D = self.C
+    self.PC += 1
+    return 0
+
+def LD_52(self): # 52 LD D,D
+    self.D = self.D
+    self.PC += 1
+    return 0
+
+def LD_53(self): # 53 LD D,E
+    self.D = self.E
+    self.PC += 1
+    return 0
+
+def LD_54(self): # 54 LD D,H
+    self.D = self.H
+    self.PC += 1
+    return 0
+
+def LD_55(self): # 55 LD D,L
+    self.D = self.L
+    self.PC += 1
+    return 0
+
+def LD_56(self): # 56 LD D,(HL)
+    self.D = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_57(self): # 57 LD D,A
+    self.D = self.A
+    self.PC += 1
+    return 0
+
+def LD_58(self): # 58 LD E,B
+    self.E = self.B
+    self.PC += 1
+    return 0
+
+def LD_59(self): # 59 LD E,C
+    self.E = self.C
+    self.PC += 1
+    return 0
+
+def LD_5a(self): # 5a LD E,D
+    self.E = self.D
+    self.PC += 1
+    return 0
+
+def LD_5b(self): # 5b LD E,E
+    self.E = self.E
+    self.PC += 1
+    return 0
+
+def LD_5c(self): # 5c LD E,H
+    self.E = self.H
+    self.PC += 1
+    return 0
+
+def LD_5d(self): # 5d LD E,L
+    self.E = self.L
+    self.PC += 1
+    return 0
+
+def LD_5e(self): # 5e LD E,(HL)
+    self.E = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_5f(self): # 5f LD E,A
+    self.E = self.A
+    self.PC += 1
+    return 0
+
+def LD_60(self): # 60 LD H,B
+    self.H = self.B
+    self.PC += 1
+    return 0
+
+def LD_61(self): # 61 LD H,C
+    self.H = self.C
+    self.PC += 1
+    return 0
+
+def LD_62(self): # 62 LD H,D
+    self.H = self.D
+    self.PC += 1
+    return 0
+
+def LD_63(self): # 63 LD H,E
+    self.H = self.E
+    self.PC += 1
+    return 0
+
+def LD_64(self): # 64 LD H,H
+    self.H = self.H
+    self.PC += 1
+    return 0
+
+def LD_65(self): # 65 LD H,L
+    self.H = self.L
+    self.PC += 1
+    return 0
+
+def LD_66(self): # 66 LD H,(HL)
+    self.H = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_67(self): # 67 LD H,A
+    self.H = self.A
+    self.PC += 1
+    return 0
+
+def LD_68(self): # 68 LD L,B
+    self.L = self.B
+    self.PC += 1
+    return 0
+
+def LD_69(self): # 69 LD L,C
+    self.L = self.C
+    self.PC += 1
+    return 0
+
+def LD_6a(self): # 6a LD L,D
+    self.L = self.D
+    self.PC += 1
+    return 0
+
+def LD_6b(self): # 6b LD L,E
+    self.L = self.E
+    self.PC += 1
+    return 0
+
+def LD_6c(self): # 6c LD L,H
+    self.L = self.H
+    self.PC += 1
+    return 0
+
+def LD_6d(self): # 6d LD L,L
+    self.L = self.L
+    self.PC += 1
+    return 0
+
+def LD_6e(self): # 6e LD L,(HL)
+    self.L = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_6f(self): # 6f LD L,A
+    self.L = self.A
+    self.PC += 1
+    return 0
+
+def LD_70(self): # 70 LD (HL),B
+    self.mb[self.HL] = self.B
+    self.PC += 1
+    return 0
+
+def LD_71(self): # 71 LD (HL),C
+    self.mb[self.HL] = self.C
+    self.PC += 1
+    return 0
+
+def LD_72(self): # 72 LD (HL),D
+    self.mb[self.HL] = self.D
+    self.PC += 1
+    return 0
+
+def LD_73(self): # 73 LD (HL),E
+    self.mb[self.HL] = self.E
+    self.PC += 1
+    return 0
+
+def LD_74(self): # 74 LD (HL),H
+    self.mb[self.HL] = self.H
+    self.PC += 1
+    return 0
+
+def LD_75(self): # 75 LD (HL),L
+    self.mb[self.HL] = self.L
+    self.PC += 1
+    return 0
+
+def HALT_76(self): # 76 HALT
+    if self.interruptMasterEnable:
+        self.halted = True
+    else:
+        self.PC += 1
+    return 0
+
+def LD_77(self): # 77 LD (HL),A
+    self.mb[self.HL] = self.A
+    self.PC += 1
+    return 0
+
+def LD_78(self): # 78 LD A,B
+    self.A = self.B
+    self.PC += 1
+    return 0
+
+def LD_79(self): # 79 LD A,C
+    self.A = self.C
+    self.PC += 1
+    return 0
+
+def LD_7a(self): # 7a LD A,D
+    self.A = self.D
+    self.PC += 1
+    return 0
+
+def LD_7b(self): # 7b LD A,E
+    self.A = self.E
+    self.PC += 1
+    return 0
+
+def LD_7c(self): # 7c LD A,H
+    self.A = self.H
+    self.PC += 1
+    return 0
+
+def LD_7d(self): # 7d LD A,L
+    self.A = self.L
+    self.PC += 1
+    return 0
+
+def LD_7e(self): # 7e LD A,(HL)
+    self.A = self.mb[self.HL]
+    self.PC += 1
+    return 0
+
+def LD_7f(self): # 7f LD A,A
+    self.A = self.A
+    self.PC += 1
+    return 0
+
+def ADD_80(self): # 80 ADD A,B
+    t = self.A+self.B
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.B & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_81(self): # 81 ADD A,C
+    t = self.A+self.C
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.C & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_82(self): # 82 ADD A,D
+    t = self.A+self.D
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.D & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_83(self): # 83 ADD A,E
+    t = self.A+self.E
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.E & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_84(self): # 84 ADD A,H
+    t = self.A+self.H
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.H & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_85(self): # 85 ADD A,L
+    t = self.A+self.L
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.L & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_86(self): # 86 ADD A,(HL)
+    t = self.A+self.mb[self.HL]
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.mb[self.HL] & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADD_87(self): # 87 ADD A,A
+    t = self.A+self.A
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.A & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_88(self): # 88 ADC A,B
+    t = self.A+self.B+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.B & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_89(self): # 89 ADC A,C
+    t = self.A+self.C+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.C & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_8a(self): # 8a ADC A,D
+    t = self.A+self.D+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.D & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_8b(self): # 8b ADC A,E
+    t = self.A+self.E+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.E & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_8c(self): # 8c ADC A,H
+    t = self.A+self.H+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.H & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_8d(self): # 8d ADC A,L
+    t = self.A+self.L+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.L & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_8e(self): # 8e ADC A,(HL)
+    t = self.A+self.mb[self.HL]+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.mb[self.HL] & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def ADC_8f(self): # 8f ADC A,A
+    t = self.A+self.A+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (self.A & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_90(self): # 90 SUB B
+    t = self.A-self.B
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.B & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_91(self): # 91 SUB C
+    t = self.A-self.C
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.C & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_92(self): # 92 SUB D
+    t = self.A-self.D
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.D & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_93(self): # 93 SUB E
+    t = self.A-self.E
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.E & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_94(self): # 94 SUB H
+    t = self.A-self.H
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.H & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_95(self): # 95 SUB L
+    t = self.A-self.L
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.L & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_96(self): # 96 SUB (HL)
+    t = self.A-self.mb[self.HL]
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.mb[self.HL] & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SUB_97(self): # 97 SUB A
+    t = self.A-self.A
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.A & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_98(self): # 98 SBC A,B
+    t = self.A-self.B- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.B & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_99(self): # 99 SBC A,C
+    t = self.A-self.C- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.C & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_9a(self): # 9a SBC A,D
+    t = self.A-self.D- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.D & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_9b(self): # 9b SBC A,E
+    t = self.A-self.E- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.E & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_9c(self): # 9c SBC A,H
+    t = self.A-self.H- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.H & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_9d(self): # 9d SBC A,L
+    t = self.A-self.L- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.L & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_9e(self): # 9e SBC A,(HL)
+    t = self.A-self.mb[self.HL]- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.mb[self.HL] & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def SBC_9f(self): # 9f SBC A,A
+    t = self.A-self.A- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.A & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a0(self): # a0 AND B
+    t = self.A&self.B
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a1(self): # a1 AND C
+    t = self.A&self.C
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a2(self): # a2 AND D
+    t = self.A&self.D
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a3(self): # a3 AND E
+    t = self.A&self.E
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a4(self): # a4 AND H
+    t = self.A&self.H
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a5(self): # a5 AND L
+    t = self.A&self.L
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a6(self): # a6 AND (HL)
+    t = self.A&self.mb[self.HL]
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def AND_a7(self): # a7 AND A
+    t = self.A&self.A
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_a8(self): # a8 XOR B
+    t = self.A^self.B
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_a9(self): # a9 XOR C
+    t = self.A^self.C
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_aa(self): # aa XOR D
+    t = self.A^self.D
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_ab(self): # ab XOR E
+    t = self.A^self.E
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_ac(self): # ac XOR H
+    t = self.A^self.H
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_ad(self): # ad XOR L
+    t = self.A^self.L
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_ae(self): # ae XOR (HL)
+    t = self.A^self.mb[self.HL]
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def XOR_af(self): # af XOR A
+    t = self.A^self.A
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b0(self): # b0 OR B
+    t = self.A|self.B
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b1(self): # b1 OR C
+    t = self.A|self.C
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b2(self): # b2 OR D
+    t = self.A|self.D
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b3(self): # b3 OR E
+    t = self.A|self.E
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b4(self): # b4 OR H
+    t = self.A|self.H
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b5(self): # b5 OR L
+    t = self.A|self.L
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b6(self): # b6 OR (HL)
+    t = self.A|self.mb[self.HL]
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def OR_b7(self): # b7 OR A
+    t = self.A|self.A
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 1
+    return 0
+
+def CP_b8(self): # b8 CP B
+    t = self.A-self.B
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.B & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_b9(self): # b9 CP C
+    t = self.A-self.C
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.C & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_ba(self): # ba CP D
+    t = self.A-self.D
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.D & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_bb(self): # bb CP E
+    t = self.A-self.E
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.E & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_bc(self): # bc CP H
+    t = self.A-self.H
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.H & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_bd(self): # bd CP L
+    t = self.A-self.L
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.L & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_be(self): # be CP (HL)
+    t = self.A-self.mb[self.HL]
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.mb[self.HL] & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def CP_bf(self): # bf CP A
+    t = self.A-self.A
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (self.A & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 1
+    return 0
+
+def RET_c0(self): # c0 RET NZ
+    if self.fNZ:
+        self.PC = self.mb[self.SP+1] << 8 # High
+        self.PC += self.mb[self.SP] # Low
+        self.SP += 2
+        return 0
+    else:
+        self.PC += 1
+        return 1
+
+def POP_c1(self): # c1 POP BC
+    self.B = self.mb[self.SP+1] # High
+    self.C = self.mb[self.SP] # Low
+    self.SP += 2
+    self.PC += 1
+    return 0
+
+def JP_c2(self, v): # c2 JP NZ,a16
+    if self.fNZ:
+        self.PC = v
+        return 0
+    else:
+        self.PC += 3
+        return 1
+
+def JP_c3(self, v): # c3 JP a16
+    self.PC = v
+    return 0
+
+def CALL_c4(self, v): # c4 CALL NZ,a16
+    self.PC += 3
+    if self.fNZ:
+        self.mb[self.SP-1] = self.PC >> 8 # High
+        self.mb[self.SP-2] = self.PC & 0xFF # Low
+        self.SP -= 2
+        self.PC = v
+        return 0
+    else:
+        return 1
+
+def PUSH_c5(self): # c5 PUSH BC
+    self.mb[self.SP-1] = self.B # High
+    self.mb[self.SP-2] = self.C # Low
+    self.SP -= 2
+    self.PC += 1
+    return 0
+
+def ADD_c6(self, v): # c6 ADD A,d8
+    t = self.A+v
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (v & 0xF)) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_c7(self): # c7 RST 00H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 0
+    return 0
+
+def RET_c8(self): # c8 RET Z
+    if self.fZ:
+        self.PC = self.mb[self.SP+1] << 8 # High
+        self.PC += self.mb[self.SP] # Low
+        self.SP += 2
+        return 0
+    else:
+        self.PC += 1
+        return 1
+
+def RET_c9(self): # c9 RET
+    self.PC = self.mb[self.SP+1] << 8 # High
+    self.PC += self.mb[self.SP] # Low
+    self.SP += 2
+    return 0
+
+def JP_ca(self, v): # ca JP Z,a16
+    if self.fZ:
+        self.PC = v
+        return 0
+    else:
+        self.PC += 3
+        return 1
+
+def CB_cb(self): # cb PREFIX CB
+    raise Exception('CB cannot be called!')
+    self.PC += 1
+    return 0
+
+def CALL_cc(self, v): # cc CALL Z,a16
+    self.PC += 3
+    if self.fZ:
+        self.mb[self.SP-1] = self.PC >> 8 # High
+        self.mb[self.SP-2] = self.PC & 0xFF # Low
+        self.SP -= 2
+        self.PC = v
+        return 0
+    else:
+        return 1
+
+def CALL_cd(self, v): # cd CALL a16
+    self.PC += 3
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = v
+    return 0
+
+def ADC_ce(self, v): # ce ADC A,d8
+    t = self.A+v+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) + (v & 0xF) + self.fC) > 0xF) << flagH
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_cf(self): # cf RST 08H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 8
+    return 0
+
+def RET_d0(self): # d0 RET NC
+    if self.fNC:
+        self.PC = self.mb[self.SP+1] << 8 # High
+        self.PC += self.mb[self.SP] # Low
+        self.SP += 2
+        return 0
+    else:
+        self.PC += 1
+        return 1
+
+def POP_d1(self): # d1 POP DE
+    self.D = self.mb[self.SP+1] # High
+    self.E = self.mb[self.SP] # Low
+    self.SP += 2
+    self.PC += 1
+    return 0
+
+def JP_d2(self, v): # d2 JP NC,a16
+    if self.fNC:
+        self.PC = v
+        return 0
+    else:
+        self.PC += 3
+        return 1
+
+def CALL_d4(self, v): # d4 CALL NC,a16
+    self.PC += 3
+    if self.fNC:
+        self.mb[self.SP-1] = self.PC >> 8 # High
+        self.mb[self.SP-2] = self.PC & 0xFF # Low
+        self.SP -= 2
+        self.PC = v
+        return 0
+    else:
+        return 1
+
+def PUSH_d5(self): # d5 PUSH DE
+    self.mb[self.SP-1] = self.D # High
+    self.mb[self.SP-2] = self.E # Low
+    self.SP -= 2
+    self.PC += 1
+    return 0
+
+def SUB_d6(self, v): # d6 SUB d8
+    t = self.A-v
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (v & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_d7(self): # d7 RST 10H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 16
+    return 0
+
+def RET_d8(self): # d8 RET C
+    if self.fC:
+        self.PC = self.mb[self.SP+1] << 8 # High
+        self.PC += self.mb[self.SP] # Low
+        self.SP += 2
+        return 0
+    else:
+        self.PC += 1
+        return 1
+
+def RETI_d9(self): # d9 RETI
+    self.interruptMasterEnable = True
+    self.PC = self.mb[self.SP+1] << 8 # High
+    self.PC += self.mb[self.SP] # Low
+    self.SP += 2
+    return 0
+
+def JP_da(self, v): # da JP C,a16
+    if self.fC:
+        self.PC = v
+        return 0
+    else:
+        self.PC += 3
+        return 1
+
+def CALL_dc(self, v): # dc CALL C,a16
+    self.PC += 3
+    if self.fC:
+        self.mb[self.SP-1] = self.PC >> 8 # High
+        self.mb[self.SP-2] = self.PC & 0xFF # Low
+        self.SP -= 2
+        self.PC = v
+        return 0
+    else:
+        return 1
+
+def SBC_de(self, v): # de SBC A,d8
+    t = self.A-v- self.fC
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (v & 0xF) - self.fC) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_df(self): # df RST 18H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 24
+    return 0
+
+def LD_e0(self, v): # e0 LDH (a8),A
+    self.mb[v + 0xFF00] = self.A
+    self.PC += 2
+    return 0
+
+def POP_e1(self): # e1 POP HL
+    self.HL = (self.mb[self.SP+1] << 8) + self.mb[self.SP] # High
+    self.SP += 2
+    self.PC += 1
+    return 0
+
+def LD_e2(self): # e2 LD (C),A
+    self.mb[0xFF00 + self.C] = self.A
+    self.PC += 1
+    return 0
+
+def PUSH_e5(self): # e5 PUSH HL
+    self.mb[self.SP-1] = self.HL >> 8 # High
+    self.mb[self.SP-2] = self.HL & 0xFF # Low
+    self.SP -= 2
+    self.PC += 1
+    return 0
+
+def AND_e6(self, v): # e6 AND d8
+    t = self.A&v
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_e7(self): # e7 RST 20H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 32
+    return 0
+
+def ADD_e8(self, v): # e8 ADD SP,r8
+    t = self.SP+getSignedInt8(v)
+    flag = 0b00000000
+    flag += (((self.SP & 0xFFF) + (getSignedInt8(v) & 0xFFF)) > 0xFFF) << flagH
+    flag += (t > 0xFFFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFFFF
+    self.SP = t
+    self.PC += 2
+    return 0
+
+def JP_e9(self): # e9 JP (HL)
+    self.PC = self.HL
+    return 0
+
+def LD_ea(self, v): # ea LD (a16),A
+    self.mb[v] = self.A
+    self.PC += 3
+    return 0
+
+def XOR_ee(self, v): # ee XOR d8
+    t = self.A^v
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_ef(self): # ef RST 28H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 40
+    return 0
+
+def LD_f0(self, v): # f0 LDH A,(a8)
+    self.A = self.mb[v + 0xFF00]
+    self.PC += 2
+    return 0
+
+def POP_f1(self): # f1 POP AF
+    self.A = self.mb[self.SP+1] # High
+    self.F = self.mb[self.SP] # Low
+    self.SP += 2
+    self.PC += 1
+    return 0
+
+def LD_f2(self): # f2 LD A,(C)
+    self.A = self.mb[0xFF00 + self.C]
+    self.PC += 1
+    return 0
+
+def DI_f3(self): # f3 DI
+    self.interruptMasterEnable = False
+    self.PC += 1
+    return 0
+
+def PUSH_f5(self): # f5 PUSH AF
+    self.mb[self.SP-1] = self.A # High
+    self.mb[self.SP-2] = self.F # Low
+    self.SP -= 2
+    self.PC += 1
+    return 0
+
+def OR_f6(self, v): # f6 OR d8
+    t = self.A|v
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RST_f7(self): # f7 RST 30H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 48
+    return 0
+
+def LD_f8(self, v): # f8 LD HL,SP+r8
+    self.HL = self.SP + getSignedInt8(v)
+    t = self.HL
+    flag = 0b00000000
+    flag += (((self.SP & 0xFFF) + (v & 0xFFF)) > 0xFFF) << flagH
+    flag += (t > 0xFFFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def LD_f9(self): # f9 LD SP,HL
+    self.SP = self.HL
+    self.PC += 1
+    return 0
+
+def LD_fa(self, v): # fa LD A,(a16)
+    self.A = self.mb[v]
+    self.PC += 3
+    return 0
+
+def EI_fb(self): # fb EI
+    self.interruptMasterEnable = True
+    self.PC += 1
+    return 0
+
+def CP_fe(self, v): # fe CP d8
+    t = self.A-v
+    flag = 0b01000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (((self.A & 0xF) - (v & 0xF)) < 0) << flagH
+    flag += (t < 0) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.PC += 2
+    return 0
+
+def RST_ff(self): # ff RST 38H
+    self.PC += 1
+    self.mb[self.SP-1] = self.PC >> 8 # High
+    self.mb[self.SP-2] = self.PC & 0xFF # Low
+    self.SP -= 2
+    self.PC = 56
+    return 0
+
+def RLC_100(self): # 100 RLC B
+    t = (self.B << 1) + (self.B >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RLC_101(self): # 101 RLC C
+    t = (self.C << 1) + (self.C >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RLC_102(self): # 102 RLC D
+    t = (self.D << 1) + (self.D >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RLC_103(self): # 103 RLC E
+    t = (self.E << 1) + (self.E >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RLC_104(self): # 104 RLC H
+    t = (self.H << 1) + (self.H >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RLC_105(self): # 105 RLC L
+    t = (self.L << 1) + (self.L >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RLC_106(self): # 106 RLC (HL)
+    t = (self.mb[self.HL] << 1) + (self.mb[self.HL] >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RLC_107(self): # 107 RLC A
+    t = (self.A << 1) + (self.A >> 7)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RRC_108(self): # 108 RRC B
+    t = (self.B >> 1) + ((self.B & 1) << 7)+ ((self.B & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RRC_109(self): # 109 RRC C
+    t = (self.C >> 1) + ((self.C & 1) << 7)+ ((self.C & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RRC_10a(self): # 10a RRC D
+    t = (self.D >> 1) + ((self.D & 1) << 7)+ ((self.D & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RRC_10b(self): # 10b RRC E
+    t = (self.E >> 1) + ((self.E & 1) << 7)+ ((self.E & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RRC_10c(self): # 10c RRC H
+    t = (self.H >> 1) + ((self.H & 1) << 7)+ ((self.H & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RRC_10d(self): # 10d RRC L
+    t = (self.L >> 1) + ((self.L & 1) << 7)+ ((self.L & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RRC_10e(self): # 10e RRC (HL)
+    t = (self.mb[self.HL] >> 1) + ((self.mb[self.HL] & 1) << 7)+ ((self.mb[self.HL] & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RRC_10f(self): # 10f RRC A
+    t = (self.A >> 1) + ((self.A & 1) << 7)+ ((self.A & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RL_110(self): # 110 RL B
+    t = (self.B << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RL_111(self): # 111 RL C
+    t = (self.C << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RL_112(self): # 112 RL D
+    t = (self.D << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RL_113(self): # 113 RL E
+    t = (self.E << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RL_114(self): # 114 RL H
+    t = (self.H << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RL_115(self): # 115 RL L
+    t = (self.L << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RL_116(self): # 116 RL (HL)
+    t = (self.mb[self.HL] << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RL_117(self): # 117 RL A
+    t = (self.A << 1)+ self.fC
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RR_118(self): # 118 RR B
+    t = (self.B >> 1)+ (self.fC << 7)+ ((self.B & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RR_119(self): # 119 RR C
+    t = (self.C >> 1)+ (self.fC << 7)+ ((self.C & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RR_11a(self): # 11a RR D
+    t = (self.D >> 1)+ (self.fC << 7)+ ((self.D & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RR_11b(self): # 11b RR E
+    t = (self.E >> 1)+ (self.fC << 7)+ ((self.E & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RR_11c(self): # 11c RR H
+    t = (self.H >> 1)+ (self.fC << 7)+ ((self.H & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RR_11d(self): # 11d RR L
+    t = (self.L >> 1)+ (self.fC << 7)+ ((self.L & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RR_11e(self): # 11e RR (HL)
+    t = (self.mb[self.HL] >> 1)+ (self.fC << 7)+ ((self.mb[self.HL] & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RR_11f(self): # 11f RR A
+    t = (self.A >> 1)+ (self.fC << 7)+ ((self.A & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SLA_120(self): # 120 SLA B
+    t = (self.B << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SLA_121(self): # 121 SLA C
+    t = (self.C << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SLA_122(self): # 122 SLA D
+    t = (self.D << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SLA_123(self): # 123 SLA E
+    t = (self.E << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SLA_124(self): # 124 SLA H
+    t = (self.H << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SLA_125(self): # 125 SLA L
+    t = (self.L << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SLA_126(self): # 126 SLA (HL)
+    t = (self.mb[self.HL] << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SLA_127(self): # 127 SLA A
+    t = (self.A << 1)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SRA_128(self): # 128 SRA B
+    t = ((self.B >> 1) | (self.B & 0x80)) + ((self.B & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SRA_129(self): # 129 SRA C
+    t = ((self.C >> 1) | (self.C & 0x80)) + ((self.C & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SRA_12a(self): # 12a SRA D
+    t = ((self.D >> 1) | (self.D & 0x80)) + ((self.D & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SRA_12b(self): # 12b SRA E
+    t = ((self.E >> 1) | (self.E & 0x80)) + ((self.E & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SRA_12c(self): # 12c SRA H
+    t = ((self.H >> 1) | (self.H & 0x80)) + ((self.H & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SRA_12d(self): # 12d SRA L
+    t = ((self.L >> 1) | (self.L & 0x80)) + ((self.L & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SRA_12e(self): # 12e SRA (HL)
+    t = ((self.mb[self.HL] >> 1) | (self.mb[self.HL] & 0x80)) + ((self.mb[self.HL] & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SRA_12f(self): # 12f SRA A
+    t = ((self.A >> 1) | (self.A & 0x80)) + ((self.A & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SWAP_130(self): # 130 SWAP B
+    t = ((self.B & 0xF0) >> 4) | ((self.B & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SWAP_131(self): # 131 SWAP C
+    t = ((self.C & 0xF0) >> 4) | ((self.C & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SWAP_132(self): # 132 SWAP D
+    t = ((self.D & 0xF0) >> 4) | ((self.D & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SWAP_133(self): # 133 SWAP E
+    t = ((self.E & 0xF0) >> 4) | ((self.E & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SWAP_134(self): # 134 SWAP H
+    t = ((self.H & 0xF0) >> 4) | ((self.H & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SWAP_135(self): # 135 SWAP L
+    t = ((self.L & 0xF0) >> 4) | ((self.L & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SWAP_136(self): # 136 SWAP (HL)
+    t = ((self.mb[self.HL] & 0xF0) >> 4) | ((self.mb[self.HL] & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SWAP_137(self): # 137 SWAP A
+    t = ((self.A & 0xF0) >> 4) | ((self.A & 0x0F) << 4)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SRL_138(self): # 138 SRL B
+    t = (self.B >> 1) + ((self.B & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SRL_139(self): # 139 SRL C
+    t = (self.C >> 1) + ((self.C & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SRL_13a(self): # 13a SRL D
+    t = (self.D >> 1) + ((self.D & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SRL_13b(self): # 13b SRL E
+    t = (self.E >> 1) + ((self.E & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SRL_13c(self): # 13c SRL H
+    t = (self.H >> 1) + ((self.H & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SRL_13d(self): # 13d SRL L
+    t = (self.L >> 1) + ((self.L & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SRL_13e(self): # 13e SRL (HL)
+    t = (self.mb[self.HL] >> 1) + ((self.mb[self.HL] & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SRL_13f(self): # 13f SRL A
+    t = (self.A >> 1) + ((self.A & 1) << 8)
+    flag = 0b00000000
+    flag += ((t & 0xFF) == 0) << flagZ
+    flag += (t > 0xFF) << flagC
+    self.F &= 0b00000000
+    self.F |= flag
+    t &= 0xFF
+    self.A = t
+    self.PC += 2
+    return 0
+
+def BIT_140(self): # 140 BIT 0,B
+    t = self.B & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_141(self): # 141 BIT 0,C
+    t = self.C & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_142(self): # 142 BIT 0,D
+    t = self.D & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_143(self): # 143 BIT 0,E
+    t = self.E & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_144(self): # 144 BIT 0,H
+    t = self.H & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_145(self): # 145 BIT 0,L
+    t = self.L & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_146(self): # 146 BIT 0,(HL)
+    t = self.mb[self.HL] & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_147(self): # 147 BIT 0,A
+    t = self.A & (1 << 0)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_148(self): # 148 BIT 1,B
+    t = self.B & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_149(self): # 149 BIT 1,C
+    t = self.C & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_14a(self): # 14a BIT 1,D
+    t = self.D & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_14b(self): # 14b BIT 1,E
+    t = self.E & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_14c(self): # 14c BIT 1,H
+    t = self.H & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_14d(self): # 14d BIT 1,L
+    t = self.L & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_14e(self): # 14e BIT 1,(HL)
+    t = self.mb[self.HL] & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_14f(self): # 14f BIT 1,A
+    t = self.A & (1 << 1)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_150(self): # 150 BIT 2,B
+    t = self.B & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_151(self): # 151 BIT 2,C
+    t = self.C & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_152(self): # 152 BIT 2,D
+    t = self.D & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_153(self): # 153 BIT 2,E
+    t = self.E & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_154(self): # 154 BIT 2,H
+    t = self.H & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_155(self): # 155 BIT 2,L
+    t = self.L & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_156(self): # 156 BIT 2,(HL)
+    t = self.mb[self.HL] & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_157(self): # 157 BIT 2,A
+    t = self.A & (1 << 2)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_158(self): # 158 BIT 3,B
+    t = self.B & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_159(self): # 159 BIT 3,C
+    t = self.C & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_15a(self): # 15a BIT 3,D
+    t = self.D & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_15b(self): # 15b BIT 3,E
+    t = self.E & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_15c(self): # 15c BIT 3,H
+    t = self.H & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_15d(self): # 15d BIT 3,L
+    t = self.L & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_15e(self): # 15e BIT 3,(HL)
+    t = self.mb[self.HL] & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_15f(self): # 15f BIT 3,A
+    t = self.A & (1 << 3)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_160(self): # 160 BIT 4,B
+    t = self.B & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_161(self): # 161 BIT 4,C
+    t = self.C & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_162(self): # 162 BIT 4,D
+    t = self.D & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_163(self): # 163 BIT 4,E
+    t = self.E & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_164(self): # 164 BIT 4,H
+    t = self.H & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_165(self): # 165 BIT 4,L
+    t = self.L & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_166(self): # 166 BIT 4,(HL)
+    t = self.mb[self.HL] & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_167(self): # 167 BIT 4,A
+    t = self.A & (1 << 4)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_168(self): # 168 BIT 5,B
+    t = self.B & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_169(self): # 169 BIT 5,C
+    t = self.C & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_16a(self): # 16a BIT 5,D
+    t = self.D & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_16b(self): # 16b BIT 5,E
+    t = self.E & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_16c(self): # 16c BIT 5,H
+    t = self.H & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_16d(self): # 16d BIT 5,L
+    t = self.L & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_16e(self): # 16e BIT 5,(HL)
+    t = self.mb[self.HL] & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_16f(self): # 16f BIT 5,A
+    t = self.A & (1 << 5)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_170(self): # 170 BIT 6,B
+    t = self.B & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_171(self): # 171 BIT 6,C
+    t = self.C & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_172(self): # 172 BIT 6,D
+    t = self.D & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_173(self): # 173 BIT 6,E
+    t = self.E & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_174(self): # 174 BIT 6,H
+    t = self.H & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_175(self): # 175 BIT 6,L
+    t = self.L & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_176(self): # 176 BIT 6,(HL)
+    t = self.mb[self.HL] & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_177(self): # 177 BIT 6,A
+    t = self.A & (1 << 6)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_178(self): # 178 BIT 7,B
+    t = self.B & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_179(self): # 179 BIT 7,C
+    t = self.C & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_17a(self): # 17a BIT 7,D
+    t = self.D & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_17b(self): # 17b BIT 7,E
+    t = self.E & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_17c(self): # 17c BIT 7,H
+    t = self.H & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_17d(self): # 17d BIT 7,L
+    t = self.L & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_17e(self): # 17e BIT 7,(HL)
+    t = self.mb[self.HL] & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def BIT_17f(self): # 17f BIT 7,A
+    t = self.A & (1 << 7)
+    flag = 0b00100000
+    flag += ((t & 0xFF) == 0) << flagZ
+    self.F &= 0b00010000
+    self.F |= flag
+    self.PC += 2
+    return 0
+
+def RES_180(self): # 180 RES 0,B
+    t = self.B & ~(1 << 0)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_181(self): # 181 RES 0,C
+    t = self.C & ~(1 << 0)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_182(self): # 182 RES 0,D
+    t = self.D & ~(1 << 0)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_183(self): # 183 RES 0,E
+    t = self.E & ~(1 << 0)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_184(self): # 184 RES 0,H
+    t = self.H & ~(1 << 0)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_185(self): # 185 RES 0,L
+    t = self.L & ~(1 << 0)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_186(self): # 186 RES 0,(HL)
+    t = self.mb[self.HL] & ~(1 << 0)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_187(self): # 187 RES 0,A
+    t = self.A & ~(1 << 0)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_188(self): # 188 RES 1,B
+    t = self.B & ~(1 << 1)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_189(self): # 189 RES 1,C
+    t = self.C & ~(1 << 1)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_18a(self): # 18a RES 1,D
+    t = self.D & ~(1 << 1)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_18b(self): # 18b RES 1,E
+    t = self.E & ~(1 << 1)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_18c(self): # 18c RES 1,H
+    t = self.H & ~(1 << 1)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_18d(self): # 18d RES 1,L
+    t = self.L & ~(1 << 1)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_18e(self): # 18e RES 1,(HL)
+    t = self.mb[self.HL] & ~(1 << 1)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_18f(self): # 18f RES 1,A
+    t = self.A & ~(1 << 1)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_190(self): # 190 RES 2,B
+    t = self.B & ~(1 << 2)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_191(self): # 191 RES 2,C
+    t = self.C & ~(1 << 2)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_192(self): # 192 RES 2,D
+    t = self.D & ~(1 << 2)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_193(self): # 193 RES 2,E
+    t = self.E & ~(1 << 2)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_194(self): # 194 RES 2,H
+    t = self.H & ~(1 << 2)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_195(self): # 195 RES 2,L
+    t = self.L & ~(1 << 2)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_196(self): # 196 RES 2,(HL)
+    t = self.mb[self.HL] & ~(1 << 2)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_197(self): # 197 RES 2,A
+    t = self.A & ~(1 << 2)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_198(self): # 198 RES 3,B
+    t = self.B & ~(1 << 3)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_199(self): # 199 RES 3,C
+    t = self.C & ~(1 << 3)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_19a(self): # 19a RES 3,D
+    t = self.D & ~(1 << 3)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_19b(self): # 19b RES 3,E
+    t = self.E & ~(1 << 3)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_19c(self): # 19c RES 3,H
+    t = self.H & ~(1 << 3)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_19d(self): # 19d RES 3,L
+    t = self.L & ~(1 << 3)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_19e(self): # 19e RES 3,(HL)
+    t = self.mb[self.HL] & ~(1 << 3)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_19f(self): # 19f RES 3,A
+    t = self.A & ~(1 << 3)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_1a0(self): # 1a0 RES 4,B
+    t = self.B & ~(1 << 4)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_1a1(self): # 1a1 RES 4,C
+    t = self.C & ~(1 << 4)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_1a2(self): # 1a2 RES 4,D
+    t = self.D & ~(1 << 4)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_1a3(self): # 1a3 RES 4,E
+    t = self.E & ~(1 << 4)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_1a4(self): # 1a4 RES 4,H
+    t = self.H & ~(1 << 4)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_1a5(self): # 1a5 RES 4,L
+    t = self.L & ~(1 << 4)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_1a6(self): # 1a6 RES 4,(HL)
+    t = self.mb[self.HL] & ~(1 << 4)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_1a7(self): # 1a7 RES 4,A
+    t = self.A & ~(1 << 4)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_1a8(self): # 1a8 RES 5,B
+    t = self.B & ~(1 << 5)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_1a9(self): # 1a9 RES 5,C
+    t = self.C & ~(1 << 5)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_1aa(self): # 1aa RES 5,D
+    t = self.D & ~(1 << 5)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_1ab(self): # 1ab RES 5,E
+    t = self.E & ~(1 << 5)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_1ac(self): # 1ac RES 5,H
+    t = self.H & ~(1 << 5)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_1ad(self): # 1ad RES 5,L
+    t = self.L & ~(1 << 5)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_1ae(self): # 1ae RES 5,(HL)
+    t = self.mb[self.HL] & ~(1 << 5)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_1af(self): # 1af RES 5,A
+    t = self.A & ~(1 << 5)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_1b0(self): # 1b0 RES 6,B
+    t = self.B & ~(1 << 6)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_1b1(self): # 1b1 RES 6,C
+    t = self.C & ~(1 << 6)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_1b2(self): # 1b2 RES 6,D
+    t = self.D & ~(1 << 6)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_1b3(self): # 1b3 RES 6,E
+    t = self.E & ~(1 << 6)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_1b4(self): # 1b4 RES 6,H
+    t = self.H & ~(1 << 6)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_1b5(self): # 1b5 RES 6,L
+    t = self.L & ~(1 << 6)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_1b6(self): # 1b6 RES 6,(HL)
+    t = self.mb[self.HL] & ~(1 << 6)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_1b7(self): # 1b7 RES 6,A
+    t = self.A & ~(1 << 6)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def RES_1b8(self): # 1b8 RES 7,B
+    t = self.B & ~(1 << 7)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def RES_1b9(self): # 1b9 RES 7,C
+    t = self.C & ~(1 << 7)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def RES_1ba(self): # 1ba RES 7,D
+    t = self.D & ~(1 << 7)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def RES_1bb(self): # 1bb RES 7,E
+    t = self.E & ~(1 << 7)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def RES_1bc(self): # 1bc RES 7,H
+    t = self.H & ~(1 << 7)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def RES_1bd(self): # 1bd RES 7,L
+    t = self.L & ~(1 << 7)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def RES_1be(self): # 1be RES 7,(HL)
+    t = self.mb[self.HL] & ~(1 << 7)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def RES_1bf(self): # 1bf RES 7,A
+    t = self.A & ~(1 << 7)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1c0(self): # 1c0 SET 0,B
+    t = self.B | (1 << 0)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1c1(self): # 1c1 SET 0,C
+    t = self.C | (1 << 0)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1c2(self): # 1c2 SET 0,D
+    t = self.D | (1 << 0)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1c3(self): # 1c3 SET 0,E
+    t = self.E | (1 << 0)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1c4(self): # 1c4 SET 0,H
+    t = self.H | (1 << 0)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1c5(self): # 1c5 SET 0,L
+    t = self.L | (1 << 0)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1c6(self): # 1c6 SET 0,(HL)
+    t = self.mb[self.HL] | (1 << 0)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1c7(self): # 1c7 SET 0,A
+    t = self.A | (1 << 0)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1c8(self): # 1c8 SET 1,B
+    t = self.B | (1 << 1)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1c9(self): # 1c9 SET 1,C
+    t = self.C | (1 << 1)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1ca(self): # 1ca SET 1,D
+    t = self.D | (1 << 1)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1cb(self): # 1cb SET 1,E
+    t = self.E | (1 << 1)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1cc(self): # 1cc SET 1,H
+    t = self.H | (1 << 1)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1cd(self): # 1cd SET 1,L
+    t = self.L | (1 << 1)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1ce(self): # 1ce SET 1,(HL)
+    t = self.mb[self.HL] | (1 << 1)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1cf(self): # 1cf SET 1,A
+    t = self.A | (1 << 1)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1d0(self): # 1d0 SET 2,B
+    t = self.B | (1 << 2)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1d1(self): # 1d1 SET 2,C
+    t = self.C | (1 << 2)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1d2(self): # 1d2 SET 2,D
+    t = self.D | (1 << 2)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1d3(self): # 1d3 SET 2,E
+    t = self.E | (1 << 2)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1d4(self): # 1d4 SET 2,H
+    t = self.H | (1 << 2)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1d5(self): # 1d5 SET 2,L
+    t = self.L | (1 << 2)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1d6(self): # 1d6 SET 2,(HL)
+    t = self.mb[self.HL] | (1 << 2)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1d7(self): # 1d7 SET 2,A
+    t = self.A | (1 << 2)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1d8(self): # 1d8 SET 3,B
+    t = self.B | (1 << 3)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1d9(self): # 1d9 SET 3,C
+    t = self.C | (1 << 3)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1da(self): # 1da SET 3,D
+    t = self.D | (1 << 3)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1db(self): # 1db SET 3,E
+    t = self.E | (1 << 3)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1dc(self): # 1dc SET 3,H
+    t = self.H | (1 << 3)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1dd(self): # 1dd SET 3,L
+    t = self.L | (1 << 3)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1de(self): # 1de SET 3,(HL)
+    t = self.mb[self.HL] | (1 << 3)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1df(self): # 1df SET 3,A
+    t = self.A | (1 << 3)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1e0(self): # 1e0 SET 4,B
+    t = self.B | (1 << 4)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1e1(self): # 1e1 SET 4,C
+    t = self.C | (1 << 4)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1e2(self): # 1e2 SET 4,D
+    t = self.D | (1 << 4)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1e3(self): # 1e3 SET 4,E
+    t = self.E | (1 << 4)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1e4(self): # 1e4 SET 4,H
+    t = self.H | (1 << 4)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1e5(self): # 1e5 SET 4,L
+    t = self.L | (1 << 4)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1e6(self): # 1e6 SET 4,(HL)
+    t = self.mb[self.HL] | (1 << 4)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1e7(self): # 1e7 SET 4,A
+    t = self.A | (1 << 4)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1e8(self): # 1e8 SET 5,B
+    t = self.B | (1 << 5)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1e9(self): # 1e9 SET 5,C
+    t = self.C | (1 << 5)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1ea(self): # 1ea SET 5,D
+    t = self.D | (1 << 5)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1eb(self): # 1eb SET 5,E
+    t = self.E | (1 << 5)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1ec(self): # 1ec SET 5,H
+    t = self.H | (1 << 5)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1ed(self): # 1ed SET 5,L
+    t = self.L | (1 << 5)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1ee(self): # 1ee SET 5,(HL)
+    t = self.mb[self.HL] | (1 << 5)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1ef(self): # 1ef SET 5,A
+    t = self.A | (1 << 5)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1f0(self): # 1f0 SET 6,B
+    t = self.B | (1 << 6)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1f1(self): # 1f1 SET 6,C
+    t = self.C | (1 << 6)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1f2(self): # 1f2 SET 6,D
+    t = self.D | (1 << 6)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1f3(self): # 1f3 SET 6,E
+    t = self.E | (1 << 6)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1f4(self): # 1f4 SET 6,H
+    t = self.H | (1 << 6)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1f5(self): # 1f5 SET 6,L
+    t = self.L | (1 << 6)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1f6(self): # 1f6 SET 6,(HL)
+    t = self.mb[self.HL] | (1 << 6)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1f7(self): # 1f7 SET 6,A
+    t = self.A | (1 << 6)
+    self.A = t
+    self.PC += 2
+    return 0
+
+def SET_1f8(self): # 1f8 SET 7,B
+    t = self.B | (1 << 7)
+    self.B = t
+    self.PC += 2
+    return 0
+
+def SET_1f9(self): # 1f9 SET 7,C
+    t = self.C | (1 << 7)
+    self.C = t
+    self.PC += 2
+    return 0
+
+def SET_1fa(self): # 1fa SET 7,D
+    t = self.D | (1 << 7)
+    self.D = t
+    self.PC += 2
+    return 0
+
+def SET_1fb(self): # 1fb SET 7,E
+    t = self.E | (1 << 7)
+    self.E = t
+    self.PC += 2
+    return 0
+
+def SET_1fc(self): # 1fc SET 7,H
+    t = self.H | (1 << 7)
+    self.H = t
+    self.PC += 2
+    return 0
+
+def SET_1fd(self): # 1fd SET 7,L
+    t = self.L | (1 << 7)
+    self.L = t
+    self.PC += 2
+    return 0
+
+def SET_1fe(self): # 1fe SET 7,(HL)
+    t = self.mb[self.HL] | (1 << 7)
+    self.mb[self.HL] = t
+    self.PC += 2
+    return 0
+
+def SET_1ff(self): # 1ff SET 7,A
+    t = self.A | (1 << 7)
+    self.A = t
+    self.PC += 2
+    return 0
+
+opcodes = [
+    (1, (4,), NOP_00),
+    (3, (12,), LD_01),
+    (1, (8,), LD_02),
+    (1, (8,), INC_03),
+    (1, (4,), INC_04),
+    (1, (4,), DEC_05),
+    (2, (8,), LD_06),
+    (1, (4,), RLCA_07),
+    (3, (20,), LD_08),
+    (1, (8,), ADD_09),
+    (1, (8,), LD_0a),
+    (1, (8,), DEC_0b),
+    (1, (4,), INC_0c),
+    (1, (4,), DEC_0d),
+    (2, (8,), LD_0e),
+    (1, (4,), RRCA_0f),
+    (2, (4,), STOP_10),
+    (3, (12,), LD_11),
+    (1, (8,), LD_12),
+    (1, (8,), INC_13),
+    (1, (4,), INC_14),
+    (1, (4,), DEC_15),
+    (2, (8,), LD_16),
+    (1, (4,), RLA_17),
+    (2, (12,), JR_18),
+    (1, (8,), ADD_19),
+    (1, (8,), LD_1a),
+    (1, (8,), DEC_1b),
+    (1, (4,), INC_1c),
+    (1, (4,), DEC_1d),
+    (2, (8,), LD_1e),
+    (1, (4,), RRA_1f),
+    (2, (12, 8), JR_20),
+    (3, (12,), LD_21),
+    (1, (8,), LD_22),
+    (1, (8,), INC_23),
+    (1, (4,), INC_24),
+    (1, (4,), DEC_25),
+    (2, (8,), LD_26),
+    (1, (4,), DAA_27),
+    (2, (12, 8), JR_28),
+    (1, (8,), ADD_29),
+    (1, (8,), LD_2a),
+    (1, (8,), DEC_2b),
+    (1, (4,), INC_2c),
+    (1, (4,), DEC_2d),
+    (2, (8,), LD_2e),
+    (1, (4,), CPL_2f),
+    (2, (12, 8), JR_30),
+    (3, (12,), LD_31),
+    (1, (8,), LD_32),
+    (1, (8,), INC_33),
+    (1, (12,), INC_34),
+    (1, (12,), DEC_35),
+    (2, (12,), LD_36),
+    (1, (4,), SCF_37),
+    (2, (12, 8), JR_38),
+    (1, (8,), ADD_39),
+    (1, (8,), LD_3a),
+    (1, (8,), DEC_3b),
+    (1, (4,), INC_3c),
+    (1, (4,), DEC_3d),
+    (2, (8,), LD_3e),
+    (1, (4,), CCF_3f),
+    (1, (4,), LD_40),
+    (1, (4,), LD_41),
+    (1, (4,), LD_42),
+    (1, (4,), LD_43),
+    (1, (4,), LD_44),
+    (1, (4,), LD_45),
+    (1, (8,), LD_46),
+    (1, (4,), LD_47),
+    (1, (4,), LD_48),
+    (1, (4,), LD_49),
+    (1, (4,), LD_4a),
+    (1, (4,), LD_4b),
+    (1, (4,), LD_4c),
+    (1, (4,), LD_4d),
+    (1, (8,), LD_4e),
+    (1, (4,), LD_4f),
+    (1, (4,), LD_50),
+    (1, (4,), LD_51),
+    (1, (4,), LD_52),
+    (1, (4,), LD_53),
+    (1, (4,), LD_54),
+    (1, (4,), LD_55),
+    (1, (8,), LD_56),
+    (1, (4,), LD_57),
+    (1, (4,), LD_58),
+    (1, (4,), LD_59),
+    (1, (4,), LD_5a),
+    (1, (4,), LD_5b),
+    (1, (4,), LD_5c),
+    (1, (4,), LD_5d),
+    (1, (8,), LD_5e),
+    (1, (4,), LD_5f),
+    (1, (4,), LD_60),
+    (1, (4,), LD_61),
+    (1, (4,), LD_62),
+    (1, (4,), LD_63),
+    (1, (4,), LD_64),
+    (1, (4,), LD_65),
+    (1, (8,), LD_66),
+    (1, (4,), LD_67),
+    (1, (4,), LD_68),
+    (1, (4,), LD_69),
+    (1, (4,), LD_6a),
+    (1, (4,), LD_6b),
+    (1, (4,), LD_6c),
+    (1, (4,), LD_6d),
+    (1, (8,), LD_6e),
+    (1, (4,), LD_6f),
+    (1, (8,), LD_70),
+    (1, (8,), LD_71),
+    (1, (8,), LD_72),
+    (1, (8,), LD_73),
+    (1, (8,), LD_74),
+    (1, (8,), LD_75),
+    (1, (4,), HALT_76),
+    (1, (8,), LD_77),
+    (1, (4,), LD_78),
+    (1, (4,), LD_79),
+    (1, (4,), LD_7a),
+    (1, (4,), LD_7b),
+    (1, (4,), LD_7c),
+    (1, (4,), LD_7d),
+    (1, (8,), LD_7e),
+    (1, (4,), LD_7f),
+    (1, (4,), ADD_80),
+    (1, (4,), ADD_81),
+    (1, (4,), ADD_82),
+    (1, (4,), ADD_83),
+    (1, (4,), ADD_84),
+    (1, (4,), ADD_85),
+    (1, (8,), ADD_86),
+    (1, (4,), ADD_87),
+    (1, (4,), ADC_88),
+    (1, (4,), ADC_89),
+    (1, (4,), ADC_8a),
+    (1, (4,), ADC_8b),
+    (1, (4,), ADC_8c),
+    (1, (4,), ADC_8d),
+    (1, (8,), ADC_8e),
+    (1, (4,), ADC_8f),
+    (1, (4,), SUB_90),
+    (1, (4,), SUB_91),
+    (1, (4,), SUB_92),
+    (1, (4,), SUB_93),
+    (1, (4,), SUB_94),
+    (1, (4,), SUB_95),
+    (1, (8,), SUB_96),
+    (1, (4,), SUB_97),
+    (1, (4,), SBC_98),
+    (1, (4,), SBC_99),
+    (1, (4,), SBC_9a),
+    (1, (4,), SBC_9b),
+    (1, (4,), SBC_9c),
+    (1, (4,), SBC_9d),
+    (1, (8,), SBC_9e),
+    (1, (4,), SBC_9f),
+    (1, (4,), AND_a0),
+    (1, (4,), AND_a1),
+    (1, (4,), AND_a2),
+    (1, (4,), AND_a3),
+    (1, (4,), AND_a4),
+    (1, (4,), AND_a5),
+    (1, (8,), AND_a6),
+    (1, (4,), AND_a7),
+    (1, (4,), XOR_a8),
+    (1, (4,), XOR_a9),
+    (1, (4,), XOR_aa),
+    (1, (4,), XOR_ab),
+    (1, (4,), XOR_ac),
+    (1, (4,), XOR_ad),
+    (1, (8,), XOR_ae),
+    (1, (4,), XOR_af),
+    (1, (4,), OR_b0),
+    (1, (4,), OR_b1),
+    (1, (4,), OR_b2),
+    (1, (4,), OR_b3),
+    (1, (4,), OR_b4),
+    (1, (4,), OR_b5),
+    (1, (8,), OR_b6),
+    (1, (4,), OR_b7),
+    (1, (4,), CP_b8),
+    (1, (4,), CP_b9),
+    (1, (4,), CP_ba),
+    (1, (4,), CP_bb),
+    (1, (4,), CP_bc),
+    (1, (4,), CP_bd),
+    (1, (8,), CP_be),
+    (1, (4,), CP_bf),
+    (1, (20, 8), RET_c0),
+    (1, (12,), POP_c1),
+    (3, (16, 12), JP_c2),
+    (3, (16,), JP_c3),
+    (3, (24, 12), CALL_c4),
+    (1, (16,), PUSH_c5),
+    (2, (8,), ADD_c6),
+    (1, (16,), RST_c7),
+    (1, (20, 8), RET_c8),
+    (1, (16,), RET_c9),
+    (3, (16, 12), JP_ca),
+    (1, (4,), CB_cb),
+    (3, (24, 12), CALL_cc),
+    (3, (24,), CALL_cd),
+    (2, (8,), ADC_ce),
+    (1, (16,), RST_cf),
+    (1, (20, 8), RET_d0),
+    (1, (12,), POP_d1),
+    (3, (16, 12), JP_d2),
+    None,
+    (3, (24, 12), CALL_d4),
+    (1, (16,), PUSH_d5),
+    (2, (8,), SUB_d6),
+    (1, (16,), RST_d7),
+    (1, (20, 8), RET_d8),
+    (1, (16,), RETI_d9),
+    (3, (16, 12), JP_da),
+    None,
+    (3, (24, 12), CALL_dc),
+    None,
+    (2, (8,), SBC_de),
+    (1, (16,), RST_df),
+    (2, (12,), LD_e0),
+    (1, (12,), POP_e1),
+    (1, (8,), LD_e2),
+    None,
+    None,
+    (1, (16,), PUSH_e5),
+    (2, (8,), AND_e6),
+    (1, (16,), RST_e7),
+    (2, (16,), ADD_e8),
+    (1, (4,), JP_e9),
+    (3, (16,), LD_ea),
+    None,
+    None,
+    None,
+    (2, (8,), XOR_ee),
+    (1, (16,), RST_ef),
+    (2, (12,), LD_f0),
+    (1, (12,), POP_f1),
+    (1, (8,), LD_f2),
+    (1, (4,), DI_f3),
+    None,
+    (1, (16,), PUSH_f5),
+    (2, (8,), OR_f6),
+    (1, (16,), RST_f7),
+    (2, (12,), LD_f8),
+    (1, (8,), LD_f9),
+    (3, (16,), LD_fa),
+    (1, (4,), EI_fb),
+    None,
+    None,
+    (2, (8,), CP_fe),
+    (1, (16,), RST_ff),
+    (1, (8,), RLC_100),
+    (1, (8,), RLC_101),
+    (1, (8,), RLC_102),
+    (1, (8,), RLC_103),
+    (1, (8,), RLC_104),
+    (1, (8,), RLC_105),
+    (1, (16,), RLC_106),
+    (1, (8,), RLC_107),
+    (1, (8,), RRC_108),
+    (1, (8,), RRC_109),
+    (1, (8,), RRC_10a),
+    (1, (8,), RRC_10b),
+    (1, (8,), RRC_10c),
+    (1, (8,), RRC_10d),
+    (1, (16,), RRC_10e),
+    (1, (8,), RRC_10f),
+    (1, (8,), RL_110),
+    (1, (8,), RL_111),
+    (1, (8,), RL_112),
+    (1, (8,), RL_113),
+    (1, (8,), RL_114),
+    (1, (8,), RL_115),
+    (1, (16,), RL_116),
+    (1, (8,), RL_117),
+    (1, (8,), RR_118),
+    (1, (8,), RR_119),
+    (1, (8,), RR_11a),
+    (1, (8,), RR_11b),
+    (1, (8,), RR_11c),
+    (1, (8,), RR_11d),
+    (1, (16,), RR_11e),
+    (1, (8,), RR_11f),
+    (1, (8,), SLA_120),
+    (1, (8,), SLA_121),
+    (1, (8,), SLA_122),
+    (1, (8,), SLA_123),
+    (1, (8,), SLA_124),
+    (1, (8,), SLA_125),
+    (1, (16,), SLA_126),
+    (1, (8,), SLA_127),
+    (1, (8,), SRA_128),
+    (1, (8,), SRA_129),
+    (1, (8,), SRA_12a),
+    (1, (8,), SRA_12b),
+    (1, (8,), SRA_12c),
+    (1, (8,), SRA_12d),
+    (1, (16,), SRA_12e),
+    (1, (8,), SRA_12f),
+    (1, (8,), SWAP_130),
+    (1, (8,), SWAP_131),
+    (1, (8,), SWAP_132),
+    (1, (8,), SWAP_133),
+    (1, (8,), SWAP_134),
+    (1, (8,), SWAP_135),
+    (1, (16,), SWAP_136),
+    (1, (8,), SWAP_137),
+    (1, (8,), SRL_138),
+    (1, (8,), SRL_139),
+    (1, (8,), SRL_13a),
+    (1, (8,), SRL_13b),
+    (1, (8,), SRL_13c),
+    (1, (8,), SRL_13d),
+    (1, (16,), SRL_13e),
+    (1, (8,), SRL_13f),
+    (1, (8,), BIT_140),
+    (1, (8,), BIT_141),
+    (1, (8,), BIT_142),
+    (1, (8,), BIT_143),
+    (1, (8,), BIT_144),
+    (1, (8,), BIT_145),
+    (1, (16,), BIT_146),
+    (1, (8,), BIT_147),
+    (1, (8,), BIT_148),
+    (1, (8,), BIT_149),
+    (1, (8,), BIT_14a),
+    (1, (8,), BIT_14b),
+    (1, (8,), BIT_14c),
+    (1, (8,), BIT_14d),
+    (1, (16,), BIT_14e),
+    (1, (8,), BIT_14f),
+    (1, (8,), BIT_150),
+    (1, (8,), BIT_151),
+    (1, (8,), BIT_152),
+    (1, (8,), BIT_153),
+    (1, (8,), BIT_154),
+    (1, (8,), BIT_155),
+    (1, (16,), BIT_156),
+    (1, (8,), BIT_157),
+    (1, (8,), BIT_158),
+    (1, (8,), BIT_159),
+    (1, (8,), BIT_15a),
+    (1, (8,), BIT_15b),
+    (1, (8,), BIT_15c),
+    (1, (8,), BIT_15d),
+    (1, (16,), BIT_15e),
+    (1, (8,), BIT_15f),
+    (1, (8,), BIT_160),
+    (1, (8,), BIT_161),
+    (1, (8,), BIT_162),
+    (1, (8,), BIT_163),
+    (1, (8,), BIT_164),
+    (1, (8,), BIT_165),
+    (1, (16,), BIT_166),
+    (1, (8,), BIT_167),
+    (1, (8,), BIT_168),
+    (1, (8,), BIT_169),
+    (1, (8,), BIT_16a),
+    (1, (8,), BIT_16b),
+    (1, (8,), BIT_16c),
+    (1, (8,), BIT_16d),
+    (1, (16,), BIT_16e),
+    (1, (8,), BIT_16f),
+    (1, (8,), BIT_170),
+    (1, (8,), BIT_171),
+    (1, (8,), BIT_172),
+    (1, (8,), BIT_173),
+    (1, (8,), BIT_174),
+    (1, (8,), BIT_175),
+    (1, (16,), BIT_176),
+    (1, (8,), BIT_177),
+    (1, (8,), BIT_178),
+    (1, (8,), BIT_179),
+    (1, (8,), BIT_17a),
+    (1, (8,), BIT_17b),
+    (1, (8,), BIT_17c),
+    (1, (8,), BIT_17d),
+    (1, (16,), BIT_17e),
+    (1, (8,), BIT_17f),
+    (1, (8,), RES_180),
+    (1, (8,), RES_181),
+    (1, (8,), RES_182),
+    (1, (8,), RES_183),
+    (1, (8,), RES_184),
+    (1, (8,), RES_185),
+    (1, (16,), RES_186),
+    (1, (8,), RES_187),
+    (1, (8,), RES_188),
+    (1, (8,), RES_189),
+    (1, (8,), RES_18a),
+    (1, (8,), RES_18b),
+    (1, (8,), RES_18c),
+    (1, (8,), RES_18d),
+    (1, (16,), RES_18e),
+    (1, (8,), RES_18f),
+    (1, (8,), RES_190),
+    (1, (8,), RES_191),
+    (1, (8,), RES_192),
+    (1, (8,), RES_193),
+    (1, (8,), RES_194),
+    (1, (8,), RES_195),
+    (1, (16,), RES_196),
+    (1, (8,), RES_197),
+    (1, (8,), RES_198),
+    (1, (8,), RES_199),
+    (1, (8,), RES_19a),
+    (1, (8,), RES_19b),
+    (1, (8,), RES_19c),
+    (1, (8,), RES_19d),
+    (1, (16,), RES_19e),
+    (1, (8,), RES_19f),
+    (1, (8,), RES_1a0),
+    (1, (8,), RES_1a1),
+    (1, (8,), RES_1a2),
+    (1, (8,), RES_1a3),
+    (1, (8,), RES_1a4),
+    (1, (8,), RES_1a5),
+    (1, (16,), RES_1a6),
+    (1, (8,), RES_1a7),
+    (1, (8,), RES_1a8),
+    (1, (8,), RES_1a9),
+    (1, (8,), RES_1aa),
+    (1, (8,), RES_1ab),
+    (1, (8,), RES_1ac),
+    (1, (8,), RES_1ad),
+    (1, (16,), RES_1ae),
+    (1, (8,), RES_1af),
+    (1, (8,), RES_1b0),
+    (1, (8,), RES_1b1),
+    (1, (8,), RES_1b2),
+    (1, (8,), RES_1b3),
+    (1, (8,), RES_1b4),
+    (1, (8,), RES_1b5),
+    (1, (16,), RES_1b6),
+    (1, (8,), RES_1b7),
+    (1, (8,), RES_1b8),
+    (1, (8,), RES_1b9),
+    (1, (8,), RES_1ba),
+    (1, (8,), RES_1bb),
+    (1, (8,), RES_1bc),
+    (1, (8,), RES_1bd),
+    (1, (16,), RES_1be),
+    (1, (8,), RES_1bf),
+    (1, (8,), SET_1c0),
+    (1, (8,), SET_1c1),
+    (1, (8,), SET_1c2),
+    (1, (8,), SET_1c3),
+    (1, (8,), SET_1c4),
+    (1, (8,), SET_1c5),
+    (1, (16,), SET_1c6),
+    (1, (8,), SET_1c7),
+    (1, (8,), SET_1c8),
+    (1, (8,), SET_1c9),
+    (1, (8,), SET_1ca),
+    (1, (8,), SET_1cb),
+    (1, (8,), SET_1cc),
+    (1, (8,), SET_1cd),
+    (1, (16,), SET_1ce),
+    (1, (8,), SET_1cf),
+    (1, (8,), SET_1d0),
+    (1, (8,), SET_1d1),
+    (1, (8,), SET_1d2),
+    (1, (8,), SET_1d3),
+    (1, (8,), SET_1d4),
+    (1, (8,), SET_1d5),
+    (1, (16,), SET_1d6),
+    (1, (8,), SET_1d7),
+    (1, (8,), SET_1d8),
+    (1, (8,), SET_1d9),
+    (1, (8,), SET_1da),
+    (1, (8,), SET_1db),
+    (1, (8,), SET_1dc),
+    (1, (8,), SET_1dd),
+    (1, (16,), SET_1de),
+    (1, (8,), SET_1df),
+    (1, (8,), SET_1e0),
+    (1, (8,), SET_1e1),
+    (1, (8,), SET_1e2),
+    (1, (8,), SET_1e3),
+    (1, (8,), SET_1e4),
+    (1, (8,), SET_1e5),
+    (1, (16,), SET_1e6),
+    (1, (8,), SET_1e7),
+    (1, (8,), SET_1e8),
+    (1, (8,), SET_1e9),
+    (1, (8,), SET_1ea),
+    (1, (8,), SET_1eb),
+    (1, (8,), SET_1ec),
+    (1, (8,), SET_1ed),
+    (1, (16,), SET_1ee),
+    (1, (8,), SET_1ef),
+    (1, (8,), SET_1f0),
+    (1, (8,), SET_1f1),
+    (1, (8,), SET_1f2),
+    (1, (8,), SET_1f3),
+    (1, (8,), SET_1f4),
+    (1, (8,), SET_1f5),
+    (1, (16,), SET_1f6),
+    (1, (8,), SET_1f7),
+    (1, (8,), SET_1f8),
+    (1, (8,), SET_1f9),
+    (1, (8,), SET_1fa),
+    (1, (8,), SET_1fb),
+    (1, (8,), SET_1fc),
+    (1, (8,), SET_1fd),
+    (1, (16,), SET_1fe),
+    (1, (8,), SET_1ff),
+]

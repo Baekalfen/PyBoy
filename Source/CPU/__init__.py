@@ -5,24 +5,46 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from registers import A, F, B, C, D, E, H, L, SP, PC
 import CoreDump
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-from flags import flagZ, flagN, flagH, flagC # Only debugging
+from registers import _A, _F, _B, _C, _D, _E, _HL, _SP, _PC
+from flags import flagZ, flagN, flagH, flagC
 from Logger import logger
 from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 
-class CPU():
-    #  A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL, pointer, Flag
+class CPU(object): # 'object' is important for property!!!
     from opcodes import opcodes
-    from registers import reg, setReg, setAF, setBC, setDE, setHL, setPC, getAF, getBC, getDE, getHL
+    # from registers import A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL
+    from registers import reg, setA, setF, setB, setC, setD, setE, setH, setL, setAF, setBC, setDE, setHL, setPC, setSP
     from Interrupts import checkForInterrupts, testAndTriggerInterrupt
     from flags import VBlank, LCDC, TIMER, Serial, HightoLow
     from flags import testFlag, setFlag, clearFlag
-    from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled
-    from flags import testRAMRegisterFlag, setRAMRegisterFlag, clearRAMRegisterFlag, testRAMRegisterFlagEnabled
-    from operations import CPU_EI, CPU_STOP, CPU_HALT, CPU_LDD, CPU_INC8, CPU_DEC8, CPU_INC16, CPU_DEC16, CPU_ADD8, CPU_ADD16, CPU_SUB8, CPU_ADC8, CPU_SBC8, CPU_AND8, CPU_XOR8, CPU_OR8, CPU_CP, CPU_RLC, CPU_RRC, CPU_RL, CPU_RR, CPU_DAA, CPU_RET, CPU_POP, CPU_PUSH, CPU_DI, CPU_EXT_SLA, CPU_EXT_SRA, CPU_EXT_SWAP, CPU_EXT_SRL, CPU_EXT_BIT, CPU_EXT_RES, CPU_EXT_SET, CPU_EXT_RLC, CPU_EXT_RRC, CPU_EXT_RL, CPU_EXT_RR
+    from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
+
+
+    A = property(lambda s: s.reg[_A], setA)
+    F = property(lambda s: s.reg[_F], setF)
+    B = property(lambda s: s.reg[_B], setB)
+    C = property(lambda s: s.reg[_C], setC)
+    D = property(lambda s: s.reg[_D], setD)
+    E = property(lambda s: s.reg[_E], setE)
+    H = property(lambda s: s.reg[_HL] >> 8, setH)
+    L = property(lambda s: s.reg[_HL] & 0xFF, setL)
+    HL = property(lambda s: s.reg[_HL], setHL)
+    SP = property(lambda s: s.reg[_SP], setSP)
+    PC = property(lambda s: s.reg[_PC], setPC)
+
+    AF = property(lambda s:(s.reg[_A] << 8) + s.reg[_F], setAF)
+    BC = property(lambda s:(s.reg[_B] << 8) + s.reg[_C], setBC)
+    DE = property(lambda s:(s.reg[_D] << 8) + s.reg[_E], setDE)
+
+    fC = property(lambda s:bool(s.reg[_F] & (1 << flagC)), lambda s,x: s.setFlag(flagC, x))
+    fH = property(lambda s:bool(s.reg[_F] & (1 << flagH)), lambda s,x: s.setFlag(flagH, x))
+    fN = property(lambda s:bool(s.reg[_F] & (1 << flagN)), lambda s,x: s.setFlag(flagN, x))
+    fZ = property(lambda s:bool(s.reg[_F] & (1 << flagZ)), lambda s,x: s.setFlag(flagZ, x))
+    fNC = property(lambda s:not bool(s.reg[_F] & (1 << flagC)), None)
+    fNZ = property(lambda s:not bool(s.reg[_F] & (1 << flagZ)), None)
 
     def __init__(self, MB, profiling=False):
         self.mb = MB
@@ -38,7 +60,7 @@ class CPU():
 
         self.debugCallStack = []
 
-        self.reg[PC] = 0
+        self.PC = 0
 
         #debug
         self.oldPC = -1
@@ -48,9 +70,13 @@ class CPU():
         self.profiling = profiling
         self.hitRate = np.zeros(shape=(512,), dtype=int)
 
+
     def executeInstruction(self, instruction):
         # '*' unpacks tuple into arguments
         success = instruction[0](*instruction[2])
+
+        assert success is not None, "Opcode returned None! %0.2x" % self.mb[self.PC]
+
         if success:
             return instruction[1][1]  # Select correct cycles for jumps
         else:
@@ -76,14 +102,14 @@ class CPU():
             return (
                 operation[2],
                 operation[1],
-                (self, pc+operation[0])
+                (self,)
             )
         elif operation[0] == 2:
             # 8-bit immediate
             return (
                 operation[2],
                 operation[1],
-                (self, self.mb[pc+1], pc+operation[0])
+                (self, self.mb[pc+1])
             )
         elif operation[0] == 3:
             # 16-bit immediate
@@ -91,7 +117,7 @@ class CPU():
             return (
                 operation[2],
                 operation[1],
-                (self, (self.mb[pc+2] << 8) + self.mb[pc+1], pc+operation[0])
+                (self, (self.mb[pc+2] << 8) + self.mb[pc+1])
             )
         else:
             raise CoreDump.CoreDump("Unexpected opcode length: %s" % operation[0])
@@ -106,28 +132,26 @@ class CPU():
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
             self.halted = False
-        instruction = self.fetchInstruction(self.reg[PC])
+        instruction = self.fetchInstruction(self.PC)
 
         if __debug__:
-            # if self.reg[PC] == 0x50:
-            # self.lala = True
-
             if self.lala and not self.halted:
-                if (self.mb[self.reg[PC]]) == 0xCB:
-                    print hex(self.reg[PC]+1)[2:], hex(self.mb[self.reg[PC]])
+                if (self.mb[self.PC]) == 0xCB:
+                   print hex(self.PC+1)[2:]
                 else:
-                    print hex(self.reg[PC])[2:], hex(self.mb[self.reg[PC]])
+                   print hex(self.PC)[2:]
 
-            if self.breakAllow and self.reg[PC] == self.breakNext:
+            if self.breakAllow and self.PC == self.breakNext:
                 self.breakAllow = False
                 self.breakOn = True
 
-            if self.oldPC == self.reg[PC] and not self.halted:
+            if self.oldPC == self.PC and not self.halted:
                 self.breakOn = True
                 logger.info("PC DIDN'T CHANGE! Can't continue!")
-                CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
+                print self.getDump()
+                # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
-            self.oldPC = self.reg[PC]
+            self.oldPC = self.PC
 
             #TODO: Make better CoreDump print out. Where is 0xC000?
             #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
@@ -159,14 +183,14 @@ class CPU():
                 else:
                     pass
 
-        if __debug__:
-            try:
-                return self.executeInstruction(instruction)
-            except:
-                self.getDump(instruction)
-                exit(1)
-        else:
-            return self.executeInstruction(instruction)
+        # if __debug__:
+        #     try:
+        #         return self.executeInstruction(instruction)
+        #     except:
+        #         self.getDump(instruction)
+        #         exit(1)
+        # else:
+        return self.executeInstruction(instruction)
 
     def error(self, message):
         raise CoreDump.CoreDump(message)
@@ -182,27 +206,29 @@ class CPU():
         if self.testFlag(flagN):
             flags += " N"
 
-        logger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.reg[A], self.reg[F]))
-        logger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.reg[B], self.reg[C]))
-        logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.reg[D], self.reg[E]))
-        logger.info("H:   0x%0.2X   L: 0x%0.2X" % (self.reg[H], self.reg[L]))
-        logger.info("SP:  0x%0.4X   PC: 0x%0.4X"% (self.reg[SP], self.reg[PC]))
+	logger.info(flags)
+        logger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.A, self.F))
+        logger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.B, self.C))
+        logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.D, self.E))
+        logger.info("H:   0x%0.2X   L: 0x%0.2X" % (self.HL >> 8, self.HL & 0xFF))
+        logger.info("SP:  0x%0.4X   PC: 0x%0.4X"% (self.SP, self.PC))
         # logger.info("0xC000", "0x%0.2X" % self.mb[0xc000])
         # logger.info("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
-        logger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb[self.getHL()],
-            self.mb[self.getHL()+1]))
+        logger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb[self.HL], self.mb[self.HL+1]))
+        logger.info("(SP) 0x%0.2X   (SP+1) 0x%0.2X" % (self.mb[self.SP], self.mb[self.SP+1]))
+        logger.info(" ".join(map(lambda x: "%0.2x" % x, [self.mb[self.SP+x] for x in range(16)])))
         logger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
 
-        if (self.mb[self.reg[PC]]) != 0xCB:
-            l = self.opcodes[self.mb[self.reg[PC]]][0]
-            logger.info("Op: 0x%0.2X" % self.mb[self.reg[PC]])
-            logger.info("Name: " + str(CPU_COMMANDS[self.mb[self.reg[PC]]]))
+        if (self.mb[self.PC]) != 0xCB:
+            l = self.opcodes[self.mb[self.PC]][0]
+            logger.info("Op: 0x%0.2X" % self.mb[self.PC])
+            logger.info("Name: " + str(CPU_COMMANDS[self.mb[self.PC]]))
             logger.info("Len:" + str(l))
             if instruction:
                 logger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
         else:
 
-            logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.reg[PC]+1], str(CPU_COMMANDS_EXT[self.mb[self.reg[PC]+1]])))
+            logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.PC+1], str(CPU_COMMANDS_EXT[self.mb[self.PC+1]])))
         logger.info("Call Stack " + str(self.debugCallStack))
         logger.info("Active ROM and RAM bank " +
                 str(self.mb.cartridge.ROMBankSelected) + ' ' +
@@ -221,7 +247,7 @@ class CPU():
             flags += "Serial "
         if self.testInterruptFlagEnabled(self.HightoLow):
             flags += "HightoLow "
-	logger.info('{}'.format(flags))
+	logger.info(flags)
         logger.info("Waiting Interrupts")
         flags = ""
         if self.testInterruptFlag(self.VBlank):

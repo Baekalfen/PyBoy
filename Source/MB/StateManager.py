@@ -10,10 +10,10 @@ from Logger import logger
 def saveState(self, filename):
     logger.info("Saving state...")
     with open(filename, "wb") as f:
-        for n in self.cpu.reg[:-2]:
+        for n in self.cpu.reg[:-3]:
             f.write(chr(n))
 
-        for n in self.cpu.reg[-2:]:
+        for n in self.cpu.reg[-3:]:
             f.write(chr(n&0xFF))
             f.write(chr((n&0xFF00)>>8))
 
@@ -52,8 +52,8 @@ def loadState(self, filename):
     with open(filename, "rb") as f:
         self.cpu.oldPC = None
 
-        self.cpu.reg[:-2] = [ord(f.read(1)) for _ in xrange(len(self.cpu.reg)-2)]
-        self.cpu.reg[-2:] = [ord(f.read(1)) + (ord(f.read(1))<<8) for _ in xrange(2)]
+        self.cpu.reg[:-3] = [ord(f.read(1)) for _ in xrange(len(self.cpu.reg)-2)]
+        self.cpu.reg[-3:] = [ord(f.read(1)) + (ord(f.read(1))<<8) for _ in xrange(2)]
 
         self.cpu.interruptMasterEnable = ord(f.read(1))
         self.cpu.halted = ord(f.read(1))

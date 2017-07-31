@@ -53,7 +53,7 @@ def __getitem__(self, i):
     elif i == 0xFFFF:  # Interrupt Enable Register
         return self.ram.interruptRegister[0]
     else:
-        raise CoreDump.CoreDump("Memory access violation. Tried to read: %s" % hex(i))
+        raise Exception("Memory access violation. Tried to read: %s" % hex(i))
 
 def __setitem__(self,i,value):
     assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
@@ -110,7 +110,7 @@ def __setitem__(self,i,value):
     elif i == 0xFFFF:  # Interrupt Enable Register
         self.ram.interruptRegister[0] = value
     else:
-        raise CoreDump.CoreDump("Memory access violation. Tried to write: %s" % hex(i))
+        raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 
 def transferDMAtoOAM(self,src,dst=0xFE00):
     # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers

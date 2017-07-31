@@ -66,7 +66,7 @@ def start(ROM, bootROM = None, scale=1):
     window = Window(scale=scale)
     if bootROM is not None:
         logger.info("Starting with boot ROM")
-    mb = Motherboard(ROM, bootROM, window, profiling = profiling)
+    mb = Motherboard(ROM, bootROM, window, profiling = profiling, debugger = debugger)
 
     if "loadState" in sys.argv:
         mb.loadState(mb.cartridge.filename+".state")
@@ -228,5 +228,6 @@ if __name__ == "__main__":
     finally:
         if debugger:
             logger.info("Debugger ready for shutdown")
+            sleep(10)
             debugger.quit()
 

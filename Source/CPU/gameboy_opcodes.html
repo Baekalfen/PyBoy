@@ -1,0 +1,1930 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+    <title>Gameboy (LR35902) OPCODES</title>
+    <meta http-equiv="content-type" content="text/html; charset=windows-1250">
+    <style type="text/css">
+        <!-- table.withborder {
+            border-width: 1px;
+            border-style: solid;
+            border-color: black;
+            border-collapse: collapse;
+        }
+        
+        td.withborder {
+            border-width: 1px;
+            border-style: solid;
+            border-color: black;
+            border-collapse: collapse;
+        }
+        
+        a:link {
+            text-decoration: none;
+            color: #2018A0;
+        }
+        
+        a:visited {
+            text-decoration: none;
+            color: #2018A0;
+        }
+        
+        a:active {
+            text-decoration: none;
+            color: #2018A0;
+        }
+        
+        a:hover {
+            text-decoration: none;
+            color: #4030FF;
+        }
+        
+        sub {
+            font-size: 8pt;
+        }
+        
+        sup {
+            font-size: 8pt;
+        }
+        
+        hr {
+            height: 1px;
+            color: black;
+        }
+        
+        -->
+    </style>
+</head>
+
+<body bgcolor="#dfdfdf">
+    <span style="font-size: 150%"><b>Gameboy CPU (LR35902) instruction set</b></span>
+    <br>
+    <br>
+    <table cellspacing="0" cellpadding="0" class="withborder" bgcolor="#bfbfbf" width="1350">
+        <tr style="font-family: monospace; font-size: 8pt" align="center" bgcolor="#9f9f9f">
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x0&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x1&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x2&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x3&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x4&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x5&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x6&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x7&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x8&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x9&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xA&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xB&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xC&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xD&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xE&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xF&nbsp;</b></td>
+        </tr>
+
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;0x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ff99cc">NOP
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">LD BC,d16
+                <br>3&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (BC),A
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">INC BC
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RLCA
+                <br>1&nbsp;&nbsp;4
+                <br>0 0 0 C</td>
+            <td class="withborder" bgcolor="#ccffcc">LD (a16),SP
+                <br>3&nbsp;&nbsp;20
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">ADD HL,BC
+                <br>1&nbsp;&nbsp;8
+                <br>- 0 H C</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(BC)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">DEC BC
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RRCA
+                <br>1&nbsp;&nbsp;4
+                <br>0 0 0 C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;1x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ff99cc">STOP 0
+                <br>2&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">LD DE,d16
+                <br>3&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (DE),A
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">INC DE
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RLA
+                <br>1&nbsp;&nbsp;4
+                <br>0 0 0 C</td>
+            <td class="withborder" bgcolor="#ffcc99">JR r8
+                <br>2&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">ADD HL,DE
+                <br>1&nbsp;&nbsp;8
+                <br>- 0 H C</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(DE)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">DEC DE
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RRA
+                <br>1&nbsp;&nbsp;4
+                <br>0 0 0 C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;2x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffcc99">JR NZ,r8
+                <br>2&nbsp;&nbsp;12/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">LD HL,d16
+                <br>3&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL+),A
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">INC HL
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">DAA
+                <br>1&nbsp;&nbsp;4
+                <br>Z - 0 C</td>
+            <td class="withborder" bgcolor="#ffcc99">JR Z,r8
+                <br>2&nbsp;&nbsp;12/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">ADD HL,HL
+                <br>1&nbsp;&nbsp;8
+                <br>- 0 H C</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(HL+)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">DEC HL
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">CPL
+                <br>1&nbsp;&nbsp;4
+                <br>- 1 1 -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;3x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffcc99">JR NC,r8
+                <br>2&nbsp;&nbsp;12/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">LD SP,d16
+                <br>3&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL-),A
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">INC SP
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC (HL)
+                <br>1&nbsp;&nbsp;12
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC (HL)
+                <br>1&nbsp;&nbsp;12
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),d8
+                <br>2&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">SCF
+                <br>1&nbsp;&nbsp;4
+                <br>- 0 0 1</td>
+            <td class="withborder" bgcolor="#ffcc99">JR C,r8
+                <br>2&nbsp;&nbsp;12/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">ADD HL,SP
+                <br>1&nbsp;&nbsp;8
+                <br>- 0 H C</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(HL-)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">DEC SP
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">INC A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H -</td>
+            <td class="withborder" bgcolor="#ffff99">DEC A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,d8
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">CCF
+                <br>1&nbsp;&nbsp;4
+                <br>- 0 0 C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;4x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ccccff">LD B,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD B,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD C,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;5x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ccccff">LD D,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD D,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD E,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;6x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ccccff">LD H,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD H,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD L,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;7x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),B
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),C
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),D
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),E
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),H
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),L
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ff99cc">HALT
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (HL),A
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,B
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,C
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,D
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,E
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,H
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,L
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,A
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;8x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 H C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;9x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffff99">SUB B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB (HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SUB A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,(HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Ax&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffff99">AND B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND (HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">AND A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR (HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">XOR A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Bx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffff99">OR B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR (HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">OR A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffff99">CP B
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP C
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP D
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP E
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP H
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP L
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP (HL)
+                <br>1&nbsp;&nbsp;8
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffff99">CP A
+                <br>1&nbsp;&nbsp;4
+                <br>Z 1 H C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Cx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffcc99">RET NZ
+                <br>1&nbsp;&nbsp;20/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">POP BC
+                <br>1&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">JP NZ,a16
+                <br>3&nbsp;&nbsp;16/12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">JP a16
+                <br>3&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">CALL NZ,a16
+                <br>3&nbsp;&nbsp;24/12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">PUSH BC
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">ADD A,d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 00H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">RET Z
+                <br>1&nbsp;&nbsp;20/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">RET
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">JP Z,a16
+                <br>3&nbsp;&nbsp;16/12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ff99cc">PREFIX CB
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">CALL Z,a16
+                <br>3&nbsp;&nbsp;24/12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">CALL a16
+                <br>3&nbsp;&nbsp;24
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">ADC A,d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 H C</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 08H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Dx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ffcc99">RET NC
+                <br>1&nbsp;&nbsp;20/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">POP DE
+                <br>1&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">JP NC,a16
+                <br>3&nbsp;&nbsp;16/12
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ffcc99">CALL NC,a16
+                <br>3&nbsp;&nbsp;24/12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">PUSH DE
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">SUB d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 10H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">RET C
+                <br>1&nbsp;&nbsp;20/8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">RETI
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcc99">JP C,a16
+                <br>3&nbsp;&nbsp;16/12
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ffcc99">CALL C,a16
+                <br>3&nbsp;&nbsp;24/12
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ffff99">SBC A,d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 18H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Ex&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ccccff">LDH (a8),A
+                <br>2&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">POP HL
+                <br>1&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (C),A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ccffcc">PUSH HL
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">AND d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 0</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 20H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffcccc">ADD SP,r8
+                <br>2&nbsp;&nbsp;16
+                <br>0 0 H C</td>
+            <td class="withborder" bgcolor="#ffcc99">JP (HL)
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD (a16),A
+                <br>3&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ffff99">XOR d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 28H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Fx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#ccccff">LDH A,(a8)
+                <br>2&nbsp;&nbsp;12
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">POP AF
+                <br>1&nbsp;&nbsp;12
+                <br>Z N H C</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(C)
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ff99cc">DI
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ccffcc">PUSH AF
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ffff99">OR d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 30H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccffcc">LD HL,SP+r8
+                <br>2&nbsp;&nbsp;12
+                <br>0 0 H C</td>
+            <td class="withborder" bgcolor="#ccffcc">LD SP,HL
+                <br>1&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ccccff">LD A,(a16)
+                <br>3&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#ff99cc">EI
+                <br>1&nbsp;&nbsp;4
+                <br>- - - -</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" bgcolor="#ffff99">CP d8
+                <br>2&nbsp;&nbsp;8
+                <br>Z 1 H C</td>
+            <td class="withborder" bgcolor="#ffcc99">RST 38H
+                <br>1&nbsp;&nbsp;16
+                <br>- - - -</td>
+        </tr>
+    </table>
+    <br>
+    <br>
+
+    <span style="font-size: 150%"><b>Prefix CB</b></span>
+    <br>
+    <br>
+
+    <table cellspacing="0" cellpadding="0" class="withborder" bgcolor="#bfbfbf" width="1350">
+        <tr style="font-family: monospace; font-size: 8pt" align="center" bgcolor="#9f9f9f">
+            <td class="withborder">&nbsp;</td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x0&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x1&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x2&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x3&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x4&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x5&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x6&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x7&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x8&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;x9&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xA&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xB&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xC&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xD&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xE&nbsp;</b></td>
+            <td class="withborder" style="width: 8em"><b>&nbsp;xF&nbsp;</b></td>
+        </tr>
+
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;0x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">RLC B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RLC A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RRC A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;1x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">RL B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RL A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">RR A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;2x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">SLA B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SLA A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRA B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRA A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;3x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">SWAP B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SWAP A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 0</td>
+            <td class="withborder" bgcolor="#80ffff">SRL B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL (HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 0 C</td>
+            <td class="withborder" bgcolor="#80ffff">SRL A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 0 C</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;4x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 0,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 1,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;5x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 2,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 3,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;6x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 4,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 5,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;7x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 6,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,B
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,C
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,D
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,E
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,H
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,L
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>Z 0 1 -</td>
+            <td class="withborder" bgcolor="#80ffff">BIT 7,A
+                <br>2&nbsp;&nbsp;8
+                <br>Z 0 1 -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;8x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 0,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 1,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;9x&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 2,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 3,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Ax&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 4,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 5,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Bx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 6,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">RES 7,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Cx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 0,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 1,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Dx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 2,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 3,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Ex&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 4,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 5,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+        <tr style="font-family: monospace; font-size: 8pt" align="center">
+            <td class="withborder" bgcolor="#9f9f9f"><b>&nbsp;Fx&nbsp;</b></td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 6,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,B
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,C
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,D
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,E
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,H
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,L
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,(HL)
+                <br>2&nbsp;&nbsp;16
+                <br>- - - -</td>
+            <td class="withborder" bgcolor="#80ffff">SET 7,A
+                <br>2&nbsp;&nbsp;8
+                <br>- - - -</td>
+        </tr>
+    </table>
+    <br>
+    <br>
+
+    <table cellspacing="0" cellpadding="0" style="font-family: monospace; font-size: 8pt" width="1350">
+        <tr>
+            <td>
+                <table cellspacing="0" cellpadding="0" style="font-family: monospace; font-size: 8pt">
+                    <tr>
+                        <td bgcolor="#ff99cc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>Misc/control instructions</td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#ffcc99">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>Jumps/calls</td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#ccccff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>8bit load/store/move instructions</td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#ccffcc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>16bit load/store/move instructions</td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#ffff99">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>8bit arithmetic/logical instructions</td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#ffcccc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>16bit arithmetic/logical instructions</td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#80ffff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>8bit rotations/shifts and bit instructions</td>
+                    </tr>
+                </table>
+            </td>
+            <td width="25">&nbsp;</td>
+            <td>
+                <table cellspacing="0" cellpadding="0">
+                    <tr style="font-family: monospace; font-size: 8pt" align="center">
+                        <td align="right">&nbsp;
+                            <br>Length in bytes&nbsp;&rarr;
+                            <br>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td class="withborder" style="width: 7em" bgcolor="#ffffff">INS reg
+                            <br>2&nbsp;&nbsp;8
+                            <br>Z N H C</td>
+                        <td>&nbsp;</td>
+                        <td align="left">&larr;&nbsp;Instruction mnemonic
+                            <br>&larr;&nbsp;Duration in cycles
+                            <br>&larr;&nbsp;Flags affected</td>
+                    </tr>
+                </table>
+            </td>
+            <td width="25">&nbsp;</td>
+            <td width="450">
+                Duration of conditional calls and returns is different when action is taken or not. This is indicated by two numbers separated by "/". The higher number (on the left side of "/") means duration of instruction when action is taken, the lower number (on the right side of "/") means duration of instruction when action is not taken.
+            </td>
+        </tr>
+    </table>
+    <br>
+    <table cellspacing="0" cellpadding="0" style="font-family: monospace; font-size: 8pt" width="1350">
+        <tr>
+            <td>
+                Instruction <b>STOP</b> has according to manuals opcode <b>10 00</b> and thus is 2 bytes long. Anyhow it seems there is no reason for it so some assemblers code it simply as one byte instruction <b>10</b>.
+                <br> Flags affected are always shown in <b>Z H N C</b> order. If flag is marked by "<b>0</b>" it means it is reset after the instruction. If it is marked by "<b>1</b>" it is set. If it is marked by "<b>-</b>" it is not changed. If it is marked by "<b>Z</b>", "<b>N</b>", "<b>H</b>" or "<b>C</b>" corresponding flag is affected as expected by its function.
+                <br>
+                <br>
+
+                <span style="font-family: monospace"><b>d8&nbsp;</b></span> means immediate 8 bit data
+                <br>
+                <span style="font-family: monospace"><b>d16</b></span> means immediate 16 bit data
+                <br>
+                <span style="font-family: monospace"><b>a8&nbsp;</b></span> means 8 bit unsigned data, which are added to $FF00 in certain instructions (replacement for missing <b>IN</b> and <b>OUT</b> instructions)
+                <br>
+                <span style="font-family: monospace"><b>a16</b></span> means 16 bit address
+                <br>
+                <span style="font-family: monospace"><b>r8&nbsp;</b></span> means 8 bit signed data, which are added to program counter
+                <br>
+                <br>
+                <b>LD A,(C)</b> has alternative mnemonic <b>LD A,($FF00+C)</b>
+                <br>
+                <b>LD C,(A)</b> has alternative mnemonic <b>LD ($FF00+C),A</b>
+                <br>
+                <b>LDH A,(a8)</b> has alternative mnemonic <b>LD A,($FF00+a8)</b>
+                <br>
+                <b>LDH (a8),A</b> has alternative mnemonic <b>LD ($FF00+a8),A</b>
+                <br>
+                <b>LD A,(HL+)</b> has alternative mnemonic <b>LD A,(HLI)</b> or <b>LDI A,(HL)</b>
+                <br>
+                <b>LD (HL+),A</b> has alternative mnemonic <b>LD (HLI),A</b> or <b>LDI (HL),A</b>
+                <br>
+                <b>LD A,(HL-)</b> has alternative mnemonic <b>LD A,(HLD)</b> or <b>LDD A,(HL)</b>
+                <br>
+                <b>LD (HL-),A</b> has alternative mnemonic <b>LD (HLD),A</b> or <b>LDD (HL),A</b>
+                <br>
+                <b>LD HL,SP+r8</b> has alternative mnemonic <b>LDHL SP,r8</b>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+    <span style="font-size: 150%"><b>Registers</b></span>
+    <br>
+    <br>
+    <table>
+        <tr>
+            <td>
+                <table cellspacing="0" cellpadding="0" class="withborder" bgcolor="#efefef" width="300">
+                    <tr align="center" bgcolor="#bfbfbf">
+                        <td class="withborder" width="150">15&nbsp;&nbsp;.&nbsp;.&nbsp;.&nbsp;&nbsp;8</td>
+                        <td class="withborder width=" 150 "">7&nbsp;&nbsp;.&nbsp;.&nbsp;.&nbsp;&nbsp;0</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder">A (accumulator)</td>
+                        <td class="withborder">F (flags)</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder">B</td>
+                        <td class="withborder">C</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder">D</td>
+                        <td class="withborder">E</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder">H</td>
+                        <td class="withborder">L</td>
+                    </tr>
+                </table>
+                <br>
+                <table cellspacing="0" cellpadding="0" class="withborder" bgcolor="#efefef" width="300">
+                    <tr align="center" bgcolor="#bfbfbf">
+                        <td class="withborder" width="300">15&nbsp;&nbsp;.&nbsp;.&nbsp;.&nbsp;&nbsp;0</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder" width="400">SP (stack pointer)</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder">PC (program counter)</td>
+                    </tr>
+                </table>
+            </td>
+
+            <td width="50">&nbsp;</td>
+
+            <td>
+                <b>Flag register (F) bits:</b>
+                <br>
+                <br>
+                <table cellspacing="0" cellpadding="0" class="withborder" bgcolor="#efefef" width="200">
+                    <tr align="center" bgcolor="#bfbfbf">
+                        <td class="withborder" width="25">7</td>
+                        <td class="withborder" width="25">6</td>
+                        <td class="withborder" width="25">5</td>
+                        <td class="withborder" width="25">4</td>
+                        <td class="withborder" width="25">3</td>
+                        <td class="withborder" width="25">2</td>
+                        <td class="withborder" width="25">1</td>
+                        <td class="withborder" width="25">0</td>
+                    </tr>
+                    <tr align="center">
+                        <td class="withborder">Z</td>
+                        <td class="withborder">N</td>
+                        <td class="withborder">H</td>
+                        <td class="withborder">C</td>
+                        <td class="withborder">0</td>
+                        <td class="withborder">0</td>
+                        <td class="withborder">0</td>
+                        <td class="withborder">0</td>
+                    </tr>
+                </table>
+                <br>
+                <span style="font-family: monospace; font-size: 14pt"><b>Z</b></span> - Zero Flag
+                <br>
+                <span style="font-family: monospace; font-size: 14pt"><b>N</b></span> - Subtract Flag
+                <br>
+                <span style="font-family: monospace; font-size: 14pt"><b>H</b></span> - Half Carry Flag
+                <br>
+                <span style="font-family: monospace; font-size: 14pt"><b>C</b></span> - Carry Flag
+                <br>
+                <span style="font-family: monospace; font-size: 14pt"><b>0</b></span> - Not used, always zero
+                <br>
+            </td>
+        </tr>
+    </table>
+
+    <script type="text/javascript">
+        var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+        document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+        var pageTracker = _gat._getTracker("UA-6016386-1");
+        pageTracker._trackPageview();
+    </script>
+</body>
+
+</html>
