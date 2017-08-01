@@ -56,7 +56,8 @@ class CPU(object): # 'object' is important for property!!!
 
         # Profiling
         self.profiling = profiling
-        self.hitRate = np.zeros(shape=(512,), dtype=int)
+        if profiling:
+            self.hitRate = np.zeros(shape=(512,), dtype=int)
 
 
     def executeInstruction(self, instruction):
@@ -123,6 +124,8 @@ class CPU(object): # 'object' is important for property!!!
             # WARNING: The instruction immediately following the HALT instruction is "skipped"
             # when interrupts are disabled (DI) on the GB,GBP, and SGB.
             self.halted = False
+        elif self.halted:
+            return -1
         instruction = self.fetchInstruction(self.PC)
 
         if __debug__:

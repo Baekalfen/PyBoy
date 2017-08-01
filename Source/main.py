@@ -62,6 +62,8 @@ def start(ROM, bootROM = None, scale=1):
         addConsoleHandler()
 
     profiling = "profiling" in sys.argv
+    if profiling:
+        logger.info("Profiling enabled")
 
     window = Window(scale=scale)
     if bootROM is not None:
@@ -138,7 +140,7 @@ def start(ROM, bootROM = None, scale=1):
     logger.info("# Emulator is turning off #")
     logger.info("###########################")
 
-    if mb.cpu.profiling:
+    if profiling:
         np.set_printoptions(threshold=np.inf)
         argMax = np.argsort(mb.cpu.hitRate)
         for n in argMax[::-1]:

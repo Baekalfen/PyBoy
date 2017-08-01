@@ -21,7 +21,7 @@ class Motherboard():
         self.cartridge = Cartridge.Cartridge(gameROMFile)
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(random=False)
-        self.cpu = CPU.CPU(self)
+        self.cpu = CPU.CPU(self, profiling)
         self.lcd = LCD.LCD(self)
 
         self.debugger = debugger
