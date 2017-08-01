@@ -7,7 +7,6 @@
 
 import CoreDump
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-from registers import _A, _F, _B, _C, _D, _E, _HL, _SP, _PC
 from flags import flagZ, flagN, flagH, flagC
 from Logger import logger
 from Interrupts import InterruptVector, NoInterrupt
@@ -15,36 +14,25 @@ import numpy as np
 
 class CPU(object): # 'object' is important for property!!!
     from opcodes import opcodes
-    # from registers import A, F, B, C, D, E, H, L, SP, PC, AF, BC, DE, HL
-    from registers import reg, setA, setF, setB, setC, setD, setE, setH, setL, setAF, setBC, setDE, setHL, setPC, setSP
+    from registers import A, F, B, C, D, E, HL, SP, PC
+    from registers import setH, setL, setAF, setBC, setDE
     from Interrupts import checkForInterrupts, testAndTriggerInterrupt
     from flags import VBlank, LCDC, TIMER, Serial, HightoLow
     from flags import testFlag, setFlag, clearFlag
     from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
 
+    H = property(lambda s: s.HL >> 8, setH)
+    L = property(lambda s: s.HL & 0xFF, setL)
+    AF = property(lambda s:(s.A << 8) + s.F, setAF)
+    BC = property(lambda s:(s.B << 8) + s.C, setBC)
+    DE = property(lambda s:(s.D << 8) + s.E, setDE)
 
-    A = property(lambda s: s.reg[_A], setA)
-    F = property(lambda s: s.reg[_F], setF)
-    B = property(lambda s: s.reg[_B], setB)
-    C = property(lambda s: s.reg[_C], setC)
-    D = property(lambda s: s.reg[_D], setD)
-    E = property(lambda s: s.reg[_E], setE)
-    H = property(lambda s: s.reg[_HL] >> 8, setH)
-    L = property(lambda s: s.reg[_HL] & 0xFF, setL)
-    HL = property(lambda s: s.reg[_HL], setHL)
-    SP = property(lambda s: s.reg[_SP], setSP)
-    PC = property(lambda s: s.reg[_PC], setPC)
-
-    AF = property(lambda s:(s.reg[_A] << 8) + s.reg[_F], setAF)
-    BC = property(lambda s:(s.reg[_B] << 8) + s.reg[_C], setBC)
-    DE = property(lambda s:(s.reg[_D] << 8) + s.reg[_E], setDE)
-
-    fC = property(lambda s:bool(s.reg[_F] & (1 << flagC)), lambda s,x: s.setFlag(flagC, x))
-    fH = property(lambda s:bool(s.reg[_F] & (1 << flagH)), lambda s,x: s.setFlag(flagH, x))
-    fN = property(lambda s:bool(s.reg[_F] & (1 << flagN)), lambda s,x: s.setFlag(flagN, x))
-    fZ = property(lambda s:bool(s.reg[_F] & (1 << flagZ)), lambda s,x: s.setFlag(flagZ, x))
-    fNC = property(lambda s:not bool(s.reg[_F] & (1 << flagC)), None)
-    fNZ = property(lambda s:not bool(s.reg[_F] & (1 << flagZ)), None)
+    fC = property(lambda s:bool(s.F & (1 << flagC)), None)
+    fH = property(lambda s:bool(s.F & (1 << flagH)), None)
+    fN = property(lambda s:bool(s.F & (1 << flagN)), None)
+    fZ = property(lambda s:bool(s.F & (1 << flagZ)), None)
+    fNC = property(lambda s:not bool(s.F & (1 << flagC)), None)
+    fNZ = property(lambda s:not bool(s.F & (1 << flagZ)), None)
 
     def __init__(self, MB, profiling=False):
         self.mb = MB
@@ -97,6 +85,9 @@ class CPU(object): # 'object' is important for property!!!
 
         operation = opcodes.opcodes[opcode]
 
+        if operation == None:
+            import pdb; pdb.set_trace()
+
         # OPTIMIZE: Can this be improved?
         if operation[0] == 1:
             return (
@@ -145,12 +136,12 @@ class CPU(object): # 'object' is important for property!!!
                 self.breakAllow = False
                 self.breakOn = True
 
-            if self.oldPC == self.PC and not self.halted:
-                self.breakOn = True
-                logger.info("PC DIDN'T CHANGE! Can't continue!")
-                print self.getDump()
-                # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
-                raise Exception("Escape to main.py")
+            # if self.oldPC == self.PC and not self.halted:
+            #     self.breakOn = True
+            #     logger.info("PC DIDN'T CHANGE! Can't continue!")
+            #     print self.getDump()
+            #     # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
+            #     raise Exception("Escape to main.py")
             self.oldPC = self.PC
 
             #TODO: Make better CoreDump print out. Where is 0xC000?

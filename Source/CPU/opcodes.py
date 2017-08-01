@@ -140,7 +140,7 @@ def RRCA_0f(self): # 0f RRCA
     return 0
 
 def STOP_10(self, v): # 10 STOP 0
-    raise Exception('STOP not implemented!')
+    pass
     self.PC += 2
     return 0
 
@@ -1997,7 +1997,7 @@ def LD_f0(self, v): # f0 LDH A,(a8)
 
 def POP_f1(self): # f1 POP AF
     self.A = self.mb[self.SP+1] # High
-    self.F = self.mb[self.SP] # Low
+    self.F = self.mb[self.SP] & 0xF0 # Low
     self.SP += 2
     self.PC += 1
     return 0
@@ -2046,6 +2046,7 @@ def LD_f8(self, v): # f8 LD HL,SP+r8
     flag += (t > 0xFFFF) << flagC
     self.F &= 0b00000000
     self.F |= flag
+    self.HL &= 0xFFFF
     self.PC += 2
     return 0
 

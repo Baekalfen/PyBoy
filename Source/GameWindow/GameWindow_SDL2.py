@@ -178,7 +178,12 @@ class SdlGameWindow(AbstractGameWindow):
         sdl2.SDL_RenderPresent(self.renderer)
 
     def stop(self):
-        # self._window.stop()
+        if __debug__:
+            sdl2.SDL_DestroyWindow(self.tileDataWindow.window)
+            sdl2.SDL_DestroyWindow(self.tileView1Window.window)
+            sdl2.SDL_DestroyWindow(self.tileView2Window.window)
+            sdl2.SDL_DestroyWindow(self.spriteWindow.window)
+        sdl2.SDL_DestroyWindow(self._window.window)
         sdl2.ext.quit()
 
     def scanline(self, y, viewPos, windowPos):

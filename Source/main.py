@@ -92,7 +92,6 @@ def start(ROM, bootROM = None, scale=1):
         t_start = time.clock()
         for event in window.getEvents():
             if event == WindowEvent.Quit:
-                window.stop()
                 done = True
             elif event == WindowEvent.ReleaseSpeedUp:
                 limitEmulationSpeed ^= True
@@ -113,7 +112,7 @@ def start(ROM, bootROM = None, scale=1):
             mb.tickFrame()
         else:
             if not debugger.tick(): # Returns false on keyboard interrupt
-                return
+                done = True
 
             if not debugger.running:
                 mb.tickFrame()
@@ -134,6 +133,7 @@ def start(ROM, bootROM = None, scale=1):
             counter = 0
         counter += 1
 
+    window.stop()
     logger.info("###########################")
     logger.info("# Emulator is turning off #")
     logger.info("###########################")
@@ -174,8 +174,6 @@ def runBlarggsTest():
         except Exception as ex:
             logger.info(ex)
             time.sleep(1)
-            window.stop()
-            time.sleep(2)
 
 if __name__ == "__main__":
     bootROM = "ROMs/DMG_ROM.bin"

@@ -372,7 +372,8 @@ class opcodeData():
 
     def STOP(self):
         code = Code(fname(), self.opcode, self.name, True, self.length)
-        code.addLine("raise Exception('STOP not implemented!')")
+        code.addLine("pass")
+        # code.addLine("raise Exception('STOP not implemented!')")
         return fname(), code.getCode()
 
     def DAA(self):
@@ -456,6 +457,7 @@ class opcodeData():
         elif self.opcode == 0xF8:
             code.addLine("t = self.HL")
             code.addLines(self.handleFlags16bit("self.SP", "v", '+', False))
+            code.addLine("self.HL &= 0xFFFF")
 
         # if self.opcode == 0x08:
         #     import pdb; pdb.set_trace()
@@ -671,9 +673,13 @@ class opcodeData():
                 "self.SP += 2"
             ])
         else:
+            if left.code[-1] == 'F':
+                Fmask = " & 0xF0"
+            else:
+                Fmask = ""
             code.addLines([
                 "self.%s = self.mb[self.SP+1] # High" % left.code[-2], # See comment from PUSH
-                "self.%s = self.mb[self.SP] # Low" % left.code[-1],
+                "self.%s = self.mb[self.SP]%s # Low" % (left.code[-1], Fmask),
                 "self.SP += 2"
             ])
 
