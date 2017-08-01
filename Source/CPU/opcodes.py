@@ -204,6 +204,7 @@ def RLA_17(self): # 17 RLA
 
 def JR_18(self, v): # 18 JR r8
     self.PC += 2 + getSignedInt8(v)
+    self.PC &= 0xFFFF
     return 0
 
 def ADD_19(self): # 19 ADD HL,DE
@@ -275,8 +276,10 @@ def JR_20(self, v): # 20 JR NZ,r8
     self.PC += 2
     if self.fNZ:
         self.PC += getSignedInt8(v)
+        self.PC &= 0xFFFF
         return 0
     else:
+        self.PC &= 0xFFFF
         return 1
 
 def LD_21(self, v): # 21 LD HL,d16
@@ -352,8 +355,10 @@ def JR_28(self, v): # 28 JR Z,r8
     self.PC += 2
     if self.fZ:
         self.PC += getSignedInt8(v)
+        self.PC &= 0xFFFF
         return 0
     else:
+        self.PC &= 0xFFFF
         return 1
 
 def ADD_29(self): # 29 ADD HL,HL
@@ -412,7 +417,7 @@ def LD_2e(self, v): # 2e LD L,d8
     return 0
 
 def CPL_2f(self): # 2f CPL
-    self.A = ~self.A
+    self.A = (~self.A) & 0xFF
     flag = 0b01100000
     self.F &= 0b10010000
     self.F |= flag
@@ -423,8 +428,10 @@ def JR_30(self, v): # 30 JR NC,r8
     self.PC += 2
     if self.fNC:
         self.PC += getSignedInt8(v)
+        self.PC &= 0xFFFF
         return 0
     else:
+        self.PC &= 0xFFFF
         return 1
 
 def LD_31(self, v): # 31 LD SP,d16
@@ -486,8 +493,10 @@ def JR_38(self, v): # 38 JR C,r8
     self.PC += 2
     if self.fC:
         self.PC += getSignedInt8(v)
+        self.PC &= 0xFFFF
         return 0
     else:
+        self.PC &= 0xFFFF
         return 1
 
 def ADD_39(self): # 39 ADD HL,SP
@@ -1653,11 +1662,12 @@ def CP_bf(self): # bf CP A
 def RET_c0(self): # c0 RET NZ
     if self.fNZ:
         self.PC = self.mb[self.SP+1] << 8 # High
-        self.PC += self.mb[self.SP] # Low
+        self.PC |= self.mb[self.SP] # Low
         self.SP += 2
         return 0
     else:
         self.PC += 1
+        self.PC &= 0xFFFF
         return 1
 
 def POP_c1(self): # c1 POP BC
@@ -1681,6 +1691,7 @@ def JP_c3(self, v): # c3 JP a16
 
 def CALL_c4(self, v): # c4 CALL NZ,a16
     self.PC += 3
+    self.PC &= 0xFFFF
     if self.fNZ:
         self.mb[self.SP-1] = self.PC >> 8 # High
         self.mb[self.SP-2] = self.PC & 0xFF # Low
@@ -1721,16 +1732,17 @@ def RST_c7(self): # c7 RST 00H
 def RET_c8(self): # c8 RET Z
     if self.fZ:
         self.PC = self.mb[self.SP+1] << 8 # High
-        self.PC += self.mb[self.SP] # Low
+        self.PC |= self.mb[self.SP] # Low
         self.SP += 2
         return 0
     else:
         self.PC += 1
+        self.PC &= 0xFFFF
         return 1
 
 def RET_c9(self): # c9 RET
     self.PC = self.mb[self.SP+1] << 8 # High
-    self.PC += self.mb[self.SP] # Low
+    self.PC |= self.mb[self.SP] # Low
     self.SP += 2
     return 0
 
@@ -1749,6 +1761,7 @@ def CB_cb(self): # cb PREFIX CB
 
 def CALL_cc(self, v): # cc CALL Z,a16
     self.PC += 3
+    self.PC &= 0xFFFF
     if self.fZ:
         self.mb[self.SP-1] = self.PC >> 8 # High
         self.mb[self.SP-2] = self.PC & 0xFF # Low
@@ -1760,6 +1773,7 @@ def CALL_cc(self, v): # cc CALL Z,a16
 
 def CALL_cd(self, v): # cd CALL a16
     self.PC += 3
+    self.PC &= 0xFFFF
     self.mb[self.SP-1] = self.PC >> 8 # High
     self.mb[self.SP-2] = self.PC & 0xFF # Low
     self.SP -= 2
@@ -1790,11 +1804,12 @@ def RST_cf(self): # cf RST 08H
 def RET_d0(self): # d0 RET NC
     if self.fNC:
         self.PC = self.mb[self.SP+1] << 8 # High
-        self.PC += self.mb[self.SP] # Low
+        self.PC |= self.mb[self.SP] # Low
         self.SP += 2
         return 0
     else:
         self.PC += 1
+        self.PC &= 0xFFFF
         return 1
 
 def POP_d1(self): # d1 POP DE
@@ -1814,6 +1829,7 @@ def JP_d2(self, v): # d2 JP NC,a16
 
 def CALL_d4(self, v): # d4 CALL NC,a16
     self.PC += 3
+    self.PC &= 0xFFFF
     if self.fNC:
         self.mb[self.SP-1] = self.PC >> 8 # High
         self.mb[self.SP-2] = self.PC & 0xFF # Low
@@ -1854,17 +1870,18 @@ def RST_d7(self): # d7 RST 10H
 def RET_d8(self): # d8 RET C
     if self.fC:
         self.PC = self.mb[self.SP+1] << 8 # High
-        self.PC += self.mb[self.SP] # Low
+        self.PC |= self.mb[self.SP] # Low
         self.SP += 2
         return 0
     else:
         self.PC += 1
+        self.PC &= 0xFFFF
         return 1
 
 def RETI_d9(self): # d9 RETI
     self.interruptMasterEnable = True
     self.PC = self.mb[self.SP+1] << 8 # High
-    self.PC += self.mb[self.SP] # Low
+    self.PC |= self.mb[self.SP] # Low
     self.SP += 2
     return 0
 
@@ -1878,6 +1895,7 @@ def JP_da(self, v): # da JP C,a16
 
 def CALL_dc(self, v): # dc CALL C,a16
     self.PC += 3
+    self.PC &= 0xFFFF
     if self.fC:
         self.mb[self.SP-1] = self.PC >> 8 # High
         self.mb[self.SP-2] = self.PC & 0xFF # Low

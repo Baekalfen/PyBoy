@@ -23,7 +23,7 @@ class CPU(object): # 'object' is important for property!!!
 
     H = property(lambda s: s.HL >> 8, setH)
     L = property(lambda s: s.HL & 0xFF, setL)
-    AF = property(lambda s:(s.A << 8) + s.F, setAF)
+    AF = property(lambda s:(s.A << 8) + s.F, setAF) # Only used StateManager
     BC = property(lambda s:(s.B << 8) + s.C, setBC)
     DE = property(lambda s:(s.D << 8) + s.E, setDE)
 
@@ -128,20 +128,20 @@ class CPU(object): # 'object' is important for property!!!
         if __debug__:
             if self.lala and not self.halted:
                 if (self.mb[self.PC]) == 0xCB:
-                   print hex(self.PC+1)[2:]
+                    print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP)
                 else:
-                   print hex(self.PC)[2:]
+                    print "%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC], self.AF, self.BC, self.DE, self.HL, self.SP)
 
-            if self.breakAllow and self.PC == self.breakNext:
+            if self.breakAllow and self.PC == self.breakNext and self.AF == 0x1f80:
                 self.breakAllow = False
                 self.breakOn = True
 
-            # if self.oldPC == self.PC and not self.halted:
-            #     self.breakOn = True
-            #     logger.info("PC DIDN'T CHANGE! Can't continue!")
-            #     print self.getDump()
-            #     # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
-            #     raise Exception("Escape to main.py")
+            if self.oldPC == self.PC and not self.halted:
+                self.breakOn = True
+                logger.info("PC DIDN'T CHANGE! Can't continue!")
+                print self.getDump()
+                # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
+                raise Exception("Escape to main.py")
             self.oldPC = self.PC
 
             #TODO: Make better CoreDump print out. Where is 0xC000?
@@ -174,14 +174,14 @@ class CPU(object): # 'object' is important for property!!!
                 else:
                     pass
 
-        # if __debug__:
-        #     try:
-        #         return self.executeInstruction(instruction)
-        #     except:
-        #         self.getDump(instruction)
-        #         exit(1)
-        # else:
-        return self.executeInstruction(instruction)
+        if __debug__:
+            try:
+                return self.executeInstruction(instruction)
+            except:
+                self.getDump(instruction)
+                exit(1)
+        else:
+            return self.executeInstruction(instruction)
 
     def error(self, message):
         raise CoreDump.CoreDump(message)

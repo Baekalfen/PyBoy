@@ -163,7 +163,7 @@ def runBlarggsTest():
                 "TestROMs/cpu_instrs/individual/05-op rp.gb",
                 "TestROMs/cpu_instrs/individual/06-ld r,r.gb",
                 "TestROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
-                "TestROMs/cpu_instrs/individual/08-misc instrs.gb", #Generates Seg. fault
+                "TestROMs/cpu_instrs/individual/08-misc instrs.gb",
                 "TestROMs/cpu_instrs/individual/09-op r,r.gb",
                 "TestROMs/cpu_instrs/individual/10-bit ops.gb",
                 "TestROMs/cpu_instrs/individual/11-op a,(hl).gb",

@@ -424,7 +424,7 @@ class opcodeData():
     def CPL(self):
         left = Operand('A')
         code = Code(fname(), self.opcode, self.name, False, self.length)
-        code.addLine("%s = ~%s" % (left.code, left.code))
+        code.addLine("%s = (~%s) & 0xFF" % (left.code, left.code))
         code.addLines(self.handleFlags8bit(None, None, None))
         return fname(), code.getCode()
 
@@ -754,6 +754,7 @@ class opcodeData():
         if left is None:
             code.addLines([
                 "self.PC += %d + getSignedInt8(v)" % self.length,
+                "self.PC &= 0xFFFF",
                 "return 0"
             ])
         else:
@@ -761,8 +762,10 @@ class opcodeData():
                 "self.PC += %d" % self.length,
                 "if %s:" % left.code,
                 "\tself.PC += getSignedInt8(v)",
+                "\tself.PC &= 0xFFFF",
                 "\treturn 0",
                 "else:",
+                "\tself.PC &= 0xFFFF",
                 "\treturn 1"
             ])
 
@@ -791,7 +794,8 @@ class opcodeData():
 
         # Taken from PUSH
         code.addLines([
-            "self.PC += %s" % self.length
+            "self.PC += %s" % self.length,
+            "self.PC &= 0xFFFF"
         ])
 
         if left is None:
@@ -833,7 +837,7 @@ class opcodeData():
         if left is None:
             code.addLines([
                 "self.PC = self.mb[self.SP+1] << 8 # High",
-                "self.PC += self.mb[self.SP] # Low",
+                "self.PC |= self.mb[self.SP] # Low",
                 "self.SP += 2",
                 "return 0"
             ])
@@ -841,11 +845,12 @@ class opcodeData():
             code.addLines([
                 "if %s:" % left.code,
                 "\tself.PC = self.mb[self.SP+1] << 8 # High",
-                "\tself.PC += self.mb[self.SP] # Low",
+                "\tself.PC |= self.mb[self.SP] # Low",
                 "\tself.SP += 2",
                 "\treturn 0",
                 "else:",
                 "\tself.PC += %s" % self.length,
+                "\tself.PC &= 0xFFFF",
                 "\treturn 1"
             ])
 
@@ -856,7 +861,7 @@ class opcodeData():
         code.addLine("self.interruptMasterEnable = True")
         code.addLines([
             "self.PC = self.mb[self.SP+1] << 8 # High",
-            "self.PC += self.mb[self.SP] # Low",
+            "self.PC |= self.mb[self.SP] # Low",
             "self.SP += 2",
             "return 0"
         ])

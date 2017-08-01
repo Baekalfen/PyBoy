@@ -64,9 +64,9 @@ def __setitem__(self,i,value):
     elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
         self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
     elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+        self.lcd.VRAM[i - 0x8000] = value
         if i < 0x9800: # Is within tile data -- not tile maps
             self.lcd.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
-        self.lcd.VRAM[i - 0x8000] = value
     elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
         self.cartridge[i] = value
     elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
@@ -117,5 +117,5 @@ def transferDMAtoOAM(self,src,dst=0xFE00):
     # TODO: Add timing delay of 160µs and disallow access to RAM!
     offset = src * 0x100
     for n in xrange(0x00,0xA0):
-        self.__setitem__(0xFE00 + n, self.__getitem__(n + offset))
+        self.__setitem__(dst + n, self.__getitem__(n + offset))
 
