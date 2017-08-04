@@ -57,44 +57,51 @@ def tickFrame(self):
     if lcdEnabled:
         self.lcd.refreshTileDataAdaptive()
 
-    if __debug__:
-        self.MainWindow.refreshTileView1(self.lcd)
-        self.MainWindow.refreshTileView2(self.lcd)
-        self.MainWindow.refreshSpriteView(self.lcd)
-        self.MainWindow.drawTileCacheView(self.lcd)
-        self.MainWindow.drawTileView1ScreenPort(self.lcd)
-        self.MainWindow.drawTileView2WindowPort(self.lcd)
+        if __debug__:
+            self.MainWindow.refreshTileView1(self.lcd)
+            self.MainWindow.refreshTileView2(self.lcd)
+            self.MainWindow.refreshSpriteView(self.lcd)
+            self.MainWindow.drawTileCacheView(self.lcd)
+            self.MainWindow.drawTileView1ScreenPort(self.lcd)
+            self.MainWindow.drawTileView2WindowPort(self.lcd)
 
-    # TODO: the 19, 41 and 49 ticks should correct for longer instructions
-    # Iterate the 144 lines on screen
-    for y in xrange(144):
-        self.checkLYC(y)
+        # TODO: the 19, 41 and 49 ticks should correct for longer instructions
+        # Iterate the 144 lines on screen
+        for y in xrange(144):
+            self.checkLYC(y)
 
-        # Mode 2
-        self.setSTATMode(2)
-        self.calculateCycles(80)
-        # Mode 3
-        self.setSTATMode(3)
-        self.calculateCycles(170)
+            # Mode 2
+            self.setSTATMode(2)
+            self.calculateCycles(80)
+            # Mode 3
+            self.setSTATMode(3)
+            self.calculateCycles(170)
 
-        self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos()) # Just recording states of LCD registers
+            self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos()) # Just recording states of LCD registers
 
-        # Mode 0
-        self.setSTATMode(0)
-        self.calculateCycles(206)
+            # Mode 0
+            self.setSTATMode(0)
+            self.calculateCycles(206)
 
-    self.cpu.setInterruptFlag(self.cpu.VBlank)
+        self.cpu.setInterruptFlag(self.cpu.VBlank)
 
-    if lcdEnabled:
         self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+
+        # Wait for next frame
+        for y in xrange(144,154):
+            self.checkLYC(y)
+
+            # Mode 1
+            self.setSTATMode(1)
+            self.calculateCycles(456)
     else:
+        # https://www.reddit.com/r/EmuDev/comments/6r6gf3/gb_pokemon_gold_spews_unexpected_values_at_mbc/
+        # TODO: What happens if LCD gets turned on/off mid-cycle?
         self.MainWindow.blankScreen()
+        self.setSTATMode(0)
+        self[LY] = 0
 
-    # Wait for next frame
-    for y in xrange(144,154):
-        self.checkLYC(y)
+        for y in xrange(154):
+            self.calculateCycles(456)
 
-        # Mode 1
-        self.setSTATMode(1)
-        self.calculateCycles(456)
 
