@@ -84,21 +84,23 @@ def start(ROM, bootROM = None, scale=1):
     exp_avg_emu = 0
     exp_avg_cpu = 0
     t_start = 0
+    t_start_ = 0
     t_VSynced = 0
     t_frameDone = 0
     counter = 0
     limitEmulationSpeed = True
     while not done:
         exp_avg_emu = 0.9 * exp_avg_emu + 0.1 * (t_VSynced-t_start)
+        exp_avg_cpu = 0.9 * exp_avg_cpu + 0.1 * (t_frameDone-t_start_)
 
-        t_start = time.clock()
+        t_start_ = time.time() # Real-world time
+        t_start = time.clock() # Time on the CPU
         for event in window.getEvents():
             if event == WindowEvent.Quit:
                 done = True
             elif event == WindowEvent.ReleaseSpeedUp:
                 limitEmulationSpeed ^= True
-            # elif event == WindowEvent.PressSpeedUp:
-            #     limitEmulationSpeed = False
+                logger.info("Speed limit: %s" % limitEmulationSpeed)
             elif event == WindowEvent.SaveState:
                 mb.saveState(mb.cartridge.filename+".state")
             elif event == WindowEvent.LoadState:
@@ -121,15 +123,17 @@ def start(ROM, bootROM = None, scale=1):
         window.updateDisplay()
 
 
-        # # Trying to avoid VSync'ing on a frame, if we are out of time
-        # if limitEmulationSpeed or (time.clock()-t_start < SPF):
-        #     # This one makes time and frame syncing work, but messes with time.clock()
-        #     window.VSync()
-
         t_VSynced = time.clock()
 
+        # # Trying to avoid VSync'ing on a frame, if we are out of time
+        if limitEmulationSpeed:
+            # This one makes time and frame syncing work, but messes with time.clock()
+            window.VSync()
+        t_frameDone = time.time()
+
+
         if counter % 60 == 0:
-            text = str(int(((exp_avg_emu)/SPF*100))) + "%"
+            text = "%d %d" % ((exp_avg_emu)/SPF*100, (exp_avg_cpu)/SPF*100)
             window._window.title = text
             # logger.info(text)
             counter = 0
@@ -156,7 +160,7 @@ def start(ROM, bootROM = None, scale=1):
 def runBlarggsTest():
     for rom in [
                 "TestROMs/instr_timing/instr_timing.gb",
-                ## "TestROMs/mem_timing/mem_timing.gb",
+                "TestROMs/mem_timing/mem_timing.gb",
                 "TestROMs/oam_bug/rom_singles/1-lcd_sync.gb",
                 "TestROMs/cpu_instrs/individual/01-special.gb",
                 "TestROMs/cpu_instrs/individual/02-interrupts.gb",
