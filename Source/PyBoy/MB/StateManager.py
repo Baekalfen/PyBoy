@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from Logger import logger
+from ..Logger import logger
 
 def saveState(self, filename):
     logger.info("Saving state...")

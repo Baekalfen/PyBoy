@@ -2238,6 +2238,8 @@ class Test_CPU(unittest.TestCase):
         self.assertEqual(mb.cpu.reg[PC], 0x41) # Check the PC ends up at interrupt vector for timer
         self.assertEqual(mb.cpu.interruptMasterEnable, False)
 
+
+
     def test_opcode77(self):  # LD (HL),A
         clearRegisters()
         clearFlag()

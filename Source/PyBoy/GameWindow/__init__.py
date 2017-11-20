@@ -8,3 +8,4 @@
 
 from .AbstractGameWindow import AbstractGameWindow
 from .GameWindow_SDL2 import SdlGameWindow
+from .GameWindow_dummy import DummyGameWindow

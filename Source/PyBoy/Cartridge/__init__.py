@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import CoreDump
+from .. import CoreDump
 import os
 import struct
 
@@ -16,7 +16,7 @@ from MBC2 import MBC2
 from MBC3 import MBC3
 from MBC5 import MBC5
 
-from Logger import logger
+from ..Logger import logger
 
 def Cartridge(filename):
     ROMBanks = loadROMfile(filename)

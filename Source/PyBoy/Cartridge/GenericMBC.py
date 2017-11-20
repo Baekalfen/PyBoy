@@ -4,10 +4,10 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-import CoreDump
+from .. import CoreDump
 import os
 from RTC import RTC
-from Logger import logger
+from ..Logger import logger
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):

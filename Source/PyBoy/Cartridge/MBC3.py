@@ -4,10 +4,10 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-import CoreDump
+from .. import CoreDump
 from GenericMBC import GenericMBC
 
-from Logger import logger
+from ..Logger import logger
 
 class MBC3(GenericMBC):
     def __setitem__(self, address, value):

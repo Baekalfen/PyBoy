@@ -5,10 +5,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import CoreDump
-from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+from .. import CoreDump
+from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC
-from Logger import logger
+from ..Logger import logger
 from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 

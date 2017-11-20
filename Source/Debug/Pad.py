@@ -4,7 +4,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from Logger import logger
 import GenericScreen
 import curses
 

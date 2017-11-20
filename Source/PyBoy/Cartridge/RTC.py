@@ -4,11 +4,11 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-import CoreDump
+from .. import CoreDump
 import time
 import os
 import struct
-from Logger import logger
+from ..Logger import logger
 
 class RTC():
     def __init__(self):

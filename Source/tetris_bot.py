@@ -14,25 +14,12 @@ import sys
 import numpy as np
 import platform
 from PyBoy.Logger import logger
+from PyBoy.WindowEvent import WindowEvent
 
 if platform.system() != "Windows":
     from Debug import Debug
 from PyBoy import PyBoy
-
-
-def getWindow():
-    if len(sys.argv) < 2:
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "SDL2":
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "dummy":
-        from PyBoy.GameWindow import DummyGameWindow as Window
-    else:
-        print "Invalid arguments!"
-        exit(1)
-
-    return Window
-
+from PyBoy.GameWindow import SdlGameWindow as Window
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
@@ -40,7 +27,7 @@ def getROM(ROMdir):
         ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir))
     for i, f in enumerate(found_files):
         print ("%s\t%s" % (i + 1, f))
-    filename = raw_input("Write the name or number of the ROM file:\n")
+    filename = raw_input("Write the name or number of the tetris ROM file:\n")
 
     try:
         filename = ROMdir + found_files[int(filename) - 1]
@@ -55,10 +42,9 @@ if __name__ == "__main__":
     if __debug__:
         os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
 
-    bootROM = "ROMs/DMG_ROM.bin"
+    bootROM = None
     ROMdir = "ROMs/"
     scale = 1
-    debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories
     if not bootROM is None and not os.path.exists(bootROM):
@@ -71,24 +57,46 @@ if __name__ == "__main__":
 
     try:
         # Check if the ROM is given through argv
-        if len(sys.argv) > 2: # First arg is SDL2/PyGame
-            filename = sys.argv[2]
+        if len(sys.argv) > 1: # First arg is SDL2/PyGame
+            filename = sys.argv[1]
         else:
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy((getWindow())(scale=scale), filename, bootROM)
+        pyboy = PyBoy(Window(scale=scale), filename, bootROM)
+        frame = 0
         while not pyboy.tick():
-            pass
+            print "frame:", frame
+
+            # Start game
+            if frame == 144:
+                pyboy.sendInput([WindowEvent.PressButtonStart])
+            elif frame == 145:
+                pyboy.sendInput([WindowEvent.ReleaseButtonStart])
+            elif frame == 152:
+                pyboy.sendInput([WindowEvent.PressButtonA])
+            elif frame == 153:
+                pyboy.sendInput([WindowEvent.ReleaseButtonA])
+            elif frame == 156:
+                pyboy.sendInput([WindowEvent.PressButtonA])
+            elif frame == 157:
+                pyboy.sendInput([WindowEvent.ReleaseButtonA])
+            elif frame == 162:
+                pyboy.sendInput([WindowEvent.PressButtonA])
+            elif frame == 163:
+                pyboy.sendInput([WindowEvent.ReleaseButtonA])
+
+            # Play game
+            elif frame >168:
+                if frame % 2 == 0:
+                    pyboy.sendInput([WindowEvent.PressArrowRight])
+                elif frame % 2 == 1:
+                    pyboy.sendInput([WindowEvent.ReleaseArrowRight])
+
+            frame += 1
         pyboy.stop()
 
     except KeyboardInterrupt:
         print ("Interrupted by keyboard")
     except Exception as ex:
         traceback.print_exc()
-        # time.sleep(10)
-    # finally:
-    #     if debugger:
-    #         logger.info("Debugger ready for shutdown")
-    #         time.sleep(10)
-    #         debugger.quit()

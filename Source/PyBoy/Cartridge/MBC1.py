@@ -4,8 +4,8 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-import CoreDump
-from Logger import logger
+from .. import CoreDump
+from ..Logger import logger
 from GenericMBC import GenericMBC
 
 class MBC1(GenericMBC):

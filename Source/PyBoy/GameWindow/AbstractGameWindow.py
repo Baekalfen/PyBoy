@@ -54,4 +54,7 @@ class AbstractGameWindow(object):
     def blankScreen(self):
         raise NotImplementedError()
 
+    @abstractmethod
+    def getScreenBuffer(self):
+        raise NotImplementedError()
 

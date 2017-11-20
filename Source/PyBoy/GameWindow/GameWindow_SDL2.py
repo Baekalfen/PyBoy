@@ -6,24 +6,20 @@
 #
 
 import sys
-from random import randint
 import time
 import sdl2
 import sdl2.ext
 import numpy as np
-import CoreDump
-import time
 import warnings
-import itertools
-import operator
 
-from MathUint8 import getSignedInt8
-from WindowEvent import WindowEvent
-from LCD import colorPalette, alphaMask
+from .. import CoreDump
+from ..MathUint8 import getSignedInt8
+from ..WindowEvent import WindowEvent
+from ..LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
-from GameWindow import AbstractGameWindow
+from ..GameWindow import AbstractGameWindow
 
-from Logger import logger
+from ..Logger import logger
 
 gameboyResolution = (160, 144)
 
@@ -35,6 +31,11 @@ def pixels2dWithoutWarning(surface):
 
 class SdlGameWindow(AbstractGameWindow):
     def __init__(self, scale=1):
+        self._scale = scale
+
+        if self._scale != 1:
+            logger.warn("Scaling set to %s. The implementation is temporary, which means scaling above 1 will impact performance." % self._scale)
+
         super(self.__class__, self).__init__(scale)
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
@@ -75,7 +76,7 @@ class SdlGameWindow(AbstractGameWindow):
         sdl2.ext.init()
 
         self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
-        logger.debug('scale = ' + str(self._scaledResolution))
+        logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
         self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
         self._windowSurface = self._window.get_surface()
@@ -114,7 +115,8 @@ class SdlGameWindow(AbstractGameWindow):
             sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"_tileView2.bmp")
 
     def setTitle(self,title):
-        sdl2.ext.title(self._window,title)
+        self._window.title = title
+        # sdl2.ext.title(self._window,title)
         # sdl2.SDL_SetWindowTitle(self._window,title)
 
     def __setDebug(self):
@@ -282,6 +284,10 @@ class SdlGameWindow(AbstractGameWindow):
             # Pan docs says it should be white, but it does fit with Pokemon?
             # self._screenBuffer.fill(0x00FFFFFF)
             self._screenBuffer.fill(0x00000000)
+
+
+    def getScreenBuffer(self):
+        return self._screenBuffer
 
     #################################################################
     #
