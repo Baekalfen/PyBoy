@@ -115,16 +115,18 @@ Scripts/Bots
 ============
 PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. Take a look at `tetris_bot.py` for a crude "bot", which interacts with the game.
 
-Currently, 5 methods are exposed, which should allow for complete control of the Game Boy. Please open an issue here on GitHub, if other methods are needed.
+Currently, 7 methods are exposed, which should allow for complete control of the Game Boy. Please open an issue here on GitHub, if other methods are needed.
 
 The Methods are:
-1. __getScreenBuffer()__ Returns a NumPy matrix of the current image displayed on the screen. The format is 32-bit RGBA.
+1. __getScreenBuffer()__ Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit RGBA.
 2. __getMemoryValue(address)__ Returns the 8-bit value found at the address on the Game Boy.
 3. __setMemoryValue(address, value)__ Sets the 8-bit value at the address on the Game Boy.
 4. __sendInput(event_list)__ Sends a list of `WindowEvent`s to the Game Boy.
-5. __getMotherBoard()__ Returns the motherboard instance. This should be a last resort to get access to everything. If you use this heavily, then maybe open an issue, so it can be better supported.
+5. __getMotherBoard()__ Returns a reference to the motherboard instance. This should be a last resort to get access to everything. If you use this heavily, then maybe open an issue, so it can be better supported.
+6. __getSprite(self, index)__ Returns a sprite object, which makes the OAM data more presentable. See the available methods in `Source/PyBoy/BotSupport/Sprite.py`.
+7. __getTileView(self, high)__ Returns a TileView object. If given the parameter `True` it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile.
 
-I can recommend to use the addresses from 0x9800 to 0xA000 instead of the screenbuffer, as they contain the index of the tiles on the screen. It is much simpler to look at the 8-bit value instead of recognizing the equivalent 8x8 pixels on the screen. Same goes for the sprite memory between 0xFE00 and 0xFEA0.
+I can recommend to use the addresses from 0x9800 to 0x9FFF instead of the screenbuffer, as they contain the index of the tiles on the screen. It is much simpler to look at the 8-bit value instead of recognizing the equivalent 8x8 pixels on the screen. Same goes for the sprite memory between 0xFE00 and 0xFEA0.
 
 To see more details about this, have a look at the "Display" part of the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or refer to the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 

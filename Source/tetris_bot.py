@@ -38,10 +38,6 @@ def getROM(ROMdir):
 
 
 if __name__ == "__main__":
-    # Automatically bump to '-OO' optimizations
-    if __debug__:
-        os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
-
     bootROM = None
     ROMdir = "ROMs/"
     scale = 1
@@ -65,10 +61,13 @@ if __name__ == "__main__":
         # Start PyBoy and run loop
         pyboy = PyBoy(Window(scale=scale), filename, bootROM)
         frame = 0
+        first_brick = False
+        view = pyboy.getTileView(False)
         while not pyboy.tick():
             print "frame:", frame
 
-            # Start game
+            # Start game. Just press Start and A when the game allows us.
+            # The frames are not 100% accurate.
             if frame == 144:
                 pyboy.sendInput([WindowEvent.PressButtonStart])
             elif frame == 145:
@@ -86,12 +85,37 @@ if __name__ == "__main__":
             elif frame == 163:
                 pyboy.sendInput([WindowEvent.ReleaseButtonA])
 
-            # Play game
+            # Play game. When we are passed the 168th frame, the game has begone.
+            # The "technique" is just to move the Tetromino to the right.
             elif frame >168:
                 if frame % 2 == 0:
                     pyboy.sendInput([WindowEvent.PressArrowRight])
                 elif frame % 2 == 1:
                     pyboy.sendInput([WindowEvent.ReleaseArrowRight])
+
+                # As an example, it could be useful to know the coordinates
+                # of the sprites on the screen and which they look like.
+                for n in range(40):
+                    sprite = pyboy.getSprite(n)
+                    if sprite.is_on_screen():
+                        print sprite.get_x(), sprite.get_y(), sprite.get_tile()
+
+                # Show how we can read the tile data for the screen. We can use
+                # this to see when one of the Tetrominos touch the bottom. This
+                # could be used to extract a matrix of the occupied squares by
+                # iterating from the top to the bottom of the screen.
+                # Sidenote: The currently moving Tetromino is a sprite, so it
+                # won't show up in the tile data. The tile data shows only the
+                # placed Tetrominos.
+                # We could also read out the score from the screen instead of
+                # finding the corresponding value in RAM.
+                if not first_brick:
+                    for n in range(10):
+                        if view.get_tile(n+2,17) != 47:
+                            first_brick = True
+                            print "First brick touched the bottom!"
+                            break
+
 
             frame += 1
         pyboy.stop()

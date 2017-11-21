@@ -12,6 +12,7 @@ import time
 from MB import Motherboard
 from WindowEvent import WindowEvent
 from Logger import logger, addConsoleHandler
+import BotSupport
 import Logger
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 
@@ -113,6 +114,11 @@ class PyBoy():
                 if self.mb.cpu.hitRate[n] != 0:
                     print "%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n])
 
+
+    ###########################
+    #
+    # Scripts and bot methods
+
     def getScreenBuffer(self):
         return self.window
 
@@ -128,3 +134,9 @@ class PyBoy():
 
     def getMotherBoard(self):
         return self.mb
+
+    def getSprite(self, index):
+        return BotSupport.Sprite(self.mb.lcd, index)
+
+    def getTileView(self, high):
+        return BotSupport.TileView(self.mb.lcd, high)
