@@ -140,3 +140,6 @@ class PyBoy():
 
     def getTileView(self, high):
         return BotSupport.TileView(self.mb.lcd, high)
+
+    def getScreenPosition(self):
+        return (self.mb[0xFF43], self.mb[0xFF42])

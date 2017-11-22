@@ -93,12 +93,13 @@ if __name__ == "__main__":
                 elif frame % 2 == 1:
                     pyboy.sendInput([WindowEvent.ReleaseArrowRight])
 
+                print "Screen pos:", pyboy.getScreenPosition()
                 # As an example, it could be useful to know the coordinates
                 # of the sprites on the screen and which they look like.
                 for n in range(40):
                     sprite = pyboy.getSprite(n)
                     if sprite.is_on_screen():
-                        print sprite.get_x(), sprite.get_y(), sprite.get_tile()
+                        print "Sprite:", sprite.get_x(), sprite.get_y(), sprite.get_tile()
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This

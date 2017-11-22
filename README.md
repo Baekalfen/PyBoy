@@ -115,20 +115,22 @@ Scripts/Bots
 ============
 PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. Take a look at `tetris_bot.py` for a crude "bot", which interacts with the game.
 
-Currently, 7 methods are exposed, which should allow for complete control of the Game Boy. Please open an issue here on GitHub, if other methods are needed.
+Currently, 8 methods are exposed, which should allow for complete control of the Game Boy. Please open an issue here on GitHub, if other methods are needed.
 
 The Methods are:
-1. __getScreenBuffer()__ Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit RGBA.
-2. __getMemoryValue(address)__ Returns the 8-bit value found at the address on the Game Boy.
-3. __setMemoryValue(address, value)__ Sets the 8-bit value at the address on the Game Boy.
-4. __sendInput(event_list)__ Sends a list of `WindowEvent`s to the Game Boy.
-5. __getMotherBoard()__ Returns a reference to the motherboard instance. This should be a last resort to get access to everything. If you use this heavily, then maybe open an issue, so it can be better supported.
-6. __getSprite(self, index)__ Returns a sprite object, which makes the OAM data more presentable. See the available methods in `Source/PyBoy/BotSupport/Sprite.py`.
-7. __getTileView(self, high)__ Returns a TileView object. If given the parameter `True` it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile.
+1. __tick()__ Progresses the Game Boy ahead by one frame. _Open an issue if you need finer control._
+2. __getScreenBuffer()__ Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit RGBA.
+3. __getMemoryValue(address)__ Returns the 8-bit value found at the address on the Game Boy.
+4. __setMemoryValue(address, value)__ Sets the 8-bit value at the address on the Game Boy.
+5. __sendInput(event_list)__ Sends a list of `WindowEvent`s to the Game Boy.
+6. __getMotherBoard()__ Returns a reference to the motherboard instance. This should be a last resort to get access to everything. _If you use this heavily, then open an issue, so it can be better supported._
+7. __getSprite(index)__ Returns a sprite object, which makes the OAM data more presentable. See the available methods in `Source/PyBoy/BotSupport/Sprite.py`.
+8. __getTileView(high)__ Returns a TileView object. If given the parameter `True` it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile.
+9. __getScreenPosition()__ Returns a tuple of (SCX, SCY). These coordinates define the offset in the TileView from where the top-left corner of the screen is place. Note that the TileView defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the TileView (see 7.4 Viewport in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf)).
 
-I can recommend to use the addresses from 0x9800 to 0x9FFF instead of the screenbuffer, as they contain the index of the tiles on the screen. It is much simpler to look at the 8-bit value instead of recognizing the equivalent 8x8 pixels on the screen. Same goes for the sprite memory between 0xFE00 and 0xFEA0.
+I can recommend to use the TileView instead of the screenbuffer, as they contain the index of the tiles on the screen. It is much simpler to look at the 8-bit value instead of recognizing the equivalent 8x8 pixels on the screen. Same goes for the sprite memory between 0xFE00 and 0xFEA0.
 
-To see more details about this, have a look at the "Display" part of the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or refer to the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+To see more details about this the display and the Game boy, have a look at the "Display" part of the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or refer to the [Pan Docs](http://bgb.bircd.org/pandocs.htm), which has clear-cut details about every conceivable topic.
 
 Contribute
 ==========
