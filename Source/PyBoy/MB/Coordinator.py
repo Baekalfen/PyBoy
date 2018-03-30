@@ -55,16 +55,6 @@ def calculateCycles(self, x):
 def tickFrame(self):
     lcdEnabled = self.lcd.LCDC.enabled
     if lcdEnabled:
-        self.lcd.refreshTileDataAdaptive()
-
-        if __debug__:
-            self.MainWindow.refreshTileView1(self.lcd)
-            self.MainWindow.refreshTileView2(self.lcd)
-            self.MainWindow.refreshSpriteView(self.lcd)
-            self.MainWindow.drawTileCacheView(self.lcd)
-            self.MainWindow.drawTileView1ScreenPort(self.lcd)
-            self.MainWindow.drawTileView2WindowPort(self.lcd)
-
         # TODO: the 19, 41 and 49 ticks should correct for longer instructions
         # Iterate the 144 lines on screen
         for y in xrange(144):
@@ -73,11 +63,12 @@ def tickFrame(self):
             # Mode 2
             self.setSTATMode(2)
             self.calculateCycles(80)
+
             # Mode 3
             self.setSTATMode(3)
             self.calculateCycles(170)
 
-            self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos()) # Just recording states of LCD registers
+            self.MainWindow.scanline(y, self.lcd.get_view_port(), self.lcd.get_window_pos()) # Just recording states of LCD registers
 
             # Mode 0
             self.setSTATMode(0)
@@ -86,6 +77,9 @@ def tickFrame(self):
         self.cpu.setInterruptFlag(self.cpu.VBlank)
 
         self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+
+        if __debug__:
+            self.MainWindow.refreshDebugWindows(self.lcd)
 
         # Wait for next frame
         for y in xrange(144,154):

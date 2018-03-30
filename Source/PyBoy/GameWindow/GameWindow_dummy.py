@@ -7,7 +7,6 @@
 
 import sys
 import time
-import numpy as np
 
 from .. import CoreDump
 from ..WindowEvent import WindowEvent
@@ -25,7 +24,6 @@ class DummyGameWindow(AbstractGameWindow):
 
         CoreDump.windowHandle = self
 
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
     def dump(self,filename):
         pass
@@ -46,7 +44,7 @@ class DummyGameWindow(AbstractGameWindow):
         logger.info("DummyWindow stopping")
 
     def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y] = viewPos + windowPos
+        pass
 
     def renderScreen(self, lcd):
         pass

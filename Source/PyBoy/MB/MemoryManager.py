@@ -64,9 +64,10 @@ def __setitem__(self,i,value):
     elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
         self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
     elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+        self.MainWindow.VRAM_changed = True
         self.lcd.VRAM[i - 0x8000] = value
         if i < 0x9800: # Is within tile data -- not tile maps
-            self.lcd.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
+            self.MainWindow.tiles_changed.add(i & 0xFFF0) # Mask out the byte of the tile
     elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
         self.cartridge[i] = value
     elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
@@ -75,6 +76,7 @@ def __setitem__(self,i,value):
         # Redirect to internal RAM
         self[i - 0x2000] = value
     elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
+        self.MainWindow.OAM_changed = True
         self.lcd.OAM[i - 0xFE00] = value
     elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
         self.ram.nonIOInternalRAM0[i - 0xFEA0] = value
@@ -94,11 +96,11 @@ def __setitem__(self,i,value):
         elif i == 0xFF46:
             self.transferDMAtoOAM(value)
         elif i == 0xFF47:
-            self.lcd.BGP.set(value)
+            self.MainWindow.flush_cache |= self.lcd.BGP.set(value) # TODO: Separate BGP, OBP0 and OBP1 cache flush
         elif i == 0xFF48:
-            self.lcd.OBP0.set(value)
+            self.MainWindow.flush_cache |= self.lcd.OBP0.set(value)
         elif i == 0xFF49:
-            self.lcd.OBP1.set(value)
+            self.MainWindow.flush_cache |= self.lcd.OBP1.set(value)
         else:
             self.ram.IOPorts[i - 0xFF00] = value
     elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O

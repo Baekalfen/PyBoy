@@ -11,7 +11,6 @@ import time
 import os.path
 import os
 import sys
-import numpy as np
 import platform
 from PyBoy.Logger import logger
 
@@ -27,6 +26,8 @@ def getWindow():
         from PyBoy.GameWindow import SdlGameWindow as Window
     elif sys.argv[1] == "dummy":
         from PyBoy.GameWindow import DummyGameWindow as Window
+    elif sys.argv[1] == "SDL2Process":
+        from PyBoy.GameWindow import MultiprocessGameWindow as Window
     else:
         print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
         print "Valid GameWindows are: 'SDL2' and 'dummy'"

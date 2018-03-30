@@ -79,7 +79,7 @@ def loadState(self, filename):
         if self.cartridge.rtcEnabled:
             self.cartridge.rtc.load(filename + ".rtc")
 
+    self.MainWindow.flush_cache = True
+
     logger.info("State loaded.")
 
-    self.lcd.clearCache = True
-    self.lcd.refreshTileDataAdaptive()

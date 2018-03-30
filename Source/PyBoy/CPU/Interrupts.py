@@ -19,11 +19,11 @@ def checkForInterrupts(self):
 
     # 0xFF0F (IF) - Bit 0-4 Requested interrupts
     # 0xFFFF (IE) - Bit 0-4 Enabling interrupt vectors
-    anyInterruptToHandle = ((self.mb[IF] & 0b11111) & (self.mb[IE] & 0b11111)) != 0
+    anyInterruptToHandle = ((self.mb[IF] & 0b11111) & (self.mb[IE] & 0b11111))
 
     # Better to make a long check, than run through 5 if statements
+    # TODO: Implement a interruptMasterEnable latch! The interrupt doesn't take effect on the very next instruction after IE
     if anyInterruptToHandle and self.interruptMasterEnable:
-
         return (
             self.testAndTriggerInterrupt(VBlank, 0x0040) or
             self.testAndTriggerInterrupt(LCDC, 0x0048) or

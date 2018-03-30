@@ -7,11 +7,15 @@
 
 from abc import abstractmethod
 
-
 class AbstractGameWindow(object):
 
     def __init__(self, scale=1):
         self._scale = scale
+
+        self.VRAM_changed = True
+        self.OAM_changed = True
+        self.tiles_changed = set([])
+        self.flush_cache = True
 
     @abstractmethod
     def dump(self, filename):
@@ -38,16 +42,11 @@ class AbstractGameWindow(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def scanline(self, y, viewPos, windowPos):
+    def scanline(self, y, view_pos, window_pos):
         raise NotImplementedError()
 
     @abstractmethod
-    def renderScreen(self, lc):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize,
-            spritePriority, BGPkey, xFlip=0, yFlip=0):
+    def renderScreen(self, lcd):
         raise NotImplementedError()
 
     @abstractmethod
@@ -57,4 +56,3 @@ class AbstractGameWindow(object):
     @abstractmethod
     def getScreenBuffer(self):
         raise NotImplementedError()
-

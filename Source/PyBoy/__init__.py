@@ -10,6 +10,7 @@ import sys
 import time
 import numpy as np
 from ScreenRecorder import ScreenRecorder
+import platform
 
 from MB import Motherboard
 from WindowEvent import WindowEvent
@@ -61,7 +62,7 @@ class PyBoy():
                 done = True
             elif event == WindowEvent.ReleaseSpeedUp:
                 self.limitEmulationSpeed ^= True
-                logger.info("Speed limit: %s" % limitEmulationSpeed)
+                logger.info("Speed limit: %s" % self.limitEmulationSpeed)
             elif event == WindowEvent.SaveState:
                 self.mb.saveState(self.mb.cartridge.filename+".state")
             elif event == WindowEvent.LoadState:
@@ -90,11 +91,11 @@ class PyBoy():
         self.window.updateDisplay()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.window.getScreen())
+            self.screen_recorder.add_frame(self.window.getScreenBuffer())
 
         self.t_VSynced = time.clock()
 
-        # # Trying to avoid VSync'ing on a frame, if we are out of time
+        # TODO: Try to avoid VSync'ing on a frame, if we are out of time
         if self.limitEmulationSpeed:
             # This one makes time and frame syncing work, but messes with time.clock()
             self.window.VSync()
@@ -103,9 +104,7 @@ class PyBoy():
 
         if self.counter % 60 == 0:
             text = "%d %d" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)
-            # self.window._window.title = text
             self.window.setTitle(text)
-            # logger.info(text)
             self.counter = 0
         self.counter += 1
 
