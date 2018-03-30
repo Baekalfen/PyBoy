@@ -40,13 +40,10 @@ macOS
 -----
 The easiest way to get started, is to first install [brew](https://www.brew.sh).
 
-Git and Mercurial is not strictly needed for the emulator. You can choose not to install them, if you download and install PySDL2 and NumPy manually.
-
 When brew is installed, the depencencies can be installed with the following commands in the terminal:
 
     brew update
-    brew install git mercurial
-    brew install pypy sdl2
+    brew install git pypy sdl2
     brew link sdl2
     brew install sdl2_gfx sdl2_image
 
@@ -58,11 +55,8 @@ Ubuntu/Linux
 ------------
 Ubuntu has some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy and PySDL2 in a virtualenv.
 
-Git and Mercurial is not strictly needed for the emulator. You can choose not to install them, if you download and install PySDL2 and NumPy manually.
-
     sudo apt update
-    sudo apt install git mercurial
-    sudo apt install pypy pypy-dev virtualenv libsdl2-dev
+    sudo apt install git pypy pypy-dev virtualenv libsdl2-dev
 
 Now move to the `PyBoy/Source` directory before creating the virtual environment:
 
@@ -74,10 +68,9 @@ Now move to the `PyBoy/Source` directory before creating the virtual environment
 
 Windows
 -------
-First, install Git, Mercurial, vcredist and VCForPython27:
+First, install Git, vcredist and VCForPython27:
 
 * https://git-scm.com/download/win
-* https://www.mercurial-scm.org/wiki/Download#Windows
 * https://www.microsoft.com/en-us/download/details.aspx?id=5582
 * https://www.microsoft.com/en-us/download/details.aspx?id=44266
 
