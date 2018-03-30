@@ -11,7 +11,6 @@ import time
 import os.path
 import os
 import sys
-import numpy as np
 import platform
 from PyBoy.Logger import logger
 from PyBoy.WindowEvent import WindowEvent

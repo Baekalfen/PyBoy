@@ -43,9 +43,8 @@ The easiest way to get started, is to first install [brew](https://www.brew.sh).
 When brew is installed, the depencencies can be installed with the following commands in the terminal:
 
     brew update
-    brew install git pypy sdl2
+    brew install git pypy sdl2 sdl2_gfx sdl2_image
     brew link sdl2
-    brew install sdl2_gfx sdl2_image
 
     pip_pypy install git+https://bitbucket.org/pypy/numpy.git
     pip_pypy install git+https://github.com/marcusva/py-sdl2.git
