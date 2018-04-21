@@ -5,34 +5,42 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 import sys
+import platform
 import time
 
+import numpy as np
+
+import Global
 from MB import Motherboard
-from WindowEvent import WindowEvent
+import WindowEvent
 from Logger import logger, addConsoleHandler
 import BotSupport
 import Logger
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 
+from PyBoy.GameWindow.GameWindow_SDL2 import SdlGameWindow
+# from PyBoy.GameWindow.GameWindow_PyGame import PyGameGameWindow
+from PyBoy.GameWindow.GameWindow_dummy import DummyGameWindow
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
+
 class PyBoy():
-    def __init__(self, window, ROM, bootROM = None):
+    def __init__(self, win_type, scale, ROM, bootROM = None):
         self.debugger = None
         self.mb = None
-        self.window = window
+        self.window = self.getWindow(win_type, scale)
 
         if "debug" in sys.argv and platform.system() != "Windows":
-            self.debugger = Debug()
-            self.debugger.tick()
+            pass
+            # self.debugger = Debug()
+            # self.debugger.tick()
         else:
             addConsoleHandler()
 
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(ROM, bootROM, window, profiling = self.profiling, debugger = self.debugger)
+        self.mb = Motherboard(ROM, bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
 
         if not self.debugger is None:
             self.debugger.mb = self.mb
@@ -46,6 +54,24 @@ class PyBoy():
         self.counter = 0
         self.limitEmulationSpeed = True
 
+    def getWindow(self, win_type, scale):
+        print "Window type is:", win_type
+        Window = None
+        if win_type is None:
+            Window = SdlGameWindow(scale)
+        elif win_type == "SDL2":
+            Window = SdlGameWindow(scale)
+        # elif win_type == "PyGame":
+        #     Window = PyGameGameWindow(scale)
+        elif win_type == "dummy":
+            Window = DummyGameWindow(scale)
+        else:
+            print "Invalid window argument!"
+            exit(1)
+
+        return Window
+
+
     def tick(self):
         done = False
         self.exp_avg_emu = 0.9 * self.exp_avg_emu + 0.1 * (self.t_VSynced-self.t_start)
@@ -58,7 +84,7 @@ class PyBoy():
                 done = True
             elif event == WindowEvent.ReleaseSpeedUp:
                 self.limitEmulationSpeed ^= True
-                logger.info("Speed limit: %s" % limitEmulationSpeed)
+                logger.info("Speed limit: %s" % self.limitEmulationSpeed)
             elif event == WindowEvent.SaveState:
                 self.mb.saveState(self.mb.cartridge.filename+".state")
             elif event == WindowEvent.LoadState:
@@ -84,9 +110,9 @@ class PyBoy():
         self.t_VSynced = time.clock()
 
         # # Trying to avoid VSync'ing on a frame, if we are out of time
-        if self.limitEmulationSpeed:
-            # This one makes time and frame syncing work, but messes with time.clock()
-            self.window.VSync()
+        # if self.limitEmulationSpeed:
+        #     # This one makes time and frame syncing work, but messes with time.clock()
+        #     self.window.VSync()
         self.t_frameDone = time.time()
 
 
@@ -128,9 +154,8 @@ class PyBoy():
     def setMemoryValue(self, addr, value):
         self.mb[addr] = value
 
-    def sendInput(self, event_list):
-        for event in event_list:
-            self.mb.buttonEvent(event)
+    def sendInput(self, event):
+        self.mb.buttonEvent(event)
 
     def getMotherBoard(self):
         return self.mb

@@ -5,16 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-A = 0
-F = 0
-B = 0
-C = 0
-D = 0
-E = 0
-HL = 0
-SP = 0
-PC = 0
-
 def setH(self, x):
     assert x <= 0xFF, "%0.2x" % x
     self.HL &= 0x00FF

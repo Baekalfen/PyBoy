@@ -89,7 +89,7 @@ class RTC():
             dayCarry = self.dayCarry << 7
             return dayHigh + halt + dayCarry
         else:
-            logger.warn("Invalid RTC register: %0.4x %0.2x" % (register, value))
+            logger.warn("Invalid RTC register: %0.4x" % (register))
 
     def setRegister(self, register, value):
         if not self.latchEnabled:

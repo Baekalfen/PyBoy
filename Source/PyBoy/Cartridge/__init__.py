@@ -8,8 +8,10 @@
 from .. import CoreDump
 import os
 import struct
+from .. import Global
+import numpy as np
 
-from GenericMBC import GenericMBC
+# from GenericMBC import GenericMBC
 from GenericMBC import ROM_only
 from MBC1 import MBC1
 from MBC2 import MBC2
@@ -24,7 +26,7 @@ def Cartridge(filename):
         raise Exception("Cartridge header checksum mismatch!")
 
     # WARN: The following table doesn't work for MBC2! See Pan Docs
-    exRAMCount = ExRAMTable[ROMBanks[0][0x0149]]
+    exRAMCount = int(ExRAMTable[ROMBanks[0][0x0149]])
 
     cartType = ROMBanks[0][0x0147]
     cartInfo = cartridgeTable.get(cartType, None)
@@ -49,10 +51,17 @@ def loadROMfile(filename):
         ROMData = ROMFile.read()
 
         bankSize = (16 * 1024)
-        ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
+        # TODO: LOAD DATA!
+        if Global.isPyPy:
+            ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
+        else:
+            ROMBanks = np.ndarray(shape=(len(ROMData)/bankSize, bankSize), dtype='uint8')
 
         for i, byte in enumerate(ROMData):
-            ROMBanks[i / bankSize][i % bankSize] = ord(byte)
+            if Global.isPyPy:
+                ROMBanks[i / bankSize][i % bankSize] = ord(byte)
+            else:
+                ROMBanks[i / bankSize, i % bankSize] = ord(byte)
 
     return ROMBanks
 
@@ -79,7 +88,8 @@ cartridgeTable = {
 
 # Number of 8KB banks
 ExRAMTable = {
-    0x00 : None,
+    0x00 : 1, # We wrongfully allocate some RAM, to help Cython
+    # 0x00 : None,
     0x02 : 1,
     0x03 : 4,
     0x04 : 16,

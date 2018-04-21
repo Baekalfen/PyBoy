@@ -15,7 +15,8 @@ import warnings
 from .. import CoreDump
 from ..MathUint8 import getSignedInt8
 from ..WindowEvent import WindowEvent
-from ..LCD import colorPalette, alphaMask
+from .. import LCD
+# from ..LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from ..GameWindow import AbstractGameWindow
 
@@ -29,7 +30,8 @@ def pixels2dWithoutWarning(surface):
         warnings.simplefilter("ignore")
         return sdl2.ext.pixels2d(surface)
 
-class SdlGameWindow(AbstractGameWindow):
+# TODO: class SdlGameWindow(AbstractGameWindow):
+class SdlGameWindow():
     def __init__(self, scale=1):
         self._scale = scale
 
@@ -92,7 +94,7 @@ class SdlGameWindow(AbstractGameWindow):
         self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
         self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
 
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
+        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='int32')
 
         if __debug__:
             self.__setDebug()
@@ -189,7 +191,10 @@ class SdlGameWindow(AbstractGameWindow):
         sdl2.ext.quit()
 
     def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y] = viewPos + windowPos
+        self.scanlineParameters[y, 0] = viewPos[0]
+        self.scanlineParameters[y, 1] = viewPos[1]
+        self.scanlineParameters[y, 2] = windowPos[0]
+        self.scanlineParameters[y, 3] = windowPos[1]
 
     def renderScreen(self, lcd):
         # All VRAM addresses are offset by 0x8000
@@ -212,7 +217,7 @@ class SdlGameWindow(AbstractGameWindow):
                     self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenBuffer[x,y] = colorPalette[0]
+                    self._screenBuffer[x,y] = LCD.colorPalette[0]
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
@@ -267,11 +272,11 @@ class SdlGameWindow(AbstractGameWindow):
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
-                        pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
+                        pixel += LCD.alphaMask # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
 
-                    if not (pixel & alphaMask):
+                    if not (pixel & LCD.alphaMask):
                         toBuffer[x2+x, y2+y] = pixel
 
 

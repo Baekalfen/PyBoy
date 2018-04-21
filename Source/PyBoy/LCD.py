@@ -6,8 +6,10 @@
 #
 
 import CoreDump
+import RAM
 from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
-import numpy
+import numpy as np
+
 
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 
@@ -38,14 +40,14 @@ class LCD():
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
 
-        self.tileCache = numpy.ndarray((384 * 8, 8), dtype='int32')
+        self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
 
         self.VRAM = allocateRAM(VIDEO_RAM)
         self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
 
         # TODO: Find a more optimal way to do this
-        self.spriteCacheOBP0 = numpy.ndarray((384 * 8, 8), dtype='int32')
-        self.spriteCacheOBP1 = numpy.ndarray((384 * 8, 8), dtype='int32')
+        self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')
+        self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='uint32')
 
         self.LCDC = LCDCRegister(0)
         self.BGP = PaletteRegister(0xFC, self)
@@ -98,7 +100,8 @@ class LCD():
 class PaletteRegister():
     def __init__(self, value, lcd):
         self.lcd = lcd
-        self.value = None
+        self.value = 0 # None
+        print value
         self.set(value)
 
     def set(self, value):

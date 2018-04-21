@@ -13,6 +13,7 @@ import re
 from HTMLParser import HTMLParser
 
 destination = "opcodes.py"
+pxd_destination = "opcodes.pxd"
 
 warning = """\
 # -*- encoding: utf-8 -*-
@@ -199,7 +200,14 @@ class Code():
 
         code += "\n\t".join(self.lines)
 
-        return code
+
+        pxd = [
+            "cdef short %s_%0.2x(self) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name),
+            # TODO: Differentiate between 16-bit values (01,11,21,31 ops) and 8-bit values for 'v'
+            "cdef short %s_%0.2x(self, int v) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name)
+        ][self.takesImmediate]
+
+        return (pxd, code)
 
 
 class opcodeData():
@@ -1065,24 +1073,27 @@ def update():
     opcodeFunctions = map(lambda x: (None,None) if x is None else x.createFunction(), opcodes)
 
     with open(destination, "w") as f:
-        f.write(warning)
-        f.write(imports)
-        lookupList = []
-        for lookupTuple, functionText in opcodeFunctions:
-            lookupList.append(lookupTuple)
+        with open(pxd_destination, "w") as f_pxd:
+            f.write(warning)
+            f.write(imports)
+            lookupList = []
+            for lookupTuple, code in opcodeFunctions:
+                lookupList.append(lookupTuple)
 
-            if functionText is None:
-                continue
+                if code is None:
+                    continue
 
-            f.write(functionText.replace('\t', ' '*4) + "\n\n")
+                (pxd, functionText) = code
+                f_pxd.write(pxd + "\n")
+                f.write(functionText.replace('\t', ' '*4) + "\n\n")
 
-        f.write('opcodes = [\n')
-        for t in lookupList:
-            f.write(" "*4 + str(t).replace("'",'') + ',\n')
-        f.write(']')
+            f.write('opcodes = [\n')
+            for t in lookupList:
+                f.write(" "*4 + str(t).replace("'",'') + ',\n')
+            f.write(']')
 
-        # f.write("\n\n# from opcodes import ")
-        # f.write(', '.join(map(lambda (_,__,f): f[5:], lookupList)))
+            # f.write("\n\n# from opcodes import ")
+            # f.write(', '.join(map(lambda (_,__,f): f[5:], lookupList)))
 
 
 def load():

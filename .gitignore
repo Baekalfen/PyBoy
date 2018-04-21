@@ -82,3 +82,8 @@ ROMs/
 diffDump.txt
 Core_Dump_*
 *.state
+
+Source/PyBoy/**/*.c
+Source/PyBoy/**/*.h
+Source/PyBoy/**/*.html
+Source/PyBoy/**/*.so

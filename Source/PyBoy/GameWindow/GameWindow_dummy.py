@@ -10,22 +10,23 @@ import time
 import numpy as np
 
 from .. import CoreDump
-from ..WindowEvent import WindowEvent
+from .. import WindowEvent
 from ..GameWindow import AbstractGameWindow
 from ..Logger import logger
 
 gameboyResolution = (160, 144)
 
 
-class DummyGameWindow(AbstractGameWindow):
+# TODO: class DummyGameWindow(AbstractGameWindow):
+class DummyGameWindow():
     def __init__(self, scale):
         scale = 1
-        super(self.__class__, self).__init__(scale)
+        # super(self.__class__, self).__init__(scale)
         logger.debug("DummyWindow initialization")
 
         CoreDump.windowHandle = self
 
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
+        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='int32')
 
     def dump(self,filename):
         pass
@@ -46,7 +47,10 @@ class DummyGameWindow(AbstractGameWindow):
         logger.info("DummyWindow stopping")
 
     def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y] = viewPos + windowPos
+        self.scanlineParameters[y, 0] = viewPos[0]
+        self.scanlineParameters[y, 1] = viewPos[1]
+        self.scanlineParameters[y, 2] = windowPos[0]
+        self.scanlineParameters[y, 3] = windowPos[1]
 
     def renderScreen(self, lcd):
         pass

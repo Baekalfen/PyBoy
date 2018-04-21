@@ -13,25 +13,11 @@ import os
 import sys
 import numpy as np
 import platform
+from PyBoy import PyBoy
 from PyBoy.Logger import logger
 
 if platform.system() != "Windows":
     from Debug import Debug
-from PyBoy import PyBoy
-
-
-def getWindow():
-    if len(sys.argv) < 2:
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "SDL2":
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "dummy":
-        from PyBoy.GameWindow import DummyGameWindow as Window
-    else:
-        print "Invalid arguments!"
-        exit(1)
-
-    return Window
 
 
 def getROM(ROMdir):
@@ -77,7 +63,7 @@ if __name__ == "__main__":
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy((getWindow())(scale=scale), filename, bootROM)
+        pyboy = PyBoy(sys.argv[1], scale, filename, bootROM)
         while not pyboy.tick():
             pass
         pyboy.stop()

@@ -8,6 +8,8 @@ from .. import CoreDump
 import os
 from RTC import RTC
 from ..Logger import logger
+from .. import Global
+import cython
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):
@@ -24,6 +26,7 @@ class GenericMBC:
 
 
         self.RAMBanks = None
+        self.RAMBanksInitialized = False
         self.initRAMBanks(exRAMCount)
         self.gameName = self.getGameName(ROMBanks)
 
@@ -75,21 +78,26 @@ class GenericMBC:
         if n is None:
             return
 
-        self.RAMBanks = []
-        for n in range(n):
-            # In real life the values in RAM are scrambled on initialization
-            self.RAMBanks.append([0 for x in xrange(8 * 1024)])
+        self.RAMBanksInitialized = True
+
+        # In real life the values in RAM are scrambled on initialization
+        if Global.isPyPy:
+            self.RAMBanks = [[0 for x in xrange(8 * 1024)] for _ in range(n)]
+        else:
+            self.RAMBanks = np.ndarray(shape=(n, 8 * 1024), dtype='uint8')
+
 
     def getGameName(self, ROMBanks):
         return "".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
 
+    @cython.locals(address=cython.ushort)
     def __getitem__(self, address):
         if 0x0000 <= address < 0x4000:
             return self.ROMBanks[0][address]
         elif 0x4000 <= address < 0x8000:
             return self.ROMBanks[self.ROMBankSelected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
-            if not self.RAMBanks:
+            if not self.RAMBanksInitialized:
                 raise CoreDump.CoreDump("RAM banks not initialized: %s" % hex(address))
 
             if self.rtcEnabled and 0x08 <= self.RAMBankSelected <= 0x0C:
@@ -99,10 +107,10 @@ class GenericMBC:
         else:
             raise CoreDump.CoreDump("Reading address invalid: %s" % address)
 
-    def __getslice__(self, a, b):
-        if b-a < 0:
-            raise CoreDump.CoreDump("Negative slice not allowed")
-        return [self.__getitem__(a+n) for n in xrange(b-a)]
+    # def __getslice__(self, a, b):
+    #     if b-a < 0:
+    #         raise CoreDump.CoreDump("Negative slice not allowed")
+    #     return [self.__getitem__(a+n) for n in xrange(b-a)]
 
     def __str__(self):
         string = "Cartridge:\n"
@@ -122,7 +130,12 @@ class GenericMBC:
 
 
 class ROM_only(GenericMBC):
+    @cython.locals(address=cython.ushort, value=cython.uchar)
     def __setitem__(self, address, value):
+        self.set(address, value)
+
+    @cython.locals(address=cython.ushort, value=cython.uchar)
+    def set(self, address, value):
         if 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1

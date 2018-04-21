@@ -5,21 +5,73 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .. import CoreDump
-from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+from opcodes import opcodes
+from ... import CoreDump
+from ...opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+import flags
 from flags import flagZ, flagN, flagH, flagC
-from ..Logger import logger
-from Interrupts import InterruptVector, NoInterrupt
+from flags import VBlank, LCDC, TIMER, Serial, HightoLow
+from ...Logger import logger
+# from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 
+
+IF_address = 0xFF0F
+IE_address = 0xFFFF
+NoInterrupt = 0
+InterruptVector = 1
+
 class CPU(object): # 'object' is important for property!!!
-    from opcodes import opcodes
-    from registers import A, F, B, C, D, E, HL, SP, PC
+    # from registers import A, F, B, C, D, E, HL, SP, PC
     from registers import setH, setL, setAF, setBC, setDE
-    from Interrupts import checkForInterrupts, testAndTriggerInterrupt
-    from flags import VBlank, LCDC, TIMER, Serial, HightoLow
+    # from Interrupts import checkForInterrupts, testAndTriggerInterrupt
     from flags import testFlag, setFlag, clearFlag
     from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
+
+
+    def checkForInterrupts(self):
+        #GPCPUman.pdf p. 40 about priorities
+        # If an interrupt occours, the PC is pushed to the stack.
+        # It is up to the interrupt routine to return it.
+
+        # 0xFF0F (IF_address) - Bit 0-4 Requested interrupts
+        # 0xFFFF (IE_address) - Bit 0-4 Enabling interrupt vectors
+        anyInterruptToHandle = ((self.mb[IF_address] & 0b11111) & (self.mb[IE_address] & 0b11111)) != 0
+
+        # Better to make a long check, than run through 5 if statements
+        if anyInterruptToHandle and self.interruptMasterEnable:
+
+            return (
+                self.testAndTriggerInterrupt(VBlank, 0x0040) or
+                self.testAndTriggerInterrupt(LCDC, 0x0048) or
+                self.testAndTriggerInterrupt(TIMER, 0x0050) or
+                self.testAndTriggerInterrupt(Serial, 0x0058) or
+                self.testAndTriggerInterrupt(HightoLow, 0x0060)
+                )
+
+        return NoInterrupt
+
+    def testAndTriggerInterrupt(self, flag, vector):
+        if self.testInterruptFlagEnabled(flag) and self.testInterruptFlag(flag):
+
+            self.clearInterruptFlag(flag)
+            self.interruptMasterEnable = False
+            if self.halted:
+                self.PC += 1 # Escape HALT on return
+                # self.CPU_PUSH(self.PC+1)
+            # else:
+                # self.CPU_PUSH(self.PC)
+
+            self.mb[self.SP-1] = self.PC >> 8 # High
+            self.mb[self.SP-2] = self.PC & 0xFF # Low
+            self.SP -= 2
+
+            self.PC = vector
+
+            return InterruptVector
+        return NoInterrupt
+
+
 
     H = property(lambda s: s.HL >> 8, setH)
     L = property(lambda s: s.HL & 0xFF, setL)
@@ -35,20 +87,30 @@ class CPU(object): # 'object' is important for property!!!
     fNZ = property(lambda s:not bool(s.F & (1 << flagZ)), None)
 
     def __init__(self, MB, profiling=False):
+        self.A = 0
+        self.F = 0
+        self.B = 0
+        self.C = 0
+        self.D = 0
+        self.E = 0
+        self.HL = 0
+        self.SP = 0
+        self.PC = 0
+
         self.mb = MB
 
         self.interruptMasterEnable = False
 
         self.breakAllow = True
         self.breakOn = False
-        self.breakNext = None
+        self.breakNext = 0
 
         self.halted = False
         self.stopped = False
 
         self.debugCallStack = []
 
-        self.PC = 0
+        # self.PC = 0
 
         #debug
         self.oldPC = -1
@@ -84,7 +146,7 @@ class CPU(object): # 'object' is important for property!!!
         # if opcode == 0xf0:
         #     print "F0", hex(self.mb[pc+1])
 
-        operation = opcodes.opcodes[opcode]
+        operation = opcodes[opcode]
 
         if operation == None:
             import pdb; pdb.set_trace()
@@ -186,9 +248,6 @@ class CPU(object): # 'object' is important for property!!!
         else:
             return self.executeInstruction(instruction)
 
-    def error(self, message):
-        raise CoreDump.CoreDump(message)
-
     def getDump(self, instruction = None):
         flags = ""
         if self.testFlag(flagZ):
@@ -200,7 +259,7 @@ class CPU(object): # 'object' is important for property!!!
         if self.testFlag(flagN):
             flags += " N"
 
-	logger.info(flags)
+        logger.info(flags)
         logger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.A, self.F))
         logger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.B, self.C))
         logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.D, self.E))
@@ -214,7 +273,7 @@ class CPU(object): # 'object' is important for property!!!
         logger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
 
         if (self.mb[self.PC]) != 0xCB:
-            l = self.opcodes[self.mb[self.PC]][0]
+            l = opcodes[self.mb[self.PC]][0]
             logger.info("Op: 0x%0.2X" % self.mb[self.PC])
             logger.info("Name: " + str(CPU_COMMANDS[self.mb[self.PC]]))
             logger.info("Len:" + str(l))
@@ -231,28 +290,28 @@ class CPU(object): # 'object' is important for property!!!
         logger.info("Enabled Interrupts")
 
         flags = ""
-        if self.testInterruptFlagEnabled(self.VBlank):
+        if self.testInterruptFlagEnabled(VBlank):
             flags += "VBlank "
-        if self.testInterruptFlagEnabled(self.LCDC):
+        if self.testInterruptFlagEnabled(LCDC):
             flags += "LCDC "
-        if self.testInterruptFlagEnabled(self.TIMER):
+        if self.testInterruptFlagEnabled(TIMER):
             flags += "Timer "
-        if self.testInterruptFlagEnabled(self.Serial):
+        if self.testInterruptFlagEnabled(Serial):
             flags += "Serial "
-        if self.testInterruptFlagEnabled(self.HightoLow):
+        if self.testInterruptFlagEnabled(HightoLow):
             flags += "HightoLow "
-	logger.info(flags)
+        logger.info(flags)
         logger.info("Waiting Interrupts")
         flags = ""
-        if self.testInterruptFlag(self.VBlank):
+        if self.testInterruptFlag(VBlank):
             flags += "VBlank "
-        if self.testInterruptFlag(self.LCDC):
+        if self.testInterruptFlag(LCDC):
             flags += "LCDC "
-        if self.testInterruptFlag(self.TIMER):
+        if self.testInterruptFlag(TIMER):
             flags += "Timer "
-        if self.testInterruptFlag(self.Serial):
+        if self.testInterruptFlag(Serial):
             flags += "Serial "
-        if self.testInterruptFlag(self.HightoLow):
+        if self.testInterruptFlag(HightoLow):
             flags += "HightoLow "
         if self.halted:
             flags += " **HALTED**"
