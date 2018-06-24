@@ -36,6 +36,9 @@ class FrameBuffer(object):
         """Set FrameBuffer item at index"""
         self._cache[key] = item
 
+    def get_array(self):
+        return self._array.copy()
+
 class ScaledFrameBuffer(FrameBuffer):
 
     def update(self):
