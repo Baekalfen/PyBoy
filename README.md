@@ -1,3 +1,6 @@
+# _Warning! You are on the experimental branch for "Cythonization" of PyBoy. It's currently a work in progress, to see if PyBoy will benefit from Cython._
+
+
 # PyBoy
 
 It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
