@@ -28,7 +28,8 @@ def getWindow():
     elif sys.argv[1] == "dummy":
         from PyBoy.GameWindow import DummyGameWindow as Window
     else:
-        print "Invalid arguments!"
+        print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
+        print "Valid GameWindows are: 'SDL2' and 'dummy'"
         exit(1)
 
     return Window

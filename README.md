@@ -103,6 +103,34 @@ Now, create a directory at `Source/ROMs` and place your ROMs in this directory -
 
 Then run `pypy main.py` from the `Source` directory and choose a ROM to start.
 
+For more advanced use, you can use `pypy main.py [GameWindow] [ROM path]`. For example: `pypy main.py SDL2 ROMs/game.rom`. Currently, the GameWindows `SDL2` and `dummy` are supported. Use `SDL2` if you want to see the screen, and `dummy` if you want to run PyBoy headless.
+
+The Game Boy controls are as follows:
+
+| Keyboard key | GameBoy equivalant |
+| ---          | ---                |
+| Up           | Up                 |
+| Down         | Down               |
+| Left         | Left               |
+| Right        | Right              |
+| A            | A                  |
+| S            | B                  |
+| Return       | Start              |
+| Backspace    | Select             |
+
+The other controls for the emulator:
+
+| Keyboard key | Emulator function       |
+| ---          | ---                     |
+| Escape       | Quit                    |
+| D            | Debug                   |
+| Space        | Unlimited FPS           |
+| Z            | Save state              |
+| X            | Load state              |
+| I            | Toggle screen recording |
+
+Note, that debug and save/load state might not be perfectly stable.
+
 Scripts/Bots
 ============
 PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. Take a look at `tetris_bot.py` for a crude "bot", which interacts with the game.
