@@ -53,6 +53,7 @@ class SdlGameWindow(AbstractGameWindow):
                 # sdl2.SDLK_e       : self.debug = True
                 sdl2.SDLK_d         : WindowEvent.DebugToggle,
                 sdl2.SDLK_SPACE     : WindowEvent.PressSpeedUp,
+                sdl2.SDLK_i         : WindowEvent.ScreenRecordingToggle,
         }
         self.windowEventsUp = {
                 sdl2.SDLK_UP        : WindowEvent.ReleaseArrowUp,
@@ -288,6 +289,9 @@ class SdlGameWindow(AbstractGameWindow):
 
     def getScreenBuffer(self):
         return self._screenBuffer
+
+    def getScreen(self):
+        return self._screenBuffer.get_array()
 
     #################################################################
     #

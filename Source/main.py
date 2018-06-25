@@ -49,7 +49,6 @@ def getROM(ROMdir):
 
     return filename
 
-
 if __name__ == "__main__":
     # Automatically bump to '-OO' optimizations
     if __debug__:

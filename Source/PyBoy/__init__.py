@@ -8,6 +8,8 @@
 
 import sys
 import time
+import numpy as np
+from ScreenRecorder import ScreenRecorder
 
 from MB import Motherboard
 from WindowEvent import WindowEvent
@@ -45,6 +47,7 @@ class PyBoy():
         self.t_frameDone = 0
         self.counter = 0
         self.limitEmulationSpeed = True
+        self.screen_recorder = None
 
     def tick(self):
         done = False
@@ -67,6 +70,12 @@ class PyBoy():
                 # mb.cpu.breakAllow = True
                 self.debugger.running ^= True
                 # mb.cpu.breakOn ^= True
+            elif event == WindowEvent.ScreenRecordingToggle:
+                if not self.screen_recorder:
+                    self.screen_recorder = ScreenRecorder()
+                else:
+                    self.screen_recorder.save()
+                    self.screen_recorder = None
             else:  # Right now, everything else is a button press
                 self.mb.buttonEvent(event)
 
@@ -80,6 +89,8 @@ class PyBoy():
                 self.mb.tickFrame()
         self.window.updateDisplay()
 
+        if self.screen_recorder:
+            self.screen_recorder.add_frame(self.window.getScreen())
 
         self.t_VSynced = time.clock()
 
