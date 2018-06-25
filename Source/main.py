@@ -40,7 +40,7 @@ def getROM(ROMdir):
         ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir))
     for i, f in enumerate(found_files):
         print ("%s\t%s" % (i + 1, f))
-    filename = "1" # raw_input("Write the name or number of the ROM file:\n")
+    filename = raw_input("Write the name or number of the ROM file:\n")
 
     try:
         filename = ROMdir + found_files[int(filename) - 1]

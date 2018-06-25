@@ -8,6 +8,7 @@ from Logger import logger
 class ScreenRecorder:
 
     def __init__(self):
+        logger.info("ScreenRecorder started")
         self.frames = []
         self.color_mapping = {0x00FFFFFF: np.uint8([255, 255, 255]), 0x00999999: np.uint8([153, 153, 153]),
                               0x00555555: np.uint8([85, 85, 85]), 0x00000000: np.uint8([0, 0, 0])}
@@ -16,6 +17,7 @@ class ScreenRecorder:
         self.frames.append(frame)
 
     def save(self, format='gif', path=None, fps=60):
+        logger.info("ScreenRecorder saving...")
         if format not in ['gif']:
             raise Exception("Unsupported file format.")
         if fps < 1 or fps > 100:
