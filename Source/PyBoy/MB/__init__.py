@@ -44,6 +44,13 @@ class Motherboard():
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
 
+        self.serial_buffer = ""
+
+    def get_serial(self):
+        b = self.serial_buffer
+        self.serial_buffer = ""
+        return b
+
     def buttonEvent(self, key):
         self.interaction.keyEvent(key)
         self.cpu.setInterruptFlag(self.cpu.HightoLow)

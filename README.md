@@ -20,6 +20,7 @@ Table of Contents
     * [Windows](#windows)
     * [Setup and Run](#setup-and-run)
 * [Scripts/Bots](#scriptsbots)
+* [Compatibility](#compatibility)
 * [Contribute](#contribute)
 * [License](#license)
 
@@ -151,6 +152,10 @@ The Methods are:
 I can recommend to use the TileView instead of the screenbuffer, as they contain the index of the tiles on the screen. It is much simpler to look at the 8-bit value instead of recognizing the equivalent 8x8 pixels on the screen. Same goes for the sprite memory between 0xFE00 and 0xFEA0.
 
 To see more details about this the display and the Game boy, have a look at the "Display" part of the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or refer to the [Pan Docs](http://bgb.bircd.org/pandocs.htm), which has clear-cut details about every conceivable topic.
+
+Compatibility
+=============
+See [results](Source/blargg.md) on Blargg's test ROMs. The list isn't complete, as the features in the missing tests, hasn't been implemented.
 
 Contribute
 ==========

@@ -24,12 +24,15 @@ class DummyGameWindow(AbstractGameWindow):
 
         CoreDump.windowHandle = self
 
+        self.enable_title = True
+
 
     def dump(self,filename):
         pass
 
-    def setTitle(self,title):
-        logger.info("DummyWindow set title: %s" % title)
+    def setTitle(self, title):
+        if self.enable_title:
+            logger.info("DummyWindow set title: %s" % title)
 
     def getEvents(self):
         return []

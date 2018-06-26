@@ -83,6 +83,9 @@ def __setitem__(self,i,value):
     elif 0xFF00 <= i < 0xFF4C:  # I/O ports
         if i == 0xFF00:
             self.ram.IOPorts[i - 0xFF00] = self.interaction.pull(value)
+        elif i == 0xFF01:
+            self.serial_buffer += chr(value)
+            self.ram.IOPorts[i - 0xFF00] = value
         elif i == 0xFF04:
             self.timer.DIV = 0
         elif i == 0xFF05:
