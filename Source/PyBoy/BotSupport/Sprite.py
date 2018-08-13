@@ -35,7 +35,8 @@ class Sprite():
             }
 
     def is_on_screen(self):
-        spriteHeight = 16 if self.LCDC.spriteSize else 16
+        #spriteHeight = 16 if self.LCDC.spriteSize else 16
+        spriteHeight = 16 if self.LCDC.sprite_size else 16
         return (0 < self.get_y() < 144+spriteHeight) and (0 < self.get_x() < 160+8)
 
 def get_bit(val, bit):
