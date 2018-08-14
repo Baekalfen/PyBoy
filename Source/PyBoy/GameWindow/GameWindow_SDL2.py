@@ -457,5 +457,6 @@ class SdlGameWindow(AbstractGameWindow):
 
             i = n*2
             self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), self.sprite_cacheOBP0, self.spriteBuffer)
-            if lcd.LCDC.spriteSize:
+            # if lcd.LCDC.spriteSize:
+            if lcd.LCDC.sprite_size:
                 self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), self.sprite_cacheOBP0, self.spriteBuffer)
