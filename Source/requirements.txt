@@ -1,0 +1,4 @@
+git+https://bitbucket.org/pypy/numpy.git
+git+https://github.com/marcusva/py-sdl2.git
+imageio
+
