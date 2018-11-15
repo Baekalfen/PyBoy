@@ -82,3 +82,12 @@ ROMs/
 diffDump.txt
 Core_Dump_*
 *.state
+
+# Files from venv and dependencies
+Source/bin
+Source/include
+Source/lib-python
+Source/lib_pypy
+Source/pip-selfcheck.json
+Source/site-packages
+
