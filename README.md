@@ -47,8 +47,7 @@ When brew is installed, the depencencies can be installed with the following com
     brew install git pypy sdl2 sdl2_gfx sdl2_image
     brew link sdl2
 
-    pip_pypy install git+https://bitbucket.org/pypy/numpy.git
-    pip_pypy install git+https://github.com/marcusva/py-sdl2.git
+    pip_pypy install -r requirements.txt
 
 
 Ubuntu/Linux
@@ -60,11 +59,10 @@ Ubuntu has some problems installing PyPy in parallel with the system version of 
 
 Now move to the `PyBoy/Source` directory before creating the virtual environment:
 
-    virtualenv . -p `which pypy`
+    virtualenv . -p $(which pypy)
     source ./bin/activate
 
-    pip install git+https://bitbucket.org/pypy/numpy.git
-    pip install git+https://github.com/marcusva/py-sdl2.git
+    pip install -r requirements.txt
 
 Windows
 -------
@@ -86,8 +84,7 @@ Start a Command Prompt and run the following:
 
     pypy -m ensurepip
     pypy -m pip install -U pip wheel
-    pypy -m pip install git+https://bitbucket.org/pypy/numpy.git
-    pypy -m pip install git+https://github.com/marcusva/py-sdl2.git
+    pypy -m pip install -r requirements.txt
 
 Download SDL2 Runtime Binaries for 32-bit Windows:
 
