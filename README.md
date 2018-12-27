@@ -150,6 +150,28 @@ I can recommend to use the TileView instead of the screenbuffer, as they contain
 
 To see more details about this the display and the Game boy, have a look at the "Display" part of the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or refer to the [Pan Docs](http://bgb.bircd.org/pandocs.htm), which has clear-cut details about every conceivable topic.
 
+For inspiration, here is a short demonstration of fetching the screen buffer:
+
+    >>>> import PyBoy
+    >>>> from PyBoy.GameWindow import SdlGameWindow as Window
+    >>>> pyboy = PyBoy.PyBoy(Window(), "ROMs/TestRom.gb")
+    324714   DEBUG    SDL GameWindow initialization
+    324807   DEBUG    Scale: x1 (160, 144)
+    325017   INFO     Cartridge type: 0x13 - MBC3, SRAM, Battery
+    325017   INFO     Cartridge size: 64 ROM banks of 16KB, 16 RAM banks of 8KB
+    325021   INFO     RAM loaded.
+
+    >>>> pyboy.window.getScreenBuffer()
+    array([[4207173, 4207173, 4207173, ..., 4207173, 4207173, 4207173],
+           [4207173, 4207173, 4207173, ..., 4207173, 4207173, 4207173],
+           [4207173, 4207173, 4207173, ..., 4207173, 4207173, 4207173],
+           ...,
+           [4207173, 4207173, 4207173, ..., 4207173, 4207173, 4207173],
+           [4207173, 4207173, 4207173, ..., 4207173, 4207173, 4207173],
+           [4207173, 4207173, 4207173, ..., 4207173, 4207173, 4207173]], dtype=uint32)
+    >>>> while True:
+    ....     pyboy.tick()
+
 Compatibility
 =============
 See [results](Source/blargg.md) on Blargg's test ROMs. The list isn't complete, as the features in the missing tests, hasn't been implemented.

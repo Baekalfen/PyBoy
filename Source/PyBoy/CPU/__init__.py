@@ -6,7 +6,7 @@
 #
 
 from .. import CoreDump
-from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+from ..OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from flags import flagZ, flagN, flagH, flagC
 from ..Logger import logger
 from Interrupts import InterruptVector, NoInterrupt

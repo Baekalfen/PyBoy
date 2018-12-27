@@ -17,7 +17,7 @@ from WindowEvent import WindowEvent
 from Logger import logger, addConsoleHandler
 import BotSupport
 import Logger
-from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+from OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 
 
 SPF = 1/60. # inverse FPS (frame-per-second)
@@ -130,7 +130,7 @@ class PyBoy():
     # Scripts and bot methods
 
     def getScreenBuffer(self):
-        return self.window
+        return self.window.getScreenBuffer()
 
     def getMemoryValue(self, addr):
         return self.mb[addr]
