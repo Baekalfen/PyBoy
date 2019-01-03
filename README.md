@@ -39,7 +39,7 @@ The code has a few dependencies, but it should be fairly easy to get it up and r
 
 macOS
 -----
-The easiest way to get started, is to first install [brew](https://www.brew.sh).
+The easiest way to get started, is to first install [brew](https://brew.sh).
 
 When brew is installed, the depencencies can be installed with the following commands in the terminal:
 
