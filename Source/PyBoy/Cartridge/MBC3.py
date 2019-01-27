@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 from .. import CoreDump
-from GenericMBC import GenericMBC
+from .GenericMBC import GenericMBC
 
 from ..Logger import logger
 

@@ -6,7 +6,7 @@
 #
 from .. import CoreDump
 from ..Logger import logger
-from GenericMBC import GenericMBC
+from .GenericMBC import GenericMBC
 
 class MBC1(GenericMBC):
     def __setitem__(self, address, value):

@@ -7,19 +7,19 @@
 
 from .. import CoreDump
 from ..OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-from flags import flagZ, flagN, flagH, flagC
+from .flags import flagZ, flagN, flagH, flagC
 from ..Logger import logger
-from Interrupts import InterruptVector, NoInterrupt
+from .Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 
 class CPU(object): # 'object' is important for property!!!
-    from opcodes import opcodes
-    from registers import A, F, B, C, D, E, HL, SP, PC
-    from registers import setH, setL, setAF, setBC, setDE
-    from Interrupts import checkForInterrupts, testAndTriggerInterrupt
-    from flags import VBlank, LCDC, TIMER, Serial, HightoLow
-    from flags import testFlag, setFlag, clearFlag
-    from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
+    from .opcodes import opcodes
+    from .registers import A, F, B, C, D, E, HL, SP, PC
+    from .registers import setH, setL, setAF, setBC, setDE
+    from .Interrupts import checkForInterrupts, testAndTriggerInterrupt
+    from .flags import VBlank, LCDC, TIMER, Serial, HightoLow
+    from .flags import testFlag, setFlag, clearFlag
+    from .flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
 
     H = property(lambda s: s.HL >> 8, setH)
     L = property(lambda s: s.HL & 0xFF, setL)
@@ -131,9 +131,9 @@ class CPU(object): # 'object' is important for property!!!
         if __debug__:
             if self.lala and not self.halted:
                 if (self.mb[self.PC]) == 0xCB:
-                    print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP)
+                    print("%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP))
                 else:
-                    print "%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC], self.AF, self.BC, self.DE, self.HL, self.SP)
+                    print("%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC], self.AF, self.BC, self.DE, self.HL, self.SP))
 
             if self.breakAllow and self.PC == self.breakNext and self.AF == 0x1f80:
                 self.breakAllow = False
@@ -142,7 +142,7 @@ class CPU(object): # 'object' is important for property!!!
             if self.oldPC == self.PC and not self.halted:
                 self.breakOn = True
                 logger.info("PC DIDN'T CHANGE! Can't continue!")
-                print self.getDump()
+                print(self.getDump())
                 # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
                 raise Exception("Escape to main.py")
             self.oldPC = self.PC
@@ -200,7 +200,7 @@ class CPU(object): # 'object' is important for property!!!
         if self.testFlag(flagN):
             flags += " N"
 
-	logger.info(flags)
+        logger.info(flags)
         logger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.A, self.F))
         logger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.B, self.C))
         logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.D, self.E))
@@ -241,7 +241,7 @@ class CPU(object): # 'object' is important for property!!!
             flags += "Serial "
         if self.testInterruptFlagEnabled(self.HightoLow):
             flags += "HightoLow "
-	logger.info(flags)
+        logger.info(flags)
         logger.info("Waiting Interrupts")
         flags = ""
         if self.testInterruptFlag(self.VBlank):

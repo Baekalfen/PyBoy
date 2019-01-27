@@ -6,7 +6,7 @@ windowHandle = None
 
 class CoreDump(Exception):
     def __init__(self, message):
-        print "TODO: Fix CoreDump.\n",message
+        print("TODO: Fix CoreDump.\n",message)
         exit(1)
         super(CoreDump, self).__init__(message)
 
