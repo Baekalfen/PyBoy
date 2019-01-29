@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from flags import VBlank, LCDC, TIMER, Serial, HightoLow
+from .flags import VBlank, LCDC, TIMER, Serial, HightoLow
 
 # Order important. NoInterrupt evaluates to False in if statements
 NoInterrupt, InterruptVector = range(0,2)

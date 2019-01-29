@@ -16,7 +16,7 @@ from .. import CoreDump
 from ..MathUint8 import getSignedInt8
 from ..WindowEvent import WindowEvent
 from ..LCD import color_palette
-from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
+from .FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from ..GameWindow import AbstractGameWindow
 
 from ..Logger import logger

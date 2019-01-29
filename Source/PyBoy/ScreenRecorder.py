@@ -2,7 +2,7 @@ import os
 import imageio
 import numpy as np
 import time
-from Logger import logger
+from PyBoy.Logger import logger
 
 
 class ScreenRecorder:

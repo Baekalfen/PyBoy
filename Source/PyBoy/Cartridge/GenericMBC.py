@@ -6,7 +6,7 @@
 #
 from .. import CoreDump
 import os
-from RTC import RTC
+from .RTC import RTC
 from ..Logger import logger
 
 class GenericMBC:
