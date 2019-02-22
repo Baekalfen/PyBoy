@@ -7,7 +7,7 @@ setuptools.setup(
     name="PyBoy",
     version="0.0.1",
     author="Mads Ynddal",
-    author_email="mynddal@me.com",
+    author_email="mads-pyboy@ynddal.dk",
     long_description=long_description,
     content_type="text/markdown",
     url="https://github.com/Baekalfen/PyBoy",
