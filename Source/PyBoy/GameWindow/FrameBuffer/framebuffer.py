@@ -42,9 +42,7 @@ class FrameBuffer(object):
 class ScaledFrameBuffer(FrameBuffer):
 
     def update(self):
-        for (x, y),_ in np.ndenumerate(self._array):
-            self._array[x, y] = self._cache[x/self._scaleFactor,
-                    y/self._scaleFactor]
+        self._array[:,:] = np.repeat(np.repeat(self._cache, self._scaleFactor, 1), self._scaleFactor, 0)
 
 class SimpleFrameBuffer(FrameBuffer):
 
