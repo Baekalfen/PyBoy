@@ -75,6 +75,7 @@ class ScalableGameWindow(AbstractGameWindow):
             self._window, logical_size=self.gameboyResolution,
             flags=(sdl2.SDL_RENDERER_ACCELERATED |
                    sdl2.SDL_RENDERER_PRESENTVSYNC))
+        self._sdlrenderer = self._renderer.sdlrenderer
 
         self.blankScreen()
         self._window.show()
@@ -144,7 +145,7 @@ class ScalableGameWindow(AbstractGameWindow):
                 dx = (x + bx) & 0x07
                 dy = (y + by) & 0x07
             else:  # White if blank
-                self._renderer.draw_point((x, y), self.color_palette[0])
+                # self._renderer.draw_point((x, y), self.color_palette[0])
                 continue
 
             # If using the second Tile Data Table, convert to signed
@@ -159,13 +160,21 @@ class ScalableGameWindow(AbstractGameWindow):
             bit1 = lcd.VRAM[(tile << 4) + (dy << 1) + 1] & (0x80 >> dx)
 
             # Draw the pixel to the frame buffer
-            self._renderer.draw_point((x, y), bgp[((bit1<<1)+bit0) >> (7-dx)])
+            # self._renderer.draw_point((x, y), bgp[((bit1<<1)+bit0)>>(7-dx)])
+            color = bgp[((bit1<<1)+bit0)>>(7-dx)]
+            if not color == self.color_palette[0]:
+                sdl2.render.SDL_SetRenderDrawColor(self._sdlrenderer, *color)
+                sdl2.render.SDL_RenderDrawPoint(self._sdlrenderer, x, y)
 
     def renderScreen(self, lcd):
+        # Flip buffers and set to white
         self._renderer.present()
+        self._renderer.clear(self.color_palette[0])
 
     def blankScreen(self):
         # Make the screen white
+        self._renderer.clear(self.color_palette[0])
+        self._renderer.present()
         self._renderer.clear(self.color_palette[0])
 
     def getScreenBuffer(self):
