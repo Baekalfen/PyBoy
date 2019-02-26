@@ -124,22 +124,25 @@ class ScalableGameWindow(AbstractGameWindow):
         wx, wy = lcd.get_window_pos()
 
         # Single line, so we can save some math with the tile indices
-        bOffset += ((y + by) << 2) & 0x3FF
-        wOffset += (y - wy) << 2  # No wrapping for window
+        wOffset += (y - wy) << 2
 
         # Class access costs, so do some quick caching
         tile_select = lcd.LCDC.tile_select == 0
         window_enabled_and_y = lcd.LCDC.window_enabled and wy <= y
-        dy = y & 0x07
         bgp = [self.color_palette[lcd.BGP.get_code(x)] for x in range(4)]
         
         for x in self.xs:
             # Window gets priority, otherwise it's the background
             # TODO: This is done almost 8x as much as needed
             if window_enabled_and_y and wx <= x:
-                tile = lcd.VRAM[wOffset + ((x - wx) >> 3) & 0x1F]
+                tile = lcd.VRAM[wOffset + (((x - wx) >> 3) & 0x1F)]
+                dx = (x - wx) & 0x07
+                dy = (y - wy) & 0x07
             elif lcd.LCDC.background_enable:
-                tile = lcd.VRAM[bOffset + ((x + bx) >> 3) & 0x1F]
+                tile = lcd.VRAM[bOffset + (((((x + bx) >> 3) & 0x1F) +
+                                            (((y + by) >> 3) << 5)) & 0x3FF)]
+                dx = (x + bx) & 0x07
+                dy = (y + by) & 0x07
             else:  # White if blank
                 self._renderer.draw_point((x, y), self.color_palette[0])
                 continue
@@ -152,7 +155,6 @@ class ScalableGameWindow(AbstractGameWindow):
                     
             # Get the color from the Tile Data Table... bit by bit
             # TODO: This is horribly inefficient
-            dx = x & 0x07
             bit0 = lcd.VRAM[(tile << 4) + (dy << 1)] & (0x80 >> dx)
             bit1 = lcd.VRAM[(tile << 4) + (dy << 1) + 1] & (0x80 >> dx)
 
