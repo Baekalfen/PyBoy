@@ -124,7 +124,7 @@ class ScalableGameWindow(AbstractGameWindow):
         wx, wy = lcd.get_window_pos()
 
         # Single line, so we can save some math with the tile indices
-        wOffset += (y - wy) << 2
+        wOffset += ((y - wy) >> 3) << 5
 
         # Class access costs, so do some quick caching
         tile_select = lcd.LCDC.tile_select == 0
