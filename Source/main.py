@@ -24,6 +24,8 @@ def getWindow():
         from PyBoy.GameWindow import SdlGameWindow as Window
     elif sys.argv[1] == "SDL2":
         from PyBoy.GameWindow import SdlGameWindow as Window
+    elif sys.argv[1] == "scale":
+        from PyBoy.GameWindow import ScalableGameWindow as Window
     elif sys.argv[1] == "dummy":
         from PyBoy.GameWindow import DummyGameWindow as Window
     elif sys.argv[1] == "SDL2Process":
@@ -58,7 +60,7 @@ if __name__ == "__main__":
 
     bootROM = "ROMs/DMG_ROM.bin"
     ROMdir = "ROMs/"
-    scale = 1
+    scale = 2
     debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories

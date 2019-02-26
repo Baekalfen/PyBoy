@@ -64,8 +64,8 @@ class MultiprocessGameWindow(AbstractGameWindow):
     def stop(self):
         self.pipe.send(('stop', tuple()))
 
-    def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y] = viewPos + windowPos
+    def scanline(self, y, lcd):
+        self.scanlineParameters[y] = lcd.get_view_port() + lcd.get_window_pos()
 
     def renderScreen(self, lcd):
         self.scanlineParameters_clone[:] = self.scanlineParameters

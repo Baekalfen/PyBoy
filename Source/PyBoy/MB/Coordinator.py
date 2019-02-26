@@ -58,7 +58,7 @@ def tickFrame(self):
         # TODO: the 19, 41 and 49 ticks should correct for longer instructions
         # Iterate the 144 lines on screen
         for y in xrange(144):
-            self.checkLYC(y)
+            self.checkLYC(y)  # y is the LY register, which does not exist in LCD.py
 
             # Mode 2
             self.setSTATMode(2)
@@ -68,7 +68,9 @@ def tickFrame(self):
             self.setSTATMode(3)
             self.calculateCycles(170)
 
-            self.MainWindow.scanline(y, self.lcd.get_view_port(), self.lcd.get_window_pos()) # Just recording states of LCD registers
+            self.MainWindow.scanline(y, self.lcd)
+            # Just recording states of LCD registers (or rendering a line,
+            # but I had to pass the whole lcd object for that)
 
             # Mode 0
             self.setSTATMode(0)

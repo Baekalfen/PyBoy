@@ -10,3 +10,4 @@ from .AbstractGameWindow import AbstractGameWindow
 from .GameWindow_SDL2 import SdlGameWindow
 from .GameWindow_Multiprocess import MultiprocessGameWindow
 from .GameWindow_dummy import DummyGameWindow
+from .GameWindow_Scaling import ScalableGameWindow
