@@ -118,7 +118,7 @@ class ScalableGameWindow(AbstractGameWindow):
 
         # Background and Window View Address (offset into VRAM...)
         bOffset = 0x1C00 if lcd.LCDC.background_map_select else 0x1800 
-        wOffset = 0x1C00 if lcd.LCDC.background_map_select else 0x1800
+        wOffset = 0x1C00 if lcd.LCDC.window_map_select else 0x1800
 
         bx, by = lcd.get_view_port()
         wx, wy = lcd.get_window_pos()
