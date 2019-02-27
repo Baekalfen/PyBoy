@@ -7,6 +7,7 @@
 #
 
 
+import ctypes
 import sdl2.ext.colorpalettes  # Implicitly imports sdl2 and sdl2.ext
 
 from .. import CoreDump
@@ -56,7 +57,8 @@ class ScalableGameWindow(AbstractGameWindow):
     # best to just pregenerate and reuse it won't change anyway
     xs = range(gameboyResolution[0])
 
-    color_palette = list(reversed(sdl2.ext.colorpalettes.GRAY2PALETTE))
+    # In the end, we're just converting back to 32 bits anyway...
+    palette = list(map(long, reversed(sdl2.ext.colorpalettes.GRAY2PALETTE)))
 
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
@@ -71,16 +73,21 @@ class ScalableGameWindow(AbstractGameWindow):
         self._window = sdl2.ext.Window("PyBoy", size=start_size,
                                        flags=sdl2.SDL_WINDOW_RESIZABLE)
 
-        self._renderer = sdl2.ext.Renderer(
-            self._window, logical_size=self.gameboyResolution,
-            flags=(sdl2.SDL_RENDERER_ACCELERATED |
-                   sdl2.SDL_RENDERER_PRESENTVSYNC))
+        self._renderer = sdl2.ext.Renderer(self._window, -1,
+                                           self.gameboyResolution)
         self._sdlrenderer = self._renderer.sdlrenderer
+        self._screenbuf = sdl2.SDL_CreateTexture(self._sdlrenderer,
+                                                 sdl2.SDL_PIXELFORMAT_ARGB32,
+                                                 sdl2.SDL_TEXTUREACCESS_STATIC,
+                                                 *self.gameboyResolution)
+        self._linebuf = [0] * self.gameboyResolution[0]
+        self._linerect = sdl2.rect.SDL_Rect(0, 0, self.gameboyResolution[0], 1)
 
         self.blankScreen()
         self._window.show()
 
     def dump(self, filename):
+        # This will probably break the renderer
         sdl2.surface.SDL2_SaveBMP(self._window.get_surface(), filename + ".bmp")
 
     def setTitle(self, title):
@@ -130,8 +137,8 @@ class ScalableGameWindow(AbstractGameWindow):
         # Class access costs, so do some quick caching
         tile_select = lcd.LCDC.tile_select == 0
         window_enabled_and_y = lcd.LCDC.window_enabled and wy <= y
-        bgp = [self.color_palette[lcd.BGP.get_code(x)] for x in range(4)]
-        
+        bgp = [self.palette[lcd.BGP.get_code(x)] for x in range(4)]
+
         for x in self.xs:
             # Window gets priority, otherwise it's the background
             # TODO: This is done almost 8x as much as needed
@@ -145,7 +152,7 @@ class ScalableGameWindow(AbstractGameWindow):
                 dx = (x + bx) & 0x07
                 dy = (y + by) & 0x07
             else:  # White if blank
-                # self._renderer.draw_point((x, y), self.color_palette[0])
+                self._linebuf[x] = self.palette[0]
                 continue
 
             # If using the second Tile Data Table, convert to signed
@@ -161,21 +168,24 @@ class ScalableGameWindow(AbstractGameWindow):
 
             # Draw the pixel to the frame buffer
             # self._renderer.draw_point((x, y), bgp[((bit1<<1)+bit0)>>(7-dx)])
-            color = bgp[((bit1<<1)+bit0)>>(7-dx)]
-            if not color == self.color_palette[0]:
-                sdl2.render.SDL_SetRenderDrawColor(self._sdlrenderer, *color)
-                sdl2.render.SDL_RenderDrawPoint(self._sdlrenderer, x, y)
+            self._linebuf[x] = bgp[((bit1<<1)+bit0)>>(7-dx)]
+
+        # Copy into the screen buffer from the list
+        self._linerect.y = y
+        buf, _ = sdl2.ext.array.to_ctypes(self._linebuf, ctypes.c_uint32,
+                                          self.gameboyResolution[0])
+        sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
+                               ctypes.byref(buf), self.gameboyResolution[0])
 
     def renderScreen(self, lcd):
-        # Flip buffers and set to white
+        # Copy from internal buffer to screen
+        sdl2.render.SDL_RenderCopy(self._sdlrenderer, self._screenbuf, None, None)
         self._renderer.present()
-        self._renderer.clear(self.color_palette[0])
 
     def blankScreen(self):
         # Make the screen white
-        self._renderer.clear(self.color_palette[0])
+        self._renderer.clear(self.palette[0])
         self._renderer.present()
-        self._renderer.clear(self.color_palette[0])
 
     def getScreenBuffer(self):
         # I think that calling get_surface() on the window breaks the
