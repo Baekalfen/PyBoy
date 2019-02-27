@@ -132,6 +132,7 @@ class ScalableGameWindow(AbstractGameWindow):
         wx, wy = lcd.get_window_pos()
 
         # Single line, so we can save some math with the tile indices
+        bOffset += (((y + by) / 8 ) * 32) % 0x400
         wOffset += ((y - wy) / 8 ) * 32
 
         # Class access costs, so do some quick caching
@@ -141,8 +142,6 @@ class ScalableGameWindow(AbstractGameWindow):
 
         for x in self.xs:
 
-
-
             # Window gets priority, otherwise it's the background
             # TODO: This is done almost 8x as much as needed
             if window_enabled_and_y and wx <= x:
@@ -150,8 +149,7 @@ class ScalableGameWindow(AbstractGameWindow):
                 dx = (x - wx) % 8
                 dy = (y - wy) % 8
             elif lcd.LCDC.background_enable:
-                tile = lcd.VRAM[bOffset + (((((x + bx) / 8) % 32) +
-                                            (((y + by) / 8) * 32)) % 0x400)]
+                tile = lcd.VRAM[bOffset + (((x + bx) / 8) % 32)]
                 dx = (x + bx) % 8
                 dy = (y + by) % 8
             else:  # White if blank
