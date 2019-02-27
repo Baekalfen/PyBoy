@@ -22,7 +22,7 @@ from ..Logger import logger
 
 class ScalableGameWindow(AbstractGameWindow):
 
-    gameboyResolution = (160, 144)
+    dims = (160, 144)
 
     windowEventsDown = {
         sdl2.SDLK_UP        : WindowEvent.PressArrowUp,
@@ -55,7 +55,8 @@ class ScalableGameWindow(AbstractGameWindow):
     # range is better for Python3 compatibility than xrange, but in
     # Python2, range produces a list instead of a generator, so it's
     # best to just pregenerate and reuse it won't change anyway
-    xs = range(gameboyResolution[0])
+    xs = range(dims[0])
+    sprites = range(0x00, 0xA0, 4)
 
     # In the end, we're just converting back to 32 bits anyway...
     palette = list(map(long, reversed(sdl2.ext.colorpalettes.GRAY2PALETTE)))
@@ -69,19 +70,19 @@ class ScalableGameWindow(AbstractGameWindow):
 
         sdl2.ext.init()
 
-        start_size = tuple(map(lambda x: scale * x, self.gameboyResolution))
+        start_size = tuple(map(lambda x: scale * x, self.dims))
         self._window = sdl2.ext.Window("PyBoy", size=start_size,
                                        flags=sdl2.SDL_WINDOW_RESIZABLE)
 
         self._renderer = sdl2.ext.Renderer(self._window, -1,
-                                           self.gameboyResolution)
+                                           self.dims)
         self._sdlrenderer = self._renderer.sdlrenderer
         self._screenbuf = sdl2.SDL_CreateTexture(self._sdlrenderer,
                                                  sdl2.SDL_PIXELFORMAT_ARGB32,
                                                  sdl2.SDL_TEXTUREACCESS_STATIC,
-                                                 *self.gameboyResolution)
-        self._linebuf = [0] * self.gameboyResolution[0]
-        self._linerect = sdl2.rect.SDL_Rect(0, 0, self.gameboyResolution[0], 1)
+                                                 *self.dims)
+        self._linebuf = [0] * self.dims[0]
+        self._linerect = sdl2.rect.SDL_Rect(0, 0, self.dims[0], 1)
 
         self.blankScreen()
         self._window.show()
@@ -163,20 +164,32 @@ class ScalableGameWindow(AbstractGameWindow):
                 tile = ((tile + 128) & 0xFF) + 128
 
             # Get the color from the Tile Data Table... bit by bit
-            # TODO: This is horribly inefficient
-            bit0 = lcd.VRAM[(tile << 4) + (dy << 1)] & (0x80 >> dx)
-            bit1 = lcd.VRAM[(tile << 4) + (dy << 1) + 1] & (0x80 >> dx)
+            bit0 = lcd.VRAM[16 * tile + 2 * dy] & (0x80 >> dx)
+            bit1 = lcd.VRAM[16 * tile + 2 * dy + 1] & (0x80 >> dx)
 
             # Draw the pixel to the frame buffer
-            # self._renderer.draw_point((x, y), bgp[((bit1<<1)+bit0)>>(7-dx)])
             self._linebuf[x] = bgp[((bit1<<1)+bit0)>>(7-dx)]
+
+        # Get the sprites for this line (probably pretty slow?)
+        # This finds all the sprites on the line, then sorts them by x
+        # list.sort() is stable, so order will be correct
+        # (Although in GBC this is different, it's by memory only)
+        sprites = sorted(filter(lambda n: lcd.OAM[n] - 16 <= y < lcd.OAM[n],
+                                self.sprites), key=lambda n: lcd.OAM[n+1])
+
+        # Iterate through the sprites and update the buffer
+        # TODO: flipping and 16-tall and transparency and priority (testing)
+        for n in sprites:
+            for x in xrange(max(lcd.OAM[n+1] - 8, 0),
+                            min(lcd.OAM[n+1], self.dims[0])):
+                self._linebuf[x] = self.palette[3]
 
         # Copy into the screen buffer from the list
         self._linerect.y = y
         buf, _ = sdl2.ext.array.to_ctypes(self._linebuf, ctypes.c_uint32,
-                                          self.gameboyResolution[0])
+                                          self.dims[0])
         sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
-                               ctypes.byref(buf), self.gameboyResolution[0])
+                               ctypes.byref(buf), self.dims[0])
 
     def renderScreen(self, lcd):
         # Copy from internal buffer to screen
