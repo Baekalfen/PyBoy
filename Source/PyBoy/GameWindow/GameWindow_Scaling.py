@@ -186,24 +186,24 @@ class ScalableGameWindow(AbstractGameWindow):
         # This finds all the sprites on the line, then sorts them by x
         # list.sort() is stable, so order will be correct
         # (Although in GBC this is different, it's by memory only)
-        sprites = sorted(filter(lambda n: lcd.OAM[n] - 16 <= y < lcd.OAM[n],
-                                self.sprites), key=lambda n: lcd.OAM[n+1])[:10]
+        if lcd.LCDC.sprite_size:
+            sprites = sorted(filter(
+                lambda n: lcd.OAM[n]-16 <= y < lcd.OAM[n], self.sprites),
+                             key=lambda n: lcd.OAM[n+1])[:10]
+        else:
+            sprites = sorted(filter(
+                lambda n: lcd.OAM[n]-16 <= y < lcd.OAM[n]-8, self.sprites),
+                             key=lambda n: lcd.OAM[n+1])[:10]
 
         # Iterate through the sprites and update the buffer
         # TODO: transparency and palettes
         for n in sprites:
             sy, sx, tile, sf = lcd.OAM[n:n+4]
-            upper = sy - y > 8
             if lcd.LCDC.sprite_size:
-                if upper:
+                if sy - y > 8:
                     tile &= 0xFE
                 else:
                     tile |= 0x01
-            elif not upper:
-                # In 8x8 mode, it seems that sprites are still
-                # accessed for sorting/priority in the lower half,
-                # even though they won't render at all.
-                continue
 
             # Get the row of the sprite, accounting for flipping
             dy = 0x07 & (sy - y - 1 if sf & 0x40 else y - sy + 16)
@@ -216,10 +216,16 @@ class ScalableGameWindow(AbstractGameWindow):
             if sf & 0x20:
                 pixels = reversed(tuple(pixels))
 
+            # Get the palette
+            if sf & 0x10:
+                obp = [self.palette[lcd.OBP1.get_code(x)] for x in range(4)]
+            else:
+                obp = [self.palette[lcd.OBP0.get_code(x)] for x in range(4)]
+
             for x, pixel in zip(xrange(sx - 8, sx), pixels):
-                if not 0 <= x < self.dims[0]:
-                    continue
-                self._linebuf[x] = self.palette[pixel]
+                if 0 <= x < self.dims[0]:
+                    if pixel and (not sf & 0x80 or self._linebuf[x] == bgp[0]):
+                        self._linebuf[x] = obp[pixel]
 
         # Copy into the screen buffer from the list
         self._linerect.y = y
