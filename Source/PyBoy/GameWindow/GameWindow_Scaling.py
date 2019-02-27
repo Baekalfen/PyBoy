@@ -20,6 +20,18 @@ from ..GameWindow import AbstractGameWindow
 from ..Logger import logger
 
 
+# Bit conversion for tiles using a lookup table
+# Not sure I like the order of arguments, might change later
+# TODO: profile this vs just looping for the conversion
+lookup2bits = {b: tuple(b >> 2*s & 0x3 for s in reversed(range(4)))
+               for b in range(256)}
+def bytes2bits(byte0, byte1):
+    bits7531 = lookup2bits[0b10101010 & byte1 | 0b01010101 & byte0 >> 1]
+    bits6420 = lookup2bits[0b10101010 & byte1 << 1 | 0b01010101 & byte0]
+    for odd, even in zip(bits7531, bits6420):
+        yield odd
+        yield even
+
 class ScalableGameWindow(AbstractGameWindow):
 
     dims = (160, 144)
@@ -119,14 +131,14 @@ class ScalableGameWindow(AbstractGameWindow):
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window.window)
         sdl2.ext.quit()
-    
+
     def scanline(self, y, lcd):
         # Instead of recording and rendering at vblank, I'm going to try
         # writing to the double buffer with the Renderer in real time as
         # the GB actually does, and then swap at the call to renderScreen
 
         # Background and Window View Address (offset into VRAM...)
-        bOffset = 0x1C00 if lcd.LCDC.background_map_select else 0x1800 
+        bOffset = 0x1C00 if lcd.LCDC.background_map_select else 0x1800
         wOffset = 0x1C00 if lcd.LCDC.window_map_select else 0x1800
 
         bx, by = lcd.get_view_port()
@@ -175,14 +187,39 @@ class ScalableGameWindow(AbstractGameWindow):
         # list.sort() is stable, so order will be correct
         # (Although in GBC this is different, it's by memory only)
         sprites = sorted(filter(lambda n: lcd.OAM[n] - 16 <= y < lcd.OAM[n],
-                                self.sprites), key=lambda n: lcd.OAM[n+1])
+                                self.sprites), key=lambda n: lcd.OAM[n+1])[:10]
 
         # Iterate through the sprites and update the buffer
-        # TODO: flipping and 16-tall and transparency and priority (testing)
+        # TODO: transparency and palettes
         for n in sprites:
-            for x in xrange(max(lcd.OAM[n+1] - 8, 0),
-                            min(lcd.OAM[n+1], self.dims[0])):
-                self._linebuf[x] = self.palette[3]
+            sy, sx, tile, sf = lcd.OAM[n:n+4]
+            upper = sy - y > 8
+            if lcd.LCDC.sprite_size:
+                if upper:
+                    tile &= 0xFE
+                else:
+                    tile |= 0x01
+            elif not upper:
+                # In 8x8 mode, it seems that sprites are still
+                # accessed for sorting/priority in the lower half,
+                # even though they won't render at all.
+                continue
+
+            # Get the row of the sprite, accounting for flipping
+            dy = 0x07 & (sy - y - 1 if sf & 0x40 else y - sy + 16)
+
+            # Combine bytes into generator of 2-bit pixels
+            pixels = bytes2bits(*lcd.VRAM[16 * tile + 2 * dy:
+                                          16 * tile + 2 * dy + 2])
+
+            # Flip if needed
+            if sf & 0x20:
+                pixels = reversed(tuple(pixels))
+
+            for x, pixel in zip(xrange(sx - 8, sx), pixels):
+                if not 0 <= x < self.dims[0]:
+                    continue
+                self._linebuf[x] = self.palette[pixel]
 
         # Copy into the screen buffer from the list
         self._linerect.y = y
