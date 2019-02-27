@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
-# Author: Kristian Sims
 # Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
+# Author: Kristian Sims
 # License: See LICENSE file
 # GitHub: https://github.com/krs013/PyBoy
 #
@@ -132,7 +132,7 @@ class ScalableGameWindow(AbstractGameWindow):
         wx, wy = lcd.get_window_pos()
 
         # Single line, so we can save some math with the tile indices
-        wOffset += ((y - wy) >> 3) << 5
+        wOffset += ((y - wy) / 8 ) * 32
 
         # Class access costs, so do some quick caching
         tile_select = lcd.LCDC.tile_select == 0
@@ -140,17 +140,20 @@ class ScalableGameWindow(AbstractGameWindow):
         bgp = [self.palette[lcd.BGP.get_code(x)] for x in range(4)]
 
         for x in self.xs:
+
+
+
             # Window gets priority, otherwise it's the background
             # TODO: This is done almost 8x as much as needed
             if window_enabled_and_y and wx <= x:
-                tile = lcd.VRAM[wOffset + (((x - wx) >> 3) & 0x1F)]
-                dx = (x - wx) & 0x07
-                dy = (y - wy) & 0x07
+                tile = lcd.VRAM[wOffset + (((x - wx) / 8) % 32)]
+                dx = (x - wx) % 8
+                dy = (y - wy) % 8
             elif lcd.LCDC.background_enable:
-                tile = lcd.VRAM[bOffset + (((((x + bx) >> 3) & 0x1F) +
-                                            (((y + by) >> 3) << 5)) & 0x3FF)]
-                dx = (x + bx) & 0x07
-                dy = (y + by) & 0x07
+                tile = lcd.VRAM[bOffset + (((((x + bx) / 8) % 32) +
+                                            (((y + by) / 8) * 32)) % 0x400)]
+                dx = (x + bx) % 8
+                dy = (y + by) % 8
             else:  # White if blank
                 self._linebuf[x] = self.palette[0]
                 continue
@@ -160,7 +163,7 @@ class ScalableGameWindow(AbstractGameWindow):
             # offset of 256 (the subtract and add become +128)
             if tile_select:
                 tile = ((tile + 128) & 0xFF) + 128
-                    
+
             # Get the color from the Tile Data Table... bit by bit
             # TODO: This is horribly inefficient
             bit0 = lcd.VRAM[(tile << 4) + (dy << 1)] & (0x80 >> dx)
