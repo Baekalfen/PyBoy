@@ -141,6 +141,9 @@ class ScalableGameWindow(AbstractGameWindow):
         bx, by = lcd.get_view_port()
         wx, wy = lcd.get_window_pos()
 
+        bdy = (y + by) % 8
+        wdy = (y - wy) % 8
+
         # Single line, so we can save some math with the tile indices
         bOffset += (((y + by) / 8 ) * 32) % 0x400
         wOffset += ((y - wy) / 8 ) * 32
@@ -150,34 +153,43 @@ class ScalableGameWindow(AbstractGameWindow):
         window_enabled_and_y = lcd.LCDC.window_enabled and wy <= y
         bgp = [self.palette[lcd.BGP.get_code(x)] for x in range(4)]
 
+        byte0 = None
+
         for x in self.xs:
 
             # Window gets priority, otherwise it's the background
-            # TODO: This is done almost 8x as much as needed
             if window_enabled_and_y and wx <= x:
-                tile = lcd.VRAM[wOffset + (((x - wx) / 8) % 32)]
                 dx = (x - wx) % 8
-                dy = (y - wy) % 8
+                if dx == 0 or byte0 is None:
+                    tile = lcd.VRAM[wOffset + (((x - wx) / 8) % 32)]
+
+                    # Convert to signed (-128+256=+128)
+                    if tile_select:
+                        tile = ((tile + 128) & 0xFF) + 128
+
+                    # Get the color from the Tile Data Table
+                    byte0 = lcd.VRAM[16 * tile + 2 * wdy]
+                    byte1 = lcd.VRAM[16 * tile + 2 * wdy + 1]
+
             elif lcd.LCDC.background_enable:
-                tile = lcd.VRAM[bOffset + (((x + bx) / 8) % 32)]
                 dx = (x + bx) % 8
-                dy = (y + by) % 8
+                if dx == 0 or byte0 is None:
+                    tile = lcd.VRAM[bOffset + (((x + bx) / 8) % 32)]
+
+                    # Convert to signed (-128+256=+128)
+                    if tile_select:
+                        tile = ((tile + 128) & 0xFF) + 128
+
+                    # Get the color from the Tile Data Table
+                    byte0 = lcd.VRAM[16 * tile + 2 * bdy]
+                    byte1 = lcd.VRAM[16 * tile + 2 * bdy + 1]
+
             else:  # White if blank
                 self._linebuf[x] = self.palette[0]
                 continue
 
-            # If using the second Tile Data Table, convert to signed
-            # by adding 128, masking, and subtracting 128, then add an
-            # offset of 256 (the subtract and add become +128)
-            if tile_select:
-                tile = ((tile + 128) & 0xFF) + 128
-
-            # Get the color from the Tile Data Table... bit by bit
-            bit0 = lcd.VRAM[16 * tile + 2 * dy] & (0x80 >> dx)
-            bit1 = lcd.VRAM[16 * tile + 2 * dy + 1] & (0x80 >> dx)
-
-            # Draw the pixel to the frame buffer
-            self._linebuf[x] = bgp[((bit1<<1)+bit0)>>(7-dx)]
+            pixel = 2 * (byte1 & 0x80 >> dx) + (byte0 & 0x80 >> dx)
+            self._linebuf[x] = bgp[pixel >> 7-dx]
 
         # Get the sprites for this line (probably pretty slow?)
         # This finds all the sprites on the line, then sorts them by x
