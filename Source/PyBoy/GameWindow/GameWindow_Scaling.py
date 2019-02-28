@@ -11,10 +11,7 @@ import ctypes
 import sdl2.ext.colorpalettes  # Implicitly imports sdl2 and sdl2.ext
 
 from .. import CoreDump
-from ..MathUint8 import getSignedInt8
 from ..WindowEvent import WindowEvent
-from ..LCD import color_palette
-from .FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from ..GameWindow import AbstractGameWindow
 
 from ..Logger import logger
@@ -196,14 +193,18 @@ class ScalableGameWindow(AbstractGameWindow):
                              key=lambda n: lcd.OAM[n+1])[:10]
 
         # Iterate through the sprites and update the buffer
-        # TODO: transparency and palettes
         for n in sprites:
             sy, sx, tile, sf = lcd.OAM[n:n+4]
-            if lcd.LCDC.sprite_size:
-                tile &= 0xFE
 
             # Get the row of the sprite, accounting for flipping
             dy = sy - y - 1 if sf & 0x40 else y - sy + 16
+
+            if lcd.LCDC.sprite_size:
+                # Double sprites start on an even index
+                tile &= 0xFE
+            else:
+                # Single sprites have y index from 0-7
+                dy &= 0x07
 
             # Combine bytes into generator of 2-bit pixels
             pixels = bytes2bits(*lcd.VRAM[16 * tile + 2 * dy:
