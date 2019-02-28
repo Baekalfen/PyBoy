@@ -200,13 +200,10 @@ class ScalableGameWindow(AbstractGameWindow):
         for n in sprites:
             sy, sx, tile, sf = lcd.OAM[n:n+4]
             if lcd.LCDC.sprite_size:
-                if sy - y > 8:
-                    tile &= 0xFE
-                else:
-                    tile |= 0x01
+                tile &= 0xFE
 
             # Get the row of the sprite, accounting for flipping
-            dy = 0x07 & (sy - y - 1 if sf & 0x40 else y - sy + 16)
+            dy = sy - y - 1 if sf & 0x40 else y - sy + 16
 
             # Combine bytes into generator of 2-bit pixels
             pixels = bytes2bits(*lcd.VRAM[16 * tile + 2 * dy:
