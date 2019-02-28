@@ -16,6 +16,7 @@ class AbstractGameWindow(object):
         self.OAM_changed = True
         self.tiles_changed = set([])
         self.flush_cache = True
+        self.color_palette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
 
     @abstractmethod
     def dump(self, filename):

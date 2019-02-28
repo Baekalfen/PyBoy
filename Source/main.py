@@ -24,6 +24,8 @@ def getWindow():
         from PyBoy.GameWindow import SdlGameWindow as Window
     elif sys.argv[1] == "SDL2":
         from PyBoy.GameWindow import SdlGameWindow as Window
+    elif sys.argv[1] == "OpenGL":
+        from PyBoy.GameWindow import OpenGLGameWindow as Window
     elif sys.argv[1] == "dummy":
         from PyBoy.GameWindow import DummyGameWindow as Window
     elif sys.argv[1] == "SDL2Process":

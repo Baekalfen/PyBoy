@@ -14,18 +14,17 @@ LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40
 # STAT bit descriptions
 # ModeFlag0, ModeFlag1, Coincidence, Mode00, Mode01, Mode10, LYC_LY = range(7)
 
-color_palette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
-
 class LCD():
-    def __init__(self, MB):
+    def __init__(self, MB, color_palette):
         self.mb = MB
+        self.color_palette = color_palette
 
         self.VRAM = allocateRAM(VIDEO_RAM)
         self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
         self.LCDC = LCDCRegister(0)
-        self.BGP = PaletteRegister(0xFC)
-        self.OBP0 = PaletteRegister(0xFF)
-        self.OBP1 = PaletteRegister(0xFF)
+        self.BGP = PaletteRegister(0xFC, color_palette)
+        self.OBP0 = PaletteRegister(0xFF, color_palette)
+        self.OBP1 = PaletteRegister(0xFF, color_palette)
         # self.STAT = 0x00
         # self.SCY = 0x00
         # self.SCX = 0x00
@@ -43,9 +42,10 @@ class LCD():
 
 
 class PaletteRegister():
-    def __init__(self, value):
+    def __init__(self, value, color_palette):
         self.value = None
         self.set(value)
+        self.color_palette = color_palette
 
     def set(self, value):
         if self.value == value: # Pokemon Blue continously sets this without changing the value
@@ -56,7 +56,7 @@ class PaletteRegister():
         return True
 
     def get_color(self, i):
-        return color_palette[self.lookup[i]]
+        return self.color_palette[self.lookup[i]]
 
     def get_code(self, i):
         return self.lookup[i]
