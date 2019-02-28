@@ -154,7 +154,6 @@ class OpenGLGameWindow(AbstractGameWindow):
 
     def glReshape(self, width, height):
         self._scale = max(min(float(height)/gameboyResolution[1], float(width)/gameboyResolution[0]), 1)
-        print self._scale
         self._scale = int(self._scale*10)/10. # One decimal
 
         self._scaledResolution = tuple(int(x * self._scale) for x in gameboyResolution)
