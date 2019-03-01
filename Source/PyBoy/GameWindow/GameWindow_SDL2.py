@@ -7,6 +7,7 @@
 
 import sys
 import time
+import ctypes
 import sdl2
 import sdl2.ext
 import numpy as np
@@ -36,22 +37,14 @@ def get_color_code(byte1,byte2,offset):
 alphaMask = 0x7F000000
 tiles = 384
 
-def pixels2dWithoutWarning(surface):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        return sdl2.ext.pixels2d(surface)
 
 class SdlGameWindow(AbstractGameWindow):
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
 
-        if self._scale != 1:
-            logger.warn("Scaling set to %s. The implementation is temporary, which means scaling above 1 will impact performance." % self._scale)
-
-
-        self.tile_cache = np.ndarray((tiles * 8, 8), dtype='int32')
-        self.sprite_cacheOBP0 = np.ndarray((tiles * 8, 8), dtype='int32')
-        self.sprite_cacheOBP1 = np.ndarray((tiles * 8, 8), dtype='int32')
+        self.tile_cache = np.ndarray((tiles * 8, 8), dtype='uint32')
+        self.sprite_cacheOBP0 = np.ndarray((tiles * 8, 8), dtype='uint32')
+        self.sprite_cacheOBP1 = np.ndarray((tiles * 8, 8), dtype='uint32')
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
@@ -94,19 +87,16 @@ class SdlGameWindow(AbstractGameWindow):
         self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
-        self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
-        self._windowSurface = self._window.get_surface()
+        self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution, flags=sdl2.SDL_WINDOW_RESIZABLE)
 
-        if self._scale == 1:
-            self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface))
-        else:
-            self._screenBuffer = ScaledFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
-        self._screenBuffer.fill(0x00558822)
+        self._renderer = sdl2.ext.Renderer(self._window, -1, gameboyResolution, flags=sdl2.SDL_RENDERER_ACCELERATED)
+        self._sdlrenderer = self._renderer.sdlrenderer
+
+        self._sdlTextureBuffer = sdl2.SDL_CreateTexture(self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, *gameboyResolution)
+        self._screenBuffer = np.ndarray(gameboyResolution[::-1], dtype='uint32')
+        
+        self.blankScreen()
         self._window.show()
-
-        # Only used for VSYNC
-        self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
-        self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
 
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
@@ -183,8 +173,8 @@ class SdlGameWindow(AbstractGameWindow):
         return events
 
     def updateDisplay(self):
-        self._window.refresh()
-        self._screenBuffer.update() # TODO: Flip order?
+        sdl2.render.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer, None, None)
+        self._renderer.present()
         if __debug__:
             self.tileDataWindow.refresh()
             self.tileView1Window.refresh()
@@ -192,7 +182,8 @@ class SdlGameWindow(AbstractGameWindow):
             self.spriteWindow.refresh()
 
     def VSync(self):
-        sdl2.SDL_RenderPresent(self.renderer)
+        # Rather than call this each frame, I think there is a method that sets the Renderer to be Vsync'd persistently 
+        pass
 
     def stop(self):
         if __debug__:
@@ -226,10 +217,10 @@ class SdlGameWindow(AbstractGameWindow):
                     if lcd.LCDC.tile_select == 0: # If using signed tile indices
                         backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
 
-                    self._screenBuffer[x,y] = self.tile_cache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+                    self._screenBuffer[y,x] = self.tile_cache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenBuffer[x,y] = color_palette[0]
+                    self._screenBuffer[y,x] = color_palette[0]
 
                 if lcd.LCDC.window_enabled:
                     # wx, wy = lcd.get_window_pos()
@@ -239,7 +230,7 @@ class SdlGameWindow(AbstractGameWindow):
                         if lcd.LCDC.tile_select == 0: # If using signed tile indices
                             windowTileIndex = getSignedInt8(windowTileIndex)+256
 
-                        self._screenBuffer[x,y] = self.tile_cache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
+                        self._screenBuffer[y,x] = self.tile_cache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
@@ -265,6 +256,8 @@ class SdlGameWindow(AbstractGameWindow):
             if x < 160 and y < 144:
                 self.copySprite(fromXY, toXY, sprite_cache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
 
+        # Copy contents of numpy screen buffer into sdlTexture buffer, which will then get scaled to the window
+        sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, None, self._screenBuffer.ctypes.data_as(ctypes.c_void_p), self._screenBuffer.strides[0])
 
     def refreshTileData(self, lcd):
         if self.flush_cache:
@@ -312,13 +305,13 @@ class SdlGameWindow(AbstractGameWindow):
                 pixel = fromBuffer[xx, yy]
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
-                    if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
+                    if not (not spritePriority or (spritePriority and toBuffer[y2+y, x2+x] == BGPkey)):
                         pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
 
                     if not (pixel & alphaMask):
-                        toBuffer[x2+x, y2+y] = pixel
+                        toBuffer[y2+y, x2+x] = pixel
 
 
     def blankScreen(self):
@@ -333,7 +326,7 @@ class SdlGameWindow(AbstractGameWindow):
 
 
     def getScreenBuffer(self):
-        return self._screenBuffer.get_buffer()
+        return self._screenBuffer
 
     #################################################################
     #
@@ -356,7 +349,7 @@ class SdlGameWindow(AbstractGameWindow):
         x2,y2 = toXY
 
         tileSize = 8
-        toBuffer[x2:x2+tileSize, y2:y2+tileSize] = fromBuffer[x1:x1+tileSize, y1:y1+tileSize]
+        toBuffer[y2:y2+tileSize, x2:x2+tileSize] = fromBuffer[y1:y1+tileSize, x1:x1+tileSize]
 
     def refreshTileView1(self, lcd):
         # self.tileView1Buffer.fill(0x00ABC4FF)
