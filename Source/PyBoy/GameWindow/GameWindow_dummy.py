@@ -46,7 +46,7 @@ class DummyGameWindow(AbstractGameWindow):
     def stop(self):
         logger.info("DummyWindow stopping")
 
-    def scanline(self, y, viewPos, windowPos):
+    def scanline(self, y, lcd):
         pass
 
     def renderScreen(self, lcd):
