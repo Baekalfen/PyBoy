@@ -5,7 +5,9 @@
 # License: See LICENSE file
 # GitHub: https://github.com/krs013/PyBoy
 #
-
+# Cacheless GameWindow that renders screen line-by-line in scanline()
+# It's closer to the hardware and maybe easier to understand, but not
+# fast enough to replace GameWindow_SDL2
 
 import ctypes
 import sdl2.ext.colorpalettes  # Implicitly imports sdl2 and sdl2.ext
@@ -18,8 +20,8 @@ from ..Logger import logger
 
 
 # Bit conversion for tiles using a lookup table
-# Not sure I like the order of arguments, might change later
 # TODO: profile this vs just looping for the conversion
+# This creates a zip and generator object, so it may be slow
 lookup2bits = {b: tuple(b >> 2*s & 0x3 for s in reversed(range(4)))
                for b in range(256)}
 def bytes2bits(byte0, byte1):
@@ -29,9 +31,7 @@ def bytes2bits(byte0, byte1):
         yield odd
         yield even
 
-class ScalableGameWindow(AbstractGameWindow):
-
-    dims = (160, 144)
+class ScanlineGameWindow(AbstractGameWindow):
 
     windowEventsDown = {
         sdl2.SDLK_UP        : WindowEvent.PressArrowUp,
@@ -61,13 +61,9 @@ class ScalableGameWindow(AbstractGameWindow):
         sdl2.SDLK_SPACE     : WindowEvent.ReleaseSpeedUp,
     }
 
-    # range is better for Python3 compatibility than xrange, but in
-    # Python2, range produces a list instead of a generator, so it's
-    # best to just pregenerate and reuse it won't change anyway
+    dims = (160, 144)
     xs = range(dims[0])
     sprites = range(0x00, 0xA0, 4)
-
-    # In the end, we're just converting back to 32 bits anyway...
     palette = list(map(long, reversed(sdl2.ext.colorpalettes.GRAY2PALETTE)))
 
     def __init__(self, scale=1):
@@ -75,7 +71,7 @@ class ScalableGameWindow(AbstractGameWindow):
 
         CoreDump.windowHandle = self
 
-        logger.debug("SDL Scalable Window initialization")
+        logger.debug("Scanline Window initialization")
 
         sdl2.ext.init()
 
@@ -130,9 +126,10 @@ class ScalableGameWindow(AbstractGameWindow):
         sdl2.ext.quit()
 
     def scanline(self, y, lcd):
-        # Instead of recording and rendering at vblank, I'm going to try
-        # writing to the double buffer with the Renderer in real time as
-        # the GB actually does, and then swap at the call to renderScreen
+        # Instead of recording parameters and rendering at vblank, we
+        # write to the double buffer with the Renderer in real time as
+        # the GB actually does, and then swap buffers at the call to
+        # renderScreen
 
         # Background and Window View Address (offset into VRAM...)
         bOffset = 0x1C00 if lcd.LCDC.background_map_select else 0x1800
@@ -148,7 +145,7 @@ class ScalableGameWindow(AbstractGameWindow):
         bOffset += (((y + by) / 8 ) * 32) % 0x400
         wOffset += ((y - wy) / 8 ) * 32
 
-        # Class access costs, so do some quick caching
+        # Dict lookups cost, so do some quick caching
         tile_select = lcd.LCDC.tile_select == 0
         window_enabled_and_y = lcd.LCDC.window_enabled and wy <= y
         bgp = [self.palette[lcd.BGP.get_code(x)] for x in range(4)]

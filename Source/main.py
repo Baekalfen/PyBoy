@@ -24,15 +24,15 @@ def getWindow():
         from PyBoy.GameWindow import SdlGameWindow as Window
     elif sys.argv[1] == "SDL2":
         from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "scale":
-        from PyBoy.GameWindow import ScalableGameWindow as Window
+    elif sys.argv[1] == "scanline":
+        from PyBoy.GameWindow import ScanlineGameWindow as Window
     elif sys.argv[1] == "dummy":
         from PyBoy.GameWindow import DummyGameWindow as Window
     elif sys.argv[1] == "SDL2Process":
         from PyBoy.GameWindow import MultiprocessGameWindow as Window
     else:
         print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
-        print "Valid GameWindows are: 'SDL2' and 'dummy'"
+        print "Valid GameWindows are: 'SDL2', 'scanline', and 'dummy'"
         exit(1)
 
     return Window
