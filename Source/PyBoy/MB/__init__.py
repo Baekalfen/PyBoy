@@ -31,7 +31,7 @@ class Motherboard():
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(random=False)
         self.cpu = CPU.CPU(self, profiling)
-        self.lcd = LCD.LCD(self)
+        self.lcd = LCD.LCD(self, window.color_palette)
         self.bootROMEnabled = True
 
         if "loadState" in sys.argv:
