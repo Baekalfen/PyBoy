@@ -43,7 +43,7 @@ class AbstractGameWindow(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def scanline(self, y, view_pos, window_pos):
+    def scanline(self, y, lcd):
         raise NotImplementedError()
 
     @abstractmethod

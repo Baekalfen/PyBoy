@@ -6,9 +6,7 @@
 #
 
 import sys
-import time
 import numpy as np
-import warnings
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -18,7 +16,6 @@ import OpenGL.GLUT.freeglut
 from .. import CoreDump
 from ..MathUint8 import getSignedInt8
 from ..WindowEvent import WindowEvent
-from .FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 from ..GameWindow import AbstractGameWindow
 
 from ..Logger import logger
@@ -176,8 +173,8 @@ class OpenGLGameWindow(AbstractGameWindow):
     def stop(self):
         pass
 
-    def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y] = viewPos + windowPos
+    def scanline(self, y, lcd):
+        self.scanlineParameters[y] = lcd.get_view_port() + lcd.get_window_pos()
 
     def renderScreen(self, lcd):
         self.refreshTileData(lcd)

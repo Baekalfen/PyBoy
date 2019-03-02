@@ -24,6 +24,8 @@ def getWindow():
         from PyBoy.GameWindow import SdlGameWindow as Window
     elif sys.argv[1] == "SDL2":
         from PyBoy.GameWindow import SdlGameWindow as Window
+    elif sys.argv[1] == "scanline":
+        from PyBoy.GameWindow import ScanlineGameWindow as Window
     elif sys.argv[1] == "OpenGL":
         from PyBoy.GameWindow import OpenGLGameWindow as Window
     elif sys.argv[1] == "dummy":
@@ -32,7 +34,7 @@ def getWindow():
         from PyBoy.GameWindow import MultiprocessGameWindow as Window
     else:
         print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
-        print "Valid GameWindows are: 'SDL2' and 'dummy'"
+        print "Valid GameWindows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'"
         exit(1)
 
     return Window
@@ -60,7 +62,7 @@ if __name__ == "__main__":
 
     bootROM = "ROMs/DMG_ROM.bin"
     ROMdir = "ROMs/"
-    scale = 1
+    scale = 2
     debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories
