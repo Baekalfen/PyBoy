@@ -10,7 +10,9 @@
 # fast enough to replace GameWindow_SDL2
 
 import ctypes
-import sdl2.ext.colorpalettes  # Implicitly imports sdl2 and sdl2.ext
+import sdl2
+import sdl2.ext
+import sdl2.ext.colorpalettes
 
 from .. import CoreDump
 from ..WindowEvent import WindowEvent
@@ -18,6 +20,7 @@ from ..GameWindow import AbstractGameWindow
 
 from ..Logger import logger
 
+gameboyResolution = (160, 144)
 
 # Bit conversion for tiles using a lookup table
 # TODO: profile this vs just looping for the conversion
@@ -61,9 +64,6 @@ class ScanlineGameWindow(AbstractGameWindow):
         sdl2.SDLK_SPACE     : WindowEvent.ReleaseSpeedUp,
     }
 
-    dims = (160, 144)
-    xs = range(dims[0])
-    sprites = range(0x00, 0xA0, 4)
     palette = list(map(long, reversed(sdl2.ext.colorpalettes.GRAY2PALETTE)))
 
     def __init__(self, scale=1):
@@ -75,19 +75,19 @@ class ScanlineGameWindow(AbstractGameWindow):
 
         sdl2.ext.init()
 
-        start_size = tuple(map(lambda x: scale * x, self.dims))
+        start_size = tuple(map(lambda x: scale * x, gameboyResolution))
         self._window = sdl2.ext.Window("PyBoy", size=start_size,
                                        flags=sdl2.SDL_WINDOW_RESIZABLE)
 
         self._renderer = sdl2.ext.Renderer(self._window, -1,
-                                           self.dims)
+                                           gameboyResolution)
         self._sdlrenderer = self._renderer.sdlrenderer
         self._screenbuf = sdl2.SDL_CreateTexture(self._sdlrenderer,
                                                  sdl2.SDL_PIXELFORMAT_ARGB32,
                                                  sdl2.SDL_TEXTUREACCESS_STATIC,
-                                                 *self.dims)
-        self._linebuf = [0] * self.dims[0]
-        self._linerect = sdl2.rect.SDL_Rect(0, 0, self.dims[0], 1)
+                                                 *gameboyResolution)
+        self._linebuf = [0] * gameboyResolution[0]
+        self._linerect = sdl2.rect.SDL_Rect(0, 0, gameboyResolution[0], 1)
 
         self.blankScreen()
         self._window.show()
@@ -113,12 +113,11 @@ class ScanlineGameWindow(AbstractGameWindow):
         return events
 
     def updateDisplay(self):
-        # window.refresh is only needed for direct pixel surface access
+        self._renderer.present()
         pass
 
     def VSync(self):
-        # Not really sure what this is supposed to do, but the frame
-        # limiter isn't implemented anyway yet, so I'll leave this alone
+        # Not implemented
         pass
 
     def stop(self):
@@ -152,7 +151,7 @@ class ScanlineGameWindow(AbstractGameWindow):
 
         byte0 = None
 
-        for x in self.xs:
+        for x in range(gameboyResolution[0]):
 
             # Window gets priority, otherwise it's the background
             if window_enabled_and_y and wx <= x:
@@ -192,13 +191,14 @@ class ScanlineGameWindow(AbstractGameWindow):
         # This finds all the sprites on the line, then sorts them by x
         # list.sort() is stable, so order will be correct
         # (Although in GBC this is different, it's by memory only)
+        spritesAddresses = range(0x00, 0xA0, 4)
         if lcd.LCDC.sprite_size:
             sprites = sorted(filter(
-                lambda n: lcd.OAM[n]-16 <= y < lcd.OAM[n], self.sprites),
+                lambda n: lcd.OAM[n]-16 <= y < lcd.OAM[n], spritesAddresses),
                              key=lambda n: lcd.OAM[n+1])[:10]
         else:
             sprites = sorted(filter(
-                lambda n: lcd.OAM[n]-16 <= y < lcd.OAM[n]-8, self.sprites),
+                lambda n: lcd.OAM[n]-16 <= y < lcd.OAM[n]-8, spritesAddresses),
                              key=lambda n: lcd.OAM[n+1])[:10]
 
         # Iterate through the sprites and update the buffer
@@ -230,26 +230,24 @@ class ScanlineGameWindow(AbstractGameWindow):
                 obp = [self.palette[lcd.OBP0.get_code(x)] for x in range(4)]
 
             for x, pixel in zip(xrange(sx - 8, sx), pixels):
-                if 0 <= x < self.dims[0]:
+                if 0 <= x < gameboyResolution[0]:
                     if pixel and (not sf & 0x80 or self._linebuf[x] == bgp[0]):
                         self._linebuf[x] = obp[pixel]
 
         # Copy into the screen buffer from the list
         self._linerect.y = y
         buf, _ = sdl2.ext.array.to_ctypes(self._linebuf, ctypes.c_uint32,
-                                          self.dims[0])
+                                          gameboyResolution[0])
         sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
-                               ctypes.byref(buf), self.dims[0])
+                               ctypes.byref(buf), gameboyResolution[0])
 
     def renderScreen(self, lcd):
         # Copy from internal buffer to screen
         sdl2.render.SDL_RenderCopy(self._sdlrenderer, self._screenbuf, None, None)
-        self._renderer.present()
 
     def blankScreen(self):
         # Make the screen white
         self._renderer.clear(self.palette[0])
-        self._renderer.present()
 
     def getScreenBuffer(self):
         # I think that calling get_surface() on the window breaks the
