@@ -151,12 +151,12 @@ class OpenGLGameWindow(AbstractGameWindow):
 
     def glReshape(self, width, height):
         self._scale = max(min(float(height)/gameboyResolution[1], float(width)/gameboyResolution[0]), 1)
-        self._scale = int(self._scale*10)/10. # One decimal
+        # self._scale = int(self._scale*10)/10. # One decimal
 
         self._scaledResolution = tuple(int(x * self._scale) for x in gameboyResolution)
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
         glPixelZoom(self._scale,self._scale)
-        glutReshapeWindow(*self._scaledResolution);
+        # glutReshapeWindow(*self._scaledResolution);
 
     def glDraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

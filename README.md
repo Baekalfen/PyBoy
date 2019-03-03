@@ -19,6 +19,7 @@ Table of Contents
     * [Ubuntu/Linux](#ubuntulinux)
     * [Windows](#windows)
     * [Setup and Run](#setup-and-run)
+    * [Experimental Game Windows](#experimental-game-windows)
 * [Scripts/Bots](#scriptsbots)
 * [Compatibility](#compatibility)
 * [Contribute](#contribute)
@@ -128,6 +129,21 @@ The other controls for the emulator:
 | I            | Toggle screen recording |
 
 Note, that debug and save/load state might not be perfectly stable.
+
+
+Experimental Game Windows
+-------------------------
+
+PyBoy is bundled with several renderers, called "Game Windows". The recommended is `SDL2`, and its installation is described in the installation instructions above.
+
+The installations instructions here, will be sparse, as they are mostly for the technically interested.
+
+1. `SDL2` : Instructions are found above.
+2. `scanline` : Instructions are the same as `SDL2`.
+3. `OpenGL` : Install OpenGL and FreeGLUT through the system's package manager. Install `pyopengl` and optionally `pyopengl-accelerate` through pip.
+4. `dummy` : No installation required.
+5. `SDL2Process` : Instructions are the same as `SDL2`. Stability and performance is uncertain.
+
 
 Scripts/Bots
 ============

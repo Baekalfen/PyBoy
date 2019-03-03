@@ -12,7 +12,8 @@ import os.path
 import os
 import sys
 import platform
-from PyBoy.Logger import logger
+from PyBoy.Logger import logger, addConsoleHandler
+addConsoleHandler()
 
 if platform.system() != "Windows":
     from Debug import Debug
