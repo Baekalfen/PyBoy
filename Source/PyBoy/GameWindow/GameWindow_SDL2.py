@@ -92,9 +92,11 @@ class SdlGameWindow(AbstractGameWindow):
 
         self._sdlTextureBuffer = sdl2.SDL_CreateTexture(self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, *gameboyResolution)
         self._screenBuffer = np.ndarray(gameboyResolution[::-1], dtype='uint32')
-        
+
         self.blankScreen()
         self._window.show()
+
+        self.ticks = sdl2.SDL_GetTicks()
 
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
@@ -179,9 +181,11 @@ class SdlGameWindow(AbstractGameWindow):
             self.tileView2Window.refresh()
             self.spriteWindow.refresh()
 
-    def VSync(self):
-        # Rather than call this each frame, I think there is a method that sets the Renderer to be Vsync'd persistently 
-        pass
+    def frameLimiter(self):
+        now = sdl2.SDL_GetTicks()
+        sdl2.SDL_Delay(max(0, int(1/60.0*1000-(now-self.ticks))))
+        self.ticks = sdl2.SDL_GetTicks()
+
 
     def stop(self):
         if __debug__:

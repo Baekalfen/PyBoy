@@ -97,7 +97,7 @@ class MultiprocessGameWindow(AbstractGameWindow):
 def MultiprocessSlave(Window, scanlineParameters, VRAM, OAM, pipe, scale):
     window = Window(scale)
     window.scanlineParameters = scanlineParameters
-    lcdDummy = LCDDummy(VRAM, OAM)
+    lcdDummy = LCDDummy(VRAM, OAM, window.color_palette)
 
     running = True
     while(running):
@@ -132,14 +132,14 @@ def MultiprocessSlave(Window, scanlineParameters, VRAM, OAM, pipe, scale):
             raise Exception("Unknown command: %s" % command)
 
 class LCDDummy():
-    def __init__(self, VRAM, OAM):
+    def __init__(self, VRAM, OAM, color_palette):
         self.VRAM = VRAM
         self.OAM = OAM
 
         self.LCDC = LCDCRegister(0)
-        self.BGP = PaletteRegister(0xFC)
-        self.OBP0 = PaletteRegister(0xFF)
-        self.OBP1 = PaletteRegister(0xFF)
+        self.BGP = PaletteRegister(0xFC, color_palette)
+        self.OBP0 = PaletteRegister(0xFF, color_palette)
+        self.OBP1 = PaletteRegister(0xFF, color_palette)
 
     def update(self, LCDCvalue, BGPvalue, OBP0value, OBP1value):
         self.LCDC.set(LCDCvalue)

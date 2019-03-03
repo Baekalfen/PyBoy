@@ -69,8 +69,6 @@ def tickFrame(self):
             self.calculateCycles(170)
 
             self.MainWindow.scanline(y, self.lcd)
-            # Just recording states of LCD registers (or rendering a line,
-            # but I had to pass the whole lcd object for that --K)
 
             # Mode 0
             self.setSTATMode(0)

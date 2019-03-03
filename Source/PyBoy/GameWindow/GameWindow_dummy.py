@@ -40,7 +40,7 @@ class DummyGameWindow(AbstractGameWindow):
     def updateDisplay(self):
         pass
 
-    def VSync(self):
+    def frameLimiter(self):
         pass
 
     def stop(self):

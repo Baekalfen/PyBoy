@@ -95,10 +95,8 @@ class PyBoy():
 
         self.t_VSynced = time.clock()
 
-        # TODO: Try to avoid VSync'ing on a frame, if we are out of time
         if self.limitEmulationSpeed:
-            # This one makes time and frame syncing work, but messes with time.clock()
-            self.window.VSync()
+            self.window.frameLimiter()
         self.t_frameDone = time.time()
 
 
