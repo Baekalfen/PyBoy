@@ -96,6 +96,8 @@ class SdlGameWindow(AbstractGameWindow):
         self.blankScreen()
         self._window.show()
 
+        self.ticks = sdl2.SDL_GetTicks()
+
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='uint8')
 
         if __debug__:
@@ -179,8 +181,11 @@ class SdlGameWindow(AbstractGameWindow):
             self.tileView2Window.refresh()
             self.spriteWindow.refresh()
 
-    def VSync(self):
-        pass
+    def frameLimiter(self):
+        now = sdl2.SDL_GetTicks()
+        sdl2.SDL_Delay(max(0, int(1/60.0*1000-(now-self.ticks))))
+        self.ticks = sdl2.SDL_GetTicks()
+
 
     def stop(self):
         if __debug__:

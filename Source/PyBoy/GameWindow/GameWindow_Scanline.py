@@ -89,6 +89,8 @@ class ScanlineGameWindow(AbstractGameWindow):
         self._linebuf = [0] * gameboyResolution[0]
         self._linerect = sdl2.rect.SDL_Rect(0, 0, gameboyResolution[0], 1)
 
+        self.ticks = sdl2.SDL_GetTicks()
+
         self.blankScreen()
         self._window.show()
 
@@ -116,9 +118,10 @@ class ScanlineGameWindow(AbstractGameWindow):
         self._renderer.present()
         pass
 
-    def VSync(self):
-        # Not implemented
-        pass
+    def frameLimiter(self):
+        now = sdl2.SDL_GetTicks()
+        sdl2.SDL_Delay(max(0, int(1/60.0*1000-(now-self.ticks))))
+        self.ticks = sdl2.SDL_GetTicks()
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window.window)

@@ -167,7 +167,7 @@ class OpenGLGameWindow(AbstractGameWindow):
         self.glDraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 
-    def VSync(self):
+    def frameLimiter(self):
         pass
 
     def stop(self):
