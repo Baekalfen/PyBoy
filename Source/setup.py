@@ -26,7 +26,7 @@ setup(
     name='PyBoy',
     packages = ["PyBoy", "PyBoy.Cartridge", "PyBoy.MB", "PyBoy.MB.CPU"],
     cmdclass={'build_ext':build_ext},
-    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/MB/CPU", np.get_include()], #, "PyBoy/GameWindow",
+    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/MB/CPU", np.get_include(), "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
     # include_dirs=[np.get_include()],
     ext_modules = cythonize([
             'PyBoy/MathUint8.py',
@@ -56,7 +56,8 @@ setup(
             'PyBoy/__init__.py',
         ],
         include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/MB/CPU", np.get_include()], #, "PyBoy/GameWindow",
-        nthreads=4,
+        nthreads=6,
         annotate=False,
+        language_level='2'
     )
 )

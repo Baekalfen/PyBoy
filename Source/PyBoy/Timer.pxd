@@ -10,5 +10,5 @@ cdef class Timer:
     cdef public unsigned int DIVcounter, TIMAcounter
     cdef public unsigned int[4] dividers
 
-    cpdef bint tick(self, unsigned int)
-    cpdef unsigned int cyclesToInterrupt(self)
+    cdef bint tick(self, unsigned int)
+    cdef unsigned int cyclesToInterrupt(self)

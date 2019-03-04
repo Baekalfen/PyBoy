@@ -11,20 +11,20 @@
 # cdef short flagC, flagH, flagN, flagZ
 # cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
-cpdef short testFlag(self, int flag)
-cpdef void setFlag(self, int flag, bint value=*)
-cpdef void clearFlag(self, int flag)
+cdef short testFlag(self, int flag)
+cdef void setFlag(self, int flag, bint value=*)
+cdef void clearFlag(self, int flag)
 
 # ### Interrupt flags
 
-cpdef bint testInterruptFlag(self, int flag)
-cpdef void setInterruptFlag(self, int flag)
-cpdef void clearInterruptFlag(self, int flag)
+cdef bint testInterruptFlag(self, int flag)
+cdef void setInterruptFlag(self, int flag)
+cdef void clearInterruptFlag(self, int flag)
 
-cpdef bint testInterruptFlagEnabled(self, int flag)
+cdef bint testInterruptFlagEnabled(self, int flag)
 
-cpdef bint testRAMRegisterFlag(self, int address, int flag)
-cpdef void setRAMRegisterFlag(self, int address, int flag, bint value=*)
-cpdef void clearRAMRegisterFlag(self, int address, int flag)
-cpdef bint testRAMRegisterFlagEnabled(self, int address, int flag)
+cdef bint testRAMRegisterFlag(self, int address, int flag)
+cdef void setRAMRegisterFlag(self, int address, int flag, bint value=*)
+cdef void clearRAMRegisterFlag(self, int address, int flag)
+cdef bint testRAMRegisterFlagEnabled(self, int address, int flag)
 

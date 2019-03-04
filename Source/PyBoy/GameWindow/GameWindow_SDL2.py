@@ -9,7 +9,7 @@ import cython
 import sys
 import time
 import sdl2
-import sdl2.ext
+# import sdl2.ext
 import numpy as np
 import warnings
 
@@ -26,12 +26,12 @@ from ..Logger import logger
 gameboyResolution = (160, 144)
 
 
-def pixels2dWithoutWarning(surface):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        return sdl2.ext.pixels2d(surface)
+# def pixels2dWithoutWarning(surface):
+#     with warnings.catch_warnings():
+#         warnings.simplefilter("ignore")
+#         return sdl2.ext.pixels2d(surface)
 
-# TODO: class SdlGameWindow(AbstractGameWindow):
+# class SdlGameWindow(AbstractGameWindow):
 class SdlGameWindow():
     def __init__(self, scale=1):
         self._scale = scale
@@ -75,120 +75,121 @@ class SdlGameWindow():
 
         CoreDump.windowHandle = self
 
-        logger.debug("SDL initialization")
-        sdl2.ext.init()
+
+        logger.debug("SDL GameWindow initialization")
+        # sdl2.ext.init()
+        sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING) # Should be less... https://wiki.libsdl.org/SDL_Init
 
         self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
-        self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
-        self._windowSurface = self._window.get_surface()
+        self._window = sdl2.SDL_CreateWindow(
+                "PyBoy",
+                sdl2.SDL_WINDOWPOS_CENTERED,
+                sdl2.SDL_WINDOWPOS_CENTERED,
+                gameboyResolution[0],
+                gameboyResolution[1],
+                sdl2.SDL_WINDOW_RESIZABLE)
+        self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
-        if self._scale == 1:
-            self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface))
-        else:
-            self._screenBuffer = ScaledFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
-        self._screenBuffer.fill(0x00558822)
-        self._window.show()
+#         self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution, flags=sdl2.SDL_WINDOW_RESIZABLE)
 
-        # Only used for VSYNC
-        self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
-        self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
+#         self._renderer = sdl2.ext.Renderer(self._window, -1, gameboyResolution, flags=sdl2.SDL_RENDERER_ACCELERATED)
+#         self._sdlrenderer = self._renderer.sdlrenderer
+
+        self._sdlTextureBuffer = sdl2.SDL_CreateTexture(self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, gameboyResolution[0], gameboyResolution[1])
+        self._screenBuffer = np.ndarray(gameboyResolution[::-1], dtype='uint32')
+
+        self.blankScreen()
+        sdl2.SDL_ShowWindow(self._window)
+        # self._window.show()
+        # logger.debug("SDL initialization")
+        # sdl2.ext.init()
+
+        # self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
+        # logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
+
+        # self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution)
+        # self._windowSurface = self._window.get_surface()
+
+        # if self._scale == 1:
+        #     self._screenBuffer = SimpleFrameBuffer(pixels2dWithoutWarning(self._windowSurface))
+        # else:
+        #     self._screenBuffer = ScaledFrameBuffer(pixels2dWithoutWarning(self._windowSurface), self._scale)
+        # self._screenBuffer.fill(0x00558822)
+        # self._window.show()
+
+        # # Only used for VSYNC
+        # self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
+        # self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
 
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='int32')
+
 
         if __debug__:
             self.__setDebug()
 
-    def makeWindowAndGetBuffer(self, width, height, pos_x, pos_y, window_name):
-        sdl2.ext.Window.DEFAULTPOS = (pos_x, pos_y)
+    # def makeWindowAndGetBuffer(self, width, height, pos_x, pos_y, window_name):
+    #     sdl2.ext.Window.DEFAULTPOS = (pos_x, pos_y)
 
-        window = sdl2.ext.Window(window_name, size=(width, height))
-        windowSurface = window.get_surface()
-        windowBuffer = pixels2dWithoutWarning(windowSurface)
-        window.show()
+    #     window = sdl2.ext.Window(window_name, size=(width, height))
+    #     windowSurface = window.get_surface()
+    #     windowBuffer = pixels2dWithoutWarning(windowSurface)
+    #     window.show()
 
-        return window, windowSurface, windowBuffer
+    #     return window, windowSurface, windowBuffer
 
     def dump(self,filename):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface,filename+".bmp")
-        if __debug__:
-            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileDataWindowSurface,filename+"_tileData.bmp")
-            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView2WindowSurface,filename+"_tileView1.bmp")
-            sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"_tileView2.bmp")
+        # if __debug__:
+        #     sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileDataWindowSurface,filename+"_tileData.bmp")
+        #     sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView2WindowSurface,filename+"_tileView1.bmp")
+        #     sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"_tileView2.bmp")
 
     def setTitle(self,title):
-        self._window.title = title
+        # self._window.title = title
+        sdl2.SDL_SetWindowTitle(self._window, title)
         # sdl2.ext.title(self._window,title)
         # sdl2.SDL_SetWindowTitle(self._window,title)
 
-    def __setDebug(self):
-        windowOffset = 0
-        # Tile Data
-        tiles = 384
-        self.tileDataWidth = 16*8 # Change the 16 to whatever wide you want the tile window
-        self.tileDataHeight = ((tiles*8) / self.tileDataWidth)*8
-
-        self.tileDataWindow, self.tileDataWindowSurface, self.tileDataBuffer = \
-                self.makeWindowAndGetBuffer(self.tileDataWidth, self.tileDataHeight, windowOffset, 0, "Tile Data")
-        windowOffset += self.tileDataWidth
-
-        # Background View 1
-        self.tileView1Width = 0x100
-        self.tileView1Height = 0x100
-
-        self.tileView1Window, self.tileView1WindowSurface, self.tileView1Buffer = \
-                self.makeWindowAndGetBuffer(self.tileView1Width, self.tileView1Height, windowOffset, 0, "Tile View 1")
-        windowOffset += self.tileView1Width
-
-        # Background View 2
-        self.tileView2Width = 0x100
-        self.tileView2Height = 0x100
-
-        self.tileView2Window, self.tileView2WindowSurface, self.tileView2Buffer = \
-                self.makeWindowAndGetBuffer(self.tileView2Width, self.tileView2Height, windowOffset, 0, "Tile View 2")
-        windowOffset += self.tileView2Width
-
-        # Sprite View
-        self.spriteWidth = 0x40
-        self.spriteHeight = 0x28*2
-
-        self.spriteWindow, self.spriteWindowSurface, self.spriteBuffer = \
-                self.makeWindowAndGetBuffer(self.spriteWidth, self.spriteHeight, windowOffset, 0, "Sprite View")
-        windowOffset += self.spriteWidth
 
     def getEvents(self):
         events = []
 
-        for event in sdl2.ext.get_events():
-            if event.type == sdl2.SDL_QUIT:
-                events.append(WindowEvent.Quit)
-            elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
-            elif event.type == sdl2.SDL_KEYUP:
-                events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
+        # for event in sdl2.ext.get_events():
+        #     if event.type == sdl2.SDL_QUIT:
+        #         events.append(WindowEvent.Quit)
+        #     elif event.type == sdl2.SDL_KEYDOWN:
+        #         events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
+        #     elif event.type == sdl2.SDL_KEYUP:
+        #         events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
 
         return events
 
-    def updateDisplay(self):
-        self._window.refresh()
-        self._screenBuffer.update()
-        if __debug__:
-            self.tileDataWindow.refresh()
-            self.tileView1Window.refresh()
-            self.tileView2Window.refresh()
-            self.spriteWindow.refresh()
+    # def updateDisplay(self):
+    #     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer, None, None)
+    #     sdl2.SDL_RenderPresent(self._sdlrenderer)
+
+        # sdl2.SDL_RenderPresent(self._renderer)
+        # self._window.refresh()
+        # self._screenBuffer#.update()
+        # if __debug__:
+        #     self.tileDataWindow.refresh()
+        #     self.tileView1Window.refresh()
+        #     self.tileView2Window.refresh()
+        #     self.spriteWindow.refresh()
 
     def VSync(self):
-        sdl2.SDL_RenderPresent(self.renderer)
+        pass
+        # sdl2.SDL_RenderPresent(self.renderer)
 
     def stop(self):
-        if __debug__:
-            sdl2.SDL_DestroyWindow(self.tileDataWindow.window)
-            sdl2.SDL_DestroyWindow(self.tileView1Window.window)
-            sdl2.SDL_DestroyWindow(self.tileView2Window.window)
-            sdl2.SDL_DestroyWindow(self.spriteWindow.window)
-        sdl2.SDL_DestroyWindow(self._window.window)
+        # if __debug__:
+        #     sdl2.SDL_DestroyWindow(self.tileDataWindow.window)
+        #     sdl2.SDL_DestroyWindow(self.tileView1Window.window)
+        #     sdl2.SDL_DestroyWindow(self.tileView2Window.window)
+        #     sdl2.SDL_DestroyWindow(self.spriteWindow.window)
+        sdl2.SDL_DestroyWindow(self._window)
         sdl2.ext.quit()
 
     def scanline(self, y, viewPos, windowPos):
@@ -197,7 +198,7 @@ class SdlGameWindow():
         self.scanlineParameters[y, 2] = windowPos[0]
         self.scanlineParameters[y, 3] = windowPos[1]
 
-    @cython.locals(y=cython.ushort)
+    @cython.locals(y=cython.ushort, x=cython.ushort)
     def renderScreen(self, lcd):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
@@ -216,10 +217,10 @@ class SdlGameWindow():
                     if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                         backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
 
-                    self._screenBuffer[x,y] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+                    self._screenBuffer[y,x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenBuffer[x,y] = LCD.colorPalette[0]
+                    self._screenBuffer[y,x] = LCD.colorPalette[0]
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
@@ -229,7 +230,7 @@ class SdlGameWindow():
                         if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                             windowTileIndex = getSignedInt8(windowTileIndex)+256
 
-                        self._screenBuffer[x,y] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
+                        self._screenBuffer[y,x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
@@ -252,8 +253,8 @@ class SdlGameWindow():
 
             spriteCache = lcd.spriteCacheOBP1 if attributes & 0b10000 else lcd.spriteCacheOBP0
 
-            if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
+            # if x < 160 and y < 144:
+            #     self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
 
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, spritePriority, BGPkey, xFlip = 0, yFlip = 0):
@@ -283,14 +284,15 @@ class SdlGameWindow():
 
 
     def blankScreen(self):
+        pass
         # If the screen is off, fill it with a color.
-        if __debug__:
-            # Currently, it's dark purple
-            self._screenBuffer.fill(0x00403245)
-        else:
-            # Pan docs says it should be white, but it does fit with Pokemon?
-            # self._screenBuffer.fill(0x00FFFFFF)
-            self._screenBuffer.fill(0x00000000)
+        # if __debug__:
+        #     # Currently, it's dark purple
+        #     self._screenBuffer.fill(0x00403245)
+        # else:
+        #     # Pan docs says it should be white, but it does fit with Pokemon?
+        #     # self._screenBuffer.fill(0x00FFFFFF)
+        #     self._screenBuffer.fill(0x00000000)
 
 
     def getScreenBuffer(self):
@@ -302,111 +304,111 @@ class SdlGameWindow():
     #
     #################################################################
 
-    def copyTile(self, fromXY, toXY, fromBuffer, toBuffer):
-        x1,y1 = fromXY
-        x2,y2 = toXY
+    # def copyTile(self, fromXY, toXY, fromBuffer, toBuffer):
+    #     x1,y1 = fromXY
+    #     x2,y2 = toXY
 
-        tileSize = 8
-        toBuffer[x2:x2+tileSize, y2:y2+tileSize] = fromBuffer[x1:x1+tileSize, y1:y1+tileSize]
+    #     tileSize = 8
+    #     toBuffer[x2:x2+tileSize, y2:y2+tileSize] = fromBuffer[x1:x1+tileSize, y1:y1+tileSize]
 
-    def refreshTileView1(self, lcd):
-        # self.tileView1Buffer.fill(0x00ABC4FF)
+    # def refreshTileView1(self, lcd):
+    #     # self.tileView1Buffer.fill(0x00ABC4FF)
 
-        tileSize = 8
-        winHorTileView1Limit = 32
-        winVerTileView1Limit = 32
+    #     tileSize = 8
+    #     winHorTileView1Limit = 32
+    #     winVerTileView1Limit = 32
 
-        for n in xrange(0x1800,0x1C00):
-            tileIndex = lcd.VRAM[n] #TODO: Simplify this reference -- and reoccurences
+    #     for n in xrange(0x1800,0x1C00):
+    #         tileIndex = lcd.VRAM[n] #TODO: Simplify this reference -- and reoccurences
 
-            # Check the tile source and add offset
-            # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
-            # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if (lcd.LCDC.value >> 4) & 1 == 0: #TODO: use correct flag
-                tileIndex = 256 + getSignedInt8(tileIndex)
+    #         # Check the tile source and add offset
+    #         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+    #         # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+    #         if (lcd.LCDC.value >> 4) & 1 == 0: #TODO: use correct flag
+    #             tileIndex = 256 + getSignedInt8(tileIndex)
 
-            tileColumn = (n-0x1800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
-            tileRow = (n-0x1800)/winVerTileView1Limit # Vertical time number based on tileColumn
+    #         tileColumn = (n-0x1800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
+    #         tileRow = (n-0x1800)/winVerTileView1Limit # Vertical time number based on tileColumn
 
-            fromXY = ((tileIndex*8)%self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
-            toXY = (tileColumn*8, tileRow*8)
+    #         fromXY = ((tileIndex*8)%self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
+    #         toXY = (tileColumn*8, tileRow*8)
 
-            self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView1Buffer)
+    #         self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView1Buffer)
 
-    def refreshTileView2(self, lcd):
-        # self.tileView2Buffer.fill(0x00ABC4FF)
+    # def refreshTileView2(self, lcd):
+    #     # self.tileView2Buffer.fill(0x00ABC4FF)
 
-        tileSize = 8
-        winHorTileView2Limit = 32
-        winVerTileView2Limit = 32
+    #     tileSize = 8
+    #     winHorTileView2Limit = 32
+    #     winVerTileView2Limit = 32
 
-        for n in xrange(0x1C00,0x2000):
-            tileIndex = lcd.VRAM[n]
+    #     for n in xrange(0x1C00,0x2000):
+    #         tileIndex = lcd.VRAM[n]
 
-            # Check the tile source and add offset
-            # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
-            # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if (lcd.LCDC.value >> 4) & 1 == 0:
-                tileIndex = 256 + getSignedInt8(tileIndex)
+    #         # Check the tile source and add offset
+    #         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
+    #         # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+    #         if (lcd.LCDC.value >> 4) & 1 == 0:
+    #             tileIndex = 256 + getSignedInt8(tileIndex)
 
-            tileColumn = (n-0x1C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
-            tileRow = (n-0x1C00)/winVerTileView2Limit # Vertical time number based on tileColumn
+    #         tileColumn = (n-0x1C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
+    #         tileRow = (n-0x1C00)/winVerTileView2Limit # Vertical time number based on tileColumn
 
-            fromXY = ((tileIndex*8)%self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
-            toXY = (tileColumn*8, tileRow*8)
+    #         fromXY = ((tileIndex*8)%self.tileDataWidth, ((tileIndex*8)/self.tileDataWidth)*8)
+    #         toXY = (tileColumn*8, tileRow*8)
 
-            self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView2Buffer)
-
-
-    def drawTileCacheView(self, lcd):
-        for n in xrange(self.tileDataHeight/8):
-            self.tileDataBuffer[0:self.tileDataWidth,n*8:(n+1)*8] = lcd.tileCache[n*self.tileDataWidth:(n+1)*self.tileDataWidth,0:8]
-
-    def drawTileView1ScreenPort(self, lcd):
-        xx, yy = lcd.getViewPort()
-
-        width = gameboyResolution[0]
-        height = gameboyResolution[1]
-
-        self.drawHorLine(xx       , yy        ,width  , self.tileView1Buffer)
-        self.drawHorLine(xx       , yy+height ,width  , self.tileView1Buffer)
-
-        self.drawVerLine(xx       , yy        ,height , self.tileView1Buffer)
-        self.drawVerLine(xx+width , yy        ,height , self.tileView1Buffer)
-
-    def drawTileView2WindowPort(self, lcd):
-        xx, yy = lcd.getWindowPos()
-
-        xx = -xx
-        yy = -yy
-
-        width = gameboyResolution[0]
-        height = gameboyResolution[1]
-
-        self.drawHorLine(xx       , yy        ,width  , self.tileView2Buffer)
-        self.drawHorLine(xx       , yy+height ,width  , self.tileView2Buffer)
-
-        self.drawVerLine(xx       , yy        ,height , self.tileView2Buffer)
-        self.drawVerLine(xx+width , yy        ,height , self.tileView2Buffer)
+    #         self.copyTile(fromXY, toXY, self.tileDataBuffer, self.tileView2Buffer)
 
 
-    def drawHorLine(self,xx,yy,length,screen,color = 0):
-        for x in xrange(length):
-            screen[(xx+x)%0xFF,yy&0xFF] = color
+    # def drawTileCacheView(self, lcd):
+    #     for n in xrange(self.tileDataHeight/8):
+    #         self.tileDataBuffer[0:self.tileDataWidth,n*8:(n+1)*8] = lcd.tileCache[n*self.tileDataWidth:(n+1)*self.tileDataWidth,0:8]
 
-    def drawVerLine(self,xx,yy,length,screen,color = 0):
-        for y in xrange(length):
-            screen[xx&0xFF,(yy+y)&0xFF] = color
+    # def drawTileView1ScreenPort(self, lcd):
+    #     xx, yy = lcd.getViewPort()
+
+    #     width = gameboyResolution[0]
+    #     height = gameboyResolution[1]
+
+    #     self.drawHorLine(xx       , yy        ,width  , self.tileView1Buffer)
+    #     self.drawHorLine(xx       , yy+height ,width  , self.tileView1Buffer)
+
+    #     self.drawVerLine(xx       , yy        ,height , self.tileView1Buffer)
+    #     self.drawVerLine(xx+width , yy        ,height , self.tileView1Buffer)
+
+    # def drawTileView2WindowPort(self, lcd):
+    #     xx, yy = lcd.getWindowPos()
+
+    #     xx = -xx
+    #     yy = -yy
+
+    #     width = gameboyResolution[0]
+    #     height = gameboyResolution[1]
+
+    #     self.drawHorLine(xx       , yy        ,width  , self.tileView2Buffer)
+    #     self.drawHorLine(xx       , yy+height ,width  , self.tileView2Buffer)
+
+    #     self.drawVerLine(xx       , yy        ,height , self.tileView2Buffer)
+    #     self.drawVerLine(xx+width , yy        ,height , self.tileView2Buffer)
 
 
-    def refreshSpriteView(self, lcd):
-        self.spriteBuffer.fill(0x00ABC4FF)
-        for n in xrange(0x00,0xA0,4):
-            tileIndex = lcd.OAM[n+2] # TODO: Simplify this reference
-            attributes = lcd.OAM[n+3]
-            fromXY = (tileIndex * 8, 0)
+    # def drawHorLine(self,xx,yy,length,screen,color = 0):
+    #     for x in xrange(length):
+    #         screen[(xx+x)%0xFF,yy&0xFF] = color
 
-            i = n*2
-            self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), lcd.spriteCacheOBP0, self.spriteBuffer)
-            if lcd.LCDC.spriteSize:
-                self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), lcd.spriteCacheOBP0, self.spriteBuffer)
+    # def drawVerLine(self,xx,yy,length,screen,color = 0):
+    #     for y in xrange(length):
+    #         screen[xx&0xFF,(yy+y)&0xFF] = color
+
+
+    # def refreshSpriteView(self, lcd):
+    #     self.spriteBuffer.fill(0x00ABC4FF)
+    #     for n in xrange(0x00,0xA0,4):
+    #         tileIndex = lcd.OAM[n+2] # TODO: Simplify this reference
+    #         attributes = lcd.OAM[n+3]
+    #         fromXY = (tileIndex * 8, 0)
+
+    #         i = n*2
+    #         self.copyTile(fromXY, (i%self.spriteWidth, (i/self.spriteWidth)*16), lcd.spriteCacheOBP0, self.spriteBuffer)
+    #         if lcd.LCDC.spriteSize:
+    #             self.copyTile((tileIndex * 8+8, 0), (i%self.spriteWidth, (i/self.spriteWidth)*16 + 8), lcd.spriteCacheOBP0, self.spriteBuffer)

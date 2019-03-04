@@ -8,7 +8,7 @@
 
 cimport cython
 cimport PyBoy.Cartridge
-cimport PyBoy.MB
+from PyBoy cimport MB
 cimport PyBoy.WindowEvent
 from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
 # from PyBoy.GameWindow.GameWindow_PyGame cimport PyGameGameWindow
@@ -22,7 +22,7 @@ cdef float SPF
 cdef class PyBoy():
     cdef object debugger
     cdef object mb
-    cdef object window
+    cdef SdlGameWindow window
 
     cdef bint profiling
     cdef float exp_avg_emu
@@ -35,7 +35,7 @@ cdef class PyBoy():
     cdef bint limitEmulationSpeed
 
     @cython.locals(done=cython.bint)
-    cpdef bint tick(self)
+    cdef bint tick(self)
 
     cdef object getWindow(self, str, unsigned int)
 

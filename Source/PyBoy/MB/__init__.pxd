@@ -10,6 +10,8 @@
 # from ..Cartridge cimport MBC3
 cimport PyBoy.MB.CPU
 from PyBoy cimport RAM, Cartridge, BootROM, LCD, Interaction, Timer
+from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
+
 # from PyBoy.Cartridge import GenericMBC
 # from CPU.flags cimport VBlank, TIMER, HightoLow, LCDC
 
@@ -18,7 +20,8 @@ cdef short IF_address, IE_address, NoInterrupt, InterruptVector
 cdef unsigned short STAT, LY, LYC
 
 cdef class Motherboard:
-    cdef object debugger, MainWindow, timer, interaction, bootROM, ram, cpu, lcd
+    cdef object debugger, timer, interaction, bootROM, ram, cpu, lcd
+    cdef SdlGameWindow MainWindow
     # cdef object cartridge
     cdef Cartridge.GenericMBC cartridge
     cdef bint bootROMEnabled
@@ -36,12 +39,12 @@ cdef class Motherboard:
 
     # cdef public unsigned int A, F, B, C, D, E, HL, SP, PC
     # cpdef public object mb
-    cpdef void buttonEvent(self, object)
-    cpdef void stop(self, bint)
+    cdef void buttonEvent(self, object)
+    cdef void stop(self, bint)
     cdef setSTATMode(self, int)
     cdef void checkLYC(self, int)
     cdef void calculateCycles(self, int)
-    cpdef void tickFrame(self)
+    cdef void tickFrame(self)
     # cpdef unsigned short __len__(self)
 
     cdef object get(self, unsigned short)

@@ -11,8 +11,8 @@
 cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable
 
 cdef tuple gameboyResolution
-cpdef tuple colorPalette
-cpdef unsigned int alphaMask
+cdef tuple colorPalette
+cdef unsigned int alphaMask
 
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
@@ -21,7 +21,7 @@ cdef class LCD:
     cdef public bint clearCache
     cdef public set tilesChanged
     # TODO: Numpy
-    cpdef unsigned int[:, :] tileCache
+    cdef unsigned int[:, :] tileCache
     # cpdef object tileCache
     # TODO: Should be 8-bit
     cdef public unsigned char[:] VRAM

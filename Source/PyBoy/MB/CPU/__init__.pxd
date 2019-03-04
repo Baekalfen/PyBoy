@@ -5,6 +5,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+cimport PyBoy.MB
+
 cdef short IF_address, IE_address, NoInterrupt, InterruptVector
 
 cdef class CPU:
@@ -18,8 +20,8 @@ cdef class CPU:
     cdef int testAndTriggerInterrupt(self, int, int)
     cdef int executeInstruction(self, object)
     cdef object fetchInstruction(self, int pc)
-    cpdef int tick(self)
+    cdef int tick(self)
 
-    cdef public unsigned char A, F, B, C, D, E
-    cdef public unsigned short HL, SP, PC
-    cpdef public object mb
+    cdef unsigned char A, F, B, C, D, E
+    cdef unsigned short HL, SP, PC
+    cdef PyBoy.MB mb
