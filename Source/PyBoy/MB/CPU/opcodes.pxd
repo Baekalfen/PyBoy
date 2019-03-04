@@ -1,3 +1,5 @@
+cdef short flagC, flagH, flagN, flagZ
+
 cdef short NOP_00(self) # 00 NOP
 cdef short LD_01(self, int v) # 01 LD BC,d16
 cdef short LD_02(self) # 02 LD (BC),A

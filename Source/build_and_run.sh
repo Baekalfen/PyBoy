@@ -4,10 +4,11 @@ set -e
 
 export CFLAGS="-I $(python -c 'import numpy; print numpy.get_include()') $CFLAGS"
 export CFLAGS="-I /usr/local/include/SDL2/ $CFLAGS"
-export CFLAGS="$(sdl2-config --static-libs) $CFLAGS"
+# export CFLAGS="-L/usr/local/lib $CFLAGS"
+export CFLAGS="$(sdl2-config --static-libs) $CFLAGS" # Too many variables, but gives the -L above
 
-./clean.sh
-cp ~/Desktop/opcodes.c ~/Desktop/opcodes.so PyBoy/MB/CPU/
+# ./clean.sh
+# cp ~/Desktop/opcodes.c ~/Desktop/opcodes.so PyBoy/MB/CPU/
 
 python setup.py build_ext --inplace
 

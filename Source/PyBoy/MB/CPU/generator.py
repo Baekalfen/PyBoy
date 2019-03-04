@@ -30,6 +30,11 @@ from MathUint8 import getSignedInt8
 
 """
 
+cimports = """
+cdef short flagC, flagH, flagN, flagZ
+
+"""
+
 opcodes = []
 
 class MyHTMLParser(HTMLParser):
@@ -1076,6 +1081,7 @@ def update():
         with open(pxd_destination, "w") as f_pxd:
             f.write(warning)
             f.write(imports)
+            f_pxd.write(cimports)
             lookupList = []
             for lookupTuple, code in opcodeFunctions:
                 lookupList.append(lookupTuple)

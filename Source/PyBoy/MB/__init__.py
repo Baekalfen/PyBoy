@@ -12,7 +12,8 @@ import CPU
 from ..Logger import logger
 from .. import RAM, BootROM, LCD, Interaction, Timer, CoreDump
 from .. import Cartridge
-from CPU.flags import VBlank, TIMER, HightoLow, LCDC
+# from CPU.flags import VBlank, TIMER, HightoLow, LCDC
+VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
 STAT = 0xFF41
 LY = 0xFF44

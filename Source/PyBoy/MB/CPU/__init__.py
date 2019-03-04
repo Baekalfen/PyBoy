@@ -8,26 +8,103 @@
 from opcodes import opcodes
 from ... import CoreDump
 from ...opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-import flags
-from flags import flagZ, flagN, flagH, flagC
-from flags import VBlank, LCDC, TIMER, Serial, HightoLow
+# import flags
+# from flags import flagZ, flagN, flagH, flagC
+# from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from ...Logger import logger
 # from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 
 
+flagC, flagH, flagN, flagZ = range(4, 8)
+VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 IF_address = 0xFF0F
 IE_address = 0xFFFF
 NoInterrupt = 0
 InterruptVector = 1
 
+def setH(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self.HL &= 0x00FF
+    self.HL |= x << 8
+
+def setL(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self.HL &= 0xFF00
+    self.HL |= x
+
+def setAF(self, x):
+    assert x <= 0xFFFF, "%0.4x" % x
+    self.A = x >> 8
+    self.F = x & 0x00F0 # Lower nibble of F is always zero!
+
+def setBC(self, x):
+    assert x <= 0xFFFF, "%0.4x" % x
+    self.B = x >> 8
+    self.C = x & 0x00FF
+
+def setDE(self, x):
+    assert x <= 0xFFFF, "%0.4x" % x
+    self.D = x >> 8
+    self.E = x & 0x00FF
+
 class CPU(object): # 'object' is important for property!!!
     # from registers import A, F, B, C, D, E, HL, SP, PC
-    from registers import setH, setL, setAF, setBC, setDE
+    # from registers import setH, setL, setAF, setBC, setDE
     # from Interrupts import checkForInterrupts, testAndTriggerInterrupt
-    from flags import testFlag, setFlag, clearFlag
-    from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
+    # from flags import testFlag, setFlag, clearFlag
+    # from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
 
+
+
+    ### CPU Flags
+
+    def testFlag(self, flag):
+        return (self.F & (1 << flag)) != 0
+
+    def setFlag(self, flag, value=True):
+        self.F = (self.F & (0xFF - (1 << flag)))
+        if value:
+            self.F = (self.F + (1 << flag))
+
+    def clearFlag(self, flag):
+        self.F = (self.F & (0xFF - (1 << flag)))
+
+
+    ### Interrupt flags
+
+
+    def testInterruptFlag(self, flag):
+        return (self.mb[0xFF0F] & (1 << flag))
+
+
+    def setInterruptFlag(self, flag):
+        self.mb[0xFF0F] |= (1 << flag)
+
+
+    def clearInterruptFlag(self, flag):
+        self.mb[0xFF0F] &= (0xFF - (1 << flag))
+
+
+    def testInterruptFlagEnabled(self, flag):
+        return (self.mb[0xFFFF] & (1 << flag))
+
+
+
+    def testRAMRegisterFlag(self, address, flag):
+        return (self.mb[address] & (1 << flag))
+
+    def setRAMRegisterFlag(self, address, flag, value=True):
+        self.clearRAMRegisterFlag(address, flag)
+        # self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
+        # if value:
+        self.mb[address] = (self.mb[address] + (value << flag))
+
+    def clearRAMRegisterFlag(self, address, flag):
+        self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
+
+    def testRAMRegisterFlagEnabled(self, address, flag):
+        return (self.mb[address] & (1 << flag))
 
     def checkForInterrupts(self):
         #GPCPUman.pdf p. 40 about priorities
@@ -75,7 +152,7 @@ class CPU(object): # 'object' is important for property!!!
 
     H = property(lambda s: s.HL >> 8, setH)
     L = property(lambda s: s.HL & 0xFF, setL)
-    AF = property(lambda s:(s.A << 8) + s.F, setAF) # Only used StateManager
+    AF = property(lambda s:(s.A << 8) + s.F, setAF) # Only used in StateManager
     BC = property(lambda s:(s.B << 8) + s.C, setBC)
     DE = property(lambda s:(s.D << 8) + s.E, setDE)
 
@@ -190,63 +267,63 @@ class CPU(object): # 'object' is important for property!!!
             return -1
         instruction = self.fetchInstruction(self.PC)
 
-        if __debug__:
-            if self.lala and not self.halted:
-                if (self.mb[self.PC]) == 0xCB:
-                    print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP)
-                else:
-                    print "%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC], self.AF, self.BC, self.DE, self.HL, self.SP)
+        #if __debug__:
+        #    if self.lala and not self.halted:
+        #        if (self.mb[self.PC]) == 0xCB:
+        #            print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP)
+        #        else:
+        #            print "%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC], self.AF, self.BC, self.DE, self.HL, self.SP)
 
-            if self.breakAllow and self.PC == self.breakNext and self.AF == 0x1f80:
-                self.breakAllow = False
-                self.breakOn = True
+        #    if self.breakAllow and self.PC == self.breakNext and self.AF == 0x1f80:
+        #        self.breakAllow = False
+        #        self.breakOn = True
 
-            if self.oldPC == self.PC and not self.halted:
-                self.breakOn = True
-                logger.info("PC DIDN'T CHANGE! Can't continue!")
-                print self.getDump()
-                # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
-                raise Exception("Escape to main.py")
-            self.oldPC = self.PC
+        #    if self.oldPC == self.PC and not self.halted:
+        #        self.breakOn = True
+        #        logger.info("PC DIDN'T CHANGE! Can't continue!")
+        #        print self.getDump()
+        #        # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
+        #        raise Exception("Escape to main.py")
+        #    self.oldPC = self.PC
 
-            #TODO: Make better CoreDump print out. Where is 0xC000?
-            #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
-            if self.breakOn:
-                self.getDump(instruction)
+        #    #TODO: Make better CoreDump print out. Where is 0xC000?
+        #    #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
+        #    if self.breakOn:
+        #        self.getDump(instruction)
 
-                action = raw_input()
-                if action == 'd':
-                    CoreDump.CoreDump("Debug")
-                elif action == 'c':
-                    self.breakOn = False
-                    self.breakAllow = True
-                elif action == 'r':
-                    self.breakOn = False
-                    self.breakAllow = False
-                elif action[:2] == "0x":
-                    logger.info("Breaking on next {}".format(hex(int(action,16)))) #Checking parser
-                    self.breakNext = int(action,16)
-                    self.breakOn = False
-                    self.breakAllow = True
-                elif action == 'ei':
-                    self.interruptMasterEnable = True
-                elif action == 'o':
-                    targetPC = instruction[-1][-1]
-                    logger.info("Stepping over for {}".format(hex(targetPC))) #Checking parser
-                    self.breakNext = targetPC
-                    self.breakOn = False
-                    self.breakAllow = True
-                else:
-                    pass
+        #        action = raw_input()
+        #        if action == 'd':
+        #            CoreDump.CoreDump("Debug")
+        #        elif action == 'c':
+        #            self.breakOn = False
+        #            self.breakAllow = True
+        #        elif action == 'r':
+        #            self.breakOn = False
+        #            self.breakAllow = False
+        #        elif action[:2] == "0x":
+        #            logger.info("Breaking on next {}".format(hex(int(action,16)))) #Checking parser
+        #            self.breakNext = int(action,16)
+        #            self.breakOn = False
+        #            self.breakAllow = True
+        #        elif action == 'ei':
+        #            self.interruptMasterEnable = True
+        #        elif action == 'o':
+        #            targetPC = instruction[-1][-1]
+        #            logger.info("Stepping over for {}".format(hex(targetPC))) #Checking parser
+        #            self.breakNext = targetPC
+        #            self.breakOn = False
+        #            self.breakAllow = True
+        #        else:
+        #            pass
 
-        if __debug__:
-            try:
-                return self.executeInstruction(instruction)
-            except:
-                self.getDump(instruction)
-                exit(1)
-        else:
-            return self.executeInstruction(instruction)
+        #if __debug__:
+        #    try:
+        #        return self.executeInstruction(instruction)
+        #    except:
+        #        self.getDump(instruction)
+        #        exit(1)
+        #else:
+        return self.executeInstruction(instruction)
 
     def getDump(self, instruction = None):
         flags = ""

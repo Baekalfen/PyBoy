@@ -3,8 +3,10 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
 
-from flags import flagZ, flagN, flagH, flagC
+# from flags import flagZ, flagN, flagH, flagC
 from MathUint8 import getSignedInt8
+flagC, flagH, flagN, flagZ = range(4, 8)
+
 
 def NOP_00(self): # 00 NOP
     self.PC += 1

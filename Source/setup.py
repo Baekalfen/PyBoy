@@ -22,6 +22,11 @@ import numpy as np
 # foo = Extension(name='foo.__init__', sources=['foo/__init__.pyx'])
 # bar = Extension(name='foo.bar', sources=['foo/bar.pyx'])
 
+import multiprocessing
+
+thread_count = multiprocessing.cpu_count()/2 # Half for Hyper-Threading
+thread_count = 1
+
 setup(
     name='PyBoy',
     packages = ["PyBoy", "PyBoy.Cartridge", "PyBoy.MB", "PyBoy.MB.CPU"],
@@ -47,16 +52,16 @@ setup(
             'PyBoy/GameWindow/GameWindow_dummy.py',
             'PyBoy/LCD.py',
             'PyBoy/MB/CPU/__init__.py',
-            'PyBoy/MB/CPU/flags.py',
-            'PyBoy/MB/CPU/registers.py',
+            # 'PyBoy/MB/CPU/flags.py',
+            # 'PyBoy/MB/CPU/registers.py',
             'PyBoy/MB/CPU/opcodes.py',
             'PyBoy/MB/CPU/MathUint8.py',
             'PyBoy/MB/__init__.py',
             # 'PyBoy/Global.py',
             'PyBoy/__init__.py',
         ],
-        include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/MB/CPU", np.get_include()], #, "PyBoy/GameWindow",
-        nthreads=6,
+        include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/GameWindow", "PyBoy/MB/CPU", np.get_include()], #, "PyBoy/GameWindow",
+        nthreads=thread_count,
         annotate=False,
         language_level='2'
     )
