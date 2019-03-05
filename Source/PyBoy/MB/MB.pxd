@@ -23,39 +23,28 @@ cdef unsigned short STAT, LY, LYC
 cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
 cdef class Motherboard:
-    cdef object debugger, interaction, bootROM, ram, lcd
+    cdef object debugger
+    cdef object interaction
+    cdef object bootROM
+    cdef object ram
+    cdef object lcd
     cdef CPU.CPU cpu
     cdef Timer.Timer timer
     cdef SdlGameWindow MainWindow
     cdef PyBoy.Cartridge.GenericMBC.GenericMBC cartridge
-    # cdef Cartridge.GenericMBC cartridge
     cdef bint bootROMEnabled
-    # cdef bint interruptMasterEnable, breakAllow, breakOn, breakNext, halted, stopped, lala, profiling
-    # cdef int oldPC
 
-    # cdef object debugCallStack
-    # # cdef void getDump(self, instruction=*)
-
-    # cdef int checkForInterrupts(self)
-    # cdef int testAndTriggerInterrupt(self, int, int)
-    # cdef int executeInstruction(self, object)
-    # cdef object fetchInstruction(self, int pc)
-    # cpdef int tick(self)
-
-    # cdef public unsigned int A, F, B, C, D, E, HL, SP, PC
-    # cpdef public object mb
     cdef void buttonEvent(self, object)
     cdef void stop(self, bint)
     cdef setSTATMode(self, int)
     cdef void checkLYC(self, int)
     cdef void calculateCycles(self, int)
     cpdef void tickFrame(self)
-    # # cpdef unsigned short __len__(self)
 
     cdef object get(self, unsigned short)
     cdef void set(self, unsigned short, unsigned char)
 
-    # cdef void transferDMAtoOAM(self, char, unsigned short dst=*)
-    # cdef void saveState(self, char*)
-    # cdef void loadState(self, char*)
+    cdef void transferDMAtoOAM(self, char, unsigned short dst=*)
+    cdef void saveState(self, char*)
+    cdef void loadState(self, char*)
 
