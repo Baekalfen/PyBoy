@@ -14,7 +14,7 @@ cimport numpy as np
 
 ctypedef np.uint8_t DTYPE_t
 
-cpdef DTYPE_t[:] allocateRAM(unsigned short, rand=*)
+cdef DTYPE_t[:] allocateRAM(unsigned short, rand=*)
 
 cdef class RAM:
     cdef public DTYPE_t[:] internalRAM0

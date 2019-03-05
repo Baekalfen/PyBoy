@@ -8,7 +8,7 @@
 import cython
 import CoreDump
 import RAM
-from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
+# from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 import numpy as np
 
 
@@ -43,8 +43,8 @@ class LCD():
 
         self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
 
-        self.VRAM = allocateRAM(VIDEO_RAM)
-        self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
+        self.VRAM = np.zeros(shape=(RAM.VIDEO_RAM,), dtype=np.uint8)
+        self.OAM = np.zeros(shape=(RAM.OBJECT_ATTRIBUTE_MEMORY,), dtype=np.uint8)
 
         # TODO: Find a more optimal way to do this
         self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')

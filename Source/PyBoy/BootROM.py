@@ -5,7 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from RAM import allocateRAM
 import Global
 import numpy as np # np.fromfile is not included in Cython version
 import struct
@@ -26,7 +25,7 @@ class BootROM():
             # else:
             _bootROM = np.fromfile(bootROMFile, np.uint8, 256).astype(np.uint8)
         else:
-            _bootROM = allocateRAM(256)
+            _bootROM = np.zeros(shape=(0xFF,), dtype=np.uint8)
             # _bootROM = [0 for x in range(256)]
             # Set stack pointer
             _bootROM[0x00] = 0x31

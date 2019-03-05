@@ -8,6 +8,8 @@
 # cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
 
 # LCDC bit descriptions
+cimport PyBoy.RAM
+# from PyBoy.RAM cimport allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable
 
 cdef tuple gameboyResolution
@@ -16,16 +18,18 @@ cdef unsigned int alphaMask
 
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
+
+import numpy as np
+cimport numpy as np
+ctypedef np.uint8_t DTYPE_t
+
 cdef class LCD:
     cdef object mb
     cdef public bint clearCache
     cdef public set tilesChanged
-    # TODO: Numpy
     cdef unsigned int[:, :] tileCache
-    # cpdef object tileCache
-    # TODO: Should be 8-bit
-    cdef public unsigned char[:] VRAM
-    cdef public unsigned char[:] OAM
+    cdef public DTYPE_t[:] VRAM
+    cdef public DTYPE_t[:] OAM
 
     # TODO: Numpy
     cdef object spriteCacheOBP0
