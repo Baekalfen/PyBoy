@@ -24,14 +24,16 @@ import numpy as np
 
 import multiprocessing
 
-thread_count = multiprocessing.cpu_count()/2 # Half for Hyper-Threading
-thread_count = 1
+thread_count = multiprocessing.cpu_count()
+# thread_count = multiprocessing.cpu_count()/2 # Half for Hyper-Threading
+# thread_count = 1
+print "Thread Count:", thread_count
 
 setup(
     name='PyBoy',
-    packages = ["PyBoy", "PyBoy.Cartridge", "PyBoy.MB", "PyBoy.MB.CPU"],
+    packages = ["PyBoy"],
     cmdclass={'build_ext':build_ext},
-    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/MB/CPU", np.get_include(), "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
+    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", np.get_include(), "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
     # include_dirs=[np.get_include()],
     ext_modules = cythonize([
             'PyBoy/MathUint8.py',
@@ -45,24 +47,27 @@ setup(
             'PyBoy/Cartridge/MBC5.py',
             'PyBoy/RAM.py',
             'PyBoy/Interaction.py',
-            'PyBoy/Timer.py',
-            # 'PyBoy/GameWindow/AbstractGameWindow.py',
+            # # 'PyBoy/GameWindow/AbstractGameWindow.py',
+            'PyBoy/GameWindow/__init__.py',
             'PyBoy/GameWindow/GameWindow_SDL2.py',
-            # 'PyBoy/GameWindow/GameWindow_PyGame.py',
+            # # 'PyBoy/GameWindow/GameWindow_PyGame.py',
             'PyBoy/GameWindow/GameWindow_dummy.py',
             'PyBoy/LCD.py',
-            'PyBoy/MB/CPU/__init__.py',
-            # 'PyBoy/MB/CPU/flags.py',
-            # 'PyBoy/MB/CPU/registers.py',
-            'PyBoy/MB/CPU/opcodes.py',
-            'PyBoy/MB/CPU/MathUint8.py',
+            'PyBoy/MB/CPU.py',
+            # # 'PyBoy/MB/CPU/flags.py',
+            # # 'PyBoy/MB/CPU/registers.py',
+            'PyBoy/MB/opcodes.py',
+            'PyBoy/MB/MathUint8.py',
+            'PyBoy/MB/Timer.py',
+            'PyBoy/MB/MB.py',
             'PyBoy/MB/__init__.py',
-            # 'PyBoy/Global.py',
+            'PyBoy/Global.py',
             'PyBoy/__init__.py',
+            'PyBoy/PyBoy.py',
         ],
-        include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/GameWindow", "PyBoy/MB/CPU", np.get_include()], #, "PyBoy/GameWindow",
+        include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/GameWindow", np.get_include()], #, "PyBoy/GameWindow",
         nthreads=thread_count,
         annotate=False,
-        language_level='2'
+        language_level='2',
     )
 )

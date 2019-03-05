@@ -19,7 +19,7 @@ import numpy as np
 # cimport PyBoy.Global
 
 # cdef GenericMBC Cartridge(unicode)
-cdef GenericMBC Cartridge(char*)
+cpdef GenericMBC Cartridge(char*)
 cdef bint validateCheckSum(unsigned char[:,:])
 cdef unsigned char[:, :] loadROMfile(char*)
 

@@ -5,13 +5,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from opcodes import opcodes
-from ... import CoreDump
-from ...opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+# from opcodes import opcodes
+import opcodes
+import CoreDump
+from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 # import flags
 # from flags import flagZ, flagN, flagH, flagC
 # from flags import VBlank, LCDC, TIMER, Serial, HightoLow
-from ...Logger import logger
+from ..Logger import logger
 # from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 
@@ -23,6 +24,30 @@ IE_address = 0xFFFF
 NoInterrupt = 0
 InterruptVector = 1
 
+def setA(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self._A = x
+
+def setF(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self._F = x
+
+def setB(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self._B = x
+
+def setC(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self._C = x
+
+def setD(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self._D = x
+
+def setE(self, x):
+    assert x <= 0xFF, "%0.2x" % x
+    self._E = x
+
 def setH(self, x):
     assert x <= 0xFF, "%0.2x" % x
     self.HL &= 0x00FF
@@ -32,6 +57,18 @@ def setL(self, x):
     assert x <= 0xFF, "%0.2x" % x
     self.HL &= 0xFF00
     self.HL |= x
+
+def setHL(self, x):
+    assert x <= 0xFFFF, "%0.4x" % x
+    self._HL = x
+
+def setSP(self, x):
+    assert x <= 0xFFFF, "%0.4x" % x
+    self._SP = x
+
+def setPC(self, x):
+    assert x <= 0xFFFF, "%0.4x" % x
+    self._PC = x
 
 def setAF(self, x):
     assert x <= 0xFFFF, "%0.4x" % x
@@ -47,6 +84,35 @@ def setDE(self, x):
     assert x <= 0xFFFF, "%0.4x" % x
     self.D = x >> 8
     self.E = x & 0x00FF
+
+def getA(self):
+    return self._A
+def getF(self):
+    return self._F
+def getB(self):
+    return self._B
+def getC(self):
+    return self._C
+def getD(self):
+    return self._D
+def getE(self):
+    return self._E
+def getH(self):
+    return self._HL >> 8
+def getL(self):
+    return self._HL & 0xFF
+def getHL(self):
+    return self._HL
+def getSP(self):
+    return self._SP
+def getPC(self):
+    return self._PC
+def getAF(self):
+    return (self.A << 8) + self.F
+def getBC(self):
+    return (self.B << 8) + self.C
+def getDE(self):
+    return (self.D << 8) + self.E
 
 class CPU(object): # 'object' is important for property!!!
     # from registers import A, F, B, C, D, E, HL, SP, PC
@@ -149,12 +215,21 @@ class CPU(object): # 'object' is important for property!!!
         return NoInterrupt
 
 
+    A = property(getA, setA)
+    F = property(getF, setF)
+    B = property(getB, setB)
+    C = property(getC, setC)
+    D = property(getD, setD)
+    E = property(getE, setE)
+    HL = property(getHL, setHL)
+    SP = property(getSP, setSP)
+    PC = property(getPC, setPC)
 
-    H = property(lambda s: s.HL >> 8, setH)
-    L = property(lambda s: s.HL & 0xFF, setL)
-    AF = property(lambda s:(s.A << 8) + s.F, setAF) # Only used in StateManager
-    BC = property(lambda s:(s.B << 8) + s.C, setBC)
-    DE = property(lambda s:(s.D << 8) + s.E, setDE)
+    H = property(getH, setH)
+    L = property(getL, setL)
+    AF = property(getAF, setAF) # Only used in StateManager
+    BC = property(getBC, setBC)
+    DE = property(getDE, setDE)
 
     fC = property(lambda s:bool(s.F & (1 << flagC)), None)
     fH = property(lambda s:bool(s.F & (1 << flagH)), None)
@@ -164,15 +239,15 @@ class CPU(object): # 'object' is important for property!!!
     fNZ = property(lambda s:not bool(s.F & (1 << flagZ)), None)
 
     def __init__(self, MB, profiling=False):
-        self.A = 0
-        self.F = 0
-        self.B = 0
-        self.C = 0
-        self.D = 0
-        self.E = 0
-        self.HL = 0
-        self.SP = 0
-        self.PC = 0
+        self._A = 0
+        self._F = 0
+        self._B = 0
+        self._C = 0
+        self._D = 0
+        self._E = 0
+        self._HL = 0
+        self._SP = 0
+        self._PC = 0
 
         self.mb = MB
 
@@ -198,19 +273,7 @@ class CPU(object): # 'object' is important for property!!!
         if profiling:
             self.hitRate = np.zeros(shape=(512,), dtype=int)
 
-
-    def executeInstruction(self, instruction):
-        # '*' unpacks tuple into arguments
-        success = instruction[0](*instruction[2])
-
-        assert success is not None, "Opcode returned None! %0.2x" % self.mb[self.PC]
-
-        if success:
-            return instruction[1][1]  # Select correct cycles for jumps
-        else:
-            return instruction[1][0]
-
-    def fetchInstruction(self, pc):
+    def fetchAndExecuteInstruction(self, pc):
         opcode = self.mb[pc]
         if opcode == 0xCB:  # Extension code
             pc += 1
@@ -220,38 +283,9 @@ class CPU(object): # 'object' is important for property!!!
         #Profiling
         if self.profiling:
             self.hitRate[opcode] += 1
-        # if opcode == 0xf0:
-        #     print "F0", hex(self.mb[pc+1])
 
-        operation = opcodes[opcode]
+        return opcodes.executeOpcode(self, opcode)
 
-        if operation == None:
-            import pdb; pdb.set_trace()
-
-        # OPTIMIZE: Can this be improved?
-        if operation[0] == 1:
-            return (
-                operation[2],
-                operation[1],
-                (self,)
-            )
-        elif operation[0] == 2:
-            # 8-bit immediate
-            return (
-                operation[2],
-                operation[1],
-                (self, self.mb[pc+1])
-            )
-        elif operation[0] == 3:
-            # 16-bit immediate
-            # Flips order of values due to big-endian
-            return (
-                operation[2],
-                operation[1],
-                (self, (self.mb[pc+2] << 8) + self.mb[pc+1])
-            )
-        else:
-            raise CoreDump.CoreDump("Unexpected opcode length: %s" % operation[0])
 
     def tick(self):
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
@@ -265,7 +299,9 @@ class CPU(object): # 'object' is important for property!!!
             self.halted = False
         elif self.halted:
             return -1
-        instruction = self.fetchInstruction(self.PC)
+        # instruction = self.fetchInstruction(self.PC)
+        # return self.executeInstruction(instruction)
+        return self.fetchAndExecuteInstruction(self.PC)
 
         #if __debug__:
         #    if self.lala and not self.halted:
@@ -323,73 +359,74 @@ class CPU(object): # 'object' is important for property!!!
         #        self.getDump(instruction)
         #        exit(1)
         #else:
-        return self.executeInstruction(instruction)
+        #    return self.executeInstruction(instruction)
 
     def getDump(self, instruction = None):
-        flags = ""
-        if self.testFlag(flagZ):
-            flags += " Z"
-        if self.testFlag(flagH):
-            flags += " H"
-        if self.testFlag(flagC):
-            flags += " C"
-        if self.testFlag(flagN):
-            flags += " N"
+        pass
+    #     flags = ""
+    #     if self.testFlag(flagZ):
+    #         flags += " Z"
+    #     if self.testFlag(flagH):
+    #         flags += " H"
+    #     if self.testFlag(flagC):
+    #         flags += " C"
+    #     if self.testFlag(flagN):
+    #         flags += " N"
 
-        logger.info(flags)
-        logger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.A, self.F))
-        logger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.B, self.C))
-        logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.D, self.E))
-        logger.info("H:   0x%0.2X   L: 0x%0.2X" % (self.HL >> 8, self.HL & 0xFF))
-        logger.info("SP:  0x%0.4X   PC: 0x%0.4X"% (self.SP, self.PC))
-        # logger.info("0xC000", "0x%0.2X" % self.mb[0xc000])
-        # logger.info("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
-        logger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb[self.HL], self.mb[self.HL+1]))
-        logger.info("(SP) 0x%0.2X   (SP+1) 0x%0.2X" % (self.mb[self.SP], self.mb[self.SP+1]))
-        logger.info(" ".join(map(lambda x: "%0.2x" % x, [self.mb[self.SP+x] for x in range(16)])))
-        logger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
+    #     logger.info(flags)
+    #     logger.info("A:   0x%0.2X   F: 0x%0.2X" % (self.A, self.F))
+    #     logger.info("B:   0x%0.2X   C: 0x%0.2X" % (self.B, self.C))
+    #     logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.D, self.E))
+    #     logger.info("H:   0x%0.2X   L: 0x%0.2X" % (self.HL >> 8, self.HL & 0xFF))
+    #     logger.info("SP:  0x%0.4X   PC: 0x%0.4X"% (self.SP, self.PC))
+    #     # logger.info("0xC000", "0x%0.2X" % self.mb[0xc000])
+    #     # logger.info("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
+    #     logger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb[self.HL], self.mb[self.HL+1]))
+    #     logger.info("(SP) 0x%0.2X   (SP+1) 0x%0.2X" % (self.mb[self.SP], self.mb[self.SP+1]))
+    #     logger.info(" ".join(map(lambda x: "%0.2x" % x, [self.mb[self.SP+x] for x in range(16)])))
+    #     logger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
 
-        if (self.mb[self.PC]) != 0xCB:
-            l = opcodes[self.mb[self.PC]][0]
-            logger.info("Op: 0x%0.2X" % self.mb[self.PC])
-            logger.info("Name: " + str(CPU_COMMANDS[self.mb[self.PC]]))
-            logger.info("Len:" + str(l))
-            if instruction:
-                logger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
-        else:
+    #     if (self.mb[self.PC]) != 0xCB:
+    #         l = opcodes[self.mb[self.PC]][0]
+    #         logger.info("Op: 0x%0.2X" % self.mb[self.PC])
+    #         logger.info("Name: " + str(CPU_COMMANDS[self.mb[self.PC]]))
+    #         logger.info("Len:" + str(l))
+    #         if instruction:
+    #             logger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
+    #     else:
 
-            logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.PC+1], str(CPU_COMMANDS_EXT[self.mb[self.PC+1]])))
-        logger.info("Call Stack " + str(self.debugCallStack))
-        logger.info("Active ROM and RAM bank " +
-                str(self.mb.cartridge.ROMBankSelected) + ' ' +
-                str(self.mb.cartridge.RAMBankSelected))
-        logger.info("Master Interrupt" + str(self.interruptMasterEnable))
-        logger.info("Enabled Interrupts")
+    #         logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.PC+1], str(CPU_COMMANDS_EXT[self.mb[self.PC+1]])))
+    #     logger.info("Call Stack " + str(self.debugCallStack))
+    #     logger.info("Active ROM and RAM bank " +
+    #             str(self.mb.cartridge.ROMBankSelected) + ' ' +
+    #             str(self.mb.cartridge.RAMBankSelected))
+    #     logger.info("Master Interrupt" + str(self.interruptMasterEnable))
+    #     logger.info("Enabled Interrupts")
 
-        flags = ""
-        if self.testInterruptFlagEnabled(VBlank):
-            flags += "VBlank "
-        if self.testInterruptFlagEnabled(LCDC):
-            flags += "LCDC "
-        if self.testInterruptFlagEnabled(TIMER):
-            flags += "Timer "
-        if self.testInterruptFlagEnabled(Serial):
-            flags += "Serial "
-        if self.testInterruptFlagEnabled(HightoLow):
-            flags += "HightoLow "
-        logger.info(flags)
-        logger.info("Waiting Interrupts")
-        flags = ""
-        if self.testInterruptFlag(VBlank):
-            flags += "VBlank "
-        if self.testInterruptFlag(LCDC):
-            flags += "LCDC "
-        if self.testInterruptFlag(TIMER):
-            flags += "Timer "
-        if self.testInterruptFlag(Serial):
-            flags += "Serial "
-        if self.testInterruptFlag(HightoLow):
-            flags += "HightoLow "
-        if self.halted:
-            flags += " **HALTED**"
-        logger.info(flags)
+    #     flags = ""
+    #     if self.testInterruptFlagEnabled(VBlank):
+    #         flags += "VBlank "
+    #     if self.testInterruptFlagEnabled(LCDC):
+    #         flags += "LCDC "
+    #     if self.testInterruptFlagEnabled(TIMER):
+    #         flags += "Timer "
+    #     if self.testInterruptFlagEnabled(Serial):
+    #         flags += "Serial "
+    #     if self.testInterruptFlagEnabled(HightoLow):
+    #         flags += "HightoLow "
+    #     logger.info(flags)
+    #     logger.info("Waiting Interrupts")
+    #     flags = ""
+    #     if self.testInterruptFlag(VBlank):
+    #         flags += "VBlank "
+    #     if self.testInterruptFlag(LCDC):
+    #         flags += "LCDC "
+    #     if self.testInterruptFlag(TIMER):
+    #         flags += "Timer "
+    #     if self.testInterruptFlag(Serial):
+    #         flags += "Serial "
+    #     if self.testInterruptFlag(HightoLow):
+    #         flags += "HightoLow "
+    #     if self.halted:
+    #         flags += " **HALTED**"
+    #     logger.info(flags)

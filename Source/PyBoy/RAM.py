@@ -25,10 +25,10 @@ def allocateRAM(size, rand=False):
         # return [random.randrange(0x00,0xFF) for x in range(size)]
         raise Exception("Random RAM not implemented")
 
-    if Global.isPyPy:
-        return [0 for x in range(size)]
-    else:
-        return np.zeros(shape=(size,), dtype=np.uint8)
+    # if Global.isPyPy:
+    #     return [0 for x in range(size)]
+    # else:
+    return np.zeros(shape=(size,), dtype=np.uint8)
         # return np.zeros(size, dtype=np.uint8)
 
 class RAM():

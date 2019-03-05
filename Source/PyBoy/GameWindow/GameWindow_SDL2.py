@@ -126,8 +126,8 @@ class SdlGameWindow():
         self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='int32')
 
 
-        if __debug__:
-            self.__setDebug()
+        # if __debug__:
+        #     self.__setDebug()
 
     # def makeWindowAndGetBuffer(self, width, height, pos_x, pos_y, window_name):
     #     sdl2.ext.Window.DEFAULTPOS = (pos_x, pos_y)

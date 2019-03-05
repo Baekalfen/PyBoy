@@ -5,14 +5,14 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from .. import Global
+# from .. import Global
 
-from .AbstractGameWindow import AbstractGameWindow
-from .GameWindow_dummy import DummyGameWindow
+from AbstractGameWindow import AbstractGameWindow
+from GameWindow_dummy import DummyGameWindow
 
-if Global.isPyPy:
-    from .GameWindow_SDL2 import SdlGameWindow
-else:
-    from .GameWindow_PyGame import PyGameGameWindow
+# if Global.isPyPy:
+from GameWindow_SDL2 import SdlGameWindow
+# else:
+#     from .GameWindow_PyGame import PyGameGameWindow
 
 

@@ -52,16 +52,16 @@ def loadROMfile(filename):
 
         bankSize = (16 * 1024)
         # TODO: LOAD DATA!
-        if Global.isPyPy:
-            ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
-        else:
-            ROMBanks = np.ndarray(shape=(len(ROMData)/bankSize, bankSize), dtype='uint8')
+        # if Global.isPyPy:
+        #     ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
+        # else:
+        ROMBanks = np.ndarray(shape=(len(ROMData)/bankSize, bankSize), dtype='uint8')
 
         for i, byte in enumerate(ROMData):
-            if Global.isPyPy:
-                ROMBanks[i / bankSize][i % bankSize] = ord(byte)
-            else:
-                ROMBanks[i / bankSize, i % bankSize] = ord(byte)
+            # if Global.isPyPy:
+            #     ROMBanks[i / bankSize][i % bankSize] = ord(byte)
+            # else:
+            ROMBanks[i / bankSize, i % bankSize] = ord(byte)
 
     return ROMBanks
 

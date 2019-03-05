@@ -14,17 +14,17 @@ import cython
 class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:
-            if Global.isPyPy:
-                with open(bootROMFile, "rb") as bootROMFileHandle:
-                    rom = bootROMFileHandle.read()
-                # print _bootROM.shape, romData.shape
-                # print [hex(x) for x in _bootROM]
-                # print [hex(x) for x in romData]
-                # print _bootROM.shape
-                # print [hex(x) for x in _bootROM]
-                _bootROM = struct.unpack('%iB' % len(rom), rom)
-            else:
-                _bootROM = np.fromfile(bootROMFile, np.uint8, 256).astype(np.uint32)
+            # if Global.isPyPy:
+            #     with open(bootROMFile, "rb") as bootROMFileHandle:
+            #         rom = bootROMFileHandle.read()
+            #     # print _bootROM.shape, romData.shape
+            #     # print [hex(x) for x in _bootROM]
+            #     # print [hex(x) for x in romData]
+            #     # print _bootROM.shape
+            #     # print [hex(x) for x in _bootROM]
+            #     _bootROM = struct.unpack('%iB' % len(rom), rom)
+            # else:
+            _bootROM = np.fromfile(bootROMFile, np.uint8, 256).astype(np.uint32)
         else:
             _bootROM = allocateRAM(256)
             # _bootROM = [0 for x in range(256)]
@@ -44,10 +44,10 @@ class BootROM():
             _bootROM[0xFE] = 0xE0
             _bootROM[0xFF] = 0x50
 
-        if Global.isPyPy:
-            self.bootROM = _bootROM
-        else:
-            self.bootROM = _bootROM.copy()
+        # if Global.isPyPy:
+        #     self.bootROM = _bootROM
+        # else:
+        self.bootROM = _bootROM.copy()
 
 
     @cython.locals(address=cython.ushort)

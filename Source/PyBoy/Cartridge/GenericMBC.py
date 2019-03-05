@@ -81,10 +81,10 @@ class GenericMBC:
         self.RAMBanksInitialized = True
 
         # In real life the values in RAM are scrambled on initialization
-        if Global.isPyPy:
-            self.RAMBanks = [[0 for x in xrange(8 * 1024)] for _ in range(n)]
-        else:
-            self.RAMBanks = np.ndarray(shape=(n, 8 * 1024), dtype='uint8')
+        # if Global.isPyPy:
+        #     self.RAMBanks = [[0 for x in xrange(8 * 1024)] for _ in range(n)]
+        # else:
+        self.RAMBanks = np.ndarray(shape=(n, 8 * 1024), dtype='uint8')
 
 
     def getGameName(self, ROMBanks):
