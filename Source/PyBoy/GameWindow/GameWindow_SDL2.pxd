@@ -8,7 +8,7 @@
 # cimport sdl2_cython.events as sdl2_events
 cimport PyBoy.MathUint8
 cimport SDL2 as sdl2
-# cimport PyBoy.LCD
+cimport PyBoy.LCD
 
 import numpy as np
 cimport numpy as np
@@ -39,7 +39,7 @@ cdef class SdlGameWindow:
     cdef void VSync(self)
     cdef void stop(self)
     cdef void scanline(self, int, tuple, tuple)
-    cdef void renderScreen(self, object)
+    cdef void renderScreen(self, PyBoy.LCD.LCD)
     cdef void copySprite(self, tuple, tuple, object, object, int, bint, unsigned int, xFlip=*, yFlip=*)
     cdef void blankScreen(self)
     cdef object getScreenBuffer(self)
