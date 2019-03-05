@@ -1,4 +1,5 @@
 
+cimport PyBoy.MathUint8
 cimport CPU
 
 cdef unsigned short flagC, flagH, flagN, flagZ

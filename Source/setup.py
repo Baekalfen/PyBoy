@@ -54,7 +54,6 @@ setup(
             'PyBoy/LCD.py',
             'PyBoy/MB/CPU.py',
             'PyBoy/MB/opcodes.py',
-            'PyBoy/MB/MathUint8.py',
             'PyBoy/MB/Timer.py',
             'PyBoy/MB/MB.py',
             'PyBoy/MB/__init__.py',

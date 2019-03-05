@@ -29,9 +29,9 @@ cdef class DummyGameWindow:
     cdef object win
     cdef object renderer
 
-    cpdef void updateDisplay(self)
-    cpdef void VSync(self)
+    cdef void updateDisplay(self)
+    cdef void VSync(self)
     # cdef void stop(self)
-    cpdef void scanline(self, int, tuple, tuple)
-    cpdef void blankScreen(self)
+    cdef void scanline(self, int, tuple, tuple)
+    cdef void blankScreen(self)
 

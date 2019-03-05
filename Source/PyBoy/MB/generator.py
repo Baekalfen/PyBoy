@@ -27,11 +27,13 @@ warning = """\
 imports = """
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
-from MathUint8 import getSignedInt8
+from .. import MathUint8
+# from MathUint8 import getSignedInt8
 
 """
 
 cimports = """
+cimport PyBoy.MathUint8
 cimport CPU
 
 cdef unsigned short flagC, flagH, flagN, flagZ
@@ -131,7 +133,7 @@ class Operand():
             self.signed = True
 
             # post operation set in LD handler!
-            return "cpu.SP + getSignedInt8(v)"
+            return "cpu.SP + MathUint8.getSignedInt8(v)"
 
         elif operand[0] == '(' and operand[-1] == ')':
             self.pointer = True
@@ -159,7 +161,7 @@ class Operand():
             self.immediate = True
 
             if operand == 'r8':
-                code = "getSignedInt8(%s)" % code
+                code = "MathUint8.getSignedInt8(%s)" % code
                 self.signed = True
 
             elif operand == 'a8':
@@ -513,14 +515,14 @@ class opcodeData():
 
     def ADD(self):
         # EXPERIMENTAL E8
-        # t = self.SP+getSignedInt8(v)
+        # t = self.SP+MathUint8.getSignedInt8(v)
         # flag = 0b00000000
 
-        # if getSignedInt8(v) >= 0:
-        #     flag += (((self.SP & 0xFFF) + (getSignedInt8(v) & 0xFFF)) > 0xFFF) << flagH
+        # if MathUint8.getSignedInt8(v) >= 0:
+        #     flag += (((self.SP & 0xFFF) + (MathUint8.getSignedInt8(v) & 0xFFF)) > 0xFFF) << flagH
         #     flag += (t > 0xFFFF) << flagC
         # else:
-        #     flag += (((self.A & 0xFFF) + (getSignedInt8(v) & 0xFFF)) < 0) << flagH
+        #     flag += (((self.A & 0xFFF) + (MathUint8.getSignedInt8(v) & 0xFFF)) < 0) << flagH
         #     flag += (t < 0) << flagC
 
         # self.F &= 0b00000000
@@ -772,7 +774,7 @@ class opcodeData():
         code = Code(fname(), self.opcode, self.name, right.immediate, self.length, self.cycles, branchOp = True)
         if left is None:
             code.addLines([
-                "cpu.PC += %d + getSignedInt8(v)" % self.length,
+                "cpu.PC += %d + MathUint8.getSignedInt8(v)" % self.length,
                 "cpu.PC &= 0xFFFF",
                 "return " + self.cycles[0]
             ])
@@ -780,7 +782,7 @@ class opcodeData():
             code.addLines([
                 "cpu.PC += %d" % self.length,
                 "if %s:" % left.code,
-                "\tcpu.PC += getSignedInt8(v)",
+                "\tcpu.PC += MathUint8.getSignedInt8(v)",
                 "\tcpu.PC &= 0xFFFF",
                 "\treturn " + self.cycles[0],
                 "else:",

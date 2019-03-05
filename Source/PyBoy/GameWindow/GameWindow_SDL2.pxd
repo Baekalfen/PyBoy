@@ -6,6 +6,7 @@
 #
 
 # cimport sdl2_cython.events as sdl2_events
+cimport PyBoy.MathUint8
 cimport SDL2 as sdl2
 
 # cimport PyBoy.GameWindow.AbstractGameWindow

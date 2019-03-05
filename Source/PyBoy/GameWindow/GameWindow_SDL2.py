@@ -14,7 +14,8 @@ import numpy as np
 import warnings
 
 from .. import CoreDump
-from ..MathUint8 import getSignedInt8
+from .. import MathUint8
+# from ..MathUint8 import getSignedInt8
 from ..WindowEvent import WindowEvent
 from .. import LCD
 # from ..LCD import colorPalette, alphaMask
@@ -215,7 +216,7 @@ class SdlGameWindow():
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tileSelect == 0: # If using signed tile indices
-                        backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
+                        backgroundTileIndex = MathUint8.getSignedInt8(backgroundTileIndex)+256
 
                     self._screenBuffer[y,x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
@@ -228,7 +229,7 @@ class SdlGameWindow():
                         windowTileIndex = lcd.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
                         if lcd.LCDC.tileSelect == 0: # If using signed tile indices
-                            windowTileIndex = getSignedInt8(windowTileIndex)+256
+                            windowTileIndex = MathUint8.getSignedInt8(windowTileIndex)+256
 
                         self._screenBuffer[y,x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
@@ -325,7 +326,7 @@ class SdlGameWindow():
     #         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
     #         # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
     #         if (lcd.LCDC.value >> 4) & 1 == 0: #TODO: use correct flag
-    #             tileIndex = 256 + getSignedInt8(tileIndex)
+    #             tileIndex = 256 + MathUint8.getSignedInt8(tileIndex)
 
     #         tileColumn = (n-0x1800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
     #         tileRow = (n-0x1800)/winVerTileView1Limit # Vertical time number based on tileColumn
@@ -349,7 +350,7 @@ class SdlGameWindow():
     #         # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
     #         # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
     #         if (lcd.LCDC.value >> 4) & 1 == 0:
-    #             tileIndex = 256 + getSignedInt8(tileIndex)
+    #             tileIndex = 256 + MathUint8.getSignedInt8(tileIndex)
 
     #         tileColumn = (n-0x1C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
     #         tileRow = (n-0x1C00)/winVerTileView2Limit # Vertical time number based on tileColumn
