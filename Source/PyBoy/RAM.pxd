@@ -12,13 +12,11 @@ cimport numpy as np
 # cimport PyBoy.Global
 
 
-# ctypedef np.uint32_t DTYPE_t
 ctypedef np.uint8_t DTYPE_t
 
 cpdef DTYPE_t[:] allocateRAM(unsigned short, rand=*)
 
 cdef class RAM:
-    # TODO: Should be 8-bit
     cdef public DTYPE_t[:] internalRAM0
     cdef public DTYPE_t[:] nonIOInternalRAM0
     cdef public DTYPE_t[:] IOPorts

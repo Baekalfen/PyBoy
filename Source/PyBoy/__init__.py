@@ -6,5 +6,5 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import RAM, BootROM, LCD, Interaction, CoreDump, Cartridge
+import RAM, BootROM, LCD, Interaction, CoreDump, Cartridge, MB
 from PyBoy import PyBoy

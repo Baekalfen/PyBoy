@@ -103,7 +103,6 @@ class PaletteRegister():
     def __init__(self, value, lcd):
         self.lcd = lcd
         self.value = 0 # None
-        print value
         self.set(value)
 
     def set(self, value):

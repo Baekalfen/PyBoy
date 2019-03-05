@@ -8,11 +8,11 @@
 
 cimport cython
 cimport PyBoy.Cartridge
-cimport PyBoy.MB
+# cimport PyBoy.MB.MB
 # cimport PyBoy.WindowEvent
 cimport PyBoy.WindowEvent
+from PyBoy.MB.MB cimport Motherboard
 from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
-# # from PyBoy.GameWindow.GameWindow_PyGame cimport PyGameGameWindow
 from PyBoy.GameWindow.GameWindow_dummy cimport DummyGameWindow
 
 # cimport PyBoy.Global
@@ -22,7 +22,7 @@ cdef float SPF
 
 cdef class PyBoy:
     cdef object debugger
-    cdef object mb
+    cdef Motherboard mb
     cdef SdlGameWindow window
     # cdef object window
 

@@ -40,7 +40,7 @@ class PyBoy():
             addConsoleHandler()
 
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(ROM, bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
+        self.mb = Motherboard(unicode(ROM), unicode(bootROM), self.window, profiling = self.profiling, debugger = self.debugger)
 
         if not self.debugger is None:
             self.debugger.mb = self.mb

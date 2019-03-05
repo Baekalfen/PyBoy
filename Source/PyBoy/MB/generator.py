@@ -34,9 +34,9 @@ from MathUint8 import getSignedInt8
 cimports = """
 cimport CPU
 
-cdef short flagC, flagH, flagN, flagZ
-cdef short getOpcodeLength(unsigned short)
-cdef short executeOpcode(CPU.CPU, unsigned short)
+cdef unsigned short flagC, flagH, flagN, flagZ
+cdef unsigned short getOpcodeLength(unsigned short)
+cdef unsigned short executeOpcode(CPU.CPU, unsigned short)
 
 """
 
@@ -213,9 +213,9 @@ class Code():
 
 
         pxd = [
-            "cdef short %s_%0.2x(CPU.CPU) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name),
+            "cdef unsigned char %s_%0.2x(CPU.CPU) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name),
             # TODO: Differentiate between 16-bit values (01,11,21,31 ops) and 8-bit values for 'v'
-            "cdef short %s_%0.2x(CPU.CPU, int v) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name)
+            "cdef unsigned char %s_%0.2x(CPU.CPU, int v) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name)
         ][self.takesImmediate]
 
         return (pxd, code)

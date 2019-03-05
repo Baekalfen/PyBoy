@@ -9,8 +9,8 @@
 cimport numpy as np
 
 cdef class GenericMBC:
-    cdef char* filename
-    cdef char* gameName
+    cdef unicode filename
+    cdef unicode gameName
     cdef unsigned char[:,:] ROMBanks
     cdef unsigned char[:,:] RAMBanks
     cdef unsigned char cartType
@@ -26,7 +26,7 @@ cdef class GenericMBC:
     cdef void saveRAM(self, filename=*)
     cdef void loadRAM(self, filename=*)
     cdef void initRAMBanks(self, unsigned char)
-    cdef char* getGameName(self, unsigned char[:, :])
+    cdef unicode getGameName(self, unsigned char[:, :])
 
 cdef class ROM_only(GenericMBC):
     pass

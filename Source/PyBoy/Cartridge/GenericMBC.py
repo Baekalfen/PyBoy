@@ -88,7 +88,7 @@ class GenericMBC:
 
 
     def getGameName(self, ROMBanks):
-        return "".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
+        return unicode("".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0"))
 
     @cython.locals(address=cython.ushort)
     def __getitem__(self, address):

@@ -22,9 +22,9 @@ cdef unsigned char getD(CPU)
 cdef unsigned char getE(CPU)
 cdef unsigned char getH(CPU)
 cdef unsigned char getL(CPU)
-cdef unsigned char getHL(CPU)
-cdef unsigned char getSP(CPU)
-cdef unsigned char getPC(CPU)
+cdef unsigned int getHL(CPU)
+cdef unsigned int getSP(CPU)
+cdef unsigned int getPC(CPU)
 cdef unsigned int getAF(CPU)
 cdef unsigned int getBC(CPU)
 cdef unsigned int getDE(CPU)
@@ -49,7 +49,7 @@ cdef void setDE(CPU, int x)
 cdef class CPU:
 
     cdef public bint interruptMasterEnable, breakAllow, breakOn, halted, stopped, lala, profiling
-    cdef unsigned short oldPC, breakNext
+    cdef unsigned int oldPC, breakNext
 
     cdef object debugCallStack
     # cdef void getDump(self, instruction=*)
@@ -62,14 +62,14 @@ cdef class CPU:
     cdef int tick(self)
 
     cdef unsigned char _A, _F, _B, _C, _D, _E
-    cdef unsigned short _HL, _SP, _PC
+    cdef unsigned int _HL, _SP, _PC
     cdef object mb
 
     ### CPU Flags
     # cdef extern short flagC, flagH, flagN, flagZ
     # cdef extern short VBlank, LCDC, TIMER, Serial, HightoLow
 
-    cdef short testFlag(self, int flag)
+    cdef bint testFlag(self, int flag)
     cdef void setFlag(self, int flag, bint value=*)
     cdef void clearFlag(self, int flag)
 

@@ -20,7 +20,6 @@ from .. import Cartridge
 # LY = 0xFF44
 # LYC = 0xFF45
 
-
 class Motherboard():
     def __init__(self, gameROMFile, bootROMFile, window, profiling = False, debugger = None):
         if bootROMFile is not None:
