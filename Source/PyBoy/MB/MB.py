@@ -5,10 +5,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# import sys
+import sys
 # # import pyximport; pyximport.install()
 
-# from ..Logger import logger
+from ..Logger import logger
 import Timer
 import CPU
 from .. import RAM, BootROM, LCD, Interaction, CoreDump
@@ -23,12 +23,11 @@ from .. import Cartridge
 
 class Motherboard():
     def __init__(self, gameROMFile, bootROMFile, window, profiling = False, debugger = None):
-        pass
-        # if bootROMFile is not None:
-        #     logger.info("Boot-ROM file provided")
+        if bootROMFile is not None:
+            logger.info("Boot-ROM file provided")
 
-        # if profiling:
-        #     logger.info("Profiling enabled")
+        if profiling:
+            logger.info("Profiling enabled")
 
         self.debugger = debugger
         self.MainWindow = window

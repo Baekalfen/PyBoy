@@ -275,6 +275,7 @@ class CPU(object): # 'object' is important for property!!!
 
     def fetchAndExecuteInstruction(self, pc):
         opcode = self.mb[pc]
+        print "PC: 0x%0.2x, Opcode: 0x%0.2x" % (pc, opcode)
         if opcode == 0xCB:  # Extension code
             pc += 1
             opcode = self.mb[pc]
