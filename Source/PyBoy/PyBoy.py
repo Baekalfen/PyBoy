@@ -19,9 +19,8 @@ import BotSupport
 import Logger
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 
-# from PyBoy.GameWindow.GameWindow_SDL2 import SdlGameWindow
+import GameWindow
 # # from PyBoy.GameWindow.GameWindow_PyGame import PyGameGameWindow
-# from PyBoy.GameWindow.GameWindow_dummy import DummyGameWindow
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
@@ -58,13 +57,13 @@ class PyBoy():
         print "Window type is:", win_type
         Window = None
         if win_type is None:
-            Window = SdlGameWindow(scale)
+            Window = GameWindow.SdlGameWindow(scale)
         elif win_type == "SDL2":
-            Window = SdlGameWindow(scale)
+            Window = GameWindow.SdlGameWindow(scale)
         # elif win_type == "PyGame":
         #     Window = PyGameGameWindow(scale)
         elif win_type == "dummy":
-            Window = DummyGameWindow(scale)
+            Window = GameWindow.DummyGameWindow(scale)
         else:
             print "Invalid window argument!"
             exit(1)

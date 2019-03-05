@@ -8,6 +8,10 @@
 # cimport sdl2_cython.events as sdl2_events
 cimport PyBoy.MathUint8
 cimport SDL2 as sdl2
+# cimport PyBoy.LCD
+
+import numpy as np
+cimport numpy as np
 
 # cimport PyBoy.GameWindow.AbstractGameWindow
 cdef tuple gameboyResolution
@@ -16,15 +20,13 @@ cdef tuple gameboyResolution
 cdef class SdlGameWindow:
     # cdef tuple makeWindowAndGetBuffer(self, int, int, int, int, char*)
 
-
-    # TODO: sdl2_events.SDL_Event
-    # cdef object[:] getEvents(self)
+    cdef list getEvents(self)
     cdef unsigned int _scale
     cdef dict windowEventsDown
     cdef dict windowEventsUp
     cdef bint debug
     cdef tuple _scaledResolution
-    cdef unsigned int[:, :] _screenBuffer # TODO: Make into NumPy array
+    cdef np.uint32_t[:, :] _screenBuffer
     cdef int[:, :] scanlineParameters
 
     # cdef int ticks
@@ -34,9 +36,8 @@ cdef class SdlGameWindow:
     cdef sdl2.SDL_Texture *_sdlTextureBuffer
 
     cdef void setTitle(self, char*)
-    # cdef void updateDisplay(self)
     cdef void VSync(self)
-    # cdef void stop(self)
+    cdef void stop(self)
     cdef void scanline(self, int, tuple, tuple)
     cdef void renderScreen(self, object)
     cdef void copySprite(self, tuple, tuple, object, object, int, bint, unsigned int, xFlip=*, yFlip=*)

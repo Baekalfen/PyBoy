@@ -9,7 +9,7 @@ import cython
 import sys
 import time
 import sdl2
-# import sdl2.ext
+import sdl2.ext
 import numpy as np
 import warnings
 
@@ -157,13 +157,13 @@ class SdlGameWindow():
     def getEvents(self):
         events = []
 
-        # for event in sdl2.ext.get_events():
-        #     if event.type == sdl2.SDL_QUIT:
-        #         events.append(WindowEvent.Quit)
-        #     elif event.type == sdl2.SDL_KEYDOWN:
-        #         events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
-        #     elif event.type == sdl2.SDL_KEYUP:
-        #         events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
+        for event in sdl2.ext.get_events():
+            if event.type == sdl2.SDL_QUIT:
+                events.append(WindowEvent.Quit)
+            elif event.type == sdl2.SDL_KEYDOWN:
+                events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
+            elif event.type == sdl2.SDL_KEYUP:
+                events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
 
         return events
 
@@ -212,6 +212,8 @@ class SdlGameWindow():
             offset = xx & 0b111 # Used for the half tile at the left side when scrolling
 
             for x in xrange(gameboyResolution[0]):
+                self._screenBuffer[y,x] = 0x00403245
+                continue
                 if lcd.LCDC.backgroundEnable:
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
@@ -289,7 +291,7 @@ class SdlGameWindow():
         # If the screen is off, fill it with a color.
         # if __debug__:
         #     # Currently, it's dark purple
-        #     self._screenBuffer.fill(0x00403245)
+        self._screenBuffer[...] = 0x00403245
         # else:
         #     # Pan docs says it should be white, but it does fit with Pokemon?
         #     # self._screenBuffer.fill(0x00FFFFFF)

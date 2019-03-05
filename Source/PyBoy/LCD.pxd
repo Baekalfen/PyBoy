@@ -8,6 +8,7 @@
 # cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
 
 # LCDC bit descriptions
+# from PyBoy.MB.MB cimport Motherboard
 cimport PyBoy.RAM
 # from PyBoy.RAM cimport allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable
@@ -27,33 +28,31 @@ cdef class LCD:
     cdef object mb
     cdef public bint clearCache
     cdef public set tilesChanged
-    cdef unsigned int[:, :] tileCache
+    cdef np.uint32_t[:, :] tileCache
     cdef public DTYPE_t[:] VRAM
     cdef public DTYPE_t[:] OAM
 
     # TODO: Numpy
-    cdef object spriteCacheOBP0
-    cdef object spriteCacheOBP1
+    cdef np.uint32_t[:, :] spriteCacheOBP0
+    cdef np.uint32_t[:, :] spriteCacheOBP1
 
-    cdef public object LCDC
-    cdef public object BGP
-    cdef public object OBP0
-    cdef public object OBP1
+    cdef public LCDCRegister LCDC
+    cdef public PaletteRegister BGP
+    cdef public PaletteRegister OBP0
+    cdef public PaletteRegister OBP1
 
-    # TODO: Cythonize
-    # cdef tuple getWindowPos(self)
-    # cdef tuple getViewPort(self)
-    # cdef public void refreshTileDataAdaptive(self)
+    cdef tuple getWindowPos(self)
+    cdef tuple getViewPort(self)
+    cdef void refreshTileDataAdaptive(self)
 
 cdef class PaletteRegister:
-    cdef object lcd
+    cdef LCD lcd
 
     cdef unsigned char value
     cdef unsigned char[4] lookup
 
-    # TODO: Cythonize
-    # cdef public void set(self, unsigned int)
-    # cdef unsigned int getColor(self, char)
+    cdef void set(self, unsigned int)
+    cdef unsigned int getColor(self, char)
 
     cdef char getCode(self, unsigned char)
 
