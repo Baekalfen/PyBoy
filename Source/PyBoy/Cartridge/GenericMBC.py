@@ -150,3 +150,5 @@ class ROM_only(GenericMBC):
         else:
             logger.warn("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
         #     raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
+
+

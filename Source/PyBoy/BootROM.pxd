@@ -9,7 +9,7 @@ import numpy as np
 cimport numpy as np
 # cimport PyBoy.Global
 
-ctypedef np.uint32_t DTYPE_t
+ctypedef np.uint8_t DTYPE_t
 
 cdef class BootROM:
     cdef public DTYPE_t[:] bootROM

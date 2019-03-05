@@ -24,7 +24,7 @@ class BootROM():
             #     # print [hex(x) for x in _bootROM]
             #     _bootROM = struct.unpack('%iB' % len(rom), rom)
             # else:
-            _bootROM = np.fromfile(bootROMFile, np.uint8, 256).astype(np.uint32)
+            _bootROM = np.fromfile(bootROMFile, np.uint8, 256).astype(np.uint8)
         else:
             _bootROM = allocateRAM(256)
             # _bootROM = [0 for x in range(256)]

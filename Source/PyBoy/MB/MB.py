@@ -33,32 +33,32 @@ class Motherboard():
         self.MainWindow = window
         self.timer = Timer.Timer()
         self.interaction = Interaction.Interaction()
-        self.cartridge = Cartridge.Cartridge(gameROMFile)
+        self.cartridge = Cartridge.Cartridge.Cartridge(gameROMFile)
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(random=False)
         self.cpu = CPU.CPU(self, profiling)
         self.lcd = LCD.LCD(self)
         self.bootROMEnabled = True
 
-#         if "loadState" in sys.argv:
-#             self.loadState(str(self.cartridge.filename) + ".state")
+        if "loadState" in sys.argv:
+            self.loadState(str(self.cartridge.filename) + ".state")
 
-#         self.cartridge.loadRAM()
-#         if self.cartridge.rtcEnabled:
-#             self.cartridge.rtc.load(self.cartridge.filename)
+        self.cartridge.loadRAM()
+        # if self.cartridge.rtcEnabled:
+        #     self.cartridge.rtc.load(self.cartridge.filename)
 
 #         CoreDump.RAM = self.ram
 #         CoreDump.CPU = self.cpu
 
-    # def buttonEvent(self, key):
-    #     self.interaction.keyEvent(key)
-    #     self.cpu.setInterruptFlag(HightoLow)
+    def buttonEvent(self, key):
+        self.interaction.keyEvent(key)
+        self.cpu.setInterruptFlag(HightoLow)
 
-    # def stop(self, save):
-    #     if save:
-    #         self.cartridge.saveRAM()
-    #         if self.cartridge.rtcEnabled:
-    #             self.cartridge.rtc.save(self.cartridge.filename)
+    def stop(self, save):
+        if save:
+            self.cartridge.saveRAM()
+            if self.cartridge.rtcEnabled:
+                self.cartridge.rtc.save(self.cartridge.filename)
 
 
     #########################
@@ -68,18 +68,18 @@ class Motherboard():
         self[STAT] &= 0b11111100 # Clearing 2 LSB
         self[STAT] |= mode # Apply mode to LSB
 
-        # if self.cpu.testRAMRegisterFlag(STAT,mode+3) and mode != 3: # Mode "3" is not interruptable
-        # # if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
-        #     self.cpu.setInterruptFlag(LCDC)
+        if self.cpu.testRAMRegisterFlag(STAT,mode+3) and mode != 3: # Mode "3" is not interruptable
+        # if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
+            self.cpu.setInterruptFlag(LCDC)
 
-    #def checkLYC(self, y):
-    #    self[LY] = y
-    #    if self[LYC] == y:
-    #        self[STAT] |= 0b100 # Sets the LYC flag
-    #        if self[STAT] & 0b01000000:
-    #            self.cpu.setInterruptFlag(LCDC)
-    #    else:
-    #        self[STAT] &= 0b11111011
+    def checkLYC(self, y):
+        self[LY] = y
+        if self[LYC] == y:
+            self[STAT] |= 0b100 # Sets the LYC flag
+            if self[STAT] & 0b01000000:
+                self.cpu.setInterruptFlag(LCDC)
+        else:
+            self[STAT] &= 0b11111011
 
     def calculateCycles(self, x):
         while x > 0:

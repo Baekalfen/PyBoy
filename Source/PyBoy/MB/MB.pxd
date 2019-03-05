@@ -13,6 +13,7 @@ cimport CPU
 cimport Timer
 from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
 
+cimport PyBoy.Cartridge.GenericMBC
 # from PyBoy.Cartridge import GenericMBC
 # from CPU.flags cimport VBlank, TIMER, HightoLow, LCDC
 
@@ -26,7 +27,7 @@ cdef class Motherboard:
     cdef CPU.CPU cpu
     cdef Timer.Timer timer
     cdef SdlGameWindow MainWindow
-    cdef object cartridge
+    cdef PyBoy.Cartridge.GenericMBC.GenericMBC cartridge
     # cdef Cartridge.GenericMBC cartridge
     cdef bint bootROMEnabled
     # cdef bint interruptMasterEnable, breakAllow, breakOn, breakNext, halted, stopped, lala, profiling
@@ -43,16 +44,16 @@ cdef class Motherboard:
 
     # cdef public unsigned int A, F, B, C, D, E, HL, SP, PC
     # cpdef public object mb
-    # cdef void buttonEvent(self, object)
-    # cdef void stop(self, bint)
+    cdef void buttonEvent(self, object)
+    cdef void stop(self, bint)
     cdef setSTATMode(self, int)
-    # cdef void checkLYC(self, int)
-    # cdef void calculateCycles(self, int)
+    cdef void checkLYC(self, int)
+    cdef void calculateCycles(self, int)
     cpdef void tickFrame(self)
     # # cpdef unsigned short __len__(self)
 
-    # cdef object get(self, unsigned short)
-    # cdef void set(self, unsigned short, unsigned char)
+    cdef object get(self, unsigned short)
+    cdef void set(self, unsigned short, unsigned char)
 
     # cdef void transferDMAtoOAM(self, char, unsigned short dst=*)
     # cdef void saveState(self, char*)
