@@ -25,6 +25,7 @@ warning = """\
 # from registers import A, B, C, D, E, H, L, SP, PC
 # from flags import flagZ, flagN, flagH, flagC
 imports = """
+import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
 from .. import MathUint8
@@ -33,13 +34,19 @@ from .. import MathUint8
 """
 
 cimports = """
+cimport numpy
 cimport PyBoy.MathUint8
 cimport CPU
+cimport cython
 
 cdef unsigned short flagC, flagH, flagN, flagZ
+cdef unsigned char[:] opcodeLengths
 cdef unsigned short getOpcodeLength(unsigned short)
+@cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef unsigned short executeOpcode(CPU.CPU, unsigned short)
 
+
+cdef unsigned char NOOPCODE(CPU.CPU)
 """
 
 opcodes = []
@@ -1101,13 +1108,13 @@ def update():
                 f_pxd.write(pxd + "\n")
                 f.write(functionText.replace('\t', ' '*4) + "\n\n")
 
-            f.write("def NOOPCODE(cpu):\n    raise Exception('Not a valid opcode')\n\n")
+            f.write("def NOOPCODE(cpu):\n    return 0\n\n")
 
             f.write("def getOpcodeLength(opcode):\n    return opcodeLengths[opcode]\n")
             f.write("""
 def executeOpcode(cpu, opcode):
     opLen = getOpcodeLength(opcode)
-    v = None
+    v = 0
     pc = cpu.PC
     if opLen == 2:
         # 8-bit immediate
@@ -1115,16 +1122,19 @@ def executeOpcode(cpu, opcode):
     elif opLen == 3:
         # 16-bit immediate
         # Flips order of values due to big-endian
-        v = (cpu.mb[pc+2] << 8) + cpu.mb[pc+1]
+        a = cpu.mb[pc+2]
+        b = cpu.mb[pc+1]
+        v = (a << 8) + b
 
 """)
 
+            indent = 4
             for i,t in enumerate(lookupList):
                 t = t if t is not None else (0,"NOOPCODE")
-                f.write(" "*4 + "if opcode == 0x%0.2x:\n" % i + " "*8 + "return " + str(t[1]).replace("'",'') + ('(cpu)' if t[0] <= 1 else '(cpu, v)') + "\n")
+                f.write(" "*indent + ("if" if i==0 else "elif") +" opcode == 0x%0.2x:\n" % i + " "*(indent+4) + "return " + str(t[1]).replace("'",'') + ('(cpu)' if t[0] <= 1 else '(cpu, v)') + "\n")
             f.write('\n\n')
 
-            f.write('opcodeLengths = [\n    ')
+            f.write('opcodeLengths = np.asarray([\n    ')
             for i,t in enumerate(lookupList):
                 t = t if t is not None else (0,"NOOPCODE")
                 f.write(str(t[0]).replace("'",'') + ',')
@@ -1133,7 +1143,7 @@ def executeOpcode(cpu, opcode):
                 else:
                     f.write(' ')
 
-            f.write(']')
+            f.write('], dtype=np.uint8)')
             f.write('\n\n')
 
 

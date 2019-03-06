@@ -6,9 +6,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+cdef enum WindowEvent:
+    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState
+
 cimport cython
 cimport PyBoy.Cartridge
-cimport PyBoy.WindowEvent
+# cimport PyBoy.WindowEvent
 from PyBoy.MB.MB cimport Motherboard
 from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
 from PyBoy.GameWindow.GameWindow_dummy cimport DummyGameWindow
@@ -26,10 +29,10 @@ cdef class PyBoy:
     cdef bint profiling
     cdef float exp_avg_emu
     cdef float exp_avg_cpu
-    cdef unsigned int t_start
-    cdef unsigned int t_start_
-    cdef unsigned int t_VSynced
-    cdef unsigned int t_frameDone
+    cdef float t_start
+    cdef float t_start_
+    cdef float t_VSynced
+    cdef float t_frameDone
     cdef unsigned int counter
     cdef bint limitEmulationSpeed
 
@@ -38,7 +41,7 @@ cdef class PyBoy:
 
     cdef SdlGameWindow getWindow(self, str, unsigned int)
 
-    cdef void stop(self, save=*)
+    cpdef void stop(self, save=*)
 
 
 #    ###########################

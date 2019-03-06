@@ -1,11 +1,17 @@
 
+cimport numpy
 cimport PyBoy.MathUint8
 cimport CPU
+cimport cython
 
 cdef unsigned short flagC, flagH, flagN, flagZ
+cdef unsigned char[:] opcodeLengths
 cdef unsigned short getOpcodeLength(unsigned short)
+@cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef unsigned short executeOpcode(CPU.CPU, unsigned short)
 
+
+cdef unsigned char NOOPCODE(CPU.CPU)
 cdef unsigned char NOP_00(CPU.CPU) # 00 NOP
 cdef unsigned char LD_01(CPU.CPU, int v) # 01 LD BC,d16
 cdef unsigned char LD_02(CPU.CPU) # 02 LD (BC),A

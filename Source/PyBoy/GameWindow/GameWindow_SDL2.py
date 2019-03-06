@@ -15,7 +15,7 @@ import warnings
 from .. import CoreDump
 from .. import MathUint8
 # from ..MathUint8 import getSignedInt8
-from ..WindowEvent import WindowEvent
+# from .. import WindowEvent
 from .. import LCD
 # from ..LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
@@ -219,7 +219,8 @@ class SdlGameWindow():
                     self._screenBuffer[y,x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenBuffer[y,x] = LCD.colorPalette[0]
+                    colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
+                    self._screenBuffer[y,x] = colorPalette[0]
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()

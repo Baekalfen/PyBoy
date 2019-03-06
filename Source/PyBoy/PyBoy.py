@@ -13,7 +13,7 @@ import numpy as np
 
 import Global
 from MB.MB import Motherboard
-import WindowEvent
+# import WindowEvent
 from Logger import logger, addConsoleHandler
 import BotSupport
 import Logger
@@ -113,7 +113,6 @@ class PyBoy():
         #     # This one makes time and frame syncing work, but messes with time.clock()
         #     self.window.VSync()
         self.t_frameDone = time.time()
-
 
         if self.counter % 60 == 0:
             text = "%d %d" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)

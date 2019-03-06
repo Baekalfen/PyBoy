@@ -6,6 +6,12 @@
 #
 
 # cimport sdl2_cython.events as sdl2_events
+# cimport PyBoy.WindowEvent
+
+cdef enum WindowEvent:
+    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState
+
+
 cimport PyBoy.MathUint8
 cimport SDL2 as sdl2
 cimport PyBoy.LCD

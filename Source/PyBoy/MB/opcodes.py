@@ -3,6 +3,7 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
 
+import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
 from .. import MathUint8
@@ -4210,14 +4211,14 @@ def SET_1ff(cpu): # 1ff SET 7,A
     return 8
 
 def NOOPCODE(cpu):
-    raise Exception('Not a valid opcode')
+    return 0
 
 def getOpcodeLength(opcode):
     return opcodeLengths[opcode]
 
 def executeOpcode(cpu, opcode):
     opLen = getOpcodeLength(opcode)
-    v = None
+    v = 0
     pc = cpu.PC
     if opLen == 2:
         # 8-bit immediate
@@ -4225,1035 +4226,1037 @@ def executeOpcode(cpu, opcode):
     elif opLen == 3:
         # 16-bit immediate
         # Flips order of values due to big-endian
-        v = (cpu.mb[pc+2] << 8) + cpu.mb[pc+1]
+        a = cpu.mb[pc+2]
+        b = cpu.mb[pc+1]
+        v = (a << 8) + b
 
     if opcode == 0x00:
         return NOP_00(cpu)
-    if opcode == 0x01:
+    elif opcode == 0x01:
         return LD_01(cpu, v)
-    if opcode == 0x02:
+    elif opcode == 0x02:
         return LD_02(cpu)
-    if opcode == 0x03:
+    elif opcode == 0x03:
         return INC_03(cpu)
-    if opcode == 0x04:
+    elif opcode == 0x04:
         return INC_04(cpu)
-    if opcode == 0x05:
+    elif opcode == 0x05:
         return DEC_05(cpu)
-    if opcode == 0x06:
+    elif opcode == 0x06:
         return LD_06(cpu, v)
-    if opcode == 0x07:
+    elif opcode == 0x07:
         return RLCA_07(cpu)
-    if opcode == 0x08:
+    elif opcode == 0x08:
         return LD_08(cpu, v)
-    if opcode == 0x09:
+    elif opcode == 0x09:
         return ADD_09(cpu)
-    if opcode == 0x0a:
+    elif opcode == 0x0a:
         return LD_0a(cpu)
-    if opcode == 0x0b:
+    elif opcode == 0x0b:
         return DEC_0b(cpu)
-    if opcode == 0x0c:
+    elif opcode == 0x0c:
         return INC_0c(cpu)
-    if opcode == 0x0d:
+    elif opcode == 0x0d:
         return DEC_0d(cpu)
-    if opcode == 0x0e:
+    elif opcode == 0x0e:
         return LD_0e(cpu, v)
-    if opcode == 0x0f:
+    elif opcode == 0x0f:
         return RRCA_0f(cpu)
-    if opcode == 0x10:
+    elif opcode == 0x10:
         return STOP_10(cpu, v)
-    if opcode == 0x11:
+    elif opcode == 0x11:
         return LD_11(cpu, v)
-    if opcode == 0x12:
+    elif opcode == 0x12:
         return LD_12(cpu)
-    if opcode == 0x13:
+    elif opcode == 0x13:
         return INC_13(cpu)
-    if opcode == 0x14:
+    elif opcode == 0x14:
         return INC_14(cpu)
-    if opcode == 0x15:
+    elif opcode == 0x15:
         return DEC_15(cpu)
-    if opcode == 0x16:
+    elif opcode == 0x16:
         return LD_16(cpu, v)
-    if opcode == 0x17:
+    elif opcode == 0x17:
         return RLA_17(cpu)
-    if opcode == 0x18:
+    elif opcode == 0x18:
         return JR_18(cpu, v)
-    if opcode == 0x19:
+    elif opcode == 0x19:
         return ADD_19(cpu)
-    if opcode == 0x1a:
+    elif opcode == 0x1a:
         return LD_1a(cpu)
-    if opcode == 0x1b:
+    elif opcode == 0x1b:
         return DEC_1b(cpu)
-    if opcode == 0x1c:
+    elif opcode == 0x1c:
         return INC_1c(cpu)
-    if opcode == 0x1d:
+    elif opcode == 0x1d:
         return DEC_1d(cpu)
-    if opcode == 0x1e:
+    elif opcode == 0x1e:
         return LD_1e(cpu, v)
-    if opcode == 0x1f:
+    elif opcode == 0x1f:
         return RRA_1f(cpu)
-    if opcode == 0x20:
+    elif opcode == 0x20:
         return JR_20(cpu, v)
-    if opcode == 0x21:
+    elif opcode == 0x21:
         return LD_21(cpu, v)
-    if opcode == 0x22:
+    elif opcode == 0x22:
         return LD_22(cpu)
-    if opcode == 0x23:
+    elif opcode == 0x23:
         return INC_23(cpu)
-    if opcode == 0x24:
+    elif opcode == 0x24:
         return INC_24(cpu)
-    if opcode == 0x25:
+    elif opcode == 0x25:
         return DEC_25(cpu)
-    if opcode == 0x26:
+    elif opcode == 0x26:
         return LD_26(cpu, v)
-    if opcode == 0x27:
+    elif opcode == 0x27:
         return DAA_27(cpu)
-    if opcode == 0x28:
+    elif opcode == 0x28:
         return JR_28(cpu, v)
-    if opcode == 0x29:
+    elif opcode == 0x29:
         return ADD_29(cpu)
-    if opcode == 0x2a:
+    elif opcode == 0x2a:
         return LD_2a(cpu)
-    if opcode == 0x2b:
+    elif opcode == 0x2b:
         return DEC_2b(cpu)
-    if opcode == 0x2c:
+    elif opcode == 0x2c:
         return INC_2c(cpu)
-    if opcode == 0x2d:
+    elif opcode == 0x2d:
         return DEC_2d(cpu)
-    if opcode == 0x2e:
+    elif opcode == 0x2e:
         return LD_2e(cpu, v)
-    if opcode == 0x2f:
+    elif opcode == 0x2f:
         return CPL_2f(cpu)
-    if opcode == 0x30:
+    elif opcode == 0x30:
         return JR_30(cpu, v)
-    if opcode == 0x31:
+    elif opcode == 0x31:
         return LD_31(cpu, v)
-    if opcode == 0x32:
+    elif opcode == 0x32:
         return LD_32(cpu)
-    if opcode == 0x33:
+    elif opcode == 0x33:
         return INC_33(cpu)
-    if opcode == 0x34:
+    elif opcode == 0x34:
         return INC_34(cpu)
-    if opcode == 0x35:
+    elif opcode == 0x35:
         return DEC_35(cpu)
-    if opcode == 0x36:
+    elif opcode == 0x36:
         return LD_36(cpu, v)
-    if opcode == 0x37:
+    elif opcode == 0x37:
         return SCF_37(cpu)
-    if opcode == 0x38:
+    elif opcode == 0x38:
         return JR_38(cpu, v)
-    if opcode == 0x39:
+    elif opcode == 0x39:
         return ADD_39(cpu)
-    if opcode == 0x3a:
+    elif opcode == 0x3a:
         return LD_3a(cpu)
-    if opcode == 0x3b:
+    elif opcode == 0x3b:
         return DEC_3b(cpu)
-    if opcode == 0x3c:
+    elif opcode == 0x3c:
         return INC_3c(cpu)
-    if opcode == 0x3d:
+    elif opcode == 0x3d:
         return DEC_3d(cpu)
-    if opcode == 0x3e:
+    elif opcode == 0x3e:
         return LD_3e(cpu, v)
-    if opcode == 0x3f:
+    elif opcode == 0x3f:
         return CCF_3f(cpu)
-    if opcode == 0x40:
+    elif opcode == 0x40:
         return LD_40(cpu)
-    if opcode == 0x41:
+    elif opcode == 0x41:
         return LD_41(cpu)
-    if opcode == 0x42:
+    elif opcode == 0x42:
         return LD_42(cpu)
-    if opcode == 0x43:
+    elif opcode == 0x43:
         return LD_43(cpu)
-    if opcode == 0x44:
+    elif opcode == 0x44:
         return LD_44(cpu)
-    if opcode == 0x45:
+    elif opcode == 0x45:
         return LD_45(cpu)
-    if opcode == 0x46:
+    elif opcode == 0x46:
         return LD_46(cpu)
-    if opcode == 0x47:
+    elif opcode == 0x47:
         return LD_47(cpu)
-    if opcode == 0x48:
+    elif opcode == 0x48:
         return LD_48(cpu)
-    if opcode == 0x49:
+    elif opcode == 0x49:
         return LD_49(cpu)
-    if opcode == 0x4a:
+    elif opcode == 0x4a:
         return LD_4a(cpu)
-    if opcode == 0x4b:
+    elif opcode == 0x4b:
         return LD_4b(cpu)
-    if opcode == 0x4c:
+    elif opcode == 0x4c:
         return LD_4c(cpu)
-    if opcode == 0x4d:
+    elif opcode == 0x4d:
         return LD_4d(cpu)
-    if opcode == 0x4e:
+    elif opcode == 0x4e:
         return LD_4e(cpu)
-    if opcode == 0x4f:
+    elif opcode == 0x4f:
         return LD_4f(cpu)
-    if opcode == 0x50:
+    elif opcode == 0x50:
         return LD_50(cpu)
-    if opcode == 0x51:
+    elif opcode == 0x51:
         return LD_51(cpu)
-    if opcode == 0x52:
+    elif opcode == 0x52:
         return LD_52(cpu)
-    if opcode == 0x53:
+    elif opcode == 0x53:
         return LD_53(cpu)
-    if opcode == 0x54:
+    elif opcode == 0x54:
         return LD_54(cpu)
-    if opcode == 0x55:
+    elif opcode == 0x55:
         return LD_55(cpu)
-    if opcode == 0x56:
+    elif opcode == 0x56:
         return LD_56(cpu)
-    if opcode == 0x57:
+    elif opcode == 0x57:
         return LD_57(cpu)
-    if opcode == 0x58:
+    elif opcode == 0x58:
         return LD_58(cpu)
-    if opcode == 0x59:
+    elif opcode == 0x59:
         return LD_59(cpu)
-    if opcode == 0x5a:
+    elif opcode == 0x5a:
         return LD_5a(cpu)
-    if opcode == 0x5b:
+    elif opcode == 0x5b:
         return LD_5b(cpu)
-    if opcode == 0x5c:
+    elif opcode == 0x5c:
         return LD_5c(cpu)
-    if opcode == 0x5d:
+    elif opcode == 0x5d:
         return LD_5d(cpu)
-    if opcode == 0x5e:
+    elif opcode == 0x5e:
         return LD_5e(cpu)
-    if opcode == 0x5f:
+    elif opcode == 0x5f:
         return LD_5f(cpu)
-    if opcode == 0x60:
+    elif opcode == 0x60:
         return LD_60(cpu)
-    if opcode == 0x61:
+    elif opcode == 0x61:
         return LD_61(cpu)
-    if opcode == 0x62:
+    elif opcode == 0x62:
         return LD_62(cpu)
-    if opcode == 0x63:
+    elif opcode == 0x63:
         return LD_63(cpu)
-    if opcode == 0x64:
+    elif opcode == 0x64:
         return LD_64(cpu)
-    if opcode == 0x65:
+    elif opcode == 0x65:
         return LD_65(cpu)
-    if opcode == 0x66:
+    elif opcode == 0x66:
         return LD_66(cpu)
-    if opcode == 0x67:
+    elif opcode == 0x67:
         return LD_67(cpu)
-    if opcode == 0x68:
+    elif opcode == 0x68:
         return LD_68(cpu)
-    if opcode == 0x69:
+    elif opcode == 0x69:
         return LD_69(cpu)
-    if opcode == 0x6a:
+    elif opcode == 0x6a:
         return LD_6a(cpu)
-    if opcode == 0x6b:
+    elif opcode == 0x6b:
         return LD_6b(cpu)
-    if opcode == 0x6c:
+    elif opcode == 0x6c:
         return LD_6c(cpu)
-    if opcode == 0x6d:
+    elif opcode == 0x6d:
         return LD_6d(cpu)
-    if opcode == 0x6e:
+    elif opcode == 0x6e:
         return LD_6e(cpu)
-    if opcode == 0x6f:
+    elif opcode == 0x6f:
         return LD_6f(cpu)
-    if opcode == 0x70:
+    elif opcode == 0x70:
         return LD_70(cpu)
-    if opcode == 0x71:
+    elif opcode == 0x71:
         return LD_71(cpu)
-    if opcode == 0x72:
+    elif opcode == 0x72:
         return LD_72(cpu)
-    if opcode == 0x73:
+    elif opcode == 0x73:
         return LD_73(cpu)
-    if opcode == 0x74:
+    elif opcode == 0x74:
         return LD_74(cpu)
-    if opcode == 0x75:
+    elif opcode == 0x75:
         return LD_75(cpu)
-    if opcode == 0x76:
+    elif opcode == 0x76:
         return HALT_76(cpu)
-    if opcode == 0x77:
+    elif opcode == 0x77:
         return LD_77(cpu)
-    if opcode == 0x78:
+    elif opcode == 0x78:
         return LD_78(cpu)
-    if opcode == 0x79:
+    elif opcode == 0x79:
         return LD_79(cpu)
-    if opcode == 0x7a:
+    elif opcode == 0x7a:
         return LD_7a(cpu)
-    if opcode == 0x7b:
+    elif opcode == 0x7b:
         return LD_7b(cpu)
-    if opcode == 0x7c:
+    elif opcode == 0x7c:
         return LD_7c(cpu)
-    if opcode == 0x7d:
+    elif opcode == 0x7d:
         return LD_7d(cpu)
-    if opcode == 0x7e:
+    elif opcode == 0x7e:
         return LD_7e(cpu)
-    if opcode == 0x7f:
+    elif opcode == 0x7f:
         return LD_7f(cpu)
-    if opcode == 0x80:
+    elif opcode == 0x80:
         return ADD_80(cpu)
-    if opcode == 0x81:
+    elif opcode == 0x81:
         return ADD_81(cpu)
-    if opcode == 0x82:
+    elif opcode == 0x82:
         return ADD_82(cpu)
-    if opcode == 0x83:
+    elif opcode == 0x83:
         return ADD_83(cpu)
-    if opcode == 0x84:
+    elif opcode == 0x84:
         return ADD_84(cpu)
-    if opcode == 0x85:
+    elif opcode == 0x85:
         return ADD_85(cpu)
-    if opcode == 0x86:
+    elif opcode == 0x86:
         return ADD_86(cpu)
-    if opcode == 0x87:
+    elif opcode == 0x87:
         return ADD_87(cpu)
-    if opcode == 0x88:
+    elif opcode == 0x88:
         return ADC_88(cpu)
-    if opcode == 0x89:
+    elif opcode == 0x89:
         return ADC_89(cpu)
-    if opcode == 0x8a:
+    elif opcode == 0x8a:
         return ADC_8a(cpu)
-    if opcode == 0x8b:
+    elif opcode == 0x8b:
         return ADC_8b(cpu)
-    if opcode == 0x8c:
+    elif opcode == 0x8c:
         return ADC_8c(cpu)
-    if opcode == 0x8d:
+    elif opcode == 0x8d:
         return ADC_8d(cpu)
-    if opcode == 0x8e:
+    elif opcode == 0x8e:
         return ADC_8e(cpu)
-    if opcode == 0x8f:
+    elif opcode == 0x8f:
         return ADC_8f(cpu)
-    if opcode == 0x90:
+    elif opcode == 0x90:
         return SUB_90(cpu)
-    if opcode == 0x91:
+    elif opcode == 0x91:
         return SUB_91(cpu)
-    if opcode == 0x92:
+    elif opcode == 0x92:
         return SUB_92(cpu)
-    if opcode == 0x93:
+    elif opcode == 0x93:
         return SUB_93(cpu)
-    if opcode == 0x94:
+    elif opcode == 0x94:
         return SUB_94(cpu)
-    if opcode == 0x95:
+    elif opcode == 0x95:
         return SUB_95(cpu)
-    if opcode == 0x96:
+    elif opcode == 0x96:
         return SUB_96(cpu)
-    if opcode == 0x97:
+    elif opcode == 0x97:
         return SUB_97(cpu)
-    if opcode == 0x98:
+    elif opcode == 0x98:
         return SBC_98(cpu)
-    if opcode == 0x99:
+    elif opcode == 0x99:
         return SBC_99(cpu)
-    if opcode == 0x9a:
+    elif opcode == 0x9a:
         return SBC_9a(cpu)
-    if opcode == 0x9b:
+    elif opcode == 0x9b:
         return SBC_9b(cpu)
-    if opcode == 0x9c:
+    elif opcode == 0x9c:
         return SBC_9c(cpu)
-    if opcode == 0x9d:
+    elif opcode == 0x9d:
         return SBC_9d(cpu)
-    if opcode == 0x9e:
+    elif opcode == 0x9e:
         return SBC_9e(cpu)
-    if opcode == 0x9f:
+    elif opcode == 0x9f:
         return SBC_9f(cpu)
-    if opcode == 0xa0:
+    elif opcode == 0xa0:
         return AND_a0(cpu)
-    if opcode == 0xa1:
+    elif opcode == 0xa1:
         return AND_a1(cpu)
-    if opcode == 0xa2:
+    elif opcode == 0xa2:
         return AND_a2(cpu)
-    if opcode == 0xa3:
+    elif opcode == 0xa3:
         return AND_a3(cpu)
-    if opcode == 0xa4:
+    elif opcode == 0xa4:
         return AND_a4(cpu)
-    if opcode == 0xa5:
+    elif opcode == 0xa5:
         return AND_a5(cpu)
-    if opcode == 0xa6:
+    elif opcode == 0xa6:
         return AND_a6(cpu)
-    if opcode == 0xa7:
+    elif opcode == 0xa7:
         return AND_a7(cpu)
-    if opcode == 0xa8:
+    elif opcode == 0xa8:
         return XOR_a8(cpu)
-    if opcode == 0xa9:
+    elif opcode == 0xa9:
         return XOR_a9(cpu)
-    if opcode == 0xaa:
+    elif opcode == 0xaa:
         return XOR_aa(cpu)
-    if opcode == 0xab:
+    elif opcode == 0xab:
         return XOR_ab(cpu)
-    if opcode == 0xac:
+    elif opcode == 0xac:
         return XOR_ac(cpu)
-    if opcode == 0xad:
+    elif opcode == 0xad:
         return XOR_ad(cpu)
-    if opcode == 0xae:
+    elif opcode == 0xae:
         return XOR_ae(cpu)
-    if opcode == 0xaf:
+    elif opcode == 0xaf:
         return XOR_af(cpu)
-    if opcode == 0xb0:
+    elif opcode == 0xb0:
         return OR_b0(cpu)
-    if opcode == 0xb1:
+    elif opcode == 0xb1:
         return OR_b1(cpu)
-    if opcode == 0xb2:
+    elif opcode == 0xb2:
         return OR_b2(cpu)
-    if opcode == 0xb3:
+    elif opcode == 0xb3:
         return OR_b3(cpu)
-    if opcode == 0xb4:
+    elif opcode == 0xb4:
         return OR_b4(cpu)
-    if opcode == 0xb5:
+    elif opcode == 0xb5:
         return OR_b5(cpu)
-    if opcode == 0xb6:
+    elif opcode == 0xb6:
         return OR_b6(cpu)
-    if opcode == 0xb7:
+    elif opcode == 0xb7:
         return OR_b7(cpu)
-    if opcode == 0xb8:
+    elif opcode == 0xb8:
         return CP_b8(cpu)
-    if opcode == 0xb9:
+    elif opcode == 0xb9:
         return CP_b9(cpu)
-    if opcode == 0xba:
+    elif opcode == 0xba:
         return CP_ba(cpu)
-    if opcode == 0xbb:
+    elif opcode == 0xbb:
         return CP_bb(cpu)
-    if opcode == 0xbc:
+    elif opcode == 0xbc:
         return CP_bc(cpu)
-    if opcode == 0xbd:
+    elif opcode == 0xbd:
         return CP_bd(cpu)
-    if opcode == 0xbe:
+    elif opcode == 0xbe:
         return CP_be(cpu)
-    if opcode == 0xbf:
+    elif opcode == 0xbf:
         return CP_bf(cpu)
-    if opcode == 0xc0:
+    elif opcode == 0xc0:
         return RET_c0(cpu)
-    if opcode == 0xc1:
+    elif opcode == 0xc1:
         return POP_c1(cpu)
-    if opcode == 0xc2:
+    elif opcode == 0xc2:
         return JP_c2(cpu, v)
-    if opcode == 0xc3:
+    elif opcode == 0xc3:
         return JP_c3(cpu, v)
-    if opcode == 0xc4:
+    elif opcode == 0xc4:
         return CALL_c4(cpu, v)
-    if opcode == 0xc5:
+    elif opcode == 0xc5:
         return PUSH_c5(cpu)
-    if opcode == 0xc6:
+    elif opcode == 0xc6:
         return ADD_c6(cpu, v)
-    if opcode == 0xc7:
+    elif opcode == 0xc7:
         return RST_c7(cpu)
-    if opcode == 0xc8:
+    elif opcode == 0xc8:
         return RET_c8(cpu)
-    if opcode == 0xc9:
+    elif opcode == 0xc9:
         return RET_c9(cpu)
-    if opcode == 0xca:
+    elif opcode == 0xca:
         return JP_ca(cpu, v)
-    if opcode == 0xcb:
+    elif opcode == 0xcb:
         return CB_cb(cpu)
-    if opcode == 0xcc:
+    elif opcode == 0xcc:
         return CALL_cc(cpu, v)
-    if opcode == 0xcd:
+    elif opcode == 0xcd:
         return CALL_cd(cpu, v)
-    if opcode == 0xce:
+    elif opcode == 0xce:
         return ADC_ce(cpu, v)
-    if opcode == 0xcf:
+    elif opcode == 0xcf:
         return RST_cf(cpu)
-    if opcode == 0xd0:
+    elif opcode == 0xd0:
         return RET_d0(cpu)
-    if opcode == 0xd1:
+    elif opcode == 0xd1:
         return POP_d1(cpu)
-    if opcode == 0xd2:
+    elif opcode == 0xd2:
         return JP_d2(cpu, v)
-    if opcode == 0xd3:
+    elif opcode == 0xd3:
         return NOOPCODE(cpu)
-    if opcode == 0xd4:
+    elif opcode == 0xd4:
         return CALL_d4(cpu, v)
-    if opcode == 0xd5:
+    elif opcode == 0xd5:
         return PUSH_d5(cpu)
-    if opcode == 0xd6:
+    elif opcode == 0xd6:
         return SUB_d6(cpu, v)
-    if opcode == 0xd7:
+    elif opcode == 0xd7:
         return RST_d7(cpu)
-    if opcode == 0xd8:
+    elif opcode == 0xd8:
         return RET_d8(cpu)
-    if opcode == 0xd9:
+    elif opcode == 0xd9:
         return RETI_d9(cpu)
-    if opcode == 0xda:
+    elif opcode == 0xda:
         return JP_da(cpu, v)
-    if opcode == 0xdb:
+    elif opcode == 0xdb:
         return NOOPCODE(cpu)
-    if opcode == 0xdc:
+    elif opcode == 0xdc:
         return CALL_dc(cpu, v)
-    if opcode == 0xdd:
+    elif opcode == 0xdd:
         return NOOPCODE(cpu)
-    if opcode == 0xde:
+    elif opcode == 0xde:
         return SBC_de(cpu, v)
-    if opcode == 0xdf:
+    elif opcode == 0xdf:
         return RST_df(cpu)
-    if opcode == 0xe0:
+    elif opcode == 0xe0:
         return LD_e0(cpu, v)
-    if opcode == 0xe1:
+    elif opcode == 0xe1:
         return POP_e1(cpu)
-    if opcode == 0xe2:
+    elif opcode == 0xe2:
         return LD_e2(cpu)
-    if opcode == 0xe3:
+    elif opcode == 0xe3:
         return NOOPCODE(cpu)
-    if opcode == 0xe4:
+    elif opcode == 0xe4:
         return NOOPCODE(cpu)
-    if opcode == 0xe5:
+    elif opcode == 0xe5:
         return PUSH_e5(cpu)
-    if opcode == 0xe6:
+    elif opcode == 0xe6:
         return AND_e6(cpu, v)
-    if opcode == 0xe7:
+    elif opcode == 0xe7:
         return RST_e7(cpu)
-    if opcode == 0xe8:
+    elif opcode == 0xe8:
         return ADD_e8(cpu, v)
-    if opcode == 0xe9:
+    elif opcode == 0xe9:
         return JP_e9(cpu)
-    if opcode == 0xea:
+    elif opcode == 0xea:
         return LD_ea(cpu, v)
-    if opcode == 0xeb:
+    elif opcode == 0xeb:
         return NOOPCODE(cpu)
-    if opcode == 0xec:
+    elif opcode == 0xec:
         return NOOPCODE(cpu)
-    if opcode == 0xed:
+    elif opcode == 0xed:
         return NOOPCODE(cpu)
-    if opcode == 0xee:
+    elif opcode == 0xee:
         return XOR_ee(cpu, v)
-    if opcode == 0xef:
+    elif opcode == 0xef:
         return RST_ef(cpu)
-    if opcode == 0xf0:
+    elif opcode == 0xf0:
         return LD_f0(cpu, v)
-    if opcode == 0xf1:
+    elif opcode == 0xf1:
         return POP_f1(cpu)
-    if opcode == 0xf2:
+    elif opcode == 0xf2:
         return LD_f2(cpu)
-    if opcode == 0xf3:
+    elif opcode == 0xf3:
         return DI_f3(cpu)
-    if opcode == 0xf4:
+    elif opcode == 0xf4:
         return NOOPCODE(cpu)
-    if opcode == 0xf5:
+    elif opcode == 0xf5:
         return PUSH_f5(cpu)
-    if opcode == 0xf6:
+    elif opcode == 0xf6:
         return OR_f6(cpu, v)
-    if opcode == 0xf7:
+    elif opcode == 0xf7:
         return RST_f7(cpu)
-    if opcode == 0xf8:
+    elif opcode == 0xf8:
         return LD_f8(cpu, v)
-    if opcode == 0xf9:
+    elif opcode == 0xf9:
         return LD_f9(cpu)
-    if opcode == 0xfa:
+    elif opcode == 0xfa:
         return LD_fa(cpu, v)
-    if opcode == 0xfb:
+    elif opcode == 0xfb:
         return EI_fb(cpu)
-    if opcode == 0xfc:
+    elif opcode == 0xfc:
         return NOOPCODE(cpu)
-    if opcode == 0xfd:
+    elif opcode == 0xfd:
         return NOOPCODE(cpu)
-    if opcode == 0xfe:
+    elif opcode == 0xfe:
         return CP_fe(cpu, v)
-    if opcode == 0xff:
+    elif opcode == 0xff:
         return RST_ff(cpu)
-    if opcode == 0x100:
+    elif opcode == 0x100:
         return RLC_100(cpu)
-    if opcode == 0x101:
+    elif opcode == 0x101:
         return RLC_101(cpu)
-    if opcode == 0x102:
+    elif opcode == 0x102:
         return RLC_102(cpu)
-    if opcode == 0x103:
+    elif opcode == 0x103:
         return RLC_103(cpu)
-    if opcode == 0x104:
+    elif opcode == 0x104:
         return RLC_104(cpu)
-    if opcode == 0x105:
+    elif opcode == 0x105:
         return RLC_105(cpu)
-    if opcode == 0x106:
+    elif opcode == 0x106:
         return RLC_106(cpu)
-    if opcode == 0x107:
+    elif opcode == 0x107:
         return RLC_107(cpu)
-    if opcode == 0x108:
+    elif opcode == 0x108:
         return RRC_108(cpu)
-    if opcode == 0x109:
+    elif opcode == 0x109:
         return RRC_109(cpu)
-    if opcode == 0x10a:
+    elif opcode == 0x10a:
         return RRC_10a(cpu)
-    if opcode == 0x10b:
+    elif opcode == 0x10b:
         return RRC_10b(cpu)
-    if opcode == 0x10c:
+    elif opcode == 0x10c:
         return RRC_10c(cpu)
-    if opcode == 0x10d:
+    elif opcode == 0x10d:
         return RRC_10d(cpu)
-    if opcode == 0x10e:
+    elif opcode == 0x10e:
         return RRC_10e(cpu)
-    if opcode == 0x10f:
+    elif opcode == 0x10f:
         return RRC_10f(cpu)
-    if opcode == 0x110:
+    elif opcode == 0x110:
         return RL_110(cpu)
-    if opcode == 0x111:
+    elif opcode == 0x111:
         return RL_111(cpu)
-    if opcode == 0x112:
+    elif opcode == 0x112:
         return RL_112(cpu)
-    if opcode == 0x113:
+    elif opcode == 0x113:
         return RL_113(cpu)
-    if opcode == 0x114:
+    elif opcode == 0x114:
         return RL_114(cpu)
-    if opcode == 0x115:
+    elif opcode == 0x115:
         return RL_115(cpu)
-    if opcode == 0x116:
+    elif opcode == 0x116:
         return RL_116(cpu)
-    if opcode == 0x117:
+    elif opcode == 0x117:
         return RL_117(cpu)
-    if opcode == 0x118:
+    elif opcode == 0x118:
         return RR_118(cpu)
-    if opcode == 0x119:
+    elif opcode == 0x119:
         return RR_119(cpu)
-    if opcode == 0x11a:
+    elif opcode == 0x11a:
         return RR_11a(cpu)
-    if opcode == 0x11b:
+    elif opcode == 0x11b:
         return RR_11b(cpu)
-    if opcode == 0x11c:
+    elif opcode == 0x11c:
         return RR_11c(cpu)
-    if opcode == 0x11d:
+    elif opcode == 0x11d:
         return RR_11d(cpu)
-    if opcode == 0x11e:
+    elif opcode == 0x11e:
         return RR_11e(cpu)
-    if opcode == 0x11f:
+    elif opcode == 0x11f:
         return RR_11f(cpu)
-    if opcode == 0x120:
+    elif opcode == 0x120:
         return SLA_120(cpu)
-    if opcode == 0x121:
+    elif opcode == 0x121:
         return SLA_121(cpu)
-    if opcode == 0x122:
+    elif opcode == 0x122:
         return SLA_122(cpu)
-    if opcode == 0x123:
+    elif opcode == 0x123:
         return SLA_123(cpu)
-    if opcode == 0x124:
+    elif opcode == 0x124:
         return SLA_124(cpu)
-    if opcode == 0x125:
+    elif opcode == 0x125:
         return SLA_125(cpu)
-    if opcode == 0x126:
+    elif opcode == 0x126:
         return SLA_126(cpu)
-    if opcode == 0x127:
+    elif opcode == 0x127:
         return SLA_127(cpu)
-    if opcode == 0x128:
+    elif opcode == 0x128:
         return SRA_128(cpu)
-    if opcode == 0x129:
+    elif opcode == 0x129:
         return SRA_129(cpu)
-    if opcode == 0x12a:
+    elif opcode == 0x12a:
         return SRA_12a(cpu)
-    if opcode == 0x12b:
+    elif opcode == 0x12b:
         return SRA_12b(cpu)
-    if opcode == 0x12c:
+    elif opcode == 0x12c:
         return SRA_12c(cpu)
-    if opcode == 0x12d:
+    elif opcode == 0x12d:
         return SRA_12d(cpu)
-    if opcode == 0x12e:
+    elif opcode == 0x12e:
         return SRA_12e(cpu)
-    if opcode == 0x12f:
+    elif opcode == 0x12f:
         return SRA_12f(cpu)
-    if opcode == 0x130:
+    elif opcode == 0x130:
         return SWAP_130(cpu)
-    if opcode == 0x131:
+    elif opcode == 0x131:
         return SWAP_131(cpu)
-    if opcode == 0x132:
+    elif opcode == 0x132:
         return SWAP_132(cpu)
-    if opcode == 0x133:
+    elif opcode == 0x133:
         return SWAP_133(cpu)
-    if opcode == 0x134:
+    elif opcode == 0x134:
         return SWAP_134(cpu)
-    if opcode == 0x135:
+    elif opcode == 0x135:
         return SWAP_135(cpu)
-    if opcode == 0x136:
+    elif opcode == 0x136:
         return SWAP_136(cpu)
-    if opcode == 0x137:
+    elif opcode == 0x137:
         return SWAP_137(cpu)
-    if opcode == 0x138:
+    elif opcode == 0x138:
         return SRL_138(cpu)
-    if opcode == 0x139:
+    elif opcode == 0x139:
         return SRL_139(cpu)
-    if opcode == 0x13a:
+    elif opcode == 0x13a:
         return SRL_13a(cpu)
-    if opcode == 0x13b:
+    elif opcode == 0x13b:
         return SRL_13b(cpu)
-    if opcode == 0x13c:
+    elif opcode == 0x13c:
         return SRL_13c(cpu)
-    if opcode == 0x13d:
+    elif opcode == 0x13d:
         return SRL_13d(cpu)
-    if opcode == 0x13e:
+    elif opcode == 0x13e:
         return SRL_13e(cpu)
-    if opcode == 0x13f:
+    elif opcode == 0x13f:
         return SRL_13f(cpu)
-    if opcode == 0x140:
+    elif opcode == 0x140:
         return BIT_140(cpu)
-    if opcode == 0x141:
+    elif opcode == 0x141:
         return BIT_141(cpu)
-    if opcode == 0x142:
+    elif opcode == 0x142:
         return BIT_142(cpu)
-    if opcode == 0x143:
+    elif opcode == 0x143:
         return BIT_143(cpu)
-    if opcode == 0x144:
+    elif opcode == 0x144:
         return BIT_144(cpu)
-    if opcode == 0x145:
+    elif opcode == 0x145:
         return BIT_145(cpu)
-    if opcode == 0x146:
+    elif opcode == 0x146:
         return BIT_146(cpu)
-    if opcode == 0x147:
+    elif opcode == 0x147:
         return BIT_147(cpu)
-    if opcode == 0x148:
+    elif opcode == 0x148:
         return BIT_148(cpu)
-    if opcode == 0x149:
+    elif opcode == 0x149:
         return BIT_149(cpu)
-    if opcode == 0x14a:
+    elif opcode == 0x14a:
         return BIT_14a(cpu)
-    if opcode == 0x14b:
+    elif opcode == 0x14b:
         return BIT_14b(cpu)
-    if opcode == 0x14c:
+    elif opcode == 0x14c:
         return BIT_14c(cpu)
-    if opcode == 0x14d:
+    elif opcode == 0x14d:
         return BIT_14d(cpu)
-    if opcode == 0x14e:
+    elif opcode == 0x14e:
         return BIT_14e(cpu)
-    if opcode == 0x14f:
+    elif opcode == 0x14f:
         return BIT_14f(cpu)
-    if opcode == 0x150:
+    elif opcode == 0x150:
         return BIT_150(cpu)
-    if opcode == 0x151:
+    elif opcode == 0x151:
         return BIT_151(cpu)
-    if opcode == 0x152:
+    elif opcode == 0x152:
         return BIT_152(cpu)
-    if opcode == 0x153:
+    elif opcode == 0x153:
         return BIT_153(cpu)
-    if opcode == 0x154:
+    elif opcode == 0x154:
         return BIT_154(cpu)
-    if opcode == 0x155:
+    elif opcode == 0x155:
         return BIT_155(cpu)
-    if opcode == 0x156:
+    elif opcode == 0x156:
         return BIT_156(cpu)
-    if opcode == 0x157:
+    elif opcode == 0x157:
         return BIT_157(cpu)
-    if opcode == 0x158:
+    elif opcode == 0x158:
         return BIT_158(cpu)
-    if opcode == 0x159:
+    elif opcode == 0x159:
         return BIT_159(cpu)
-    if opcode == 0x15a:
+    elif opcode == 0x15a:
         return BIT_15a(cpu)
-    if opcode == 0x15b:
+    elif opcode == 0x15b:
         return BIT_15b(cpu)
-    if opcode == 0x15c:
+    elif opcode == 0x15c:
         return BIT_15c(cpu)
-    if opcode == 0x15d:
+    elif opcode == 0x15d:
         return BIT_15d(cpu)
-    if opcode == 0x15e:
+    elif opcode == 0x15e:
         return BIT_15e(cpu)
-    if opcode == 0x15f:
+    elif opcode == 0x15f:
         return BIT_15f(cpu)
-    if opcode == 0x160:
+    elif opcode == 0x160:
         return BIT_160(cpu)
-    if opcode == 0x161:
+    elif opcode == 0x161:
         return BIT_161(cpu)
-    if opcode == 0x162:
+    elif opcode == 0x162:
         return BIT_162(cpu)
-    if opcode == 0x163:
+    elif opcode == 0x163:
         return BIT_163(cpu)
-    if opcode == 0x164:
+    elif opcode == 0x164:
         return BIT_164(cpu)
-    if opcode == 0x165:
+    elif opcode == 0x165:
         return BIT_165(cpu)
-    if opcode == 0x166:
+    elif opcode == 0x166:
         return BIT_166(cpu)
-    if opcode == 0x167:
+    elif opcode == 0x167:
         return BIT_167(cpu)
-    if opcode == 0x168:
+    elif opcode == 0x168:
         return BIT_168(cpu)
-    if opcode == 0x169:
+    elif opcode == 0x169:
         return BIT_169(cpu)
-    if opcode == 0x16a:
+    elif opcode == 0x16a:
         return BIT_16a(cpu)
-    if opcode == 0x16b:
+    elif opcode == 0x16b:
         return BIT_16b(cpu)
-    if opcode == 0x16c:
+    elif opcode == 0x16c:
         return BIT_16c(cpu)
-    if opcode == 0x16d:
+    elif opcode == 0x16d:
         return BIT_16d(cpu)
-    if opcode == 0x16e:
+    elif opcode == 0x16e:
         return BIT_16e(cpu)
-    if opcode == 0x16f:
+    elif opcode == 0x16f:
         return BIT_16f(cpu)
-    if opcode == 0x170:
+    elif opcode == 0x170:
         return BIT_170(cpu)
-    if opcode == 0x171:
+    elif opcode == 0x171:
         return BIT_171(cpu)
-    if opcode == 0x172:
+    elif opcode == 0x172:
         return BIT_172(cpu)
-    if opcode == 0x173:
+    elif opcode == 0x173:
         return BIT_173(cpu)
-    if opcode == 0x174:
+    elif opcode == 0x174:
         return BIT_174(cpu)
-    if opcode == 0x175:
+    elif opcode == 0x175:
         return BIT_175(cpu)
-    if opcode == 0x176:
+    elif opcode == 0x176:
         return BIT_176(cpu)
-    if opcode == 0x177:
+    elif opcode == 0x177:
         return BIT_177(cpu)
-    if opcode == 0x178:
+    elif opcode == 0x178:
         return BIT_178(cpu)
-    if opcode == 0x179:
+    elif opcode == 0x179:
         return BIT_179(cpu)
-    if opcode == 0x17a:
+    elif opcode == 0x17a:
         return BIT_17a(cpu)
-    if opcode == 0x17b:
+    elif opcode == 0x17b:
         return BIT_17b(cpu)
-    if opcode == 0x17c:
+    elif opcode == 0x17c:
         return BIT_17c(cpu)
-    if opcode == 0x17d:
+    elif opcode == 0x17d:
         return BIT_17d(cpu)
-    if opcode == 0x17e:
+    elif opcode == 0x17e:
         return BIT_17e(cpu)
-    if opcode == 0x17f:
+    elif opcode == 0x17f:
         return BIT_17f(cpu)
-    if opcode == 0x180:
+    elif opcode == 0x180:
         return RES_180(cpu)
-    if opcode == 0x181:
+    elif opcode == 0x181:
         return RES_181(cpu)
-    if opcode == 0x182:
+    elif opcode == 0x182:
         return RES_182(cpu)
-    if opcode == 0x183:
+    elif opcode == 0x183:
         return RES_183(cpu)
-    if opcode == 0x184:
+    elif opcode == 0x184:
         return RES_184(cpu)
-    if opcode == 0x185:
+    elif opcode == 0x185:
         return RES_185(cpu)
-    if opcode == 0x186:
+    elif opcode == 0x186:
         return RES_186(cpu)
-    if opcode == 0x187:
+    elif opcode == 0x187:
         return RES_187(cpu)
-    if opcode == 0x188:
+    elif opcode == 0x188:
         return RES_188(cpu)
-    if opcode == 0x189:
+    elif opcode == 0x189:
         return RES_189(cpu)
-    if opcode == 0x18a:
+    elif opcode == 0x18a:
         return RES_18a(cpu)
-    if opcode == 0x18b:
+    elif opcode == 0x18b:
         return RES_18b(cpu)
-    if opcode == 0x18c:
+    elif opcode == 0x18c:
         return RES_18c(cpu)
-    if opcode == 0x18d:
+    elif opcode == 0x18d:
         return RES_18d(cpu)
-    if opcode == 0x18e:
+    elif opcode == 0x18e:
         return RES_18e(cpu)
-    if opcode == 0x18f:
+    elif opcode == 0x18f:
         return RES_18f(cpu)
-    if opcode == 0x190:
+    elif opcode == 0x190:
         return RES_190(cpu)
-    if opcode == 0x191:
+    elif opcode == 0x191:
         return RES_191(cpu)
-    if opcode == 0x192:
+    elif opcode == 0x192:
         return RES_192(cpu)
-    if opcode == 0x193:
+    elif opcode == 0x193:
         return RES_193(cpu)
-    if opcode == 0x194:
+    elif opcode == 0x194:
         return RES_194(cpu)
-    if opcode == 0x195:
+    elif opcode == 0x195:
         return RES_195(cpu)
-    if opcode == 0x196:
+    elif opcode == 0x196:
         return RES_196(cpu)
-    if opcode == 0x197:
+    elif opcode == 0x197:
         return RES_197(cpu)
-    if opcode == 0x198:
+    elif opcode == 0x198:
         return RES_198(cpu)
-    if opcode == 0x199:
+    elif opcode == 0x199:
         return RES_199(cpu)
-    if opcode == 0x19a:
+    elif opcode == 0x19a:
         return RES_19a(cpu)
-    if opcode == 0x19b:
+    elif opcode == 0x19b:
         return RES_19b(cpu)
-    if opcode == 0x19c:
+    elif opcode == 0x19c:
         return RES_19c(cpu)
-    if opcode == 0x19d:
+    elif opcode == 0x19d:
         return RES_19d(cpu)
-    if opcode == 0x19e:
+    elif opcode == 0x19e:
         return RES_19e(cpu)
-    if opcode == 0x19f:
+    elif opcode == 0x19f:
         return RES_19f(cpu)
-    if opcode == 0x1a0:
+    elif opcode == 0x1a0:
         return RES_1a0(cpu)
-    if opcode == 0x1a1:
+    elif opcode == 0x1a1:
         return RES_1a1(cpu)
-    if opcode == 0x1a2:
+    elif opcode == 0x1a2:
         return RES_1a2(cpu)
-    if opcode == 0x1a3:
+    elif opcode == 0x1a3:
         return RES_1a3(cpu)
-    if opcode == 0x1a4:
+    elif opcode == 0x1a4:
         return RES_1a4(cpu)
-    if opcode == 0x1a5:
+    elif opcode == 0x1a5:
         return RES_1a5(cpu)
-    if opcode == 0x1a6:
+    elif opcode == 0x1a6:
         return RES_1a6(cpu)
-    if opcode == 0x1a7:
+    elif opcode == 0x1a7:
         return RES_1a7(cpu)
-    if opcode == 0x1a8:
+    elif opcode == 0x1a8:
         return RES_1a8(cpu)
-    if opcode == 0x1a9:
+    elif opcode == 0x1a9:
         return RES_1a9(cpu)
-    if opcode == 0x1aa:
+    elif opcode == 0x1aa:
         return RES_1aa(cpu)
-    if opcode == 0x1ab:
+    elif opcode == 0x1ab:
         return RES_1ab(cpu)
-    if opcode == 0x1ac:
+    elif opcode == 0x1ac:
         return RES_1ac(cpu)
-    if opcode == 0x1ad:
+    elif opcode == 0x1ad:
         return RES_1ad(cpu)
-    if opcode == 0x1ae:
+    elif opcode == 0x1ae:
         return RES_1ae(cpu)
-    if opcode == 0x1af:
+    elif opcode == 0x1af:
         return RES_1af(cpu)
-    if opcode == 0x1b0:
+    elif opcode == 0x1b0:
         return RES_1b0(cpu)
-    if opcode == 0x1b1:
+    elif opcode == 0x1b1:
         return RES_1b1(cpu)
-    if opcode == 0x1b2:
+    elif opcode == 0x1b2:
         return RES_1b2(cpu)
-    if opcode == 0x1b3:
+    elif opcode == 0x1b3:
         return RES_1b3(cpu)
-    if opcode == 0x1b4:
+    elif opcode == 0x1b4:
         return RES_1b4(cpu)
-    if opcode == 0x1b5:
+    elif opcode == 0x1b5:
         return RES_1b5(cpu)
-    if opcode == 0x1b6:
+    elif opcode == 0x1b6:
         return RES_1b6(cpu)
-    if opcode == 0x1b7:
+    elif opcode == 0x1b7:
         return RES_1b7(cpu)
-    if opcode == 0x1b8:
+    elif opcode == 0x1b8:
         return RES_1b8(cpu)
-    if opcode == 0x1b9:
+    elif opcode == 0x1b9:
         return RES_1b9(cpu)
-    if opcode == 0x1ba:
+    elif opcode == 0x1ba:
         return RES_1ba(cpu)
-    if opcode == 0x1bb:
+    elif opcode == 0x1bb:
         return RES_1bb(cpu)
-    if opcode == 0x1bc:
+    elif opcode == 0x1bc:
         return RES_1bc(cpu)
-    if opcode == 0x1bd:
+    elif opcode == 0x1bd:
         return RES_1bd(cpu)
-    if opcode == 0x1be:
+    elif opcode == 0x1be:
         return RES_1be(cpu)
-    if opcode == 0x1bf:
+    elif opcode == 0x1bf:
         return RES_1bf(cpu)
-    if opcode == 0x1c0:
+    elif opcode == 0x1c0:
         return SET_1c0(cpu)
-    if opcode == 0x1c1:
+    elif opcode == 0x1c1:
         return SET_1c1(cpu)
-    if opcode == 0x1c2:
+    elif opcode == 0x1c2:
         return SET_1c2(cpu)
-    if opcode == 0x1c3:
+    elif opcode == 0x1c3:
         return SET_1c3(cpu)
-    if opcode == 0x1c4:
+    elif opcode == 0x1c4:
         return SET_1c4(cpu)
-    if opcode == 0x1c5:
+    elif opcode == 0x1c5:
         return SET_1c5(cpu)
-    if opcode == 0x1c6:
+    elif opcode == 0x1c6:
         return SET_1c6(cpu)
-    if opcode == 0x1c7:
+    elif opcode == 0x1c7:
         return SET_1c7(cpu)
-    if opcode == 0x1c8:
+    elif opcode == 0x1c8:
         return SET_1c8(cpu)
-    if opcode == 0x1c9:
+    elif opcode == 0x1c9:
         return SET_1c9(cpu)
-    if opcode == 0x1ca:
+    elif opcode == 0x1ca:
         return SET_1ca(cpu)
-    if opcode == 0x1cb:
+    elif opcode == 0x1cb:
         return SET_1cb(cpu)
-    if opcode == 0x1cc:
+    elif opcode == 0x1cc:
         return SET_1cc(cpu)
-    if opcode == 0x1cd:
+    elif opcode == 0x1cd:
         return SET_1cd(cpu)
-    if opcode == 0x1ce:
+    elif opcode == 0x1ce:
         return SET_1ce(cpu)
-    if opcode == 0x1cf:
+    elif opcode == 0x1cf:
         return SET_1cf(cpu)
-    if opcode == 0x1d0:
+    elif opcode == 0x1d0:
         return SET_1d0(cpu)
-    if opcode == 0x1d1:
+    elif opcode == 0x1d1:
         return SET_1d1(cpu)
-    if opcode == 0x1d2:
+    elif opcode == 0x1d2:
         return SET_1d2(cpu)
-    if opcode == 0x1d3:
+    elif opcode == 0x1d3:
         return SET_1d3(cpu)
-    if opcode == 0x1d4:
+    elif opcode == 0x1d4:
         return SET_1d4(cpu)
-    if opcode == 0x1d5:
+    elif opcode == 0x1d5:
         return SET_1d5(cpu)
-    if opcode == 0x1d6:
+    elif opcode == 0x1d6:
         return SET_1d6(cpu)
-    if opcode == 0x1d7:
+    elif opcode == 0x1d7:
         return SET_1d7(cpu)
-    if opcode == 0x1d8:
+    elif opcode == 0x1d8:
         return SET_1d8(cpu)
-    if opcode == 0x1d9:
+    elif opcode == 0x1d9:
         return SET_1d9(cpu)
-    if opcode == 0x1da:
+    elif opcode == 0x1da:
         return SET_1da(cpu)
-    if opcode == 0x1db:
+    elif opcode == 0x1db:
         return SET_1db(cpu)
-    if opcode == 0x1dc:
+    elif opcode == 0x1dc:
         return SET_1dc(cpu)
-    if opcode == 0x1dd:
+    elif opcode == 0x1dd:
         return SET_1dd(cpu)
-    if opcode == 0x1de:
+    elif opcode == 0x1de:
         return SET_1de(cpu)
-    if opcode == 0x1df:
+    elif opcode == 0x1df:
         return SET_1df(cpu)
-    if opcode == 0x1e0:
+    elif opcode == 0x1e0:
         return SET_1e0(cpu)
-    if opcode == 0x1e1:
+    elif opcode == 0x1e1:
         return SET_1e1(cpu)
-    if opcode == 0x1e2:
+    elif opcode == 0x1e2:
         return SET_1e2(cpu)
-    if opcode == 0x1e3:
+    elif opcode == 0x1e3:
         return SET_1e3(cpu)
-    if opcode == 0x1e4:
+    elif opcode == 0x1e4:
         return SET_1e4(cpu)
-    if opcode == 0x1e5:
+    elif opcode == 0x1e5:
         return SET_1e5(cpu)
-    if opcode == 0x1e6:
+    elif opcode == 0x1e6:
         return SET_1e6(cpu)
-    if opcode == 0x1e7:
+    elif opcode == 0x1e7:
         return SET_1e7(cpu)
-    if opcode == 0x1e8:
+    elif opcode == 0x1e8:
         return SET_1e8(cpu)
-    if opcode == 0x1e9:
+    elif opcode == 0x1e9:
         return SET_1e9(cpu)
-    if opcode == 0x1ea:
+    elif opcode == 0x1ea:
         return SET_1ea(cpu)
-    if opcode == 0x1eb:
+    elif opcode == 0x1eb:
         return SET_1eb(cpu)
-    if opcode == 0x1ec:
+    elif opcode == 0x1ec:
         return SET_1ec(cpu)
-    if opcode == 0x1ed:
+    elif opcode == 0x1ed:
         return SET_1ed(cpu)
-    if opcode == 0x1ee:
+    elif opcode == 0x1ee:
         return SET_1ee(cpu)
-    if opcode == 0x1ef:
+    elif opcode == 0x1ef:
         return SET_1ef(cpu)
-    if opcode == 0x1f0:
+    elif opcode == 0x1f0:
         return SET_1f0(cpu)
-    if opcode == 0x1f1:
+    elif opcode == 0x1f1:
         return SET_1f1(cpu)
-    if opcode == 0x1f2:
+    elif opcode == 0x1f2:
         return SET_1f2(cpu)
-    if opcode == 0x1f3:
+    elif opcode == 0x1f3:
         return SET_1f3(cpu)
-    if opcode == 0x1f4:
+    elif opcode == 0x1f4:
         return SET_1f4(cpu)
-    if opcode == 0x1f5:
+    elif opcode == 0x1f5:
         return SET_1f5(cpu)
-    if opcode == 0x1f6:
+    elif opcode == 0x1f6:
         return SET_1f6(cpu)
-    if opcode == 0x1f7:
+    elif opcode == 0x1f7:
         return SET_1f7(cpu)
-    if opcode == 0x1f8:
+    elif opcode == 0x1f8:
         return SET_1f8(cpu)
-    if opcode == 0x1f9:
+    elif opcode == 0x1f9:
         return SET_1f9(cpu)
-    if opcode == 0x1fa:
+    elif opcode == 0x1fa:
         return SET_1fa(cpu)
-    if opcode == 0x1fb:
+    elif opcode == 0x1fb:
         return SET_1fb(cpu)
-    if opcode == 0x1fc:
+    elif opcode == 0x1fc:
         return SET_1fc(cpu)
-    if opcode == 0x1fd:
+    elif opcode == 0x1fd:
         return SET_1fd(cpu)
-    if opcode == 0x1fe:
+    elif opcode == 0x1fe:
         return SET_1fe(cpu)
-    if opcode == 0x1ff:
+    elif opcode == 0x1ff:
         return SET_1ff(cpu)
 
 
-opcodeLengths = [
+opcodeLengths = np.asarray([
     1, 3, 1, 1, 1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1,
     2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1,
     2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1,
@@ -5286,5 +5289,5 @@ opcodeLengths = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    ]
+    ], dtype=np.uint8)
 

@@ -14,7 +14,7 @@ cimport PyBoy.RAM
 cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable
 
 cdef tuple gameboyResolution
-cdef tuple colorPalette
+cdef public tuple colorPalette
 cdef unsigned int alphaMask
 
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
