@@ -16,9 +16,9 @@ from .. import Cartridge
 # # from CPU.flags import VBlank, TIMER, HightoLow, LCDC
 # VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
-# STAT = 0xFF41
-# LY = 0xFF44
-# LYC = 0xFF45
+STAT = 0xFF41
+LY = 0xFF44
+LYC = 0xFF45
 
 class Motherboard():
     def __init__(self, gameROMFile, bootROMFile, window, profiling = False, debugger = None):
@@ -38,6 +38,7 @@ class Motherboard():
         self.cpu = CPU.CPU(self, profiling)
         self.lcd = LCD.LCD(self)
         self.bootROMEnabled = True
+
 
         if "loadState" in sys.argv:
             self.loadState(str(self.cartridge.filename) + ".state")
@@ -157,6 +158,7 @@ class Motherboard():
 
             for y in xrange(154):
                 self.calculateCycles(456)
+
 
 
     ########################

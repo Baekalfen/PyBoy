@@ -12,6 +12,7 @@ cimport PyBoy.LCD
 
 import numpy as np
 cimport numpy as np
+import cython
 
 # cimport PyBoy.GameWindow.AbstractGameWindow
 # TODO: ctuple? https://cython.readthedocs.io/en/latest/src/userguide/language_basics.html
@@ -40,6 +41,7 @@ cdef class SdlGameWindow:
     cdef void VSync(self)
     cdef void stop(self)
     cdef void scanline(self, int, tuple, tuple)
+    @cython.locals(y=cython.ushort, x=cython.ushort)
     cdef void renderScreen(self, PyBoy.LCD.LCD)
     cdef void copySprite(self, tuple, tuple, object, object, int, bint, unsigned int, xFlip=*, yFlip=*)
     cdef void blankScreen(self)

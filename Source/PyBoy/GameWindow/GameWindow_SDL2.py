@@ -5,7 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import cython
 import sys
 import time
 import sdl2
@@ -199,7 +198,6 @@ class SdlGameWindow():
         self.scanlineParameters[y, 2] = windowPos[0]
         self.scanlineParameters[y, 3] = windowPos[1]
 
-    @cython.locals(y=cython.ushort, x=cython.ushort)
     def renderScreen(self, lcd):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00

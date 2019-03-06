@@ -19,6 +19,7 @@ cdef unsigned int alphaMask
 
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
+import cython
 
 import numpy as np
 cimport numpy as np
@@ -43,6 +44,7 @@ cdef class LCD:
 
     cdef tuple getWindowPos(self)
     cdef tuple getViewPort(self)
+    @cython.locals(x=cython.ushort, y=cython.ushort)
     cdef void refreshTileDataAdaptive(self)
 
 cdef class PaletteRegister:

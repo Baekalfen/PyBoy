@@ -6,6 +6,7 @@
 #
 
 # from RTC cimport RTC
+import cython
 cimport numpy as np
 
 cdef class GenericMBC:
@@ -29,5 +30,6 @@ cdef class GenericMBC:
     cdef unicode getGameName(self, unsigned char[:, :])
 
 cdef class ROM_only(GenericMBC):
-    pass
+    @cython.locals(address=cython.ushort, value=cython.uchar)
+    cdef void set(self, unsigned short, unsigned char)
 

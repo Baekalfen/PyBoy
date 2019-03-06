@@ -5,7 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import cython
 import CoreDump
 import RAM
 # from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
@@ -69,7 +68,6 @@ class LCD():
     def getViewPort(self):
         return self.mb[SCX], self.mb[SCY]
 
-    @cython.locals(x=cython.ushort, y=cython.ushort)
     def refreshTileDataAdaptive(self):
         if self.clearCache:
             self.tilesChanged.clear()

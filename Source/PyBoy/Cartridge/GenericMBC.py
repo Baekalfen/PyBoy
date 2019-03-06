@@ -134,7 +134,6 @@ class ROM_only(GenericMBC):
     def __setitem__(self, address, value):
         self.set(address, value)
 
-    @cython.locals(address=cython.ushort, value=cython.uchar)
     def set(self, address, value):
         if 0x2000 <= address < 0x4000:
             if value == 0:
