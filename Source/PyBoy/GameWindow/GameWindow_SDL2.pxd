@@ -14,6 +14,7 @@ import numpy as np
 cimport numpy as np
 
 # cimport PyBoy.GameWindow.AbstractGameWindow
+# TODO: ctuple? https://cython.readthedocs.io/en/latest/src/userguide/language_basics.html
 cdef tuple gameboyResolution
 # cdef object pixels2dWithoutWarning(object)
 
@@ -45,6 +46,7 @@ cdef class SdlGameWindow:
     cdef object getScreenBuffer(self)
 
     cdef inline void updateDisplay(self):
+        sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, &self._screenBuffer[0,0], self._screenBuffer.strides[0])
         sdl2.SDL_RenderCopy(
                 self._sdlrenderer,
                 self._sdlTextureBuffer,

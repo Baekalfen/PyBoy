@@ -212,8 +212,6 @@ class SdlGameWindow():
             offset = xx & 0b111 # Used for the half tile at the left side when scrolling
 
             for x in xrange(gameboyResolution[0]):
-                self._screenBuffer[y,x] = 0x00403245
-                continue
                 if lcd.LCDC.backgroundEnable:
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
@@ -258,6 +256,7 @@ class SdlGameWindow():
 
             # if x < 160 and y < 144:
             #     self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
+
 
 
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, spritePriority, BGPkey, xFlip = 0, yFlip = 0):
