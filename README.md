@@ -53,17 +53,18 @@ When brew is installed, the depencencies can be installed with the following com
 
 Ubuntu/Linux
 ------------
-Ubuntu has some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy and PySDL2 in a virtualenv.
+Ubuntu has some problems installing PyPy in parallel with the system version of CPython. Therefore, we will install the PyPy version of NumPy and PySDL2 in a virtualenv. First, however, we need to install some dependencies.
 
     sudo apt update
-    sudo apt install git pypy pypy-dev virtualenv libsdl2-dev
+    sudo apt install git pypy pypy-dev virtualenv libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev
 
-Now move to the `PyBoy/Source` directory before creating the virtual environment:
+Now move to the project directory `PyBoy/` (or wherever you keep your virtual environments) and create the virtual environment:
 
     virtualenv . -p $(which pypy)
-    source ./bin/activate
+    source bin/activate
 
-    pip install -r requirements.txt
+    pip install -r Source/requirements.txt
+
 
 Windows
 -------

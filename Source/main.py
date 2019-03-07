@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     # Verify directories
     if not bootROM is None and not os.path.exists(bootROM):
-        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
+        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Some games are known to not work without it. Using replacement in the meanwhile..." % bootROM)
         bootROM = None
 
     if not os.path.exists(ROMdir) and len(sys.argv) < 2:
