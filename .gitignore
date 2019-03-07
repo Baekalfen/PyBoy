@@ -84,10 +84,18 @@ Core_Dump_*
 *.state
 
 # Files from venv and dependencies
-{,Source}/bin
-{,Source}/include
-{,Source}/lib-python
-{,Source}/lib_pypy
-{,Source}/pip-selfcheck.json
-{,Source}/site-packages
+/Source/bin
+/Source/include
+/Source/lib-python
+/Source/lib_pypy
+/Source/pip-selfcheck.json
+/Source/site-packages
+/Source/share
 
+/bin
+/include
+/lib-python
+/lib_pypy
+/pip-selfcheck.json
+/site-packages
+/share
