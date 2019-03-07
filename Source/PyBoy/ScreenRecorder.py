@@ -1,5 +1,8 @@
 import os
-import imageio
+try:
+    import imageio
+except:
+    imageio = None
 import numpy as np
 import time
 from PyBoy.Logger import logger
@@ -9,14 +12,24 @@ class ScreenRecorder:
 
     def __init__(self):
         logger.info("ScreenRecorder started")
+        if imageio is None:
+            logger.warning("ScreenRecorder: Dependency \"imageio\" could not be imported. Screen recording is disabled.")
+            return
         self.frames = []
         self.color_mapping = {0x00FFFFFF: np.uint8([255, 255, 255]), 0x00999999: np.uint8([153, 153, 153]),
                               0x00555555: np.uint8([85, 85, 85]), 0x00000000: np.uint8([0, 0, 0])}
 
     def add_frame(self, frame):
+        if imageio is None:
+            return
+
         self.frames.append(frame)
 
     def save(self, format='gif', path=None, fps=60):
+        if imageio is None:
+            logger.warning("ScreenRecorder: No recording to save. Missing dependency \"imageio\".")
+            return
+
         logger.info("ScreenRecorder saving...")
         if format not in ['gif']:
             raise Exception("Unsupported file format.")

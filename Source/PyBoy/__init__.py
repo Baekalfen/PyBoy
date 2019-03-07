@@ -91,7 +91,7 @@ class PyBoy():
         self.window.updateDisplay()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.window.getScreenBuffer())
+            self.screen_recorder.add_frame(self.window.getScreenBuffer().copy())
 
         self.t_VSynced = time.clock()
 

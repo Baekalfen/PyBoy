@@ -328,7 +328,7 @@ class SdlGameWindow(AbstractGameWindow):
 
 
     def getScreenBuffer(self):
-        return self._screenBuffer
+        return self._screenBuffer.T
 
     #################################################################
     #

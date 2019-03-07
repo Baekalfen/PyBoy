@@ -154,7 +154,7 @@ Currently, 8 methods are exposed, which should allow for complete control of the
 
 The Methods are:
 1. __tick()__ Progresses the Game Boy ahead by one frame. _Open an issue if you need finer control._
-2. __getScreenBuffer()__ Returns a copy to the NumPy matrix of the current image displayed on the screen. The format is 32-bit ARGB.
+2. __getScreenBuffer()__ Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit ARGB.
 3. __getMemoryValue(address)__ Returns the 8-bit value found at the address on the Game Boy.
 4. __setMemoryValue(address, value)__ Sets the 8-bit value at the address on the Game Boy.
 5. __sendInput(event_list)__ Sends a list of `WindowEvent`s to the Game Boy.
