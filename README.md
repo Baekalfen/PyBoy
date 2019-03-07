@@ -15,7 +15,25 @@ If you've read the report and want more explicit details, have a look at the [Pa
 </p>
 
 
+Contibutors
+===========
 
+Thanks to all the people, who have contributed to the project!
+
+Original Developers
+-------------------
+
+ * Asger Anders Lund Hansen - [AsgerLundHansen](https://github.com/AsgerLundHansen)
+ * Mads Ynddal - [baekalfen](https://github.com/Baekalfen)
+ * Troels Ynddal - [troelsy](https://github.com/troelsy)
+
+GitHub Contributors
+-------------------
+
+ * Kristian Sims - [krs013](https://github.com/krs013)
+ * Thomas Li Fredriksen - [thomafred](https://github.com/thomafred)
+ * Florian Katenbrink - [FKatenbrink](https://github.com/FKatenbrink)
+ * Liz - [stillinbeta](https://github.com/stillinbeta)
 
 Contribute
 ==========

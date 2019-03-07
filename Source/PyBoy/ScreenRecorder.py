@@ -1,3 +1,9 @@
+# -*- encoding: utf-8 -*-
+#
+# License: See LICENSE file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
 import os
 try:
     import imageio

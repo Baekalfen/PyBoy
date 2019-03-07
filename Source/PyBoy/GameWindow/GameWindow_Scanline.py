@@ -1,10 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
-# Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
-# Author: Kristian Sims
 # License: See LICENSE file
 # GitHub: https://github.com/krs013/PyBoy
 #
+
 # Cacheless GameWindow that renders screen line-by-line in scanline()
 # It's closer to the hardware and maybe easier to understand, but not
 # fast enough to replace GameWindow_SDL2

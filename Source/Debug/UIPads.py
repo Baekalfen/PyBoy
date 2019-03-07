@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
-# Authors: Mads Ynddal
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
 from Pad import Pad
 from Window import Window
 import curses
