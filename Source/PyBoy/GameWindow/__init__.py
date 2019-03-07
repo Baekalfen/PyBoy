@@ -31,4 +31,3 @@ except:
     logger.warning("Failed to load MultiProcess GameWindow")
 
 from .GameWindow_dummy import DummyGameWindow
-from .GameWindow_Scanline import ScanlineGameWindow
