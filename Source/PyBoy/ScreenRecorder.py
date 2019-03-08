@@ -22,8 +22,6 @@ class ScreenRecorder:
             logger.warning("ScreenRecorder: Dependency \"imageio\" could not be imported. Screen recording is disabled.")
             return
         self.frames = []
-        self.color_mapping = {0x00FFFFFF: np.uint8([255, 255, 255]), 0x00999999: np.uint8([153, 153, 153]),
-                              0x00555555: np.uint8([85, 85, 85]), 0x00000000: np.uint8([0, 0, 0])}
 
     def add_frame(self, frame):
         if imageio is None:
@@ -36,11 +34,10 @@ class ScreenRecorder:
             logger.warning("ScreenRecorder: No recording to save. Missing dependency \"imageio\".")
             return
 
+        assert format not in ['gif'], "Unsupported file format."
+        assert 1 <= fps <= 60, "Invalid FPS. Choose a number between 1 and 60."
+
         logger.info("ScreenRecorder saving...")
-        if format not in ['gif']:
-            raise Exception("Unsupported file format.")
-        if fps < 1 or fps > 100:
-            raise Exception("Invalid FPS. Choose a number between 1 and 100.")
 
         if path is None:
             recordings_folder = os.getcwd() + "/recordings"
@@ -50,7 +47,9 @@ class ScreenRecorder:
 
         images = []
         for frame in self.frames:
-            rgb_image = np.array([[self.color_mapping[frame[x,y]] for x in range(frame.shape[0])] for y in range(frame.shape[1])], dtype=np.uint8)
+            # Reshape uint32->4xuint8. Strip alpha channel.
+            # Transpose dimensions, but not colors. Otherwise the recording comes out mirrored.
+            rgb_image = frame.view(np.uint8).reshape(frame.shape + (4,))[:,:,:-1].transpose(1,0,2)
             images.append(rgb_image)
 
         if format == 'gif':
