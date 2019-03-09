@@ -8,6 +8,7 @@
 # It's closer to the hardware and maybe easier to understand, but not
 # fast enough to replace GameWindow_SDL2
 
+import array
 import ctypes
 import sdl2
 import sdl2.ext
@@ -85,7 +86,8 @@ class ScanlineGameWindow(AbstractGameWindow):
                                                  sdl2.SDL_PIXELFORMAT_ARGB32,
                                                  sdl2.SDL_TEXTUREACCESS_STATIC,
                                                  *gameboyResolution)
-        self._linebuf = [0] * gameboyResolution[0]
+        self._linebuf = array.array('I', [0] * gameboyResolution[0])
+        self._linebuf_p = ctypes.c_void_p(self._linebuf.buffer_info()[0])
         self._linerect = sdl2.rect.SDL_Rect(0, 0, gameboyResolution[0], 1)
 
         self.ticks = sdl2.SDL_GetTicks()
@@ -238,10 +240,8 @@ class ScanlineGameWindow(AbstractGameWindow):
 
         # Copy into the screen buffer from the list
         self._linerect.y = y
-        buf, _ = sdl2.ext.array.to_ctypes(self._linebuf, ctypes.c_uint32,
-                                          gameboyResolution[0])
         sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
-                               ctypes.byref(buf), gameboyResolution[0])
+                               self._linebuf_p, gameboyResolution[0])
 
     def renderScreen(self, lcd):
         # Copy from internal buffer to screen
