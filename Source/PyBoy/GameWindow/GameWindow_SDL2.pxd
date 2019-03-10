@@ -47,7 +47,7 @@ cdef class SdlGameWindow:
     cdef void VSync(self)
     cdef void stop(self)
     cdef void scanline(self, int, tuple, tuple)
-    @cython.locals(y=cython.ushort, x=cython.ushort)
+    @cython.locals(y=cython.ushort, x=cython.ushort, windowViewAddress=cython.ushort, backgroundViewAddress=cython.ushort,backgroundTileIndex=cython.int, windowTileIndex=cython.int, xx=cython.int, yy=cython.int, wx=cython.int, wy=cython.int, offset=cython.int, n=cython.uchar)
     cdef void renderScreen(self, PyBoy.LCD.LCD)
     cdef void copySprite(self, tuple, tuple, object, object, int, bint, unsigned int, xFlip=*, yFlip=*)
     cdef void blankScreen(self)
