@@ -24,29 +24,29 @@ IE_address = 0xFFFF
 NoInterrupt = 0
 InterruptVector = 1
 
-def setA(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self._A = x
+# def setA(self, x):
+#     assert x <= 0xFF, "%0.2x" % x
+#     self._A = x
 
-def setF(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self._F = x
+# def setF(self, x):
+#     assert x <= 0xFF, "%0.2x" % x
+#     self._F = x
 
-def setB(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self._B = x
+# def setB(self, x):
+#     assert x <= 0xFF, "%0.2x" % x
+#     self._B = x
 
-def setC(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self._C = x
+# def setC(self, x):
+#     assert x <= 0xFF, "%0.2x" % x
+#     self._C = x
 
-def setD(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self._D = x
+# def setD(self, x):
+#     assert x <= 0xFF, "%0.2x" % x
+#     self._D = x
 
-def setE(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self._E = x
+# def setE(self, x):
+#     assert x <= 0xFF, "%0.2x" % x
+#     self._E = x
 
 def setH(self, x):
     assert x <= 0xFF, "%0.2x" % x
@@ -58,17 +58,17 @@ def setL(self, x):
     self.HL &= 0xFF00
     self.HL |= x
 
-def setHL(self, x):
-    assert x <= 0xFFFF, "%0.4x" % x
-    self._HL = x
+# def setHL(self, x):
+#     assert x <= 0xFFFF, "%0.4x" % x
+#     self._HL = x
 
-def setSP(self, x):
-    assert x <= 0xFFFF, "%0.4x" % x
-    self._SP = x
+# def setSP(self, x):
+#     assert x <= 0xFFFF, "%0.4x" % x
+#     self._SP = x
 
-def setPC(self, x):
-    assert x <= 0xFFFF, "%0.4x" % x
-    self._PC = x
+# def setPC(self, x):
+#     assert x <= 0xFFFF, "%0.4x" % x
+#     self._PC = x
 
 def setAF(self, x):
     assert x <= 0xFFFF, "%0.4x" % x
@@ -85,28 +85,28 @@ def setDE(self, x):
     self.D = x >> 8
     self.E = x & 0x00FF
 
-def getA(self):
-    return self._A
-def getF(self):
-    return self._F
-def getB(self):
-    return self._B
-def getC(self):
-    return self._C
-def getD(self):
-    return self._D
-def getE(self):
-    return self._E
+# def getA(self):
+#     return self._A
+# def getF(self):
+#     return self._F
+# def getB(self):
+#     return self._B
+# def getC(self):
+#     return self._C
+# def getD(self):
+#     return self._D
+# def getE(self):
+#     return self._E
 def getH(self):
     return self._HL >> 8
 def getL(self):
     return self._HL & 0xFF
-def getHL(self):
-    return self._HL
-def getSP(self):
-    return self._SP
-def getPC(self):
-    return self._PC
+# def getHL(self):
+#     return self._HL
+# def getSP(self):
+#     return self._SP
+# def getPC(self):
+#     return self._PC
 def getAF(self):
     return (self.A << 8) + self.F
 def getBC(self):
@@ -215,15 +215,15 @@ class CPU(object): # 'object' is important for property!!!
         return NoInterrupt
 
 
-    A = property(getA, setA)
-    F = property(getF, setF)
-    B = property(getB, setB)
-    C = property(getC, setC)
-    D = property(getD, setD)
-    E = property(getE, setE)
-    HL = property(getHL, setHL)
-    SP = property(getSP, setSP)
-    PC = property(getPC, setPC)
+    # A = property(getA, setA)
+    # F = property(getF, setF)
+    # B = property(getB, setB)
+    # C = property(getC, setC)
+    # D = property(getD, setD)
+    # E = property(getE, setE)
+    # HL = property(getHL, setHL)
+    # SP = property(getSP, setSP)
+    # PC = property(getPC, setPC)
 
     H = property(getH, setH)
     L = property(getL, setL)
@@ -231,7 +231,9 @@ class CPU(object): # 'object' is important for property!!!
     BC = property(getBC, setBC)
     DE = property(getDE, setDE)
 
-    fC = property(lambda s:bool(s.F & (1 << flagC)), None)
+    def fC(self):
+        return bool(self.F & (1 << flagC))
+
     fH = property(lambda s:bool(s.F & (1 << flagH)), None)
     fN = property(lambda s:bool(s.F & (1 << flagN)), None)
     fZ = property(lambda s:bool(s.F & (1 << flagZ)), None)
@@ -239,15 +241,15 @@ class CPU(object): # 'object' is important for property!!!
     fNZ = property(lambda s:not bool(s.F & (1 << flagZ)), None)
 
     def __init__(self, MB, profiling=False):
-        self._A = 0
-        self._F = 0
-        self._B = 0
-        self._C = 0
-        self._D = 0
-        self._E = 0
-        self._HL = 0
-        self._SP = 0
-        self._PC = 0
+        self.A = 0
+        self.F = 0
+        self.B = 0
+        self.C = 0
+        self.D = 0
+        self.E = 0
+        self.HL = 0
+        self.SP = 0
+        self.PC = 0
 
         self.mb = MB
 

@@ -226,6 +226,8 @@ class Code():
             # TODO: Differentiate between 16-bit values (01,11,21,31 ops) and 8-bit values for 'v'
             "cdef unsigned char %s_%0.2x(CPU.CPU, int v) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name)
         ][self.takesImmediate]
+        pxd = "@cython.locals(v=cython.int, flag=cython.uchar)\n" + pxd
+
 
         return (pxd, code)
 
