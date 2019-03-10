@@ -161,7 +161,7 @@ class Operand():
                 'Z', 'C', 'NZ', 'NC' # flags
                 ]:
             self.flag = True
-            return "cpu.f"+operand
+            return "cpu.f"+operand+"()"
 
         elif operand in ['d8', 'd16', 'a8', 'a16', 'r8']:
             code = "v"
@@ -323,7 +323,7 @@ class opcodeData():
 
         lines.append("flag = " + format(sum(map(lambda (i,f): (f == "1") << (i+4), self.flags)), "#010b")) # Sets the ones that always get set by operation
         if self.flagH == "H":
-            c = " %s cpu.fC" % op if carry else ""
+            c = " %s cpu.fC()" % op if carry else ""
             lines.append("flag += (((%s & 0xFFF) %s (%s & 0xFFF)%s) > 0xFFF) << flagH" % (r0,op,r1,c))
 
         if self.flagC == "C":
@@ -348,10 +348,10 @@ class opcodeData():
             lines.append("flag += ((t & 0xFF) == 0) << flagZ")
 
         if self.flagH == "H" and op == '-':
-            c = " %s cpu.fC" % op if carry else ""
+            c = " %s cpu.fC()" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) < 0) << flagH" % (r0,op,r1,c))
         elif self.flagH == "H":
-            c = " %s cpu.fC" % op if carry else ""
+            c = " %s cpu.fC()" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << flagH" % (r0,op,r1,c))
 
         if self.flagC == "C" and op == '-':
@@ -416,10 +416,10 @@ class opcodeData():
             "t = %s" % left.code,
 
             "corr = 0",
-            "corr |= 0x06 if cpu.fH else 0x00",
-            "corr |= 0x60 if cpu.fC else 0x00",
+            "corr |= 0x06 if cpu.fH() else 0x00",
+            "corr |= 0x60 if cpu.fC() else 0x00",
 
-            "if cpu.fN:",
+            "if cpu.fN():",
             "\tt -= corr",
             "else:",
             "\tcorr |= 0x06 if (t & 0x0F) > 0x09 else 0x00",
@@ -508,7 +508,7 @@ class opcodeData():
         calc = "t = " + left.code + op + right.code
 
         if carry:
-            calc += op + " cpu.fC"
+            calc += op + " cpu.fC()"
 
         lines.append(calc)
 
@@ -735,7 +735,7 @@ class opcodeData():
         if not left is None:
             if left.code[-1] == "C" and not "NC" in left.code:
                 left.flag = True
-                left.code = "cpu.fC"
+                left.code = "cpu.fC()"
             assert left.flag
         elif right.pointer:
             # FIX: Wrongful syntax of "JP (HL)" actually meaning "JP HL"
@@ -776,7 +776,7 @@ class opcodeData():
         if not left is None:
             if left.code[-1] == "C" and not "NC" in left.code:
                 left.flag = True
-                left.code = "cpu.fC"
+                left.code = "cpu.fC()"
             assert left.flag
         assert right.immediate
 
@@ -816,7 +816,7 @@ class opcodeData():
         if not left is None:
             if left.code[-1] == "C" and not "NC" in left.code:
                 left.flag = True
-                left.code = "cpu.fC"
+                left.code = "cpu.fC()"
             assert left.flag
         assert right.immediate
 
@@ -860,7 +860,7 @@ class opcodeData():
             if not left is None:
                 if left.code[-1] == "C" and not "NC" in left.code:
                     left.flag = True
-                    left.code = "cpu.fC"
+                    left.code = "cpu.fC()"
                 assert left.flag
 
         code = Code(fname(), self.opcode, self.name, False, self.length, self.cycles, branchOp = True)
@@ -927,7 +927,7 @@ class opcodeData():
     def RotateLeft(self, name, left, throughCarry = False):
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         if throughCarry:
-            code.addLine(("t = (%s << 1)" % left.code) + "+ cpu.fC")
+            code.addLine(("t = (%s << 1)" % left.code) + "+ cpu.fC()")
         else:
             code.addLine("t = (%s << 1) + (%s >> 7)" % (left.code, left.code))
         code.addLines(self.handleFlags8bit(left.code, None, None, throughCarry))
@@ -963,7 +963,7 @@ class opcodeData():
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         if throughCarry:
             #                                                                Trigger "overflow" for carry flag
-            code.addLine(("t = (%s >> 1)" % left.code) + "+ (cpu.fC << 7)" + "+ ((%s & 1) << 8)" % (left.code))
+            code.addLine(("t = (%s >> 1)" % left.code) + "+ (cpu.fC() << 7)" + "+ ((%s & 1) << 8)" % (left.code))
         else:
             #                                                                   Trigger "overflow" for carry flag
             code.addLine("t = (%s >> 1) + ((%s & 1) << 7)" % (left.code, left.code) + "+ ((%s & 1) << 8)" % (left.code))

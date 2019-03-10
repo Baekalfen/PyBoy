@@ -98,9 +98,9 @@ def setDE(self, x):
 # def getE(self):
 #     return self._E
 def getH(self):
-    return self._HL >> 8
+    return self.HL >> 8
 def getL(self):
-    return self._HL & 0xFF
+    return self.HL & 0xFF
 # def getHL(self):
 #     return self._HL
 # def getSP(self):
@@ -234,11 +234,20 @@ class CPU(object): # 'object' is important for property!!!
     def fC(self):
         return bool(self.F & (1 << flagC))
 
-    fH = property(lambda s:bool(s.F & (1 << flagH)), None)
-    fN = property(lambda s:bool(s.F & (1 << flagN)), None)
-    fZ = property(lambda s:bool(s.F & (1 << flagZ)), None)
-    fNC = property(lambda s:not bool(s.F & (1 << flagC)), None)
-    fNZ = property(lambda s:not bool(s.F & (1 << flagZ)), None)
+    def fH(self):
+        return bool(self.F & (1 << flagH))
+
+    def fN(self):
+        return bool(self.F & (1 << flagN))
+
+    def fZ(self):
+        return bool(self.F & (1 << flagZ))
+
+    def fNC(self):
+        return not bool(self.F & (1 << flagC))
+
+    def fNZ(self):
+        return not bool(self.F & (1 << flagZ))
 
     def __init__(self, MB, profiling=False):
         self.A = 0

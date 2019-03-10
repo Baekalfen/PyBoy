@@ -66,6 +66,11 @@ cdef class CPU:
     cdef object mb
 
     cdef int fC(self)
+    cdef int fH(self)
+    cdef int fN(self)
+    cdef int fZ(self)
+    cdef int fNC(self)
+    cdef int fNZ(self)
 
     ### CPU Flags
     # cdef extern short flagC, flagH, flagN, flagZ
