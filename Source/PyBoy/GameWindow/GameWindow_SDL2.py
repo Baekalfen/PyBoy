@@ -279,7 +279,7 @@ class SdlGameWindow():
                 pixel = fromBuffer[xx, yy]
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
-                    if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
+                    if not (not spritePriority or (spritePriority and toBuffer[y2+y, x2+x] == BGPkey)):
                         pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
