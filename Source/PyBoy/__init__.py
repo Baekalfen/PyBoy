@@ -132,7 +132,7 @@ class PyBoy():
             self.profiler.disable()
             stats = pstats.Stats(self.profiler)
 
-            if "profilingFile" in self.kwargs:
+            if "profilingFile" in self.kwargs and self.kwargs["profilingFile"]:
                 try:
                     stats.dump_stats(self.kwargs["profilingFile"])
                 except IOError:
