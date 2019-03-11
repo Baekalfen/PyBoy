@@ -10,7 +10,7 @@
 cimport opcodes
 
 
-cdef short IF_address, IE_address, NoInterrupt, InterruptVector
+cdef unsigned short IF_address, IE_address, NoInterrupt, InterruptVector
 cdef short flagC, flagH, flagN, flagZ
 cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
