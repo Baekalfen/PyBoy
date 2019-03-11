@@ -54,9 +54,8 @@ def parse_arguments(argstring=None):
                         "Choices: " + ", ".join(GameWindow.windowTypes))
     parser.add_argument("--debug", help="Enable debug mode",
                         action='store_true')
-    parser.add_argument("--profile", nargs='?', const=True,
-                        choices=[True, "opcodes"],
-                        help="Enable profiling, optional presets")
+    parser.add_argument("--profile", action="store_true",
+                        help="Enable profiling with cProfile, some overhead")
     parser.add_argument("--profilingFile", type=str,
                         help="Save file for profiling data")
     parser.add_argument("--profilingSort",
