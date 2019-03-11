@@ -5,11 +5,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
+
 import time
-import numpy as np
-from PyBoy.ScreenRecorder import ScreenRecorder
 import platform
+import numpy as np
+
+import GameWindow
+from PyBoy.ScreenRecorder import ScreenRecorder
 
 from .MB import Motherboard
 from .WindowEvent import WindowEvent
@@ -22,19 +24,23 @@ from .OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy():
-    def __init__(self, window, ROM, bootROM = None):
+    def __init__(self, windowType, ROM, bootROM=None, debug=False,
+                 profiling=False, loadState=False):
+
         self.debugger = None
         self.mb = None
-        self.window = window
+        self.window = GameWindow.createGameWindow(windowType)
 
-        if "debug" in sys.argv and platform.system() != "Windows":
+        if debug:
             self.debugger = Debug()
             self.debugger.tick()
         else:
             addConsoleHandler()
 
-        self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(ROM, bootROM, window, profiling = self.profiling, debugger = self.debugger)
+        self.profiling = profiling
+        self.mb = Motherboard(ROM, bootROM, self.window,
+                              profiling = self.profiling,
+                              debugger = self.debugger)
 
         if not self.debugger is None:
             self.debugger.mb = self.mb

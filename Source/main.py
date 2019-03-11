@@ -5,39 +5,23 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
+import argparse
 import traceback
 import time
-import os.path
 import os
 import sys
 import platform
+from PyBoy import GameWindow
 from PyBoy.Logger import logger, addConsoleHandler
+
+
 addConsoleHandler()
+
 
 if platform.system() != "Windows":
     from Debug import Debug
 from PyBoy import PyBoy
-
-
-def getWindow():
-    if len(sys.argv) < 2:
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "SDL2":
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "scanline":
-        from PyBoy.GameWindow import ScanlineGameWindow as Window
-    elif sys.argv[1] == "OpenGL":
-        from PyBoy.GameWindow import OpenGLGameWindow as Window
-    elif sys.argv[1] == "dummy":
-        from PyBoy.GameWindow import DummyGameWindow as Window
-    elif sys.argv[1] == "SDL2Process":
-        from PyBoy.GameWindow import MultiprocessGameWindow as Window
-    else:
-        print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
-        print "Valid GameWindows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'"
-        exit(1)
-
-    return Window
 
 
 def getROM(ROMdir):
@@ -55,34 +39,55 @@ def getROM(ROMdir):
 
     return filename
 
-def main():
+
+def parse_arguments(argstring=None):
+
+    parser = argparse.ArgumentParser(description="A Python Gameboy Emulator")
+
+    parser.add_argument("romfile", type=str, help="path to Gameboy ROM")
+    parser.add_argument("--window",
+                        choices=GameWindow.windowTypes,
+                        default=GameWindow.defaultWindowType,
+                        help="Name of a valid Game Window implementation. "
+                        "Choices: " + ", ".join(GameWindow.windowTypes))
+    parser.add_argument("--debug", help="Enable debug mode",
+                        action='store_true')
+    parser.add_argument("--profiling", help="Enable profiling",
+                        action="store_true")
+    parser.add_argument("--loadState", help="Load state from .state file",
+                        action="store_true")
+
+    return vars(parser.parse_args())
+
+
+def main(romfile=None, window=None, debug=False, profiling=False,
+         loadState=False):
+
     # Automatically bump to '-OO' optimizations
     if __debug__:
         os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
 
     bootROM = "ROMs/DMG_ROM.bin"
     ROMdir = "ROMs/"
-    scale = 2
-    debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories
     if not bootROM is None and not os.path.exists(bootROM):
-        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Some games are known to not work without it. Using replacement in the meanwhile..." % bootROM)
+        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. "
+               "Some games are known to not work without it. "
+               "Using replacement in the meanwhile..." % bootROM)
         bootROM = None
 
-    if not os.path.exists(ROMdir) and len(sys.argv) < 2:
-        print ("ROM folder not found. Please copy the Game-ROM to '%s'" % ROMdir)
-        exit()
+    if not os.path.exists(ROMdir) and not romfile:
+        print ("ROM folder not found. Please copy the Game ROM to '%s'" %
+               ROMdir)
+        return
 
+    if not romfile:
+        romfile = getROM(ROMdir)
+    
     try:
-        # Check if the ROM is given through argv
-        if len(sys.argv) > 2: # First arg is SDL2/PyGame
-            filename = sys.argv[2]
-        else:
-            filename = getROM(ROMdir)
-
         # Start PyBoy and run loop
-        pyboy = PyBoy((getWindow())(scale=scale), filename, bootROM)
+        pyboy = PyBoy(window, romfile, bootROM)
         while not pyboy.tick():
             pass
         pyboy.stop()
@@ -100,7 +105,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    arguments = parse_arguments()
+    main(**arguments)
 
-    # import cProfile
-    # cProfile.run('main()', sort='cumulative')
+    #import cProfile
+    #cProfile.run('main()', sort='cumulative')
