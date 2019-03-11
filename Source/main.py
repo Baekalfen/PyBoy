@@ -12,6 +12,8 @@ import platform
 import sys
 import time
 import traceback
+from pstats import Stats
+
 from PyBoy import GameWindow
 from PyBoy.Logger import logger, addConsoleHandler
 
@@ -52,16 +54,24 @@ def parse_arguments(argstring=None):
                         "Choices: " + ", ".join(GameWindow.windowTypes))
     parser.add_argument("--debug", help="Enable debug mode",
                         action='store_true')
-    parser.add_argument("--profile", help="Enable profiling",
-                        action="store_true")
+    parser.add_argument("--profile", nargs='?', const=True,
+                        choices=[True, "opcodes"],
+                        help="Enable profiling, optional presets")
+    # parser.add_argument("--profilingFile", type=str,
+    #                     help="Save file for profiling data")
+    parser.add_argument("--profilingSort",
+                        help="Sort order for profiling data",
+                        choices=["ncalls", "cumulative", "file", "line",
+                                 "name", "nfl", "pcalls", "stdname", "time"])
+    parser.add_argument("--profilingFilter", nargs='+',
+                        help="Filter(s) for profiling data")
     parser.add_argument("--loadState", help="Load state from .state file",
                         action="store_true")
 
     return vars(parser.parse_args())
 
 
-def main(romfile=None, window=None, debug=False, profile=False,
-         loadState=False):
+def main(romfile=None, window=None, **kwargs):
 
     # Automatically bump to '-OO' optimizations
     if __debug__:
@@ -87,8 +97,7 @@ def main(romfile=None, window=None, debug=False, profile=False,
     
     try:
         # Start PyBoy and run loop
-        pyboy = PyBoy(window, romfile, bootROM, debug=debug, profile=profile,
-                      loadState=loadState)
+        pyboy = PyBoy(window, romfile, bootROM, **kwargs)
         while not pyboy.tick():
             pass
         pyboy.stop()

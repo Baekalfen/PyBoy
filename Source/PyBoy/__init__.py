@@ -9,7 +9,7 @@
 import time
 import platform
 import cProfile
-import numpy as np
+import pstats
 
 import GameWindow
 from PyBoy.ScreenRecorder import ScreenRecorder
@@ -25,10 +25,9 @@ from .OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy():
-    def __init__(self, windowType, ROM, bootROM=None, debug=False,
-                 profile=False, loadState=False):
+    def __init__(self, windowType, ROM, bootROM=None, **kwargs):
 
-        if profile:
+        if 'profile' in kwargs and kwargs['profile']:
             self.profiler = cProfile.Profile()
             self.profiler.enable()
         else:
@@ -38,14 +37,18 @@ class PyBoy():
         self.mb = None
         self.window = GameWindow.createGameWindow(windowType)
 
-        if debug:
+        if 'debug' in kwargs and kwargs['debug']:
             self.debugger = Debug()
             self.debugger.tick()
         else:
             addConsoleHandler()
 
+        self.kwargs = kwargs
+
         self.mb = Motherboard(ROM, bootROM, self.window,
-                              debugger = self.debugger)
+                              debugger=self.debugger,
+                              loadState=kwargs['loadState'] if 'loadState'
+                              in kwargs else False)
 
         if not self.debugger is None:
             self.debugger.mb = self.mb
@@ -127,7 +130,28 @@ class PyBoy():
 
         if self.profiler:
             self.profiler.disable()
-            self.profiler.print_stats(sort='cumulative')
+            stats = pstats.Stats(self.profiler)
+            stats.strip_dirs()
+            if "profilingSort" in self.kwargs:
+                stats.sort_stats(self.kwargs["profilingSort"])
+            if "profilingFilter" in self.kwargs:
+                restrictions = []
+                for r in self.kwargs["profilingFilter"]:
+                    try:
+                        restrictions.append(int(r))
+                        continue
+                    except ValueError:
+                        pass
+                    try:
+                        restrictions.append(float(r))
+                        continue
+                    except ValueError:
+                        pass
+                    restrictions.append(r)
+            else:
+                restrictions = [-1]
+
+            stats.print_stats(*restrictions)
 
     ###########################
     #

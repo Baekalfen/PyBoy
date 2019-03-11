@@ -4,10 +4,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
 
 from ..Logger import logger
 from .. import CPU, RAM, Cartridge, BootROM, LCD, Interaction, Timer, CoreDump
+
 
 class Motherboard():
     from .MemoryManager import __getitem__, __setitem__, transferDMAtoOAM
@@ -15,7 +15,8 @@ class Motherboard():
     from .Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
     from ..CPU.flags import TIMER
 
-    def __init__(self, gameROMFile, bootROMFile, window, debugger = None):
+    def __init__(self, gameROMFile, bootROMFile, window, debugger=None,
+                 loadState=False):
         if bootROMFile is not None:
             logger.info("Boot-ROM file provided")
 
@@ -30,7 +31,7 @@ class Motherboard():
         self.lcd = LCD.LCD(self, window.color_palette)
         self.bootROMEnabled = True
 
-        if "loadState" in sys.argv:
+        if loadState:
             self.loadState(self.cartridge.filename+".state")
 
         self.cartridge.loadRAM()
