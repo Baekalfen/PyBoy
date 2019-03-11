@@ -6,7 +6,7 @@
 
 from . import CoreDump
 from .RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
-import numpy as np
+
 
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 

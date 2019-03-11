@@ -9,7 +9,7 @@ from ..OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .flags import flagZ, flagN, flagH, flagC
 from ..Logger import logger
 from .Interrupts import InterruptVector, NoInterrupt
-import numpy as np
+
 
 class CPU(object): # 'object' is important for property!!!
     from .opcodes import opcodes

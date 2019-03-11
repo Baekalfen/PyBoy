@@ -7,7 +7,6 @@
 
 
 import time
-import platform
 import cProfile
 import pstats
 
