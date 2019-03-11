@@ -35,6 +35,7 @@ alphaMask = 0x7F000000
 class SdlGameWindow():
     def __init__(self, scale=1):
         self._scale = scale
+        self.ticks = sdl2.SDL_GetTicks()
 
         if self._scale != 1:
             logger.warn("Scaling set to %s. The implementation is temporary, which means scaling above 1 will impact performance." % self._scale)
@@ -181,6 +182,9 @@ class SdlGameWindow():
 
     def VSync(self):
         pass
+        now = sdl2.SDL_GetTicks()
+        sdl2.SDL_Delay(max(0, int(1/60.0*1000-(now-self.ticks))))
+        self.ticks = sdl2.SDL_GetTicks()
         # sdl2.SDL_RenderPresent(self.renderer)
 
     def stop(self):

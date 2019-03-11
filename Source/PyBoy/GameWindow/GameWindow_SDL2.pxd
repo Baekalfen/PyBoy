@@ -29,6 +29,7 @@ cdef unsigned int alphaMask
 cdef class SdlGameWindow:
     # cdef tuple makeWindowAndGetBuffer(self, int, int, int, int, char*)
 
+    cdef int ticks
     cdef list getEvents(self)
     cdef unsigned int _scale
     cdef dict windowEventsDown
