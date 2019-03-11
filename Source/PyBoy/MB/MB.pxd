@@ -40,7 +40,7 @@ cdef class Motherboard:
     cdef unsigned char get(self, unsigned short)
     cdef void set(self, unsigned short, unsigned char)
 
-    cdef void transferDMAtoOAM(self, char, unsigned short dst=*)
+    cdef void transferDMAtoOAM(self, unsigned char, unsigned short dst=*)
     cdef void saveState(self, unicode)
     cdef void loadState(self, unicode)
     # cdef void saveState(self, char*)
