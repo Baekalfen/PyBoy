@@ -8,6 +8,7 @@
 
 import time
 import platform
+import cProfile
 import numpy as np
 
 import GameWindow
@@ -25,7 +26,13 @@ SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy():
     def __init__(self, windowType, ROM, bootROM=None, debug=False,
-                 profiling=False, loadState=False):
+                 profile=False, loadState=False):
+
+        if profile:
+            self.profiler = cProfile.Profile()
+            self.profiler.enable()
+        else:
+            self.profiler = None
 
         self.debugger = None
         self.mb = None
@@ -37,9 +44,7 @@ class PyBoy():
         else:
             addConsoleHandler()
 
-        self.profiling = profiling
         self.mb = Motherboard(ROM, bootROM, self.window,
-                              profiling = self.profiling,
                               debugger = self.debugger)
 
         if not self.debugger is None:
@@ -120,13 +125,9 @@ class PyBoy():
         self.window.stop()
         self.mb.stop(save)
 
-        if self.profiling:
-            np.set_printoptions(threshold=np.inf)
-            argMax = np.argsort(self.mb.cpu.hitRate)
-            for n in argMax[::-1]:
-                if self.mb.cpu.hitRate[n] != 0:
-                    print("%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n]))
-
+        if self.profiler:
+            self.profiler.disable()
+            self.profiler.print_stats(sort='cumulative')
 
     ###########################
     #

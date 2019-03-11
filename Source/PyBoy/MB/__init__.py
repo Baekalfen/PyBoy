@@ -15,12 +15,9 @@ class Motherboard():
     from .Coordinator import calculateCycles, setSTATMode, checkLYC, tickFrame
     from ..CPU.flags import TIMER
 
-    def __init__(self, gameROMFile, bootROMFile, window, profiling = False, debugger = None):
+    def __init__(self, gameROMFile, bootROMFile, window, debugger = None):
         if bootROMFile is not None:
             logger.info("Boot-ROM file provided")
-
-        if profiling:
-            logger.info("Profiling enabled")
 
         self.debugger = debugger
         self.MainWindow = window
@@ -29,7 +26,7 @@ class Motherboard():
         self.cartridge = Cartridge.Cartridge(gameROMFile)
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(random=False)
-        self.cpu = CPU.CPU(self, profiling)
+        self.cpu = CPU.CPU(self)
         self.lcd = LCD.LCD(self, window.color_palette)
         self.bootROMEnabled = True
 

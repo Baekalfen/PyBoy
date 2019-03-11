@@ -33,7 +33,7 @@ class CPU(object): # 'object' is important for property!!!
     fNC = property(lambda s:not bool(s.F & (1 << flagC)), None)
     fNZ = property(lambda s:not bool(s.F & (1 << flagZ)), None)
 
-    def __init__(self, MB, profiling=False):
+    def __init__(self, MB):
         self.mb = MB
 
         self.interruptMasterEnable = False
@@ -53,12 +53,6 @@ class CPU(object): # 'object' is important for property!!!
         self.oldPC = -1
         self.lala = False
 
-        # Profiling
-        self.profiling = profiling
-        if profiling:
-            self.hitRate = np.zeros(shape=(512,), dtype=int)
-
-
     def executeInstruction(self, instruction):
         # '*' unpacks tuple into arguments
         success = instruction[0](*instruction[2])
@@ -76,12 +70,6 @@ class CPU(object): # 'object' is important for property!!!
             pc += 1
             opcode = self.mb[pc]
             opcode += 0x100  # Internally shifting look-up table
-
-        #Profiling
-        if self.profiling:
-            self.hitRate[opcode] += 1
-        # if opcode == 0xf0:
-        #     print "F0", hex(self.mb[pc+1])
 
         operation = opcodes.opcodes[opcode]
 

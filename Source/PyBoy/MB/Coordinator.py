@@ -43,10 +43,6 @@ def calculateCycles(self, x):
             # Serial is not implemented, so this isn't a concern
             cycles = min(self.timer.cyclesToInterrupt(), x)
 
-            # Profiling
-            if self.cpu.profiling:
-                self.cpu.hitRate[0x76] += cycles/4
-
         x -= cycles
         if self.timer.tick(cycles):
             self.cpu.setInterruptFlag(self.TIMER)

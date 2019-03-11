@@ -7,11 +7,11 @@
 
 
 import argparse
-import traceback
-import time
 import os
-import sys
 import platform
+import sys
+import time
+import traceback
 from PyBoy import GameWindow
 from PyBoy.Logger import logger, addConsoleHandler
 
@@ -26,8 +26,8 @@ from PyBoy import PyBoy
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
-    found_files = filter(lambda f: f.lower().endswith(
-        ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir))
+    found_files = filter(lambda f: f.lower().endswith(".gb") or
+                         f.lower().endswith(".gbc"), os.listdir(ROMdir))
     for i, f in enumerate(found_files):
         print ("%s\t%s" % (i + 1, f))
     filename = raw_input("Write the name or number of the ROM file:\n")
@@ -52,7 +52,7 @@ def parse_arguments(argstring=None):
                         "Choices: " + ", ".join(GameWindow.windowTypes))
     parser.add_argument("--debug", help="Enable debug mode",
                         action='store_true')
-    parser.add_argument("--profiling", help="Enable profiling",
+    parser.add_argument("--profile", help="Enable profiling",
                         action="store_true")
     parser.add_argument("--loadState", help="Load state from .state file",
                         action="store_true")
@@ -60,7 +60,7 @@ def parse_arguments(argstring=None):
     return vars(parser.parse_args())
 
 
-def main(romfile=None, window=None, debug=False, profiling=False,
+def main(romfile=None, window=None, debug=False, profile=False,
          loadState=False):
 
     # Automatically bump to '-OO' optimizations
@@ -87,7 +87,8 @@ def main(romfile=None, window=None, debug=False, profiling=False,
     
     try:
         # Start PyBoy and run loop
-        pyboy = PyBoy(window, romfile, bootROM)
+        pyboy = PyBoy(window, romfile, bootROM, debug=debug, profile=profile,
+                      loadState=loadState)
         while not pyboy.tick():
             pass
         pyboy.stop()
@@ -107,6 +108,3 @@ def main(romfile=None, window=None, debug=False, profiling=False,
 if __name__ == "__main__":
     arguments = parse_arguments()
     main(**arguments)
-
-    #import cProfile
-    #cProfile.run('main()', sort='cumulative')
