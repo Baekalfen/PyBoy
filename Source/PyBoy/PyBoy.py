@@ -92,6 +92,8 @@ class PyBoy():
                 # mb.cpu.breakAllow = True
                 self.debugger.running ^= True
                 # mb.cpu.breakOn ^= True
+            elif event == WindowEvent.Pass:
+                pass # Used in place of None in Cython, when key isn't mapped to anything
             else:  # Right now, everything else is a button press
                 self.mb.buttonEvent(event)
 

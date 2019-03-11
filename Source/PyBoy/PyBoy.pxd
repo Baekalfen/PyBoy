@@ -7,7 +7,7 @@
 #
 
 cdef enum WindowEvent:
-    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState
+    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState, Pass
 
 cimport cython
 cimport PyBoy.Cartridge
@@ -36,7 +36,7 @@ cdef class PyBoy:
     cdef unsigned int counter
     cdef bint limitEmulationSpeed
 
-    @cython.locals(done=cython.bint)
+    @cython.locals(done=cython.bint, event=WindowEvent)
     cpdef bint tick(self)
 
     cdef SdlGameWindow getWindow(self, str, unsigned int)

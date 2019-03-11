@@ -30,7 +30,7 @@ cdef class Motherboard:
     cdef PyBoy.Cartridge.GenericMBC.GenericMBC cartridge
     cdef bint bootROMEnabled
 
-    cdef void buttonEvent(self, object)
+    cdef void buttonEvent(self, int)
     cdef void stop(self, bint)
     cdef setSTATMode(self, int)
     cdef void checkLYC(self, int)

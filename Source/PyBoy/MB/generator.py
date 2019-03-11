@@ -43,10 +43,10 @@ cdef unsigned short flagC, flagH, flagN, flagZ
 cdef unsigned char[:] opcodeLengths
 cdef unsigned short getOpcodeLength(unsigned short)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
-cdef unsigned short executeOpcode(CPU.CPU, unsigned short)
+cdef char executeOpcode(CPU.CPU, unsigned short)
 
 
-cdef unsigned char NOOPCODE(CPU.CPU)
+cdef unsigned char NOOPCODE(CPU.CPU) except -1
 """
 
 opcodes = []
@@ -222,9 +222,9 @@ class Code():
 
 
         pxd = [
-            "cdef unsigned char %s_%0.2x(CPU.CPU) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name),
+            "cdef unsigned char %s_%0.2x(CPU.CPU) except -1 # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name),
             # TODO: Differentiate between 16-bit values (01,11,21,31 ops) and 8-bit values for 'v'
-            "cdef unsigned char %s_%0.2x(CPU.CPU, int v) # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name)
+            "cdef unsigned char %s_%0.2x(CPU.CPU, int v) except -1 # %0.2x %s" % (self.functionName, self.opcode, self.opcode, self.name)
         ][self.takesImmediate]
         pxd = "@cython.locals(v=cython.int, flag=cython.uchar)\n" + pxd
 

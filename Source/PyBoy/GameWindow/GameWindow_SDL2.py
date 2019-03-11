@@ -160,9 +160,9 @@ class SdlGameWindow():
             if event.type == sdl2.SDL_QUIT:
                 events.append(WindowEvent.Quit)
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(self.windowEventsDown.get(event.key.keysym.sym, None))
+                events.append(self.windowEventsDown.get(event.key.keysym.sym, WindowEvent.Pass))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(self.windowEventsUp.get(event.key.keysym.sym, None))
+                events.append(self.windowEventsUp.get(event.key.keysym.sym, WindowEvent.Pass))
 
         return events
 
