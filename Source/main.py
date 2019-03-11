@@ -57,8 +57,8 @@ def parse_arguments(argstring=None):
     parser.add_argument("--profile", nargs='?', const=True,
                         choices=[True, "opcodes"],
                         help="Enable profiling, optional presets")
-    # parser.add_argument("--profilingFile", type=str,
-    #                     help="Save file for profiling data")
+    parser.add_argument("--profilingFile", type=str,
+                        help="Save file for profiling data")
     parser.add_argument("--profilingSort",
                         help="Sort order for profiling data",
                         choices=["ncalls", "cumulative", "file", "line",

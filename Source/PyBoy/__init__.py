@@ -131,9 +131,18 @@ class PyBoy():
         if self.profiler:
             self.profiler.disable()
             stats = pstats.Stats(self.profiler)
+
+            if "profilingFile" in self.kwargs:
+                try:
+                    stats.dump_stats(self.kwargs["profilingFile"])
+                except IOError:
+                    logger.warn("Failed to save profiling data to" +
+                                self.kwargs["profilingFile"])
+
             stats.strip_dirs()
             if "profilingSort" in self.kwargs:
                 stats.sort_stats(self.kwargs["profilingSort"])
+
             if "profilingFilter" in self.kwargs:
                 restrictions = []
                 for r in self.kwargs["profilingFilter"]:
