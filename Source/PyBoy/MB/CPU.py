@@ -183,7 +183,6 @@ class CPU(object): # 'object' is important for property!!!
 
         # Better to make a long check, than run through 5 if statements
         if anyInterruptToHandle and self.interruptMasterEnable:
-
             return (
                 self.testAndTriggerInterrupt(VBlank, 0x0040) or
                 self.testAndTriggerInterrupt(LCDC, 0x0048) or

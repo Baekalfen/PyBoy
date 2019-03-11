@@ -24,7 +24,7 @@ from ..GameWindow import AbstractGameWindow
 from ..Logger import logger
 
 gameboyResolution = (160, 144)
-
+alphaMask = 0x7F000000
 
 # def pixels2dWithoutWarning(surface):
 #     with warnings.catch_warnings():
@@ -253,8 +253,8 @@ class SdlGameWindow():
 
             spriteCache = lcd.spriteCacheOBP1 if attributes & 0b10000 else lcd.spriteCacheOBP0
 
-            # if x < 160 and y < 144:
-            #     self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
+            if x < 160 and y < 144:
+                self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
 
 
 
@@ -276,12 +276,12 @@ class SdlGameWindow():
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     if not (not spritePriority or (spritePriority and toBuffer[x2+x, y2+y] == BGPkey)):
-                        pixel += LCD.alphaMask # Add a fake alphachannel to the sprite for BG pixels.
+                        pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
 
-                    if not (pixel & LCD.alphaMask):
-                        toBuffer[x2+x, y2+y] = pixel
+                    if not (pixel & alphaMask):
+                        toBuffer[y2+y, x2+x] = pixel
 
 
     def blankScreen(self):

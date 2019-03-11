@@ -23,6 +23,7 @@ import cython
 # cimport PyBoy.GameWindow.AbstractGameWindow
 # TODO: ctuple? https://cython.readthedocs.io/en/latest/src/userguide/language_basics.html
 cdef tuple gameboyResolution
+cdef unsigned int alphaMask
 # cdef object pixels2dWithoutWarning(object)
 
 cdef class SdlGameWindow:
