@@ -4,13 +4,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
-import time
+
 import ctypes
 import sdl2
 import sdl2.ext
 import numpy as np
-import warnings
 
 from .. import CoreDump
 from ..MathUint8 import getSignedInt8

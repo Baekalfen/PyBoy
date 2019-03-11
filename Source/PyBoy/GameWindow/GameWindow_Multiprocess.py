@@ -4,10 +4,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
-import time
+
 import numpy as np
-import warnings
 
 import multiprocessing
 from multiprocessing import Process, Pipe, Queue

@@ -4,7 +4,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
+
 import numpy as np
 
 from OpenGL.GL import *

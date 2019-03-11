@@ -4,8 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
-import time
 
 from .. import CoreDump
 from ..WindowEvent import WindowEvent
