@@ -13,11 +13,8 @@ import os
 import sys
 import platform
 from PyBoy.Logger import logger
-
-if platform.system() != "Windows":
-    from Debug import Debug
 from PyBoy import PyBoy
-from PyBoy.GameWindow import SdlGameWindow as Window
+# from PyBoy.GameWindow import SdlGameWindow as Window
 
 
 if __name__ == "__main__":
@@ -41,8 +38,8 @@ if __name__ == "__main__":
                 ]:
         try:
             logger.info(rom)
-            window = Window(scale=1)
-            pyboy = PyBoy(window, rom)
+            # window = Window(scale=1)
+            pyboy = PyBoy("SDL2", 1, rom, "ROMs/DMG_ROM.bin")
             while not pyboy.tick():
                 pass
             pyboy.stop(save=False)
