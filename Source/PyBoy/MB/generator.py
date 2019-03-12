@@ -313,6 +313,32 @@ class opcodeData():
         # print functionText
         return lookupTuple, functionText
 
+    # Special carry and half-carry for E8 and F8: http://forums.nesdev.com/viewtopic.php?p=42138
+    # Blargg: "Both of these set carry and half-carry based on the low byte of SP added to the UNSIGNED immediate byte. The Negative and Zero flags are always cleared. They also calculate SP + SIGNED immediate byte and put the result into SP or HL, respectively."
+    def handleFlags16bit_E8_F8(self, r0, r1, op, carry = False):
+        flagMask = sum(map(lambda (i,f): (f == "-") << (i+4), self.flags))
+
+        if flagMask == 0b11110000:# Only in case we do a dynamic operation, do we include the following calculations
+            return ["# No flag operations"]
+
+        lines = []
+
+        lines.append("flag = " + format(sum(map(lambda (i,f): (f == "1") << (i+4), self.flags)), "#010b")) # Sets the ones that always get set by operation
+
+        # flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
+        if self.flagH == "H":
+            c = " %s cpu.fC()" % op if carry else ""
+            lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << flagH" % (r0,op,r1,c))
+
+        # flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
+        if self.flagC == "C":
+            lines.append("flag += (((%s & 0xFF) %s (%s & 0xFF)%s) > 0xFF) << flagC" % (r0,op,r1,c))
+
+        lines.append("cpu.F &= " + format(flagMask, "#010b")) # Clears all flags affected by the operation
+        lines.append("cpu.F |= flag")
+        return lines
+
+
     def handleFlags16bit(self, r0, r1, op, carry = False):
         flagMask = sum(map(lambda (i,f): (f == "-") << (i+4), self.flags))
 
@@ -485,8 +511,9 @@ class opcodeData():
         elif not right.postOperation is None:
             code.addLine(right.postOperation)
         elif self.opcode == 0xF8:
+            # E8 and F8 http://forums.nesdev.com/viewtopic.php?p=42138
             code.addLine("t = cpu.HL")
-            code.addLines(self.handleFlags16bit("cpu.SP", "v", '+', False))
+            code.addLines(self.handleFlags16bit_E8_F8("cpu.SP", "v", '+', False))
             code.addLine("cpu.HL &= 0xFFFF")
 
         # if self.opcode == 0x08:
@@ -512,7 +539,11 @@ class opcodeData():
 
         lines.append(calc)
 
-        if self.is16bitOp:
+        if self.opcode == 0xE8:
+            # E8 and F8 http://forums.nesdev.com/viewtopic.php?p=42138
+            lines.extend(self.handleFlags16bit_E8_F8(left.code, "v", op, carry))
+            lines.append("t &= 0xFFFF")
+        elif self.is16bitOp:
             lines.extend(self.handleFlags16bit(left.code, right.code, op, carry))
             lines.append("t &= 0xFFFF")
         else:
@@ -523,23 +554,6 @@ class opcodeData():
         return lines
 
     def ADD(self):
-        # EXPERIMENTAL E8
-        # t = self.SP+MathUint8.getSignedInt8(v)
-        # flag = 0b00000000
-
-        # if MathUint8.getSignedInt8(v) >= 0:
-        #     flag += (((self.SP & 0xFFF) + (MathUint8.getSignedInt8(v) & 0xFFF)) > 0xFFF) << flagH
-        #     flag += (t > 0xFFFF) << flagC
-        # else:
-        #     flag += (((self.A & 0xFFF) + (MathUint8.getSignedInt8(v) & 0xFFF)) < 0) << flagH
-        #     flag += (t < 0) << flagC
-
-        # self.F &= 0b00000000
-        # self.F |= flag
-        # t &= 0xFFFF
-        # self.SP = t
-        # self.PC += 2
-        # return 0
         if self.name.find(',') > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)

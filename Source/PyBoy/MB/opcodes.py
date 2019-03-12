@@ -1974,8 +1974,8 @@ def RST_e7(cpu): # e7 RST 20H
 def ADD_e8(cpu, v): # e8 ADD SP,r8
     t = cpu.SP+MathUint8.getSignedInt8(v)
     flag = 0b00000000
-    flag += (((cpu.SP & 0xFFF) + (MathUint8.getSignedInt8(v) & 0xFFF)) > 0xFFF) << flagH
-    flag += (t > 0xFFFF) << flagC
+    flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
+    flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFFFF
@@ -2063,8 +2063,8 @@ def LD_f8(cpu, v): # f8 LD HL,SP+r8
     cpu.HL = cpu.SP + MathUint8.getSignedInt8(v)
     t = cpu.HL
     flag = 0b00000000
-    flag += (((cpu.SP & 0xFFF) + (v & 0xFFF)) > 0xFFF) << flagH
-    flag += (t > 0xFFFF) << flagC
+    flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
+    flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
     cpu.F &= 0b00000000
     cpu.F |= flag
     cpu.HL &= 0xFFFF
