@@ -21,14 +21,15 @@ warning = """\
 """
 
 # from registers import A, B, C, D, E, H, L, SP, PC
-# from flags import flagZ, flagN, flagH, flagC
 imports = """
 from .flags import flagZ, flagN, flagH, flagC
-from ..MathUint8 import getSignedInt8
-
 """
 
+def inlineGetSignedInt8(arg):
+    return "((({} + 128) & 255) - 128)".format(arg)
+
 opcodes = []
+
 
 class MyHTMLParser(HTMLParser):
     def __init__(self):
@@ -119,7 +120,7 @@ class Operand():
             self.signed = True
 
             # post operation set in LD handler!
-            return "self.SP + getSignedInt8(v)"
+            return "self.SP + " + inlineGetSignedInt8("v")
 
         elif operand[0] == '(' and operand[-1] == ')':
             self.pointer = True
@@ -147,7 +148,7 @@ class Operand():
             self.immediate = True
 
             if operand == 'r8':
-                code = "getSignedInt8(%s)" % code
+                code = inlineGetSignedInt8(code)
                 self.signed = True
 
             elif operand == 'a8':
@@ -764,7 +765,7 @@ class opcodeData():
         code = Code(fname(), self.opcode, self.name, right.immediate, self.length, branchOp = True)
         if left is None:
             code.addLines([
-                "self.PC += %d + getSignedInt8(v)" % self.length,
+                "self.PC += %d + " % self.length + inlineGetSignedInt8("v"),
                 "self.PC &= 0xFFFF",
                 "return 0"
             ])
@@ -772,7 +773,7 @@ class opcodeData():
             code.addLines([
                 "self.PC += %d" % self.length,
                 "if %s:" % left.code,
-                "\tself.PC += getSignedInt8(v)",
+                "\tself.PC += " + inlineGetSignedInt8("v"),
                 "\tself.PC &= 0xFFFF",
                 "\treturn 0",
                 "else:",
@@ -1103,4 +1104,3 @@ def load():
     update()
 
 load()
-
