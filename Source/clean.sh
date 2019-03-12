@@ -1,3 +1,6 @@
 #!/bin/bash
 find . -name "*.pyo" -delete
 find . -name "*.pyc" -delete
+find . -name "*.so" -delete
+find . -name "*.h" -delete
+find . -name "*.c" -delete
