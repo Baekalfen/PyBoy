@@ -1971,8 +1971,8 @@ def RST_e7(self): # e7 RST 20H
 def ADD_e8(self, v): # e8 ADD SP,r8
     t = self.SP+getSignedInt8(v)
     flag = 0b00000000
-    flag += (((self.SP & 0xFFF) + (getSignedInt8(v) & 0xFFF)) > 0xFFF) << flagH
-    flag += (t > 0xFFFF) << flagC
+    flag += (((self.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
+    flag += (((self.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
     self.F &= 0b00000000
     self.F |= flag
     t &= 0xFFFF
@@ -2060,8 +2060,8 @@ def LD_f8(self, v): # f8 LD HL,SP+r8
     self.HL = self.SP + getSignedInt8(v)
     t = self.HL
     flag = 0b00000000
-    flag += (((self.SP & 0xFFF) + (v & 0xFFF)) > 0xFFF) << flagH
-    flag += (t > 0xFFFF) << flagC
+    flag += (((self.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
+    flag += (((self.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
     self.F &= 0b00000000
     self.F |= flag
     self.HL &= 0xFFFF
