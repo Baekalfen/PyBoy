@@ -6,7 +6,7 @@
 #
 
 cdef class Timer:
-    cdef public unsigned char DIV, TIMA, TMA, TAC
+    cdef public unsigned int DIV, TIMA, TMA, TAC
     cdef public unsigned int DIVcounter, TIMAcounter
     cdef public unsigned int[4] dividers
 

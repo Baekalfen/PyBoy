@@ -13,6 +13,8 @@ import Timer
 import CPU
 from .. import RAM, BootROM, LCD, Interaction, CoreDump
 from .. import Cartridge
+VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
+
 # # from CPU.flags import VBlank, TIMER, HightoLow, LCDC
 # VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
@@ -200,6 +202,7 @@ class Motherboard():
                 return self.timer.TMA
             elif i == 0xFF07:
                 return self.timer.TAC
+
             elif i == 0xFF40:
                 return self.lcd.LCDC.value
             elif i == 0xFF47:
@@ -257,7 +260,7 @@ class Motherboard():
             elif i == 0xFF06:
                 self.timer.TMA = value
             elif i == 0xFF07:
-                self.timer.TAC = value & 0b11
+                self.timer.TAC = value & 0b111
             elif i == 0xFF40:
                 self.lcd.LCDC.set(value)
             elif i == 0xFF46:

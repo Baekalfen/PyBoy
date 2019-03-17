@@ -5,7 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
+cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
 
 # LCDC bit descriptions
 # from PyBoy.MB.MB cimport Motherboard

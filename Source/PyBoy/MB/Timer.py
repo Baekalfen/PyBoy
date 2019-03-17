@@ -39,7 +39,7 @@ class Timer():
 
 
         self.TIMAcounter += cycles
-        divider = self.dividers[self.TAC] # NOTE: self.TAC should be AND'ed with 0b11, but this is done when writing
+        divider = self.dividers[self.TAC & 0b11]
 
         if self.TIMAcounter >= divider:
             self.TIMAcounter -= divider # Keeps possible remainder
@@ -54,9 +54,9 @@ class Timer():
 
     def cyclesToInterrupt(self):
         if self.TAC & 0b100 == 0: # Check if timer is not enabled
-            return 2**16 # Large enough, that 'calculateCycles' will choose 'x'
+            return 1<<16 # Large enough, that 'calculateCycles' will choose 'x'
 
-        divider = self.dividers[self.TAC] # NOTE: self.TAC should be AND'ed with 0b11, but this is done when writing
+        divider = self.dividers[self.TAC & 0b11]
 
         cyclesLeft = ((0x100 - self.TIMA) * divider) - self.TIMAcounter
 

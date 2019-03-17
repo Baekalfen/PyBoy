@@ -14,7 +14,6 @@ cimport PyBoy.LCD
 cimport PyBoy.Interaction
 from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
 
-cdef short IF_address, IE_address, NoInterrupt, InterruptVector
 cdef unsigned short STAT, LY, LYC
 cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
