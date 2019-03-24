@@ -18,6 +18,8 @@ from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
 cdef unsigned short STAT, LY, LYC
 cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
+cdef (int, int) _dummy_declaration
+
 cdef class Motherboard:
     cdef object debugger
     cdef PyBoy.Interaction.Interaction interaction

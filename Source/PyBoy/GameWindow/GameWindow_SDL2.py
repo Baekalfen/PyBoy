@@ -247,21 +247,19 @@ class SdlGameWindow():
             x = lcd.OAM[n+1] - 8
             tileIndex = lcd.OAM[n+2]
             attributes = lcd.OAM[n+3]
-            xFlip = bool(attributes & 0b100000)
-            yFlip = bool(attributes & 0b1000000)
-            spritePriority = bool(attributes & 0b10000000)
+            xFlip = (attributes & 0b100000)
+            yFlip = (attributes & 0b1000000)
+            spritePriority = (attributes & 0b10000000)
 
             fromXY = (tileIndex * 8, 0)
             toXY = (x, y)
 
-            spriteCache = lcd.spriteCacheOBP1 if attributes & 0b10000 else lcd.spriteCacheOBP0
-
             if x < 160 and y < 144:
-                self.copySprite(fromXY, toXY, spriteCache, self._screenBuffer, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
+                self.copySprite(lcd, attributes & 0b10000, fromXY, toXY, spriteSize, spritePriority, BGPkey, xFlip, yFlip)
 
 
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize, spritePriority, BGPkey, xFlip = 0, yFlip = 0):
+    def copySprite(self, lcd, obp_select, fromXY, toXY, spriteSize, spritePriority, BGPkey, xFlip, yFlip):
         x1,y1 = fromXY
         x2,y2 = toXY
 
@@ -275,16 +273,19 @@ class SdlGameWindow():
                 if spriteSize == 16: # If y-flipped on 8x16 sprites, we will have to load the sprites in reverse order
                     xx += (y&0b1000)^(yFlip<<3) # Shifting tile, when iteration past 8th line
 
-                pixel = fromBuffer[xx, yy]
+                if obp_select:
+                    pixel = lcd.spriteCacheOBP1[xx][yy]
+                else:
+                    pixel = lcd.spriteCacheOBP0[xx][yy]
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
-                    if not (not spritePriority or (spritePriority and toBuffer[y2+y, x2+x] == BGPkey)):
+                    if not (not spritePriority or (spritePriority and self._screenBuffer[y2+y, x2+x] == BGPkey)):
                         pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
 
                     if not (pixel & alphaMask):
-                        toBuffer[y2+y, x2+x] = pixel
+                        self._screenBuffer[y2+y, x2+x] = pixel
 
 
     def blankScreen(self):

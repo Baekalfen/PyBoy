@@ -15,6 +15,7 @@ from PyBoy.GameWindow.GameWindow_dummy cimport DummyGameWindow
 
 # cimport PyBoy.Global
 
+cdef (int, int) _dummy_declaration
 
 cdef float SPF
 

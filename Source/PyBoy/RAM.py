@@ -8,12 +8,11 @@
 import Global
 # if not Global.isPyPy:
 import cython
-import numpy as np
+import array
 
 # MEMORY SIZES
-VIDEO_RAM = 8 * 1024  # 8KB
+# if not cython.compiled:
 INTERNAL_RAM_0 = 8 * 1024  # 8KB
-OBJECT_ATTRIBUTE_MEMORY = 0xA0
 NON_IO_INTERNAL_RAM0 = 0x60
 IO_PORTS = 0x4C
 NON_IO_INTERNAL_RAM1 = 0x34
@@ -21,28 +20,18 @@ INTERNAL_RAM_1 = 0x7F
 INTERRUPT_ENABLE_REGISTER = 1
 ###########
 
-def allocateRAM(size, rand=False):
-    if rand:
-        # return [random.randrange(0x00,0xFF) for x in range(size)]
-        raise Exception("Random RAM not implemented")
-
-    if cython.compiled:
-        return np.zeros(shape=(size,), dtype=np.uint8)
-    else:
-        return [0 for x in range(size)]
-
 class RAM():
 
     def __init__(self, random=False):
         if random: #NOTE: In real life, the RAM is scrambled with random data on boot.
             raise Exception("Random RAM not implemented")
 
-        self.internalRAM0 = allocateRAM(INTERNAL_RAM_0)
-        self.nonIOInternalRAM0 = allocateRAM(NON_IO_INTERNAL_RAM0)
-        self.IOPorts = allocateRAM(IO_PORTS)
-        self.internalRAM1 = allocateRAM(INTERNAL_RAM_1)
-        self.nonIOInternalRAM1 = allocateRAM(NON_IO_INTERNAL_RAM1)
-        self.interruptRegister = allocateRAM(INTERRUPT_ENABLE_REGISTER)
+        self.internalRAM0 = array.array('B', [0]*(INTERNAL_RAM_0))
+        self.nonIOInternalRAM0 = array.array('B', [0]*(NON_IO_INTERNAL_RAM0))
+        self.IOPorts = array.array('B', [0]*(IO_PORTS))
+        self.internalRAM1 = array.array('B', [0]*(INTERNAL_RAM_1))
+        self.nonIOInternalRAM1 = array.array('B', [0]*(NON_IO_INTERNAL_RAM1))
+        self.interruptRegister = array.array('B', [0]*(INTERRUPT_ENABLE_REGISTER))
 
 
     def listToHex(self,a,truncate = True, offset=0):

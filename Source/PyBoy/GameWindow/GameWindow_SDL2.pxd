@@ -32,7 +32,7 @@ cdef class SdlGameWindow:
     cdef dict windowEventsDown
     cdef dict windowEventsUp
     cdef bint debug
-    cdef tuple _scaledResolution
+    cdef (int, int) _scaledResolution
     cdef np.uint32_t[:, :] _screenBuffer
     cdef int[144][4] scanlineParameters
 
@@ -45,10 +45,43 @@ cdef class SdlGameWindow:
     cdef void setTitle(self, char*)
     cdef void VSync(self)
     cdef void stop(self)
-    cdef void scanline(self, int, tuple, tuple)
-    @cython.locals(y=cython.ushort, x=cython.ushort, windowViewAddress=cython.ushort, backgroundViewAddress=cython.ushort,backgroundTileIndex=cython.int, windowTileIndex=cython.int, xx=cython.int, yy=cython.int, wx=cython.int, wy=cython.int, offset=cython.int, n=cython.uchar)
+    cdef void scanline(self, int, (int, int), (int, int))
+    @cython.locals(
+            y=ushort,
+            x=ushort,
+            windowViewAddress=ushort,
+            backgroundViewAddress=ushort,
+            backgroundTileIndex=int,
+            windowTileIndex=int,
+            xx=int,
+            yy=int,
+            wx=int,
+            wy=int,
+            offset=int,
+            n=uchar,
+            fromXY=(int, int),
+            toXY=(int, int),
+            tileIndex=uchar,
+            attributes=uchar,
+            xFlip=bint,
+            yFlip=bint,
+            spritePriority=bint,
+            # spriteCache=np.uint32_t[384 * 8][8],
+            spriteSize=uchar)
     cdef void renderScreen(self, PyBoy.LCD.LCD)
-    cdef void copySprite(self, tuple, tuple, object, object, int, bint, unsigned int, xFlip=*, yFlip=*)
+
+    @cython.locals(
+            x1=ushort,
+            y1=ushort,
+            x2=ushort,
+            y2=ushort,
+            y=ushort,
+            x=ushort,
+            yy=ushort,
+            xx=ushort,
+            pixel=int,
+            )
+    cdef void copySprite(self, PyBoy.LCD.LCD, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
     cdef void blankScreen(self)
     cdef object getScreenBuffer(self)
 

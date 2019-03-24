@@ -4,6 +4,8 @@ cimport PyBoy.MathUint8
 cimport CPU
 cimport cython
 
+cdef (int, int) _dummy_declaration
+
 cdef unsigned short flagC, flagH, flagN, flagZ
 cdef unsigned char[:] opcodeLengths
 cdef unsigned short getOpcodeLength(unsigned short)

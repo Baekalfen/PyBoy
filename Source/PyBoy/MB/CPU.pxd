@@ -45,6 +45,7 @@ cdef void setBC(CPU, int x)
 cdef void setDE(CPU, int x)
 
 
+cdef (int, int) _dummy_declaration
 
 cdef class CPU:
 

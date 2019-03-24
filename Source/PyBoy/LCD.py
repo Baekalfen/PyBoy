@@ -8,8 +8,11 @@
 import CoreDump
 import RAM
 # from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
+import array
 import numpy as np
 
+VIDEO_RAM = 8 * 1024  # 8KB
+OBJECT_ATTRIBUTE_MEMORY = 0xA0
 
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 
@@ -42,8 +45,8 @@ class LCD():
 
         self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
 
-        self.VRAM = np.zeros(shape=(RAM.VIDEO_RAM,), dtype=np.uint8)
-        self.OAM = np.zeros(shape=(RAM.OBJECT_ATTRIBUTE_MEMORY,), dtype=np.uint8)
+        self.VRAM = array.array('B', [0]*(VIDEO_RAM))
+        self.OAM = array.array('B', [0]*(OBJECT_ATTRIBUTE_MEMORY))
 
         # TODO: Find a more optimal way to do this
         self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')
@@ -63,10 +66,10 @@ class LCD():
         # self.WX = 0x00
 
     def getWindowPos(self):
-        return self.mb[WX]-7, self.mb[WY]
+        return (self.mb[WX]-7, self.mb[WY])
 
     def getViewPort(self):
-        return self.mb[SCX], self.mb[SCY]
+        return (self.mb[SCX], self.mb[SCY])
 
     def refreshTileDataAdaptive(self):
         if self.clearCache:
@@ -92,8 +95,8 @@ class LCD():
                     alpha = 0x00000000
                     if colorCode == 0:
                         alpha = alphaMask # Add alpha channel
-                    self.spriteCacheOBP0[x, y] = self.OBP0.getColor(colorCode) + alpha
-                    self.spriteCacheOBP1[x, y] = self.OBP1.getColor(colorCode) + alpha
+                    self.spriteCacheOBP0[x][y] = self.OBP0.getColor(colorCode) + alpha
+                    self.spriteCacheOBP1[x][y] = self.OBP1.getColor(colorCode) + alpha
 
         self.tilesChanged.clear()
 
