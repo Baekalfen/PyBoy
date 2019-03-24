@@ -286,15 +286,13 @@ class SdlGameWindow():
 
 
     def blankScreen(self):
-        pass
         # If the screen is off, fill it with a color.
-        # if __debug__:
-        #     # Currently, it's dark purple
-        self._screenBuffer[...] = 0x00403245
-        # else:
-        #     # Pan docs says it should be white, but it does fit with Pokemon?
-        #     # self._screenBuffer.fill(0x00FFFFFF)
-        #     self._screenBuffer.fill(0x00000000)
+        if __debug__:
+            # Dark purple to stand out
+            self._screenBuffer[...] = 0x00403245
+        else:
+            # Pan docs says it should be white
+            self._screenBuffer[...] = 0x00FFFFFF
 
 
     def getScreenBuffer(self):

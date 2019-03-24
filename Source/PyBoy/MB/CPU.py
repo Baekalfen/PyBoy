@@ -5,13 +5,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# from opcodes import opcodes
 import opcodes
 import CoreDump
 from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-# import flags
-# from flags import flagZ, flagN, flagH, flagC
-# from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from ..Logger import logger
 import numpy as np
 
@@ -21,107 +17,24 @@ VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 IF_address = 0xFF0F
 IE_address = 0xFFFF
 
-# def setA(self, x):
-#     assert x <= 0xFF, "%0.2x" % x
-#     self._A = x
-
-# def setF(self, x):
-#     assert x <= 0xFF, "%0.2x" % x
-#     self._F = x
-
-# def setB(self, x):
-#     assert x <= 0xFF, "%0.2x" % x
-#     self._B = x
-
-# def setC(self, x):
-#     assert x <= 0xFF, "%0.2x" % x
-#     self._C = x
-
-# def setD(self, x):
-#     assert x <= 0xFF, "%0.2x" % x
-#     self._D = x
-
-# def setE(self, x):
-#     assert x <= 0xFF, "%0.2x" % x
-#     self._E = x
-
-def setH(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self.HL &= 0x00FF
-    self.HL |= x << 8
-
-def setL(self, x):
-    assert x <= 0xFF, "%0.2x" % x
-    self.HL &= 0xFF00
-    self.HL |= x
-
-# def setHL(self, x):
-#     assert x <= 0xFFFF, "%0.4x" % x
-#     self._HL = x
-
-# def setSP(self, x):
-#     assert x <= 0xFFFF, "%0.4x" % x
-#     self._SP = x
-
-# def setPC(self, x):
-#     assert x <= 0xFFFF, "%0.4x" % x
-#     self._PC = x
-
-def setAF(self, x):
-    assert x <= 0xFFFF, "%0.4x" % x
-    self.A = x >> 8
-    self.F = x & 0x00F0 # Lower nibble of F is always zero!
-
-def setBC(self, x):
-    assert x <= 0xFFFF, "%0.4x" % x
-    self.B = x >> 8
-    self.C = x & 0x00FF
-
-def setDE(self, x):
-    assert x <= 0xFFFF, "%0.4x" % x
-    self.D = x >> 8
-    self.E = x & 0x00FF
-
-# def getA(self):
-#     return self._A
-# def getF(self):
-#     return self._F
-# def getB(self):
-#     return self._B
-# def getC(self):
-#     return self._C
-# def getD(self):
-#     return self._D
-# def getE(self):
-#     return self._E
-def getH(self):
-    return self.HL >> 8
-def getL(self):
-    return self.HL & 0xFF
-# def getHL(self):
-#     return self._HL
-# def getSP(self):
-#     return self._SP
-# def getPC(self):
-#     return self._PC
-def getAF(self):
-    return (self.A << 8) + self.F
-def getBC(self):
-    return (self.B << 8) + self.C
-def getDE(self):
-    return (self.D << 8) + self.E
 
 class CPU(object): # 'object' is important for property!!!
-    # from registers import A, F, B, C, D, E, HL, SP, PC
-    # from registers import setH, setL, setAF, setBC, setDE
-    # from Interrupts import checkForInterrupts, testAndTriggerInterrupt
-    # from flags import testFlag, setFlag, clearFlag
-    # from flags import testInterruptFlag, setInterruptFlag, clearInterruptFlag, testInterruptFlagEnabled, testRAMRegisterFlag
+    def setAF(self, x):
+        assert x <= 0xFFFF, "%0.4x" % x
+        self.A = x >> 8
+        self.F = x & 0x00F0 # Lower nibble of F is always zero!
 
+    def setBC(self, x):
+        assert x <= 0xFFFF, "%0.4x" % x
+        self.B = x >> 8
+        self.C = x & 0x00FF
 
+    def setDE(self, x):
+        assert x <= 0xFFFF, "%0.4x" % x
+        self.D = x >> 8
+        self.E = x & 0x00FF
 
     ### CPU Flags
-
     def testFlag(self, flag):
         return (self.F & (1 << flag)) != 0
 
@@ -135,12 +48,8 @@ class CPU(object): # 'object' is important for property!!!
 
 
     ### Interrupt flags
-
-
     def setInterruptFlag(self, flag):
         self.mb[0xFF0F] |= (1 << flag)
-
-
 
     def testRAMRegisterFlag(self, address, flag):
         v = self.mb[address]
@@ -218,21 +127,6 @@ class CPU(object): # 'object' is important for property!!!
 
         return False
 
-    # A = property(getA, setA)
-    # F = property(getF, setF)
-    # B = property(getB, setB)
-    # C = property(getC, setC)
-    # D = property(getD, setD)
-    # E = property(getE, setE)
-    # HL = property(getHL, setHL)
-    # SP = property(getSP, setSP)
-    # PC = property(getPC, setPC)
-
-    H = property(getH, setH)
-    L = property(getL, setL)
-    AF = property(getAF, setAF) # Only used in StateManager
-    BC = property(getBC, setBC)
-    DE = property(getDE, setDE)
 
     def fC(self):
         return (self.F & (1 << flagC)) != 0
