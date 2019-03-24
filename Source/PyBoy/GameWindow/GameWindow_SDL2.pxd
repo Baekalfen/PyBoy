@@ -9,13 +9,13 @@
 # cimport PyBoy.WindowEvent
 
 
-cimport PyBoy.MathUint8
 cimport SDL2 as sdl2
 cimport PyBoy.LCD
 
 import numpy as np
 cimport numpy as np
 import cython
+cimport cython
 
 # cimport PyBoy.GameWindow.AbstractGameWindow
 # TODO: ctuple? https://cython.readthedocs.io/en/latest/src/userguide/language_basics.html
@@ -36,9 +36,7 @@ cdef class SdlGameWindow:
     cdef np.uint32_t[:, :] _screenBuffer
     cdef int[144][4] scanlineParameters
 
-    # cdef int ticks
     cdef sdl2.SDL_Window *_window
-    # cdef sdl2.SDL_Renderer *_renderer
     cdef sdl2.SDL_Renderer *_sdlrenderer
     cdef sdl2.SDL_Texture *_sdlTextureBuffer
 
@@ -67,7 +65,8 @@ cdef class SdlGameWindow:
             yFlip=bint,
             spritePriority=bint,
             # spriteCache=np.uint32_t[384 * 8][8],
-            spriteSize=uchar)
+            spriteSize=uchar,
+            colorPalette=(int, int, int, int))
     cdef void renderScreen(self, PyBoy.LCD.LCD)
 
     @cython.locals(

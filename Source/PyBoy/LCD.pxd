@@ -29,7 +29,7 @@ cdef class LCD:
     cdef object mb
     cdef public bint clearCache
     cdef public set tilesChanged
-    cdef np.uint32_t[:, :] tileCache
+    cdef np.uint32_t[384 * 8][8] tileCache
     cdef public DTYPE_t[8 * 1024] VRAM
     cdef public DTYPE_t[0xA0] OAM
     # cdef np.uint32_t[:, :] spriteCacheOBP0

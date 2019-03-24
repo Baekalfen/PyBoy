@@ -90,7 +90,7 @@ class LCD():
 
                     colorCode = getColorCode(byte1, byte2, pixelOnLine)
 
-                    self.tileCache[x, y] = self.BGP.getColor(colorCode)
+                    self.tileCache[x][y] = self.BGP.getColor(colorCode)
                     # TODO: Find a more optimal way to do this
                     alpha = 0x00000000
                     if colorCode == 0:

@@ -28,14 +28,11 @@ imports = """
 import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
-from .. import MathUint8
-# from MathUint8 import getSignedInt8
 
 """
 
 cimports = """
 cimport numpy
-cimport PyBoy.MathUint8
 cimport CPU
 cimport cython
 
@@ -50,6 +47,10 @@ cdef char executeOpcode(CPU.CPU, unsigned short)
 
 cdef unsigned char NOOPCODE(CPU.CPU) except -1
 """
+
+def inlineGetSignedInt8(arg):
+    return "((({} + 128) & 255) - 128)".format(arg)
+
 
 opcodes = []
 
@@ -142,7 +143,7 @@ class Operand():
             self.signed = True
 
             # post operation set in LD handler!
-            return "cpu.SP + MathUint8.getSignedInt8(v)"
+            return "cpu.SP + " + inlineGetSignedInt8("v")
 
         elif operand[0] == '(' and operand[-1] == ')':
             self.pointer = True
@@ -170,7 +171,7 @@ class Operand():
             self.immediate = True
 
             if operand == 'r8':
-                code = "MathUint8.getSignedInt8(%s)" % code
+                code = inlineGetSignedInt8(code)
                 self.signed = True
 
             elif operand == 'a8':
@@ -799,7 +800,7 @@ class opcodeData():
         code = Code(fname(), self.opcode, self.name, right.immediate, self.length, self.cycles, branchOp = True)
         if left is None:
             code.addLines([
-                "cpu.PC += %d + MathUint8.getSignedInt8(v)" % self.length,
+                "cpu.PC += %d + " % self.length + inlineGetSignedInt8("v"),
                 "cpu.PC &= 0xFFFF",
                 "return " + self.cycles[0]
             ])
@@ -807,7 +808,7 @@ class opcodeData():
             code.addLines([
                 "cpu.PC += %d" % self.length,
                 "if %s:" % left.code,
-                "\tcpu.PC += MathUint8.getSignedInt8(v)",
+                "\tcpu.PC += " + inlineGetSignedInt8("v"),
                 "\tcpu.PC &= 0xFFFF",
                 "\treturn " + self.cycles[0],
                 "else:",

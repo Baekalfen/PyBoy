@@ -1,6 +1,5 @@
 
 cimport numpy
-cimport PyBoy.MathUint8
 cimport CPU
 cimport cython
 

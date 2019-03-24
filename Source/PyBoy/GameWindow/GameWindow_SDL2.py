@@ -15,14 +15,9 @@ import ctypes
 import warnings
 
 from .. import CoreDump
-from .. import MathUint8
-# from ..MathUint8 import getSignedInt8
-# if not cython.compiled:
 from .. import WindowEvent
 from .. import LCD
-# from ..LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
-# from ..GameWindow import AbstractGameWindow
 
 from ..Logger import logger
 
@@ -217,9 +212,10 @@ class SdlGameWindow():
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tileSelect == 0: # If using signed tile indices
-                        backgroundTileIndex = MathUint8.getSignedInt8(backgroundTileIndex)+256
+                        # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                        backgroundTileIndex = ((backgroundTileIndex + 128) & 255) + 128
 
-                    self._screenBuffer[y,x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
+                    self._screenBuffer[y,x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8][(y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
                     colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
@@ -231,9 +227,10 @@ class SdlGameWindow():
                         windowTileIndex = lcd.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
                         if lcd.LCDC.tileSelect == 0: # If using signed tile indices
-                            windowTileIndex = MathUint8.getSignedInt8(windowTileIndex)+256
+                            # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                            windowTileIndex = ((windowTileIndex + 128) & 255) + 128
 
-                        self._screenBuffer[y,x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
+                        self._screenBuffer[y,x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8][(y-wy)%8]
 
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
