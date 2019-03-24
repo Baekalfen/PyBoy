@@ -38,7 +38,6 @@ cdef class CPU:
     cdef int HL, SP, PC # Only short (16-bit) needed, but I'm not sure all intermittent results do not overflow
     cdef Motherboard mb
 
-    cdef void setAF(CPU, int x)
     cdef void setBC(CPU, int x)
     cdef void setDE(CPU, int x)
 

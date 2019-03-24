@@ -19,11 +19,6 @@ IE_address = 0xFFFF
 
 
 class CPU(object): # 'object' is important for property!!!
-    def setAF(self, x):
-        assert x <= 0xFFFF, "%0.4x" % x
-        self.A = x >> 8
-        self.F = x & 0x00F0 # Lower nibble of F is always zero!
-
     def setBC(self, x):
         assert x <= 0xFFFF, "%0.4x" % x
         self.B = x >> 8

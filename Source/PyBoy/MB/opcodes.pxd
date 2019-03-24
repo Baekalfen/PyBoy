@@ -1,4 +1,5 @@
 
+cimport numpy
 cimport CPU
 cimport cython
 

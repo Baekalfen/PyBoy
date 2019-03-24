@@ -2016,7 +2016,7 @@ def LD_f0(cpu, v): # f0 LDH A,(a8)
 
 def POP_f1(cpu): # f1 POP AF
     cpu.A = cpu.mb[cpu.SP+1] # High
-    cpu.F = cpu.mb[cpu.SP] # Low
+    cpu.F = cpu.mb[cpu.SP] & 0xF0 # Low
     cpu.SP += 2
     cpu.PC += 1
     return 12
@@ -2033,7 +2033,7 @@ def DI_f3(cpu): # f3 DI
 
 def PUSH_f5(cpu): # f5 PUSH AF
     cpu.mb[cpu.SP-1] = cpu.A # High
-    cpu.mb[cpu.SP-2] = cpu.F # Low
+    cpu.mb[cpu.SP-2] = cpu.F & 0xF0 # Low
     cpu.SP -= 2
     cpu.PC += 1
     return 16

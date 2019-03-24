@@ -745,11 +745,18 @@ class opcodeData():
                 "cpu.SP -= 2"
             ])
         else:
-            code.addLines([
-                "cpu.mb[cpu.SP-1] = cpu.%s # High" % left.operand[-2], # A bit of a hack, but you can only push double registers,
-                "cpu.mb[cpu.SP-2] = cpu.%s # Low" % left.operand[-1], # by taking fx 'A' and 'F' directly, we save calculations
-                "cpu.SP -= 2"
-            ])
+            code.addLine(
+                "cpu.mb[cpu.SP-1] = cpu.%s # High" % left.operand[-2] # A bit of a hack, but you can only push double registers,
+                )
+            if left.operand == "AF":
+                code.addLine(
+                    "cpu.mb[cpu.SP-2] = cpu.%s & 0xF0 # Low" % left.operand[-1] # by taking fx 'A' and 'F' directly, we save calculations
+                )
+            else:
+                code.addLine(
+                    "cpu.mb[cpu.SP-2] = cpu.%s # Low" % left.operand[-1] # by taking fx 'A' and 'F' directly, we save calculations
+                )
+            code.addLine("cpu.SP -= 2")
 
         return fname(), code.getCode()
 
@@ -769,11 +776,18 @@ class opcodeData():
                 Fmask = " & 0xF0"
             else:
                 Fmask = ""
-            code.addLines([
-                "cpu.%s = cpu.mb[cpu.SP+1] # High" % left.operand[-2], # See comment from PUSH
-                "cpu.%s = cpu.mb[cpu.SP]%s # Low" % (left.operand[-1], Fmask),
-                "cpu.SP += 2"
-            ])
+            code.addLine(
+                "cpu.%s = cpu.mb[cpu.SP+1] # High" % left.operand[-2] # See comment from PUSH
+            )
+            if left.operand == "AF":
+                code.addLine(
+                    "cpu.%s = cpu.mb[cpu.SP]%s & 0xF0 # Low" % (left.operand[-1], Fmask)
+                )
+            else:
+                code.addLine(
+                    "cpu.%s = cpu.mb[cpu.SP]%s # Low" % (left.operand[-1], Fmask)
+                )
+            code.addLine("cpu.SP += 2")
 
         return fname(), code.getCode()
 
