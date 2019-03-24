@@ -13,7 +13,7 @@ import numpy as np
 
 import Global
 from MB.MB import Motherboard
-# import WindowEvent
+import WindowEvent
 from Logger import logger, addConsoleHandler
 import BotSupport
 import Logger

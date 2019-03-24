@@ -13,7 +13,6 @@ from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 # from flags import flagZ, flagN, flagH, flagC
 # from flags import VBlank, LCDC, TIMER, Serial, HightoLow
 from ..Logger import logger
-# from Interrupts import InterruptVector, NoInterrupt
 import numpy as np
 
 
@@ -21,8 +20,6 @@ flagC, flagH, flagN, flagZ = range(4, 8)
 VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 IF_address = 0xFF0F
 IE_address = 0xFFFF
-NoInterrupt = 0
-InterruptVector = 1
 
 # def setA(self, x):
 #     assert x <= 0xFF, "%0.2x" % x
@@ -140,25 +137,14 @@ class CPU(object): # 'object' is important for property!!!
     ### Interrupt flags
 
 
-    def testInterruptFlag(self, flag):
-        return (self.mb[0xFF0F] & (1 << flag))
-
-
     def setInterruptFlag(self, flag):
         self.mb[0xFF0F] |= (1 << flag)
 
 
-    def clearInterruptFlag(self, flag):
-        self.mb[0xFF0F] &= (0xFF - (1 << flag))
-
-
-    def testInterruptFlagEnabled(self, flag):
-        return (self.mb[0xFFFF] & (1 << flag))
-
-
 
     def testRAMRegisterFlag(self, address, flag):
-        return (self.mb[address] & (1 << flag))
+        v = self.mb[address]
+        return (v & (1 << flag))
 
     def setRAMRegisterFlag(self, address, flag, value=True):
         self.clearRAMRegisterFlag(address, flag)
@@ -170,33 +156,18 @@ class CPU(object): # 'object' is important for property!!!
         self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
 
     def testRAMRegisterFlagEnabled(self, address, flag):
-        return (self.mb[address] & (1 << flag))
+        v = self.mb[address]
+        return (v & (1 << flag))
 
-    def checkForInterrupts(self):
-        #GPCPUman.pdf p. 40 about priorities
-        # If an interrupt occours, the PC is pushed to the stack.
-        # It is up to the interrupt routine to return it.
+    def testInterrupt(self, if_v, ie_v, flag):
+        intr_flag_enabled = (ie_v & (1 << flag))
+        intr_flag = (if_v & (1 << flag))
 
-        # 0xFF0F (IF_address) - Bit 0-4 Requested interrupts
-        # 0xFFFF (IE_address) - Bit 0-4 Enabling interrupt vectors
-        anyInterruptToHandle = ((self.mb[IF_address] & 0b11111) & (self.mb[IE_address] & 0b11111)) != 0
+        if intr_flag_enabled and intr_flag:
 
-        # Better to make a long check, than run through 5 if statements
-        if anyInterruptToHandle and self.interruptMasterEnable:
-            return (
-                self.testAndTriggerInterrupt(VBlank, 0x0040) or
-                self.testAndTriggerInterrupt(LCDC, 0x0048) or
-                self.testAndTriggerInterrupt(TIMER, 0x0050) or
-                self.testAndTriggerInterrupt(Serial, 0x0058) or
-                self.testAndTriggerInterrupt(HightoLow, 0x0060)
-                )
+            # Clear interrupt flag
+            self.mb[0xFF0F] &= (0xFF - (1 << flag))
 
-        return NoInterrupt
-
-    def testAndTriggerInterrupt(self, flag, vector):
-        if self.testInterruptFlagEnabled(flag) and self.testInterruptFlag(flag):
-
-            self.clearInterruptFlag(flag)
             self.interruptMasterEnable = False
             if self.halted:
                 self.PC += 1 # Escape HALT on return
@@ -208,11 +179,44 @@ class CPU(object): # 'object' is important for property!!!
             self.mb[self.SP-2] = self.PC & 0xFF # Low
             self.SP -= 2
 
-            self.PC = vector
+            # self.PC = vector
 
-            return InterruptVector
-        return NoInterrupt
+            return True
+        return False
 
+    def checkForInterrupts(self):
+        #GPCPUman.pdf p. 40 about priorities
+        # If an interrupt occours, the PC is pushed to the stack.
+        # It is up to the interrupt routine to return it.
+        if not self.interruptMasterEnable:
+            return False
+
+        # 0xFF0F (IF_address) - Bit 0-4 Requested interrupts
+        if_v = self.mb[IF_address]
+        # 0xFFFF (IE_address) - Bit 0-4 Enabling interrupt vectors
+        ie_v = self.mb[IE_address]
+
+        # Better to make a long check, than run through 5 if statements
+        if ((if_v & 0b11111) & (ie_v & 0b11111)) != 0:
+            if self.testInterrupt(if_v, ie_v, VBlank):
+                self.PC = 0x0040
+                return True
+            elif self.testInterrupt(if_v, ie_v, LCDC):
+                self.PC = 0x0048
+                return True
+            elif self.testInterrupt(if_v, ie_v, TIMER):
+                self.PC = 0x0050
+                return True
+            elif self.testInterrupt(if_v, ie_v, Serial):
+                self.PC = 0x0058
+                return True
+            elif self.testInterrupt(if_v, ie_v, HightoLow):
+                self.PC = 0x0060
+                return True
+            # flags_vectors = [(VBlank, 0x0040), (LCDC, 0x0048), (TIMER, 0x0050), (Serial, 0x0058), (HightoLow, 0x0060)]
+            # for flag, vector in flags_vectors:
+
+        return False
 
     # A = property(getA, setA)
     # F = property(getF, setF)
@@ -231,22 +235,22 @@ class CPU(object): # 'object' is important for property!!!
     DE = property(getDE, setDE)
 
     def fC(self):
-        return bool(self.F & (1 << flagC))
+        return (self.F & (1 << flagC)) != 0
 
     def fH(self):
-        return bool(self.F & (1 << flagH))
+        return (self.F & (1 << flagH)) != 0
 
     def fN(self):
-        return bool(self.F & (1 << flagN))
+        return (self.F & (1 << flagN)) != 0
 
     def fZ(self):
-        return bool(self.F & (1 << flagZ))
+        return (self.F & (1 << flagZ)) != 0
 
     def fNC(self):
-        return not bool(self.F & (1 << flagC))
+        return (self.F & (1 << flagC)) == 0
 
     def fNZ(self):
-        return not bool(self.F & (1 << flagZ))
+        return (self.F & (1 << flagZ)) == 0
 
     def __init__(self, MB, profiling=False):
         self.A = 0
@@ -303,7 +307,7 @@ class CPU(object): # 'object' is important for property!!!
         # "The interrupt will be acknowledged during opcode fetch period of each instruction."
         didInterrupt = self.checkForInterrupts()
 
-        instruction = None
+        # instruction = None
         if self.halted and didInterrupt:
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped"

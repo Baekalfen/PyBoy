@@ -5,9 +5,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-cdef enum WindowEvent:
-    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState, Pass
-
 # cimport PyBoy.WindowEvent
 
 cdef unsigned char P10, P11, P12, P13, P14, P15

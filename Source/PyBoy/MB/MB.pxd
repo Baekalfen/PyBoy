@@ -5,6 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import cython
 cimport CPU
 cimport Timer
 cimport PyBoy.Cartridge.GenericMBC
@@ -31,8 +32,9 @@ cdef class Motherboard:
 
     cdef void buttonEvent(self, int)
     cdef void stop(self, bint)
-    cdef setSTATMode(self, int)
+    cdef void setSTATMode(self, int)
     cdef void checkLYC(self, int)
+    @cython.locals(cycles=cython.int)
     cdef void calculateCycles(self, int)
     cdef void tickFrame(self)
 

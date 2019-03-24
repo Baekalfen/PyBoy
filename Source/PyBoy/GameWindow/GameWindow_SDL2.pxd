@@ -8,9 +8,6 @@
 # cimport sdl2_cython.events as sdl2_events
 # cimport PyBoy.WindowEvent
 
-cdef enum WindowEvent:
-    Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState, Pass
-
 
 cimport PyBoy.MathUint8
 cimport SDL2 as sdl2
@@ -37,7 +34,7 @@ cdef class SdlGameWindow:
     cdef bint debug
     cdef tuple _scaledResolution
     cdef np.uint32_t[:, :] _screenBuffer
-    cdef int[:, :] scanlineParameters
+    cdef int[144][4] scanlineParameters
 
     # cdef int ticks
     cdef sdl2.SDL_Window *_window

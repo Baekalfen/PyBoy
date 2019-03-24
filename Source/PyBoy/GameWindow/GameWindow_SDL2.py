@@ -10,16 +10,19 @@ import time
 import sdl2
 import sdl2.ext
 import numpy as np
+import cython
+import ctypes
 import warnings
 
 from .. import CoreDump
 from .. import MathUint8
 # from ..MathUint8 import getSignedInt8
-# from .. import WindowEvent
+# if not cython.compiled:
+from .. import WindowEvent
 from .. import LCD
 # from ..LCD import colorPalette, alphaMask
 from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
-from ..GameWindow import AbstractGameWindow
+# from ..GameWindow import AbstractGameWindow
 
 from ..Logger import logger
 
@@ -40,7 +43,7 @@ class SdlGameWindow():
         if self._scale != 1:
             logger.warn("Scaling set to %s. The implementation is temporary, which means scaling above 1 will impact performance." % self._scale)
 
-        super(self.__class__, self).__init__(scale)
+        # super(self.__class__, self).__init__(scale)
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
@@ -88,8 +91,8 @@ class SdlGameWindow():
                 "PyBoy",
                 sdl2.SDL_WINDOWPOS_CENTERED,
                 sdl2.SDL_WINDOWPOS_CENTERED,
-                gameboyResolution[0],
-                gameboyResolution[1],
+                self._scaledResolution[0],
+                self._scaledResolution[1],
                 sdl2.SDL_WINDOW_RESIZABLE)
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
@@ -124,7 +127,7 @@ class SdlGameWindow():
         # self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
         # self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
 
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='int32')
+        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[1],4), dtype='int32')
 
 
         # if __debug__:
@@ -168,12 +171,10 @@ class SdlGameWindow():
         return events
 
     # def updateDisplay(self):
+    #     sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, None, self._screenBuffer.ctypes.data_as(ctypes.c_void_p), self._screenBuffer.strides[0])
     #     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer, None, None)
     #     sdl2.SDL_RenderPresent(self._sdlrenderer)
 
-        # sdl2.SDL_RenderPresent(self._renderer)
-        # self._window.refresh()
-        # self._screenBuffer#.update()
         # if __debug__:
         #     self.tileDataWindow.refresh()
         #     self.tileView1Window.refresh()
@@ -181,11 +182,9 @@ class SdlGameWindow():
         #     self.spriteWindow.refresh()
 
     def VSync(self):
-        pass
         now = sdl2.SDL_GetTicks()
         sdl2.SDL_Delay(max(0, int(1/60.0*1000-(now-self.ticks))))
         self.ticks = sdl2.SDL_GetTicks()
-        # sdl2.SDL_RenderPresent(self.renderer)
 
     def stop(self):
         # if __debug__:
@@ -197,10 +196,10 @@ class SdlGameWindow():
         sdl2.ext.quit()
 
     def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y, 0] = viewPos[0]
-        self.scanlineParameters[y, 1] = viewPos[1]
-        self.scanlineParameters[y, 2] = windowPos[0]
-        self.scanlineParameters[y, 3] = windowPos[1]
+        self.scanlineParameters[y][0] = viewPos[0]
+        self.scanlineParameters[y][1] = viewPos[1]
+        self.scanlineParameters[y][2] = windowPos[0]
+        self.scanlineParameters[y][3] = windowPos[1]
 
     def renderScreen(self, lcd):
         # All VRAM addresses are offset by 0x8000

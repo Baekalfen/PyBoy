@@ -11,7 +11,6 @@ import time
 import os.path
 import os
 import sys
-import numpy as np
 import platform
 from PyBoy import PyBoy
 from PyBoy.Logger import logger
@@ -43,7 +42,7 @@ if __name__ == "__main__":
 
     bootROM = "ROMs/DMG_ROM.bin"
     ROMdir = "ROMs/"
-    scale = 1
+    scale = 3
     debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories
