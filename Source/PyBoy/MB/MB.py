@@ -170,20 +170,20 @@ class Motherboard():
         return 0xFFFF
 
     def __getitem__(self, i):
-        return self.get(i)
+        return self.getitem(i)
 
-    def get(self, i):
+    def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
             if i <= 0xFF and self.bootROMEnabled:
-                return self.bootROM[i]
+                return self.bootROM.getitem(i)
             else:
-                return self.cartridge[i]
+                return self.cartridge.getitem(i)
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
-            return self.cartridge[i]
+            return self.cartridge.getitem(i)
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
             return self.lcd.VRAM[i - 0x8000]
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
-            return self.cartridge[i]
+            return self.cartridge.getitem(i)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             return self.ram.internalRAM0[i - 0xC000]
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
@@ -223,24 +223,24 @@ class Motherboard():
             raise Exception("Memory access violation. Tried to read: %s" % hex(i))
 
     def __setitem__(self,i,value):
-        self.set(i,value)
+        self.setitem(i,value)
 
-    def set(self,i,value):
+    def setitem(self,i,value):
         if i == 0xFF01:
             print chr(value),
         assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
                 # CoreDump.CoreDump("Memory write error! Can't write %s to %s" % (hex(value),hex(i))),\
 
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-            self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
+            self.cartridge.setitem(i, value) #Doesn't change the data. This is for MBC commands
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
-            self.cartridge[i] = value #Doesn't change the data. This is for MBC commands
+            self.cartridge.setitem(i, value) #Doesn't change the data. This is for MBC commands
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
                 self.lcd.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
-            self.cartridge[i] = value
+            self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             self.ram.internalRAM0[i - 0xC000] = value
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM

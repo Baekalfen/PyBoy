@@ -8,4 +8,4 @@
 from PyBoy.Cartridge.GenericMBC cimport GenericMBC
 
 cdef class MBC5(GenericMBC):
-    pass
+    cdef void setitem(self, unsigned short, unsigned char)

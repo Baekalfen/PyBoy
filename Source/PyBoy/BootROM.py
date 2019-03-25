@@ -9,6 +9,7 @@ import Global
 import numpy as np # np.fromfile is not included in Cython version
 import struct
 import cython
+import array
 
 class BootROM():
     def __init__(self, bootROMFile):
@@ -20,7 +21,7 @@ class BootROM():
                     rom = bootROMFileHandle.read()
                 _bootROM = struct.unpack('%iB' % len(rom), rom)
         else:
-            _bootROM = np.zeros(shape=(0xFF,), dtype=np.uint8)
+            _bootROM = array.array('B', [0] * 256)
             # _bootROM = [0 for x in range(256)]
             # Set stack pointer
             _bootROM[0x00] = 0x31
@@ -43,7 +44,5 @@ class BootROM():
         else:
             self.bootROM = _bootROM
 
-
-    @cython.locals(address=cython.ushort)
-    def __getitem__(self, address):
-        return self.bootROM[address]
+    def getitem(self, addr):
+        return self.bootROM[addr]

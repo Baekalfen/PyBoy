@@ -8,7 +8,7 @@
 from PyBoy.Cartridge.GenericMBC cimport GenericMBC
 
 cdef class MBC3(GenericMBC):
-    pass
+    cdef void setitem(self, unsigned short, unsigned char)
     # cdef char* filename
     # cdef char* gameName
     # cdef unsigned char[:,:] ROMBanks

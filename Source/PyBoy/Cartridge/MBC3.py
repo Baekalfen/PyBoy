@@ -10,8 +10,7 @@ from ..Logger import logger
 import cython
 
 class MBC3(GenericMBC):
-    @cython.locals(address=cython.ushort, value=cython.uchar)
-    def __setitem__(self, address, value):
+    def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
             if (value & 0b00001111) == 0b1010:
                 self.RAMBankEnabled = True

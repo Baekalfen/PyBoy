@@ -29,7 +29,9 @@ cdef class GenericMBC:
     cdef void initRAMBanks(self, unsigned char)
     cdef unicode getGameName(self, unsigned char[:, :])
 
+    cdef unsigned char getitem(self, unsigned short)
+    cdef void setitem(self, unsigned short, unsigned char)
+
 cdef class ROM_only(GenericMBC):
-    @cython.locals(address=cython.ushort, value=cython.uchar)
-    cdef void set(self, unsigned short, unsigned char)
+    cdef void setitem(self, unsigned short, unsigned char)
 

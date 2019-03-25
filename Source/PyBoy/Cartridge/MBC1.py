@@ -10,8 +10,7 @@ from GenericMBC import GenericMBC
 import cython
 
 class MBC1(GenericMBC):
-    @cython.locals(address=cython.ushort, value=cython.uchar)
-    def __setitem__(self, address, value):
+    def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
             if (value & 0b00001111) == 0x0A:
                 self.RAMBankEnabled = True

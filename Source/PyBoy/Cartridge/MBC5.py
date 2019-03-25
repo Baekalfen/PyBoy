@@ -8,6 +8,6 @@ from .. import CoreDump
 from GenericMBC import GenericMBC
 
 class MBC5(GenericMBC):
-    def __setitem__(self, address, value):
+    def setitem(self, address, value):
         raise Exception("Not implemented")
 

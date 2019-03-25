@@ -90,8 +90,13 @@ class GenericMBC:
     def getGameName(self, ROMBanks):
         return unicode("".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0"))
 
-    @cython.locals(address=cython.ushort)
-    def __getitem__(self, address):
+
+    def setitem(self, address, value):
+        raise Exception("Cannot set item in GenericMBC")
+
+    # @cython.locals(address=cython.ushort)
+    # def __getitem__(self, address):
+    def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.ROMBanks[0][address]
         elif 0x4000 <= address < 0x8000:
@@ -130,11 +135,7 @@ class GenericMBC:
 
 
 class ROM_only(GenericMBC):
-    @cython.locals(address=cython.ushort, value=cython.uchar)
-    def __setitem__(self, address, value):
-        self.set(address, value)
-
-    def set(self, address, value):
+    def setitem(self, address, value):
         if 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1

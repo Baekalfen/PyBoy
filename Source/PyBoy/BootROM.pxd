@@ -12,6 +12,8 @@ cimport numpy as np
 ctypedef np.uint8_t DTYPE_t
 
 cdef class BootROM:
-    cdef public DTYPE_t[:] bootROM
+    cdef DTYPE_t[256] bootROM
     # cdef np.ndarray[DTYPE_t, ndim=256] _bootROM
+
+    cdef unsigned char getitem(self, unsigned short)
 
