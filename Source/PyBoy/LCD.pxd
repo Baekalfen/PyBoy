@@ -9,7 +9,7 @@ cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, W
 
 # LCDC bit descriptions
 # from PyBoy.MB.MB cimport Motherboard
-cimport PyBoy.RAM
+# cimport PyBoy.RAM
 # from PyBoy.RAM cimport allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable
 
@@ -32,8 +32,6 @@ cdef class LCD:
     cdef np.uint32_t[384 * 8][8] tileCache
     cdef public DTYPE_t[8 * 1024] VRAM
     cdef public DTYPE_t[0xA0] OAM
-    # cdef np.uint32_t[:, :] spriteCacheOBP0
-    # cdef np.uint32_t[:, :] spriteCacheOBP1
     cdef np.uint32_t[384 * 8][8] spriteCacheOBP0
     cdef np.uint32_t[384 * 8][8] spriteCacheOBP1
 
@@ -61,8 +59,7 @@ cdef class PaletteRegister:
 cdef class LCDCRegister:
     cdef unsigned char value
 
-    # TODO: Cythonize
-    # cdef void set(self, unsigned int)
+    cdef void set(self, unsigned int)
 
     cdef public bint enabled
     cdef public bint windowMapSelect

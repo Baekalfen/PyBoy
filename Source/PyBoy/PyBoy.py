@@ -149,10 +149,10 @@ class PyBoy():
         return self.window
 
     def getMemoryValue(self, addr):
-        return self.mb[addr]
+        return self.mb.getitem(addr)
 
     def setMemoryValue(self, addr, value):
-        self.mb[addr] = value
+        self.mb.setitem(addr, value)
 
     def sendInput(self, event):
         self.mb.buttonEvent(event)
@@ -167,4 +167,4 @@ class PyBoy():
         return BotSupport.TileView(self.mb.lcd, high)
 
     def getScreenPosition(self):
-        return (self.mb[0xFF43], self.mb[0xFF42])
+        return (self.mb.getitem(0xFF43), self.mb.getitem(0xFF42))

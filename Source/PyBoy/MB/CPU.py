@@ -44,23 +44,23 @@ class CPU(object): # 'object' is important for property!!!
 
     ### Interrupt flags
     def setInterruptFlag(self, flag):
-        self.mb[0xFF0F] |= (1 << flag)
+        self.mb.setitem(IF_address, self.mb.getitem(IF_address) | (1 << flag))
 
     def testRAMRegisterFlag(self, address, flag):
-        v = self.mb[address]
+        v = self.mb.getitem(address)
         return (v & (1 << flag))
 
     def setRAMRegisterFlag(self, address, flag, value=True):
         self.clearRAMRegisterFlag(address, flag)
-        # self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
+        # self.mb.setitem(address, (self.mb.getitem(address) & (0xFF - (1 << flag))))
         # if value:
-        self.mb[address] = (self.mb[address] + (value << flag))
+        self.mb.setitem(address, (self.mb.getitem(address) + (value << flag)))
 
     def clearRAMRegisterFlag(self, address, flag):
-        self.mb[address] = (self.mb[address] & (0xFF - (1 << flag)))
+        self.mb.setitem(address, (self.mb.getitem(address) & (0xFF - (1 << flag))))
 
     def testRAMRegisterFlagEnabled(self, address, flag):
-        v = self.mb[address]
+        v = self.mb.getitem(address)
         return (v & (1 << flag))
 
     def testInterrupt(self, if_v, ie_v, flag):
@@ -70,7 +70,7 @@ class CPU(object): # 'object' is important for property!!!
         if intr_flag_enabled and intr_flag:
 
             # Clear interrupt flag
-            self.mb[0xFF0F] &= (0xFF - (1 << flag))
+            self.mb.setitem(0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
 
             self.interruptMasterEnable = False
             if self.halted:
@@ -79,8 +79,8 @@ class CPU(object): # 'object' is important for property!!!
             # else:
                 # self.CPU_PUSH(self.PC)
 
-            self.mb[self.SP-1] = self.PC >> 8 # High
-            self.mb[self.SP-2] = self.PC & 0xFF # Low
+            self.mb.setitem(self.SP-1, self.PC >> 8) # High
+            self.mb.setitem(self.SP-2, self.PC & 0xFF) # Low
             self.SP -= 2
 
             # self.PC = vector
@@ -96,9 +96,9 @@ class CPU(object): # 'object' is important for property!!!
             return False
 
         # 0xFF0F (IF_address) - Bit 0-4 Requested interrupts
-        if_v = self.mb[IF_address]
+        if_v = self.mb.getitem(IF_address)
         # 0xFFFF (IE_address) - Bit 0-4 Enabling interrupt vectors
-        ie_v = self.mb[IE_address]
+        ie_v = self.mb.getitem(IE_address)
 
         # Better to make a long check, than run through 5 if statements
         if ((if_v & 0b11111) & (ie_v & 0b11111)) != 0:
@@ -177,12 +177,12 @@ class CPU(object): # 'object' is important for property!!!
             self.hitRate = np.zeros(shape=(512,), dtype=int)
 
     def fetchAndExecuteInstruction(self, pc):
-        opcode = self.mb[pc]
+        opcode = self.mb.getitem(pc)
         # print("PC: 0x%0.2x, Opcode: 0x%0.2x" % (pc, opcode))
-        # print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP)
+        # print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb.getitem(self.PC+1), self.AF, self.BC, self.DE, self.HL, self.SP)
         if opcode == 0xCB:  # Extension code
             pc += 1
-            opcode = self.mb[pc]
+            opcode = self.mb.getitem(pc)
             opcode += 0x100  # Internally shifting look-up table
 
         #Profiling
@@ -210,10 +210,10 @@ class CPU(object): # 'object' is important for property!!!
 
         #if __debug__:
         #    if self.lala and not self.halted:
-        #        if (self.mb[self.PC]) == 0xCB:
-        #            print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC+1], self.AF, self.BC, self.DE, self.HL, self.SP)
+        #        if (self.mb.getitem(self.PC)) == 0xCB:
+        #            print "%0.4x CB%0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb.getitem(self.PC+1), self.AF, self.BC, self.DE, self.HL, self.SP)
         #        else:
-        #            print "%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb[self.PC], self.AF, self.BC, self.DE, self.HL, self.SP)
+        #            print "%0.4x %0.2x AF:%0.4x BC:%0.4x DE%0.4x HL%0.4x SP%0.4x" % (self.PC, self.mb.getitem(self.PC), self.AF, self.BC, self.DE, self.HL, self.SP)
 
         #    if self.breakAllow and self.PC == self.breakNext and self.AF == 0x1f80:
         #        self.breakAllow = False
@@ -284,23 +284,23 @@ class CPU(object): # 'object' is important for property!!!
     #     logger.info("D:   0x%0.2X   E: 0x%0.2X" % (self.D, self.E))
     #     logger.info("H:   0x%0.2X   L: 0x%0.2X" % (self.HL >> 8, self.HL & 0xFF))
     #     logger.info("SP:  0x%0.4X   PC: 0x%0.4X"% (self.SP, self.PC))
-    #     # logger.info("0xC000", "0x%0.2X" % self.mb[0xc000])
-    #     # logger.info("(HL-1)", "0x%0.2X" % self.mb[self.getHL()-1])
-    #     logger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb[self.HL], self.mb[self.HL+1]))
-    #     logger.info("(SP) 0x%0.2X   (SP+1) 0x%0.2X" % (self.mb[self.SP], self.mb[self.SP+1]))
-    #     logger.info(" ".join(map(lambda x: "%0.2x" % x, [self.mb[self.SP+x] for x in range(16)])))
-    #     logger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb[0xFF04], self.mb[0xFF05], self.mb[0xFF06],bin(self.mb[0xFF07])))
+    #     # logger.info("0xC000", "0x%0.2X" % self.mb.getitem(0xc000))
+    #     # logger.info("(HL-1)", "0x%0.2X" % self.mb.getitem(self.getHL()-1))
+    #     logger.info("(HL) 0x%0.2X   (HL+1) 0x%0.2X" % (self.mb.getitem(self.HL), self.mb.getitem(self.HL+1)))
+    #     logger.info("(SP) 0x%0.2X   (SP+1) 0x%0.2X" % (self.mb.getitem(self.SP), self.mb.getitem(self.SP+1)))
+    #     logger.info(" ".join(map(lambda x: "%0.2x" % x, [self.mb.getitem(self.SP+x) for x in range(16)])))
+    #     logger.info("Timer: DIV %s, TIMA %s, TMA %s, TAC %s" % (self.mb.getitem(0xFF04), self.mb.getitem(0xFF05), self.mb.getitem(0xFF06),bin(self.mb.getitem(0xFF07))))
 
-    #     if (self.mb[self.PC]) != 0xCB:
-    #         l = opcodes[self.mb[self.PC]][0]
-    #         logger.info("Op: 0x%0.2X" % self.mb[self.PC])
-    #         logger.info("Name: " + str(CPU_COMMANDS[self.mb[self.PC]]))
+    #     if (self.mb.getitem(self.PC)) != 0xCB:
+    #         l = opcodes[self.mb.getitem(self.PC)][0]
+    #         logger.info("Op: 0x%0.2X" % self.mb.getitem(self.PC))
+    #         logger.info("Name: " + str(CPU_COMMANDS[self.mb.getitem(self.PC)]))
     #         logger.info("Len:" + str(l))
     #         if instruction:
     #             logger.info(("val: 0x%0.2X" % instruction[2][1]) if not l == 1 else "")
     #     else:
 
-    #         logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb[self.PC+1], str(CPU_COMMANDS_EXT[self.mb[self.PC+1]])))
+    #         logger.info("CB op: 0x%0.2X  CB name: %s" % (self.mb.getitem(self.PC+1), str(CPU_COMMANDS_EXT[self.mb.getitem(self.PC+1)])))
     #     logger.info("Call Stack " + str(self.debugCallStack))
     #     logger.info("Active ROM and RAM bank " +
     #             str(self.mb.cartridge.ROMBankSelected) + ' ' +

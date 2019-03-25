@@ -40,8 +40,8 @@ cdef class Motherboard:
     cdef void calculateCycles(self, int)
     cdef void tickFrame(self)
 
-    cdef unsigned char getitem(self, unsigned short)
-    cdef void setitem(self, unsigned short, unsigned char)
+    cpdef unsigned char getitem(self, unsigned short)
+    cpdef void setitem(self, unsigned short, unsigned char)
 
     cdef void transferDMAtoOAM(self, unsigned char, unsigned short dst=*)
     cdef void saveState(self, unicode)

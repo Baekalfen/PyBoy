@@ -67,21 +67,21 @@ class Motherboard():
     ## Coordinator
 
     def setSTATMode(self, mode):
-        self[STAT] &= 0b11111100 # Clearing 2 LSB
-        self[STAT] |= mode # Apply mode to LSB
+        self.setitem(STAT, self.getitem(STAT) & 0b11111100) # Clearing 2 LSB
+        self.setitem(STAT, self.getitem(STAT) | mode) # Apply mode to LSB
 
         if self.cpu.testRAMRegisterFlag(STAT,mode+3) and mode != 3: # Mode "3" is not interruptable
         # if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
             self.cpu.setInterruptFlag(LCDC)
 
     def checkLYC(self, y):
-        self[LY] = y
-        if self[LYC] == y:
-            self[STAT] |= 0b100 # Sets the LYC flag
-            if self[STAT] & 0b01000000:
+        self.setitem(LY, y)
+        if self.getitem(LYC) == y:
+            self.setitem(STAT, self.getitem(STAT) | 0b100) # Sets the LYC flag
+            if self.getitem(STAT) & 0b01000000:
                 self.cpu.setInterruptFlag(LCDC)
         else:
-            self[STAT] &= 0b11111011
+            self.setitem(STAT, self.getitem(STAT) & 0b11111011)
 
     def calculateCycles(self, x):
         while x > 0:
@@ -156,7 +156,7 @@ class Motherboard():
             # TODO: What happens if LCD gets turned on/off mid-cycle?
             self.MainWindow.blankScreen()
             self.setSTATMode(0)
-            self[LY] = 0
+            self.setitem(LY, 0)
 
             for y in xrange(154):
                 self.calculateCycles(456)
@@ -165,12 +165,6 @@ class Motherboard():
 
     ########################
     ## MemoryManager
-
-    def __len__(self):
-        return 0xFFFF
-
-    def __getitem__(self, i):
-        return self.getitem(i)
 
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
@@ -188,7 +182,7 @@ class Motherboard():
             return self.ram.internalRAM0[i - 0xC000]
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             # Redirect to internal RAM
-            return self[i - 0x2000]
+            return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
@@ -222,9 +216,6 @@ class Motherboard():
         else:
             raise Exception("Memory access violation. Tried to read: %s" % hex(i))
 
-    def __setitem__(self,i,value):
-        self.setitem(i,value)
-
     def setitem(self,i,value):
         if i == 0xFF01:
             print chr(value),
@@ -245,7 +236,7 @@ class Motherboard():
             self.ram.internalRAM0[i - 0xC000] = value
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             # Redirect to internal RAM
-            self[i - 0x2000] = value
+            self.setitem(i - 0x2000, value)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
             self.lcd.OAM[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
@@ -289,7 +280,7 @@ class Motherboard():
         # TODO: Add timing delay of 160µs and disallow access to RAM!
         offset = src * 0x100
         for n in xrange(0x00,0xA0):
-            self[dst + n] = self[n + offset]
+            self.setitem(dst + n, self.getitem(n + offset))
 
 
 

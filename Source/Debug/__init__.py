@@ -130,7 +130,7 @@ class Debug():
                 return lines
 
             info = self.addrInfo(addr)
-            opcode = self.mb[addr]
+            opcode = self.mb.getitem(addr)
             lines.append([
                 info,
                 "%0.4x" % addr,

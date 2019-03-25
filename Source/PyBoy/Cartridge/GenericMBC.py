@@ -14,7 +14,10 @@ import cython
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):
         self.filename = filename  # For debugging and saving
-        self.ROMBanks = ROMBanks
+        banks = ROMBanks.shape[0]
+        for n in range(banks):
+            self.ROMBanks[n][:] = ROMBanks[n]
+        # self.ROMBanks = ROMBanks
         self.cartType = cartType
 
         # self.SRAM = SRAM
@@ -25,8 +28,9 @@ class GenericMBC:
             self.rtc = RTC()
 
 
-        self.RAMBanks = None
+        # self.RAMBanks = None
         self.RAMBanksInitialized = False
+        self.exRAMCount = exRAMCount
         self.initRAMBanks(exRAMCount)
         self.gameName = self.getGameName(ROMBanks)
 
@@ -47,14 +51,14 @@ class GenericMBC:
             romPath = filename
 
         with open(romPath+".ram", "wb") as saveRAM:
-            for bank in self.RAMBanks:
-                for byte in bank:
-                    saveRAM.write(chr(byte))
+            for bank in xrange(self.exRAMCount):
+                for byte in xrange(8*1024):
+                    saveRAM.write(chr(self.RAMBanks[bank][byte]))
 
         logger.info("RAM saved.")
 
     def loadRAM(self, filename = None):
-        if self.RAMBanks is None:
+        if not self.RAMBanksInitialized:
             logger.info("Loading RAM is not supported on {}".format(self.cartType))
             return
 
@@ -68,7 +72,7 @@ class GenericMBC:
             return
 
         with open(romPath+".ram", "rb") as loadRAM:
-            for bank in xrange(len(self.RAMBanks)):
+            for bank in xrange(self.exRAMCount):
                 for byte in xrange(8*1024):
                     self.RAMBanks[bank][byte] = ord(loadRAM.read(1))
 
@@ -84,7 +88,7 @@ class GenericMBC:
         if cython.compiled:
             self.RAMBanks = np.ndarray(shape=(n, 8 * 1024), dtype='uint8')
         else:
-            self.RAMBanks = [[0 for x in xrange(8 * 1024)] for _ in range(n)]
+            self.RAMBanks = [[0] * (8 * 1024) for _ in range(n)]
 
 
     def getGameName(self, ROMBanks):

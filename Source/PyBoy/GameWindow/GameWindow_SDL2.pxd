@@ -10,7 +10,8 @@
 
 
 cimport SDL2 as sdl2
-cimport PyBoy.LCD
+# cimport PyBoy.LCD
+from PyBoy.LCD cimport LCD
 
 import numpy as np
 cimport numpy as np
@@ -67,7 +68,7 @@ cdef class SdlGameWindow:
             # spriteCache=np.uint32_t[384 * 8][8],
             spriteSize=uchar,
             colorPalette=(int, int, int, int))
-    cdef void renderScreen(self, PyBoy.LCD.LCD)
+    cdef void renderScreen(self, LCD)
 
     @cython.locals(
             x1=ushort,
@@ -80,7 +81,7 @@ cdef class SdlGameWindow:
             xx=ushort,
             pixel=int,
             )
-    cdef void copySprite(self, PyBoy.LCD.LCD, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
+    cdef void copySprite(self, LCD, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
     cdef void blankScreen(self)
     cdef object getScreenBuffer(self)
 

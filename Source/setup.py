@@ -36,6 +36,7 @@ setup(
     include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", np.get_include(), "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
     ext_modules = cythonize([
             'PyBoy/MathUint8.py',
+            'PyBoy/LCD.py',
             'PyBoy/BootROM.py',
             'PyBoy/WindowEvent.py',
             'PyBoy/Cartridge/__init__.py',
@@ -44,13 +45,13 @@ setup(
             'PyBoy/Cartridge/MBC2.py',
             'PyBoy/Cartridge/MBC3.py',
             'PyBoy/Cartridge/MBC5.py',
+            'PyBoy/Cartridge/RTC.py',
             'PyBoy/RAM.py',
             'PyBoy/Interaction.py',
             # # 'PyBoy/GameWindow/AbstractGameWindow.py',
             'PyBoy/GameWindow/__init__.py',
             'PyBoy/GameWindow/GameWindow_SDL2.py',
             'PyBoy/GameWindow/GameWindow_dummy.py',
-            'PyBoy/LCD.py',
             'PyBoy/MB/CPU.py',
             'PyBoy/MB/opcodes.py',
             'PyBoy/MB/Timer.py',
@@ -62,7 +63,7 @@ setup(
         ],
         include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/GameWindow", np.get_include(), "/usr/local/lib/python2.7/site-packages/sdl2/", "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
         nthreads=thread_count,
-        annotate=False,
+        annotate=True,
         language_level='2',
     )
 )

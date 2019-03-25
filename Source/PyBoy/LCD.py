@@ -6,7 +6,7 @@
 #
 
 import CoreDump
-import RAM
+# import RAM
 # from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 import array
 import numpy as np
@@ -66,10 +66,10 @@ class LCD():
         # self.WX = 0x00
 
     def getWindowPos(self):
-        return (self.mb[WX]-7, self.mb[WY])
+        return (self.mb.getitem(WX)-7, self.mb.getitem(WY))
 
     def getViewPort(self):
-        return (self.mb[SCX], self.mb[SCY])
+        return (self.mb.getitem(SCX), self.mb.getitem(SCY))
 
     def refreshTileDataAdaptive(self):
         if self.clearCache:
@@ -81,8 +81,8 @@ class LCD():
 
         for t in self.tilesChanged:
             for k in xrange(0, 16 ,2): #2 bytes for each line
-                byte1 = self.mb[t+k]
-                byte2 = self.mb[t+k+1]
+                byte1 = self.mb.getitem(t+k)
+                byte2 = self.mb.getitem(t+k+1)
 
                 for pixelOnLine in xrange(7,-1,-1):
                     y = k/2
