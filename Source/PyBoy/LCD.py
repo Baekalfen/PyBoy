@@ -83,8 +83,6 @@ class LCD():
             for k in xrange(0, 16 ,2): #2 bytes for each line
                 byte1 = self.VRAM[t+k - 0x8000]
                 byte2 = self.VRAM[t+k+1 - 0x8000]
-                # byte1 = self.mb.getitem(t+k)
-                # byte2 = self.mb.getitem(t+k+1)
 
                 for pixelOnLine in xrange(7,-1,-1):
                     y = k/2

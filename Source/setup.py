@@ -64,5 +64,21 @@ setup(
         nthreads=thread_count,
         annotate=True,
         language_level='2',
+        compiler_directives={
+            "cdivision" : True,
+            "cdivision_warnings" : False,
+            "boundscheck" : False,
+            "wraparound" : False,
+            "initializedcheck" : False,
+            "nonecheck" : False,
+            "overflowcheck" : False,
+            # # "profile" : True, # For profiling
+            # "infer_types" : True,
+        },
     )
 )
+
+# https://cython.readthedocs.io/en/stable/src/userguide/source_files_and_compilation.html#compiler-options
+# TODO?
+# Cython.Compiler.Options.convert_range = True
+# This will convert statements of the form for i in range(...) to for i from ... when i is a C integer type, and the direction (i.e. sign of step) can be determined. WARNING: This may change the semantics if the range causes assignment to i to overflow. Specifically, if this option is set, an error will be raised before the loop is entered, whereas without this option the loop will execute until an overflowing value is encountered

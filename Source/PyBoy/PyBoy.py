@@ -28,7 +28,6 @@ SPF = 1/60. # inverse FPS (frame-per-second)
 class PyBoy():
     def __init__(self, win_type, scale, ROM, bootROM = None):
         self.debugger = None
-        self.mb = None
         self.window = self.getWindow(win_type, scale)
 
         if "debug" in sys.argv and platform.system() != "Windows":

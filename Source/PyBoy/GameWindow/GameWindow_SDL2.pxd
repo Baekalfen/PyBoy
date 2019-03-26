@@ -33,7 +33,7 @@ cdef class SdlGameWindow:
     cdef dict windowEventsUp
     cdef bint debug
     cdef (int, int) _scaledResolution
-    cdef np.uint32_t[:, :] _screenBuffer
+    cdef np.uint32_t[144][160] _screenBuffer
     cdef int[144][4] scanlineParameters
 
     cdef sdl2.SDL_Window *_window
@@ -86,7 +86,7 @@ cdef class SdlGameWindow:
     cdef object getScreenBuffer(self)
 
     cdef inline void updateDisplay(self):
-        sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, &self._screenBuffer[0,0], self._screenBuffer.strides[0])
+        sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, &self._screenBuffer, 160*4)
         sdl2.SDL_RenderCopy(
                 self._sdlrenderer,
                 self._sdlTextureBuffer,

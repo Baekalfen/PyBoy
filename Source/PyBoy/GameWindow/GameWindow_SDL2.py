@@ -217,11 +217,11 @@ class SdlGameWindow():
                         # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
                         backgroundTileIndex = ((backgroundTileIndex + 128) & 255) + 128
 
-                    self._screenBuffer[y,x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8][(y+yy)%8]
+                    self._screenBuffer[y][x] = lcd.tileCache[backgroundTileIndex*8 + (x+offset)%8][(y+yy)%8]
                 else:
                     # If background is disabled, it becomes white
                     colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
-                    self._screenBuffer[y,x] = colorPalette[0]
+                    self._screenBuffer[y][x] = colorPalette[0]
 
                 if lcd.LCDC.windowEnabled:
                     # wx, wy = lcd.getWindowPos()
@@ -232,7 +232,7 @@ class SdlGameWindow():
                             # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
                             windowTileIndex = (windowTileIndex ^ 0x80) + 128
 
-                        self._screenBuffer[y,x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8][(y-wy)%8]
+                        self._screenBuffer[y][x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8][(y-wy)%8]
 
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
@@ -278,23 +278,23 @@ class SdlGameWindow():
                     pixel = lcd.spriteCacheOBP0[xx][yy]
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
-                    if not (not spritePriority or (spritePriority and self._screenBuffer[y2+y, x2+x] == BGPkey)):
+                    if not (not spritePriority or (spritePriority and self._screenBuffer[y2+y][x2+x] == BGPkey)):
                         pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
 
                     if not (pixel & alphaMask):
-                        self._screenBuffer[y2+y, x2+x] = pixel
+                        self._screenBuffer[y2+y][x2+x] = pixel
 
 
     def blankScreen(self):
         # If the screen is off, fill it with a color.
+        color = 0x00FFFFFF
         if __debug__:
-            # Dark purple to stand out
-            self._screenBuffer[...] = 0x00403245
-        else:
-            # Pan docs says it should be white
-            self._screenBuffer[...] = 0x00FFFFFF
+            color = 0x00403245
+        for y in range(144):
+            for x in range(160):
+                self._screenBuffer[y][x] = color
 
 
     def getScreenBuffer(self):
