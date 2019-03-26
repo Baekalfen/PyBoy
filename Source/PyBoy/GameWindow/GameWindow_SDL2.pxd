@@ -19,8 +19,7 @@ import cython
 cimport cython
 
 # cimport PyBoy.GameWindow.AbstractGameWindow
-# TODO: ctuple? https://cython.readthedocs.io/en/latest/src/userguide/language_basics.html
-cdef tuple gameboyResolution
+cdef (int, int) gameboyResolution
 cdef unsigned int alphaMask
 # cdef object pixels2dWithoutWarning(object)
 
@@ -42,6 +41,7 @@ cdef class SdlGameWindow:
     cdef sdl2.SDL_Texture *_sdlTextureBuffer
 
     cdef void setTitle(self, char*)
+    @cython.locals(now=cython.int, delay=cython.int)
     cdef void VSync(self)
     cdef void stop(self)
     cdef void scanline(self, int, (int, int), (int, int))

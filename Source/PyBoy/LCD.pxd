@@ -13,8 +13,8 @@ cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, W
 # from PyBoy.RAM cimport allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable
 
-cdef tuple gameboyResolution
-cdef public tuple colorPalette
+cdef (int, int) gameboyResolution
+cdef public int[4] colorPalette
 cdef unsigned int alphaMask
 
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
@@ -26,7 +26,6 @@ cimport numpy as np
 ctypedef np.uint8_t DTYPE_t
 
 cdef class LCD:
-    cdef object mb
     cdef public bint clearCache
     cdef public set tilesChanged
     cdef np.uint32_t[384 * 8][8] tileCache
@@ -35,6 +34,10 @@ cdef class LCD:
     cdef np.uint32_t[384 * 8][8] spriteCacheOBP0
     cdef np.uint32_t[384 * 8][8] spriteCacheOBP1
 
+    cdef int SCY
+    cdef int SCX
+    cdef int WY
+    cdef int WX
     cdef public LCDCRegister LCDC
     cdef public PaletteRegister BGP
     cdef public PaletteRegister OBP0
@@ -42,7 +45,15 @@ cdef class LCD:
 
     cdef (int, int) getWindowPos(self)
     cdef (int, int) getViewPort(self)
-    @cython.locals(x=cython.ushort, y=cython.ushort)
+    @cython.locals(
+            x=cython.ushort,
+            y=cython.ushort,
+            t=cython.int,
+            k=cython.int,
+            pixelOnLine=cython.int,
+            colorCode=cython.int,
+            alpha=cython.int,
+            )
     cdef void refreshTileDataAdaptive(self)
 
 cdef class PaletteRegister:
@@ -51,6 +62,7 @@ cdef class PaletteRegister:
     cdef unsigned char value
     cdef unsigned char[4] lookup
 
+    @cython.locals(x=cython.ushort)
     cdef void set(self, unsigned int)
     cdef unsigned int getColor(self, char)
 

@@ -174,7 +174,7 @@ class CPU(object): # 'object' is important for property!!!
         # Profiling
         self.profiling = profiling
         if profiling:
-            self.hitRate = np.zeros(shape=(512,), dtype=int)
+            self.hitRate = np.zeros(shape=(512,), dtype=np.uint32)
 
     def fetchAndExecuteInstruction(self, pc):
         opcode = self.mb.getitem(pc)

@@ -86,7 +86,8 @@ class GenericMBC:
 
         # In real life the values in RAM are scrambled on initialization
         if cython.compiled:
-            self.RAMBanks = np.ndarray(shape=(n, 8 * 1024), dtype='uint8')
+            # Allocating the maximum, as it is easier with static array sizes. And it's 128KB...
+            self.RAMBanks = np.ndarray(shape=(16, 8 * 1024), dtype='uint8')
         else:
             self.RAMBanks = [[0] * (8 * 1024) for _ in range(n)]
 
@@ -115,11 +116,6 @@ class GenericMBC:
                 return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
         else:
             raise CoreDump.CoreDump("Reading address invalid: %s" % address)
-
-    # def __getslice__(self, a, b):
-    #     if b-a < 0:
-    #         raise CoreDump.CoreDump("Negative slice not allowed")
-    #     return [self.__getitem__(a+n) for n in xrange(b-a)]
 
     def __str__(self):
         string = "Cartridge:\n"

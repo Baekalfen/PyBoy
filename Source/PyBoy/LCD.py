@@ -14,7 +14,8 @@ import numpy as np
 VIDEO_RAM = 8 * 1024  # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
 
-LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
+# LCDC,
+STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF41, 0xFF4C)
 
 # LCDC bit descriptions
 BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable = range(8)
@@ -37,8 +38,7 @@ def getColorCode(byte1,byte2,offset):
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
 
 class LCD():
-    def __init__(self, MB):
-        self.mb = MB
+    def __init__(self):
         self.clearCache = False
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
@@ -57,19 +57,19 @@ class LCD():
         self.OBP0 = PaletteRegister(0xFF, self)
         self.OBP1 = PaletteRegister(0xFF, self)
         # self.STAT = 0x00
-        # self.SCY = 0x00
-        # self.SCX = 0x00
         # self.LY = 0x00
         # self.LYC = 0x00
         # self.DMA = 0x00
-        # self.WY = 0x00
-        # self.WX = 0x00
+        self.SCY = 0x00
+        self.SCX = 0x00
+        self.WY = 0x00
+        self.WX = 0x00
 
     def getWindowPos(self):
-        return (self.mb.getitem(WX)-7, self.mb.getitem(WY))
+        return (self.WX-7, self.WY)
 
     def getViewPort(self):
-        return (self.mb.getitem(SCX), self.mb.getitem(SCY))
+        return (self.SCX, self.SCY)
 
     def refreshTileDataAdaptive(self):
         if self.clearCache:
@@ -81,8 +81,10 @@ class LCD():
 
         for t in self.tilesChanged:
             for k in xrange(0, 16 ,2): #2 bytes for each line
-                byte1 = self.mb.getitem(t+k)
-                byte2 = self.mb.getitem(t+k+1)
+                byte1 = self.VRAM[t+k - 0x8000]
+                byte2 = self.VRAM[t+k+1 - 0x8000]
+                # byte1 = self.mb.getitem(t+k)
+                # byte2 = self.mb.getitem(t+k+1)
 
                 for pixelOnLine in xrange(7,-1,-1):
                     y = k/2
@@ -111,7 +113,9 @@ class PaletteRegister():
             return
 
         self.value = value
-        self.lookup = [(value >> x) & 0b11 for x in xrange(0,8,2)]
+        self.lookup = [0] * 4
+        for x in xrange(4):
+            self.lookup[x] = (value >> x*2) & 0b11
         self.lcd.clearCache = True
 
     def getColor(self, i):

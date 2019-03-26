@@ -35,7 +35,6 @@ setup(
     cmdclass={'build_ext':build_ext},
     include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", np.get_include(), "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
     ext_modules = cythonize([
-            'PyBoy/MathUint8.py',
             'PyBoy/LCD.py',
             'PyBoy/BootROM.py',
             'PyBoy/WindowEvent.py',

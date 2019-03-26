@@ -8,6 +8,8 @@
 
 from PyBoy.MB.MB cimport Motherboard
 cimport opcodes
+import numpy as np
+cimport numpy as np
 import cython
 
 cdef unsigned short IF_address, IE_address
@@ -23,6 +25,7 @@ cdef class CPU:
     cdef unsigned int oldPC, breakNext
 
     cdef object debugCallStack
+    cdef np.uint32_t[512] hitRate
 
     @cython.locals(intr_flag_enabled=cython.bint, intr_flag=cython.bint)
     cdef bint testInterrupt(self, unsigned char, unsigned char, short)

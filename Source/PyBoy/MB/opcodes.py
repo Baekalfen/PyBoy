@@ -204,7 +204,7 @@ def RLA_17(cpu): # 17 RLA
     return 4
 
 def JR_18(cpu, v): # 18 JR r8
-    cpu.PC += 2 + (((v + 128) & 255) - 128)
+    cpu.PC += 2 + ((v ^ 0x80) - 128)
     cpu.PC &= 0xFFFF
     return 12
 
@@ -276,7 +276,7 @@ def RRA_1f(cpu): # 1f RRA
 def JR_20(cpu, v): # 20 JR NZ,r8
     cpu.PC += 2
     if cpu.fNZ():
-        cpu.PC += (((v + 128) & 255) - 128)
+        cpu.PC += ((v ^ 0x80) - 128)
         cpu.PC &= 0xFFFF
         return 12
     else:
@@ -355,7 +355,7 @@ def DAA_27(cpu): # 27 DAA
 def JR_28(cpu, v): # 28 JR Z,r8
     cpu.PC += 2
     if cpu.fZ():
-        cpu.PC += (((v + 128) & 255) - 128)
+        cpu.PC += ((v ^ 0x80) - 128)
         cpu.PC &= 0xFFFF
         return 12
     else:
@@ -428,7 +428,7 @@ def CPL_2f(cpu): # 2f CPL
 def JR_30(cpu, v): # 30 JR NC,r8
     cpu.PC += 2
     if cpu.fNC():
-        cpu.PC += (((v + 128) & 255) - 128)
+        cpu.PC += ((v ^ 0x80) - 128)
         cpu.PC &= 0xFFFF
         return 12
     else:
@@ -493,7 +493,7 @@ def SCF_37(cpu): # 37 SCF
 def JR_38(cpu, v): # 38 JR C,r8
     cpu.PC += 2
     if cpu.fC():
-        cpu.PC += (((v + 128) & 255) - 128)
+        cpu.PC += ((v ^ 0x80) - 128)
         cpu.PC &= 0xFFFF
         return 12
     else:
@@ -1970,7 +1970,7 @@ def RST_e7(cpu): # e7 RST 20H
     return 16
 
 def ADD_e8(cpu, v): # e8 ADD SP,r8
-    t = cpu.SP+(((v + 128) & 255) - 128)
+    t = cpu.SP+((v ^ 0x80) - 128)
     flag = 0b00000000
     flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
     flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
@@ -2058,7 +2058,7 @@ def RST_f7(cpu): # f7 RST 30H
     return 16
 
 def LD_f8(cpu, v): # f8 LD HL,SP+r8
-    cpu.HL = cpu.SP + (((v + 128) & 255) - 128)
+    cpu.HL = cpu.SP + ((v ^ 0x80) - 128)
     t = cpu.HL
     flag = 0b00000000
     flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << flagH

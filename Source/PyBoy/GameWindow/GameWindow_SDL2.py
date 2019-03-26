@@ -177,7 +177,10 @@ class SdlGameWindow():
 
     def VSync(self):
         now = sdl2.SDL_GetTicks()
-        sdl2.SDL_Delay(max(0, int(1/60.0*1000-(now-self.ticks))))
+        delay = int(1/60.0*1000-(now-self.ticks))
+        if delay < 0: # Cython doesn't suppport max()
+            delay = 0
+        sdl2.SDL_Delay(delay)
         self.ticks = sdl2.SDL_GetTicks()
 
     def stop(self):
@@ -227,7 +230,7 @@ class SdlGameWindow():
 
                         if lcd.LCDC.tileSelect == 0: # If using signed tile indices
                             # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
-                            windowTileIndex = ((windowTileIndex + 128) & 255) + 128
+                            windowTileIndex = (windowTileIndex ^ 0x80) + 128
 
                         self._screenBuffer[y,x] = lcd.tileCache[windowTileIndex*8 + (x-(wx))%8][(y-wy)%8]
 

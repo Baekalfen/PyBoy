@@ -11,8 +11,9 @@ import sys
 from ..Logger import logger
 import Timer
 import CPU
-from .. import RAM, BootROM, LCD, Interaction, CoreDump
+from .. import RAM, BootROM, Interaction, CoreDump
 from .. import Cartridge
+from .. import LCD
 VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
 # # from CPU.flags import VBlank, TIMER, HightoLow, LCDC
@@ -38,7 +39,7 @@ class Motherboard():
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(random=False)
         self.cpu = CPU.CPU(self, profiling)
-        self.lcd = LCD.LCD(self)
+        self.lcd = LCD.LCD()
         self.bootROMEnabled = True
 
 
@@ -199,12 +200,20 @@ class Motherboard():
 
             elif i == 0xFF40:
                 return self.lcd.LCDC.value
+            elif i == 0xFF42:
+                return self.lcd.SCY
+            elif i == 0xFF43:
+                return self.lcd.SCX
             elif i == 0xFF47:
                 return self.lcd.BGP.value
             elif i == 0xFF48:
                 return self.lcd.OBP0.value
             elif i == 0xFF49:
                 return self.lcd.OBP1.value
+            elif i == 0xFF4A:
+                return self.lcd.WY
+            elif i == 0xFF4B:
+                return self.lcd.WX
             else:
                 return self.ram.IOPorts[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -254,6 +263,10 @@ class Motherboard():
                 self.timer.TAC = value & 0b111
             elif i == 0xFF40:
                 self.lcd.LCDC.set(value)
+            elif i == 0xFF42:
+                self.lcd.SCY = value
+            elif i == 0xFF43:
+                self.lcd.SCX = value
             elif i == 0xFF46:
                 self.transferDMAtoOAM(value)
             elif i == 0xFF47:
@@ -262,6 +275,10 @@ class Motherboard():
                 self.lcd.OBP0.set(value)
             elif i == 0xFF49:
                 self.lcd.OBP1.set(value)
+            elif i == 0xFF4A:
+                self.lcd.WY = value
+            elif i == 0xFF4B:
+                self.lcd.WX = value
             else:
                 self.ram.IOPorts[i - 0xFF00] = value
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -275,9 +292,10 @@ class Motherboard():
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 
-    def transferDMAtoOAM(self, src, dst=0xFE00):
+    def transferDMAtoOAM(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
         # TODO: Add timing delay of 160µs and disallow access to RAM!
+        dst=0xFE00
         offset = src * 0x100
         for n in xrange(0x00,0xA0):
             self.setitem(dst + n, self.getitem(n + offset))
@@ -365,4 +383,5 @@ class Motherboard():
 
         self.lcd.clearCache = True
         self.lcd.refreshTileDataAdaptive()
+
 
