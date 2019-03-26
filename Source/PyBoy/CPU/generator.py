@@ -26,7 +26,7 @@ from .flags import flagZ, flagN, flagH, flagC
 """
 
 def inlineGetSignedInt8(arg):
-    return "((({} + 128) & 255) - 128)".format(arg)
+    return "(({} ^ 0x80) - 128)".format(arg)
 
 opcodes = []
 

@@ -165,7 +165,7 @@ class ScanlineGameWindow(AbstractGameWindow):
 
                     # Convert to signed (-128+256=+128)
                     if tile_select:
-                        tile = ((tile + 128) & 0xFF) + 128
+                        tile = (tile ^ 0x80) + 128
 
                     # Get the color from the Tile Data Table
                     byte0 = lcd.VRAM[16 * tile + 2 * wdy]
@@ -178,7 +178,7 @@ class ScanlineGameWindow(AbstractGameWindow):
 
                     # Convert to signed (-128+256=+128)
                     if tile_select:
-                        tile = ((tile + 128) & 0xFF) + 128
+                        tile = (tile ^ 0x80) + 128
 
                     # Get the color from the Tile Data Table
                     byte0 = lcd.VRAM[16 * tile + 2 * bdy]

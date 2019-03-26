@@ -215,8 +215,8 @@ class SdlGameWindow(AbstractGameWindow):
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tile_select == 0: # If using signed tile indices
-                        # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
-                        backgroundTileIndex = ((backgroundTileIndex + 128) & 255) + 128
+                        # (x ^ 0x80) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                        backgroundTileIndex = (backgroundTileIndex ^ 0x80) + 128
 
                     self._screenBuffer[y,x] = self.tile_cache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
@@ -229,8 +229,8 @@ class SdlGameWindow(AbstractGameWindow):
                         windowTileIndex = lcd.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
                         if lcd.LCDC.tile_select == 0: # If using signed tile indices
-                            # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
-                            windowTileIndex = ((windowTileIndex + 128) & 255) + 128
+                            # (x ^ 0x80) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                            windowTileIndex = (windowTileIndex ^ 0x80) + 128
 
                         self._screenBuffer[y,x] = self.tile_cache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
@@ -367,8 +367,8 @@ class SdlGameWindow(AbstractGameWindow):
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
             if (lcd.LCDC.value >> 4) & 1 == 0: #TODO: use correct flag
-                # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
-                tileIndex = ((tileIndex + 128) & 255) + 128
+                # (x ^ 0x80) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                tileIndex = (tileIndex ^ 0x80) + 128
 
             tile_column = (n-0x1800)%winHorTileView1Limit # Horizontal tile number wrapping on 16
             tileRow = (n-0x1800)/winVerTileView1Limit # Vertical time number based on tileColumn
@@ -392,8 +392,8 @@ class SdlGameWindow(AbstractGameWindow):
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
             if (lcd.LCDC.value >> 4) & 1 == 0:
-                # ((x + 128) & 255) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
-                tileIndex = ((tileIndex + 128) & 255) + 128
+                # (x ^ 0x80) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                tileIndex = (tileIndex ^ 0x80) + 128
 
             tile_column = (n-0x1C00)%winHorTileView2Limit # Horizontal tile number wrapping on 16
             tileRow = (n-0x1C00)/winVerTileView2Limit # Vertical time number based on tileColumn
