@@ -4,8 +4,6 @@
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
 
 from .flags import flagZ, flagN, flagH, flagC
-from ..MathUint8 import getSignedInt8
-
 def NOP_00(self): # 00 NOP
     self.PC += 1
     return 0
@@ -203,7 +201,7 @@ def RLA_17(self): # 17 RLA
     return 0
 
 def JR_18(self, v): # 18 JR r8
-    self.PC += 2 + getSignedInt8(v)
+    self.PC += 2 + ((v ^ 0x80) - 128)
     self.PC &= 0xFFFF
     return 0
 
@@ -275,7 +273,7 @@ def RRA_1f(self): # 1f RRA
 def JR_20(self, v): # 20 JR NZ,r8
     self.PC += 2
     if self.fNZ:
-        self.PC += getSignedInt8(v)
+        self.PC += ((v ^ 0x80) - 128)
         self.PC &= 0xFFFF
         return 0
     else:
@@ -354,7 +352,7 @@ def DAA_27(self): # 27 DAA
 def JR_28(self, v): # 28 JR Z,r8
     self.PC += 2
     if self.fZ:
-        self.PC += getSignedInt8(v)
+        self.PC += ((v ^ 0x80) - 128)
         self.PC &= 0xFFFF
         return 0
     else:
@@ -427,7 +425,7 @@ def CPL_2f(self): # 2f CPL
 def JR_30(self, v): # 30 JR NC,r8
     self.PC += 2
     if self.fNC:
-        self.PC += getSignedInt8(v)
+        self.PC += ((v ^ 0x80) - 128)
         self.PC &= 0xFFFF
         return 0
     else:
@@ -492,7 +490,7 @@ def SCF_37(self): # 37 SCF
 def JR_38(self, v): # 38 JR C,r8
     self.PC += 2
     if self.fC:
-        self.PC += getSignedInt8(v)
+        self.PC += ((v ^ 0x80) - 128)
         self.PC &= 0xFFFF
         return 0
     else:
@@ -1969,7 +1967,7 @@ def RST_e7(self): # e7 RST 20H
     return 0
 
 def ADD_e8(self, v): # e8 ADD SP,r8
-    t = self.SP+getSignedInt8(v)
+    t = self.SP+((v ^ 0x80) - 128)
     flag = 0b00000000
     flag += (((self.SP & 0xF) + (v & 0xF)) > 0xF) << flagH
     flag += (((self.SP & 0xFF) + (v & 0xFF)) > 0xFF) << flagC
@@ -2057,7 +2055,7 @@ def RST_f7(self): # f7 RST 30H
     return 0
 
 def LD_f8(self, v): # f8 LD HL,SP+r8
-    self.HL = self.SP + getSignedInt8(v)
+    self.HL = self.SP + ((v ^ 0x80) - 128)
     t = self.HL
     flag = 0b00000000
     flag += (((self.SP & 0xF) + (v & 0xF)) > 0xF) << flagH

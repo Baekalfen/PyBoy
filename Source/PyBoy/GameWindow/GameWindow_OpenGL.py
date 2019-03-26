@@ -13,7 +13,6 @@ from OpenGL.GLUT import *
 import OpenGL.GLUT.freeglut
 
 from .. import CoreDump
-from ..MathUint8 import getSignedInt8
 from ..WindowEvent import WindowEvent
 from ..GameWindow import AbstractGameWindow
 
@@ -193,7 +192,8 @@ class OpenGLGameWindow(AbstractGameWindow):
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((xx + x)/8)%32 + ((y+yy)/8)*32)%0x400]
 
                     if lcd.LCDC.tile_select == 0: # If using signed tile indices
-                        backgroundTileIndex = getSignedInt8(backgroundTileIndex)+256
+                        # (x ^ 0x80) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                        backgroundTileIndex = (backgroundTileIndex ^ 0x80) + 128
 
                     self._screenBuffer[x,y] = self.tile_cache[backgroundTileIndex*8 + (x+offset)%8, (y+yy)%8]
                 else:
@@ -206,7 +206,8 @@ class OpenGLGameWindow(AbstractGameWindow):
                         windowTileIndex = lcd.VRAM[windowViewAddress + (((x-wx)/8)%32 + ((y-wy)/8)*32)%0x400]
 
                         if lcd.LCDC.tile_select == 0: # If using signed tile indices
-                            windowTileIndex = getSignedInt8(windowTileIndex)+256
+                            # (x ^ 0x80) - 128 to convert to signed, then add 256 for offset (reduces to + 128)
+                            windowTileIndex = (windowTileIndex ^ 0x80) + 128
 
                         self._screenBuffer[x,y] = self.tile_cache[windowTileIndex*8 + (x-(wx))%8, (y-wy)%8]
 
