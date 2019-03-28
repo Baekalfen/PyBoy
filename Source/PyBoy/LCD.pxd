@@ -22,19 +22,16 @@ cdef unsigned int alphaMask
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
 import cython
-
-import numpy as np
-cimport numpy as np
-ctypedef np.uint8_t DTYPE_t
+from libc.stdint cimport uint8_t, uint32_t
 
 cdef class LCD:
-    cdef public bint clearCache
-    cdef public set tilesChanged
-    cdef np.uint32_t[384 * 8][8] tileCache
-    cpdef public DTYPE_t[8 * 1024] VRAM
-    cdef public DTYPE_t[0xA0] OAM
-    cdef np.uint32_t[384 * 8][8] spriteCacheOBP0
-    cdef np.uint32_t[384 * 8][8] spriteCacheOBP1
+    cdef bint clearCache
+    cdef set tilesChanged
+    cdef uint32_t[384 * 8][8] tileCache
+    cdef uint8_t[8 * 1024] VRAM
+    cdef uint8_t[0xA0] OAM
+    cdef uint32_t[384 * 8][8] spriteCacheOBP0
+    cdef uint32_t[384 * 8][8] spriteCacheOBP1
 
     cdef int SCY
     cdef int SCX

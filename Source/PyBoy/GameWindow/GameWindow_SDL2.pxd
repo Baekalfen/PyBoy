@@ -13,10 +13,9 @@ cimport SDL2 as sdl2
 # cimport PyBoy.LCD
 from PyBoy.LCD cimport LCD
 
-import numpy as np
-cimport numpy as np
 import cython
 cimport cython
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 # cimport PyBoy.GameWindow.AbstractGameWindow
 cdef (int, int) gameboyResolution
@@ -33,7 +32,7 @@ cdef class SdlGameWindow:
     cdef dict windowEventsUp
     cdef bint debug
     cdef (int, int) _scaledResolution
-    cdef np.uint32_t[144][160] _screenBuffer
+    cdef uint32_t[144][160] _screenBuffer
     cdef int[144][4] scanlineParameters
 
     cdef sdl2.SDL_Window *_window

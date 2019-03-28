@@ -5,11 +5,13 @@ cimport cython
 
 cdef (int, int) _dummy_declaration
 
-cdef unsigned short flagC, flagH, flagN, flagZ
-cdef unsigned char[512] opcodeLengths
-cdef unsigned short getOpcodeLength(unsigned short)
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
+
+cdef uint16_t flagC, flagH, flagN, flagZ
+cdef uint8_t[512] opcodeLengths
+cdef uint16_t getOpcodeLength(uint16_t)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
-cdef char executeOpcode(CPU.CPU, unsigned short)
+cdef int executeOpcode(CPU.CPU, uint16_t)
 
 
 cdef unsigned char NOOPCODE(CPU.CPU) except -1

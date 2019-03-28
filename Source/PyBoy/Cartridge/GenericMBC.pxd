@@ -7,15 +7,15 @@
 
 from PyBoy.Cartridge.RTC cimport RTC
 import cython
-cimport numpy as np
+from libc.stdint cimport uint8_t, uint32_t
 
 cdef class GenericMBC:
     cdef unicode filename
     cdef unicode gameName
     # 256 is absoulte max. 16KB in each bank
-    cdef unsigned char[256][16 * 1024] ROMBanks
+    cdef uint8_t[256][16 * 1024] ROMBanks
     # 16 is absoulte max. 8KB in each bank
-    cdef unsigned char[16][8 * 1024] RAMBanks
+    cdef uint8_t[16][8 * 1024] RAMBanks
     cdef unsigned char cartType
     cdef bint battery
     cdef bint rtcEnabled

@@ -236,7 +236,6 @@ class SdlGameWindow():
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
         # Prioritizes sprite in inverted order
-        # logger.debug("Rendering Sprites")
         spriteSize = 16 if lcd.LCDC.spriteSize else 8
         BGPkey = lcd.BGP.getColor(0)
 
