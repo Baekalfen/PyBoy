@@ -5,6 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 from .. import CoreDump
+import array
 import os
 from RTC import RTC
 from ..Logger import logger
@@ -15,6 +16,7 @@ class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM, battery, rtcEnabled):
         self.filename = filename + ".ram"
         banks = ROMBanks.shape[0]
+        self.ROMBanks = [[0] * (16 * 1024) for _ in range(256)]
         for n in range(banks):
             self.ROMBanks[n][:] = ROMBanks[n]
         # self.ROMBanks = ROMBanks
@@ -100,12 +102,8 @@ class GenericMBC:
         self.RAMBanksInitialized = True
 
         # In real life the values in RAM are scrambled on initialization
-        if cython.compiled:
-            # Allocating the maximum, as it is easier with static array sizes. And it's 128KB...
-            self.RAMBanks = np.ndarray(shape=(16, 8 * 1024), dtype='uint8')
-        else:
-            self.RAMBanks = [[0] * (8 * 1024) for _ in range(n)]
-
+        # Allocating the maximum, as it is easier with static array sizes. And it's just 128KB...
+        self.RAMBanks = [array.array('B', [0] * (8 * 1024)) for _ in range(16)] # Trying to do CPython a favor with static arrays, although not 2D
 
     def getGameName(self, ROMBanks):
         return unicode("".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0"))

@@ -25,7 +25,7 @@ cdef class CPU:
     cdef unsigned int oldPC, breakNext
 
     cdef object debugCallStack
-    cdef np.uint32_t[512] hitRate
+    cdef int[512] hitRate
 
     @cython.locals(intr_flag_enabled=cython.bint, intr_flag=cython.bint)
     cdef bint testInterrupt(self, unsigned char, unsigned char, short)

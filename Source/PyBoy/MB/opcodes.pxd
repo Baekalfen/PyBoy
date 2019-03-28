@@ -6,7 +6,7 @@ cimport cython
 cdef (int, int) _dummy_declaration
 
 cdef unsigned short flagC, flagH, flagN, flagZ
-cdef unsigned char[:] opcodeLengths
+cdef unsigned char[512] opcodeLengths
 cdef unsigned short getOpcodeLength(unsigned short)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef char executeOpcode(CPU.CPU, unsigned short)

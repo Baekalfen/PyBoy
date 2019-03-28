@@ -25,6 +25,7 @@ warning = """\
 # from registers import A, B, C, D, E, H, L, SP, PC
 # from flags import flagZ, flagN, flagH, flagC
 imports = """
+import array
 import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
@@ -1221,7 +1222,7 @@ def executeOpcode(cpu, opcode):
                 f.write(" "*indent + ("if" if i==0 else "elif") +" opcode == 0x%0.2x:\n" % i + " "*(indent+4) + "return " + str(t[1]).replace("'",'') + ('(cpu)' if t[0] <= 1 else '(cpu, v)') + "\n")
             f.write('\n\n')
 
-            f.write('opcodeLengths = np.asarray([\n    ')
+            f.write('opcodeLengths = array.array("B", [\n    ')
             for i,t in enumerate(lookupList):
                 t = t if t is not None else (0,"NOOPCODE")
                 f.write(str(t[0]).replace("'",'') + ',')
@@ -1230,7 +1231,7 @@ def executeOpcode(cpu, opcode):
                 else:
                     f.write(' ')
 
-            f.write('], dtype=np.uint8)')
+            f.write('])')
             f.write('\n\n')
 
 

@@ -5,6 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import array
 import opcodes
 import CoreDump
 from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
@@ -174,7 +175,7 @@ class CPU(object): # 'object' is important for property!!!
         # Profiling
         self.profiling = profiling
         if profiling:
-            self.hitRate = np.zeros(shape=(512,), dtype=np.uint32)
+            self.hitRate = array.array('L', [0] * 512)
 
     def saveState(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:

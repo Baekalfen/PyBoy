@@ -3,6 +3,7 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
 
+import array
 import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
@@ -5254,7 +5255,7 @@ def executeOpcode(cpu, opcode):
         return SET_1ff(cpu)
 
 
-opcodeLengths = np.asarray([
+opcodeLengths = array.array("B", [
     1, 3, 1, 1, 1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1,
     2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1,
     2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1,
@@ -5287,5 +5288,5 @@ opcodeLengths = np.asarray([
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    ], dtype=np.uint8)
+    ])
 

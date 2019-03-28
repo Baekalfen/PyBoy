@@ -16,7 +16,6 @@ import warnings
 
 from .. import CoreDump
 from .. import WindowEvent
-from FrameBuffer import SimpleFrameBuffer, ScaledFrameBuffer
 
 from ..Logger import logger
 

@@ -6,43 +6,32 @@
 #
 
 import Global
-import numpy as np # np.fromfile is not included in Cython version
 import struct
-import cython
 import array
 
 class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:
-            if cython.compiled:
-                _bootROM = np.fromfile(bootROMFile, np.uint8, 256).astype(np.uint8)
-            else:
-                with open(bootROMFile, "rb") as bootROMFileHandle:
-                    rom = bootROMFileHandle.read()
-                _bootROM = struct.unpack('%iB' % len(rom), rom)
+            with open(bootROMFile, "rb") as bootROMFileHandle:
+                rom = bootROMFileHandle.read()
+            self.bootROM = array.array('B', struct.unpack('%iB' % len(rom), rom))
         else:
-            _bootROM = array.array('B', [0] * 256)
-            # _bootROM = [0 for x in range(256)]
+            self.bootROM = array.array('B', [0] * 256)
             # Set stack pointer
-            _bootROM[0x00] = 0x31
-            _bootROM[0x01] = 0xFE
-            _bootROM[0x02] = 0xFF
+            self.bootROM[0x00] = 0x31
+            self.bootROM[0x01] = 0xFE
+            self.bootROM[0x02] = 0xFF
 
             # Inject jump to 0xFC
-            _bootROM[0x03] = 0xC3
-            _bootROM[0x04] = 0xFC
-            _bootROM[0x05] = 0x00
+            self.bootROM[0x03] = 0xC3
+            self.bootROM[0x04] = 0xFC
+            self.bootROM[0x05] = 0x00
 
             # Inject code to disable boot-ROM
-            _bootROM[0xFC] = 0x3E
-            _bootROM[0xFD] = 0x01
-            _bootROM[0xFE] = 0xE0
-            _bootROM[0xFF] = 0x50
-
-        if cython.compiled:
-            self.bootROM = _bootROM.copy()
-        else:
-            self.bootROM = _bootROM
+            self.bootROM[0xFC] = 0x3E
+            self.bootROM[0xFD] = 0x01
+            self.bootROM[0xFE] = 0xE0
+            self.bootROM[0xFF] = 0x50
 
     def getitem(self, addr):
         return self.bootROM[addr]
