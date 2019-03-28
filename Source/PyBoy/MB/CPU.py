@@ -176,6 +176,30 @@ class CPU(object): # 'object' is important for property!!!
         if profiling:
             self.hitRate = np.zeros(shape=(512,), dtype=np.uint32)
 
+    def saveState(self, f):
+        for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
+            f.write(chr(n & 0xFF))
+
+        for n in [self.HL, self.SP, self.PC]:
+            f.write(chr(n & 0xFF))
+            f.write(chr((n & 0xFF00) >> 8))
+
+        f.write(chr(self.interruptMasterEnable))
+        f.write(chr(self.halted))
+        f.write(chr(self.stopped))
+
+    def loadState(self, f):
+        self.oldPC = -1
+
+        self.A, self.F, self.B,\
+        self.C, self.D, self.E  = [ord(f.read(1)) for _ in xrange(6)]
+
+        self.HL, self.SP, self.PC = [ord(f.read(1)) | (ord(f.read(1))<<8) for _ in xrange(3)]
+
+        self.interruptMasterEnable = ord(f.read(1))
+        self.halted = ord(f.read(1))
+        self.stopped = ord(f.read(1))
+
     def fetchAndExecuteInstruction(self, pc):
         opcode = self.mb.getitem(pc)
         # print("PC: 0x%0.2x, Opcode: 0x%0.2x" % (pc, opcode))

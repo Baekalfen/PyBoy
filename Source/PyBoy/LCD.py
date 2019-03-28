@@ -43,11 +43,10 @@ class LCD():
         self.tilesChanged = set([])
         assert isinstance(self.tilesChanged, set)
 
-        self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
-
         self.VRAM = array.array('B', [0]*(VIDEO_RAM))
         self.OAM = array.array('B', [0]*(OBJECT_ATTRIBUTE_MEMORY))
 
+        self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
         # TODO: Find a more optimal way to do this
         self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')
         self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='uint32')
@@ -64,6 +63,40 @@ class LCD():
         self.SCX = 0x00
         self.WY = 0x00
         self.WX = 0x00
+
+    def saveState(self, f):
+        for n in range(VIDEO_RAM):
+            f.write(chr(self.VRAM[n]))
+
+        for n in range(OBJECT_ATTRIBUTE_MEMORY):
+            f.write(chr(self.OAM[n]))
+
+        f.write(chr(self.LCDC.value))
+        f.write(chr(self.BGP.value))
+        f.write(chr(self.OBP0.value))
+        f.write(chr(self.OBP1.value))
+
+        f.write(chr(self.SCY))
+        f.write(chr(self.SCX))
+        f.write(chr(self.WY))
+        f.write(chr(self.WX))
+
+    def loadState(self, f):
+        for n in range(VIDEO_RAM):
+            self.VRAM[n] = ord(f.read(1))
+
+        for n in range(OBJECT_ATTRIBUTE_MEMORY):
+            self.OAM[n] = ord(f.read(1))
+
+        self.LCDC.set(ord(f.read(1)))
+        self.BGP.set(ord(f.read(1)))
+        self.OBP0.set(ord(f.read(1)))
+        self.OBP1.set(ord(f.read(1)))
+
+        self.SCY = ord(f.read(1))
+        self.SCX = ord(f.read(1))
+        self.WY = ord(f.read(1))
+        self.WX = ord(f.read(1))
 
     def getWindowPos(self):
         return (self.WX-7, self.WY)

@@ -21,6 +21,7 @@ cdef float SPF
 
 cdef class PyBoy:
     cdef object debugger
+    cdef unicode ROM
     cdef Motherboard mb
     cdef SdlGameWindow window
 

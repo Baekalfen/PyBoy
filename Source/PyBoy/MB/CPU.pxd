@@ -37,6 +37,9 @@ cdef class CPU:
     cdef char fetchAndExecuteInstruction(self, unsigned int)
     cdef int tick(self)
 
+    cdef void saveState(self, file)
+    cdef void loadState(self, file)
+
     cdef short A, F, B, C, D, E # Only char (8-bit) needed, but I'm not sure all intermittent results do not overflow
     cdef int HL, SP, PC # Only short (16-bit) needed, but I'm not sure all intermittent results do not overflow
     cdef Motherboard mb

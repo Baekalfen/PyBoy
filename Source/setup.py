@@ -62,7 +62,7 @@ setup(
         ],
         include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/GameWindow", np.get_include(), "/usr/local/lib/python2.7/site-packages/sdl2/", "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
         nthreads=thread_count,
-        annotate=True,
+        annotate=False,
         language_level='2',
         compiler_directives={
             "cdivision" : True,

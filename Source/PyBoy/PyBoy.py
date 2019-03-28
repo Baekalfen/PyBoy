@@ -27,6 +27,7 @@ SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy():
     def __init__(self, win_type, scale, ROM, bootROM = None):
+        self.ROM = unicode(ROM)
         self.debugger = None
         self.window = self.getWindow(win_type, scale)
 
@@ -84,9 +85,9 @@ class PyBoy():
                 self.limitEmulationSpeed ^= True
                 logger.info("Speed limit: %s" % self.limitEmulationSpeed)
             elif event == WindowEvent.SaveState:
-                self.mb.saveState(self.mb.cartridge.filename+".state")
+                self.mb.saveState(self.ROM + ".state")
             elif event == WindowEvent.LoadState:
-                self.mb.loadState(self.mb.cartridge.filename+".state")
+                self.mb.loadState(self.ROM + ".state")
             elif event == WindowEvent.DebugToggle:
                 # mb.cpu.breakAllow = True
                 self.debugger.running ^= True
@@ -167,3 +168,9 @@ class PyBoy():
 
     def getScreenPosition(self):
         return (self.mb.getitem(0xFF43), self.mb.getitem(0xFF42))
+
+    def saveState(self, filename):
+        self.mb.saveState(filename)
+
+    def loadState(self, filename):
+        self.mb.loadState(filename)

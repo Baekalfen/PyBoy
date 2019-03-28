@@ -6,6 +6,7 @@
 #
 
 cdef class RTC:
+    cdef unicode filename
     cdef bint latchEnabled
     cdef double timeZero
     cdef unsigned int secLatch
@@ -16,8 +17,9 @@ cdef class RTC:
     cdef unsigned int dayCarry
     cdef unsigned int halt
 
-    cdef void save(self, unicode)
-    cdef void load(self, unicode)
+    cdef void stop(self)
+    cdef void saveState(self, file)
+    cdef void loadState(self, file)
     cdef void latchRTC(self)
     cdef void writeCommand(self, unsigned char)
     cdef unsigned char getRegister(self, unsigned char)

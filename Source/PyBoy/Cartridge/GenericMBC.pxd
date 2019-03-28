@@ -27,8 +27,10 @@ cdef class GenericMBC:
     cdef unsigned short RAMBankSelected
     cdef unsigned short ROMBankSelected
 
-    cdef void saveRAM(self, filename=*)
-    cdef void loadRAM(self, filename=*)
+    cdef void saveState(self, file)
+    cdef void loadState(self, file)
+    cdef void saveRAM(self, file)
+    cdef void loadRAM(self, file)
     cdef void initRAMBanks(self, unsigned char)
     cdef unicode getGameName(self, unsigned char[:, :])
 

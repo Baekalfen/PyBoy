@@ -12,8 +12,8 @@ from .. import Global
 import cython
 
 class GenericMBC:
-    def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):
-        self.filename = filename  # For debugging and saving
+    def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM, battery, rtcEnabled):
+        self.filename = filename + ".ram"
         banks = ROMBanks.shape[0]
         for n in range(banks):
             self.ROMBanks[n][:] = ROMBanks[n]
@@ -25,7 +25,7 @@ class GenericMBC:
         self.rtcEnabled = rtcEnabled
 
         if self.rtcEnabled:
-            self.rtc = RTC()
+            self.rtc = RTC(filename)
 
 
         # self.RAMBanks = None
@@ -40,41 +40,56 @@ class GenericMBC:
         self.ROMBankSelected = 1  # TODO: Check this, not documented #NOTE: TestROM 01-special.gb
                                   # assumes initial value of 1
 
-    def saveRAM(self, filename = None):
-        if self.RAMBanks is None:
+        if not os.path.exists(self.filename):
+            logger.info("No RAM file found. Skipping.")
+        else:
+            with open(self.filename, "rb") as f:
+                self.loadRAM(f)
+
+    def stop(self):
+        with open(self.filename, "wb") as f:
+            self.saveRAM(f)
+
+        if self.rtcEnabled:
+            self.rtc.stop()
+
+    def saveState(self, f):
+        f.write(chr(self.ROMBankSelected))
+        f.write(chr(self.RAMBankSelected))
+        f.write(chr(self.RAMBankEnabled))
+        f.write(chr(self.memoryModel))
+        self.saveRAM(f)
+        if self.rtcEnabled:
+            self.rtc.saveState(f)
+
+    def loadState(self, f):
+        self.ROMBankSelected = ord(f.read(1))
+        self.RAMBankSelected = ord(f.read(1))
+        self.RAMBankEnabled = ord(f.read(1))
+        self.memoryModel = ord(f.read(1))
+        self.loadRAM(f)
+        if self.rtcEnabled:
+            self.rtc.loadState(f)
+
+    def saveRAM(self, f):
+        if not self.RAMBanksInitialized:
             logger.info("Saving RAM is not supported on {}".format(self.cartType))
             return
 
-        if filename is None:
-            romPath, ext = os.path.splitext(self.filename)
-        else:
-            romPath = filename
-
-        with open(romPath+".ram", "wb") as saveRAM:
-            for bank in xrange(self.exRAMCount):
-                for byte in xrange(8*1024):
-                    saveRAM.write(chr(self.RAMBanks[bank][byte]))
+        for bank in xrange(self.exRAMCount):
+            for byte in xrange(8*1024):
+                f.write(chr(self.RAMBanks[bank][byte]))
 
         logger.info("RAM saved.")
 
-    def loadRAM(self, filename = None):
+    def loadRAM(self, f):
         if not self.RAMBanksInitialized:
             logger.info("Loading RAM is not supported on {}".format(self.cartType))
             return
 
-        if filename is None:
-            romPath, ext = os.path.splitext(self.filename)
-        else:
-            romPath = filename
-
-        if not os.path.exists(romPath+".ram"):
-            logger.info("No RAM file found. Skipping.")
-            return
-
-        with open(romPath+".ram", "rb") as loadRAM:
-            for bank in xrange(self.exRAMCount):
-                for byte in xrange(8*1024):
-                    self.RAMBanks[bank][byte] = ord(loadRAM.read(1))
+        for bank in xrange(self.exRAMCount):
+            for byte in xrange(8*1024):
+                self.RAMBanks[bank][byte] = ord(f.read(1))
 
         logger.info("RAM loaded.")
 

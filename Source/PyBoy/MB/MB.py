@@ -6,6 +6,7 @@
 #
 
 import sys
+import array
 # # import pyximport; pyximport.install()
 
 from ..Logger import logger
@@ -42,13 +43,8 @@ class Motherboard():
         self.lcd = LCD.LCD()
         self.bootROMEnabled = True
 
-
         if "loadState" in sys.argv:
-            self.loadState(str(self.cartridge.filename) + ".state")
-
-        self.cartridge.loadRAM()
-        if self.cartridge.rtcEnabled:
-            self.cartridge.rtc.load(self.cartridge.filename)
+            self.loadState(gameROMFile + ".state")
 
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
@@ -59,9 +55,30 @@ class Motherboard():
 
     def stop(self, save):
         if save:
-            self.cartridge.saveRAM()
-            if self.cartridge.rtcEnabled:
-                self.cartridge.rtc.save(self.cartridge.filename)
+            self.cartridge.stop()
+
+    def saveState(self, filename):
+        logger.info("Saving state...")
+        with open(filename, "wb") as f:
+            f.write(chr(self.bootROMEnabled))
+            self.cpu.saveState(f)
+            self.lcd.saveState(f)
+            self.ram.saveState(f)
+            self.cartridge.saveState(f)
+        logger.info("State saved.")
+
+    def loadState(self, filename):
+        logger.info("Loading state...")
+        with open(filename, "rb") as f:
+            self.bootROMEnabled = ord(f.read(1))
+            self.cpu.loadState(f)
+            self.lcd.loadState(f)
+            self.ram.loadState(f)
+            self.cartridge.loadState(f)
+        logger.info("State loaded.")
+
+        self.lcd.clearCache = True
+        self.lcd.refreshTileDataAdaptive()
 
 
     #########################
@@ -299,89 +316,3 @@ class Motherboard():
         offset = src * 0x100
         for n in xrange(0x00,0xA0):
             self.setitem(dst + n, self.getitem(n + offset))
-
-
-
-
-
-
-    ##########################
-    # Statemanager
-    def saveState(self, filename):
-        logger.info("Saving state...")
-        with open(filename, "wb") as f:
-            for n in [self.cpu.AF, self.cpu.BC, self.cpu.DE, self.cpu.HL, self.cpu.SP, self.cpu.PC]:
-                f.write(chr(n&0xFF))
-                f.write(chr((n&0xFF00)>>8))
-
-            f.write(chr(self.cpu.interruptMasterEnable))
-            f.write(chr(self.cpu.halted))
-            f.write(chr(self.cpu.stopped))
-            f.write(chr(self.bootROMEnabled))
-
-            f.write(bytearray([chr(n) for n in self.lcd.VRAM]))
-            f.write(bytearray([chr(n) for n in self.ram.internalRAM0]))
-            f.write(bytearray([chr(n) for n in self.lcd.OAM]))
-            f.write(bytearray([chr(n) for n in self.ram.nonIOInternalRAM0]))
-            f.write(bytearray([chr(n) for n in self.ram.IOPorts]))
-            f.write(bytearray([chr(n) for n in self.ram.internalRAM1]))
-            f.write(bytearray([chr(n) for n in self.ram.nonIOInternalRAM1]))
-            f.write(bytearray([chr(n) for n in self.ram.interruptRegister]))
-
-            f.write(chr(self.lcd.LCDC.value))
-            f.write(chr(self.lcd.BGP.value))
-            f.write(chr(self.lcd.OBP0.value))
-            f.write(chr(self.lcd.OBP1.value))
-
-            f.write(chr(self.cartridge.ROMBankSelected))
-            f.write(chr(self.cartridge.RAMBankSelected))
-            f.write(chr(self.cartridge.RAMBankEnabled))
-            f.write(chr(self.cartridge.memoryModel))
-            self.cartridge.saveRAM(filename)
-            if self.cartridge.rtcEnabled:
-                self.cartridge.rtc.save(filename + ".rtc")
-
-        logger.info("State saved.")
-
-
-    def loadState(self, filename):
-        logger.info("Loading state...")
-        with open(filename, "rb") as f:
-            self.cpu.oldPC = -1
-
-            self.cpu.AF, self.cpu.BC, self.cpu.DE,\
-            self.cpu.HL, self.cpu.SP, self.cpu.PC = [ord(f.read(1)) | (ord(f.read(1))<<8) for _ in xrange(6)]
-
-            self.cpu.interruptMasterEnable = ord(f.read(1))
-            self.cpu.halted = ord(f.read(1))
-            self.cpu.stopped = ord(f.read(1))
-            self.bootROMEnabled = ord(f.read(1))
-
-            self.lcd.VRAM[:]              = [ord(f.read(1)) for _ in self.lcd.VRAM]
-            self.ram.internalRAM0[:]      = [ord(f.read(1)) for _ in self.ram.internalRAM0]
-            self.lcd.OAM[:]               = [ord(f.read(1)) for _ in self.lcd.OAM]
-            self.ram.nonIOInternalRAM0[:] = [ord(f.read(1)) for _ in self.ram.nonIOInternalRAM0]
-            self.ram.IOPorts[:]           = [ord(f.read(1)) for _ in self.ram.IOPorts]
-            self.ram.internalRAM1[:]      = [ord(f.read(1)) for _ in self.ram.internalRAM1]
-            self.ram.nonIOInternalRAM1[:] = [ord(f.read(1)) for _ in self.ram.nonIOInternalRAM1]
-            self.ram.interruptRegister[:] = [ord(f.read(1)) for _ in self.ram.interruptRegister]
-
-            self.lcd.LCDC.set(ord(f.read(1)))
-            self.lcd.BGP.set(ord(f.read(1)))
-            self.lcd.OBP0.set(ord(f.read(1)))
-            self.lcd.OBP1.set(ord(f.read(1)))
-
-            self.cartridge.ROMBankSelected = ord(f.read(1))
-            self.cartridge.RAMBankSelected = ord(f.read(1))
-            self.cartridge.RAMBankEnabled = ord(f.read(1))
-            self.cartridge.memoryModel = ord(f.read(1))
-            self.cartridge.loadRAM(filename)
-            if self.cartridge.rtcEnabled:
-                self.cartridge.rtc.load(filename + ".rtc")
-
-        logger.info("State loaded.")
-
-        self.lcd.clearCache = True
-        self.lcd.refreshTileDataAdaptive()
-
-

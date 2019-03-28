@@ -51,7 +51,7 @@ clean:
 	find . -name "*.so" -delete
 	find . -name "*.c" -delete
 	find . -name "*.h" -delete
-# find . -name "*.html" -delete
+	find . -name "*.html" -delete
 
 run:
 	python main.py SDL2 ROMs/POKEMON\ BLUE.gb
