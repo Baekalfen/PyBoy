@@ -62,7 +62,7 @@ class Motherboard():
     def stop(self, save):
         if save:
             self.cartridge.stop()
-        self.window.stop()
+        self.MainWindow.stop()
 
     def saveState(self, filename):
         logger.info("Saving state...")
@@ -159,7 +159,7 @@ class Motherboard():
                 self.setSTATMode(3)
                 self.calculateCycles(170)
 
-                self.MainWindow.scanline(y, self.lcd.getViewPort(), self.lcd.getWindowPos()) # Just recording states of LCD registers
+                self.MainWindow.scanline(y, self.lcd)
 
                 # Mode 0
                 self.setSTATMode(0)

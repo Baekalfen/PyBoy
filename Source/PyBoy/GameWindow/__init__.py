@@ -6,12 +6,22 @@
 
 # from .. import Global
 
+from ..Logger import logger
 from AbstractGameWindow import AbstractGameWindow
 from GameWindow_dummy import DummyGameWindow
 
-# if Global.isPyPy:
-from GameWindow_SDL2 import SdlGameWindow
-# else:
-#     from .GameWindow_PyGame import PyGameGameWindow
+try:
+    from .GameWindow_SDL2 import SdlGameWindow
+except:
+    logger.warning("Failed to load SDL2 GameWindow.")
 
+try:
+    from .GameWindow_Scanline import ScanlineGameWindow
+except:
+    logger.warning("Failed to load Scanline GameWindow")
+
+try:
+    from .GameWindow_OpenGL import OpenGLGameWindow
+except:
+    logger.warning("Failed to load OpenGL GameWindow")
 

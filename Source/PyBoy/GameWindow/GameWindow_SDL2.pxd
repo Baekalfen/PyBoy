@@ -40,9 +40,12 @@ cdef class SdlGameWindow:
 
     cdef void setTitle(self, char*)
     @cython.locals(now=cython.int, delay=cython.int)
-    cdef void VSync(self)
+    cdef void framelimiter(self)
     cdef void stop(self)
-    cdef void scanline(self, int, (int, int), (int, int))
+
+    @cython.locals(viewPos=(int, int), windowPos=(int, int))
+    cdef void scanline(self, int, LCD)
+
     @cython.locals(
             y=ushort,
             x=ushort,

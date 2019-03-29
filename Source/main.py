@@ -12,7 +12,8 @@ import os
 import sys
 import platform
 from PyBoy import PyBoy
-from PyBoy.Logger import logger
+from PyBoy.Logger import logger, addConsoleHandler
+addConsoleHandler()
 
 if platform.system() != "Windows":
     from Debug import Debug
@@ -34,7 +35,7 @@ def getROM(ROMdir):
     return filename
 
 
-if __name__ == "__main__":
+def main():
     # Automatically bump to '-OO' optimizations
     if __debug__:
         os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
@@ -75,4 +76,11 @@ if __name__ == "__main__":
     #     if debugger:
     #         logger.info("Debugger ready for shutdown")
     #         time.sleep(10)
-    #         debugger.quit()
+    #
+
+
+if __name__ == "__main__":
+    main()
+
+    # import cProfile
+    # cProfile.run('main()', sort='cumulative')         debugger.quit()

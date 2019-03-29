@@ -40,13 +40,13 @@ class DummyGameWindow():
     def updateDisplay(self):
         pass
 
-    def VSync(self):
+    def framelimiter(self):
         pass
 
     def stop(self):
         logger.info("DummyWindow stopping")
 
-    def scanline(self, y, viewPos, windowPos):
+    def scanline(self, y, lcd):
         pass
 
     def renderScreen(self, lcd):

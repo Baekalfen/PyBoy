@@ -29,7 +29,7 @@ class AbstractGameWindow(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def VSync(self):
+    def framelimiter(self):
         raise NotImplementedError()
 
     @abstractmethod

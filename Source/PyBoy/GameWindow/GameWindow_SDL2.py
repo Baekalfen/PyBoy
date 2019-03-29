@@ -32,9 +32,6 @@ class SdlGameWindow():
         self._scale = scale
         self.ticks = sdl2.SDL_GetTicks()
 
-        if self._scale != 1:
-            logger.warn("Scaling set to %s. The implementation is temporary, which means scaling above 1 will impact performance." % self._scale)
-
         # super(self.__class__, self).__init__(scale)
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
@@ -177,7 +174,7 @@ class SdlGameWindow():
         #     self.tileView2Window.refresh()
         #     self.spriteWindow.refresh()
 
-    def VSync(self):
+    def framelimiter(self):
         now = sdl2.SDL_GetTicks()
         delay = int(1/60.0*1000-(now-self.ticks))
         if delay < 0: # Cython doesn't suppport max()
@@ -194,7 +191,9 @@ class SdlGameWindow():
         sdl2.SDL_DestroyWindow(self._window)
         sdl2.ext.quit()
 
-    def scanline(self, y, viewPos, windowPos):
+    def scanline(self, y, lcd): # Just recording states of LCD registers
+        viewPos = lcd.getViewPort()
+        windowPos = lcd.getWindowPos()
         self.scanlineParameters[y][0] = viewPos[0]
         self.scanlineParameters[y][1] = viewPos[1]
         self.scanlineParameters[y][2] = windowPos[0]

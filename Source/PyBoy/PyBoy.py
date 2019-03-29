@@ -31,15 +31,10 @@ class PyBoy():
         self.debugger = None
         self.window = self.getWindow(win_type, scale)
 
-        if "debug" in sys.argv and platform.system() != "Windows":
-            pass
-            # self.debugger = Debug()
-            # self.debugger.tick()
-        else:
-            addConsoleHandler()
+        addConsoleHandler()
 
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(unicode(ROM), unicode(bootROM), self.window, profiling = self.profiling, debugger = self.debugger)
+        self.mb = Motherboard(unicode(ROM), bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
 
         if not self.debugger is None:
             self.debugger.mb = self.mb
@@ -56,18 +51,19 @@ class PyBoy():
 
     def getWindow(self, win_type, scale):
         print "Window type is:", win_type
-        Window = None
         if win_type is None:
             Window = GameWindow.SdlGameWindow(scale)
         elif win_type == "SDL2":
             Window = GameWindow.SdlGameWindow(scale)
-        # elif win_type == "PyGame":
-        #     Window = PyGameGameWindow(scale)
+        elif win_type == "scanline":
+            Window = GameWindow.ScanlineGameWindow(scale)
+        elif win_type == "OpenGL":
+            Window = GameWindow.OpenGLGameWindow(scale)
         elif win_type == "dummy":
             Window = GameWindow.DummyGameWindow(scale)
         else:
             print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
-            print "Valid GameWindows are: 'SDL2' and 'dummy'"
+            print "Valid GameWindows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'"
             exit(1)
 
         return Window
@@ -123,14 +119,12 @@ class PyBoy():
         # Trying to avoid VSync'ing on a frame, if we are out of time
         if self.limitEmulationSpeed:
             # This one makes time and frame syncing work, but messes with time.clock()
-            self.window.VSync()
+            self.window.framelimiter()
         self.t_frameDone = time.time()
 
         if self.counter % 60 == 0:
             text = "%d %d" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)
-            # self.window._window.title = text
             self.window.setTitle(text)
-            # logger.info(text)
             self.counter = 0
         self.counter += 1
 
@@ -170,10 +164,10 @@ class PyBoy():
         return self.mb
 
     def getSprite(self, index):
-        return BotSupport.Sprite(self.mb.lcd, index)
+        return BotSupport.Sprite(self.mb, index)
 
     def getTileView(self, high):
-        return BotSupport.TileView(self.mb.lcd, high)
+        return BotSupport.TileView(self.mb, high)
 
     def getScreenPosition(self):
         return (self.mb.getitem(0xFF43), self.mb.getitem(0xFF42))

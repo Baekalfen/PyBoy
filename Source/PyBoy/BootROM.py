@@ -11,7 +11,7 @@ import array
 class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:
-            with open(bootROMFile, "rb") as bootROMFileHandle:
+            with open(unicode(bootROMFile), "rb") as bootROMFileHandle:
                 rom = bootROMFileHandle.read()
             self.bootROM = array.array('B', struct.unpack('%iB' % len(rom), rom))
         else:

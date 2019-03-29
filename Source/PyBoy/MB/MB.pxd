@@ -40,8 +40,8 @@ cdef class Motherboard:
     cdef void calculateCycles(self, int)
     cdef void tickFrame(self)
 
-    cdef unsigned char getitem(self, unsigned short)
-    cdef void setitem(self, unsigned short, unsigned char)
+    cpdef unsigned char getitem(self, unsigned short)
+    cpdef void setitem(self, unsigned short, unsigned char)
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transferDMAtoOAM(self, unsigned char)
