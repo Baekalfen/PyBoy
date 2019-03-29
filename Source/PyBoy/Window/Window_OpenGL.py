@@ -35,7 +35,7 @@ tiles = 384
 
 class OpenGLWindow(GenericWindow):
     def __init__(self, scale=1):
-        # super(self.__class__, self).__init__(scale)
+        super(self.__class__, self).__init__(scale)
 
         self.tile_cache = np.ndarray((tiles * 8, 8), dtype='int32')
         self.sprite_cacheOBP0 = np.ndarray((tiles * 8, 8), dtype='int32')
@@ -43,10 +43,8 @@ class OpenGLWindow(GenericWindow):
 
         self.color_palette = (0xFFFFFF00,0x99999900,0x55555500,0x00000000)
 
-
         self.debug = False
 
-        logger.debug("OpenGL Window initialization")
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*tuple([x*self._scale for x in gameboyResolution]))
@@ -59,9 +57,6 @@ class OpenGLWindow(GenericWindow):
         self.events = []
 
         glPixelZoom(self._scale,self._scale)
-        self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
-        logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
-
 
         self._screenBuffer = np.ndarray(shape=gameboyResolution, dtype='uint32')
         self._screenBuffer.fill(0x00558822)

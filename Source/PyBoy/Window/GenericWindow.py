@@ -6,12 +6,16 @@
 
 from ..Logger import logger
 
+gameboyResolution = (160, 144)
+
 class GenericWindow(object):
 
     def __init__(self, scale=1):
         self._scale = scale
-        # super(self.__class__, self).__init__(scale)
-        logger.debug(self.__name__ + "initialization")
+        logger.debug("%s initialization" % self.__class__.__name__)
+
+        self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
+        logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
         self.enable_title = True
 

@@ -23,10 +23,8 @@ alphaMask = 0x7F000000
 
 class SdlWindow(GenericWindow):
     def __init__(self, scale=1):
-        self._scale = scale
+        super(self.__class__, self).__init__(scale)
         self.ticks = sdl2.SDL_GetTicks()
-
-        # super(self.__class__, self).__init__(scale)
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
         # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
@@ -61,12 +59,8 @@ class SdlWindow(GenericWindow):
 
         self.debug = False
 
-        logger.debug("SDL Window initialization")
         # sdl2.ext.init()
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING) # Should be less... https://wiki.libsdl.org/SDL_Init
-
-        self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
-        logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
         self._window = sdl2.SDL_CreateWindow(
                 "PyBoy",

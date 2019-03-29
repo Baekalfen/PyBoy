@@ -24,11 +24,9 @@ cdef class SdlWindow(GenericWindow):
 
     cdef int ticks
     cdef list getEvents(self)
-    cdef unsigned int _scale
     cdef dict windowEventsDown
     cdef dict windowEventsUp
     cdef bint debug
-    cdef (int, int) _scaledResolution
     cdef uint32_t[144][160] _screenBuffer
     cdef int[144][4] scanlineParameters
 

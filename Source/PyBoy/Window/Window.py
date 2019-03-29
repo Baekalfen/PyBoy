@@ -26,7 +26,7 @@ except:
 
 
 def getWindow(win_type, scale):
-    print "Window type is:", win_type
+    logger.info("Window type is: %s" % win_type)
     if win_type is None:
         window = SdlWindow(scale)
     elif win_type == "SDL2":

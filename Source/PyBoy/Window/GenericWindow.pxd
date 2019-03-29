@@ -6,12 +6,14 @@
 
 from PyBoy.LCD cimport LCD
 
-cdef (int, int) _dummy_declaration
+cdef (int, int) gameboyResolution
 
 cdef class GenericWindow:
-    cdef void setTitle(self, char*)
+    cdef (int, int) _scaledResolution
+    cdef unsigned int _scale
+    cdef bint enable_title
 
-    # TODO: sdl2_events.SDL_Event
+    cdef void setTitle(self, char*)
     cdef list getEvents(self)
 
     cdef void updateDisplay(self)

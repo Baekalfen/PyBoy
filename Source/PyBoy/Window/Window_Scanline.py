@@ -68,12 +68,9 @@ class ScanlineWindow(GenericWindow):
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
 
-        logger.debug("Scanline Window initialization")
-
         sdl2.ext.init()
 
-        start_size = tuple(map(lambda x: scale * x, gameboyResolution))
-        self._window = sdl2.ext.Window("PyBoy", size=start_size,
+        self._window = sdl2.ext.Window("PyBoy", size=self._scaledResolution,
                                        flags=sdl2.SDL_WINDOW_RESIZABLE)
 
         self._renderer = sdl2.ext.Renderer(self._window, -1,

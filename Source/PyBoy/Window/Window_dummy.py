@@ -13,10 +13,7 @@ from GenericWindow import GenericWindow
 
 class DummyWindow(GenericWindow):
     def __init__(self, scale):
-        # super(self.__class__, self).__init__(scale)
-        logger.debug("DummyWindow initialization")
-
-        self.enable_title = True
+        super(self.__class__, self).__init__(scale)
 
     def dump(self,filename):
         pass
