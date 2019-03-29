@@ -62,7 +62,7 @@ def main():
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy(sys.argv[1], scale, filename, bootROM)
+        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None, scale, filename, bootROM)
         while not pyboy.tick():
             pass
         pyboy.stop()

@@ -1,38 +1,45 @@
-# from distutils.core import setup
+import setuptools
 from Cython.Build import cythonize
-
-# setup(
-#   name = 'CPU',
-#   ext_modules = cythonize([
-#         '__init__.pyx',
-#         'flags.pyx',
-#         'Interrupts.pyx',
-#         'opcodes.pyx',
-#         'registers.pyx',
-#       ]),
-# )
-
-
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 import numpy as np
-
-# foo = Extension(name='foo.__init__', sources=['foo/__init__.pyx'])
-# bar = Extension(name='foo.bar', sources=['foo/bar.pyx'])
-
 import multiprocessing
 
+with open('../README.md', 'r') as rm:
+	    long_description = rm.read()
+
 thread_count = multiprocessing.cpu_count()
-# thread_count = multiprocessing.cpu_count()/2 # Half for Hyper-Threading
 # thread_count = 1
 print "Thread Count:", thread_count
 
 setup(
     name='PyBoy',
-    packages = ["PyBoy"],
+    version='0.1',
+    # packages = ["PyBoy"],
+    packages=setuptools.find_packages(),
+    author="Mads Ynddal",
+    author_email="mads-pyboy@ynddal.dk",
+    long_description=long_description,
+    content_type="text/markdown",
+    url="https://github.com/Baekalfen/PyBoy",
+    classifiers=[
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Cython",
+        "License :: Free for non-commercial use",
+        "Operating System :: OS Independent",
+        "Topic :: System :: Emulators",
+    ],
     cmdclass={'build_ext':build_ext},
+    install_requires=[
+        "cython",
+        "pysdl2",
+        "imageio",
+        "numpy",
+    ],
     include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", np.get_include(), "/usr/local/include/SDL2/"], #, "PyBoy/GameWindow",
     ext_modules = cythonize([
             'PyBoy/LCD.py',
