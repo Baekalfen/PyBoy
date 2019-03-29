@@ -65,7 +65,7 @@ cdef class PaletteRegister:
     cdef unsigned char[4] lookup
 
     @cython.locals(x=cython.ushort)
-    cdef void set(self, unsigned int)
+    cdef bint set(self, unsigned int)
     cdef unsigned int getColor(self, unsigned char)
 
     cdef char getCode(self, unsigned char)

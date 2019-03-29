@@ -10,6 +10,7 @@ import platform
 import time
 
 import numpy as np
+from ScreenRecorder import ScreenRecorder
 
 import Global
 from MB.MB import Motherboard
@@ -52,6 +53,7 @@ class PyBoy():
         self.t_frameDone = 0
         self.counter = 0
         self.limitEmulationSpeed = True
+        self.screen_recorder = None
 
     def getWindow(self, win_type, scale):
         print "Window type is:", win_type
@@ -65,7 +67,8 @@ class PyBoy():
         elif win_type == "dummy":
             Window = GameWindow.DummyGameWindow(scale)
         else:
-            print "Invalid window argument!"
+            print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
+            print "Valid GameWindows are: 'SDL2' and 'dummy'"
             exit(1)
 
         return Window
@@ -94,6 +97,12 @@ class PyBoy():
                 # mb.cpu.breakOn ^= True
             elif event == WindowEvent.Pass:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
+            elif event == WindowEvent.ScreenRecordingToggle:
+                if not self.screen_recorder:
+                    self.screen_recorder = ScreenRecorder()
+                else:
+                    self.screen_recorder.save()
+                    self.screen_recorder = None
             else:  # Right now, everything else is a button press
                 self.mb.buttonEvent(event)
 
@@ -107,6 +116,8 @@ class PyBoy():
                 self.mb.tickFrame()
         self.window.updateDisplay()
 
+        if self.screen_recorder:
+            self.screen_recorder.add_frame(self.window.getScreenBuffer())
 
         self.t_VSynced = time.clock()
 
@@ -130,7 +141,6 @@ class PyBoy():
         logger.info("###########################")
         logger.info("# Emulator is turning off #")
         logger.info("###########################")
-        self.window.stop()
         self.mb.stop(save)
 
         if self.profiling:
@@ -174,3 +184,12 @@ class PyBoy():
 
     def loadState(self, filename):
         self.mb.loadState(filename)
+
+    def getSerial(self):
+        return self.mb.getSerial()
+
+    def disableTitle(self):
+        self.window.disableTitle()
+
+    def setLimitEmulationSpeed(self, v):
+        self.limitEmulationSpeed = v

@@ -49,6 +49,13 @@ class Motherboard():
         CoreDump.RAM = self.ram
         CoreDump.CPU = self.cpu
 
+        self.serialBuffer = u''
+
+    def getSerial(self):
+        b = self.serialBuffer
+        self.serialBuffer = u''
+        return b
+
     def buttonEvent(self, key):
         self.interaction.keyEvent(key)
         self.cpu.setInterruptFlag(HightoLow)
@@ -56,6 +63,7 @@ class Motherboard():
     def stop(self, save):
         if save:
             self.cartridge.stop()
+        self.window.stop()
 
     def saveState(self, filename):
         logger.info("Saving state...")
@@ -270,6 +278,9 @@ class Motherboard():
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF00:
                 self.ram.IOPorts[i - 0xFF00] = self.interaction.pull(value)
+            elif i == 0xFF01:
+                self.serialBuffer += chr(value)
+                self.ram.IOPorts[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.DIV = 0
             elif i == 0xFF05:
@@ -287,11 +298,11 @@ class Motherboard():
             elif i == 0xFF46:
                 self.transferDMAtoOAM(value)
             elif i == 0xFF47:
-                self.lcd.BGP.set(value)
+                self.lcd.clearCache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
-                self.lcd.OBP0.set(value)
+                self.lcd.clearCache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
-                self.lcd.OBP1.set(value)
+                self.lcd.clearCache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:

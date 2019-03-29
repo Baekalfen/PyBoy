@@ -52,9 +52,9 @@ class LCD():
         self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='uint32')
 
         self.LCDC = LCDCRegister(0)
-        self.BGP = PaletteRegister(0xFC, self)
-        self.OBP0 = PaletteRegister(0xFF, self)
-        self.OBP1 = PaletteRegister(0xFF, self)
+        self.BGP = PaletteRegister(0xFC)
+        self.OBP0 = PaletteRegister(0xFF)
+        self.OBP1 = PaletteRegister(0xFF)
         # self.STAT = 0x00
         # self.LY = 0x00
         # self.LYC = 0x00
@@ -134,24 +134,23 @@ class LCD():
         self.tilesChanged.clear()
 
 class PaletteRegister():
-    def __init__(self, value, lcd):
-        self.lcd = lcd
+    def __init__(self, value):
         self.value = 0 # None
         self.set(value)
 
     def set(self, value):
         if self.value == value: # Pokemon Blue continously sets this without changing the value
-            return
+            return False
 
         self.value = value
         self.lookup = [0] * 4
         for x in xrange(4):
             self.lookup[x] = (value >> x*2) & 0b11
-        self.lcd.clearCache = True
+        # self.lcd.clearCache = True
+        return True
 
     def getColor(self, i):
         return colorPalette[self.lookup[i]]
-        # return colorPalette[i]
 
     def getCode(self, i):
         return self.lookup[i]

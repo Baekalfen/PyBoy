@@ -31,6 +31,7 @@ cdef class Motherboard:
     cdef SdlGameWindow MainWindow
     cdef PyBoy.Cartridge.GenericMBC.GenericMBC cartridge
     cdef bint bootROMEnabled
+    cdef unicode serialBuffer
 
     cdef void buttonEvent(self, int)
     cdef void stop(self, bint)

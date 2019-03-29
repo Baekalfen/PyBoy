@@ -26,13 +26,14 @@ class DummyGameWindow():
 
         CoreDump.windowHandle = self
 
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[0],4), dtype='int32')
+        self.enable_title = True
 
     def dump(self,filename):
         pass
 
     def setTitle(self,title):
-        logger.info("DummyWindow set title: %s" % title)
+        if self.enable_title:
+            logger.info("DummyWindow set title: %s" % title)
 
     def getEvents(self):
         return []
@@ -47,10 +48,7 @@ class DummyGameWindow():
         logger.info("DummyWindow stopping")
 
     def scanline(self, y, viewPos, windowPos):
-        self.scanlineParameters[y, 0] = viewPos[0]
-        self.scanlineParameters[y, 1] = viewPos[1]
-        self.scanlineParameters[y, 2] = windowPos[0]
-        self.scanlineParameters[y, 3] = windowPos[1]
+        pass
 
     def renderScreen(self, lcd):
         pass

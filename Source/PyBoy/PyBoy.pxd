@@ -34,6 +34,7 @@ cdef class PyBoy:
     cdef float t_frameDone
     cdef unsigned int counter
     cdef bint limitEmulationSpeed
+    cdef object screen_recorder
 
     @cython.locals(done=cython.bint, event=int)
     cpdef bint tick(self)

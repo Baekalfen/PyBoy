@@ -53,6 +53,7 @@ class SdlGameWindow():
                 # sdl2.SDLK_e       : self.debug = True
                 sdl2.SDLK_d         : WindowEvent.DebugToggle,
                 sdl2.SDLK_SPACE     : WindowEvent.PressSpeedUp,
+                sdl2.SDLK_i         : WindowEvent.ScreenRecordingToggle,
         }
         self.windowEventsUp = {
                 sdl2.SDLK_UP        : WindowEvent.ReleaseArrowUp,
@@ -135,6 +136,9 @@ class SdlGameWindow():
     #     window.show()
 
     #     return window, windowSurface, windowBuffer
+
+    def disableTitle(self):
+        pass
 
     def dump(self,filename):
         sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface,filename+".bmp")
