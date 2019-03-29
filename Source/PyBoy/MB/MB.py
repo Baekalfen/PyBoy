@@ -81,8 +81,8 @@ class Motherboard():
             self.cartridge.loadState(f)
         logger.info("State loaded.")
 
-        self.lcd.clearCache = True
-        self.lcd.refreshTileDataAdaptive()
+        self.window.clearCache = True
+        self.window.updateCache(self.lcd)
 
 
     #########################
@@ -134,7 +134,7 @@ class Motherboard():
     def tickFrame(self):
         lcdEnabled = self.lcd.LCDC.enabled
         if lcdEnabled:
-            self.lcd.refreshTileDataAdaptive()
+            self.window.updateCache(self.lcd)
 
             if __debug__:
                 self.window.refreshTileView1(self.lcd)
@@ -258,7 +258,7 @@ class Motherboard():
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
-                self.lcd.tilesChanged.add(i & 0xFFF0) # Mask out the byte of the tile
+                self.window.tiles_changed.add(i & 0xFFF0) # Mask out the byte of the tile
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
@@ -293,11 +293,11 @@ class Motherboard():
             elif i == 0xFF46:
                 self.transferDMAtoOAM(value)
             elif i == 0xFF47:
-                self.lcd.clearCache |= self.lcd.BGP.set(value)
+                self.window.clearCache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
-                self.lcd.clearCache |= self.lcd.OBP0.set(value)
+                self.window.clearCache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
-                self.lcd.clearCache |= self.lcd.OBP1.set(value)
+                self.window.clearCache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:

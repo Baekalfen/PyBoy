@@ -25,29 +25,10 @@ gameboyResolution = (160, 144)
 colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
 alphaMask = 0x7F000000
 
-def getColorCode(byte1,byte2,offset):
-    # The colors are 2 bit and are found like this:
-    #
-    # Color of the first pixel is 0b10
-    # | Color of the second pixel is 0b01
-    # v v
-    # 1 0 0 1 0 0 0 1 <- byte1
-    # 0 1 1 1 1 1 0 0 <- byte2
-    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
-
 class LCD():
     def __init__(self):
-        self.clearCache = False
-        self.tilesChanged = set([])
-        assert isinstance(self.tilesChanged, set)
-
         self.VRAM = array.array('B', [0]*(VIDEO_RAM))
         self.OAM = array.array('B', [0]*(OBJECT_ATTRIBUTE_MEMORY))
-
-        self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
-        # TODO: Find a more optimal way to do this
-        self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')
-        self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='uint32')
 
         self.LCDC = LCDCRegister(0)
         self.BGP = PaletteRegister(0xFC)
@@ -102,34 +83,7 @@ class LCD():
     def getViewPort(self):
         return (self.SCX, self.SCY)
 
-    def refreshTileDataAdaptive(self):
-        if self.clearCache:
-            self.tilesChanged.clear()
-            for x in xrange(0x8000,0x9800,16):
 
-                self.tilesChanged.add(x)
-            self.clearCache = False
-
-        for t in self.tilesChanged:
-            for k in xrange(0, 16 ,2): #2 bytes for each line
-                byte1 = self.VRAM[t+k - 0x8000]
-                byte2 = self.VRAM[t+k+1 - 0x8000]
-
-                for pixelOnLine in xrange(7,-1,-1):
-                    y = k/2
-                    x = (t - 0x8000)/2 + 7-pixelOnLine
-
-                    colorCode = getColorCode(byte1, byte2, pixelOnLine)
-
-                    self.tileCache[x][y] = self.BGP.getColor(colorCode)
-                    # TODO: Find a more optimal way to do this
-                    alpha = 0x00000000
-                    if colorCode == 0:
-                        alpha = alphaMask # Add alpha channel
-                    self.spriteCacheOBP0[x][y] = self.OBP0.getColor(colorCode) + alpha
-                    self.spriteCacheOBP1[x][y] = self.OBP1.getColor(colorCode) + alpha
-
-        self.tilesChanged.clear()
 
 class PaletteRegister():
     def __init__(self, value):

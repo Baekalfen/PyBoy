@@ -12,9 +12,13 @@ cimport SDL2 as sdl2
 from PyBoy.LCD cimport LCD
 from PyBoy.Window.GenericWindow cimport GenericWindow
 
+cdef (int, int, int, int) _dummy_declaration2
+
 import cython
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
+
+cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
 cdef (int, int) gameboyResolution
 cdef unsigned int alphaMask
@@ -78,7 +82,7 @@ cdef class SdlWindow(GenericWindow):
             xx=ushort,
             pixel=int,
             )
-    cdef void copySprite(self, LCD, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
+    cdef void copySprite(self, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
     cdef void blankScreen(self)
     cdef object getScreenBuffer(self)
 
@@ -90,4 +94,10 @@ cdef class SdlWindow(GenericWindow):
                 NULL,
                 NULL)
         sdl2.SDL_RenderPresent(self._sdlrenderer)
+
+
+    cdef uint32_t[384 * 8][8] tileCache
+    cdef uint32_t[384 * 8][8] spriteCacheOBP0
+    cdef uint32_t[384 * 8][8] spriteCacheOBP1
+
 

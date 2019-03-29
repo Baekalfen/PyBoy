@@ -17,6 +17,11 @@ class GenericWindow(object):
         self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
+        self.colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
+
+        self.clearCache = False
+        self.tiles_changed = set([])
+
         self.enable_title = True
 
 
@@ -44,13 +49,12 @@ class GenericWindow(object):
     def renderScreen(self, lc):
         raise NotImplementedError()
 
-    def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize,
-            spritePriority, BGPkey, xFlip=0, yFlip=0):
-        raise NotImplementedError()
-
     def blankScreen(self):
-        raise NotImplementedError()
+        pass
 
     def getScreenBuffer(self):
         raise NotImplementedError()
+
+    def updateCache(self, lcd):
+        pass
 

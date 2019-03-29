@@ -18,19 +18,12 @@ cdef (int, int) gameboyResolution
 cdef public int[4] colorPalette
 cdef unsigned int alphaMask
 
-cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
-
 import cython
 from libc.stdint cimport uint8_t, uint32_t
 
 cdef class LCD:
-    cdef bint clearCache
-    cdef set tilesChanged
-    cdef uint32_t[384 * 8][8] tileCache
     cdef uint8_t[8 * 1024] VRAM
     cdef uint8_t[0xA0] OAM
-    cdef uint32_t[384 * 8][8] spriteCacheOBP0
-    cdef uint32_t[384 * 8][8] spriteCacheOBP1
 
     cdef int SCY
     cdef int SCX
@@ -46,16 +39,6 @@ cdef class LCD:
 
     cdef (int, int) getWindowPos(self)
     cdef (int, int) getViewPort(self)
-    @cython.locals(
-            x=cython.ushort,
-            y=cython.ushort,
-            t=cython.int,
-            k=cython.int,
-            pixelOnLine=cython.int,
-            colorCode=cython.int,
-            alpha=cython.int,
-            )
-    cdef void refreshTileDataAdaptive(self)
 
 cdef class PaletteRegister:
     cdef LCD lcd

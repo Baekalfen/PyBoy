@@ -2,10 +2,10 @@
 cimport numpy
 cimport CPU
 cimport cython
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 cdef (int, int) _dummy_declaration
-
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+cdef (int, int, int, int) _dummy_declaration2
 
 cdef uint16_t flagC, flagH, flagN, flagZ
 cdef uint8_t[512] opcodeLengths

@@ -13,6 +13,7 @@ from PyBoy.MB.MB cimport Motherboard
 from PyBoy.Window.GenericWindow cimport GenericWindow
 
 cdef (int, int) _dummy_declaration
+cdef (int, int, int, int) _dummy_declaration2
 
 cdef float SPF
 

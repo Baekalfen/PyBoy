@@ -17,6 +17,7 @@ cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
 
 cdef (int, int) _dummy_declaration
+cdef (int, int, int, int) _dummy_declaration2
 
 cdef class CPU:
 
