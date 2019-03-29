@@ -4,18 +4,21 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-cdef class AbstractGameWindow:
+from PyBoy.LCD cimport LCD
+
+cdef (int, int) _dummy_declaration
+
+cdef class GenericWindow:
     cdef void setTitle(self, char*)
 
     # TODO: sdl2_events.SDL_Event
-    cdef object[:] getEvents(self)
+    cdef list getEvents(self)
 
     cdef void updateDisplay(self)
-    cdef void VSync(self)
+    cdef void framelimiter(self)
     cdef void stop(self)
-    cdef void scanline(self, int, tuple, tuple)
-    cdef void renderScreen(self, object)
-    cdef void copySprite(self, tuple, tuple, object, object, int, bint, unsigned int, xFlip=*, yFlip=*)
+    cdef void scanline(self, int, LCD)
+    cdef void renderScreen(self, LCD)
     cdef void blankScreen(self)
     cdef object getScreenBuffer(self)
 

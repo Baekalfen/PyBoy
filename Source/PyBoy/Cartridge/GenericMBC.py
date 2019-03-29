@@ -3,13 +3,11 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from .. import CoreDump
 import array
 import os
 from RTC import RTC
 from ..Logger import logger
 from .. import Global
-import cython
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM, battery, rtcEnabled):
@@ -111,8 +109,6 @@ class GenericMBC:
     def setitem(self, address, value):
         raise Exception("Cannot set item in GenericMBC")
 
-    # @cython.locals(address=cython.ushort)
-    # def __getitem__(self, address):
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.ROMBanks[0][address]
@@ -120,14 +116,14 @@ class GenericMBC:
             return self.ROMBanks[self.ROMBankSelected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.RAMBanksInitialized:
-                raise CoreDump.CoreDump("RAM banks not initialized: %s" % hex(address))
+                raise logger.error("RAM banks not initialized: %s" % hex(address))
 
             if self.rtcEnabled and 0x08 <= self.RAMBankSelected <= 0x0C:
                 return self.rtc.getRegister(self.RAMBankSelected)
             else:
                 return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
         else:
-            raise CoreDump.CoreDump("Reading address invalid: %s" % address)
+            raise logger.error("Reading address invalid: %s" % address)
 
     def __str__(self):
         string = "Cartridge:\n"
@@ -161,6 +157,6 @@ class ROM_only(GenericMBC):
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
             logger.warn("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
-        #     raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
+        #     raise logger.error("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
 
 

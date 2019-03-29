@@ -4,7 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import CoreDump
 # import RAM
 # from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 import array

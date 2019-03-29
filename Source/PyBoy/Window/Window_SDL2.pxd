@@ -9,19 +9,17 @@
 
 
 cimport SDL2 as sdl2
-# cimport PyBoy.LCD
 from PyBoy.LCD cimport LCD
+from PyBoy.Window.GenericWindow cimport GenericWindow
 
 import cython
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
-# cimport PyBoy.GameWindow.AbstractGameWindow
 cdef (int, int) gameboyResolution
 cdef unsigned int alphaMask
-# cdef object pixels2dWithoutWarning(object)
 
-cdef class SdlGameWindow:
+cdef class SdlWindow(GenericWindow):
     # cdef tuple makeWindowAndGetBuffer(self, int, int, int, int, char*)
 
     cdef int ticks

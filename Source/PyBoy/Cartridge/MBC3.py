@@ -3,10 +3,8 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from .. import CoreDump
 from GenericMBC import GenericMBC
 from ..Logger import logger
-import cython
 
 class MBC3(GenericMBC):
     def setitem(self, address, value):
@@ -39,7 +37,7 @@ class MBC3(GenericMBC):
             elif 0x08 <= self.RAMBankSelected <= 0x0C:
                 self.rtc.setRegister(self.RAMBankSelected, value)
             else:
-                raise CoreDump.CoreDump("Invalid RAM bank selected: 0x%0.2x" % self.RAMBankSelected)
+                raise logger.error("Invalid RAM bank selected: 0x%0.2x" % self.RAMBankSelected)
         else:
-            raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x" % address)
+            raise logger.error("Invalid writing address: 0x%0.4x" % address)
 

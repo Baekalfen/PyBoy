@@ -6,7 +6,6 @@
 
 import array
 import opcodes
-import CoreDump
 from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from ..Logger import logger
 import numpy as np
@@ -247,18 +246,16 @@ class CPU(object): # 'object' is important for property!!!
         #        self.breakOn = True
         #        logger.info("PC DIDN'T CHANGE! Can't continue!")
         #        print self.getDump()
-        #        # CoreDump.windowHandle.dump(self.mb.cartridge.filename+"_dump.bmp")
         #        raise Exception("Escape to main.py")
         #    self.oldPC = self.PC
 
-        #    #TODO: Make better CoreDump print out. Where is 0xC000?
         #    #TODO: Make better opcode printing. Show arguments (check LDH/LDD)
         #    if self.breakOn:
         #        self.getDump(instruction)
 
         #        action = raw_input()
         #        if action == 'd':
-        #            CoreDump.CoreDump("Debug")
+        #           pass
         #        elif action == 'c':
         #            self.breakOn = False
         #            self.breakAllow = True

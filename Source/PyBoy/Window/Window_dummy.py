@@ -8,22 +8,13 @@ import sys
 import time
 import numpy as np
 
-from .. import CoreDump
-from .. import WindowEvent
-from ..GameWindow import AbstractGameWindow
 from ..Logger import logger
+from GenericWindow import GenericWindow
 
-gameboyResolution = (160, 144)
-
-
-# TODO: class DummyGameWindow(AbstractGameWindow):
-class DummyGameWindow():
+class DummyWindow(GenericWindow):
     def __init__(self, scale):
-        scale = 1
         # super(self.__class__, self).__init__(scale)
         logger.debug("DummyWindow initialization")
-
-        CoreDump.windowHandle = self
 
         self.enable_title = True
 

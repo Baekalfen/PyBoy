@@ -15,12 +15,12 @@ import Global
 from MB.MB import Motherboard
 import WindowEvent
 from Logger import logger, addConsoleHandler
+addConsoleHandler()
+
 import BotSupport
 import Logger
 from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-
-import GameWindow
-# # from PyBoy.GameWindow.GameWindow_PyGame import PyGameGameWindow
+import Window
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
@@ -29,9 +29,8 @@ class PyBoy():
     def __init__(self, win_type, scale, ROM, bootROM = None):
         self.ROM = unicode(ROM)
         self.debugger = None
-        self.window = self.getWindow(win_type, scale)
+        self.window = Window.Window.getWindow(win_type, scale)
 
-        addConsoleHandler()
 
         self.profiling = "profiling" in sys.argv
         self.mb = Motherboard(unicode(ROM), bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
@@ -48,25 +47,6 @@ class PyBoy():
         self.counter = 0
         self.limitEmulationSpeed = True
         self.screen_recorder = None
-
-    def getWindow(self, win_type, scale):
-        print "Window type is:", win_type
-        if win_type is None:
-            Window = GameWindow.SdlGameWindow(scale)
-        elif win_type == "SDL2":
-            Window = GameWindow.SdlGameWindow(scale)
-        elif win_type == "scanline":
-            Window = GameWindow.ScanlineGameWindow(scale)
-        elif win_type == "OpenGL":
-            Window = GameWindow.OpenGLGameWindow(scale)
-        elif win_type == "dummy":
-            Window = GameWindow.DummyGameWindow(scale)
-        else:
-            print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
-            print "Valid GameWindows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'"
-            exit(1)
-
-        return Window
 
 
     def tick(self):

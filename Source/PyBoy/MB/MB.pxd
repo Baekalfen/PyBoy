@@ -12,7 +12,7 @@ cimport PyBoy.BootROM
 cimport PyBoy.RAM
 cimport PyBoy.LCD
 cimport PyBoy.Interaction
-from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
+cimport PyBoy.Window.GenericWindow
 
 cdef unsigned short STAT, LY, LYC
 cdef short VBlank, LCDC, TIMER, Serial, HightoLow
@@ -27,7 +27,7 @@ cdef class Motherboard:
     cdef PyBoy.LCD.LCD lcd
     cdef CPU.CPU cpu
     cdef Timer.Timer timer
-    cdef SdlGameWindow MainWindow
+    cdef PyBoy.Window.GenericWindow.GenericWindow window
     cdef PyBoy.Cartridge.GenericMBC.GenericMBC cartridge
     cdef bint bootROMEnabled
     cdef unicode serialBuffer

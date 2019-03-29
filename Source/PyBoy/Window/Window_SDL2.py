@@ -13,21 +13,15 @@ import cython
 import ctypes
 import warnings
 
-from .. import CoreDump
 from .. import WindowEvent
+from GenericWindow import GenericWindow
 
 from ..Logger import logger
 
 gameboyResolution = (160, 144)
 alphaMask = 0x7F000000
 
-# def pixels2dWithoutWarning(surface):
-#     with warnings.catch_warnings():
-#         warnings.simplefilter("ignore")
-#         return sdl2.ext.pixels2d(surface)
-
-# class SdlGameWindow(AbstractGameWindow):
-class SdlGameWindow():
+class SdlWindow(GenericWindow):
     def __init__(self, scale=1):
         self._scale = scale
         self.ticks = sdl2.SDL_GetTicks()
@@ -67,10 +61,7 @@ class SdlGameWindow():
 
         self.debug = False
 
-        CoreDump.windowHandle = self
-
-
-        logger.debug("SDL GameWindow initialization")
+        logger.debug("SDL Window initialization")
         # sdl2.ext.init()
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING) # Should be less... https://wiki.libsdl.org/SDL_Init
 
@@ -137,11 +128,12 @@ class SdlGameWindow():
         pass
 
     def dump(self,filename):
-        sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle._windowSurface,filename+".bmp")
+        pass
+        # sdl2.surface.SDL_SaveBMP(self._sdlTextureBuffer,filename+".bmp")
         # if __debug__:
-        #     sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileDataWindowSurface,filename+"_tileData.bmp")
-        #     sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView2WindowSurface,filename+"_tileView1.bmp")
-        #     sdl2.surface.SDL_SaveBMP(CoreDump.windowHandle.tileView1WindowSurface,filename+"_tileView2.bmp")
+        #     sdl2.surface.SDL_SaveBMP(self.tileDataWindowSurface,filename+"_tileData.bmp")
+        #     sdl2.surface.SDL_SaveBMP(self.tileView2WindowSurface,filename+"_tileView1.bmp")
+        #     sdl2.surface.SDL_SaveBMP(self.tileView1WindowSurface,filename+"_tileView2.bmp")
 
     def setTitle(self,title):
         # self._window.title = title

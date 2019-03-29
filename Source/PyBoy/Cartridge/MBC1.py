@@ -3,7 +3,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from .. import CoreDump
 from ..Logger import logger
 from GenericMBC import GenericMBC
 import cython
@@ -36,7 +35,7 @@ class MBC1(GenericMBC):
             elif self.memoryModel == 1:  # 4/32 mode
                 self.RAMBankSelected = value & 0b00000011
             else:
-                raise CoreDump.CoreDump("Invalid memoryModel: %s" % self.memoryModel)
+                raise logger.error("Invalid memoryModel: %s" % self.memoryModel)
         elif 0x6000 <= address < 0x8000:
             self.memoryModel = value & 0x1
         elif 0xA000 <= address < 0xC000:
@@ -46,5 +45,5 @@ class MBC1(GenericMBC):
                 self.initRAMBanks(ExRAMTable[0x02])
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
-            raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
+            raise logger.error("Invalid writing address: %s" % hex(address))
 

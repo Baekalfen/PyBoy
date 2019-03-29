@@ -1,0 +1,13 @@
+# -*- encoding: utf-8 -*-
+#
+# License: See LICENSE file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+from PyBoy.LCD cimport LCD
+from PyBoy.Window.GenericWindow cimport GenericWindow
+cdef (int, int) gameboyResolution
+
+cdef class DummyWindow(GenericWindow):
+    pass
+

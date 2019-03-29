@@ -4,56 +4,49 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from abc import abstractmethod
+from ..Logger import logger
 
-
-class AbstractGameWindow(object):
+class GenericWindow(object):
 
     def __init__(self, scale=1):
         self._scale = scale
+        # super(self.__class__, self).__init__(scale)
+        logger.debug(self.__name__ + "initialization")
 
-    @abstractmethod
+        self.enable_title = True
+
+
     def dump(self, filename):
         raise NotImplementedError()
 
-    @abstractmethod
     def setTitle(self, title):
         raise NotImplementedError()
 
-    @abstractmethod
     def getEvents(self):
         raise NotImplementedError()
 
-    @abstractmethod
     def updateDisplay(self):
         raise NotImplementedError()
 
-    @abstractmethod
     def framelimiter(self):
         raise NotImplementedError()
 
-    @abstractmethod
     def stop(self):
         raise NotImplementedError()
 
-    @abstractmethod
-    def scanline(self, y, viewPos, windowPos):
+    def scanline(self, y, lcd):
         raise NotImplementedError()
 
-    @abstractmethod
     def renderScreen(self, lc):
         raise NotImplementedError()
 
-    @abstractmethod
     def copySprite(self, fromXY, toXY, fromBuffer, toBuffer, spriteSize,
             spritePriority, BGPkey, xFlip=0, yFlip=0):
         raise NotImplementedError()
 
-    @abstractmethod
     def blankScreen(self):
         raise NotImplementedError()
 
-    @abstractmethod
     def getScreenBuffer(self):
         raise NotImplementedError()
 

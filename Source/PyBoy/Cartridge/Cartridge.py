@@ -4,7 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .. import CoreDump
 import os
 import struct
 from .. import Global

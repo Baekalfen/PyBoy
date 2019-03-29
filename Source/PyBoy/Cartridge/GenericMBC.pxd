@@ -5,7 +5,6 @@
 #
 
 from PyBoy.Cartridge.RTC cimport RTC
-import cython
 from libc.stdint cimport uint8_t, uint32_t
 
 cdef class GenericMBC:

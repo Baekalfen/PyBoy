@@ -7,12 +7,10 @@
 
 cimport cython
 cimport PyBoy.Cartridge
+cimport PyBoy.Window.Window
 # cimport PyBoy.WindowEvent
 from PyBoy.MB.MB cimport Motherboard
-from PyBoy.GameWindow.GameWindow_SDL2 cimport SdlGameWindow
-from PyBoy.GameWindow.GameWindow_dummy cimport DummyGameWindow
-
-# cimport PyBoy.Global
+from PyBoy.Window.GenericWindow cimport GenericWindow
 
 cdef (int, int) _dummy_declaration
 
@@ -22,7 +20,7 @@ cdef class PyBoy:
     cdef object debugger
     cdef unicode ROM
     cdef Motherboard mb
-    cdef SdlGameWindow window
+    cdef GenericWindow window
 
     cdef bint profiling
     cdef float exp_avg_emu
@@ -37,9 +35,6 @@ cdef class PyBoy:
 
     @cython.locals(done=cython.bint, event=int)
     cpdef bint tick(self)
-
-    cdef SdlGameWindow getWindow(self, str, unsigned int)
-
     cpdef void stop(self, save=*)
 
 

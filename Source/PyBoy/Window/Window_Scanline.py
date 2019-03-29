@@ -4,9 +4,9 @@
 # GitHub: https://github.com/krs013/PyBoy
 #
 
-# Cacheless GameWindow that renders screen line-by-line in scanline()
+# Cacheless Window that renders screen line-by-line in scanline()
 # It's closer to the hardware and maybe easier to understand, but not
-# fast enough to replace GameWindow_SDL2
+# fast enough to replace Window_SDL2
 
 import array
 import ctypes
@@ -14,9 +14,8 @@ import sdl2
 import sdl2.ext
 import sdl2.ext.colorpalettes
 
-from .. import CoreDump
 from ..WindowEvent import WindowEvent
-from ..GameWindow import AbstractGameWindow
+from GenericWindow import GenericWindow
 
 from ..Logger import logger
 
@@ -34,7 +33,7 @@ def bytes2bits(byte0, byte1):
         yield odd
         yield even
 
-class ScanlineGameWindow(AbstractGameWindow):
+class ScanlineWindow(GenericWindow):
 
     windowEventsDown = {
         sdl2.SDLK_UP        : WindowEvent.PressArrowUp,
@@ -68,8 +67,6 @@ class ScanlineGameWindow(AbstractGameWindow):
 
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
-
-        CoreDump.windowHandle = self
 
         logger.debug("Scanline Window initialization")
 

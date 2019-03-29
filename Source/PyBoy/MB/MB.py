@@ -11,7 +11,7 @@ import array
 from ..Logger import logger
 import Timer
 import CPU
-from .. import RAM, BootROM, Interaction, CoreDump
+from .. import RAM, BootROM, Interaction
 from .. import Cartridge
 from .. import LCD
 VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
@@ -32,7 +32,7 @@ class Motherboard():
             logger.info("Profiling enabled")
 
         self.debugger = debugger
-        self.MainWindow = window
+        self.window = window
         self.timer = Timer.Timer()
         self.interaction = Interaction.Interaction()
         self.cartridge = Cartridge.Cartridge.Cartridge(gameROMFile)
@@ -44,9 +44,6 @@ class Motherboard():
 
         if "loadState" in sys.argv:
             self.loadState(gameROMFile + ".state")
-
-        CoreDump.RAM = self.ram
-        CoreDump.CPU = self.cpu
 
         self.serialBuffer = u''
 
@@ -62,7 +59,7 @@ class Motherboard():
     def stop(self, save):
         if save:
             self.cartridge.stop()
-        self.MainWindow.stop()
+        self.window.stop()
 
     def saveState(self, filename):
         logger.info("Saving state...")
@@ -140,12 +137,12 @@ class Motherboard():
             self.lcd.refreshTileDataAdaptive()
 
             if __debug__:
-                self.MainWindow.refreshTileView1(self.lcd)
-                self.MainWindow.refreshTileView2(self.lcd)
-                self.MainWindow.refreshSpriteView(self.lcd)
-                self.MainWindow.drawTileCacheView(self.lcd)
-                self.MainWindow.drawTileView1ScreenPort(self.lcd)
-                self.MainWindow.drawTileView2WindowPort(self.lcd)
+                self.window.refreshTileView1(self.lcd)
+                self.window.refreshTileView2(self.lcd)
+                self.window.refreshSpriteView(self.lcd)
+                self.window.drawTileCacheView(self.lcd)
+                self.window.drawTileView1ScreenPort(self.lcd)
+                self.window.drawTileView2WindowPort(self.lcd)
 
             # TODO: the 19, 41 and 49 ticks should correct for longer instructions
             # Iterate the 144 lines on screen
@@ -159,7 +156,7 @@ class Motherboard():
                 self.setSTATMode(3)
                 self.calculateCycles(170)
 
-                self.MainWindow.scanline(y, self.lcd)
+                self.window.scanline(y, self.lcd)
 
                 # Mode 0
                 self.setSTATMode(0)
@@ -167,7 +164,7 @@ class Motherboard():
 
             self.cpu.setInterruptFlag(VBlank)
 
-            self.MainWindow.renderScreen(self.lcd) # Actually render screen from scanline parameters
+            self.window.renderScreen(self.lcd) # Actually render screen from scanline parameters
 
             # Wait for next frame
             for y in xrange(144,154):
@@ -179,7 +176,7 @@ class Motherboard():
         else:
             # https://www.reddit.com/r/EmuDev/comments/6r6gf3/gb_pokemon_gold_spews_unexpected_values_at_mbc/
             # TODO: What happens if LCD gets turned on/off mid-cycle?
-            self.MainWindow.blankScreen()
+            self.window.blankScreen()
             self.setSTATMode(0)
             self.setitem(LY, 0)
 
@@ -253,7 +250,6 @@ class Motherboard():
         if i == 0xFF01:
             print chr(value),
         assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
-                # CoreDump.CoreDump("Memory write error! Can't write %s to %s" % (hex(value),hex(i))),\
 
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
             self.cartridge.setitem(i, value) #Doesn't change the data. This is for MBC commands

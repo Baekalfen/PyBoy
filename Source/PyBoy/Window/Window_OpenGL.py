@@ -12,9 +12,8 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import OpenGL.GLUT.freeglut
 
-from .. import CoreDump
 from ..WindowEvent import WindowEvent
-from ..GameWindow import AbstractGameWindow
+from GenericWindow import GenericWindow
 
 from ..Logger import logger
 
@@ -34,8 +33,7 @@ def get_color_code(byte1,byte2,offset):
 alphaMask = 0x0000007F
 tiles = 384
 
-# class OpenGLGameWindow(AbstractGameWindow):
-class OpenGLGameWindow():
+class OpenGLWindow(GenericWindow):
     def __init__(self, scale=1):
         # super(self.__class__, self).__init__(scale)
 
@@ -48,9 +46,7 @@ class OpenGLGameWindow():
 
         self.debug = False
 
-        CoreDump.windowHandle = self
-
-        logger.debug("OpenGL GameWindow initialization")
+        logger.debug("OpenGL Window initialization")
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*tuple([x*self._scale for x in gameboyResolution]))
