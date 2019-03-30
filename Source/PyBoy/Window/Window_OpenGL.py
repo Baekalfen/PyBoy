@@ -62,9 +62,9 @@ class OpenGLWindow(SdlWindow):
         glutSetWindowTitle(title)
 
     def getEvents(self):
-        # evts = self.events[:]
-        # self.events = []
-        return []#evts
+        evts = self.events
+        self.events = []
+        return evts
 
     def glKeyboard(self, c, x, y, special, up):
         if special:
