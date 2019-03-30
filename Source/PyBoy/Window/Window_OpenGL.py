@@ -23,22 +23,17 @@ class OpenGLWindow(SdlWindow):
         super(self.__class__, self).__init__(scale)
 
     def init(self):
-        self.colorPalette = (0xFFFFFF00,0x99999900,0x55555500,0x00000000)
+        self.colorPalette = [x << 8 for x in self.colorPalette] # (0xFFFFFF00,0x99999900,0x55555500,0x00000000)
         self.alphaMask = 0x0000007F
 
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*self._scaledResolution)
-        # glutInitWindowPosition(100,100)
-        glutInitWindowPosition(
-                (glutGet(GLUT_SCREEN_WIDTH)-self._scaledResolution[0])/2,
-                (glutGet(GLUT_SCREEN_HEIGHT)-self._scaledResolution[1])/2
-                )
         glutCreateWindow("PyBoy")
-        glutKeyboardFunc(self._notLambda1)
-        glutKeyboardUpFunc(self._notLambda2)
-        glutSpecialFunc(self._notLambda3)
-        glutSpecialUpFunc(self._notLambda4)
+        glutKeyboardFunc(self._key)
+        glutKeyboardUpFunc(self._keyUp)
+        glutSpecialFunc(self._spec)
+        glutSpecialUpFunc(self._specUp)
         self.events = []
 
         glPixelZoom(self._scale,self._scale)
@@ -46,14 +41,14 @@ class OpenGLWindow(SdlWindow):
         glutDisplayFunc(self.glDraw)
 
     # Cython does not cooperate with Lambdas
-    def _notLambda1(self, c, x, y):
-        self.glKeyboard(c,x,y,False,False)
-    def _notLambda2(self, c, x, y):
-        self.glKeyboard(c,x,y,False,True)
-    def _notLambda3(self, c, x, y):
-        self.glKeyboard(c,x,y,True,False)
-    def _notLambda4(self, c, x, y):
-        self.glKeyboard(c,x,y,True, True)
+    def _key(self, c, x, y):
+        self.glKeyboard(c,x,y,False)
+    def _keyUp(self, c, x, y):
+        self.glKeyboard(c,x,y,True)
+    def _spec(self, c, x, y):
+        self.glKeyboardSpecial(c,x,y,False)
+    def _specUp(self, c, x, y):
+        self.glKeyboardSpecial(c,x,y,True)
 
     def dump(self,filename):
         pass
@@ -66,71 +61,66 @@ class OpenGLWindow(SdlWindow):
         self.events = []
         return evts
 
-    def glKeyboard(self, c, x, y, special, up):
-        if special:
-            if up:
-                if c == GLUT_KEY_UP:
-                    self.events.append(WindowEvent.ReleaseArrowUp)
-                if c == GLUT_KEY_DOWN:
-                    self.events.append(WindowEvent.ReleaseArrowDown)
-                if c == GLUT_KEY_LEFT:
-                    self.events.append(WindowEvent.ReleaseArrowLeft)
-                if c == GLUT_KEY_RIGHT:
-                    self.events.append(WindowEvent.ReleaseArrowRight)
-            else:
-                if c == GLUT_KEY_UP:
-                    self.events.append(WindowEvent.PressArrowUp)
-                if c == GLUT_KEY_DOWN:
-                    self.events.append(WindowEvent.PressArrowDown)
-                if c == GLUT_KEY_LEFT:
-                    self.events.append(WindowEvent.PressArrowLeft)
-                if c == GLUT_KEY_RIGHT:
-                    self.events.append(WindowEvent.PressArrowRight)
-
+    def glKeyboardSpecial(self, c, x, y, up):
+        if up:
+            if c == GLUT_KEY_UP:
+                self.events.append(WindowEvent.ReleaseArrowUp)
+            if c == GLUT_KEY_DOWN:
+                self.events.append(WindowEvent.ReleaseArrowDown)
+            if c == GLUT_KEY_LEFT:
+                self.events.append(WindowEvent.ReleaseArrowLeft)
+            if c == GLUT_KEY_RIGHT:
+                self.events.append(WindowEvent.ReleaseArrowRight)
         else:
-            if up:
-                if c == 'a':
-                    self.events.append(WindowEvent.ReleaseButtonA)
-                elif c == 's':
-                    self.events.append(WindowEvent.ReleaseButtonB)
-                elif c == 'z':
-                    self.events.append(WindowEvent.SaveState)
-                elif c == 'x':
-                    self.events.append(WindowEvent.LoadState)
-                elif c == ' ':
-                    self.events.append(WindowEvent.ReleaseSpeedUp)
-                elif c == chr(8):
-                    self.events.append(WindowEvent.ReleaseButtonSelect)
-                elif c == chr(13):
-                    self.events.append(WindowEvent.ReleaseButtonStart)
-            else:
-                # if c == 'e':
-                #     self.debug = True
-                if c == 'a':
-                    self.events.append(WindowEvent.PressButtonA)
-                elif c == 's':
-                    self.events.append(WindowEvent.PressButtonB)
-                elif c == chr(27):
-                    self.events.append(WindowEvent.Quit)
-                elif c == 'd':
-                    self.events.append(WindowEvent.DebugToggle)
-                elif c == ' ':
-                    self.events.append(WindowEvent.PressSpeedUp)
-                elif c == 'i':
-                    self.events.append(WindowEvent.ScreenRecordingToggle)
-                elif c == chr(8):
-                    self.events.append(WindowEvent.PressButtonSelect)
-                elif c == chr(13):
-                    self.events.append(WindowEvent.PressButtonStart)
+            if c == GLUT_KEY_UP:
+                self.events.append(WindowEvent.PressArrowUp)
+            if c == GLUT_KEY_DOWN:
+                self.events.append(WindowEvent.PressArrowDown)
+            if c == GLUT_KEY_LEFT:
+                self.events.append(WindowEvent.PressArrowLeft)
+            if c == GLUT_KEY_RIGHT:
+                self.events.append(WindowEvent.PressArrowRight)
+
+    def glKeyboard(self, c, x, y, up):
+        if up:
+            if c == 'a':
+                self.events.append(WindowEvent.ReleaseButtonA)
+            elif c == 's':
+                self.events.append(WindowEvent.ReleaseButtonB)
+            elif c == 'z':
+                self.events.append(WindowEvent.SaveState)
+            elif c == 'x':
+                self.events.append(WindowEvent.LoadState)
+            elif c == ' ':
+                self.events.append(WindowEvent.ReleaseSpeedUp)
+            elif c == chr(8):
+                self.events.append(WindowEvent.ReleaseButtonSelect)
+            elif c == chr(13):
+                self.events.append(WindowEvent.ReleaseButtonStart)
+        else:
+            if c == 'a':
+                self.events.append(WindowEvent.PressButtonA)
+            elif c == 's':
+                self.events.append(WindowEvent.PressButtonB)
+            elif c == chr(27):
+                self.events.append(WindowEvent.Quit)
+            elif c == 'd':
+                self.events.append(WindowEvent.DebugToggle)
+            elif c == ' ':
+                self.events.append(WindowEvent.PressSpeedUp)
+            elif c == 'i':
+                self.events.append(WindowEvent.ScreenRecordingToggle)
+            elif c == chr(8):
+                self.events.append(WindowEvent.PressButtonSelect)
+            elif c == chr(13):
+                self.events.append(WindowEvent.PressButtonStart)
 
 
     def glReshape(self, width, height):
-        self._scale = int(max(min(float(height)/gameboyResolution[1], float(width)/gameboyResolution[0]), 1))
-        # self._scale = int(self._scale*10)/10. # One decimal
-
-        self._scaledResolution = tuple(int(x * self._scale) for x in gameboyResolution)
-        logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
-        glPixelZoom(self._scale,self._scale)
+        scale = max(min(float(height)/gameboyResolution[1], float(width)/gameboyResolution[0]), 1)
+        self._scaledResolution = tuple([int(x * scale) for x in gameboyResolution])
+        logger.debug('Scale: x%s %s' % (scale, self._scaledResolution))
+        glPixelZoom(scale,scale)
         # glutReshapeWindow(*self._scaledResolution);
 
     def glDraw(self):
@@ -144,7 +134,7 @@ class OpenGLWindow(SdlWindow):
         self.glDraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 
-    def frameLimiter(self):
+    def framelimiter(self):
         pass
 
     def stop(self):

@@ -4,10 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# cimport sdl2_cython.events as sdl2_events
-# cimport PyBoy.WindowEvent
-
-
 cimport SDL2 as sdl2
 from PyBoy.LCD cimport LCD
 from .Window_SDL2 cimport SdlWindow
@@ -22,3 +18,11 @@ cdef (int, int) gameboyResolution
 
 cdef class OpenGLWindow(SdlWindow):
     cdef list events
+
+    cdef void glKeyboard(self, str, int, int, bint)
+    cdef void glKeyboardSpecial(self, char, int, int, bint)
+
+    # TODO: Callbacks don't really work, when Cythonized
+    cpdef void glDraw(self)
+    @cython.locals(scale=float)
+    cpdef void glReshape(self, int, int)

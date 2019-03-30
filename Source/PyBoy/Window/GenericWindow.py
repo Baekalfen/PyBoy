@@ -14,7 +14,7 @@ class GenericWindow(object):
         self._scale = scale
         logger.debug("%s initialization" % self.__class__.__name__)
 
-        self._scaledResolution = tuple(x * self._scale for x in gameboyResolution)
+        self._scaledResolution = tuple([int(x * self._scale) for x in gameboyResolution])
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
         self.colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
