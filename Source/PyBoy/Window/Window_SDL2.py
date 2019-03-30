@@ -9,12 +9,10 @@ import time
 import sdl2
 import sdl2.ext
 import numpy as np
-import ctypes
-
-from .. import WindowEvent
-from .GenericWindow import GenericWindow
 
 from ..Logger import logger
+from .. import WindowEvent
+from .GenericWindow import GenericWindow
 
 gameboyResolution = (160, 144)
 
@@ -121,12 +119,6 @@ class SdlWindow(GenericWindow):
         #     self.tileView1Window.refresh()
         #     self.tileView2Window.refresh()
         #     self.spriteWindow.refresh()
-
-    # def _updateDisplay(self):
-    #     sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, None, self._screenBuffer.ctypes.data_as(ctypes.c_void_p), self._screenBuffer.strides[0])
-    #     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer, None, None)
-    #     sdl2.SDL_RenderPresent(self._sdlrenderer)
-
 
     def framelimiter(self):
         now = sdl2.SDL_GetTicks()

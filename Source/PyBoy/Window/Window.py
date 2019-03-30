@@ -4,9 +4,9 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
+import platform
 from ..Logger import logger, addConsoleHandler
 addConsoleHandler()
-
 
 def getWindow(win_type, scale):
     logger.info("Window type is: %s" % win_type)
@@ -14,8 +14,12 @@ def getWindow(win_type, scale):
         win_type = "SDL2"
 
     if win_type == "SDL2":
-        from .Window_SDL2 import SdlWindow
-        window = SdlWindow(scale)
+        if platform.python_implementation() == "PyPy":
+            from .Window_SDL2_CPython import SdlWindowCPython
+            window = SdlWindowCPython(scale)
+        else:
+            from .Window_SDL2 import SdlWindow
+            window = SdlWindow(scale)
     elif win_type == "scanline":
         from .Window_Scanline import ScanlineWindow
         window = ScanlineWindow(scale)
