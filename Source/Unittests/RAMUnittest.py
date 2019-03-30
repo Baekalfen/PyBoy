@@ -17,11 +17,11 @@ def funky(self,ram,x,y):
     r = random.random()
 
     random.seed(r)
-    for n in xrange(x,y):
+    for n in range(x,y):
         ram[n].setInt(random.randint(0, 255))
 
     random.seed(r)
-    for n in xrange(x,y):
+    for n in range(x,y):
         self.assertEqual(ram[n],random.randint(0, 255))
 
 

@@ -5,7 +5,7 @@
 #
 
 
-from PyBoy.MB.MB cimport Motherboard
+cimport PyBoy.MB.MB
 cimport opcodes
 import numpy as np
 cimport numpy as np
@@ -42,7 +42,7 @@ cdef class CPU:
 
     cdef short A, F, B, C, D, E # Only char (8-bit) needed, but I'm not sure all intermittent results do not overflow
     cdef int HL, SP, PC # Only short (16-bit) needed, but I'm not sure all intermittent results do not overflow
-    cdef Motherboard mb
+    cdef PyBoy.MB.MB.Motherboard mb
 
     cdef void setBC(CPU, int x)
     cdef void setDE(CPU, int x)

@@ -25,14 +25,12 @@ warning = """\
 # from flags import flagZ, flagN, flagH, flagC
 imports = """
 import array
-import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
 
 """
 
 cimports = """
-cimport numpy
 cimport CPU
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t

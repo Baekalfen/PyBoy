@@ -1,0 +1,4 @@
+cython
+numpy
+pysdl2
+

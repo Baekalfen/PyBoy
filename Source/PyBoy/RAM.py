@@ -4,8 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import Global
-import cython
 import array
 
 # MEMORY SIZES
@@ -32,17 +30,17 @@ class RAM():
 
     def saveState(self, f):
         for n in range(INTERNAL_RAM_0):
-            f.write(chr(self.internalRAM0[n]))
+            f.write(self.internalRAM0[n].to_bytes(1, 'little'))
         for n in range(NON_IO_INTERNAL_RAM0):
-            f.write(chr(self.nonIOInternalRAM0[n]))
+            f.write(self.nonIOInternalRAM0[n].to_bytes(1, 'little'))
         for n in range(IO_PORTS):
-            f.write(chr(self.IOPorts[n]))
+            f.write(self.IOPorts[n].to_bytes(1, 'little'))
         for n in range(INTERNAL_RAM_1):
-            f.write(chr(self.internalRAM1[n]))
+            f.write(self.internalRAM1[n].to_bytes(1, 'little'))
         for n in range(NON_IO_INTERNAL_RAM1):
-            f.write(chr(self.nonIOInternalRAM1[n]))
+            f.write(self.nonIOInternalRAM1[n].to_bytes(1, 'little'))
         for n in range(INTERRUPT_ENABLE_REGISTER):
-            f.write(chr(self.interruptRegister[n]))
+            f.write(self.interruptRegister[n].to_bytes(1, 'little'))
 
     def loadState(self, f):
         for n in range(INTERNAL_RAM_0):

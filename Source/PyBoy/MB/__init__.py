@@ -4,6 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import MB
-import CPU
-import Timer
+from . import MB
+# from . import CPU
+# from . import Timer

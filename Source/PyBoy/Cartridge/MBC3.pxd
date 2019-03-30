@@ -4,7 +4,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from PyBoy.Cartridge.GenericMBC cimport GenericMBC
+from .GenericMBC cimport GenericMBC
 
 cdef class MBC3(GenericMBC):
     cdef void setitem(self, unsigned short, unsigned char)

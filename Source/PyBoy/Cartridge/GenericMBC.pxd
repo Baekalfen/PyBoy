@@ -30,7 +30,7 @@ cdef class GenericMBC:
     cdef void saveRAM(self, file)
     cdef void loadRAM(self, file)
     cdef void initRAMBanks(self, unsigned char)
-    cdef unicode getGameName(self, unsigned char[:, :])
+    cdef unicode getGameName(self, list)
 
     cdef unsigned char getitem(self, unsigned short)
     cdef void setitem(self, unsigned short, unsigned char)

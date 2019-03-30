@@ -5,8 +5,8 @@
 #
 
 import cython
-cimport CPU
-cimport Timer
+cimport PyBoy.MB.CPU
+cimport PyBoy.MB.Timer
 cimport PyBoy.Cartridge.GenericMBC
 cimport PyBoy.BootROM
 cimport PyBoy.RAM
@@ -26,8 +26,8 @@ cdef class Motherboard:
     cdef PyBoy.BootROM.BootROM bootROM
     cdef PyBoy.RAM.RAM ram
     cdef PyBoy.LCD.LCD lcd
-    cdef CPU.CPU cpu
-    cdef Timer.Timer timer
+    cdef PyBoy.MB.CPU.CPU cpu
+    cdef PyBoy.MB.Timer.Timer timer
     cdef PyBoy.Window.GenericWindow.GenericWindow window
     cdef PyBoy.Cartridge.GenericMBC.GenericMBC cartridge
     cdef bint bootROMEnabled

@@ -5,7 +5,7 @@
 #
 
 import array
-import opcodes
+from . import opcodes
 from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from ..Logger import logger
 import numpy as np
@@ -17,7 +17,7 @@ IF_address = 0xFF0F
 IE_address = 0xFFFF
 
 
-class CPU(object): # 'object' is important for property!!!
+class CPU():
     def setBC(self, x):
         assert x <= 0xFFFF, "%0.4x" % x
         self.B = x >> 8
@@ -177,23 +177,23 @@ class CPU(object): # 'object' is important for property!!!
 
     def saveState(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
-            f.write(chr(n & 0xFF))
+            f.write((n & 0xFF).to_bytes(1, 'little'))
 
         for n in [self.HL, self.SP, self.PC]:
-            f.write(chr(n & 0xFF))
-            f.write(chr((n & 0xFF00) >> 8))
+            f.write((n & 0xFF).to_bytes(1, 'little'))
+            f.write(((n & 0xFF00) >> 8).to_bytes(1, 'little'))
 
-        f.write(chr(self.interruptMasterEnable))
-        f.write(chr(self.halted))
-        f.write(chr(self.stopped))
+        f.write(self.interruptMasterEnable.to_bytes(1, 'little'))
+        f.write(self.halted.to_bytes(1, 'little'))
+        f.write(self.stopped.to_bytes(1, 'little'))
 
     def loadState(self, f):
         self.oldPC = -1
 
         self.A, self.F, self.B,\
-        self.C, self.D, self.E  = [ord(f.read(1)) for _ in xrange(6)]
+        self.C, self.D, self.E  = [ord(f.read(1)) for _ in range(6)]
 
-        self.HL, self.SP, self.PC = [ord(f.read(1)) | (ord(f.read(1))<<8) for _ in xrange(3)]
+        self.HL, self.SP, self.PC = [ord(f.read(1)) | (ord(f.read(1))<<8) for _ in range(3)]
 
         self.interruptMasterEnable = ord(f.read(1))
         self.halted = ord(f.read(1))

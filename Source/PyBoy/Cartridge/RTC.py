@@ -37,8 +37,8 @@ class RTC():
 
     def saveState(self, f):
         f.write(struct.pack('f', self.timeZero))
-        f.write(chr(self.halt))
-        f.write(chr(self.dayCarry))
+        f.write(self.halt.to_bytes(1, 'little'))
+        f.write(self.dayCarry.to_bytes(1, 'little'))
         logger.info("RTC saved.")
 
     def loadState(self, f):
@@ -69,7 +69,7 @@ class RTC():
                 self.latchRTC()
             self.latchEnabled = True
         else:
-            logger.warn("Invalid RTC command: %0.2x" % value)
+            logger.warning("Invalid RTC command: %0.2x" % value)
 
     def getRegister(self, register):
         if not self.latchEnabled:
@@ -89,7 +89,7 @@ class RTC():
             dayCarry = self.dayCarry << 7
             return dayHigh + halt + dayCarry
         else:
-            logger.warn("Invalid RTC register: %0.4x" % (register))
+            logger.warning("Invalid RTC register: %0.4x" % (register))
 
     def setRegister(self, register, value):
         if not self.latchEnabled:
@@ -113,9 +113,9 @@ class RTC():
             if self.halt == 0:
                 pass # TODO: Start the timer
             else:
-                logger.warn("Stopping RTC is not implemented!")
+                logger.warning("Stopping RTC is not implemented!")
 
             self.timeZero -= int(t / 3600 / 24) - (dayHigh<<8)
             self.dayCarry = dayCarry
         else:
-            logger.warn("Invalid RTC register: %0.4x %0.2x" % (register, value))
+            logger.warning("Invalid RTC register: %0.4x %0.2x" % (register, value))

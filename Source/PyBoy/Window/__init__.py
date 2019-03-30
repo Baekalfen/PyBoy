@@ -4,6 +4,6 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-import Window
+from . import Window
 from .GenericWindow import GenericWindow
 

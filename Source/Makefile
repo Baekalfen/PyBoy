@@ -3,7 +3,8 @@
 
 all: build
 
-NUMPY := $(shell python -c 'import numpy; print numpy.get_include()')
+PY := python3
+NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')
 SDL := $(shell sdl2-config --static-libs)
 
 # CFLAGS := $(CFLAGS)
@@ -42,7 +43,7 @@ export PATH
 build:
 	@echo "Building..."
 	@echo $(CFLAGS)
-	python setup.py build_ext --inplace
+	${PY} setup.py build_ext --inplace
 
 clean:
 	@echo "Cleaning..."
@@ -54,10 +55,10 @@ clean:
 	find . -name "*.html" -delete
 
 run: build
-	python main.py SDL2 ROMs/POKEMON\ BLUE.gb
+	${PY} main.py SDL2 ROMs/POKEMON\ BLUE.gb
 	# python main.py SDL2 ROMs/pokemon_gold.gbc
 	# python main.py dummy ROMs/pokemon_gold.gbc
 
 install:
-	python setup.py install
+	${PY} setup.py install
 

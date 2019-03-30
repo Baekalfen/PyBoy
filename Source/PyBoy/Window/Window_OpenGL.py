@@ -13,7 +13,7 @@ from OpenGL.GLUT import *
 import OpenGL.GLUT.freeglut
 
 from .. import WindowEvent
-from Window_SDL2 import SdlWindow
+from .Window_SDL2 import SdlWindow
 from ..Logger import logger
 
 gameboyResolution = (160, 144)
@@ -42,13 +42,13 @@ class OpenGLWindow(SdlWindow):
 
     # Cython does not cooperate with Lambdas
     def _key(self, c, x, y):
-        self.glKeyboard(c,x,y,False)
+        self.glKeyboard(c.decode("ascii"), x, y, False)
     def _keyUp(self, c, x, y):
-        self.glKeyboard(c,x,y,True)
+        self.glKeyboard(c.decode("ascii"), x, y, True)
     def _spec(self, c, x, y):
-        self.glKeyboardSpecial(c,x,y,False)
+        self.glKeyboardSpecial(c, x, y, False)
     def _specUp(self, c, x, y):
-        self.glKeyboardSpecial(c,x,y,True)
+        self.glKeyboardSpecial(c, x, y, True)
 
     def dump(self,filename):
         pass
@@ -119,7 +119,6 @@ class OpenGLWindow(SdlWindow):
     def glReshape(self, width, height):
         scale = max(min(float(height)/gameboyResolution[1], float(width)/gameboyResolution[0]), 1)
         self._scaledResolution = tuple([int(x * scale) for x in gameboyResolution])
-        logger.debug('Scale: x%s %s' % (scale, self._scaledResolution))
         glPixelZoom(scale,scale)
         # glutReshapeWindow(*self._scaledResolution);
 

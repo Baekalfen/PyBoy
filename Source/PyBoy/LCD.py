@@ -43,20 +43,20 @@ class LCD():
 
     def saveState(self, f):
         for n in range(VIDEO_RAM):
-            f.write(chr(self.VRAM[n]))
+            f.write(self.VRAM[n].to_bytes(1, 'little'))
 
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
-            f.write(chr(self.OAM[n]))
+            f.write(self.OAM[n].to_bytes(1, 'little'))
 
-        f.write(chr(self.LCDC.value))
-        f.write(chr(self.BGP.value))
-        f.write(chr(self.OBP0.value))
-        f.write(chr(self.OBP1.value))
+        f.write(self.LCDC.value.to_bytes(1, 'little'))
+        f.write(self.BGP.value.to_bytes(1, 'little'))
+        f.write(self.OBP0.value.to_bytes(1, 'little'))
+        f.write(self.OBP1.value.to_bytes(1, 'little'))
 
-        f.write(chr(self.SCY))
-        f.write(chr(self.SCX))
-        f.write(chr(self.WY))
-        f.write(chr(self.WX))
+        f.write(self.SCY.to_bytes(1, 'little'))
+        f.write(self.SCX.to_bytes(1, 'little'))
+        f.write(self.WY.to_bytes(1, 'little'))
+        f.write(self.WX.to_bytes(1, 'little'))
 
     def loadState(self, f):
         for n in range(VIDEO_RAM):
@@ -95,7 +95,7 @@ class PaletteRegister():
 
         self.value = value
         self.lookup = [0] * 4
-        for x in xrange(4):
+        for x in range(4):
             self.lookup[x] = self.colorPalette[(value >> x*2) & 0b11]
         return True
 

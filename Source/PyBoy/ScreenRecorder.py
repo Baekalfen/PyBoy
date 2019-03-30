@@ -4,14 +4,16 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import numpy as np
+import time
 import os
+
 try:
     import imageio
 except:
     imageio = None
-import numpy as np
-import time
-from Logger import logger
+
+from .Logger import logger
 
 
 class ScreenRecorder:

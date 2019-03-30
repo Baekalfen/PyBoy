@@ -4,7 +4,6 @@
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
 
 import array
-import numpy as np
 flagC, flagH, flagN, flagZ = range(4, 8)
 # from flags import flagZ, flagN, flagH, flagC
 

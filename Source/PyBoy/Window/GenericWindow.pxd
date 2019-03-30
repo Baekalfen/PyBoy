@@ -20,7 +20,7 @@ cdef class GenericWindow:
     cdef public uint32_t[4] colorPalette
     cdef unsigned int alphaMask
 
-    cdef void setTitle(self, char*)
+    cdef void setTitle(self, unicode)
     cdef list getEvents(self)
 
     cdef void updateDisplay(self)

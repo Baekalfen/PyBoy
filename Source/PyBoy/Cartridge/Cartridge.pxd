@@ -4,13 +4,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-cimport GenericMBC
-cimport ROM_only
-cimport MBC1
-cimport MBC2
-cimport MBC3
-cimport MBC5
-cimport RTC
+from . cimport GenericMBC
+# from .GenericMBC cimport ROM_only
+# from . cimport MBC1
+# from . cimport MBC2
+# from . cimport MBC3
+# from . cimport MBC5
+# from . cimport RTC
 
 cimport numpy as np
 import numpy as np
@@ -18,7 +18,7 @@ import numpy as np
 # cimport PyBoy.Global
 
 # cdef GenericMBC Cartridge(unicode)
-cdef GenericMBC Cartridge(char*)
+cdef public GenericMBC.GenericMBC Cartridge(char*)
 cdef bint validateCheckSum(unsigned char[:,:])
 cdef unsigned char[:, :] loadROMfile(char*)
 

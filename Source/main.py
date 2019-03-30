@@ -15,8 +15,8 @@ from PyBoy import PyBoy
 from PyBoy.Logger import logger, addConsoleHandler
 addConsoleHandler()
 
-if platform.system() != "Windows":
-    from Debug import Debug
+# if platform.system() != "Windows":
+#     from Debug import Debug
 
 
 def getROM(ROMdir):

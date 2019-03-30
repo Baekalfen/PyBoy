@@ -5,29 +5,24 @@
 #
 import array
 import os
-from RTC import RTC
+from .RTC import RTC
 from ..Logger import logger
-from .. import Global
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM, battery, rtcEnabled):
         self.filename = filename + ".ram"
-        banks = ROMBanks.shape[0]
+        banks = len(ROMBanks)
         self.ROMBanks = [[0] * (16 * 1024) for _ in range(256)]
         for n in range(banks):
             self.ROMBanks[n][:] = ROMBanks[n]
-        # self.ROMBanks = ROMBanks
         self.cartType = cartType
 
-        # self.SRAM = SRAM
         self.battery = battery
         self.rtcEnabled = rtcEnabled
 
         if self.rtcEnabled:
             self.rtc = RTC(filename)
 
-
-        # self.RAMBanks = None
         self.RAMBanksInitialized = False
         self.exRAMCount = exRAMCount
         self.initRAMBanks(exRAMCount)
@@ -53,10 +48,10 @@ class GenericMBC:
             self.rtc.stop()
 
     def saveState(self, f):
-        f.write(chr(self.ROMBankSelected))
-        f.write(chr(self.RAMBankSelected))
-        f.write(chr(self.RAMBankEnabled))
-        f.write(chr(self.memoryModel))
+        f.write(self.ROMBankSelected.to_bytes(1, 'little'))
+        f.write(self.RAMBankSelected.to_bytes(1, 'little'))
+        f.write(self.RAMBankEnabled.to_bytes(1, 'little'))
+        f.write(self.memoryModel.to_bytes(1, 'little'))
         self.saveRAM(f)
         if self.rtcEnabled:
             self.rtc.saveState(f)
@@ -75,9 +70,9 @@ class GenericMBC:
             logger.info("Saving RAM is not supported on {}".format(self.cartType))
             return
 
-        for bank in xrange(self.exRAMCount):
-            for byte in xrange(8*1024):
-                f.write(chr(self.RAMBanks[bank][byte]))
+        for bank in range(self.exRAMCount):
+            for byte in range(8*1024):
+                f.write(self.RAMBanks[bank][byte].to_bytes(1, "little"))
 
         logger.info("RAM saved.")
 
@@ -86,8 +81,8 @@ class GenericMBC:
             logger.info("Loading RAM is not supported on {}".format(self.cartType))
             return
 
-        for bank in xrange(self.exRAMCount):
-            for byte in xrange(8*1024):
+        for bank in range(self.exRAMCount):
+            for byte in range(8*1024):
                 self.RAMBanks[bank][byte] = ord(f.read(1))
 
         logger.info("RAM loaded.")
@@ -103,7 +98,7 @@ class GenericMBC:
         self.RAMBanks = [array.array('B', [0] * (8 * 1024)) for _ in range(16)] # Trying to do CPython a favor with static arrays, although not 2D
 
     def getGameName(self, ROMBanks):
-        return unicode("".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0"))
+        return "".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
 
 
     def setitem(self, address, value):
@@ -152,11 +147,11 @@ class ROM_only(GenericMBC):
         elif 0xA000 <= address < 0xC000:
             if self.RAMBanks == None:
                 from . import ExRAMTable
-                logger.warn("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
+                logger.warning("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
                 self.initRAMBanks(ExRAMTable[0x02])
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
-            logger.warn("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
         #     raise logger.error("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
 
 

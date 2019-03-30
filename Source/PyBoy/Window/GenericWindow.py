@@ -8,7 +8,7 @@ from ..Logger import logger
 
 gameboyResolution = (160, 144)
 
-class GenericWindow(object):
+class GenericWindow():
 
     def __init__(self, scale=1):
         self._scale = scale

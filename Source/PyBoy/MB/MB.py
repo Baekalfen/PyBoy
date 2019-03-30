@@ -9,11 +9,9 @@ import array
 # # import pyximport; pyximport.install()
 
 from ..Logger import logger
-import Timer
-import CPU
-from .. import RAM, BootROM, Interaction
-from .. import Cartridge
-from .. import LCD
+from . import Timer
+from . import CPU
+from .. import RAM, BootROM, Interaction, Cartridge, LCD
 VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
 # # from CPU.flags import VBlank, TIMER, HightoLow, LCDC
@@ -64,7 +62,7 @@ class Motherboard():
     def saveState(self, filename):
         logger.info("Saving state...")
         with open(filename, "wb") as f:
-            f.write(chr(self.bootROMEnabled))
+            f.write(self.bootROMEnabled.to_bytes(1, 'little'))
             self.cpu.saveState(f)
             self.lcd.saveState(f)
             self.ram.saveState(f)
@@ -138,7 +136,7 @@ class Motherboard():
 
             # TODO: the 19, 41 and 49 ticks should correct for longer instructions
             # Iterate the 144 lines on screen
-            for y in xrange(144):
+            for y in range(144):
                 self.checkLYC(y)
 
                 # Mode 2
@@ -159,7 +157,7 @@ class Motherboard():
             self.window.renderScreen(self.lcd) # Actually render screen from scanline parameters
 
             # Wait for next frame
-            for y in xrange(144,154):
+            for y in range(144,154):
                 self.checkLYC(y)
 
                 # Mode 1
@@ -172,7 +170,7 @@ class Motherboard():
             self.setSTATMode(0)
             self.setitem(LY, 0)
 
-            for y in xrange(154):
+            for y in range(154):
                 self.calculateCycles(456)
 
 
@@ -240,7 +238,7 @@ class Motherboard():
 
     def setitem(self,i,value):
         if i == 0xFF01:
-            print chr(value),
+            print (chr(value)),
         assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
 
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
@@ -312,5 +310,5 @@ class Motherboard():
         # TODO: Add timing delay of 160µs and disallow access to RAM!
         dst=0xFE00
         offset = src * 0x100
-        for n in xrange(0x00,0xA0):
+        for n in range(0x00,0xA0):
             self.setitem(dst + n, self.getitem(n + offset))

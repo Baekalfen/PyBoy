@@ -1,5 +1,4 @@
 
-cimport numpy
 cimport CPU
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t

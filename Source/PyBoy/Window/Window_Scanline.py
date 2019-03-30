@@ -227,7 +227,7 @@ class ScanlineWindow(GenericWindow):
             else:
                 obp = [self.palette[lcd.OBP0.get_code(x)] for x in range(4)]
 
-            for x, pixel in zip(xrange(sx - 8, sx), pixels):
+            for x, pixel in zip(range(sx - 8, sx), pixels):
                 if 0 <= x < gameboyResolution[0]:
                     if pixel and (not sf & 0x80 or self._linebuf[x] == bgp[0]):
                         self._linebuf[x] = obp[pixel]

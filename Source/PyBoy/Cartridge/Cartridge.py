@@ -6,15 +6,15 @@
 
 import os
 import struct
-from .. import Global
-import numpy as np
+import array
+# import numpy as np
 
-from GenericMBC import GenericMBC
-from GenericMBC import ROM_only
-from MBC1 import MBC1
-from MBC2 import MBC2
-from MBC3 import MBC3
-from MBC5 import MBC5
+from .GenericMBC import GenericMBC
+from .GenericMBC import ROM_only
+from .MBC1 import MBC1
+from .MBC2 import MBC2
+from .MBC3 import MBC3
+from .MBC5 import MBC5
 
 from ..Logger import logger
 
@@ -49,17 +49,10 @@ def loadROMfile(filename):
         ROMData = ROMFile.read()
 
         bankSize = (16 * 1024)
-        # TODO: LOAD DATA!
-        # if Global.isPyPy:
-        #     ROMBanks = [[0] * bankSize for n in xrange(len(ROMData) / bankSize)]
-        # else:
-        ROMBanks = np.ndarray(shape=(len(ROMData)/bankSize, bankSize), dtype='uint8')
+        ROMBanks = [array.array('B', [0] * bankSize) for n in range(len(ROMData) // bankSize)]
 
         for i, byte in enumerate(ROMData):
-            # if Global.isPyPy:
-            #     ROMBanks[i / bankSize][i % bankSize] = ord(byte)
-            # else:
-            ROMBanks[i / bankSize, i % bankSize] = ord(byte)
+            ROMBanks[i // bankSize][i % bankSize] = byte & 0xFF
 
     return ROMBanks
 

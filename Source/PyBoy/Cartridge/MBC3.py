@@ -3,7 +3,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from GenericMBC import GenericMBC
+from .GenericMBC import GenericMBC
 from ..Logger import logger
 
 class MBC3(GenericMBC):
@@ -16,7 +16,7 @@ class MBC3(GenericMBC):
             else:
                 # Pan Docs: "Practically any value with 0Ah in the lower 4 bits enables RAM, and any other value disables RAM."
                 self.RAMBankEnabled = False
-                logger.warn("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
+                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
         elif 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1
@@ -30,7 +30,7 @@ class MBC3(GenericMBC):
             else:
                 # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
                 # https://github.com/pret/pokered/issues/155
-                logger.warn("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
+                logger.warning("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
             if self.RAMBankSelected <= 0x03:
                 self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value

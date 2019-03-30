@@ -8,32 +8,28 @@ import sys
 import platform
 import time
 
-import numpy as np
-from ScreenRecorder import ScreenRecorder
+from . import BotSupport
+from .ScreenRecorder import ScreenRecorder
+from .MB.MB import Motherboard
+from . import WindowEvent
+from . import Window
 
-import Global
-from MB.MB import Motherboard
-import WindowEvent
-from Logger import logger, addConsoleHandler
+from .opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+from .Logger import logger, addConsoleHandler
 addConsoleHandler()
 
-import BotSupport
-import Logger
-from opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-import Window
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
 
 class PyBoy():
     def __init__(self, win_type, scale, ROM, bootROM = None):
-        self.ROM = unicode(ROM)
+        self.ROM = ROM
         self.debugger = None
         self.window = Window.Window.getWindow(win_type, scale)
 
-
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(unicode(ROM), bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
+        self.mb = Motherboard(ROM, bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
 
         if not self.debugger is None:
             self.debugger.mb = self.mb
@@ -103,7 +99,7 @@ class PyBoy():
         self.t_frameDone = time.time()
 
         if self.counter % 60 == 0:
-            text = "%d %d" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)
+            text = "%0.0f %0.0f" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)
             self.window.setTitle(text)
             self.counter = 0
         self.counter += 1
@@ -117,11 +113,12 @@ class PyBoy():
         self.mb.stop(save)
 
         if self.profiling:
+            import numpy as np
             np.set_printoptions(threshold=np.inf)
             argMax = np.argsort(self.mb.cpu.hitRate)
             for n in argMax[::-1]:
                 if self.mb.cpu.hitRate[n] != 0:
-                    print "%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n])
+                    print("%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n]))
 
 
     ###########################

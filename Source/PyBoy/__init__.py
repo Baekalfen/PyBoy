@@ -5,5 +5,5 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import RAM, BootROM, Window, LCD, Interaction, Cartridge, MB, WindowEvent
-from PyBoy import PyBoy
+from . import RAM, BootROM, Window, LCD, Interaction, Cartridge, MB, WindowEvent
+from .PyBoy import PyBoy

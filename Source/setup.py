@@ -12,7 +12,7 @@ with open('../README.md', 'r') as rm:
 
 thread_count = multiprocessing.cpu_count()
 # thread_count = 1
-print "Thread Count:", thread_count
+print("Thread Count:", thread_count)
 
 setup(
     name='PyBoy',
@@ -25,9 +25,7 @@ setup(
     content_type="text/markdown",
     url="https://github.com/Baekalfen/PyBoy",
     classifiers=[
-        "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Cython",
         "License :: Free for non-commercial use",
         "Operating System :: OS Independent",
@@ -37,15 +35,21 @@ setup(
     install_requires=[
         "cython",
         "pysdl2",
-        "imageio",
         "numpy",
-    ],
+        ],
+    extras_require={
+        "all" : [
+            "pyopengl",
+            "imageio",
+            ],
+        },
     include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/Window", "PyBoy/MB", np.get_include(), "/usr/local/include/SDL2/"],
     ext_modules = cythonize([
             'PyBoy/LCD.py',
             'PyBoy/BootROM.py',
             'PyBoy/WindowEvent.py',
             'PyBoy/Cartridge/__init__.py',
+            # 'PyBoy/Cartridge/Cartridge.py',
             'PyBoy/Cartridge/GenericMBC.py',
             'PyBoy/Cartridge/MBC1.py',
             'PyBoy/Cartridge/MBC2.py',
@@ -67,7 +71,6 @@ setup(
             'PyBoy/MB/Timer.py',
             'PyBoy/MB/MB.py',
             'PyBoy/MB/__init__.py',
-            'PyBoy/Global.py',
             'PyBoy/__init__.py',
             'PyBoy/PyBoy.py',
             'PyBoy/ScreenRecorder.py',
@@ -77,7 +80,7 @@ setup(
         include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/Window", np.get_include(), "/usr/local/lib/python2.7/site-packages/sdl2/", "/usr/local/include/SDL2/"], #, "PyBoy/Window",
         nthreads=thread_count,
         annotate=False,
-        language_level='2',
+        language_level=2,
         compiler_directives={
             "cdivision" : True,
             "cdivision_warnings" : False,
