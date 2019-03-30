@@ -7,8 +7,6 @@
 
 cimport PyBoy.MB.MB
 cimport opcodes
-import numpy as np
-cimport numpy as np
 import cython
 
 cdef unsigned short IF_address, IE_address

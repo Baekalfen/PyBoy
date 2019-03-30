@@ -8,7 +8,6 @@ import array
 from . import opcodes
 from ..opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from ..Logger import logger
-import numpy as np
 
 
 flagC, flagH, flagN, flagZ = range(4, 8)

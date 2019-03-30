@@ -7,7 +7,6 @@
 # import RAM
 # from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 import array
-import numpy as np
 
 VIDEO_RAM = 8 * 1024  # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0

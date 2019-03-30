@@ -7,7 +7,6 @@
 import os
 import struct
 import array
-# import numpy as np
 
 from .GenericMBC import GenericMBC
 from .GenericMBC import ROM_only

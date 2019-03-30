@@ -12,11 +12,6 @@ from . cimport GenericMBC
 # from . cimport MBC5
 # from . cimport RTC
 
-cimport numpy as np
-import numpy as np
-# cimport numpy as np
-# cimport PyBoy.Global
-
 # cdef GenericMBC Cartridge(unicode)
 cdef public GenericMBC.GenericMBC Cartridge(char*)
 cdef bint validateCheckSum(unsigned char[:,:])
