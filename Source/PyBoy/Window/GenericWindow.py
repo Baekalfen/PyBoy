@@ -18,12 +18,15 @@ class GenericWindow(object):
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
         self.colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
+        self.alphaMask = 0x7F000000
 
         self.clearCache = False
         self.tiles_changed = set([])
 
         self.enable_title = True
 
+    def init(self):
+        pass
 
     def dump(self, filename):
         raise NotImplementedError()

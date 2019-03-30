@@ -22,18 +22,16 @@ BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, Win
 # ModeFlag0, ModeFlag1, Coincidence, Mode00, Mode01, Mode10, LYC_LY = range(7)
 
 gameboyResolution = (160, 144)
-colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
-alphaMask = 0x7F000000
 
 class LCD():
-    def __init__(self):
+    def __init__(self, colorPalette):
         self.VRAM = array.array('B', [0]*(VIDEO_RAM))
         self.OAM = array.array('B', [0]*(OBJECT_ATTRIBUTE_MEMORY))
 
         self.LCDC = LCDCRegister(0)
-        self.BGP = PaletteRegister(0xFC)
-        self.OBP0 = PaletteRegister(0xFF)
-        self.OBP1 = PaletteRegister(0xFF)
+        self.BGP = PaletteRegister(0xFC, colorPalette)
+        self.OBP0 = PaletteRegister(0xFF, colorPalette)
+        self.OBP1 = PaletteRegister(0xFF, colorPalette)
         # self.STAT = 0x00
         # self.LY = 0x00
         # self.LYC = 0x00
@@ -86,8 +84,9 @@ class LCD():
 
 
 class PaletteRegister():
-    def __init__(self, value):
-        self.value = 0 # None
+    def __init__(self, value, colorPalette):
+        self.colorPalette = colorPalette
+        self.value = 0
         self.set(value)
 
     def set(self, value):
@@ -97,15 +96,14 @@ class PaletteRegister():
         self.value = value
         self.lookup = [0] * 4
         for x in xrange(4):
-            self.lookup[x] = (value >> x*2) & 0b11
-        # self.lcd.clearCache = True
+            self.lookup[x] = self.colorPalette[(value >> x*2) & 0b11]
         return True
 
     def getColor(self, i):
-        return colorPalette[self.lookup[i]]
-
-    def getCode(self, i):
         return self.lookup[i]
+
+    # def getCode(self, i):
+    #     return self.lookup[i]
 
 class LCDCRegister():
     def __init__(self, value):

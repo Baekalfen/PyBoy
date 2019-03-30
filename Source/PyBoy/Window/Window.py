@@ -42,6 +42,7 @@ def getWindow(win_type, scale):
         logger.error("Valid Windows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'")
         exit(1)
 
+    window.init()
     return window
 
 

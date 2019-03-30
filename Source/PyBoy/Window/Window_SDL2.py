@@ -19,7 +19,6 @@ from GenericWindow import GenericWindow
 from ..Logger import logger
 
 gameboyResolution = (160, 144)
-alphaMask = 0x7F000000
 
 def getColorCode(byte1,byte2,offset):
     # The colors are 2 bit and are found like this:
@@ -33,7 +32,17 @@ def getColorCode(byte1,byte2,offset):
 
 class SdlWindow(GenericWindow):
     def __init__(self, scale=1):
-        super(self.__class__, self).__init__(scale)
+        # super(self.__class__, self).__init__(scale)
+        GenericWindow.__init__(self, scale)
+        # super(GenericWindow, self).__init__(scale)
+
+        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[1],4), dtype='int32')
+        self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
+        self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')
+        self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='uint32')
+
+
+    def init(self):
         self.ticks = sdl2.SDL_GetTicks()
 
         # http://pysdl2.readthedocs.org/en/latest/tutorial/pong.html
@@ -48,7 +57,6 @@ class SdlWindow(GenericWindow):
                 sdl2.SDLK_RETURN    : WindowEvent.PressButtonStart,
                 sdl2.SDLK_BACKSPACE : WindowEvent.PressButtonSelect,
                 sdl2.SDLK_ESCAPE    : WindowEvent.Quit,
-                # sdl2.SDLK_e       : self.debug = True
                 sdl2.SDLK_d         : WindowEvent.DebugToggle,
                 sdl2.SDLK_SPACE     : WindowEvent.PressSpeedUp,
                 sdl2.SDLK_i         : WindowEvent.ScreenRecordingToggle,
@@ -66,8 +74,6 @@ class SdlWindow(GenericWindow):
                 sdl2.SDLK_x         : WindowEvent.LoadState,
                 sdl2.SDLK_SPACE     : WindowEvent.ReleaseSpeedUp,
         }
-
-        self.debug = False
 
         # sdl2.ext.init()
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING) # Should be less... https://wiki.libsdl.org/SDL_Init
@@ -111,12 +117,6 @@ class SdlWindow(GenericWindow):
         # # Only used for VSYNC
         # self.win = sdl2.SDL_CreateWindow("", 0,0,0,0, 0) # Hack doesn't work, if hidden # sdl2.SDL_WINDOW_HIDDEN)
         # self.renderer = sdl2.SDL_CreateRenderer(self.win, -1, sdl2.SDL_RENDERER_PRESENTVSYNC)
-
-        self.scanlineParameters = np.ndarray(shape=(gameboyResolution[1],4), dtype='int32')
-
-        self.tileCache = np.ndarray((384 * 8, 8), dtype='uint32')
-        self.spriteCacheOBP0 = np.ndarray((384 * 8, 8), dtype='uint32')
-        self.spriteCacheOBP1 = np.ndarray((384 * 8, 8), dtype='uint32')
 
         # if __debug__:
         #     self.__setDebug()
@@ -162,7 +162,8 @@ class SdlWindow(GenericWindow):
 
         return events
 
-    # def updateDisplay(self):
+    def updateDisplay(self):
+        self._updateDisplay()
     #     sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, None, self._screenBuffer.ctypes.data_as(ctypes.c_void_p), self._screenBuffer.strides[0])
     #     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer, None, None)
     #     sdl2.SDL_RenderPresent(self._sdlrenderer)
@@ -206,7 +207,6 @@ class SdlWindow(GenericWindow):
 
         for y in xrange(gameboyResolution[1]):
             xx, yy, wx, wy = self.scanlineParameters[y]
-            # xx, yy = lcd.getViewPort()
             offset = xx & 0b111 # Used for the half tile at the left side when scrolling
 
             for x in xrange(gameboyResolution[0]):
@@ -277,11 +277,11 @@ class SdlWindow(GenericWindow):
 
                 if 0 <= x2+x < 160 and 0 <= y2+y < 144:
                     if not (not spritePriority or (spritePriority and self._screenBuffer[y2+y][x2+x] == BGPkey)):
-                        pixel += alphaMask # Add a fake alphachannel to the sprite for BG pixels.
+                        pixel |= self.alphaMask  # Add a fake alphachannel to the sprite for BG pixels.
                                             # We can't just merge this with the next if, as
                                             # sprites can have an alpha channel in other ways
 
-                    if not (pixel & alphaMask):
+                    if not (pixel & self.alphaMask):
                         self._screenBuffer[y2+y][x2+x] = pixel
 
     def updateCache(self, lcd):
@@ -307,16 +307,25 @@ class SdlWindow(GenericWindow):
                     # TODO: Find a more optimal way to do this
                     alpha = 0x00000000
                     if colorCode == 0:
-                        alpha = alphaMask # Add alpha channel
+                        alpha = self.alphaMask # Add alpha channel
                     self.spriteCacheOBP0[x][y] = lcd.OBP0.getColor(colorCode) + alpha
                     self.spriteCacheOBP1[x][y] = lcd.OBP1.getColor(colorCode) + alpha
 
         self.tiles_changed.clear()
 
+        # if __debug__:
+        #     self.window.refreshTileView1(self.lcd)
+        #     self.window.refreshTileView2(self.lcd)
+        #     self.window.refreshSpriteView(self.lcd)
+        #     self.window.drawTileCacheView(self.lcd)
+        #     self.window.drawTileView1ScreenPort(self.lcd)
+        #     self.window.drawTileView2WindowPort(self.lcd)
+
+
 
     def blankScreen(self):
         # If the screen is off, fill it with a color.
-        color = 0x00FFFFFF
+        color = self.colorPalette[0]
         if __debug__:
             color = 0x00403245
         for y in range(144):

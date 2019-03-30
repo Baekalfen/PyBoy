@@ -15,8 +15,6 @@ cdef char BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDa
 # cdef public int VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 
 cdef (int, int) gameboyResolution
-cdef public int[4] colorPalette
-cdef unsigned int alphaMask
 
 import cython
 from libc.stdint cimport uint8_t, uint32_t
@@ -44,13 +42,12 @@ cdef class PaletteRegister:
     cdef LCD lcd
 
     cdef unsigned char value
-    cdef unsigned char[4] lookup
+    cdef uint32_t[4] lookup
+    cdef uint32_t[4] colorPalette
 
     @cython.locals(x=cython.ushort)
     cdef bint set(self, unsigned int)
-    cdef unsigned int getColor(self, unsigned char)
-
-    cdef char getCode(self, unsigned char)
+    cdef uint32_t getColor(self, unsigned char)
 
 cdef class LCDCRegister:
     cdef unsigned char value

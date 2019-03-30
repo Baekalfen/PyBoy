@@ -21,16 +21,14 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
 cdef (int, int) gameboyResolution
-cdef unsigned int alphaMask
 
 cdef class SdlWindow(GenericWindow):
     # cdef tuple makeWindowAndGetBuffer(self, int, int, int, int, char*)
 
     cdef int ticks
-    cdef list getEvents(self)
+    # cdef list getEvents(self)
     cdef dict windowEventsDown
     cdef dict windowEventsUp
-    cdef bint debug
     cdef uint32_t[144][160] _screenBuffer
     cdef int[144][4] scanlineParameters
 
@@ -38,10 +36,10 @@ cdef class SdlWindow(GenericWindow):
     cdef sdl2.SDL_Renderer *_sdlrenderer
     cdef sdl2.SDL_Texture *_sdlTextureBuffer
 
-    cdef void setTitle(self, char*)
+    # cdef void setTitle(self, char*)
+
     @cython.locals(now=cython.int, delay=cython.int)
     cdef void framelimiter(self)
-    cdef void stop(self)
 
     @cython.locals(viewPos=(int, int), windowPos=(int, int))
     cdef void scanline(self, int, LCD)
@@ -66,9 +64,8 @@ cdef class SdlWindow(GenericWindow):
             xFlip=bint,
             yFlip=bint,
             spritePriority=bint,
-            # spriteCache=np.uint32_t[384 * 8][8],
             spriteSize=uchar,
-            colorPalette=(int, int, int, int))
+            )
     cdef void renderScreen(self, LCD)
 
     @cython.locals(
@@ -83,10 +80,9 @@ cdef class SdlWindow(GenericWindow):
             pixel=int,
             )
     cdef void copySprite(self, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
-    cdef void blankScreen(self)
-    cdef object getScreenBuffer(self)
 
-    cdef inline void updateDisplay(self):
+    # Not directly override updateDisplay. Otherwise we get: "Overriding final methods is not allowed"
+    cdef inline void _updateDisplay(self):
         sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, &self._screenBuffer, 160*4)
         sdl2.SDL_RenderCopy(
                 self._sdlrenderer,

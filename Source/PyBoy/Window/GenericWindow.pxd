@@ -6,6 +6,7 @@
 
 import cython
 
+from libc.stdint cimport uint32_t
 from PyBoy.LCD cimport LCD
 
 cdef (int, int) gameboyResolution
@@ -14,8 +15,10 @@ cdef class GenericWindow:
     cdef (int, int) _scaledResolution
     cdef unsigned int _scale
     cdef bint enable_title
+    cdef void init(self)
 
-    cdef (int, int, int, int) colorPalette
+    cdef public uint32_t[4] colorPalette
+    cdef unsigned int alphaMask
 
     cdef void setTitle(self, char*)
     cdef list getEvents(self)
@@ -30,13 +33,4 @@ cdef class GenericWindow:
 
     cdef bint clearCache
     cdef set tiles_changed
-    @cython.locals(
-            x=cython.ushort,
-            y=cython.ushort,
-            t=cython.int,
-            k=cython.int,
-            pixelOnLine=cython.int,
-            colorCode=cython.int,
-            alpha=cython.int,
-            )
     cdef void updateCache(self, LCD)

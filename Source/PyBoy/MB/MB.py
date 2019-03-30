@@ -39,7 +39,7 @@ class Motherboard():
         self.bootROM = BootROM.BootROM(bootROMFile)
         self.ram = RAM.RAM(random=False)
         self.cpu = CPU.CPU(self, profiling)
-        self.lcd = LCD.LCD()
+        self.lcd = LCD.LCD(window.colorPalette)
         self.bootROMEnabled = True
 
         if "loadState" in sys.argv:
@@ -135,14 +135,6 @@ class Motherboard():
         lcdEnabled = self.lcd.LCDC.enabled
         if lcdEnabled:
             self.window.updateCache(self.lcd)
-
-            if __debug__:
-                self.window.refreshTileView1(self.lcd)
-                self.window.refreshTileView2(self.lcd)
-                self.window.refreshSpriteView(self.lcd)
-                self.window.drawTileCacheView(self.lcd)
-                self.window.drawTileView1ScreenPort(self.lcd)
-                self.window.drawTileView2WindowPort(self.lcd)
 
             # TODO: the 19, 41 and 49 ticks should correct for longer instructions
             # Iterate the 144 lines on screen
