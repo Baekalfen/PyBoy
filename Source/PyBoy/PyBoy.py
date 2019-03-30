@@ -34,24 +34,18 @@ class PyBoy():
         if not self.debugger is None:
             self.debugger.mb = self.mb
 
-        self.exp_avg_emu = 0
-        self.exp_avg_cpu = 0
-        self.t_start = 0
-        self.t_start_ = 0
-        self.t_VSynced = 0
-        self.t_frameDone = 0
+        self.avg_emu = 0
+        self.avg_cpu = 0
         self.counter = 0
-        self.limitEmulationSpeed = True
+        self.setLimitEmulationSpeed(True, 5)
         self.screen_recorder = None
 
 
     def tick(self):
         done = False
-        self.exp_avg_emu = 0.9 * self.exp_avg_emu + 0.1 * (self.t_VSynced-self.t_start)
-        self.exp_avg_cpu = 0.9 * self.exp_avg_cpu + 0.1 * (self.t_frameDone-self.t_start_)
 
-        self.t_start_ = time.time() # Real-world time
-        self.t_start = time.clock() # Time on the CPU
+        t_start = time.perf_counter_ns()
+
         for event in self.window.getEvents():
             if event == WindowEvent.Quit:
                 done = True
@@ -90,16 +84,25 @@ class PyBoy():
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.window.getScreenBuffer())
 
-        self.t_VSynced = time.clock()
+        t_cpu = time.perf_counter_ns()
 
-        # Trying to avoid VSync'ing on a frame, if we are out of time
         if self.limitEmulationSpeed:
-            # This one makes time and frame syncing work, but messes with time.clock()
-            self.window.framelimiter()
-        self.t_frameDone = time.time()
+            self.window.framelimiter(1)
+        elif self.maxEmulationSpeed > 0:
+            self.window.framelimiter(self.maxEmulationSpeed)
+
+        t_emu = time.perf_counter_ns()
+
+        secs = t_emu-t_start
+        secs /= 10**9
+        self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
+
+        secs = t_cpu-t_start
+        secs /= 10**9
+        self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
 
         if self.counter % 60 == 0:
-            text = "%0.0f %0.0f" % ((self.exp_avg_emu)/SPF*100, (self.exp_avg_cpu)/SPF*100)
+            text = "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
             self.window.setTitle(text)
             self.counter = 0
         self.counter += 1
@@ -164,5 +167,8 @@ class PyBoy():
     def disableTitle(self):
         self.window.disableTitle()
 
-    def setLimitEmulationSpeed(self, v):
+    def setLimitEmulationSpeed(self, v, max_speed=0):
         self.limitEmulationSpeed = v
+        if max_speed > 5:
+            logger.warning("The emulation speed might not be accurate, when higher than 5")
+        self.maxEmulationSpeed = max_speed

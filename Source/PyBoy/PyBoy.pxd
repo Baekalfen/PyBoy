@@ -5,6 +5,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from libc cimport time
 cimport cython
 cimport PyBoy.Cartridge
 cimport PyBoy.Window.Window
@@ -24,17 +25,14 @@ cdef class PyBoy:
     cdef GenericWindow window
 
     cdef bint profiling
-    cdef float exp_avg_emu
-    cdef float exp_avg_cpu
-    cdef float t_start
-    cdef float t_start_
-    cdef float t_VSynced
-    cdef float t_frameDone
+    cdef double avg_emu
+    cdef double avg_cpu
     cdef unsigned int counter
     cdef bint limitEmulationSpeed
+    cdef int maxEmulationSpeed
     cdef object screen_recorder
 
-    @cython.locals(done=cython.bint, event=int)
+    @cython.locals(done=cython.bint, event=int, t_start=long, t_cpu=long, t_emu=long, secs=float)
     cpdef bint tick(self)
     cpdef void stop(self, save=*)
 

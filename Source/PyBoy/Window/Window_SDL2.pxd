@@ -39,7 +39,7 @@ cdef class SdlWindow(GenericWindow):
     # cdef void setTitle(self, char*)
 
     @cython.locals(now=cython.int, delay=cython.int)
-    cdef void framelimiter(self)
+    cdef void framelimiter(self, int)
 
     @cython.locals(viewPos=(int, int), windowPos=(int, int))
     cdef void scanline(self, int, LCD)

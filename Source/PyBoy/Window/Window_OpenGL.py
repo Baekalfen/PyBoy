@@ -133,7 +133,7 @@ class OpenGLWindow(SdlWindow):
         self.glDraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 
-    def framelimiter(self):
+    def framelimiter(self, speed):
         pass
 
     def stop(self):

@@ -120,9 +120,9 @@ class SdlWindow(GenericWindow):
         #     self.tileView2Window.refresh()
         #     self.spriteWindow.refresh()
 
-    def framelimiter(self):
+    def framelimiter(self, speed):
         now = sdl2.SDL_GetTicks()
-        delay = int(1/60.0*1000-(now-self.ticks))
+        delay = int(1/(60.0 * speed)*1000-(now-self.ticks))
         if delay < 0: # Cython doesn't suppport max()
             delay = 0
         sdl2.SDL_Delay(delay)

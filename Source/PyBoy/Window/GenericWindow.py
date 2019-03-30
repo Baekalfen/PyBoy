@@ -40,7 +40,7 @@ class GenericWindow():
     def updateDisplay(self):
         raise NotImplementedError()
 
-    def framelimiter(self):
+    def framelimiter(self, speed):
         raise NotImplementedError()
 
     def stop(self):

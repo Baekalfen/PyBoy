@@ -25,7 +25,7 @@ cdef class GenericWindow:
 
     cdef void disableTitle(self)
     cdef void updateDisplay(self)
-    cdef void framelimiter(self)
+    cdef void framelimiter(self, int)
     cdef void stop(self)
     cdef void scanline(self, int, LCD)
     cdef void renderScreen(self, LCD)
