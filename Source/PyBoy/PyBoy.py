@@ -70,7 +70,7 @@ class PyBoy():
                 pass # Used in place of None in Cython, when key isn't mapped to anything
             elif event == WindowEvent.ScreenRecordingToggle:
                 if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder()
+                    self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
                 else:
                     self.screen_recorder.save()
                     self.screen_recorder = None
@@ -127,6 +127,9 @@ class PyBoy():
 
     def getScreenBuffer(self):
         return self.window
+
+    def getScreenBufferFormat(self):
+        return "RGBA" if self.mb.window.alphaMask == 0x0000007F else "ARGB"
 
     def getMemoryValue(self, addr):
         return self.mb.getitem(addr)

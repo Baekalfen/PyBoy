@@ -13,18 +13,14 @@ import sys
 import platform
 from PyBoy.Logger import logger
 from PyBoy import WindowEvent
-
-if platform.system() != "Windows":
-    from Debug import Debug
 from PyBoy import PyBoy
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
-    found_files = filter(lambda f: f.lower().endswith(
-        ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir))
+    found_files = list(filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir)))
     for i, f in enumerate(found_files):
         print ("%s\t%s" % (i + 1, f))
-    filename = raw_input("Write the name or number of the tetris ROM file:\n")
+    filename = input("Write the name or number of the tetris ROM file:\n")
 
     try:
         filename = ROMdir + found_files[int(filename) - 1]
@@ -57,11 +53,12 @@ if __name__ == "__main__":
 
         # Start PyBoy and run loop
         pyboy = PyBoy('SDL2', 3, filename, bootROM)
+        pyboy.setLimitEmulationSpeed(False)
         frame = 0
         first_brick = False
         view = pyboy.getTileView(False)
         while not pyboy.tick():
-            print "frame:", frame
+            print ("frame:", frame)
 
             # Start game. Just press Start and A when the game allows us.
             # The frames are not 100% accurate.
@@ -90,13 +87,13 @@ if __name__ == "__main__":
                 elif frame % 2 == 1:
                     pyboy.sendInput(WindowEvent.ReleaseArrowRight)
 
-                print "Screen pos:", pyboy.getScreenPosition()
+                print ("Screen pos:", pyboy.getScreenPosition())
                 # As an example, it could be useful to know the coordinates
                 # of the sprites on the screen and which they look like.
                 for n in range(40):
                     sprite = pyboy.getSprite(n)
                     if sprite.is_on_screen():
-                        print "Sprite:", sprite.get_x(), sprite.get_y(), sprite.get_tile()
+                        print ("Sprite:", sprite.get_x(), sprite.get_y(), sprite.get_tile())
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This
@@ -111,7 +108,7 @@ if __name__ == "__main__":
                     for n in range(10):
                         if view.get_tile(n+2,17) != 47:
                             first_brick = True
-                            print "First brick touched the bottom!"
+                            print ("First brick touched the bottom!")
                             break
 
 

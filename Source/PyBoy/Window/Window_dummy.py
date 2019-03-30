@@ -43,3 +43,6 @@ class DummyWindow(GenericWindow):
     def blankScreen(self):
         pass
 
+    def disableTitle(self):
+        self.enable_title = False
+

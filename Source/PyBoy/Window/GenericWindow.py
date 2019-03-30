@@ -61,3 +61,6 @@ class GenericWindow():
     def updateCache(self, lcd):
         pass
 
+    def disableTitle(self):
+        pass
+

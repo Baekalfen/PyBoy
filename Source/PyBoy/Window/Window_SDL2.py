@@ -90,9 +90,6 @@ class SdlWindow(GenericWindow):
         self.blankScreen()
         sdl2.SDL_ShowWindow(self._window)
 
-    def disableTitle(self):
-        pass
-
     def dump(self,filename):
         pass
         # sdl2.surface.SDL_SaveBMP(self._sdlTextureBuffer,filename+".bmp")
@@ -146,7 +143,7 @@ class SdlWindow(GenericWindow):
         #     sdl2.SDL_DestroyWindow(self.tileView2Window.window)
         #     sdl2.SDL_DestroyWindow(self.spriteWindow.window)
         sdl2.SDL_DestroyWindow(self._window)
-        sdl2.ext.quit()
+        sdl2.SDL_Quit()
 
     def scanline(self, y, lcd): # Just recording states of LCD registers
         viewPos = lcd.getViewPort()

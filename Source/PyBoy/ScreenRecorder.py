@@ -18,12 +18,13 @@ from .Logger import logger
 
 class ScreenRecorder:
 
-    def __init__(self):
+    def __init__(self, colorScheme):
         logger.info("ScreenRecorder started")
         if imageio is None:
             logger.warning("ScreenRecorder: Dependency \"imageio\" could not be imported. Screen recording is disabled.")
             return
         self.frames = []
+        self.colorScheme = colorScheme
 
     def add_frame(self, frame):
         if imageio is None:
@@ -51,7 +52,13 @@ class ScreenRecorder:
         for frame in self.frames:
             # Reshape uint32->4xuint8. Strip alpha channel.
             # Transpose dimensions, but not colors. Otherwise the recording comes out mirrored.
-            rgb_image = frame.view(np.uint8).reshape(frame.shape + (4,))[:,:,:-1]
+            rgb_image = frame.view(np.uint8).reshape(frame.shape + (4,))
+            if self.colorScheme == "RGBA":
+                rgb_image = rgb_image[:,:,1:]
+            elif self.colorScheme == "ARGB":
+                rgb_image = rgb_image[:,:,:-1]
+            else:
+                logger.error("Unsupported color scheme! Trying to continue.")
             images.append(rgb_image)
 
         if format == 'gif':

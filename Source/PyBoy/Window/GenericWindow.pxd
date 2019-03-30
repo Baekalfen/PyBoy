@@ -23,6 +23,7 @@ cdef class GenericWindow:
     cdef void setTitle(self, unicode)
     cdef list getEvents(self)
 
+    cdef void disableTitle(self)
     cdef void updateDisplay(self)
     cdef void framelimiter(self)
     cdef void stop(self)

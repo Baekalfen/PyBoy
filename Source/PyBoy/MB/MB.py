@@ -55,9 +55,9 @@ class Motherboard():
         self.cpu.setInterruptFlag(HightoLow)
 
     def stop(self, save):
+        self.window.stop()
         if save:
             self.cartridge.stop()
-        self.window.stop()
 
     def saveState(self, filename):
         logger.info("Saving state...")
