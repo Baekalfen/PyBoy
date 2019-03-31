@@ -32,7 +32,7 @@ cdef class PyBoy:
     cdef int maxEmulationSpeed
     cdef object screen_recorder
 
-    @cython.locals(done=cython.bint, event=int, t_start=long, t_cpu=long, t_emu=long, secs=float)
+    @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
     cpdef bint tick(self)
     cpdef void stop(self, save=*)
 

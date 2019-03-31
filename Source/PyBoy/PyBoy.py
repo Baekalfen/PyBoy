@@ -44,7 +44,7 @@ class PyBoy():
     def tick(self):
         done = False
 
-        t_start = time.perf_counter_ns()
+        t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
         for event in self.window.getEvents():
             if event == WindowEvent.Quit:
@@ -77,21 +77,19 @@ class PyBoy():
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.window.getScreenBuffer())
 
-        t_cpu = time.perf_counter_ns()
+        t_cpu = time.perf_counter()
 
         if self.limitEmulationSpeed:
             self.window.framelimiter(1)
         elif self.maxEmulationSpeed > 0:
             self.window.framelimiter(self.maxEmulationSpeed)
 
-        t_emu = time.perf_counter_ns()
+        t_emu = time.perf_counter()
 
         secs = t_emu-t_start
-        secs /= 10**9
         self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
 
         secs = t_cpu-t_start
-        secs /= 10**9
         self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
 
         if self.counter % 60 == 0:
