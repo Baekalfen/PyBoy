@@ -1,11 +1,9 @@
-# PyBoy
+# PyBoy - Now in CPython!
 
 It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-
-**To get more information about the project, and find out how to [get started](https://github.com/Baekalfen/PyBoy/wiki/Installation), have a look at the [Wiki](https://github.com/Baekalfen/PyBoy/wiki).**
 
 <p align="center">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="320">
@@ -13,6 +11,14 @@ If you've read the report and want more explicit details, have a look at the [Pa
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.gif" width="316">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.gif" width="320">
 </p>
+
+Installation
+============
+We have now moved away from PyPy, and PyBoy fully supports regular CPython, by the use of Cython. Performance has also increased dramatically.
+
+**To get started, look at the [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation)**
+
+At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
 
 
 Contibutors
