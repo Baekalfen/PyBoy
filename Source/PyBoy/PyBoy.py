@@ -37,7 +37,7 @@ class PyBoy():
         self.avg_emu = 0
         self.avg_cpu = 0
         self.counter = 0
-        self.setLimitEmulationSpeed(True, 5)
+        self.setLimitEmulationSpeed(True, 0)
         self.screen_recorder = None
 
 
@@ -71,14 +71,7 @@ class PyBoy():
             else:  # Right now, everything else is a button press
                 self.mb.buttonEvent(event)
 
-        if self.debugger is None:
-            self.mb.tickFrame()
-        else:
-            if not self.debugger.tick(): # Returns false on keyboard interrupt
-                done = True
-
-            if not self.debugger.running:
-                self.mb.tickFrame()
+        self.mb.tickFrame()
         self.window.updateDisplay()
 
         if self.screen_recorder:

@@ -28,7 +28,7 @@ class DummyWindow(GenericWindow):
     def updateDisplay(self):
         pass
 
-    def framelimiter(self):
+    def framelimiter(self, speed):
         pass
 
     def stop(self):
