@@ -3,26 +3,28 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from .. import CoreDump
+import array
 import os
 from .RTC import RTC
 from ..Logger import logger
 
 class GenericMBC:
-    def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM  , battery , rtcEnabled):
-        self.filename = filename  # For debugging and saving
-        self.ROMBanks = ROMBanks
+    def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM, battery, rtcEnabled):
+        self.filename = filename + ".ram"
+        banks = len(ROMBanks)
+        self.ROMBanks = [[0] * (16 * 1024) for _ in range(256)]
+        for n in range(banks):
+            self.ROMBanks[n][:] = ROMBanks[n]
         self.cartType = cartType
 
-        # self.SRAM = SRAM
         self.battery = battery
         self.rtcEnabled = rtcEnabled
 
         if self.rtcEnabled:
-            self.rtc = RTC()
+            self.rtc = RTC(filename)
 
-
-        self.RAMBanks = None
+        self.RAMBanksInitialized = False
+        self.exRAMCount = exRAMCount
         self.initRAMBanks(exRAMCount)
         self.gameName = self.getGameName(ROMBanks)
 
@@ -32,41 +34,56 @@ class GenericMBC:
         self.ROMBankSelected = 1  # TODO: Check this, not documented #NOTE: TestROM 01-special.gb
                                   # assumes initial value of 1
 
-    def saveRAM(self, filename = None):
-        if self.RAMBanks is None:
+        if not os.path.exists(self.filename):
+            logger.info("No RAM file found. Skipping.")
+        else:
+            with open(self.filename, "rb") as f:
+                self.loadRAM(f)
+
+    def stop(self):
+        with open(self.filename, "wb") as f:
+            self.saveRAM(f)
+
+        if self.rtcEnabled:
+            self.rtc.stop()
+
+    def saveState(self, f):
+        f.write(self.ROMBankSelected.to_bytes(1, 'little'))
+        f.write(self.RAMBankSelected.to_bytes(1, 'little'))
+        f.write(self.RAMBankEnabled.to_bytes(1, 'little'))
+        f.write(self.memoryModel.to_bytes(1, 'little'))
+        self.saveRAM(f)
+        if self.rtcEnabled:
+            self.rtc.saveState(f)
+
+    def loadState(self, f):
+        self.ROMBankSelected = ord(f.read(1))
+        self.RAMBankSelected = ord(f.read(1))
+        self.RAMBankEnabled = ord(f.read(1))
+        self.memoryModel = ord(f.read(1))
+        self.loadRAM(f)
+        if self.rtcEnabled:
+            self.rtc.loadState(f)
+
+    def saveRAM(self, f):
+        if not self.RAMBanksInitialized:
             logger.info("Saving RAM is not supported on {}".format(self.cartType))
             return
 
-        if filename is None:
-            romPath, ext = os.path.splitext(self.filename)
-        else:
-            romPath = filename
-
-        with open(romPath+".ram", "wb") as saveRAM:
-            for bank in self.RAMBanks:
-                for byte in bank:
-                    saveRAM.write(chr(byte))
+        for bank in range(self.exRAMCount):
+            for byte in range(8*1024):
+                f.write(self.RAMBanks[bank][byte].to_bytes(1, "little"))
 
         logger.info("RAM saved.")
 
-    def loadRAM(self, filename = None):
-        if self.RAMBanks is None:
+    def loadRAM(self, f):
+        if not self.RAMBanksInitialized:
             logger.info("Loading RAM is not supported on {}".format(self.cartType))
             return
 
-        if filename is None:
-            romPath, ext = os.path.splitext(self.filename)
-        else:
-            romPath = filename
-
-        if not os.path.exists(romPath+".ram"):
-            logger.info("No RAM file found. Skipping.")
-            return
-
-        with open(romPath+".ram", "rb") as loadRAM:
-            for bank in xrange(len(self.RAMBanks)):
-                for byte in xrange(8*1024):
-                    self.RAMBanks[bank][byte] = ord(loadRAM.read(1))
+        for bank in range(self.exRAMCount):
+            for byte in range(8*1024):
+                self.RAMBanks[bank][byte] = ord(f.read(1))
 
         logger.info("RAM loaded.")
 
@@ -74,34 +91,34 @@ class GenericMBC:
         if n is None:
             return
 
-        self.RAMBanks = []
-        for n in range(n):
-            # In real life the values in RAM are scrambled on initialization
-            self.RAMBanks.append([0 for x in xrange(8 * 1024)])
+        self.RAMBanksInitialized = True
+
+        # In real life the values in RAM are scrambled on initialization
+        # Allocating the maximum, as it is easier with static array sizes. And it's just 128KB...
+        self.RAMBanks = [array.array('B', [0] * (8 * 1024)) for _ in range(16)] # Trying to do CPython a favor with static arrays, although not 2D
 
     def getGameName(self, ROMBanks):
         return "".join([chr(x) for x in ROMBanks[0][0x0134:0x0142]]).rstrip("\0")
 
-    def __getitem__(self, address):
+
+    def setitem(self, address, value):
+        raise Exception("Cannot set item in GenericMBC")
+
+    def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.ROMBanks[0][address]
         elif 0x4000 <= address < 0x8000:
             return self.ROMBanks[self.ROMBankSelected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
-            if not self.RAMBanks:
-                raise CoreDump.CoreDump("RAM banks not initialized: %s" % hex(address))
+            if not self.RAMBanksInitialized:
+                raise logger.error("RAM banks not initialized: %s" % hex(address))
 
             if self.rtcEnabled and 0x08 <= self.RAMBankSelected <= 0x0C:
                 return self.rtc.getRegister(self.RAMBankSelected)
             else:
                 return self.RAMBanks[self.RAMBankSelected][address - 0xA000]
         else:
-            raise CoreDump.CoreDump("Reading address invalid: %s" % address)
-
-    def __getslice__(self, a, b):
-        if b-a < 0:
-            raise CoreDump.CoreDump("Negative slice not allowed")
-        return [self.__getitem__(a+n) for n in xrange(b-a)]
+            raise logger.error("Reading address invalid: %s" % address)
 
     def __str__(self):
         string = "Cartridge:\n"
@@ -121,7 +138,7 @@ class GenericMBC:
 
 
 class ROM_only(GenericMBC):
-    def __setitem__(self, address, value):
+    def setitem(self, address, value):
         if 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1
@@ -130,9 +147,11 @@ class ROM_only(GenericMBC):
         elif 0xA000 <= address < 0xC000:
             if self.RAMBanks == None:
                 from . import ExRAMTable
-                logger.warn("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
+                logger.warning("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
                 self.initRAMBanks(ExRAMTable[0x02])
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
-            logger.warn("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
-        #     raise CoreDump.CoreDump("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+        #     raise logger.error("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
+
+

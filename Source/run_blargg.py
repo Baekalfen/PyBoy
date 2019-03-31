@@ -1,10 +1,6 @@
 #! /usr/local/bin/python2
 # -*- encoding: utf-8 -*-
-#
-# Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
-# License: See LICENSE file
-# GitHub: https://github.com/Baekalfen/PyBoy
-#
+
 
 import traceback
 import time
@@ -13,47 +9,43 @@ import os
 import sys
 import platform
 from PyBoy.Logger import logger
-
 from PyBoy import PyBoy
-from PyBoy.GameWindow import DummyGameWindow as Window
-
 import multiprocessing as mp
 
-timeout = 10
+timeout = 5
 
 def test_rom(rom):
-    try:
-        logger.info(rom)
-        window = Window(scale=1)
-        window.enable_title = False
-        pyboy = PyBoy(window, rom)
-        serial_output = ""
-        t = time.time()
-        while not pyboy.tick():
-            b = pyboy.mb.get_serial()
-            if b != "":
-                serial_output += b
-                # print b,
-                t = time.time()
+    logger.info(rom)
+    pyboy = PyBoy("dummy", 1, rom, "ROMs/DMG_ROM.bin")
+    # pyboy = PyBoy("SDL2", 1, rom, "ROMs/DMG_ROM.bin")
+    pyboy.disableTitle()
+    pyboy.setLimitEmulationSpeed(False)
+    serial_output = ""
+    t = time.time()
+    result = None
+    while not pyboy.tick():
+        b = pyboy.getSerial()
+        if b != "":
+            serial_output += b
+            # print b,
+            t = time.time()
 
-            if "Passed" in serial_output:
-                return ("Passed")
-                break
-            elif "Failed" in serial_output:
-                return (serial_output)
-                break
+        if "Passed" in serial_output:
+            result = ("Passed")
+            break
+        elif "Failed" in serial_output:
+            result = (serial_output)
+            break
 
-            if time.time()-t > timeout:
-                return ("Timeout:\n" + serial_output)
-                break
-        print serial_output
-        pyboy.stop(save=False)
-    except Exception as ex:
-        print ex
-        return str(ex)
+        if time.time()-t > timeout:
+            result = ("Timeout:\n" + serial_output)
+            break
+    print (serial_output)
+    pyboy.stop(save=False)
+    return result
 
 if __name__ == "__main__":
-    pool = mp.Pool(4)
+    pool = mp.Pool(mp.cpu_count())
 
     test_roms = [
         "TestROMs/instr_timing/instr_timing.gb",
@@ -137,6 +129,7 @@ if __name__ == "__main__":
     ]
     # results = []
 
+    # results = map(test_rom, test_roms)
     results = pool.map(test_rom, test_roms)
     # for rom in test_roms:
 
@@ -146,6 +139,7 @@ if __name__ == "__main__":
         f.write("|---|---|\n")
         for rom, res in zip(test_roms, results):
             f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))
+
 
 
 

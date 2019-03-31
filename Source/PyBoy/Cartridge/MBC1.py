@@ -3,12 +3,11 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from .. import CoreDump
 from ..Logger import logger
 from .GenericMBC import GenericMBC
 
 class MBC1(GenericMBC):
-    def __setitem__(self, address, value):
+    def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
             if (value & 0b00001111) == 0x0A:
                 self.RAMBankEnabled = True
@@ -35,15 +34,15 @@ class MBC1(GenericMBC):
             elif self.memoryModel == 1:  # 4/32 mode
                 self.RAMBankSelected = value & 0b00000011
             else:
-                raise CoreDump.CoreDump("Invalid memoryModel: %s" % self.memoryModel)
+                raise logger.error("Invalid memoryModel: %s" % self.memoryModel)
         elif 0x6000 <= address < 0x8000:
             self.memoryModel = value & 0x1
         elif 0xA000 <= address < 0xC000:
             if self.RAMBanks == None:
                 from . import ExRAMTable
-                logger.warn("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
+                logger.warning("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM banks are not initialized. Initializing %d RAM banks as precaution" % (value, address, ExRAMTable[0x02]))
                 self.initRAMBanks(ExRAMTable[0x02])
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
-            raise CoreDump.CoreDump("Invalid writing address: %s" % hex(address))
+            raise logger.error("Invalid writing address: %s" % hex(address))
 

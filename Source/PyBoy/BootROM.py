@@ -5,15 +5,16 @@
 #
 
 import struct
+import array
 
 class BootROM():
     def __init__(self, bootROMFile):
         if bootROMFile is not None:
             with open(bootROMFile, "rb") as bootROMFileHandle:
                 rom = bootROMFileHandle.read()
-                self.bootROM = struct.unpack('%iB' % len(rom), rom)
+            self.bootROM = array.array('B', struct.unpack('%iB' % len(rom), rom))
         else:
-            self.bootROM = [0 for x in range(256)]
+            self.bootROM = array.array('B', [0] * 256)
             # Set stack pointer
             self.bootROM[0x00] = 0x31
             self.bootROM[0x01] = 0xFE
@@ -30,5 +31,5 @@ class BootROM():
             self.bootROM[0xFE] = 0xE0
             self.bootROM[0xFF] = 0x50
 
-    def __getitem__(self, i):
-        return self.bootROM[i]
+    def getitem(self, addr):
+        return self.bootROM[addr]

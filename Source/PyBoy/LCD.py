@@ -4,61 +4,105 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from . import CoreDump
-from .RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
-import numpy as np
+# import RAM
+# from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
+import array
 
-LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
+VIDEO_RAM = 8 * 1024  # 8KB
+OBJECT_ATTRIBUTE_MEMORY = 0xA0
+
+# LCDC,
+STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF41, 0xFF4C)
+
+# LCDC bit descriptions
+BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable = range(8)
 
 # STAT bit descriptions
 # ModeFlag0, ModeFlag1, Coincidence, Mode00, Mode01, Mode10, LYC_LY = range(7)
 
-class LCD():
-    def __init__(self, MB, color_palette):
-        self.mb = MB
-        self.color_palette = color_palette
+gameboyResolution = (160, 144)
 
-        self.VRAM = allocateRAM(VIDEO_RAM)
-        self.OAM = allocateRAM(OBJECT_ATTRIBUTE_MEMORY)
+class LCD():
+    def __init__(self, colorPalette):
+        self.VRAM = array.array('B', [0]*(VIDEO_RAM))
+        self.OAM = array.array('B', [0]*(OBJECT_ATTRIBUTE_MEMORY))
+
         self.LCDC = LCDCRegister(0)
-        self.BGP = PaletteRegister(0xFC, color_palette)
-        self.OBP0 = PaletteRegister(0xFF, color_palette)
-        self.OBP1 = PaletteRegister(0xFF, color_palette)
+        self.BGP = PaletteRegister(0xFC, colorPalette)
+        self.OBP0 = PaletteRegister(0xFF, colorPalette)
+        self.OBP1 = PaletteRegister(0xFF, colorPalette)
         # self.STAT = 0x00
-        # self.SCY = 0x00
-        # self.SCX = 0x00
         # self.LY = 0x00
         # self.LYC = 0x00
         # self.DMA = 0x00
-        # self.WY = 0x00
-        # self.WX = 0x00
+        self.SCY = 0x00
+        self.SCX = 0x00
+        self.WY = 0x00
+        self.WX = 0x00
 
-    def get_window_pos(self):
-        return self.mb[WX]-7, self.mb[WY]
+    def saveState(self, f):
+        for n in range(VIDEO_RAM):
+            f.write(self.VRAM[n].to_bytes(1, 'little'))
 
-    def get_view_port(self):
-        return self.mb[SCX], self.mb[SCY]
+        for n in range(OBJECT_ATTRIBUTE_MEMORY):
+            f.write(self.OAM[n].to_bytes(1, 'little'))
+
+        f.write(self.LCDC.value.to_bytes(1, 'little'))
+        f.write(self.BGP.value.to_bytes(1, 'little'))
+        f.write(self.OBP0.value.to_bytes(1, 'little'))
+        f.write(self.OBP1.value.to_bytes(1, 'little'))
+
+        f.write(self.SCY.to_bytes(1, 'little'))
+        f.write(self.SCX.to_bytes(1, 'little'))
+        f.write(self.WY.to_bytes(1, 'little'))
+        f.write(self.WX.to_bytes(1, 'little'))
+
+    def loadState(self, f):
+        for n in range(VIDEO_RAM):
+            self.VRAM[n] = ord(f.read(1))
+
+        for n in range(OBJECT_ATTRIBUTE_MEMORY):
+            self.OAM[n] = ord(f.read(1))
+
+        self.LCDC.set(ord(f.read(1)))
+        self.BGP.set(ord(f.read(1)))
+        self.OBP0.set(ord(f.read(1)))
+        self.OBP1.set(ord(f.read(1)))
+
+        self.SCY = ord(f.read(1))
+        self.SCX = ord(f.read(1))
+        self.WY = ord(f.read(1))
+        self.WX = ord(f.read(1))
+
+    def getWindowPos(self):
+        return (self.WX-7, self.WY)
+
+    def getViewPort(self):
+        return (self.SCX, self.SCY)
+
 
 
 class PaletteRegister():
-    def __init__(self, value, color_palette):
-        self.value = None
+    def __init__(self, value, colorPalette):
+        self.colorPalette = colorPalette
+        self.value = 0
         self.set(value)
-        self.color_palette = color_palette
 
     def set(self, value):
         if self.value == value: # Pokemon Blue continously sets this without changing the value
             return False
 
         self.value = value
-        self.lookup = [(value >> x) & 0b11 for x in xrange(0,8,2)]
+        self.lookup = [0] * 4
+        for x in range(4):
+            self.lookup[x] = self.colorPalette[(value >> x*2) & 0b11]
         return True
 
-    def get_color(self, i):
-        return self.color_palette[self.lookup[i]]
-
-    def get_code(self, i):
+    def getColor(self, i):
         return self.lookup[i]
+
+    # def getCode(self, i):
+    #     return self.lookup[i]
 
 class LCDCRegister():
     def __init__(self, value):
@@ -69,11 +113,11 @@ class LCDCRegister():
 
         # No need to convert to bool. Any non-zero value is evaluated as True
         self.enabled             = value & (1 << 7)
-        self.window_map_select     = value & (1 << 6)
-        self.window_enabled       = value & (1 << 5)
-        self.tile_select          = value & (1 << 4)
-        self.background_map_select = value & (1 << 3)
-        self.sprite_size          = value & (1 << 2)
-        self.sprite_enable        = value & (1 << 1)
-        self.background_enable    = value & (1 << 0)
+        self.windowMapSelect     = value & (1 << 6)
+        self.windowEnabled       = value & (1 << 5)
+        self.tileSelect          = value & (1 << 4)
+        self.backgroundMapSelect = value & (1 << 3)
+        self.spriteSize          = value & (1 << 2)
+        self.spriteEnable        = value & (1 << 1)
+        self.backgroundEnable    = value & (1 << 0)
 

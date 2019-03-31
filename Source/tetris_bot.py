@@ -1,7 +1,6 @@
 #! /usr/local/bin/python2
 # -*- encoding: utf-8 -*-
 #
-# Authors: Asger Anders Lund Hansen, Mads Ynddal and Troels Ynddal
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
@@ -13,20 +12,15 @@ import os
 import sys
 import platform
 from PyBoy.Logger import logger
-from PyBoy.WindowEvent import WindowEvent
-
-if platform.system() != "Windows":
-    from Debug import Debug
+from PyBoy import WindowEvent
 from PyBoy import PyBoy
-from PyBoy.GameWindow import SdlGameWindow as Window
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
-    found_files = filter(lambda f: f.lower().endswith(
-        ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir))
+    found_files = list(filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir)))
     for i, f in enumerate(found_files):
         print ("%s\t%s" % (i + 1, f))
-    filename = raw_input("Write the name or number of the tetris ROM file:\n")
+    filename = input("Write the name or number of the tetris ROM file:\n")
 
     try:
         filename = ROMdir + found_files[int(filename) - 1]
@@ -58,47 +52,48 @@ if __name__ == "__main__":
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy(Window(scale=scale), filename, bootROM)
+        pyboy = PyBoy('SDL2', 3, filename, bootROM)
+        pyboy.setLimitEmulationSpeed(False)
         frame = 0
         first_brick = False
         view = pyboy.getTileView(False)
         while not pyboy.tick():
-            print "frame:", frame
+            print ("frame:", frame)
 
             # Start game. Just press Start and A when the game allows us.
             # The frames are not 100% accurate.
             if frame == 144:
-                pyboy.sendInput([WindowEvent.PressButtonStart])
+                pyboy.sendInput(WindowEvent.PressButtonStart)
             elif frame == 145:
-                pyboy.sendInput([WindowEvent.ReleaseButtonStart])
+                pyboy.sendInput(WindowEvent.ReleaseButtonStart)
             elif frame == 152:
-                pyboy.sendInput([WindowEvent.PressButtonA])
+                pyboy.sendInput(WindowEvent.PressButtonA)
             elif frame == 153:
-                pyboy.sendInput([WindowEvent.ReleaseButtonA])
+                pyboy.sendInput(WindowEvent.ReleaseButtonA)
             elif frame == 156:
-                pyboy.sendInput([WindowEvent.PressButtonA])
+                pyboy.sendInput(WindowEvent.PressButtonA)
             elif frame == 157:
-                pyboy.sendInput([WindowEvent.ReleaseButtonA])
+                pyboy.sendInput(WindowEvent.ReleaseButtonA)
             elif frame == 162:
-                pyboy.sendInput([WindowEvent.PressButtonA])
+                pyboy.sendInput(WindowEvent.PressButtonA)
             elif frame == 163:
-                pyboy.sendInput([WindowEvent.ReleaseButtonA])
+                pyboy.sendInput(WindowEvent.ReleaseButtonA)
 
             # Play game. When we are passed the 168th frame, the game has begone.
             # The "technique" is just to move the Tetromino to the right.
             elif frame >168:
                 if frame % 2 == 0:
-                    pyboy.sendInput([WindowEvent.PressArrowRight])
+                    pyboy.sendInput(WindowEvent.PressArrowRight)
                 elif frame % 2 == 1:
-                    pyboy.sendInput([WindowEvent.ReleaseArrowRight])
+                    pyboy.sendInput(WindowEvent.ReleaseArrowRight)
 
-                print "Screen pos:", pyboy.getScreenPosition()
+                print ("Screen pos:", pyboy.getScreenPosition())
                 # As an example, it could be useful to know the coordinates
                 # of the sprites on the screen and which they look like.
                 for n in range(40):
                     sprite = pyboy.getSprite(n)
                     if sprite.is_on_screen():
-                        print "Sprite:", sprite.get_x(), sprite.get_y(), sprite.get_tile()
+                        print ("Sprite:", sprite.get_x(), sprite.get_y(), sprite.get_tile())
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This
@@ -113,7 +108,7 @@ if __name__ == "__main__":
                     for n in range(10):
                         if view.get_tile(n+2,17) != 47:
                             first_brick = True
-                            print "First brick touched the bottom!"
+                            print ("First brick touched the bottom!")
                             break
 
 

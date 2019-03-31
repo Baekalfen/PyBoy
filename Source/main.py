@@ -11,42 +11,21 @@ import os.path
 import os
 import sys
 import platform
+from PyBoy import PyBoy
 from PyBoy.Logger import logger, addConsoleHandler
 addConsoleHandler()
 
-if platform.system() != "Windows":
-    from Debug import Debug
-from PyBoy import PyBoy
-
-
-def getWindow():
-    if len(sys.argv) < 2:
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "SDL2":
-        from PyBoy.GameWindow import SdlGameWindow as Window
-    elif sys.argv[1] == "scanline":
-        from PyBoy.GameWindow import ScanlineGameWindow as Window
-    elif sys.argv[1] == "OpenGL":
-        from PyBoy.GameWindow import OpenGLGameWindow as Window
-    elif sys.argv[1] == "dummy":
-        from PyBoy.GameWindow import DummyGameWindow as Window
-    elif sys.argv[1] == "SDL2Process":
-        from PyBoy.GameWindow import MultiprocessGameWindow as Window
-    else:
-        print "Invalid arguments! Usage: pypy main.py [GameWindow] [ROM path]"
-        print "Valid GameWindows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'"
-        exit(1)
-
-    return Window
+# if platform.system() != "Windows":
+#     from Debug import Debug
 
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
-    found_files = filter(lambda f: f.lower().endswith(
-        ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir))
+    found_files = list(filter(lambda f: f.lower().endswith(
+        ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir)))
     for i, f in enumerate(found_files):
         print ("%s\t%s" % (i + 1, f))
-    filename = raw_input("Write the name or number of the ROM file:\n")
+    filename = input("Write the name or number of the ROM file:\n")
 
     try:
         filename = ROMdir + found_files[int(filename) - 1]
@@ -55,6 +34,7 @@ def getROM(ROMdir):
 
     return filename
 
+
 def main():
     # Automatically bump to '-OO' optimizations
     if __debug__:
@@ -62,12 +42,12 @@ def main():
 
     bootROM = "ROMs/DMG_ROM.bin"
     ROMdir = "ROMs/"
-    scale = 2
+    scale = 3
     debug = "debug" in sys.argv and platform.system() != "Windows"
 
     # Verify directories
     if not bootROM is None and not os.path.exists(bootROM):
-        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Some games are known to not work without it. Using replacement in the meanwhile..." % bootROM)
+        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
         bootROM = None
 
     if not os.path.exists(ROMdir) and len(sys.argv) < 2:
@@ -82,7 +62,7 @@ def main():
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy((getWindow())(scale=scale), filename, bootROM)
+        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None, scale, filename, bootROM)
         while not pyboy.tick():
             pass
         pyboy.stop()
@@ -96,11 +76,11 @@ def main():
     #     if debugger:
     #         logger.info("Debugger ready for shutdown")
     #         time.sleep(10)
-    #         debugger.quit()
+    #
 
 
 if __name__ == "__main__":
     main()
 
     # import cProfile
-    # cProfile.run('main()', sort='cumulative')
+    # cProfile.run('main()', sort='cumulative')         debugger.quit()

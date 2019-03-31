@@ -2,15 +2,22 @@
 #
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
-#
-from .. import CoreDump
+
 import time
 import os
 import struct
 from ..Logger import logger
 
 class RTC():
-    def __init__(self):
+    def __init__(self, filename):
+        self.filename = filename + ".rtc"
+
+        if not os.path.exists(self.filename):
+            logger.info("No RTC file found. Skipping.")
+        else:
+            with open(self.filename, "rb") as f:
+                self.loadState(f)
+
         self.latchEnabled = False
 
         self.timeZero = time.time()
@@ -24,26 +31,20 @@ class RTC():
         self.dayCarry = 0
         self.halt = 0
 
-    def save(self, filename):
-        romPath, ext = os.path.splitext(filename)
-        with open(romPath + ".rtc", "wb") as f:
-            f.write(struct.pack('f', self.timeZero))
-            f.write(chr(self.halt))
-            f.write(chr(self.dayCarry))
+    def stop(self):
+        with open(self.filename, "wb") as f:
+            self.saveState(f)
+
+    def saveState(self, f):
+        f.write(struct.pack('f', self.timeZero))
+        f.write(self.halt.to_bytes(1, 'little'))
+        f.write(self.dayCarry.to_bytes(1, 'little'))
         logger.info("RTC saved.")
 
-    def load(self, filename):
-        romPath, ext = os.path.splitext(filename)
-
-        rtcFile = romPath + ".rtc"
-        if not os.path.exists(rtcFile):
-            logger.info("No RTC file found. Skipping.")
-            return
-
-        with open(rtcFile, "rb") as f:
-            self.timeZero = struct.unpack('f',f.read(4))[0]
-            self.halt = ord(f.read(1))
-            self.dayCarry = ord(f.read(1))
+    def loadState(self, f):
+        self.timeZero = struct.unpack('f',f.read(4))[0]
+        self.halt = ord(f.read(1))
+        self.dayCarry = ord(f.read(1))
         logger.info("RTC loaded.")
 
     def latchRTC(self):
@@ -68,7 +69,7 @@ class RTC():
                 self.latchRTC()
             self.latchEnabled = True
         else:
-            logger.warn("Invalid RTC command: %0.2x" % value)
+            logger.warning("Invalid RTC command: %0.2x" % value)
 
     def getRegister(self, register):
         if not self.latchEnabled:
@@ -88,7 +89,7 @@ class RTC():
             dayCarry = self.dayCarry << 7
             return dayHigh + halt + dayCarry
         else:
-            logger.warn("Invalid RTC register: %0.4x %0.2x" % (register, value))
+            logger.warning("Invalid RTC register: %0.4x" % (register))
 
     def setRegister(self, register, value):
         if not self.latchEnabled:
@@ -112,9 +113,9 @@ class RTC():
             if self.halt == 0:
                 pass # TODO: Start the timer
             else:
-                logger.warn("Stopping RTC is not implemented!")
+                logger.warning("Stopping RTC is not implemented!")
 
             self.timeZero -= int(t / 3600 / 24) - (dayHigh<<8)
             self.dayCarry = dayCarry
         else:
-            logger.warn("Invalid RTC register: %0.4x %0.2x" % (register, value))
+            logger.warning("Invalid RTC register: %0.4x %0.2x" % (register, value))

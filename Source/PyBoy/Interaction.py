@@ -3,8 +3,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from .WindowEvent import WindowEvent
-from . import CoreDump
+from . import WindowEvent
 
 P10, P11, P12, P13, P14, P15 = range(0,6)
 
