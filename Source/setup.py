@@ -1,24 +1,20 @@
-import setuptools
+from setuptools import find_packages, setup
 from Cython.Build import cythonize
-from distutils.core import setup
-from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
-import numpy as np
-import multiprocessing
+from multiprocessing import cpu_count
 
 with open('../README.md', 'r') as rm:
 	    long_description = rm.read()
 
-thread_count = multiprocessing.cpu_count()
-# thread_count = 1
+thread_count = cpu_count()
 print("Thread Count:", thread_count)
 
 setup(
     name='PyBoy',
     version='0.1',
     # packages = ["PyBoy"],
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
     long_description=long_description,
@@ -43,7 +39,7 @@ setup(
             "imageio",
             ],
         },
-    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/Window", "PyBoy/MB", np.get_include(), "/usr/local/include/SDL2/"],
+    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/Window", "PyBoy/MB"],
     ext_modules = cythonize([
             'PyBoy/LCD.py',
             'PyBoy/BootROM.py',
@@ -77,7 +73,7 @@ setup(
             'PyBoy/BotSupport/Sprite.py',
             'PyBoy/BotSupport/TileView.py',
         ],
-        include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/Window", np.get_include(), "/usr/local/include/SDL2/"],
+        include_path=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/MB", "PyBoy/Window"],
         nthreads=thread_count,
         annotate=False,
         language_level=2,

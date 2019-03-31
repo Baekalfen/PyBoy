@@ -5,45 +5,11 @@ all: build
 
 PY := python3
 NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')
-SDL := $(shell sdl2-config --static-libs)
-
-# CFLAGS := $(CFLAGS)
-CFLAGS := ""
-CFLAGS += "-I$(NUMPY)"
-CFLAGS += "-I/usr/local/include/SDL2/"
-CFLAGS += "-I/usr/local/Cellar/sdl2/2.0.9_1/include/SDL2"
-CFLAGS += "-L/usr/local/lib"
-CFLAGS += "-L/usr/local/lib"
-# Don't know why, the following line doesn't work. But providing the output on separate lines, work...
-# CFLAGS += "$(SDL)" # Too many variables, but gives the -L above
-CFLAGS += "-lSDL2"
-CFLAGS += "-lm"
-CFLAGS += "-liconv"
-CFLAGS += "-Wl,-framework,CoreAudio"
-CFLAGS += "-Wl,-framework,AudioToolbox"
-CFLAGS += "-Wl,-framework,ForceFeedback"
-CFLAGS += "-lobjc"
-CFLAGS += "-Wl,-framework,CoreVideo"
-CFLAGS += "-Wl,-framework,Cocoa"
-CFLAGS += "-Wl,-framework,Carbon"
-CFLAGS += "-Wl,-framework,IOKit"
-CFLAGS += "-Wl,-weak_framework,QuartzCore"
-CFLAGS += "-Wl,-weak_framework,Metal"
-
-CFLAGS += "-DCYTHON_WITHOUT_ASSERTIONS"
-CFLAGS += "-O3"
-CFLAGS += "-F/Library/Frameworks -framework SDL2"
-export CFLAGS
-
-export SDL2_INCLUDE_DIR="/Library/Frameworks/SDL2.framework/Headers"
-
-PATH += "/usr/local/bin"
-export PATH
+SDL := $(shell sdl2-config --cflags --libs)
 
 build:
 	@echo "Building..."
-	@echo $(CFLAGS)
-	${PY} setup.py build_ext --inplace
+	${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
 
 clean:
 	@echo "Cleaning..."
@@ -56,8 +22,6 @@ clean:
 
 run: build
 	${PY} main.py SDL2 ROMs/POKEMON\ BLUE.gb
-	# python main.py SDL2 ROMs/pokemon_gold.gbc
-	# python main.py dummy ROMs/pokemon_gold.gbc
 
 install:
 	${PY} setup.py install
