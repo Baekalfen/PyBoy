@@ -16,6 +16,8 @@ Installation
 ============
 We have now moved away from PyPy, and PyBoy fully supports regular CPython, by the use of Cython. Performance has also increased dramatically.
 
+The code base is still pure Python, which means it will still run in CPython and PyPy (although slowly). Cython is an addition, where we can compile the code to run 100-200 times faster.
+
 **To get started, look at the [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation)**
 
 At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
