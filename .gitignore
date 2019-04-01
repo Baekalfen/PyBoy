@@ -81,7 +81,14 @@ TestROMs/
 ROMs/
 diffDump.txt
 Core_Dump_*
-*.state
+*.gb*.state
+*.gb*.ram
+*.gb*.rtc
+
+Source/PyBoy/**/*.c
+Source/PyBoy/**/*.h
+Source/PyBoy/**/*.html
+Source/PyBoy/**/*.so
 
 # Files from venv and dependencies
 /Source/bin
