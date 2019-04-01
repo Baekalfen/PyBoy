@@ -14,7 +14,7 @@ from .MB.MB import Motherboard
 from . import WindowEvent
 from . import Window
 
-from .opcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
+from .OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .Logger import logger, addConsoleHandler
 addConsoleHandler()
 
