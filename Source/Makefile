@@ -9,7 +9,7 @@ SDL := $(shell sdl2-config --cflags --libs)
 
 build:
 	@echo "Building..."
-	${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
+	CFLAGS='-w' ${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
 
 clean:
 	@echo "Cleaning..."
@@ -26,4 +26,3 @@ run: build
 
 install:
 	${PY} setup.py install
-

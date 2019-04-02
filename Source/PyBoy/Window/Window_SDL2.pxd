@@ -8,6 +8,11 @@
 # cimport PyBoy.WindowEvent
 
 
+from cpython.array cimport array
+from array import array
+
+from cpython.buffer cimport PyObject_GetBuffer, PyBuffer_Release, PyBUF_ANY_CONTIGUOUS, PyBUF_SIMPLE
+
 cimport SDL2 as sdl2
 from PyBoy.LCD cimport LCD
 from PyBoy.Window.GenericWindow cimport GenericWindow
@@ -29,8 +34,12 @@ cdef class SdlWindow(GenericWindow):
     # cdef list getEvents(self)
     cdef dict windowEventsDown
     cdef dict windowEventsUp
-    cdef uint32_t[144][160] _screenBuffer
-    cdef int[144][4] scanlineParameters
+    cdef uint8_t[:] _screenBuffer
+    cdef uint8_t[:] _tileCache, _spriteCacheOBP0, _spriteCacheOBP1
+    cdef uint32_t[:,:] screenBuffer
+    cdef uint32_t[:,:] tileCache, spriteCacheOBP0, spriteCacheOBP1
+
+    cdef uint8_t[144][4] scanlineParameters
 
     cdef sdl2.SDL_Window *_window
     cdef sdl2.SDL_Renderer *_sdlrenderer
@@ -45,55 +54,41 @@ cdef class SdlWindow(GenericWindow):
     cdef void scanline(self, int, LCD)
 
     @cython.locals(
-            y=ushort,
-            x=ushort,
-            windowViewAddress=ushort,
-            backgroundViewAddress=ushort,
+            y=int,
+            x=int,
+            windowViewAddress=int,
+            backgroundViewAddress=int,
             backgroundTileIndex=int,
             windowTileIndex=int,
-            xx=int,
-            yy=int,
+            bx=int,
+            by=int,
             wx=int,
             wy=int,
             offset=int,
-            n=uchar,
-            fromXY=(int, int),
-            toXY=(int, int),
-            tileIndex=uchar,
-            attributes=uchar,
+            n=int,
+            tileIndex=int,
+            attributes=int,
             xFlip=bint,
             yFlip=bint,
             spritePriority=bint,
-            spriteSize=uchar,
+            spriteSize=int,
+            yy=int,
+            xx=int,
+            pixel=uint32_t,
             )
     cdef void renderScreen(self, LCD)
 
-    @cython.locals(
-            x1=ushort,
-            y1=ushort,
-            x2=ushort,
-            y2=ushort,
-            y=ushort,
-            x=ushort,
-            yy=ushort,
-            xx=ushort,
-            pixel=int,
-            )
-    cdef void copySprite(self, bint, (int, int), (int, int), int, bint, unsigned int, bint, bint)
-
     # Not directly override updateDisplay. Otherwise we get: "Overriding final methods is not allowed"
     cdef inline void _updateDisplay(self):
-        sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, &self._screenBuffer, 160*4)
+        cdef Py_buffer buffer
+        PyObject_GetBuffer(self._screenBuffer, &buffer, PyBUF_SIMPLE | PyBUF_ANY_CONTIGUOUS)
+        try:
+            sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, <void*>buffer.buf, 160*4)
+        finally:
+            PyBuffer_Release(&buffer)
         sdl2.SDL_RenderCopy(
                 self._sdlrenderer,
                 self._sdlTextureBuffer,
                 NULL,
                 NULL)
         sdl2.SDL_RenderPresent(self._sdlrenderer)
-
-
-    cdef uint32_t[384 * 8][8] tileCache
-    cdef uint32_t[384 * 8][8] spriteCacheOBP0
-    cdef uint32_t[384 * 8][8] spriteCacheOBP1
-
-
