@@ -19,6 +19,7 @@ clean:
 	find . -name "*.c" -delete
 	find . -name "*.h" -delete
 	find . -name "*.html" -delete
+	find . -name "__pycache__" -d -delete
 
 run: build
 	${PY} main.py SDL2 ROMs/POKEMON\ BLUE.gb
