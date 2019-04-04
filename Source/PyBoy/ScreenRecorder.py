@@ -4,7 +4,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import numpy as np
+
 import time
 import os
 
@@ -30,7 +30,7 @@ class ScreenRecorder:
         if imageio is None:
             return
 
-        self.frames.append(np.asarray(frame, dtype=np.uint32))
+        #self.frames.append(np.asarray(frame, dtype=np.uint32))
 
     def save(self, format='gif', path=None, fps=60):
         if imageio is None:
@@ -52,7 +52,7 @@ class ScreenRecorder:
         for frame in self.frames:
             # Reshape uint32->4xuint8. Strip alpha channel.
             # Transpose dimensions, but not colors. Otherwise the recording comes out mirrored.
-            rgb_image = frame.view(np.uint8).reshape(frame.shape + (4,))
+            rgb_image = frame.view("uint8").reshape(frame.shape + (4,))
             if self.colorScheme == "RGBA":
                 rgb_image = rgb_image[:,:,1:]
             elif self.colorScheme == "ARGB":

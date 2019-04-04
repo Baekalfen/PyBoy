@@ -4,18 +4,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# cimport sdl2_cython.events as sdl2_events
-# cimport PyBoy.WindowEvent
-
 
 from cpython.array cimport array
 from array import array
 
-from cpython.buffer cimport PyObject_GetBuffer, PyBuffer_Release, PyBUF_ANY_CONTIGUOUS, PyBUF_SIMPLE
-
 cimport SDL2 as sdl2
 from PyBoy.LCD cimport LCD
 from PyBoy.Window.GenericWindow cimport GenericWindow
+
 
 cdef (int, int, int, int) _dummy_declaration2
 
@@ -27,15 +23,15 @@ cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
 cdef (int, int) gameboyResolution
 
-cdef class SdlWindow(GenericWindow):
-    # cdef tuple makeWindowAndGetBuffer(self, int, int, int, int, char*)
 
-    cdef int ticks
+cdef class SdlWindow(GenericWindow):
+
+    cdef uint32_t ticks
     # cdef list getEvents(self)
     cdef dict windowEventsDown
     cdef dict windowEventsUp
-    cdef uint8_t[:] _screenBuffer
-    cdef uint8_t[:] _tileCache, _spriteCacheOBP0, _spriteCacheOBP1
+    cdef array _screenBuffer
+    cdef array _tileCache, _spriteCacheOBP0, _spriteCacheOBP1
     cdef uint32_t[:,:] screenBuffer
     cdef uint32_t[:,:] tileCache, spriteCacheOBP0, spriteCacheOBP1
 
@@ -47,7 +43,7 @@ cdef class SdlWindow(GenericWindow):
 
     # cdef void setTitle(self, char*)
 
-    @cython.locals(now=cython.int, delay=cython.int)
+    @cython.locals(now=uint32_t, delay=cython.int)
     cdef void framelimiter(self, int)
 
     @cython.locals(viewPos=(int, int), windowPos=(int, int))
@@ -65,30 +61,38 @@ cdef class SdlWindow(GenericWindow):
             wx=int,
             wy=int,
             offset=int,
+            BGPkey=uint32_t,
+            spriteSize=int,
             n=int,
             tileIndex=int,
             attributes=int,
             xFlip=bint,
             yFlip=bint,
             spritePriority=bint,
-            spriteSize=int,
+            spriteCache=uint32_t[:,:],
+            dy=int,
+            dx=int,
             yy=int,
             xx=int,
             pixel=uint32_t,
             )
     cdef void renderScreen(self, LCD)
 
-    # Not directly override updateDisplay. Otherwise we get: "Overriding final methods is not allowed"
+    @cython.locals(
+        x=int,
+        t=int,
+        k=int,
+        y=int,
+        byte1=uint8_t,
+        byte2=uint8_t,
+        colorCode=uint32_t,
+        alpha=uint32_t
+        )
+    cdef void updateCache(self, LCD)
+
     cdef inline void _updateDisplay(self):
-        cdef Py_buffer buffer
-        PyObject_GetBuffer(self._screenBuffer, &buffer, PyBUF_SIMPLE | PyBUF_ANY_CONTIGUOUS)
-        try:
-            sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL, <void*>buffer.buf, 160*4)
-        finally:
-            PyBuffer_Release(&buffer)
-        sdl2.SDL_RenderCopy(
-                self._sdlrenderer,
-                self._sdlTextureBuffer,
-                NULL,
-                NULL)
+        sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, NULL,
+                               self._screenBuffer.data.as_voidptr, 160*4)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer,
+                            NULL, NULL)
         sdl2.SDL_RenderPresent(self._sdlrenderer)

@@ -4,15 +4,28 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
+
+if not cythonmode:
+    import ctypes
+
 import sys
 import sdl2
 import sdl2.ext
+from array import array
 
 from ..Logger import logger
 from .. import WindowEvent
 from .GenericWindow import GenericWindow
 
+
 gameboyResolution = (160, 144)
+
 
 def getColorCode(byte1,byte2,offset):
     # The colors are 2 bit and are found like this:
@@ -24,18 +37,22 @@ def getColorCode(byte1,byte2,offset):
     # 0 1 1 1 1 1 0 0 <- byte2
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
 
+
 class SdlWindow(GenericWindow):
     def __init__(self, scale=1):
         GenericWindow.__init__(self, scale)
 
-        self._screenBuffer = bytearray([0] * (gameboyResolution[0]*gameboyResolution[1]*4))
+        self._screenBuffer = array('B', [0] * (gameboyResolution[0]*gameboyResolution[1]*4))
         self.screenBuffer = memoryview(self._screenBuffer).cast('I', shape=gameboyResolution[::-1])
-        self._tileCache = bytearray([0] * (384*8*8*4))
+        self._tileCache = array('B', [0] * (384*8*8*4))
         self.tileCache = memoryview(self._tileCache).cast('I', shape=[384*8, 8])
-        self._spriteCacheOBP0 = bytearray([0] * (384*8*8*4))
+        self._spriteCacheOBP0 = array('B', [0] * (384*8*8*4))
         self.spriteCacheOBP0 = memoryview(self._spriteCacheOBP0).cast('I', shape=[384*8, 8])
-        self._spriteCacheOBP1 = bytearray([0] * (384*8*8*4))
+        self._spriteCacheOBP1 = array('B', [0] * (384*8*8*4))
         self.spriteCacheOBP1 = memoryview(self._spriteCacheOBP1).cast('I', shape=[384*8, 8])
+
+        if not cythonmode:
+            self._screenBuffer_p = ctypes.c_void_p(self._screenBuffer.buffer_info()[0])
 
         self.scanlineParameters = [[0,0,0,0] for _ in range(gameboyResolution[1])]
 
@@ -180,9 +197,11 @@ class SdlWindow(GenericWindow):
             spriteCache = self.spriteCacheOBP1 if attributes & 0b10000 else self.spriteCacheOBP0
 
             if x < 160 and y < 144:
-                for yy in reversed(range(spriteSize)) if yFlip else range(spriteSize):
+                for dy in range(spriteSize):
+                    yy = spriteSize - dy - 1 if yFlip else dy
                     if 0 <= y < 144:
-                        for xx in reversed(range(8)) if xFlip else range(8):
+                        for dx in range(8):
+                            xx = 7 - dx if xFlip else dx
                             pixel = spriteCache[8*tileIndex+yy, xx]
 
                             if 0 <= x < 160:
@@ -197,8 +216,6 @@ class SdlWindow(GenericWindow):
                         x -= 8
                     y += 1
 
-        # Copy happens in Window_SDL2.pxd
-
     def updateCache(self, lcd):
         if self.clearCache:
             self.tiles_changed.clear()
@@ -210,12 +227,11 @@ class SdlWindow(GenericWindow):
             for k in range(0, 16 ,2):  # 2 bytes for each line
                 byte1 = lcd.VRAM[t + k - 0x8000]
                 byte2 = lcd.VRAM[t + k + 1 - 0x8000]
+                y = (t + k - 0x8000)//2
 
-                for pixelOnLine in range(7,-1,-1):
-                    y = (t + k - 0x8000)//2
-                    x = 7-pixelOnLine
+                for x in range(8):
 
-                    colorCode = getColorCode(byte1, byte2, pixelOnLine)
+                    colorCode = getColorCode(byte1, byte2, 7 - x)
 
                     self.tileCache[y, x] = lcd.BGP.getColor(colorCode)
                     # TODO: Find a more optimal way to do this
@@ -233,7 +249,22 @@ class SdlWindow(GenericWindow):
         for y in range(144):
             for x in range(160):
                 self.screenBuffer[y, x] = color
-        # self._sdlrenderer.clear(0)
 
     def getScreenBuffer(self):
         return self._screenBuffer
+
+
+# Unfortunately CPython/PyPy code has to be hidden in an exec call to
+# prevent Cython from trying to parse it. This block provides the
+# functions that are otherwise implemented as inlined cdefs in the pxd
+if not cythonmode:
+    exec("""
+def _updateDisplay(self):
+    sdl2.SDL_UpdateTexture(self._sdlTextureBuffer, None,
+                           self._screenBuffer_p, gameboyResolution[0]*4)
+    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer,
+                        None, None)
+    sdl2.SDL_RenderPresent(self._sdlrenderer)
+
+SdlWindow._updateDisplay = _updateDisplay
+""", globals(), locals())
