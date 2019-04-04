@@ -5,9 +5,14 @@
 #
 
 
-from cython import compiled
-if not compiled:
-    raise ImportError
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
+
+if not cythonmode:
+    import ctypes
 
 import array
 
@@ -55,6 +60,9 @@ class ScanlineWindow(GenericWindow):
 
         self._linebuf = array.array('I', [0] * gameboyResolution[0])
         self._linerect = {'x': 0, 'y': 0, 'w': gameboyResolution[0], 'h': 1}
+        if not cythonmode:
+            self._linerect = sdl2.SDL_Rect(0, 0, gameboyResolution[0], 1)
+            self._linebuf_p = ctypes.c_void_p(self._linebuf.buffer_info()[0])
 
     def init(self):
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
@@ -248,3 +256,24 @@ class ScanlineWindow(GenericWindow):
 
     def getScreenBuffer(self):
         raise NotImplementedError()
+
+
+# Unfortunately CPython/PyPy code has to be hidden in an exec call to
+# prevent Cython from trying to parse it. This block provides the
+# functions that are otherwise implemented as inlined cdefs in the pxd
+if not cythonmode:
+    exec("""
+def _scanlineCopy(self):
+    sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
+                           self._linebuf_p, gameboyResolution[0])
+
+def _renderCopy(self):
+    sdl2.SDL_RenderCopy(self._sdlrenderer, self._screenbuf, None, None)
+
+def _renderPresent(self):
+    sdl2.SDL_RenderPresent(self._sdlrenderer)
+
+ScanlineWindow._scanlineCopy = _scanlineCopy
+ScanlineWindow._renderCopy = _renderCopy
+ScanlineWindow._renderPresent = _renderPresent
+""", globals(), locals())
