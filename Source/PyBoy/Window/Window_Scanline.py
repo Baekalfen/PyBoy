@@ -230,15 +230,21 @@ class ScanlineWindow(GenericWindow):
                     dx = sx - x - 1 if sf & 0x20 else x - sx + 8
                     spixel = 2 * (sbyte1 & 0x80 >> dx) + (sbyte0 & 0x80 >> dx)
                     spixel >>= 7 - dx
-                    break
-            else:
-                spixel = 0
 
-            if spixel and (not sf & 0x80 or bpixel == 0):
-                if sf & 0x10:
-                    self._linebuf[x] = lcd.OBP1.getColor(spixel)
-                else:
-                    self._linebuf[x] = lcd.OBP0.getColor(spixel)
+                    # If the sprite is transparent, check for more
+                    if spixel == 0:
+                        continue
+
+                    # Draw the highest priority sprite pixel
+                    if not sf & 0x80 or bpixel == 0:
+                        if sf & 0x10:
+                            self._linebuf[x] = lcd.OBP1.getColor(spixel)
+                        else:
+                            self._linebuf[x] = lcd.OBP0.getColor(spixel)
+                    else:
+                        self._linebuf[x] = lcd.BGP.getColor(bpixel)
+
+                    break
             else:
                 self._linebuf[x] = lcd.BGP.getColor(bpixel)
 
