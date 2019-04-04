@@ -146,99 +146,101 @@ class ScanlineWindow(GenericWindow):
         # Set to an impossible value to signal first loop. This could
         # break if we switch to an actual signed offset from a
         # pointer, so be careful.
-        tile = -1
-
-        for x in range(gameboyResolution[0]):
-
-            # Window gets priority, otherwise it's the background
-            if window_enabled_and_y and wx <= x:
-                dx = (x - wx) % 8
-                if dx == 0 or tile < 0:
-                    tile = lcd.VRAM[wOffset + ((x - wx) >> 3)]
-
-                    # Convert to signed and offset (-128+256=+128)
-                    if tile_select:
-                        tile = (tile ^ 0x80) + 128
-
-                    # Get the color from the Tile Data Table
-                    byte0 = lcd.VRAM[16 * tile + 2 * wdy]
-                    byte1 = lcd.VRAM[16 * tile + 2 * wdy + 1]
-
-            elif lcd.LCDC.backgroundEnable:
-                dx = (x + bx) % 8
-                if dx == 0 or tile < 0:
-                    tile = lcd.VRAM[bOffset + (((x + bx) >> 3) % 32)]
-
-                    # Convert to signed and offset (-128+256=+128)
-                    if tile_select:
-                        tile = (tile ^ 0x80) + 128
-
-                    # Get the color from the Tile Data Table
-                    byte0 = lcd.VRAM[16 * tile + 2 * bdy]
-                    byte1 = lcd.VRAM[16 * tile + 2 * bdy + 1]
-
-            else:  # White if blank
-                self._linebuf[x] = self.colorPalette[0]
-                continue
-
-            pixel = 2 * (byte1 & 0x80 >> dx) + (byte0 & 0x80 >> dx)
-            self._linebuf[x] = lcd.BGP.getColor(pixel >> 7-dx)
+        bt = -1
+        wt = -1
 
         # Limit to 10 sprites per line, could optionally disable later
-        nsprites = 10
-
+        sprites = [0] * 10
+        ymin = y if lcd.LCDC.spriteSize else y + 8
+        ymax = y + 16
+        nsprites = 0
+        for n in range(0x00, 0xA0, 4):
+            if ymin < lcd.OAM[n] <= ymax:
+                sprites[nsprites] = n
+                nsprites += 1
+                if nsprites == 10:
+                    break
         # I took out the sorting part, so sprites are now rendered in
         # GBC order instead. It may be worth adding an option to sort
         # them in noncolor mode later, but for any normal game it
         # shouldn't matter.
 
-        # Iterate through the sprites and update the buffer
-        for n in range(0x00, 0xA0, 4):
-            sy = lcd.OAM[n]
-            sx = lcd.OAM[n+1]
-            tile = lcd.OAM[n+2]
-            sf = lcd.OAM[n+3]
+        # As in hardware, compute each pixel one-by-one
+        for x in range(gameboyResolution[0]):
 
-            # Get the row of the sprite, accounting for flipping
-            dy = sy - y - 1 if sf & 0x40 else y - sy + 16
+            # Window gets priority, otherwise it's the background
+            if window_enabled_and_y and wx <= x:
+                dx = (x - wx) % 8
+                if dx == 0 or bt < 0:
+                    bt = lcd.VRAM[wOffset + ((x - wx) >> 3)]
 
-            if lcd.LCDC.spriteSize:
-                # Check if this is our line
-                if sy - 16 <= y < sy and 0 < sx < 168:
-                    nsprites -= 1
-                    if nsprites == 0:
-                        break
-                else:
-                    continue
+                    # Convert to signed and offset (-128+256=+128)
+                    if tile_select:
+                        bt = (bt ^ 0x80) + 128
 
-                # Double sprites start on an even index
-                tile &= 0xFE
+                    # Get the color from the Tile Data Table
+                    bbyte0 = lcd.VRAM[16 * bt + 2 * wdy]
+                    bbyte1 = lcd.VRAM[16 * bt + 2 * wdy + 1]
+
+                bpixel = 2 * (bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
+                bpixel >>= 7 - dx
+
+            elif lcd.LCDC.backgroundEnable:
+                dx = (x + bx) % 8
+                if dx == 0 or wt < 0:
+                    wt = lcd.VRAM[bOffset + (((x + bx) >> 3) % 32)]
+
+                    # Convert to signed and offset (-128+256=+128)
+                    if tile_select:
+                        wt = (wt ^ 0x80) + 128
+
+                    # Get the color from the Tile Data Table
+                    bbyte0 = lcd.VRAM[16 * wt + 2 * bdy]
+                    bbyte1 = lcd.VRAM[16 * wt + 2 * bdy + 1]
+
+                bpixel = 2 * (bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
+                bpixel >>= 7 - dx
+
+            else:  # White if blank
+                bpixel = 0
+
+            # Iterate through the sprites and look for the first match
+            for n in sprites[:nsprites]:
+                sx = lcd.OAM[n+1]
+
+                # Check for sprite collision
+                if sx - 8 <= x < sx:
+                    sy = lcd.OAM[n]
+                    st = lcd.OAM[n+2]
+                    sf = lcd.OAM[n+3]
+
+                    # Get the row of the sprite, accounting for flipping
+                    dy = sy - y - 1 if sf & 0x40 else y - sy + 16
+
+                    if lcd.LCDC.spriteSize:
+                        # Double sprites start on an even index
+                        st &= 0xFE
+                    else:
+                        # Single sprites have y index from 0-7
+                        dy &= 0x07
+
+                    sbyte0 = lcd.VRAM[16 * st + 2 * dy]
+                    sbyte1 = lcd.VRAM[16 * st + 2 * dy + 1]
+
+                    dx = sx - x - 1 if sf & 0x20 else x - sx + 8
+                    spixel = 2 * (sbyte1 & 0x80 >> dx) + (sbyte0 & 0x80 >> dx)
+                    spixel >>= 7 - dx
+                    break
             else:
-                # Check if this is our line
-                if sy - 16 <= y < sy - 8 and 0 < sx < 168:
-                    nsprites -= 1
-                    if nsprites == 0:
-                        break
+                spixel = 0
+
+            if spixel and (not sf & 0x80 or bpixel == 0):
+                if sf & 0x10:
+                    self._linebuf[x] = lcd.OBP1.getColor(spixel)
                 else:
-                    continue
-
-                # Single sprites have y index from 0-7
-                dy &= 0x07
-
-            byte0 = lcd.VRAM[16 * tile + 2 * dy]
-            byte1 = lcd.VRAM[16 * tile + 2 * dy + 1]
-
-            for dx in range(8):
-                x = sx - dx - 1 if sf & 0x20 else sx + dx - 8
-                pixel = 2 * (byte1 & 0x80 >> dx) + (byte0 & 0x80 >> dx)
-
-                if 0 <= x < gameboyResolution[0]:
-                    if pixel and (not sf & 0x80 or
-                                  self._linebuf[x] == lcd.BGP.getColor(0)):
-                        if sf & 0x10:
-                            self._linebuf[x] = lcd.OBP1.getColor(pixel >> 7-dx)
-                        else:
-                            self._linebuf[x] = lcd.OBP0.getColor(pixel >> 7-dx)
+                    self._linebuf[x] = lcd.OBP0.getColor(spixel)
+            else:
+                self._linebuf[x] = lcd.BGP.getColor(bpixel)
 
         # Copy into the screen buffer stored in a Texture
         self._linerect.y = y

@@ -50,18 +50,26 @@ cdef class ScanlineWindow(GenericWindow):
         bgp=uint32_t[4],
         obp0 = uint32_t[4],
         obp1 = uint32_t[4],
-        tile=int,
-        x=int,
-        dx=int,
-        byte0=uint8_t,
-        byte1=uint8_t,
-        pixel=int,
+        bt=int,
+        wt=int,
+        sprites=int[10],
         nsprites=int,
+        ymin=int,
+        ymax=int,
+        x=int,
         n=int,
+        sx=int,
         sy=int,  # These maybe should be uint8_t, since they're
-        sx=int,  # getting unpacked from an array of bytes, but then
+        st=int,  # getting unpacked from an array of bytes, but then
         sf=int,  # the operations would have to be overflow safe.
         dy=int,
+        dx=int,
+        bbyte0=uint8_t,
+        bbyte1=uint8_t,
+        sbyte0=uint8_t,
+        sbyte1=uint8_t,
+        bpixel=int,
+        spixel=int
         )
     cdef void scanline(self, int, LCD)
 
