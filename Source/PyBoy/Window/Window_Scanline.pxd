@@ -22,7 +22,6 @@ cdef dict windowEventsUp
 
 cdef class ScanlineWindow(GenericWindow):
 
-
     cdef sdl2.SDL_Window* _window
     cdef sdl2.SDL_Renderer* _sdlrenderer
     cdef sdl2.SDL_Texture* _screenbuf

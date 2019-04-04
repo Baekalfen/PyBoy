@@ -4,7 +4,13 @@
 # GitHub: https://github.com/krs013/PyBoy
 #
 
+
+from cython import compiled
+if not compiled:
+    raise ImportError
+
 import array
+
 import sdl2.ext
 
 from PyBoy import WindowEvent
@@ -93,9 +99,6 @@ class ScanlineWindow(GenericWindow):
 
         return events
 
-    def updateDisplay(self):
-        self._renderPresent()
-
     def framelimiter(self, speed):
         now = sdl2.SDL_GetTicks()
         delay = int(1/(60.0 * speed)*1000-(now-self.ticks))
@@ -125,8 +128,8 @@ class ScanlineWindow(GenericWindow):
         wdy = (y - wy) % 8
 
         # Single line, so we can save some math with the tile indices
-        bOffset += (((y + by) / 8 ) * 32) % 0x400
-        wOffset += ((y - wy) / 8 ) * 32
+        bOffset += (((y + by) >> 3) << 5) % 0x400
+        wOffset += ((y - wy) >> 3) << 5
 
         # Dict lookups cost, so do some quick caching
         tile_select = lcd.LCDC.tileSelect == 0
@@ -143,7 +146,7 @@ class ScanlineWindow(GenericWindow):
             if window_enabled_and_y and wx <= x:
                 dx = (x - wx) % 8
                 if dx == 0 or tile < 0:
-                    tile = lcd.VRAM[wOffset + (((x - wx) / 8) % 32)]
+                    tile = lcd.VRAM[wOffset + ((x - wx) >> 3)]
 
                     # Convert to signed and offset (-128+256=+128)
                     if tile_select:
@@ -156,7 +159,7 @@ class ScanlineWindow(GenericWindow):
             elif lcd.LCDC.backgroundEnable:
                 dx = (x + bx) % 8
                 if dx == 0 or tile < 0:
-                    tile = lcd.VRAM[bOffset + (((x + bx) / 8) % 32)]
+                    tile = lcd.VRAM[bOffset + (((x + bx) >> 3) % 32)]
 
                     # Convert to signed and offset (-128+256=+128)
                     if tile_select:
@@ -218,7 +221,7 @@ class ScanlineWindow(GenericWindow):
             byte1 = lcd.VRAM[16 * tile + 2 * dy + 1]
 
             for dx in range(8):
-                x = sx - dx if sf & 0x20 else sx - 8 + dx
+                x = sx - dx - 1 if sf & 0x20 else sx + dx - 8
                 pixel = 2 * (byte1 & 0x80 >> dx) + (byte0 & 0x80 >> dx)
 
                 if 0 <= x < gameboyResolution[0]:
@@ -229,25 +232,19 @@ class ScanlineWindow(GenericWindow):
                         else:
                             self._linebuf[x] = lcd.OBP0.getColor(pixel >> 7-dx)
 
-        # Copy into the screen buffer from the list
+        # Copy into the screen buffer stored in a Texture
         self._linerect.y = y
-
         self._scanlineCopy()
-        # sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
-        #                        self._linebuf_p, gameboyResolution[0])
 
     def renderScreen(self, lcd):
-        # Copy from internal buffer to screen
-        # sdl2.render.SDL_RenderCopy(self._sdlrenderer, self._screenbuf, None, None)
         self._renderCopy()
 
+    def updateDisplay(self):
+        self._renderPresent()
+
     def blankScreen(self):
-        # Make the screen white
         sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, 0xff, 0xff, 0xff, 0xff)
         sdl2.SDL_RenderClear(self._sdlrenderer)
 
     def getScreenBuffer(self):
-        # I think that calling get_surface() on the window breaks the
-        # Renderer, so except for core dump, I'm not going to use it.
-        # Not sure how to handle screen recording in this case.
         raise NotImplementedError()
