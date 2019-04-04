@@ -238,7 +238,7 @@ class Motherboard():
 
     def setitem(self,i,value):
         if i == 0xFF01:
-            print ("write to 0xFF01:", hex(value))
+            print (chr(value)),
         assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
 
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
