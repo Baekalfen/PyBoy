@@ -123,7 +123,7 @@ class Motherboard():
 
                 # Profiling
                 if self.cpu.profiling:
-                    self.cpu.hitRate[0x76] += cycles/4
+                    self.cpu.hitRate[0x76] += cycles//4
 
             x -= cycles
             if self.timer.tick(cycles):

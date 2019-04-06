@@ -5,7 +5,6 @@
 #
 
 import sys
-import numpy as np
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -124,7 +123,7 @@ class OpenGLWindow(SdlWindow):
 
     def glDraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        buf = np.asarray(self._screenBuffer)[::-1,:]
+        #buf = np.asarray(self._screenBuffer)[::-1,:]
         w,h = gameboyResolution
         glDrawPixels(w,h, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
@@ -138,4 +137,3 @@ class OpenGLWindow(SdlWindow):
 
     def stop(self):
         pass
-

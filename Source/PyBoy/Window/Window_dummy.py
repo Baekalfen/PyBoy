@@ -6,10 +6,10 @@
 
 import sys
 import time
-import numpy as np
 
 from ..Logger import logger
 from .GenericWindow import GenericWindow
+
 
 class DummyWindow(GenericWindow):
     def __init__(self, scale):
@@ -45,4 +45,3 @@ class DummyWindow(GenericWindow):
 
     def disableTitle(self):
         self.enable_title = False
-

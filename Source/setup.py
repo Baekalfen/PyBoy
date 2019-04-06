@@ -31,7 +31,6 @@ setup(
     install_requires=[
         "cython",
         "pysdl2",
-        "numpy",
         ],
     extras_require={
         "all" : [
