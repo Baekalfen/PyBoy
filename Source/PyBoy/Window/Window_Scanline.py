@@ -101,9 +101,11 @@ class ScanlineWindow(GenericWindow):
             if event.type == sdl2.SDL_QUIT:
                 events.append(WindowEvent.Quit)
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(windowEventsDown.get(event.key.keysym.sym, None))
+                events.append(windowEventsDown.get(event.key.keysym.sym,
+                                                   WindowEvent.Pass))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(windowEventsUp.get(event.key.keysym.sym, None))
+                events.append(windowEventsUp.get(event.key.keysym.sym,
+                                                 WindowEvent.Pass))
 
         return events
 

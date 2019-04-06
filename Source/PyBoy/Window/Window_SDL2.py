@@ -42,16 +42,29 @@ class SdlWindow(GenericWindow):
     def __init__(self, scale=1):
         GenericWindow.__init__(self, scale)
 
-        self._screenBuffer = array('B', [0] * (gameboyResolution[0]*gameboyResolution[1]*4))
-        self.screenBuffer = memoryview(self._screenBuffer).cast('I', shape=gameboyResolution[::-1])
+        self._screenBuffer = array('B', [0] * (160*144*4))
         self._tileCache = array('B', [0] * (384*8*8*4))
-        self.tileCache = memoryview(self._tileCache).cast('I', shape=[384*8, 8])
         self._spriteCacheOBP0 = array('B', [0] * (384*8*8*4))
-        self.spriteCacheOBP0 = memoryview(self._spriteCacheOBP0).cast('I', shape=[384*8, 8])
         self._spriteCacheOBP1 = array('B', [0] * (384*8*8*4))
-        self.spriteCacheOBP1 = memoryview(self._spriteCacheOBP1).cast('I', shape=[384*8, 8])
 
-        if not cythonmode:
+        if cythonmode:
+            self.screenBuffer = memoryview(self._screenBuffer).cast('I', shape=(144, 160))
+            self.tileCache = memoryview(self._tileCache).cast('I', shape=[384*8, 8])
+            self.spriteCacheOBP0 = memoryview(self._spriteCacheOBP0).cast('I', shape=[384*8, 8])
+            self.spriteCacheOBP1 = memoryview(self._spriteCacheOBP1).cast('I', shape=[384*8, 8])
+        else:
+            view = memoryview(self._screenBuffer).cast('I')
+            self.screenBuffer = [view[i:i+160] for i in range(0, 160*144, 160)]
+
+            view = memoryview(self._tileCache).cast('I')
+            self.tileCache = [view[i:i+8] for i in range(0, 384*8*8, 8)]
+
+            view = memoryview(self._spriteCacheOBP0).cast('I')
+            self.spriteCacheOBP0 = [view[i:i+8] for i in range(0, 384*8*8, 8)]
+
+            view = memoryview(self._spriteCacheOBP1).cast('I')
+            self.spriteCacheOBP1 = [view[i:i+8] for i in range(0, 384*8*8, 8)]
+
             self._screenBuffer_p = ctypes.c_void_p(self._screenBuffer.buffer_info()[0])
 
         self.scanlineParameters = [[0,0,0,0] for _ in range(gameboyResolution[1])]
@@ -165,7 +178,7 @@ class SdlWindow(GenericWindow):
                         # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset (reduces to + 128)
                         windowTileIndex = (windowTileIndex ^ 0x80) + 128
 
-                    self.screenBuffer[y, x] = self.tileCache[8*windowTileIndex + (y-wy)%8, (x-wx)%8]
+                    self.screenBuffer[y][x] = self.tileCache[8*windowTileIndex + (y-wy)%8][(x-wx)%8]
 
                 elif lcd.LCDC.backgroundEnable:
                     backgroundTileIndex = lcd.VRAM[backgroundViewAddress + (((bx + x)//8)%32 + ((y+by)//8)*32)%0x400]
@@ -174,10 +187,10 @@ class SdlWindow(GenericWindow):
                         # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset (reduces to + 128)
                         backgroundTileIndex = (backgroundTileIndex ^ 0x80) + 128
 
-                    self.screenBuffer[y, x] = self.tileCache[8*backgroundTileIndex + (y+by)%8, (x+offset)%8]
+                    self.screenBuffer[y][x] = self.tileCache[8*backgroundTileIndex + (y+by)%8][(x+offset)%8]
                 else:
                     # If background is disabled, it becomes white
-                    self.screenBuffer[y, x] = self.colorPalette[0]
+                    self.screenBuffer[y][x] = self.colorPalette[0]
 
         ### RENDER SPRITES
         # Doesn't restrict 10 sprite pr. scan line.
@@ -202,16 +215,16 @@ class SdlWindow(GenericWindow):
                     if 0 <= y < 144:
                         for dx in range(8):
                             xx = 7 - dx if xFlip else dx
-                            pixel = spriteCache[8*tileIndex+yy, xx]
+                            pixel = spriteCache[8*tileIndex+yy][xx]
 
                             if 0 <= x < 160:
-                                if (spritePriority and not self.screenBuffer[y, x] == BGPkey):
+                                if (spritePriority and not self.screenBuffer[y][x] == BGPkey):
                                     # Add a fake alphachannel to the sprite for BG pixels. We can't just merge
                                     # this with the next if, as sprites can have an alpha channel in other ways
                                     pixel |= self.alphaMask
 
                                 if not (pixel & self.alphaMask):
-                                    self.screenBuffer[y, x] = pixel
+                                    self.screenBuffer[y][x] = pixel
                             x += 1
                         x -= 8
                     y += 1
@@ -233,13 +246,13 @@ class SdlWindow(GenericWindow):
 
                     colorCode = getColorCode(byte1, byte2, 7 - x)
 
-                    self.tileCache[y, x] = lcd.BGP.getColor(colorCode)
+                    self.tileCache[y][x] = lcd.BGP.getColor(colorCode)
                     # TODO: Find a more optimal way to do this
                     alpha = 0x00000000
                     if colorCode == 0:
                         alpha = self.alphaMask  # Add alpha channel
-                    self.spriteCacheOBP0[y, x] = lcd.OBP0.getColor(colorCode) + alpha
-                    self.spriteCacheOBP1[y, x] = lcd.OBP1.getColor(colorCode) + alpha
+                    self.spriteCacheOBP0[y][x] = lcd.OBP0.getColor(colorCode) + alpha
+                    self.spriteCacheOBP1[y][x] = lcd.OBP1.getColor(colorCode) + alpha
 
         self.tiles_changed.clear()
 
@@ -248,7 +261,7 @@ class SdlWindow(GenericWindow):
         color = self.colorPalette[0]
         for y in range(144):
             for x in range(160):
-                self.screenBuffer[y, x] = color
+                self.screenBuffer[y][x] = color
 
     def getScreenBuffer(self):
         return self._screenBuffer
