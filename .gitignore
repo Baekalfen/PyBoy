@@ -90,6 +90,8 @@ Source/PyBoy/**/*.h
 Source/PyBoy/**/*.html
 Source/PyBoy/**/*.so
 
+/Source/Recordings
+
 # Files from venv and dependencies
 /Source/bin
 /Source/include

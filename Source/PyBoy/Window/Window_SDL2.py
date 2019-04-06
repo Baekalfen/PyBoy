@@ -11,9 +11,7 @@ try:
 except ImportError:
     cythonmode = False
 
-if not cythonmode:
-    import ctypes
-
+import ctypes
 import sys
 import sdl2
 import sdl2.ext
@@ -264,7 +262,10 @@ class SdlWindow(GenericWindow):
                 self.screenBuffer[y][x] = color
 
     def getScreenBuffer(self):
-        return self._screenBuffer
+        if cythonmode:
+            return self._screenBuffer.tobytes()
+        else:
+            return self._screenBuffer
 
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to

@@ -20,8 +20,8 @@ class ScreenRecorder:
         self.frames = []
 
     def add_frame(self, frame):
-        # self.frames.append(Image.frombytes("RGBA", (160, 144), frame))
-        self.frames.append(Image.fromarray(frame))
+        self.frames.append(Image.frombytes("RGBA", (160, 144), frame))
+        self.frames[-1].info['duration'] = 17
 
     def save(self, path=None, *, fps=60):
 
@@ -35,7 +35,7 @@ class ScreenRecorder:
 
         if self.frames:
             self.frames[0].save(path, save_all=True, interlace=False,
-                                duration=1000/fps, optimize=True,
+                                optimize=True,
                                 append_images=self.frames[1:])
             logger.info("Screen recording saved in {}".format(path))
         else:
