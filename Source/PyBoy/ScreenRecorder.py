@@ -20,8 +20,7 @@ class ScreenRecorder:
         self.frames = []
 
     def add_frame(self, frame):
-        self.frames.append(Image.frombytes("RGBA", (160, 144), frame))
-        self.frames[-1].info['duration'] = 17
+        self.frames.append(Image.frombytes("L", (160, 144), frame[2::4]))
 
     def save(self, path=None, *, fps=60):
 
@@ -31,12 +30,14 @@ class ScreenRecorder:
             directory = os.path.join(os.path.curdir, "Recordings")
             if not os.path.exists(directory):
                 os.makedirs(directory, mode=0o755)
-            path = os.path.join(directory, time.strftime("Recording-%Y-%m-%d-%H:%M:%S.gif"))
+            path = os.path.join(directory, time.strftime("Recording-%Y.%m.%d-%H.%M.%S.gif"))
 
         if self.frames:
             self.frames[0].save(path, save_all=True, interlace=False,
-                                optimize=True,
-                                append_images=self.frames[1:])
+                                lossless=True, optimize=True,
+                                append_images=self.frames[1:],
+                                duration=int(round(1000/fps, -1)))
+
             logger.info("Screen recording saved in {}".format(path))
         else:
             logger.error("Screen recording failed: no frames")

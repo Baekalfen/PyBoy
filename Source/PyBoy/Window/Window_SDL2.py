@@ -111,6 +111,9 @@ class SdlWindow(GenericWindow):
                 sdl2.SDL_WINDOW_RESIZABLE)
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
+        # Set color for clearing the screen
+        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, 255, 255, 255, 255)
+
         self._sdlTextureBuffer = sdl2.SDL_CreateTexture(self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, gameboyResolution[0], gameboyResolution[1])
 
         self.blankScreen()
@@ -219,9 +222,9 @@ class SdlWindow(GenericWindow):
                                 if (spritePriority and not self.screenBuffer[y][x] == BGPkey):
                                     # Add a fake alphachannel to the sprite for BG pixels. We can't just merge
                                     # this with the next if, as sprites can have an alpha channel in other ways
-                                    pixel |= self.alphaMask
+                                    pixel &= ~self.alphaMask
 
-                                if not (pixel & self.alphaMask):
+                                if pixel & self.alphaMask:
                                     self.screenBuffer[y][x] = pixel
                             x += 1
                         x -= 8
@@ -245,12 +248,12 @@ class SdlWindow(GenericWindow):
                     colorCode = getColorCode(byte1, byte2, 7 - x)
 
                     self.tileCache[y][x] = lcd.BGP.getColor(colorCode)
-                    # TODO: Find a more optimal way to do this
-                    alpha = 0x00000000
+                    self.spriteCacheOBP0[y][x] = lcd.OBP0.getColor(colorCode)
+                    self.spriteCacheOBP1[y][x] = lcd.OBP1.getColor(colorCode)
+
                     if colorCode == 0:
-                        alpha = self.alphaMask  # Add alpha channel
-                    self.spriteCacheOBP0[y][x] = lcd.OBP0.getColor(colorCode) + alpha
-                    self.spriteCacheOBP1[y][x] = lcd.OBP1.getColor(colorCode) + alpha
+                        self.spriteCacheOBP0[y][x] &= ~self.alphaMask
+                        self.spriteCacheOBP1[y][x] &= ~self.alphaMask
 
         self.tiles_changed.clear()
 
@@ -279,6 +282,7 @@ def _updateDisplay(self):
     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer,
                         None, None)
     sdl2.SDL_RenderPresent(self._sdlrenderer)
+    sdl2.SDL_RenderClear(self._sdlrenderer)
 
 SdlWindow._updateDisplay = _updateDisplay
 """, globals(), locals())

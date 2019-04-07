@@ -17,8 +17,8 @@ class GenericWindow():
         self._scaledResolution = tuple([int(x * self._scale) for x in gameboyResolution])
         logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
 
-        self.colorPalette = (0x00FFFFFF,0x00999999,0x00555555,0x00000000)
-        self.alphaMask = 0x7F000000
+        self.colorPalette = (0xFFFFFFFF,0xFF999999,0xFF555555,0xFF000000)
+        self.alphaMask = 0xFF000000
 
         self.clearCache = False
         self.tiles_changed = set([])
@@ -63,4 +63,3 @@ class GenericWindow():
 
     def disableTitle(self):
         pass
-
