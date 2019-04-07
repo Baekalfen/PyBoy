@@ -35,6 +35,7 @@ setup(
     extras_require={
         "all" : [
             "pyopengl",
+            "numpy",
             "Pillow",
             ],
         },
