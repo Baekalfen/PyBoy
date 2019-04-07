@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 # THIS FILE IS AUTO-GENERATED!!!
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
@@ -15,7 +14,6 @@ destination = "opcodes.py"
 pxd_destination = "opcodes.pxd"
 
 warning = """\
-# -*- encoding: utf-8 -*-
 # THIS FILE IS AUTO-GENERATED!!!
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.

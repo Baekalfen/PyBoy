@@ -1,5 +1,4 @@
 #! /usr/local/bin/python2
-# -*- encoding: utf-8 -*-
 
 
 import traceback
