@@ -23,6 +23,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Cython",
+        "Programming Language :: Python :: Implementation :: PyPy",
         "License :: Free for non-commercial use",
         "Operating System :: OS Independent",
         "Topic :: System :: Emulators",
@@ -62,6 +63,7 @@ setup(
             'PyBoy/Window/Window_OpenGL.py',
             'PyBoy/Window/Window_Scanline.py',
             'PyBoy/Window/Window_dummy.py',
+            'PyBoy/Window/Window_headless.py',
             'PyBoy/MB/CPU.py',
             'PyBoy/MB/opcodes.py',
             'PyBoy/MB/Timer.py',

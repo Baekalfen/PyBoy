@@ -4,7 +4,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 import sys
-import platform
 import time
 
 from . import BotSupport
@@ -74,7 +73,7 @@ class PyBoy():
         self.window.updateDisplay()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.window.getScreenBuffer())
+            self.screen_recorder.add_frame(self.getScreenBuffer())
 
         t_cpu = time.perf_counter()
 
@@ -119,7 +118,7 @@ class PyBoy():
     # Scripts and bot methods
 
     def getScreenBuffer(self):
-        return self.window
+        return self.window.getScreenBuffer()
 
     def getScreenBufferFormat(self):
         return "RGBA" if self.mb.window.alphaMask == 0x0000007F else "ARGB"
