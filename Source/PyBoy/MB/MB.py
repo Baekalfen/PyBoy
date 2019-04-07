@@ -122,7 +122,7 @@ class Motherboard():
 
                 # Profiling
                 if self.cpu.profiling:
-                    self.cpu.hitRate[0x76] += cycles/4
+                    self.cpu.hitRate[0x76] += cycles//4
 
             x -= cycles
             if self.timer.tick(cycles):
@@ -236,8 +236,6 @@ class Motherboard():
             raise Exception("Memory access violation. Tried to read: %s" % hex(i))
 
     def setitem(self,i,value):
-        if i == 0xFF01:
-            print (chr(value)),
         assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
 
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0

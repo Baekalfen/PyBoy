@@ -9,16 +9,9 @@ addConsoleHandler()
 
 def getWindow(win_type, scale):
     logger.info("Window type is: %s" % win_type)
-    if win_type is None:
-        win_type = "SDL2"
-
-    if win_type == "SDL2":
-        if platform.python_implementation() == "PyPy":
-            from .Window_SDL2_CPython import SdlWindowCPython
-            window = SdlWindowCPython(scale)
-        else:
-            from .Window_SDL2 import SdlWindow
-            window = SdlWindow(scale)
+    if win_type == "SDL2" or win_type is None:
+        from .Window_SDL2 import SdlWindow
+        window = SdlWindow(scale)
     elif win_type == "scanline":
         from .Window_Scanline import ScanlineWindow
         window = ScanlineWindow(scale)
@@ -38,5 +31,3 @@ def getWindow(win_type, scale):
 
     window.init()
     return window
-
-

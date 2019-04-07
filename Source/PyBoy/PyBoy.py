@@ -105,12 +105,11 @@ class PyBoy():
         self.mb.stop(save)
 
         if self.profiling:
-            import numpy as np
-            np.set_printoptions(threshold=np.inf)
-            argMax = np.argsort(self.mb.cpu.hitRate)
-            for n in argMax[::-1]:
-                if self.mb.cpu.hitRate[n] != 0:
-                    print("%3x %16s %s" % (n, CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100], self.mb.cpu.hitRate[n]))
+            print("Profiling report:")
+            from operator import itemgetter
+            names = [CPU_COMMANDS[n] if n<0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
+            for hits, n, name in sorted(filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
+                print("%3x %16s %s" % (n, name, hits))
 
 
     ###########################
@@ -121,7 +120,7 @@ class PyBoy():
         return self.window.getScreenBuffer()
 
     def getScreenBufferFormat(self):
-        return "RGBA" if self.mb.window.alphaMask == 0x0000007F else "ARGB"
+        return self.mb.window.colorFormat
 
     def getMemoryValue(self, addr):
         return self.mb.getitem(addr)

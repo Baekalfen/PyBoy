@@ -3,65 +3,52 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import numpy as np
-import time
-import os
 
-try:
-    import imageio
-except:
-    imageio = None
+import os
+import time
 
 from .Logger import logger
 
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+FPS = 60
 
 class ScreenRecorder:
 
     def __init__(self, colorScheme):
-        logger.info("ScreenRecorder started")
-        if imageio is None:
-            logger.warning("ScreenRecorder: Dependency \"imageio\" could not be imported. Screen recording is disabled.")
-            return
-        self.frames = []
+        if Image:
+            logger.info("ScreenRecorder started")
+            self.frames = []
+        else:
+            logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. Screen recording is disabled.")
         self.colorScheme = colorScheme
 
     def add_frame(self, frame):
-        if imageio is None:
+        if Image:
+            self.frames.append(Image.frombytes(self.colorScheme, (160, 144), frame))
+
+    def save(self, path=None, fps=60):
+        if not Image:
+            logger.warning("ScreenRecorder: No recording to save. Missing dependency \"Pillow\".")
             return
-
-        self.frames.append(np.asarray(frame, dtype=np.uint32))
-
-    def save(self, format='gif', path=None, fps=60):
-        if imageio is None:
-            logger.warning("ScreenRecorder: No recording to save. Missing dependency \"imageio\".")
-            return
-
-        assert format not in ['gif'], "Unsupported file format."
-        assert 1 <= fps <= 60, "Invalid FPS. Choose a number between 1 and 60."
 
         logger.info("ScreenRecorder saving...")
 
         if path is None:
-            recordings_folder = os.getcwd() + "/recordings"
-            if not os.path.exists(recordings_folder):
-                os.makedirs(recordings_folder)
-            path = recordings_folder + "/recording " + time.strftime("%Y-%m-%d %H-%M-%S") + "." + format
+            directory = os.path.join(os.path.curdir, "Recordings")
+            if not os.path.exists(directory):
+                os.makedirs(directory, mode=0o755)
+            path = os.path.join(directory, time.strftime("Recording-%Y.%m.%d-%H.%M.%S.gif"))
 
-        images = []
-        for frame in self.frames:
-            # Reshape uint32->4xuint8. Strip alpha channel.
-            # Transpose dimensions, but not colors. Otherwise the recording comes out mirrored.
-            rgb_image = frame.view(np.uint8).reshape(frame.shape + (4,))
-            if self.colorScheme == "RGBA":
-                rgb_image = rgb_image[:,:,1:]
-            elif self.colorScheme == "ARGB":
-                rgb_image = rgb_image[:,:,:-1]
-            else:
-                logger.error("Unsupported color scheme! Trying to continue.")
-            images.append(rgb_image)
+        if self.frames:
+            self.frames[0].save(path, save_all=True, interlace=False,
+                                loop=0, optimize=True,
+                                append_images=self.frames[1:],
+                                duration=int(round(1000/fps, -1)))
 
-        if format == 'gif':
-            imageio.mimsave(path, images, fps=fps)
-        # TODO: Add mp4
-
-        logger.info("Screen recording saved in {}".format(path))
+            logger.info("Screen recording saved in {}".format(path))
+        else:
+            logger.error("Screen recording failed: no frames")

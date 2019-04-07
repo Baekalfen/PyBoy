@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
 import numpy as np
 
 from OpenGL.GL import *
@@ -13,7 +12,6 @@ import OpenGL.GLUT.freeglut
 
 from .. import WindowEvent
 from .Window_SDL2 import SdlWindow
-from ..Logger import logger
 
 gameboyResolution = (160, 144)
 
@@ -22,8 +20,9 @@ class OpenGLWindow(SdlWindow):
         super(self.__class__, self).__init__(scale)
 
     def init(self):
-        self.colorPalette = [x << 8 for x in self.colorPalette] # (0xFFFFFF00,0x99999900,0x55555500,0x00000000)
-        self.alphaMask = 0x0000007F
+        self.colorPalette = [((x << 8) & 0xFFFFFFFF) | 0x000000FF for x in self.colorPalette] # Shifting from ARGB to RGBA
+        self.alphaMask = 0x000000FF
+        self.colorFormat = u"RGB"
 
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -123,7 +122,7 @@ class OpenGLWindow(SdlWindow):
 
     def glDraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        buf = np.asarray(self._screenBuffer)[::-1,:]
+        buf = np.asarray(self.screenBuffer)[::-1,:]
         w,h = gameboyResolution
         glDrawPixels(w,h, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
@@ -132,9 +131,12 @@ class OpenGLWindow(SdlWindow):
         self.glDraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 
+    def getScreenBuffer(self):
+        frame = np.asarray(self.screenBuffer).view(np.uint8).reshape(160,144,4)[:,:,1:]
+        return np.ascontiguousarray(frame)
+
     def framelimiter(self, speed):
         pass
 
     def stop(self):
         pass
-
