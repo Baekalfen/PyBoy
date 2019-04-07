@@ -19,6 +19,7 @@ cdef class GenericWindow:
 
     cdef public uint32_t[4] colorPalette
     cdef unsigned int alphaMask
+    cdef unicode colorFormat
 
     cdef void setTitle(self, unicode)
     cdef list getEvents(self)

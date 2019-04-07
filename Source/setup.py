@@ -5,7 +5,7 @@ from Cython.Distutils import build_ext
 from multiprocessing import cpu_count
 
 with open('../README.md', 'r') as rm:
-	    long_description = rm.read()
+    long_description = rm.read()
 
 thread_count = cpu_count()
 print("Thread Count:", thread_count)
@@ -53,7 +53,6 @@ setup(
             'PyBoy/Cartridge/RTC.py',
             'PyBoy/RAM.py',
             'PyBoy/Interaction.py',
-            # # 'PyBoy/Window/AbstractWindow.py',
             'PyBoy/Window/__init__.py',
             'PyBoy/Window/GenericWindow.py',
             'PyBoy/Window/Window.py',

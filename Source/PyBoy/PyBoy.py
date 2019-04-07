@@ -122,7 +122,7 @@ class PyBoy():
         return self.window
 
     def getScreenBufferFormat(self):
-        return "RGBA" if self.mb.window.alphaMask == 0x0000007F else "ARGB"
+        return self.mb.window.colorFormat
 
     def getMemoryValue(self, addr):
         return self.mb.getitem(addr)

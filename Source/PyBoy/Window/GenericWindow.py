@@ -19,6 +19,7 @@ class GenericWindow():
 
         self.colorPalette = (0xFFFFFFFF,0xFF999999,0xFF555555,0xFF000000)
         self.alphaMask = 0xFF000000
+        self.colorFormat = u"RGBA"
 
         self.clearCache = False
         self.tiles_changed = set([])

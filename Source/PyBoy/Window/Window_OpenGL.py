@@ -23,6 +23,7 @@ class OpenGLWindow(SdlWindow):
     def init(self):
         self.colorPalette = [((x << 8) & 0xFFFFFFFF) | 0x000000FF for x in self.colorPalette] # Shifting from ARGB to RGBA
         self.alphaMask = 0x000000FF
+        self.colorFormat = u"RGB"
 
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -130,6 +131,10 @@ class OpenGLWindow(SdlWindow):
     def updateDisplay(self):
         self.glDraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
+
+    def getScreenBuffer(self):
+        frame = np.asarray(self.screenBuffer).view(np.uint8).reshape(160,144,4)[:,:,1:]
+        return np.ascontiguousarray(frame)
 
     def framelimiter(self, speed):
         pass

@@ -7,15 +7,15 @@
 
 import os
 import time
-from itertools import chain
+
+from .Logger import logger
 
 try:
     from PIL import Image
 except ImportError:
     Image = None
 
-from .Logger import logger
-
+FPS = 60
 
 class ScreenRecorder:
 
@@ -25,12 +25,13 @@ class ScreenRecorder:
             self.frames = []
         else:
             logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. Screen recording is disabled.")
+        self.colorScheme = colorScheme
 
     def add_frame(self, frame):
         if Image:
-            self.frames.append(Image.frombytes('RGBA', (160, 144), frame))
+            self.frames.append(Image.frombytes(self.colorScheme, (160, 144), frame))
 
-    def save(self, path=None, *, fps=60):
+    def save(self, path=None, fps=60):
         if not Image:
             logger.warning("ScreenRecorder: No recording to save. Missing dependency \"Pillow\".")
             return
