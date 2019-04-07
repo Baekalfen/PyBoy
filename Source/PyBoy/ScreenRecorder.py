@@ -7,6 +7,7 @@
 
 import os
 import time
+from itertools import chain
 
 from PIL import Image
 
@@ -20,7 +21,7 @@ class ScreenRecorder:
         self.frames = []
 
     def add_frame(self, frame):
-        self.frames.append(Image.frombytes("L", (160, 144), frame[2::4]))
+        self.frames.append(Image.frombytes('RGBA', (160, 144), frame))
 
     def save(self, path=None, *, fps=60):
 
