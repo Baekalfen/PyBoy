@@ -12,12 +12,10 @@ except ImportError:
     cythonmode = False
 
 import ctypes
-import sys
 import sdl2
 import sdl2.ext
 from array import array
 
-from ..Logger import logger
 from .. import WindowEvent
 from .GenericWindow import GenericWindow
 
