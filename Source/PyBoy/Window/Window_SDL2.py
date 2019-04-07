@@ -111,9 +111,6 @@ class SdlWindow(GenericWindow):
                 sdl2.SDL_WINDOW_RESIZABLE)
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
-        # Set color for clearing the screen
-        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, 255, 255, 255, 255)
-
         self._sdlTextureBuffer = sdl2.SDL_CreateTexture(self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, gameboyResolution[0], gameboyResolution[1])
 
         self.blankScreen()

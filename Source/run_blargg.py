@@ -40,7 +40,7 @@ def test_rom(rom):
         if time.time()-t > timeout:
             result = ("Timeout:\n" + serial_output)
             break
-    print (serial_output)
+    print(serial_output)
     pyboy.stop(save=False)
     return result
 

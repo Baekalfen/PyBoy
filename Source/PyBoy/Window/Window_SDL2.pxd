@@ -96,4 +96,4 @@ cdef class SdlWindow(GenericWindow):
         sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer,
                             NULL, NULL)
         sdl2.SDL_RenderPresent(self._sdlrenderer)
-        sdl2.SDL_RenderClear(self._sdlrenderer)
+
