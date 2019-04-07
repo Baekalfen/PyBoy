@@ -35,7 +35,7 @@ setup(
     extras_require={
         "all" : [
             "pyopengl",
-            "imageio",
+            "Pillow",
             ],
         },
     include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/Window", "PyBoy/MB"],
