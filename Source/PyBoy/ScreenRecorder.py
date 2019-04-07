@@ -45,7 +45,7 @@ class ScreenRecorder:
 
         if self.frames:
             self.frames[0].save(path, save_all=True, interlace=False,
-                                lossless=True, optimize=True,
+                                loop=0, optimize=True,
                                 append_images=self.frames[1:],
                                 duration=int(round(1000/fps, -1)))
 
