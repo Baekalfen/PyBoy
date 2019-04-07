@@ -61,5 +61,5 @@ class GenericWindow():
         pass
 
     def disableTitle(self):
-        pass
+        self.enable_title = False
 

@@ -28,6 +28,9 @@ def getWindow(win_type, scale):
     elif win_type == "dummy":
         from .Window_dummy import DummyWindow
         window = DummyWindow(scale)
+    elif win_type == "headless":
+        from .Window_headless import HeadlessWindow
+        window = HeadlessWindow(scale)
     else:
         logger.error("Invalid arguments! Usage: pypy main.py [Window] [ROM path]")
         logger.error("Valid Windows are: 'SDL2', 'scanline', 'OpenGL',  and 'dummy'")

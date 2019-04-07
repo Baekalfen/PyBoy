@@ -3,13 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
-import time
 import sdl2
 import sdl2.ext
 import numpy as np
 
-from ..Logger import logger
 from .. import WindowEvent
 from .GenericWindow import GenericWindow
 
@@ -228,6 +225,7 @@ class SdlWindow(GenericWindow):
 
                     if not (pixel & self.alphaMask):
                         self._screenBuffer[y2+y][x2+x] = pixel
+
 
     def updateCache(self, lcd):
         if self.clearCache:
