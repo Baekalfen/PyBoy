@@ -11,6 +11,7 @@ from .screenrecorder import ScreenRecorder
 from .mb.mb import Motherboard
 from . import windowevent
 from . import window
+from .debug import debugwindow
 
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .logger import logger, addconsolehandler
@@ -24,9 +25,10 @@ class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
         self.gamerom_file = gamerom_file
         self.window = window.window.getwindow(win_type, scale)
+        self.debugger = debugwindow.DebugWindow()
 
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling)
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling, debugger=self.debugger)
 
         if "loadState" in sys.argv:
             self.mb.load_state(gamerom_file + ".state")
@@ -53,7 +55,8 @@ class PyBoy:
             elif event == windowevent.LOAD_STATE:
                 self.mb.load_state(self.gamerom_file + ".state")
             elif event == windowevent.DEBUG_TOGGLE:
-                self.debugger.running ^= True
+                # self.debugger.running ^= True
+                pass
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
@@ -129,9 +132,6 @@ class PyBoy:
     def sendInput(self, event):
         self.mb.buttonEvent(event)
 
-    def getMotherBoard(self):
-        return self.mb
-
     def getSprite(self, index):
         return botsupport.Sprite(self.mb, index)
 
@@ -139,7 +139,7 @@ class PyBoy:
         return botsupport.TileView(self.mb, high)
 
     def getScreenPosition(self):
-        return (self.mb.getitem(0xFF43), self.mb.getitem(0xFF42))
+        return self.mb.lcd.getViewPort()
 
     def saveState(self, filename):
         self.mb.save_state(filename)

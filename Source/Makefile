@@ -1,5 +1,5 @@
 
-.PHONY: build clean run install
+.PHONY: build clean run install test
 
 all: build
 
@@ -27,3 +27,9 @@ run: build
 
 install:
 	${PY} setup.py install
+
+test:
+	${PY} run_blargg.py
+	git diff blargg.md
+	${PY} tetris_bot.py ROMs/Tetris.gb
+

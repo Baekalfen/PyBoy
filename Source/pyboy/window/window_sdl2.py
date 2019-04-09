@@ -97,10 +97,6 @@ class SDLWindow(BaseWindow):
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
 
-        # TODO: Instance variables should all start out in __init__,
-        # but some SDL objects are still in init()
-        self._ticks = 0
-
     def init(self):
         self._ticks = sdl2.SDL_GetTicks()
 
@@ -280,10 +276,8 @@ class SDLWindow(BaseWindow):
 if not cythonmode:
     exec("""
 def _update_display(self):
-    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None,
-                           self._screenbuffer_ptr, COLS*4)
-    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer,
-                        None, None)
+    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self._screenbuffer_ptr, COLS*4)
+    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
     sdl2.SDL_RenderPresent(self._sdlrenderer)
     sdl2.SDL_RenderClear(self._sdlrenderer)
 

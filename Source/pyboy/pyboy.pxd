@@ -6,10 +6,9 @@
 
 from libc cimport time
 cimport cython
-
 from pyboy.mb.mb cimport Motherboard
 from pyboy.window.base_window cimport BaseWindow
-
+from pyboy.debug.debugwindow cimport DebugWindow
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
@@ -17,7 +16,7 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef float SPF
 
 cdef class PyBoy:
-    cdef object debugger
+    cdef DebugWindow debugger
     cdef unicode gamerom_file
     cdef Motherboard mb
     cdef BaseWindow window

@@ -132,6 +132,8 @@ class Motherboard:
                 self.set_STAT_mode(3)
                 self.calculate_cycles(170)
                 self.window.scanline(y, self.lcd)
+                if self.debugger:
+                    self.debugger.scanline(y, self.lcd)
 
                 # Mode 0
                 self.set_STAT_mode(0)
@@ -139,6 +141,8 @@ class Motherboard:
 
             self.cpu.set_interruptflag(VBLANK)
             self.window.render_screen(self.lcd)
+            if self.debugger:
+                self.debugger.update(self.lcd)
 
             # Wait for next frame
             for y in range(144, 154):

@@ -1,8 +1,8 @@
 #! /usr/local/bin/python2
 
 import time
-from PyBoy.Logger import logger
-from PyBoy import PyBoy
+from pyboy.Logger import logger
+from pyboy import PyBoy
 import multiprocessing as mp
 
 timeout = 5

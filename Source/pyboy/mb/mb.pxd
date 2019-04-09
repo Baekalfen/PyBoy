@@ -15,6 +15,7 @@ cimport pyboy.lcd
 cimport pyboy.interaction
 cimport pyboy.window.window
 cimport pyboy.window.base_window
+cimport pyboy.debug.debugwindow
 
 
 cdef unsigned short STAT, LY, LYC
@@ -25,7 +26,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class Motherboard:
-    cdef object debugger
+    cdef pyboy.debug.debugwindow.DebugWindow debugger
     cdef pyboy.interaction.Interaction interaction
     cdef pyboy.bootrom.BootROM bootrom
     cdef pyboy.ram.RAM ram

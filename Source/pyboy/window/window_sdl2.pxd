@@ -87,8 +87,6 @@ cdef class SDLWindow(BaseWindow):
     cdef void update_cache(self, LCD)
 
     cdef inline void _update_display(self):
-        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, NULL,
-                               self._screenbuffer_raw.data.as_voidptr, 160*4)
-        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer,
-                            NULL, NULL)
+        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, NULL, self._screenbuffer_raw.data.as_voidptr, 160*4)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, NULL, NULL)
         sdl2.SDL_RenderPresent(self._sdlrenderer)

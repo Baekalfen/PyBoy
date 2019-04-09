@@ -8,8 +8,8 @@ import traceback
 import os.path
 import os
 import sys
-from PyBoy import WindowEvent
-from PyBoy import PyBoy
+from pyboy import WindowEvent
+from pyboy import PyBoy
 
 
 def getROM(ROMdir):

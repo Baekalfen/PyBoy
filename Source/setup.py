@@ -42,7 +42,7 @@ setup(
             "Pillow",
         ],
     },
-    include_dirs=[".", "PyBoy", "PyBoy/Cartridge", "PyBoy/Window", "PyBoy/MB"],
+    include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/mb", "pyboy/debug"],
     ext_modules=cythonize([
         'pyboy/lcd.py',
         'pyboy/bootrom.py',
@@ -65,6 +65,7 @@ setup(
         'pyboy/window/window_scanline.py',
         'pyboy/window/window_dummy.py',
         'pyboy/window/window_headless.py',
+        'pyboy/debug/debugwindow.py',
         'pyboy/mb/cpu.py',
         'pyboy/mb/opcodes.py',
         'pyboy/mb/timer.py',
@@ -89,7 +90,7 @@ setup(
             "nonecheck": False,
             "overflowcheck": False,
             # "profile" : True,
-            # "infer_types" : True,
+            "infer_types" : True,
         },
     )
 )
