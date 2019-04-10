@@ -3,8 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from PyBoy.Cartridge.RTC cimport RTC
+
+from pyboy.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint32_t
+
 
 cdef class GenericMBC:
     cdef unicode filename
@@ -34,6 +36,6 @@ cdef class GenericMBC:
     cdef unsigned char getitem(self, unsigned short)
     cdef void setitem(self, unsigned short, unsigned char)
 
+
 cdef class ROM_only(GenericMBC):
     cdef void setitem(self, unsigned short, unsigned char)
-

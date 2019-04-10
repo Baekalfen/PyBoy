@@ -3,10 +3,12 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
+
 import cython
 
 from libc.stdint cimport uint32_t
-from PyBoy.LCD cimport LCD
+from pyboy.lcd cimport LCD
+
 
 cdef (int, int) gameboyResolution
 

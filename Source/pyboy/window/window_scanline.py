@@ -4,6 +4,13 @@
 #
 
 
+import array
+
+import sdl2.ext
+
+from pyboy import windowevent
+from pyboy.window.genericwindow import GenericWindow
+
 try:
     from cython import compiled
     cythonmode = compiled
@@ -13,42 +20,35 @@ except ImportError:
 if not cythonmode:
     import ctypes
 
-import array
-
-import sdl2.ext
-
-from PyBoy import WindowEvent
-from PyBoy.Window.GenericWindow import GenericWindow
-
 
 gameboyResolution = (160, 144)
 
 windowEventsDown = {
-    sdl2.SDLK_UP        : WindowEvent.PressArrowUp,
-    sdl2.SDLK_DOWN      : WindowEvent.PressArrowDown,
-    sdl2.SDLK_RIGHT     : WindowEvent.PressArrowRight,
-    sdl2.SDLK_LEFT      : WindowEvent.PressArrowLeft,
-    sdl2.SDLK_a         : WindowEvent.PressButtonA,
-    sdl2.SDLK_s         : WindowEvent.PressButtonB,
-    sdl2.SDLK_RETURN    : WindowEvent.PressButtonStart,
-    sdl2.SDLK_BACKSPACE : WindowEvent.PressButtonSelect,
-    sdl2.SDLK_ESCAPE    : WindowEvent.Quit,
-    sdl2.SDLK_d         : WindowEvent.DebugToggle,
-    sdl2.SDLK_SPACE     : WindowEvent.PressSpeedUp,
-    sdl2.SDLK_i         : WindowEvent.ScreenRecordingToggle,
+    sdl2.SDLK_UP        : windowevent.PressArrowUp,
+    sdl2.SDLK_DOWN      : windowevent.PressArrowDown,
+    sdl2.SDLK_RIGHT     : windowevent.PressArrowRight,
+    sdl2.SDLK_LEFT      : windowevent.PressArrowLeft,
+    sdl2.SDLK_a         : windowevent.PressButtonA,
+    sdl2.SDLK_s         : windowevent.PressButtonB,
+    sdl2.SDLK_RETURN    : windowevent.PressButtonStart,
+    sdl2.SDLK_BACKSPACE : windowevent.PressButtonSelect,
+    sdl2.SDLK_ESCAPE    : windowevent.Quit,
+    sdl2.SDLK_d         : windowevent.DebugToggle,
+    sdl2.SDLK_SPACE     : windowevent.PressSpeedUp,
+    sdl2.SDLK_i         : windowevent.ScreenRecordingToggle,
 }
 windowEventsUp = {
-    sdl2.SDLK_UP        : WindowEvent.ReleaseArrowUp,
-    sdl2.SDLK_DOWN      : WindowEvent.ReleaseArrowDown,
-    sdl2.SDLK_RIGHT     : WindowEvent.ReleaseArrowRight,
-    sdl2.SDLK_LEFT      : WindowEvent.ReleaseArrowLeft,
-    sdl2.SDLK_a         : WindowEvent.ReleaseButtonA,
-    sdl2.SDLK_s         : WindowEvent.ReleaseButtonB,
-    sdl2.SDLK_RETURN    : WindowEvent.ReleaseButtonStart,
-    sdl2.SDLK_BACKSPACE : WindowEvent.ReleaseButtonSelect,
-    sdl2.SDLK_z         : WindowEvent.SaveState,
-    sdl2.SDLK_x         : WindowEvent.LoadState,
-    sdl2.SDLK_SPACE     : WindowEvent.ReleaseSpeedUp,
+    sdl2.SDLK_UP        : windowevent.ReleaseArrowUp,
+    sdl2.SDLK_DOWN      : windowevent.ReleaseArrowDown,
+    sdl2.SDLK_RIGHT     : windowevent.ReleaseArrowRight,
+    sdl2.SDLK_LEFT      : windowevent.ReleaseArrowLeft,
+    sdl2.SDLK_a         : windowevent.ReleaseButtonA,
+    sdl2.SDLK_s         : windowevent.ReleaseButtonB,
+    sdl2.SDLK_RETURN    : windowevent.ReleaseButtonStart,
+    sdl2.SDLK_BACKSPACE : windowevent.ReleaseButtonSelect,
+    sdl2.SDLK_z         : windowevent.SaveState,
+    sdl2.SDLK_x         : windowevent.LoadState,
+    sdl2.SDLK_SPACE     : windowevent.ReleaseSpeedUp,
 }
 
 
@@ -98,13 +98,13 @@ class ScanlineWindow(GenericWindow):
 
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
-                events.append(WindowEvent.Quit)
+                events.append(windowevent.Quit)
             elif event.type == sdl2.SDL_KEYDOWN:
                 events.append(windowEventsDown.get(event.key.keysym.sym,
-                                                   WindowEvent.Pass))
+                                                   windowevent.Pass))
             elif event.type == sdl2.SDL_KEYUP:
                 events.append(windowEventsUp.get(event.key.keysym.sym,
-                                                 WindowEvent.Pass))
+                                                 windowevent.Pass))
 
         return events
 

@@ -3,26 +3,27 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-import platform
-from ..Logger import logger, addConsoleHandler
+
+from ..logger import logger, addConsoleHandler
 addConsoleHandler()
+
 
 def getWindow(win_type, scale):
     logger.info("Window type is: %s" % win_type)
     if win_type == "SDL2" or win_type is None:
-        from .Window_SDL2 import SdlWindow
+        from .window_sdl2 import SdlWindow
         window = SdlWindow(scale)
     elif win_type == "scanline":
-        from .Window_Scanline import ScanlineWindow
+        from .window_scanline import ScanlineWindow
         window = ScanlineWindow(scale)
     elif win_type == "OpenGL":
-        from .Window_OpenGL import OpenGLWindow
+        from .window_opengl import OpenGLWindow
         window = OpenGLWindow(scale)
     elif win_type == "dummy":
-        from .Window_dummy import DummyWindow
+        from .window_dummy import DummyWindow
         window = DummyWindow(scale)
     elif win_type == "headless":
-        from .Window_headless import HeadlessWindow
+        from .window_headless import HeadlessWindow
         window = HeadlessWindow(scale)
     else:
         logger.error("Invalid arguments! Usage: pypy main.py [Window] [ROM path]")

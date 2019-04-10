@@ -3,9 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-# import RAM
-# from RAM import allocateRAM, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
+
 import array
+
 
 VIDEO_RAM = 8 * 1024  # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
@@ -119,4 +119,3 @@ class LCDCRegister():
         self.spriteSize          = value & (1 << 2)
         self.spriteEnable        = value & (1 << 1)
         self.backgroundEnable    = value & (1 << 0)
-

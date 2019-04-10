@@ -3,18 +3,17 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os
-import struct
+
 import array
 
-from .GenericMBC import GenericMBC
-from .GenericMBC import ROM_only
-from .MBC1 import MBC1
-from .MBC2 import MBC2
-from .MBC3 import MBC3
-from .MBC5 import MBC5
+from .genericmbc import ROM_only
+from .mbc1 import MBC1
+from .mbc2 import MBC2
+from .mbc3 import MBC3
+from .mbc5 import MBC5
 
-from ..Logger import logger
+from ..logger import logger
+
 
 def Cartridge(filename):
     ROMBanks = loadROMfile(filename)
@@ -83,5 +82,3 @@ ExRAMTable = {
     0x03 : 4,
     0x04 : 16,
 }
-
-

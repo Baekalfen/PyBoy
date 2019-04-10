@@ -2,8 +2,11 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from ..Logger import logger
-from .GenericMBC import GenericMBC
+
+
+from ..logger import logger
+from .genericmbc import GenericMBC
+
 
 class MBC1(GenericMBC):
     def setitem(self, address, value):
@@ -44,4 +47,3 @@ class MBC1(GenericMBC):
             self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
         else:
             raise logger.error("Invalid writing address: %s" % hex(address))
-

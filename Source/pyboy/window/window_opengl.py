@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 import numpy as np
 
 from OpenGL.GL import *
@@ -10,10 +11,12 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import OpenGL.GLUT.freeglut
 
-from .. import WindowEvent
-from .Window_SDL2 import SdlWindow
+from .. import windowevent
+from .window_sdl2 import SdlWindow
+
 
 gameboyResolution = (160, 144)
+
 
 class OpenGLWindow(SdlWindow):
     def __init__(self, scale=1):
@@ -62,56 +65,56 @@ class OpenGLWindow(SdlWindow):
     def glKeyboardSpecial(self, c, x, y, up):
         if up:
             if c == GLUT_KEY_UP:
-                self.events.append(WindowEvent.ReleaseArrowUp)
+                self.events.append(windowevent.ReleaseArrowUp)
             if c == GLUT_KEY_DOWN:
-                self.events.append(WindowEvent.ReleaseArrowDown)
+                self.events.append(windowevent.ReleaseArrowDown)
             if c == GLUT_KEY_LEFT:
-                self.events.append(WindowEvent.ReleaseArrowLeft)
+                self.events.append(windowevent.ReleaseArrowLeft)
             if c == GLUT_KEY_RIGHT:
-                self.events.append(WindowEvent.ReleaseArrowRight)
+                self.events.append(windowevent.ReleaseArrowRight)
         else:
             if c == GLUT_KEY_UP:
-                self.events.append(WindowEvent.PressArrowUp)
+                self.events.append(windowevent.PressArrowUp)
             if c == GLUT_KEY_DOWN:
-                self.events.append(WindowEvent.PressArrowDown)
+                self.events.append(windowevent.PressArrowDown)
             if c == GLUT_KEY_LEFT:
-                self.events.append(WindowEvent.PressArrowLeft)
+                self.events.append(windowevent.PressArrowLeft)
             if c == GLUT_KEY_RIGHT:
-                self.events.append(WindowEvent.PressArrowRight)
+                self.events.append(windowevent.PressArrowRight)
 
     def glKeyboard(self, c, x, y, up):
         if up:
             if c == 'a':
-                self.events.append(WindowEvent.ReleaseButtonA)
+                self.events.append(windowevent.ReleaseButtonA)
             elif c == 's':
-                self.events.append(WindowEvent.ReleaseButtonB)
+                self.events.append(windowevent.ReleaseButtonB)
             elif c == 'z':
-                self.events.append(WindowEvent.SaveState)
+                self.events.append(windowevent.SaveState)
             elif c == 'x':
-                self.events.append(WindowEvent.LoadState)
+                self.events.append(windowevent.LoadState)
             elif c == ' ':
-                self.events.append(WindowEvent.ReleaseSpeedUp)
+                self.events.append(windowevent.ReleaseSpeedUp)
             elif c == chr(8):
-                self.events.append(WindowEvent.ReleaseButtonSelect)
+                self.events.append(windowevent.ReleaseButtonSelect)
             elif c == chr(13):
-                self.events.append(WindowEvent.ReleaseButtonStart)
+                self.events.append(windowevent.ReleaseButtonStart)
         else:
             if c == 'a':
-                self.events.append(WindowEvent.PressButtonA)
+                self.events.append(windowevent.PressButtonA)
             elif c == 's':
-                self.events.append(WindowEvent.PressButtonB)
+                self.events.append(windowevent.PressButtonB)
             elif c == chr(27):
-                self.events.append(WindowEvent.Quit)
+                self.events.append(windowevent.Quit)
             elif c == 'd':
-                self.events.append(WindowEvent.DebugToggle)
+                self.events.append(windowevent.DebugToggle)
             elif c == ' ':
-                self.events.append(WindowEvent.PressSpeedUp)
+                self.events.append(windowevent.PressSpeedUp)
             elif c == 'i':
-                self.events.append(WindowEvent.ScreenRecordingToggle)
+                self.events.append(windowevent.ScreenRecordingToggle)
             elif c == chr(8):
-                self.events.append(WindowEvent.PressButtonSelect)
+                self.events.append(windowevent.PressButtonSelect)
             elif c == chr(13):
-                self.events.append(WindowEvent.PressButtonStart)
+                self.events.append(windowevent.PressButtonStart)
 
 
     def glReshape(self, width, height):

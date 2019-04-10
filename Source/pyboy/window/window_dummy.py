@@ -3,8 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from ..Logger import logger
-from .GenericWindow import GenericWindow
+
+from ..logger import logger
+from .genericwindow import GenericWindow
 
 
 class DummyWindow(GenericWindow):
@@ -38,4 +39,3 @@ class DummyWindow(GenericWindow):
 
     def blankScreen(self):
         pass
-

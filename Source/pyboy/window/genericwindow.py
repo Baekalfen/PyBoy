@@ -3,9 +3,12 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from ..Logger import logger
+
+from ..logger import logger
+
 
 gameboyResolution = (160, 144)
+
 
 class GenericWindow():
 

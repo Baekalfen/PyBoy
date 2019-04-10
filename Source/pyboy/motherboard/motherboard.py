@@ -3,14 +3,16 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
-import array
-# # import pyximport; pyximport.install()
 
-from ..Logger import logger
-from . import Timer
-from . import CPU
-from .. import RAM, BootROM, Interaction, Cartridge, LCD
+import sys
+
+
+from ..logger import logger
+from . import timer
+from . import cpu
+from .. import ram, bootrom, interaction, cartridge, lcd
+
+
 VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
 
 # # from CPU.flags import VBlank, TIMER, HightoLow, LCDC
@@ -20,8 +22,10 @@ STAT = 0xFF41
 LY = 0xFF44
 LYC = 0xFF45
 
+
 class Motherboard():
-    def __init__(self, gameROMFile, bootROMFile, window, profiling = False, debugger = None):
+    def __init__(self, gameROMFile, bootROMFile, window, profiling=False,
+                 debugger=None):
         if bootROMFile is not None:
             logger.info("Boot-ROM file provided")
 
@@ -30,13 +34,13 @@ class Motherboard():
 
         self.debugger = debugger
         self.window = window
-        self.timer = Timer.Timer()
-        self.interaction = Interaction.Interaction()
-        self.cartridge = Cartridge.Cartridge.Cartridge(gameROMFile)
-        self.bootROM = BootROM.BootROM(bootROMFile)
-        self.ram = RAM.RAM(random=False)
-        self.cpu = CPU.CPU(self, profiling)
-        self.lcd = LCD.LCD(window.colorPalette)
+        self.timer = timer.Timer()
+        self.interaction = interaction.Interaction()
+        self.cartridge = cartridge.cartridge.Cartridge(gameROMFile)
+        self.bootROM = bootrom.BootROM(bootROMFile)
+        self.ram = ram.RAM(random=False)
+        self.cpu = cpu.CPU(self, profiling)
+        self.lcd = lcd.LCD(window.colorPalette)
         self.bootROMEnabled = True
 
         if "loadState" in sys.argv:
@@ -80,7 +84,6 @@ class Motherboard():
 
         self.window.clearCache = True
         self.window.updateCache(self.lcd)
-
 
     #########################
     ## Coordinator

@@ -2,10 +2,13 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
+
 import array
 import os
-from .RTC import RTC
-from ..Logger import logger
+from .rtc import RTC
+from ..logger import logger
+
 
 class GenericMBC:
     def __init__(self, filename, ROMBanks, exRAMCount, cartType, SRAM, battery, rtcEnabled):
@@ -152,5 +155,3 @@ class ROM_only(GenericMBC):
         else:
             logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
         #     raise logger.error("Invalid writing address: 0x%0.4x, value: 0x%0.2x" % (address, value))
-
-

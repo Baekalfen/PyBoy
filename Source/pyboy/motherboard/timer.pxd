@@ -3,7 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 import cython
+
 
 cdef class Timer:
     cdef public unsigned int DIV, TIMA, TMA, TAC

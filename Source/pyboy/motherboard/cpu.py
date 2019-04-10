@@ -3,10 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 import array
 from . import opcodes
-from ..OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-from ..Logger import logger
 
 
 flagC, flagH, flagN, flagZ = range(4, 8)
@@ -37,7 +36,6 @@ class CPU():
 
     def clearFlag(self, flag):
         self.F = (self.F & (0xFF - (1 << flag)))
-
 
     ### Interrupt flags
     def setInterruptFlag(self, flag):

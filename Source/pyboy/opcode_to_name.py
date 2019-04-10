@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 CPU_COMMANDS = [
     "NOP",
     "LD BC,nn",
@@ -260,7 +261,6 @@ CPU_COMMANDS = [
     "XX",
     "CP n",
     "RST 38"]
-
 
 
 CPU_COMMANDS_EXT = [
@@ -521,6 +521,3 @@ CPU_COMMANDS_EXT = [
     "CPU_EXT_SET",
     "CPU_EXT_SET"
 ]
-
-
-

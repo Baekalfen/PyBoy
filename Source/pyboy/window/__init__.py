@@ -3,6 +3,6 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from . import Window
-from .GenericWindow import GenericWindow
 
+from . import window
+from .genericwindow import GenericWindow

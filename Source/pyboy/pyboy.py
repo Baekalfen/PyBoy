@@ -1,19 +1,20 @@
-#! /usr/local/bin/python2
 #
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
+
 import sys
 import time
 
-from . import BotSupport
-from .ScreenRecorder import ScreenRecorder
-from .MB.MB import Motherboard
-from . import WindowEvent
-from . import Window
+from . import botsupport
+from .screenrecorder import ScreenRecorder
+from .motherboard.motherboard import Motherboard
+from . import windowevent
+from . import window
 
-from .OpcodeToName import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .Logger import logger, addConsoleHandler
+from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
+from .logger import logger, addConsoleHandler
 addConsoleHandler()
 
 
@@ -24,7 +25,7 @@ class PyBoy():
     def __init__(self, win_type, scale, ROM, bootROM = None):
         self.ROM = ROM
         self.debugger = None
-        self.window = Window.Window.getWindow(win_type, scale)
+        self.window = window.window.getWindow(win_type, scale)
 
         self.profiling = "profiling" in sys.argv
         self.mb = Motherboard(ROM, bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
@@ -45,22 +46,22 @@ class PyBoy():
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
         for event in self.window.getEvents():
-            if event == WindowEvent.Quit:
+            if event == windowevent.Quit:
                 done = True
-            elif event == WindowEvent.ReleaseSpeedUp:
+            elif event == windowevent.ReleaseSpeedUp:
                 self.limitEmulationSpeed ^= True
                 logger.info("Speed limit: %s" % self.limitEmulationSpeed)
-            elif event == WindowEvent.SaveState:
+            elif event == windowevent.SaveState:
                 self.mb.saveState(self.ROM + ".state")
-            elif event == WindowEvent.LoadState:
+            elif event == windowevent.LoadState:
                 self.mb.loadState(self.ROM + ".state")
-            elif event == WindowEvent.DebugToggle:
+            elif event == windowevent.DebugToggle:
                 # mb.cpu.breakAllow = True
                 self.debugger.running ^= True
                 # mb.cpu.breakOn ^= True
-            elif event == WindowEvent.Pass:
+            elif event == windowevent.Pass:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
-            elif event == WindowEvent.ScreenRecordingToggle:
+            elif event == windowevent.ScreenRecordingToggle:
                 if not self.screen_recorder:
                     self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
                 else:
@@ -135,10 +136,10 @@ class PyBoy():
         return self.mb
 
     def getSprite(self, index):
-        return BotSupport.Sprite(self.mb, index)
+        return botsupport.Sprite(self.mb, index)
 
     def getTileView(self, high):
-        return BotSupport.TileView(self.mb, high)
+        return botsupport.TileView(self.mb, high)
 
     def getScreenPosition(self):
         return (self.mb.getitem(0xFF43), self.mb.getitem(0xFF42))

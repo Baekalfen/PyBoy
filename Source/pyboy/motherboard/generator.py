@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 import pdb
 import inspect
 import os
@@ -10,10 +11,11 @@ import urllib2
 import re
 from HTMLParser import HTMLParser
 
+
 destination = "opcodes.py"
 pxd_destination = "opcodes.pxd"
 
-warning = """\
+warning = """
 # THIS FILE IS AUTO-GENERATED!!!
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
@@ -29,9 +31,10 @@ flagC, flagH, flagN, flagZ = range(4, 8)
 """
 
 cimports = """
-cimport CPU
+cimport cpu
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
+
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
@@ -42,15 +45,16 @@ cdef uint16_t getOpcodeLength(uint16_t)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int executeOpcode(CPU.CPU, uint16_t)
 
-
 cdef unsigned char NOOPCODE(CPU.CPU) except -1
 """
+
 
 def inlineGetSignedInt8(arg):
     return "(({} ^ 0x80) - 128)".format(arg)
 
 
 opcodes = []
+
 
 class MyHTMLParser(HTMLParser):
     def __init__(self):
@@ -1243,4 +1247,3 @@ def load():
     update()
 
 load()
-

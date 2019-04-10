@@ -3,11 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from PyBoy.LCD cimport LCD
-from PyBoy.Window.GenericWindow cimport GenericWindow
+
+from pyboy.lcd cimport LCD
+from pyboy.window.genericwindow cimport GenericWindow
+
+
 cdef (int, int) gameboyResolution
 cdef (int, int, int, int) _dummy_declaration2
 
 cdef class DummyWindow(GenericWindow):
     pass
-

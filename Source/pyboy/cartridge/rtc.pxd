@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 cdef class RTC:
     cdef unicode filename
     cdef bint latchEnabled
@@ -22,4 +23,3 @@ cdef class RTC:
     cdef void writeCommand(self, unsigned char)
     cdef unsigned char getRegister(self, unsigned char)
     cdef void setRegister(self, unsigned char, unsigned char)
-

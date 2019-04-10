@@ -2,10 +2,12 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 
+
 import time
 import os
 import struct
-from ..Logger import logger
+from ..logger import logger
+
 
 class RTC():
     def __init__(self, filename):

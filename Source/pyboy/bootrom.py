@@ -3,8 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 import struct
 import array
+
 
 class BootROM():
     def __init__(self, bootROMFile):

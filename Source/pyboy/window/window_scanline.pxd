@@ -8,9 +8,9 @@ cimport cython
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
-cimport SDL2 as sdl2
-from PyBoy.LCD cimport LCD
-from PyBoy.Window.GenericWindow cimport GenericWindow
+cimport sdl2 as sdl2
+from pyboy.lcd cimport LCD
+from pyboy.window.genericwindow cimport GenericWindow
 
 
 cdef (int, int) gameboyResolution

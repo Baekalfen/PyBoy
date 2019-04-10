@@ -3,7 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 VRAM_offset = 0x8000
+
 
 class TileView():
     def __init__(self, mb, high_tile_data=False):
@@ -18,6 +20,3 @@ class TileView():
             return (self.mb.getitem(VRAM_offset + self.view_offset+x+y*32) ^ 0x80) - 128
         else:
             return self.mb.getitem(VRAM_offset + self.view_offset+x+y*32)
-
-
-

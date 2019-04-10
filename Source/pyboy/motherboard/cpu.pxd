@@ -4,17 +4,18 @@
 #
 
 
-cimport PyBoy.MB.MB
+cimport pyboy.motherboard.motherboard
 cimport opcodes
 import cython
+
 
 cdef unsigned short IF_address, IE_address
 cdef short flagC, flagH, flagN, flagZ
 cdef short VBlank, LCDC, TIMER, Serial, HightoLow
 
-
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
+
 
 cdef class CPU:
 
@@ -39,7 +40,7 @@ cdef class CPU:
 
     cdef short A, F, B, C, D, E # Only char (8-bit) needed, but I'm not sure all intermittent results do not overflow
     cdef int HL, SP, PC # Only short (16-bit) needed, but I'm not sure all intermittent results do not overflow
-    cdef PyBoy.MB.MB.Motherboard mb
+    cdef pyboy.motherboard.motherboard.Motherboard mb
 
     cdef void setBC(CPU, int x)
     cdef void setDE(CPU, int x)
@@ -65,5 +66,3 @@ cdef class CPU:
     cdef void clearRAMRegisterFlag(self, int address, int flag)
     @cython.locals(v=cython.int)
     cdef bint testRAMRegisterFlagEnabled(self, int address, int flag)
-
-

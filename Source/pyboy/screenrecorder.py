@@ -7,14 +7,16 @@
 import os
 import time
 
-from .Logger import logger
+from .logger import logger
 
 try:
     from PIL import Image
 except ImportError:
     Image = None
 
+
 FPS = 60
+
 
 class ScreenRecorder:
 

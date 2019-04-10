@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 from libc.stdint cimport uint8_t
 
 cdef class RAM:

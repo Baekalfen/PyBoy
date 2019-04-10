@@ -1,16 +1,17 @@
-#! /usr/local/bin/python2
 #
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 from libc cimport time
 cimport cython
-cimport PyBoy.Cartridge
-cimport PyBoy.Window.Window
-# cimport PyBoy.WindowEvent
-from PyBoy.MB.MB cimport Motherboard
-from PyBoy.Window.GenericWindow cimport GenericWindow
+cimport pyboy.cartridge
+cimport pyboy.window.window
+
+from pyboy.motherboard.motherboard cimport Motherboard
+from pyboy.window.genericwindow cimport GenericWindow
+
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2

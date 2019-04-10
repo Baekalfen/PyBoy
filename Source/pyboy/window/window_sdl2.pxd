@@ -7,16 +7,16 @@
 from cpython.array cimport array
 from array import array
 
-cimport SDL2 as sdl2
-from PyBoy.LCD cimport LCD
-from PyBoy.Window.GenericWindow cimport GenericWindow
-
-
-cdef (int, int, int, int) _dummy_declaration2
+cimport sdl2 as sdl2
+from pyboy.lcd cimport LCD
+from pyboy.window.genericwindow cimport GenericWindow
 
 import cython
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
+
+
+cdef (int, int, int, int) _dummy_declaration2
 
 cdef unsigned char getColorCode(unsigned char, unsigned char, unsigned char)
 
@@ -95,4 +95,3 @@ cdef class SdlWindow(GenericWindow):
         sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdlTextureBuffer,
                             NULL, NULL)
         sdl2.SDL_RenderPresent(self._sdlrenderer)
-

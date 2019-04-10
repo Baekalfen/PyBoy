@@ -3,10 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .Window_SDL2 import SdlWindow
-from ..Logger import logger
+
+from .window_sdl2 import SdlWindow
+from ..logger import logger
+
 
 gameboyResolution = (160, 144)
+
 
 class HeadlessWindow(SdlWindow):
     def __init__(self, scale=1):
@@ -34,4 +37,3 @@ class HeadlessWindow(SdlWindow):
 
     def stop(self):
         pass
-
