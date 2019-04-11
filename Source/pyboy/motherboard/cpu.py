@@ -5,6 +5,7 @@
 
 
 import array
+
 from . import opcodes
 
 

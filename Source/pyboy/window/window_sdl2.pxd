@@ -25,9 +25,9 @@ cdef int ROWS, COLS
 
 cdef class SDLWindow(GenericWindow):
 
-    cdef uint32_t ticks
-    cdef dict key_down
-    cdef dict key_up
+    cdef uint32_t _ticks
+    cdef dict _key_down
+    cdef dict _key_up
     cdef array _screenbuffer_raw
     cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer

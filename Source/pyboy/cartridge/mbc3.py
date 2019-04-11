@@ -4,41 +4,45 @@
 #
 
 
-from .genericmbc import GenericMBC
+from .mbc import MBC
 from ..logger import logger
 
 
-class MBC3(GenericMBC):
+class MBC3(MBC):
     def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
             if (value & 0b00001111) == 0b1010:
-                self.RAMBankEnabled = True
+                self.rambankenabled = True
             elif value == 0:
-                self.RAMBankEnabled = False
+                self.rambankenabled = False
             else:
-                # Pan Docs: "Practically any value with 0Ah in the lower 4 bits enables RAM, and any other value disables RAM."
-                self.RAMBankEnabled = False
-                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
+                # Pan Docs: "Practically any value with 0Ah in the
+                # lower 4 bits enables RAM, and any other value
+                # disables RAM."
+                self.rambankenabled = False
+                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x"
+                               % (address, value))
         elif 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1
             # print "ROM Bank switch:", value & 0b01111111
-            self.ROMBankSelected = value & 0b01111111  # sets 7LSB of ROM bank address
+            self.rombankselected = value & 0b01111111  # sets 7LSB of ROM bank address
         elif 0x4000 <= address < 0x6000:
-            self.RAMBankSelected = value
+            self.rambankselected = value
         elif 0x6000 <= address < 0x8000:
-            if self.rtcEnabled:
-                self.rtc.writeCommand(value)
+            if self.rtcenabled:
+                self.rtc.writecommand(value)
             else:
                 # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
                 # https://github.com/pret/pokered/issues/155
-                logger.warning("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
+                logger.warning("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x"
+                               % (address, value))
         elif 0xA000 <= address < 0xC000:
-            if self.RAMBankSelected <= 0x03:
-                self.RAMBanks[self.RAMBankSelected][address - 0xA000] = value
-            elif 0x08 <= self.RAMBankSelected <= 0x0C:
-                self.rtc.setRegister(self.RAMBankSelected, value)
+            if self.rambankselected <= 0x03:
+                self.rambanks[self.rambankselected][address-0xA000] = value
+            elif 0x08 <= self.rambankselected <= 0x0C:
+                self.rtc.setregister(self.rambankselected, value)
             else:
-                raise logger.error("Invalid RAM bank selected: 0x%0.2x" % self.RAMBankSelected)
+                raise logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambankselected)
         else:
             raise logger.error("Invalid writing address: 0x%0.4x" % address)

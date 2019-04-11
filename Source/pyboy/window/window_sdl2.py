@@ -115,8 +115,8 @@ class SDLWindow(GenericWindow):
             b"PyBoy",
             sdl2.SDL_WINDOWPOS_CENTERED,
             sdl2.SDL_WINDOWPOS_CENTERED,
-            self._scaledResolution[0],
-            self._scaledResolution[1],
+            self._scaledresolution[0],
+            self._scaledresolution[1],
             sdl2.SDL_WINDOW_RESIZABLE)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(
@@ -153,9 +153,9 @@ class SDLWindow(GenericWindow):
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
-        delay = int(1000.0/(60.0*speed) - (now-self.ticks))
+        delay = int(1000.0/(60.0*speed) - (now-self._ticks))
         sdl2.SDL_Delay(delay if delay > 0 else 0)
-        self.ticks = sdl2.SDL_GetTicks()
+        self._ticks = sdl2.SDL_GetTicks()
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)

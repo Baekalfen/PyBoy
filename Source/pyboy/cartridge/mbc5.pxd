@@ -4,8 +4,8 @@
 #
 
 
-from .genericmbc cimport GenericMBC
+from .mbc cimport MBC
 
 
-cdef class MBC5(GenericMBC):
+cdef class MBC5(MBC):
     cdef void setitem(self, unsigned short, unsigned char)

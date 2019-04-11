@@ -4,9 +4,9 @@
 #
 
 
-from .genericmbc import GenericMBC
+from .mbc import MBC
 
 
-class MBC5(GenericMBC):
+class MBC5(MBC):
     def setitem(self, address, value):
-        raise Exception("Not implemented")
+        raise NotImplementedError()

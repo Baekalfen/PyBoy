@@ -7,7 +7,8 @@
 import cython
 cimport pyboy.motherboard.cpu
 cimport pyboy.motherboard.timer
-cimport pyboy.cartridge.genericmbc
+cimport pyboy.cartridge.mbc
+# cimport pyboy.cartridge.cartridge
 cimport pyboy.bootrom
 cimport pyboy.ram
 cimport pyboy.lcd
@@ -31,7 +32,7 @@ cdef class Motherboard:
     cdef pyboy.motherboard.cpu.CPU cpu
     cdef pyboy.motherboard.timer.Timer timer
     cdef pyboy.window.genericwindow.GenericWindow window
-    cdef pyboy.cartridge.genericmbc.GenericMBC cartridge
+    cdef pyboy.cartridge.mbc.MBC cartridge
     cdef bint bootROMEnabled
     cdef unicode serialBuffer
 

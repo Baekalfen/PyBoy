@@ -49,7 +49,7 @@ setup(
         'pyboy/windowevent.py',
         'pyboy/cartridge/__init__.py',
         # 'pyboy/cartridge/cartridge.py',
-        'pyboy/cartridge/genericmbc.py',
+        'pyboy/cartridge/mbc.py',
         'pyboy/cartridge/mbc1.py',
         'pyboy/cartridge/mbc2.py',
         'pyboy/cartridge/mbc3.py',

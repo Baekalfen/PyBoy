@@ -27,7 +27,7 @@ cdef class ScanlineWindow(GenericWindow):
     cdef uint32_t[160] _linebuf
     cdef sdl2.SDL_Rect _linerect
 
-    cdef uint32_t ticks
+    cdef uint32_t _ticks
     cdef int scale
 
     @cython.profile(False)

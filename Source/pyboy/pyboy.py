@@ -74,7 +74,7 @@ class PyBoy():
         self.window.update_display()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.getScreenBuffer())
+            self.screen_recorder.add_frame(self.getscreenbuffer())
 
         t_cpu = time.perf_counter()
 
@@ -117,7 +117,7 @@ class PyBoy():
     #
     # Scripts and bot methods
 
-    def getScreenBuffer(self):
+    def getscreenbuffer(self):
         return self.window.getscreenbuffer()
 
     def getScreenBufferFormat(self):

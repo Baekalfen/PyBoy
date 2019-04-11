@@ -65,14 +65,14 @@ class ScanlineWindow(GenericWindow):
 
     def init(self):
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
-        self.ticks = sdl2.SDL_GetTicks()
+        self._ticks = sdl2.SDL_GetTicks()
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy",
             sdl2.SDL_WINDOWPOS_CENTERED,
             sdl2.SDL_WINDOWPOS_CENTERED,
-            self._scaledResolution[0],
-            self._scaledResolution[1],
+            self._scaledresolution[0],
+            self._scaledresolution[1],
             sdl2.SDL_WINDOW_RESIZABLE)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(
@@ -82,7 +82,7 @@ class ScanlineWindow(GenericWindow):
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_BGRA32,
             sdl2.SDL_TEXTUREACCESS_STREAMING, COLS, ROWS)
 
-        self.blankScreen()
+        self.blank_screen()
         sdl2.SDL_ShowWindow(self._window)
 
     def dump(self, filename):
@@ -106,9 +106,9 @@ class ScanlineWindow(GenericWindow):
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
-        delay = int(1000.0/(60.0*speed) - (now-self.ticks))
+        delay = int(1000.0/(60.0*speed) - (now-self._ticks))
         sdl2.SDL_Delay(delay if delay > 0 else 0)
-        self.ticks = sdl2.SDL_GetTicks()
+        self._ticks = sdl2.SDL_GetTicks()
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)
@@ -266,7 +266,7 @@ if not cythonmode:
     exec("""
 def _scanline_copy(self):
     sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
-                           self._linebuf_p, gameboyResolution[0])
+                           self._linebuf_p, COLS)
 
 def _render_copy(self):
     sdl2.SDL_RenderCopy(self._sdlrenderer, self._screenbuf, None, None)

@@ -69,7 +69,7 @@ class Motherboard():
             self.cpu.saveState(f)
             self.lcd.saveState(f)
             self.ram.saveState(f)
-            self.cartridge.saveState(f)
+            self.cartridge.save_state(f)
         logger.info("State saved.")
 
     def loadState(self, filename):
@@ -79,7 +79,7 @@ class Motherboard():
             self.cpu.loadState(f)
             self.lcd.loadState(f)
             self.ram.loadState(f)
-            self.cartridge.loadState(f)
+            self.cartridge.load_state(f)
         logger.info("State loaded.")
 
         self.window.clearcache = True
@@ -136,7 +136,7 @@ class Motherboard():
         if lcdEnabled:
             self.window.update_cache(self.lcd)
 
-            # TODO: the 19, 41 and 49 ticks should correct for longer instructions
+            # TODO: the 19, 41 and 49._ticks should correct for longer instructions
             # Iterate the 144 lines on screen
             for y in range(144):
                 self.checkLYC(y)

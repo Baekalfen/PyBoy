@@ -6,7 +6,6 @@
 
 from libc cimport time
 cimport cython
-cimport pyboy.cartridge
 cimport pyboy.window.window
 
 from pyboy.motherboard.motherboard cimport Motherboard

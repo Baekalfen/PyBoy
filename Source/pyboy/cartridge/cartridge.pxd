@@ -4,19 +4,12 @@
 #
 
 
-from . cimport genericmbc
-# from .GenericMBC cimport ROM_only
-# from . cimport MBC1
-# from . cimport MBC2
-# from . cimport MBC3
-# from . cimport MBC5
-# from . cimport RTC
+from .mbc cimport MBC
 
 
-# cdef GenericMBC Cartridge(unicode)
-cdef public genericmbc.GenericMBC Cartridge(char*)
-cdef bint validateCheckSum(unsigned char[:,:])
-cdef unsigned char[:, :] loadROMfile(char*)
+cdef public MBC Cartridge(unicode)
+cdef bint validatechecksum(unsigned char[:,:])
+cdef unsigned char[:, :] loadromfile(unicode)
 
-cdef dict cartridgeTable
-cdef dict ExRAMTable
+cdef dict CARTRIDGETABLE
+cdef dict EXRAMTABLE
