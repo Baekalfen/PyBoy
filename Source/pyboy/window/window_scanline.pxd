@@ -13,10 +13,9 @@ from pyboy.lcd cimport LCD
 from pyboy.window.genericwindow cimport GenericWindow
 
 
-cdef (int, int) gameboyResolution
-cdef uint32_t[4] palette
-cdef dict windowEventsDown
-cdef dict windowEventsUp
+cdef (int, int) _dummy
+cdef int ROWS, COLS
+cdef dict KEY_DOWN, KEY_UP
 
 
 cdef class ScanlineWindow(GenericWindow):
@@ -33,17 +32,17 @@ cdef class ScanlineWindow(GenericWindow):
 
     @cython.profile(False)
     @cython.locals(now=uint32_t, delay=int)
-    cdef void framelimiter(self, int)
+    cdef void frame_limiter(self, int)
 
     @cython.locals(
-        bOffset=int,
-        wOffset=int,
+        bmap=int,
+        wmap=int,
         bx=int,
         by=int,
         wx=int,
         wy=int,
-        bdy=int,
-        wdy=int,
+        bd=int,
+        wd=int,
         tile_select=bint,
         window_enabled_and_y=bint,
         bgp=uint32_t[4],
@@ -58,9 +57,9 @@ cdef class ScanlineWindow(GenericWindow):
         x=int,
         n=int,
         sx=int,
-        sy=int,  # These maybe should be uint8_t, since they're
-        st=int,  # getting unpacked from an array of bytes, but then
-        sf=int,  # the operations would have to be overflow safe.
+        sy=int,
+        st=int,
+        sf=int,
         dy=int,
         dx=int,
         bbyte0=uint8_t,
@@ -68,22 +67,22 @@ cdef class ScanlineWindow(GenericWindow):
         sbyte0=uint8_t,
         sbyte1=uint8_t,
         bpixel=int,
-        spixel=int
+        spixel=int,
         )
     cdef void scanline(self, int, LCD)
 
-    cdef inline void _scanlineCopy(self):
+    cdef inline void _scanline_copy(self):
         sdl2.SDL_UpdateTexture(self._screenbuf,
                                &self._linerect,
                                &self._linebuf,
                                160)
 
-    cdef inline void _renderCopy(self):
+    cdef inline void _render_copy(self):
         sdl2.SDL_RenderCopy(
                 self._sdlrenderer,
                 self._screenbuf,
                 NULL,
                 NULL)
 
-    cdef inline void _renderPresent(self):
+    cdef inline void _render_present(self):
         sdl2.SDL_RenderPresent(self._sdlrenderer)

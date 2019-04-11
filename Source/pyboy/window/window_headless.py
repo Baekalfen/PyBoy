@@ -4,35 +4,35 @@
 #
 
 
-from .window_sdl2 import SdlWindow
+from .window_sdl2 import SDLWindow
 from ..logger import logger
 
 
-gameboyResolution = (160, 144)
+ROWS, COLS = 144, 160
 
 
-class HeadlessWindow(SdlWindow):
+class HeadlessWindow(SDLWindow):
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
         self.lcd = None
 
     def init(self):
-        self.blankScreen()
+        self.blank_screen()
 
-    def setTitle(self,title):
+    def set_title(self, title):
         if self.enable_title:
             logger.info("HeadlessWindow set title: %s" % title)
 
-    def getEvents(self):
+    def get_events(self):
         return []
 
-    def updateDisplay(self):
+    def update_display(self):
         pass
 
-    def getScreenBuffer(self):
-        return self._screenBuffer
+    def getscreenbuffer(self):
+        return self._screenbuffer_raw
 
-    def framelimiter(self, speed):
+    def frame_limiter(self, speed):
         pass
 
     def stop(self):

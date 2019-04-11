@@ -5,7 +5,7 @@
 
 
 from pyboy.lcd cimport LCD
-from .window_sdl2 cimport SdlWindow
+from .window_sdl2 cimport SDLWindow
 
 import cython
 cimport cython
@@ -13,10 +13,10 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
-cdef (int, int, int, int) _dummy_declaration2
+cdef (int, int) _dummy_declaration
 
-cdef (int, int) gameboyResolution
+cdef int ROWS, COLS
 
-cdef class HeadlessWindow(SdlWindow):
+cdef class HeadlessWindow(SDLWindow):
     cdef LCD lcd
     pass

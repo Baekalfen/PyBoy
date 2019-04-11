@@ -10,30 +10,30 @@ from libc.stdint cimport uint32_t
 from pyboy.lcd cimport LCD
 
 
-cdef (int, int) gameboyResolution
+cdef int ROWS, COLS
 
 cdef class GenericWindow:
-    cdef (int, int) _scaledResolution
+    cdef (int, int) _scaledresolution
     cdef unsigned int _scale
     cdef bint enable_title
     cdef void init(self)
 
-    cdef public uint32_t[4] colorPalette
-    cdef unsigned int alphaMask
-    cdef unicode colorFormat
+    cdef public uint32_t[4] colorpalette
+    cdef unsigned int alphamask
+    cdef unicode colorformat
 
-    cdef void setTitle(self, unicode)
-    cdef list getEvents(self)
+    cdef void set_title(self, unicode)
+    cdef list get_events(self)
 
-    cdef void disableTitle(self)
-    cdef void updateDisplay(self)
-    cdef void framelimiter(self, int)
+    cdef void disable_title(self)
+    cdef void update_display(self)
+    cdef void frame_limiter(self, int)
     cdef void stop(self)
     cdef void scanline(self, int, LCD)
-    cdef void renderScreen(self, LCD)
-    cdef void blankScreen(self)
-    cdef object getScreenBuffer(self)
+    cdef void render_screen(self, LCD)
+    cdef void blank_screen(self)
+    cdef object getscreenbuffer(self)
 
-    cdef bint clearCache
+    cdef bint clearcache
     cdef set tiles_changed
-    cdef void updateCache(self, LCD)
+    cdef void update_cache(self, LCD)

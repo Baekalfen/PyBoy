@@ -40,7 +40,7 @@ class ScreenRecorder:
         logger.info("ScreenRecorder saving...")
 
         if path is None:
-            directory = os.path.join(os.path.curdir, "Recordings")
+            directory = os.path.join(os.path.curdir, "recordings")
             if not os.path.exists(directory):
                 os.makedirs(directory, mode=0o755)
             path = os.path.join(directory, time.strftime("Recording-%Y.%m.%d-%H.%M.%S.gif"))

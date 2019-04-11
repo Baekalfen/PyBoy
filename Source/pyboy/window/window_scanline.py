@@ -21,34 +21,34 @@ if not cythonmode:
     import ctypes
 
 
-gameboyResolution = (160, 144)
+ROWS, COLS = 144, 160
 
-windowEventsDown = {
-    sdl2.SDLK_UP        : windowevent.PressArrowUp,
-    sdl2.SDLK_DOWN      : windowevent.PressArrowDown,
-    sdl2.SDLK_RIGHT     : windowevent.PressArrowRight,
-    sdl2.SDLK_LEFT      : windowevent.PressArrowLeft,
-    sdl2.SDLK_a         : windowevent.PressButtonA,
-    sdl2.SDLK_s         : windowevent.PressButtonB,
-    sdl2.SDLK_RETURN    : windowevent.PressButtonStart,
-    sdl2.SDLK_BACKSPACE : windowevent.PressButtonSelect,
-    sdl2.SDLK_ESCAPE    : windowevent.Quit,
-    sdl2.SDLK_d         : windowevent.DebugToggle,
-    sdl2.SDLK_SPACE     : windowevent.PressSpeedUp,
-    sdl2.SDLK_i         : windowevent.ScreenRecordingToggle,
+KEY_DOWN = {
+    sdl2.SDLK_UP: windowevent.PressArrowUp,
+    sdl2.SDLK_DOWN: windowevent.PressArrowDown,
+    sdl2.SDLK_RIGHT: windowevent.PressArrowRight,
+    sdl2.SDLK_LEFT: windowevent.PressArrowLeft,
+    sdl2.SDLK_a: windowevent.PressButtonA,
+    sdl2.SDLK_s: windowevent.PressButtonB,
+    sdl2.SDLK_RETURN: windowevent.PressButtonStart,
+    sdl2.SDLK_BACKSPACE: windowevent.PressButtonSelect,
+    sdl2.SDLK_ESCAPE: windowevent.Quit,
+    sdl2.SDLK_d: windowevent.DebugToggle,
+    sdl2.SDLK_SPACE: windowevent.PressSpeedUp,
+    sdl2.SDLK_i: windowevent.ScreenRecordingToggle,
 }
-windowEventsUp = {
-    sdl2.SDLK_UP        : windowevent.ReleaseArrowUp,
-    sdl2.SDLK_DOWN      : windowevent.ReleaseArrowDown,
-    sdl2.SDLK_RIGHT     : windowevent.ReleaseArrowRight,
-    sdl2.SDLK_LEFT      : windowevent.ReleaseArrowLeft,
-    sdl2.SDLK_a         : windowevent.ReleaseButtonA,
-    sdl2.SDLK_s         : windowevent.ReleaseButtonB,
-    sdl2.SDLK_RETURN    : windowevent.ReleaseButtonStart,
-    sdl2.SDLK_BACKSPACE : windowevent.ReleaseButtonSelect,
-    sdl2.SDLK_z         : windowevent.SaveState,
-    sdl2.SDLK_x         : windowevent.LoadState,
-    sdl2.SDLK_SPACE     : windowevent.ReleaseSpeedUp,
+KEY_UP = {
+    sdl2.SDLK_UP: windowevent.ReleaseArrowUp,
+    sdl2.SDLK_DOWN: windowevent.ReleaseArrowDown,
+    sdl2.SDLK_RIGHT: windowevent.ReleaseArrowRight,
+    sdl2.SDLK_LEFT: windowevent.ReleaseArrowLeft,
+    sdl2.SDLK_a: windowevent.ReleaseButtonA,
+    sdl2.SDLK_s: windowevent.ReleaseButtonB,
+    sdl2.SDLK_RETURN: windowevent.ReleaseButtonStart,
+    sdl2.SDLK_BACKSPACE: windowevent.ReleaseButtonSelect,
+    sdl2.SDLK_z: windowevent.SaveState,
+    sdl2.SDLK_x: windowevent.LoadState,
+    sdl2.SDLK_SPACE: windowevent.ReleaseSpeedUp,
 }
 
 
@@ -57,10 +57,10 @@ class ScanlineWindow(GenericWindow):
     def __init__(self, scale=1):
         GenericWindow.__init__(self, scale)
 
-        self._linebuf = array.array('I', [0] * gameboyResolution[0])
-        self._linerect = {'x': 0, 'y': 0, 'w': gameboyResolution[0], 'h': 1}
+        self._linebuf = array.array('I', [0] * COLS)
+        self._linerect = {'x': 0, 'y': 0, 'w': COLS, 'h': 1}
         if not cythonmode:
-            self._linerect = sdl2.SDL_Rect(0, 0, gameboyResolution[0], 1)
+            self._linerect = sdl2.SDL_Rect(0, 0, COLS, 1)
             self._linebuf_p = ctypes.c_void_p(self._linebuf.buffer_info()[0])
 
     def init(self):
@@ -79,10 +79,8 @@ class ScanlineWindow(GenericWindow):
             self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
         self._screenbuf = sdl2.SDL_CreateTexture(
-            self._sdlrenderer,
-            sdl2.SDL_PIXELFORMAT_BGRA32,
-            sdl2.SDL_TEXTUREACCESS_STREAMING,
-            gameboyResolution[0], gameboyResolution[1])
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_BGRA32,
+            sdl2.SDL_TEXTUREACCESS_STREAMING, COLS, ROWS)
 
         self.blankScreen()
         sdl2.SDL_ShowWindow(self._window)
@@ -90,30 +88,26 @@ class ScanlineWindow(GenericWindow):
     def dump(self, filename):
         raise NotImplementedError()
 
-    def setTitle(self, title):
+    def set_title(self, title):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
-    def getEvents(self):
+    def get_events(self):
         events = []
-
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
                 events.append(windowevent.Quit)
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(windowEventsDown.get(event.key.keysym.sym,
-                                                   windowevent.Pass))
+                events.append(KEY_DOWN.get(event.key.keysym.sym,
+                                           windowevent.Pass))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(windowEventsUp.get(event.key.keysym.sym,
-                                                 windowevent.Pass))
-
+                events.append(KEY_UP.get(event.key.keysym.sym,
+                                         windowevent.Pass))
         return events
 
-    def framelimiter(self, speed):
+    def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
-        delay = int(1/(60.0 * speed)*1000-(now-self.ticks))
-        if delay < 0: # Cython doesn't suppport max()
-            delay = 0
-        sdl2.SDL_Delay(delay)
+        delay = int(1000.0/(60.0*speed) - (now-self.ticks))
+        sdl2.SDL_Delay(delay if delay > 0 else 0)
         self.ticks = sdl2.SDL_GetTicks()
 
     def stop(self):
@@ -127,18 +121,18 @@ class ScanlineWindow(GenericWindow):
         # renderScreen
 
         # Background and Window View Address (offset into VRAM...)
-        bOffset = 0x1C00 if lcd.LCDC.backgroundMapSelect else 0x1800
-        wOffset = 0x1C00 if lcd.LCDC.windowMapSelect else 0x1800
+        bmap = 0x1C00 if lcd.LCDC.backgroundMapSelect else 0x1800
+        wmap = 0x1C00 if lcd.LCDC.windowMapSelect else 0x1800
 
         bx, by = lcd.getViewPort()
         wx, wy = lcd.getWindowPos()
 
-        bdy = (y + by) % 8
-        wdy = (y - wy) % 8
+        bd = (y + by) % 8
+        wd = (y - wy) % 8
 
         # Single line, so we can save some math with the tile indices
-        bOffset += (((y + by) >> 3) << 5) % 0x400
-        wOffset += ((y - wy) >> 3) << 5
+        bmap += (((y + by) >> 3) << 5) % 0x400
+        wmap += ((y - wy) >> 3) << 5
 
         # Dict lookups cost, so do some quick caching
         tile_select = lcd.LCDC.tileSelect == 0
@@ -152,9 +146,9 @@ class ScanlineWindow(GenericWindow):
 
         # Limit to 10 sprites per line, could optionally disable later
         sprites = [0] * 10
+        nsprites = 0
         ymin = y if lcd.LCDC.spriteSize else y + 8
         ymax = y + 16
-        nsprites = 0
         for n in range(0x00, 0xA0, 4):
             if ymin < lcd.OAM[n] <= ymax:
                 sprites[nsprites] = n
@@ -167,39 +161,37 @@ class ScanlineWindow(GenericWindow):
         # shouldn't matter.
 
         # As in hardware, compute each pixel one-by-one
-        for x in range(gameboyResolution[0]):
-
+        for x in range(COLS):
             # Window gets priority, otherwise it's the background
             if window_enabled_and_y and wx <= x:
                 dx = (x - wx) % 8
                 if dx == 0 or bt < 0:
-                    bt = lcd.VRAM[wOffset + ((x - wx) >> 3)]
-
+                    bt = lcd.VRAM[wmap + ((x-wx) >> 3)]
                     # Convert to signed and offset (-128+256=+128)
                     if tile_select:
                         bt = (bt ^ 0x80) + 128
 
                     # Get the color from the Tile Data Table
-                    bbyte0 = lcd.VRAM[16 * bt + 2 * wdy]
-                    bbyte1 = lcd.VRAM[16 * bt + 2 * wdy + 1]
+                    bbyte0 = lcd.VRAM[16*bt + 2*wd]
+                    bbyte1 = lcd.VRAM[16*bt + 2*wd + 1]
 
-                bpixel = 2 * (bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
+                bpixel = 2*(bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
                 bpixel >>= 7 - dx
 
             elif lcd.LCDC.backgroundEnable:
                 dx = (x + bx) % 8
                 if dx == 0 or wt < 0:
-                    wt = lcd.VRAM[bOffset + (((x + bx) >> 3) % 32)]
+                    wt = lcd.VRAM[bmap + (((x + bx) >> 3) % 32)]
 
                     # Convert to signed and offset (-128+256=+128)
                     if tile_select:
                         wt = (wt ^ 0x80) + 128
 
                     # Get the color from the Tile Data Table
-                    bbyte0 = lcd.VRAM[16 * wt + 2 * bdy]
-                    bbyte1 = lcd.VRAM[16 * wt + 2 * bdy + 1]
+                    bbyte0 = lcd.VRAM[16*wt + 2*bd]
+                    bbyte1 = lcd.VRAM[16*wt + 2*bd + 1]
 
-                bpixel = 2 * (bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
+                bpixel = 2*(bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
                 bpixel >>= 7 - dx
 
             else:  # White if blank
@@ -228,8 +220,8 @@ class ScanlineWindow(GenericWindow):
                     sbyte0 = lcd.VRAM[16 * st + 2 * dy]
                     sbyte1 = lcd.VRAM[16 * st + 2 * dy + 1]
 
-                    dx = sx - x - 1 if sf & 0x20 else x - sx + 8
-                    spixel = 2 * (sbyte1 & 0x80 >> dx) + (sbyte0 & 0x80 >> dx)
+                    dx = sx-x-1 if sf & 0x20 else x-sx+8
+                    spixel = 2*(sbyte1 & 0x80 >> dx) + (sbyte0 & 0x80 >> dx)
                     spixel >>= 7 - dx
 
                     # If the sprite is transparent, check for more
@@ -251,19 +243,19 @@ class ScanlineWindow(GenericWindow):
 
         # Copy into the screen buffer stored in a Texture
         self._linerect.y = y
-        self._scanlineCopy()
+        self._scanline_copy()
 
-    def renderScreen(self, lcd):
-        self._renderCopy()
+    def render_screen(self, lcd):
+        self._render_copy()
 
-    def updateDisplay(self):
-        self._renderPresent()
+    def update_display(self):
+        self._render_present()
 
-    def blankScreen(self):
+    def blank_screen(self):
         sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, 0xff, 0xff, 0xff, 0xff)
         sdl2.SDL_RenderClear(self._sdlrenderer)
 
-    def getScreenBuffer(self):
+    def getscreenbuffer(self):
         raise NotImplementedError()
 
 
@@ -272,17 +264,17 @@ class ScanlineWindow(GenericWindow):
 # functions that are otherwise implemented as inlined cdefs in the pxd
 if not cythonmode:
     exec("""
-def _scanlineCopy(self):
+def _scanline_copy(self):
     sdl2.SDL_UpdateTexture(self._screenbuf, self._linerect,
                            self._linebuf_p, gameboyResolution[0])
 
-def _renderCopy(self):
+def _render_copy(self):
     sdl2.SDL_RenderCopy(self._sdlrenderer, self._screenbuf, None, None)
 
-def _renderPresent(self):
+def _render_present(self):
     sdl2.SDL_RenderPresent(self._sdlrenderer)
 
-ScanlineWindow._scanlineCopy = _scanlineCopy
-ScanlineWindow._renderCopy = _renderCopy
-ScanlineWindow._renderPresent = _renderPresent
+ScanlineWindow._scanline_copy = _scanline_copy
+ScanlineWindow._render_copy = _render_copy
+ScanlineWindow._render_present = _render_present
 """, globals(), locals())

@@ -40,7 +40,7 @@ class Motherboard():
         self.bootROM = bootrom.BootROM(bootROMFile)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD(window.colorPalette)
+        self.lcd = lcd.LCD(window.colorpalette)
         self.bootROMEnabled = True
 
         if "loadState" in sys.argv:
@@ -82,8 +82,8 @@ class Motherboard():
             self.cartridge.loadState(f)
         logger.info("State loaded.")
 
-        self.window.clearCache = True
-        self.window.updateCache(self.lcd)
+        self.window.clearcache = True
+        self.window.update_cache(self.lcd)
 
     #########################
     ## Coordinator
@@ -134,7 +134,7 @@ class Motherboard():
     def tickFrame(self):
         lcdEnabled = self.lcd.LCDC.enabled
         if lcdEnabled:
-            self.window.updateCache(self.lcd)
+            self.window.update_cache(self.lcd)
 
             # TODO: the 19, 41 and 49 ticks should correct for longer instructions
             # Iterate the 144 lines on screen
@@ -156,7 +156,7 @@ class Motherboard():
 
             self.cpu.setInterruptFlag(VBlank)
 
-            self.window.renderScreen(self.lcd) # Actually render screen from scanline parameters
+            self.window.render_screen(self.lcd) # Actually render screen from scanline parameters
 
             # Wait for next frame
             for y in range(144,154):
@@ -168,7 +168,7 @@ class Motherboard():
         else:
             # https://www.reddit.com/r/EmuDev/comments/6r6gf3/gb_pokemon_gold_spews_unexpected_values_at_mbc/
             # TODO: What happens if LCD gets turned on/off mid-cycle?
-            self.window.blankScreen()
+            self.window.blank_screen()
             self.setSTATMode(0)
             self.setitem(LY, 0)
 
@@ -283,11 +283,11 @@ class Motherboard():
             elif i == 0xFF46:
                 self.transferDMAtoOAM(value)
             elif i == 0xFF47:
-                self.window.clearCache |= self.lcd.BGP.set(value)
+                self.window.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
-                self.window.clearCache |= self.lcd.OBP0.set(value)
+                self.window.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
-                self.window.clearCache |= self.lcd.OBP1.set(value)
+                self.window.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:

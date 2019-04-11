@@ -12,20 +12,20 @@ class DummyWindow(GenericWindow):
     def __init__(self, scale):
         super(self.__class__, self).__init__(scale)
 
-    def dump(self,filename):
+    def dump(self, filename):
         pass
 
-    def setTitle(self,title):
+    def set_title(self, title):
         if self.enable_title:
             logger.info("DummyWindow set title: %s" % title)
 
-    def getEvents(self):
+    def get_events(self):
         return []
 
-    def updateDisplay(self):
+    def update_display(self):
         pass
 
-    def framelimiter(self, speed):
+    def frame_limiter(self, speed):
         pass
 
     def stop(self):
@@ -34,8 +34,8 @@ class DummyWindow(GenericWindow):
     def scanline(self, y, lcd):
         pass
 
-    def renderScreen(self, lcd):
+    def render_screen(self, lcd):
         pass
 
-    def blankScreen(self):
+    def blank_screen(self):
         pass

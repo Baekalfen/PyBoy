@@ -25,7 +25,7 @@ class PyBoy():
     def __init__(self, win_type, scale, ROM, bootROM = None):
         self.ROM = ROM
         self.debugger = None
-        self.window = window.window.getWindow(win_type, scale)
+        self.window = window.window.getwindow(win_type, scale)
 
         self.profiling = "profiling" in sys.argv
         self.mb = Motherboard(ROM, bootROM, self.window, profiling = self.profiling, debugger = self.debugger)
@@ -45,7 +45,7 @@ class PyBoy():
 
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
-        for event in self.window.getEvents():
+        for event in self.window.get_events():
             if event == windowevent.Quit:
                 done = True
             elif event == windowevent.ReleaseSpeedUp:
@@ -71,7 +71,7 @@ class PyBoy():
                 self.mb.buttonEvent(event)
 
         self.mb.tickFrame()
-        self.window.updateDisplay()
+        self.window.update_display()
 
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.getScreenBuffer())
@@ -79,9 +79,9 @@ class PyBoy():
         t_cpu = time.perf_counter()
 
         if self.limitEmulationSpeed:
-            self.window.framelimiter(1)
+            self.window.frame_limiter(1)
         elif self.maxEmulationSpeed > 0:
-            self.window.framelimiter(self.maxEmulationSpeed)
+            self.window.frame_limiter(self.maxEmulationSpeed)
 
         t_emu = time.perf_counter()
 
@@ -93,7 +93,7 @@ class PyBoy():
 
         if self.counter % 60 == 0:
             text = "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
-            self.window.setTitle(text)
+            self.window.set_title(text)
             self.counter = 0
         self.counter += 1
 
@@ -118,10 +118,10 @@ class PyBoy():
     # Scripts and bot methods
 
     def getScreenBuffer(self):
-        return self.window.getScreenBuffer()
+        return self.window.getscreenbuffer()
 
     def getScreenBufferFormat(self):
-        return self.mb.window.colorFormat
+        return self.mb.window.colorformat
 
     def getMemoryValue(self, addr):
         return self.mb.getitem(addr)
@@ -154,7 +154,7 @@ class PyBoy():
         return self.mb.getSerial()
 
     def disableTitle(self):
-        self.window.disableTitle()
+        self.window.disable_title()
 
     def setLimitEmulationSpeed(self, v, max_speed=0):
         self.limitEmulationSpeed = v

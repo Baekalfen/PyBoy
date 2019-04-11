@@ -7,7 +7,7 @@
 from ..logger import logger
 
 
-gameboyResolution = (160, 144)
+ROWS, COLS = 144, 160
 
 
 class GenericWindow():
@@ -16,16 +16,15 @@ class GenericWindow():
         self._scale = scale
         logger.debug("%s initialization" % self.__class__.__name__)
 
-        self._scaledResolution = tuple([int(x * self._scale) for x in gameboyResolution])
-        logger.debug('Scale: x%s %s' % (self._scale, self._scaledResolution))
+        self._scaledresolution = (scale * COLS, scale * ROWS)
+        logger.debug('Scale: x%s %s' % (self._scale, self._scaledresolution))
 
-        self.colorPalette = (0xFFFFFFFF,0xFF999999,0xFF555555,0xFF000000)
-        self.alphaMask = 0xFF000000
-        self.colorFormat = u"RGBA"
+        self.colorpalette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
+        self.alphamask = 0xFF000000
+        self.colorformat = u"RGBA"
 
-        self.clearCache = False
+        self.clearcache = False
         self.tiles_changed = set([])
-
         self.enable_title = True
 
     def init(self):
@@ -34,16 +33,16 @@ class GenericWindow():
     def dump(self, filename):
         raise NotImplementedError()
 
-    def setTitle(self, title):
+    def set_title(self, title):
         raise NotImplementedError()
 
-    def getEvents(self):
+    def get_events(self):
         raise NotImplementedError()
 
-    def updateDisplay(self):
+    def update_display(self):
         raise NotImplementedError()
 
-    def framelimiter(self, speed):
+    def frame_limiter(self, speed):
         raise NotImplementedError()
 
     def stop(self):
@@ -52,17 +51,17 @@ class GenericWindow():
     def scanline(self, y, lcd):
         raise NotImplementedError()
 
-    def renderScreen(self, lc):
+    def render_screen(self, lc):
         raise NotImplementedError()
 
-    def blankScreen(self):
+    def blank_screen(self):
         pass
 
-    def getScreenBuffer(self):
+    def getscreenbuffer(self):
         raise NotImplementedError()
 
-    def updateCache(self, lcd):
+    def update_cache(self, lcd):
         pass
 
-    def disableTitle(self):
+    def disable_title(self):
         self.enable_title = False
