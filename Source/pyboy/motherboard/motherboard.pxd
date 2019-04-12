@@ -17,7 +17,7 @@ cimport pyboy.window.genericwindow
 
 
 cdef unsigned short STAT, LY, LYC
-cdef short VBlank, LCDC, TIMER, Serial, HightoLow
+cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
@@ -26,30 +26,28 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef class Motherboard:
     cdef object debugger
     cdef pyboy.interaction.Interaction interaction
-    cdef pyboy.bootrom.BootROM bootROM
+    cdef pyboy.bootrom.BootROM bootrom
     cdef pyboy.ram.RAM ram
     cdef pyboy.lcd.LCD lcd
     cdef pyboy.motherboard.cpu.CPU cpu
     cdef pyboy.motherboard.timer.Timer timer
     cdef pyboy.window.genericwindow.GenericWindow window
     cdef pyboy.cartridge.mbc.MBC cartridge
-    cdef bint bootROMEnabled
-    cdef unicode serialBuffer
+    cdef bint bootromenabled
+    cdef unicode serialbuffer
 
-    cdef void buttonEvent(self, int)
+    cdef void buttonevent(self, int)
     cdef void stop(self, bint)
-    cdef void setSTATMode(self, int)
-    cdef void checkLYC(self, int)
+    cdef void set_STAT_mode(self, int)
+    cdef void check_LYC(self, int)
     @cython.locals(cycles=cython.int)
-    cdef void calculateCycles(self, int)
-    cdef void tickFrame(self)
+    cdef void calculate_cycles(self, int)
+    cdef void tickframe(self)
 
     cpdef unsigned char getitem(self, unsigned short)
     cpdef void setitem(self, unsigned short, unsigned char)
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
-    cdef void transferDMAtoOAM(self, unsigned char)
-    cdef void saveState(self, unicode)
-    cdef void loadState(self, unicode)
-    # cdef void saveState(self, char*)
-    # cdef void loadState(self, char*)
+    cdef void transfer_DMA(self, unsigned char)
+    cdef void save_state(self, unicode)
+    cdef void load_state(self, unicode)

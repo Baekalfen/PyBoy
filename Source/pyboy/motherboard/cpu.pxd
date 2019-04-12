@@ -26,21 +26,34 @@ cdef class CPU:
     cdef int[512] hitRate
 
     @cython.locals(intr_flag_enabled=cython.bint, intr_flag=cython.bint)
-    cdef bint testInterrupt(self, unsigned char, unsigned char, short)
+    cdef bint test_interrupt(self, unsigned char, unsigned char, short)
 
-    @cython.locals(anyInterruptToHandle=cython.bint, ie_v=cython.uchar, if_v=cython.uchar, v=cython.uchar, intr_flag=cython.bint, intr_flag_enabled=cython.bint, flag=cython.short, vector=cython.ushort)
-    cdef int checkForInterrupts(self)
+    @cython.locals(
+        anyInterruptToHandle=cython.bint,
+        ie_v=cython.uchar,
+        if_v=cython.uchar,
+        v=cython.uchar,
+        intr_flag=cython.bint,
+        intr_flag_enabled=cython.bint,
+        flag=cython.short,
+        vector=cython.ushort)
+    cdef int checkforinterrupts(self)
 
     @cython.locals(opcode=cython.ushort)
-    cdef char fetchAndExecuteInstruction(self, unsigned int)
+    cdef char fetch_and_execute(self, unsigned int)
     cdef int tick(self)
+    cdef void save_state(self, file)
+    cdef void load_state(self, file)
 
-    cdef void saveState(self, file)
-    cdef void loadState(self, file)
+    # Only char (8-bit) needed, but I'm not sure all intermittent
+    # results do not overflow
+    cdef short A, F, B, C, D, E
 
-    cdef short A, F, B, C, D, E # Only char (8-bit) needed, but I'm not sure all intermittent results do not overflow
-    cdef int HL, SP, PC # Only short (16-bit) needed, but I'm not sure all intermittent results do not overflow
-    cdef pyboy.motherboard.motherboard.Motherboard mb
+    # Only short (16-bit) needed, but I'm not sure all intermittent
+    # results do not overflow
+    cdef int HL, SP, PC
+
+    cdef pyboy.motherboard.motherboard.Motherboard motherboard
 
     cdef void setBC(CPU, int x)
     cdef void setDE(CPU, int x)
@@ -53,16 +66,16 @@ cdef class CPU:
     cdef bint fNZ(self)
 
     ### CPU Flags
-    cdef bint testFlag(self, int flag)
-    cdef void setFlag(self, int flag, bint value=*)
-    cdef void clearFlag(self, int flag)
+    cdef bint test_flag(self, int flag)
+    cdef void set_flag(self, int flag, bint value=*)
+    cdef void clear_flag(self, int flag)
 
     ### Interrupt flags
-    cdef void setInterruptFlag(self, int flag)
+    cdef void set_interruptflag(self, int flag)
 
     @cython.locals(v=cython.int)
-    cdef bint testRAMRegisterFlag(self, int address, int flag)
-    cdef void setRAMRegisterFlag(self, int address, int flag, bint value=*)
-    cdef void clearRAMRegisterFlag(self, int address, int flag)
+    cdef bint test_ramregisterflag(self, int address, int flag)
+    cdef void set_ramregisterflag(self, int address, int flag, bint value=*)
+    cdef void clear_ramregisterflag(self, int address, int flag)
     @cython.locals(v=cython.int)
-    cdef bint testRAMRegisterFlagEnabled(self, int address, int flag)
+    cdef bint test_ramregisterflag_enabled(self, int address, int flag)

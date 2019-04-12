@@ -20,15 +20,15 @@ cdef float SPF
 cdef class PyBoy:
     cdef object debugger
     cdef unicode ROM
-    cdef Motherboard mb
+    cdef Motherboard motherboard
     cdef GenericWindow window
 
     cdef bint profiling
     cdef double avg_emu
     cdef double avg_cpu
     cdef unsigned int counter
-    cdef bint limitEmulationSpeed
-    cdef int maxEmulationSpeed
+    cdef bint limit_emulationspeed
+    cdef int emulationspeed, max_emulationspeed
     cdef object screen_recorder
 
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
@@ -39,7 +39,6 @@ cdef class PyBoy:
 #    ###########################
 #    #
 #    # Scripts and bot methods
-
 #    cpdef object getScreenBuffer(self)
 #    cpdef unsigned char getMemoryValue(self, unsigned short)
 #    cpdef void setMemoryValue(self, unsigned short, unsigned char)

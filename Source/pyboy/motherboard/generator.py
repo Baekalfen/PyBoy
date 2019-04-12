@@ -134,9 +134,9 @@ class Operand:
         if operand == "(C)":
             self.highpointer = True
             if assign:
-                return "cpu.mb.setitem(0xFF00 + cpu.C, %s)"
+                return "cpu.motherboard.setitem(0xFF00 + cpu.C, %s)"
             else:
-                return "cpu.mb.getitem(0xFF00 + cpu.C)"
+                return "cpu.motherboard.getitem(0xFF00 + cpu.C)"
 
         elif operand == "SP+r8":
             self.immediate = True
@@ -148,10 +148,10 @@ class Operand:
         elif operand.startswith('(') and operand.endswith(')'):
             self.pointer = True
             if assign:
-                code = "cpu.mb.setitem(%s" % self.codegen(False, operand=re.search(
+                code = "cpu.motherboard.setitem(%s" % self.codegen(False, operand=re.search(
                     '\(([a-zA-Z]+\d*)[\+-]?\)', operand).group(1)) + ", %s)"  # noqa: W605
             else:
-                code = "cpu.mb.getitem(%s)" % self.codegen(False, operand=re.search(
+                code = "cpu.motherboard.getitem(%s)" % self.codegen(False, operand=re.search(
                     '\(([a-zA-Z]+\d*)[\+-]?\)', operand).group(1))  # noqa: W605
 
             if '-' in operand or '+' in operand:
@@ -761,18 +761,19 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
             code.addlines([
-                "cpu.mb.setitem(cpu.SP-1, cpu.HL >> 8)  # High",
-                "cpu.mb.setitem(cpu.SP-2, cpu.HL & 0xFF)  # Low",
+                "cpu.motherboard.setitem(cpu.SP-1, cpu.HL >> 8)  # High",
+                "cpu.motherboard.setitem(cpu.SP-2, cpu.HL & 0xFF)  # Low",
                 "cpu.SP -= 2"])
         else:
             # A bit of a hack, but you can only push double registers
-            code.addline("cpu.mb.setitem(cpu.SP-1, cpu.%s)  # High" % left.operand[-2])
+            code.addline("cpu.motherboard.setitem(cpu.SP-1, cpu.%s)  # High" % left.operand[-2])
             if left.operand == "AF":
                 # by taking fx 'A' and 'F' directly, we save calculations
-                code.addline("cpu.mb.setitem(cpu.SP-2, cpu.%s & 0xF0)  # Low" % left.operand[-1])
+                code.addline("cpu.motherboard.setitem(cpu.SP-2, cpu.%s & 0xF0)  # Low"
+                             % left.operand[-1])
             else:
                 # by taking fx 'A' and 'F' directly, we save calculations
-                code.addline("cpu.mb.setitem(cpu.SP-2, cpu.%s)  # Low" % left.operand[-1])
+                code.addline("cpu.motherboard.setitem(cpu.SP-2, cpu.%s)  # Low" % left.operand[-1])
             code.addline("cpu.SP -= 2")
 
         return code.getcode()
@@ -783,21 +784,21 @@ class OpcodeData:
 
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
-            code.addlines([
-                (left.set % "(cpu.mb.getitem(cpu.SP+1) << 8) + cpu.mb.getitem(cpu.SP)") + "# High",
-                "cpu.SP += 2"])
+            code.addlines([(left.set % "(cpu.motherboard.getitem(cpu.SP+1) << 8) + "
+                            "cpu.motherboard.getitem(cpu.SP)") + "# High",
+                           "cpu.SP += 2"])
         else:
             if left.operand.endswith('F'):  # Catching AF
                 fmask = " & 0xF0"
             else:
                 fmask = ""
             # See comment from PUSH
-            code.addline("cpu.%s = cpu.mb.getitem(cpu.SP+1) # High" % left.operand[-2])
+            code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP+1) # High" % left.operand[-2])
             if left.operand == "AF":
-                code.addline("cpu.%s = cpu.mb.getitem(cpu.SP)%s & 0xF0  # Low"
+                code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP)%s & 0xF0  # Low"
                              % (left.operand[-1], fmask))
             else:
-                code.addline("cpu.%s = cpu.mb.getitem(cpu.SP)%s  # Low"
+                code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP)%s  # Low"
                              % (left.operand[-1], fmask))
             code.addline("cpu.SP += 2")
 
@@ -916,16 +917,16 @@ class OpcodeData:
 
         if left is None:
             code.addlines([
-                "cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
-                "cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
+                "cpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
+                "cpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
                 "cpu.SP -= 2",
                 "cpu.PC = %s" % ('v' if right.immediate else right.get),
                 "return " + self.cycles[0]])
         else:
             code.addlines([
                 "if %s:" % l_code,
-                "\tcpu.mb.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
-                "\tcpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
+                "\tcpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
+                "\tcpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
                 "\tcpu.SP -= 2",
                 "\tcpu.PC = %s" % ('v' if right.immediate else right.get),
                 "\treturn " + self.cycles[0],
@@ -952,15 +953,15 @@ class OpcodeData:
                     branch_op=True)
         if left is None:
             code.addlines([
-                "cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8  # High",
-                "cpu.PC |= cpu.mb.getitem(cpu.SP)  # Low",
+                "cpu.PC = cpu.motherboard.getitem(cpu.SP+1) << 8  # High",
+                "cpu.PC |= cpu.motherboard.getitem(cpu.SP)  # Low",
                 "cpu.SP += 2",
                 "return " + self.cycles[0]])
         else:
             code.addlines([
                 "if %s:" % l_code,
-                "\tcpu.PC = cpu.mb.getitem(cpu.SP+1) << 8  # High",
-                "\tcpu.PC |= cpu.mb.getitem(cpu.SP)  # Low",
+                "\tcpu.PC = cpu.motherboard.getitem(cpu.SP+1) << 8  # High",
+                "\tcpu.PC |= cpu.motherboard.getitem(cpu.SP)  # Low",
                 "\tcpu.SP += 2",
                 "\treturn " + self.cycles[0],
                 "else:",
@@ -975,8 +976,8 @@ class OpcodeData:
                     branch_op=True)
         code.addline("cpu.interruptmasterenable = True")
         code.addlines([
-            "cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8  # High",
-            "cpu.PC |= cpu.mb.getitem(cpu.SP)  # Low",
+            "cpu.PC = cpu.motherboard.getitem(cpu.SP+1) << 8  # High",
+            "cpu.PC |= cpu.motherboard.getitem(cpu.SP)  # Low",
             "cpu.SP += 2",
             "return " + self.cycles[0]])
 
@@ -992,8 +993,8 @@ class OpcodeData:
         # Taken from PUSH and CALL
         code.addlines([
             "cpu.PC += %s" % self.length,
-            "cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
-            "cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
+            "cpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8) # High",
+            "cpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
             "cpu.SP -= 2"])
 
         code.addlines([
@@ -1193,12 +1194,12 @@ def execute_opcode(cpu, opcode):
     pc = cpu.PC
     if oplen == 2:
         # 8-bit immediate
-        v = cpu.mb.getitem(pc+1)
+        v = cpu.motherboard.getitem(pc+1)
     elif oplen == 3:
         # 16-bit immediate
         # Flips order of values due to big-endian
-        a = cpu.mb.getitem(pc+2)
-        b = cpu.mb.getitem(pc+1)
+        a = cpu.motherboard.getitem(pc+2)
+        b = cpu.motherboard.getitem(pc+1)
         v = (a << 8) + b
 
 """)

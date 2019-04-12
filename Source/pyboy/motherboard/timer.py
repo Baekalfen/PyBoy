@@ -20,29 +20,28 @@
 
 class Timer():
     def __init__(self):
-        self.DIV = 0 # Always showing self.counter with mode 3 divider
-        self.TIMA = 0 # Can be set from RAM 0xFF05
-        self.DIVcounter = 0
-        self.TIMAcounter = 0
+        self.DIV = 0  # Always showing self.counter with mode 3 divider
+        self.TIMA = 0  # Can be set from RAM 0xFF05
+        self.DIV_counter = 0
+        self.TIMA_counter = 0
         self.TMA = 0
         self.TAC = 0
         self.dividers = [1024, 16, 64, 256]
 
     def tick(self, cycles):
-        self.DIVcounter += cycles
-        self.DIV += (self.DIVcounter >> 8) # Add the overflown bits to DIV
-        self.DIVcounter &= 0xFF # Remove the overflown bits
+        self.DIV_counter += cycles
+        self.DIV += (self.DIV_counter >> 8)  # Add overflown bits to DIV
+        self.DIV_counter &= 0xFF  # Remove the overflown bits
         self.DIV &= 0xFF
 
-        if self.TAC & 0b100 == 0: # Check if timer is not enabled
+        if self.TAC & 0b100 == 0:  # Check if timer is not enabled
             return False
 
-
-        self.TIMAcounter += cycles
+        self.TIMA_counter += cycles
         divider = self.dividers[self.TAC & 0b11]
 
-        if self.TIMAcounter >= divider:
-            self.TIMAcounter -= divider # Keeps possible remainder
+        if self.TIMA_counter >= divider:
+            self.TIMA_counter -= divider  # Keeps possible remainder
             self.TIMA += 1
 
             if self.TIMA > 0xFF:
@@ -52,12 +51,13 @@ class Timer():
 
         return False
 
-    def cyclesToInterrupt(self):
-        if self.TAC & 0b100 == 0: # Check if timer is not enabled
-            return 1<<16 # Large enough, that 'calculateCycles' will choose 'x'
+    def cyclestointerrupt(self):
+        if self.TAC & 0b100 == 0:  # Check if timer is not enabled
+            # Large enough, that 'calculate_cycles' will choose 'x'
+            return 1 << 16
 
         divider = self.dividers[self.TAC & 0b11]
 
-        cyclesLeft = ((0x100 - self.TIMA) * divider) - self.TIMAcounter
+        cyclesleft = ((0x100 - self.TIMA) * divider) - self.TIMA_counter
 
-        return cyclesLeft
+        return cyclesleft

@@ -7,26 +7,20 @@
 import sys
 
 
-from ..logger import logger
-from . import timer
 from . import cpu
-from .. import ram, bootrom, interaction, cartridge, lcd
+from . import timer
+from .. import bootrom, cartridge, interaction, lcd, ram
+from ..logger import logger
 
 
-VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
-
-# # from CPU.flags import VBlank, TIMER, HightoLow, LCDC
-# VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
-
-STAT = 0xFF41
-LY = 0xFF44
-LYC = 0xFF45
+VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
+STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard():
-    def __init__(self, gameROMFile, bootROMFile, window, profiling=False,
+    def __init__(self, gameromfile, bootromfile, window, profiling=False,
                  debugger=None):
-        if bootROMFile is not None:
+        if bootromfile is not None:
             logger.info("Boot-ROM file provided")
 
         if profiling:
@@ -36,154 +30,149 @@ class Motherboard():
         self.window = window
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
-        self.cartridge = cartridge.cartridge.Cartridge(gameROMFile)
-        self.bootROM = bootrom.BootROM(bootROMFile)
+        self.cartridge = cartridge.cartridge.Cartridge(gameromfile)
+        self.bootrom = bootrom.BootROM(bootromfile)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD(window.colorpalette)
-        self.bootROMEnabled = True
+        self.bootromenabled = True
 
         if "loadState" in sys.argv:
-            self.loadState(gameROMFile + ".state")
+            self.load_state(gameromfile + ".state")
 
-        self.serialBuffer = u''
+        self.serialbuffer = u''
 
-    def getSerial(self):
-        b = self.serialBuffer
-        self.serialBuffer = u''
+    def getserial(self):
+        b = self.serialbuffer
+        self.serialbuffer = u''
         return b
 
-    def buttonEvent(self, key):
-        self.interaction.keyEvent(key)
-        self.cpu.setInterruptFlag(HightoLow)
+    def buttonevent(self, key):
+        self.interaction.key_event(key)
+        self.cpu.set_interruptflag(HIGHTOLOW)
 
     def stop(self, save):
         self.window.stop()
         if save:
             self.cartridge.stop()
 
-    def saveState(self, filename):
+    def save_state(self, filename):
         logger.info("Saving state...")
         with open(filename, "wb") as f:
-            f.write(self.bootROMEnabled.to_bytes(1, 'little'))
-            self.cpu.saveState(f)
-            self.lcd.saveState(f)
-            self.ram.saveState(f)
+            f.write(self.bootromenabled.to_bytes(1, 'little'))
+            self.cpu.save_state(f)
+            self.lcd.save_state(f)
+            self.ram.save_state(f)
             self.cartridge.save_state(f)
         logger.info("State saved.")
 
-    def loadState(self, filename):
+    def load_state(self, filename):
         logger.info("Loading state...")
         with open(filename, "rb") as f:
-            self.bootROMEnabled = ord(f.read(1))
-            self.cpu.loadState(f)
-            self.lcd.loadState(f)
-            self.ram.loadState(f)
+            self.bootromenabled = ord(f.read(1))
+            self.cpu.load_state(f)
+            self.lcd.load_state(f)
+            self.ram.load_state(f)
             self.cartridge.load_state(f)
         logger.info("State loaded.")
 
         self.window.clearcache = True
         self.window.update_cache(self.lcd)
 
-    #########################
-    ## Coordinator
+    ###################################################################
+    # Coordinator
+    #
+    def set_STAT_mode(self, mode):
+        self.setitem(STAT, self.getitem(STAT) & 0b11111100)  # Clearing 2 LSB
+        self.setitem(STAT, self.getitem(STAT) | mode)  # Apply mode to LSB
 
-    def setSTATMode(self, mode):
-        self.setitem(STAT, self.getitem(STAT) & 0b11111100) # Clearing 2 LSB
-        self.setitem(STAT, self.getitem(STAT) | mode) # Apply mode to LSB
+        # Mode "3" is not interruptable
+        if self.cpu.test_ramregisterflag(STAT, mode + 3) and mode != 3:
+            self.cpu.set_interruptflag(LCDC)
 
-        if self.cpu.testRAMRegisterFlag(STAT,mode+3) and mode != 3: # Mode "3" is not interruptable
-        # if self.cpu.testSTATFlag(mode+3) and mode != 3: # Mode "3" is not interruptable
-            self.cpu.setInterruptFlag(LCDC)
-
-    def checkLYC(self, y):
+    def check_LYC(self, y):
         self.setitem(LY, y)
         if self.getitem(LYC) == y:
-            self.setitem(STAT, self.getitem(STAT) | 0b100) # Sets the LYC flag
+            self.setitem(STAT, self.getitem(STAT) | 0b100)  # Sets the LYC flag
             if self.getitem(STAT) & 0b01000000:
-                self.cpu.setInterruptFlag(LCDC)
+                self.cpu.set_interruptflag(LCDC)
         else:
             self.setitem(STAT, self.getitem(STAT) & 0b11111011)
 
-    def calculateCycles(self, x):
+    def calculate_cycles(self, x):
         while x > 0:
             cycles = self.cpu.tick()
 
             # TODO: Benchmark whether 'if' and 'try/except' is better
-            if cycles == -1: # CPU has HALTED
+            if cycles == -1:  # CPU has HALTED
                 # Fast-forward to next interrupt:
                 # VBLANK and LCDC are covered by just returning.
                 # Timer has to be determined.
-                # As we are halted, we are guaranteed, that
-                # our state cannot be altered by other factors
-                # than time.
-                # For HiToLo interrupt it is indistinguishable
-                # whether it gets triggered mid-frame or by next
-                # frame
+                # As we are halted, we are guaranteed, that our state
+                # cannot be altered by other factors than time.
+                # For HiToLo interrupt it is indistinguishable whether
+                # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
-                cycles = min(self.timer.cyclesToInterrupt(), x)
+                cycles = min(self.timer.cyclestointerrupt(), x)
 
                 # Profiling
                 if self.cpu.profiling:
-                    self.cpu.hitRate[0x76] += cycles//4
+                    self.cpu.hitrate[0x76] += cycles//4
 
             x -= cycles
             if self.timer.tick(cycles):
-                self.cpu.setInterruptFlag(TIMER)
+                self.cpu.set_interruptflag(TIMER)
 
-    def tickFrame(self):
-        lcdEnabled = self.lcd.LCDC.enabled
-        if lcdEnabled:
+    def tickframe(self):
+        lcdenabled = self.lcd.LCDC.enabled
+        if lcdenabled:
             self.window.update_cache(self.lcd)
 
             # TODO: the 19, 41 and 49._ticks should correct for longer instructions
             # Iterate the 144 lines on screen
             for y in range(144):
-                self.checkLYC(y)
+                self.check_LYC(y)
 
                 # Mode 2
-                self.setSTATMode(2)
-                self.calculateCycles(80)
-                # Mode 3
-                self.setSTATMode(3)
-                self.calculateCycles(170)
+                self.set_STAT_mode(2)
+                self.calculate_cycles(80)
 
+                # Mode 3
+                self.set_STAT_mode(3)
+                self.calculate_cycles(170)
                 self.window.scanline(y, self.lcd)
 
                 # Mode 0
-                self.setSTATMode(0)
-                self.calculateCycles(206)
+                self.set_STAT_mode(0)
+                self.calculate_cycles(206)
 
-            self.cpu.setInterruptFlag(VBlank)
-
-            self.window.render_screen(self.lcd) # Actually render screen from scanline parameters
+            self.cpu.set_interruptflag(VBLANK)
+            self.window.render_screen(self.lcd)
 
             # Wait for next frame
-            for y in range(144,154):
-                self.checkLYC(y)
+            for y in range(144, 154):
+                self.check_LYC(y)
 
                 # Mode 1
-                self.setSTATMode(1)
-                self.calculateCycles(456)
+                self.set_STAT_mode(1)
+                self.calculate_cycles(456)
         else:
-            # https://www.reddit.com/r/EmuDev/comments/6r6gf3/gb_pokemon_gold_spews_unexpected_values_at_mbc/
+            # https://www.reddit.com/r/EmuDev/comments/6r6gf3
             # TODO: What happens if LCD gets turned on/off mid-cycle?
             self.window.blank_screen()
-            self.setSTATMode(0)
+            self.set_STAT_mode(0)
             self.setitem(LY, 0)
 
             for y in range(154):
-                self.calculateCycles(456)
+                self.calculate_cycles(456)
 
-
-
-    ########################
-    ## MemoryManager
-
+    ###################################################################
+    # MemoryManager
+    #
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-            if i <= 0xFF and self.bootROMEnabled:
-                return self.bootROM.getitem(i)
+            if i <= 0xFF and self.bootromenabled:
+                return self.bootrom.getitem(i)
             else:
                 return self.cartridge.getitem(i)
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
@@ -197,7 +186,7 @@ class Motherboard():
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
-        elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
+        elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.ram.nonIOInternalRAM0[i - 0xFEA0]
@@ -210,7 +199,6 @@ class Motherboard():
                 return self.timer.TMA
             elif i == 0xFF07:
                 return self.timer.TAC
-
             elif i == 0xFF40:
                 return self.lcd.LCDC.value
             elif i == 0xFF42:
@@ -236,27 +224,30 @@ class Motherboard():
         elif i == 0xFFFF:  # Interrupt Enable Register
             return self.ram.interruptRegister[0]
         else:
-            raise Exception("Memory access violation. Tried to read: %s" % hex(i))
+            raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
 
-    def setitem(self,i,value):
-        assert value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value),hex(i))
+    def setitem(self, i, value):
+        if value > 0xFF:
+            raise ValueError("Memory write error! Can't write %s to %s" % (hex(value), hex(i)))
 
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-            self.cartridge.setitem(i, value) #Doesn't change the data. This is for MBC commands
+            # Doesn't change the data. This is for MBC commands
+            self.cartridge.setitem(i, value)
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
-            self.cartridge.setitem(i, value) #Doesn't change the data. This is for MBC commands
+            # Doesn't change the data. This is for MBC commands
+            self.cartridge.setitem(i, value)
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
             self.lcd.VRAM[i - 0x8000] = value
-            if i < 0x9800: # Is within tile data -- not tile maps
-                self.window.tiles_changed.add(i & 0xFFF0) # Mask out the byte of the tile
+            if i < 0x9800:  # Is within tile data -- not tile maps
+                # Mask out the byte of the tile
+                self.window.tiles_changed.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             self.ram.internalRAM0[i - 0xC000] = value
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
-            # Redirect to internal RAM
-            self.setitem(i - 0x2000, value)
-        elif 0xFE00 <= i < 0xFEA0:  # Sprite Attrib Memory (OAM)
+            self.setitem(i - 0x2000, value)  # Redirect to internal RAM
+        elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             self.lcd.OAM[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             self.ram.nonIOInternalRAM0[i - 0xFEA0] = value
@@ -264,7 +255,7 @@ class Motherboard():
             if i == 0xFF00:
                 self.ram.IOPorts[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
-                self.serialBuffer += chr(value)
+                self.serialbuffer += chr(value)
                 self.ram.IOPorts[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.DIV = 0
@@ -281,7 +272,7 @@ class Motherboard():
             elif i == 0xFF43:
                 self.lcd.SCX = value
             elif i == 0xFF46:
-                self.transferDMAtoOAM(value)
+                self.transfer_DMA(value)
             elif i == 0xFF47:
                 self.window.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
@@ -295,8 +286,8 @@ class Motherboard():
             else:
                 self.ram.IOPorts[i - 0xFF00] = value
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
-            if self.bootROMEnabled and i == 0xFF50 and value == 1:
-                self.bootROMEnabled = False
+            if self.bootromenabled and i == 0xFF50 and value == 1:
+                self.bootromenabled = False
             self.ram.nonIOInternalRAM1[i - 0xFF4C] = value
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
             self.ram.internalRAM1[i-0xFF80] = value
@@ -305,10 +296,10 @@ class Motherboard():
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 
-    def transferDMAtoOAM(self, src):
+    def transfer_DMA(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
         # TODO: Add timing delay of 160µs and disallow access to RAM!
-        dst=0xFE00
+        dst = 0xFE00
         offset = src * 0x100
-        for n in range(0x00,0xA0):
+        for n in range(0xA0):
             self.setitem(dst + n, self.getitem(n + offset))

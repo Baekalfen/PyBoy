@@ -40,7 +40,7 @@ class RTC():
     def save_state(self, f):
         f.write(struct.pack('f', self.timezero))
         f.write(self.halt.to_bytes(1, 'little'))
-        f.write(self.dayCarry.to_bytes(1, 'little'))
+        f.write(self.daycarry.to_bytes(1, 'little'))
         logger.info("RTC saved.")
 
     def load_state(self, f):
