@@ -6,20 +6,20 @@
 
 cdef class RTC:
     cdef unicode filename
-    cdef bint latchEnabled
-    cdef double timeZero
-    cdef unsigned int secLatch
-    cdef unsigned int minLatch
-    cdef unsigned int hourLatch
-    cdef unsigned int dayLatchLow
-    cdef unsigned int dayLatchHigh
-    cdef unsigned int dayCarry
+    cdef bint latchenabled
+    cdef double timezero
+    cdef unsigned int seclatch
+    cdef unsigned int minlatch
+    cdef unsigned int hourlatch
+    cdef unsigned int daylatchlow
+    cdef unsigned int daylatchhigh
+    cdef unsigned int daycarry
     cdef unsigned int halt
 
     cdef void stop(self)
-    cdef void saveState(self, file)
-    cdef void loadState(self, file)
-    cdef void latchRTC(self)
-    cdef void writeCommand(self, unsigned char)
-    cdef unsigned char getRegister(self, unsigned char)
-    cdef void setRegister(self, unsigned char, unsigned char)
+    cdef void save_state(self, file)
+    cdef void load_state(self, file)
+    cdef void latch_rtc(self)
+    cdef void writecommand(self, unsigned char)
+    cdef unsigned char getregister(self, unsigned char)
+    cdef void setregister(self, unsigned char, unsigned char)

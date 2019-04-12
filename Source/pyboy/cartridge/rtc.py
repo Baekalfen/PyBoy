@@ -3,9 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 
 
-import time
 import os
 import struct
+import time
+
 from ..logger import logger
 
 
@@ -17,106 +18,109 @@ class RTC():
             logger.info("No RTC file found. Skipping.")
         else:
             with open(self.filename, "rb") as f:
-                self.loadState(f)
+                self.load_state(f)
 
-        self.latchEnabled = False
+        self.latchenabled = False
 
-        self.timeZero = time.time()
+        self.timezero = time.time()
 
-        self.secLatch = 0
-        self.minLatch = 0
-        self.hourLatch = 0
-        self.dayLatchLow = 0
+        self.seclatch = 0
+        self.minlatch = 0
+        self.hourlatch = 0
+        self.daylatchlow = 0
 
-        self.dayLatchHigh = 0
-        self.dayCarry = 0
+        self.daylatchhigh = 0
+        self.daycarry = 0
         self.halt = 0
 
     def stop(self):
         with open(self.filename, "wb") as f:
-            self.saveState(f)
+            self.save_state(f)
 
-    def saveState(self, f):
-        f.write(struct.pack('f', self.timeZero))
+    def save_state(self, f):
+        f.write(struct.pack('f', self.timezero))
         f.write(self.halt.to_bytes(1, 'little'))
         f.write(self.dayCarry.to_bytes(1, 'little'))
         logger.info("RTC saved.")
 
-    def loadState(self, f):
-        self.timeZero = struct.unpack('f',f.read(4))[0]
+    def load_state(self, f):
+        self.timezero = struct.unpack('f',f.read(4))[0]
         self.halt = ord(f.read(1))
-        self.dayCarry = ord(f.read(1))
+        self.daycarry = ord(f.read(1))
         logger.info("RTC loaded.")
 
-    def latchRTC(self):
-        t = time.time() - self.timeZero
-        self.secLatch = int(t % 60)
-        self.minLatch = int(t / 60 % 60)
-        self.hourLatch = int(t / 3600 % 24)
+    def latch_rtc(self):
+        t = time.time() - self.timezero
+        self.seclatch = int(t % 60)
+        self.minlatch = int(t / 60 % 60)
+        self.hourlatch = int(t / 3600 % 24)
         days = int(t / 3600 / 24)
-        self.dayLatchLow = days & 0xFF
-        self.dayLatchHigh = days >> 8
+        self.daylatchlow = days & 0xFF
+        self.daylatchhigh = days >> 8
 
-        if self.dayLatchHigh > 1:
-            self.dayCarry = 1
-            self.dayLatchHigh &= 0b1
-            self.timeZero += 0x200 * 3600 * 24 # Add 0x200 (512) days to "reset" the day counter to zero
+        if self.daylatchhigh > 1:
+            self.daycarry = 1
+            self.daylatchhigh &= 0b1
+            # Add 0x200 (512) days to "reset" the day counter to zero
+            self.timezero += 0x200 * 3600 * 24
 
-    def writeCommand(self, value):
+    def writecommand(self, value):
         if value == 0x00:
-            self.latchEnabled = False
+            self.latchenabled = False
         elif value == 0x01:
-            if not self.latchEnabled:
-                self.latchRTC()
-            self.latchEnabled = True
+            if not self.latchenabled:
+                self.latch_rtc()
+            self.latchenabled = True
         else:
             logger.warning("Invalid RTC command: %0.2x" % value)
 
-    def getRegister(self, register):
-        if not self.latchEnabled:
+    def getregister(self, register):
+        if not self.latchenabled:
             logger.info("RTC: Get register, but nothing is latched! 0x%0.2x" % register)
 
         if register == 0x08:
-            return self.secLatch
+            return self.seclatch
         elif register == 0x09:
-            return self.minLatch
+            return self.minlatch
         elif register == 0x0A:
-            return self.hourLatch
+            return self.hourlatch
         elif register == 0x0B:
-            return self.dayLatchLow
+            return self.daylatchlow
         elif register == 0x0C:
-            dayHigh = self.dayLatchHigh & 0b1
+            dayhigh = self.daylatchhigh & 0b1
             halt = self.halt << 6
-            dayCarry = self.dayCarry << 7
-            return dayHigh + halt + dayCarry
+            daycarry = self.daycarry << 7
+            return dayhigh + halt + daycarry
         else:
             logger.warning("Invalid RTC register: %0.4x" % (register))
 
-    def setRegister(self, register, value):
-        if not self.latchEnabled:
-            logger.info("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x" % (register, value))
+    def setregister(self, register, value):
+        if not self.latchenabled:
+            logger.info("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x"
+                        % (register, value))
 
-        t = time.time() - self.timeZero
+        t = time.time() - self.timezero
         if register == 0x08:
-            self.timeZero -= int(t % 60) - value # TODO: What happens, when these value are larger than allowed?
+            # TODO: What happens, when these value are larger than allowed?
+            self.timezero -= int(t % 60) - value
         elif register == 0x09:
-            self.timeZero -= int(t / 60 % 60) - value
+            self.timezero -= int(t / 60 % 60) - value
         elif register == 0x0A:
-            self.timeZero -= int(t / 3600 % 24) - value
+            self.timezero -= int(t / 3600 % 24) - value
         elif register == 0x0B:
-            self.timeZero -= int(t / 3600 / 24) - value
+            self.timezero -= int(t / 3600 / 24) - value
         elif register == 0x0C:
-            dayHigh = value & 0b1
+            dayhigh = value & 0b1
             halt = (value & 0b1000000) >> 6
-            dayCarry = (value & 0b10000000) >> 7
+            daycarry = (value & 0b10000000) >> 7
 
             self.halt = halt
             if self.halt == 0:
-                pass # TODO: Start the timer
+                pass  # TODO: Start the timer
             else:
                 logger.warning("Stopping RTC is not implemented!")
 
-            self.timeZero -= int(t / 3600 / 24) - (dayHigh<<8)
-            self.dayCarry = dayCarry
+            self.timezero -= int(t / 3600 / 24) - (dayhigh << 8)
+            self.daycarry = daycarry
         else:
             logger.warning("Invalid RTC register: %0.4x %0.2x" % (register, value))
