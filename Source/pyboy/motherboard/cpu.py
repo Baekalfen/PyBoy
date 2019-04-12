@@ -9,10 +9,10 @@ import array
 from . import opcodes
 
 
-flagC, flagH, flagN, flagZ = range(4, 8)
-VBlank, LCDC, TIMER, Serial, HightoLow = range(5)
-IF_address = 0xFF0F
-IE_address = 0xFFFF
+FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
+VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
+IF_ADDRESS = 0xFF0F
+IE_ADDRESS = 0xFFFF
 
 
 class CPU():
@@ -26,7 +26,7 @@ class CPU():
         self.D = x >> 8
         self.E = x & 0x00FF
 
-    ### CPU Flags
+    # CPU Flags
     def testFlag(self, flag):
         return (self.F & (1 << flag)) != 0
 
@@ -38,9 +38,9 @@ class CPU():
     def clearFlag(self, flag):
         self.F = (self.F & (0xFF - (1 << flag)))
 
-    ### Interrupt flags
+    # Interrupt flags
     def setInterruptFlag(self, flag):
-        self.mb.setitem(IF_address, self.mb.getitem(IF_address) | (1 << flag))
+        self.mb.setitem(IF_ADDRESS, self.mb.getitem(IF_ADDRESS) | (1 << flag))
 
     def testRAMRegisterFlag(self, address, flag):
         v = self.mb.getitem(address)
@@ -68,9 +68,9 @@ class CPU():
             # Clear interrupt flag
             self.mb.setitem(0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
 
-            self.interruptMasterEnable = False
+            self.interruptmasterenable = False
             if self.halted:
-                self.PC += 1 # Escape HALT on return
+                self.PC += 1  # Escape HALT on return
                 # self.CPU_PUSH(self.PC+1)
             # else:
                 # self.CPU_PUSH(self.PC)
@@ -85,20 +85,20 @@ class CPU():
         return False
 
     def checkForInterrupts(self):
-        #GPCPUman.pdf p. 40 about priorities
+        # GPCPUman.pdf p. 40 about priorities
         # If an interrupt occours, the PC is pushed to the stack.
         # It is up to the interrupt routine to return it.
-        if not self.interruptMasterEnable:
+        if not self.interruptmasterenable:
             return False
 
         # 0xFF0F (IF_address) - Bit 0-4 Requested interrupts
-        if_v = self.mb.getitem(IF_address)
+        if_v = self.mb.getitem(IF_ADDRESS)
         # 0xFFFF (IE_address) - Bit 0-4 Enabling interrupt vectors
-        ie_v = self.mb.getitem(IE_address)
+        ie_v = self.mb.getitem(IE_ADDRESS)
 
         # Better to make a long check, than run through 5 if statements
         if ((if_v & 0b11111) & (ie_v & 0b11111)) != 0:
-            if self.testInterrupt(if_v, ie_v, VBlank):
+            if self.testInterrupt(if_v, ie_v, VBLANK):
                 self.PC = 0x0040
                 return True
             elif self.testInterrupt(if_v, ie_v, LCDC):
@@ -107,10 +107,10 @@ class CPU():
             elif self.testInterrupt(if_v, ie_v, TIMER):
                 self.PC = 0x0050
                 return True
-            elif self.testInterrupt(if_v, ie_v, Serial):
+            elif self.testInterrupt(if_v, ie_v, SERIAL):
                 self.PC = 0x0058
                 return True
-            elif self.testInterrupt(if_v, ie_v, HightoLow):
+            elif self.testInterrupt(if_v, ie_v, HIGHTOLOW):
                 self.PC = 0x0060
                 return True
             # flags_vectors = [(VBlank, 0x0040), (LCDC, 0x0048), (TIMER, 0x0050), (Serial, 0x0058), (HightoLow, 0x0060)]
@@ -118,24 +118,23 @@ class CPU():
 
         return False
 
-
     def fC(self):
-        return (self.F & (1 << flagC)) != 0
+        return (self.F & (1 << FLAGC)) != 0
 
     def fH(self):
-        return (self.F & (1 << flagH)) != 0
+        return (self.F & (1 << FLAGH)) != 0
 
     def fN(self):
-        return (self.F & (1 << flagN)) != 0
+        return (self.F & (1 << FLAGN)) != 0
 
     def fZ(self):
-        return (self.F & (1 << flagZ)) != 0
+        return (self.F & (1 << FLAGZ)) != 0
 
     def fNC(self):
-        return (self.F & (1 << flagC)) == 0
+        return (self.F & (1 << FLAGC)) == 0
 
     def fNZ(self):
-        return (self.F & (1 << flagZ)) == 0
+        return (self.F & (1 << FLAGZ)) == 0
 
     def __init__(self, MB, profiling=False):
         self.A = 0
@@ -150,7 +149,7 @@ class CPU():
 
         self.mb = MB
 
-        self.interruptMasterEnable = False
+        self.interruptmasterenable = False
 
         self.breakAllow = True
         self.breakOn = False
@@ -163,7 +162,7 @@ class CPU():
 
         # self.PC = 0
 
-        #debug
+        # debug
         self.oldPC = -1
         self.lala = False
 
@@ -180,19 +179,18 @@ class CPU():
             f.write((n & 0xFF).to_bytes(1, 'little'))
             f.write(((n & 0xFF00) >> 8).to_bytes(1, 'little'))
 
-        f.write(self.interruptMasterEnable.to_bytes(1, 'little'))
+        f.write(self.interruptmasterenable.to_bytes(1, 'little'))
         f.write(self.halted.to_bytes(1, 'little'))
         f.write(self.stopped.to_bytes(1, 'little'))
 
     def loadState(self, f):
         self.oldPC = -1
 
-        self.A, self.F, self.B,\
-        self.C, self.D, self.E  = [ord(f.read(1)) for _ in range(6)]
+        self.A, self.F, self.B, self.C, self.D, self.E = [ord(f.read(1)) for _ in range(6)]
 
-        self.HL, self.SP, self.PC = [ord(f.read(1)) | (ord(f.read(1))<<8) for _ in range(3)]
+        self.HL, self.SP, self.PC = [ord(f.read(1)) | (ord(f.read(1)) << 8) for _ in range(3)]
 
-        self.interruptMasterEnable = ord(f.read(1))
+        self.interruptmasterenable = ord(f.read(1))
         self.halted = ord(f.read(1))
         self.stopped = ord(f.read(1))
 
@@ -205,11 +203,11 @@ class CPU():
             opcode = self.mb.getitem(pc)
             opcode += 0x100  # Internally shifting look-up table
 
-        #Profiling
+        # Profiling
         if self.profiling:
             self.hitRate[opcode] += 1
 
-        return opcodes.executeOpcode(self, opcode)
+        return opcodes.execute_opcode(self, opcode)
 
 
     def tick(self):

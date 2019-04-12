@@ -9,9 +9,9 @@ cimport opcodes
 import cython
 
 
-cdef unsigned short IF_address, IE_address
-cdef short flagC, flagH, flagN, flagZ
-cdef short VBlank, LCDC, TIMER, Serial, HightoLow
+cdef unsigned short IF_ADDRESS, IE_ADDRESS
+cdef short FLAGC, FLAGH, FLAGN, FLAGZ
+cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
@@ -19,7 +19,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef class CPU:
 
-    cdef public bint interruptMasterEnable, breakAllow, breakOn, halted, stopped, lala, profiling
+    cdef public bint interruptmasterenable, breakAllow, breakOn, halted, stopped, lala, profiling
     cdef unsigned int oldPC, breakNext
 
     cdef object debugCallStack
