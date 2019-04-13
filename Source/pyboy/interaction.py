@@ -18,7 +18,7 @@ def set_bit(x, bit):
     return x | (1 << bit)
 
 
-class Interaction():
+class Interaction:
     def __init__(self):
         self.directional = 0xF
         self.standard = 0xF

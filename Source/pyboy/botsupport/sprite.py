@@ -11,7 +11,7 @@ OAM_OFFSET = 0x8000
 LCDC_OFFSET = 0xFF40
 
 
-class Sprite():
+class Sprite:
     def __init__(self, mb, index):
         self.mb = mb
         self.index = index

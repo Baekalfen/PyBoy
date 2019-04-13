@@ -10,7 +10,7 @@ from ..logger import logger
 ROWS, COLS = 144, 160
 
 
-class GenericWindow():
+class GenericWindow:
 
     def __init__(self, scale=1):
         self._scale = scale

@@ -22,7 +22,7 @@ LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF
 ROWS, COLS = 144, 160
 
 
-class LCD():
+class LCD:
     def __init__(self, colorPalette):
         self.VRAM = array.array('B', [0]*VIDEO_RAM)
         self.OAM = array.array('B', [0]*OBJECT_ATTRIBUTE_MEMORY)
@@ -81,7 +81,7 @@ class LCD():
         return (self.SCX, self.SCY)
 
 
-class PaletteRegister():
+class PaletteRegister:
     def __init__(self, value, colorpalette):
         self.colorpalette = colorpalette
         self.value = 0
@@ -102,7 +102,7 @@ class PaletteRegister():
         return self.lookup[i]
 
 
-class LCDCRegister():
+class LCDCRegister:
     def __init__(self, value):
         self.set(value)
 

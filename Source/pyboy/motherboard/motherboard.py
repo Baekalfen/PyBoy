@@ -17,7 +17,7 @@ VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
-class Motherboard():
+class Motherboard:
     def __init__(self, gameromfile, bootromfile, window, profiling=False,
                  debugger=None):
         if bootromfile is not None:

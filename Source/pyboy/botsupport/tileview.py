@@ -7,7 +7,7 @@
 VRAM_OFFSET = 0x8000
 
 
-class TileView():
+class TileView:
     def __init__(self, mb, high_tile_data=False):
         self.mb = mb
         self.view_offset = 0x1C00 if high_tile_data else 0x1800

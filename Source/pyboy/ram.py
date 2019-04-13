@@ -16,7 +16,7 @@ INTERNAL_RAM1 = 0x7F
 INTERRUPT_ENABLE_REGISTER = 1
 
 
-class RAM():
+class RAM:
 
     def __init__(self, random=False):
         if random:  # NOTE: In real life, the RAM is scrambled with random data on boot.

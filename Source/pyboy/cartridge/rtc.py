@@ -10,7 +10,7 @@ import time
 from ..logger import logger
 
 
-class RTC():
+class RTC:
     def __init__(self, filename):
         self.filename = filename + ".rtc"
 

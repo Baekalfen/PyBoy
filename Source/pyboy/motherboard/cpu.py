@@ -15,7 +15,7 @@ IF_ADDRESS = 0xFF0F
 IE_ADDRESS = 0xFFFF
 
 
-class CPU():
+class CPU:
     def setBC(self, x):
         assert x <= 0xFFFF, "%0.4x" % x
         self.B = x >> 8

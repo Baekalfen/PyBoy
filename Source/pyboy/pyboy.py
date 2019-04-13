@@ -21,7 +21,7 @@ addconsolehandler()
 SPF = 1/60.  # inverse FPS (frame-per-second)
 
 
-class PyBoy():
+class PyBoy:
     def __init__(self, win_type, scale, ROM, bootROM=None):
         self.ROM = ROM
         self.debugger = None

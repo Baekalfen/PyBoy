@@ -18,7 +18,7 @@
 # 11:  16384 Hz (OSC/256)
 
 
-class Timer():
+class Timer:
     def __init__(self):
         self.DIV = 0  # Always showing self.counter with mode 3 divider
         self.TIMA = 0  # Can be set from RAM 0xFF05

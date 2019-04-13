@@ -8,7 +8,7 @@ import array
 import struct
 
 
-class BootROM():
+class BootROM:
     def __init__(self, bootromfile):
         if bootromfile is not None:
             with open(bootromfile, "rb") as bootromfilehandle:
