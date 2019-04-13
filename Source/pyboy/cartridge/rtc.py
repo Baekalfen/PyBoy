@@ -44,7 +44,7 @@ class RTC():
         logger.info("RTC saved.")
 
     def load_state(self, f):
-        self.timezero = struct.unpack('f',f.read(4))[0]
+        self.timezero = struct.unpack('f', f.read(4))[0]
         self.halt = ord(f.read(1))
         self.daycarry = ord(f.read(1))
         logger.info("RTC loaded.")

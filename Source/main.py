@@ -9,10 +9,10 @@ import os
 import traceback
 import sys
 from pyboy import PyBoy
-from pyboy.logger import addConsoleHandler
+from pyboy.logger import addconsolehandler
 
 
-addConsoleHandler()
+addconsolehandler()
 
 
 def getROM(ROMdir):

@@ -7,8 +7,8 @@
 from libc.stdint cimport uint8_t
 
 cdef class RAM:
-    cdef void saveState(self, file)
-    cdef void loadState(self, file)
+    cdef void save_state(self, file)
+    cdef void load_state(self, file)
     cdef public uint8_t[8*1024] internalRAM0
     cdef public uint8_t[0x60] nonIOInternalRAM0
     cdef public uint8_t[0x4C] IOPorts

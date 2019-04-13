@@ -48,12 +48,14 @@ class CPU():
 
     def set_ramregisterflag(self, address, flag, value=True):
         self.clear_ramregisterflag(address, flag)
-        # self.motherboard.setitem(address, (self.motherboard.getitem(address) & (0xFF - (1 << flag))))
+        # self.motherboard.setitem(
+        #     address, (self.motherboard.getitem(address) & (0xFF - (1 << flag))))
         # if value:
         self.motherboard.setitem(address, (self.motherboard.getitem(address) + (value << flag)))
 
     def clear_ramregisterflag(self, address, flag):
-        self.motherboard.setitem(address, (self.motherboard.getitem(address) & (0xFF - (1 << flag))))
+        self.motherboard.setitem(
+            address, (self.motherboard.getitem(address) & (0xFF - (1 << flag))))
 
     def test_ramregisterflag_enabled(self, address, flag):
         v = self.motherboard.getitem(address)
@@ -66,14 +68,15 @@ class CPU():
         if intr_flag_enabled and intr_flag:
 
             # Clear interrupt flag
-            self.motherboard.setitem(0xFF0F, self.motherboard.getitem(0xFF0F) & (0xFF - (1 << flag)))
+            self.motherboard.setitem(
+                0xFF0F, self.motherboard.getitem(0xFF0F) & (0xFF - (1 << flag)))
 
             self.interruptmasterenable = False
             if self.halted:
                 self.PC += 1  # Escape HALT on return
 
-            self.motherboard.setitem(self.SP-1, self.PC >> 8) # High
-            self.motherboard.setitem(self.SP-2, self.PC & 0xFF) # Low
+            self.motherboard.setitem(self.SP-1, self.PC >> 8)  # High
+            self.motherboard.setitem(self.SP-2, self.PC & 0xFF)  # Low
             self.SP -= 2
 
             return True

@@ -124,7 +124,7 @@ class Motherboard():
                 self.cpu.set_interruptflag(TIMER)
 
     def tickframe(self):
-        lcdenabled = self.lcd.LCDC.enabled
+        lcdenabled = self.lcd.LCDC.lcd_enable
         if lcdenabled:
             self.window.update_cache(self.lcd)
 
@@ -182,14 +182,15 @@ class Motherboard():
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
             return self.cartridge.getitem(i)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
-            return self.ram.internalRAM0[i - 0xC000]
+            return self.ram.internal_ram0[i - 0xC000]
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
-            return self.ram.nonIOInternalRAM0[i - 0xFEA0]
+            print(0xFEA0 + i)
+            return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF04:
                 return self.timer.DIV
@@ -216,13 +217,14 @@ class Motherboard():
             elif i == 0xFF4B:
                 return self.lcd.WX
             else:
-                return self.ram.IOPorts[i - 0xFF00]
+                return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
-            return self.ram.nonIOInternalRAM1[i - 0xFF4C]
+            print(0xFF4C + i)
+            return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
-            return self.ram.internalRAM1[i-0xFF80]
+            return self.ram.internal_ram1[i-0xFF80]
         elif i == 0xFFFF:  # Interrupt Enable Register
-            return self.ram.interruptRegister[0]
+            return self.ram.interrupt_register[0]
         else:
             raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
 
@@ -244,19 +246,19 @@ class Motherboard():
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
-            self.ram.internalRAM0[i - 0xC000] = value
+            self.ram.internal_ram0[i - 0xC000] = value
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             self.setitem(i - 0x2000, value)  # Redirect to internal RAM
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             self.lcd.OAM[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
-            self.ram.nonIOInternalRAM0[i - 0xFEA0] = value
+            self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF00:
-                self.ram.IOPorts[i - 0xFF00] = self.interaction.pull(value)
+                self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
                 self.serialbuffer += chr(value)
-                self.ram.IOPorts[i - 0xFF00] = value
+                self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.DIV = 0
             elif i == 0xFF05:
@@ -284,15 +286,15 @@ class Motherboard():
             elif i == 0xFF4B:
                 self.lcd.WX = value
             else:
-                self.ram.IOPorts[i - 0xFF00] = value
+                self.ram.io_ports[i - 0xFF00] = value
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
             if self.bootromenabled and i == 0xFF50 and value == 1:
                 self.bootromenabled = False
-            self.ram.nonIOInternalRAM1[i - 0xFF4C] = value
+            self.ram.non_io_internal_ram1[i - 0xFF4C] = value
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
-            self.ram.internalRAM1[i-0xFF80] = value
+            self.ram.internal_ram1[i-0xFF80] = value
         elif i == 0xFFFF:  # Interrupt Enable Register
-            self.ram.interruptRegister[0] = value
+            self.ram.interrupt_register[0] = value
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 

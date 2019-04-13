@@ -24,37 +24,37 @@ class Interaction():
         self.standard = 0xF
 
     def key_event(self, key):
-        if key == windowevent.PressArrowRight:
+        if key == windowevent.PRESSARROWRIGHT:
             self.directional = reset_bit(self.directional, P10)
-        elif key == windowevent.PressArrowLeft:
+        elif key == windowevent.PRESSARROWLEFT:
             self.directional = reset_bit(self.directional, P11)
-        elif key == windowevent.PressArrowUp:
+        elif key == windowevent.PRESSARROWUP:
             self.directional = reset_bit(self.directional, P12)
-        elif key == windowevent.PressArrowDown:
+        elif key == windowevent.PRESSARROWDOWN:
             self.directional = reset_bit(self.directional, P13)
-        elif key == windowevent.PressButtonA:
+        elif key == windowevent.PRESSBUTTONA:
             self.standard = reset_bit(self.standard, P10)
-        elif key == windowevent.PressButtonB:
+        elif key == windowevent.PRESSBUTTONB:
             self.standard = reset_bit(self.standard, P11)
-        elif key == windowevent.PressButtonSelect:
+        elif key == windowevent.PRESSBUTTONSELECT:
             self.standard = reset_bit(self.standard, P12)
-        elif key == windowevent.PressButtonStart:
+        elif key == windowevent.PRESSBUTTONSTART:
             self.standard = reset_bit(self.standard, P13)
-        elif key == windowevent.ReleaseArrowRight:
+        elif key == windowevent.RELEASEARROWRIGHT:
             self.directional = set_bit(self.directional, P10)
-        elif key == windowevent.ReleaseArrowLeft:
+        elif key == windowevent.RELEASEARROWLEFT:
             self.directional = set_bit(self.directional, P11)
-        elif key == windowevent.ReleaseArrowUp:
+        elif key == windowevent.RELEASEARROWUP:
             self.directional = set_bit(self.directional, P12)
-        elif key == windowevent.ReleaseArrowDown:
+        elif key == windowevent.RELEASEARROWDOWN:
             self.directional = set_bit(self.directional, P13)
-        elif key == windowevent.ReleaseButtonA:
+        elif key == windowevent.RELEASEBUTTONA:
             self.standard = set_bit(self.standard, P10)
-        elif key == windowevent.ReleaseButtonB:
+        elif key == windowevent.RELEASEBUTTONB:
             self.standard = set_bit(self.standard, P11)
-        elif key == windowevent.ReleaseButtonSelect:
+        elif key == windowevent.RELEASEBUTTONSELECT:
             self.standard = set_bit(self.standard, P12)
-        elif key == windowevent.ReleaseButtonStart:
+        elif key == windowevent.RELEASEBUTTONSTART:
             self.standard = set_bit(self.standard, P13)
 
     def pull(self, joystickbyte):

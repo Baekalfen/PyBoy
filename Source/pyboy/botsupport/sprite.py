@@ -41,7 +41,7 @@ class Sprite():
 
     def is_on_screen(self):
         LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
-        spritesize = 16 if LCDC.spritesize else 16
+        spritesize = 16 if LCDC.sprite_size else 16
         return (0 < self.get_y() < 144 + spritesize and
                 0 < self.get_x() < 160 + 8)
 

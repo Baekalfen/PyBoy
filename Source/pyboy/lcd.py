@@ -10,36 +10,37 @@ import array
 VIDEO_RAM = 8 * 1024  # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
 
-# LCDC,
-STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX = range(0xFF41, 0xFF4C)
+LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 
 # LCDC bit descriptions
-BG_WinEnable, SpriteEnable, SpriteSize, BGTileDataDisSel, BG_WinTileDataSel, WinEnable, WinTileDataSel, Enable = range(8)
+(BACKGROUND_ENABLE, SPRITE_ENABLE, SPRITE_SIZE, BACKGROUNDMAP_SELECT,
+ TILEDATA_SELELECT, WINDOW_ENABLE, WINDOWMAP_SELECT, LCD_ENABLE) = range(8)
 
 # STAT bit descriptions
-# ModeFlag0, ModeFlag1, Coincidence, Mode00, Mode01, Mode10, LYC_LY = range(7)
+# MODEFLAG0, MODEFLAG1, COINCIDENCE, MODE00, MODE01, MODE10, LYC_LY = range(7)
 
-gameboyResolution = (160, 144)
+ROWS, COLS = 144, 160
+
 
 class LCD():
     def __init__(self, colorPalette):
-        self.VRAM = array.array('B', [0]*(VIDEO_RAM))
-        self.OAM = array.array('B', [0]*(OBJECT_ATTRIBUTE_MEMORY))
+        self.VRAM = array.array('B', [0]*VIDEO_RAM)
+        self.OAM = array.array('B', [0]*OBJECT_ATTRIBUTE_MEMORY)
 
         self.LCDC = LCDCRegister(0)
-        self.BGP = PaletteRegister(0xFC, colorPalette)
-        self.OBP0 = PaletteRegister(0xFF, colorPalette)
-        self.OBP1 = PaletteRegister(0xFF, colorPalette)
         # self.STAT = 0x00
+        self.SCY = 0x00
+        self.SCX = 0x00
         # self.LY = 0x00
         # self.LYC = 0x00
         # self.DMA = 0x00
-        self.SCY = 0x00
-        self.SCX = 0x00
+        self.BGP = PaletteRegister(0xFC, colorPalette)
+        self.OBP0 = PaletteRegister(0xFF, colorPalette)
+        self.OBP1 = PaletteRegister(0xFF, colorPalette)
         self.WY = 0x00
         self.WX = 0x00
 
-    def saveState(self, f):
+    def save_state(self, f):
         for n in range(VIDEO_RAM):
             f.write(self.VRAM[n].to_bytes(1, 'little'))
 
@@ -56,7 +57,7 @@ class LCD():
         f.write(self.WY.to_bytes(1, 'little'))
         f.write(self.WX.to_bytes(1, 'little'))
 
-    def loadState(self, f):
+    def load_state(self, f):
         for n in range(VIDEO_RAM):
             self.VRAM[n] = ord(f.read(1))
 
@@ -73,35 +74,33 @@ class LCD():
         self.WY = ord(f.read(1))
         self.WX = ord(f.read(1))
 
-    def getWindowPos(self):
+    def get_windowpos(self):
         return (self.WX-7, self.WY)
 
-    def getViewPort(self):
+    def get_viewport(self):
         return (self.SCX, self.SCY)
 
 
-
 class PaletteRegister():
-    def __init__(self, value, colorPalette):
-        self.colorPalette = colorPalette
+    def __init__(self, value, colorpalette):
+        self.colorpalette = colorpalette
         self.value = 0
         self.set(value)
 
     def set(self, value):
-        if self.value == value: # Pokemon Blue continously sets this without changing the value
+        # Pokemon Blue continously sets this without changing the value
+        if self.value == value:
             return False
 
         self.value = value
         self.lookup = [0] * 4
         for x in range(4):
-            self.lookup[x] = self.colorPalette[(value >> x*2) & 0b11]
+            self.lookup[x] = self.colorpalette[(value >> x*2) & 0b11]
         return True
 
-    def getColor(self, i):
+    def get_color(self, i):
         return self.lookup[i]
 
-    # def getCode(self, i):
-    #     return self.lookup[i]
 
 class LCDCRegister():
     def __init__(self, value):
@@ -110,12 +109,12 @@ class LCDCRegister():
     def set(self, value):
         self.value = value
 
-        # No need to convert to bool. Any non-zero value is evaluated as True
-        self.enabled             = value & (1 << 7)
-        self.windowMapSelect     = value & (1 << 6)
-        self.windowEnabled       = value & (1 << 5)
-        self.tileSelect          = value & (1 << 4)
-        self.backgroundMapSelect = value & (1 << 3)
-        self.spriteSize          = value & (1 << 2)
-        self.spriteEnable        = value & (1 << 1)
-        self.backgroundEnable    = value & (1 << 0)
+        # No need to convert to bool. Any non-zero value is true.
+        self.lcd_enable = value & (1 << 7)
+        self.windowmap_select = value & (1 << 6)
+        self.window_enable = value & (1 << 5)
+        self.tiledata_select = value & (1 << 4)
+        self.backgroundmap_select = value & (1 << 3)
+        self.sprite_size = value & (1 << 2)
+        self.sprite_enable = value & (1 << 1)
+        self.background_enable = value & (1 << 0)

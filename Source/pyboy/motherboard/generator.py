@@ -594,7 +594,7 @@ class OpcodeData:
         calc = " ".join(["t", "=", left.get, op, right.get])
 
         if carry:
-            calc += op + " cpu.fC()"
+            calc += " " + op + " cpu.fC()"
 
         lines.append(calc)
 
@@ -785,7 +785,7 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
             code.addlines([(left.set % "(cpu.motherboard.getitem(cpu.SP+1) << 8) + "
-                            "cpu.motherboard.getitem(cpu.SP)") + "# High",
+                            "cpu.motherboard.getitem(cpu.SP)") + "  # High",
                            "cpu.SP += 2"])
         else:
             if left.operand.endswith('F'):  # Catching AF
@@ -793,7 +793,7 @@ class OpcodeData:
             else:
                 fmask = ""
             # See comment from PUSH
-            code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP+1) # High" % left.operand[-2])
+            code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP+1)  # High" % left.operand[-2])
             if left.operand == "AF":
                 code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP)%s & 0xF0  # Low"
                              % (left.operand[-1], fmask))
@@ -993,8 +993,8 @@ class OpcodeData:
         # Taken from PUSH and CALL
         code.addlines([
             "cpu.PC += %s" % self.length,
-            "cpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8) # High",
-            "cpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
+            "cpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
+            "cpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
             "cpu.SP -= 2"])
 
         code.addlines([
@@ -1011,7 +1011,7 @@ class OpcodeData:
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         left.assign = False
         if throughcarry:
-            code.addline(("t = (%s << 1)" % left.get) + "+ cpu.fC()")
+            code.addline(("t = (%s << 1)" % left.get) + " + cpu.fC()")
         else:
             code.addline("t = (%s << 1) + (%s >> 7)" % (left.get, left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
@@ -1048,11 +1048,11 @@ class OpcodeData:
         if throughcarry:
             # Trigger "overflow" for carry flag
             code.addline(("t = (%s >> 1)" % left.get) +
-                         "+ (cpu.fC() << 7)" + "+ ((%s & 1) << 8)" % (left.get))
+                         " + (cpu.fC() << 7)" + " + ((%s & 1) << 8)" % (left.get))
         else:
             # Trigger "overflow" for carry flag
             code.addline("t = (%s >> 1) + ((%s & 1) << 7)" % (left.get, left.get)
-                         + "+ ((%s & 1) << 8)" % (left.get))
+                         + " + ((%s & 1) << 8)" % (left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
         code.addline("t &= 0xFF")
         code.addline(left.set % "t")
@@ -1182,11 +1182,11 @@ def update():
             (pxd, functiontext) = code
 
             f_pxd.write(pxd + "\n")
-            f.write(functiontext.replace('\t', ' '*4) + "\n\n")
+            f.write(functiontext.replace('\t', ' '*4) + "\n\n\n")
 
-        f.write("def no_opcode(cpu):\n    return 0\n\n")
+        f.write("def no_opcode(cpu):\n    return 0\n\n\n")
 
-        f.write("def get_opcode_length(opcode):\n    return OPCODE_LENGTHS[opcode]\n")
+        f.write("def get_opcode_length(opcode):\n    return OPCODE_LENGTHS[opcode]\n\n")
         f.write("""
 def execute_opcode(cpu, opcode):
     oplen = get_opcode_length(opcode)
@@ -1221,11 +1221,7 @@ def execute_opcode(cpu, opcode):
             else:
                 f.write(" ")
 
-        f.write('])')
-        f.write('\n\n')
-
-        # f.write("\n\n# from opcodes import ")
-        # f.write(', '.join(map(lambda _,__,f: f[5:], lookupList)))
+        f.write('])\n')
 
 
 def load():

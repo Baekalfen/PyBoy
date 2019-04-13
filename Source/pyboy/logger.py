@@ -12,7 +12,7 @@ logger = logging.getLogger()
 already_loaded = False
 
 
-def addConsoleHandler():
+def addconsolehandler():
     global already_loaded
     if not already_loaded:
         already_loaded = True

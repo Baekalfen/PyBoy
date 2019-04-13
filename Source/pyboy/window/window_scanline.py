@@ -24,31 +24,31 @@ if not cythonmode:
 ROWS, COLS = 144, 160
 
 KEY_DOWN = {
-    sdl2.SDLK_UP: windowevent.PressArrowUp,
-    sdl2.SDLK_DOWN: windowevent.PressArrowDown,
-    sdl2.SDLK_RIGHT: windowevent.PressArrowRight,
-    sdl2.SDLK_LEFT: windowevent.PressArrowLeft,
-    sdl2.SDLK_a: windowevent.PressButtonA,
-    sdl2.SDLK_s: windowevent.PressButtonB,
-    sdl2.SDLK_RETURN: windowevent.PressButtonStart,
-    sdl2.SDLK_BACKSPACE: windowevent.PressButtonSelect,
-    sdl2.SDLK_ESCAPE: windowevent.Quit,
-    sdl2.SDLK_d: windowevent.DebugToggle,
-    sdl2.SDLK_SPACE: windowevent.PressSpeedUp,
-    sdl2.SDLK_i: windowevent.ScreenRecordingToggle,
+    sdl2.SDLK_UP: windowevent.PRESSARROWUP,
+    sdl2.SDLK_DOWN: windowevent.PRESSARROWDOWN,
+    sdl2.SDLK_RIGHT: windowevent.PRESSARROWRIGHT,
+    sdl2.SDLK_LEFT: windowevent.PRESSARROWLEFT,
+    sdl2.SDLK_a: windowevent.PRESSBUTTONA,
+    sdl2.SDLK_s: windowevent.PRESSBUTTONB,
+    sdl2.SDLK_RETURN: windowevent.PRESSBUTTONSTART,
+    sdl2.SDLK_BACKSPACE: windowevent.PRESSBUTTONSELECT,
+    sdl2.SDLK_ESCAPE: windowevent.QUIT,
+    sdl2.SDLK_d: windowevent.DEBUGTOGGLE,
+    sdl2.SDLK_SPACE: windowevent.PRESSSPEEDUP,
+    sdl2.SDLK_i: windowevent.SCREENRECORDINGTOGGLE,
 }
 KEY_UP = {
-    sdl2.SDLK_UP: windowevent.ReleaseArrowUp,
-    sdl2.SDLK_DOWN: windowevent.ReleaseArrowDown,
-    sdl2.SDLK_RIGHT: windowevent.ReleaseArrowRight,
-    sdl2.SDLK_LEFT: windowevent.ReleaseArrowLeft,
-    sdl2.SDLK_a: windowevent.ReleaseButtonA,
-    sdl2.SDLK_s: windowevent.ReleaseButtonB,
-    sdl2.SDLK_RETURN: windowevent.ReleaseButtonStart,
-    sdl2.SDLK_BACKSPACE: windowevent.ReleaseButtonSelect,
-    sdl2.SDLK_z: windowevent.SaveState,
-    sdl2.SDLK_x: windowevent.LoadState,
-    sdl2.SDLK_SPACE: windowevent.ReleaseSpeedUp,
+    sdl2.SDLK_UP: windowevent.RELEASEARROWUP,
+    sdl2.SDLK_DOWN: windowevent.RELEASEARROWDOWN,
+    sdl2.SDLK_RIGHT: windowevent.RELEASEARROWRIGHT,
+    sdl2.SDLK_LEFT: windowevent.RELEASEARROWLEFT,
+    sdl2.SDLK_a: windowevent.RELEASEBUTTONA,
+    sdl2.SDLK_s: windowevent.RELEASEBUTTONB,
+    sdl2.SDLK_RETURN: windowevent.RELEASEBUTTONSTART,
+    sdl2.SDLK_BACKSPACE: windowevent.RELEASEBUTTONSELECT,
+    sdl2.SDLK_z: windowevent.SAVESTATE,
+    sdl2.SDLK_x: windowevent.LOADSTATE,
+    sdl2.SDLK_SPACE: windowevent.RELEASESPEEDUP,
 }
 
 
@@ -95,13 +95,13 @@ class ScanlineWindow(GenericWindow):
         events = []
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
-                events.append(windowevent.Quit)
+                events.append(windowevent.QUIT)
             elif event.type == sdl2.SDL_KEYDOWN:
                 events.append(KEY_DOWN.get(event.key.keysym.sym,
-                                           windowevent.Pass))
+                                           windowevent.PASS))
             elif event.type == sdl2.SDL_KEYUP:
                 events.append(KEY_UP.get(event.key.keysym.sym,
-                                         windowevent.Pass))
+                                         windowevent.PASS))
         return events
 
     def frame_limiter(self, speed):
@@ -121,11 +121,11 @@ class ScanlineWindow(GenericWindow):
         # renderScreen
 
         # Background and Window View Address (offset into VRAM...)
-        bmap = 0x1C00 if lcd.LCDC.backgroundMapSelect else 0x1800
-        wmap = 0x1C00 if lcd.LCDC.windowMapSelect else 0x1800
+        bmap = 0x1C00 if lcd.LCDC.backgroundmap_select else 0x1800
+        wmap = 0x1C00 if lcd.LCDC.windowmap_select else 0x1800
 
-        bx, by = lcd.getViewPort()
-        wx, wy = lcd.getWindowPos()
+        bx, by = lcd.get_viewport()
+        wx, wy = lcd.get_windowpos()
 
         bd = (y + by) % 8
         wd = (y - wy) % 8
@@ -135,8 +135,8 @@ class ScanlineWindow(GenericWindow):
         wmap += ((y - wy) >> 3) << 5
 
         # Dict lookups cost, so do some quick caching
-        tile_select = lcd.LCDC.tileSelect == 0
-        window_enabled_and_y = lcd.LCDC.windowEnabled and wy <= y
+        tile_select = lcd.LCDC.tiledata_select == 0
+        window_enabled_and_y = lcd.LCDC.window_enable and wy <= y
 
         # Set to an impossible value to signal first loop. This could
         # break if we switch to an actual signed offset from a
@@ -147,7 +147,7 @@ class ScanlineWindow(GenericWindow):
         # Limit to 10 sprites per line, could optionally disable later
         sprites = [0] * 10
         nsprites = 0
-        ymin = y if lcd.LCDC.spriteSize else y + 8
+        ymin = y if lcd.LCDC.sprite_size else y + 8
         ymax = y + 16
         for n in range(0x00, 0xA0, 4):
             if ymin < lcd.OAM[n] <= ymax:
@@ -178,7 +178,7 @@ class ScanlineWindow(GenericWindow):
                 bpixel = 2*(bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
                 bpixel >>= 7 - dx
 
-            elif lcd.LCDC.backgroundEnable:
+            elif lcd.LCDC.background_enable:
                 dx = (x + bx) % 8
                 if dx == 0 or wt < 0:
                     wt = lcd.VRAM[bmap + (((x + bx) >> 3) % 32)]
@@ -210,7 +210,7 @@ class ScanlineWindow(GenericWindow):
                     # Get the row of the sprite, accounting for flipping
                     dy = sy - y - 1 if sf & 0x40 else y - sy + 16
 
-                    if lcd.LCDC.spriteSize:
+                    if lcd.LCDC.sprite_size:
                         # Double sprites start on an even index
                         st &= 0xFE
                     else:
@@ -231,15 +231,15 @@ class ScanlineWindow(GenericWindow):
                     # Draw the highest priority sprite pixel
                     if not sf & 0x80 or bpixel == 0:
                         if sf & 0x10:
-                            self._linebuf[x] = lcd.OBP1.getColor(spixel)
+                            self._linebuf[x] = lcd.OBP1.get_color(spixel)
                         else:
-                            self._linebuf[x] = lcd.OBP0.getColor(spixel)
+                            self._linebuf[x] = lcd.OBP0.get_color(spixel)
                     else:
-                        self._linebuf[x] = lcd.BGP.getColor(bpixel)
+                        self._linebuf[x] = lcd.BGP.get_color(bpixel)
 
                     break
             else:
-                self._linebuf[x] = lcd.BGP.getColor(bpixel)
+                self._linebuf[x] = lcd.BGP.get_color(bpixel)
 
         # Copy into the screen buffer stored in a Texture
         self._linerect.y = y

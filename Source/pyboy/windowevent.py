@@ -4,4 +4,9 @@
 #
 
 
-Quit, PressArrowUp, PressArrowDown, PressArrowRight, PressArrowLeft, PressButtonA, PressButtonB, PressButtonSelect, PressButtonStart, ReleaseArrowUp, ReleaseArrowDown, ReleaseArrowRight, ReleaseArrowLeft, ReleaseButtonA, ReleaseButtonB, ReleaseButtonSelect, ReleaseButtonStart, DebugToggle, PressSpeedUp, ReleaseSpeedUp, SaveState, LoadState, Pass, ScreenRecordingToggle = range(24)
+(QUIT, PRESSARROWUP, PRESSARROWDOWN, PRESSARROWRIGHT, PRESSARROWLEFT,
+ PRESSBUTTONA, PRESSBUTTONB, PRESSBUTTONSELECT, PRESSBUTTONSTART,
+ RELEASEARROWUP, RELEASEARROWDOWN, RELEASEARROWRIGHT, RELEASEARROWLEFT,
+ RELEASEBUTTONA, RELEASEBUTTONB, RELEASEBUTTONSELECT, RELEASEBUTTONSTART,
+ DEBUGTOGGLE, PRESSSPEEDUP, RELEASESPEEDUP, SAVESTATE, LOADSTATE, PASS,
+ SCREENRECORDINGTOGGLE) = range(24)

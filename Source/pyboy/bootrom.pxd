@@ -5,5 +5,5 @@
 
 
 cdef class BootROM:
-    cdef unsigned char[256] bootROM
+    cdef unsigned char[256] bootrom
     cdef unsigned char getitem(self, unsigned short)

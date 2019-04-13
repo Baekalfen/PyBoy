@@ -4,33 +4,34 @@
 #
 
 
-import struct
 import array
+import struct
 
 
 class BootROM():
-    def __init__(self, bootROMFile):
-        if bootROMFile is not None:
-            with open(bootROMFile, "rb") as bootROMFileHandle:
-                rom = bootROMFileHandle.read()
-            self.bootROM = array.array('B', struct.unpack('%iB' % len(rom), rom))
+    def __init__(self, bootromfile):
+        if bootromfile is not None:
+            with open(bootromfile, "rb") as bootromfilehandle:
+                rom = bootromfilehandle.read()
+            self.bootrom = array.array('B', struct.unpack('%iB' % len(rom), rom))
         else:
-            self.bootROM = array.array('B', [0] * 256)
+            self.bootrom = array.array('B', [0] * 256)
+
             # Set stack pointer
-            self.bootROM[0x00] = 0x31
-            self.bootROM[0x01] = 0xFE
-            self.bootROM[0x02] = 0xFF
+            self.bootrom[0x00] = 0x31
+            self.bootrom[0x01] = 0xFE
+            self.bootrom[0x02] = 0xFF
 
             # Inject jump to 0xFC
-            self.bootROM[0x03] = 0xC3
-            self.bootROM[0x04] = 0xFC
-            self.bootROM[0x05] = 0x00
+            self.bootrom[0x03] = 0xC3
+            self.bootrom[0x04] = 0xFC
+            self.bootrom[0x05] = 0x00
 
             # Inject code to disable boot-ROM
-            self.bootROM[0xFC] = 0x3E
-            self.bootROM[0xFD] = 0x01
-            self.bootROM[0xFE] = 0xE0
-            self.bootROM[0xFF] = 0x50
+            self.bootrom[0xFC] = 0x3E
+            self.bootrom[0xFD] = 0x01
+            self.bootrom[0xFE] = 0xE0
+            self.bootrom[0xFF] = 0x50
 
     def getitem(self, addr):
-        return self.bootROM[addr]
+        return self.bootrom[addr]

@@ -82,7 +82,7 @@ CARTRIDGETABLE = {
 
 # Number of 8KB banks
 EXRAMTABLE = {
-    0x00: 1, # We wrongfully allocate some RAM, to help Cython
+    0x00: 1,  # We wrongfully allocate some RAM, to help Cython
     # 0x00: None,
     0x02: 1,
     0x03: 4,

@@ -14,11 +14,11 @@ from . import windowevent
 from . import window
 
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .logger import logger, addConsoleHandler
-addConsoleHandler()
+from .logger import logger, addconsolehandler
+addconsolehandler()
 
 
-SPF = 1/60. # inverse FPS (frame-per-second)
+SPF = 1/60.  # inverse FPS (frame-per-second)
 
 
 class PyBoy():
@@ -42,23 +42,23 @@ class PyBoy():
 
     def tick(self):
         done = False
-        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        t_start = time.perf_counter()  # Change to _ns when PyPy supports it
 
         for event in self.window.get_events():
-            if event == windowevent.Quit:
+            if event == windowevent.QUIT:
                 done = True
-            elif event == windowevent.ReleaseSpeedUp:
+            elif event == windowevent.RELEASESPEEDUP:
                 self.limit_emulationspeed ^= True
                 logger.info("Speed limit: %s" % self.limit_emulationspeed)
-            elif event == windowevent.SaveState:
+            elif event == windowevent.SAVESTATE:
                 self.motherboard.save_state(self.ROM + ".state")
-            elif event == windowevent.LoadState:
+            elif event == windowevent.LOADSTATE:
                 self.motherboard.load_state(self.ROM + ".state")
-            elif event == windowevent.DebugToggle:
+            elif event == windowevent.DEBUGTOGGLE:
                 self.debugger.running ^= True
-            elif event == windowevent.Pass:
+            elif event == windowevent.PASS:
                 pass  # Used in place of None in Cython, when key isn't mapped to anything
-            elif event == windowevent.ScreenRecordingToggle:
+            elif event == windowevent.SCREENRECORDINGTOGGLE:
                 if not self.screen_recorder:
                     self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
                 else:

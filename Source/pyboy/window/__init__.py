@@ -4,5 +4,8 @@
 #
 
 
+__all__ = ["window", "GenericWindow"]
+
+
 from . import window
 from .genericwindow import GenericWindow

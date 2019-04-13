@@ -46,7 +46,7 @@ setup(
     ext_modules=cythonize([
         'pyboy/lcd.py',
         'pyboy/bootrom.py',
-        'pyboy/windowevent.py',
+        # 'pyboy/windowevent.py',
         'pyboy/cartridge/__init__.py',
         # 'pyboy/cartridge/cartridge.py',
         'pyboy/cartridge/mbc.py',

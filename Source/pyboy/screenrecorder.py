@@ -25,7 +25,8 @@ class ScreenRecorder:
             logger.info("ScreenRecorder started")
             self.frames = []
         else:
-            logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. Screen recording is disabled.")
+            logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. "
+                           "Screen recording is disabled.")
         self.colorScheme = colorScheme
 
     def add_frame(self, frame):

@@ -4,6 +4,9 @@
 #
 
 
-from . import ram, bootrom, window, lcd, interaction, cartridge, motherboard, \
-    windowevent
+__all__ = ["PyBoy", "bootrom", "cartridge", "interaction", "lcd",
+           "motherboard", "ram", "window", "windowevent"]
+
+
+from . import bootrom, cartridge, interaction, lcd, motherboard, ram, window, windowevent
 from .pyboy import PyBoy

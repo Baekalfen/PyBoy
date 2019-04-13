@@ -4,8 +4,8 @@
 #
 
 
-from ..logger import logger, addConsoleHandler
-addConsoleHandler()
+from ..logger import logger, addconsolehandler
+addconsolehandler()
 
 
 def getwindow(win_type, scale):
