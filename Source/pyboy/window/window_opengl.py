@@ -31,7 +31,7 @@ class OpenGLWindow(SDLWindow):
 
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
-        glutInitWindowSize(*self._scaledResolution)
+        glutInitWindowSize(*self._scaledresolution)
         glutCreateWindow("PyBoy")
         glutKeyboardFunc(self._key)
         glutKeyboardUpFunc(self._keyUp)
@@ -123,9 +123,9 @@ class OpenGLWindow(SDLWindow):
 
     def _glreshape(self, width, height):
         scale = max(min(height / ROWS, width / COLS), 1)
-        self._scaledResolution = (round(scale * COLS), round(scale * ROWS))
+        self._scaledresolution = (round(scale * COLS), round(scale * ROWS))
         glPixelZoom(scale, scale)
-        # glutReshapeWindow(*self._scaledResolution);
+        # glutReshapeWindow(*self._scaledresolution);
 
     def _gldraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
