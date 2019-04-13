@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+
 cimport sdl2
 from pyboy.lcd cimport LCD
 from .window_sdl2 cimport SDLWindow
@@ -13,6 +14,7 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
 cdef (int, int) _dummy_declaration
+cdef (int, int, int, int) _dummy_declaration2
 
 cdef int ROWS, COLS
 

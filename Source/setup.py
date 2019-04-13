@@ -58,7 +58,6 @@ setup(
         'pyboy/ram.py',
         'pyboy/interaction.py',
         'pyboy/window/__init__.py',
-        'pyboy/window/genericwindow.py',
         'pyboy/window/window.py',
         'pyboy/window/window_sdl2.py',
         'pyboy/window/window_opengl.py',

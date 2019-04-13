@@ -9,7 +9,7 @@ from array import array
 
 cimport sdl2
 from pyboy.lcd cimport LCD
-from pyboy.window.genericwindow cimport GenericWindow
+from pyboy.window.window cimport Window
 
 import cython
 cimport cython
@@ -17,13 +17,14 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
 cdef (int, int) _dummy_declaration
+cdef (int, int, int, int) _dummy_declaration2
 
 cdef unsigned char getcolorcode(unsigned char, unsigned char, unsigned char)
 
 cdef int ROWS, COLS
 
 
-cdef class SDLWindow(GenericWindow):
+cdef class SDLWindow(Window):
 
     cdef uint32_t _ticks
     cdef dict _key_down

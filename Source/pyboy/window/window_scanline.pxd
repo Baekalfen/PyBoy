@@ -10,15 +10,17 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 cimport sdl2 as sdl2
 from pyboy.lcd cimport LCD
-from pyboy.window.genericwindow cimport GenericWindow
+from pyboy.window.window cimport Window
 
 
 cdef (int, int) _dummy
+cdef (int, int, int, int) _dummy2
+
 cdef int ROWS, COLS
 cdef dict KEY_DOWN, KEY_UP
 
 
-cdef class ScanlineWindow(GenericWindow):
+cdef class ScanlineWindow(Window):
 
     cdef sdl2.SDL_Window* _window
     cdef sdl2.SDL_Renderer* _sdlrenderer

@@ -13,7 +13,7 @@ cimport pyboy.bootrom
 cimport pyboy.ram
 cimport pyboy.lcd
 cimport pyboy.interaction
-cimport pyboy.window.genericwindow
+cimport pyboy.window.window
 
 
 cdef unsigned short STAT, LY, LYC
@@ -31,7 +31,7 @@ cdef class Motherboard:
     cdef pyboy.lcd.LCD lcd
     cdef pyboy.motherboard.cpu.CPU cpu
     cdef pyboy.motherboard.timer.Timer timer
-    cdef pyboy.window.genericwindow.GenericWindow window
+    cdef pyboy.window.window.Window window
     cdef pyboy.cartridge.mbc.MBC cartridge
     cdef bint bootromenabled
     cdef unicode serialbuffer

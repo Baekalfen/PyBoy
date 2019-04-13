@@ -5,10 +5,11 @@
 
 
 from pyboy.lcd cimport LCD
-from pyboy.window.genericwindow cimport GenericWindow
+from pyboy.window.window cimport Window
 
 
 cdef (int, int) _dummy_declaration
+cdef (int, int, int, int) _dummy_declaration2
 
-cdef class DummyWindow(GenericWindow):
+cdef class DummyWindow(Window):
     pass

@@ -6,10 +6,9 @@
 
 from libc cimport time
 cimport cython
-cimport pyboy.window.window
 
 from pyboy.motherboard.motherboard cimport Motherboard
-from pyboy.window.genericwindow cimport GenericWindow
+from pyboy.window.window cimport Window
 
 
 cdef (int, int) _dummy_declaration
@@ -21,7 +20,7 @@ cdef class PyBoy:
     cdef object debugger
     cdef unicode ROM
     cdef Motherboard motherboard
-    cdef GenericWindow window
+    cdef Window window
 
     cdef bint profiling
     cdef double avg_emu

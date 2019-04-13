@@ -4,11 +4,11 @@
 #
 
 
+from pyboy.window.window import Window
 from ..logger import logger
-from .genericwindow import GenericWindow
 
 
-class DummyWindow(GenericWindow):
+class DummyWindow(Window):
     def __init__(self, scale):
         super(self.__class__, self).__init__(scale)
 

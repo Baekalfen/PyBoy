@@ -9,7 +9,7 @@ import array
 import sdl2.ext
 
 from pyboy import windowevent
-from pyboy.window.genericwindow import GenericWindow
+from pyboy.window.window import Window
 
 try:
     from cython import compiled
@@ -52,10 +52,10 @@ KEY_UP = {
 }
 
 
-class ScanlineWindow(GenericWindow):
+class ScanlineWindow(Window):
 
     def __init__(self, scale=1):
-        GenericWindow.__init__(self, scale)
+        Window.__init__(self, scale)
 
         self._linebuf = array.array('I', [0] * COLS)
         self._linerect = {'x': 0, 'y': 0, 'w': COLS, 'h': 1}

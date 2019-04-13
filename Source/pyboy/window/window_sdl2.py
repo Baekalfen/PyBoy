@@ -4,14 +4,14 @@
 #
 
 
-import ctypes
 from array import array
+from ctypes import c_void_p
 
 import sdl2
 import sdl2.ext
 
 from .. import windowevent
-from .genericwindow import GenericWindow
+from .window import Window
 
 try:
     from cython import compiled
@@ -38,9 +38,9 @@ def getcolorcode(byte1, byte2, offset):
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
 
-class SDLWindow(GenericWindow):
+class SDLWindow(Window):
     def __init__(self, scale=1):
-        GenericWindow.__init__(self, scale)
+        Window.__init__(self, scale)
 
         self._screenbuffer_raw = array('B', [0] * (ROWS*COLS*4))
         self._tilecache_raw = array('B', [0] * (TILES*8*8*4))
@@ -65,8 +65,7 @@ class SDLWindow(GenericWindow):
             self._spritecache0 = [v[i:i+8] for i in range(0, 384*8*8, 8)]
             v = memoryview(self._spritecache1_raw).cast('I')
             self._spritecache1 = [v[i:i+8] for i in range(0, 384*8*8, 8)]
-            self._screenbuffer_ptr = ctypes.c_void_p(
-                self._screenbuffer_raw.buffer_info()[0])
+            self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
 
