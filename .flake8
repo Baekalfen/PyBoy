@@ -1,0 +1,12 @@
+[flake8]
+# E261: Adds no improvement to readability: Two spaces before inline comment
+# E123: flake8 is either buggy, or the rule is nonsensical. Doesn't work when nested: Closing brackets should match indentation of opening bracket.
+# E221: Sometimes alignment of operators is better. Use common sense: "multiple spaces before operator"
+# E203: Sometimes alignment of commas is better. Use common sense: "whitespace before ','"
+# W503: Sometimes common sense prevail: "line break before binary operator"
+# W504: Sometimes common sense prevail: "line break after binary operator"
+# E226: "If operators with different priorities are used, __consider__ adding whitespace around the operators with the lowest priority(ies). Use your own judgment;..."
+# E722: Use common sense: "do not use bare 'except'"
+ignore = E261, E123, E221, E203, W503, W504, E226, E722
+exclude = .git, __pycache__, */test_pyboy/*,
+max-line-length = 120
