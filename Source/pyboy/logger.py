@@ -3,11 +3,9 @@
 # GitHub: https://github.com/baekalfen/PyBoy
 #
 
-
 import logging
-
-
 logger = logging.getLogger()
+
 
 already_loaded = False
 

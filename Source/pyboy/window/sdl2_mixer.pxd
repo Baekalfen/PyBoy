@@ -69,17 +69,17 @@ cdef extern from "SDL_mixer.h" nogil:
     void* Mix_GetMusicHookData()
     void Mix_ChannelFinished(void (*channel_finished)(int channel))
 
-    int MIX_CHANNEL_POST  # macro
+    int MIX_CHANNEL_POST # macro
 
     ctypedef void (*Mix_EffectFunc_t) (int chan, void* stream, int len, void* udata)
     ctypedef void (*Mix_EffectDone_t) (int chan, void* udata)
-    
+
     int Mix_RegisterEffect(int chan, Mix_EffectFunc_t f, Mix_EffectDone_t d, void* arg)
     int Mix_UnregisterEffect(int channel, Mix_EffectFunc_t f)
     int Mix_UnregisterAllEffects(int channel)
 
     int MIX_EFFECTSMAXSPEED # macro
-    
+
     int Mix_SetPanning(int channel, Uint8 left, Uint8 right)
     int Mix_SetPosition(int channel, Sint16 angle, Uint8 distance)
     int Mix_SetDistance(int channel, Uint8 distance)

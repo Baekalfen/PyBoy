@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 cdef unsigned char P10, P11, P12, P13, P14, P15
 cdef unsigned char reset_bit(unsigned char, unsigned char)
 cdef unsigned char set_bit(unsigned char, unsigned char)

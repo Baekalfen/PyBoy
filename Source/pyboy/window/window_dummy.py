@@ -3,12 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
-from pyboy.window.window import Window
+from pyboy.window.base_window import BaseWindow
 from ..logger import logger
 
 
-class DummyWindow(Window):
+class DummyWindow(BaseWindow):
     def __init__(self, scale):
         super(self.__class__, self).__init__(scale)
 

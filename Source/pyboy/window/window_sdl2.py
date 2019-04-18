@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 from array import array
 from ctypes import c_void_p
 
@@ -11,7 +10,7 @@ import sdl2
 import sdl2.ext
 
 from .. import windowevent
-from .window import Window
+from .base_window import BaseWindow
 
 try:
     from cython import compiled
@@ -22,6 +21,35 @@ except ImportError:
 
 ROWS, COLS = 144, 160
 TILES = 384
+
+# https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
+KEY_DOWN = {
+    sdl2.SDLK_UP        : windowevent.PRESS_ARROW_UP,
+    sdl2.SDLK_DOWN      : windowevent.PRESS_ARROW_DOWN,
+    sdl2.SDLK_RIGHT     : windowevent.PRESS_ARROW_RIGHT,
+    sdl2.SDLK_LEFT      : windowevent.PRESS_ARROW_LEFT,
+    sdl2.SDLK_a         : windowevent.PRESS_BUTTON_A,
+    sdl2.SDLK_s         : windowevent.PRESS_BUTTON_B,
+    sdl2.SDLK_RETURN    : windowevent.PRESS_BUTTON_START,
+    sdl2.SDLK_BACKSPACE : windowevent.PRESS_BUTTON_SELECT,
+    sdl2.SDLK_ESCAPE    : windowevent.QUIT,
+    sdl2.SDLK_d         : windowevent.DEBUG_TOGGLE,
+    sdl2.SDLK_SPACE     : windowevent.PRESS_SPEED_UP,
+    sdl2.SDLK_i         : windowevent.SCREEN_RECORDING_TOGGLE,
+}
+KEY_UP = {
+    sdl2.SDLK_UP        : windowevent.RELEASE_ARROW_UP,
+    sdl2.SDLK_DOWN      : windowevent.RELEASE_ARROW_DOWN,
+    sdl2.SDLK_RIGHT     : windowevent.RELEASE_ARROW_RIGHT,
+    sdl2.SDLK_LEFT      : windowevent.RELEASE_ARROW_LEFT,
+    sdl2.SDLK_a         : windowevent.RELEASE_BUTTON_A,
+    sdl2.SDLK_s         : windowevent.RELEASE_BUTTON_B,
+    sdl2.SDLK_RETURN    : windowevent.RELEASE_BUTTON_START,
+    sdl2.SDLK_BACKSPACE : windowevent.RELEASE_BUTTON_SELECT,
+    sdl2.SDLK_z         : windowevent.SAVE_STATE,
+    sdl2.SDLK_x         : windowevent.LOAD_STATE,
+    sdl2.SDLK_SPACE     : windowevent.RELEASE_SPEED_UP,
+}
 
 
 def getcolorcode(byte1, byte2, offset):
@@ -38,9 +66,9 @@ def getcolorcode(byte1, byte2, offset):
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
 
-class SDLWindow(Window):
+class SDLWindow(BaseWindow):
     def __init__(self, scale=1):
-        Window.__init__(self, scale)
+        BaseWindow.__init__(self, scale)
 
         self._screenbuffer_raw = array('B', [0] * (ROWS*COLS*4))
         self._tilecache_raw = array('B', [0] * (TILES*8*8*4))
@@ -72,40 +100,9 @@ class SDLWindow(Window):
         # TODO: Instance variables should all start out in __init__,
         # but some SDL objects are still in init()
         self._ticks = 0
-        self._key_down = {}
-        self._key_up = {}
 
     def init(self):
         self._ticks = sdl2.SDL_GetTicks()
-
-        # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
-        self._key_down = {
-            sdl2.SDLK_UP: windowevent.PRESSARROWUP,
-            sdl2.SDLK_DOWN: windowevent.PRESSARROWDOWN,
-            sdl2.SDLK_RIGHT: windowevent.PRESSARROWRIGHT,
-            sdl2.SDLK_LEFT: windowevent.PRESSARROWLEFT,
-            sdl2.SDLK_a: windowevent.PRESSBUTTONA,
-            sdl2.SDLK_s: windowevent.PRESSBUTTONB,
-            sdl2.SDLK_RETURN: windowevent.PRESSBUTTONSTART,
-            sdl2.SDLK_BACKSPACE: windowevent.PRESSBUTTONSELECT,
-            sdl2.SDLK_ESCAPE: windowevent.QUIT,
-            sdl2.SDLK_d: windowevent.DEBUGTOGGLE,
-            sdl2.SDLK_SPACE: windowevent.PRESSSPEEDUP,
-            sdl2.SDLK_i: windowevent.SCREENRECORDINGTOGGLE,
-        }
-        self._key_up = {
-            sdl2.SDLK_UP: windowevent.RELEASEARROWUP,
-            sdl2.SDLK_DOWN: windowevent.RELEASEARROWDOWN,
-            sdl2.SDLK_RIGHT: windowevent.RELEASEARROWRIGHT,
-            sdl2.SDLK_LEFT: windowevent.RELEASEARROWLEFT,
-            sdl2.SDLK_a: windowevent.RELEASEBUTTONA,
-            sdl2.SDLK_s: windowevent.RELEASEBUTTONB,
-            sdl2.SDLK_RETURN: windowevent.RELEASEBUTTONSTART,
-            sdl2.SDLK_BACKSPACE: windowevent.RELEASEBUTTONSELECT,
-            sdl2.SDLK_z: windowevent.SAVESTATE,
-            sdl2.SDLK_x: windowevent.LOADSTATE,
-            sdl2.SDLK_SPACE: windowevent.RELEASESPEEDUP,
-        }
 
         # Should be less... https://wiki.libsdl.org/SDL_Init
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
@@ -140,9 +137,9 @@ class SDLWindow(Window):
             if event.type == sdl2.SDL_QUIT:
                 events.append(windowevent.QUIT)
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(self._key_down.get(event.key.keysym.sym, windowevent.PASS))
+                events.append(KEY_DOWN.get(event.key.keysym.sym, windowevent.PASS))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(self._key_up.get(event.key.keysym.sym, windowevent.PASS))
+                events.append(KEY_UP.get(event.key.keysym.sym, windowevent.PASS))
         return events
 
     def update_display(self):
@@ -159,8 +156,8 @@ class SDLWindow(Window):
         sdl2.SDL_Quit()
 
     def scanline(self, y, lcd):
-        viewpos = lcd.get_viewport()
-        windowpos = lcd.get_windowpos()
+        viewpos = lcd.getviewport()
+        windowpos = lcd.getwindowpos()
         self._scanlineparameters[y][0] = viewpos[0]
         self._scanlineparameters[y][1] = viewpos[1]
         self._scanlineparameters[y][2] = windowpos[0]
@@ -169,7 +166,7 @@ class SDLWindow(Window):
     def render_screen(self, lcd):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
-        bmap = 0x1800 if lcd.LCDC.backgroundmap_select == 0 else 0x1C00
+        background_offset = 0x1800 if lcd.LCDC.backgroundmap_select == 0 else 0x1C00
         wmap = 0x1800 if lcd.LCDC.windowmap_select == 0 else 0x1C00
 
         for y in range(ROWS):
@@ -187,7 +184,7 @@ class SDLWindow(Window):
                         wt = (wt ^ 0x80) + 128
                     self._screenbuffer[y][x] = self._tilecache[8*wt + (y-wy) % 8][(x-wx) % 8]
                 elif lcd.LCDC.background_enable:
-                    bt = lcd.VRAM[bmap + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
+                    bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
                     # If using signed tile indices, modify index
                     if not lcd.LCDC.tiledata_select:
                         # (x ^ 0x80 - 128) to convert to signed, then
@@ -196,13 +193,13 @@ class SDLWindow(Window):
                     self._screenbuffer[y][x] = self._tilecache[8*bt + (y+by) % 8][(x+offset) % 8]
                 else:
                     # If background is disabled, it becomes white
-                    self._screenbuffer[y][x] = self.colorpalette[0]
+                    self._screenbuffer[y][x] = self.color_palette[0]
 
         # Render sprites
         # - Doesn't restrict 10 sprites per scan line
         # - Prioritizes sprite in inverted order
         spritesize = 16 if lcd.LCDC.sprite_size else 8
-        bgpkey = lcd.BGP.get_color(0)
+        bgpkey = lcd.BGP.getcolor(0)
 
         for n in range(0x00, 0xA0, 4):
             y = lcd.OAM[n] - 16
@@ -245,7 +242,7 @@ class SDLWindow(Window):
             self.clearcache = False
 
         for t in self.tiles_changed:
-            for k in range(0, 16, 2):  # 2 bytes for each line
+            for k in range(0, 16, 2): # 2 bytes for each line
                 byte1 = lcd.VRAM[t + k - 0x8000]
                 byte2 = lcd.VRAM[t + k + 1 - 0x8000]
                 y = (t + k - 0x8000)//2
@@ -253,9 +250,9 @@ class SDLWindow(Window):
                 for x in range(8):
                     colorcode = getcolorcode(byte1, byte2, 7-x)
 
-                    self._tilecache[y][x] = lcd.BGP.get_color(colorcode)
-                    self._spritecache0[y][x] = lcd.OBP0.get_color(colorcode)
-                    self._spritecache1[y][x] = lcd.OBP1.get_color(colorcode)
+                    self._tilecache[y][x] = lcd.BGP.getcolor(colorcode)
+                    self._spritecache0[y][x] = lcd.OBP0.getcolor(colorcode)
+                    self._spritecache1[y][x] = lcd.OBP1.getcolor(colorcode)
 
                     if colorcode == 0:
                         self._spritecache0[y][x] &= ~self.alphamask
@@ -265,7 +262,7 @@ class SDLWindow(Window):
 
     def blank_screen(self):
         # If the screen is off, fill it with a color.
-        color = self.colorpalette[0]
+        color = self.color_palette[0]
         for y in range(144):
             for x in range(160):
                 self._screenbuffer[y][x] = color

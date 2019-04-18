@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 from .window_sdl2 import SDLWindow
 from ..logger import logger
 

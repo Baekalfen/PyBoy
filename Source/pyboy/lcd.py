@@ -3,29 +3,19 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import array
 
 
-VIDEO_RAM = 8 * 1024  # 8KB
+VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
-
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
-
-# LCDC bit descriptions
-(BACKGROUND_ENABLE, SPRITE_ENABLE, SPRITE_SIZE, BACKGROUNDMAP_SELECT,
- TILEDATA_SELELECT, WINDOW_ENABLE, WINDOWMAP_SELECT, LCD_ENABLE) = range(8)
-
-# STAT bit descriptions
-# MODEFLAG0, MODEFLAG1, COINCIDENCE, MODE00, MODE01, MODE10, LYC_LY = range(7)
-
 ROWS, COLS = 144, 160
 
 
 class LCD:
-    def __init__(self, colorPalette):
-        self.VRAM = array.array('B', [0]*VIDEO_RAM)
-        self.OAM = array.array('B', [0]*OBJECT_ATTRIBUTE_MEMORY)
+    def __init__(self, color_palette):
+        self.VRAM = array.array('B', [0] * VIDEO_RAM)
+        self.OAM = array.array('B', [0] * OBJECT_ATTRIBUTE_MEMORY)
 
         self.LCDC = LCDCRegister(0)
         # self.STAT = 0x00
@@ -34,9 +24,9 @@ class LCD:
         # self.LY = 0x00
         # self.LYC = 0x00
         # self.DMA = 0x00
-        self.BGP = PaletteRegister(0xFC, colorPalette)
-        self.OBP0 = PaletteRegister(0xFF, colorPalette)
-        self.OBP1 = PaletteRegister(0xFF, colorPalette)
+        self.BGP = PaletteRegister(0xFC, color_palette)
+        self.OBP0 = PaletteRegister(0xFF, color_palette)
+        self.OBP1 = PaletteRegister(0xFF, color_palette)
         self.WY = 0x00
         self.WX = 0x00
 
@@ -74,16 +64,16 @@ class LCD:
         self.WY = ord(f.read(1))
         self.WX = ord(f.read(1))
 
-    def get_windowpos(self):
-        return (self.WX-7, self.WY)
+    def getwindowpos(self):
+        return (self.WX - 7, self.WY)
 
-    def get_viewport(self):
+    def getviewport(self):
         return (self.SCX, self.SCY)
 
 
 class PaletteRegister:
-    def __init__(self, value, colorpalette):
-        self.colorpalette = colorpalette
+    def __init__(self, value, color_palette):
+        self.color_palette = color_palette
         self.value = 0
         self.set(value)
 
@@ -95,10 +85,10 @@ class PaletteRegister:
         self.value = value
         self.lookup = [0] * 4
         for x in range(4):
-            self.lookup[x] = self.colorpalette[(value >> x*2) & 0b11]
+            self.lookup[x] = self.color_palette[(value >> x * 2) & 0b11]
         return True
 
-    def get_color(self, i):
+    def getcolor(self, i):
         return self.lookup[i]
 
 
@@ -110,11 +100,11 @@ class LCDCRegister:
         self.value = value
 
         # No need to convert to bool. Any non-zero value is true.
-        self.lcd_enable = value & (1 << 7)
-        self.windowmap_select = value & (1 << 6)
-        self.window_enable = value & (1 << 5)
-        self.tiledata_select = value & (1 << 4)
+        self.lcd_enable           = value & (1 << 7)
+        self.windowmap_select     = value & (1 << 6)
+        self.window_enable        = value & (1 << 5)
+        self.tiledata_select      = value & (1 << 4)
         self.backgroundmap_select = value & (1 << 3)
-        self.sprite_size = value & (1 << 2)
-        self.sprite_enable = value & (1 << 1)
-        self.background_enable = value & (1 << 0)
+        self.sprite_size          = value & (1 << 2)
+        self.sprite_enable        = value & (1 << 1)
+        self.background_enable    = value & (1 << 0)

@@ -3,9 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from .base_mbc cimport BaseMBC
 
-from .mbc cimport MBC
 
-
-cdef class MBC2(MBC):
+cdef class MBC2(BaseMBC):
     cdef void setitem(self, unsigned short, unsigned char)

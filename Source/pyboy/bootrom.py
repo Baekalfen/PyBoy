@@ -3,16 +3,15 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import array
 import struct
 
 
 class BootROM:
-    def __init__(self, bootromfile):
-        if bootromfile is not None:
-            with open(bootromfile, "rb") as bootromfilehandle:
-                rom = bootromfilehandle.read()
+    def __init__(self, bootrom_file):
+        if bootrom_file is not None:
+            with open(bootrom_file, "rb") as f:
+                rom = f.read()
             self.bootrom = array.array('B', struct.unpack('%iB' % len(rom), rom))
         else:
             self.bootrom = array.array('B', [0] * 256)

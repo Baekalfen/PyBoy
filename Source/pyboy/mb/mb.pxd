@@ -5,15 +5,16 @@
 
 
 import cython
-cimport pyboy.motherboard.cpu
-cimport pyboy.motherboard.timer
-cimport pyboy.cartridge.mbc
+cimport pyboy.mb.cpu
+cimport pyboy.mb.timer
+cimport pyboy.cartridge.base_mbc
 # cimport pyboy.cartridge.cartridge
 cimport pyboy.bootrom
 cimport pyboy.ram
 cimport pyboy.lcd
 cimport pyboy.interaction
 cimport pyboy.window.window
+cimport pyboy.window.base_window
 
 
 cdef unsigned short STAT, LY, LYC
@@ -29,11 +30,11 @@ cdef class Motherboard:
     cdef pyboy.bootrom.BootROM bootrom
     cdef pyboy.ram.RAM ram
     cdef pyboy.lcd.LCD lcd
-    cdef pyboy.motherboard.cpu.CPU cpu
-    cdef pyboy.motherboard.timer.Timer timer
-    cdef pyboy.window.window.Window window
-    cdef pyboy.cartridge.mbc.MBC cartridge
-    cdef bint bootromenabled
+    cdef pyboy.mb.cpu.CPU cpu
+    cdef pyboy.mb.timer.Timer timer
+    cdef pyboy.window.base_window.BaseWindow window
+    cdef pyboy.cartridge.base_mbc.BaseMBC cartridge
+    cdef bint bootrom_enabled
     cdef unicode serialbuffer
 
     cdef void buttonevent(self, int)

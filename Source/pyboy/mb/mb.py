@@ -3,10 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
-import sys
-
-
 from . import cpu
 from . import timer
 from .. import bootrom, cartridge, interaction, lcd, ram
@@ -18,9 +14,8 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gameromfile, bootromfile, window, profiling=False,
-                 debugger=None):
-        if bootromfile is not None:
+    def __init__(self, gamerom_file, bootrom_file, window, profiling=False, debugger=None):
+        if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
         if profiling:
@@ -30,16 +25,12 @@ class Motherboard:
         self.window = window
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
-        self.cartridge = cartridge.cartridge.Cartridge(gameromfile)
-        self.bootrom = bootrom.BootROM(bootromfile)
+        self.cartridge = cartridge.Cartridge(gamerom_file)
+        self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD(window.colorpalette)
-        self.bootromenabled = True
-
-        if "loadState" in sys.argv:
-            self.load_state(gameromfile + ".state")
-
+        self.lcd = lcd.LCD(window.color_palette)
+        self.bootrom_enabled = True
         self.serialbuffer = u''
 
     def getserial(self):
@@ -59,7 +50,7 @@ class Motherboard:
     def save_state(self, filename):
         logger.info("Saving state...")
         with open(filename, "wb") as f:
-            f.write(self.bootromenabled.to_bytes(1, 'little'))
+            f.write(self.bootrom_enabled.to_bytes(1, 'little'))
             self.cpu.save_state(f)
             self.lcd.save_state(f)
             self.ram.save_state(f)
@@ -69,7 +60,7 @@ class Motherboard:
     def load_state(self, filename):
         logger.info("Loading state...")
         with open(filename, "rb") as f:
-            self.bootromenabled = ord(f.read(1))
+            self.bootrom_enabled = ord(f.read(1))
             self.cpu.load_state(f)
             self.lcd.load_state(f)
             self.ram.load_state(f)
@@ -83,8 +74,8 @@ class Motherboard:
     # Coordinator
     #
     def set_STAT_mode(self, mode):
-        self.setitem(STAT, self.getitem(STAT) & 0b11111100)  # Clearing 2 LSB
-        self.setitem(STAT, self.getitem(STAT) | mode)  # Apply mode to LSB
+        self.setitem(STAT, self.getitem(STAT) & 0b11111100) # Clearing 2 LSB
+        self.setitem(STAT, self.getitem(STAT) | mode) # Apply mode to LSB
 
         # Mode "3" is not interruptable
         if self.cpu.test_ramregisterflag(STAT, mode + 3) and mode != 3:
@@ -93,7 +84,7 @@ class Motherboard:
     def check_LYC(self, y):
         self.setitem(LY, y)
         if self.getitem(LYC) == y:
-            self.setitem(STAT, self.getitem(STAT) | 0b100)  # Sets the LYC flag
+            self.setitem(STAT, self.getitem(STAT) | 0b100) # Sets the LYC flag
             if self.getitem(STAT) & 0b01000000:
                 self.cpu.set_interruptflag(LCDC)
         else:
@@ -104,7 +95,7 @@ class Motherboard:
             cycles = self.cpu.tick()
 
             # TODO: Benchmark whether 'if' and 'try/except' is better
-            if cycles == -1:  # CPU has HALTED
+            if cycles == -1: # CPU has HALTED
                 # Fast-forward to next interrupt:
                 # VBLANK and LCDC are covered by just returning.
                 # Timer has to be determined.
@@ -170,28 +161,28 @@ class Motherboard:
     # MemoryManager
     #
     def getitem(self, i):
-        if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-            if i <= 0xFF and self.bootromenabled:
+        if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
+            if i <= 0xFF and self.bootrom_enabled:
                 return self.bootrom.getitem(i)
             else:
                 return self.cartridge.getitem(i)
-        elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
+        elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
             return self.cartridge.getitem(i)
-        elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+        elif 0x8000 <= i < 0xA000: # 8kB Video RAM
             return self.lcd.VRAM[i - 0x8000]
-        elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
+        elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             return self.cartridge.getitem(i)
-        elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
+        elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
             return self.ram.internal_ram0[i - 0xC000]
-        elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
+        elif 0xE000 <= i < 0xFE00: # Echo of 8kB Internal RAM
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
-        elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
+        elif 0xFE00 <= i < 0xFEA0: # Sprite Attribute Memory (OAM)
             return self.lcd.OAM[i - 0xFE00]
-        elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
+        elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
             print(0xFEA0 + i)
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
-        elif 0xFF00 <= i < 0xFF4C:  # I/O ports
+        elif 0xFF00 <= i < 0xFF4C: # I/O ports
             if i == 0xFF04:
                 return self.timer.DIV
             elif i == 0xFF05:
@@ -218,42 +209,41 @@ class Motherboard:
                 return self.lcd.WX
             else:
                 return self.ram.io_ports[i - 0xFF00]
-        elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
+        elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
             print(0xFF4C + i)
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
-        elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
+        elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             return self.ram.internal_ram1[i-0xFF80]
-        elif i == 0xFFFF:  # Interrupt Enable Register
+        elif i == 0xFFFF: # Interrupt Enable Register
             return self.ram.interrupt_register[0]
         else:
             raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
 
     def setitem(self, i, value):
-        if value > 0xFF:
-            raise ValueError("Memory write error! Can't write %s to %s" % (hex(value), hex(i)))
+        assert 0 <= value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value), hex(i))
 
-        if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
+        if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
-        elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
+        elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
-        elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+        elif 0x8000 <= i < 0xA000: # 8kB Video RAM
             self.lcd.VRAM[i - 0x8000] = value
-            if i < 0x9800:  # Is within tile data -- not tile maps
+            if i < 0x9800: # Is within tile data -- not tile maps
                 # Mask out the byte of the tile
                 self.window.tiles_changed.add(i & 0xFFF0)
-        elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
+        elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
-        elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
+        elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
             self.ram.internal_ram0[i - 0xC000] = value
-        elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
-            self.setitem(i - 0x2000, value)  # Redirect to internal RAM
-        elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
+        elif 0xE000 <= i < 0xFE00: # Echo of 8kB Internal RAM
+            self.setitem(i - 0x2000, value) # Redirect to internal RAM
+        elif 0xFE00 <= i < 0xFEA0: # Sprite Attribute Memory (OAM)
             self.lcd.OAM[i - 0xFE00] = value
-        elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
+        elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
-        elif 0xFF00 <= i < 0xFF4C:  # I/O ports
+        elif 0xFF00 <= i < 0xFF4C: # I/O ports
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
@@ -287,13 +277,13 @@ class Motherboard:
                 self.lcd.WX = value
             else:
                 self.ram.io_ports[i - 0xFF00] = value
-        elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
-            if self.bootromenabled and i == 0xFF50 and value == 1:
-                self.bootromenabled = False
+        elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
+            if self.bootrom_enabled and i == 0xFF50 and value == 1:
+                self.bootrom_enabled = False
             self.ram.non_io_internal_ram1[i - 0xFF4C] = value
-        elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
+        elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i-0xFF80] = value
-        elif i == 0xFFFF:  # Interrupt Enable Register
+        elif i == 0xFFFF: # Interrupt Enable Register
             self.ram.interrupt_register[0] = value
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))

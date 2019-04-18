@@ -7,8 +7,8 @@
 from libc cimport time
 cimport cython
 
-from pyboy.motherboard.motherboard cimport Motherboard
-from pyboy.window.window cimport Window
+from pyboy.mb.mb cimport Motherboard
+from pyboy.window.base_window cimport BaseWindow
 
 
 cdef (int, int) _dummy_declaration
@@ -18,9 +18,9 @@ cdef float SPF
 
 cdef class PyBoy:
     cdef object debugger
-    cdef unicode ROM
-    cdef Motherboard motherboard
-    cdef Window window
+    cdef unicode gamerom_file
+    cdef Motherboard mb
+    cdef BaseWindow window
 
     cdef bint profiling
     cdef double avg_emu

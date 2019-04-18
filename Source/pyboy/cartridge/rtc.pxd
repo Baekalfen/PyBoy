@@ -6,14 +6,14 @@
 
 cdef class RTC:
     cdef unicode filename
-    cdef bint latchenabled
+    cdef bint latch_enabled
     cdef double timezero
-    cdef unsigned int seclatch
-    cdef unsigned int minlatch
-    cdef unsigned int hourlatch
-    cdef unsigned int daylatchlow
-    cdef unsigned int daylatchhigh
-    cdef unsigned int daycarry
+    cdef unsigned int sec_latch
+    cdef unsigned int min_latch
+    cdef unsigned int hour_latch
+    cdef unsigned int day_latch_low
+    cdef unsigned int day_latch_high
+    cdef unsigned int day_carry
     cdef unsigned int halt
 
     cdef void stop(self)

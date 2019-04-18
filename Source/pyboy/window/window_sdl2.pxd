@@ -3,13 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 from cpython.array cimport array
 from array import array
 
 cimport sdl2
 from pyboy.lcd cimport LCD
-from pyboy.window.window cimport Window
+from pyboy.window.base_window cimport BaseWindow
 
 import cython
 cimport cython
@@ -24,7 +23,7 @@ cdef unsigned char getcolorcode(unsigned char, unsigned char, unsigned char)
 cdef int ROWS, COLS
 
 
-cdef class SDLWindow(Window):
+cdef class SDLWindow(BaseWindow):
 
     cdef uint32_t _ticks
     cdef dict _key_down
@@ -50,7 +49,7 @@ cdef class SDLWindow(Window):
         y=int,
         x=int,
         wmap=int,
-        bmap=int,
+        background_offset=int,
         bt=int,
         wt=int,
         bx=int,

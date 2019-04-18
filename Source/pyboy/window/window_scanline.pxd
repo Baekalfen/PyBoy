@@ -3,14 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 cimport cython
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 cimport sdl2 as sdl2
 from pyboy.lcd cimport LCD
-from pyboy.window.window cimport Window
+from pyboy.window.base_window cimport BaseWindow
 
 
 cdef (int, int) _dummy
@@ -20,7 +19,7 @@ cdef int ROWS, COLS
 cdef dict KEY_DOWN, KEY_UP
 
 
-cdef class ScanlineWindow(Window):
+cdef class ScanlineWindow(BaseWindow):
 
     cdef sdl2.SDL_Window* _window
     cdef sdl2.SDL_Renderer* _sdlrenderer

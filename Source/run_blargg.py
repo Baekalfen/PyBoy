@@ -1,17 +1,12 @@
 #! /usr/local/bin/python2
 
-
-import traceback
 import time
-import os.path
-import os
-import sys
-import platform
 from PyBoy.Logger import logger
 from PyBoy import PyBoy
 import multiprocessing as mp
 
 timeout = 5
+
 
 def test_rom(rom):
     logger.info(rom)
@@ -36,12 +31,13 @@ def test_rom(rom):
             result = (serial_output)
             break
 
-        if time.time()-t > timeout:
+        if time.time() - t > timeout:
             result = ("Timeout:\n" + serial_output)
             break
     print(serial_output)
     pyboy.stop(save=False)
     return result
+
 
 if __name__ == "__main__":
     pool = mp.Pool(mp.cpu_count())
@@ -138,7 +134,3 @@ if __name__ == "__main__":
         f.write("|---|---|\n")
         for rom, res in zip(test_roms, results):
             f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))
-
-
-
-

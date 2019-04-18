@@ -4,29 +4,26 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import os
 import traceback
 import sys
 from pyboy import PyBoy
 from pyboy.logger import addconsolehandler
 
-
 addconsolehandler()
 
 
-def getROM(ROMdir):
+def getROM(romdir):
     """Give a list of ROMs to start"""
-    found_files = list(filter(lambda f: f.lower().endswith(
-        ".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir)))
+    found_files = list(filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(romdir)))
     for i, f in enumerate(found_files):
         print("%s\t%s" % (i + 1, f))
     filename = input("Write the name or number of the ROM file:\n")
 
     try:
-        filename = ROMdir + found_files[int(filename) - 1]
+        filename = romdir + found_files[int(filename) - 1]
     except TypeError:
-        filename = ROMdir + filename
+        filename = romdir + filename
 
     return filename
 
@@ -36,31 +33,28 @@ def main():
     if __debug__:
         os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
 
-    bootROM = "ROMs/DMG_ROM.bin"
-    ROMdir = "ROMs/"
+    bootrom = "ROMs/DMG_ROM.bin"
+    romdir = "ROMs/"
     scale = 3
 
     # Verify directories
-    if bootROM is not None and not os.path.exists(bootROM):
-        print("Boot-ROM not found. Please copy the Boot-ROM to '%s'."
-              "Using replacement in the meanwhile..." % bootROM)
-        bootROM = None
+    if bootrom is not None and not os.path.exists(bootrom):
+        print("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootrom)
+        bootrom = None
 
-    if not os.path.exists(ROMdir) and len(sys.argv) < 2:
-        print("ROM folder not found. Please copy the Game-ROM to "
-              "'%s'".format(ROMdir))
+    if not os.path.exists(romdir) and len(sys.argv) < 2:
+        print("ROM folder not found. Please copy the Game-ROM to '%s'".format(romdir))
         exit()
 
     try:
         # Check if the ROM is given through argv
-        if len(sys.argv) > 2:  # First arg is SDL2/PyGame
+        if len(sys.argv) > 2: # First arg is SDL2/PyGame
             filename = sys.argv[2]
         else:
-            filename = getROM(ROMdir)
+            filename = getROM(romdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None,
-                      scale, filename, bootROM)
+        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None, scale, filename, bootrom)
         while not pyboy.tick():
             pass
         pyboy.stop()

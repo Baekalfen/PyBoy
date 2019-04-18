@@ -3,12 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import array
 
 
 # MEMORY SIZES
-INTERNAL_RAM0 = 8 * 1024  # 8KB
+INTERNAL_RAM0 = 8 * 1024 # 8KB
 NON_IO_INTERNAL_RAM0 = 0x60
 IO_PORTS = 0x4C
 NON_IO_INTERNAL_RAM1 = 0x34
@@ -19,7 +18,7 @@ INTERRUPT_ENABLE_REGISTER = 1
 class RAM:
 
     def __init__(self, random=False):
-        if random:  # NOTE: In real life, the RAM is scrambled with random data on boot.
+        if random: # NOTE: In real life, the RAM is scrambled with random data on boot.
             raise Exception("Random RAM not implemented")
 
         self.internal_ram0 = array.array('B', [0]*(INTERNAL_RAM0))

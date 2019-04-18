@@ -5,14 +5,12 @@
 #
 
 import traceback
-import time
 import os.path
 import os
 import sys
-import platform
-from PyBoy.Logger import logger
 from PyBoy import WindowEvent
 from PyBoy import PyBoy
+
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
@@ -35,7 +33,7 @@ if __name__ == "__main__":
     scale = 1
 
     # Verify directories
-    if not bootROM is None and not os.path.exists(bootROM):
+    if bootROM is not None and not os.path.exists(bootROM):
         print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
         bootROM = None
 
@@ -80,7 +78,7 @@ if __name__ == "__main__":
 
             # Play game. When we are passed the 168th frame, the game has begone.
             # The "technique" is just to move the Tetromino to the right.
-            elif frame >168:
+            elif frame > 168:
                 if frame % 2 == 0:
                     pyboy.sendInput(WindowEvent.PressArrowRight)
                 elif frame % 2 == 1:
@@ -105,11 +103,10 @@ if __name__ == "__main__":
                 # finding the corresponding value in RAM.
                 if not first_brick:
                     for n in range(10):
-                        if view.get_tile(n+2,17) != 47:
+                        if view.get_tile(n+2, 17) != 47:
                             first_brick = True
                             print ("First brick touched the bottom!")
                             break
-
 
             frame += 1
         pyboy.stop()

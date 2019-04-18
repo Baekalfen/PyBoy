@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import cython
 
 
@@ -14,5 +13,5 @@ cdef class Timer:
 
     @cython.locals(divider=cython.int)
     cdef bint tick(self, unsigned int)
-    @cython.locals(divider=cython.int, cyclesLeft=cython.uint)
+    @cython.locals(divider=cython.int, cyclesleft=cython.uint)
     cdef unsigned int cyclestointerrupt(self)

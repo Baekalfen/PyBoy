@@ -14,14 +14,14 @@ class Test_Cartridge(unittest.TestCase):
 
     def test_Platform(self):
         dataRead = cart[0x143]
-        dataCheck = 0x80  # GGBCPUman.pdf p. 10: $80 = Color GB, $00 or other = not Color GB
+        dataCheck = 0x80 # GGBCPUman.pdf p. 10: $80 = Color GB, $00 or other = not Color GB
 
         self.assertNotEqual(dataRead, dataCheck)
 
     def test_GameName(self):
         dataRead = cart[0x134:0x143]
-        dataCheck = [0x50, 0x4F, 0x4B, 0x45, 0x4D, 0x4F, 0x4E, 0x20,  #POKEMON␣
-                     0x42, 0x4C, 0x55, 0x45, 0x00, 0x00, 0x00]        #BLUE\0\0\0
+        dataCheck = [0x50, 0x4F, 0x4B, 0x45, 0x4D, 0x4F, 0x4E, 0x20, #POKEMON␣
+                     0x42, 0x4C, 0x55, 0x45, 0x00, 0x00, 0x00]       #BLUE\0\0\0
 
         self.assertEqual(len(dataRead), 15)
         self.assertEqual(len(dataCheck), 15)

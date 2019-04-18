@@ -3,13 +3,12 @@
 # GitHub: https://github.com/krs013/PyBoy
 #
 
-
 import array
 
 import sdl2.ext
 
 from pyboy import windowevent
-from pyboy.window.window import Window
+from pyboy.window.base_window import BaseWindow
 
 try:
     from cython import compiled
@@ -22,40 +21,39 @@ if not cythonmode:
 
 
 ROWS, COLS = 144, 160
-
 KEY_DOWN = {
-    sdl2.SDLK_UP: windowevent.PRESSARROWUP,
-    sdl2.SDLK_DOWN: windowevent.PRESSARROWDOWN,
-    sdl2.SDLK_RIGHT: windowevent.PRESSARROWRIGHT,
-    sdl2.SDLK_LEFT: windowevent.PRESSARROWLEFT,
-    sdl2.SDLK_a: windowevent.PRESSBUTTONA,
-    sdl2.SDLK_s: windowevent.PRESSBUTTONB,
-    sdl2.SDLK_RETURN: windowevent.PRESSBUTTONSTART,
-    sdl2.SDLK_BACKSPACE: windowevent.PRESSBUTTONSELECT,
-    sdl2.SDLK_ESCAPE: windowevent.QUIT,
-    sdl2.SDLK_d: windowevent.DEBUGTOGGLE,
-    sdl2.SDLK_SPACE: windowevent.PRESSSPEEDUP,
-    sdl2.SDLK_i: windowevent.SCREENRECORDINGTOGGLE,
+    sdl2.SDLK_UP        : windowevent.PRESS_ARROW_UP,
+    sdl2.SDLK_DOWN      : windowevent.PRESS_ARROW_DOWN,
+    sdl2.SDLK_RIGHT     : windowevent.PRESS_ARROW_RIGHT,
+    sdl2.SDLK_LEFT      : windowevent.PRESS_ARROW_LEFT,
+    sdl2.SDLK_a         : windowevent.PRESS_BUTTON_A,
+    sdl2.SDLK_s         : windowevent.PRESS_BUTTON_B,
+    sdl2.SDLK_RETURN    : windowevent.PRESS_BUTTON_START,
+    sdl2.SDLK_BACKSPACE : windowevent.PRESS_BUTTON_SELECT,
+    sdl2.SDLK_ESCAPE    : windowevent.QUIT,
+    sdl2.SDLK_d         : windowevent.DEBUG_TOGGLE,
+    sdl2.SDLK_SPACE     : windowevent.PRESS_SPEED_UP,
+    sdl2.SDLK_i         : windowevent.SCREEN_RECORDING_TOGGLE,
 }
 KEY_UP = {
-    sdl2.SDLK_UP: windowevent.RELEASEARROWUP,
-    sdl2.SDLK_DOWN: windowevent.RELEASEARROWDOWN,
-    sdl2.SDLK_RIGHT: windowevent.RELEASEARROWRIGHT,
-    sdl2.SDLK_LEFT: windowevent.RELEASEARROWLEFT,
-    sdl2.SDLK_a: windowevent.RELEASEBUTTONA,
-    sdl2.SDLK_s: windowevent.RELEASEBUTTONB,
-    sdl2.SDLK_RETURN: windowevent.RELEASEBUTTONSTART,
-    sdl2.SDLK_BACKSPACE: windowevent.RELEASEBUTTONSELECT,
-    sdl2.SDLK_z: windowevent.SAVESTATE,
-    sdl2.SDLK_x: windowevent.LOADSTATE,
-    sdl2.SDLK_SPACE: windowevent.RELEASESPEEDUP,
+    sdl2.SDLK_UP        : windowevent.RELEASE_ARROW_UP,
+    sdl2.SDLK_DOWN      : windowevent.RELEASE_ARROW_DOWN,
+    sdl2.SDLK_RIGHT     : windowevent.RELEASE_ARROW_RIGHT,
+    sdl2.SDLK_LEFT      : windowevent.RELEASE_ARROW_LEFT,
+    sdl2.SDLK_a         : windowevent.RELEASE_BUTTON_A,
+    sdl2.SDLK_s         : windowevent.RELEASE_BUTTON_B,
+    sdl2.SDLK_RETURN    : windowevent.RELEASE_BUTTON_START,
+    sdl2.SDLK_BACKSPACE : windowevent.RELEASE_BUTTON_SELECT,
+    sdl2.SDLK_z         : windowevent.SAVE_STATE,
+    sdl2.SDLK_x         : windowevent.LOAD_STATE,
+    sdl2.SDLK_SPACE     : windowevent.RELEASE_SPEED_UP,
 }
 
 
-class ScanlineWindow(Window):
+class ScanlineWindow(BaseWindow):
 
     def __init__(self, scale=1):
-        Window.__init__(self, scale)
+        BaseWindow.__init__(self, scale)
 
         self._linebuf = array.array('I', [0] * COLS)
         self._linerect = {'x': 0, 'y': 0, 'w': COLS, 'h': 1}
@@ -97,16 +95,14 @@ class ScanlineWindow(Window):
             if event.type == sdl2.SDL_QUIT:
                 events.append(windowevent.QUIT)
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(KEY_DOWN.get(event.key.keysym.sym,
-                                           windowevent.PASS))
+                events.append(KEY_DOWN.get(event.key.keysym.sym, windowevent.PASS))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(KEY_UP.get(event.key.keysym.sym,
-                                         windowevent.PASS))
+                events.append(KEY_UP.get(event.key.keysym.sym, windowevent.PASS))
         return events
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
-        delay = int(1000.0/(60.0*speed) - (now-self._ticks))
+        delay = int(1000.0 / (60.0 * speed) - (now - self._ticks))
         sdl2.SDL_Delay(delay if delay > 0 else 0)
         self._ticks = sdl2.SDL_GetTicks()
 
@@ -194,7 +190,7 @@ class ScanlineWindow(Window):
                 bpixel = 2*(bbyte1 & 0x80 >> dx) + (bbyte0 & 0x80 >> dx)
                 bpixel >>= 7 - dx
 
-            else:  # White if blank
+            else: # White if blank
                 bpixel = 0
 
             # Iterate through the sprites and look for the first match

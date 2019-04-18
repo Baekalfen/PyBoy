@@ -3,8 +3,5 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-
-__all__ = ["Window"]
-
-
-from .window import Window
+from .window import getwindow
+from .base_window import BaseWindow

@@ -3,18 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import cython
 from libc.stdint cimport uint8_t, uint32_t
 
 
 cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
-
-# LCDC bit descriptions
-cdef char BACKGROUND_ENABLE, SPRITE_ENABLE, SPRITE_SIZE, BACKGROUNDMAP_SELECT
-cdef char TILEDATA_SELELECT, WINDOW_ENABLE, WINDOWMAP_SELECT, LCD_ENABLE
-
-
 cdef int ROWS, COLS
 
 
@@ -34,8 +27,8 @@ cdef class LCD:
     cdef void save_state(self, file)
     cdef void load_state(self, file)
 
-    cdef (int, int) get_windowpos(self)
-    cdef (int, int) get_viewport(self)
+    cdef (int, int) getwindowpos(self)
+    cdef (int, int) getviewport(self)
 
 
 cdef class PaletteRegister:
@@ -43,11 +36,11 @@ cdef class PaletteRegister:
 
     cdef unsigned char value
     cdef uint32_t[4] lookup
-    cdef uint32_t[4] colorpalette
+    cdef uint32_t[4] color_palette
 
     @cython.locals(x=cython.ushort)
     cdef bint set(self, unsigned int)
-    cdef uint32_t get_color(self, unsigned char)
+    cdef uint32_t getcolor(self, unsigned char)
 
 
 cdef class LCDCRegister:

@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import array
 import os
 
@@ -11,30 +10,30 @@ from .rtc import RTC
 from ..logger import logger
 
 
-class MBC:
-    def __init__(self, filename, rombanks, exramcount, carttype, sram, battery, rtcenabled):
+class BaseMBC:
+    def __init__(self, filename, rombanks, external_ram_count, carttype, sram, battery, rtc_enabled):
         self.filename = filename + ".ram"
         banks = len(rombanks)
-        self.rombanks = [[0] * (16 * 1024) for _ in range(256)]
+        self.rombanks = [[0] * (16*1024) for _ in range(256)]
         for n in range(banks):
             self.rombanks[n][:] = rombanks[n]
         self.carttype = carttype
 
         self.battery = battery
-        self.rtcenabled = rtcenabled
+        self.rtc_enabled = rtc_enabled
 
-        if self.rtcenabled:
+        if self.rtc_enabled:
             self.rtc = RTC(filename)
 
-        self.rambanksinitialized = False
-        self.exramcount = exramcount
-        self.initrambanks(exramcount)
+        self.rambank_initialized = False
+        self.external_ram_count = external_ram_count
+        self.init_rambanks(external_ram_count)
         self.gamename = self.getgamename(rombanks)
 
         self.memorymodel = 0
-        self.rambankenabled = False
-        self.rambankselected = 0  # TODO: Check this, not documented
-        self.rombankselected = 1  # TODO: Check this, not documented
+        self.rambank_enabled = False
+        self.rambank_selected = 0 # TODO: Check this, not documented
+        self.rombank_selected = 1 # TODO: Check this, not documented
         # Note: TestROM 01-special.gb assumes initial value of 1
 
         if not os.path.exists(self.filename):
@@ -47,61 +46,58 @@ class MBC:
         with open(self.filename, "wb") as f:
             self.save_ram(f)
 
-        if self.rtcenabled:
+        if self.rtc_enabled:
             self.rtc.stop()
 
     def save_state(self, f):
-        f.write(self.rombankselected.to_bytes(1, 'little'))
-        f.write(self.rambankselected.to_bytes(1, 'little'))
-        f.write(self.rambankenabled.to_bytes(1, 'little'))
+        f.write(self.rombank_selected.to_bytes(1, 'little'))
+        f.write(self.rambank_selected.to_bytes(1, 'little'))
+        f.write(self.rambank_enabled.to_bytes(1, 'little'))
         f.write(self.memorymodel.to_bytes(1, 'little'))
         self.save_ram(f)
-        if self.rtcEnabled:
-            self.rtc.saveState(f)
+        if self.rtc_enabled:
+            self.rtc.save_state(f)
 
     def load_state(self, f):
-        self.rombankselected = ord(f.read(1))
-        self.rambankselected = ord(f.read(1))
-        self.rambankenabled = ord(f.read(1))
+        self.rombank_selected = ord(f.read(1))
+        self.rambank_selected = ord(f.read(1))
+        self.rambank_enabled = ord(f.read(1))
         self.memorymodel = ord(f.read(1))
         self.load_ram(f)
-        if self.rtcenabled:
+        if self.rtc_enabled:
             self.rtc.load_state(f)
 
     def save_ram(self, f):
-        if not self.rambanksinitialized:
+        if not self.rambank_initialized:
             logger.info("Saving RAM is not supported on {}".format(self.carttype))
             return
 
-        for bank in range(self.exramcount):
+        for bank in range(self.external_ram_count):
             for byte in range(8*1024):
                 f.write(self.rambanks[bank][byte].to_bytes(1, "little"))
 
         logger.info("RAM saved.")
 
     def load_ram(self, f):
-        if not self.rambanksinitialized:
+        if not self.rambank_initialized:
             logger.info("Loading RAM is not supported on {}".format(self.carttype))
             return
 
-        for bank in range(self.exramcount):
+        for bank in range(self.external_ram_count):
             for byte in range(8*1024):
                 self.rambanks[bank][byte] = ord(f.read(1))
 
         logger.info("RAM loaded.")
 
-    def initrambanks(self, n):
+    def init_rambanks(self, n):
         if n is None:
             return
 
-        self.rambanksinitialized = True
+        self.rambank_initialized = True
 
-        # In real life the values in RAM are scrambled on
-        # initialization.
-        # Allocating the maximum, as it is easier with
-        # static array sizes. And it's just 128KB...
-        self.rambanks = [array.array('B', [0] * (8 * 1024)) for _ in range(16)]
-        # Trying to do CPython a favor with static arrays, although not 2D
+        # In real life the values in RAM are scrambled on initialization.
+        # Allocating the maximum, as it is easier with static array sizes. And it's just 128KB...
+        self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(16)]
 
     def getgamename(self, rombanks):
         return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).rstrip("\0")
@@ -113,15 +109,15 @@ class MBC:
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombankselected][address-0x4000]
+            return self.rombanks[self.rombank_selected][address-0x4000]
         elif 0xA000 <= address < 0xC000:
-            if not self.rambanksinitialized:
+            if not self.rambank_initialized:
                 raise logger.error("RAM banks not initialized: %s" % hex(address))
 
-            if self.rtcenabled and 0x08 <= self.rambankselected <= 0x0C:
-                return self.rtc.getregister(self.rambankselected)
+            if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
+                return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambankselected][address - 0xA000]
+                return self.rambanks[self.rambank_selected][address-0xA000]
         else:
             raise logger.error("Reading address invalid: %s" % address)
 
@@ -129,32 +125,32 @@ class MBC:
         return "\n".join([
             "Cartridge:",
             "Filename: %s" % self.filename,
-            "Game name: %s" % self.gameName,
+            "Game name: %s" % self.gamename,
             "GB Color: %s" % str(self.ROMBanks[0][0x143] == 0x80),
             "Cartridge type: %s" % hex(self.cartType),
-            "Number of ROM banks: %s" % len(self.ROMBanks),
-            "Active ROM bank: %s" % self.ROMBankSelected,
+            "Number of ROM banks: %s" % len(self.rombanks),
+            "Active ROM bank: %s" % self.rombank_selected,
             # "Memory bank type: %s" % self.ROMBankController,
-            "Number of RAM banks: %s" % len(self.RAMBanks),
-            "Active RAM bank: %s" % self.RAMBankSelected,
+            "Number of RAM banks: %s" % len(self.rambanks),
+            "Active RAM bank: %s" % self.rambank_selected,
             "Battery: %s" % self.battery,
-            "RTC: %s" % self.RTC])
+            "RTC: %s" % self.rtc])
 
 
-class ROM(MBC):
+class ROMOnly(BaseMBC):
     def setitem(self, address, value):
         if 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1
-            self.rombankselected = (value & 0b1)
+            self.rombank_selected = (value & 0b1)
             logger.info("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
-            if self.RAMBanks is None:
-                from . import EXRAMTABLE
+            if self.rambanks is None:
+                from . import EXTERNAL_RAM_TABLE
                 logger.warning("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but "
                                "RAM banks are not initialized. Initializing %d RAM banks as "
-                               "precaution" % (value, address, EXRAMTABLE[0x02]))
-                self.initrambanks(EXRAMTABLE[0x02])
-            self.rambanks[self.rambankselected][address-0xA000] = value
+                               "precaution" % (value, address, EXTERNAL_RAM_TABLE[0x02]))
+                self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
+            self.rambanks[self.rambank_selected][address-0xA000] = value
         else:
             logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))

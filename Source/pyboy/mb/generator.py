@@ -74,7 +74,7 @@ class MyHTMLParser(HTMLParser):
     def handle_endtag(self, tag):
         if not self.founddata and self.tagstack[-1] == "td" and self.counter % 0x100 != 0:
             self.counter += 1
-            opcodes.append(None)  # Blank operations
+            opcodes.append(None) # Blank operations
         self.tagstack.pop()
 
     def handle_data(self, data):
@@ -134,9 +134,9 @@ class Operand:
         if operand == "(C)":
             self.highpointer = True
             if assign:
-                return "cpu.motherboard.setitem(0xFF00 + cpu.C, %s)"
+                return "cpu.mb.setitem(0xFF00 + cpu.C, %s)"
             else:
-                return "cpu.motherboard.getitem(0xFF00 + cpu.C)"
+                return "cpu.mb.getitem(0xFF00 + cpu.C)"
 
         elif operand == "SP+r8":
             self.immediate = True
@@ -148,11 +148,11 @@ class Operand:
         elif operand.startswith('(') and operand.endswith(')'):
             self.pointer = True
             if assign:
-                code = "cpu.motherboard.setitem(%s" % self.codegen(False, operand=re.search(
-                    '\(([a-zA-Z]+\d*)[\+-]?\)', operand).group(1)) + ", %s)"  # noqa: W605
+                code = "cpu.mb.setitem(%s" % self.codegen(False, operand=re.search(
+                    r'\(([a-zA-Z]+\d*)[\+-]?\)', operand).group(1)) + ", %s)"
             else:
-                code = "cpu.motherboard.getitem(%s)" % self.codegen(False, operand=re.search(
-                    '\(([a-zA-Z]+\d*)[\+-]?\)', operand).group(1))  # noqa: W605
+                code = "cpu.mb.getitem(%s)" % self.codegen(False, operand=re.search(
+                    r'\(([a-zA-Z]+\d*)[\+-]?\)', operand).group(1))
 
             if '-' in operand or '+' in operand:
                 # TODO: Replace with opcode 23 (INC HL)?
@@ -163,7 +163,7 @@ class Operand:
         # Sadly, there is an overlap between the register 'C' and to
         # check for the carry flag 'C'.
         elif operand in [
-                'A', 'F', 'B', 'C', 'D', 'E',  # registers
+                'A', 'F', 'B', 'C', 'D', 'E', # registers
                 'SP', 'PC', 'HL']:             # double registers
             if assign:
                 return "cpu." + operand + " = %s"
@@ -184,14 +184,14 @@ class Operand:
 
         elif operand in ['AF', 'BC', 'DE']:
             if assign:
-                return "cpu.set" + operand + "(%s)"
+                return "cpu.set_" + operand.lower() + "(%s)"
             else:
                 return "((cpu." + operand[0] + " << 8) + cpu." + operand[1] + ")"
 
-        elif operand in ['Z', 'C', 'NZ', 'NC']:  # flags
+        elif operand in ['Z', 'C', 'NZ', 'NC']: # flags
             assert not assign
             self.flag = True
-            return "cpu.f" + operand + "()"
+            return "cpu.f_" + operand.lower() + "()"
 
         elif operand in ['d8', 'd16', 'a8', 'a16', 'r8']:
             assert not assign
@@ -245,23 +245,23 @@ class Code:
 
     def getcode(self):
         code = ""
-        code += ["def %s_%0.2X(cpu):  # %0.2X %s"
+        code += ["def %s_%0.2X(cpu): # %0.2X %s"
                  % (self.function_name, self.opcode, self.opcode, self.name),
-                 "def %s_%0.2X(cpu, v):  # %0.2X %s"
+                 "def %s_%0.2X(cpu, v): # %0.2X %s"
                  % (self.function_name, self.opcode, self.opcode, self.name)][self.takes_immediate]
         code += "\n\t"
 
         if not self.branch_op:
             self.lines.append("cpu.PC += %d" % self.length)
-            self.lines.append("return " + self.cycles[0])  # Choose the 0th cycle count
+            self.lines.append("return " + self.cycles[0]) # Choose the 0th cycle count
 
         code += "\n\t".join(self.lines)
 
-        pxd = ["cdef unsigned char %s_%0.2X(cpu.CPU) except -1  # %0.2X %s"
+        pxd = ["cdef unsigned char %s_%0.2X(cpu.CPU) except -1 # %0.2X %s"
                % (self.function_name, self.opcode, self.opcode, self.name),
                # TODO: Differentiate between 16-bit values
                # (01,11,21,31 ops) and 8-bit values for 'v'
-               "cdef unsigned char %s_%0.2X(cpu.CPU, int v) except -1  # %0.2X %s"
+               "cdef unsigned char %s_%0.2X(cpu.CPU, int v) except -1 # %0.2X %s"
                % (self.function_name, self.opcode, self.opcode, self.name)][self.takes_immediate]
 
         if self.opcode == 0x27:
@@ -287,59 +287,59 @@ class OpcodeData:
 
         # TODO: There's no need for this to be so explicit
         self.functionhandlers = {
-            "NOP": self.NOP,
-            "HALT": self.HALT,
-            "PREFIX": self.CB,
-            "EI": self.EI,
-            "DI": self.DI,
-            "STOP": self.STOP,
+            "NOP"    : self.NOP,
+            "HALT"   : self.HALT,
+            "PREFIX" : self.CB,
+            "EI"     : self.EI,
+            "DI"     : self.DI,
+            "STOP"   : self.STOP,
 
-            "LD": self.LD,
-            "LDH": self.LDH,
+            "LD"     : self.LD,
+            "LDH"    : self.LDH,
 
-            "ADD": self.ADD,
-            "SUB": self.SUB,
-            "INC": self.INC,
-            "DEC": self.DEC,
-            "ADC": self.ADC,
-            "SBC": self.SBC,
+            "ADD"    : self.ADD,
+            "SUB"    : self.SUB,
+            "INC"    : self.INC,
+            "DEC"    : self.DEC,
+            "ADC"    : self.ADC,
+            "SBC"    : self.SBC,
 
-            "AND": self.AND,
-            "OR": self.OR,
-            "XOR": self.XOR,
-            "CP": self.CP,
+            "AND"    : self.AND,
+            "OR"     : self.OR,
+            "XOR"    : self.XOR,
+            "CP"     : self.CP,
 
-            "PUSH": self.PUSH,
-            "POP": self.POP,
+            "PUSH"   : self.PUSH,
+            "POP"    : self.POP,
 
-            "JP": self.JP,
-            "JR": self.JR,
-            "CALL": self.CALL,
-            "RET": self.RET,
-            "RETI": self.RETI,
-            "RST": self.RST,
+            "JP"     : self.JP,
+            "JR"     : self.JR,
+            "CALL"   : self.CALL,
+            "RET"    : self.RET,
+            "RETI"   : self.RETI,
+            "RST"    : self.RST,
 
-            "DAA": self.DAA,
-            "SCF": self.SCF,
-            "CCF": self.CCF,
-            "CPL": self.CPL,
+            "DAA"    : self.DAA,
+            "SCF"    : self.SCF,
+            "CCF"    : self.CCF,
+            "CPL"    : self.CPL,
 
-            "RLA": self.RLA,
-            "RLCA": self.RLCA,
-            "RLC": self.RLC,
-            "RL": self.RL,
-            "RRA": self.RRA,
-            "RRCA": self.RRCA,
-            "RRC": self.RRC,
-            "RR": self.RR,
+            "RLA"    : self.RLA,
+            "RLCA"   : self.RLCA,
+            "RLC"    : self.RLC,
+            "RL"     : self.RL,
+            "RRA"    : self.RRA,
+            "RRCA"   : self.RRCA,
+            "RRC"    : self.RRC,
+            "RR"     : self.RR,
 
-            "SLA": self.SLA,
-            "SRA": self.SRA,
-            "SWAP": self.SWAP,
-            "SRL": self.SRL,
-            "BIT": self.BIT,
-            "RES": self.RES,
-            "SET": self.SET
+            "SLA"    : self.SLA,
+            "SRA"    : self.SRA,
+            "SWAP"   : self.SWAP,
+            "SRL"    : self.SRL,
+            "BIT"    : self.BIT,
+            "RES"    : self.RES,
+            "SET"    : self.SET
         }
 
     def createfunction(self):
@@ -371,7 +371,7 @@ class OpcodeData:
 
         # flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
         if self.flag_h == "H":
-            c = " %s cpu.fC()" % op if carry else ""
+            c = " %s cpu.f_c()" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH"
                          % (r0, op, r1, c))
 
@@ -399,7 +399,7 @@ class OpcodeData:
                                                 self.flags)), "#010b"))
 
         if self.flag_h == "H":
-            c = " %s cpu.fC()" % op if carry else ""
+            c = " %s cpu.f_c()" % op if carry else ""
             lines.append("flag += (((%s & 0xFFF) %s (%s & 0xFFF)%s) > 0xFFF) << FLAGH"
                          % (r0, op, r1, c))
 
@@ -428,11 +428,11 @@ class OpcodeData:
             lines.append("flag += ((t & 0xFF) == 0) << FLAGZ")
 
         if self.flag_h == "H" and op == '-':
-            c = " %s cpu.fC()" % op if carry else ""
+            c = " %s cpu.f_c()" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) < 0) << FLAGH"
                          % (r0, op, r1, c))
         elif self.flag_h == "H":
-            c = " %s cpu.fC()" % op if carry else ""
+            c = " %s cpu.f_c()" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH"
                          % (r0, op, r1, c))
 
@@ -461,7 +461,7 @@ class OpcodeData:
         # TODO: Implement HALT bug. If master interrupt is disabled,
         # the intruction following HALT is skipped
         code.addlines([
-            "if cpu.interruptmasterenable:",
+            "if cpu.interrupt_master_enable:",
             "\tcpu.halted = True",
             "else:",
             "\tcpu.PC += 1",
@@ -476,12 +476,12 @@ class OpcodeData:
 
     def EI(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles)
-        code.addline("cpu.interruptmasterenable = True")
+        code.addline("cpu.interrupt_master_enable = True")
         return code.getcode()
 
     def DI(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles)
-        code.addline("cpu.interruptmasterenable = False")
+        code.addline("cpu.interrupt_master_enable = False")
         return code.getcode()
 
     def STOP(self):
@@ -500,10 +500,10 @@ class OpcodeData:
             "t = %s" % left.get,
 
             "corr = 0",
-            "corr |= 0x06 if cpu.fH() else 0x00",
-            "corr |= 0x60 if cpu.fC() else 0x00",
+            "corr |= 0x06 if cpu.f_h() else 0x00",
+            "corr |= 0x60 if cpu.f_c() else 0x00",
 
-            "if cpu.fN():",
+            "if cpu.f_n():",
             "\tt -= corr",
             "else:",
             "\tcorr |= 0x06 if (t & 0x0F) > 0x09 else 0x00",
@@ -594,7 +594,7 @@ class OpcodeData:
         calc = " ".join(["t", "=", left.get, op, right.get])
 
         if carry:
-            calc += " " + op + " cpu.fC()"
+            calc += " " + op + " cpu.f_c()"
 
         lines.append(calc)
 
@@ -761,19 +761,19 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
             code.addlines([
-                "cpu.motherboard.setitem(cpu.SP-1, cpu.HL >> 8)  # High",
-                "cpu.motherboard.setitem(cpu.SP-2, cpu.HL & 0xFF)  # Low",
+                "cpu.mb.setitem(cpu.SP-1, cpu.HL >> 8) # High",
+                "cpu.mb.setitem(cpu.SP-2, cpu.HL & 0xFF) # Low",
                 "cpu.SP -= 2"])
         else:
             # A bit of a hack, but you can only push double registers
-            code.addline("cpu.motherboard.setitem(cpu.SP-1, cpu.%s)  # High" % left.operand[-2])
+            code.addline("cpu.mb.setitem(cpu.SP-1, cpu.%s) # High" % left.operand[-2])
             if left.operand == "AF":
                 # by taking fx 'A' and 'F' directly, we save calculations
-                code.addline("cpu.motherboard.setitem(cpu.SP-2, cpu.%s & 0xF0)  # Low"
+                code.addline("cpu.mb.setitem(cpu.SP-2, cpu.%s & 0xF0) # Low"
                              % left.operand[-1])
             else:
                 # by taking fx 'A' and 'F' directly, we save calculations
-                code.addline("cpu.motherboard.setitem(cpu.SP-2, cpu.%s)  # Low" % left.operand[-1])
+                code.addline("cpu.mb.setitem(cpu.SP-2, cpu.%s) # Low" % left.operand[-1])
             code.addline("cpu.SP -= 2")
 
         return code.getcode()
@@ -784,21 +784,21 @@ class OpcodeData:
 
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
-            code.addlines([(left.set % "(cpu.motherboard.getitem(cpu.SP+1) << 8) + "
-                            "cpu.motherboard.getitem(cpu.SP)") + "  # High",
+            code.addlines([(left.set % "(cpu.mb.getitem(cpu.SP+1) << 8) + "
+                            "cpu.mb.getitem(cpu.SP)") + " # High",
                            "cpu.SP += 2"])
         else:
-            if left.operand.endswith('F'):  # Catching AF
+            if left.operand.endswith('F'): # Catching AF
                 fmask = " & 0xF0"
             else:
                 fmask = ""
             # See comment from PUSH
-            code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP+1)  # High" % left.operand[-2])
+            code.addline("cpu.%s = cpu.mb.getitem(cpu.SP+1) # High" % left.operand[-2])
             if left.operand == "AF":
-                code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP)%s & 0xF0  # Low"
+                code.addline("cpu.%s = cpu.mb.getitem(cpu.SP)%s & 0xF0 # Low"
                              % (left.operand[-1], fmask))
             else:
-                code.addline("cpu.%s = cpu.motherboard.getitem(cpu.SP)%s  # Low"
+                code.addline("cpu.%s = cpu.mb.getitem(cpu.SP)%s # Low"
                              % (left.operand[-1], fmask))
             code.addline("cpu.SP += 2")
 
@@ -823,7 +823,7 @@ class OpcodeData:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
                 left.flag = True
-                l_code = "cpu.fC()"
+                l_code = "cpu.f_c()"
             assert left.flag
         elif right.pointer:
             # FIX: Wrongful syntax of "JP (HL)" actually meaning "JP HL"
@@ -865,7 +865,7 @@ class OpcodeData:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
                 left.flag = True
-                l_code = "cpu.fC()"
+                l_code = "cpu.f_c()"
             assert left.flag
         assert right.immediate
 
@@ -903,7 +903,7 @@ class OpcodeData:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
                 left.flag = True
-                l_code = "cpu.fC()"
+                l_code = "cpu.f_c()"
             assert left.flag
         assert right.immediate
 
@@ -917,16 +917,16 @@ class OpcodeData:
 
         if left is None:
             code.addlines([
-                "cpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
-                "cpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
+                "cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
+                "cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
                 "cpu.SP -= 2",
                 "cpu.PC = %s" % ('v' if right.immediate else right.get),
                 "return " + self.cycles[0]])
         else:
             code.addlines([
                 "if %s:" % l_code,
-                "\tcpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
-                "\tcpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
+                "\tcpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
+                "\tcpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
                 "\tcpu.SP -= 2",
                 "\tcpu.PC = %s" % ('v' if right.immediate else right.get),
                 "\treturn " + self.cycles[0],
@@ -946,22 +946,22 @@ class OpcodeData:
             if left is not None:
                 if l_code.endswith("C") and "NC" not in l_code:
                     left.flag = True
-                    l_code = "cpu.fC()"
+                    l_code = "cpu.f_c()"
                 assert left.flag
 
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles,
                     branch_op=True)
         if left is None:
             code.addlines([
-                "cpu.PC = cpu.motherboard.getitem(cpu.SP+1) << 8  # High",
-                "cpu.PC |= cpu.motherboard.getitem(cpu.SP)  # Low",
+                "cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High",
+                "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
                 "cpu.SP += 2",
                 "return " + self.cycles[0]])
         else:
             code.addlines([
                 "if %s:" % l_code,
-                "\tcpu.PC = cpu.motherboard.getitem(cpu.SP+1) << 8  # High",
-                "\tcpu.PC |= cpu.motherboard.getitem(cpu.SP)  # Low",
+                "\tcpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High",
+                "\tcpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
                 "\tcpu.SP += 2",
                 "\treturn " + self.cycles[0],
                 "else:",
@@ -974,10 +974,10 @@ class OpcodeData:
     def RETI(self):
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles,
                     branch_op=True)
-        code.addline("cpu.interruptmasterenable = True")
+        code.addline("cpu.interrupt_master_enable = True")
         code.addlines([
-            "cpu.PC = cpu.motherboard.getitem(cpu.SP+1) << 8  # High",
-            "cpu.PC |= cpu.motherboard.getitem(cpu.SP)  # Low",
+            "cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High",
+            "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
             "cpu.SP += 2",
             "return " + self.cycles[0]])
 
@@ -993,8 +993,8 @@ class OpcodeData:
         # Taken from PUSH and CALL
         code.addlines([
             "cpu.PC += %s" % self.length,
-            "cpu.motherboard.setitem(cpu.SP-1, cpu.PC >> 8)  # High",
-            "cpu.motherboard.setitem(cpu.SP-2, cpu.PC & 0xFF)  # Low",
+            "cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
+            "cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
             "cpu.SP -= 2"])
 
         code.addlines([
@@ -1011,7 +1011,7 @@ class OpcodeData:
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         left.assign = False
         if throughcarry:
-            code.addline(("t = (%s << 1)" % left.get) + " + cpu.fC()")
+            code.addline(("t = (%s << 1)" % left.get) + " + cpu.f_c()")
         else:
             code.addline("t = (%s << 1) + (%s >> 7)" % (left.get, left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
@@ -1048,7 +1048,7 @@ class OpcodeData:
         if throughcarry:
             # Trigger "overflow" for carry flag
             code.addline(("t = (%s >> 1)" % left.get) +
-                         " + (cpu.fC() << 7)" + " + ((%s & 1) << 8)" % (left.get))
+                         " + (cpu.f_c() << 7)" + " + ((%s & 1) << 8)" % (left.get))
         else:
             # Trigger "overflow" for carry flag
             code.addline("t = (%s >> 1) + ((%s & 1) << 7)" % (left.get, left.get)
@@ -1171,6 +1171,7 @@ def update():
     with open(destination, "w") as f, open(pxd_destination, "w") as f_pxd:
         f.write(warning)
         f.write(imports)
+        f_pxd.write(warning)
         f_pxd.write(cimports)
         lookuplist = []
         for lookuptuple, code in opcodefunctions:
@@ -1194,12 +1195,12 @@ def execute_opcode(cpu, opcode):
     pc = cpu.PC
     if oplen == 2:
         # 8-bit immediate
-        v = cpu.motherboard.getitem(pc+1)
+        v = cpu.mb.getitem(pc+1)
     elif oplen == 3:
         # 16-bit immediate
         # Flips order of values due to big-endian
-        a = cpu.motherboard.getitem(pc+2)
-        b = cpu.motherboard.getitem(pc+1)
+        a = cpu.mb.getitem(pc+2)
+        b = cpu.mb.getitem(pc+1)
         v = (a << 8) + b
 
 """)

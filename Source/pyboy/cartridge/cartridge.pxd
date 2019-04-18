@@ -3,13 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from .base_mbc cimport BaseMBC
 
-from .mbc cimport MBC
 
+cdef public BaseMBC Cartridge(unicode)
+cdef bint validate_checksum(unsigned char[:,:])
+cdef unsigned char[:, :] load_romfile(unicode)
 
-cdef public MBC Cartridge(unicode)
-cdef bint validatechecksum(unsigned char[:,:])
-cdef unsigned char[:, :] loadromfile(unicode)
-
-cdef dict CARTRIDGETABLE
-cdef dict EXRAMTABLE
+cdef dict CARTRIDGE_TABLE
+cdef dict EXTERNAL_RAM_TABLE
