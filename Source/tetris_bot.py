@@ -8,7 +8,7 @@ import traceback
 import os.path
 import os
 import sys
-from pyboy import WindowEvent
+from pyboy import windowevent
 from pyboy import PyBoy
 
 
@@ -50,39 +50,40 @@ if __name__ == "__main__":
 
         # Start PyBoy and run loop
         pyboy = PyBoy('SDL2', 3, filename, bootROM)
-        pyboy.setLimitEmulationSpeed(False)
+        pyboy.setEmulationSpeed(False)
         frame = 0
         first_brick = False
         view = pyboy.getTileView(False)
-        while not pyboy.tick():
+        for _ in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
+            pyboy.tick()
             print ("frame:", frame)
 
             # Start game. Just press Start and A when the game allows us.
             # The frames are not 100% accurate.
             if frame == 144:
-                pyboy.sendInput(WindowEvent.PressButtonStart)
+                pyboy.sendInput(windowevent.PRESS_BUTTON_START)
             elif frame == 145:
-                pyboy.sendInput(WindowEvent.ReleaseButtonStart)
+                pyboy.sendInput(windowevent.RELEASE_BUTTON_START)
             elif frame == 152:
-                pyboy.sendInput(WindowEvent.PressButtonA)
+                pyboy.sendInput(windowevent.PRESS_BUTTON_A)
             elif frame == 153:
-                pyboy.sendInput(WindowEvent.ReleaseButtonA)
+                pyboy.sendInput(windowevent.RELEASE_BUTTON_A)
             elif frame == 156:
-                pyboy.sendInput(WindowEvent.PressButtonA)
+                pyboy.sendInput(windowevent.PRESS_BUTTON_A)
             elif frame == 157:
-                pyboy.sendInput(WindowEvent.ReleaseButtonA)
+                pyboy.sendInput(windowevent.RELEASE_BUTTON_A)
             elif frame == 162:
-                pyboy.sendInput(WindowEvent.PressButtonA)
+                pyboy.sendInput(windowevent.PRESS_BUTTON_A)
             elif frame == 163:
-                pyboy.sendInput(WindowEvent.ReleaseButtonA)
+                pyboy.sendInput(windowevent.RELEASE_BUTTON_A)
 
             # Play game. When we are passed the 168th frame, the game has begone.
             # The "technique" is just to move the Tetromino to the right.
             elif frame > 168:
                 if frame % 2 == 0:
-                    pyboy.sendInput(WindowEvent.PressArrowRight)
+                    pyboy.sendInput(windowevent.PRESS_ARROW_RIGHT)
                 elif frame % 2 == 1:
-                    pyboy.sendInput(WindowEvent.ReleaseArrowRight)
+                    pyboy.sendInput(windowevent.RELEASE_ARROW_RIGHT)
 
                 print ("Screen pos:", pyboy.getScreenPosition())
                 # As an example, it could be useful to know the coordinates

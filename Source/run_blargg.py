@@ -1,7 +1,7 @@
 #! /usr/local/bin/python2
 
 import time
-from pyboy.Logger import logger
+from pyboy.logger import logger
 from pyboy import PyBoy
 import multiprocessing as mp
 
@@ -13,7 +13,7 @@ def test_rom(rom):
     pyboy = PyBoy("dummy", 1, rom, "ROMs/DMG_ROM.bin")
     # pyboy = PyBoy("SDL2", 1, rom, "ROMs/DMG_ROM.bin")
     pyboy.disableTitle()
-    pyboy.setLimitEmulationSpeed(False)
+    pyboy.setEmulationSpeed(False)
     serial_output = ""
     t = time.time()
     result = None

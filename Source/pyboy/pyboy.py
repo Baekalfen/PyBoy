@@ -25,12 +25,13 @@ class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
         self.gamerom_file = gamerom_file
         self.window = window.window.getwindow(win_type, scale)
-        self.debugger = debugwindow.DebugWindow()
+        if "--debug" in sys.argv:
+            self.debugger = debugwindow.DebugWindow()
 
         self.profiling = "profiling" in sys.argv
         self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling, debugger=self.debugger)
 
-        if "loadState" in sys.argv:
+        if "--loadstate" in sys.argv:
             self.mb.load_state(gamerom_file + ".state")
 
         self.avg_emu = 0
@@ -117,11 +118,11 @@ class PyBoy:
     ###################################################################
     # Scripts and bot methods
     #
-    def getscreenbuffer(self):
+    def getScreenBuffer(self):
         return self.window.getscreenbuffer()
 
     def getScreenBufferFormat(self):
-        return self.mb.window.colorformat
+        return self.mb.window.color_format
 
     def getMemoryValue(self, addr):
         return self.mb.getitem(addr)
@@ -130,7 +131,7 @@ class PyBoy:
         self.mb.setitem(addr, value)
 
     def sendInput(self, event):
-        self.mb.buttonEvent(event)
+        self.mb.buttonevent(event)
 
     def getSprite(self, index):
         return botsupport.Sprite(self.mb, index)
@@ -139,7 +140,7 @@ class PyBoy:
         return botsupport.TileView(self.mb, high)
 
     def getScreenPosition(self):
-        return self.mb.lcd.getViewPort()
+        return self.mb.lcd.getviewport()
 
     def saveState(self, filename):
         self.mb.save_state(filename)
@@ -153,8 +154,11 @@ class PyBoy:
     def disableTitle(self):
         self.window.disable_title()
 
+    def setEmulationSpeed(self, v, max_speed=0):
+        self.set_emulation_speed(v, max_speed)
+
     def set_emulation_speed(self, v, max_speed=0):
-        self.emulationspeed = v
+        self.limit_emulationspeed = v
         if max_speed > 5:
             logger.warning("The emulation speed might not be accurate when higher than 5")
         self.max_emulationspeed = max_speed
