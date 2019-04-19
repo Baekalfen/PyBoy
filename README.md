@@ -47,12 +47,12 @@ Contribute
 ==========
 Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
 
-For the more major features, there are four that you can give a try:
+For the more major features, there are six that you can give a try:
 * Sound
 * Color
 * Link Cable
-* (Experimental) Time travel - rewind time in the emulator
-* (Experimental) AI - use the `BotSupport` to train a neural network
+* _(Experimental)_ Time travel - rewind time in the emulator
+* _(Experimental)_ AI - use the `BotSupport` to train a neural network
 * Unit tests and/or test ROM
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
