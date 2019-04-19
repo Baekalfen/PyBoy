@@ -25,11 +25,14 @@ class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
         self.gamerom_file = gamerom_file
         self.window = window.window.getwindow(win_type, scale)
+        self.profiling = "profiling" in sys.argv
+
         if "--debug" in sys.argv:
             self.debugger = debugwindow.DebugWindow()
-
-        self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling, debugger=self.debugger)
+            self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling,
+                                  debugger=self.debugger)
+        else:
+            self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling)
 
         if "--loadstate" in sys.argv:
             self.mb.load_state(gamerom_file + ".state")
