@@ -9,6 +9,7 @@ from array import array
 cimport sdl2
 from pyboy.lcd cimport LCD
 from pyboy.window.base_window cimport BaseWindow
+from pyboy.window.debug_window cimport DebugWindow
 
 import cython
 cimport cython
@@ -39,11 +40,16 @@ cdef class SDLWindow(BaseWindow):
     cdef sdl2.SDL_Renderer *_sdlrenderer
     cdef sdl2.SDL_Texture *_sdltexturebuffer
 
+    cdef bint debug
+    cdef DebugWindow debugger
+
     @cython.locals(now=uint32_t, delay=cython.int)
     cdef void frame_limiter(self, int)
 
     @cython.locals(viewpos=(int, int), windowpos=(int, int))
     cdef void scanline(self, int, LCD)
+
+    # cdef void set_lcd(self, LCD)
 
     @cython.locals(
         y=int,

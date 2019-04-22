@@ -65,7 +65,7 @@ setup(
         'pyboy/window/window_scanline.py',
         'pyboy/window/window_dummy.py',
         'pyboy/window/window_headless.py',
-        'pyboy/debug/debugwindow.py',
+        'pyboy/window/debug_window.py',
         'pyboy/mb/cpu.py',
         'pyboy/mb/opcodes.py',
         'pyboy/mb/timer.py',

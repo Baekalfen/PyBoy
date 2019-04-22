@@ -14,14 +14,13 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, window, profiling=False, debugger=None):
+    def __init__(self, gamerom_file, bootrom_file, window, profiling=False, debug=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
         if profiling:
             logger.info("Profiling enabled")
 
-        self.debugger = debugger
         self.window = window
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
@@ -30,6 +29,8 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD(window.color_palette)
+        if debug:
+            self.window.set_lcd(self.lcd)
         self.bootrom_enabled = True
         self.serialbuffer = u''
 
@@ -132,8 +133,6 @@ class Motherboard:
                 self.set_STAT_mode(3)
                 self.calculate_cycles(170)
                 self.window.scanline(y, self.lcd)
-                if self.debugger:
-                    self.debugger.scanline(y, self.lcd)
 
                 # Mode 0
                 self.set_STAT_mode(0)
@@ -141,8 +140,6 @@ class Motherboard:
 
             self.cpu.set_interruptflag(VBLANK)
             self.window.render_screen(self.lcd)
-            if self.debugger:
-                self.debugger.update(self.lcd)
 
             # Wait for next frame
             for y in range(144, 154):

@@ -7,6 +7,7 @@ import cython
 from libc.stdint cimport uint32_t
 
 from .base_window cimport BaseWindow
+from .debug_window cimport DebugWindow
 from pyboy.lcd cimport LCD
 
 
@@ -17,4 +18,4 @@ cdef int ROWS, COLS
 
 
 @cython.locals(window=BaseWindow)
-cpdef BaseWindow getwindow(str, unsigned int)
+cpdef BaseWindow getwindow(str, unsigned int, bint)

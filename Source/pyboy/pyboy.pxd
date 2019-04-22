@@ -8,7 +8,6 @@ from libc cimport time
 cimport cython
 from pyboy.mb.mb cimport Motherboard
 from pyboy.window.base_window cimport BaseWindow
-from pyboy.debug.debugwindow cimport DebugWindow
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
@@ -16,7 +15,6 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef float SPF
 
 cdef class PyBoy:
-    cdef DebugWindow debugger
     cdef unicode gamerom_file
     cdef Motherboard mb
     cdef BaseWindow window
@@ -25,6 +23,7 @@ cdef class PyBoy:
     cdef double avg_emu
     cdef double avg_cpu
     cdef unsigned int counter
+    cdef bint paused
     cdef bint limit_emulationspeed
     cdef int emulationspeed, max_emulationspeed
     cdef object screen_recorder

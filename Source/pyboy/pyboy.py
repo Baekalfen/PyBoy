@@ -11,7 +11,6 @@ from .screenrecorder import ScreenRecorder
 from .mb.mb import Motherboard
 from . import windowevent
 from . import window
-from .debug import debugwindow
 
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .logger import logger, addconsolehandler
@@ -24,15 +23,12 @@ SPF = 1/60. # inverse FPS (frame-per-second)
 class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
         self.gamerom_file = gamerom_file
-        self.window = window.window.getwindow(win_type, scale)
-        self.profiling = "profiling" in sys.argv
 
-        if "--debug" in sys.argv:
-            self.debugger = debugwindow.DebugWindow()
-            self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling,
-                                  debugger=self.debugger)
-        else:
-            self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling)
+        debug = "--debug" in sys.argv
+        self.window = window.window.getwindow(win_type, scale, debug)
+
+        self.profiling = "profiling" in sys.argv
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling, debug=debug)
 
         if "--loadstate" in sys.argv:
             self.mb.load_state(gamerom_file + ".state")
@@ -43,6 +39,7 @@ class PyBoy:
         self.set_emulation_speed(True, 0)
         self.limit_emulationspeed = True
         self.screen_recorder = None
+        self.paused = False
 
     def tick(self):
         done = False
@@ -63,6 +60,18 @@ class PyBoy:
                 pass
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
+            elif event == windowevent.PAUSE:
+                self.paused = True
+                logger.info("Emulation paused!")
+            elif event == windowevent.UNPAUSE:
+                self.paused = False
+                logger.info("Emulation unpaused!")
+            elif event == windowevent.PAUSE_TOGGLE:
+                self.paused ^= True
+                if self.paused:
+                    logger.info("Emulation paused!")
+                else:
+                    logger.info("Emulation unpaused!")
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
                     self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
@@ -72,15 +81,15 @@ class PyBoy:
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
 
-        self.mb.tickframe()
+        if not self.paused:
+            self.mb.tickframe()
         self.window.update_display()
+        t_cpu = time.perf_counter()
 
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.getscreenbuffer())
 
-        t_cpu = time.perf_counter()
-
-        if self.limit_emulationspeed:
+        if self.paused or self.limit_emulationspeed:
             self.window.frame_limiter(1)
         elif self.max_emulationspeed > 0:
             self.window.frame_limiter(self.max_emulationspeed)
@@ -94,8 +103,7 @@ class PyBoy:
         self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
 
         if self.counter % 60 == 0:
-            text = ("CPU/frame: %0.2f%% Emulation: x%d"
-                    % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
+            text = ("CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
             self.window.set_title(text)
             self.counter = 0
         self.counter += 1
@@ -111,11 +119,9 @@ class PyBoy:
         if self.profiling:
             print("Profiling report:")
             from operator import itemgetter
-            names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100]
-                     for n in range(0x200)]
-            for hits, n, name in sorted(filter(
-                    itemgetter(0), zip(self.mb.cpu.hitRate,
-                                       range(0x200), names)), reverse=True):
+            names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
+            for hits, n, name in sorted(
+                    filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print("%3x %16s %s" % (n, name, hits))
 
     ###################################################################
