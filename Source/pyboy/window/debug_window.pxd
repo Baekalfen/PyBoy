@@ -6,7 +6,7 @@
 from cpython.array cimport array
 from array import array
 
-cimport SDL2 as sdl2
+cimport sdl2
 from pyboy.lcd cimport LCD
 
 cdef (int, int, int, int) _dummy_declaration2
