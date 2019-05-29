@@ -108,3 +108,10 @@ Source/PyBoy/**/*.so
 /pip-selfcheck.json
 /site-packages
 /share
+
+
+# LaTeX files
+Projects/Projects.aux
+Projects/Projects.bbl
+Projects/Projects.blg
+Projects/Projects.out

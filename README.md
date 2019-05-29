@@ -47,7 +47,7 @@ Contribute
 ==========
 Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
 
-For the more major features, there are six that you can give a try:
+For the more major features, there are six that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
 * Sound
 * Color
 * Link Cable
