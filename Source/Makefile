@@ -21,6 +21,9 @@ clean:
 	find . -name "*.html" -delete
 	find . -name "__pycache__" -d -delete
 	rm -rf ./build
+	rm -rf ./dist
+	rm -rf ./PyBoy.egg-info
+
 
 run: build
 	${PY} main.py SDL2 ROMs/POKEMON\ BLUE.gb
