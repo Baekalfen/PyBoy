@@ -43,6 +43,7 @@ setup(
         ],
     },
     include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/mb", "pyboy/debug"],
+    zip_safe=False,
     ext_modules=cythonize([
         'pyboy/lcd.py',
         'pyboy/bootrom.py',

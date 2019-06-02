@@ -26,7 +26,7 @@ run: build
 	${PY} main.py SDL2 ROMs/POKEMON\ BLUE.gb
 
 install:
-	${PY} setup.py install
+	CFLAGS='-w' ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
 
 test:
 	${PY} run_blargg.py
