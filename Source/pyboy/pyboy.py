@@ -5,6 +5,7 @@
 
 import sys
 import time
+import numpy as np
 
 from . import botsupport
 from .screenrecorder import ScreenRecorder
@@ -14,14 +15,20 @@ from . import window
 
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .logger import logger, addconsolehandler
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
 addconsolehandler()
 
-
-SPF = 1/60. # inverse FPS (frame-per-second)
+SPF = 1 / 60.  # inverse FPS (frame-per-second)
+SC_HEIGHT, SC_WIDTH = 160, 144 # these values are even used in `openai_env.py`
 
 
 class PyBoy:
-    def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
+    def __init__(self, win_type, gamerom_file, scale=3, bootrom_file=None):
         self.gamerom_file = gamerom_file
 
         debug = "--debug" in sys.argv
@@ -43,7 +50,7 @@ class PyBoy:
 
     def tick(self):
         done = False
-        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        t_start = time.perf_counter()  # Change to _ns when PyPy supports it
 
         for event in self.window.get_events():
             if event == windowevent.QUIT:
@@ -59,7 +66,7 @@ class PyBoy:
                 # self.debugger.running ^= True
                 pass
             elif event == windowevent.PASS:
-                pass # Used in place of None in Cython, when key isn't mapped to anything
+                pass  # Used in place of None in Cython, when key isn't mapped to anything
             elif event == windowevent.PAUSE:
                 self.paused = True
                 logger.info("Emulation paused!")
@@ -78,7 +85,7 @@ class PyBoy:
                 else:
                     self.screen_recorder.save()
                     self.screen_recorder = None
-            else: # Right now, everything else is a button press
+            else:  # Right now, everything else is a button press
                 self.mb.buttonevent(event)
 
         if not self.paused:
@@ -87,7 +94,7 @@ class PyBoy:
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.getscreenbuffer())
+            self.screen_recorder.add_frame(self.getScreenBuffer())
 
         if self.paused or self.limit_emulationspeed:
             self.window.frame_limiter(1)
@@ -96,14 +103,14 @@ class PyBoy:
 
         t_emu = time.perf_counter()
 
-        secs = t_emu-t_start
+        secs = t_emu - t_start
         self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
 
-        secs = t_cpu-t_start
+        secs = t_cpu - t_start
         self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
 
         if self.counter % 60 == 0:
-            text = ("CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
+            text = ("CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu / SPF * 100, round(SPF / self.avg_emu)))
             self.window.set_title(text)
             self.counter = 0
         self.counter += 1
@@ -119,10 +126,24 @@ class PyBoy:
         if self.profiling:
             print("Profiling report:")
             from operator import itemgetter
-            names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
+            names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n - 0x100] for n in range(0x200)]
             for hits, n, name in sorted(
                     filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print("%3x %16s %s" % (n, name, hits))
+
+    def step(self, action):
+        # === Internal Process to move one step forward ===
+        self.mb.buttonevent(action)
+        if not self.paused:
+            self.mb.tickframe() # TODO: I don't know what this does...
+        self.window.update_display() # update the screen
+        # === Internal Process done ===
+
+        observation = self.get_obs()
+        reward = -1.0  # TODO: think the reward design
+        done = False # TODO: when to done??
+        info = {}
+        return observation, reward, done, info
 
     ###################################################################
     # Scripts and bot methods
@@ -171,3 +192,13 @@ class PyBoy:
         if max_speed > 5:
             logger.warning("The emulation speed might not be accurate when higher than 5")
         self.max_emulationspeed = max_speed
+
+    def _readout_frame(self, frame):
+        """ Readout a raw frame of the GameBoy Emulator """
+        return Image.frombytes(self.mb.window.color_format, (SC_HEIGHT, SC_WIDTH), frame)
+
+    def get_obs(self):
+        """ Convert the Raw frame into Numpy array and return it """
+        raw_frame = self._readout_frame(self.getScreenBuffer())
+        data = np.asarray(raw_frame, dtype="int32")
+        return data

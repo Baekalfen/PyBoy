@@ -7,8 +7,8 @@
 import os
 import traceback
 import sys
-from pyboy import PyBoy
-from pyboy.logger import addconsolehandler
+from Source.pyboy import PyBoy
+from Source.pyboy.logger import addconsolehandler
 
 addconsolehandler()
 
@@ -54,7 +54,7 @@ def main():
             filename = getROM(romdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None, scale, filename, bootrom)
+        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None, filename, scale, bootrom)
         while not pyboy.tick():
             pass
         pyboy.stop()
