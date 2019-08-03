@@ -85,12 +85,12 @@ Core_Dump_*
 *.gb*.ram
 *.gb*.rtc
 
-Source/PyBoy/**/*.c
-Source/PyBoy/**/*.h
-Source/PyBoy/**/*.html
-Source/PyBoy/**/*.so
+Source/pyboy/**/*.c
+Source/pyboy/**/*.h
+Source/pyboy/**/*.html
+Source/pyboy/**/*.so
 
-/Source/Recordings
+/Source/recordings
 
 # Files from venv and dependencies
 /Source/bin
