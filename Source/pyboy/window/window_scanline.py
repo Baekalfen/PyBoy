@@ -143,7 +143,7 @@ class ScanlineWindow(BaseWindow):
         # Limit to 10 sprites per line, could optionally disable later
         sprites = [0] * 10
         nsprites = 0
-        ymin = y if lcd.LCDC.sprite_size else y + 8
+        ymin = y if lcd.LCDC.sprite_height else y + 8
         ymax = y + 16
         for n in range(0x00, 0xA0, 4):
             if ymin < lcd.OAM[n] <= ymax:
@@ -206,7 +206,7 @@ class ScanlineWindow(BaseWindow):
                     # Get the row of the sprite, accounting for flipping
                     dy = sy - y - 1 if sf & 0x40 else y - sy + 16
 
-                    if lcd.LCDC.sprite_size:
+                    if lcd.LCDC.sprite_height:
                         # Double sprites start on an even index
                         st &= 0xFE
                     else:
@@ -244,7 +244,7 @@ class ScanlineWindow(BaseWindow):
     def render_screen(self, lcd):
         self._render_copy()
 
-    def update_display(self):
+    def update_display(self, paused):
         self._render_present()
 
     def blank_screen(self):

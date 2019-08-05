@@ -11,7 +11,6 @@ import sdl2.ext
 
 from .. import windowevent
 from .base_window import BaseWindow
-from .debug_window import DebugWindow
 
 try:
     from cython import compiled
@@ -68,7 +67,7 @@ def getcolorcode(byte1, byte2, offset):
 
 
 class SDLWindow(BaseWindow):
-    def __init__(self, scale, debug):
+    def __init__(self, scale):
         BaseWindow.__init__(self, scale)
 
         self._screenbuffer_raw = array('B', [0] * (ROWS*COLS*4))
@@ -98,9 +97,6 @@ class SDLWindow(BaseWindow):
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
 
-        self.debug = debug
-        if self.debug:
-            self.debugger = DebugWindow()
 
     def init(self):
         self._ticks = sdl2.SDL_GetTicks()
@@ -126,9 +122,6 @@ class SDLWindow(BaseWindow):
         self.blank_screen()
         sdl2.SDL_ShowWindow(self._window)
 
-    def set_lcd(self, lcd):
-        self.debugger.set_lcd(lcd)
-
     def dump(self, filename):
         raise NotImplementedError()
 
@@ -150,23 +143,12 @@ class SDLWindow(BaseWindow):
                         events.append(windowevent.PAUSE)
                     elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
                         events.append(windowevent.UNPAUSE)
-                elif self.debug and (event.window.event == sdl2.SDL_WINDOWEVENT_LEAVE):
-                    # TODO: Tell the debugger when we are paused to save processing power
-                    self.debugger.window_focus(event.window.windowID, False)
-            elif self.debug:
-                click = event.type == sdl2.SDL_MOUSEBUTTONUP and event.button.button == sdl2.SDL_BUTTON_LEFT
-                if ((0 <= event.motion.x < 2**16) and
-                    (0 <= event.motion.y < 2**16) and
-                    (0 <= event.motion.windowID < 2**16)):
-                    self.debugger.mouse(click, event.motion.windowID, event.motion.x, event.motion.y)
 
         return events
 
-    def update_display(self):
-        self._update_display()
-
-        if self.debug:
-            self.debugger.update()
+    def update_display(self, paused):
+        if not paused:
+            self._update_display()
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
@@ -186,12 +168,7 @@ class SDLWindow(BaseWindow):
         self._scanlineparameters[y][2] = windowpos[0]
         self._scanlineparameters[y][3] = windowpos[1]
 
-        if self.debug:
-            self.debugger.scanline(y)
-
     def render_screen(self, lcd):
-        if self.debug:
-            self.debugger.update_cache()
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
         background_offset = 0x1800 if lcd.LCDC.backgroundmap_select == 0 else 0x1C00
@@ -226,7 +203,7 @@ class SDLWindow(BaseWindow):
         # Render sprites
         # - Doesn't restrict 10 sprites per scan line
         # - Prioritizes sprite in inverted order
-        spritesize = 16 if lcd.LCDC.sprite_size else 8
+        spriteheight = 16 if lcd.LCDC.sprite_height else 8
         bgpkey = lcd.BGP.getcolor(0)
 
         for n in range(0x00, 0xA0, 4):
@@ -240,8 +217,8 @@ class SDLWindow(BaseWindow):
             spritecache = (self._spritecache1 if attributes & 0b10000 else self._spritecache0)
 
             if x < 160 and y < 144:
-                for dy in range(spritesize):
-                    yy = spritesize - dy - 1 if yflip else dy
+                for dy in range(spriteheight):
+                    yy = spriteheight - dy - 1 if yflip else dy
                     if 0 <= y < 144:
                         for dx in range(8):
                             xx = 7 - dx if xflip else dx
@@ -287,6 +264,7 @@ class SDLWindow(BaseWindow):
                         self._spritecache1[y][x] &= ~self.alphamask
 
         self.tiles_changed.clear()
+
 
     def blank_screen(self):
         # If the screen is off, fill it with a color.

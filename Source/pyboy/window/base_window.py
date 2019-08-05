@@ -39,7 +39,7 @@ class BaseWindow:
     def get_events(self):
         raise NotImplementedError()
 
-    def update_display(self):
+    def update_display(self, paused):
         raise NotImplementedError()
 
     def frame_limiter(self, speed):
@@ -65,3 +65,6 @@ class BaseWindow:
 
     def disable_title(self):
         self.enable_title = False
+
+    def set_lcd(self, lcd):
+        pass

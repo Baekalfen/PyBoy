@@ -21,7 +21,7 @@ class DummyWindow(BaseWindow):
     def get_events(self):
         return []
 
-    def update_display(self):
+    def update_display(self, paused):
         pass
 
     def frame_limiter(self, speed):

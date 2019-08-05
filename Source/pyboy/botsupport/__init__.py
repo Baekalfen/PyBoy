@@ -3,5 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from .tile import Tile
 from .sprite import Sprite
 from .tileview import TileView

@@ -7,7 +7,6 @@ import cython
 from libc.stdint cimport uint32_t
 
 from .base_window cimport BaseWindow
-from .debug_window cimport DebugWindow
 from pyboy.lcd cimport LCD
 
 

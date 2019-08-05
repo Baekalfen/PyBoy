@@ -25,7 +25,7 @@ class HeadlessWindow(SDLWindow):
     def get_events(self):
         return []
 
-    def update_display(self):
+    def update_display(self, paused):
         pass
 
     def getscreenbuffer(self):

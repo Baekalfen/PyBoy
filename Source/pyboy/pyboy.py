@@ -28,7 +28,7 @@ class PyBoy:
         self.window = window.window.getwindow(win_type, scale, debug)
 
         self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling, debug=debug)
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling)
 
         if "--loadstate" in sys.argv:
             self.mb.load_state(gamerom_file + ".state")
@@ -83,7 +83,7 @@ class PyBoy:
 
         if not self.paused:
             self.mb.tickframe()
-        self.window.update_display()
+        self.window.update_display(self.paused)
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:

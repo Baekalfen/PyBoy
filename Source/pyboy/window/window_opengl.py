@@ -135,7 +135,7 @@ class OpenGLWindow(SDLWindow):
         glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
 
-    def update_display(self):
+    def update_display(self, paused):
         self._gldraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 

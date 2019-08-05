@@ -105,6 +105,6 @@ class LCDCRegister:
         self.window_enable        = value & (1 << 5)
         self.tiledata_select      = value & (1 << 4)
         self.backgroundmap_select = value & (1 << 3)
-        self.sprite_size          = value & (1 << 2)
+        self.sprite_height        = value & (1 << 2)
         self.sprite_enable        = value & (1 << 1)
         self.background_enable    = value & (1 << 0)
