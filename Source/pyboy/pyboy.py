@@ -16,6 +16,12 @@ from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .logger import logger, addconsolehandler
 addconsolehandler()
 
+if "--no-logger" in sys.argv:
+    logger.disabled = True
+
+argv_debug = "--debug" in sys.argv
+argv_profiling = "--profiling" in sys.argv
+argv_loadstate = "--loadstate" in sys.argv
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
@@ -24,13 +30,15 @@ class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
         self.gamerom_file = gamerom_file
 
-        debug = "--debug" in sys.argv
-        self.window = window.window.getwindow(win_type, scale, debug)
+        self.window = window.window.getwindow(win_type, scale, argv_debug)
 
-        self.profiling = "profiling" in sys.argv
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=self.profiling)
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=argv_profiling)
 
-        if "--loadstate" in sys.argv:
+        # TODO: Get rid of this extra step
+        if argv_debug:
+            self.window.set_lcd(self.mb.lcd)
+
+        if argv_loadstate:
             self.mb.load_state(gamerom_file + ".state")
 
         self.avg_emu = 0
@@ -87,7 +95,7 @@ class PyBoy:
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.getscreenbuffer())
+            self.screen_recorder.add_frame(self.get_screen_buffer())
 
         if self.paused or self.limit_emulationspeed:
             self.window.frame_limiter(1)
@@ -116,7 +124,7 @@ class PyBoy:
         logger.info("###########################")
         self.mb.stop(save)
 
-        if self.profiling:
+        if argv_profiling:
             print("Profiling report:")
             from operator import itemgetter
             names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
@@ -127,47 +135,91 @@ class PyBoy:
     ###################################################################
     # Scripts and bot methods
     #
-    def getScreenBuffer(self):
+
+    def get_screen_buffer(self):
         return self.window.getscreenbuffer()
 
-    def getScreenBufferFormat(self):
+    def get_screen_buffer_format(self):
         return self.mb.window.color_format
 
-    def getMemoryValue(self, addr):
+    def get_memory_value(self, addr):
         return self.mb.getitem(addr)
 
-    def setMemoryValue(self, addr, value):
+    def set_memory_value(self, addr, value):
         self.mb.setitem(addr, value)
 
-    def sendInput(self, event):
+    def send_input(self, event):
         self.mb.buttonevent(event)
 
-    def getSprite(self, index):
-        return botsupport.Sprite(self.mb, index)
+    def get_tile(self, index):
+        return botsupport.Tile(self.mb.lcd, index)
 
-    def getTileView(self, high):
-        return botsupport.TileView(self.mb, high)
+    def get_sprite(self, index):
+        return botsupport.Sprite(self.mb.lcd, index)
 
-    def getScreenPosition(self):
+    def get_tile_view(self, high):
+        return botsupport.Tile_view(self.mb.lcd, high)
+
+    def get_screen_position(self):
         return self.mb.lcd.getviewport()
 
-    def saveState(self, filename):
+    def save_state(self, filename):
         self.mb.save_state(filename)
 
-    def loadState(self, filename):
+    def load_state(self, filename):
         self.mb.load_state(filename)
 
-    def getSerial(self):
+    def get_serial(self):
         return self.mb.getserial()
 
-    def disableTitle(self):
+    def disable_title(self):
         self.window.disable_title()
-
-    def setEmulationSpeed(self, v, max_speed=0):
-        self.set_emulation_speed(v, max_speed)
 
     def set_emulation_speed(self, v, max_speed=0):
         self.limit_emulationspeed = v
         if max_speed > 5:
             logger.warning("The emulation speed might not be accurate when higher than 5")
         self.max_emulationspeed = max_speed
+
+
+    ## Legacy wrappers
+    def getScreenBuffer(self):
+        return self.get_screen_buffer()
+
+    def getScreenBufferFormat(self):
+        return self.get_screen_buffer_format()
+
+    def getMemoryValue(self, addr):
+        return self.get_memory_value(addr)
+
+    def setMemoryValue(self, addr, value):
+        self.set_memory_value(addr, value)
+
+    def sendInput(self, event):
+        self.send_input(event)
+
+    def getSprite(self, index):
+        return self.get_sprite(index)
+
+    def getTileView(self, high):
+        return self.get_tile_view(high)
+
+    def getScreenPosition(self):
+        return self.get_screen_position()
+
+    def saveState(self, filename):
+        self.save_state(filename)
+
+    def loadState(self, filename):
+        self.load_state(filename)
+
+    def getSerial(self):
+        return self.get_serial()
+
+    def disableTitle(self):
+        self.disable_title()
+
+    def setEmulationSpeed(self, v, max_speed=0):
+        self.set_emulation_speed(v, max_speed)
+
+

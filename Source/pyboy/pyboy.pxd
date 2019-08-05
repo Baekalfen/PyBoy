@@ -13,13 +13,15 @@ cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 
 cdef float SPF
+cdef bint argv_debug
+cdef bint argv_profiling
+cdef bint argv_loadstate
 
 cdef class PyBoy:
     cdef unicode gamerom_file
     cdef Motherboard mb
     cdef BaseWindow window
 
-    cdef bint profiling
     cdef double avg_emu
     cdef double avg_cpu
     cdef unsigned int counter

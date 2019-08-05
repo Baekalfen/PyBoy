@@ -1,4 +1,4 @@
 cython
 numpy
 pysdl2
-
+pytest
