@@ -52,6 +52,7 @@ class Sound:
 
     def set(self, offset, value):
         self.sync()
+
         if offset < 5:
             self.sweepchannel.setreg(offset, value)
         elif offset < 10:
@@ -63,6 +64,7 @@ class Sound:
         """Run the audio for the number of clock cycles stored in self.clock"""
         nsamples = self.clock // self.sampleclocks
         # print(self.clock, self.sampleclocks, nsamples)
+        # print(sdl2.SDL_GetQueuedAudioSize(self.device))
         if nsamples > 2048:
             self.clock = 0
             sdl2.SDL_ClearQueuedAudio(self.device)
@@ -133,6 +135,7 @@ class ToneChannel:
             raise IndexError("Attempt to read register {} in ToneChannel".format(reg))
 
     def setreg(self, reg, val):
+        # print(reg, hex(val))
         if reg == 0:
             return
         elif reg == 1:
@@ -147,11 +150,11 @@ class ToneChannel:
             self.sndper = (self.sndper & 0x700) + val  # Is this ever written solo?
             self.period = 4 * (0x800 - self.sndper)
         elif reg == 4:
-            if val >> 7 & 0x01:
-                self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
             self.uselen = val >> 6 & 0x01
             self.sndper = (val << 8 & 0x0700) + (self.sndper & 0xFF)
             self.period = 4 * (0x800 - self.sndper)
+            if val >> 7 & 0x01:
+                self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
         else:
             raise IndexError("Attempt to write register {} in ToneChannel".format(reg))
 
@@ -222,7 +225,6 @@ class SweepChannel(ToneChannel):
             return ToneChannel.getreg(self, reg)
 
     def setreg(self, reg, val):
-        print(reg, hex(val))
         if reg == 0:
             self.swpper = val >> 4 & 0x07
             self.swpdir = val >> 3 & 0x01
