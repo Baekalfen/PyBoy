@@ -31,6 +31,7 @@ cdef class Motherboard:
     cdef pyboy.core.lcd.LCD lcd
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
+    cdef object sound
     cdef pyboy.window.base_window.BaseWindow window
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled

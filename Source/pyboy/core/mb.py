@@ -5,7 +5,8 @@
 
 from pyboy.logger import logger
 
-from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
+from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
+
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
@@ -27,6 +28,7 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD(window.color_palette)
+        self.sound = sound.Sound()
         self.bootrom_enabled = True
         self.serialbuffer = u''
 
@@ -41,6 +43,7 @@ class Motherboard:
 
     def stop(self, save):
         self.window.stop()
+        self.sound.stop()
         if save:
             self.cartridge.stop()
 
@@ -49,6 +52,7 @@ class Motherboard:
         f.write(self.bootrom_enabled.to_bytes(1, 'little'))
         self.cpu.save_state(f)
         self.lcd.save_state(f)
+        self.sound.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
         logger.info("State saved.")
@@ -58,6 +62,7 @@ class Motherboard:
         self.bootrom_enabled = ord(f.read(1))
         self.cpu.load_state(f)
         self.lcd.load_state(f)
+        self.sound.load_state(f)
         self.ram.load_state(f)
         self.cartridge.load_state(f)
         logger.info("State loaded.")
@@ -106,6 +111,7 @@ class Motherboard:
                     self.cpu.hitrate[0x76] += cycles//4
 
             x -= cycles
+            self.sound.clock += cycles
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(TIMER)
 
@@ -151,6 +157,7 @@ class Motherboard:
 
             for y in range(154):
                 self.calculate_cycles(456)
+        self.sound.sync()
 
     ###################################################################
     # MemoryManager
@@ -185,6 +192,8 @@ class Motherboard:
                 return self.timer.TMA
             elif i == 0xFF07:
                 return self.timer.TAC
+            elif 0xFF10 <= i < 0xFF40:
+                return self.sound.get(i - 0xFF10)
             elif i == 0xFF40:
                 return self.lcd.LCDC.value
             elif i == 0xFF42:
@@ -250,6 +259,8 @@ class Motherboard:
                 self.timer.TMA = value
             elif i == 0xFF07:
                 self.timer.TAC = value & 0b111
+            elif 0xFF10 <= i < 0xFF40:
+                self.sound.set(i - 0xFF10, value)
             elif i == 0xFF40:
                 self.lcd.LCDC.set(value)
             elif i == 0xFF42:

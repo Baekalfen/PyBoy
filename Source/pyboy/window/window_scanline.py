@@ -1,6 +1,6 @@
 #
 # License: See LICENSE file
-# GitHub: https://github.com/krs013/PyBoy
+# GitHub: https://github.com/Baekalfen/PyBoy
 #
 
 import array
