@@ -14,7 +14,11 @@ sys.path.append("..") # Adds higher directory to python modules path.
 from pyboy import PyBoy
 import multiprocessing as mp
 
-timeout = 5
+import platform
+if platform.python_implementation() == "PyPy":
+    timeout = 30
+else:
+    timeout = 5
 
 
 def run_rom(rom):
