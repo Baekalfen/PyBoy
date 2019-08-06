@@ -16,28 +16,21 @@ class Sprite:
         # self.index = index
         self.mem_index = index * 4
 
-        # We save it, to keep contistency
-        self.sprite_height = self.lcd.LCDC.sprite_height
-
-    # Legacy support -- use properties
-    def get_y(self):
-        return self.lcd.OAM(self.mem_index + 0)
-
-    # Legacy support -- use properties
-    def get_x(self):
-        return self.lcd.OAM(self.mem_index + 1)
-
-    # Legacy support -- use properties
-    def get_tile(self):
-        return self.tile_index()
+    @property
+    def y(self):
+        return self.mb.getitem(OAM_OFFSET + self.offset + 0)
 
     @property
-    def tile_index(self):
-        return self.lcd.OAM(self.mem_index + 2)
+    def x(self):
+        return self.mb.getitem(OAM_OFFSET + self.offset + 1)
 
-    # Legacy support -- use properties
-    def get_attributes(self):
-        attr = self.lcd.OAM(self.mem_index + 3)
+    @property
+    def tile(self):
+        return self.mb.getitem(OAM_OFFSET + self.offset + 2)
+
+    @property
+    def attributes(self):
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
         return {
             "OBJ-to-BG Priority": get_bit(attr, 7),
             "Y flip": get_bit(attr, 6),
@@ -49,11 +42,6 @@ class Sprite:
             # "Palette number": val & 0b11,
         }
 
-    def is_on_screen(self):
-        sprite_height = 16 if self.lcd.LCDC.sprite_height else 16
-        return (0 < self.y < 144 + sprite_height and
-                0 < self.x < 160 + 8)
-
     @property
     def tiles(self):
         tile_index = self.get_tile()
@@ -62,9 +50,13 @@ class Sprite:
         else:
             return [Tile(self.lcd, tile_index)]
 
-    x = property(get_x)
-    y = property(get_y)
-    attributes = property(get_attributes)
+    @property
+    def on_screen(self):
+        LCDC_mem = self.mb.getitem(LCDC_OFFSET)
+        LCDC = LCDCRegister(LCDC_mem)
+        sprite_size = 16 if LCDC.sprite_size else 16
+        return (0 < self.y < 144 + sprite_size and
+                0 < self.x < 160 + 8)
 
 def get_bit(val, bit):
     # return (val & (1 << bit)) >> bit

@@ -7,6 +7,7 @@ import traceback
 import os.path
 import os
 import sys
+from pprint import pprint
 from pyboy import windowevent
 from pyboy import PyBoy
 
@@ -49,48 +50,50 @@ if __name__ == "__main__":
 
         # Start PyBoy and run loop
         pyboy = PyBoy('SDL2', 3, filename, bootROM)
-        pyboy.setEmulationSpeed(False)
-        frame = 0
+        pyboy.set_emulation_speed(False)
+        print ("Screen pos:", pyboy.get_screen_position())
+
         first_brick = False
-        view = pyboy.getTileView(False)
-        for _ in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
+        view = pyboy.get_tile_view(False)
+        for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
             pyboy.tick()
-            print ("frame:", frame)
+            # print ("frame:", frame)
 
             # Start game. Just press Start and A when the game allows us.
             # The frames are not 100% accurate.
             if frame == 144:
-                pyboy.sendInput(windowevent.PRESS_BUTTON_START)
+                pyboy.send_input(windowevent.PRESS_BUTTON_START)
             elif frame == 145:
-                pyboy.sendInput(windowevent.RELEASE_BUTTON_START)
+                pyboy.send_input(windowevent.RELEASE_BUTTON_START)
             elif frame == 152:
-                pyboy.sendInput(windowevent.PRESS_BUTTON_A)
+                pyboy.send_input(windowevent.PRESS_BUTTON_A)
             elif frame == 153:
-                pyboy.sendInput(windowevent.RELEASE_BUTTON_A)
+                pyboy.send_input(windowevent.RELEASE_BUTTON_A)
             elif frame == 156:
-                pyboy.sendInput(windowevent.PRESS_BUTTON_A)
+                pyboy.send_input(windowevent.PRESS_BUTTON_A)
             elif frame == 157:
-                pyboy.sendInput(windowevent.RELEASE_BUTTON_A)
+                pyboy.send_input(windowevent.RELEASE_BUTTON_A)
             elif frame == 162:
-                pyboy.sendInput(windowevent.PRESS_BUTTON_A)
+                pyboy.send_input(windowevent.PRESS_BUTTON_A)
             elif frame == 163:
-                pyboy.sendInput(windowevent.RELEASE_BUTTON_A)
+                pyboy.send_input(windowevent.RELEASE_BUTTON_A)
 
             # Play game. When we are passed the 168th frame, the game has begone.
             # The "technique" is just to move the Tetromino to the right.
             elif frame > 168:
                 if frame % 2 == 0:
-                    pyboy.sendInput(windowevent.PRESS_ARROW_RIGHT)
+                    pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
                 elif frame % 2 == 1:
-                    pyboy.sendInput(windowevent.RELEASE_ARROW_RIGHT)
+                    pyboy.send_input(windowevent.RELEASE_ARROW_RIGHT)
 
-                print ("Screen pos:", pyboy.getScreenPosition())
+
                 # As an example, it could be useful to know the coordinates
                 # of the sprites on the screen and which they look like.
-                for n in range(40):
-                    sprite = pyboy.getSprite(n)
-                    if sprite.is_on_screen():
-                        print ("Sprite:", sprite.get_x(), sprite.get_y(), sprite.get_tile())
+                if frame == 170: # Arbitrary frame where we read out all sprite on the screen
+                    for n in range(40):
+                        sprite = pyboy.get_sprite(n)
+                        if sprite.on_screen:
+                            print ("Sprite:", sprite.x, sprite.y, sprite.tile)
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This
@@ -103,12 +106,19 @@ if __name__ == "__main__":
                 # finding the corresponding value in RAM.
                 if not first_brick:
                     for n in range(10):
+                        # 17 for the bottom tile when zero-indexed (144/8 == 18)
+                        # +2 because we skip the border on the left side. Then we iterate inwards for 10 tiles
+                        # 47 is the white background tile index
                         if view.get_tile(n+2, 17) != 47:
                             first_brick = True
                             print ("First brick touched the bottom!")
+
+                            # Illustrating how we can extract the game board quite simply. This can be used to read the tile indexes
+                            game_board_matrix = [[view.get_tile(x+2,y) for x in range(10)] for y in range(18)]
+                            pprint(game_board_matrix)
+
                             break
 
-            frame += 1
         pyboy.stop()
 
     except KeyboardInterrupt:

@@ -26,6 +26,7 @@ cdef class PyBoy:
     cdef double avg_cpu
     cdef unsigned int counter
     cdef bint paused
+    cdef bint autopause
     cdef bint limit_emulationspeed
     cdef int emulationspeed, max_emulationspeed
     cdef object screen_recorder

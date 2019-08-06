@@ -28,9 +28,6 @@ class HeadlessWindow(SDLWindow):
     def update_display(self, paused):
         pass
 
-    def getscreenbuffer(self):
-        return self._screenbuffer_raw
-
     def frame_limiter(self, speed):
         pass
 

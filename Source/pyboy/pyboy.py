@@ -22,6 +22,7 @@ if "--no-logger" in sys.argv:
 argv_debug = "--debug" in sys.argv
 argv_profiling = "--profiling" in sys.argv
 argv_loadstate = "--loadstate" in sys.argv
+argv_autopause = "--autopause" in sys.argv
 
 
 SPF = 1/60. # inverse FPS (frame-per-second)
@@ -49,6 +50,7 @@ class PyBoy:
         self.limit_emulationspeed = True
         self.screen_recorder = None
         self.paused = False
+        self.autopause = argv_autopause
 
     def tick(self):
         done = False
@@ -69,10 +71,10 @@ class PyBoy:
                 pass
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
-            elif event == windowevent.PAUSE:
+            elif event == windowevent.PAUSE and self.autopause:
                 self.paused = True
                 logger.info("Emulation paused!")
-            elif event == windowevent.UNPAUSE:
+            elif event == windowevent.UNPAUSE and self.autopause:
                 self.paused = False
                 logger.info("Emulation unpaused!")
             elif event == windowevent.PAUSE_TOGGLE:
@@ -90,6 +92,7 @@ class PyBoy:
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
 
+        # self.paused &= self.autopause # Overrules paused state, if not allowed
         if not self.paused:
             self.mb.tickframe()
         self.window.update_display(self.paused)
@@ -161,14 +164,15 @@ class PyBoy:
     def send_input(self, event):
         self.mb.buttonevent(event)
 
-    def get_tile(self, index):
-        return botsupport.Tile(self.mb.lcd, index)
+#     # Does this make sense outside of TileViews?
+#     def get_tile(self, index):
+#         return botsupport.Tile(self.mb, index)
 
     def get_sprite(self, index):
-        return botsupport.Sprite(self.mb.lcd, index)
+        return botsupport.Sprite(self.mb, index)
 
     def get_tile_view(self, high):
-        return botsupport.Tile_view(self.mb.lcd, high)
+        return botsupport.TileView(self.mb, high)
 
     def get_screen_position(self):
         return self.mb.lcd.getviewport()
@@ -184,6 +188,9 @@ class PyBoy:
 
     def disable_title(self):
         self.window.disable_title()
+
+    def set_autopause(self, v):
+        self.autopause = v
 
     def set_emulation_speed(self, v, max_speed=0):
         self.limit_emulationspeed = v

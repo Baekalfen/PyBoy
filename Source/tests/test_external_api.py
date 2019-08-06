@@ -6,15 +6,18 @@
 import io
 import hashlib
 import numpy as np
+import PIL
 from PIL import Image
 
 import sys
 sys.path.append("..") # Adds higher directory to python modules path.
 
+from pyboy import windowevent
 from pyboy import PyBoy
 
 boot_rom = "../ROMs/DMG_ROM.bin"
-any_rom = 'BlarggROMs/cpu_instrs/cpu_instrs.gb'
+tetris_rom = '../ROMs/Tetris.gb'
+any_rom = tetris_rom
 
 def test_misc():
     pyboy = PyBoy("dummy", 1, any_rom, boot_rom)
@@ -25,6 +28,7 @@ def test_screen_buffer_and_image():
     for window, dims, cformat, boot_logo_hash_predigested in [
             # These are different because the underlying format is different. We'll test the actual image afterwards.
             ("SDL2", (160,144), 'RGBA', b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
+            ("headless", (160,144), 'RGBA', b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
             ("OpenGL", (144, 160), 'RGB', b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
             ]:
 
@@ -39,6 +43,7 @@ def test_screen_buffer_and_image():
         boot_logo_hash = hashlib.sha256()
         boot_logo_hash.update(pyboy.get_raw_screen_buffer())
         assert boot_logo_hash.digest() == boot_logo_hash_predigested
+        assert isinstance(pyboy.get_raw_screen_buffer(), bytes)
 
         # The output of `get_screen_image` is supposed to be homogeneous, which means a shared hash between versions.
         boot_logo_png_hash_predigested = (
@@ -47,6 +52,7 @@ def test_screen_buffer_and_image():
             )
         boot_logo_png_hash = hashlib.sha256()
         image = pyboy.get_screen_image()
+        assert isinstance(image, PIL.Image.Image)
         image_data = io.BytesIO()
         image.save(image_data, format='BMP')
         boot_logo_png_hash.update(image_data.getvalue())
@@ -55,6 +61,7 @@ def test_screen_buffer_and_image():
         # get_raw_screen_buffer_as_nparray
         numpy_hash = hashlib.sha256()
         numpy_array = np.ascontiguousarray(pyboy.get_raw_screen_buffer_as_nparray())
+        assert isinstance(pyboy.get_raw_screen_buffer_as_nparray(), np.ndarray)
         assert numpy_array.shape == (144, 160, 3)
         numpy_hash.update(numpy_array.tobytes())
         assert numpy_hash.digest() == (
@@ -65,42 +72,236 @@ def test_screen_buffer_and_image():
         pyboy.stop(save=False)
 
 
-def test_get_memory_value():
-    pass
+def test_tetris():
+    NEXT_TETROMINO = 0xC213
 
-def test_set_memory_value():
-    pass
+    def verify_screen_image(predigested):
+        screen_hash = hashlib.sha256()
+        image = pyboy.get_screen_image()
+        image_data = io.BytesIO()
+        image.save(image_data, format='BMP')
+        screen_hash.update(image_data.getvalue())
+        short_digest = screen_hash.digest()[:10] # Just for quick verification, and make the code less ugly
+        # print(short_digest)
+        # image.show()
+        # breakpoint()
+        assert short_digest == predigested, "Didn't match: " + str(short_digest)
 
-def test_send_input():
-    pass
+    pyboy = PyBoy('SDL2', 1, tetris_rom, None)
+    pyboy.set_emulation_speed(False)
 
-def test_get_tile():
-    pass
+    first_brick = False
+    view = pyboy.get_tile_view(False)
+    for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
+        pyboy.tick()
 
-def test_get_sprite():
-    pass
+        assert pyboy.get_screen_position() == (0, 0)
 
-def test_get_tile_view():
-    pass
+        # Start game. Just press Start and A when the game allows us.
+        # The frames are not 100% accurate.
+        if frame == 20:
+            verify_screen_image(b"O'\tw\xa8{\xb3\xd7]\t")
+        elif frame == 144:
+            verify_screen_image(b'X37?\xb6\xa1I\xf25\xc1')
+            pyboy.send_input(windowevent.PRESS_BUTTON_START)
+        elif frame == 145:
+            pyboy.send_input(windowevent.RELEASE_BUTTON_START)
+        elif frame == 152:
+            verify_screen_image(b'~K\xe0\xa8"\xdb\xdd\xd9\x07\x80')
+            pyboy.send_input(windowevent.PRESS_BUTTON_A)
+        elif frame == 153:
+            pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+        elif frame == 156:
+            verify_screen_image(b'x\xb0\xfb)\xa0c<?am')
+            pyboy.send_input(windowevent.PRESS_BUTTON_A)
+        elif frame == 157:
+            pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+        elif frame == 162:
+            verify_screen_image(b'{\x93\xaa\xdc\xdc\xa3\xc3\x97\x8ez')
+            pyboy.send_input(windowevent.PRESS_BUTTON_A)
+        elif frame == 163:
+            pyboy.send_input(windowevent.RELEASE_BUTTON_A)
 
-def test_get_screen_position():
-    pass
+        # Play game. When we are passed the 168th frame, the game has begone.
+        # The "technique" is just to move the Tetromino to the right.
+        elif frame > 168:
+            if frame % 2 == 0:
+                pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
+            elif frame % 2 == 1:
+                pyboy.send_input(windowevent.RELEASE_ARROW_RIGHT)
 
-def test_save_state():
-    pass
+            # breakpoint()
 
-def test_load_state():
-    pass
+            # Show how we can read the tile data for the screen. We can use
+            # this to see when one of the Tetrominos touch the bottom. This
+            # could be used to extract a matrix of the occupied squares by
+            # iterating from the top to the bottom of the screen.
+            # Sidenote: The currently moving Tetromino is a sprite, so it
+            # won't show up in the tile data. The tile data shows only the
+            # placed Tetrominos.
+            # We could also read out the score from the screen instead of
+            # finding the corresponding value in RAM.
 
-def test_get_serial():
-    pass
+
+            if not first_brick:
+                for n in range(10):
+                    # 17 for the bottom tile when zero-indexed (144/8 == 18)
+                    # +2 because we skip the border on the left side. Then we iterate inwards for 10 tiles
+                    # 47 is the white background tile index
+                    if view.get_tile(n+2, 17) != 47:
+                        first_brick = True
+                        print(frame)
+                        print ("First brick touched the bottom!")
+
+                        game_board_matrix = [[view.get_tile(x+2,y) for x in range(10)] for y in range(18)]
+                        assert game_board_matrix == (
+                                [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 130, 130, 47],
+                                 [47, 47, 47, 47, 47, 47, 47, 47, 130, 130]]
+                            )
+
+                        break
+
+            if frame == 1014:
+                assert not first_brick
+
+            if frame == 1015:
+                assert first_brick
+
+                all_sprites = [(s.x, s.y, s.tile, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
+                assert all_sprites == (
+                    [(0, 0, 60, False),
+                     (102, 102, 102, True),
+                     (102, 102, 102, True),
+                     (60, 60, 0, True),
+                     (0, 0, 24, False),
+                     (56, 56, 24, True),
+                     (24, 24, 24, True),
+                     (60, 60, 0, True),
+                     (0, 0, 60, False),
+                     (78, 78, 14, True),
+                     (60, 60, 112, True),
+                     (126, 126, 0, True),
+                     (0, 0, 124, False),
+                     (14, 14, 60, True),
+                     (14, 14, 14, True),
+                     (124, 124, 0, True),
+                     (0, 0, 60, False),
+                     (108, 108, 76, True),
+                     (78, 78, 126, True),
+                     (12, 12, 0, True),
+                     (0, 0, 124, False),
+                     (96, 96, 124, True),
+                     (14, 14, 78, True),
+                     (60, 60, 0, True),
+                     (0, 0, 60, False),
+                     (96, 96, 124, True),
+                     (102, 102, 102, True),
+                     (60, 60, 0, True),
+                     (0, 0, 126, False),
+                     (6, 6, 12, True),
+                     (24, 24, 56, True),
+                     (56, 56, 0, True),
+                     (0, 0, 60, False),
+                     (78, 78, 60, True),
+                     (78, 78, 78, True),
+                     (60, 60, 0, True),
+                     (0, 0, 60, False),
+                     (78, 78, 78, True),
+                     (62, 62, 14, True),
+                     (60, 60, 0, True)]
+                    )
+
+
+                assert pyboy.get_memory_value(NEXT_TETROMINO) == 12
+                pyboy.save_state('tmp.state')
+                pyboy.set_memory_value(NEXT_TETROMINO, 11)
+                assert pyboy.get_memory_value(NEXT_TETROMINO) == 11
+                break
+
+    for frame in range(1016, 1866):
+        pyboy.tick()
+        if frame == 1017:
+            assert pyboy.get_memory_value(NEXT_TETROMINO) == 11 # Would have been 4 otherwise
+
+        if frame == 1865:
+            game_board_matrix = [[view.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+            assert game_board_matrix == (
+                    [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 128, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 136, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 136, 47, 47, 130, 130, 47],
+                     [47, 47, 47, 47, 137, 47, 47, 47, 130, 130]]
+                    )
+
+    pyboy.load_state('tmp.state') # Reverts memory state to before we changed the Tetromino
+    pyboy.tick()
+    for frame in range(1016, 5282):
+        pyboy.tick()
+        if frame == 1017:
+            assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
+
+        if frame == 1865:
+            game_board_matrix = [[view.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+            assert game_board_matrix == (
+                    [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                     [47, 47, 47, 47, 131, 131, 47, 130, 130, 47],
+                     [47, 47, 47, 47, 131, 131, 47, 47, 130, 130]]
+                        )
+
+    verify_screen_image(b'8k\x93\xfd\x15\xc4\xa7};\x94')
+
+# # Blargg's tests verifies this
+# def test_get_serial():
+#     pass
 
 def test_disable_title():
+    # Simply tests, that no exception is generated
     pyboy = PyBoy("dummy", 1, any_rom, boot_rom)
     pyboy.disable_title()
     pyboy.tick()
     pyboy.stop(save=False)
-
-def test_set_emulation_speed():
-    pass
 

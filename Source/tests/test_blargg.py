@@ -21,13 +21,13 @@ def run_rom(rom):
     # logger.info(rom)
     pyboy = PyBoy("dummy", 1, rom, "../ROMs/DMG_ROM.bin")
     # pyboy = PyBoy("SDL2", 1, rom, "../ROMs/DMG_ROM.bin")
-    pyboy.disableTitle()
-    pyboy.setEmulationSpeed(False)
+    pyboy.disable_title()
+    pyboy.set_emulation_speed(False)
     serial_output = ""
     t = time.time()
     result = None
     while not pyboy.tick():
-        b = pyboy.getSerial()
+        b = pyboy.get_serial()
         if b != "":
             serial_output += b
             t = time.time()
