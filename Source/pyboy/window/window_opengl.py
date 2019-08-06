@@ -3,6 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 import numpy as np
 
@@ -16,6 +20,7 @@ from OpenGL.GLUT import glutInit, glutInitDisplayMode, glutInitWindowSize, glutC
 
 from .. import windowevent
 from .window_sdl2 import SDLWindow
+from ..logger import logger
 
 
 ROWS, COLS = 144, 160
@@ -23,13 +28,14 @@ ROWS, COLS = 144, 160
 
 class OpenGLWindow(SDLWindow):
     def __init__(self, scale=1):
-        super(self.__class__, self).__init__(scale)
+        super(self.__class__, self).__init__(scale, False)
 
     def init(self):
         # Shift from ARGB to RGBA
         self.color_palette = [((x << 8) & 0xFFFFFFFF) | 0x000000FF for x in self.color_palette]
         self.alphamask = 0x000000FF
         self.color_format = u"RGB"
+        self.buffer_dims = (144, 160)
 
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -139,10 +145,15 @@ class OpenGLWindow(SDLWindow):
         self._gldraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 
-    def getscreenbuffer(self):
-        frame = np.asarray(self._screenbuffer).view(np.uint8).reshape(
-            COLS, ROWS, 4)[:, :, 1:]
-        return np.ascontiguousarray(frame)
+    def get_screen_buffer_as_nparray(self):
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(144, 160, 4)[:,:,1:]
+
+    def get_screen_image(self):
+        if not Image:
+            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            return None
+
+        return Image.fromarray(np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(self.buffer_dims+(4,))[:,:,1:], self.color_format).convert(mode='RGBA') # Convert to RGBA for consistency with SDL2
 
     def frame_limiter(self, speed):
         pass

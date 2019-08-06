@@ -23,6 +23,7 @@ argv_debug = "--debug" in sys.argv
 argv_profiling = "--profiling" in sys.argv
 argv_loadstate = "--loadstate" in sys.argv
 
+
 SPF = 1/60. # inverse FPS (frame-per-second)
 
 
@@ -136,11 +137,20 @@ class PyBoy:
     # Scripts and bot methods
     #
 
-    def get_screen_buffer(self):
-        return self.window.getscreenbuffer()
+    def get_raw_screen_buffer(self):
+        return self.window.get_screen_buffer()
 
-    def get_screen_buffer_format(self):
+    def get_raw_screen_buffer_as_nparray(self):
+        return self.window.get_screen_buffer_as_nparray()
+
+    def get_raw_screen_buffer_dims(self):
+        return self.mb.window.buffer_dims
+
+    def get_raw_screen_buffer_format(self):
         return self.mb.window.color_format
+
+    def get_screen_image(self):
+        return self.mb.window.get_screen_image()
 
     def get_memory_value(self, addr):
         return self.mb.getitem(addr)
@@ -180,46 +190,4 @@ class PyBoy:
         if max_speed > 5:
             logger.warning("The emulation speed might not be accurate when higher than 5")
         self.max_emulationspeed = max_speed
-
-
-    ## Legacy wrappers
-    def getScreenBuffer(self):
-        return self.get_screen_buffer()
-
-    def getScreenBufferFormat(self):
-        return self.get_screen_buffer_format()
-
-    def getMemoryValue(self, addr):
-        return self.get_memory_value(addr)
-
-    def setMemoryValue(self, addr, value):
-        self.set_memory_value(addr, value)
-
-    def sendInput(self, event):
-        self.send_input(event)
-
-    def getSprite(self, index):
-        return self.get_sprite(index)
-
-    def getTileView(self, high):
-        return self.get_tile_view(high)
-
-    def getScreenPosition(self):
-        return self.get_screen_position()
-
-    def saveState(self, filename):
-        self.save_state(filename)
-
-    def loadState(self, filename):
-        self.load_state(filename)
-
-    def getSerial(self):
-        return self.get_serial()
-
-    def disableTitle(self):
-        self.disable_title()
-
-    def setEmulationSpeed(self, v, max_speed=0):
-        self.set_emulation_speed(v, max_speed)
-
 

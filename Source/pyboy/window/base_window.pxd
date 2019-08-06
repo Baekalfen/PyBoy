@@ -24,6 +24,7 @@ cdef class BaseWindow:
     cdef public uint32_t[4] color_palette
     cdef unsigned int alphamask
     cdef unicode color_format
+    cdef (int, int) buffer_dims
 
     cdef void set_title(self, unicode)
     cdef list get_events(self)
@@ -35,7 +36,8 @@ cdef class BaseWindow:
     cdef void scanline(self, int, LCD)
     cdef void render_screen(self, LCD)
     cdef void blank_screen(self)
-    cdef object getscreenbuffer(self)
+    cdef bytes get_screen_buffer(self)
+    cdef object get_screen_buffer_as_nparray(self)
 
     cdef bint clearcache
     cdef set tiles_changed

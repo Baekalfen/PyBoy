@@ -22,6 +22,7 @@ class BaseWindow:
         self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
         self.alphamask = 0xFF000000
         self.color_format = u"RGBA"
+        self.buffer_dims = (160, 144)
 
         self.clearcache = False
         self.tiles_changed = set([])
@@ -57,7 +58,10 @@ class BaseWindow:
     def blank_screen(self):
         pass
 
-    def getscreenbuffer(self):
+    def get_screen_buffer(self):
+        raise NotImplementedError()
+
+    def get_screen_buffer_as_nparray(self):
         raise NotImplementedError()
 
     def update_cache(self, lcd):

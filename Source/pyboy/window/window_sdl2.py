@@ -11,12 +11,19 @@ import sdl2.ext
 
 from .. import windowevent
 from .base_window import BaseWindow
+from .debug_window import DebugWindow
+from ..logger import logger
 
 try:
     from cython import compiled
     cythonmode = compiled
 except ImportError:
     cythonmode = False
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 ROWS, COLS = 144, 160
 TILES = 384
@@ -273,12 +280,22 @@ class SDLWindow(BaseWindow):
             for x in range(160):
                 self._screenbuffer[y][x] = color
 
-    def getscreenbuffer(self):
-        if cythonmode:
-            return self._screenbuffer_raw.tobytes()
-        else:
-            return self._screenbuffer_raw
+    def get_screen_buffer(self):
+        return self._screenbuffer_raw.tobytes()
 
+    def get_screen_buffer_as_nparray(self):
+        import numpy as np
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(144, 160, 4)[:,:,:-1]
+
+    def get_screen_image(self):
+        if not Image:
+            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            return None
+
+        return Image.frombytes(
+                self.color_format,
+                self.buffer_dims,
+                self.get_screen_buffer())
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to
 # prevent Cython from trying to parse it. This block provides the

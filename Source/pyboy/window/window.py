@@ -3,8 +3,7 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from ..logger import logger, addconsolehandler
-addconsolehandler()
+from ..logger import logger
 
 
 ROWS, COLS = 144, 160
