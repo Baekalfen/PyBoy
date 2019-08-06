@@ -22,15 +22,19 @@ def test_misc():
     pyboy.stop(save=False)
 
 def test_screen_buffer_and_image():
-    for window, boot_logo_hash_predigested in [
+    for window, dims, cformat, boot_logo_hash_predigested in [
             # These are different because the underlying format is different. We'll test the actual image afterwards.
-            ("SDL2", b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
-            ("OpenGL", b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
+            ("SDL2", (160,144), 'RGBA', b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
+            ("OpenGL", (144, 160), 'RGB', b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
             ]:
+
         pyboy = PyBoy(window, 1, any_rom, boot_rom)
         pyboy.set_emulation_speed(False)
         for n in range(275): # Iterate to boot logo
             pyboy.tick()
+
+        assert pyboy.get_raw_screen_buffer_dims() == dims
+        assert pyboy.get_raw_screen_buffer_format() == cformat
 
         boot_logo_hash = hashlib.sha256()
         boot_logo_hash.update(pyboy.get_raw_screen_buffer())
