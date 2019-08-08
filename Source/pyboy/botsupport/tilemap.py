@@ -15,6 +15,10 @@ class TileView:
         self.high_tile_data = high_tile_data
 
     def get_tile(self, x, y):
+        """
+        Returns the tile-index of the tile at the given coordinate in the tile map.
+        """
+
         assert 0 <= x < 32
         assert 0 <= y < 32
 

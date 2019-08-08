@@ -5,4 +5,4 @@
 
 from .tile import Tile
 from .sprite import Sprite
-from .tileview import TileView
+from .tilemap import TileMap

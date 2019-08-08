@@ -27,9 +27,21 @@ argv_autopause = "--autopause" in sys.argv
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
-
 class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
+        """
+        PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class multiple times.
+
+        This object, `pyboy.windowevent`, and the `pyboy.botsupport` module, are the only official user-facing interfaces. All other parts of the emulator, are subject to change.
+
+        A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on GitHub, if other methods are needed for your projects. Take a look at tetris_bot.py for a crude "bot", which interacts with the game.
+
+        Args:
+            win_type (str): Specify one of the supported window types. If unsure, specify None to get the default.
+            scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
+            gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+            bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify None.
+        """
         self.gamerom_file = gamerom_file
 
         self.window = window.window.getwindow(win_type, scale, argv_debug)
@@ -47,12 +59,20 @@ class PyBoy:
         self.avg_cpu = 0
         self.counter = 0
         self.set_emulation_speed(True, 0)
-        self.limit_emulationspeed = True
         self.screen_recorder = None
         self.paused = False
         self.autopause = argv_autopause
 
     def tick(self):
+        """
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
+        the `pyboy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        """
         done = False
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
@@ -123,6 +143,12 @@ class PyBoy:
         return done
 
     def stop(self, save=True):
+        """
+        Gently stops the emulator and all sub-modules.
+
+        Args:
+            save (str): Specify whether to save the game upon stopping. It will always be saved in a file next to the provided game-ROM.
+        """
         logger.info("###########################")
         logger.info("# Emulator is turning off #")
         logger.info("###########################")
@@ -141,41 +167,116 @@ class PyBoy:
     #
 
     def get_raw_screen_buffer(self):
+        """
+        Provides a raw, unfiltered `bytes` object with the data from the screen. Check `pyboy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
+
+        Use this, only if you need to bypass the overhead of `pyboy.get_screen_image` or `pyboy.get_screen_np_ndarray`.
+
+        Returns:
+            bytes: 92160 bytes of screen data in a `bytes` object.
+        """
         return self.window.get_screen_buffer()
 
-    def get_raw_screen_buffer_as_nparray(self):
-        return self.window.get_screen_buffer_as_nparray()
-
     def get_raw_screen_buffer_dims(self):
+        """
+        Returns the dimensions of the raw screen buffer.
+
+        Returns:
+            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+        """
         return self.mb.window.buffer_dims
 
     def get_raw_screen_buffer_format(self):
+        """
+        Returns the format of the raw screen buffer.
+
+        Returns:
+            str: Color format of the raw screen buffer. E.g. 'RGB'.
+        """
         return self.mb.window.color_format
 
+    def get_screen_np_ndarray(self):
+        """
+        Provides the screen data in NumPy format. The dataformat is always RGB.
+
+        Returns:
+            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+        """
+        return self.window.get_screen_buffer_as_nparray()
+
     def get_screen_image(self):
+        """
+        Generates a PIL Image from the screen buffer.
+
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
+
+        Returns:
+            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+        """
         return self.mb.window.get_screen_image()
 
     def get_memory_value(self, addr):
+        """
+        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use `pyboy.set_memory_value` to send MBC commands to the virtual cartridge.
+
+        Returns:
+            int: An integer with the value of the memory address
+        """
         return self.mb.getitem(addr)
 
     def set_memory_value(self, addr, value):
+        """
+        Write one byte to a given memory address of the Game Boy's current memory state. This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            addr (int): Address to write to
+            value (int): A byte to write
+        """
         self.mb.setitem(addr, value)
 
     def send_input(self, event):
+        """
+        Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
+
+        Args:
+            event (pyboy.windowevent): The event to send
+        """
         self.mb.buttonevent(event)
 
-#     # Does this make sense outside of TileViews?
-#     def get_tile(self, index):
-#         return botsupport.Tile(self.mb, index)
-
     def get_sprite(self, index):
+        """
+        Provides a `pyboy.botsupport.sprite` object, which makes the OAM data more presentable. The given index corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
+
+        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            index (int): Sprite index from 0 to 39.
+        Returns:
+            `pyboy.botsupport.sprite`: Sprite corresponding to the given index.
+        """
         return botsupport.Sprite(self.mb, index)
 
-    def get_tile_view(self, high):
-        return botsupport.TileView(self.mb, high)
+    def get_tile_map(self, high):
+        """
+        The Game Boy supports two tile maps at the same time. These tile maps are used to draw static graphics on the display of the Game Boy. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            high (bool): If given the parameter is `True`, it will return a `TileMap` for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a `TileMap` for the 0x9800-0x9BFF range.
+        Returns:
+            `pyboy.botsupport.tilemap`: A TileMap object for the given memory range.
+        """
+        return botsupport.TileMap(self.mb, high)
 
     def get_screen_position(self):
-        return self.mb.lcd.getviewport()
+        """
+        These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the tile map.
+
+        For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
+
+        Returns:
+            ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
+        """
+        return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
 
     def save_state(self, filename):
         self.mb.save_state(filename)

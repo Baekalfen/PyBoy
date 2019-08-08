@@ -14,6 +14,7 @@ sys.path.append("..") # Adds higher directory to python modules path.
 from pyboy import PyBoy
 import multiprocessing as mp
 
+# TODO: The timeout should be emulator-cycle based
 import platform
 if platform.python_implementation() == "PyPy":
     timeout = 30

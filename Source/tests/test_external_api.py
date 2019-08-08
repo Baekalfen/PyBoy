@@ -58,10 +58,10 @@ def test_screen_buffer_and_image():
         boot_logo_png_hash.update(image_data.getvalue())
         assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
 
-        # get_raw_screen_buffer_as_nparray
+        # get_screen_np_ndarray
         numpy_hash = hashlib.sha256()
-        numpy_array = np.ascontiguousarray(pyboy.get_raw_screen_buffer_as_nparray())
-        assert isinstance(pyboy.get_raw_screen_buffer_as_nparray(), np.ndarray)
+        numpy_array = np.ascontiguousarray(pyboy.get_screen_np_ndarray())
+        assert isinstance(pyboy.get_screen_np_ndarray(), np.ndarray)
         assert numpy_array.shape == (144, 160, 3)
         numpy_hash.update(numpy_array.tobytes())
         assert numpy_hash.digest() == (
