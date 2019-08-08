@@ -77,7 +77,7 @@ setup(
         'pyboy/pyboy.py',
         'pyboy/screenrecorder.py',
         'pyboy/botsupport/sprite.py',
-        'pyboy/botsupport/tileview.py',
+        'pyboy/botsupport/tilemap.py',
         ],
         include_path=[".", "pyboy", "pyboy/cartridge", "pyboy/mb", "pyboy/window"],
         nthreads=thread_count,

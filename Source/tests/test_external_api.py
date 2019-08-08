@@ -91,11 +91,11 @@ def test_tetris():
     pyboy.set_emulation_speed(False)
 
     first_brick = False
-    view = pyboy.get_tile_view(False)
+    tile_map = pyboy.get_tile_map(False)
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
         pyboy.tick()
 
-        assert pyboy.get_screen_position() == (0, 0)
+        assert pyboy.get_screen_position() == ((0, 0), (-7, 0))
 
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
@@ -148,12 +148,12 @@ def test_tetris():
                     # 17 for the bottom tile when zero-indexed (144/8 == 18)
                     # +2 because we skip the border on the left side. Then we iterate inwards for 10 tiles
                     # 47 is the white background tile index
-                    if view.get_tile(n+2, 17) != 47:
+                    if tile_map.get_tile(n+2, 17) != 47:
                         first_brick = True
                         print(frame)
                         print ("First brick touched the bottom!")
 
-                        game_board_matrix = [[view.get_tile(x+2,y) for x in range(10)] for y in range(18)]
+                        game_board_matrix = [[tile_map.get_tile(x+2,y) for x in range(10)] for y in range(18)]
                         assert game_board_matrix == (
                                 [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -240,7 +240,7 @@ def test_tetris():
             assert pyboy.get_memory_value(NEXT_TETROMINO) == 11 # Would have been 4 otherwise
 
         if frame == 1865:
-            game_board_matrix = [[view.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+            game_board_matrix = [[tile_map.get_tile(x+2, y) for x in range(10)] for y in range(18)]
             assert game_board_matrix == (
                     [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                      [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -270,7 +270,7 @@ def test_tetris():
             assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
 
         if frame == 1865:
-            game_board_matrix = [[view.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+            game_board_matrix = [[tile_map.get_tile(x+2, y) for x in range(10)] for y in range(18)]
             assert game_board_matrix == (
                     [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                      [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
