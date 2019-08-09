@@ -6,6 +6,7 @@
 
 cimport pyboy.mb.mb
 cimport opcodes
+
 import cython
 
 

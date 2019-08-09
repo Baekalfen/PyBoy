@@ -3,6 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+"""
+The core module of the emulator
+"""
+
 import sys
 import time
 
@@ -69,7 +73,7 @@ class PyBoy:
 
         To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
         The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
-        the `pyboy.set_emulation_speed` method.
+        the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         """
@@ -83,9 +87,11 @@ class PyBoy:
                 self.limit_emulationspeed ^= True
                 logger.info("Speed limit: %s" % self.limit_emulationspeed)
             elif event == windowevent.SAVE_STATE:
-                self.mb.save_state(self.gamerom_file + ".state")
+                with open(self.gamerom_file + ".state", "wb") as f:
+                    self.mb.save_state(f)
             elif event == windowevent.LOAD_STATE:
-                self.mb.load_state(self.gamerom_file + ".state")
+                with open(self.gamerom_file + ".state", "rb") as f:
+                    self.mb.load_state(f)
             elif event == windowevent.DEBUG_TOGGLE:
                 # self.debugger.running ^= True
                 pass
@@ -162,15 +168,16 @@ class PyBoy:
                     filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print("%3x %16s %s" % (n, name, hits))
 
+
     ###################################################################
     # Scripts and bot methods
     #
 
     def get_raw_screen_buffer(self):
         """
-        Provides a raw, unfiltered `bytes` object with the data from the screen. Check `pyboy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
+        Provides a raw, unfiltered `bytes` object with the data from the screen. Check `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
 
-        Use this, only if you need to bypass the overhead of `pyboy.get_screen_image` or `pyboy.get_screen_np_ndarray`.
+        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_np_ndarray`.
 
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
@@ -217,7 +224,7 @@ class PyBoy:
 
     def get_memory_value(self, addr):
         """
-        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use `pyboy.set_memory_value` to send MBC commands to the virtual cartridge.
+        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send MBC commands to the virtual cartridge.
 
         Returns:
             int: An integer with the value of the memory address
@@ -278,24 +285,70 @@ class PyBoy:
         """
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
 
-    def save_state(self, filename):
-        self.mb.save_state(filename)
+    def save_state(self, file_handle):
+        """
+        Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in a game.
 
-    def load_state(self, filename):
-        self.mb.load_state(filename)
+        You can either save it to a file, or in-memory. The following two examples will provide the file handle in each case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
+
+            # Save to file
+            file_handle = open("state_file.state", "wb")
+
+            # Save to memory
+            import io
+            file_handle = io.BytesIO()
+            file_handle.seek(0)
+
+        Args:
+            file_handle (io.BufferedIOBase): A file-like object for which to write the emulator state.
+        """
+        self.mb.save_state(file_handle)
+
+    def load_state(self, file_like_object):
+        """
+        Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress in a game.
+
+        You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you can load it here.
+
+        Args:
+            file_handle (io.BufferedIOBase): A file-like object for which to read the emulator state.
+        """
+        self.mb.load_state(file_like_object)
 
     def get_serial(self):
+        """
+        Provides all data that has been sent over the serial port since last call to this function.
+
+        Returns:
+            str : Buffer data
+        """
         return self.mb.getserial()
 
     def disable_title(self):
+        """
+        Disable window-title updates. These are output to the log, when in `headless` or `dummy` mode.
+        """
         self.window.disable_title()
 
-    def set_autopause(self, v):
-        self.autopause = v
+    def set_autopause(self, autopause):
+        """
+        PyBoy can automatically pause execution, when the game window looses focus. This might not be convenient, when running the emulator autonomously.
 
-    def set_emulation_speed(self, v, max_speed=0):
-        self.limit_emulationspeed = v
-        if max_speed > 5:
-            logger.warning("The emulation speed might not be accurate when higher than 5")
-        self.max_emulationspeed = max_speed
+        Args:
+            autopause (bool): Allow to autopause or not.
+        """
+        self.autopause = autopause
+
+    def set_emulation_speed(self, limit, target_speed=0):
+        """
+        Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high `target_speed`.
+
+        Args:
+            limit (bool): Whether to limit the speed or not.
+            target_speed (bool): If limiting the speed, what is the target speed.
+        """
+        self.limit_emulationspeed = limit
+        if target_speed > 5:
+            logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
+        self.max_emulationspeed = target_speed
 

@@ -4,7 +4,7 @@
 #
 
 """
-These are all the supported events to send to the emulator:
+All supported events to send to the emulator:
 
     QUIT
     PRESS_ARROW_UP

@@ -82,9 +82,10 @@ def test_tetris():
         image.save(image_data, format='BMP')
         screen_hash.update(image_data.getvalue())
         short_digest = screen_hash.digest()[:10] # Just for quick verification, and make the code less ugly
-        # print(short_digest)
-        # image.show()
-        # breakpoint()
+        if short_digest != predigested:
+            print("Didn't match: " + str(short_digest))
+            image.show()
+            breakpoint()
         assert short_digest == predigested, "Didn't match: " + str(short_digest)
 
     pyboy = PyBoy('SDL2', 1, tetris_rom, None)
@@ -92,6 +93,7 @@ def test_tetris():
 
     first_brick = False
     tile_map = pyboy.get_tile_map(False)
+    state_data = io.BytesIO()
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
         pyboy.tick()
 
@@ -229,7 +231,9 @@ def test_tetris():
 
 
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 12
-                pyboy.save_state('tmp.state')
+                with open('tmp.state', 'wb') as f:
+                    pyboy.save_state(f)
+                pyboy.save_state(state_data)
                 pyboy.set_memory_value(NEXT_TETROMINO, 11)
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 11
                 break
@@ -262,37 +266,42 @@ def test_tetris():
                      [47, 47, 47, 47, 137, 47, 47, 47, 130, 130]]
                     )
 
-    pyboy.load_state('tmp.state') # Reverts memory state to before we changed the Tetromino
-    pyboy.tick()
-    for frame in range(1016, 5282):
-        pyboy.tick()
-        if frame == 1017:
-            assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
+    state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
+    with open('tmp.state', 'rb') as f:
+        for _f in [f, state_data]: # Tests both file-written state and in-memory state
+            pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
+            pyboy.tick()
+            for frame in range(1016, 5282):
+                pyboy.tick()
+                if frame == 1017:
+                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
 
-        if frame == 1865:
-            game_board_matrix = [[tile_map.get_tile(x+2, y) for x in range(10)] for y in range(18)]
-            assert game_board_matrix == (
-                    [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                     [47, 47, 47, 47, 131, 131, 47, 130, 130, 47],
-                     [47, 47, 47, 47, 131, 131, 47, 47, 130, 130]]
-                        )
+                if frame == 1865:
+                    game_board_matrix = [[tile_map.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+                    assert game_board_matrix == (
+                            [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 131, 131, 47, 130, 130, 47],
+                             [47, 47, 47, 47, 131, 131, 47, 47, 130, 130]]
+                                )
 
-    verify_screen_image(b'8k\x93\xfd\x15\xc4\xa7};\x94')
+    verify_screen_image(b'\xd4\xc6\x12\xe5\xe9\xa8\xbaZ\x9c\xe3')
+
+# test_tetris()
 
 # # Blargg's tests verifies this
 # def test_get_serial():

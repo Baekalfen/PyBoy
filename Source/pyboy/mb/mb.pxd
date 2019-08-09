@@ -49,5 +49,5 @@ cdef class Motherboard:
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, unsigned char)
-    cdef void save_state(self, unicode)
-    cdef void load_state(self, unicode)
+    cdef void save_state(self, file)
+    cdef void load_state(self, file)

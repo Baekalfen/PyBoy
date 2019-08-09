@@ -6,7 +6,6 @@
 from pyboy.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint32_t
 
-
 cdef class BaseMBC:
     cdef unicode filename
     cdef unicode gamename

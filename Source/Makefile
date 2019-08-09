@@ -13,13 +13,13 @@ build:
 
 clean:
 	@echo "Cleaning..."
-	find . -name "*.pyo" -delete
-	find . -name "*.pyc" -delete
-	find . -name "*.so" -delete
-	find . -name "*.c" -delete
-	find . -name "*.h" -delete
-	find . -name "*.html" -delete
-	find . -name "__pycache__" -d -delete
+	find pyboy/ -name "*.pyo" -delete
+	find pyboy/ -name "*.pyc" -delete
+	find pyboy/ -name "*.so" -delete
+	find pyboy/ -name "*.c" -delete
+	find pyboy/ -name "*.h" -delete
+	find pyboy/ -name "*.html" -delete
+	find pyboy/ -name "__pycache__" -d -delete
 	rm -rf ./build
 	rm -rf ./dist
 	rm -rf ./PyBoy.egg-info
