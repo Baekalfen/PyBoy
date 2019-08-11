@@ -20,18 +20,17 @@ FPS = 60
 
 class ScreenRecorder:
 
-    def __init__(self, color_scheme):
+    def __init__(self):
         if Image:
             logger.info("ScreenRecorder started")
             self.frames = []
         else:
             logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. "
                            "Screen recording is disabled.")
-        self.color_scheme = color_scheme
 
     def add_frame(self, frame):
         if Image:
-            self.frames.append(Image.frombytes(self.color_scheme, (160, 144), frame))
+            self.frames.append(frame)
 
     def save(self, path=None, fps=60):
         if not Image:

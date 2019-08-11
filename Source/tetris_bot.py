@@ -54,7 +54,7 @@ if __name__ == "__main__":
         print ("Screen pos:", pyboy.get_screen_position())
 
         first_brick = False
-        view = pyboy.get_tile_view(False)
+        tile_map = pyboy.get_tile_map(False)
         for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
             pyboy.tick()
             # print ("frame:", frame)
@@ -77,6 +77,53 @@ if __name__ == "__main__":
                 pyboy.send_input(windowevent.PRESS_BUTTON_A)
             elif frame == 163:
                 pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+
+            elif frame == 4480:
+                # Illustrating how we can extract the game board quite simply. This can be used to read the tile indexes
+                # To find the exact slice needed, try printing the tile_map
+                # >>> print(tile_map)
+                #      0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31
+                # __________________________________________________________________________________________________________________________________
+                # 0  | 42  123 47  47  47  47  47  47  47  47  47  47  123 48  49  49  49  49  49  50  47  47  47  47  47  47  47  47  47  47  47  47
+                # 1  | 42  124 47  47  47  47  47  47  47  47  47  47  124 68  28  12  24  27  14  69  47  47  47  47  47  47  47  47  47  47  47  47
+                # 2  | 42  125 47  47  47  47  47  47  47  47  47  47  125 103 70  70  70  70  70  104 47  47  47  47  47  47  47  47  47  47  47  47
+                # 3  | 42  123 47  47  47  47  47  47  47  47  47  47  123 47  47  47  47  47  0   47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 4  | 42  124 47  47  47  47  47  47  47  47  47  47  124 67  52  52  52  52  52  52  47  47  47  47  47  47  47  47  47  47  47  47
+                # 5  | 42  125 47  47  47  47  47  47  47  47  47  47  125 48  49  49  49  49  49  50  47  47  47  47  47  47  47  47  47  47  47  47
+                # 6  | 42  123 47  47  47  47  47  47  47  47  47  47  123 54  21  14  31  14  21  55  47  47  47  47  47  47  47  47  47  47  47  47
+                # 7  | 42  124 47  47  47  47  47  47  47  47  47  47  124 54  47  47  47  0   47  55  47  47  47  47  47  47  47  47  47  47  47  47
+                # 8  | 42  125 47  47  47  47  47  47  47  47  47  47  125 64  66  66  66  66  66  65  47  47  47  47  47  47  47  47  47  47  47  47
+                # 9  | 42  123 47  47  47  47  47  47  47  47  47  47  123 54  21  18  23  14  28  55  47  47  47  47  47  47  47  47  47  47  47  47
+                # 10 | 42  124 47  47  47  47  47  47  47  47  47  47  124 54  47  47  47  0   47  55  47  47  47  47  47  47  47  47  47  47  47  47
+                # 11 | 42  125 47  47  47  47  47  47  47  47  47  47  125 51  52  52  52  52  52  53  47  47  47  47  47  47  47  47  47  47  47  47
+                # 12 | 42  123 47  47  47  47  47  47  47  47  47  47  123 43  56  57  57  57  57  58  47  47  47  47  47  47  47  47  47  47  47  47
+                # 13 | 42  124 47  47  47  47  47  47  47  47  47  47  124 43  59  47  47  47  47  60  47  47  47  47  47  47  47  47  47  47  47  47
+                # 14 | 42  125 47  47  47  47  47  47  47  47  47  47  125 43  59  47  47  47  47  60  47  47  47  47  47  47  47  47  47  47  47  47
+                # 15 | 42  123 47  47  47  47  47  47  47  47  47  47  123 43  59  47  47  47  47  60  47  47  47  47  47  47  47  47  47  47  47  47
+                # 16 | 42  124 47  47  47  47  47  47  47  130 130 47  124 43  59  47  47  47  47  60  47  47  47  47  47  47  47  47  47  47  47  47
+                # 17 | 42  125 47  47  47  47  47  47  47  47  130 130 125 43  61  62  62  62  62  63  47  47  47  47  47  47  47  47  47  47  47  47
+                # 18 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 19 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 20 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 21 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 22 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 23 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 24 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 25 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 26 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 27 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 28 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 29 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 30 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+                # 31 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
+
+                print("Final game board:")
+                game_board_matrix = tile_map[2:12,0:18]
+                pprint(game_board_matrix)
+
+                print("Final game board mask:")
+                game_board_matrix = [[0 if x == 47 else 1 for x in row] for row in tile_map[2:12,0:18]]
+                pprint(game_board_matrix)
 
             # Play game. When we are passed the 168th frame, the game has begone.
             # The "technique" is just to move the Tetromino to the right.
@@ -105,23 +152,19 @@ if __name__ == "__main__":
                 # We could also read out the score from the screen instead of
                 # finding the corresponding value in RAM.
                 if not first_brick:
-                    for n in range(10):
-                        # 17 for the bottom tile when zero-indexed (144/8 == 18)
-                        # +2 because we skip the border on the left side. Then we iterate inwards for 10 tiles
-                        # 47 is the white background tile index
-                        if view.get_tile(n+2, 17) != 47:
-                            first_brick = True
-                            print ("First brick touched the bottom!")
+                    # 17 for the bottom tile when zero-indexed
+                    # 2 because we skip the border on the left side. Then we take a slice of 10 more tiles
+                    # 47 is the white background tile index
+                    if any(filter(lambda x: x==47, tile_map[2:12, 17])):
+                        first_brick = True
+                        print ("First brick touched the bottom!")
 
-                            # Illustrating how we can extract the game board quite simply. This can be used to read the tile indexes
-                            game_board_matrix = [[view.get_tile(x+2,y) for x in range(10)] for y in range(18)]
-                            pprint(game_board_matrix)
-
-                            break
-
+                        # Illustrating how we can extract the game board quite simply. This can be used to read the tile indexes
+                        game_board_matrix = tile_map[2:12,0:18]
+                        pprint(game_board_matrix)
         pyboy.stop()
 
     except KeyboardInterrupt:
         print ("Interrupted by keyboard")
-    except Exception as ex:
+    except Exception:
         traceback.print_exc()

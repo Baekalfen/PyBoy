@@ -4,6 +4,7 @@
 all: build
 
 PY := python3
+PYPY := pypy3
 NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')
 SDL := $(shell sdl2-config --cflags --libs)
 
@@ -31,8 +32,10 @@ run: build
 install:
 	CFLAGS='-w' ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
 
-test:
-	${PY} run_blargg.py
-	git diff blargg.md
+test: clean build
 	${PY} tetris_bot.py ROMs/Tetris.gb
+	${PYPY} tetris_bot.py ROMs/Tetris.gb
+	${PY} -m pytest
+	${PYPY} -m pytest
+
 

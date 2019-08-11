@@ -111,7 +111,7 @@ class PyBoy:
                     logger.info("Emulation unpaused!")
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
+                    self.screen_recorder = ScreenRecorder()
                 else:
                     self.screen_recorder.save()
                     self.screen_recorder = None
@@ -125,7 +125,7 @@ class PyBoy:
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.get_screen_buffer())
+            self.screen_recorder.add_frame(self.get_screen_image())
 
         if self.paused or self.limit_emulationspeed:
             self.window.frame_limiter(1)
@@ -351,4 +351,65 @@ class PyBoy:
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.max_emulationspeed = target_speed
+
+
+
+    ####################################################################
+    ## LEGACY, UNSUPPORTED SCRIPTS AND BOT METHODS
+    ##
+
+    #def getScreenBuffer(self):
+    #    """DEPRECATED METHOD:
+    #    Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit ARGB."""
+
+    #    return self.get_raw_screen_buffer()
+
+    #def getScreenBufferFormat(self):
+    #    """DEPRECATED METHOD:
+    #    Returns either "RGBA" or "ARGB" depending on the chosen Window."""
+
+    #    return self.get_raw_screen_buffer_format()
+
+    #def getMemoryValue(self, address):
+    #    """DEPRECATED METHOD:
+    #    Returns the 8-bit value found at the address on the emulator."""
+
+    #    return self.get_memory_value(address)
+
+
+    #def setMemoryValue(self, address, value):
+    #    """DEPRECATED METHOD:
+    #    Sets the 8-bit value at the address on the emulator."""
+
+    #    return self.get_memory_value(address, value)
+
+    #def sendInput(self, event):
+    #    """DEPRECATED METHOD:
+    #    Sends a single WindowEvent to the emulator."""
+
+    #    if isinstance(event, list):
+    #        for e in event:
+    #            self.send_input(e)
+    #    else:
+    #        self.send_input(event)
+
+    #def getSprite(self, index):
+    #    """DEPRECATED METHOD:
+    #    Returns a Sprite object, which makes the OAM data more presentable. See the available methods in Source/PyBoy/BotSupport/Sprite.py."""
+
+    #    return self.get_sprite(index)
+
+    #def getTileView(self, high):
+    #    """DEPRECATED METHOD:
+    #    Returns a TileView object. If given the parameter is True, it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is False it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile in the tile buffer."""
+
+    #    return self.get_tile_map(high)
+
+    #def getScreenPosition(self):
+    #    """DEPRECATED METHOD:
+    #    Returns a tuple of (SCX, SCY). These coordinates define the offset in the TileView from where the top-left corner of the screen is place. Note that the TileView defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the TileView (see 7.4 Viewport in the report)."""
+
+    #    return self.get_screen_position(self)[0]
+
+
 

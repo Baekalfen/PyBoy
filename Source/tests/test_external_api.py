@@ -10,13 +10,13 @@ import PIL
 from PIL import Image
 
 import sys
-sys.path.append("..") # Adds higher directory to python modules path.
+sys.path.append(".") # Adds higher directory to python modules path.
 
 from pyboy import windowevent
 from pyboy import PyBoy
 
-boot_rom = "../ROMs/DMG_ROM.bin"
-tetris_rom = '../ROMs/Tetris.gb'
+boot_rom = "ROMs/DMG_ROM.bin"
+tetris_rom = "ROMs/Tetris.gb"
 any_rom = tetris_rom
 
 def test_misc():
@@ -132,8 +132,6 @@ def test_tetris():
             elif frame % 2 == 1:
                 pyboy.send_input(windowevent.RELEASE_ARROW_RIGHT)
 
-            # breakpoint()
-
             # Show how we can read the tile data for the screen. We can use
             # this to see when one of the Tetrominos touch the bottom. This
             # could be used to extract a matrix of the occupied squares by
@@ -144,40 +142,36 @@ def test_tetris():
             # We could also read out the score from the screen instead of
             # finding the corresponding value in RAM.
 
-
             if not first_brick:
-                for n in range(10):
-                    # 17 for the bottom tile when zero-indexed (144/8 == 18)
-                    # +2 because we skip the border on the left side. Then we iterate inwards for 10 tiles
-                    # 47 is the white background tile index
-                    if tile_map.get_tile(n+2, 17) != 47:
-                        first_brick = True
-                        print(frame)
-                        print ("First brick touched the bottom!")
+                # 17 for the bottom tile when zero-indexed
+                # 2 because we skip the border on the left side. Then we take a slice of 10 more tiles
+                # 47 is the white background tile index
+                if any(filter(lambda x: x!=47, tile_map[2:12, 17])):
+                    first_brick = True
+                    print(frame)
+                    print ("First brick touched the bottom!")
 
-                        game_board_matrix = [[tile_map.get_tile(x+2,y) for x in range(10)] for y in range(18)]
-                        assert game_board_matrix == (
-                                [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 130, 130, 47],
-                                 [47, 47, 47, 47, 47, 47, 47, 47, 130, 130]]
-                            )
-
-                        break
+                    game_board_matrix = list(tile_map[2:12,:18])
+                    assert game_board_matrix == (
+                            [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 130, 130, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 130, 130]]
+                        )
 
             if frame == 1014:
                 assert not first_brick
@@ -244,7 +238,7 @@ def test_tetris():
             assert pyboy.get_memory_value(NEXT_TETROMINO) == 11 # Would have been 4 otherwise
 
         if frame == 1865:
-            game_board_matrix = [[tile_map.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+            game_board_matrix = list(tile_map[2:12,:18])
             assert game_board_matrix == (
                     [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                      [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -277,7 +271,7 @@ def test_tetris():
                     assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
 
                 if frame == 1865:
-                    game_board_matrix = [[tile_map.get_tile(x+2, y) for x in range(10)] for y in range(18)]
+                    game_board_matrix = list(tile_map[2:12,:18])
                     assert game_board_matrix == (
                             [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                              [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -300,8 +294,6 @@ def test_tetris():
                                 )
 
     verify_screen_image(b'\xd4\xc6\x12\xe5\xe9\xa8\xbaZ\x9c\xe3')
-
-# test_tetris()
 
 # # Blargg's tests verifies this
 # def test_get_serial():
