@@ -53,6 +53,8 @@ print(tile_map)
 # 31 | 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127 127
 
 index_map = tile_map.get_tile_matrix()
+
+# Isolating the part with Snorlax
 pprint(list(tile_map[13:20,8:14]))
 
 # For unattended use, the screen buffer can be displayed using the following:

@@ -3,6 +3,7 @@
 
 all: build
 
+THREADS := 12
 PY := python3
 PYPY := pypy3
 NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')
@@ -25,7 +26,6 @@ clean:
 	rm -rf ./dist
 	rm -rf ./PyBoy.egg-info
 
-
 run: build
 	${PY} main.py SDL2 ROMs/POKEMON\ BLUE.gb
 
@@ -34,8 +34,15 @@ install:
 
 test: clean build
 	${PY} tetris_bot.py ROMs/Tetris.gb
+	${PY} -m pytest -n${THREADS}
 	${PYPY} tetris_bot.py ROMs/Tetris.gb
-	${PY} -m pytest
-	${PYPY} -m pytest
+	${PYPY} -m pytest -n${THREADS}
 
+docs: clean
+	pdoc --html --force pyboy
+
+	cp html/pyboy/windowevent.html docs/
+	cp html/pyboy/pyboy.html docs/
+	cp -r html/pyboy/botsupport docs/
+	rm -rf html
 

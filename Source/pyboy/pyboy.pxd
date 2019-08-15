@@ -6,6 +6,7 @@
 
 from libc cimport time
 cimport cython
+from libc.stdint cimport uint64_t
 from pyboy.mb.mb cimport Motherboard
 from pyboy.window.base_window cimport BaseWindow
 
@@ -30,6 +31,9 @@ cdef class PyBoy:
     cdef bint limit_emulationspeed
     cdef int emulationspeed, max_emulationspeed
     cdef object screen_recorder
+    cdef uint64_t frame_count
+    cdef list recorded_input
+    cdef list external_input
 
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
     cpdef bint tick(self)

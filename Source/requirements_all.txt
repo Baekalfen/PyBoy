@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest-xdist
+pyopengl
+Pillow
+imgcat
+markdown
+pdoc3
+

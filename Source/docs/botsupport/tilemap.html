@@ -43,10 +43,43 @@ class TileMap:
         assert 0 &lt;= x &lt; 32
         assert 0 &lt;= y &lt; 32
 
+        tile = self.mb.getitem(VRAM_OFFSET + self.map_offset + 32*y + x)
         if self.high_tile_data:
-            return self.mb.getitem(VRAM_OFFSET + self.map_offset + ((32*y + x) ^ 0x80) - 128)
+            return (tile ^ 0x80) - 128
         else:
-            return self.mb.getitem(VRAM_OFFSET + self.map_offset + 32*y + x)</code></pre>
+            return tile
+
+    def get_tile_matrix(self):
+        return self[:,:]
+
+    def __str__(self):
+        adjust = 4
+        return (
+                &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
+                &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
+                &#34;\n&#34;.join([f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line]) for i,line in enumerate(self.get_tile_matrix())])
+            )
+
+    def __getitem__(self, xy):
+        x, y = xy
+
+        if x == slice(None):
+            x = slice(0,32,1)
+
+        if y == slice(None):
+            y = slice(0,32,1)
+
+        x_slice = isinstance(x, slice) # Assume slice, otherwise int
+        y_slice = isinstance(y, slice) # Assume slice, otherwise int
+
+        if x_slice and y_slice:
+            return [[self.get_tile(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]
+        elif x_slice:
+            return [self.get_tile(_x, y) for _x in range(x.stop)[x]]
+        elif y_slice:
+            return [self.get_tile(x, _y) for _y in range(y.stop)[y]]
+        else:
+            return self.get_tile(x, y)</code></pre>
 </details>
 </section>
 <section>
@@ -79,10 +112,43 @@ class TileMap:
         assert 0 &lt;= x &lt; 32
         assert 0 &lt;= y &lt; 32
 
+        tile = self.mb.getitem(VRAM_OFFSET + self.map_offset + 32*y + x)
         if self.high_tile_data:
-            return self.mb.getitem(VRAM_OFFSET + self.map_offset + ((32*y + x) ^ 0x80) - 128)
+            return (tile ^ 0x80) - 128
         else:
-            return self.mb.getitem(VRAM_OFFSET + self.map_offset + 32*y + x)</code></pre>
+            return tile
+
+    def get_tile_matrix(self):
+        return self[:,:]
+
+    def __str__(self):
+        adjust = 4
+        return (
+                &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
+                &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
+                &#34;\n&#34;.join([f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line]) for i,line in enumerate(self.get_tile_matrix())])
+            )
+
+    def __getitem__(self, xy):
+        x, y = xy
+
+        if x == slice(None):
+            x = slice(0,32,1)
+
+        if y == slice(None):
+            y = slice(0,32,1)
+
+        x_slice = isinstance(x, slice) # Assume slice, otherwise int
+        y_slice = isinstance(y, slice) # Assume slice, otherwise int
+
+        if x_slice and y_slice:
+            return [[self.get_tile(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]
+        elif x_slice:
+            return [self.get_tile(_x, y) for _x in range(x.stop)[x]]
+        elif y_slice:
+            return [self.get_tile(x, _y) for _y in range(y.stop)[y]]
+        else:
+            return self.get_tile(x, y)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -100,10 +166,22 @@ class TileMap:
     assert 0 &lt;= x &lt; 32
     assert 0 &lt;= y &lt; 32
 
+    tile = self.mb.getitem(VRAM_OFFSET + self.map_offset + 32*y + x)
     if self.high_tile_data:
-        return self.mb.getitem(VRAM_OFFSET + self.map_offset + ((32*y + x) ^ 0x80) - 128)
+        return (tile ^ 0x80) - 128
     else:
-        return self.mb.getitem(VRAM_OFFSET + self.map_offset + 32*y + x)</code></pre>
+        return tile</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.tilemap.TileMap.get_tile_matrix"><code class="name flex">
+<span>def <span class="ident">get_tile_matrix</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_tile_matrix(self):
+    return self[:,:]</code></pre>
 </details>
 </dd>
 </dl>
@@ -128,6 +206,7 @@ class TileMap:
 <h4><code><a title="pyboy.botsupport.tilemap.TileMap" href="#pyboy.botsupport.tilemap.TileMap">TileMap</a></code></h4>
 <ul class="">
 <li><code><a title="pyboy.botsupport.tilemap.TileMap.get_tile" href="#pyboy.botsupport.tilemap.TileMap.get_tile">get_tile</a></code></li>
+<li><code><a title="pyboy.botsupport.tilemap.TileMap.get_tile_matrix" href="#pyboy.botsupport.tilemap.TileMap.get_tile_matrix">get_tile_matrix</a></code></li>
 </ul>
 </li>
 </ul>

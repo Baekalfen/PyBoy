@@ -34,6 +34,12 @@ The core module of the emulator
 
 import sys
 import time
+import json
+import numpy as np
+
+import io
+import base64
+import zlib
 
 from . import botsupport
 from .screenrecorder import ScreenRecorder
@@ -45,6 +51,9 @@ from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .logger import logger, addconsolehandler
 addconsolehandler()
 
+SPF = 1/60. # inverse FPS (frame-per-second)
+
+# TODO: Move all argv to main.py and make a settings object to pass to PyBoy
 if &#34;--no-logger&#34; in sys.argv:
     logger.disabled = True
 
@@ -52,9 +61,14 @@ argv_debug = &#34;--debug&#34; in sys.argv
 argv_profiling = &#34;--profiling&#34; in sys.argv
 argv_loadstate = &#34;--loadstate&#34; in sys.argv
 argv_autopause = &#34;--autopause&#34; in sys.argv
+argv_record_input = &#34;--record-input&#34; in sys.argv
+if argv_record_input:
+    idx = sys.argv.index(&#34;--record-input&#34;)
+    assert len(sys.argv) &gt; idx+1
+    argv_record_input_file = sys.argv[idx+1]
+    # TODO: Find a library to take care of argv
+    assert argv_record_input_file[0] != &#39;-&#39;, &#34;Output file looks like an argument&#34;
 
-
-SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
@@ -91,13 +105,18 @@ class PyBoy:
         self.screen_recorder = None
         self.paused = False
         self.autopause = argv_autopause
+        if argv_record_input:
+            logger.info(&#34;Recording event inputs&#34;)
+        self.frame_count = 0
+        self.recorded_input = []
+        self.external_input = []
 
     def tick(self):
         &#34;&#34;&#34;
         Progresses the emulator ahead by one frame.
 
         To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify otherwise with
         the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
@@ -105,7 +124,16 @@ class PyBoy:
         done = False
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
-        for event in self.window.get_events():
+        events = self.window.get_events()
+
+        if argv_record_input and len(events) != 0:
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode(&#39;utf8&#39;)))
+        self.frame_count += 1
+
+        events += self.external_input
+        self.external_input = []
+
+        for event in events:
             if event == windowevent.QUIT:
                 done = True
             elif event == windowevent.RELEASE_SPEED_UP:
@@ -136,7 +164,7 @@ class PyBoy:
                     logger.info(&#34;Emulation unpaused!&#34;)
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
+                    self.screen_recorder = ScreenRecorder()
                 else:
                     self.screen_recorder.save()
                     self.screen_recorder = None
@@ -150,7 +178,7 @@ class PyBoy:
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.get_screen_buffer())
+            self.screen_recorder.add_frame(self.get_screen_image())
 
         if self.paused or self.limit_emulationspeed:
             self.window.frame_limiter(1)
@@ -192,6 +220,12 @@ class PyBoy:
             for hits, n, name in sorted(
                     filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print(&#34;%3x %16s %s&#34; % (n, name, hits))
+
+        if argv_record_input:
+            with open(argv_record_input_file, &#39;wb&#39;) as f:
+                recorded_data = io.StringIO() # json.dump writes &#39;str&#39; not bytes...
+                json.dump(self.recorded_input, recorded_data)
+                f.write(zlib.compress(recorded_data.getvalue().encode(&#39;ascii&#39;)))
 
 
     ###################################################################
@@ -273,7 +307,8 @@ class PyBoy:
         Args:
             event (pyboy.windowevent): The event to send
         &#34;&#34;&#34;
-        self.mb.buttonevent(event)
+        # self.mb.buttonevent(event)
+        self.external_input.append(event)
 
     def get_sprite(self, index):
         &#34;&#34;&#34;
@@ -375,7 +410,66 @@ class PyBoy:
         self.limit_emulationspeed = limit
         if target_speed &gt; 5:
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
-        self.max_emulationspeed = target_speed</code></pre>
+        self.max_emulationspeed = target_speed
+
+
+
+    ####################################################################
+    ## LEGACY, UNSUPPORTED SCRIPTS AND BOT METHODS
+    ##
+
+    #def getScreenBuffer(self):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit ARGB.&#34;&#34;&#34;
+
+    #    return self.get_raw_screen_buffer()
+
+    #def getScreenBufferFormat(self):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Returns either &#34;RGBA&#34; or &#34;ARGB&#34; depending on the chosen Window.&#34;&#34;&#34;
+
+    #    return self.get_raw_screen_buffer_format()
+
+    #def getMemoryValue(self, address):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Returns the 8-bit value found at the address on the emulator.&#34;&#34;&#34;
+
+    #    return self.get_memory_value(address)
+
+
+    #def setMemoryValue(self, address, value):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Sets the 8-bit value at the address on the emulator.&#34;&#34;&#34;
+
+    #    return self.get_memory_value(address, value)
+
+    #def sendInput(self, event):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Sends a single WindowEvent to the emulator.&#34;&#34;&#34;
+
+    #    if isinstance(event, list):
+    #        for e in event:
+    #            self.send_input(e)
+    #    else:
+    #        self.send_input(event)
+
+    #def getSprite(self, index):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Returns a Sprite object, which makes the OAM data more presentable. See the available methods in Source/PyBoy/BotSupport/Sprite.py.&#34;&#34;&#34;
+
+    #    return self.get_sprite(index)
+
+    #def getTileView(self, high):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Returns a TileView object. If given the parameter is True, it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is False it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile in the tile buffer.&#34;&#34;&#34;
+
+    #    return self.get_tile_map(high)
+
+    #def getScreenPosition(self):
+    #    &#34;&#34;&#34;DEPRECATED METHOD:
+    #    Returns a tuple of (SCX, SCY). These coordinates define the offset in the TileView from where the top-left corner of the screen is place. Note that the TileView defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the TileView (see 7.4 Viewport in the report).&#34;&#34;&#34;
+
+    #    return self.get_screen_position(self)[0]</code></pre>
 </details>
 </section>
 <section>
@@ -443,13 +537,18 @@ class PyBoy:
         self.screen_recorder = None
         self.paused = False
         self.autopause = argv_autopause
+        if argv_record_input:
+            logger.info(&#34;Recording event inputs&#34;)
+        self.frame_count = 0
+        self.recorded_input = []
+        self.external_input = []
 
     def tick(self):
         &#34;&#34;&#34;
         Progresses the emulator ahead by one frame.
 
         To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify otherwise with
         the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
@@ -457,7 +556,16 @@ class PyBoy:
         done = False
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
-        for event in self.window.get_events():
+        events = self.window.get_events()
+
+        if argv_record_input and len(events) != 0:
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode(&#39;utf8&#39;)))
+        self.frame_count += 1
+
+        events += self.external_input
+        self.external_input = []
+
+        for event in events:
             if event == windowevent.QUIT:
                 done = True
             elif event == windowevent.RELEASE_SPEED_UP:
@@ -488,7 +596,7 @@ class PyBoy:
                     logger.info(&#34;Emulation unpaused!&#34;)
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
+                    self.screen_recorder = ScreenRecorder()
                 else:
                     self.screen_recorder.save()
                     self.screen_recorder = None
@@ -502,7 +610,7 @@ class PyBoy:
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
-            self.screen_recorder.add_frame(self.get_screen_buffer())
+            self.screen_recorder.add_frame(self.get_screen_image())
 
         if self.paused or self.limit_emulationspeed:
             self.window.frame_limiter(1)
@@ -544,6 +652,12 @@ class PyBoy:
             for hits, n, name in sorted(
                     filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print(&#34;%3x %16s %s&#34; % (n, name, hits))
+
+        if argv_record_input:
+            with open(argv_record_input_file, &#39;wb&#39;) as f:
+                recorded_data = io.StringIO() # json.dump writes &#39;str&#39; not bytes...
+                json.dump(self.recorded_input, recorded_data)
+                f.write(zlib.compress(recorded_data.getvalue().encode(&#39;ascii&#39;)))
 
 
     ###################################################################
@@ -625,7 +739,8 @@ class PyBoy:
         Args:
             event (pyboy.windowevent): The event to send
         &#34;&#34;&#34;
-        self.mb.buttonevent(event)
+        # self.mb.buttonevent(event)
+        self.external_input.append(event)
 
     def get_sprite(self, index):
         &#34;&#34;&#34;
@@ -1058,7 +1173,8 @@ file_handle.seek(0)
     Args:
         event (pyboy.windowevent): The event to send
     &#34;&#34;&#34;
-    self.mb.buttonevent(event)</code></pre>
+    # self.mb.buttonevent(event)
+    self.external_input.append(event)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.set_autopause"><code class="name flex">
@@ -1166,7 +1282,13 @@ file_handle.seek(0)
         names = [CPU_COMMANDS[n] if n &lt; 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
         for hits, n, name in sorted(
                 filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
-            print(&#34;%3x %16s %s&#34; % (n, name, hits))</code></pre>
+            print(&#34;%3x %16s %s&#34; % (n, name, hits))
+
+    if argv_record_input:
+        with open(argv_record_input_file, &#39;wb&#39;) as f:
+            recorded_data = io.StringIO() # json.dump writes &#39;str&#39; not bytes...
+            json.dump(self.recorded_input, recorded_data)
+            f.write(zlib.compress(recorded_data.getvalue().encode(&#39;ascii&#39;)))</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.tick"><code class="name flex">
@@ -1175,7 +1297,7 @@ file_handle.seek(0)
 <dd>
 <section class="desc"><p>Progresses the emulator ahead by one frame.</p>
 <p>To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
+This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify otherwise with
 the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.set_emulation_speed"><code>PyBoy.set_emulation_speed()</code></a> method.</p>
 <p><em>Open an issue on GitHub if you need finer control, and we will take a look at it.</em></p></section>
 <details class="source">
@@ -1185,7 +1307,7 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
     Progresses the emulator ahead by one frame.
 
     To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-    The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
+    This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify otherwise with
     the `PyBoy.set_emulation_speed` method.
 
     _Open an issue on GitHub if you need finer control, and we will take a look at it._
@@ -1193,7 +1315,16 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
     done = False
     t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
-    for event in self.window.get_events():
+    events = self.window.get_events()
+
+    if argv_record_input and len(events) != 0:
+        self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode(&#39;utf8&#39;)))
+    self.frame_count += 1
+
+    events += self.external_input
+    self.external_input = []
+
+    for event in events:
         if event == windowevent.QUIT:
             done = True
         elif event == windowevent.RELEASE_SPEED_UP:
@@ -1224,7 +1355,7 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
                 logger.info(&#34;Emulation unpaused!&#34;)
         elif event == windowevent.SCREEN_RECORDING_TOGGLE:
             if not self.screen_recorder:
-                self.screen_recorder = ScreenRecorder(self.getScreenBufferFormat())
+                self.screen_recorder = ScreenRecorder()
             else:
                 self.screen_recorder.save()
                 self.screen_recorder = None
@@ -1238,7 +1369,7 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
     t_cpu = time.perf_counter()
 
     if self.screen_recorder:
-        self.screen_recorder.add_frame(self.get_screen_buffer())
+        self.screen_recorder.add_frame(self.get_screen_image())
 
     if self.paused or self.limit_emulationspeed:
         self.window.frame_limiter(1)

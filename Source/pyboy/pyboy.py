@@ -9,6 +9,12 @@ The core module of the emulator
 
 import sys
 import time
+import json
+import numpy as np
+
+import io
+import base64
+import zlib
 
 from . import botsupport
 from .screenrecorder import ScreenRecorder
@@ -20,6 +26,9 @@ from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .logger import logger, addconsolehandler
 addconsolehandler()
 
+SPF = 1/60. # inverse FPS (frame-per-second)
+
+# TODO: Move all argv to main.py and make a settings object to pass to PyBoy
 if "--no-logger" in sys.argv:
     logger.disabled = True
 
@@ -27,9 +36,14 @@ argv_debug = "--debug" in sys.argv
 argv_profiling = "--profiling" in sys.argv
 argv_loadstate = "--loadstate" in sys.argv
 argv_autopause = "--autopause" in sys.argv
+argv_record_input = "--record-input" in sys.argv
+if argv_record_input:
+    idx = sys.argv.index("--record-input")
+    assert len(sys.argv) > idx+1
+    argv_record_input_file = sys.argv[idx+1]
+    # TODO: Find a library to take care of argv
+    assert argv_record_input_file[0] != '-', "Output file looks like an argument"
 
-
-SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy:
     def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
@@ -66,13 +80,18 @@ class PyBoy:
         self.screen_recorder = None
         self.paused = False
         self.autopause = argv_autopause
+        if argv_record_input:
+            logger.info("Recording event inputs")
+        self.frame_count = 0
+        self.recorded_input = []
+        self.external_input = []
 
     def tick(self):
         """
         Progresses the emulator ahead by one frame.
 
         To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        The emulator will itself limit the speed, to not run faster than real-time, unless you specify otherwise with
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify otherwise with
         the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
@@ -80,7 +99,16 @@ class PyBoy:
         done = False
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
-        for event in self.window.get_events():
+        events = self.window.get_events()
+
+        if argv_record_input and len(events) != 0:
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode('utf8')))
+        self.frame_count += 1
+
+        events += self.external_input
+        self.external_input = []
+
+        for event in events:
             if event == windowevent.QUIT:
                 done = True
             elif event == windowevent.RELEASE_SPEED_UP:
@@ -168,6 +196,12 @@ class PyBoy:
                     filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print("%3x %16s %s" % (n, name, hits))
 
+        if argv_record_input:
+            with open(argv_record_input_file, 'wb') as f:
+                recorded_data = io.StringIO() # json.dump writes 'str' not bytes...
+                json.dump(self.recorded_input, recorded_data)
+                f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))
+
 
     ###################################################################
     # Scripts and bot methods
@@ -248,7 +282,8 @@ class PyBoy:
         Args:
             event (pyboy.windowevent): The event to send
         """
-        self.mb.buttonevent(event)
+        # self.mb.buttonevent(event)
+        self.external_input.append(event)
 
     def get_sprite(self, index):
         """
