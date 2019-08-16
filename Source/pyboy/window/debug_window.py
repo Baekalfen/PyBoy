@@ -15,8 +15,9 @@ import sdl2.ext
 from array import array
 
 from .window_sdl2 import SDLWindow
-from .window_sdl2 import KEY_UP, KEY_DOWN
 from .. import windowevent
+from .window_sdl2 import KEY_UP, KEY_DOWN
+
 # from ..botsupport import Sprite
 
 TILES = 384

@@ -28,7 +28,7 @@ ROWS, COLS = 144, 160
 
 class OpenGLWindow(SDLWindow):
     def __init__(self, scale=1):
-        super(self.__class__, self).__init__(scale, False)
+        super(self.__class__, self).__init__(scale)
 
     def init(self):
         # Shift from ARGB to RGBA

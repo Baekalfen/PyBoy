@@ -11,7 +11,6 @@ import sdl2.ext
 
 from .. import windowevent
 from .base_window import BaseWindow
-from .debug_window import DebugWindow
 from ..logger import logger
 
 try:

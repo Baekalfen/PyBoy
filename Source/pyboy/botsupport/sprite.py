@@ -11,10 +11,10 @@ LCDC_OFFSET = 0xFF40
 
 
 class Sprite:
-    def __init__(self, lcd, index):
-        self.lcd = lcd
+    def __init__(self, mb, index):
+        self.mb = mb
         # self.index = index
-        self.mem_index = index * 4
+        self.offset = index * 4
 
     @property
     def y(self):
@@ -46,16 +46,16 @@ class Sprite:
     def tiles(self):
         tile_index = self.get_tile()
         if self.sprite_height:
-            return [Tile(self.lcd, tile_index), Tile(self.lcd, tile_index + 1)]
+            return [Tile(self.mb.lcd, tile_index), Tile(self.mb.lcd, tile_index + 1)]
         else:
-            return [Tile(self.lcd, tile_index)]
+            return [Tile(self.mb.lcd, tile_index)]
 
     @property
     def on_screen(self):
         LCDC_mem = self.mb.getitem(LCDC_OFFSET)
         LCDC = LCDCRegister(LCDC_mem)
-        sprite_size = 16 if LCDC.sprite_size else 16
-        return (0 < self.y < 144 + sprite_size and
+        sprite_height = 16 if LCDC.sprite_height else 16
+        return (0 < self.y < 144 + sprite_height and
                 0 < self.x < 160 + 8)
 
 def get_bit(val, bit):

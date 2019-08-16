@@ -29,8 +29,8 @@ def verify_screen_image_np(pyboy, saved_array):
     #     breakpoint()
     return match
 
-def replay(ROM, replay):
-    pyboy = PyBoy("headless", 1, ROM, boot_rom)
+def replay(ROM, replay, window='headless', verify=True):
+    pyboy = PyBoy(window, 1, ROM, boot_rom)
     pyboy.set_emulation_speed(False)
     with open(replay, 'rb') as f:
         recorded_input = json.loads(zlib.decompress(f.read()).decode('ascii'))
@@ -45,7 +45,8 @@ def replay(ROM, replay):
         if next_event[0] == frame_count:
             for e in next_event[1]:
                 pyboy.send_input(e)
-                assert verify_screen_image_np(pyboy, base64.b64decode(next_event[2].encode('utf8')))
+                if verify:
+                    assert verify_screen_image_np(pyboy, base64.b64decode(next_event[2].encode('utf8')))
             next_event = recorded_input.pop(0)
         frame_count += 1
         pyboy.tick()

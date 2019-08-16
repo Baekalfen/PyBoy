@@ -8,13 +8,11 @@ from .tile import Tile
 VRAM_OFFSET = 0x8000
 
 
-class TileView:
-    def __init__(self, lcd, high_tile_data=False):
-        self.lcd = lcd
-        self.view_offset = 0x1C00 if high_tile_data else 0x1800
+class TileMap:
+    def __init__(self, mb, high_tile_data=False):
+        self.mb = mb
+        self.map_offset = 0x1C00 if high_tile_data else 0x1800
         self.high_tile_data = high_tile_data
-
-
 
     def get_tile(self, x, y):
         """
@@ -29,12 +27,12 @@ class TileView:
             return (tile ^ 0x80) - 128
         else:
             return tile
-            # return Tile(self.lcd.VRAM(self.view_offset + ((32*y + x) ^ 0x80) - 128))
+            # return Tile(self.lcd.VRAM(self.map_offset + ((32*y + x) ^ 0x80) - 128))
         # else:
-            # return Tile(self.lcd.VRAM(self.view_offset + 32*y + x))
+            # return Tile(self.lcd.VRAM(self.map_offset + 32*y + x))
 
-    # Get only the tiles within the current display view
-    # def get_tile_matrix_view(self):
+    # Get only the tiles within the current display map
+    # def get_tile_matrix_map(self):
     #     pass
 
     def get_tile_matrix(self):
@@ -69,5 +67,3 @@ class TileView:
         else:
             return self.get_tile(x, y)
 
-
->>>>>>> Improved API and testing
