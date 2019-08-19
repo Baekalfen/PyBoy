@@ -102,7 +102,7 @@ class PyBoy:
         events = self.window.get_events()
 
         if argv_record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode('utf8')))
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
         self.frame_count += 1
 
         events += self.external_input
@@ -211,7 +211,7 @@ class PyBoy:
         """
         Provides a raw, unfiltered `bytes` object with the data from the screen. Check `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
 
-        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_np_ndarray`.
+        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_ndarray`.
 
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
@@ -236,7 +236,7 @@ class PyBoy:
         """
         return self.mb.window.color_format
 
-    def get_screen_np_ndarray(self):
+    def get_screen_ndarray(self):
         """
         Provides the screen data in NumPy format. The dataformat is always RGB.
 
@@ -298,16 +298,23 @@ class PyBoy:
         """
         return botsupport.Sprite(self.mb, index)
 
-    def get_tile_map(self, high):
+    def get_background_tile_map(self):
         """
-        The Game Boy supports two tile maps at the same time. These tile maps are used to draw static graphics on the display of the Game Boy. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-        Args:
-            high (bool): If given the parameter is `True`, it will return a `TileMap` for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a `TileMap` for the 0x9800-0x9BFF range.
         Returns:
-            `pyboy.botsupport.tilemap`: A TileMap object for the given memory range.
+            `pyboy.botsupport.tilemap`: A TileMap object for the background tile map.
         """
-        return botsupport.TileMap(self.mb, high)
+        return botsupport.TileMap(self.mb, window=False)
+
+    def get_window_tile_map(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Returns:
+            `pyboy.botsupport.tilemap`: A TileMap object for the window tile map.
+        """
+        return botsupport.TileMap(self.mb, window=True)
 
     def get_screen_position(self):
         """
@@ -386,65 +393,4 @@ class PyBoy:
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.max_emulationspeed = target_speed
-
-
-
-    ####################################################################
-    ## LEGACY, UNSUPPORTED SCRIPTS AND BOT METHODS
-    ##
-
-    #def getScreenBuffer(self):
-    #    """DEPRECATED METHOD:
-    #    Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit ARGB."""
-
-    #    return self.get_raw_screen_buffer()
-
-    #def getScreenBufferFormat(self):
-    #    """DEPRECATED METHOD:
-    #    Returns either "RGBA" or "ARGB" depending on the chosen Window."""
-
-    #    return self.get_raw_screen_buffer_format()
-
-    #def getMemoryValue(self, address):
-    #    """DEPRECATED METHOD:
-    #    Returns the 8-bit value found at the address on the emulator."""
-
-    #    return self.get_memory_value(address)
-
-
-    #def setMemoryValue(self, address, value):
-    #    """DEPRECATED METHOD:
-    #    Sets the 8-bit value at the address on the emulator."""
-
-    #    return self.get_memory_value(address, value)
-
-    #def sendInput(self, event):
-    #    """DEPRECATED METHOD:
-    #    Sends a single WindowEvent to the emulator."""
-
-    #    if isinstance(event, list):
-    #        for e in event:
-    #            self.send_input(e)
-    #    else:
-    #        self.send_input(event)
-
-    #def getSprite(self, index):
-    #    """DEPRECATED METHOD:
-    #    Returns a Sprite object, which makes the OAM data more presentable. See the available methods in Source/PyBoy/BotSupport/Sprite.py."""
-
-    #    return self.get_sprite(index)
-
-    #def getTileView(self, high):
-    #    """DEPRECATED METHOD:
-    #    Returns a TileView object. If given the parameter is True, it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is False it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile in the tile buffer."""
-
-    #    return self.get_tile_map(high)
-
-    #def getScreenPosition(self):
-    #    """DEPRECATED METHOD:
-    #    Returns a tuple of (SCX, SCY). These coordinates define the offset in the TileView from where the top-left corner of the screen is place. Note that the TileView defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the TileView (see 7.4 Viewport in the report)."""
-
-    #    return self.get_screen_position(self)[0]
-
-
 

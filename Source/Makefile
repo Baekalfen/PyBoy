@@ -34,9 +34,12 @@ install:
 
 test: clean build
 	${PY} tetris_bot.py ROMs/Tetris.gb
-	${PY} -m pytest -n${THREADS}
+	${PY} -m pytest -n${THREADS} -v
 	${PYPY} tetris_bot.py ROMs/Tetris.gb
-	${PYPY} -m pytest -n${THREADS}
+	${PYPY} -m pytest -n${THREADS} -v
+
+test_quick: clean build
+	${PY} -m pytest -n${THREADS} -v
 
 docs: clean
 	pdoc --html --force pyboy

@@ -19,7 +19,7 @@ boot_rom = "ROMs/DMG_ROM.bin"
 event_filter = [windowevent.PRESS_SPEED_UP, windowevent.RELEASE_SPEED_UP]
 
 def verify_screen_image_np(pyboy, saved_array):
-    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.get_screen_np_ndarray())
+    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.get_screen_ndarray())
     # if not match:
     #     from PIL import Image
     #     original = Image.frombytes("RGB", (160,144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))

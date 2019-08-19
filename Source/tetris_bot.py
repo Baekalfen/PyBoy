@@ -54,7 +54,7 @@ if __name__ == "__main__":
         print ("Screen pos:", pyboy.get_screen_position())
 
         first_brick = False
-        tile_map = pyboy.get_tile_map(False)
+        tile_map = pyboy.get_window_tile_map()
         for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
             pyboy.tick()
             # print ("frame:", frame)
@@ -140,7 +140,7 @@ if __name__ == "__main__":
                     for n in range(40):
                         sprite = pyboy.get_sprite(n)
                         if sprite.on_screen:
-                            print ("Sprite:", sprite.x, sprite.y, sprite.tile)
+                            print ("Sprite:", sprite.x, sprite.y, sprite.tile_index, sprite.tiles, sprite.on_screen)
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This

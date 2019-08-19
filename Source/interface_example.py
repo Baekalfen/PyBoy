@@ -13,7 +13,7 @@ pyboy.set_emulation_speed(False, 0)
 for n in range(1000): # Move ahead the desired number of frames.
     pyboy.tick()
 
-tile_map = pyboy.get_tile_map(True) # Get the TileView object for the window. Set False for the background.
+tile_map = pyboy.get_window_tile_map() # Get the TileView object for the window.
 
 # The following prints out the indices of each tile in the window -- excluding sprites and the background!
 print(tile_map)

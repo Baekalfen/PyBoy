@@ -3,11 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import os
 import io
 import hashlib
+from functools import reduce
+
 import numpy as np
 import PIL
-from PIL import Image
 
 import sys
 sys.path.append(".") # Adds higher directory to python modules path.
@@ -22,6 +24,21 @@ any_rom = tetris_rom
 def test_misc():
     pyboy = PyBoy("dummy", 1, any_rom, boot_rom)
     pyboy.tick()
+    pyboy.stop(save=False)
+
+def test_tiles():
+    pyboy = PyBoy('headless', 1, tetris_rom, None)
+    pyboy.set_emulation_speed(False)
+
+    tile = pyboy.get_window_tile_map().get_tile(0, 0)
+    image = tile.image()
+    assert isinstance(image, PIL.Image.Image)
+    ndarray = tile.image_ndarray()
+    assert isinstance(ndarray, np.ndarray)
+    assert ndarray.shape == (8,8)
+    data = tile.image_data()
+    assert data.shape == (8,8)
+
     pyboy.stop(save=False)
 
 def test_screen_buffer_and_image():
@@ -58,10 +75,10 @@ def test_screen_buffer_and_image():
         boot_logo_png_hash.update(image_data.getvalue())
         assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
 
-        # get_screen_np_ndarray
+        # get_screen_ndarray
         numpy_hash = hashlib.sha256()
-        numpy_array = np.ascontiguousarray(pyboy.get_screen_np_ndarray())
-        assert isinstance(pyboy.get_screen_np_ndarray(), np.ndarray)
+        numpy_array = np.ascontiguousarray(pyboy.get_screen_ndarray())
+        assert isinstance(pyboy.get_screen_ndarray(), np.ndarray)
         assert numpy_array.shape == (144, 160, 3)
         numpy_hash.update(numpy_array.tobytes())
         assert numpy_hash.digest() == (
@@ -70,7 +87,6 @@ def test_screen_buffer_and_image():
             )
 
         pyboy.stop(save=False)
-
 
 def test_tetris():
     NEXT_TETROMINO = 0xC213
@@ -88,11 +104,11 @@ def test_tetris():
             breakpoint()
         assert short_digest == predigested, "Didn't match: " + str(short_digest)
 
-    pyboy = PyBoy('SDL2', 1, tetris_rom, None)
+    pyboy = PyBoy('headless', 1, tetris_rom, None)
     pyboy.set_emulation_speed(False)
 
     first_brick = False
-    tile_map = pyboy.get_tile_map(False)
+    tile_map = pyboy.get_window_tile_map()
     state_data = io.BytesIO()
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
         pyboy.tick()
@@ -173,54 +189,88 @@ def test_tetris():
                              [47, 47, 47, 47, 47, 47, 47, 47, 130, 130]]
                         )
 
+                    tile_map.use_tile_objects(True)
+                    game_board_matrix = [[x.index[1] for x in row] for row in tile_map[2:12,:18]]
+                    tile_map.use_tile_objects(False)
+                    assert game_board_matrix == (
+                            [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 130, 130, 47],
+                             [47, 47, 47, 47, 47, 47, 47, 47, 130, 130]]
+                        )
+
+
             if frame == 1014:
                 assert not first_brick
 
             if frame == 1015:
                 assert first_brick
 
-                all_sprites = [(s.x, s.y, s.tile, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
+
+                # Test that all tiles says 'low' tile data, as sprites cannot use high tile data
+                assert not reduce(lambda x,y: x|y, [s.tiles[0].index[0] for s in [pyboy.get_sprite(n) for n in range(40)]], False)
+
+                # Test that both ways of getting indexes works and provides the same result.
+                all_sprites = [(s.x, s.y, s.tiles[0].index[1], s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
+                all_sprites2 = [(s.x, s.y, s.tile_index, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
+                assert all_sprites == all_sprites2
+
+                # Verify data with known reference
                 assert all_sprites == (
-                    [(0, 0, 60, False),
-                     (102, 102, 102, True),
-                     (102, 102, 102, True),
-                     (60, 60, 0, True),
-                     (0, 0, 24, False),
-                     (56, 56, 24, True),
-                     (24, 24, 24, True),
-                     (60, 60, 0, True),
-                     (0, 0, 60, False),
-                     (78, 78, 14, True),
-                     (60, 60, 112, True),
-                     (126, 126, 0, True),
-                     (0, 0, 124, False),
-                     (14, 14, 60, True),
-                     (14, 14, 14, True),
-                     (124, 124, 0, True),
-                     (0, 0, 60, False),
-                     (108, 108, 76, True),
-                     (78, 78, 126, True),
-                     (12, 12, 0, True),
-                     (0, 0, 124, False),
-                     (96, 96, 124, True),
-                     (14, 14, 78, True),
-                     (60, 60, 0, True),
-                     (0, 0, 60, False),
-                     (96, 96, 124, True),
-                     (102, 102, 102, True),
-                     (60, 60, 0, True),
-                     (0, 0, 126, False),
-                     (6, 6, 12, True),
-                     (24, 24, 56, True),
-                     (56, 56, 0, True),
-                     (0, 0, 60, False),
-                     (78, 78, 60, True),
-                     (78, 78, 78, True),
-                     (60, 60, 0, True),
-                     (0, 0, 60, False),
-                     (78, 78, 78, True),
-                     (62, 62, 14, True),
-                     (60, 60, 0, True)]
+                    [(0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (80, 144, 130, True),
+                     (88, 144, 130, True),
+                     (88, 152, 130, True),
+                     (96, 152, 130, True),
+                     (136, 128, 131, True),
+                     (144, 128, 131, True),
+                     (136, 136, 131, True),
+                     (144, 136, 131, True),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False),
+                     (0, 0, 0, False)]
                     )
 
 
@@ -292,8 +342,10 @@ def test_tetris():
                              [47, 47, 47, 47, 131, 131, 47, 130, 130, 47],
                              [47, 47, 47, 47, 131, 131, 47, 47, 130, 130]]
                                 )
+    os.remove('tmp.state')
 
     verify_screen_image(b'\xd4\xc6\x12\xe5\xe9\xa8\xbaZ\x9c\xe3')
+    pyboy.stop(save=False)
 
 # # Blargg's tests verifies this
 # def test_get_serial():

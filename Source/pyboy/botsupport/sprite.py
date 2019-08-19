@@ -3,17 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from .constants import OAM_OFFSET, LCDC_OFFSET, LOW_TILEMAP
 from .tile import Tile
 from pyboy.lcd import LCDCRegister
-
-OAM_OFFSET = 0x8000
-LCDC_OFFSET = 0xFF40
 
 
 class Sprite:
     def __init__(self, mb, index):
         self.mb = mb
-        # self.index = index
         self.offset = index * 4
 
     @property
@@ -25,7 +22,10 @@ class Sprite:
         return self.mb.getitem(OAM_OFFSET + self.offset + 1)
 
     @property
-    def tile(self):
+    def tile_index(self):
+        """
+        Doesn't return high/low because sprites always use low
+        """
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
 
     @property
@@ -42,18 +42,21 @@ class Sprite:
             # "Palette number": val & 0b11,
         }
 
+    def _get_lcdc_register(self):
+        return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+
     @property
     def tiles(self):
-        tile_index = self.get_tile()
-        if self.sprite_height:
-            return [Tile(self.mb.lcd, tile_index), Tile(self.mb.lcd, tile_index + 1)]
+        tile_index = self.tile_index
+        LCDC = self._get_lcdc_register()
+        if LCDC.sprite_height:
+            return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
         else:
-            return [Tile(self.mb.lcd, tile_index)]
+            return [Tile(self.mb, tile_index, False)]
 
     @property
     def on_screen(self):
-        LCDC_mem = self.mb.getitem(LCDC_OFFSET)
-        LCDC = LCDCRegister(LCDC_mem)
+        LCDC = self._get_lcdc_register()
         sprite_height = 16 if LCDC.sprite_height else 16
         return (0 < self.y < 144 + sprite_height and
                 0 < self.x < 160 + 8)
