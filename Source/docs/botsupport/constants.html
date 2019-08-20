@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.6.3" />
-<title>pyboy.botsupport API documentation</title>
-<meta name="description" content="Tools to help interfacing with the Game Boy hardware" />
+<title>pyboy.botsupport.constants API documentation</title>
+<meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,10 +17,9 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>pyboy.botsupport</code></h1>
+<h1 class="title">Module <code>pyboy.botsupport.constants</code></h1>
 </header>
 <section id="section-intro">
-<p>Tools to help interfacing with the Game Boy hardware</p>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">#
@@ -28,39 +27,16 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-&#34;&#34;&#34;
-Tools to help interfacing with the Game Boy hardware
-&#34;&#34;&#34;
-
-from .sprite import Sprite
-from .tilemap import TileMap
-from .tile import Tile</code></pre>
+VRAM_OFFSET = 0x8000
+LCDC_OFFSET = 0xFF40
+OAM_OFFSET = 0xFE00
+LOW_TILEMAP = 0x1800 + VRAM_OFFSET
+HIGH_TILEMAP = 0x1C00 + VRAM_OFFSET
+LOW_TILEDATA = VRAM_OFFSET
+HIGH_TILEDATA = 0x800 + VRAM_OFFSET</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="pyboy.botsupport.constants" href="constants.html">pyboy.botsupport.constants</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="pyboy.botsupport.sprite" href="sprite.html">pyboy.botsupport.sprite</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="pyboy.botsupport.spritetracker" href="spritetracker.html">pyboy.botsupport.spritetracker</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="pyboy.botsupport.tile" href="tile.html">pyboy.botsupport.tile</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="pyboy.botsupport.tilemap" href="tilemap.html">pyboy.botsupport.tilemap</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -77,16 +53,7 @@ from .tile import Tile</code></pre>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="pyboy" href="../index.html">pyboy</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="pyboy.botsupport.constants" href="constants.html">pyboy.botsupport.constants</a></code></li>
-<li><code><a title="pyboy.botsupport.sprite" href="sprite.html">pyboy.botsupport.sprite</a></code></li>
-<li><code><a title="pyboy.botsupport.spritetracker" href="spritetracker.html">pyboy.botsupport.spritetracker</a></code></li>
-<li><code><a title="pyboy.botsupport.tile" href="tile.html">pyboy.botsupport.tile</a></code></li>
-<li><code><a title="pyboy.botsupport.tilemap" href="tilemap.html">pyboy.botsupport.tilemap</a></code></li>
+<li><code><a title="pyboy.botsupport" href="index.html">pyboy.botsupport</a></code></li>
 </ul>
 </li>
 </ul>

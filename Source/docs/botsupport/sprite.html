@@ -27,16 +27,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from .constants import OAM_OFFSET, LCDC_OFFSET, LOW_TILEMAP
+from .tile import Tile
 from pyboy.lcd import LCDCRegister
-
-OAM_OFFSET = 0x8000
-LCDC_OFFSET = 0xFF40
 
 
 class Sprite:
     def __init__(self, mb, index):
         self.mb = mb
-        self.index = index
         self.offset = index * 4
 
     @property
@@ -48,7 +46,10 @@ class Sprite:
         return self.mb.getitem(OAM_OFFSET + self.offset + 1)
 
     @property
-    def tile(self):
+    def tile_index(self):
+        &#34;&#34;&#34;
+        Doesn&#39;t return high/low because sprites always use low
+        &#34;&#34;&#34;
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
 
     @property
@@ -65,17 +66,28 @@ class Sprite:
             # &#34;Palette number&#34;: val &amp; 0b11,
         }
 
+    def _get_lcdc_register(self):
+        return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+
+    @property
+    def tiles(self):
+        tile_index = self.tile_index
+        LCDC = self._get_lcdc_register()
+        if LCDC.sprite_height:
+            return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+        else:
+            return [Tile(self.mb, tile_index, False)]
+
     @property
     def on_screen(self):
-        LCDC_mem = self.mb.getitem(LCDC_OFFSET)
-        LCDC = LCDCRegister(LCDC_mem)
-        sprite_size = 16 if LCDC.sprite_size else 16
-        return (0 &lt; self.y &lt; 144 + sprite_size and
+        LCDC = self._get_lcdc_register()
+        sprite_height = 16 if LCDC.sprite_height else 16
+        return (0 &lt; self.y &lt; 144 + sprite_height and
                 0 &lt; self.x &lt; 160 + 8)
 
-
 def get_bit(val, bit):
-    return (val &amp; (1 &lt;&lt; bit)) &gt;&gt; bit</code></pre>
+    # return (val &amp; (1 &lt;&lt; bit)) &gt;&gt; bit
+    return (val &gt;&gt; bit) &amp; 1</code></pre>
 </details>
 </section>
 <section>
@@ -93,7 +105,8 @@ def get_bit(val, bit):
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def get_bit(val, bit):
-    return (val &amp; (1 &lt;&lt; bit)) &gt;&gt; bit</code></pre>
+    # return (val &amp; (1 &lt;&lt; bit)) &gt;&gt; bit
+    return (val &gt;&gt; bit) &amp; 1</code></pre>
 </details>
 </dd>
 </dl>
@@ -112,7 +125,6 @@ def get_bit(val, bit):
 <pre><code class="python">class Sprite:
     def __init__(self, mb, index):
         self.mb = mb
-        self.index = index
         self.offset = index * 4
 
     @property
@@ -124,7 +136,10 @@ def get_bit(val, bit):
         return self.mb.getitem(OAM_OFFSET + self.offset + 1)
 
     @property
-    def tile(self):
+    def tile_index(self):
+        &#34;&#34;&#34;
+        Doesn&#39;t return high/low because sprites always use low
+        &#34;&#34;&#34;
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
 
     @property
@@ -141,12 +156,23 @@ def get_bit(val, bit):
             # &#34;Palette number&#34;: val &amp; 0b11,
         }
 
+    def _get_lcdc_register(self):
+        return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+
+    @property
+    def tiles(self):
+        tile_index = self.tile_index
+        LCDC = self._get_lcdc_register()
+        if LCDC.sprite_height:
+            return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+        else:
+            return [Tile(self.mb, tile_index, False)]
+
     @property
     def on_screen(self):
-        LCDC_mem = self.mb.getitem(LCDC_OFFSET)
-        LCDC = LCDCRegister(LCDC_mem)
-        sprite_size = 16 if LCDC.sprite_size else 16
-        return (0 &lt; self.y &lt; 144 + sprite_size and
+        LCDC = self._get_lcdc_register()
+        sprite_height = 16 if LCDC.sprite_height else 16
+        return (0 &lt; self.y &lt; 144 + sprite_height and
                 0 &lt; self.x &lt; 160 + 8)</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -178,21 +204,38 @@ def attributes(self):
 <summary>Source code</summary>
 <pre><code class="python">@property
 def on_screen(self):
-    LCDC_mem = self.mb.getitem(LCDC_OFFSET)
-    LCDC = LCDCRegister(LCDC_mem)
-    sprite_size = 16 if LCDC.sprite_size else 16
-    return (0 &lt; self.y &lt; 144 + sprite_size and
+    LCDC = self._get_lcdc_register()
+    sprite_height = 16 if LCDC.sprite_height else 16
+    return (0 &lt; self.y &lt; 144 + sprite_height and
             0 &lt; self.x &lt; 160 + 8)</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.sprite.Sprite.tile"><code class="name">var <span class="ident">tile</span></code></dt>
+<dt id="pyboy.botsupport.sprite.Sprite.tile_index"><code class="name">var <span class="ident">tile_index</span></code></dt>
+<dd>
+<section class="desc"><p>Doesn't return high/low because sprites always use low</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def tile_index(self):
+    &#34;&#34;&#34;
+    Doesn&#39;t return high/low because sprites always use low
+    &#34;&#34;&#34;
+    return self.mb.getitem(OAM_OFFSET + self.offset + 2)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.sprite.Sprite.tiles"><code class="name">var <span class="ident">tiles</span></code></dt>
 <dd>
 <section class="desc"></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
-def tile(self):
-    return self.mb.getitem(OAM_OFFSET + self.offset + 2)</code></pre>
+def tiles(self):
+    tile_index = self.tile_index
+    LCDC = self._get_lcdc_register()
+    if LCDC.sprite_height:
+        return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+    else:
+        return [Tile(self.mb, tile_index, False)]</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.x"><code class="name">var <span class="ident">x</span></code></dt>
@@ -240,10 +283,11 @@ def y(self):
 <ul>
 <li>
 <h4><code><a title="pyboy.botsupport.sprite.Sprite" href="#pyboy.botsupport.sprite.Sprite">Sprite</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="pyboy.botsupport.sprite.Sprite.attributes" href="#pyboy.botsupport.sprite.Sprite.attributes">attributes</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.on_screen" href="#pyboy.botsupport.sprite.Sprite.on_screen">on_screen</a></code></li>
-<li><code><a title="pyboy.botsupport.sprite.Sprite.tile" href="#pyboy.botsupport.sprite.Sprite.tile">tile</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.tile_index" href="#pyboy.botsupport.sprite.Sprite.tile_index">tile_index</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles">tiles</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.x" href="#pyboy.botsupport.sprite.Sprite.x">x</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.y" href="#pyboy.botsupport.sprite.Sprite.y">y</a></code></li>
 </ul>

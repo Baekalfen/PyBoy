@@ -43,7 +43,6 @@ test_quick: clean build
 
 docs: clean
 	pdoc --html --force pyboy
-
 	cp html/pyboy/windowevent.html docs/
 	cp html/pyboy/pyboy.html docs/
 	cp -r html/pyboy/botsupport docs/

@@ -252,7 +252,7 @@ class PyBoy:
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
 
         Returns:
-            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+            PIL.Image: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         """
         return self.mb.window.get_screen_image()
 

@@ -127,7 +127,7 @@ class PyBoy:
         events = self.window.get_events()
 
         if argv_record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode(&#39;utf8&#39;)))
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
         self.frame_count += 1
 
         events += self.external_input
@@ -174,7 +174,7 @@ class PyBoy:
         # self.paused &amp;= self.autopause # Overrules paused state, if not allowed
         if not self.paused:
             self.mb.tickframe()
-        self.window.update_display()
+        self.window.update_display(self.paused)
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
@@ -236,7 +236,7 @@ class PyBoy:
         &#34;&#34;&#34;
         Provides a raw, unfiltered `bytes` object with the data from the screen. Check `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
 
-        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_np_ndarray`.
+        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_ndarray`.
 
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
@@ -261,7 +261,7 @@ class PyBoy:
         &#34;&#34;&#34;
         return self.mb.window.color_format
 
-    def get_screen_np_ndarray(self):
+    def get_screen_ndarray(self):
         &#34;&#34;&#34;
         Provides the screen data in NumPy format. The dataformat is always RGB.
 
@@ -277,7 +277,7 @@ class PyBoy:
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
 
         Returns:
-            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+            PIL.Image: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
         return self.mb.window.get_screen_image()
 
@@ -323,16 +323,23 @@ class PyBoy:
         &#34;&#34;&#34;
         return botsupport.Sprite(self.mb, index)
 
-    def get_tile_map(self, high):
+    def get_background_tile_map(self):
         &#34;&#34;&#34;
-        The Game Boy supports two tile maps at the same time. These tile maps are used to draw static graphics on the display of the Game Boy. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-        Args:
-            high (bool): If given the parameter is `True`, it will return a `TileMap` for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a `TileMap` for the 0x9800-0x9BFF range.
         Returns:
-            `pyboy.botsupport.tilemap`: A TileMap object for the given memory range.
+            `pyboy.botsupport.tilemap`: A TileMap object for the background tile map.
         &#34;&#34;&#34;
-        return botsupport.TileMap(self.mb, high)
+        return botsupport.TileMap(self.mb, window=False)
+
+    def get_window_tile_map(self):
+        &#34;&#34;&#34;
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Returns:
+            `pyboy.botsupport.tilemap`: A TileMap object for the window tile map.
+        &#34;&#34;&#34;
+        return botsupport.TileMap(self.mb, window=True)
 
     def get_screen_position(self):
         &#34;&#34;&#34;
@@ -410,66 +417,7 @@ class PyBoy:
         self.limit_emulationspeed = limit
         if target_speed &gt; 5:
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
-        self.max_emulationspeed = target_speed
-
-
-
-    ####################################################################
-    ## LEGACY, UNSUPPORTED SCRIPTS AND BOT METHODS
-    ##
-
-    #def getScreenBuffer(self):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Returns a reference to the NumPy matrix of the current image displayed on the screen. The format is 32-bit ARGB.&#34;&#34;&#34;
-
-    #    return self.get_raw_screen_buffer()
-
-    #def getScreenBufferFormat(self):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Returns either &#34;RGBA&#34; or &#34;ARGB&#34; depending on the chosen Window.&#34;&#34;&#34;
-
-    #    return self.get_raw_screen_buffer_format()
-
-    #def getMemoryValue(self, address):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Returns the 8-bit value found at the address on the emulator.&#34;&#34;&#34;
-
-    #    return self.get_memory_value(address)
-
-
-    #def setMemoryValue(self, address, value):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Sets the 8-bit value at the address on the emulator.&#34;&#34;&#34;
-
-    #    return self.get_memory_value(address, value)
-
-    #def sendInput(self, event):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Sends a single WindowEvent to the emulator.&#34;&#34;&#34;
-
-    #    if isinstance(event, list):
-    #        for e in event:
-    #            self.send_input(e)
-    #    else:
-    #        self.send_input(event)
-
-    #def getSprite(self, index):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Returns a Sprite object, which makes the OAM data more presentable. See the available methods in Source/PyBoy/BotSupport/Sprite.py.&#34;&#34;&#34;
-
-    #    return self.get_sprite(index)
-
-    #def getTileView(self, high):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Returns a TileView object. If given the parameter is True, it will return a TileView for the 0x9C00-0x9FFF range, if the parameter is False it will provide a TileView for the 0x9800-0x9BFF range. The TileView has one method: get_tile(x, y), which returns the index of the tile in the tile buffer.&#34;&#34;&#34;
-
-    #    return self.get_tile_map(high)
-
-    #def getScreenPosition(self):
-    #    &#34;&#34;&#34;DEPRECATED METHOD:
-    #    Returns a tuple of (SCX, SCY). These coordinates define the offset in the TileView from where the top-left corner of the screen is place. Note that the TileView defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the TileView (see 7.4 Viewport in the report).&#34;&#34;&#34;
-
-    #    return self.get_screen_position(self)[0]</code></pre>
+        self.max_emulationspeed = target_speed</code></pre>
 </details>
 </section>
 <section>
@@ -559,7 +507,7 @@ class PyBoy:
         events = self.window.get_events()
 
         if argv_record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode(&#39;utf8&#39;)))
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
         self.frame_count += 1
 
         events += self.external_input
@@ -606,7 +554,7 @@ class PyBoy:
         # self.paused &amp;= self.autopause # Overrules paused state, if not allowed
         if not self.paused:
             self.mb.tickframe()
-        self.window.update_display()
+        self.window.update_display(self.paused)
         t_cpu = time.perf_counter()
 
         if self.screen_recorder:
@@ -668,7 +616,7 @@ class PyBoy:
         &#34;&#34;&#34;
         Provides a raw, unfiltered `bytes` object with the data from the screen. Check `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
 
-        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_np_ndarray`.
+        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_ndarray`.
 
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
@@ -693,7 +641,7 @@ class PyBoy:
         &#34;&#34;&#34;
         return self.mb.window.color_format
 
-    def get_screen_np_ndarray(self):
+    def get_screen_ndarray(self):
         &#34;&#34;&#34;
         Provides the screen data in NumPy format. The dataformat is always RGB.
 
@@ -709,7 +657,7 @@ class PyBoy:
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
 
         Returns:
-            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+            PIL.Image: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
         return self.mb.window.get_screen_image()
 
@@ -755,16 +703,23 @@ class PyBoy:
         &#34;&#34;&#34;
         return botsupport.Sprite(self.mb, index)
 
-    def get_tile_map(self, high):
+    def get_background_tile_map(self):
         &#34;&#34;&#34;
-        The Game Boy supports two tile maps at the same time. These tile maps are used to draw static graphics on the display of the Game Boy. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-        Args:
-            high (bool): If given the parameter is `True`, it will return a `TileMap` for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a `TileMap` for the 0x9800-0x9BFF range.
         Returns:
-            `pyboy.botsupport.tilemap`: A TileMap object for the given memory range.
+            `pyboy.botsupport.tilemap`: A TileMap object for the background tile map.
         &#34;&#34;&#34;
-        return botsupport.TileMap(self.mb, high)
+        return botsupport.TileMap(self.mb, window=False)
+
+    def get_window_tile_map(self):
+        &#34;&#34;&#34;
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Returns:
+            `pyboy.botsupport.tilemap`: A TileMap object for the window tile map.
+        &#34;&#34;&#34;
+        return botsupport.TileMap(self.mb, window=True)
 
     def get_screen_position(self):
         &#34;&#34;&#34;
@@ -860,6 +815,25 @@ class PyBoy:
     self.window.disable_title()</code></pre>
 </details>
 </dd>
+<dt id="pyboy.pyboy.PyBoy.get_background_tile_map"><code class="name flex">
+<span>def <span class="ident">get_background_tile_map</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tilemap" href="botsupport/tilemap.html"><code>pyboy.botsupport.tilemap</code></a>: A TileMap object for the background tile map.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_background_tile_map(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+    Returns:
+        `pyboy.botsupport.tilemap`: A TileMap object for the background tile map.
+    &#34;&#34;&#34;
+    return botsupport.TileMap(self.mb, window=False)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.pyboy.PyBoy.get_memory_value"><code class="name flex">
 <span>def <span class="ident">get_memory_value</span></span>(<span>self, addr)</span>
 </code></dt>
@@ -887,7 +861,7 @@ class PyBoy:
 </code></dt>
 <dd>
 <section class="desc"><p>Provides a raw, unfiltered <code>bytes</code> object with the data from the screen. Check <a title="pyboy.pyboy.PyBoy.get_raw_screen_buffer_format" href="#pyboy.pyboy.PyBoy.get_raw_screen_buffer_format"><code>PyBoy.get_raw_screen_buffer_format()</code></a> to see which dataformat is used. The returned type and dataformat are subject to change.</p>
-<p>Use this, only if you need to bypass the overhead of <a title="pyboy.pyboy.PyBoy.get_screen_image" href="#pyboy.pyboy.PyBoy.get_screen_image"><code>PyBoy.get_screen_image()</code></a> or <a title="pyboy.pyboy.PyBoy.get_screen_np_ndarray" href="#pyboy.pyboy.PyBoy.get_screen_np_ndarray"><code>PyBoy.get_screen_np_ndarray()</code></a>.</p>
+<p>Use this, only if you need to bypass the overhead of <a title="pyboy.pyboy.PyBoy.get_screen_image" href="#pyboy.pyboy.PyBoy.get_screen_image"><code>PyBoy.get_screen_image()</code></a> or <a title="pyboy.pyboy.PyBoy.get_screen_ndarray" href="#pyboy.pyboy.PyBoy.get_screen_ndarray"><code>PyBoy.get_screen_ndarray()</code></a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>bytes</code></strong></dt>
@@ -899,7 +873,7 @@ class PyBoy:
     &#34;&#34;&#34;
     Provides a raw, unfiltered `bytes` object with the data from the screen. Check `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
 
-    Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_np_ndarray`.
+    Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_ndarray`.
 
     Returns:
         bytes: 92160 bytes of screen data in a `bytes` object.
@@ -955,7 +929,7 @@ class PyBoy:
 <section class="desc"><p>Generates a PIL Image from the screen buffer.</p>
 <p>Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the <a title="pyboy.botsupport" href="botsupport/index.html"><code>pyboy.botsupport</code></a> features, <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> on tiles/sprites, and join our Discord channel for more help.</p>
 <h2 id="returns">Returns</h2>
-<p>numpy.ndarray: Screendata in <code>ndarray</code> of bytes with shape (160, 144, 3)</p></section>
+<p>PIL.Image: Screendata in <code>ndarray</code> of bytes with shape (160, 144, 3)</p></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def get_screen_image(self):
@@ -965,13 +939,13 @@ class PyBoy:
     Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
 
     Returns:
-        numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+        PIL.Image: Screendata in `ndarray` of bytes with shape (160, 144, 3)
     &#34;&#34;&#34;
     return self.mb.window.get_screen_image()</code></pre>
 </details>
 </dd>
-<dt id="pyboy.pyboy.PyBoy.get_screen_np_ndarray"><code class="name flex">
-<span>def <span class="ident">get_screen_np_ndarray</span></span>(<span>self)</span>
+<dt id="pyboy.pyboy.PyBoy.get_screen_ndarray"><code class="name flex">
+<span>def <span class="ident">get_screen_ndarray</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Provides the screen data in NumPy format. The dataformat is always RGB.</p>
@@ -979,7 +953,7 @@ class PyBoy:
 <p>numpy.ndarray: Screendata in <code>ndarray</code> of bytes with shape (160, 144, 3)</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def get_screen_np_ndarray(self):
+<pre><code class="python">def get_screen_ndarray(self):
     &#34;&#34;&#34;
     Provides the screen data in NumPy format. The dataformat is always RGB.
 
@@ -1062,30 +1036,23 @@ class PyBoy:
     return botsupport.Sprite(self.mb, index)</code></pre>
 </details>
 </dd>
-<dt id="pyboy.pyboy.PyBoy.get_tile_map"><code class="name flex">
-<span>def <span class="ident">get_tile_map</span></span>(<span>self, high)</span>
+<dt id="pyboy.pyboy.PyBoy.get_window_tile_map"><code class="name flex">
+<span>def <span class="ident">get_window_tile_map</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>The Game Boy supports two tile maps at the same time. These tile maps are used to draw static graphics on the display of the Game Boy. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>high</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If given the parameter is <code>True</code>, it will return a <code>TileMap</code> for the 0x9C00-0x9FFF range, if the parameter is <code>False</code> it will provide a <code>TileMap</code> for the 0x9800-0x9BFF range.</dd>
-</dl>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tilemap" href="botsupport/tilemap.html"><code>pyboy.botsupport.tilemap</code></a>: A TileMap object for the given memory range.</p></section>
+<p><a title="pyboy.botsupport.tilemap" href="botsupport/tilemap.html"><code>pyboy.botsupport.tilemap</code></a>: A TileMap object for the window tile map.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def get_tile_map(self, high):
+<pre><code class="python">def get_window_tile_map(self):
     &#34;&#34;&#34;
-    The Game Boy supports two tile maps at the same time. These tile maps are used to draw static graphics on the display of the Game Boy. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-    Args:
-        high (bool): If given the parameter is `True`, it will return a `TileMap` for the 0x9C00-0x9FFF range, if the parameter is `False` it will provide a `TileMap` for the 0x9800-0x9BFF range.
     Returns:
-        `pyboy.botsupport.tilemap`: A TileMap object for the given memory range.
+        `pyboy.botsupport.tilemap`: A TileMap object for the window tile map.
     &#34;&#34;&#34;
-    return botsupport.TileMap(self.mb, high)</code></pre>
+    return botsupport.TileMap(self.mb, window=True)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.load_state"><code class="name flex">
@@ -1318,7 +1285,7 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
     events = self.window.get_events()
 
     if argv_record_input and len(events) != 0:
-        self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_np_ndarray())).decode(&#39;utf8&#39;)))
+        self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
     self.frame_count += 1
 
     events += self.external_input
@@ -1365,7 +1332,7 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
     # self.paused &amp;= self.autopause # Overrules paused state, if not allowed
     if not self.paused:
         self.mb.tickframe()
-    self.window.update_display()
+    self.window.update_display(self.paused)
     t_cpu = time.perf_counter()
 
     if self.screen_recorder:
@@ -1415,16 +1382,17 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
 <h4><code><a title="pyboy.pyboy.PyBoy" href="#pyboy.pyboy.PyBoy">PyBoy</a></code></h4>
 <ul class="">
 <li><code><a title="pyboy.pyboy.PyBoy.disable_title" href="#pyboy.pyboy.PyBoy.disable_title">disable_title</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_background_tile_map" href="#pyboy.pyboy.PyBoy.get_background_tile_map">get_background_tile_map</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_memory_value" href="#pyboy.pyboy.PyBoy.get_memory_value">get_memory_value</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_raw_screen_buffer" href="#pyboy.pyboy.PyBoy.get_raw_screen_buffer">get_raw_screen_buffer</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_raw_screen_buffer_dims" href="#pyboy.pyboy.PyBoy.get_raw_screen_buffer_dims">get_raw_screen_buffer_dims</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_raw_screen_buffer_format" href="#pyboy.pyboy.PyBoy.get_raw_screen_buffer_format">get_raw_screen_buffer_format</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_screen_image" href="#pyboy.pyboy.PyBoy.get_screen_image">get_screen_image</a></code></li>
-<li><code><a title="pyboy.pyboy.PyBoy.get_screen_np_ndarray" href="#pyboy.pyboy.PyBoy.get_screen_np_ndarray">get_screen_np_ndarray</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_screen_ndarray" href="#pyboy.pyboy.PyBoy.get_screen_ndarray">get_screen_ndarray</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_screen_position" href="#pyboy.pyboy.PyBoy.get_screen_position">get_screen_position</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_serial" href="#pyboy.pyboy.PyBoy.get_serial">get_serial</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_sprite" href="#pyboy.pyboy.PyBoy.get_sprite">get_sprite</a></code></li>
-<li><code><a title="pyboy.pyboy.PyBoy.get_tile_map" href="#pyboy.pyboy.PyBoy.get_tile_map">get_tile_map</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_window_tile_map" href="#pyboy.pyboy.PyBoy.get_window_tile_map">get_window_tile_map</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.load_state" href="#pyboy.pyboy.PyBoy.load_state">load_state</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.save_state" href="#pyboy.pyboy.PyBoy.save_state">save_state</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.send_input" href="#pyboy.pyboy.PyBoy.send_input">send_input</a></code></li>
