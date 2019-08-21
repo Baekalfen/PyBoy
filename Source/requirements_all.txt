@@ -1,8 +1,8 @@
 -r requirements.txt
-pytest-xdist
+numpy
 pyopengl
 Pillow
-imgcat
+pytest-xdist
 markdown
 pdoc3
 

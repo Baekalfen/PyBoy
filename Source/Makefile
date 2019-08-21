@@ -3,7 +3,7 @@
 
 all: build
 
-THREADS := 12
+THREADS := 6
 PY := python3
 PYPY := pypy3
 NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')

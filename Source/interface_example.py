@@ -6,8 +6,8 @@
 from pprint import pprint
 from pyboy import PyBoy
 
-# pyboy = PyBoy("headless", 1, "ROMs/TestRom.gb") # For unattended use, for example machine learning
-pyboy = PyBoy("SDL2", 1, "ROMs/POKEMON BLUE.gb")
+# pyboy = PyBoy("ROMs/POKEMON BLUE.gb", window_type="headless", window_scale=1) # For unattended use, for example machine learning
+pyboy = PyBoy("ROMs/POKEMON BLUE.gb", window_type="SDL2", window_scale=1)
 pyboy.set_emulation_speed(False, 0)
 
 for n in range(1000): # Move ahead the desired number of frames.

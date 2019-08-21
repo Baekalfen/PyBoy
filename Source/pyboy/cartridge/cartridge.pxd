@@ -6,7 +6,7 @@
 from .base_mbc cimport BaseMBC
 
 
-cdef public BaseMBC Cartridge(unicode)
+cdef BaseMBC Cartridge(unicode)
 cdef bint validate_checksum(unsigned char[:,:])
 cdef unsigned char[:, :] load_romfile(unicode)
 

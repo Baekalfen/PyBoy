@@ -32,6 +32,9 @@ cdef class PyBoy:
     cdef int emulationspeed, max_emulationspeed
     cdef object screen_recorder
     cdef uint64_t frame_count
+    cdef bint profiling
+    cdef bint record_input
+    cdef unicode record_input_file
     cdef list recorded_input
     cdef list external_input
 

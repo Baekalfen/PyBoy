@@ -37,9 +37,12 @@ setup(
     ],
     extras_require={
         "all": [
-            "pyopengl",
             "numpy",
+            "pyopengl",
             "Pillow",
+            "pytest-xdist",
+            "markdown",
+            "pdoc3",
         ],
     },
     include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/mb", "pyboy/debug"],

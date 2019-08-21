@@ -30,7 +30,6 @@ def getROM(ROMdir):
 if __name__ == "__main__":
     bootROM = None
     ROMdir = "ROMs/"
-    scale = 1
 
     # Verify directories
     if bootROM is not None and not os.path.exists(bootROM):
@@ -49,7 +48,7 @@ if __name__ == "__main__":
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy('SDL2', 3, filename, bootROM)
+        pyboy = PyBoy(filename, window_type='SDL2', window_scale=3, bootrom_file=bootROM)
         pyboy.set_emulation_speed(False)
         print ("Screen pos:", pyboy.get_screen_position())
 

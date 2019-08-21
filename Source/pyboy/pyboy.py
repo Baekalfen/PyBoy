@@ -7,7 +7,6 @@
 The core module of the emulator
 """
 
-import sys
 import time
 import json
 import numpy as np
@@ -28,50 +27,51 @@ addconsolehandler()
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
-# TODO: Move all argv to main.py and make a settings object to pass to PyBoy
-if "--no-logger" in sys.argv:
-    logger.disabled = True
-
-argv_debug = "--debug" in sys.argv
-argv_profiling = "--profiling" in sys.argv
-argv_loadstate = "--loadstate" in sys.argv
-argv_autopause = "--autopause" in sys.argv
-argv_record_input = "--record-input" in sys.argv
-if argv_record_input:
-    idx = sys.argv.index("--record-input")
-    assert len(sys.argv) > idx+1
-    argv_record_input_file = sys.argv[idx+1]
-    # TODO: Find a library to take care of argv
-    assert argv_record_input_file[0] != '-', "Output file looks like an argument"
-
 
 class PyBoy:
-    def __init__(self, win_type, scale, gamerom_file, bootrom_file=None):
+    def __init__(
+            self,
+            gamerom_file, *,
+            window_type = None,
+            window_scale = 3,
+            bootrom_file = None,
+            autopause = False,
+            loadstate_file = None,
+            debugging = False,
+            profiling = False,
+            record_input_file = None,
+        ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class multiple times.
 
         This object, `pyboy.windowevent`, and the `pyboy.botsupport` module, are the only official user-facing interfaces. All other parts of the emulator, are subject to change.
 
-        A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on GitHub, if other methods are needed for your projects. Take a look at tetris_bot.py for a crude "bot", which interacts with the game.
+        A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on GitHub, if other methods are needed for your projects. Take a look at `interface_example.px` or `tetris_bot.py` for a crude "bot", which interacts with the game.
+
+        Only the `gamerom_file` argument is required.
 
         Args:
-            win_type (str): Specify one of the supported window types. If unsure, specify None to get the default.
-            scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
             gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
-            bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify None.
+            window_type (str): Specify one of the supported window types. If unsure, specify `None` to get the default.
+            window_scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
+            bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
+            autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
+            loadstate_file (str): Filepath to a saved state to be loaded at startup.
+            debugging (bool): Whether or not to enable some extended debugging features.
+            profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
+            record_input_file (str): Filepath to save all recorded input for replay later.
         """
         self.gamerom_file = gamerom_file
 
-        self.window = window.window.getwindow(win_type, scale, argv_debug)
-
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=argv_profiling)
+        self.window = window.window.getwindow(window_type, window_scale, debugging)
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=profiling)
 
         # TODO: Get rid of this extra step
-        if argv_debug:
+        if debugging:
             self.window.set_lcd(self.mb.lcd)
 
-        if argv_loadstate:
-            self.mb.load_state(gamerom_file + ".state")
+        if loadstate_file:
+            self.mb.load_state(loadstate_file)
 
         self.avg_emu = 0
         self.avg_cpu = 0
@@ -79,12 +79,15 @@ class PyBoy:
         self.set_emulation_speed(True, 0)
         self.screen_recorder = None
         self.paused = False
-        self.autopause = argv_autopause
-        if argv_record_input:
+        self.autopause = autopause
+        self.record_input = bool(record_input_file)
+        if self.record_input:
             logger.info("Recording event inputs")
         self.frame_count = 0
+        self.record_input_file = record_input_file
         self.recorded_input = []
         self.external_input = []
+        self.profiling = profiling
 
     def tick(self):
         """
@@ -101,7 +104,7 @@ class PyBoy:
 
         events = self.window.get_events()
 
-        if argv_record_input and len(events) != 0:
+        if self.record_input and len(events) != 0:
             self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
         self.frame_count += 1
 
@@ -188,7 +191,7 @@ class PyBoy:
         logger.info("###########################")
         self.mb.stop(save)
 
-        if argv_profiling:
+        if self.profiling:
             print("Profiling report:")
             from operator import itemgetter
             names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
@@ -196,8 +199,8 @@ class PyBoy:
                     filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
                 print("%3x %16s %s" % (n, name, hits))
 
-        if argv_record_input:
-            with open(argv_record_input_file, 'wb') as f:
+        if self.record_input:
+            with open(self.record_input_file, 'wb') as f:
                 recorded_data = io.StringIO() # json.dump writes 'str' not bytes...
                 json.dump(self.recorded_input, recorded_data)
                 f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))

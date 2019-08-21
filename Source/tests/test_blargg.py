@@ -24,8 +24,8 @@ else:
 
 def run_rom(rom):
     # logger.info(rom)
-    pyboy = PyBoy("dummy", 1, rom, "ROMs/DMG_ROM.bin")
-    # pyboy = PyBoy("SDL2", 1, rom, "ROMs/DMG_ROM.bin")
+    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file="ROMs/DMG_ROM.bin")
+    # pyboy = PyBoy("ROMs/DMG_ROM.bin", window_type="SDL2", window_scale=1, bootrom_file=rom)
     pyboy.disable_title()
     pyboy.set_emulation_speed(False)
     serial_output = ""
