@@ -35,9 +35,10 @@ def test_tiles():
     assert isinstance(image, PIL.Image.Image)
     ndarray = tile.image_ndarray()
     assert isinstance(ndarray, np.ndarray)
-    assert ndarray.shape == (8,8)
+    assert ndarray.shape == (8, 8, 4)
+    assert ndarray.dtype == np.uint8
     data = tile.image_data()
-    assert data.shape == (8,8)
+    assert data.shape == (8, 8)
 
     pyboy.stop(save=False)
 

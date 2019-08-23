@@ -52,6 +52,8 @@ class PyBoy:
 
         Args:
             gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+
+        Kwargs:
             window_type (str): Specify one of the supported window types. If unsure, specify `None` to get the default.
             window_scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
@@ -184,7 +186,7 @@ class PyBoy:
         Gently stops the emulator and all sub-modules.
 
         Args:
-            save (str): Specify whether to save the game upon stopping. It will always be saved in a file next to the provided game-ROM.
+            save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the provided game-ROM.
         """
         logger.info("###########################")
         logger.info("# Emulator is turning off #")
@@ -226,13 +228,13 @@ class PyBoy:
         Returns the dimensions of the raw screen buffer.
 
         Returns:
-            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+            tuple: A two-tuple of the buffer dimensions. E.g. (160, 144).
         """
         return self.mb.window.buffer_dims
 
     def get_raw_screen_buffer_format(self):
         """
-        Returns the format of the raw screen buffer.
+        Returns the color format of the raw screen buffer.
 
         Returns:
             str: Color format of the raw screen buffer. E.g. 'RGB'.
@@ -252,10 +254,10 @@ class PyBoy:
         """
         Generates a PIL Image from the screen buffer.
 
-        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In that case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
 
         Returns:
-            PIL.Image: Screendata in `ndarray` of bytes with shape (160, 144, 3)
+            PIL.Image: RGB image of (160, 144) pixels
         """
         return self.mb.window.get_screen_image()
 
@@ -270,17 +272,21 @@ class PyBoy:
 
     def set_memory_value(self, addr, value):
         """
-        Write one byte to a given memory address of the Game Boy's current memory state. This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        Write one byte to a given memory address of the Game Boy's current memory state.
+
+        This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
         Args:
-            addr (int): Address to write to
-            value (int): A byte to write
+            addr (int): Address to write the byte
+            value (int): A byte of data
         """
         self.mb.setitem(addr, value)
 
     def send_input(self, event):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
+
+        See `pyboy.windowevent` for which events to send.
 
         Args:
             event (pyboy.windowevent): The event to send
@@ -290,32 +296,36 @@ class PyBoy:
 
     def get_sprite(self, index):
         """
-        Provides a `pyboy.botsupport.sprite` object, which makes the OAM data more presentable. The given index corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
+        Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
 
         The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
         Args:
             index (int): Sprite index from 0 to 39.
         Returns:
-            `pyboy.botsupport.sprite`: Sprite corresponding to the given index.
+            `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
         """
         return botsupport.Sprite(self.mb, index)
 
     def get_background_tile_map(self):
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one for the background tiles.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
         Returns:
-            `pyboy.botsupport.tilemap`: A TileMap object for the background tile map.
+            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the background tile map.
         """
         return botsupport.TileMap(self.mb, window=False)
 
     def get_window_tile_map(self):
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one for the window tiles.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
         Returns:
-            `pyboy.botsupport.tilemap`: A TileMap object for the window tile map.
+            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the window tile map.
         """
         return botsupport.TileMap(self.mb, window=True)
 
@@ -371,22 +381,15 @@ class PyBoy:
 
     def disable_title(self):
         """
-        Disable window-title updates. These are output to the log, when in `headless` or `dummy` mode.
+        Disable window title updates. These are output to the log, when in `headless` or `dummy` mode.
         """
         self.window.disable_title()
-
-    def set_autopause(self, autopause):
-        """
-        PyBoy can automatically pause execution, when the game window looses focus. This might not be convenient, when running the emulator autonomously.
-
-        Args:
-            autopause (bool): Allow to autopause or not.
-        """
-        self.autopause = autopause
 
     def set_emulation_speed(self, limit, target_speed=0):
         """
         Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high `target_speed`.
+
+        The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
 
         Args:
             limit (bool): Whether to limit the speed or not.

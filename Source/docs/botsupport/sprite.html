@@ -27,50 +27,115 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .constants import OAM_OFFSET, LCDC_OFFSET, LOW_TILEMAP
+from .constants import OAM_OFFSET, LCDC_OFFSET
 from .tile import Tile
 from pyboy.lcd import LCDCRegister
 
 
 class Sprite:
     def __init__(self, mb, index):
+        &#34;&#34;&#34;
+        This class presents an interface to the sprites held in the OAM data on the Game Boy.
+
+        The purpose is to make it easier to interpret events on the screen, in order to program a bot, or train an AI.
+
+        Sprites are used on the Game Boy for enemy and player characters, as only sprites can have transparency, and can move at pixel-precision on the screen. The other method of graphics -- tile maps -- can only be placed in a grid-size of 8x8 pixels precision, and can have no transparency.
+
+        By looking for specific tile indexes, you will be able to iterate through all sprites, and easy locate tile indexes corresponding to players, enemies, power-ups and so on.
+        &#34;&#34;&#34;
         self.mb = mb
         self.offset = index * 4
 
     @property
     def y(self):
+        &#34;&#34;&#34;
+        The Y-coordinate on the screen to show the Sprite.
+
+        Returns:
+            int: Y-coordinate
+        &#34;&#34;&#34;
         return self.mb.getitem(OAM_OFFSET + self.offset + 0)
 
     @property
     def x(self):
+        &#34;&#34;&#34;
+        The X-coordinate on the screen to show the Sprite.
+
+        Returns:
+            int: X-coordinate
+        &#34;&#34;&#34;
         return self.mb.getitem(OAM_OFFSET + self.offset + 1)
 
     @property
     def tile_index(self):
         &#34;&#34;&#34;
-        Doesn&#39;t return high/low because sprites always use low
+        The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        Returns:
+            int: unsigned tile index
         &#34;&#34;&#34;
+        # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
 
     @property
-    def attributes(self):
+    def attr_obj_bg_priority(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
         attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
-        return {
-            &#34;OBJ-to-BG Priority&#34;: get_bit(attr, 7),
-            &#34;Y flip&#34;: get_bit(attr, 6),
-            &#34;X flip&#34;: get_bit(attr, 5),
-            # non-CGB only
-            &#34;Palette number&#34;: get_bit(attr, 4),
-            # CGB only
-            # &#34;Tile VRAM-bank&#34;: get_bit(attr, 3),
-            # &#34;Palette number&#34;: val &amp; 0b11,
-        }
+        return _get_bit(attr, 7)
+
+    @property
+    def attr_y_flip(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+        return _get_bit(attr, 6)
+
+    @property
+    def attr_x_flip(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+        return _get_bit(attr, 5)
+
+    @property
+    def attr_palette_number(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+        return _get_bit(attr, 4)
 
     def _get_lcdc_register(self):
         return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
 
     @property
     def tiles(self):
+        &#34;&#34;&#34;
+        The Game Boy support sprites of single-height (8x8 pixels) and double-height (8x16 pixels).
+
+        In the single-height format, one tile is used. For double-height sprites, the Game Boy will also use the tile immidiately following the index given, and render it below the first.
+
+        More information can be found in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam)
+
+        Returns:
+            list: A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
+        &#34;&#34;&#34;
         tile_index = self.tile_index
         LCDC = self._get_lcdc_register()
         if LCDC.sprite_height:
@@ -80,12 +145,23 @@ class Sprite:
 
     @property
     def on_screen(self):
+        &#34;&#34;&#34;
+        To disable sprites from being rendered on screen, developers will place the sprite outside the area of the screen. This is often a good way to determine if the sprite is inactive.
+
+        This check doesn&#39;t take transparency into account, and will only check the sprites bounding-box of 8x8 or 8x16 pixels.
+
+        Returns:
+            bool: True if the sprite has at least one pixel on screen.
+        &#34;&#34;&#34;
         LCDC = self._get_lcdc_register()
         sprite_height = 16 if LCDC.sprite_height else 16
         return (0 &lt; self.y &lt; 144 + sprite_height and
                 0 &lt; self.x &lt; 160 + 8)
 
-def get_bit(val, bit):
+    def __str__(self):
+        return f&#34;Sprite: (self.x, self.y), {self.tiles}&#34;
+
+def _get_bit(val, bit):
     # return (val &amp; (1 &lt;&lt; bit)) &gt;&gt; bit
     return (val &gt;&gt; bit) &amp; 1</code></pre>
 </details>
@@ -95,21 +171,6 @@ def get_bit(val, bit):
 <section>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="pyboy.botsupport.sprite.get_bit"><code class="name flex">
-<span>def <span class="ident">get_bit</span></span>(<span>val, bit)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_bit(val, bit):
-    # return (val &amp; (1 &lt;&lt; bit)) &gt;&gt; bit
-    return (val &gt;&gt; bit) &amp; 1</code></pre>
-</details>
-</dd>
-</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -119,48 +180,116 @@ def get_bit(val, bit):
 <span>(</span><span>mb, index)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>This class presents an interface to the sprites held in the OAM data on the Game Boy.</p>
+<p>The purpose is to make it easier to interpret events on the screen, in order to program a bot, or train an AI.</p>
+<p>Sprites are used on the Game Boy for enemy and player characters, as only sprites can have transparency, and can move at pixel-precision on the screen. The other method of graphics &ndash; tile maps &ndash; can only be placed in a grid-size of 8x8 pixels precision, and can have no transparency.</p>
+<p>By looking for specific tile indexes, you will be able to iterate through all sprites, and easy locate tile indexes corresponding to players, enemies, power-ups and so on.</p></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">class Sprite:
     def __init__(self, mb, index):
+        &#34;&#34;&#34;
+        This class presents an interface to the sprites held in the OAM data on the Game Boy.
+
+        The purpose is to make it easier to interpret events on the screen, in order to program a bot, or train an AI.
+
+        Sprites are used on the Game Boy for enemy and player characters, as only sprites can have transparency, and can move at pixel-precision on the screen. The other method of graphics -- tile maps -- can only be placed in a grid-size of 8x8 pixels precision, and can have no transparency.
+
+        By looking for specific tile indexes, you will be able to iterate through all sprites, and easy locate tile indexes corresponding to players, enemies, power-ups and so on.
+        &#34;&#34;&#34;
         self.mb = mb
         self.offset = index * 4
 
     @property
     def y(self):
+        &#34;&#34;&#34;
+        The Y-coordinate on the screen to show the Sprite.
+
+        Returns:
+            int: Y-coordinate
+        &#34;&#34;&#34;
         return self.mb.getitem(OAM_OFFSET + self.offset + 0)
 
     @property
     def x(self):
+        &#34;&#34;&#34;
+        The X-coordinate on the screen to show the Sprite.
+
+        Returns:
+            int: X-coordinate
+        &#34;&#34;&#34;
         return self.mb.getitem(OAM_OFFSET + self.offset + 1)
 
     @property
     def tile_index(self):
         &#34;&#34;&#34;
-        Doesn&#39;t return high/low because sprites always use low
+        The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        Returns:
+            int: unsigned tile index
         &#34;&#34;&#34;
+        # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
 
     @property
-    def attributes(self):
+    def attr_obj_bg_priority(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
         attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
-        return {
-            &#34;OBJ-to-BG Priority&#34;: get_bit(attr, 7),
-            &#34;Y flip&#34;: get_bit(attr, 6),
-            &#34;X flip&#34;: get_bit(attr, 5),
-            # non-CGB only
-            &#34;Palette number&#34;: get_bit(attr, 4),
-            # CGB only
-            # &#34;Tile VRAM-bank&#34;: get_bit(attr, 3),
-            # &#34;Palette number&#34;: val &amp; 0b11,
-        }
+        return _get_bit(attr, 7)
+
+    @property
+    def attr_y_flip(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+        return _get_bit(attr, 6)
+
+    @property
+    def attr_x_flip(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+        return _get_bit(attr, 5)
+
+    @property
+    def attr_palette_number(self):
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+        Returns:
+            bool: The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+        attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+        return _get_bit(attr, 4)
 
     def _get_lcdc_register(self):
         return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
 
     @property
     def tiles(self):
+        &#34;&#34;&#34;
+        The Game Boy support sprites of single-height (8x8 pixels) and double-height (8x16 pixels).
+
+        In the single-height format, one tile is used. For double-height sprites, the Game Boy will also use the tile immidiately following the index given, and render it below the first.
+
+        More information can be found in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam)
+
+        Returns:
+            list: A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
+        &#34;&#34;&#34;
         tile_index = self.tile_index
         LCDC = self._get_lcdc_register()
         if LCDC.sprite_height:
@@ -170,40 +299,133 @@ def get_bit(val, bit):
 
     @property
     def on_screen(self):
+        &#34;&#34;&#34;
+        To disable sprites from being rendered on screen, developers will place the sprite outside the area of the screen. This is often a good way to determine if the sprite is inactive.
+
+        This check doesn&#39;t take transparency into account, and will only check the sprites bounding-box of 8x8 or 8x16 pixels.
+
+        Returns:
+            bool: True if the sprite has at least one pixel on screen.
+        &#34;&#34;&#34;
         LCDC = self._get_lcdc_register()
         sprite_height = 16 if LCDC.sprite_height else 16
         return (0 &lt; self.y &lt; 144 + sprite_height and
-                0 &lt; self.x &lt; 160 + 8)</code></pre>
+                0 &lt; self.x &lt; 160 + 8)
+
+    def __str__(self):
+        return f&#34;Sprite: (self.x, self.y), {self.tiles}&#34;</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="pyboy.botsupport.sprite.Sprite.attributes"><code class="name">var <span class="ident">attributes</span></code></dt>
+<dt id="pyboy.botsupport.sprite.Sprite.attr_obj_bg_priority"><code class="name">var <span class="ident">attr_obj_bg_priority</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>To better understand this values, look in the <a href="http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam">Pan Docs: VRAM Sprite Attribute Table (OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>bool</code></strong></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
-def attributes(self):
+def attr_obj_bg_priority(self):
+    &#34;&#34;&#34;
+    To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+    Returns:
+        bool: The state of the bit in the attributes lookup.
+    &#34;&#34;&#34;
     attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
-    return {
-        &#34;OBJ-to-BG Priority&#34;: get_bit(attr, 7),
-        &#34;Y flip&#34;: get_bit(attr, 6),
-        &#34;X flip&#34;: get_bit(attr, 5),
-        # non-CGB only
-        &#34;Palette number&#34;: get_bit(attr, 4),
-        # CGB only
-        # &#34;Tile VRAM-bank&#34;: get_bit(attr, 3),
-        # &#34;Palette number&#34;: val &amp; 0b11,
-    }</code></pre>
+    return _get_bit(attr, 7)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.sprite.Sprite.attr_palette_number"><code class="name">var <span class="ident">attr_palette_number</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam">Pan Docs: VRAM Sprite Attribute Table (OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>bool</code></strong></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def attr_palette_number(self):
+    &#34;&#34;&#34;
+    To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+    Returns:
+        bool: The state of the bit in the attributes lookup.
+    &#34;&#34;&#34;
+    attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+    return _get_bit(attr, 4)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.sprite.Sprite.attr_x_flip"><code class="name">var <span class="ident">attr_x_flip</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam">Pan Docs: VRAM Sprite Attribute Table (OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>bool</code></strong></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def attr_x_flip(self):
+    &#34;&#34;&#34;
+    To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+    Returns:
+        bool: The state of the bit in the attributes lookup.
+    &#34;&#34;&#34;
+    attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+    return _get_bit(attr, 5)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.sprite.Sprite.attr_y_flip"><code class="name">var <span class="ident">attr_y_flip</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam">Pan Docs: VRAM Sprite Attribute Table (OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>bool</code></strong></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def attr_y_flip(self):
+    &#34;&#34;&#34;
+    To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+
+    Returns:
+        bool: The state of the bit in the attributes lookup.
+    &#34;&#34;&#34;
+    attr = self.mb.getitem(OAM_OFFSET + self.offset + 3)
+    return _get_bit(attr, 6)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.on_screen"><code class="name">var <span class="ident">on_screen</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>To disable sprites from being rendered on screen, developers will place the sprite outside the area of the screen. This is often a good way to determine if the sprite is inactive.</p>
+<p>This check doesn't take transparency into account, and will only check the sprites bounding-box of 8x8 or 8x16 pixels.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>bool</code></strong></dt>
+<dd>True if the sprite has at least one pixel on screen.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
 def on_screen(self):
+    &#34;&#34;&#34;
+    To disable sprites from being rendered on screen, developers will place the sprite outside the area of the screen. This is often a good way to determine if the sprite is inactive.
+
+    This check doesn&#39;t take transparency into account, and will only check the sprites bounding-box of 8x8 or 8x16 pixels.
+
+    Returns:
+        bool: True if the sprite has at least one pixel on screen.
+    &#34;&#34;&#34;
     LCDC = self._get_lcdc_register()
     sprite_height = 16 if LCDC.sprite_height else 16
     return (0 &lt; self.y &lt; 144 + sprite_height and
@@ -212,24 +434,50 @@ def on_screen(self):
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.tile_index"><code class="name">var <span class="ident">tile_index</span></code></dt>
 <dd>
-<section class="desc"><p>Doesn't return high/low because sprites always use low</p></section>
+<section class="desc"><p>The index of the tile the sprite uses. To get a better representation, see the method <a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>int</code></strong></dt>
+<dd>unsigned tile index</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
 def tile_index(self):
     &#34;&#34;&#34;
-    Doesn&#39;t return high/low because sprites always use low
+    The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+    Returns:
+        int: unsigned tile index
     &#34;&#34;&#34;
+    # Sprites can only use unsigned tile indexes in the lower tile data.
     return self.mb.getitem(OAM_OFFSET + self.offset + 2)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.tiles"><code class="name">var <span class="ident">tiles</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The Game Boy support sprites of single-height (8x8 pixels) and double-height (8x16 pixels).</p>
+<p>In the single-height format, one tile is used. For double-height sprites, the Game Boy will also use the tile immidiately following the index given, and render it below the first.</p>
+<p>More information can be found in the <a href="http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam">Pan Docs: VRAM Sprite Attribute Table (OAM)</a></p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>list</code></strong></dt>
+<dd>A list of <a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object(s) representing the graphics data for the sprite</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
 def tiles(self):
+    &#34;&#34;&#34;
+    The Game Boy support sprites of single-height (8x8 pixels) and double-height (8x16 pixels).
+
+    In the single-height format, one tile is used. For double-height sprites, the Game Boy will also use the tile immidiately following the index given, and render it below the first.
+
+    More information can be found in the [Pan Docs: VRAM Sprite Attribute Table (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam)
+
+    Returns:
+        list: A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
+    &#34;&#34;&#34;
     tile_index = self.tile_index
     LCDC = self._get_lcdc_register()
     if LCDC.sprite_height:
@@ -240,21 +488,43 @@ def tiles(self):
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.x"><code class="name">var <span class="ident">x</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The X-coordinate on the screen to show the Sprite.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>int</code></strong></dt>
+<dd>X-coordinate</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
 def x(self):
+    &#34;&#34;&#34;
+    The X-coordinate on the screen to show the Sprite.
+
+    Returns:
+        int: X-coordinate
+    &#34;&#34;&#34;
     return self.mb.getitem(OAM_OFFSET + self.offset + 1)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.y"><code class="name">var <span class="ident">y</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The Y-coordinate on the screen to show the Sprite.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>int</code></strong></dt>
+<dd>Y-coordinate</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
 def y(self):
+    &#34;&#34;&#34;
+    The Y-coordinate on the screen to show the Sprite.
+
+    Returns:
+        int: Y-coordinate
+    &#34;&#34;&#34;
     return self.mb.getitem(OAM_OFFSET + self.offset + 0)</code></pre>
 </details>
 </dd>
@@ -274,17 +544,15 @@ def y(self):
 <li><code><a title="pyboy.botsupport" href="index.html">pyboy.botsupport</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="pyboy.botsupport.sprite.get_bit" href="#pyboy.botsupport.sprite.get_bit">get_bit</a></code></li>
-</ul>
-</li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
 <h4><code><a title="pyboy.botsupport.sprite.Sprite" href="#pyboy.botsupport.sprite.Sprite">Sprite</a></code></h4>
-<ul class="two-column">
-<li><code><a title="pyboy.botsupport.sprite.Sprite.attributes" href="#pyboy.botsupport.sprite.Sprite.attributes">attributes</a></code></li>
+<ul class="">
+<li><code><a title="pyboy.botsupport.sprite.Sprite.attr_obj_bg_priority" href="#pyboy.botsupport.sprite.Sprite.attr_obj_bg_priority">attr_obj_bg_priority</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.attr_palette_number" href="#pyboy.botsupport.sprite.Sprite.attr_palette_number">attr_palette_number</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.attr_x_flip" href="#pyboy.botsupport.sprite.Sprite.attr_x_flip">attr_x_flip</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.attr_y_flip" href="#pyboy.botsupport.sprite.Sprite.attr_y_flip">attr_y_flip</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.on_screen" href="#pyboy.botsupport.sprite.Sprite.on_screen">on_screen</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.tile_index" href="#pyboy.botsupport.sprite.Sprite.tile_index">tile_index</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles">tiles</a></code></li>

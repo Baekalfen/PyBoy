@@ -13,6 +13,23 @@ class TileMap:
         """
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as "background" and "window".
 
+        This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile at a given coordinate.
+
+        Example:
+        ```
+        >>> tilemap = pyboy.get_window_tile_map()
+        >>> tile = tilemap[10,10]
+        >>> print(tile)
+        34
+        >>> print(tile_map[0:10,10])
+        [43, 54, 23, 23, 23, 54, 12, 54, 54, 23]
+        >>> print(tile_map[0:10,0:4])
+        [[43, 54, 23, 23, 23, 54, 12, 54, 54, 23],
+         [43, 54, 43, 23, 23, 43, 12, 39, 54, 23],
+         [43, 54, 23, 12, 87, 54, 12, 54, 21, 23],
+         [43, 54, 23, 43, 23, 87, 12, 50, 54, 72]]
+        ```
+
         """
         self.mb = mb
 
@@ -30,13 +47,32 @@ class TileMap:
     def _get_lcdc_register(self):
         return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
 
+    @property
+    def signed_tile_index(self):
+        """
+        The Game Boy uses both signed and unsigned tile indexes. Read more about it in [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+
+        Returns:
+            int: Address in the tile map to read a tile index.
+        """
+        return self.high_tile_data
+
     def get_tile_address(self, x, y):
         """
-        Returns the memory address for a tile at the given coordinate in the tile map.
+        Returns the memory address in the tilemap for the tile at the given coordinate. The address contains the index of tile which will be shown at this position. This should not be confused with the actual tile data of `pyboy.botsupport.tile.Tile.data_address`.
 
-        This can be used as an global identifier for the specific location of a tile in a tile map.
+        This can be used as an global identifier for the specific location in a tile map.
 
-        Be aware, that the tile referenced at the memory address might change to display something else on the screen.
+        Be aware, that the tile index referenced at the memory address might change between calls to `pyboy.pyboy.PyBoy.tick`. And the tile data for the same tile index might also change to display something else on the screen.
+
+        The index might also be a signed number. Depending on if it is signed or not, will change where the tile data is read from. Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view. You can read how the indexes work in the [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+
+        Args:
+            x (int): X-coordinate in this tile map.
+            y (int): Y-coordinate in this tile map.
+
+        Returns:
+            int: Address in the tile map to read a tile index.
         """
 
         if not 0 <= x < 32:
@@ -47,15 +83,25 @@ class TileMap:
 
     def get_tile(self, x, y):
         """
-        Returns a `pyboy.botsupport.Tile` object of the tile at the given coordinate in the tile map.
+        Provides a `pyboy.botsupport.tile.Tile`-object which allows for easy interpretation of the tile data. The object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.botsupport.tile.Tile`-objects might be returned from two different coordinates in the tile map.
+
+        Args:
+            x (int): X-coordinate in this tile map.
+            y (int): Y-coordinate in this tile map.
+
+        Returns:
+            `pyboy.botsupport.tile.Tile`: Tile object corresponding to the tile index at the given coordinate in the tile map.
         """
         return Tile(self.mb, self.get_tile_index(x,y)[1], self.high_tile_data)
 
     def get_tile_index(self, x, y):
         """
-        Returns the index of the tile at the given coordinate in the tile map.
+        Returns the index of the tile at the given coordinate in the tile map. The index can be used to quickly identify what is on the screen through this tile view.
 
-        This can be used to identify tiles
+        Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view. You can read how the indexes work in the [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+
+        Returns:
+            int: Signed or unsigned tile index.
         """
 
         tile = self.mb.getitem(self.get_tile_address(x,y))
@@ -66,7 +112,14 @@ class TileMap:
 
     def get_tile_matrix(self):
         """
-        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is an object of `pyboy.botsupport.Tile`.
+        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile index to be shown on screen for each position.
+
+        The index can be used to quickly identify what is on the screen through this tile view.
+
+        Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view. You can read how the indexes work in the [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+
+        Returns:
+            list: Nested list creating a 32x32 matrix of tile indexes.
         """
         return self[:,:]
 
@@ -79,8 +132,14 @@ class TileMap:
                 "\n".join([f"{i: <3}| " + "".join([str(tile.index).ljust(adjust) for tile in line]) for i,line in enumerate(self.get_tile_matrix())])
             )
 
-    def use_tile_objects(self, v):
-        self._use_tile_objects = v
+    def use_tile_objects(self, switch):
+        """
+        Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
+
+        Args:
+            switch (bool): If True, accesses will return `pyboy.botsupport.tile.Tile`-object. If False, accesses will return an `int`.
+        """
+        self._use_tile_objects = switch
 
     def __getitem__(self, xy):
         x, y = xy

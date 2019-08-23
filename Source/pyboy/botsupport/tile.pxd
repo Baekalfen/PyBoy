@@ -13,11 +13,11 @@ from pyboy.mb.mb cimport Motherboard
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 
-cdef unsigned char getcolorcode(unsigned char, unsigned char, unsigned char)
+cdef unsigned char _getcolorcode(unsigned char, unsigned char, unsigned char)
 
 cdef class Tile:
     cdef Motherboard mb
-    cdef bint high_tile_data
+    cdef bint _signed_tile_data
     cdef int _index
     cdef int _data_address
 
@@ -26,4 +26,4 @@ cdef class Tile:
     cpdef uint32_t[:,:] image_data(self)
     cpdef object image(self)
     cpdef object image_ndarray(self)
-    cpdef void highlight(self)
+    # cpdef void highlight(self)
