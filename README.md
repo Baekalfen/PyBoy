@@ -56,6 +56,7 @@ For the more major features, there are six that you can give a try. They are als
 * Link Cable
 * _(Experimental)_ Time travel - rewind time in the emulator
 * _(Experimental)_ AI - use the `botsupport` to train a neural network
+* _(Experimental)_ Bot Support - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
 
