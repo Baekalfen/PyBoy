@@ -11,7 +11,6 @@ from pyboy import PyBoy
 from pyboy.logger import logger, addconsolehandler
 addconsolehandler()
 
-# TODO: Move all argv to main.py and make a settings object to pass to PyBoy
 if "--no-logger" in sys.argv:
     logger.disabled = True
 
