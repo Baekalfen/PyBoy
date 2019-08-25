@@ -33,9 +33,9 @@ install:
 	CFLAGS='-w' ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
 
 test: clean build
-	${PY} tetris_bot.py ROMs/Tetris.gb
+	${PY} tetris_bot.py ROMs/Tetris.gb --quiet
 	${PY} -m pytest -n${THREADS} -v
-	${PYPY} tetris_bot.py ROMs/Tetris.gb
+	${PYPY} tetris_bot.py ROMs/Tetris.gb --quiet
 	${PYPY} -m pytest -n${THREADS} -v
 
 test_quick: clean build

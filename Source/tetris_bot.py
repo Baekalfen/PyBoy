@@ -48,7 +48,11 @@ if __name__ == "__main__":
             filename = getROM(ROMdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy(filename, window_type='SDL2', window_scale=3, bootrom_file=bootROM)
+        if "--quiet" in sys.argv:
+            window = 'headless'
+        else:
+            window = 'SDL2'
+        pyboy = PyBoy(filename, window_type=window, window_scale=3, bootrom_file=bootROM)
         pyboy.set_emulation_speed(False)
         print ("Screen pos:", pyboy.get_screen_position())
 

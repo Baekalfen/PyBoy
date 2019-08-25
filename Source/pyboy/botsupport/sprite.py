@@ -3,10 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+"""
+This class presents an interface to the sprites held in the OAM data on the Game Boy.
+"""
+
 from .constants import OAM_OFFSET, LCDC_OFFSET
 from .tile import Tile
 from pyboy.lcd import LCDCRegister
-
 
 class Sprite:
     def __init__(self, mb, index):
@@ -45,13 +48,16 @@ class Sprite:
     @property
     def tile_index(self):
         """
-        The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+        The index/identifier of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (`tile_index + 1`).
 
         Returns:
             int: unsigned tile index
         """
         # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
+    tile_identifier = tile_index # Same as index, when there is no signed indexes
 
     @property
     def attr_obj_bg_priority(self):
@@ -115,9 +121,9 @@ class Sprite:
         tile_index = self.tile_index
         LCDC = self._get_lcdc_register()
         if LCDC.sprite_height:
-            return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+            return [Tile(self.mb, index=(tile_index, False)), Tile(self.mb, index=(tile_index + 1, False))]
         else:
-            return [Tile(self.mb, tile_index, False)]
+            return [Tile(self.mb, index=(tile_index, False))]
 
     @property
     def on_screen(self):
@@ -133,6 +139,9 @@ class Sprite:
         sprite_height = 16 if LCDC.sprite_height else 16
         return (0 < self.y < 144 + sprite_height and
                 0 < self.x < 160 + 8)
+
+    def __eq__(self, other):
+        return self.offset == other.offset
 
     def __str__(self):
         return f"Sprite: (self.x, self.y), {self.tiles}"

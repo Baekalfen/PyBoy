@@ -2,6 +2,9 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+"""
+Memory constants used internally to calculate tile and tile map addresses.
+"""
 
 VRAM_OFFSET = 0x8000
 LCDC_OFFSET = 0xFF40

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.6.3" />
 <title>pyboy.botsupport.sprite API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="This class presents an interface to the sprites held in the OAM data on the Game Boy." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,6 +20,7 @@
 <h1 class="title">Module <code>pyboy.botsupport.sprite</code></h1>
 </header>
 <section id="section-intro">
+<p>This class presents an interface to the sprites held in the OAM data on the Game Boy.</p>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">#
@@ -27,10 +28,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+&#34;&#34;&#34;
+This class presents an interface to the sprites held in the OAM data on the Game Boy.
+&#34;&#34;&#34;
+
 from .constants import OAM_OFFSET, LCDC_OFFSET
 from .tile import Tile
 from pyboy.lcd import LCDCRegister
-
 
 class Sprite:
     def __init__(self, mb, index):
@@ -69,13 +73,16 @@ class Sprite:
     @property
     def tile_index(self):
         &#34;&#34;&#34;
-        The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+        The index/identifier of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (`tile_index + 1`).
 
         Returns:
             int: unsigned tile index
         &#34;&#34;&#34;
         # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
+    tile_identifier = tile_index # Same as index, when there is no signed indexes
 
     @property
     def attr_obj_bg_priority(self):
@@ -139,9 +146,9 @@ class Sprite:
         tile_index = self.tile_index
         LCDC = self._get_lcdc_register()
         if LCDC.sprite_height:
-            return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+            return [Tile(self.mb, index=(tile_index, False)), Tile(self.mb, index=(tile_index + 1, False))]
         else:
-            return [Tile(self.mb, tile_index, False)]
+            return [Tile(self.mb, index=(tile_index, False))]
 
     @property
     def on_screen(self):
@@ -157,6 +164,9 @@ class Sprite:
         sprite_height = 16 if LCDC.sprite_height else 16
         return (0 &lt; self.y &lt; 144 + sprite_height and
                 0 &lt; self.x &lt; 160 + 8)
+
+    def __eq__(self, other):
+        return self.offset == other.offset
 
     def __str__(self):
         return f&#34;Sprite: (self.x, self.y), {self.tiles}&#34;
@@ -223,13 +233,16 @@ def _get_bit(val, bit):
     @property
     def tile_index(self):
         &#34;&#34;&#34;
-        The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+        The index/identifier of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (`tile_index + 1`).
 
         Returns:
             int: unsigned tile index
         &#34;&#34;&#34;
         # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
+    tile_identifier = tile_index # Same as index, when there is no signed indexes
 
     @property
     def attr_obj_bg_priority(self):
@@ -293,9 +306,9 @@ def _get_bit(val, bit):
         tile_index = self.tile_index
         LCDC = self._get_lcdc_register()
         if LCDC.sprite_height:
-            return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+            return [Tile(self.mb, index=(tile_index, False)), Tile(self.mb, index=(tile_index + 1, False))]
         else:
-            return [Tile(self.mb, tile_index, False)]
+            return [Tile(self.mb, index=(tile_index, False))]
 
     @property
     def on_screen(self):
@@ -311,6 +324,9 @@ def _get_bit(val, bit):
         sprite_height = 16 if LCDC.sprite_height else 16
         return (0 &lt; self.y &lt; 144 + sprite_height and
                 0 &lt; self.x &lt; 160 + 8)
+
+    def __eq__(self, other):
+        return self.offset == other.offset
 
     def __str__(self):
         return f&#34;Sprite: (self.x, self.y), {self.tiles}&#34;</code></pre>
@@ -432,9 +448,10 @@ def on_screen(self):
             0 &lt; self.x &lt; 160 + 8)</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.sprite.Sprite.tile_index"><code class="name">var <span class="ident">tile_index</span></code></dt>
+<dt id="pyboy.botsupport.sprite.Sprite.tile_identifier"><code class="name">var <span class="ident">tile_identifier</span></code></dt>
 <dd>
-<section class="desc"><p>The index of the tile the sprite uses. To get a better representation, see the method <a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a>.</p>
+<section class="desc"><p>The index/identifier of the tile the sprite uses. To get a better representation, see the method <a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a>.</p>
+<p>For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (<code>tile_index + 1</code>).</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>int</code></strong></dt>
@@ -445,7 +462,34 @@ def on_screen(self):
 <pre><code class="python">@property
 def tile_index(self):
     &#34;&#34;&#34;
-    The index of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+    The index/identifier of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+    For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (`tile_index + 1`).
+
+    Returns:
+        int: unsigned tile index
+    &#34;&#34;&#34;
+    # Sprites can only use unsigned tile indexes in the lower tile data.
+    return self.mb.getitem(OAM_OFFSET + self.offset + 2)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.sprite.Sprite.tile_index"><code class="name">var <span class="ident">tile_index</span></code></dt>
+<dd>
+<section class="desc"><p>The index/identifier of the tile the sprite uses. To get a better representation, see the method <a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a>.</p>
+<p>For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (<code>tile_index + 1</code>).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>int</code></strong></dt>
+<dd>unsigned tile index</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def tile_index(self):
+    &#34;&#34;&#34;
+    The index/identifier of the tile the sprite uses. To get a better representation, see the method `pyboy.botsupport.sprite.Sprite.tiles`.
+
+    For double-height sprites, this will only give the index/identifier of the first tile. The second tile will always be the one immediately following the first (`tile_index + 1`).
 
     Returns:
         int: unsigned tile index
@@ -481,9 +525,9 @@ def tiles(self):
     tile_index = self.tile_index
     LCDC = self._get_lcdc_register()
     if LCDC.sprite_height:
-        return [Tile(self.mb, tile_index, False), Tile(self.mb, tile_index + 1, False)]
+        return [Tile(self.mb, index=(tile_index, False)), Tile(self.mb, index=(tile_index + 1, False))]
     else:
-        return [Tile(self.mb, tile_index, False)]</code></pre>
+        return [Tile(self.mb, index=(tile_index, False))]</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.x"><code class="name">var <span class="ident">x</span></code></dt>
@@ -554,6 +598,7 @@ def y(self):
 <li><code><a title="pyboy.botsupport.sprite.Sprite.attr_x_flip" href="#pyboy.botsupport.sprite.Sprite.attr_x_flip">attr_x_flip</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.attr_y_flip" href="#pyboy.botsupport.sprite.Sprite.attr_y_flip">attr_y_flip</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.on_screen" href="#pyboy.botsupport.sprite.Sprite.on_screen">on_screen</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.tile_identifier" href="#pyboy.botsupport.sprite.Sprite.tile_identifier">tile_identifier</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.tile_index" href="#pyboy.botsupport.sprite.Sprite.tile_index">tile_index</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles">tiles</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.x" href="#pyboy.botsupport.sprite.Sprite.x">x</a></code></li>

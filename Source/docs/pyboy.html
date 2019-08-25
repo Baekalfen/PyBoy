@@ -65,6 +65,7 @@ class PyBoy:
             debugging = False,
             profiling = False,
             record_input_file = None,
+            disable_input = False,
         ):
         &#34;&#34;&#34;
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class multiple times.
@@ -87,6 +88,7 @@ class PyBoy:
             debugging (bool): Whether or not to enable some extended debugging features.
             profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
             record_input_file (str): Filepath to save all recorded input for replay later.
+            disable_input (bool): Enable to ignore all user input.
         &#34;&#34;&#34;
         self.gamerom_file = gamerom_file
 
@@ -98,7 +100,8 @@ class PyBoy:
             self.window.set_lcd(self.mb.lcd)
 
         if loadstate_file:
-            self.mb.load_state(loadstate_file)
+            with open(loadstate_file, &#39;rb&#39;) as f:
+                self.mb.load_state(f)
 
         self.avg_emu = 0
         self.avg_cpu = 0
@@ -107,6 +110,7 @@ class PyBoy:
         self.screen_recorder = None
         self.paused = False
         self.autopause = autopause
+        self.disable_input = disable_input
         self.record_input = bool(record_input_file)
         if self.record_input:
             logger.info(&#34;Recording event inputs&#34;)
@@ -130,6 +134,8 @@ class PyBoy:
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
         events = self.window.get_events()
+        if self.disable_input:
+            events = []
 
         if self.record_input and len(events) != 0:
             self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
@@ -331,6 +337,17 @@ class PyBoy:
             `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
         &#34;&#34;&#34;
         return botsupport.Sprite(self.mb, index)
+
+    def get_tile(self, identifier):
+        &#34;&#34;&#34;
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a `pyboy.botsupport.tile.Tile`-object for given identifier.
+
+        The `pyboy.botsupport.tile.Tile.identifier` should not be confused with the `pyboy.botsupport.tile.Tile.index`. The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See the `pyboy.botsupport.tile.Tile` object for more information.
+
+        Returns:
+            `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+        &#34;&#34;&#34;
+        return botsupport.Tile(self.mb, identifier=identifier)
 
     def get_background_tile_map(self):
         &#34;&#34;&#34;
@@ -437,7 +454,7 @@ class PyBoy:
 <dl>
 <dt id="pyboy.pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom_file, *, window_type=None, window_scale=3, bootrom_file=None, autopause=False, loadstate_file=None, debugging=False, profiling=False, record_input_file=None)</span>
+<span>(</span><span>gamerom_file, *, window_type=None, window_scale=3, bootrom_file=None, autopause=False, loadstate_file=None, debugging=False, profiling=False, record_input_file=None, disable_input=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class multiple times.</p>
@@ -467,6 +484,8 @@ class PyBoy:
 <dd>This will profile the emulator, and report which opcodes are being used the most.</dd>
 <dt><strong><code>record_input_file</code></strong> :&ensp;<code>str</code></dt>
 <dd>Filepath to save all recorded input for replay later.</dd>
+<dt><strong><code>disable_input</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Enable to ignore all user input.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
@@ -482,6 +501,7 @@ class PyBoy:
             debugging = False,
             profiling = False,
             record_input_file = None,
+            disable_input = False,
         ):
         &#34;&#34;&#34;
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class multiple times.
@@ -504,6 +524,7 @@ class PyBoy:
             debugging (bool): Whether or not to enable some extended debugging features.
             profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
             record_input_file (str): Filepath to save all recorded input for replay later.
+            disable_input (bool): Enable to ignore all user input.
         &#34;&#34;&#34;
         self.gamerom_file = gamerom_file
 
@@ -515,7 +536,8 @@ class PyBoy:
             self.window.set_lcd(self.mb.lcd)
 
         if loadstate_file:
-            self.mb.load_state(loadstate_file)
+            with open(loadstate_file, &#39;rb&#39;) as f:
+                self.mb.load_state(f)
 
         self.avg_emu = 0
         self.avg_cpu = 0
@@ -524,6 +546,7 @@ class PyBoy:
         self.screen_recorder = None
         self.paused = False
         self.autopause = autopause
+        self.disable_input = disable_input
         self.record_input = bool(record_input_file)
         if self.record_input:
             logger.info(&#34;Recording event inputs&#34;)
@@ -547,6 +570,8 @@ class PyBoy:
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
         events = self.window.get_events()
+        if self.disable_input:
+            events = []
 
         if self.record_input and len(events) != 0:
             self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
@@ -748,6 +773,17 @@ class PyBoy:
             `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
         &#34;&#34;&#34;
         return botsupport.Sprite(self.mb, index)
+
+    def get_tile(self, identifier):
+        &#34;&#34;&#34;
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a `pyboy.botsupport.tile.Tile`-object for given identifier.
+
+        The `pyboy.botsupport.tile.Tile.identifier` should not be confused with the `pyboy.botsupport.tile.Tile.index`. The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See the `pyboy.botsupport.tile.Tile` object for more information.
+
+        Returns:
+            `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+        &#34;&#34;&#34;
+        return botsupport.Tile(self.mb, identifier=identifier)
 
     def get_background_tile_map(self):
         &#34;&#34;&#34;
@@ -1088,6 +1124,28 @@ class PyBoy:
     return botsupport.Sprite(self.mb, index)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.pyboy.PyBoy.get_tile"><code class="name flex">
+<span>def <span class="ident">get_tile</span></span>(<span>self, identifier)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a <a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>-object for given identifier.</p>
+<p>The <a title="pyboy.botsupport.tile.Tile.identifier" href="botsupport/tile.html#pyboy.botsupport.tile.Tile.identifier"><code>Tile.identifier</code></a> should not be confused with the <a title="pyboy.botsupport.tile.Tile.index" href="botsupport/tile.html#pyboy.botsupport.tile.Tile.index"><code>Tile.index</code></a>. The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See the <a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>: A Tile object for the given identifier.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_tile(self, identifier):
+    &#34;&#34;&#34;
+    The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a `pyboy.botsupport.tile.Tile`-object for given identifier.
+
+    The `pyboy.botsupport.tile.Tile.identifier` should not be confused with the `pyboy.botsupport.tile.Tile.index`. The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See the `pyboy.botsupport.tile.Tile` object for more information.
+
+    Returns:
+        `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+    &#34;&#34;&#34;
+    return botsupport.Tile(self.mb, identifier=identifier)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.pyboy.PyBoy.get_window_tile_map"><code class="name flex">
 <span>def <span class="ident">get_window_tile_map</span></span>(<span>self)</span>
 </code></dt>
@@ -1325,6 +1383,8 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
     t_start = time.perf_counter() # Change to _ns when PyPy supports it
 
     events = self.window.get_events()
+    if self.disable_input:
+        events = []
 
     if self.record_input and len(events) != 0:
         self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
@@ -1434,6 +1494,7 @@ the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.se
 <li><code><a title="pyboy.pyboy.PyBoy.get_screen_position" href="#pyboy.pyboy.PyBoy.get_screen_position">get_screen_position</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_serial" href="#pyboy.pyboy.PyBoy.get_serial">get_serial</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_sprite" href="#pyboy.pyboy.PyBoy.get_sprite">get_sprite</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_tile" href="#pyboy.pyboy.PyBoy.get_tile">get_tile</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_window_tile_map" href="#pyboy.pyboy.PyBoy.get_window_tile_map">get_window_tile_map</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.load_state" href="#pyboy.pyboy.PyBoy.load_state">load_state</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.save_state" href="#pyboy.pyboy.PyBoy.save_state">save_state</a></code></li>

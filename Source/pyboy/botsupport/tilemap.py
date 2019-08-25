@@ -3,17 +3,20 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+"""
+The Game Boy has two tile maps, which defines what is rendered on the screen.
+"""
+
 from .tile import Tile
 from .constants import HIGH_TILEMAP, LOW_TILEMAP, LCDC_OFFSET
 from pyboy.lcd import LCDCRegister
-
 
 class TileMap:
     def __init__(self, mb, window=False):
         """
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as "background" and "window".
 
-        This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile at a given coordinate.
+        This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile identifier at a given coordinate.
 
         Example:
         ```
@@ -29,7 +32,6 @@ class TileMap:
          [43, 54, 23, 12, 87, 54, 12, 54, 21, 23],
          [43, 54, 23, 43, 23, 87, 12, 50, 54, 72]]
         ```
-
         """
         self.mb = mb
 
@@ -40,8 +42,8 @@ class TileMap:
         else:
             self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
 
-        self.high_tile_data = bool(LCDC.tiledata_select)
-        # self.map_offset = HIGH_TILEMAP if self.high_tile_data else LOW_TILEMAP
+        self.signed_tile_data = bool(LCDC.tiledata_select)
+        # self.map_offset = HIGH_TILEMAP if self.signed_tile_data else LOW_TILEMAP
         self._use_tile_objects = False
 
     def _get_lcdc_register(self):
@@ -50,12 +52,12 @@ class TileMap:
     @property
     def signed_tile_index(self):
         """
-        The Game Boy uses both signed and unsigned tile indexes. Read more about it in [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        The Game Boy uses both signed and unsigned tile indexes. Use this attribute to identify which is used. Read more about it in [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
         Returns:
-            int: Address in the tile map to read a tile index.
+            bool: Whether this tile map uses signed tile indexes.
         """
-        return self.high_tile_data
+        return self.signed_tile_data
 
     def get_tile_address(self, x, y):
         """
@@ -92,23 +94,43 @@ class TileMap:
         Returns:
             `pyboy.botsupport.tile.Tile`: Tile object corresponding to the tile index at the given coordinate in the tile map.
         """
-        return Tile(self.mb, self.get_tile_index(x,y)[1], self.high_tile_data)
+        return Tile(self.mb, index=(self.get_tile_index(x,y)[1], self.signed_tile_data))
 
-    def get_tile_index(self, x, y):
+    def get_tile_identifier(self, x, y):
         """
-        Returns the index of the tile at the given coordinate in the tile map. The index can be used to quickly identify what is on the screen through this tile view.
+        Returns an identifier of the tile at the given coordinate in the tile map. The identifier can be used to quickly recognize what is on the screen through this tile view.
 
-        Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view. You can read how the indexes work in the [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        This identifier unifies the otherwise complicated indexing system on the Game Boy into a single range from 0-384.
+
+        Use this instead of `pyboy.botsupport.tilemap.TileMap.get_tile_index`, if you want a simple way to identify tiles without researching the quirks of tile indexes used in the Game Boy.
 
         Returns:
-            int: Signed or unsigned tile index.
+            int: Tile identifier.
         """
 
         tile = self.mb.getitem(self.get_tile_address(x,y))
-        if self.high_tile_data:
-            return (self.high_tile_data, (tile ^ 0x80) - 128)
+        if self.signed_tile_data:
+            return ((tile ^ 0x80) - 128) + 0xFF
         else:
-            return (self.high_tile_data, tile)
+            return tile
+
+    def get_tile_index(self, x, y):
+        """
+        Returns the index of the tile at the given coordinate in the tile map.
+
+        Consider using `pyboy.botsupport.tilemap.TileMap.get_tile_identifier` if you want a simple way to identify tiles in the tile map.
+
+        You can read how the indexes work in the [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+
+        Returns:
+            tuple (bool, int): First value indicates if the index is signed. The second value is the index. Both are needed for comparison.
+        """
+
+        tile = self.mb.getitem(self.get_tile_address(x,y))
+        if self.signed_tile_data:
+            return (self.signed_tile_data, (tile ^ 0x80) - 128)
+        else:
+            return (self.signed_tile_data, tile)
 
     def get_tile_matrix(self):
         """
@@ -126,7 +148,7 @@ class TileMap:
     def __str__(self):
         adjust = 4
         return (
-                f"Tile Map Address: {self.map_offset:#0{6}x}, High Tile Data: {'Yes' if self.high_tile_data else 'No'}" +
+                f"Tile Map Address: {self.map_offset:#0{6}x}, High Tile Data: {'Yes' if self.signed_tile_data else 'No'}" +
                 " "*5 + "".join([f"{i: <4}" for i in range(32)]) + "\n" +
                 "_"*(adjust*32+2) + "\n" +
                 "\n".join([f"{i: <3}| " + "".join([str(tile.index).ljust(adjust) for tile in line]) for i,line in enumerate(self.get_tile_matrix())])
@@ -158,7 +180,7 @@ class TileMap:
         if self._use_tile_objects:
             tile_fun = self.get_tile
         else:
-            tile_fun = lambda x,y: self.get_tile_index(x,y)[1]
+            tile_fun = lambda x,y: self.get_tile_identifier(x,y)
 
         if x_slice and y_slice:
             return [[tile_fun(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]

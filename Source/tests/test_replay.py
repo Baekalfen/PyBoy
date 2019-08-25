@@ -30,7 +30,7 @@ def verify_screen_image_np(pyboy, saved_array):
     return match
 
 def replay(ROM, replay, window='headless', verify=True):
-    pyboy = PyBoy(ROM, window_type=window, bootrom_file=boot_rom)
+    pyboy = PyBoy(ROM, window_type=window, bootrom_file=boot_rom, disable_input=True)
     pyboy.set_emulation_speed(False)
     with open(replay, 'rb') as f:
         recorded_input = json.loads(zlib.decompress(f.read()).decode('ascii'))
