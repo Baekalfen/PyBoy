@@ -26,7 +26,7 @@ if argv_loadstate:
     idx = sys.argv.index("--loadstate")
     assert len(sys.argv) > idx+1
     argv_load_state_file = sys.argv[idx+1]
-    assert argv_load_state_file[0] != '-', "Output file looks like an argument"
+    assert argv_load_state_file[0] != '-', "Load state file looks like an argument"
 
 argv_record_input_file = None
 argv_record_input = "--record-input" in sys.argv
