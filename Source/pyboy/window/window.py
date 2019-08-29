@@ -5,7 +5,6 @@
 
 from ..logger import logger
 
-
 ROWS, COLS = 144, 160
 
 

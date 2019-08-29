@@ -3,20 +3,22 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
-sys.path.append(".") # Adds higher directory to python modules path.
-
-import json
-import zlib
 import base64
+import json
+import sys
+import zlib
+
 import numpy as np
 
-from pyboy import windowevent
-from pyboy import PyBoy
+from pyboy import PyBoy, windowevent
+
+sys.path.append(".") # Adds higher directory to python modules path.
+
 
 boot_rom = "ROMs/DMG_ROM.bin"
 
 event_filter = [windowevent.PRESS_SPEED_UP, windowevent.RELEASE_SPEED_UP]
+
 
 def verify_screen_image_np(pyboy, saved_array):
     match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.get_screen_ndarray())
@@ -29,14 +31,22 @@ def verify_screen_image_np(pyboy, saved_array):
     #     breakpoint()
     return match
 
+
 def replay(ROM, replay, window='headless', verify=True):
     pyboy = PyBoy(ROM, window_type=window, bootrom_file=boot_rom, disable_input=True)
-    pyboy.set_emulation_speed(False)
+    pyboy.set_emulation_speed(0)
     with open(replay, 'rb') as f:
         recorded_input = json.loads(zlib.decompress(f.read()).decode('ascii'))
 
     # Filters out the blacklisted events
-    recorded_input = list(map(lambda event_tuple: (event_tuple[0], list(filter(lambda x: x not in event_filter, event_tuple[1])), event_tuple[2]), recorded_input))
+    recorded_input = list(
+        map(lambda event_tuple: (
+            event_tuple[0],
+            list(filter(lambda x: x not in event_filter, event_tuple[1])),
+            event_tuple[2]
+            ),
+            recorded_input)
+        )
 
     frame_count = 0
     next_event = recorded_input.pop(0)
@@ -53,15 +63,18 @@ def replay(ROM, replay, window='headless', verify=True):
 
     pyboy.stop(save=False)
 
+
 def test_pokemon():
     replay("ROMs/POKEMON BLUE.gb", "tests/replays/pokemon_blue.replay")
+
 
 def test_tetris():
     replay("ROMs/Tetris.gb", "tests/replays/tetris.replay")
 
+
 def test_supermarioland():
     replay("ROMs/SuperMarioLand.gb", "tests/replays/supermarioland.replay")
 
+
 def test_kirby():
     replay("ROMs/Kirby.gb", "tests/replays/kirby.replay")
-

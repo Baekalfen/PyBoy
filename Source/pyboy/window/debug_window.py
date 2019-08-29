@@ -10,13 +10,13 @@ except ImportError:
     cythonmode = False
 
 import ctypes
-import sdl2
-import sdl2.ext
 from array import array
 
-from .window_sdl2 import SDLWindow
+import sdl2
+import sdl2.ext
+
 from .. import windowevent
-from .window_sdl2 import KEY_UP, KEY_DOWN
+from .window_sdl2 import KEY_DOWN, KEY_UP, SDLWindow
 
 # from ..botsupport import Sprite
 
@@ -48,7 +48,6 @@ def get_color_code(byte1, byte2, offset):
     # 1 0 0 1 0 0 0 1 <- byte1
     # 0 1 1 1 1 1 0 0 <- byte2
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1) # 2bit color code
-
 
 
 def make_buffer(w, h):
@@ -207,15 +206,20 @@ class SpriteWindow(Window):
     #             if tile_index > 255:
     #                 tile_index -= 256
     #             tile_index = (tile_index ^ 0x80) - 128
-    #             print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8800-0x97FF (signed index)")
+    #             print(
+    #                 f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+    #                 f"Memory area: 0x8800-0x97FF (signed index)"
+    #             )
     #         else:
     #             if tile_index > 255:
     #                 print("Index tile out of bounds, when using unsigned index")
     #                 return NO_TILE # Invalid index with tiledata select
-    #             print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8000-0x8FFF (unsigned index)")
+    #             print(
+    #                 f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+    #                 f"Memory area: 0x8000-0x8FFF (unsigned index)"
+    #             )
     #         return tile_index
     #     return NO_TILE
-
 
 
 class SpriteViewWindow(Window):
@@ -268,14 +272,21 @@ class TileWindow(Window):
                 if tile_index > 255:
                     tile_index -= 256
                 tile_index = (tile_index ^ 0x80) - 128
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8800-0x97FF (signed index)")
+                print(
+                    f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                    f"Memory area: 0x8800-0x97FF (signed index)"
+                )
             else:
                 if tile_index > 255:
                     print("Index tile out of bounds, when using unsigned index")
                     return NO_TILE # Invalid index with tiledata select
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8000-0x8FFF (unsigned index)")
+                print(
+                    f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                    f"Memory area: 0x8000-0x8FFF (unsigned index)"
+                )
             return tile_index
         return NO_TILE
+
 
 class TileViewWindow(Window):
 
@@ -346,13 +357,13 @@ class TileViewWindow(Window):
             if self.lcd.LCDC.tiledata_select == 0:
                 # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset
                 tile_index = (tile_index ^ 0x80) - 128
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8800-0x97FF (signed index)")
+                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                      f"Memory area: 0x8800-0x97FF (signed index)")
             else:
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8000-0x8FFF (unsigned index)")
+                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                      f"Memory area: 0x8000-0x8FFF (unsigned index)")
             return tile_index
         return NO_TILE
-
-
 
 
 class DebugWindow(SDLWindow):
@@ -376,7 +387,8 @@ class DebugWindow(SDLWindow):
 
         self.tile_data_width = 16*8 # Change the 16 to however wide you want the tile window
         self.tile_data_height = ((TILES*8) // self.tile_data_width)*8
-        self.tile = TileWindow(lcd, self.tile_data_width, self.tile_data_height, self.scale, b"Tile Data", (0x240*self.scale, 0))
+        self.tile = TileWindow(lcd, self.tile_data_width, self.tile_data_height,
+                               self.scale, b"Tile Data", (0x240*self.scale, 0))
 
     def stop(self):
         self.tile.stop()
@@ -431,7 +443,7 @@ class DebugWindow(SDLWindow):
                 click = event.type == sdl2.SDL_MOUSEBUTTONUP and event.button.button == sdl2.SDL_BUTTON_LEFT
                 if ((0 <= event.motion.x < 2**16) and
                     (0 <= event.motion.y < 2**16) and
-                    (0 <= event.motion.windowID < 2**16)):
+                        (0 <= event.motion.windowID < 2**16)):
                     self.mouse(click, event.motion.windowID, event.motion.x, event.motion.y)
 
         return events

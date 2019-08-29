@@ -4,18 +4,19 @@
 #
 
 import json
-import time
+import multiprocessing as mp
 import os.path
-
+# TODO: The timeout should be emulator-cycle based
+import platform
 import sys
-sys.path.append(".") # Adds higher directory to python modules path.
+import time
 
 # from pyboy.logger import logger
 from pyboy import PyBoy
-import multiprocessing as mp
 
-# TODO: The timeout should be emulator-cycle based
-import platform
+sys.path.append(".") # Adds higher directory to python modules path.
+
+
 if platform.python_implementation() == "PyPy":
     timeout = 30
 else:
@@ -27,7 +28,7 @@ def run_rom(rom):
     pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file="ROMs/DMG_ROM.bin", disable_input=True)
     # pyboy = PyBoy("ROMs/DMG_ROM.bin", window_type="SDL2", window_scale=1, bootrom_file=rom, disable_input=True)
     pyboy.disable_title()
-    pyboy.set_emulation_speed(False)
+    pyboy.set_emulation_speed(0)
     serial_output = ""
     t = time.time()
     result = None

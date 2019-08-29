@@ -6,8 +6,8 @@
 import array
 import os
 
-from .rtc import RTC
 from ..logger import logger
+from .rtc import RTC
 
 
 class BaseMBC:

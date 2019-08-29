@@ -5,7 +5,6 @@
 
 import array
 
-
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
 

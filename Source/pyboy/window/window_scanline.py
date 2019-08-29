@@ -9,7 +9,8 @@ import sdl2.ext
 
 from pyboy import windowevent
 from pyboy.window.base_window import BaseWindow
-from .window_sdl2 import KEY_UP, KEY_DOWN
+
+from .window_sdl2 import KEY_DOWN, KEY_UP
 
 try:
     from cython import compiled
@@ -22,6 +23,7 @@ if not cythonmode:
 
 
 ROWS, COLS = 144, 160
+
 
 class ScanlineWindow(BaseWindow):
 

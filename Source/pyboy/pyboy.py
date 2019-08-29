@@ -7,22 +7,20 @@
 The core module of the emulator
 """
 
-import time
-import json
-import numpy as np
-
-import io
 import base64
+import io
+import json
+import time
 import zlib
 
-from . import botsupport
-from .screenrecorder import ScreenRecorder
-from .mb.mb import Motherboard
-from . import windowevent
-from . import window
+import numpy as np
 
+from . import botsupport, window, windowevent
+from .logger import addconsolehandler, logger
+from .mb.mb import Motherboard
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .logger import logger, addconsolehandler
+from .screenrecorder import ScreenRecorder
+
 addconsolehandler()
 
 SPF = 1/60. # inverse FPS (frame-per-second)
@@ -30,24 +28,29 @@ SPF = 1/60. # inverse FPS (frame-per-second)
 
 class PyBoy:
     def __init__(
-            self,
-            gamerom_file, *,
-            window_type = None,
-            window_scale = 3,
-            bootrom_file = None,
-            autopause = False,
-            loadstate_file = None,
-            debugging = False,
-            profiling = False,
-            record_input_file = None,
-            disable_input = False,
-        ):
+                self,
+                gamerom_file, *,
+                window_type=None,
+                window_scale=3,
+                bootrom_file=None,
+                autopause=False,
+                loadstate_file=None,
+                debugging=False,
+                profiling=False,
+                record_input_file=None,
+                disable_input=False,
+            ):
         """
-        PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class multiple times.
+        PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
+        controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
+        multiple times.
 
-        This object, `pyboy.windowevent`, and the `pyboy.botsupport` module, are the only official user-facing interfaces. All other parts of the emulator, are subject to change.
+        This object, `pyboy.windowevent`, and the `pyboy.botsupport` module, are the only official user-facing
+        interfaces. All other parts of the emulator, are subject to change.
 
-        A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on GitHub, if other methods are needed for your projects. Take a look at `interface_example.px` or `tetris_bot.py` for a crude "bot", which interacts with the game.
+        A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
+        GitHub, if other methods are needed for your projects. Take a look at `interface_example.px` or `tetris_bot.py`
+        for a crude "bot", which interacts with the game.
 
         Only the `gamerom_file` argument is required.
 
@@ -81,7 +84,7 @@ class PyBoy:
         self.avg_emu = 0
         self.avg_cpu = 0
         self.counter = 0
-        self.set_emulation_speed(True, 0)
+        self.set_emulation_speed(1)
         self.screen_recorder = None
         self.paused = False
         self.autopause = autopause
@@ -100,8 +103,8 @@ class PyBoy:
         Progresses the emulator ahead by one frame.
 
         To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify otherwise with
-        the `PyBoy.set_emulation_speed` method.
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         """
@@ -113,7 +116,8 @@ class PyBoy:
             events = []
 
         if self.record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
+            self.recorded_input.append((self.frame_count, events, base64.b64encode(
+                np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
         self.frame_count += 1
 
         events += self.external_input
@@ -123,7 +127,8 @@ class PyBoy:
             if event == windowevent.QUIT:
                 done = True
             elif event == windowevent.RELEASE_SPEED_UP:
-                self.limit_emulationspeed ^= True
+                # Switch between unlimited and 1x real-time emulation speed
+                self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.info("Speed limit: %s" % self.limit_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + ".state", "wb") as f:
@@ -166,10 +171,8 @@ class PyBoy:
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.get_screen_image())
 
-        if self.paused or self.limit_emulationspeed:
-            self.window.frame_limiter(1)
-        elif self.max_emulationspeed > 0:
-            self.window.frame_limiter(self.max_emulationspeed)
+        if self.paused or self.target_emulationspeed > 0:
+            self.window.frame_limiter(self.target_emulationspeed)
 
         t_emu = time.perf_counter()
 
@@ -192,7 +195,8 @@ class PyBoy:
         Gently stops the emulator and all sub-modules.
 
         Args:
-            save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the provided game-ROM.
+            save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
+                provided game-ROM.
         """
         logger.info("###########################")
         logger.info("# Emulator is turning off #")
@@ -213,14 +217,15 @@ class PyBoy:
                 json.dump(self.recorded_input, recorded_data)
                 f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))
 
-
     ###################################################################
     # Scripts and bot methods
     #
 
     def get_raw_screen_buffer(self):
         """
-        Provides a raw, unfiltered `bytes` object with the data from the screen. Check `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are subject to change.
+        Provides a raw, unfiltered `bytes` object with the data from the screen. Check
+        `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are
+        subject to change.
 
         Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_ndarray`.
 
@@ -254,13 +259,15 @@ class PyBoy:
         Returns:
             numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         """
-        return self.window.get_screen_buffer_as_nparray()
+        return self.window.get_screen_buffer_as_ndarray()
 
     def get_screen_image(self):
         """
         Generates a PIL Image from the screen buffer.
 
-        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites, and join our Discord channel for more help.
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        and join our Discord channel for more help.
 
         Returns:
             PIL.Image: RGB image of (160, 144) pixels
@@ -269,7 +276,9 @@ class PyBoy:
 
     def get_memory_value(self, addr):
         """
-        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send MBC commands to the virtual cartridge.
+        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
+        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
+        MBC commands to the virtual cartridge.
 
         Returns:
             int: An integer with the value of the memory address
@@ -280,7 +289,9 @@ class PyBoy:
         """
         Write one byte to a given memory address of the Game Boy's current memory state.
 
-        This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is
+        needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can
+        read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
         Args:
             addr (int): Address to write the byte
@@ -302,9 +313,11 @@ class PyBoy:
 
     def get_sprite(self, index):
         """
-        Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
+        Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+        corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
 
-        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+        Docs](http://bgb.bircd.org/pandocs.htm).
 
         Args:
             index (int): Sprite index from 0 to 39.
@@ -315,9 +328,12 @@ class PyBoy:
 
     def get_tile(self, identifier):
         """
-        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a `pyboy.botsupport.tile.Tile`-object for given identifier.
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+        `pyboy.botsupport.tile.Tile`-object for given identifier.
 
-        The `pyboy.botsupport.tile.Tile.identifier` should not be confused with the `pyboy.botsupport.tile.Tile.index`. The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See the `pyboy.botsupport.tile.Tile` object for more information.
+        The `pyboy.botsupport.tile.Tile.identifier` should not be confused with the `pyboy.botsupport.tile.Tile.index`.
+        The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+        the `pyboy.botsupport.tile.Tile` object for more information.
 
         Returns:
             `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
@@ -326,7 +342,8 @@ class PyBoy:
 
     def get_background_tile_map(self):
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one for the background tiles.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the background tiles.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -337,7 +354,8 @@ class PyBoy:
 
     def get_window_tile_map(self):
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one for the window tiles.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the window tiles.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -348,9 +366,13 @@ class PyBoy:
 
     def get_screen_position(self):
         """
-        These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site of the tile map.
+        These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
+        that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
+        to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
+        of the tile map.
 
-        For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf), or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
+        For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf),
+        or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
 
         Returns:
             ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
@@ -359,9 +381,11 @@ class PyBoy:
 
     def save_state(self, file_handle):
         """
-        Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in a game.
+        Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
+        a game.
 
-        You can either save it to a file, or in-memory. The following two examples will provide the file handle in each case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
+        You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
+        case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
 
             # Save to file
             file_handle = open("state_file.state", "wb")
@@ -378,9 +402,11 @@ class PyBoy:
 
     def load_state(self, file_like_object):
         """
-        Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress in a game.
+        Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress
+        in a game.
 
-        You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you can load it here.
+        You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you
+        can load it here.
 
         Args:
             file_handle (io.BufferedIOBase): A file-like object for which to read the emulator state.
@@ -402,18 +428,18 @@ class PyBoy:
         """
         self.window.disable_title()
 
-    def set_emulation_speed(self, limit, target_speed=0):
+    def set_emulation_speed(self, target_speed):
         """
-        Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high `target_speed`.
+        Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high
+        `target_speed`.
 
         The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
 
+        A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
+
         Args:
-            limit (bool): Whether to limit the speed or not.
-            target_speed (bool): If limiting the speed, what is the target speed.
+            target_speed (int): Target emulation speed as multiplier of real-time.
         """
-        self.limit_emulationspeed = limit
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
-        self.max_emulationspeed = target_speed
-
+        self.target_emulationspeed = target_speed

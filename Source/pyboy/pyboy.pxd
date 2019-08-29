@@ -29,7 +29,7 @@ cdef class PyBoy:
     cdef bint paused
     cdef bint autopause
     cdef bint limit_emulationspeed
-    cdef int emulationspeed, max_emulationspeed
+    cdef int emulationspeed, target_emulationspeed
     cdef object screen_recorder
     cdef uint64_t frame_count
     cdef bint profiling
@@ -42,16 +42,3 @@ cdef class PyBoy:
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
     cpdef bint tick(self)
     cpdef void stop(self, save=*)
-
-
-#    ###########################
-#    #
-#    # Scripts and bot methods
-#    cpdef object getScreenBuffer(self)
-#    cpdef unsigned char getMemoryValue(self, unsigned short)
-#    cpdef void setMemoryValue(self, unsigned short, unsigned char)
-#    cpdef void sendInput(self, unsigned int)
-#    cpdef object getMotherBoard(self)
-#    cpdef object getSprite(self, unsigned int)
-#    cpdef object getTileView(self, bint)
-#    cpdef tuple getScreenPosition(self)

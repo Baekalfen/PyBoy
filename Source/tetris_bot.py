@@ -3,20 +3,20 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import traceback
-import os.path
 import os
+import os.path
 import sys
+import traceback
 from pprint import pprint
-from pyboy import windowevent
-from pyboy import PyBoy
+
+from pyboy import PyBoy, windowevent
 
 
 def getROM(ROMdir):
     # Give a list of ROMs to start
     found_files = list(filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(ROMdir)))
     for i, f in enumerate(found_files):
-        print ("%s\t%s" % (i + 1, f))
+        print("%s\t%s" % (i + 1, f))
     filename = input("Write the name or number of the tetris ROM file:\n")
 
     try:
@@ -33,11 +33,11 @@ if __name__ == "__main__":
 
     # Verify directories
     if bootROM is not None and not os.path.exists(bootROM):
-        print ("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
+        print("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootROM)
         bootROM = None
 
     if not os.path.exists(ROMdir) and len(sys.argv) < 2:
-        print ("ROM folder not found. Please copy the Game-ROM to '%s'" % ROMdir)
+        print("ROM folder not found. Please copy the Game-ROM to '%s'" % ROMdir)
         exit()
 
     try:
@@ -53,8 +53,8 @@ if __name__ == "__main__":
         else:
             window = 'SDL2'
         pyboy = PyBoy(filename, window_type=window, window_scale=3, bootrom_file=bootROM)
-        pyboy.set_emulation_speed(False)
-        print ("Screen pos:", pyboy.get_screen_position())
+        pyboy.set_emulation_speed(0)
+        print("Screen pos:", pyboy.get_screen_position())
 
         first_brick = False
         tile_map = pyboy.get_window_tile_map()
@@ -121,11 +121,11 @@ if __name__ == "__main__":
                 # 31 | 47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47  47
 
                 print("Final game board:")
-                game_board_matrix = tile_map[2:12,0:18]
+                game_board_matrix = tile_map[2:12, 0:18]
                 pprint(game_board_matrix)
 
                 print("Final game board mask:")
-                game_board_matrix = [[0 if x == 47 else 1 for x in row] for row in tile_map[2:12,0:18]]
+                game_board_matrix = [[0 if x == 47 else 1 for x in row] for row in tile_map[2:12, 0:18]]
                 pprint(game_board_matrix)
 
             # Play game. When we are passed the 168th frame, the game has begone.
@@ -136,14 +136,13 @@ if __name__ == "__main__":
                 elif frame % 2 == 1:
                     pyboy.send_input(windowevent.RELEASE_ARROW_RIGHT)
 
-
                 # As an example, it could be useful to know the coordinates
                 # of the sprites on the screen and which they look like.
                 if frame == 170: # Arbitrary frame where we read out all sprite on the screen
                     for n in range(40):
                         sprite = pyboy.get_sprite(n)
                         if sprite.on_screen:
-                            print ("Sprite:", sprite.x, sprite.y, sprite.tile_index, sprite.tiles, sprite.on_screen)
+                            print("Sprite:", sprite.x, sprite.y, sprite.tile_index, sprite.tiles, sprite.on_screen)
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This
@@ -158,16 +157,17 @@ if __name__ == "__main__":
                     # 17 for the bottom tile when zero-indexed
                     # 2 because we skip the border on the left side. Then we take a slice of 10 more tiles
                     # 47 is the white background tile index
-                    if any(filter(lambda x: x==47, tile_map[2:12, 17])):
+                    if any(filter(lambda x: x == 47, tile_map[2:12, 17])):
                         first_brick = True
-                        print ("First brick touched the bottom!")
+                        print("First brick touched the bottom!")
 
-                        # Illustrating how we can extract the game board quite simply. This can be used to read the tile indexes
-                        game_board_matrix = tile_map[2:12,0:18]
+                        # Illustrating how we can extract the game board quite simply. This can be
+                        # used to read the tile indexes
+                        game_board_matrix = tile_map[2:12, 0:18]
                         pprint(game_board_matrix)
         pyboy.stop()
 
     except KeyboardInterrupt:
-        print ("Interrupted by keyboard")
+        print("Interrupted by keyboard")
     except Exception:
         traceback.print_exc()

@@ -3,7 +3,8 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from ..logger import logger, addconsolehandler
+from ..logger import addconsolehandler, logger
+
 addconsolehandler()
 
 
@@ -61,7 +62,7 @@ class BaseWindow:
     def get_screen_buffer(self):
         raise NotImplementedError()
 
-    def get_screen_buffer_as_nparray(self):
+    def get_screen_buffer_as_ndarray(self):
         raise NotImplementedError()
 
     def update_cache(self, lcd):

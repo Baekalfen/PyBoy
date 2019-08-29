@@ -3,9 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .window_sdl2 import SDLWindow
 from ..logger import logger
-
+from .window_sdl2 import SDLWindow
 
 ROWS, COLS = 144, 160
 

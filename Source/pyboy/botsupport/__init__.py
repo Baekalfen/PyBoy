@@ -8,5 +8,5 @@ Tools to help interfacing with the Game Boy hardware
 """
 
 from .sprite import Sprite
-from .tilemap import TileMap
 from .tile import Tile
+from .tilemap import TileMap

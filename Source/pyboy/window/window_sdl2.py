@@ -10,8 +10,8 @@ import sdl2
 import sdl2.ext
 
 from .. import windowevent
-from .base_window import BaseWindow
 from ..logger import logger
+from .base_window import BaseWindow
 
 try:
     from cython import compiled
@@ -102,7 +102,6 @@ class SDLWindow(BaseWindow):
             self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
-
 
     def init(self):
         self._ticks = sdl2.SDL_GetTicks()
@@ -271,7 +270,6 @@ class SDLWindow(BaseWindow):
 
         self.tiles_changed.clear()
 
-
     def blank_screen(self):
         # If the screen is off, fill it with a color.
         color = self.color_palette[0]
@@ -282,9 +280,9 @@ class SDLWindow(BaseWindow):
     def get_screen_buffer(self):
         return self._screenbuffer_raw.tobytes()
 
-    def get_screen_buffer_as_nparray(self):
+    def get_screen_buffer_as_ndarray(self):
         import numpy as np
-        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(144, 160, 4)[:,:,:-1]
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(144, 160, 4)[:, :, :-1]
 
     def get_screen_image(self):
         if not Image:
@@ -295,6 +293,7 @@ class SDLWindow(BaseWindow):
                 self.color_format,
                 self.buffer_dims,
                 self.get_screen_buffer())
+
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to
 # prevent Cython from trying to parse it. This block provides the

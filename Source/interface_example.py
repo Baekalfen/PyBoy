@@ -4,11 +4,12 @@
 #
 
 from pprint import pprint
+
 from pyboy import PyBoy
 
 # pyboy = PyBoy("ROMs/POKEMON BLUE.gb", window_type="headless", window_scale=1) # For unattended use, for example machine learning
 pyboy = PyBoy("ROMs/POKEMON BLUE.gb", window_type="SDL2", window_scale=1)
-pyboy.set_emulation_speed(False, 0)
+pyboy.set_emulation_speed(0)
 
 for n in range(1000): # Move ahead the desired number of frames.
     pyboy.tick()
@@ -17,6 +18,7 @@ tile_map = pyboy.get_window_tile_map() # Get the TileView object for the window.
 
 # The following prints out the indices of each tile in the window -- excluding sprites and the background!
 print(tile_map)
+# Tile Map Address: 0x9c00, High Tile Data: No
 #      0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31
 # __________________________________________________________________________________________________________________________________
 # 0  | 1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1
@@ -54,10 +56,8 @@ print(tile_map)
 
 index_map = tile_map.get_tile_matrix()
 
-# Isolating the part with Snorlax
-pprint(list(tile_map[13:20,8:14]))
+# Isolating the part with Snorlax -- The indexes are found in the print-out above
+pprint(list(tile_map[13:20, 8:14]))
 
 # For unattended use, the screen buffer can be displayed using the following:
 pyboy.get_screen_image().show()
-
-

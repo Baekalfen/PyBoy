@@ -5,10 +5,12 @@
 #
 
 import os
-import traceback
 import sys
+import traceback
+
 from pyboy import PyBoy
-from pyboy.logger import logger, addconsolehandler
+from pyboy.logger import addconsolehandler, logger
+
 addconsolehandler()
 
 if "--no-logger" in sys.argv:
@@ -84,12 +86,12 @@ def main():
                 window_type=(sys.argv[1] if len(sys.argv) > 1 else None),
                 window_scale=scale,
                 bootrom_file=bootrom,
-                autopause = argv_autopause,
-                loadstate_file = argv_load_state_file, # Needs filename
-                debugging = argv_debug,
-                profiling = argv_profiling,
-                record_input_file = argv_record_input_file,
-                disable_input = argv_disable_input,
+                autopause=argv_autopause,
+                loadstate_file=argv_load_state_file, # Needs filename
+                debugging=argv_debug,
+                profiling=argv_profiling,
+                record_input_file=argv_record_input_file,
+                disable_input=argv_disable_input,
             )
         while not pyboy.tick():
             pass

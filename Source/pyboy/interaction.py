@@ -5,7 +5,6 @@
 
 from . import windowevent
 
-
 P10, P11, P12, P13 = range(4)
 
 

@@ -7,7 +7,6 @@ import array
 
 from . import opcodes
 
-
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 IF_ADDRESS = 0xFF0F

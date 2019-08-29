@@ -4,6 +4,7 @@
 #
 
 from pyboy.window.base_window import BaseWindow
+
 from ..logger import logger
 
 

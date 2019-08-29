@@ -5,9 +5,8 @@
 
 
 import re
-from urllib.request import urlopen
 from html.parser import HTMLParser
-
+from urllib.request import urlopen
 
 destination = "opcodes.py"
 pxd_destination = "opcodes.pxd"

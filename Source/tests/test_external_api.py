@@ -3,33 +3,35 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import pytest
-import os
-import io
 import hashlib
+import io
+import os
+import sys
 from functools import reduce
 
 import numpy as np
 import PIL
+import pytest
 
-import sys
+from pyboy import PyBoy, windowevent
+
 sys.path.append(".") # Adds higher directory to python modules path.
 
-from pyboy import windowevent
-from pyboy import PyBoy
 
 boot_rom = "ROMs/DMG_ROM.bin"
 tetris_rom = "ROMs/Tetris.gb"
 any_rom = tetris_rom
+
 
 def test_misc():
     pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
     pyboy.tick()
     pyboy.stop(save=False)
 
+
 def test_tiles():
     pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True)
-    pyboy.set_emulation_speed(False)
+    pyboy.set_emulation_speed(0)
 
     tile = pyboy.get_window_tile_map().get_tile(0, 0)
     image = tile.image()
@@ -53,19 +55,22 @@ def test_tiles():
     with pytest.raises(Exception):
         pyboy.get_tile(385)
 
-
     pyboy.stop(save=False)
+
 
 def test_screen_buffer_and_image():
     for window, dims, cformat, boot_logo_hash_predigested in [
             # These are different because the underlying format is different. We'll test the actual image afterwards.
-            ("SDL2", (160,144), 'RGBA', b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
-            ("headless", (160,144), 'RGBA', b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
-            ("OpenGL", (144, 160), 'RGB', b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
+            ("SDL2", (160, 144), 'RGBA',
+                b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
+            ("headless", (160, 144), 'RGBA',
+                b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
+            ("OpenGL", (144, 160), 'RGB',
+                b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
             ]:
 
         pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True)
-        pyboy.set_emulation_speed(False)
+        pyboy.set_emulation_speed(0)
         for n in range(275): # Iterate to boot logo
             pyboy.tick()
 
@@ -103,6 +108,7 @@ def test_screen_buffer_and_image():
 
         pyboy.stop(save=False)
 
+
 def test_tetris():
     NEXT_TETROMINO = 0xC213
 
@@ -120,7 +126,7 @@ def test_tetris():
         assert short_digest == predigested, "Didn't match: " + str(short_digest)
 
     pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True)
-    pyboy.set_emulation_speed(False)
+    pyboy.set_emulation_speed(0)
 
     first_brick = False
     tile_map = pyboy.get_window_tile_map()
@@ -177,12 +183,12 @@ def test_tetris():
                 # 17 for the bottom tile when zero-indexed
                 # 2 because we skip the border on the left side. Then we take a slice of 10 more tiles
                 # 47 is the white background tile index
-                if any(filter(lambda x: x!=47, tile_map[2:12, 17])):
+                if any(filter(lambda x: x != 47, tile_map[2:12, 17])):
                     first_brick = True
                     print(frame)
-                    print ("First brick touched the bottom!")
+                    print("First brick touched the bottom!")
 
-                    game_board_matrix = list(tile_map[2:12,:18])
+                    game_board_matrix = list(tile_map[2:12, :18])
                     assert game_board_matrix == (
                             [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                              [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -212,7 +218,7 @@ def test_tetris():
                     assert t1 == t2, "Testing __eq__ method of Tile object"
                     assert t1 != t3, "Testing not __eq__ method of Tile object"
 
-                    game_board_matrix = [[x.identifier for x in row] for row in tile_map[2:12,:18]]
+                    game_board_matrix = [[x.identifier for x in row] for row in tile_map[2:12, :18]]
                     tile_map.use_tile_objects(False)
                     assert game_board_matrix == (
                             [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -235,16 +241,15 @@ def test_tetris():
                              [47, 47, 47, 47, 47, 47, 47, 47, 130, 130]]
                         )
 
-
             if frame == 1014:
                 assert not first_brick
 
             if frame == 1015:
                 assert first_brick
 
-
                 # Test that all tiles says 'low' tile data, as sprites cannot use high tile data
-                assert not reduce(lambda x,y: x|y, [s.tiles[0].index[0] for s in [pyboy.get_sprite(n) for n in range(40)]], False)
+                assert not reduce(lambda x, y: x | y, [s.tiles[0].index[0]
+                                                       for s in [pyboy.get_sprite(n) for n in range(40)]], False)
 
                 s1 = pyboy.get_sprite(0)
                 s2 = pyboy.get_sprite(1)
@@ -253,9 +258,11 @@ def test_tetris():
                 assert s1.tiles[0] == s2.tiles[0], "Testing equal tiles of two different sprites"
 
                 # Test that both ways of getting indexes works and provides the same result.
-                all_sprites = [(s.x, s.y, s.tiles[0].index[1], s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
+                all_sprites = [(s.x, s.y, s.tiles[0].index[1], s.on_screen)
+                               for s in [pyboy.get_sprite(n) for n in range(40)]]
                 all_sprites2 = [(s.x, s.y, s.tile_index, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
-                all_sprites3 = [(s.x, s.y, s.tile_identifier, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
+                all_sprites3 = [(s.x, s.y, s.tile_identifier, s.on_screen)
+                                for s in [pyboy.get_sprite(n) for n in range(40)]]
                 assert all_sprites == all_sprites2
                 assert all_sprites == all_sprites3
 
@@ -303,7 +310,6 @@ def test_tetris():
                      (0, 0, 0, False)]
                     )
 
-
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 12
                 with open('tmp.state', 'wb') as f:
                     pyboy.save_state(f)
@@ -318,7 +324,7 @@ def test_tetris():
             assert pyboy.get_memory_value(NEXT_TETROMINO) == 11 # Would have been 4 otherwise
 
         if frame == 1865:
-            game_board_matrix = list(tile_map[2:12,:18])
+            game_board_matrix = list(tile_map[2:12, :18])
             assert game_board_matrix == (
                     [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                      [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -351,7 +357,7 @@ def test_tetris():
                     assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
 
                 if frame == 1865:
-                    game_board_matrix = list(tile_map[2:12,:18])
+                    game_board_matrix = list(tile_map[2:12, :18])
                     assert game_board_matrix == (
                             [[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
                              [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
@@ -381,10 +387,10 @@ def test_tetris():
 # def test_get_serial():
 #     pass
 
+
 def test_disable_title():
     # Simply tests, that no exception is generated
     pyboy = PyBoy(any_rom, window_type="dummy", disable_input=True)
     pyboy.disable_title()
     pyboy.tick()
     pyboy.stop(save=False)
-
