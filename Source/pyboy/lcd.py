@@ -5,7 +5,6 @@
 
 import array
 
-
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
@@ -105,6 +104,6 @@ class LCDCRegister:
         self.window_enable        = value & (1 << 5)
         self.tiledata_select      = value & (1 << 4)
         self.backgroundmap_select = value & (1 << 3)
-        self.sprite_size          = value & (1 << 2)
+        self.sprite_height        = value & (1 << 2)
         self.sprite_enable        = value & (1 << 1)
         self.background_enable    = value & (1 << 0)

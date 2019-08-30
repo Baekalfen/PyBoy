@@ -10,11 +10,18 @@ except ImportError:
     cythonmode = False
 
 import ctypes
-import sdl2
-import sdl2.ext
 from array import array
 
+import sdl2
+import sdl2.ext
+
+from .. import windowevent
+from .window_sdl2 import KEY_DOWN, KEY_UP, SDLWindow
+
+# from ..botsupport import Sprite
+
 TILES = 384
+SPRITES = 40
 GAMEBOY_RESOLUTION = (160, 144)
 HOR_LIMIT = 32
 
@@ -97,7 +104,7 @@ class Window():
     def stop(self):
         sdl2.SDL_DestroyWindow(self.window)
 
-    def update_display(self):
+    def update_display(self, paused):
         self._update_display()
         # sdl2.SDL_UpdateTexture(self.sdl_texture_buffer, None, self.buf_p, self.width*4)
         # sdl2.SDL_RenderCopy(self.sdlrenderer, self.sdl_texture_buffer, None, None)
@@ -127,19 +134,98 @@ class Window():
     def _mouse(self, click, window_id, x, y):
         return NO_TILE
 
-    def mark_tile(self, x, y, color):
+    def mark_tile(self, x, y, color, height=8, width=8):
         if (0 <= x < self.width) and (0 <= y < self.height): # Test that we are inside screen area
-            ts = 8 # Tile size
-            xx = x - (x % ts)
-            yy = y - (y % ts)
-            for i in range(ts):
+            tw = width # Tile width
+            th = height # Tile height
+            xx = x - (x % tw)
+            yy = y - (y % th)
+            for i in range(th):
                 self.buf0[yy+i][xx] = color
-            for i in range(ts):
+            for i in range(tw):
                 self.buf0[yy][xx+i] = color
-            for i in range(ts):
-                self.buf0[yy+ts-1][xx+i] = color
-            for i in range(ts):
-                self.buf0[yy+i][xx+ts-1] = color
+            for i in range(tw):
+                self.buf0[yy+th-1][xx+i] = color
+            for i in range(th):
+                self.buf0[yy+i][xx+tw-1] = color
+
+
+class SpriteWindow(Window):
+
+    def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED)):
+        super().__init__(lcd, w, h, scale, title, pos)
+
+    def update(self, tile_cache0, marked_tile, _scanlineparameters):
+        sprite_height = 16 if self.lcd.LCDC.sprite_height else 8
+        for n in range(0, 0xA0, 4):
+            # x = lcd.OAM[n]
+            # y = lcd.OAM[n+1]
+            t = self.lcd.OAM[n+2]
+            # attributes = lcd.OAM[n+3]
+            xx = ((n//4) * 8) % self.width
+            yy = (((n//4) * 8) // self.width)*sprite_height
+            self.copy_tile(tile_cache0, t, (xx, yy), self.buf0)
+            if self.lcd.LCDC.sprite_height:
+                self.copy_tile(tile_cache0, t+1, (xx, yy+8), self.buf0)
+
+        self.draw_overlay(marked_tile, _scanlineparameters)
+
+    def draw_overlay(self, marked_tile, _scanlineparameters):
+        sprite_height = 16 if self.lcd.LCDC.sprite_height else 8
+        # Mark selected tiles
+        if marked_tile != NO_TILE:
+            if self.lcd.LCDC.tiledata_select == 0:
+                marked_tile += 256
+
+            for n in range(0, 0xA0, 4):
+                # x = lcd.OAM[n]
+                # y = lcd.OAM[n+1]
+                t = self.lcd.OAM[n+2]
+                # attributes = lcd.OAM[n+3]
+                # for t in range(TILES):
+                if t == marked_tile:
+                    xx = (t * 8) % self.width
+                    yy = ((t * 8) // self.width)*8
+                    self.mark_tile(xx, yy, MARK2, height=sprite_height)
+
+        self.mark_tile(self.mouse_hover_x, self.mouse_hover_y, HOVER, height=sprite_height)
+        self.mark_tile(self.mouse_x, self.mouse_y, MARK, height=sprite_height)
+
+    # def _mouse(self, click, window_id, x, y):
+    #     sprite_height = 16 if self.lcd.LCDC.sprite_height else 8
+    #     print(sprite_height)
+    #     if click:
+    #         tile_x, tile_y = x // 8, y // sprite_height
+    #         hor_limit = self.width // 8
+    #         tile_index = tile_y * hor_limit + tile_x
+    #         if self.lcd.LCDC.tiledata_select == 0:
+    #             if tile_index < 128:
+    #                 print("Index tile out of bounds, when using signed index")
+    #                 return NO_TILE # Invalid index with tiledata select
+    #             # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset
+    #             if tile_index > 255:
+    #                 tile_index -= 256
+    #             tile_index = (tile_index ^ 0x80) - 128
+    #             print(
+    #                 f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+    #                 f"Memory area: 0x8800-0x97FF (signed index)"
+    #             )
+    #         else:
+    #             if tile_index > 255:
+    #                 print("Index tile out of bounds, when using unsigned index")
+    #                 return NO_TILE # Invalid index with tiledata select
+    #             print(
+    #                 f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+    #                 f"Memory area: 0x8000-0x8FFF (unsigned index)"
+    #             )
+    #         return tile_index
+    #     return NO_TILE
+
+
+class SpriteViewWindow(Window):
+
+    def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED)):
+        super().__init__(lcd, w, h, scale, title, pos)
 
 
 class TileWindow(Window):
@@ -147,13 +233,18 @@ class TileWindow(Window):
     def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED)):
         super().__init__(lcd, w, h, scale, title, pos)
 
-    def update(self, tile_cache0):
+    def update(self, tile_cache0, marked_tile, _scanlineparameters):
+
         for t in range(TILES):
             xx = (t * 8) % self.width
             yy = ((t * 8) // self.width)*8
             self.copy_tile(tile_cache0, t, (xx, yy), self.buf0)
 
-    def draw_overlay(self, marked_tile, scanline_parameters):
+        self.draw_overlay(marked_tile, _scanlineparameters)
+
+    def draw_overlay(self, marked_tile, _scanlineparameters):
+        sprite_height = 16 if self.lcd.LCDC.sprite_height else 8
+
         # Mark selected tiles
         if marked_tile != NO_TILE:
             if self.lcd.LCDC.tiledata_select == 0:
@@ -163,15 +254,15 @@ class TileWindow(Window):
                 if t == marked_tile:
                     xx = (t * 8) % self.width
                     yy = ((t * 8) // self.width)*8
-                    self.mark_tile(xx, yy, MARK2)
+                    self.mark_tile(xx, yy, MARK2, width=sprite_height, height=8)
 
-        self.mark_tile(self.mouse_hover_x, self.mouse_hover_y, HOVER)
-        self.mark_tile(self.mouse_x, self.mouse_y, MARK)
+        self.mark_tile(self.mouse_hover_x, self.mouse_hover_y, HOVER, width=sprite_height, height=8)
+        self.mark_tile(self.mouse_x, self.mouse_y, MARK, width=sprite_height, height=8)
 
     def _mouse(self, click, window_id, x, y):
         if click:
             tile_x, tile_y = x // 8, y // 8
-            hor_limit = self.width / 8
+            hor_limit = self.width // 8
             tile_index = tile_y * hor_limit + tile_x
             if self.lcd.LCDC.tiledata_select == 0:
                 if tile_index < 128:
@@ -181,14 +272,21 @@ class TileWindow(Window):
                 if tile_index > 255:
                     tile_index -= 256
                 tile_index = (tile_index ^ 0x80) - 128
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8800-0x97FF (signed index)")
+                print(
+                    f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                    f"Memory area: 0x8800-0x97FF (signed index)"
+                )
             else:
                 if tile_index > 255:
                     print("Index tile out of bounds, when using unsigned index")
                     return NO_TILE # Invalid index with tiledata select
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8000-0x8FFF (unsigned index)")
+                print(
+                    f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                    f"Memory area: 0x8000-0x8FFF (unsigned index)"
+                )
             return tile_index
         return NO_TILE
+
 
 class TileViewWindow(Window):
 
@@ -196,16 +294,16 @@ class TileViewWindow(Window):
         super().__init__(lcd, w, h, scale, title, pos)
         self.offset = offset
 
-    def update(self, lcd, tile_cache0):
+    def update(self, tile_cache0, marked_tile, _scanlineparameters, ix, iy):
         # ver_limit = 32
 
         for n in range(self.offset, self.offset + 0x400):
-            tile_index = lcd.VRAM[n]
+            tile_index = self.lcd.VRAM[n]
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if lcd.LCDC.tiledata_select == 0:
+            if self.lcd.LCDC.tiledata_select == 0:
                 # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset (reduces to + 128)
                 tile_index = (tile_index ^ 0x80) + 128
 
@@ -215,11 +313,13 @@ class TileViewWindow(Window):
             des = (tile_column * 8, tile_row * 8)
             self.copy_tile(tile_cache0, tile_index, des, self.buf0)
 
-    def draw_overlay(self, marked_tile, scanline_parameters, ix, iy):
+        self.draw_overlay(marked_tile, _scanlineparameters, ix, iy)
+
+    def draw_overlay(self, marked_tile, _scanlineparameters, ix, iy):
         # Mark screen area
         for y in range(GAMEBOY_RESOLUTION[1]):
-            xx = scanline_parameters[y][ix]
-            yy = scanline_parameters[y][iy]
+            xx = _scanlineparameters[y][ix]
+            yy = _scanlineparameters[y][iy]
             if y == 0 or y == GAMEBOY_RESOLUTION[1]-1:
                 for x in range(GAMEBOY_RESOLUTION[0]):
                     self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] = COLOR
@@ -257,38 +357,38 @@ class TileViewWindow(Window):
             if self.lcd.LCDC.tiledata_select == 0:
                 # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset
                 tile_index = (tile_index ^ 0x80) - 128
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8800-0x97FF (signed index)")
+                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                      f"Memory area: 0x8800-0x97FF (signed index)")
             else:
-                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\nMemory area: 0x8000-0x8FFF (unsigned index)")
+                print(f"Location: ({tile_x}, {tile_y})\nTile index: {tile_index}\n"
+                      f"Memory area: 0x8000-0x8FFF (unsigned index)")
             return tile_index
         return NO_TILE
 
 
-class DebugWindow():
-    def __init__(self, scale=2):
-        # self.tiles_changed = set([])
+class DebugWindow(SDLWindow):
+    def __init__(self, scale):
+        super(self.__class__, self).__init__(scale)
         self.scale = scale
-        self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
-
-        self.tile_cache, self.tile_cache0, self.tile_cache_p = make_buffer(8, 384*8)
-
-        # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
-        sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING) # Should be less... https://wiki.libsdl.org/SDL_Init
-        # sdl2.SDL_SetHint(sdl2.SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1")
-        self.scanline_parameters = [[0, 0, 0, 0] for _ in range(GAMEBOY_RESOLUTION[1])];
         self.marked_tile = NO_TILE
+
+        self.tile1_update = True
+        self.tile2_update = True
+        self.sprite_update = True
+        self.tile_update = True
 
     # Rest of the __init__, when we have the lcd instance
     def set_lcd(self, lcd):
         self.lcd = lcd
         self.tile1 = TileViewWindow(lcd, 0x100, 0x100, self.scale, b"Tile View 1", 0x1800, (0, 0))
         self.tile2 = TileViewWindow(lcd, 0x100, 0x100, self.scale, b"Tile View 2", 0x1C00, (0x100*self.scale, 0))
-        self.sprite = Window(lcd, 64, 40*2, self.scale, b"Sprites", (0x200*self.scale, 0))
+        # self.sprite = SpriteWindow(lcd, 64, 40*2, self.scale, b"Sprites", (0x200*self.scale, 0))
+        self.sprite = SpriteWindow(lcd, 8*10, 16*4, self.scale, b"Sprites", (0x200*self.scale, 0))
 
         self.tile_data_width = 16*8 # Change the 16 to however wide you want the tile window
         self.tile_data_height = ((TILES*8) // self.tile_data_width)*8
-        self.tile = TileWindow(
-            lcd, self.tile_data_width, self.tile_data_height, self.scale, b"Tile Data", (0x240*self.scale, 0))
+        self.tile = TileWindow(lcd, self.tile_data_width, self.tile_data_height,
+                               self.scale, b"Tile Data", (0x240*self.scale, 0))
 
     def stop(self):
         self.tile.stop()
@@ -297,40 +397,56 @@ class DebugWindow():
         self.sprite.stop()
         sdl2.SDL_Quit()
 
-    def update_cache(self):
-        # Update cache
-        for t in range(0x8000, 0x9800, 16):
-            for k in range(0, 16, 2):  # 2 bytes for each line
-                byte1 = self.lcd.VRAM[t+k-0x8000]
-                byte2 = self.lcd.VRAM[t+k+1-0x8000]
-                y = (t+k-0x8000) // 2
+    def update_display(self, paused):
+        if self.tile_update or not paused:
+            self.tile.update(self._tilecache, self.marked_tile, self._scanlineparameters)
+            self.tile.update_display(paused)
 
-                for x in range(8):
-                    color_code = get_color_code(byte1, byte2, 7-x)
-                    self.tile_cache0[y][x] = self.lcd.BGP.getcolor(color_code)
+        if self.tile1_update or not paused:
+            self.tile1.update(self._tilecache, self.marked_tile, self._scanlineparameters, 0, 1)
+            self.tile1.update_display(paused)
 
-    def update(self):
-        self.tile.update(self.tile_cache0)
-        self.tile1.update(self.lcd, self.tile_cache0)
-        self.tile2.update(self.lcd, self.tile_cache0)
-        # self.sprite.update(self.lcd)
+        if self.tile2_update or not paused:
+            self.tile2.update(self._tilecache, self.marked_tile, self._scanlineparameters, 2, 3)
+            self.tile2.update_display(paused)
 
-        self.tile.draw_overlay(self.marked_tile, self.scanline_parameters)
-        self.tile1.draw_overlay(self.marked_tile, self.scanline_parameters, 0, 1)
-        self.tile2.draw_overlay(self.marked_tile, self.scanline_parameters, 2, 3)
+        if self.sprite_update or not paused:
+            self.sprite.update(self._tilecache, self.marked_tile, self._scanlineparameters)
+            self.sprite.update_display(paused)
 
-        self.tile.update_display()
-        self.tile1.update_display()
-        self.tile2.update_display()
-        self.sprite.update_display()
+        self.tile1_update = False
+        self.tile2_update = False
+        self.sprite_update = False
+        self.tile_update = False
 
-    def scanline(self, y): # Just recording states of LCD registers
-        view_pos = self.lcd.getviewport()
-        window_pos = self.lcd.getwindowpos()
-        self.scanline_parameters[y][0] = view_pos[0]
-        self.scanline_parameters[y][1] = view_pos[1]
-        self.scanline_parameters[y][2] = window_pos[0]
-        self.scanline_parameters[y][3] = window_pos[1]
+        if not paused:
+            self._update_display()
+
+    def get_events(self):
+        events = []
+        for event in sdl2.ext.get_events():
+            if event.type == sdl2.SDL_QUIT:
+                events.append(windowevent.QUIT)
+            elif event.type == sdl2.SDL_KEYDOWN:
+                events.append(KEY_DOWN.get(event.key.keysym.sym, windowevent.PASS))
+            elif event.type == sdl2.SDL_KEYUP:
+                events.append(KEY_UP.get(event.key.keysym.sym, windowevent.PASS))
+            elif event.type == sdl2.SDL_WINDOWEVENT:
+                if event.window.windowID == 1:
+                    if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
+                        events.append(windowevent.PAUSE)
+                    elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
+                        events.append(windowevent.UNPAUSE)
+                elif event.window.event == sdl2.SDL_WINDOWEVENT_LEAVE:
+                    self.window_focus(event.window.windowID, False)
+            else:
+                click = event.type == sdl2.SDL_MOUSEBUTTONUP and event.button.button == sdl2.SDL_BUTTON_LEFT
+                if ((0 <= event.motion.x < 2**16) and
+                    (0 <= event.motion.y < 2**16) and
+                        (0 <= event.motion.windowID < 2**16)):
+                    self.mouse(click, event.motion.windowID, event.motion.x, event.motion.y)
+
+        return events
 
     def window_focus(self, window_id, focus):
         if not focus:
@@ -351,18 +467,27 @@ class DebugWindow():
         # Forward mouse event to appropriate handlers
         if window_id == sdl2.SDL_GetWindowID(self.tile1.window):
             mt = self.tile1.mouse(click, window_id, x, y)
+            self.tile1_update = True
         elif window_id == sdl2.SDL_GetWindowID(self.tile2.window):
             mt = self.tile2.mouse(click, window_id, x, y)
+            self.tile2_update = True
         elif window_id == sdl2.SDL_GetWindowID(self.sprite.window):
             mt = self.sprite.mouse(click, window_id, x, y)
+            self.sprite_update = True
         elif window_id == sdl2.SDL_GetWindowID(self.tile.window):
             mt = self.tile.mouse(click, window_id, x, y)
+            self.tile_update = True
         else: # Game window
             # TODO: Detect which sprites, tiles, etc. is below cursor and highlight in other views
             print(click, window_id, x, y)
 
         # Test if there is a new marked tile
         if mt != NO_TILE:
+            self.tile1_update = True
+            self.tile2_update = True
+            self.sprite_update = True
+            self.tile_update = True
+
             self.marked_tile = mt
 
             # Reset selection on other windows
@@ -386,7 +511,7 @@ class DebugWindow():
 #             i = n*2
 #             self.copy_tile(from_XY, (i%self.sprite_width, (i/self.sprite_width)*16), lcd.sprite_cache_OBP0,
 #                 self.sprite_buffer)
-#             if lcd.LCDC.sprite_size:
+#             if lcd.LCDC.sprite_height:
 #                 self.copy_tile((tile_index * 8+8, 0), (i%self.sprite_width, (i/self.sprite_width)*16 + 8),
 #                     lcd.sprite_cache_OBP0, self.sprite_buffer)
 
@@ -396,7 +521,7 @@ class DebugWindow():
 # functions that are otherwise implemented as inlined cdefs in the pxd
 if not cythonmode:
     exec("""
-def _update_display(self):
+def _update_display(self, paused):
     sdl2.SDL_UpdateTexture(self.sdl_texture_buffer, None, self.buf_p, self.width*4)
     sdl2.SDL_RenderCopy(self.sdlrenderer, self.sdl_texture_buffer, None, None)
     sdl2.SDL_RenderPresent(self.sdlrenderer)

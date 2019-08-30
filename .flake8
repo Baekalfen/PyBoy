@@ -7,6 +7,9 @@
 # W504: Sometimes common sense prevail: "line break after binary operator"
 # E226: "If operators with different priorities are used, __consider__ adding whitespace around the operators with the lowest priority(ies). Use your own judgment;..."
 # E722: Use common sense: "do not use bare 'except'"
-ignore = E261, E123, E221, E203, W503, W504, E226, E722
+# E126: Do what feels right
+# E121: Do what feels right
+# E731: "E731 do not assign a lambda expression, use a def" -- don't tell me how to use lambdas
+ignore = E261, E123, E221, E203, W503, W504, E226, E722, E126, E121, E731
 exclude = .git, __pycache__, */test_pyboy/*,
 max-line-length = 120

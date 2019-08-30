@@ -77,10 +77,12 @@ dump*.bmp
 *.gbc
 *.rom
 *.bin
+BlarggROMs/
 TestROMs/
 ROMs/
 diffDump.txt
 Core_Dump_*
+tmp.state
 *.gb*.state
 *.gb*.ram
 *.gb*.rtc

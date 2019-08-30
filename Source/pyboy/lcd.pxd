@@ -53,6 +53,6 @@ cdef class LCDCRegister:
     cdef public bint window_enable
     cdef public bint tiledata_select
     cdef public bint backgroundmap_select
-    cdef public bint sprite_size
+    cdef public bint sprite_height
     cdef public bint sprite_enable
     cdef public bint background_enable

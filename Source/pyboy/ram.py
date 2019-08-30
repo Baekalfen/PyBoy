@@ -5,7 +5,6 @@
 
 import array
 
-
 # MEMORY SIZES
 INTERNAL_RAM0 = 8 * 1024 # 8KB
 NON_IO_INTERNAL_RAM0 = 0x60

@@ -3,8 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .base_mbc import BaseMBC
 from ..logger import logger
+from .base_mbc import BaseMBC
 
 
 class MBC3(BaseMBC):

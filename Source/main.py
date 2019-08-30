@@ -5,12 +5,39 @@
 #
 
 import os
-import traceback
 import sys
+import traceback
+
 from pyboy import PyBoy
-from pyboy.logger import addconsolehandler
+from pyboy.logger import addconsolehandler, logger
 
 addconsolehandler()
+
+if "--no-logger" in sys.argv:
+    logger.disabled = True
+
+argv_debug = "--debug" in sys.argv
+argv_profiling = "--profiling" in sys.argv
+argv_autopause = "--autopause" in sys.argv
+argv_disable_input = "--no-input" in sys.argv
+
+# TODO: Find a library to take care of argv
+argv_load_state_file = None
+argv_loadstate = "--loadstate" in sys.argv
+if argv_loadstate:
+    idx = sys.argv.index("--loadstate")
+    assert len(sys.argv) > idx+1
+    argv_load_state_file = sys.argv[idx+1]
+    assert argv_load_state_file[0] != '-', "Load state file looks like an argument"
+
+argv_record_input_file = None
+argv_record_input = "--record-input" in sys.argv
+if argv_record_input:
+    assert not argv_disable_input
+    idx = sys.argv.index("--record-input")
+    assert len(sys.argv) > idx+1
+    argv_record_input_file = sys.argv[idx+1]
+    assert argv_record_input_file[0] != '-', "Output file looks like an argument"
 
 
 def getROM(romdir):
@@ -54,7 +81,18 @@ def main():
             filename = getROM(romdir)
 
         # Start PyBoy and run loop
-        pyboy = PyBoy(sys.argv[1] if len(sys.argv) > 1 else None, scale, filename, bootrom)
+        pyboy = PyBoy(
+                filename,
+                window_type=(sys.argv[1] if len(sys.argv) > 1 else None),
+                window_scale=scale,
+                bootrom_file=bootrom,
+                autopause=argv_autopause,
+                loadstate_file=argv_load_state_file, # Needs filename
+                debugging=argv_debug,
+                profiling=argv_profiling,
+                record_input_file=argv_record_input_file,
+                disable_input=argv_disable_input,
+            )
         while not pyboy.tick():
             pass
         pyboy.stop()

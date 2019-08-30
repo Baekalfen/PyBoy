@@ -3,18 +3,16 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from . import cpu
-from . import timer
 from .. import bootrom, cartridge, interaction, lcd, ram
 from ..logger import logger
-
+from . import cpu, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, window, profiling=False, debug=False):
+    def __init__(self, gamerom_file, bootrom_file, window, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -29,8 +27,6 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD(window.color_palette)
-        if debug:
-            self.window.set_lcd(self.lcd)
         self.bootrom_enabled = True
         self.serialbuffer = u''
 
@@ -48,24 +44,22 @@ class Motherboard:
         if save:
             self.cartridge.stop()
 
-    def save_state(self, filename):
+    def save_state(self, f):
         logger.info("Saving state...")
-        with open(filename, "wb") as f:
-            f.write(self.bootrom_enabled.to_bytes(1, 'little'))
-            self.cpu.save_state(f)
-            self.lcd.save_state(f)
-            self.ram.save_state(f)
-            self.cartridge.save_state(f)
+        f.write(self.bootrom_enabled.to_bytes(1, 'little'))
+        self.cpu.save_state(f)
+        self.lcd.save_state(f)
+        self.ram.save_state(f)
+        self.cartridge.save_state(f)
         logger.info("State saved.")
 
-    def load_state(self, filename):
+    def load_state(self, f):
         logger.info("Loading state...")
-        with open(filename, "rb") as f:
-            self.bootrom_enabled = ord(f.read(1))
-            self.cpu.load_state(f)
-            self.lcd.load_state(f)
-            self.ram.load_state(f)
-            self.cartridge.load_state(f)
+        self.bootrom_enabled = ord(f.read(1))
+        self.cpu.load_state(f)
+        self.lcd.load_state(f)
+        self.ram.load_state(f)
+        self.cartridge.load_state(f)
         logger.info("State loaded.")
 
         self.window.clearcache = True
@@ -181,7 +175,6 @@ class Motherboard:
         elif 0xFE00 <= i < 0xFEA0: # Sprite Attribute Memory (OAM)
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
-            print(0xFEA0 + i)
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C: # I/O ports
             if i == 0xFF04:
@@ -211,7 +204,6 @@ class Motherboard:
             else:
                 return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
-            print(0xFF4C + i)
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             return self.ram.internal_ram1[i-0xFF80]

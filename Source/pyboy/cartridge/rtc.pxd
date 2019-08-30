@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 cdef class RTC:
     cdef unicode filename
     cdef bint latch_enabled

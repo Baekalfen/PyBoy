@@ -1,3 +1,0 @@
-These files no longer work with the rest of the code!
-
-They are still valuable, but needs work to be compatible with PyBoy

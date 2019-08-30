@@ -3,7 +3,8 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from ..logger import logger, addconsolehandler
+from ..logger import addconsolehandler, logger
+
 addconsolehandler()
 
 
@@ -22,6 +23,7 @@ class BaseWindow:
         self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
         self.alphamask = 0xFF000000
         self.color_format = u"RGBA"
+        self.buffer_dims = (160, 144)
 
         self.clearcache = False
         self.tiles_changed = set([])
@@ -39,7 +41,7 @@ class BaseWindow:
     def get_events(self):
         raise NotImplementedError()
 
-    def update_display(self):
+    def update_display(self, paused):
         raise NotImplementedError()
 
     def frame_limiter(self, speed):
@@ -57,7 +59,10 @@ class BaseWindow:
     def blank_screen(self):
         pass
 
-    def getscreenbuffer(self):
+    def get_screen_buffer(self):
+        raise NotImplementedError()
+
+    def get_screen_buffer_as_ndarray(self):
         raise NotImplementedError()
 
     def update_cache(self, lcd):
@@ -65,3 +70,6 @@ class BaseWindow:
 
     def disable_title(self):
         self.enable_title = False
+
+    def set_lcd(self, lcd):
+        pass

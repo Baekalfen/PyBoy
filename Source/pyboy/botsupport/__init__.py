@@ -3,5 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+"""
+Tools to help interfacing with the Game Boy hardware
+"""
+
 from .sprite import Sprite
-from .tileview import TileView
+from .tile import Tile
+from .tilemap import TileMap

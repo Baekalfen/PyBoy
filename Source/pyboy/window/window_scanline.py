@@ -10,6 +10,8 @@ import sdl2.ext
 from pyboy import windowevent
 from pyboy.window.base_window import BaseWindow
 
+from .window_sdl2 import KEY_DOWN, KEY_UP
+
 try:
     from cython import compiled
     cythonmode = compiled
@@ -21,33 +23,6 @@ if not cythonmode:
 
 
 ROWS, COLS = 144, 160
-KEY_DOWN = {
-    sdl2.SDLK_UP        : windowevent.PRESS_ARROW_UP,
-    sdl2.SDLK_DOWN      : windowevent.PRESS_ARROW_DOWN,
-    sdl2.SDLK_RIGHT     : windowevent.PRESS_ARROW_RIGHT,
-    sdl2.SDLK_LEFT      : windowevent.PRESS_ARROW_LEFT,
-    sdl2.SDLK_a         : windowevent.PRESS_BUTTON_A,
-    sdl2.SDLK_s         : windowevent.PRESS_BUTTON_B,
-    sdl2.SDLK_RETURN    : windowevent.PRESS_BUTTON_START,
-    sdl2.SDLK_BACKSPACE : windowevent.PRESS_BUTTON_SELECT,
-    sdl2.SDLK_ESCAPE    : windowevent.QUIT,
-    sdl2.SDLK_d         : windowevent.DEBUG_TOGGLE,
-    sdl2.SDLK_SPACE     : windowevent.PRESS_SPEED_UP,
-    sdl2.SDLK_i         : windowevent.SCREEN_RECORDING_TOGGLE,
-}
-KEY_UP = {
-    sdl2.SDLK_UP        : windowevent.RELEASE_ARROW_UP,
-    sdl2.SDLK_DOWN      : windowevent.RELEASE_ARROW_DOWN,
-    sdl2.SDLK_RIGHT     : windowevent.RELEASE_ARROW_RIGHT,
-    sdl2.SDLK_LEFT      : windowevent.RELEASE_ARROW_LEFT,
-    sdl2.SDLK_a         : windowevent.RELEASE_BUTTON_A,
-    sdl2.SDLK_s         : windowevent.RELEASE_BUTTON_B,
-    sdl2.SDLK_RETURN    : windowevent.RELEASE_BUTTON_START,
-    sdl2.SDLK_BACKSPACE : windowevent.RELEASE_BUTTON_SELECT,
-    sdl2.SDLK_z         : windowevent.SAVE_STATE,
-    sdl2.SDLK_x         : windowevent.LOAD_STATE,
-    sdl2.SDLK_SPACE     : windowevent.RELEASE_SPEED_UP,
-}
 
 
 class ScanlineWindow(BaseWindow):
@@ -120,8 +95,8 @@ class ScanlineWindow(BaseWindow):
         bmap = 0x1C00 if lcd.LCDC.backgroundmap_select else 0x1800
         wmap = 0x1C00 if lcd.LCDC.windowmap_select else 0x1800
 
-        bx, by = lcd.get_viewport()
-        wx, wy = lcd.get_windowpos()
+        bx, by = lcd.getviewport()
+        wx, wy = lcd.getwindowpos()
 
         bd = (y + by) % 8
         wd = (y - wy) % 8
@@ -143,7 +118,7 @@ class ScanlineWindow(BaseWindow):
         # Limit to 10 sprites per line, could optionally disable later
         sprites = [0] * 10
         nsprites = 0
-        ymin = y if lcd.LCDC.sprite_size else y + 8
+        ymin = y if lcd.LCDC.sprite_height else y + 8
         ymax = y + 16
         for n in range(0x00, 0xA0, 4):
             if ymin < lcd.OAM[n] <= ymax:
@@ -206,7 +181,7 @@ class ScanlineWindow(BaseWindow):
                     # Get the row of the sprite, accounting for flipping
                     dy = sy - y - 1 if sf & 0x40 else y - sy + 16
 
-                    if lcd.LCDC.sprite_size:
+                    if lcd.LCDC.sprite_height:
                         # Double sprites start on an even index
                         st &= 0xFE
                     else:
@@ -227,15 +202,15 @@ class ScanlineWindow(BaseWindow):
                     # Draw the highest priority sprite pixel
                     if not sf & 0x80 or bpixel == 0:
                         if sf & 0x10:
-                            self._linebuf[x] = lcd.OBP1.get_color(spixel)
+                            self._linebuf[x] = lcd.OBP1.getcolor(spixel)
                         else:
-                            self._linebuf[x] = lcd.OBP0.get_color(spixel)
+                            self._linebuf[x] = lcd.OBP0.getcolor(spixel)
                     else:
-                        self._linebuf[x] = lcd.BGP.get_color(bpixel)
+                        self._linebuf[x] = lcd.BGP.getcolor(bpixel)
 
                     break
             else:
-                self._linebuf[x] = lcd.BGP.get_color(bpixel)
+                self._linebuf[x] = lcd.BGP.getcolor(bpixel)
 
         # Copy into the screen buffer stored in a Texture
         self._linerect.y = y
@@ -244,7 +219,7 @@ class ScanlineWindow(BaseWindow):
     def render_screen(self, lcd):
         self._render_copy()
 
-    def update_display(self):
+    def update_display(self, paused):
         self._render_present()
 
     def blank_screen(self):

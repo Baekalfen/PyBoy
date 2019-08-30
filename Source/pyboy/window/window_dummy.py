@@ -4,6 +4,7 @@
 #
 
 from pyboy.window.base_window import BaseWindow
+
 from ..logger import logger
 
 
@@ -21,7 +22,7 @@ class DummyWindow(BaseWindow):
     def get_events(self):
         return []
 
-    def update_display(self):
+    def update_display(self, paused):
         pass
 
     def frame_limiter(self, speed):
