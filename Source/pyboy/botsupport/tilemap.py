@@ -175,7 +175,7 @@ class TileMap:
         self.use_tile_objects(False)
         return_data = (
                 f"Tile Map Address: {self.map_offset:#0{6}x}, " +
-                f"High Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n" +
+                f"Signed Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n" +
                 " "*5 + "".join([f"{i: <4}" for i in range(32)]) + "\n" +
                 "_"*(adjust*32+2) + "\n" +
                 "\n".join(
