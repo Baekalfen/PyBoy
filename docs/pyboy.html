@@ -154,7 +154,7 @@ class PyBoy:
             elif event == windowevent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-                logger.info(&#34;Speed limit: %s&#34; % self.limit_emulationspeed)
+                logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
                     self.mb.save_state(f)
@@ -389,6 +389,7 @@ class PyBoy:
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, window=True)
 
+    # TODO: We actually need the scanline_parameters. Mario might always report (0,0) at the end of frame.
     def get_screen_position(self):
         &#34;&#34;&#34;
         These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
@@ -624,7 +625,7 @@ for a crude "bot", which interacts with the game.</p>
             elif event == windowevent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-                logger.info(&#34;Speed limit: %s&#34; % self.limit_emulationspeed)
+                logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
                     self.mb.save_state(f)
@@ -859,6 +860,7 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, window=True)
 
+    # TODO: We actually need the scanline_parameters. Mario might always report (0,0) at the end of frame.
     def get_screen_position(self):
         &#34;&#34;&#34;
         These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
@@ -1510,7 +1512,7 @@ otherwise with the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy
         elif event == windowevent.RELEASE_SPEED_UP:
             # Switch between unlimited and 1x real-time emulation speed
             self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-            logger.info(&#34;Speed limit: %s&#34; % self.limit_emulationspeed)
+            logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
         elif event == windowevent.SAVE_STATE:
             with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
                 self.mb.save_state(f)

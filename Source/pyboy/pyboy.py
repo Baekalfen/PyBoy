@@ -364,6 +364,7 @@ class PyBoy:
         """
         return botsupport.TileMap(self.mb, window=True)
 
+    # TODO: We actually need the scanline_parameters. Mario might always report (0,0) at the end of frame.
     def get_screen_position(self):
         """
         These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
