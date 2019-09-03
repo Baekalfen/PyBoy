@@ -1,4 +1,4 @@
-# PyBoy - Now in CPython!
+# PyBoy
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
@@ -18,7 +18,7 @@ __If you are looking to make a bot or AI__, you can find all the external compon
 
 Installation
 ============
-We have now moved away from PyPy, and PyBoy fully supports regular CPython, by the use of Cython. Performance has also increased dramatically.
+We have now moved away from PyPy, and PyBoy fully supports CPython ("regular Python"), by the use of Cython (Python-to-C compiler). Performance has also increased dramatically.
 
 The code base is still pure Python, which means it will still run in CPython and PyPy (although slowly). Cython is an addition, where we can compile the code to run 100-200 times faster.
 
