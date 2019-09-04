@@ -9,7 +9,7 @@ The Game Boy has two tile maps, which defines what is rendered on the screen.
 
 from pyboy.lcd import LCDCRegister
 
-from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEMAP
+from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_LENGTH, LOW_TILEMAP
 from .tile import Tile
 
 
@@ -46,8 +46,7 @@ class TileMap:
         else:
             self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
 
-        self.signed_tile_data = bool(LCDC.tiledata_select)
-        # self.map_offset = HIGH_TILEMAP if self.signed_tile_data else LOW_TILEMAP
+        self.signed_tile_data = not bool(LCDC.tiledata_select)
         self._use_tile_objects = False
 
     def _get_lcdc_register(self):
@@ -128,7 +127,7 @@ class TileMap:
 
         tile = self.mb.getitem(self.get_tile_address(x, y))
         if self.signed_tile_data:
-            return ((tile ^ 0x80) - 128) + 0xFF
+            return ((tile ^ 0x80) - 128) + LOW_TILEDATA_LENGTH
         else:
             return tile
 
@@ -155,17 +154,16 @@ class TileMap:
 
     def get_tile_matrix(self):
         """
-        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile index to be shown on
-        screen for each position.
+        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile identifier to be shown
+        on screen for each position.
 
-        The index can be used to quickly identify what is on the screen through this tile view.
+        The identifier can be used to quickly identify what is on the screen through this tile view.
 
-        Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view.
         You can read how the indexes work in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
         Returns:
-            list: Nested list creating a 32x32 matrix of tile indexes.
+            list: Nested list creating a 32x32 matrix of tile identifiers.
         """
         return self[:, :]
 

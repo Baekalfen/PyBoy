@@ -11,7 +11,7 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 import numpy as np
 from PIL import Image
 
-from .constants import HIGH_TILEDATA, LOW_TILEDATA, VRAM_OFFSET
+from .constants import LOW_TILEDATA, LOW_TILEDATA_LENGTH, VRAM_OFFSET
 
 
 # TODO: Import from window_sdl2
@@ -49,18 +49,23 @@ class Tile:
         if index is not None:
             assert isinstance(index, tuple), "Index parameters needs to be a tuple of (int:index, bool:signed)"
             index, signed = index
-            assert 0 <= index <= 0xFF, "index out of range"
             assert isinstance(signed, bool), "signed is not instance of bool"
+            if signed:
+                assert -128 <= index <= 127, "index out of range"
+            else:
+                assert 0 <= index < LOW_TILEDATA_LENGTH, "index out of range"
             self._signed_tile_data = signed
             self._index = index
-            offset = HIGH_TILEDATA if signed else LOW_TILEDATA
+            # The offset is not HIGH_TILEDATA, as it start 128 tiles after LOW_TILEDATA. We need the middle of
+            # the high tile data area -- i.e. 256 tiles of 16 bytes into LOW_TILEDATA.
+            offset = LOW_TILEDATA + 16*LOW_TILEDATA_LENGTH if signed else LOW_TILEDATA
             self._data_address = offset + (16*index) # _OFFSET + self._index * 2
         elif identifier is not None:
-            assert 0 <= identifier <= 0xFF+0x80, "Identifier out of range"
-            self._signed_tile_data = identifier > 0xFF
+            assert 0 <= identifier < 384, "Identifier out of range"
+            self._signed_tile_data = identifier >= LOW_TILEDATA_LENGTH
             self._index = identifier
             if self._signed_tile_data:
-                self._index -= 0xFF
+                self._index -= LOW_TILEDATA_LENGTH
             self._data_address = LOW_TILEDATA + (16*identifier)
         else:
             raise Exception("No identifier or index specified")

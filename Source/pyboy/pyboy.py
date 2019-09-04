@@ -380,7 +380,7 @@ class PyBoy:
         """
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
 
-    def save_state(self, file_handle):
+    def save_state(self, file_like_object):
         """
         Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
         a game.
@@ -389,17 +389,21 @@ class PyBoy:
         case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
 
             # Save to file
-            file_handle = open("state_file.state", "wb")
+            file_like_object = open("state_file.state", "wb")
 
             # Save to memory
             import io
-            file_handle = io.BytesIO()
-            file_handle.seek(0)
+            file_like_object = io.BytesIO()
+            file_like_object.seek(0)
 
         Args:
-            file_handle (io.BufferedIOBase): A file-like object for which to write the emulator state.
+            file_like_object (io.BufferedIOBase): A file-like object for which to write the emulator state.
         """
-        self.mb.save_state(file_handle)
+
+        if isinstance(file_like_object, str):
+            raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
+
+        self.mb.save_state(file_like_object)
 
     def load_state(self, file_like_object):
         """
@@ -409,9 +413,19 @@ class PyBoy:
         You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you
         can load it here.
 
+        To load a file, remember to load it as bytes:
+
+            # Load file
+            file_like_object = open("state_file.state", "rb")
+
+
         Args:
-            file_handle (io.BufferedIOBase): A file-like object for which to read the emulator state.
+            file_like_object (io.BufferedIOBase): A file-like object for which to read the emulator state.
         """
+
+        if isinstance(file_like_object, str):
+            raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
+
         self.mb.load_state(file_like_object)
 
     def get_serial(self):
