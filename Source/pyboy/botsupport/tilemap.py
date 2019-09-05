@@ -9,7 +9,7 @@ The Game Boy has two tile maps, which defines what is rendered on the screen.
 
 from pyboy.lcd import LCDCRegister
 
-from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_LENGTH, LOW_TILEMAP
+from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_NTILES, LOW_TILEMAP
 from .tile import Tile
 
 
@@ -127,7 +127,7 @@ class TileMap:
 
         tile = self.mb.getitem(self.get_tile_address(x, y))
         if self.signed_tile_data:
-            return ((tile ^ 0x80) - 128) + LOW_TILEDATA_LENGTH
+            return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
         else:
             return tile
 
