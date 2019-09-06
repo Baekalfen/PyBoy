@@ -36,6 +36,8 @@ cdef class Motherboard:
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
     cdef unicode serialbuffer
+    cdef long cycle_count
+    cdef long cycle_target
 
     cdef void buttonevent(self, int)
     cdef void stop(self, bint)

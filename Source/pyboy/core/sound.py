@@ -21,16 +21,18 @@ class Sound:
         # sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
 
         # Open audio device
+        # self.spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64, sdl2.SDL_AudioCallback(self.callback))
         self.spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
-        self.spec_have = sdl2.SDL_AudioSpec(0,0,0,0)
+        self.spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
         self.device = sdl2.SDL_OpenAudioDevice(None, 0, self.spec_want, self.spec_have, 0)
         # ...sdl2.SDL_AUDIO_ALLOW_ANY_CHANGE)
 
         # print(self.spec_have.format)
         # print(self.spec_have.freq)
         # print(self.spec_have.samples)
-        self.sampleclocks = 0x400000 // self.spec_have.freq  # Clocks per sample (TODO: what if it's not an integer?)
-        self.audiobuffer = array.array('b', [0] * 4096)  # Over 2 frames of sample space--should probably calculate
+        # self.sampleclocks = 0x400000 // self.spec_have.freq  # Clocks per sample (TODO: what if it's not an integer?)
+        self.sampleclocks = 0x404ac0 / self.spec_have.freq
+        self.audiobuffer = array.array('b', [0] * 4096)  # Over 2 frames of sample space
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
         self.clock = 0
@@ -60,23 +62,27 @@ class Sound:
         else:
             self.registers[offset] = value
 
+    def callback(self, _, samplebuffer, nbytes):
+        pass
+
     def sync(self):
         """Run the audio for the number of clock cycles stored in self.clock"""
-        nsamples = self.clock // self.sampleclocks
+        nsamples = int(self.clock / self.sampleclocks)
+
         # print(self.clock, self.sampleclocks, nsamples)
         # print(sdl2.SDL_GetQueuedAudioSize(self.device))
-        if nsamples > 2048:
-            self.clock = 0
-            sdl2.SDL_ClearQueuedAudio(self.device)
-            return
-        for i in range(nsamples):
+        # if nsamples > 2048:
+        #     self.clock = 0
+        #     sdl2.SDL_ClearQueuedAudio(self.device)
+        #     return
+        for i in range(min(2048, nsamples)):
             self.sweepchannel.run(self.sampleclocks)
             self.tonechannel.run(self.sampleclocks)
             sample = 4 * (self.sweepchannel.sample() + self.tonechannel.sample())
             self.audiobuffer[2*i]   = sample
             self.audiobuffer[2*i+1] = sample
+            self.clock -= self.sampleclocks
         sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2*nsamples)
-        self.clock %= self.sampleclocks
 
     def stop(self):
         sdl2.SDL_CloseAudioDevice(self.device)
@@ -88,7 +94,15 @@ class Sound:
         pass
 
 
+class Channel:
+    """Base class for all sound channels"""
+
+    def __init__(self):
+        pass
+
+
 class ToneChannel:
+    """Second sound channel--simple square wave, no sweep"""
 
     def __init__(self):
         # Shape of square waves at different duty cycles
@@ -263,3 +277,9 @@ class SweepChannel(ToneChannel):
             self.sndper = self.shadow = newper
             self.period = 4 * (0x800 - self.sndper)
             return True
+
+
+class WaveChannel:
+
+    def __init__(self):
+        pass

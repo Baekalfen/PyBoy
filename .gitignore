@@ -112,7 +112,6 @@ Source/pyboy/**/*.so
 /site-packages
 /share
 
-
 # LaTeX files
 Projects/Projects.aux
 Projects/Projects.bbl

@@ -48,7 +48,7 @@ class ScanlineWindow(BaseWindow):
             sdl2.SDL_WINDOW_RESIZABLE)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(
-            self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
+            self._window, -1, sdl2.SDL_RENDERER_ACCELERATED + sdl2.SDL_RENDERER_PRESENTVSYNC)
 
         self._screenbuf = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_BGRA32,
@@ -79,6 +79,7 @@ class ScanlineWindow(BaseWindow):
         return events
 
     def frame_limiter(self, speed):
+        return
         now = sdl2.SDL_GetTicks()
         delay = int(1000.0 / (60.0 * speed) - (now - self._ticks))
         sdl2.SDL_Delay(delay if delay > 0 else 0)

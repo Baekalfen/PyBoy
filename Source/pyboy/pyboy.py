@@ -181,7 +181,7 @@ class PyBoy:
         self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
 
         if self.counter % 60 == 0:
-            text = ("CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
+            text = ("CPU/frame: %0.2f%% Emulation: x%0.3f" % (self.avg_cpu/SPF*100, SPF/self.avg_emu))
             self.window.set_title(text)
             self.counter = 0
         self.counter += 1
