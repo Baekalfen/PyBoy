@@ -30,6 +30,7 @@ class Sound:
         # print(self.spec_have.format)
         # print(self.spec_have.freq)
         # print(self.spec_have.samples)
+
         # self.sampleclocks = 0x400000 // self.spec_have.freq  # Clocks per sample (TODO: what if it's not an integer?)
         self.sampleclocks = 0x404ac0 / self.spec_have.freq
         self.audiobuffer = array.array('b', [0] * 4096)  # Over 2 frames of sample space
@@ -62,9 +63,6 @@ class Sound:
         else:
             self.registers[offset] = value
 
-    def callback(self, _, samplebuffer, nbytes):
-        pass
-
     def sync(self):
         """Run the audio for the number of clock cycles stored in self.clock"""
         nsamples = int(self.clock / self.sampleclocks)
@@ -83,6 +81,24 @@ class Sound:
             self.audiobuffer[2*i+1] = sample
             self.clock -= self.sampleclocks
         sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2*nsamples)
+        self.clock %= self.sampleclocks
+
+    # Audio filling callback
+    def callback(self, data, stream, length):
+        for i in range(length//2):
+            self.sq1counter -= self.sampleclocks
+            self.sq2counter -= self.sampleclocks
+            if self.sq1counter < 0:
+                self.sq1state ^= 1
+                self.sq1counter = 16 * (2048 - (((0x7 & self.registers[4]) << 8) + self.registers[3]))
+                # print(self.sq1counter)
+            if self.sq2counter < 0:
+                self.sq2state ^= 1
+                self.sq2counter = 16 * (2048 - (((0x7 & self.registers[9]) << 8) + self.registers[8]))
+            stream[2*i] = 0x40 if self.sq1state else 0xB0
+            stream[2*i] += 0x3F if self.sq2state else -0x40
+            stream[2*i+1] = 0x00 if self.sq1state else 0xB0
+            stream[2*i+1] += 0x3F if self.sq2state else -0x40
 
     def stop(self):
         sdl2.SDL_CloseAudioDevice(self.device)
