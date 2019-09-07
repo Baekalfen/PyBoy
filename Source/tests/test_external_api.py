@@ -14,7 +14,7 @@ import PIL
 import pytest
 
 sys.path.append(".") # Adds higher directory to python modules path.
-from pyboy import PyBoy, windowevent # isort:skip
+from pyboy import PyBoy, windowevent, botsupport # isort:skip
 
 
 boot_rom = "ROMs/DMG_ROM.bin"
@@ -46,7 +46,7 @@ def test_tiles():
         t = pyboy.get_tile(identifier)
         assert t.identifier == identifier
         if identifier > 0xFF:
-            assert t.index[1] == identifier - 0xFF
+            assert t.index[1] == identifier - botsupport.constants.LOW_TILEDATA_NTILES
         else:
             assert t.index[1] == identifier
     with pytest.raises(Exception):
