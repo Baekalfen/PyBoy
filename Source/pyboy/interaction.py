@@ -60,7 +60,7 @@ class Interaction:
         elif key == windowevent.RELEASE_BUTTON_START:
             self.standard = set_bit(self.standard, P13)
 
-        # XOR to find the changed bits, and it to see if it way high before.
+        # XOR to find the changed bits, AND it to see if it was high before.
         # Test for both directional and standard buttons.
         return ((_directional ^ self.directional) & _directional) and \
                ((_standard ^ self.standard) & _standard)
