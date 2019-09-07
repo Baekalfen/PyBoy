@@ -41,12 +41,7 @@ cdef class Window():
     cdef void reset_hover(self)
 
     cdef void stop(self)
-    @cython.locals(
-            y=int,
-            x=int,
-            yy=int,
-            xx=int,
-            )
+    @cython.locals(y=int, x=int, yy=int, xx=int)
     cdef void copy_tile(self, uint32_t[:,:], int, (int, int), uint32_t[:,:])
 
     cdef void update_display(self, bint)
@@ -58,6 +53,7 @@ cdef class Window():
     cdef int mouse_x, mouse_y, mouse_hover_x, mouse_hover_y
     cdef int mouse(self, bint, int, int, int)
     cdef int _mouse(self, bint, int, int, int)
+    @cython.locals(tw=int, th=int, xx=int, yy=int)
     cdef void mark_tile(self, int, int, int, height=*, width=*)
 
 
