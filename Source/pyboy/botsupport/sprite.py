@@ -7,7 +7,7 @@
 This class presents an interface to the sprites held in the OAM data on the Game Boy.
 """
 
-from pyboy.lcd import LCDCRegister
+from pyboy.core.lcd import LCDCRegister
 
 from .constants import LCDC_OFFSET, OAM_OFFSET
 from .tile import Tile

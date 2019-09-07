@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from . import windowevent
+from pyboy import windowevent
 
 P10, P11, P12, P13 = range(4)
 

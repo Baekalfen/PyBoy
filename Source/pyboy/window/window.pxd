@@ -7,7 +7,7 @@ import cython
 from libc.stdint cimport uint32_t
 
 from .base_window cimport BaseWindow
-from pyboy.lcd cimport LCD
+from pyboy.core.lcd cimport LCD
 
 
 cdef (int, int) _dummy_declaration

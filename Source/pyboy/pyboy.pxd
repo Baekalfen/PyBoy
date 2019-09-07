@@ -7,7 +7,7 @@
 from libc cimport time
 cimport cython
 from libc.stdint cimport uint64_t
-from pyboy.mb.mb cimport Motherboard
+from pyboy.core.mb cimport Motherboard
 from pyboy.window.base_window cimport BaseWindow
 
 cdef (int, int) _dummy_declaration

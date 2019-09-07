@@ -7,7 +7,7 @@ import os
 import struct
 import time
 
-from ..logger import logger
+from pyboy.logger import logger
 
 
 class RTC:

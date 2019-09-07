@@ -7,7 +7,7 @@
 The Game Boy has two tile maps, which defines what is rendered on the screen.
 """
 
-from pyboy.lcd import LCDCRegister
+from pyboy.core.lcd import LCDCRegister
 
 from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_NTILES, LOW_TILEMAP
 from .tile import Tile

@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.cartridge.rtc cimport RTC
+from pyboy.core.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint32_t
 
 cdef class BaseMBC:

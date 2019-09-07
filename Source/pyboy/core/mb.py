@@ -3,9 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from . import cpu, timer
-from .. import bootrom, cartridge, interaction, lcd, ram
-from ..logger import logger
+from pyboy.logger import logger
+from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)

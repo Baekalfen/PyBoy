@@ -5,7 +5,5 @@
 
 __all__ = ['pyboy', 'botsupport', 'windowevent']
 
-from . import (
-    bootrom, cartridge, interaction, lcd, mb, ram, window, windowevent
-)
+from . import core, window, windowevent
 from .pyboy import PyBoy

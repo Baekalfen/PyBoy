@@ -4,7 +4,7 @@
 #
 
 cimport sdl2
-from pyboy.lcd cimport LCD
+from pyboy.core.lcd cimport LCD
 from .window_sdl2 cimport SDLWindow
 
 import cython

@@ -7,7 +7,7 @@ from cpython.array cimport array
 from array import array
 
 cimport sdl2
-from pyboy.lcd cimport LCD
+from pyboy.core.lcd cimport LCD
 from pyboy.window.base_window cimport BaseWindow
 
 import cython

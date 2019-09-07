@@ -16,8 +16,8 @@ import zlib
 import numpy as np
 
 from . import botsupport, window, windowevent
+from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .mb.mb import Motherboard
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .screenrecorder import ScreenRecorder
 
