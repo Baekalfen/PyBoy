@@ -3,9 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from . import cpu, timer
 from .. import bootrom, cartridge, interaction, lcd, ram
 from ..logger import logger
-from . import cpu, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
@@ -36,8 +36,8 @@ class Motherboard:
         return b
 
     def buttonevent(self, key):
-        self.interaction.key_event(key)
-        self.cpu.set_interruptflag(HIGHTOLOW)
+        if self.interaction.key_event(key):
+            self.cpu.set_interruptflag(HIGHTOLOW)
 
     def stop(self, save):
         self.window.stop()

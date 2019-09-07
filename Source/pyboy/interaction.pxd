@@ -10,5 +10,5 @@ cdef unsigned char set_bit(unsigned char, unsigned char)
 
 cdef class Interaction:
     cdef unsigned char directional, standard
-    cdef void key_event(self, int)
+    cdef bint key_event(self, int)
     cdef unsigned char pull(self, unsigned char)

@@ -22,6 +22,8 @@ class Interaction:
         self.standard = 0xF
 
     def key_event(self, key):
+        _directional = self.directional
+        _standard = self.standard
         if key == windowevent.PRESS_ARROW_RIGHT:
             self.directional = reset_bit(self.directional, P10)
         elif key == windowevent.PRESS_ARROW_LEFT:
@@ -57,6 +59,11 @@ class Interaction:
             self.standard = set_bit(self.standard, P12)
         elif key == windowevent.RELEASE_BUTTON_START:
             self.standard = set_bit(self.standard, P13)
+
+        # XOR to find the changed bits, and it to see if it way high before.
+        # Test for both directional and standard buttons.
+        return ((_directional ^ self.directional) & _directional) and \
+               ((_standard ^ self.standard) & _standard)
 
     def pull(self, joystickbyte):
         P14 = (joystickbyte >> 4) & 1
