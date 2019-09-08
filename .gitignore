@@ -117,3 +117,8 @@ Projects/Projects.aux
 Projects/Projects.bbl
 Projects/Projects.blg
 Projects/Projects.out
+
+# Autoenv scripts
+.in
+.out
+.env

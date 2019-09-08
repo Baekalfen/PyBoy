@@ -6,7 +6,6 @@
 import array
 
 import sdl2.ext
-
 from pyboy import windowevent
 from pyboy.window.base_window import BaseWindow
 

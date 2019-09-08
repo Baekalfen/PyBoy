@@ -10,18 +10,13 @@ except ImportError:
 
 import numpy as np
 import OpenGL.GLUT.freeglut
-from OpenGL.GL import (
-    GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8,
-    glClear, glDrawPixels, glFlush, glPixelZoom
-)
+from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
+                       glDrawPixels, glFlush, glPixelZoom)
 # from OpenGL.GLU import *
-from OpenGL.GLUT import (
-    GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA,
-    GLUT_SINGLE, glutCreateWindow, glutDisplayFunc, glutInit,
-    glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc,
-    glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
-    glutSpecialUpFunc
-)
+from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
+                         glutCreateWindow, glutDisplayFunc, glutInit, glutInitDisplayMode, glutInitWindowSize,
+                         glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
+                         glutSpecialUpFunc)
 
 from .. import windowevent
 from ..logger import logger
