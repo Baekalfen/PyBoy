@@ -9,7 +9,6 @@ import sys
 import zlib
 
 import numpy as np
-
 from pyboy import PyBoy, windowevent
 
 sys.path.append(".") # Adds higher directory to python modules path.

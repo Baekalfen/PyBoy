@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.lcd cimport LCD
+from pyboy.core.lcd cimport LCD
 from pyboy.window.base_window cimport BaseWindow
 
 

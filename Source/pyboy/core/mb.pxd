@@ -5,14 +5,14 @@
 
 
 import cython
-cimport pyboy.mb.cpu
-cimport pyboy.mb.timer
-cimport pyboy.cartridge.base_mbc
-# cimport pyboy.cartridge.cartridge
-cimport pyboy.bootrom
-cimport pyboy.ram
-cimport pyboy.lcd
-cimport pyboy.interaction
+cimport pyboy.core.cpu
+cimport pyboy.core.timer
+cimport pyboy.core.cartridge.base_mbc
+# cimport pyboy.core.cartridge.cartridge
+cimport pyboy.core.bootrom
+cimport pyboy.core.ram
+cimport pyboy.core.lcd
+cimport pyboy.core.interaction
 cimport pyboy.window.window
 cimport pyboy.window.base_window
 
@@ -25,14 +25,14 @@ cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class Motherboard:
-    cdef pyboy.interaction.Interaction interaction
-    cdef pyboy.bootrom.BootROM bootrom
-    cdef pyboy.ram.RAM ram
-    cdef pyboy.lcd.LCD lcd
-    cdef pyboy.mb.cpu.CPU cpu
-    cdef pyboy.mb.timer.Timer timer
+    cdef pyboy.core.interaction.Interaction interaction
+    cdef pyboy.core.bootrom.BootROM bootrom
+    cdef pyboy.core.ram.RAM ram
+    cdef pyboy.core.lcd.LCD lcd
+    cdef pyboy.core.cpu.CPU cpu
+    cdef pyboy.core.timer.Timer timer
     cdef pyboy.window.base_window.BaseWindow window
-    cdef pyboy.cartridge.base_mbc.BaseMBC cartridge
+    cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
     cdef unicode serialbuffer
 

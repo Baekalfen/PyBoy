@@ -3,7 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from ..logger import logger
+from pyboy.logger import logger
+
 from .base_mbc import BaseMBC
 
 

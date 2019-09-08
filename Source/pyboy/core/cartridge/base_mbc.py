@@ -6,7 +6,8 @@
 import array
 import os
 
-from ..logger import logger
+from pyboy.logger import logger
+
 from .rtc import RTC
 
 

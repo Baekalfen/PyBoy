@@ -4,7 +4,7 @@
 #
 
 
-cimport pyboy.mb.mb
+cimport pyboy.core.mb
 cimport opcodes
 
 import cython
@@ -53,7 +53,7 @@ cdef class CPU:
     # results do not overflow
     cdef int HL, SP, PC
 
-    cdef pyboy.mb.mb.Motherboard mb
+    cdef pyboy.core.mb.Motherboard mb
 
     cdef void set_bc(CPU, int x)
     cdef void set_de(CPU, int x)

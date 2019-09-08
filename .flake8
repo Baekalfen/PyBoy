@@ -12,5 +12,6 @@
 # E731: "E731 do not assign a lambda expression, use a def" -- don't tell me how to use lambdas
 # E402: isort will take care of that
 ignore = E261, E123, E221, E203, W503, W504, E226, E722, E126, E121, E731, E402
-exclude = .git, __pycache__, */test_pyboy/*,
+per-file-ignores = interface_example.py:E501, tetris_bot.py:E501
+exclude = .git, __pycache__, opcodes.py, __init__.py
 max-line-length = 120

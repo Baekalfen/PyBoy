@@ -8,7 +8,7 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 cimport sdl2 as sdl2
-from pyboy.lcd cimport LCD
+from pyboy.core.lcd cimport LCD
 from pyboy.window.base_window cimport BaseWindow
 
 
