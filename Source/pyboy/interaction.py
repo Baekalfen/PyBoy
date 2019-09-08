@@ -62,7 +62,7 @@ class Interaction:
 
         # XOR to find the changed bits, AND it to see if it was high before.
         # Test for both directional and standard buttons.
-        return ((_directional ^ self.directional) & _directional) and \
+        return ((_directional ^ self.directional) & _directional) or \
                ((_standard ^ self.standard) & _standard)
 
     def pull(self, joystickbyte):
