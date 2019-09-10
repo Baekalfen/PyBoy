@@ -91,6 +91,8 @@ cdef class DebugWindow(SDLWindow):
     cdef bint sprite_update
     cdef bint tile_update
 
+    cdef bint hide_window
+
     cdef TileViewWindow tile1
     cdef TileViewWindow tile2
     cdef SpriteWindow sprite

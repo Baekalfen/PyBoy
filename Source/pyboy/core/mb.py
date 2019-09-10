@@ -4,6 +4,7 @@
 #
 
 from pyboy.logger import logger
+
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)

@@ -6,7 +6,6 @@
 import array
 
 import sdl2.ext
-
 from pyboy import windowevent
 from pyboy.window.base_window import BaseWindow
 
@@ -36,7 +35,7 @@ class ScanlineWindow(BaseWindow):
             self._linerect = sdl2.SDL_Rect(0, 0, COLS, 1)
             self._linebuf_p = ctypes.c_void_p(self._linebuf.buffer_info()[0])
 
-    def init(self):
+    def init(self, hide_window):
         sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
         self._ticks = sdl2.SDL_GetTicks()
 
@@ -56,7 +55,11 @@ class ScanlineWindow(BaseWindow):
             sdl2.SDL_TEXTUREACCESS_STREAMING, COLS, ROWS)
 
         self.blank_screen()
-        sdl2.SDL_ShowWindow(self._window)
+
+        if hide_window:
+            sdl2.SDL_HideWindow(self._window)
+        else:
+            sdl2.SDL_ShowWindow(self._window)
 
     def dump(self, filename):
         raise NotImplementedError()

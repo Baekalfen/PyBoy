@@ -103,7 +103,7 @@ class SDLWindow(BaseWindow):
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
 
-    def init(self):
+    def init(self, hide_window):
         self._ticks = sdl2.SDL_GetTicks()
 
         # Should be less... https://wiki.libsdl.org/SDL_Init
@@ -125,7 +125,11 @@ class SDLWindow(BaseWindow):
             sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS)
 
         self.blank_screen()
-        sdl2.SDL_ShowWindow(self._window)
+
+        if hide_window:
+            sdl2.SDL_HideWindow(self._window)
+        else:
+            sdl2.SDL_ShowWindow(self._window)
 
     def dump(self, filename):
         raise NotImplementedError()

@@ -20,7 +20,9 @@ FPS = 60
 
 class ScreenRecorder:
 
-    def __init__(self):
+    def __init__(self, gamename):
+        self.gamename = gamename
+
         if Image:
             logger.info("ScreenRecorder started")
             self.frames = []
@@ -43,7 +45,7 @@ class ScreenRecorder:
             directory = os.path.join(os.path.curdir, "recordings")
             if not os.path.exists(directory):
                 os.makedirs(directory, mode=0o755)
-            path = os.path.join(directory, time.strftime("Recording-%Y.%m.%d-%H.%M.%S.gif"))
+            path = os.path.join(directory, time.strftime(f"{self.gamename}-%Y.%m.%d-%H.%M.%S.gif"))
 
         if self.frames:
             self.frames[0].save(path, save_all=True, interlace=False,

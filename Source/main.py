@@ -6,7 +6,6 @@
 
 import os
 import sys
-import traceback
 
 from pyboy import PyBoy
 from pyboy.logger import addconsolehandler, logger
@@ -40,6 +39,11 @@ if argv_record_input:
     assert argv_record_input_file[0] != '-', "Output file looks like an argument"
 
 
+if argv_record_input and not argv_loadstate:
+    logger.warning("To replay input consistently later, it is required to load a state at boot. This will be embedded"
+                   "into the .replay file.")
+
+
 def getROM(romdir):
     """Give a list of ROMs to start"""
     found_files = list(filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(romdir)))
@@ -56,10 +60,6 @@ def getROM(romdir):
 
 
 def main():
-    # Automatically bump to '-OO' optimizations
-    if __debug__:
-        os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
-
     bootrom = "ROMs/DMG_ROM.bin"
     romdir = "ROMs/"
     scale = 3
@@ -73,34 +73,33 @@ def main():
         print("ROM folder not found. Please copy the Game-ROM to '%s'".format(romdir))
         exit()
 
-    try:
-        # Check if the ROM is given through argv
-        if len(sys.argv) > 2: # First arg is SDL2/PyGame
-            filename = sys.argv[2]
-        else:
-            filename = getROM(romdir)
+    # Check if the ROM is given through argv
+    if len(sys.argv) > 2: # First arg is SDL2/PyGame
+        filename = sys.argv[2]
+    else:
+        filename = getROM(romdir)
 
-        # Start PyBoy and run loop
-        pyboy = PyBoy(
-                filename,
-                window_type=(sys.argv[1] if len(sys.argv) > 1 else None),
-                window_scale=scale,
-                bootrom_file=bootrom,
-                autopause=argv_autopause,
-                loadstate_file=argv_load_state_file, # Needs filename
-                debugging=argv_debug,
-                profiling=argv_profiling,
-                record_input_file=argv_record_input_file,
-                disable_input=argv_disable_input,
-            )
-        while not pyboy.tick():
-            pass
-        pyboy.stop()
+    # Start PyBoy and run loop
+    pyboy = PyBoy(
+            filename,
+            window_type=(sys.argv[1] if len(sys.argv) > 1 else None),
+            window_scale=scale,
+            bootrom_file=bootrom,
+            autopause=argv_autopause,
+            debugging=argv_debug,
+            profiling=argv_profiling,
+            record_input_file=argv_record_input_file,
+            disable_input=argv_disable_input,
+        )
 
-    except KeyboardInterrupt:
-        print("Interrupted by keyboard")
-    except Exception:
-        traceback.print_exc()
+    if argv_load_state_file:
+        with open(argv_load_state_file, 'rb') as f:
+            pyboy.load_state(f)
+
+    while not pyboy.tick():
+        pass
+
+    pyboy.stop(_replay_state_file=argv_load_state_file)
 
 
 if __name__ == "__main__":

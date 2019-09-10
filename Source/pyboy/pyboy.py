@@ -8,6 +8,7 @@ The core module of the emulator
 """
 
 import base64
+import hashlib
 import io
 import json
 import time
@@ -30,15 +31,17 @@ class PyBoy:
     def __init__(
                 self,
                 gamerom_file, *,
+                default_ram_file=None,
+                default_state_file=None,
                 window_type=None,
                 window_scale=3,
                 bootrom_file=None,
                 autopause=False,
-                loadstate_file=None,
                 debugging=False,
                 profiling=False,
                 record_input_file=None,
                 disable_input=False,
+                hide_window=False,
             ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -49,7 +52,7 @@ class PyBoy:
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
-        GitHub, if other methods are needed for your projects. Take a look at `interface_example.px` or `tetris_bot.py`
+        GitHub, if other methods are needed for your projects. Take a look at `interface_example.py` or `tetris_bot.py`
         for a crude "bot", which interacts with the game.
 
         Only the `gamerom_file` argument is required.
@@ -62,7 +65,6 @@ class PyBoy:
             window_scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
             autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
-            loadstate_file (str): Filepath to a saved state to be loaded at startup.
             debugging (bool): Whether or not to enable some extended debugging features.
             profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
             record_input_file (str): Filepath to save all recorded input for replay later.
@@ -70,16 +72,12 @@ class PyBoy:
         """
         self.gamerom_file = gamerom_file
 
-        self.window = window.window.getwindow(window_type, window_scale, debugging)
+        self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)
         self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=profiling)
 
         # TODO: Get rid of this extra step
         if debugging:
             self.window.set_lcd(self.mb.lcd)
-
-        if loadstate_file:
-            with open(loadstate_file, 'rb') as f:
-                self.mb.load_state(f)
 
         self.avg_emu = 0
         self.avg_cpu = 0
@@ -155,7 +153,7 @@ class PyBoy:
                     logger.info("Emulation unpaused!")
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder()
+                    self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
                 else:
                     self.screen_recorder.save()
                     self.screen_recorder = None
@@ -190,7 +188,7 @@ class PyBoy:
 
         return done
 
-    def stop(self, save=True):
+    def stop(self, save=True, _replay_state_file=None):
         """
         Gently stops the emulator and all sub-modules.
 
@@ -212,9 +210,20 @@ class PyBoy:
                 print("%3x %16s %s" % (n, name, hits))
 
         if self.record_input:
+            with open(self.gamerom_file, 'rb') as f:
+                m = hashlib.sha256()
+                m.update(f.read())
+                b64_romhash = base64.b64encode(m.digest()).decode('utf8')
+
+            if _replay_state_file is None:
+                b64_state = None
+            else:
+                with open(_replay_state_file, 'rb') as f:
+                    b64_state = base64.b64encode(f.read()).decode('utf8')
+
             with open(self.record_input_file, 'wb') as f:
-                recorded_data = io.StringIO() # json.dump writes 'str' not bytes...
-                json.dump(self.recorded_input, recorded_data)
+                recorded_data = io.StringIO()
+                json.dump([self.recorded_input, b64_romhash, b64_state], recorded_data)
                 f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))
 
     ###################################################################
@@ -458,3 +467,13 @@ class PyBoy:
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
+
+    def get_cartridge_title(self):
+        """
+        Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
+        have been truncated to 11 characters.
+
+        Returns:
+            str : Game name
+        """
+        return self.mb.cartridge.gamename

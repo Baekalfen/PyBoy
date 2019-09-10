@@ -32,9 +32,9 @@
 The Game Boy has two tile maps, which defines what is rendered on the screen.
 &#34;&#34;&#34;
 
-from pyboy.lcd import LCDCRegister
+from pyboy.core.lcd import LCDCRegister
 
-from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEMAP
+from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_NTILES, LOW_TILEMAP
 from .tile import Tile
 
 
@@ -71,8 +71,7 @@ class TileMap:
         else:
             self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
 
-        self.signed_tile_data = bool(LCDC.tiledata_select)
-        # self.map_offset = HIGH_TILEMAP if self.signed_tile_data else LOW_TILEMAP
+        self.signed_tile_data = not bool(LCDC.tiledata_select)
         self._use_tile_objects = False
 
     def _get_lcdc_register(self):
@@ -153,7 +152,7 @@ class TileMap:
 
         tile = self.mb.getitem(self.get_tile_address(x, y))
         if self.signed_tile_data:
-            return ((tile ^ 0x80) - 128) + 0xFF
+            return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
         else:
             return tile
 
@@ -180,17 +179,16 @@ class TileMap:
 
     def get_tile_matrix(self):
         &#34;&#34;&#34;
-        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile index to be shown on
-        screen for each position.
+        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile identifier to be shown
+        on screen for each position.
 
-        The index can be used to quickly identify what is on the screen through this tile view.
+        The identifier can be used to quickly identify what is on the screen through this tile view.
 
-        Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view.
         You can read how the indexes work in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
         Returns:
-            list: Nested list creating a 32x32 matrix of tile indexes.
+            list: Nested list creating a 32x32 matrix of tile identifiers.
         &#34;&#34;&#34;
         return self[:, :]
 
@@ -200,7 +198,7 @@ class TileMap:
         self.use_tile_objects(False)
         return_data = (
                 f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34; +
-                f&#34;High Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
+                f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
                 &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
                 &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
                 &#34;\n&#34;.join(
@@ -318,8 +316,7 @@ identifier at a given coordinate.</p>
         else:
             self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
 
-        self.signed_tile_data = bool(LCDC.tiledata_select)
-        # self.map_offset = HIGH_TILEMAP if self.signed_tile_data else LOW_TILEMAP
+        self.signed_tile_data = not bool(LCDC.tiledata_select)
         self._use_tile_objects = False
 
     def _get_lcdc_register(self):
@@ -400,7 +397,7 @@ identifier at a given coordinate.</p>
 
         tile = self.mb.getitem(self.get_tile_address(x, y))
         if self.signed_tile_data:
-            return ((tile ^ 0x80) - 128) + 0xFF
+            return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
         else:
             return tile
 
@@ -427,17 +424,16 @@ identifier at a given coordinate.</p>
 
     def get_tile_matrix(self):
         &#34;&#34;&#34;
-        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile index to be shown on
-        screen for each position.
+        Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile identifier to be shown
+        on screen for each position.
 
-        The index can be used to quickly identify what is on the screen through this tile view.
+        The identifier can be used to quickly identify what is on the screen through this tile view.
 
-        Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view.
         You can read how the indexes work in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
         Returns:
-            list: Nested list creating a 32x32 matrix of tile indexes.
+            list: Nested list creating a 32x32 matrix of tile identifiers.
         &#34;&#34;&#34;
         return self[:, :]
 
@@ -447,7 +443,7 @@ identifier at a given coordinate.</p>
         self.use_tile_objects(False)
         return_data = (
                 f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34; +
-                f&#34;High Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
+                f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
                 &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
                 &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
                 &#34;\n&#34;.join(
@@ -657,7 +653,7 @@ tiles without researching the quirks of tile indexes used in the Game Boy.</p>
 
     tile = self.mb.getitem(self.get_tile_address(x, y))
     if self.signed_tile_data:
-        return ((tile ^ 0x80) - 128) + 0xFF
+        return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
     else:
         return tile</code></pre>
 </details>
@@ -705,32 +701,30 @@ needed for comparison.</dd>
 <span>def <span class="ident">get_tile_matrix</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile index to be shown on
-screen for each position.</p>
-<p>The index can be used to quickly identify what is on the screen through this tile view.</p>
-<p>Use <a title="pyboy.botsupport.tilemap.TileMap.signed_tile_index" href="#pyboy.botsupport.tilemap.TileMap.signed_tile_index"><code>TileMap.signed_tile_index</code></a> to test if the indexes are signed for this tile view.
-You can read how the indexes work in the
+<section class="desc"><p>Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile identifier to be shown
+on screen for each position.</p>
+<p>The identifier can be used to quickly identify what is on the screen through this tile view.</p>
+<p>You can read how the indexes work in the
 <a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>list</code></strong></dt>
-<dd>Nested list creating a 32x32 matrix of tile indexes.</dd>
+<dd>Nested list creating a 32x32 matrix of tile identifiers.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def get_tile_matrix(self):
     &#34;&#34;&#34;
-    Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile index to be shown on
-    screen for each position.
+    Returns a matrix of 32x32 of the given tile map. Each element in the matrix, is the tile identifier to be shown
+    on screen for each position.
 
-    The index can be used to quickly identify what is on the screen through this tile view.
+    The identifier can be used to quickly identify what is on the screen through this tile view.
 
-    Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for this tile view.
     You can read how the indexes work in the
     [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
     Returns:
-        list: Nested list creating a 32x32 matrix of tile indexes.
+        list: Nested list creating a 32x32 matrix of tile identifiers.
     &#34;&#34;&#34;
     return self[:, :]</code></pre>
 </details>

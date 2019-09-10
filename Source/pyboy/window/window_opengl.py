@@ -10,18 +10,13 @@ except ImportError:
 
 import numpy as np
 import OpenGL.GLUT.freeglut
-from OpenGL.GL import (
-    GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8,
-    glClear, glDrawPixels, glFlush, glPixelZoom
-)
+from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
+                       glDrawPixels, glFlush, glPixelZoom)
 # from OpenGL.GLU import *
-from OpenGL.GLUT import (
-    GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA,
-    GLUT_SINGLE, glutCreateWindow, glutDisplayFunc, glutInit,
-    glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc,
-    glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
-    glutSpecialUpFunc
-)
+from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
+                         glutCreateWindow, glutDisplayFunc, glutInit, glutInitDisplayMode, glutInitWindowSize,
+                         glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
+                         glutSpecialUpFunc)
 
 from .. import windowevent
 from ..logger import logger
@@ -34,7 +29,7 @@ class OpenGLWindow(SDLWindow):
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
 
-    def init(self):
+    def init(self, hide_window):
         # Shift from ARGB to RGBA
         self.color_palette = [((x << 8) & 0xFFFFFFFF) | 0x000000FF for x in self.color_palette]
         self.alphamask = 0x000000FF
@@ -54,6 +49,9 @@ class OpenGLWindow(SDLWindow):
         glPixelZoom(self._scale, self._scale)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
+
+        if hide_window:
+            logger.warning("Hiding the window is not supported in OpenGL")
 
     # Cython does not cooperate with lambdas
     def _key(self, c, x, y):

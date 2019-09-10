@@ -41,4 +41,4 @@ cdef class PyBoy:
 
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
     cpdef bint tick(self)
-    cpdef void stop(self, save=*)
+    cpdef void stop(self, save=*, _replay_state_file=*)

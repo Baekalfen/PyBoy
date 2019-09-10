@@ -3,6 +3,13 @@
 
 all: build
 
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+    CFLAGS='-w'
+else
+    CFLAGS='-w -DCYTHON_WITHOUT_ASSERTIONS'
+endif
+
 THREADS := 6
 PY := python3
 PYPY := pypy3
@@ -12,7 +19,7 @@ ROOT_DIR := $(shell git rev-parse --show-toplevel)
 
 build:
 	@echo "Building..."
-	CFLAGS='-w' ${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
+	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
 
 clean:
 	@echo "Cleaning..."
@@ -31,14 +38,14 @@ run: build
 	${PY} main.py SDL2 ${ROOT_DIR}/Source/ROMs/POKEMON\ BLUE.gb
 
 install:
-	CFLAGS='-w' ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
+	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
 
 test: clean build
 	${PY} tetris_bot.py ${ROOT_DIR}/Source/ROMs/Tetris.gb --quiet
-	${PY} interface_example.py
+	${PY} interface_example.py --quiet
 	${PY} -m pytest -n${THREADS} -v
 	${PYPY} tetris_bot.py ${ROOT_DIR}/Source/ROMs/Tetris.gb --quiet
-	${PYPY} interface_example.py
+	${PYPY} interface_example.py --quiet
 	${PYPY} -m pytest -n${THREADS} -v
 
 test_quick: clean build
