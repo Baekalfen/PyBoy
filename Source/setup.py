@@ -20,7 +20,6 @@ setup(
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
     long_description=long_description,
-    content_type="text/markdown",
     url="https://github.com/Baekalfen/PyBoy",
     classifiers=[
         "Programming Language :: Python :: 3",
