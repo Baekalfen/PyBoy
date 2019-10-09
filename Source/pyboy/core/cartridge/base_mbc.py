@@ -14,10 +14,7 @@ from .rtc import RTC
 class BaseMBC:
     def __init__(self, filename, rombanks, external_ram_count, carttype, sram, battery, rtc_enabled):
         self.filename = filename + ".ram"
-        banks = len(rombanks)
-        self.rombanks = [[0] * (16*1024) for _ in range(256)]
-        for n in range(banks):
-            self.rombanks[n][:] = rombanks[n]
+        self.rombanks = rombanks
         self.carttype = carttype
 
         self.battery = battery

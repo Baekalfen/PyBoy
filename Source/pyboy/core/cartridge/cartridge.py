@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import array
+from array import array
 
 from pyboy.logger import logger
 
@@ -12,6 +12,12 @@ from .mbc1 import MBC1
 from .mbc2 import MBC2
 from .mbc3 import MBC3
 from .mbc5 import MBC5
+
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
 
 
 def Cartridge(filename):
@@ -50,15 +56,14 @@ def validate_checksum(rombanks):
 
 def load_romfile(filename):
     with open(filename, 'rb') as romfile:
-        romdata = romfile.read()
+        romdata = array('B', romfile.read())
 
-        banksize = (16 * 1024)
-        rombanks = [array.array('B', [0] * banksize) for n in range(len(romdata) // banksize)]
-
-        for i, byte in enumerate(romdata):
-            rombanks[i // banksize][i % banksize] = byte & 0xFF
-
-    return rombanks
+    banksize = 16 * 1024
+    if cythonmode:
+        return memoryview(romdata).cast('B', shape=(len(romdata) // banksize, banksize))
+    else:
+        v = memoryview(romdata)
+        return [v[i:i+banksize] for i in range(0, len(romdata), banksize)]
 
 
 CARTRIDGE_TABLE = {

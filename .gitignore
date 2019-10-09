@@ -9,6 +9,7 @@ __pycache__/
 .Python
 env/
 build/
+cython_debug/
 develop-eggs/
 dist/
 downloads/

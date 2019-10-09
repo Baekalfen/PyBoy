@@ -44,10 +44,9 @@ setup(
             "pdoc3",
         ],
     },
-    include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/core", "pyboy/debug"],
+    include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/core", "pyboy/botsupport"],
     zip_safe=False,
     ext_modules=cythonize([
-        # 'pyboy/cartridge/cartridge.py',
         'pyboy/__init__.py',
         'pyboy/botsupport/sprite.py',
         'pyboy/botsupport/spritetracker.py',
@@ -57,6 +56,7 @@ setup(
         'pyboy/core/bootrom.py',
         'pyboy/core/cartridge/__init__.py',
         'pyboy/core/cartridge/base_mbc.py',
+        'pyboy/core/cartridge/cartridge.py',
         'pyboy/core/cartridge/mbc1.py',
         'pyboy/core/cartridge/mbc2.py',
         'pyboy/core/cartridge/mbc3.py',
@@ -86,6 +86,7 @@ setup(
         include_path=[".", "pyboy", "pyboy/botsupport", "pyboy/cartridge", "pyboy/core", "pyboy/window"],
         nthreads=thread_count,
         annotate=False,
+        gdb_debug=False,
         language_level=2,
         compiler_directives={
             "cdivision": True,
