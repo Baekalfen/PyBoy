@@ -12,7 +12,7 @@ import cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
-cdef BaseMBC Cartridge(unicode)
+cpdef BaseMBC Cartridge(unicode)
 cdef bint validate_checksum(uint8_t[:,:])
 
 @cython.locals(romdata=array, banksize=int)
