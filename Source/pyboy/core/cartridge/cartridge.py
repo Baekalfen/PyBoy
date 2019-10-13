@@ -20,7 +20,7 @@ except ImportError:
     cythonmode = False
 
 
-def Cartridge(filename):
+def load_cartridge(filename):
     rombanks = load_romfile(filename)
     if not validate_checksum(rombanks):
         raise Exception("Cartridge header checksum mismatch!")

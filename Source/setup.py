@@ -12,6 +12,8 @@ thread_count = cpu_count()
 print("Thread Count:", thread_count)
 
 
+module_dirs = [".", "pyboy", "pyboy/core", "pyboy/core/cartridge", "pyboy/window", "pyboy/botsupport"]
+
 setup(
     name='PyBoy',
     version='0.1',
@@ -44,7 +46,7 @@ setup(
             "pdoc3",
         ],
     },
-    include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/core", "pyboy/botsupport"],
+    include_dirs=module_dirs,
     zip_safe=False,
     ext_modules=cythonize([
         'pyboy/__init__.py',
@@ -83,7 +85,7 @@ setup(
         'pyboy/window/window_sdl2.py',
         'pyboy/windowevent.py',
         ],
-        include_path=[".", "pyboy", "pyboy/botsupport", "pyboy/cartridge", "pyboy/core", "pyboy/window"],
+        include_path=module_dirs,
         nthreads=thread_count,
         annotate=False,
         gdb_debug=False,

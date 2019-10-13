@@ -9,7 +9,7 @@ from libc.stdint cimport uint8_t, uint32_t
 cdef class BaseMBC:
     cdef unicode filename
     cdef unicode gamename
-    cdef uint8_t[:,:] rombanks
+    cdef uint8_t[:, :] rombanks
     # 16 is absoulte max. 8KB in each bank
     cdef uint8_t[16][8 * 1024] rambanks
     cdef unsigned char carttype
