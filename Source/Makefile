@@ -22,7 +22,7 @@ clean:
 	find ${ROOT_DIR}/Source/pyboy/ -name "*.c" -delete
 	find ${ROOT_DIR}/Source/pyboy/ -name "*.h" -delete
 	find ${ROOT_DIR}/Source/pyboy/ -name "*.html" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "__pycache__" -d -delete
+	find ${ROOT_DIR}/Source/pyboy/ -name "__pycache__" -delete
 	rm -rf ${ROOT_DIR}/Source/build
 	rm -rf ${ROOT_DIR}/Source/dist
 	rm -rf ${ROOT_DIR}/Source/PyBoy.egg-info
@@ -50,4 +50,3 @@ docs: clean
 	cp html/pyboy/pyboy.html ${ROOT_DIR}/docs/
 	cp -r html/pyboy/botsupport ${ROOT_DIR}/docs/
 	rm -rf html
-

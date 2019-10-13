@@ -56,10 +56,6 @@ def getROM(romdir):
 
 
 def main():
-    # Automatically bump to '-OO' optimizations
-    if __debug__:
-        os.execl(sys.executable, sys.executable, '-OO', *sys.argv)
-
     bootrom = "ROMs/DMG_ROM.bin"
     romdir = "ROMs/"
     scale = 3

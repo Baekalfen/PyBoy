@@ -22,7 +22,7 @@ class Motherboard:
         self.window = window
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
-        self.cartridge = cartridge.Cartridge(gamerom_file)
+        self.cartridge = cartridge.load_cartridge(gamerom_file)
         self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
