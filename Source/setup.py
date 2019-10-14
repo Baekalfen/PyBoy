@@ -1,23 +1,33 @@
 from multiprocessing import cpu_count
+from sys import platform
 
 from setuptools import find_packages, setup
 
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
+
+# Cython currently has a bug in its code that results in symbol collision on Windows
+def get_export_symbols(self, ext):
+    parts = ext.name.split(".")
+    initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1]  # noqa: F841
+
+
+# Override function in Cython to fix symbol collision
+build_ext.get_export_symbols = get_export_symbols
+
 with open('../README.md', 'r') as rm:
     long_description = rm.read()
 
-thread_count = cpu_count()
-print("Thread Count:", thread_count)
-
+# Get number of threads to cythonize with. A value of 0 disables multiprocessing.
+thread_count = cpu_count() if platform != 'win32' else 0
 
 module_dirs = [".", "pyboy", "pyboy/core", "pyboy/core/cartridge", "pyboy/window", "pyboy/botsupport"]
+
 
 setup(
     name='PyBoy',
     version='0.1',
-    # packages = ["pyboy"],
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
@@ -84,7 +94,7 @@ setup(
         'pyboy/window/window_scanline.py',
         'pyboy/window/window_sdl2.py',
         'pyboy/windowevent.py',
-        ],
+    ],
         include_path=module_dirs,
         nthreads=thread_count,
         annotate=False,
