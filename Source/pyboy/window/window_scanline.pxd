@@ -76,7 +76,7 @@ cdef class ScanlineWindow(BaseWindow):
         sdl2.SDL_UpdateTexture(self._screenbuf,
                                &self._linerect,
                                &self._linebuf,
-                               160)
+                               4 * COLS)
 
     cdef inline void _render_copy(self):
         sdl2.SDL_RenderCopy(

@@ -1,26 +1,37 @@
 from multiprocessing import cpu_count
+from sys import platform
 
 from setuptools import find_packages, setup
 
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
+
+# Cython currently has a bug in its code that results in symbol collision on Windows
+def get_export_symbols(self, ext):
+    parts = ext.name.split(".")
+    initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1]  # noqa: F841
+
+
+# Override function in Cython to fix symbol collision
+build_ext.get_export_symbols = get_export_symbols
+
 with open('../README.md', 'r') as rm:
     long_description = rm.read()
 
-thread_count = cpu_count()
-print("Thread Count:", thread_count)
+# Get number of threads to cythonize with. A value of 0 disables multiprocessing.
+thread_count = cpu_count() if platform != 'win32' else 0
+
+module_dirs = [".", "pyboy", "pyboy/core", "pyboy/core/cartridge", "pyboy/window", "pyboy/botsupport"]
 
 
 setup(
     name='PyBoy',
     version='0.1',
-    # packages = ["pyboy"],
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
     long_description=long_description,
-    content_type="text/markdown",
     url="https://github.com/Baekalfen/PyBoy",
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -45,10 +56,9 @@ setup(
             "pdoc3",
         ],
     },
-    include_dirs=[".", "pyboy", "pyboy/cartridge", "pyboy/window", "pyboy/core", "pyboy/debug"],
+    include_dirs=module_dirs,
     zip_safe=False,
     ext_modules=cythonize([
-        # 'pyboy/cartridge/cartridge.py',
         'pyboy/__init__.py',
         'pyboy/botsupport/sprite.py',
         'pyboy/botsupport/spritetracker.py',
@@ -58,6 +68,7 @@ setup(
         'pyboy/core/bootrom.py',
         'pyboy/core/cartridge/__init__.py',
         'pyboy/core/cartridge/base_mbc.py',
+        'pyboy/core/cartridge/cartridge.py',
         'pyboy/core/cartridge/mbc1.py',
         'pyboy/core/cartridge/mbc2.py',
         'pyboy/core/cartridge/mbc3.py',
@@ -83,10 +94,11 @@ setup(
         'pyboy/window/window_scanline.py',
         'pyboy/window/window_sdl2.py',
         'pyboy/windowevent.py',
-        ],
-        include_path=[".", "pyboy", "pyboy/botsupport", "pyboy/cartridge", "pyboy/core", "pyboy/window"],
+    ],
+        include_path=module_dirs,
         nthreads=thread_count,
         annotate=False,
+        gdb_debug=False,
         language_level=2,
         compiler_directives={
             "cdivision": True,
