@@ -3,12 +3,18 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import sys
 from pprint import pprint
 
 from pyboy import PyBoy
 
-# pyboy = PyBoy("ROMs/POKEMON BLUE.gb", window_type="headless") # For unattended use, for example machine learning
-pyboy = PyBoy("ROMs/POKEMON BLUE.gb", debugging=True)
+pyboy = PyBoy(
+        "ROMs/POKEMON BLUE.gb",
+        debugging=False,
+        disable_input=True,
+        # window_type="headless", # For unattended use, for example machine learning
+        hide_window="--quiet" in sys.argv,
+    )
 pyboy.set_emulation_speed(0)
 
 for n in range(1000): # Move ahead the desired number of frames.

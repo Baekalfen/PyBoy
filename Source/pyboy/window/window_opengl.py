@@ -29,7 +29,7 @@ class OpenGLWindow(SDLWindow):
     def __init__(self, scale=1):
         super(self.__class__, self).__init__(scale)
 
-    def init(self):
+    def init(self, hide_window):
         # Shift from ARGB to RGBA
         self.color_palette = [((x << 8) & 0xFFFFFFFF) | 0x000000FF for x in self.color_palette]
         self.alphamask = 0x000000FF
@@ -49,6 +49,9 @@ class OpenGLWindow(SDLWindow):
         glPixelZoom(self._scale, self._scale)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
+
+        if hide_window:
+            logger.warning("Hiding the window is not supported in OpenGL")
 
     # Cython does not cooperate with lambdas
     def _key(self, c, x, y):

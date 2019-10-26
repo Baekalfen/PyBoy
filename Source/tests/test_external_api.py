@@ -13,7 +13,7 @@ import numpy as np
 import PIL
 import pytest
 
-sys.path.append(".") # Adds higher directory to python modules path.
+sys.path.append(".") # isort:skip
 from pyboy import PyBoy, windowevent, botsupport # isort:skip
 
 
@@ -23,13 +23,13 @@ any_rom = tetris_rom
 
 
 def test_misc():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
+    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True, hide_window=True)
     pyboy.tick()
     pyboy.stop(save=False)
 
 
 def test_tiles():
-    pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True)
+    pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True, hide_window=True)
     pyboy.set_emulation_speed(0)
 
     tile = pyboy.get_window_tile_map().get_tile(0, 0)
@@ -68,7 +68,8 @@ def test_screen_buffer_and_image():
                 b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
             ]:
 
-        pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True)
+        pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True,
+                      hide_window=True)
         pyboy.set_emulation_speed(0)
         for n in range(275): # Iterate to boot logo
             pyboy.tick()
@@ -124,7 +125,7 @@ def test_tetris():
             breakpoint()
         assert short_digest == predigested, "Didn't match: " + str(short_digest)
 
-    pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True)
+    pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True, hide_window=True)
     pyboy.set_emulation_speed(0)
 
     first_brick = False
@@ -389,7 +390,7 @@ def test_tetris():
 
 def test_disable_title():
     # Simply tests, that no exception is generated
-    pyboy = PyBoy(any_rom, window_type="dummy", disable_input=True)
+    pyboy = PyBoy(any_rom, window_type="dummy", disable_input=True, hide_window=True)
     pyboy.disable_title()
     pyboy.tick()
     pyboy.stop(save=False)

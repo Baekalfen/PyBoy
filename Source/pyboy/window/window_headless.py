@@ -14,7 +14,7 @@ class HeadlessWindow(SDLWindow):
         super(self.__class__, self).__init__(scale)
         self.lcd = None
 
-    def init(self):
+    def init(self, hide_window):
         self.blank_screen()
 
     def set_title(self, title):

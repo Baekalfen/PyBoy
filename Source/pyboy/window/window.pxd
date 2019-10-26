@@ -17,4 +17,4 @@ cdef int ROWS, COLS
 
 
 @cython.locals(window=BaseWindow)
-cpdef BaseWindow getwindow(str, unsigned int, bint)
+cpdef BaseWindow getwindow(str, unsigned int, bint, bint)

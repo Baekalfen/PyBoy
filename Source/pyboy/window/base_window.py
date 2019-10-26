@@ -29,7 +29,7 @@ class BaseWindow:
         self.tiles_changed = set([])
         self.enable_title = True
 
-    def init(self):
+    def init(self, hide_window):
         pass
 
     def dump(self, filename):

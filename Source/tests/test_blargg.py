@@ -11,10 +11,10 @@ import platform
 import sys
 import time
 
-# from pyboy.logger import logger
-from pyboy import PyBoy
+from tests import utils
 
-sys.path.append(".") # Adds higher directory to python modules path.
+sys.path.append(".") # isort:skip
+from pyboy import PyBoy # isort:skip
 
 
 if platform.python_implementation() == "PyPy":
@@ -25,8 +25,10 @@ else:
 
 def run_rom(rom):
     # logger.info(rom)
-    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file="ROMs/DMG_ROM.bin", disable_input=True)
-    # pyboy = PyBoy("ROMs/DMG_ROM.bin", window_type="SDL2", window_scale=1, bootrom_file=rom, disable_input=True)
+    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True,
+                  hide_window=True)
+    # pyboy = PyBoy(utils.boot_rom, window_type="SDL2", window_scale=1, bootrom_file=rom, disable_input=True,
+    # hide_window=True)
     pyboy.disable_title()
     pyboy.set_emulation_speed(0)
     serial_output = ""

@@ -19,7 +19,7 @@ cdef class BaseWindow:
     cdef (int, int) _scaledresolution
     cdef unsigned int _scale
     cdef bint enable_title
-    cdef void init(self)
+    cdef void init(self, bint)
 
     cdef public uint32_t[4] color_palette
     cdef unsigned int alphamask
