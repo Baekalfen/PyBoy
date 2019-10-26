@@ -21,7 +21,10 @@ def locate_bootrom(path='ROMs/'):
 
 
 def locate_roms(path='ROMs/'):
-    gb_files = map(lambda x: path+x, filter(lambda x: x.lower().endswith('.gb') or x.lower().endswith('.gbc'), os.listdir('ROMs')))
+    gb_files = map(
+            lambda x: path+x,
+            filter(lambda x: x.lower().endswith('.gb') or x.lower().endswith('.gbc'), os.listdir('ROMs'))
+        )
 
     entries = {}
     for rom in gb_files:
@@ -31,6 +34,7 @@ def locate_roms(path='ROMs/'):
             entries[rom] = m.digest()
 
     return entries
+
 
 def locate_sha256(entries, digest):
     digest_bytes = bytes.fromhex(digest.decode('ASCII'))

@@ -26,7 +26,7 @@ else:
 def run_rom(rom):
     # logger.info(rom)
     pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True,
-            hide_window=True)
+                  hide_window=True)
     # pyboy = PyBoy(utils.boot_rom, window_type="SDL2", window_scale=1, bootrom_file=rom, disable_input=True,
     # hide_window=True)
     pyboy.disable_title()

@@ -64,7 +64,7 @@ def make_buffer(w, h):
 
 class Window():
     def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED),
-            hide_window=False):
+                 hide_window=False):
         self.lcd = lcd
         self.width = w
         self.height = h
@@ -157,7 +157,7 @@ class Window():
 class SpriteWindow(Window):
 
     def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED),
-            hide_window=False):
+                 hide_window=False):
         super().__init__(lcd, w, h, scale, title, pos, hide_window)
 
     def update(self, tile_cache0, marked_tile, _scanlineparameters):
@@ -230,14 +230,14 @@ class SpriteWindow(Window):
 class SpriteViewWindow(Window):
 
     def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED),
-            hide_window=False):
+                 hide_window=False):
         super().__init__(lcd, w, h, scale, title, pos, hide_window)
 
 
 class TileWindow(Window):
 
     def __init__(self, lcd, w, h, scale, title, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED),
-            hide_window=False):
+                 hide_window=False):
         super().__init__(lcd, w, h, scale, title, pos, hide_window)
 
     def update(self, tile_cache0, marked_tile, _scanlineparameters):
@@ -298,7 +298,7 @@ class TileWindow(Window):
 class TileViewWindow(Window):
 
     def __init__(self, lcd, w, h, scale, title, offset, pos=(sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED),
-            hide_window=False):
+                 hide_window=False):
         super().__init__(lcd, w, h, scale, title, pos, hide_window)
         self.offset = offset
 
@@ -396,7 +396,7 @@ class DebugWindow(SDLWindow):
         self.lcd = lcd
         self.tile1 = TileViewWindow(lcd, 0x100, 0x100, self.scale, b"Tile View 1", 0x1800, (0, 0), self.hide_window)
         self.tile2 = TileViewWindow(lcd, 0x100, 0x100, self.scale, b"Tile View 2", 0x1C00, (0x100*self.scale, 0),
-                self.hide_window)
+                                    self.hide_window)
         self.sprite = SpriteWindow(lcd, 8*10, 16*4, self.scale, b"Sprites", (0x200*self.scale, 0), self.hide_window)
 
         self.tile_data_width = 16*8 # Change the 16 to however wide you want the tile window

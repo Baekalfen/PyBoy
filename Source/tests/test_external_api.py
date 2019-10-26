@@ -69,7 +69,7 @@ def test_screen_buffer_and_image():
             ]:
 
         pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True,
-                hide_window=True)
+                      hide_window=True)
         pyboy.set_emulation_speed(0)
         for n in range(275): # Iterate to boot logo
             pyboy.tick()
