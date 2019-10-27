@@ -11,8 +11,8 @@ __If you are looking to make a bot or AI__, you can find all the external compon
 
 <p align="center">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="320">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="316"><br>
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.gif" width="316">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="320"><br>
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.gif" width="320">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.gif" width="320">
 </p>
 
