@@ -73,3 +73,9 @@ class BaseWindow:
 
     def set_lcd(self, lcd):
         pass
+
+    def save_state(self, f):
+        pass
+
+    def load_state(self, f):
+        pass

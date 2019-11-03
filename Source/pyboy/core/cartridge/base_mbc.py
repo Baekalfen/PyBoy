@@ -67,25 +67,25 @@ class BaseMBC:
 
     def save_ram(self, f):
         if not self.rambank_initialized:
-            logger.info("Saving RAM is not supported on {}".format(self.carttype))
+            logger.warning("Saving RAM is not supported on {}".format(self.carttype))
             return
 
         for bank in range(self.external_ram_count):
             for byte in range(8*1024):
                 f.write(self.rambanks[bank][byte].to_bytes(1, "little"))
 
-        logger.info("RAM saved.")
+        logger.debug("RAM saved.")
 
     def load_ram(self, f):
         if not self.rambank_initialized:
-            logger.info("Loading RAM is not supported on {}".format(self.carttype))
+            logger.warning("Loading RAM is not supported on {}".format(self.carttype))
             return
 
         for bank in range(self.external_ram_count):
             for byte in range(8*1024):
                 self.rambanks[bank][byte] = ord(f.read(1))
 
-        logger.info("RAM loaded.")
+        logger.debug("RAM loaded.")
 
     def init_rambanks(self, n):
         if n is None:
@@ -141,7 +141,7 @@ class ROMOnly(BaseMBC):
             if value == 0:
                 value = 1
             self.rombank_selected = (value & 0b1)
-            logger.info("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
+            logger.debug("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 from . import EXTERNAL_RAM_TABLE

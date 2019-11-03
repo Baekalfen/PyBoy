@@ -12,7 +12,7 @@ from pyboy.window.base_window cimport BaseWindow
 
 import cython
 cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
 
 
 cdef (int, int) _dummy_declaration
@@ -33,7 +33,7 @@ cdef class SDLWindow(BaseWindow):
     cdef uint32_t[:,:] _screenbuffer
     cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
 
-    cdef uint8_t[144][4] _scanlineparameters
+    cdef int16_t[144][4] _scanlineparameters
 
     cdef sdl2.SDL_Window *_window
     cdef sdl2.SDL_Renderer *_sdlrenderer

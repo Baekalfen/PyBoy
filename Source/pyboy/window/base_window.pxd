@@ -29,6 +29,8 @@ cdef class BaseWindow:
     cdef void set_title(self, unicode)
     cdef list get_events(self)
 
+    cdef void save_state(self, file)
+    cdef void load_state(self, file)
     cdef void disable_title(self)
     cdef void update_display(self, bint)
     cdef void frame_limiter(self, int)

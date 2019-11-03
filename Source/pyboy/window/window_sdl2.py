@@ -38,6 +38,8 @@ KEY_DOWN = {
     sdl2.SDLK_RETURN    : windowevent.PRESS_BUTTON_START,
     sdl2.SDLK_BACKSPACE : windowevent.PRESS_BUTTON_SELECT,
     sdl2.SDLK_SPACE     : windowevent.PRESS_SPEED_UP,
+    sdl2.SDLK_COMMA     : windowevent.PRESS_REWIND_BACK,
+    sdl2.SDLK_PERIOD    : windowevent.PRESS_REWIND_FORWARD,
 }
 KEY_UP = {
     sdl2.SDLK_UP        : windowevent.RELEASE_ARROW_UP,
@@ -55,6 +57,8 @@ KEY_UP = {
     sdl2.SDLK_i         : windowevent.SCREEN_RECORDING_TOGGLE,
     sdl2.SDLK_ESCAPE    : windowevent.QUIT,
     sdl2.SDLK_d         : windowevent.DEBUG_TOGGLE,
+    sdl2.SDLK_COMMA     : windowevent.RELEASE_REWIND_BACK,
+    sdl2.SDLK_PERIOD    : windowevent.RELEASE_REWIND_FORWARD,
 }
 
 
@@ -83,22 +87,22 @@ class SDLWindow(BaseWindow):
 
         if cythonmode:
             self._screenbuffer = memoryview(
-                self._screenbuffer_raw).cast('I', shape=(144, 160))
+                self._screenbuffer_raw).cast('I', shape=(ROWS, COLS))
             self._tilecache = memoryview(
-                self._tilecache_raw).cast('I', shape=(384*8, 8))
+                self._tilecache_raw).cast('I', shape=(TILES*8, 8))
             self._spritecache0 = memoryview(
-                self._spritecache0_raw).cast('I', shape=(384*8, 8))
+                self._spritecache0_raw).cast('I', shape=(TILES*8, 8))
             self._spritecache1 = memoryview(
-                self._spritecache1_raw).cast('I', shape=(384*8, 8))
+                self._spritecache1_raw).cast('I', shape=(TILES*8, 8))
         else:
             v = memoryview(self._screenbuffer_raw).cast('I')
-            self._screenbuffer = [v[i:i+160] for i in range(0, 160*144, 160)]
+            self._screenbuffer = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
             v = memoryview(self._tilecache_raw).cast('I')
-            self._tilecache = [v[i:i+8] for i in range(0, 384*8*8, 8)]
+            self._tilecache = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
             v = memoryview(self._spritecache0_raw).cast('I')
-            self._spritecache0 = [v[i:i+8] for i in range(0, 384*8*8, 8)]
+            self._spritecache0 = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
             v = memoryview(self._spritecache1_raw).cast('I')
-            self._spritecache1 = [v[i:i+8] for i in range(0, 384*8*8, 8)]
+            self._spritecache1 = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
             self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
@@ -225,15 +229,15 @@ class SDLWindow(BaseWindow):
             spritepriority = attributes & 0b10000000
             spritecache = (self._spritecache1 if attributes & 0b10000 else self._spritecache0)
 
-            if x < 160 and y < 144:
+            if x < COLS and y < ROWS:
                 for dy in range(spriteheight):
                     yy = spriteheight - dy - 1 if yflip else dy
-                    if 0 <= y < 144:
+                    if 0 <= y < ROWS:
                         for dx in range(8):
                             xx = 7 - dx if xflip else dx
                             pixel = spritecache[8*tileindex+yy][xx]
 
-                            if 0 <= x < 160:
+                            if 0 <= x < COLS:
                                 if (spritepriority and not self._screenbuffer[y][x] == bgpkey):
                                     # Add a fake alphachannel to the
                                     # sprite for BG pixels. We can't
@@ -277,8 +281,8 @@ class SDLWindow(BaseWindow):
     def blank_screen(self):
         # If the screen is off, fill it with a color.
         color = self.color_palette[0]
-        for y in range(144):
-            for x in range(160):
+        for y in range(ROWS):
+            for x in range(COLS):
                 self._screenbuffer[y][x] = color
 
     def get_screen_buffer(self):
@@ -286,7 +290,7 @@ class SDLWindow(BaseWindow):
 
     def get_screen_buffer_as_ndarray(self):
         import numpy as np
-        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(144, 160, 4)[:, :, :-1]
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, :-1]
 
     def get_screen_image(self):
         if not Image:
@@ -297,6 +301,21 @@ class SDLWindow(BaseWindow):
                 self.color_format,
                 self.buffer_dims,
                 self.get_screen_buffer())
+
+    def save_state(self, f):
+        for y in range(ROWS):
+            f.write(self._scanlineparameters[y][0].to_bytes(1, 'little'))
+            f.write(self._scanlineparameters[y][1].to_bytes(1, 'little'))
+            # We store (WX - 7), which requires being signed
+            f.write(self._scanlineparameters[y][2].to_bytes(1, 'little', signed=True))
+            f.write(self._scanlineparameters[y][3].to_bytes(1, 'little'))
+
+    def load_state(self, f):
+        for y in range(ROWS):
+            self._scanlineparameters[y][0] = ord(f.read(1))
+            self._scanlineparameters[y][1] = ord(f.read(1))
+            self._scanlineparameters[y][2] = int.from_bytes(f.read(1), 'little', signed=True)
+            self._scanlineparameters[y][3] = ord(f.read(1))
 
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to
