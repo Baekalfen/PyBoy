@@ -164,7 +164,8 @@ class PyBoy:
                 self.rewind_speed = 1
             elif event == windowevent.PRESS_REWIND_FORWARD:
                 self.paused = True
-                self.rewind_buffer.seek_relative(int(self.rewind_speed))
+                if not self.rewind_buffer.seek_relative(int(self.rewind_speed)):
+                    logger.info("Rewind limit reached")
                 self.load_state(self.rewind_buffer.read())
                 self.window.update_cache(self.mb.lcd)
                 self.window.render_screen(self.mb.lcd)
@@ -174,7 +175,8 @@ class PyBoy:
                 self.rewind_speed = 1
             elif event == windowevent.PRESS_REWIND_BACK:
                 self.paused = True
-                self.rewind_buffer.seek_relative(-int(self.rewind_speed))
+                if not self.rewind_buffer.seek_relative(-int(self.rewind_speed)):
+                    logger.info("Rewind limit reached")
                 self.load_state(self.rewind_buffer.read())
                 self.window.update_cache(self.mb.lcd)
                 self.window.render_screen(self.mb.lcd)

@@ -52,6 +52,7 @@ class Motherboard:
         self.window.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
+        f.flush()
         logger.debug("State saved.")
 
     def load_state(self, f):
@@ -62,6 +63,7 @@ class Motherboard:
         self.window.load_state(f)
         self.ram.load_state(f)
         self.cartridge.load_state(f)
+        f.flush()
         logger.debug("State loaded.")
 
         self.window.clearcache = True
