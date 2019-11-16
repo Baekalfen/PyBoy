@@ -33,7 +33,7 @@ cdef class SDLWindow(BaseWindow):
     cdef uint32_t[:,:] _screenbuffer
     cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
 
-    cdef int16_t[144][4] _scanlineparameters
+    cdef uint8_t[144][4] _scanlineparameters
 
     cdef sdl2.SDL_Window *_window
     cdef sdl2.SDL_Renderer *_sdlrenderer

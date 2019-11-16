@@ -7,14 +7,17 @@
 import io
 
 BUFFER_LENGTH = 3600
-BYTE_MAX = 255
+
+# TODO: To improve performance, change all writes to int
+# TODO: Use lists instead of BytesIO when using ints
+# TODO: Use fixed allocation, unified storage. Manage pointers for saved states manually
 
 
 class RewindBuffer:
 
     def __init__(self):
-        self.buffers = [CompressedBuffer() for _ in range(BUFFER_LENGTH)]
-        # self.buffers = [io.BytesIO() for _ in range(BUFFER_LENGTH)]
+        # self.buffers = [CompressedBuffer() for _ in range(BUFFER_LENGTH)]
+        self.buffers = [io.BytesIO() for _ in range(BUFFER_LENGTH)]
         self.tail_buffer = 0
         self.head_buffer = 0
         self.read_pointer = 0
@@ -70,18 +73,18 @@ class CompressedBuffer:
 
     def flush(self):
         if self.zeros > 0:
-            chunks, rest = divmod(self.zeros, BYTE_MAX)
+            chunks, rest = divmod(self.zeros, 0xFF)
 
             for i in range(chunks):
                 self.buffer.write(b'\x00')
-                self.buffer.write(BYTE_MAX.to_bytes(1, "little"))
+                self.buffer.write(b'\xFF')
 
             if (rest != 0):
                 self.buffer.write(b'\x00')
                 self.buffer.write(rest.to_bytes(1, "little"))
 
         self.zeros = 0
-        self.buffer.flush()
+        # self.buffer.flush()
 
     def write(self, data):
         if len(data) > 1:

@@ -306,15 +306,16 @@ class SDLWindow(BaseWindow):
         for y in range(ROWS):
             f.write(self._scanlineparameters[y][0].to_bytes(1, 'little'))
             f.write(self._scanlineparameters[y][1].to_bytes(1, 'little'))
-            # We store (WX - 7), which requires being signed
-            f.write(self._scanlineparameters[y][2].to_bytes(1, 'little', signed=True))
+            # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
+            f.write(((self._scanlineparameters[y][2]+7) & 0xFF).to_bytes(1, 'little'))
             f.write(self._scanlineparameters[y][3].to_bytes(1, 'little'))
 
     def load_state(self, f):
         for y in range(ROWS):
             self._scanlineparameters[y][0] = ord(f.read(1))
             self._scanlineparameters[y][1] = ord(f.read(1))
-            self._scanlineparameters[y][2] = int.from_bytes(f.read(1), 'little', signed=True)
+            # Restore (WX - 7) as described above
+            self._scanlineparameters[y][2] = (int.from_bytes(f.read(1), 'little')-7) & 0xFF
             self._scanlineparameters[y][3] = ord(f.read(1))
 
 

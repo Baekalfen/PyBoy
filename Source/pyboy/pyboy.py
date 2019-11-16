@@ -152,17 +152,19 @@ class PyBoy:
             elif event == windowevent.UNPAUSE and self.autopause:
                 self.paused = False
                 logger.info("Emulation unpaused!")
-                self.rewind_buffer.commit()
+                if self.enable_rewind:
+                    self.rewind_buffer.commit()
             elif event == windowevent.PAUSE_TOGGLE:
                 self.paused ^= True
                 if self.paused:
                     logger.info("Emulation paused!")
                 else:
                     logger.info("Emulation unpaused!")
-                    self.rewind_buffer.commit()
-            elif event == windowevent.RELEASE_REWIND_FORWARD:
+                    if self.enable_rewind:
+                        self.rewind_buffer.commit()
+            elif self.enable_rewind and event == windowevent.RELEASE_REWIND_FORWARD:
                 self.rewind_speed = 1
-            elif event == windowevent.PRESS_REWIND_FORWARD:
+            elif self.enable_rewind and event == windowevent.PRESS_REWIND_FORWARD:
                 self.paused = True
                 if not self.rewind_buffer.seek_relative(int(self.rewind_speed)):
                     logger.info("Rewind limit reached")
@@ -171,9 +173,9 @@ class PyBoy:
                 self.window.render_screen(self.mb.lcd)
                 self.window.update_display(False)
                 self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-            elif event == windowevent.RELEASE_REWIND_BACK:
+            elif self.enable_rewind and event == windowevent.RELEASE_REWIND_BACK:
                 self.rewind_speed = 1
-            elif event == windowevent.PRESS_REWIND_BACK:
+            elif self.enable_rewind and event == windowevent.PRESS_REWIND_BACK:
                 self.paused = True
                 if not self.rewind_buffer.seek_relative(-int(self.rewind_speed)):
                     logger.info("Rewind limit reached")
