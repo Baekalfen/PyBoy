@@ -5,7 +5,7 @@
 
 import cython
 from libc.stdint cimport uint8_t, uint32_t
-
+from pyboy.rewind cimport IntIOWrapper
 
 cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS
@@ -24,8 +24,8 @@ cdef class LCD:
     cdef public PaletteRegister OBP0
     cdef public PaletteRegister OBP1
 
-    cdef void save_state(self, file)
-    cdef void load_state(self, file)
+    cdef void save_state(self, IntIOWrapper)
+    cdef void load_state(self, IntIOWrapper)
 
     cdef (int, int) getwindowpos(self)
     cdef (int, int) getviewport(self)

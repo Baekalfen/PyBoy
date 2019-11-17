@@ -8,7 +8,7 @@ from libc cimport time
 cimport cython
 from libc.stdint cimport uint64_t
 from pyboy.core.mb cimport Motherboard
-from pyboy.rewind cimport RewindBuffer
+from pyboy.rewind cimport RewindBuffer, IntIOWrapper
 from pyboy.window.base_window cimport BaseWindow
 
 cdef (int, int) _dummy_declaration

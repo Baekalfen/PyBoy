@@ -7,6 +7,7 @@ import array
 import os
 
 from pyboy.logger import logger
+from pyboy.rewind import IntIOWrapper
 
 from .rtc import RTC
 
@@ -31,36 +32,36 @@ class BaseMBC:
         self.memorymodel = 0
         self.rambank_enabled = False
         self.rambank_selected = 0 # TODO: Check this, not documented
-        self.rombank_selected = 1 # TODO: Check this, not documented
         # Note: TestROM 01-special.gb assumes initial value of 1
+        self.rombank_selected = 1 # TODO: Check this, not documented
 
         if not os.path.exists(self.filename):
             logger.info("No RAM file found. Skipping.")
         else:
             with open(self.filename, "rb") as f:
-                self.load_ram(f)
+                self.load_ram(IntIOWrapper(f))
 
     def stop(self):
         with open(self.filename, "wb") as f:
-            self.save_ram(f)
+            self.save_ram(IntIOWrapper(f))
 
         if self.rtc_enabled:
             self.rtc.stop()
 
     def save_state(self, f):
-        f.write(self.rombank_selected.to_bytes(1, 'little'))
-        f.write(self.rambank_selected.to_bytes(1, 'little'))
-        f.write(self.rambank_enabled.to_bytes(1, 'little'))
-        f.write(self.memorymodel.to_bytes(1, 'little'))
+        f.write(self.rombank_selected)
+        f.write(self.rambank_selected)
+        f.write(self.rambank_enabled)
+        f.write(self.memorymodel)
         self.save_ram(f)
         if self.rtc_enabled:
             self.rtc.save_state(f)
 
     def load_state(self, f):
-        self.rombank_selected = ord(f.read(1))
-        self.rambank_selected = ord(f.read(1))
-        self.rambank_enabled = ord(f.read(1))
-        self.memorymodel = ord(f.read(1))
+        self.rombank_selected = f.read()
+        self.rambank_selected = f.read()
+        self.rambank_enabled = f.read()
+        self.memorymodel = f.read()
         self.load_ram(f)
         if self.rtc_enabled:
             self.rtc.load_state(f)
@@ -72,7 +73,7 @@ class BaseMBC:
 
         for bank in range(self.external_ram_count):
             for byte in range(8*1024):
-                f.write(self.rambanks[bank][byte].to_bytes(1, "little"))
+                f.write(self.rambanks[bank][byte])
 
         logger.debug("RAM saved.")
 
@@ -83,7 +84,7 @@ class BaseMBC:
 
         for bank in range(self.external_ram_count):
             for byte in range(8*1024):
-                self.rambanks[bank][byte] = ord(f.read(1))
+                self.rambanks[bank][byte] = f.read()
 
         logger.debug("RAM loaded.")
 

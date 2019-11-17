@@ -304,19 +304,19 @@ class SDLWindow(BaseWindow):
 
     def save_state(self, f):
         for y in range(ROWS):
-            f.write(self._scanlineparameters[y][0].to_bytes(1, 'little'))
-            f.write(self._scanlineparameters[y][1].to_bytes(1, 'little'))
+            f.write(self._scanlineparameters[y][0])
+            f.write(self._scanlineparameters[y][1])
             # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
-            f.write(((self._scanlineparameters[y][2]+7) & 0xFF).to_bytes(1, 'little'))
-            f.write(self._scanlineparameters[y][3].to_bytes(1, 'little'))
+            f.write(((self._scanlineparameters[y][2]+7) & 0xFF))
+            f.write(self._scanlineparameters[y][3])
 
     def load_state(self, f):
         for y in range(ROWS):
-            self._scanlineparameters[y][0] = ord(f.read(1))
-            self._scanlineparameters[y][1] = ord(f.read(1))
+            self._scanlineparameters[y][0] = f.read()
+            self._scanlineparameters[y][1] = f.read()
             # Restore (WX - 7) as described above
-            self._scanlineparameters[y][2] = (int.from_bytes(f.read(1), 'little')-7) & 0xFF
-            self._scanlineparameters[y][3] = ord(f.read(1))
+            self._scanlineparameters[y][2] = (f.read()-7) & 0xFF
+            self._scanlineparameters[y][3] = f.read()
 
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to

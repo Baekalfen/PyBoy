@@ -46,7 +46,7 @@ class Motherboard:
 
     def save_state(self, f):
         logger.debug("Saving state...")
-        f.write(self.bootrom_enabled.to_bytes(1, 'little'))
+        f.write(self.bootrom_enabled)
         self.cpu.save_state(f)
         self.lcd.save_state(f)
         self.window.save_state(f)
@@ -57,7 +57,7 @@ class Motherboard:
 
     def load_state(self, f):
         logger.debug("Loading state...")
-        self.bootrom_enabled = ord(f.read(1))
+        self.bootrom_enabled = f.read()
         self.cpu.load_state(f)
         self.lcd.load_state(f)
         self.window.load_state(f)

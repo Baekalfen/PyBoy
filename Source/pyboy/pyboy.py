@@ -20,7 +20,7 @@ from . import botsupport, window, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .rewind import RewindBuffer
+from .rewind import IntIOWrapper, RewindBuffer
 from .screenrecorder import ScreenRecorder
 
 addconsolehandler()
@@ -137,10 +137,10 @@ class PyBoy:
                 logger.info("Speed limit: %s" % self.target_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + ".state", "wb") as f:
-                    self.mb.save_state(f)
+                    self.mb.save_state(IntIOWrapper(f))
             elif event == windowevent.LOAD_STATE:
                 with open(self.gamerom_file + ".state", "rb") as f:
-                    self.mb.load_state(f)
+                    self.mb.load_state(IntIOWrapper(f))
             elif event == windowevent.DEBUG_TOGGLE:
                 # self.debugger.running ^= True
                 pass
@@ -168,8 +168,8 @@ class PyBoy:
                 self.paused = True
                 if not self.rewind_buffer.seek_relative(int(self.rewind_speed)):
                     logger.info("Rewind limit reached")
-                self.load_state(self.rewind_buffer.read())
-                self.window.update_cache(self.mb.lcd)
+                self.mb.load_state(self.rewind_buffer.read())
+                # self.window.update_cache(self.mb.lcd)
                 self.window.render_screen(self.mb.lcd)
                 self.window.update_display(False)
                 self.rewind_speed = min(self.rewind_speed * 1.1, 15)
@@ -179,8 +179,8 @@ class PyBoy:
                 self.paused = True
                 if not self.rewind_buffer.seek_relative(-int(self.rewind_speed)):
                     logger.info("Rewind limit reached")
-                self.load_state(self.rewind_buffer.read())
-                self.window.update_cache(self.mb.lcd)
+                self.mb.load_state(self.rewind_buffer.read())
+                # self.window.update_cache(self.mb.lcd)
                 self.window.render_screen(self.mb.lcd)
                 self.window.update_display(False)
                 self.rewind_speed = min(self.rewind_speed * 1.1, 15)
