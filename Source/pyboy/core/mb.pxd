@@ -8,7 +8,7 @@ import cython
 cimport pyboy.core.cpu
 cimport pyboy.core.timer
 cimport pyboy.core.cartridge.base_mbc
-from pyboy.rewind cimport IntIOWrapper
+from pyboy.rewind cimport IntIOInterface
 # cimport pyboy.core.cartridge.cartridge
 cimport pyboy.core.bootrom
 cimport pyboy.core.ram
@@ -50,5 +50,5 @@ cdef class Motherboard:
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, unsigned char)
-    cdef void save_state(self, IntIOWrapper)
-    cdef void load_state(self, IntIOWrapper)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)

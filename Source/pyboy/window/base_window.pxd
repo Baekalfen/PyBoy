@@ -5,7 +5,7 @@
 
 import cython
 from libc.stdint cimport uint32_t
-from pyboy.rewind cimport IntIOWrapper
+from pyboy.rewind cimport IntIOInterface
 
 from pyboy.core.lcd cimport LCD
 
@@ -30,8 +30,8 @@ cdef class BaseWindow:
     cdef void set_title(self, unicode)
     cdef list get_events(self)
 
-    cdef void save_state(self, IntIOWrapper)
-    cdef void load_state(self, IntIOWrapper)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)
     cdef void disable_title(self)
     cdef void update_display(self, bint)
     cdef void frame_limiter(self, int)

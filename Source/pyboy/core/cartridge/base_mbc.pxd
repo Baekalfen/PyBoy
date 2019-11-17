@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.rewind cimport IntIOWrapper
+from pyboy.rewind cimport IntIOInterface
 from pyboy.core.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint32_t
 
@@ -24,10 +24,10 @@ cdef class BaseMBC:
     cdef unsigned short rambank_selected
     cdef unsigned short rombank_selected
 
-    cdef void save_state(self, IntIOWrapper)
-    cdef void load_state(self, IntIOWrapper)
-    cdef void save_ram(self, IntIOWrapper)
-    cdef void load_ram(self, IntIOWrapper)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)
+    cdef void save_ram(self, IntIOInterface)
+    cdef void load_ram(self, IntIOInterface)
     cdef void init_rambanks(self, unsigned char)
     cdef unicode getgamename(self, uint8_t[:,:])
 

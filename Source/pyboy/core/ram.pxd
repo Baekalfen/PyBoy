@@ -4,11 +4,11 @@
 #
 
 from libc.stdint cimport uint8_t
-from pyboy.rewind cimport IntIOWrapper
+from pyboy.rewind cimport IntIOInterface
 
 cdef class RAM:
-    cdef void save_state(self, IntIOWrapper)
-    cdef void load_state(self, IntIOWrapper)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)
     cdef public uint8_t[8*1024] internal_ram0
     cdef public uint8_t[0x60] non_io_internal_ram0
     cdef public uint8_t[0x4C] io_ports

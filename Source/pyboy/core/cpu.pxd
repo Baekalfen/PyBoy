@@ -7,7 +7,7 @@
 cimport pyboy.core.mb
 cimport opcodes
 
-from pyboy.rewind cimport IntIOWrapper
+from pyboy.rewind cimport IntIOInterface
 
 import cython
 
@@ -44,8 +44,8 @@ cdef class CPU:
     @cython.locals(opcode=cython.ushort)
     cdef char fetch_and_execute(self, unsigned int)
     cdef int tick(self)
-    cdef void save_state(self, IntIOWrapper)
-    cdef void load_state(self, IntIOWrapper)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)
 
     # Only char (8-bit) needed, but I'm not sure all intermittent
     # results do not overflow
