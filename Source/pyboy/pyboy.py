@@ -20,7 +20,7 @@ from . import botsupport, window, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .rewind import FixedAllocBuffers, IntIOWrapper
+from .rewind import CompressedFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper
 from .screenrecorder import ScreenRecorder
 
 addconsolehandler()
@@ -101,7 +101,8 @@ class PyBoy:
         self.enable_rewind = enable_rewind
         self.rewind_speed = 1.0
         if enable_rewind:
-            self.rewind_buffer = FixedAllocBuffers()
+            # self.rewind_buffer = FixedAllocBuffers()
+            self.rewind_buffer = CompressedFixedAllocBuffers()
 
     def tick(self):
         """

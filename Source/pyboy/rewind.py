@@ -69,8 +69,12 @@ class FixedAllocBuffers(IntIOInterface):
         self.section_tail = 0
         self.section_pointer = 0
 
+    def flush(self):
+        pass
+
     def new(self):
-        # print('new')
+        self.flush()
+        # print(self.section_pointer-self.sections[-1]) # Find the actual length of the state in memory
         self.sections.append(self.section_pointer)
         self.current_section += 1
         self.section_tail = self.section_pointer
@@ -82,6 +86,7 @@ class FixedAllocBuffers(IntIOInterface):
         self.buffer[self.section_pointer] = val
         self.section_pointer = (self.section_pointer + 1) % FIXED_BUFFER_SIZE
         self.section_head = self.section_pointer
+        return 1
 
     def read(self):
         if self.section_pointer == self.section_head:
@@ -96,11 +101,8 @@ class FixedAllocBuffers(IntIOInterface):
             raise Exception("Section wasn't read to finish. This would likely be unintentional")
         self.sections = self.sections[:self.current_section+1]
 
-    def flush(self):
-        pass
-
     def seek_frame(self, frames):
-        # print('seek_frame')
+        # TODO: Move for loop to Delta version
         for _ in range(abs(frames)):
             if frames < 0:
                 if self.current_section < 1:
@@ -125,6 +127,48 @@ class FixedAllocBuffers(IntIOInterface):
         # Seeks the section to 0, ready for reading
         self.section_pointer = self.section_tail
         return True
+
+
+class CompressedFixedAllocBuffers(FixedAllocBuffers):
+    def __init__(self):
+        super().__init__()
+        self.zeros = 0
+
+    def flush(self):
+        if self.zeros > 0:
+            chunks, rest = divmod(self.zeros, 0xFF)
+
+            for i in range(chunks):
+                super().write(0)
+                super().write(0xFF)
+
+            if (rest != 0):
+                super().write(0)
+                super().write(rest)
+
+        self.zeros = 0
+        super().flush()
+
+    def write(self, data):
+        if data == 0:
+            self.zeros += 1
+            return 1
+        else:
+            self.flush()
+            return super().write(data)
+
+    def read(self):
+        if self.zeros > 0:
+            self.zeros -= 1
+            return 0
+        else:
+            byte = super().read()
+            if byte == 0:
+                # If the bytes is zero, it means that the next byte will be the counter
+                self.zeros = super().read()
+                self.zeros -= 1
+            return byte
+
 
 ##############################################################
 # List-based cyclic buffer
@@ -251,7 +295,3 @@ class CompressedBuffer(IntIOInterface):
                 self.zeros = self.buffer.read()
                 self.zeros -= 1
             return byte
-
-
-# class DeltaBuffer:
-#     pass
