@@ -9,6 +9,7 @@ import io
 TIME_BUFFER_LENGTH = 3600
 FIXED_BUFFER_SIZE = 64*1024*128
 FIXED_BUFFER_MIN_ALLOC = 64*1024
+FILL_VALUE = 123
 
 # TODO: To improve performance, change all writes to int
 # TODO: Use lists instead of BytesIO when using ints
@@ -58,9 +59,7 @@ class IntIOInterface:
 
 class FixedAllocBuffers(IntIOInterface):
     def __init__(self):
-        self.buffer = array.array('B', [0]*(FIXED_BUFFER_SIZE))
-        for n in range(FIXED_BUFFER_SIZE):
-            self.buffer[n] = 123
+        self.buffer = array.array('B', [FILL_VALUE]*(FIXED_BUFFER_SIZE))
         self.sections = [0]
         self.current_section = 0
         self.tail_pointer = 0
@@ -74,13 +73,13 @@ class FixedAllocBuffers(IntIOInterface):
 
     def new(self):
         self.flush()
-        # print(self.section_pointer-self.sections[-1]) # Find the actual length of the state in memory
+        print(self.section_pointer-self.sections[-1]) # Find the actual length of the state in memory
         self.sections.append(self.section_pointer)
         self.current_section += 1
         self.section_tail = self.section_pointer
 
     def write(self, val):
-        # print('write')
+        assert val < 0x100
         if self.section_pointer+1 == self.tail_pointer:
             raise Exception("Combine states!")
         self.buffer[self.section_pointer] = val
@@ -96,7 +95,6 @@ class FixedAllocBuffers(IntIOInterface):
         return data
 
     def commit(self):
-        # print('commit')
         if not self.section_head == self.section_pointer:
             raise Exception("Section wasn't read to finish. This would likely be unintentional")
         self.sections = self.sections[:self.current_section+1]
@@ -168,6 +166,43 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
                 self.zeros = super().read()
                 self.zeros -= 1
             return byte
+
+
+class DeltaFixedAllocBuffers(FixedAllocBuffers):
+    def __init__(self):
+        super().__init__()
+        self.internal_pointer = 0
+        self.internal_buffer = array.array('B', [0]*(FIXED_BUFFER_MIN_ALLOC))
+
+    def write(self, data):
+        old_val = self.internal_buffer[self.internal_pointer]
+        xor_val = data ^ old_val
+        self.internal_buffer[self.internal_pointer] = xor_val
+        self.internal_pointer += 1
+        return super().write(old_val)
+
+    def read(self):
+        old_val = super().read()
+        data = old_val ^ self.internal_buffer[self.internal_pointer]
+        self.internal_buffer[self.internal_pointer] = old_val
+        self.internal_pointer += 1
+        return data
+
+    def new(self):
+        self.internal_pointer = 0
+        super().new()
+
+    def seek_frame(self, frames):
+        # for _ in range(abs(frames)):
+        # TODO: Can only seek one frame
+        if frames < 0:
+            frames = -1
+        else:
+            frames = 1
+
+        self.internal_pointer = 0
+
+        return super().seek_frame(frames)
 
 
 ##############################################################
