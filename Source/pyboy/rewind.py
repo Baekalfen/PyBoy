@@ -172,9 +172,13 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     def __init__(self):
         super().__init__()
         self.internal_pointer = 0
+        self.prev_internal_pointer = 0
+        # The initial values needs to be 0 to act as the "null-frame" and make the first frame a one-to-one copy
         self.internal_buffer = array.array('B', [0]*FIXED_BUFFER_MIN_ALLOC)
+        self.internal_buffer_dirty = False
 
     def write(self, data):
+        self.internal_buffer_dirty = True
         old_val = self.internal_buffer[self.internal_pointer]
         xor_val = data ^ old_val
         self.internal_buffer[self.internal_pointer] = data
@@ -193,6 +197,7 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         super().commit()
 
     def new(self):
+        self.prev_internal_pointer = self.internal_pointer
         self.internal_pointer = 0
         super().new()
 
@@ -204,6 +209,15 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         else:
             frames = 1
 
+        # Flush internal buffer to underlying memory. Otherwise, the newest frame, won't be seekable.
+        if self.internal_buffer_dirty:
+            # self.current_section += 1
+            for n in range(self.prev_internal_pointer):
+                super().write(self.internal_buffer[n])
+                # Make a null-frame so we can XOR the newest frame back in
+                self.internal_buffer[n] = 0
+            self.internal_buffer_dirty = False
+            super().new()
         self.internal_pointer = 0
 
         return super().seek_frame(frames)
