@@ -73,7 +73,7 @@ class FixedAllocBuffers(IntIOInterface):
 
     def new(self):
         self.flush()
-        print(self.section_pointer-self.sections[-1]) # Find the actual length of the state in memory
+        # print(self.section_pointer-self.sections[-1]) # Find the actual length of the state in memory
         self.sections.append(self.section_pointer)
         self.current_section += 1
         self.section_tail = self.section_pointer
@@ -168,25 +168,29 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
             return byte
 
 
-class DeltaFixedAllocBuffers(FixedAllocBuffers):
+class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     def __init__(self):
         super().__init__()
         self.internal_pointer = 0
-        self.internal_buffer = array.array('B', [0]*(FIXED_BUFFER_MIN_ALLOC))
+        self.internal_buffer = array.array('B', [0]*FIXED_BUFFER_MIN_ALLOC)
 
     def write(self, data):
         old_val = self.internal_buffer[self.internal_pointer]
         xor_val = data ^ old_val
-        self.internal_buffer[self.internal_pointer] = xor_val
+        self.internal_buffer[self.internal_pointer] = data
         self.internal_pointer += 1
-        return super().write(old_val)
+        return super().write(xor_val)
 
     def read(self):
         old_val = super().read()
         data = old_val ^ self.internal_buffer[self.internal_pointer]
-        self.internal_buffer[self.internal_pointer] = old_val
+        self.internal_buffer[self.internal_pointer] = data
         self.internal_pointer += 1
         return data
+
+    def commit(self):
+        self.internal_pointer = 0
+        super().commit()
 
     def new(self):
         self.internal_pointer = 0
