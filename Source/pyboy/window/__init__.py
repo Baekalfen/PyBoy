@@ -3,5 +3,8 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from .base_window import BaseWindow
-from .window import getwindow
+# Import sdl2 so Windows has SDL2.dll in memory
+import sdl2  # noqa:F401
+
+from .base_window import BaseWindow  # noqa:F401
+from .window import getwindow  # noqa:F401

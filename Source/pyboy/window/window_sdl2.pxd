@@ -42,7 +42,7 @@ cdef class SDLWindow(BaseWindow):
     @cython.locals(now=uint32_t, delay=cython.int)
     cdef void frame_limiter(self, int)
 
-    @cython.locals(viewpos=(int, int), windowpos=(int, int))
+    @cython.locals(bx=int, by=int, wx=int, wy=int)
     cdef void scanline(self, int, LCD)
 
     # cdef void set_lcd(self, LCD)

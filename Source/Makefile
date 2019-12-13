@@ -13,15 +13,11 @@ endif
 THREADS := 6
 PY := python3
 PYPY := pypy3
-NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')
-# The cut strips -mwindows from the mingw's output in windows; won't
-# affect other OS's since neither has lines of more than 3 elements.
-SDL := $(shell sdl2-config --cflags --libs | cut -d' ' -f 1-4)
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 
 build:
 	@echo "Building..."
-	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
+	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace
 
 clean:
 	@echo "Cleaning..."
@@ -41,7 +37,7 @@ run: build
 	${PY} main.py SDL2 ${ROOT_DIR}/Source/ROMs/POKEMON\ BLUE.gb
 
 install:
-	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
+	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext
 
 test: clean build
 	${PY} tetris_bot.py ${ROOT_DIR}/Source/ROMs/Tetris.gb --quiet
