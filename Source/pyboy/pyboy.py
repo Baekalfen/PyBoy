@@ -469,7 +469,7 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
 
-        self.mb.save_state(file_like_object)
+        self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
         """
@@ -492,7 +492,7 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
 
-        self.mb.load_state(file_like_object)
+        self.mb.load_state(IntIOWrapper(file_like_object))
 
     def get_serial(self):
         """

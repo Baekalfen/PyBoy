@@ -124,7 +124,7 @@ class FixedAllocBuffers(IntIOInterface):
 
         # Seeks the section to 0, ready for reading
         self.section_pointer = self.section_tail
-        return True
+        return True # (self.section_head - self.section_tail + FIXED_BUFFER_SIZE) % FIXED_BUFFER_SIZE;
 
 
 class CompressedFixedAllocBuffers(FixedAllocBuffers):
@@ -169,13 +169,24 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
 
 
 class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
+    """
+    I chose to keep the code simple at the expense of some edge cases acting different from the other buffers.
+    When seeking, the last frame will be lost. This has no practical effect, and is only noticeble in unittesting.
+    """
     def __init__(self):
         super().__init__()
         self.internal_pointer = 0
         self.prev_internal_pointer = 0
         # The initial values needs to be 0 to act as the "null-frame" and make the first frame a one-to-one copy
+        # TODO: It would work with any values, but it makes it easier to debug
         self.internal_buffer = array.array('B', [0]*FIXED_BUFFER_MIN_ALLOC)
         self.internal_buffer_dirty = False
+
+        # A side effect of the implementation will create a zero-frame in the beginning. Keep track of this,
+        # as we don't want to use the section until we rollover the circular buffer.
+        self.base_frame = 0
+        # The frame we inject in the end to flush the last frame out
+        self.injected_zero_frame = 0
 
     def write(self, data):
         self.internal_buffer_dirty = True
@@ -194,12 +205,23 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
 
     def commit(self):
         self.internal_pointer = 0
+        self.injected_zero_frame = 0
         super().commit()
 
     def new(self):
         self.prev_internal_pointer = self.internal_pointer
         self.internal_pointer = 0
         super().new()
+
+    def flush_internal_buffer(self):
+        # self.current_section += 1
+        for n in range(self.prev_internal_pointer):
+            super().write(self.internal_buffer[n])
+            # Make a null-frame so we can XOR the newest frame back in
+            self.internal_buffer[n] = 0
+        self.internal_buffer_dirty = False
+        super().new()
+        self.injected_zero_frame = self.current_section
 
     def seek_frame(self, frames):
         # for _ in range(abs(frames)):
@@ -211,14 +233,13 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
 
         # Flush internal buffer to underlying memory. Otherwise, the newest frame, won't be seekable.
         if self.internal_buffer_dirty:
-            # self.current_section += 1
-            for n in range(self.prev_internal_pointer):
-                super().write(self.internal_buffer[n])
-                # Make a null-frame so we can XOR the newest frame back in
-                self.internal_buffer[n] = 0
-            self.internal_buffer_dirty = False
-            super().new()
+            self.flush_internal_buffer()
         self.internal_pointer = 0
+
+        if frames > 0 and self.injected_zero_frame-1 == self.current_section:
+            return False
+        elif frames < 0 and self.current_section-1 == self.base_frame:
+            return False
 
         return super().seek_frame(frames)
 

@@ -8,8 +8,8 @@ def write_bytes(buf, values):
     for v in values:
         buf.write(v % 0x100)
 
-def test_buffer():
-    for buf in [DeltaFixedAllocBuffers()]: # FixedAllocBuffers(), CompressedFixedAllocBuffers(),
+def test_all():
+    for buf in [FixedAllocBuffers(), CompressedFixedAllocBuffers(), DeltaFixedAllocBuffers()]:
         A = [1]*16
         B = [2]*16
         C = [4]*16
@@ -23,15 +23,56 @@ def test_buffer():
             buf.new()
 
         for E in [D, C, B, A]:
-            buf.seek_frame(-1)
+            assert buf.seek_frame(-1)
             tests = [(x, buf.read()) for x in E]
             assert all(list(map(lambda x: x[0] == x[1], tests)))
 
-        breakpoint()
-        for E in [A, B, C, D]:
-            buf.seek_frame(1)
+        order = [A, B, C, D]
+        # DeltaFixedAllocBuffers doesn't repeat the first section
+        if isinstance(buf, DeltaFixedAllocBuffers):
+            order.pop(0)
+        for E in order:
+            assert buf.seek_frame(1)
             tests = [(x, buf.read()) for x in E]
             assert all(list(map(lambda x: x[0] == x[1], tests)))
+
+def test_delta_seek():
+    buf = DeltaFixedAllocBuffers()
+    A = [1]*16
+    B = [2]*16
+    C = [3]*16
+
+    write_bytes(buf, A)
+    buf.new()
+    write_bytes(buf, B)
+    buf.new()
+    write_bytes(buf, C)
+    buf.new()
+
+    assert buf.seek_frame(-1)
+    tests = [(x, buf.read()) for x in C]
+    assert all(list(map(lambda x: x[0] == x[1], tests)))
+
+    assert buf.seek_frame(-1)
+    tests = [(x, buf.read()) for x in B]
+    assert all(list(map(lambda x: x[0] == x[1], tests)))
+
+    assert buf.seek_frame(-1)
+    tests = [(x, buf.read()) for x in A]
+    assert all(list(map(lambda x: x[0] == x[1], tests)))
+
+    # Hit buffer boundary
+    assert not buf.seek_frame(-1)
+
+    assert buf.seek_frame(1)
+    tests = [(x, buf.read()) for x in B]
+    assert all(list(map(lambda x: x[0] == x[1], tests)))
+
+    assert buf.seek_frame(1)
+    tests = [(x, buf.read()) for x in C]
+    assert all(list(map(lambda x: x[0] == x[1], tests)))
+
+    assert not buf.seek_frame(1)
 
 
 def test_compressed_buffer():
@@ -92,13 +133,14 @@ def test_delta_buffer_repeat_pattern():
     assert all(map(lambda x: x == FILL_VALUE, buf.buffer[:60]))
     assert all(map(lambda x: x == 0, buf.internal_buffer[:60]))
 
+    # Initial frame will just show up directly in the underlying buffer
     write_bytes(buf, [0xAA]*20)
     assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [FILL_VALUE]*40)))
     assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
     buf.new()
 
     write_bytes(buf, [0xAA]*20)
-    # Same as above. The written data should be zeros and only get written on a call to new (flush)
+    # The written data should be zeros and only get written on a call to new (flush)
     assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [FILL_VALUE]*40)))
     assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
     buf.new()
@@ -109,7 +151,7 @@ def test_delta_buffer_repeat_pattern():
 
     write_bytes(buf, [0xAA]*20)
     buf.new()
-    # Same as above, with an extra zero-prefix
+    # Same as above, with an additional zero-prefix
     assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [0, 20, 0, 20] + [FILL_VALUE]*36)))
     assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
 

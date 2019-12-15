@@ -95,8 +95,8 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     pyboy.stop(save=False)
 
 
-def test_pokemon():
-    replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue.replay")
+# def test_pokemon():
+#     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue.replay")
 
 
 def test_pokemon_gif1():
