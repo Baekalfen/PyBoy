@@ -214,7 +214,7 @@ class PyBoy:
                 self.screen_recorder.add_frame(self.get_screen_image())
 
             if self.enable_rewind:
-                self.save_state(self.rewind_buffer)
+                self.mb.save_state(self.rewind_buffer)
                 self.rewind_buffer.new()
 
         self.window.update_display(self.paused)
