@@ -12,7 +12,7 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, window, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, window, enable_rewind, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -29,6 +29,7 @@ class Motherboard:
         self.lcd = lcd.LCD(window.color_palette)
         self.bootrom_enabled = True
         self.serialbuffer = u''
+        self.enable_rewind = enable_rewind
 
     def getserial(self):
         b = self.serialbuffer
@@ -49,7 +50,8 @@ class Motherboard:
         f.write(self.bootrom_enabled)
         self.cpu.save_state(f)
         self.lcd.save_state(f)
-        self.window.save_state(f)
+        if self.enable_rewind:
+            self.window.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
@@ -60,7 +62,8 @@ class Motherboard:
         self.bootrom_enabled = f.read()
         self.cpu.load_state(f)
         self.lcd.load_state(f)
-        self.window.load_state(f)
+        if self.enable_rewind:
+            self.window.load_state(f)
         self.ram.load_state(f)
         self.cartridge.load_state(f)
         f.flush()

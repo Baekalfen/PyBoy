@@ -20,7 +20,7 @@ from . import botsupport, window, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper
+from .rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper  # NOQA
 from .screenrecorder import ScreenRecorder
 
 addconsolehandler()
@@ -75,7 +75,7 @@ class PyBoy:
         self.gamerom_file = gamerom_file
 
         self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=profiling)
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, enable_rewind, profiling=profiling)
 
         # TODO: Get rid of this extra step
         if debugging:
