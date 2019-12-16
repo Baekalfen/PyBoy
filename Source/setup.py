@@ -98,7 +98,7 @@ setup(
     ],
         include_path=module_dirs,
         nthreads=thread_count,
-        annotate=False,
+        annotate=True,
         gdb_debug=False,
         language_level=2,
         compiler_directives={

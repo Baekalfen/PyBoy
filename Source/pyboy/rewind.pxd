@@ -5,50 +5,79 @@
 
 cimport cython
 
-from libc.stdint cimport uint8_t, int64_t
-cdef size_t BUFFER_LENGTH
+from libc.stdint cimport uint8_t, uint64_t, int64_t
 
-# cdef class RewindBuffer:
-#     cdef void commit(self)
-#     cdef IntIOInterface next(self)
-#     cdef bint seek_relative(self, int)
-#     cdef IntIOInterface read(self)
+DEF FIXED_BUFFER_SIZE = 64*1024*128
+DEF FIXED_BUFFER_MIN_ALLOC = 64*1024
+DEF FILL_VALUE = 123
+
 
 
 cdef class IntIOInterface:
-    cdef size_t write(self, uint8_t)
+    cdef int64_t write(self, uint8_t)
     cdef uint8_t read(self)
-    cdef void seek(self, int)
+    cdef void seek(self, int64_t)
     cdef void flush(self)
 
-cdef class FixedAllocBuffers(IntIOInterface):
-    cdef uint8_t[64*1024*128] buffer
-    cdef size_t tail_pointer
-    cdef size_t head_pointer
-    cdef size_t read_pointer
-    cdef int64_t section_head
-    cdef int64_t section_tail
-    cdef int64_t section_pointer
-
-    cdef void commit(self)
     cdef void new(self)
-    cdef void seek_relative(self, int)
+    cdef void commit(self)
+    cdef bint seek_frame(self, int64_t)
+
+##############################################################
+# Buffer wrappers
+##############################################################
 
 cdef class IntIOWrapper(IntIOInterface):
     cdef object buffer
 
-# cdef class TimeBuffers(RewindBuffer):
-#     cdef list buffers
-#     cdef size_t tail_buffer
-#     cdef size_t head_buffer
-#     cdef size_t read_pointer
+##############################################################
+# Homogeneous cyclic buffer
+##############################################################
 
-#     @cython.locals(head=size_t, A=size_t, B=size_t, buf=IntIOInterface)
-#     cdef IntIOInterface next(self)
-#     @cython.locals(buf=IntIOInterface)
-#     cdef IntIOInterface read(self)
+cdef class FixedAllocBuffers(IntIOInterface):
+    cdef uint8_t[FIXED_BUFFER_SIZE] buffer
+    cdef list sections
+    cdef int64_t current_section
+    cdef int64_t tail_pointer
+    # cdef int64_t head_pointer
+    cdef int64_t section_head
+    cdef int64_t section_tail
+    cdef int64_t section_pointer
 
-# cdef class CompressedBuffer(IntIOInterface):
-#     cdef IntIOInterface buffer
-#     cdef size_t zeros
+    cdef int64_t write(self, uint8_t)
+    cdef uint8_t read(self)
+    cdef void seek(self, int64_t)
+    cdef void flush(self)
 
+    cdef void new(self)
+    cdef void commit(self)
+    cdef bint seek_frame(self, int64_t)
+
+cdef class CompressedFixedAllocBuffers(FixedAllocBuffers):
+    cdef uint64_t zeros
+    cdef int64_t write(self, uint8_t)
+    cdef uint8_t read(self)
+    cdef void seek(self, int64_t)
+    cdef void flush(self)
+
+    cdef void new(self)
+    cdef void commit(self)
+    cdef bint seek_frame(self, int64_t)
+
+cdef class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
+    cdef int64_t internal_pointer
+    cdef int64_t prev_internal_pointer
+    cdef uint8_t[FIXED_BUFFER_MIN_ALLOC] internal_buffer
+    cdef bint internal_buffer_dirty
+    cdef int64_t base_frame
+    cdef int64_t injected_zero_frame
+
+    cdef void flush_internal_buffer(self)
+    cdef int64_t write(self, uint8_t)
+    cdef uint8_t read(self)
+    cdef void seek(self, int64_t)
+    cdef void flush(self)
+
+    cdef void new(self)
+    cdef void commit(self)
+    cdef bint seek_frame(self, int64_t)

@@ -35,6 +35,7 @@ cdef class Motherboard:
     cdef pyboy.window.base_window.BaseWindow window
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
+    cdef bint enable_rewind
     cdef unicode serialbuffer
 
     cdef void buttonevent(self, int)

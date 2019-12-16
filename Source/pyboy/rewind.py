@@ -5,7 +5,6 @@
 
 import array
 
-TIME_BUFFER_LENGTH = 3600
 FIXED_BUFFER_SIZE = 64*1024*128
 FIXED_BUFFER_MIN_ALLOC = 64*1024
 FILL_VALUE = 123
@@ -25,6 +24,15 @@ class IntIOInterface:
         raise Exception("Not implemented!")
 
     def flush(self):
+        raise Exception("Not implemented!")
+
+    def new(self):
+        raise Exception("Not implemented!")
+
+    def commit(self):
+        raise Exception("Not implemented!")
+
+    def seek_frame(self, _):
         raise Exception("Not implemented!")
 
 ##############################################################
@@ -135,7 +143,7 @@ class FixedAllocBuffers(IntIOInterface):
 
 class CompressedFixedAllocBuffers(FixedAllocBuffers):
     def __init__(self):
-        super().__init__()
+        FixedAllocBuffers.__init__(self)
         self.zeros = 0
 
     def flush(self):
@@ -143,15 +151,15 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
             chunks, rest = divmod(self.zeros, 0xFF)
 
             for i in range(chunks):
-                super().write(0)
-                super().write(0xFF)
+                FixedAllocBuffers.write(self, 0)
+                FixedAllocBuffers.write(self, 0xFF)
 
             if (rest != 0):
-                super().write(0)
-                super().write(rest)
+                FixedAllocBuffers.write(self, 0)
+                FixedAllocBuffers.write(self, rest)
 
         self.zeros = 0
-        super().flush()
+        FixedAllocBuffers.flush(self)
 
     def write(self, data):
         if data == 0:
@@ -159,19 +167,28 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
             return 1
         else:
             self.flush()
-            return super().write(data)
+            return FixedAllocBuffers.write(self, data)
 
     def read(self):
         if self.zeros > 0:
             self.zeros -= 1
             return 0
         else:
-            byte = super().read()
+            byte = FixedAllocBuffers.read(self)
             if byte == 0:
                 # If the bytes is zero, it means that the next byte will be the counter
-                self.zeros = super().read()
+                self.zeros = FixedAllocBuffers.read(self)
                 self.zeros -= 1
             return byte
+
+    def new(self):
+        FixedAllocBuffers.new(self)
+
+    def commit(self):
+        FixedAllocBuffers.commit(self)
+
+    def seek_frame(self, v):
+        return FixedAllocBuffers.seek_frame(self, v)
 
 
 class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
@@ -180,7 +197,7 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     When seeking, the last frame will be lost. This has no practical effect, and is only noticeble in unittesting.
     """
     def __init__(self):
-        super().__init__()
+        CompressedFixedAllocBuffers.__init__(self)
         self.internal_pointer = 0
         self.prev_internal_pointer = 0
         # The initial values needs to be 0 to act as the "null-frame" and make the first frame a one-to-one copy
@@ -200,10 +217,10 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         xor_val = data ^ old_val
         self.internal_buffer[self.internal_pointer] = data
         self.internal_pointer += 1
-        return super().write(xor_val)
+        return CompressedFixedAllocBuffers.write(self, xor_val)
 
     def read(self):
-        old_val = super().read()
+        old_val = CompressedFixedAllocBuffers.read(self)
         data = old_val ^ self.internal_buffer[self.internal_pointer]
         self.internal_buffer[self.internal_pointer] = data
         self.internal_pointer += 1
@@ -212,21 +229,21 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     def commit(self):
         self.internal_pointer = 0
         self.injected_zero_frame = 0
-        super().commit()
+        CompressedFixedAllocBuffers.commit(self)
 
     def new(self):
         self.prev_internal_pointer = self.internal_pointer
         self.internal_pointer = 0
-        super().new()
+        CompressedFixedAllocBuffers.new(self)
 
     def flush_internal_buffer(self):
         # self.current_section += 1
         for n in range(self.prev_internal_pointer):
-            super().write(self.internal_buffer[n])
+            CompressedFixedAllocBuffers.write(self, self.internal_buffer[n])
             # Make a null-frame so we can XOR the newest frame back in
             self.internal_buffer[n] = 0
         self.internal_buffer_dirty = False
-        super().new()
+        CompressedFixedAllocBuffers.new(self)
         self.injected_zero_frame = self.current_section
 
     def seek_frame(self, frames):
@@ -247,4 +264,4 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         elif frames < 0 and self.current_section-1 == self.base_frame:
             return False
 
-        return super().seek_frame(frames)
+        return CompressedFixedAllocBuffers.seek_frame(self, frames)
