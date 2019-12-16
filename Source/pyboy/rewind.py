@@ -148,7 +148,8 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
 
     def flush(self):
         if self.zeros > 0:
-            chunks, rest = divmod(self.zeros, 0xFF)
+            chunks = self.zeros // 0xFF
+            rest = self.zeros % 0xFF
 
             for i in range(chunks):
                 FixedAllocBuffers.write(self, 0)

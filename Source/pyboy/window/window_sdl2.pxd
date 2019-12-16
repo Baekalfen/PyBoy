@@ -20,7 +20,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef unsigned char getcolorcode(unsigned char, unsigned char, unsigned char)
 
-cdef int ROWS, COLS
+cdef int ROWS, COLS, TILES
 
 
 cdef class SDLWindow(BaseWindow):
