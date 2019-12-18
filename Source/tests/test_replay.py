@@ -73,9 +73,11 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     frame_count = 0
     next_event = recorded_input.pop(0)
 
+    recording = False
     while recorded_input != []:
         if record_gif is not None and (frame_count in record_gif):
             pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
+            recording ^= True
 
         if next_event[0] == frame_count:
             for e in next_event[1]:
@@ -89,6 +91,11 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
         #     print(frame_count)
         #     breakpoint()
         pyboy.tick()
+
+    # If end-frame in record_gif is high than frame counter
+    # if recording:
+    #     pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
+    #     recording ^= True
 
     if gif_destination:
         move_gif(pyboy.get_cartridge_title(), gif_destination)
@@ -129,5 +136,5 @@ def test_kirby():
 
 
 def test_rewind():
-    replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(450, 926),
+    replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(416, 643),
            gif_destination="../README/5.gif", enable_rewind=True)

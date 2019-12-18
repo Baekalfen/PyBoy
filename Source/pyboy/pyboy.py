@@ -168,26 +168,34 @@ class PyBoy:
                 self.rewind_speed = 1
             elif self.enable_rewind and event == windowevent.PRESS_REWIND_FORWARD:
                 self.paused = True
-                if self.rewind_buffer.seek_frame(int(self.rewind_speed)):
-                    self.mb.load_state(self.rewind_buffer)
-                    # self.window.update_cache(self.mb.lcd)
-                    self.window.render_screen(self.mb.lcd)
-                    self.window.update_display(False)
-                    self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-                else:
-                    logger.info("Rewind limit reached")
+                for _ in range(int(self.rewind_speed)):
+                    if self.rewind_buffer.seek_frame(1):
+                        self.mb.load_state(self.rewind_buffer)
+                        # self.window.update_cache(self.mb.lcd)
+                        self.window.render_screen(self.mb.lcd)
+                        self.window.update_display(False)
+                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                        if self.screen_recorder:
+                            self.screen_recorder.add_frame(self.get_screen_image())
+                    else:
+                        logger.info("Rewind limit reached")
+                        break
             elif self.enable_rewind and event == windowevent.RELEASE_REWIND_BACK:
                 self.rewind_speed = 1
             elif self.enable_rewind and event == windowevent.PRESS_REWIND_BACK:
                 self.paused = True
-                if self.rewind_buffer.seek_frame(-int(self.rewind_speed)):
-                    self.mb.load_state(self.rewind_buffer)
-                    # self.window.update_cache(self.mb.lcd)
-                    self.window.render_screen(self.mb.lcd)
-                    self.window.update_display(False)
-                    self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-                else:
-                    logger.info("Rewind limit reached")
+                for _ in range(int(self.rewind_speed)):
+                    if self.rewind_buffer.seek_frame(-1):
+                        self.mb.load_state(self.rewind_buffer)
+                        # self.window.update_cache(self.mb.lcd)
+                        self.window.render_screen(self.mb.lcd)
+                        self.window.update_display(False)
+                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                        if self.screen_recorder:
+                            self.screen_recorder.add_frame(self.get_screen_image())
+                    else:
+                        logger.info("Rewind limit reached")
+                        break
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
                     self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
