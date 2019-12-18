@@ -47,14 +47,15 @@ def move_gif(game, dest):
     os.replace(record_dir + '/' + gif, dest)
 
 
-def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None):
+def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, enable_rewind=False):
     with open(replay, 'rb') as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode('ascii'))
 
     verify_rom_hash(ROM, b64_romhash)
     state_data = io.BytesIO(base64.b64decode(b64_state.encode('utf8'))) if b64_state is not None else None
 
-    pyboy = PyBoy(ROM, window_type=window, bootrom_file=utils.boot_rom, disable_input=True, hide_window=False)
+    pyboy = PyBoy(ROM, window_type=window, bootrom_file=utils.boot_rom, disable_input=True, hide_window=False,
+                  enable_rewind=enable_rewind)
     pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)
@@ -125,3 +126,8 @@ def test_supermarioland():
 def test_kirby():
     replay(utils.kirby_rom, "tests/replays/kirby_gif.replay", record_gif=(0, 360),
            gif_destination="../README/4.gif")
+
+
+def test_rewind():
+    replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(450, 926),
+           gif_destination="../README/5.gif", enable_rewind=True)

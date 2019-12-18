@@ -207,15 +207,16 @@ class PyBoy:
                 self.update_window_title()
 
         # self.paused &= self.autopause # Overrules paused state, if not allowed
+
         if not self.paused:
             self.mb.tickframe()
-
-            if self.screen_recorder:
-                self.screen_recorder.add_frame(self.get_screen_image())
 
             if self.enable_rewind:
                 self.mb.save_state(self.rewind_buffer)
                 self.rewind_buffer.new()
+
+        if self.screen_recorder:
+            self.screen_recorder.add_frame(self.get_screen_image())
 
         self.window.update_display(self.paused)
         t_cpu = time.perf_counter()
@@ -241,8 +242,8 @@ class PyBoy:
         return done
 
     def update_window_title(self):
-        text = ("[PAUSED]" if self.paused else "") + \
-                "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
+        text = "[PAUSED]" if self.paused else \
+               "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
         self.window.set_title(text)
 
     def stop(self, save=True, _replay_state_file=None):

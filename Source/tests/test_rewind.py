@@ -1,5 +1,6 @@
 import platform
 import sys
+
 import pytest
 
 is_pypy = platform.python_implementation() == "PyPy"
@@ -7,12 +8,13 @@ pytestmark = pytest.mark.skipif(not is_pypy, reason="This test doesn't work in C
 
 sys.path.append(".") # isort:skip
 if is_pypy:
-    from pyboy.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, FILL_VALUE # isort:skip
+    from pyboy.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, FILL_VALUE
 
 
 def write_bytes(buf, values):
     for v in values:
         buf.write(v % 0x100)
+
 
 @pytestmark
 class TestRewind:
@@ -82,35 +84,34 @@ class TestRewind:
 
         assert not buf.seek_frame(1)
 
-
     def test_compressed_buffer(self):
         buf = CompressedFixedAllocBuffers()
 
         write_bytes(buf, [0 for _ in range(10)])
         # Zeros are not written before a flush
-        assert all(map(lambda x: x==FILL_VALUE, buf.buffer[:12]))
+        assert all(map(lambda x: x == FILL_VALUE, buf.buffer[:12]))
 
         # Now, we should see one pair of '0' and length
         buf.flush()
-        assert all(map(lambda x: x==FILL_VALUE, buf.buffer[2:12]))
+        assert all(map(lambda x: x == FILL_VALUE, buf.buffer[2:12]))
         assert buf.buffer[0] == 0
         assert buf.buffer[1] == 10
 
         # Second flush should do nothing
         buf.flush()
-        assert all(map(lambda x: x==FILL_VALUE, buf.buffer[2:12]))
+        assert all(map(lambda x: x == FILL_VALUE, buf.buffer[2:12]))
         assert buf.buffer[0] == 0
         assert buf.buffer[1] == 10
 
         # Overflow 8-bit counter and see two pairs
         write_bytes(buf, [0 for _ in range(256)])
         buf.flush()
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[2:8], [0, 255, 0, 1] + [FILL_VALUE]*2)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[2:8], [0, 255, 0, 1] + [FILL_VALUE]*2)))
 
         # Fit exactly within 8-bit counter
         write_bytes(buf, [0 for _ in range(255)])
         buf.flush()
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[6:10], [0, 255] + [FILL_VALUE]*4)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[6:10], [0, 255] + [FILL_VALUE]*4)))
 
     def test_delta_buffer(self):
         buf = DeltaFixedAllocBuffers()
@@ -118,22 +119,26 @@ class TestRewind:
         assert all(map(lambda x: x == 0, buf.internal_buffer[:60]))
 
         write_bytes(buf, range(20))
-        # The compression adds a [0,1] prefix, as there is a zero, repeated once
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0,1] + list(range(1,20)) + [FILL_VALUE]*40)))
+        # The compression adds a [0, 1] prefix, as there is a zero, repeated once
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:60], [0, 1] + list(range(1, 20)) + [FILL_VALUE]*40)))
         # The compression doesn't exist in the internal buffer
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], list(range(20)) + [0]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], list(range(20)) + [0]*40)))
         buf.new()
 
-        # Write same range(20), but add 0x80 to set the 7th bit. This should result in a delta with 20 values of 128 as only
+        # Write same range(20), but add 0x80 to set the 7th bit.
+        # This should result in a delta with 20 values of 128 as only
         # the 7th bit is the xor-difference from the frame above.
-        write_bytes(buf, range(0x80,0x80+20))
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0,1] + list(range(1,20)) + [0x80]*20 + [FILL_VALUE]*20)))
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], list(range(0x80,0x80+20)) + [0]*40)))
+        write_bytes(buf, range(0x80, 0x80+20))
+        assert all(map(lambda x: x[0] == x[1],
+            zip(buf.buffer[:60], [0, 1] + list(range(1, 20)) + [0x80]*20 + [FILL_VALUE]*20)))
+        assert all(map(lambda x: x[0] == x[1],
+            zip(buf.internal_buffer[:60], list(range(0x80, 0x80+20)) + [0]*40)))
         buf.new()
 
         write_bytes(buf, [0xFF]*20)
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:61], [0,1] + list(range(1,20)) + [0x80]*20 + [x^0xFF for x in list(range(0x80,0x80+20))])))
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xFF]*20 + [0]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:61], [0, 1] + list(range(1, 20)) + [0x80]*20 +
+            [x ^ 0xFF for x in list(range(0x80, 0x80+20))])))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xFF]*20 + [0]*40)))
         buf.new()
 
     def test_delta_buffer_repeat_pattern(self):
@@ -143,23 +148,22 @@ class TestRewind:
 
         # Initial frame will just show up directly in the underlying buffer
         write_bytes(buf, [0xAA]*20)
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [FILL_VALUE]*40)))
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:60], [0xAA]*20 + [FILL_VALUE]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
         buf.new()
 
         write_bytes(buf, [0xAA]*20)
         # The written data should be zeros and only get written on a call to new (flush)
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [FILL_VALUE]*40)))
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:60], [0xAA]*20 + [FILL_VALUE]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
         buf.new()
         # Test that we see a zero-prefix with a count of 20
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [0, 20] + [FILL_VALUE]*38)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:60], [0xAA]*20 + [0, 20] + [FILL_VALUE]*38)))
         # The internal buffer always reflect the current image, so nothing has changed.
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
 
         write_bytes(buf, [0xAA]*20)
         buf.new()
         # Same as above, with an additional zero-prefix
-        assert all(map(lambda x: x[0]==x[1], zip(buf.buffer[:60], [0xAA]*20 + [0, 20, 0, 20] + [FILL_VALUE]*36)))
-        assert all(map(lambda x: x[0]==x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
-
+        assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:60], [0xAA]*20 + [0, 20, 0, 20] + [FILL_VALUE]*36)))
+        assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
