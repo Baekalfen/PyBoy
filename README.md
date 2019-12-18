@@ -1,4 +1,6 @@
-# PyBoy
+<p align="center">
+<img src="README/pyboy.svg" width="480">
+</p>
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
@@ -47,15 +49,20 @@ GitHub Contributors
  * Florian Katenbrink - [FKatenbrink](https://github.com/FKatenbrink)
  * Liz - [stillinbeta](https://github.com/stillinbeta)
 
+Student Projects
+----------------
+
+ * __Rewind Time:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
+ * __Link Cable:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
+
 Contribute
 ==========
 Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
 
-For the more major features, there are six that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
+For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
 * Sound
 * Color
 * Link Cable
-* _(Experimental)_ Time travel - rewind time in the emulator
 * _(Experimental)_ AI - use the `botsupport` to train a neural network
 * _(Experimental)_ Bot Support - make wrappers for popular games
 
