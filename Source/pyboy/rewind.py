@@ -94,8 +94,11 @@ class FixedAllocBuffers(IntIOInterface):
 
     def write(self, val):
         assert val < 0x100
-        if self.section_pointer+1 == self.tail_pointer:
-            raise Exception("Combine states!")
+        if (self.section_pointer + 1) % FIXED_BUFFER_SIZE == self.tail_pointer:
+            # We have reached the back of the buffer. We remove the first section to make room.
+            self.sections = self.sections[1:]
+            self.tail_pointer = self.sections[0]
+            self.current_section -= 1
         self.buffer[self.section_pointer] = val
         self.section_pointer = (self.section_pointer + 1) % FIXED_BUFFER_SIZE
         self.section_head = self.section_pointer

@@ -8,7 +8,8 @@ pytestmark = pytest.mark.skipif(not is_pypy, reason="This test doesn't work in C
 
 sys.path.append(".") # isort:skip
 if is_pypy:
-    from pyboy.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, FILL_VALUE
+    from pyboy.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, FILL_VALUE, \
+                             FIXED_BUFFER_SIZE
 
 
 def write_bytes(buf, values):
@@ -167,3 +168,19 @@ class TestRewind:
         # Same as above, with an additional zero-prefix
         assert all(map(lambda x: x[0] == x[1], zip(buf.buffer[:60], [0xAA]*20 + [0, 20, 0, 20] + [FILL_VALUE]*36)))
         assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xAA]*20 + [0]*40)))
+
+    def test_buffer_overrun(self):
+        buf = FixedAllocBuffers()
+        # Fill almost entire buffer, as we want this section to be removed when we write more than the buffer can
+        # contain.
+        write_bytes(buf, [0xAA]*(FIXED_BUFFER_SIZE-10))
+        buf.new()
+        # We should have the first [0] section plus the one above.
+        assert len(buf.sections) == 2
+        # Writing 20 bytes, should overrun the buffer, and remove the section above to make room.
+        write_bytes(buf, [0xAA]*20)
+        # We can verify this already, that one section is available.
+        assert len(buf.sections) == 1
+        # When call .new(), we are back to 2 sections.
+        buf.new()
+        assert len(buf.sections) == 2
