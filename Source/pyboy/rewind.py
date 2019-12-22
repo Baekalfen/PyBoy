@@ -81,6 +81,7 @@ class FixedAllocBuffers(IntIOInterface):
         self.section_head = 0
         self.section_tail = 0
         self.section_pointer = 0
+        self.avg_section_size = 0.0
 
     def flush(self):
         pass
@@ -90,6 +91,9 @@ class FixedAllocBuffers(IntIOInterface):
         # print(self.section_pointer-self.sections[-1]) # Find the actual length of the state in memory
         self.sections.append(self.section_pointer)
         self.current_section += 1
+        section_size = (self.section_head - self.section_tail + FIXED_BUFFER_SIZE) % FIXED_BUFFER_SIZE
+        # Exponentially decaying moving average
+        self.avg_section_size = (0.9 * self.avg_section_size) + (0.1 * section_size)
         self.section_tail = self.section_pointer
 
     def write(self, val):
@@ -141,7 +145,7 @@ class FixedAllocBuffers(IntIOInterface):
 
         # Seeks the section to 0, ready for reading
         self.section_pointer = self.section_tail
-        return True # (self.section_head - self.section_tail + FIXED_BUFFER_SIZE) % FIXED_BUFFER_SIZE;
+        return True
 
 
 class CompressedFixedAllocBuffers(FixedAllocBuffers):

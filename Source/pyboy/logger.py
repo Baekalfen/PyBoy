@@ -10,7 +10,7 @@ logger = logging.getLogger()
 
 already_loaded = False
 
-log_level = logging.DEBUG
+log_level = logging.INFO
 
 
 def addconsolehandler():

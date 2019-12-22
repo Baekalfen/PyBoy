@@ -40,7 +40,9 @@ cdef class FixedAllocBuffers(IntIOInterface):
     cdef int64_t section_head
     cdef int64_t section_tail
     cdef int64_t section_pointer
+    cdef float avg_section_size
 
+    @cython.locals(section_size=float)
     cdef void new(self)
     cdef void commit(self)
     @cython.locals(_=int64_t, abs_frames=int64_t, head=int64_t, tail=int64_t)

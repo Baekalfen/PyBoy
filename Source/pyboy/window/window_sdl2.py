@@ -108,10 +108,8 @@ class SDLWindow(BaseWindow):
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
 
     def init(self, hide_window):
+        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
         self._ticks = sdl2.SDL_GetTicks()
-
-        # Should be less... https://wiki.libsdl.org/SDL_Init
-        sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy",
