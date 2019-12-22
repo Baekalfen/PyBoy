@@ -124,7 +124,7 @@ libs, libdirs, includes, cflags = define_lib_includes_cflags()
 thread_count = cpu_count() if sys.platform != 'win32' else 0  # 0 disables multiprocessing (windows)
 touch_changed_py_files()
 module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" in files]
-                             
+
 with open('../README.md', 'r') as rm:
     long_description = rm.read()
 
@@ -161,6 +161,7 @@ if 'clean' not in sys.argv:
                     'pyboy/core/timer.py',
                     'pyboy/logger.py',
                     'pyboy/pyboy.py',
+                    'pyboy/rewind.py',
                     'pyboy/screenrecorder.py',
                     'pyboy/window/__init__.py',
                     'pyboy/window/base_window.py',
