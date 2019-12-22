@@ -1,4 +1,6 @@
 import os
+import platform
+import shutil
 import sys
 from distutils.command.clean import clean as _clean
 from distutils.command.clean import log
@@ -12,15 +14,7 @@ from Cython.Distutils import build_ext
 
 ROOT_DIR = "pyboy"
 
-
-# Cython currently has a bug in its code that results in symbol collision on Windows
-def get_export_symbols(self, ext):
-    parts = ext.name.split(".")
-    initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1]  # noqa: F841
-
-
-# Override function in Cython to fix symbol collision
-build_ext.get_export_symbols = get_export_symbols
+is_pypy = platform.python_implementation() == "PyPy"
 
 
 # Add inplace functionality to the clean command
@@ -35,6 +29,10 @@ class clean(_clean):
     def run(self):
         super().run()
         if self.inplace:
+            for p in ("PyBoy.egg-info", "build", "dist"):
+                if os.path.isdir(p):
+                    shutil.rmtree(p)
+
             for root, dirs, files in os.walk(ROOT_DIR):
                 if "__pycache__" in dirs:
                     log.info(f"Removing: {os.path.join(root, '__pycache__')}")
@@ -109,73 +107,71 @@ def define_lib_includes_cflags():
     return libs, libdirs, includes, cflags
 
 
-# Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
-def touch_changed_py_files():
+def prep_pxd_py_files():
+    # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
+    # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):
         for f in files:
             if os.path.splitext(f)[1] == ".pxd":
                 py_file = os.path.join(root, os.path.splitext(f)[0]) + ".py"
-                if os.path.isfile(py_file) and os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
-                    os.utime(py_file)
+                if os.path.isfile(py_file):
+                    yield py_file
+                    if os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
+                        os.utime(py_file)
 
 
-# Set up some values for use in setup()
-libs, libdirs, includes, cflags = define_lib_includes_cflags()
-thread_count = cpu_count() if sys.platform != 'win32' else 0  # 0 disables multiprocessing (windows)
-touch_changed_py_files()
 module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" in files]
-
-with open('../README.md', 'r') as rm:
-    long_description = rm.read()
 
 
 # Cython seems to cythonize these before cleaning, so we only add them, if we aren't cleaning.
-if 'clean' not in sys.argv:
+ext_modules = None
+if not is_pypy and 'clean' not in sys.argv:
+    if sys.platform == 'win32':
+        # Cython currently has a bug in its code that results in symbol collision on Windows
+        def get_export_symbols(self, ext):
+            parts = ext.name.split(".")
+            initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1]  # noqa: F841
+
+        # Override function in Cython to fix symbol collision
+        build_ext.get_export_symbols = get_export_symbols
+        thread_count = 0 # Disables multiprocessing (windows)
+    else:
+        thread_count = cpu_count()
+
+    # Set up some values for use in setup()
+    libs, libdirs, includes, cflags = define_lib_includes_cflags()
+
+    py_pxd_files = prep_pxd_py_files()
     cythonize_files = map(lambda src: Extension(
-                src.split('.')[0].replace('/', '.'), [src],
-                include_dirs=includes,
-                library_dirs=libdirs,
-                libraries=libs,
-                extra_compile_args=cflags), [
-                    'pyboy/__init__.py',
-                    'pyboy/botsupport/sprite.py',
-                    'pyboy/botsupport/spritetracker.py',
-                    'pyboy/botsupport/tile.py',
-                    'pyboy/botsupport/tilemap.py',
-                    'pyboy/core/__init__.py',
-                    'pyboy/core/bootrom.py',
-                    'pyboy/core/cartridge/__init__.py',
-                    'pyboy/core/cartridge/base_mbc.py',
-                    'pyboy/core/cartridge/cartridge.py',
-                    'pyboy/core/cartridge/mbc1.py',
-                    'pyboy/core/cartridge/mbc2.py',
-                    'pyboy/core/cartridge/mbc3.py',
-                    'pyboy/core/cartridge/mbc5.py',
-                    'pyboy/core/cartridge/rtc.py',
-                    'pyboy/core/cpu.py',
-                    'pyboy/core/interaction.py',
-                    'pyboy/core/lcd.py',
-                    'pyboy/core/mb.py',
-                    'pyboy/core/opcodes.py',
-                    'pyboy/core/ram.py',
-                    'pyboy/core/timer.py',
-                    'pyboy/logger.py',
-                    'pyboy/pyboy.py',
-                    'pyboy/rewind.py',
-                    'pyboy/screenrecorder.py',
-                    'pyboy/window/__init__.py',
-                    'pyboy/window/base_window.py',
-                    'pyboy/window/debug_window.py',
-                    'pyboy/window/window.py',
-                    'pyboy/window/window_dummy.py',
-                    'pyboy/window/window_headless.py',
-                    'pyboy/window/window_opengl.py',
-                    'pyboy/window/window_scanline.py',
-                    'pyboy/window/window_sdl2.py',
-                    'pyboy/windowevent.py',
-                ])
-else:
-    cythonize_files = []
+        src.split('.')[0].replace('/', '.'), [src],
+        include_dirs=includes,
+        library_dirs=libdirs,
+        libraries=libs,
+        extra_compile_args=cflags),
+        list(py_pxd_files)
+    )
+    ext_modules = cythonize(
+        [*cythonize_files], # This runs even if build_ext isn't invoked...
+        nthreads=thread_count,
+        annotate=False,
+        gdb_debug=False,
+        language_level=2,
+        compiler_directives={
+            "boundscheck": False,
+            "cdivision": True,
+            "cdivision_warnings": False,
+            "infer_types" : True,
+            "initializedcheck": False,
+            "nonecheck": False,
+            "overflowcheck": False,
+            # "profile" : True,
+            "wraparound": False,
+        },
+    )
+
+
+with open('../README.md', 'r') as rm:
+    long_description = rm.read()
 
 setup(
     name='PyBoy',
@@ -209,24 +205,6 @@ setup(
             "pdoc3",
         ],
     },
-    zip_safe=False,
-    ext_modules=cythonize(
-        [*cythonize_files], # This runs even if build_ext isn't invoked...
-        include_path=module_dirs,
-        nthreads=thread_count,
-        annotate=False,
-        gdb_debug=False,
-        language_level=2,
-        compiler_directives={
-            "boundscheck": False,
-            "cdivision": True,
-            "cdivision_warnings": False,
-            "infer_types" : True,
-            "initializedcheck": False,
-            "nonecheck": False,
-            "overflowcheck": False,
-            # "profile" : True,
-            "wraparound": False,
-        },
-    )
+    zip_safe=is_pypy, # Cython doesn't support it
+    ext_modules=ext_modules
 )
