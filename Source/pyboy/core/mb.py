@@ -9,6 +9,7 @@ from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
+STATE_VERSION = 2
 
 
 class Motherboard:
@@ -47,11 +48,11 @@ class Motherboard:
 
     def save_state(self, f):
         logger.debug("Saving state...")
+        f.write(STATE_VERSION)
         f.write(self.bootrom_enabled)
         self.cpu.save_state(f)
         self.lcd.save_state(f)
-        if self.enable_rewind:
-            self.window.save_state(f)
+        self.window.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
@@ -59,10 +60,18 @@ class Motherboard:
 
     def load_state(self, f):
         logger.debug("Loading state...")
-        self.bootrom_enabled = f.read()
+        state_version = f.read()
+        if state_version >= 2:
+            logger.debug(f"State version: {state_version}")
+            # From version 2 and above, this is the version number
+            self.bootrom_enabled = f.read()
+        else:
+            logger.debug(f"State version: 0-1")
+            # HACK: The byte wasn't a state version, but the bootrom flag
+            self.bootrom_enabled = state_version
         self.cpu.load_state(f)
         self.lcd.load_state(f)
-        if self.enable_rewind:
+        if state_version >= 2:
             self.window.load_state(f)
         self.ram.load_state(f)
         self.cartridge.load_state(f)
