@@ -146,23 +146,23 @@ class CPU:
 
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
-            f.write((n & 0xFF).to_bytes(1, 'little'))
+            f.write(n & 0xFF)
 
         for n in [self.HL, self.SP, self.PC]:
-            f.write((n & 0xFF).to_bytes(1, 'little'))
-            f.write(((n & 0xFF00) >> 8).to_bytes(1, 'little'))
+            f.write(n & 0xFF)
+            f.write((n & 0xFF00) >> 8)
 
-        f.write(self.interrupt_master_enable.to_bytes(1, 'little'))
-        f.write(self.halted.to_bytes(1, 'little'))
-        f.write(self.stopped.to_bytes(1, 'little'))
+        f.write(self.interrupt_master_enable)
+        f.write(self.halted)
+        f.write(self.stopped)
 
     def load_state(self, f):
-        self.A, self.F, self.B, self.C, self.D, self.E = [ord(f.read(1)) for _ in range(6)]
-        self.HL, self.SP, self.PC = [ord(f.read(1)) | (ord(f.read(1)) << 8) for _ in range(3)]
+        self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
+        self.HL, self.SP, self.PC = [f.read() | (f.read() << 8) for _ in range(3)]
 
-        self.interrupt_master_enable = ord(f.read(1))
-        self.halted = ord(f.read(1))
-        self.stopped = ord(f.read(1))
+        self.interrupt_master_enable = f.read()
+        self.halted = f.read()
+        self.stopped = f.read()
 
     def fetch_and_execute(self, pc):
         opcode = self.mb.getitem(pc)

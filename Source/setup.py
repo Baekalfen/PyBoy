@@ -123,7 +123,8 @@ def touch_changed_py_files():
 libs, libdirs, includes, cflags = define_lib_includes_cflags()
 thread_count = cpu_count() if sys.platform != 'win32' else 0  # 0 disables multiprocessing (windows)
 touch_changed_py_files()
-
+module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" in files]
+                             
 with open('../README.md', 'r') as rm:
     long_description = rm.read()
 
@@ -210,6 +211,7 @@ setup(
     zip_safe=False,
     ext_modules=cythonize(
         [*cythonize_files], # This runs even if build_ext isn't invoked...
+        include_path=module_dirs,
         nthreads=thread_count,
         annotate=False,
         gdb_debug=False,

@@ -15,10 +15,10 @@ class BaseWindow:
 
     def __init__(self, scale=1):
         self._scale = scale
-        logger.debug("%s initialization" % self.__class__.__name__)
+        logger.info("%s initialization" % self.__class__.__name__)
 
         self._scaledresolution = (scale * COLS, scale * ROWS)
-        logger.debug('Scale: x%s %s' % (self._scale, self._scaledresolution))
+        logger.info('Scale: x%s %s' % (self._scale, self._scaledresolution))
 
         self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
         self.alphamask = 0xFF000000
@@ -73,3 +73,13 @@ class BaseWindow:
 
     def set_lcd(self, lcd):
         pass
+
+    def save_state(self, f):
+        # Just to align the state between windows
+        for y in range(ROWS*4):
+            f.write(0)
+
+    def load_state(self, f):
+        # Just to align the state between windows
+        for y in range(ROWS*4):
+            f.read()

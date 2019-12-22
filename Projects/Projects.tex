@@ -301,36 +301,6 @@ The details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pan
 
 % \chapter*{Emulation -- Accelerate rendering on GPU}
 
-\chapter*{Experimental -- Rewind Time}
-\section*{Introduction}
-This is not a Game Boy feature itself, but something we can do when emulating. I imagine a feature, where it is possible to go back in time and redo something that went wrong in the game. It could be fine-grained at CPU-cycle level, less fine at each produced frame (60 FPS), or coarse at larger intervals. It depending on what is possible to implement.
-
-The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
-
-There are already examples of other people implementing a rewind feature\footnote{\url{https://binji.github.io/2017/12/31/binjgb-rewind.html}}.
-
-\section*{Tasks}
-\begin{description}
-    \item [Read and find documentation]
-        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
-
-    \item [Look at the current implementation]
-        Familiarize yourself with the PyBoy code base and look for a good place to implement the feature, and at which granularity it is possible.
-
-    \item [Figure out an algorithm]
-        How is the data of each level of granularity going to be stored, and how is it going to be loaded? Will you track changes on a byte-level, or simply save large chunks of memory at an interval? How much space will it use, and how will it be managed? Is compression needed?
-
-    \item [Implement the algorithm]
-        When you've found an appropriate algorithm, try to implement it in PyBoy. See if there are any unexpected issues.
-
-    \item [Final polishing and testing]
-        Perform some tests to verify the solution. This might include test ROMs, which tests the system integrity in general, while the time is rewinded, but also practical game tests.
-
-    \item [Conclude results]
-        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
-
-\end{description}
-
 \chapter*{Experimental -- AI}
 \section*{Introduction}
 This is not a Game Boy feature itself, but something that is easier to approach through emulation. What I imagine, is a neural network -- or maybe a simple, handwritten bot -- which can play the Game Boy autonomously.
@@ -389,5 +359,45 @@ The details of the Game Boy are described in the Pan Docs\footnote{\url{http://b
         Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
 
 \end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Completed projects
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter*{Completed Projects}
+\newpage
+
+
+\chapter*{Experimental -- Rewind Time}
+\section*{Introduction}
+This is not a Game Boy feature itself, but something we can do when emulating. I imagine a feature, where it is possible to go back in time and redo something that went wrong in the game. It could be fine-grained at CPU-cycle level, less fine at each produced frame (60 FPS), or coarse at larger intervals. It depending on what is possible to implement.
+
+The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
+
+There are already examples of other people implementing a rewind feature\footnote{\url{https://binji.github.io/2017/12/31/binjgb-rewind.html}}.
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Familiarize yourself with the PyBoy code base and look for a good place to implement the feature, and at which granularity it is possible.
+
+    \item [Figure out an algorithm]
+        How is the data of each level of granularity going to be stored, and how is it going to be loaded? Will you track changes on a byte-level, or simply save large chunks of memory at an interval? How much space will it use, and how will it be managed? Is compression needed?
+
+    \item [Implement the algorithm]
+        When you've found an appropriate algorithm, try to implement it in PyBoy. See if there are any unexpected issues.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This might include test ROMs, which tests the system integrity in general, while the time is rewinded, but also practical game tests.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
 \end{document}
-% End of v2-acmtog-sample.tex (March 2012) - Gerry Murray, ACM
