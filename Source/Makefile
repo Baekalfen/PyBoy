@@ -21,20 +21,7 @@ build:
 
 clean:
 	@echo "Cleaning..."
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.pyo" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.pyc" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.so" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.c" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.h" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.dll" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.html" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "__pycache__" -delete
-	rm -rf ${ROOT_DIR}/Source/build
-	rm -rf ${ROOT_DIR}/Source/dist
-	rm -rf ${ROOT_DIR}/Source/PyBoy.egg-info
-
-run: build
-	${PY} main.py SDL2 ${ROOT_DIR}/Source/ROMs/POKEMON\ BLUE.gb
+	CFLAGS=$(CFLAGS) ${PY} setup.py clean
 
 install:
 	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext
