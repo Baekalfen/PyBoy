@@ -33,8 +33,14 @@ All supported events to send to the emulator:
     PAUSE
     UNPAUSE
     PAUSE_TOGGLE
+    PRESS_REWIND_BACK
+    PRESS_REWIND_FORWARD
+    RELEASE_REWIND_BACK
+    RELEASE_REWIND_FORWARD
 """
 
+# ONLY ADD NEW EVENTS AT THE END OF THE LIST!
+# Otherwise, it will break replays, which depend on the id of the event
 (QUIT,
  PRESS_ARROW_UP,
  PRESS_ARROW_DOWN,
@@ -61,4 +67,9 @@ All supported events to send to the emulator:
  SCREEN_RECORDING_TOGGLE,
  PAUSE,
  UNPAUSE,
- PAUSE_TOGGLE,) = range(27)
+ PAUSE_TOGGLE,
+ PRESS_REWIND_BACK,
+ PRESS_REWIND_FORWARD,
+ RELEASE_REWIND_BACK,
+ RELEASE_REWIND_FORWARD,
+ ) = range(31)

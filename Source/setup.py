@@ -83,6 +83,7 @@ setup(
         'pyboy/core/timer.py',
         'pyboy/logger.py',
         'pyboy/pyboy.py',
+        'pyboy/rewind.py',
         'pyboy/screenrecorder.py',
         'pyboy/window/__init__.py',
         'pyboy/window/base_window.py',

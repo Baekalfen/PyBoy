@@ -1,6 +1,7 @@
 [flake8]
 # E261: Adds no improvement to readability: Two spaces before inline comment
 # E123: flake8 is either buggy, or the rule is nonsensical. Doesn't work when nested: Closing brackets should match indentation of opening bracket.
+# E128: flake8 is either buggy, or the rule is nonsensical: Continuation line under-indented for visual indent
 # E221: Sometimes alignment of operators is better. Use common sense: "multiple spaces before operator"
 # E203: Sometimes alignment of commas is better. Use common sense: "whitespace before ','"
 # W503: Sometimes common sense prevail: "line break before binary operator"
@@ -11,7 +12,7 @@
 # E121: Do what feels right
 # E731: "E731 do not assign a lambda expression, use a def" -- don't tell me how to use lambdas
 # E402: isort will take care of that
-ignore = E261, E123, E221, E203, W503, W504, E226, E722, E126, E121, E731, E402
+ignore = E261, E123, E128, E221, E203, W503, W504, E226, E722, E126, E121, E731, E402
 exclude = .git, __pycache__, opcodes.py, __init__.py
 per-file-ignores =
     interface_example.py:E501

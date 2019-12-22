@@ -8,6 +8,7 @@ import cython
 cimport pyboy.core.cpu
 cimport pyboy.core.timer
 cimport pyboy.core.cartridge.base_mbc
+from pyboy.rewind cimport IntIOInterface
 # cimport pyboy.core.cartridge.cartridge
 cimport pyboy.core.bootrom
 cimport pyboy.core.ram
@@ -34,6 +35,7 @@ cdef class Motherboard:
     cdef pyboy.window.base_window.BaseWindow window
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
+    cdef bint enable_rewind
     cdef unicode serialbuffer
 
     cdef void buttonevent(self, int)
@@ -49,5 +51,5 @@ cdef class Motherboard:
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, unsigned char)
-    cdef void save_state(self, file)
-    cdef void load_state(self, file)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)

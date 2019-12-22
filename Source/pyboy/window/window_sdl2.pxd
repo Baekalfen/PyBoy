@@ -12,7 +12,7 @@ from pyboy.window.base_window cimport BaseWindow
 
 import cython
 cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
 
 
 cdef (int, int) _dummy_declaration
@@ -20,7 +20,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef unsigned char getcolorcode(unsigned char, unsigned char, unsigned char)
 
-cdef int ROWS, COLS
+cdef int ROWS, COLS, TILES
 
 
 cdef class SDLWindow(BaseWindow):

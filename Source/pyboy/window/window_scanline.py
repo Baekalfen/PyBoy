@@ -36,7 +36,7 @@ class ScanlineWindow(BaseWindow):
             self._linebuf_p = ctypes.c_void_p(self._linebuf.buffer_info()[0])
 
     def init(self, hide_window):
-        sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
+        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
         self._ticks = sdl2.SDL_GetTicks()
 
         self._window = sdl2.SDL_CreateWindow(

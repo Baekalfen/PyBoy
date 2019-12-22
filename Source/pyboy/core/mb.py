@@ -9,10 +9,11 @@ from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
+STATE_VERSION = 2
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, window, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, window, enable_rewind, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -29,6 +30,7 @@ class Motherboard:
         self.lcd = lcd.LCD(window.color_palette)
         self.bootrom_enabled = True
         self.serialbuffer = u''
+        self.enable_rewind = enable_rewind
 
     def getserial(self):
         b = self.serialbuffer
@@ -45,22 +47,36 @@ class Motherboard:
             self.cartridge.stop()
 
     def save_state(self, f):
-        logger.info("Saving state...")
-        f.write(self.bootrom_enabled.to_bytes(1, 'little'))
+        logger.debug("Saving state...")
+        f.write(STATE_VERSION)
+        f.write(self.bootrom_enabled)
         self.cpu.save_state(f)
         self.lcd.save_state(f)
+        self.window.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
-        logger.info("State saved.")
+        f.flush()
+        logger.debug("State saved.")
 
     def load_state(self, f):
-        logger.info("Loading state...")
-        self.bootrom_enabled = ord(f.read(1))
+        logger.debug("Loading state...")
+        state_version = f.read()
+        if state_version >= 2:
+            logger.debug(f"State version: {state_version}")
+            # From version 2 and above, this is the version number
+            self.bootrom_enabled = f.read()
+        else:
+            logger.debug(f"State version: 0-1")
+            # HACK: The byte wasn't a state version, but the bootrom flag
+            self.bootrom_enabled = state_version
         self.cpu.load_state(f)
         self.lcd.load_state(f)
+        if state_version >= 2:
+            self.window.load_state(f)
         self.ram.load_state(f)
         self.cartridge.load_state(f)
-        logger.info("State loaded.")
+        f.flush()
+        logger.debug("State loaded.")
 
         self.window.clearcache = True
         self.window.update_cache(self.lcd)
