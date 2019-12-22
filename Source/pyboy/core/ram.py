@@ -29,28 +29,28 @@ class RAM:
 
     def save_state(self, f):
         for n in range(INTERNAL_RAM0):
-            f.write(self.internal_ram0[n].to_bytes(1, 'little'))
+            f.write(self.internal_ram0[n])
         for n in range(NON_IO_INTERNAL_RAM0):
-            f.write(self.non_io_internal_ram0[n].to_bytes(1, 'little'))
+            f.write(self.non_io_internal_ram0[n])
         for n in range(IO_PORTS):
-            f.write(self.io_ports[n].to_bytes(1, 'little'))
+            f.write(self.io_ports[n])
         for n in range(INTERNAL_RAM1):
-            f.write(self.internal_ram1[n].to_bytes(1, 'little'))
+            f.write(self.internal_ram1[n])
         for n in range(NON_IO_INTERNAL_RAM1):
-            f.write(self.non_io_internal_ram1[n].to_bytes(1, 'little'))
+            f.write(self.non_io_internal_ram1[n])
         for n in range(INTERRUPT_ENABLE_REGISTER):
-            f.write(self.interrupt_register[n].to_bytes(1, 'little'))
+            f.write(self.interrupt_register[n])
 
     def load_state(self, f):
         for n in range(INTERNAL_RAM0):
-            self.internal_ram0[n] = ord(f.read(1))
+            self.internal_ram0[n] = f.read()
         for n in range(NON_IO_INTERNAL_RAM0):
-            self.non_io_internal_ram0[n] = ord(f.read(1))
+            self.non_io_internal_ram0[n] = f.read()
         for n in range(IO_PORTS):
-            self.io_ports[n] = ord(f.read(1))
+            self.io_ports[n] = f.read()
         for n in range(INTERNAL_RAM1):
-            self.internal_ram1[n] = ord(f.read(1))
+            self.internal_ram1[n] = f.read()
         for n in range(NON_IO_INTERNAL_RAM1):
-            self.non_io_internal_ram1[n] = ord(f.read(1))
+            self.non_io_internal_ram1[n] = f.read()
         for n in range(INTERRUPT_ENABLE_REGISTER):
-            self.interrupt_register[n] = ord(f.read(1))
+            self.interrupt_register[n] = f.read()

@@ -31,37 +31,37 @@ class LCD:
 
     def save_state(self, f):
         for n in range(VIDEO_RAM):
-            f.write(self.VRAM[n].to_bytes(1, 'little'))
+            f.write(self.VRAM[n])
 
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
-            f.write(self.OAM[n].to_bytes(1, 'little'))
+            f.write(self.OAM[n])
 
-        f.write(self.LCDC.value.to_bytes(1, 'little'))
-        f.write(self.BGP.value.to_bytes(1, 'little'))
-        f.write(self.OBP0.value.to_bytes(1, 'little'))
-        f.write(self.OBP1.value.to_bytes(1, 'little'))
+        f.write(self.LCDC.value)
+        f.write(self.BGP.value)
+        f.write(self.OBP0.value)
+        f.write(self.OBP1.value)
 
-        f.write(self.SCY.to_bytes(1, 'little'))
-        f.write(self.SCX.to_bytes(1, 'little'))
-        f.write(self.WY.to_bytes(1, 'little'))
-        f.write(self.WX.to_bytes(1, 'little'))
+        f.write(self.SCY)
+        f.write(self.SCX)
+        f.write(self.WY)
+        f.write(self.WX)
 
     def load_state(self, f):
         for n in range(VIDEO_RAM):
-            self.VRAM[n] = ord(f.read(1))
+            self.VRAM[n] = f.read()
 
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
-            self.OAM[n] = ord(f.read(1))
+            self.OAM[n] = f.read()
 
-        self.LCDC.set(ord(f.read(1)))
-        self.BGP.set(ord(f.read(1)))
-        self.OBP0.set(ord(f.read(1)))
-        self.OBP1.set(ord(f.read(1)))
+        self.LCDC.set(f.read())
+        self.BGP.set(f.read())
+        self.OBP0.set(f.read())
+        self.OBP1.set(f.read())
 
-        self.SCY = ord(f.read(1))
-        self.SCX = ord(f.read(1))
-        self.WY = ord(f.read(1))
-        self.WX = ord(f.read(1))
+        self.SCY = f.read()
+        self.SCX = f.read()
+        self.WY = f.read()
+        self.WX = f.read()
 
     def getwindowpos(self):
         return (self.WX - 7, self.WY)

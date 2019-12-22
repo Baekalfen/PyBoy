@@ -20,6 +20,7 @@ from . import botsupport, window, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
 from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
+from .rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper  # NOQA
 from .screenrecorder import ScreenRecorder
 
 addconsolehandler()
@@ -42,6 +43,7 @@ class PyBoy:
                 record_input_file=None,
                 disable_input=False,
                 hide_window=False,
+                enable_rewind=False,
             ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -73,7 +75,7 @@ class PyBoy:
         self.gamerom_file = gamerom_file
 
         self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=profiling)
+        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, enable_rewind, profiling=profiling)
 
         # TODO: Get rid of this extra step
         if debugging:
@@ -95,6 +97,13 @@ class PyBoy:
         self.recorded_input = []
         self.external_input = []
         self.profiling = profiling
+
+        self.enable_rewind = enable_rewind
+        self.rewind_speed = 1.0
+        if enable_rewind:
+            # self.rewind_buffer = FixedAllocBuffers()
+            # self.rewind_buffer = CompressedFixedAllocBuffers()
+            self.rewind_buffer = DeltaFixedAllocBuffers()
 
     def tick(self):
         """
@@ -130,10 +139,10 @@ class PyBoy:
                 logger.info("Speed limit: %s" % self.target_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + ".state", "wb") as f:
-                    self.mb.save_state(f)
+                    self.mb.save_state(IntIOWrapper(f))
             elif event == windowevent.LOAD_STATE:
                 with open(self.gamerom_file + ".state", "rb") as f:
-                    self.mb.load_state(f)
+                    self.mb.load_state(IntIOWrapper(f))
             elif event == windowevent.DEBUG_TOGGLE:
                 # self.debugger.running ^= True
                 pass
@@ -145,12 +154,48 @@ class PyBoy:
             elif event == windowevent.UNPAUSE and self.autopause:
                 self.paused = False
                 logger.info("Emulation unpaused!")
+                if self.enable_rewind:
+                    self.rewind_buffer.commit()
             elif event == windowevent.PAUSE_TOGGLE:
                 self.paused ^= True
                 if self.paused:
                     logger.info("Emulation paused!")
                 else:
                     logger.info("Emulation unpaused!")
+                    if self.enable_rewind:
+                        self.rewind_buffer.commit()
+            elif self.enable_rewind and event == windowevent.RELEASE_REWIND_FORWARD:
+                self.rewind_speed = 1
+            elif self.enable_rewind and event == windowevent.PRESS_REWIND_FORWARD:
+                self.paused = True
+                for _ in range(int(self.rewind_speed)):
+                    if self.rewind_buffer.seek_frame(1):
+                        self.mb.load_state(self.rewind_buffer)
+                        # self.window.update_cache(self.mb.lcd)
+                        self.window.render_screen(self.mb.lcd)
+                        self.window.update_display(False)
+                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                        if self.screen_recorder:
+                            self.screen_recorder.add_frame(self.get_screen_image())
+                    else:
+                        logger.info("Rewind limit reached")
+                        break
+            elif self.enable_rewind and event == windowevent.RELEASE_REWIND_BACK:
+                self.rewind_speed = 1
+            elif self.enable_rewind and event == windowevent.PRESS_REWIND_BACK:
+                self.paused = True
+                for _ in range(int(self.rewind_speed)):
+                    if self.rewind_buffer.seek_frame(-1):
+                        self.mb.load_state(self.rewind_buffer)
+                        # self.window.update_cache(self.mb.lcd)
+                        self.window.render_screen(self.mb.lcd)
+                        self.window.update_display(False)
+                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                        if self.screen_recorder:
+                            self.screen_recorder.add_frame(self.get_screen_image())
+                    else:
+                        logger.info("Rewind limit reached")
+                        break
             elif event == windowevent.SCREEN_RECORDING_TOGGLE:
                 if not self.screen_recorder:
                     self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
@@ -160,16 +205,33 @@ class PyBoy:
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
 
+            if event in [
+                    windowevent.PRESS_REWIND_BACK,
+                    windowevent.PRESS_REWIND_FORWARD,
+                    windowevent.PAUSE_TOGGLE,
+                    windowevent.PAUSE,
+                    windowevent.UNPAUSE
+                    ]:
+                self.update_window_title()
+
         # self.paused &= self.autopause # Overrules paused state, if not allowed
+
         if not self.paused:
             self.mb.tickframe()
-        self.window.update_display(self.paused)
-        t_cpu = time.perf_counter()
+
+            if self.enable_rewind:
+                self.mb.save_state(self.rewind_buffer)
+                self.rewind_buffer.new()
 
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.get_screen_image())
 
-        if self.paused or self.target_emulationspeed > 0:
+        self.window.update_display(self.paused)
+        t_cpu = time.perf_counter()
+
+        if self.paused:
+            self.window.frame_limiter(1)
+        elif self.target_emulationspeed > 0:
             self.window.frame_limiter(self.target_emulationspeed)
 
         t_emu = time.perf_counter()
@@ -181,12 +243,23 @@ class PyBoy:
         self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
 
         if self.counter % 60 == 0:
-            text = ("CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
-            self.window.set_title(text)
+            self.update_window_title()
             self.counter = 0
         self.counter += 1
 
         return done
+
+    def update_window_title(self):
+        if self.paused :
+            text = "[PAUSED]"
+        else:
+            text = "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
+            if self.enable_rewind:
+                text += " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
+        self.window.set_title(text)
+
+    def __del__(self):
+        self.stop(save=False)
 
     def stop(self, save=True, _replay_state_file=None):
         """
@@ -412,7 +485,7 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
 
-        self.mb.save_state(file_like_object)
+        self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
         """
@@ -435,7 +508,7 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
 
-        self.mb.load_state(file_like_object)
+        self.mb.load_state(IntIOWrapper(file_like_object))
 
     def get_serial(self):
         """

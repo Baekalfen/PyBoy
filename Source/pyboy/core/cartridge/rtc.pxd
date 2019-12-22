@@ -3,6 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from pyboy.rewind cimport IntIOInterface
+
 cdef class RTC:
     cdef unicode filename
     cdef bint latch_enabled
@@ -16,8 +18,8 @@ cdef class RTC:
     cdef unsigned int halt
 
     cdef void stop(self)
-    cdef void save_state(self, file)
-    cdef void load_state(self, file)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)
     cdef void latch_rtc(self)
     cdef void writecommand(self, unsigned char)
     cdef unsigned char getregister(self, unsigned char)

@@ -10,16 +10,18 @@ logger = logging.getLogger()
 
 already_loaded = False
 
+log_level = logging.INFO
+
 
 def addconsolehandler():
     global already_loaded
     if not already_loaded:
         already_loaded = True
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(log_level)
 
         # create console handler and set level to debug
         ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(log_level)
 
         # create formatter
         formatter = logging.Formatter('%(relativeCreated)-8d %(levelname)-8s %(message)s')

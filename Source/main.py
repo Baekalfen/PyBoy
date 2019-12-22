@@ -19,6 +19,7 @@ argv_debug = "--debug" in sys.argv
 argv_profiling = "--profiling" in sys.argv
 argv_autopause = "--autopause" in sys.argv
 argv_disable_input = "--no-input" in sys.argv
+argv_rewind = "--rewind" in sys.argv
 
 # TODO: Find a library to take care of argv
 argv_load_state_file = None
@@ -90,6 +91,7 @@ def main():
             profiling=argv_profiling,
             record_input_file=argv_record_input_file,
             disable_input=argv_disable_input,
+            enable_rewind=argv_rewind,
         )
 
     if argv_load_state_file:
