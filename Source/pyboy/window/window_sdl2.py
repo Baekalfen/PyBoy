@@ -172,12 +172,12 @@ class SDLWindow(BaseWindow):
         sdl2.SDL_Quit()
 
     def scanline(self, y, lcd):
-        bx, by = lcd.getviewport()
-        wx, wy = lcd.getwindowpos()
-        self._scanlineparameters[y][0] = bx
-        self._scanlineparameters[y][1] = by
-        self._scanlineparameters[y][2] = wx
-        self._scanlineparameters[y][3] = wy
+        viewpos = lcd.getviewport()
+        windowpos = lcd.getwindowpos()
+        self._scanlineparameters[y][0] = viewpos[0]
+        self._scanlineparameters[y][1] = viewpos[1]
+        self._scanlineparameters[y][2] = windowpos[0]
+        self._scanlineparameters[y][3] = windowpos[1]
 
     def render_screen(self, lcd):
         # All VRAM addresses are offset by 0x8000

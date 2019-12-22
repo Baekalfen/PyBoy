@@ -4,9 +4,6 @@ __pycache__/
 
 # C extensions
 *.so
-*.lib
-*.exp
-*.dll
 
 # Distribution / packaging
 .Python
