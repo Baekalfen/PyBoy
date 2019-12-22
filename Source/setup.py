@@ -10,6 +10,8 @@ from setuptools import Extension, find_packages, setup
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
+ROOT_DIR = "pyboy"
+
 
 # Cython currently has a bug in its code that results in symbol collision on Windows
 def get_export_symbols(self, ext):
@@ -33,7 +35,7 @@ class clean(_clean):
     def run(self):
         super().run()
         if self.inplace:
-            for root, dirs, files in os.walk("pyboy"):
+            for root, dirs, files in os.walk(ROOT_DIR):
                 if "__pycache__" in dirs:
                     log.info(f"Removing: {os.path.join(root, '__pycache__')}")
                     remove_tree(os.path.join(root, "__pycache__"))
@@ -107,10 +109,21 @@ def define_lib_includes_cflags():
     return libs, libdirs, includes, cflags
 
 
+# Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
+def touch_changed_py_files():
+    for root, dirs, files in os.walk(ROOT_DIR):
+        for f in files:
+            if os.path.splitext(f)[1] == ".pxd":
+                py_file = os.path.join(root, os.path.splitext(f)[0]) + ".py"
+                if os.path.isfile(py_file) and os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
+                    os.utime(py_file)
+
+
 # Set up some values for use in setup()
 libs, libdirs, includes, cflags = define_lib_includes_cflags()
 thread_count = cpu_count() if sys.platform != 'win32' else 0  # 0 disables multiprocessing (windows)
-module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" in files]
+touch_changed_py_files()
+
 with open('../README.md', 'r') as rm:
     long_description = rm.read()
 

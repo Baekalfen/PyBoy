@@ -21,7 +21,7 @@ build:
 
 clean:
 	@echo "Cleaning..."
-	CFLAGS=$(CFLAGS) ${PY} setup.py clean
+	CFLAGS=$(CFLAGS) ${PY} setup.py clean --inplace
 
 install:
 	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext
