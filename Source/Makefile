@@ -13,35 +13,18 @@ endif
 THREADS := 6
 PY := python3
 PYPY := pypy3
-NUMPY := $(shell ${PY} -c 'import numpy; print(numpy.get_include())')
-# The cut strips -mwindows from the mingw's output in windows; won't
-# affect other OS's since neither has lines of more than 3 elements.
-SDL := $(shell sdl2-config --cflags --libs | cut -d' ' -f 1-4)
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 
 build:
 	@echo "Building..."
-	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace -I${NUMPY} ${SDL}
+	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace
 
 clean:
 	@echo "Cleaning..."
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.pyo" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.pyc" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.so" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.c" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.h" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.dll" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "*.html" -delete
-	find ${ROOT_DIR}/Source/pyboy/ -name "__pycache__" -delete
-	rm -rf ${ROOT_DIR}/Source/build
-	rm -rf ${ROOT_DIR}/Source/dist
-	rm -rf ${ROOT_DIR}/Source/PyBoy.egg-info
-
-run: build
-	${PY} main.py SDL2 ${ROOT_DIR}/Source/ROMs/POKEMON\ BLUE.gb
+	CFLAGS=$(CFLAGS) ${PY} setup.py clean --inplace
 
 install:
-	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext -I${NUMPY} ${SDL}
+	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext
 
 test: clean build
 	${PY} tetris_bot.py ${ROOT_DIR}/Source/ROMs/Tetris.gb --quiet
