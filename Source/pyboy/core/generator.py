@@ -346,7 +346,7 @@ class OpcodeData:
         # Compensate for CB operations being "2 bytes long"
         if self.opcode > 0xFF:
             self.length -= 1
-        return (self.length, "%s_%0.2X" % (self.name.split()[0], self.opcode)), text
+        return (self.length, "%s_%0.2X" % (self.name.split()[0], self.opcode), self.name), text
 
     # Special carry and half-carry for E8 and F8:
     # http://forums.nesdev.com/viewtopic.php?p=42138
@@ -1181,6 +1181,7 @@ def update():
 
             (pxd, functiontext) = code
 
+            # breakpoint()
             f_pxd.write(pxd + "\n")
             f.write(functiontext.replace('\t', ' '*4) + "\n\n\n")
 
@@ -1206,7 +1207,7 @@ def execute_opcode(cpu, opcode):
 
         indent = 4
         for i, t in enumerate(lookuplist):
-            t = t if t is not None else (0, "no_opcode")
+            t = t if t is not None else (0, "no_opcode", "")
             f.write(" "*indent + ("if" if i == 0 else "elif") + " opcode == 0x%0.2X:\n" % i
                     + " "*(indent+4) + "return " + str(t[1]).replace("'", "")
                     + ("(cpu)" if t[0] <= 1 else '(cpu, v)') + "\n")
@@ -1214,7 +1215,7 @@ def execute_opcode(cpu, opcode):
 
         f.write('OPCODE_LENGTHS = array.array("B", [\n    ')
         for i, t in enumerate(lookuplist):
-            t = t if t is not None else (0, "no_opcode")
+            t = t if t is not None else (0, "no_opcode", "")
             f.write(str(t[0]).replace("'", "") + ",")
             if (i+1) % 16 == 0:
                 f.write("\n" + " "*4)
@@ -1222,6 +1223,14 @@ def execute_opcode(cpu, opcode):
                 f.write(" ")
 
         f.write('])\n')
+
+        f.write('\n\n')
+        f.write('CPU_COMMANDS = [\n    ')
+        for _, t in enumerate(lookuplist):
+            t = t if t is not None else (0, "no_opcode", "")
+            f.write(f"\"{t[2]}\",\n" + " "*4)
+
+        f.write(']\n')
 
 
 def load():

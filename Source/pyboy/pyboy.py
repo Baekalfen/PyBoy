@@ -18,8 +18,8 @@ import numpy as np
 
 from . import botsupport, window, windowevent
 from .core.mb import Motherboard
+from .core.opcodes import CPU_COMMANDS
 from .logger import addconsolehandler, logger
-from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
 from .rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper  # NOQA
 from .screenrecorder import ScreenRecorder
 
@@ -277,9 +277,9 @@ class PyBoy:
         if self.profiling:
             print("Profiling report:")
             from operator import itemgetter
-            names = [CPU_COMMANDS[n] if n < 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
+            names = [CPU_COMMANDS[n] for n in range(0x200)]
             for hits, n, name in sorted(
-                    filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
+                    filter(itemgetter(0), zip(self.mb.cpu.hitrate, range(0x200), names)), reverse=True):
                 print("%3x %16s %s" % (n, name, hits))
 
         if self.record_input:
