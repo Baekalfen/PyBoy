@@ -214,8 +214,8 @@ with open('README.md', 'r') as rm:
     long_description = rm.read()
 
 setup(
-    name='PyBoy',
-    version='0.1',
+    name='pyboy-baekalfen',
+    version='0.1.0',
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
@@ -254,5 +254,6 @@ setup(
         ],
     },
     zip_safe=CYTHON, # Cython doesn't support it
-    ext_modules=ext_modules
+    ext_modules=ext_modules,
+    python_requires='>=3.6'
 )
