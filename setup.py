@@ -15,24 +15,21 @@ from setuptools.command.test import test
 CYTHON = platform.python_implementation() != "PyPy"
 
 
-try:
+if CYTHON:
     from Cython.Build import cythonize
     import Cython.Compiler.Options
     from Cython.Distutils import build_ext
-except ImportError as ex:
-    if not CYTHON:
-        raise ex
-    else:
-        class build_ext(distutils.cmd.Command):
+else:
+    class build_ext(distutils.cmd.Command):
 
-            def initialize_options(self):
-                pass
+        def initialize_options(self):
+            pass
 
-            def finalize_options(self):
-                pass
+        def finalize_options(self):
+            pass
 
-            def run(self):
-                pass
+        def run(self):
+            pass
 
 
 ROOT_DIR = "pyboy"
