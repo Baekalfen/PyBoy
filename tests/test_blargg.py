@@ -139,7 +139,7 @@ def test_blarggs():
     pool = mp.Pool(mp.cpu_count())
     results = pool.map(run_rom, test_roms)
 
-    blargg_json = "blargg.json"
+    blargg_json = "tests/blargg.json"
 
     if os.path.isfile(blargg_json):
         with open(blargg_json, "r") as f:
@@ -156,9 +156,9 @@ def test_blarggs():
     with open(blargg_json, "w") as f:
         json.dump(dict(zip(test_roms, results)), f)
 
-    # with open("../../PyBoy.wiki/blargg.md", "w") as f:
-    #     f.write("# Test results for Blargg's test ROMs\n")
-    #     f.write("|ROM|Result|\n")
-    #     f.write("|---|---|\n")
-    #     for rom, res in zip(test_roms, results):
-    #         f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))
+    with open("../PyBoy.wiki/blargg.md", "w") as f:
+        f.write("# Test results for Blargg's test ROMs\n")
+        f.write("|ROM|Result|\n")
+        f.write("|---|---|\n")
+        for rom, res in zip(test_roms, results):
+            f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))

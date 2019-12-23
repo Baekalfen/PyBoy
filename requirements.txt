@@ -1,3 +1,0 @@
-cython
-numpy
-pysdl2
