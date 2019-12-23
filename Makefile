@@ -14,6 +14,15 @@ PY := python3
 PYPY := pypy3
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 
+dist: clean build
+	${PY} setup.py sdist bdist_wheel
+	${PY} -m twine upload dist/pyboy-${version}*
+
+codecov: clean
+	@echo "Finding code coverage..."
+	CFLAGS='-w -DCYTHON_TRACE=1' ${PY} setup.py build_ext --inplace --codecov-trace
+	${PY} setup.py test --codecov-trace
+
 build:
 	@echo "Building..."
 	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace

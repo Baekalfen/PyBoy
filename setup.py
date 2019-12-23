@@ -12,11 +12,12 @@ from multiprocessing import cpu_count
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
-CYTHON = platform.python_implementation() == "PyPy"
+CYTHON = platform.python_implementation() != "PyPy"
 
 
 try:
     from Cython.Build import cythonize
+    import Cython.Compiler.Options
     from Cython.Distutils import build_ext
 except ImportError as ex:
     if not CYTHON:
@@ -35,6 +36,14 @@ except ImportError as ex:
 
 
 ROOT_DIR = "pyboy"
+
+codecov = '--codecov-trace' in sys.argv
+
+if codecov:
+    sys.argv.pop(sys.argv.index('--codecov-trace'))
+    directive_defaults = Cython.Compiler.Options.get_directive_defaults()
+    directive_defaults['linetrace'] = True
+    directive_defaults['binding'] = True
 
 
 class PyTest(test):
@@ -57,7 +66,10 @@ class PyTest(test):
             sys.exit(return_code)
 
         import pytest
-        sys.exit(pytest.main([f"-n{cpu_count()}", "-v"]))
+        args = [f"-n{cpu_count()}", "-v"]
+        if codecov: # TODO: There's probably a more correct way to read the argv flags
+            args += ['--cov=./']
+        sys.exit(pytest.main(args))
 
 
 # Add inplace functionality to the clean command
@@ -122,7 +134,7 @@ def define_lib_includes_cflags():
     libdirs = []
     includes = []
     cflags = []
-    if sdl2_config is not None:
+    if sdl2_config != []:
         for arg in sdl2_config:
             if arg.startswith("-l"):
                 libs += [arg[2:]]
@@ -151,21 +163,23 @@ def define_lib_includes_cflags():
 
 
 def prep_pxd_py_files():
+    ignore_py_files = ['generator.py']
     # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
     # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):
         for f in files:
+            if os.path.splitext(f)[1] == ".py" and f not in ignore_py_files:
+                yield os.path.join(root, f)
             if os.path.splitext(f)[1] == ".pxd":
                 py_file = os.path.join(root, os.path.splitext(f)[0]) + ".py"
                 if os.path.isfile(py_file):
-                    yield py_file
                     if os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
                         os.utime(py_file)
 
 
 # Cython seems to cythonize these before cleaning, so we only add them, if we aren't cleaning.
 ext_modules = None
-if not CYTHON and 'clean' not in sys.argv:
+if CYTHON and 'clean' not in sys.argv:
     if sys.platform == 'win32':
         # Cython currently has a bug in its code that results in symbol collision on Windows
         def get_export_symbols(self, ext):
@@ -258,7 +272,7 @@ setup(
             "pdoc3",
         ],
     },
-    zip_safe=CYTHON, # Cython doesn't support it
+    zip_safe=not CYTHON, # Cython doesn't support it
     ext_modules=ext_modules,
     python_requires='>=3.6',
     package_data={'': ['*.pyx', '*.pxd', '*.c', '*.h']},
