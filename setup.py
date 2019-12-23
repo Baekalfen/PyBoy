@@ -1,6 +1,8 @@
+import distutils.cmd
 import os
 import platform
 import shutil
+import subprocess
 import sys
 from distutils.command.clean import clean as _clean
 from distutils.command.clean import log
@@ -8,13 +10,53 @@ from distutils.dir_util import remove_tree
 from multiprocessing import cpu_count
 
 from setuptools import Extension, find_packages, setup
+from setuptools.command.test import test
 
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+CYTHON = platform.python_implementation() == "PyPy"
+
+
+try:
+    from Cython.Build import cythonize
+    from Cython.Distutils import build_ext
+except ImportError as ex:
+    if not CYTHON:
+        raise ex
+    else:
+        class build_ext(distutils.cmd.Command):
+
+            def initialize_options(self):
+                pass
+
+            def finalize_options(self):
+                pass
+
+            def run(self):
+                pass
+
 
 ROOT_DIR = "pyboy"
 
-is_pypy = platform.python_implementation() == "PyPy"
+
+class PyTest(test):
+    def finalize_options(self):
+        super().finalize_options()
+        self.test_suite = True
+        self.test_args = []
+
+    def run_tests(self):
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        return_code = subprocess.Popen(
+            f"{sys.executable} {script_path}/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
+        ).wait()
+        if return_code != 0:
+            sys.exit(return_code)
+
+        return_code = subprocess.Popen(f"{sys.executable} {script_path}/interface_example.py --quiet".split(' ')).wait()
+        if return_code != 0:
+            sys.exit(return_code)
+
+        import pytest
+        sys.exit(pytest.main([f"-n{cpu_count()}", "-v"]))
 
 
 # Add inplace functionality to the clean command
@@ -125,12 +167,12 @@ module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" 
 
 # Cython seems to cythonize these before cleaning, so we only add them, if we aren't cleaning.
 ext_modules = None
-if not is_pypy and 'clean' not in sys.argv:
+if not CYTHON and 'clean' not in sys.argv:
     if sys.platform == 'win32':
         # Cython currently has a bug in its code that results in symbol collision on Windows
         def get_export_symbols(self, ext):
             parts = ext.name.split(".")
-            initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1]  # noqa: F841
+            initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1] # noqa: F841
 
         # Override function in Cython to fix symbol collision
         build_ext.get_export_symbols = get_export_symbols
@@ -170,7 +212,7 @@ if not is_pypy and 'clean' not in sys.argv:
     )
 
 
-with open('../README.md', 'r') as rm:
+with open('README.md', 'r') as rm:
     long_description = rm.read()
 
 setup(
@@ -190,21 +232,29 @@ setup(
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: System :: Emulators",
     ],
-    cmdclass={'build_ext': build_ext, 'clean': clean},
-    install_requires=[
-        "cython",
+    entry_points={
+        'console_scripts': [
+            'pyboy = pyboy.__main__:main',
+        ],
+    },
+    cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
+    install_requires=([] if CYTHON else ["cython"]) + [
         "pysdl2",
         "numpy",
         "Pillow",
     ],
+    tests_require=[
+        "pytest",
+        "pytest-xdist",
+        "pyopengl",
+    ],
     extras_require={
         "all": [
             "pyopengl",
-            "pytest-xdist",
             "markdown",
             "pdoc3",
         ],
     },
-    zip_safe=is_pypy, # Cython doesn't support it
+    zip_safe=CYTHON, # Cython doesn't support it
     ext_modules=ext_modules
 )

@@ -91,21 +91,21 @@ tmp.state
 *.gb*.ram
 *.gb*.rtc
 
-Source/pyboy/**/*.c
-Source/pyboy/**/*.h
-Source/pyboy/**/*.html
-Source/pyboy/**/*.so
+/pyboy/**/*.c
+/pyboy/**/*.h
+/pyboy/**/*.html
+/pyboy/**/*.so
 
-/Source/recordings
+/recordings
 
 # Files from venv and dependencies
-/Source/bin
-/Source/include
-/Source/lib-python
-/Source/lib_pypy
-/Source/pip-selfcheck.json
-/Source/site-packages
-/Source/share
+/bin
+/include
+/lib-python
+/lib_pypy
+/pip-selfcheck.json
+/site-packages
+/share
 
 /bin
 /include
