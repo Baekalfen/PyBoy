@@ -1,12 +1,10 @@
 import platform
-import sys
 
 import pytest
 
 is_pypy = platform.python_implementation() == "PyPy"
 pytestmark = pytest.mark.skipif(not is_pypy, reason="This test doesn't work in Cython")
 
-sys.path.append(".") # isort:skip
 if is_pypy:
     from pyboy.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, FILL_VALUE, \
                              FIXED_BUFFER_SIZE

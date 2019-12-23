@@ -1,8 +1,0 @@
--r requirements.txt
-numpy
-pyopengl
-Pillow
-pytest-xdist
-markdown
-pdoc3
-

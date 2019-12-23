@@ -3,8 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from test_replay import replay
-from tests import utils
+from . import utils
+from .test_replay import replay
 
 replay_file = "tests/replays/kirby_gif.replay"
 

@@ -8,15 +8,12 @@ import hashlib
 import io
 import json
 import os
-import sys
 import zlib
 
 import numpy as np
-from tests import utils
+from pyboy import PyBoy, windowevent
 
-sys.path.append(".") # isort:skip
-from pyboy import PyBoy, windowevent # isort:skip
-
+from . import utils
 
 event_filter = [windowevent.PRESS_SPEED_UP, windowevent.RELEASE_SPEED_UP, windowevent.SCREEN_RECORDING_TOGGLE]
 
@@ -109,12 +106,12 @@ def test_pokemon():
 
 def test_pokemon_gif1():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif1.replay", record_gif=(630, 3540),
-           gif_destination="../README/1.gif")
+           gif_destination="README/1.gif")
 
 
 def test_pokemon_gif2():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif2.replay", record_gif=(0, 180),
-           gif_destination="../README/2.gif")
+           gif_destination="README/2.gif")
 
 
 def test_tetris():
@@ -123,7 +120,7 @@ def test_tetris():
 
 def test_supermarioland_gif():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_gif.replay", record_gif=(120, 660),
-           gif_destination="../README/3.gif")
+           gif_destination="README/3.gif")
 
 
 def test_supermarioland():
@@ -132,9 +129,9 @@ def test_supermarioland():
 
 def test_kirby():
     replay(utils.kirby_rom, "tests/replays/kirby_gif.replay", record_gif=(0, 360),
-           gif_destination="../README/4.gif")
+           gif_destination="README/4.gif")
 
 
 def test_rewind():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(416, 643),
-           gif_destination="../README/5.gif", enable_rewind=True)
+           gif_destination="README/5.gif", enable_rewind=True)

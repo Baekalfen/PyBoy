@@ -1,4 +1,8 @@
+import distutils.cmd
 import os
+import platform
+import shutil
+import subprocess
 import sys
 from distutils.command.clean import clean as _clean
 from distutils.command.clean import log
@@ -6,21 +10,63 @@ from distutils.dir_util import remove_tree
 from multiprocessing import cpu_count
 
 from setuptools import Extension, find_packages, setup
+from setuptools.command.test import test
 
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+CYTHON = platform.python_implementation() != "PyPy"
+
+
+if CYTHON:
+    from Cython.Build import cythonize
+    import Cython.Compiler.Options
+    from Cython.Distutils import build_ext
+else:
+    class build_ext(distutils.cmd.Command):
+
+        def initialize_options(self):
+            pass
+
+        def finalize_options(self):
+            pass
+
+        def run(self):
+            pass
+
 
 ROOT_DIR = "pyboy"
 
+codecov = '--codecov-trace' in sys.argv
 
-# Cython currently has a bug in its code that results in symbol collision on Windows
-def get_export_symbols(self, ext):
-    parts = ext.name.split(".")
-    initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1]  # noqa: F841
+if codecov:
+    sys.argv.pop(sys.argv.index('--codecov-trace'))
+    directive_defaults = Cython.Compiler.Options.get_directive_defaults()
+    directive_defaults['linetrace'] = True
+    directive_defaults['binding'] = True
 
 
-# Override function in Cython to fix symbol collision
-build_ext.get_export_symbols = get_export_symbols
+class PyTest(test):
+    def finalize_options(self):
+        super().finalize_options()
+        self.test_suite = True
+        self.test_args = []
+
+    def run_tests(self):
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        return_code = subprocess.Popen(
+            f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
+        ).wait()
+        if return_code != 0:
+            sys.exit(return_code)
+
+        return_code = subprocess.Popen(
+            f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
+        if return_code != 0:
+            sys.exit(return_code)
+
+        import pytest
+        args = [f"-n{cpu_count()}", "-v"]
+        if codecov: # TODO: There's probably a more correct way to read the argv flags
+            args += ['--cov=./']
+        sys.exit(pytest.main(args))
 
 
 # Add inplace functionality to the clean command
@@ -35,6 +81,10 @@ class clean(_clean):
     def run(self):
         super().run()
         if self.inplace:
+            for p in ("PyBoy.egg-info", "build", "dist"):
+                if os.path.isdir(p):
+                    shutil.rmtree(p)
+
             for root, dirs, files in os.walk(ROOT_DIR):
                 if "__pycache__" in dirs:
                     log.info(f"Removing: {os.path.join(root, '__pycache__')}")
@@ -81,7 +131,7 @@ def define_lib_includes_cflags():
     libdirs = []
     includes = []
     cflags = []
-    if sdl2_config is not None:
+    if sdl2_config != []:
         for arg in sdl2_config:
             if arg.startswith("-l"):
                 libs += [arg[2:]]
@@ -109,110 +159,50 @@ def define_lib_includes_cflags():
     return libs, libdirs, includes, cflags
 
 
-# Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
-def touch_changed_py_files():
+def prep_pxd_py_files():
+    ignore_py_files = ['generator.py']
+    # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
+    # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):
         for f in files:
+            if os.path.splitext(f)[1] == ".py" and f not in ignore_py_files:
+                yield os.path.join(root, f)
             if os.path.splitext(f)[1] == ".pxd":
                 py_file = os.path.join(root, os.path.splitext(f)[0]) + ".py"
-                if os.path.isfile(py_file) and os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
-                    os.utime(py_file)
-
-
-# Set up some values for use in setup()
-libs, libdirs, includes, cflags = define_lib_includes_cflags()
-thread_count = cpu_count() if sys.platform != 'win32' else 0  # 0 disables multiprocessing (windows)
-touch_changed_py_files()
-module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" in files]
-
-with open('../README.md', 'r') as rm:
-    long_description = rm.read()
+                if os.path.isfile(py_file):
+                    if os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
+                        os.utime(py_file)
 
 
 # Cython seems to cythonize these before cleaning, so we only add them, if we aren't cleaning.
-if 'clean' not in sys.argv:
-    cythonize_files = map(lambda src: Extension(
-                src.split('.')[0].replace('/', '.'), [src],
-                include_dirs=includes,
-                library_dirs=libdirs,
-                libraries=libs,
-                extra_compile_args=cflags), [
-                    'pyboy/__init__.py',
-                    'pyboy/botsupport/sprite.py',
-                    'pyboy/botsupport/spritetracker.py',
-                    'pyboy/botsupport/tile.py',
-                    'pyboy/botsupport/tilemap.py',
-                    'pyboy/core/__init__.py',
-                    'pyboy/core/bootrom.py',
-                    'pyboy/core/cartridge/__init__.py',
-                    'pyboy/core/cartridge/base_mbc.py',
-                    'pyboy/core/cartridge/cartridge.py',
-                    'pyboy/core/cartridge/mbc1.py',
-                    'pyboy/core/cartridge/mbc2.py',
-                    'pyboy/core/cartridge/mbc3.py',
-                    'pyboy/core/cartridge/mbc5.py',
-                    'pyboy/core/cartridge/rtc.py',
-                    'pyboy/core/cpu.py',
-                    'pyboy/core/interaction.py',
-                    'pyboy/core/lcd.py',
-                    'pyboy/core/mb.py',
-                    'pyboy/core/opcodes.py',
-                    'pyboy/core/ram.py',
-                    'pyboy/core/timer.py',
-                    'pyboy/logger.py',
-                    'pyboy/pyboy.py',
-                    'pyboy/rewind.py',
-                    'pyboy/screenrecorder.py',
-                    'pyboy/window/__init__.py',
-                    'pyboy/window/base_window.py',
-                    'pyboy/window/debug_window.py',
-                    'pyboy/window/window.py',
-                    'pyboy/window/window_dummy.py',
-                    'pyboy/window/window_headless.py',
-                    'pyboy/window/window_opengl.py',
-                    'pyboy/window/window_scanline.py',
-                    'pyboy/window/window_sdl2.py',
-                    'pyboy/windowevent.py',
-                ])
-else:
-    cythonize_files = []
+ext_modules = None
+if CYTHON and 'clean' not in sys.argv:
+    if sys.platform == 'win32':
+        # Cython currently has a bug in its code that results in symbol collision on Windows
+        def get_export_symbols(self, ext):
+            parts = ext.name.split(".")
+            initfunc_name = "PyInit_" + parts[-2] if parts[-1] == "__init__" else parts[-1] # noqa: F841
 
-setup(
-    name='PyBoy',
-    version='0.1',
-    packages=find_packages(),
-    author="Mads Ynddal",
-    author_email="mads-pyboy@ynddal.dk",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/Baekalfen/PyBoy",
-    classifiers=[
-        "License :: Free for non-commercial use",
-        "Operating System :: OS Independent",
-        "Programming Language :: Cython",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "Topic :: System :: Emulators",
-    ],
-    cmdclass={'build_ext': build_ext, 'clean': clean},
-    install_requires=[
-        "cython",
-        "pysdl2",
-        "numpy",
-        "Pillow",
-    ],
-    extras_require={
-        "all": [
-            "pyopengl",
-            "pytest-xdist",
-            "markdown",
-            "pdoc3",
-        ],
-    },
-    zip_safe=False,
-    ext_modules=cythonize(
+        # Override function in Cython to fix symbol collision
+        build_ext.get_export_symbols = get_export_symbols
+        thread_count = 0 # Disables multiprocessing (windows)
+    else:
+        thread_count = cpu_count()
+
+    # Set up some values for use in setup()
+    libs, libdirs, includes, cflags = define_lib_includes_cflags()
+
+    py_pxd_files = prep_pxd_py_files()
+    cythonize_files = map(lambda src: Extension(
+        src.split('.')[0].replace('/', '.'), [src],
+        include_dirs=includes,
+        library_dirs=libdirs,
+        libraries=libs,
+        extra_compile_args=cflags),
+        list(py_pxd_files)
+    )
+    ext_modules = cythonize(
         [*cythonize_files], # This runs even if build_ext isn't invoked...
-        include_path=module_dirs,
         nthreads=thread_count,
         annotate=False,
         gdb_debug=False,
@@ -229,4 +219,58 @@ setup(
             "wraparound": False,
         },
     )
+
+
+try:
+    this_directory = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+        long_description = f.read()
+except FileNotFoundError:
+    print('README.md not found')
+    long_description = ""
+
+setup(
+    name='pyboy',
+    version='0.1.0',
+    packages=find_packages(),
+    author="Mads Ynddal",
+    author_email="mads-pyboy@ynddal.dk",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/Baekalfen/PyBoy",
+    classifiers=[
+        "License :: Free for non-commercial use",
+        "Operating System :: OS Independent",
+        "Programming Language :: Cython",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Topic :: System :: Emulators",
+    ],
+    entry_points={
+        'console_scripts': [
+            'pyboy = pyboy.__main__:main',
+        ],
+    },
+    cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
+    install_requires=([] if CYTHON else ["cython"]) + [
+        "pysdl2",
+        "numpy",
+        "Pillow",
+    ],
+    tests_require=[
+        "pytest",
+        "pytest-xdist",
+        "pyopengl",
+    ],
+    extras_require={
+        "all": [
+            "pyopengl",
+            "markdown",
+            "pdoc3",
+        ],
+    },
+    zip_safe=not CYTHON, # Cython doesn't support it
+    ext_modules=ext_modules,
+    python_requires='>=3.6',
+    package_data={'': ['*.pyx', '*.pxd', '*.c', '*.h']},
 )

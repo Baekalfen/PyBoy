@@ -3,13 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import sys
+from pyboy import PyBoy, windowevent
 
-from tests import utils
-
-sys.path.append(".") # isort:skip
-from pyboy import PyBoy, windowevent # isort:skip
-
+from . import utils
 
 any_rom = utils.tetris_rom
 
