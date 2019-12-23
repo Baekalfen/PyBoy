@@ -210,12 +210,17 @@ if not CYTHON and 'clean' not in sys.argv:
     )
 
 
-with open('README.md', 'r') as rm:
-    long_description = rm.read()
+try:
+    this_directory = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+        long_description = f.read()
+except FileNotFoundError:
+    print('README.md not found')
+    long_description = ""
 
 setup(
     name='pyboy-baekalfen',
-    version='0.1.0',
+    version='0.1.3',
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
@@ -255,5 +260,6 @@ setup(
     },
     zip_safe=CYTHON, # Cython doesn't support it
     ext_modules=ext_modules,
-    python_requires='>=3.6'
+    python_requires='>=3.6',
+    package_data={'': ['*.pyx', '*.pxd', '*.c', '*.h']},
 )
