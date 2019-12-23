@@ -6,16 +6,12 @@
 import hashlib
 import io
 import os
-import sys
 from functools import reduce
 
 import numpy as np
 import PIL
 import pytest
-
-sys.path.append(".") # isort:skip
-from pyboy import PyBoy, windowevent, botsupport # isort:skip
-
+from pyboy import PyBoy, botsupport, windowevent
 
 boot_rom = "ROMs/DMG_ROM.bin"
 tetris_rom = "ROMs/Tetris.gb"

@@ -8,15 +8,12 @@ import hashlib
 import io
 import json
 import os
-import sys
 import zlib
 
 import numpy as np
-from tests import utils
+from pyboy import PyBoy, windowevent
 
-sys.path.append(".") # isort:skip
-from pyboy import PyBoy, windowevent # isort:skip
-
+from . import utils
 
 event_filter = [windowevent.PRESS_SPEED_UP, windowevent.RELEASE_SPEED_UP, windowevent.SCREEN_RECORDING_TOGGLE]
 

@@ -46,12 +46,13 @@ class PyTest(test):
     def run_tests(self):
         script_path = os.path.dirname(os.path.realpath(__file__))
         return_code = subprocess.Popen(
-            f"{sys.executable} {script_path}/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
+            f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
         ).wait()
         if return_code != 0:
             sys.exit(return_code)
 
-        return_code = subprocess.Popen(f"{sys.executable} {script_path}/interface_example.py --quiet".split(' ')).wait()
+        return_code = subprocess.Popen(
+            f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
         if return_code != 0:
             sys.exit(return_code)
 
@@ -160,9 +161,6 @@ def prep_pxd_py_files():
                     yield py_file
                     if os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
                         os.utime(py_file)
-
-
-module_dirs = ["."] + [root for root, _, files in os.walk('.') if "__init__.py" in files]
 
 
 # Cython seems to cythonize these before cleaning, so we only add them, if we aren't cleaning.

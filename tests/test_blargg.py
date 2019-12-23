@@ -8,14 +8,11 @@ import multiprocessing as mp
 import os.path
 # TODO: The timeout should be emulator-cycle based
 import platform
-import sys
 import time
 
-from tests import utils
+from pyboy import PyBoy
 
-sys.path.append(".") # isort:skip
-from pyboy import PyBoy # isort:skip
-
+from . import utils
 
 if platform.python_implementation() == "PyPy":
     timeout = 30
