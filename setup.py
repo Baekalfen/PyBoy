@@ -219,8 +219,8 @@ except FileNotFoundError:
     long_description = ""
 
 setup(
-    name='pyboy-baekalfen',
-    version='0.1.3',
+    name='pyboy',
+    version='0.1.0',
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
