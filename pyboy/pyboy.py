@@ -8,17 +8,12 @@ The core module of the emulator
 """
 
 import base64
-import hashlib
-import io
-import json
 import time
-import zlib
 
 import numpy as np
 
 from . import botsupport, window, windowevent
 from .core.mb import Motherboard
-from .core.opcodes import CPU_COMMANDS
 from .logger import addconsolehandler, logger
 from .rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper  # NOQA
 from .screenrecorder import ScreenRecorder
@@ -40,7 +35,7 @@ class PyBoy:
                 autopause=False,
                 debugging=False,
                 profiling=False,
-                record_input_file=None,
+                record_input=False,
                 disable_input=False,
                 hide_window=False,
                 enable_rewind=False,
@@ -68,8 +63,8 @@ class PyBoy:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
             autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
             debugging (bool): Whether or not to enable some extended debugging features.
-            profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
-            record_input_file (str): Filepath to save all recorded input for replay later.
+            profiling (bool): Profile the emulator and report opcode usage (internal use).
+            record_input (bool): Enable input recording (internal use).
             disable_input (bool): Enable to ignore all user input.
         """
         self.gamerom_file = gamerom_file
@@ -89,14 +84,12 @@ class PyBoy:
         self.paused = False
         self.autopause = autopause
         self.disable_input = disable_input
-        self.record_input = bool(record_input_file)
+        self.record_input = record_input
         if self.record_input:
             logger.info("Recording event inputs")
         self.frame_count = 0
-        self.record_input_file = record_input_file
         self.recorded_input = []
         self.external_input = []
-        self.profiling = profiling
 
         self.enable_rewind = enable_rewind
         self.rewind_speed = 1.0
@@ -122,13 +115,13 @@ class PyBoy:
         if self.disable_input:
             events = []
 
+        events += self.external_input
+        self.external_input = []
+
         if self.record_input and len(events) != 0:
             self.recorded_input.append((self.frame_count, events, base64.b64encode(
                 np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
         self.frame_count += 1
-
-        events += self.external_input
-        self.external_input = []
 
         for event in events:
             if event == windowevent.QUIT:
@@ -261,7 +254,7 @@ class PyBoy:
     def __del__(self):
         self.stop(save=False)
 
-    def stop(self, save=True, _replay_state_file=None):
+    def stop(self, save=True):
         """
         Gently stops the emulator and all sub-modules.
 
@@ -274,30 +267,13 @@ class PyBoy:
         logger.info("###########################")
         self.mb.stop(save)
 
-        if self.profiling:
-            print("Profiling report:")
-            from operator import itemgetter
-            names = [CPU_COMMANDS[n] for n in range(0x200)]
-            for hits, n, name in sorted(
-                    filter(itemgetter(0), zip(self.mb.cpu.hitrate, range(0x200), names)), reverse=True):
-                print("%3x %16s %s" % (n, name, hits))
+    def _get_recorded_input(self):
+        logger.warning("You are calling an internal function. The output and the function is subject to change.")
+        return self.recorded_input
 
-        if self.record_input:
-            with open(self.gamerom_file, 'rb') as f:
-                m = hashlib.sha256()
-                m.update(f.read())
-                b64_romhash = base64.b64encode(m.digest()).decode('utf8')
-
-            if _replay_state_file is None:
-                b64_state = None
-            else:
-                with open(_replay_state_file, 'rb') as f:
-                    b64_state = base64.b64encode(f.read()).decode('utf8')
-
-            with open(self.record_input_file, 'wb') as f:
-                recorded_data = io.StringIO()
-                json.dump([self.recorded_input, b64_romhash, b64_state], recorded_data)
-                f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))
+    def _get_cpu_hitrate(self):
+        logger.warning("You are calling an internal function. The output and the function is subject to change.")
+        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods

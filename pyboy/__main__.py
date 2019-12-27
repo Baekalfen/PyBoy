@@ -4,66 +4,51 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import argparse
+import base64
+import hashlib
+import io
+import json
 import os
 import sys
+import zlib
 
-from pyboy import PyBoy
+from pyboy import PyBoy, core
 from pyboy.logger import addconsolehandler, logger
 
-addconsolehandler()
-
-if "--no-logger" in sys.argv:
-    logger.disabled = True
-
-argv_debug = "--debug" in sys.argv
-argv_profiling = "--profiling" in sys.argv
-argv_autopause = "--autopause" in sys.argv
-argv_disable_input = "--no-input" in sys.argv
-argv_rewind = "--rewind" in sys.argv
-
-# TODO: Find a library to take care of argv
-argv_load_state_file = None
-argv_loadstate = "--loadstate" in sys.argv
-if argv_loadstate:
-    idx = sys.argv.index("--loadstate")
-    assert len(sys.argv) > idx+1
-    argv_load_state_file = sys.argv[idx+1]
-    assert argv_load_state_file[0] != '-', "Load state file looks like an argument"
-
-argv_record_input_file = None
-argv_record_input = "--record-input" in sys.argv
-if argv_record_input:
-    assert not argv_disable_input
-    idx = sys.argv.index("--record-input")
-    assert len(sys.argv) > idx+1
-    argv_record_input_file = sys.argv[idx+1]
-    assert argv_record_input_file[0] != '-', "Output file looks like an argument"
+parser = argparse.ArgumentParser(
+        description='PyBoy -- Game Boy emulator written in Python',
+        epilog="Warning: Features marked with (internal use) might be subject to change."
+    )
+parser.add_argument('ROM', type=str, help='Path to a Game Boy compatible ROM file')
+parser.add_argument('-b', '--bootrom', type=str, help='Path to a boot-ROM file')
+parser.add_argument('-w', '--window', default='SDL2', type=str,
+        help='Specify "window". Options: SDL2 (default), scanline, OpenGL, headless, dummy')
+parser.add_argument('-d', '--debug', action='store_true', help='Enable emulator debugging mode')
+parser.add_argument('-s', '--scale', default=3, type=int, help='The scaling multiplier for the window')
+parser.add_argument('--profiling', action='store_true', help='Enable opcode profiling (internal use)')
+parser.add_argument('--autopause', action='store_true', help='Enable auto-pausing when window looses focus')
+parser.add_argument('--no-input', action='store_true', help='Disable all user-input (mostly for autonomous testing)')
+parser.add_argument('--no-logger', action='store_true', help='Disable all logging (mostly for autonomous testing)')
+parser.add_argument('--rewind', action='store_true', help='Enable rewind function')
+parser.add_argument('--record-input', type=str, help='Record user input and save to a file (internal use)')
+parser.add_argument('-l', '--loadstate', nargs='?', default=None, const='', type=str, help=(
+    'Load state from file. If filepath is specified, it will load the given path. Otherwise, it will automatically '
+    'locate a saved state next to the ROM file.'))
 
 
-if argv_record_input and not argv_loadstate:
-    logger.warning("To replay input consistently later, it is required to load a state at boot. This will be embedded"
-                   "into the .replay file.")
+def main(argv):
+    if argv.no_logger:
+        logger.disabled = True
+    else:
+        addconsolehandler()
 
+    if argv.record_input and not argv.loadstate:
+        logger.warning("To replay input consistently later, it is required to load a state at boot. This will be"
+                       "embedded into the .replay file.")
 
-def getROM(romdir):
-    """Give a list of ROMs to start"""
-    found_files = list(filter(lambda f: f.lower().endswith(".gb") or f.lower().endswith(".gbc"), os.listdir(romdir)))
-    for i, f in enumerate(found_files):
-        print("%s\t%s" % (i + 1, f))
-    filename = input("Write the name or number of the ROM file:\n")
-
-    try:
-        filename = romdir + found_files[int(filename) - 1]
-    except TypeError:
-        filename = romdir + filename
-
-    return filename
-
-
-def main():
     bootrom = "ROMs/DMG_ROM.bin"
     romdir = "ROMs/"
-    scale = 3
 
     # Verify directories
     if bootrom is not None and not os.path.exists(bootrom):
@@ -74,35 +59,68 @@ def main():
         print("ROM folder not found. Please copy the Game-ROM to '%s'".format(romdir))
         exit()
 
-    # Check if the ROM is given through argv
-    if len(sys.argv) > 2: # First arg is SDL2/PyGame
-        filename = sys.argv[2]
-    else:
-        filename = getROM(romdir)
-
     # Start PyBoy and run loop
     pyboy = PyBoy(
-            filename,
-            window_type=(sys.argv[1] if len(sys.argv) > 1 else None),
-            window_scale=scale,
-            bootrom_file=bootrom,
-            autopause=argv_autopause,
-            debugging=argv_debug,
-            profiling=argv_profiling,
-            record_input_file=argv_record_input_file,
-            disable_input=argv_disable_input,
-            enable_rewind=argv_rewind,
+            argv.ROM,
+            window_type=argv.window,
+            window_scale=argv.scale,
+            bootrom_file=argv.bootrom,
+            autopause=argv.autopause,
+            debugging=argv.debug,
+            profiling=argv.profiling,
+            record_input=argv.record_input is not None,
+            disable_input=argv.no_input,
+            enable_rewind=argv.rewind,
         )
 
-    if argv_load_state_file:
-        with open(argv_load_state_file, 'rb') as f:
-            pyboy.load_state(f)
+    if argv.loadstate is not None:
+        if argv.loadstate != '':
+            # Use filepath given
+            with open(argv.loadstate, 'rb') as f:
+                pyboy.load_state(f)
+        else:
+            # Guess filepath from ROM path
+            with open(argv.ROM+".state", 'rb') as f:
+                pyboy.load_state(f)
 
     while not pyboy.tick():
         pass
 
-    pyboy.stop(_replay_state_file=argv_load_state_file)
+    pyboy.stop()
+
+    if argv.profiling:
+        print("\n".join(profiling_printer(pyboy._get_cpu_hitrate())))
+
+    if argv.record_input:
+        save_replay(argv.ROM, argv.loadstate, argv.record_input, pyboy._get_recorded_input())
+
+
+def profiling_printer(hitrate):
+    print("Profiling report:")
+    from operator import itemgetter
+    names = [core.opcodes.CPU_COMMANDS[n] for n in range(0x200)]
+    for hits, n, name in sorted(
+            filter(itemgetter(0), zip(hitrate, range(0x200), names)), reverse=True):
+        yield ("%3x %16s %s" % (n, name, hits))
+
+
+def save_replay(rom, loadstate, replay_file, recorded_input):
+    with open(rom, 'rb') as f:
+        m = hashlib.sha256()
+        m.update(f.read())
+        b64_romhash = base64.b64encode(m.digest()).decode('utf8')
+
+    if loadstate is None:
+        b64_state = None
+    else:
+        with open(loadstate, 'rb') as f:
+            b64_state = base64.b64encode(f.read()).decode('utf8')
+
+    with open(replay_file, 'wb') as f:
+        recorded_data = io.StringIO()
+        json.dump([recorded_input, b64_romhash, b64_state], recorded_data)
+        f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))
 
 
 if __name__ == "__main__":
-    main()
+    main(parser.parse_args())
