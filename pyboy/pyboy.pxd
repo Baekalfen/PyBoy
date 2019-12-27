@@ -15,9 +15,6 @@ cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 
 cdef float SPF
-cdef bint argv_debug
-cdef bint argv_profiling
-cdef bint argv_loadstate
 
 cdef class PyBoy:
     cdef unicode gamerom_file
@@ -33,7 +30,6 @@ cdef class PyBoy:
     cdef int emulationspeed, target_emulationspeed
     cdef object screen_recorder
     cdef uint64_t frame_count
-    cdef bint profiling
     cdef bint record_input
     cdef bint disable_input
     cdef unicode record_input_file
@@ -45,5 +41,5 @@ cdef class PyBoy:
 
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
     cpdef bint tick(self)
-    cpdef void stop(self, save=*, _replay_state_file=*)
+    cpdef void stop(self, save=*)
     cdef void update_window_title(self)

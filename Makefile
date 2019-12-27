@@ -31,8 +31,11 @@ clean:
 	@echo "Cleaning..."
 	CFLAGS=$(CFLAGS) ${PY} setup.py clean --inplace
 
-install:
-	CFLAGS=$(CFLAGS) ${PY} setup.py install build_ext
+install: build
+	${PY} -m pip install .
+
+uninstall:
+	${PY} -m pip uninstall pyboy
 
 test: clean build
 	${PY} setup.py test

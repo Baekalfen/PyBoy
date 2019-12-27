@@ -41,13 +41,10 @@ Original Developers
  * Mads Ynddal - [baekalfen](https://github.com/Baekalfen)
  * Troels Ynddal - [troelsy](https://github.com/troelsy)
 
-GitHub Contributors
--------------------
+GitHub Collaborators
+--------------------
 
  * Kristian Sims - [krs013](https://github.com/krs013)
- * Thomas Li Fredriksen - [thomafred](https://github.com/thomafred)
- * Florian Katenbrink - [FKatenbrink](https://github.com/FKatenbrink)
- * Liz - [stillinbeta](https://github.com/stillinbeta)
 
 Student Projects
 ----------------
