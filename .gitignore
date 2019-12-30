@@ -126,3 +126,10 @@ Projects/Projects.out
 .in
 .out
 .env
+
+bootrom/bootrom.map
+bootrom/bootrom.obj
+bootrom/bootrom.sym
+bootrom/logo.asm
+bootrom/pyboy.png
+

@@ -385,7 +385,7 @@ class DebugWindow(SDLWindow):
         self.sprite_update = True
         self.tile_update = True
 
-        self.hide_window = True
+        self.hide_window = False
 
     # def init(self, hide_window):
     #     self.hide_window = hide_window

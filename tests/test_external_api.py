@@ -121,7 +121,7 @@ def test_tetris():
             breakpoint()
         assert short_digest == predigested, "Didn't match: " + str(short_digest)
 
-    pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True, hide_window=True)
+    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type='headless', disable_input=True, hide_window=True)
     pyboy.set_emulation_speed(0)
 
     first_brick = False

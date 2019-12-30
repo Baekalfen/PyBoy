@@ -80,10 +80,10 @@ class SDLWindow(BaseWindow):
     def __init__(self, scale):
         BaseWindow.__init__(self, scale)
 
-        self._screenbuffer_raw = array('B', [0] * (ROWS*COLS*4))
-        self._tilecache_raw = array('B', [0] * (TILES*8*8*4))
-        self._spritecache0_raw = array('B', [0] * (TILES*8*8*4))
-        self._spritecache1_raw = array('B', [0] * (TILES*8*8*4))
+        self._screenbuffer_raw = array('B', [0xFF] * (ROWS*COLS*4))
+        self._tilecache_raw = array('B', [0xFF] * (TILES*8*8*4))
+        self._spritecache0_raw = array('B', [0xFF] * (TILES*8*8*4))
+        self._spritecache1_raw = array('B', [0xFF] * (TILES*8*8*4))
 
         if cythonmode:
             self._screenbuffer = memoryview(
@@ -119,8 +119,7 @@ class SDLWindow(BaseWindow):
             self._scaledresolution[1],
             sdl2.SDL_WINDOW_RESIZABLE)
 
-        self._sdlrenderer = sdl2.SDL_CreateRenderer(
-            self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
+        self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32,
@@ -237,11 +236,8 @@ class SDLWindow(BaseWindow):
 
                             if 0 <= x < COLS:
                                 if (spritepriority and not self._screenbuffer[y][x] == bgpkey):
-                                    # Add a fake alphachannel to the
-                                    # sprite for BG pixels. We can't
-                                    # just merge this with the next
-                                    # if, as sprites can have an alpha
-                                    # channel in other ways
+                                    # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
+                                    # with the next 'if', as sprites can have an alpha channel in other ways
                                     pixel &= ~self.alphamask
 
                                 if pixel & self.alphamask:
