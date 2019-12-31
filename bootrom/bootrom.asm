@@ -12,6 +12,10 @@ main:
     ld A, $fc
     ld [$FF00+$47], A
 
+    ; Set SCX to 4 to align PyBoy logo in the middle
+    ld A, 4
+    ld [$FF00+$43], A
+
     ; Copy 96 bytes of logo data to VRAM
     ld B, 96     ; Write length
     ld C, 1      ; Use double write
@@ -22,7 +26,7 @@ main:
 
     ; Add two upper part of P for the P and B
     ld A, 1             ; P1 tile index
-    ld HL, $9807+($20*8)
+    ld HL, $9808+($20*8)
     ld [HL+], A         ; The P position
     inc HL              ; Empty space above y
     ld [HL], A          ; The B position
@@ -30,7 +34,7 @@ main:
     ; Add lower part of P, upper part of y, a wrong tile for the lower part of B, and the O. We'll correct the B later.
     ld B, 4             ; Loop counter
     ld A, 2             ; P2 tile index
-    ld HL, $9807+($20*9)
+    ld HL, $9808+($20*9)
 .four_range
     ld [HL+], A
     inc A
@@ -42,11 +46,26 @@ main:
     ld [HL], A
 
     add A, A            ; Y2 tile index coincidentally 2xA
-    ld HL, $9807+($20*10)+1
+    ld HL, $9808+($20*10)+1
     ld [HL+], A
     inc HL
     inc HL
     ld [HL], A
+
+
+    ; Wait an arbitrary 60 frames
+    ld B, 60
+.enter_vblank
+    ld A, [$FF00+$44]
+    cp $90
+    jp NZ, .enter_vblank
+.exit_vblank
+    ld A, [$FF00+$44]
+    cp $90
+    jp Z, .exit_vblank
+    ; One frame has passed, decrement counter
+    dec B
+    jp NZ, .enter_vblank
 
     ; Recreate state
     ld B, 6
@@ -71,20 +90,6 @@ main:
     ; call .memcpy
 
     ; TODO: Restore register values?
-
-    ; Wait an arbitrary 60 frames
-    ld B, 60
-.enter_vblank
-    ld A, [$FF00+$44]
-    cp $90
-    jp NZ, .enter_vblank
-.exit_vblank
-    ld A, [$FF00+$44]
-    cp $90
-    jp Z, .exit_vblank
-    ; One frame has passed, decrement counter
-    dec B
-    jp NZ, .enter_vblank
     jp .end
 
 .memcpy
