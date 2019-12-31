@@ -80,7 +80,7 @@ dump*.bmp
 *.gb
 *.gbc
 *.rom
-*.bin
+DMG_ROM.bin
 BlarggROMs/
 TestROMs/
 ROMs/
