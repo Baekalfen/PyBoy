@@ -12,10 +12,6 @@ main:
     ld A, $fc
     ld [$FF00+$47], A
 
-    ; Set SCX to 4 to align PyBoy logo in the middle
-    ld A, 4
-    ld [$FF00+$43], A
-
     ; Copy 96 bytes of logo data to VRAM
     ld B, 96     ; Write length
     ld C, 1      ; Use double write
@@ -53,9 +49,23 @@ main:
     ld [HL], A
 
 
+    ; Set SCX to 4 to align PyBoy logo in the middle
+    ld A, 4
+    ld [$FF00+$43], A
+
+    ; Start value for SCY so we can scroll the logo
+    ld C, 120
+
     ; Wait an arbitrary 60 frames
     ld B, 60
+.scroll_vblank
+    ; Scroll A a bit
+    dec C
+    dec C
+    ld A, C
+    ld [$FF00+$42], A
 .enter_vblank
+    ; Test vblank
     ld A, [$FF00+$44]
     cp $90
     jp NZ, .enter_vblank
@@ -65,7 +75,7 @@ main:
     jp Z, .exit_vblank
     ; One frame has passed, decrement counter
     dec B
-    jp NZ, .enter_vblank
+    jp NZ, .scroll_vblank
 
     ; Recreate state
     ld B, 6
