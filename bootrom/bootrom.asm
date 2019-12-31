@@ -13,20 +13,40 @@ main:
     ld [$FF00+$47], A
 
     ; Copy 96 bytes of logo data to VRAM
-    ld B, 96
-    ld HL, .logo
+    ld B, 96     ; Write length
+    ld C, 1      ; Use double write
+    ld HL, .logo ; Logo data start
     ld DE, $8010 ; Place it 1 tile in, so tile 0 stays white
-    call .logo_memcpy
+    call .memcpy
+    dec C        ; Don't double write again
 
-    ; Write range 0-5 in tile map
-    ld B, 6
-    ld A, 1
+    ; Add two upper part of P for the P and B
+    ld A, 1             ; P1 tile index
     ld HL, $9807+($20*8)
-    call .range
-    ; Write range 6-11 in tile map
-    ld B, 6
+    ld [HL+], A         ; The P position
+    inc HL              ; Empty space above y
+    ld [HL], A          ; The B position
+
+    ; Add lower part of P, upper part of y, a wrong tile for the lower part of B, and the O. We'll correct the B later.
+    ld B, 4             ; Loop counter
+    ld A, 2             ; P2 tile index
     ld HL, $9807+($20*9)
-    call .range
+.four_range
+    ld [HL+], A
+    inc A
+    dec B
+    jp NZ, .four_range
+
+    ; Add the upper part of the last Y at the current HL position
+    ld A, 3             ; Y1 tile index
+    ld [HL], A
+
+    add A, A            ; Y2 tile index coincidentally 2xA
+    ld HL, $9807+($20*10)+1
+    ld [HL+], A
+    inc HL
+    inc HL
+    ld [HL], A
 
     ; Recreate state
     ld B, 6
@@ -50,6 +70,8 @@ main:
     ; ld DE, $FFFA
     ; call .memcpy
 
+    ; TODO: Restore register values?
+
     ; Wait an arbitrary 60 frames
     ld B, 60
 .enter_vblank
@@ -67,33 +89,20 @@ main:
 
 .memcpy
     ; Regular memcpy. HL is source, DE is target, B is length
+    ; If first bit of C is non-zero, write all value double. Because the logo is black and white, we can use the same
+    ; pixel data twice. This gives colors in the color palette of '00' and '11'. For more info, see documentation of
+    ; the tile graphics format.
     ld A, [HL+]
     ld [DE], A
     inc DE
+    BIT 0,C                 ; Test C for zero
+    jp Z, .memcpy_not_double
+    ld [DE], A
+    inc DE
+.memcpy_not_double
     dec B
     jp NZ, .memcpy
     RET
-
-.logo_memcpy
-    ; Same as above, but writes every bytes twice. Because the logo is black and white, we can use the same pixel data
-    ; twice. This gives colors in the color palette of '00' and '11'. For more info, see documentation of the tile
-    ; graphics format.
-    ld A, [HL+]
-    ld [DE], A
-    inc DE
-    ld [DE], A
-    inc DE
-    dec B
-    jp NZ, .logo_memcpy
-    RET
-
-.range
-    ; Write a range of A..B+A to the location of HL
-    ld [HL+], A
-    inc A
-    dec B
-    jp NZ, .range
-    ret
 
 ; Section 0, 1, 2 and 3 of arbitrary values, which the original boot ROM writes.
 .sec0: ; 0xFF0F

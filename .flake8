@@ -17,4 +17,5 @@ exclude = .git, __pycache__, opcodes.py, __init__.py
 per-file-ignores =
     interface_example.py:E501
     tetris_bot.py:E501
+    png_to_tiles.py:E122
 max-line-length = 120

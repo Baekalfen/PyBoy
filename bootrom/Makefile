@@ -16,5 +16,7 @@ build:
 	rgbfix -p0 -v bootrom.gb
 	dd skip=0 count=256 if=bootrom.gb of=PYBOY_ROM.bin bs=1
 	cp PYBOY_ROM.bin ${ROOT_DIR}/pyboy/core/bootrom.bin
+
+clean:
 	rm logo.asm pyboy.png PYBOY_ROM.bin
 	rm bootrom.gb bootrom.map bootrom.sym bootrom.obj

@@ -1,55 +1,113 @@
-import numpy
-import PIL.ImageOps
-from PIL import Image
+import numpy as np
 
-###########################
-# PNG loading and resizing
-###########################
-im = Image.open("pyboy.png")
-orig_w, orig_h = im.size
+P = (
+"        "
+"        "
+"        "
+" xxxxx  "
+" xxxxxx "
+" xx  xx "
+" xx  xx "
+" xx  xx "
+)
 
-# Find the bbox and crop the rest away. Then we can resize to the target dimensions.
-bbox = im.getbbox() # Get bbox before inverting colors. Apparently works by default on black borders.
-im = im.crop(bbox)
+P_ = (
+" xxxxxx "
+" xxxxx  "
+" xx     "
+" xx     "
+" xx     "
+" xx     "
+" xx     "
+"        "
+)
 
-h = 16
-w = int(orig_w * (h/orig_h))
+y = (
+"        "
+" xx  xx "
+" xx  xx "
+" xx  xx "
+" xx  xx "
+" xxxxxx "
+"  xxxx  "
+"   xxx  "
+)
 
-im = im.convert("L") # Convert to b/w.
-im = im.resize((w, h), PIL.Image.NEAREST)
-im = PIL.ImageOps.invert(im) # b/w looks better when inverted
+y_ = (
+"   xx   "
+"xxxx    "
+"xxx     "
+"        "
+"        "
+"        "
+"        "
+"        "
+)
+
+o = (
+"        "
+"  xxxx  "
+" xxxxxx "
+" xx  xx "
+" xx  xx "
+" xxxxxx "
+"  xxxx  "
+"        "
+)
+
+B_ = (
+" xxxxxx "
+" xxxxx  "
+" xx  xx "
+" xx  xx "
+" xx  xx "
+" xxxxxx "
+" xxxxx  "
+"        "
+)
+
+
+# https://stackoverflow.com/questions/9475241/split-string-every-nth-character
+def split_by_n(seq, n):
+    '''A generator to divide a sequence into chunks of n units.'''
+    while seq:
+        yield seq[:n]
+        seq = seq[n:]
+
+
+np_im_list = []
+for tile in [P, P_, y, B_, o, y_]:
+    np_im_list.append([[255 if y == ' ' else 0 for y in x] for x in split_by_n(tile, 8)])
+
+np_im = np.array(np_im_list)
+tile_count, new_h, new_w = np_im.shape
+assert new_w == 8 and new_h == 8, "Only works on tiles"
 
 ###########################
 # PIL to GB tiles
 ###########################
-data = [[], []]
-np_im = numpy.array(im)
-new_w, new_h = im.size
-for x in range(0, new_w, 8):
-    for y in range(new_h):
+data = list(map(lambda x: [], range(tile_count)))
+for t in range(tile_count):
+    for y in range(8):
         byte = 0
-        for b in range(8):
+        for x in range(8):
             # B/W color palette
-            color = int(np_im[y, x+b] != 255)
+            color = int(np_im[t, y, x] != 255)
             # We pack the pixels as single bits in bytes of 8 pixels.
             # If we write the byte twice in a row, the GB hardware will understand the format.
-            byte += (color & 0b1) << (7-b)
+            byte += (color & 0b1) << (7-x)
+        data[t].append(byte)
 
-        # We sort the first and second row of tiles.
-        data[(y//8) % 2].append(byte)
-
-row = []
-
-asm_out = f"; bytes: {len(data)}, width: {w}, height: {h}\n"
-asm_out += ".logo:\n"
-for b in data[0]+data[1]:
-    if len(row) == 0:
-        asm_out += "    DB "
-    row.append(f"${b:02x}")
-    if len(row) == 8:
-        asm_out += ', '.join(row)
-        row = []
-        asm_out += '\n'
+# print("\n".join(["\n".join([bin(y) for y in x]) for x in data]))
+asm_out = ".logo:\n"
+for name, t in zip(['P1', 'P2', 'Y1', 'B2', 'O', 'Y2'], data):
+    asm_out += f".{name}\n"
+    asm_out += "    DB "
+    row = []
+    for y in t:
+        row.append(f"${y:02x}")
+    asm_out += ', '.join(row)
+    asm_out += '\n'
 
 with open('logo.asm', 'w') as f:
     f.write(asm_out)
