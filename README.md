@@ -29,8 +29,8 @@ The code base is still pure Python, which means it will still run in CPython and
 At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
 
 
-Contibutors
-===========
+Contributors
+============
 
 Thanks to all the people, who have contributed to the project!
 
