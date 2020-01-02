@@ -9,8 +9,6 @@ import base64
 import hashlib
 import io
 import json
-import os
-import sys
 import zlib
 
 from pyboy import PyBoy, core
@@ -46,18 +44,6 @@ def main(argv):
     if argv.record_input and not argv.loadstate:
         logger.warning("To replay input consistently later, it is required to load a state at boot. This will be"
                        "embedded into the .replay file.")
-
-    bootrom = "ROMs/DMG_ROM.bin"
-    romdir = "ROMs/"
-
-    # Verify directories
-    if bootrom is not None and not os.path.exists(bootrom):
-        print("Boot-ROM not found. Please copy the Boot-ROM to '%s'. Using replacement in the meanwhile..." % bootrom)
-        bootrom = None
-
-    if not os.path.exists(romdir) and len(sys.argv) < 2:
-        print("ROM folder not found. Please copy the Game-ROM to '%s'".format(romdir))
-        exit()
 
     # Start PyBoy and run loop
     pyboy = PyBoy(

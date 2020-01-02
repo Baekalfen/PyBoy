@@ -80,7 +80,7 @@ dump*.bmp
 *.gb
 *.gbc
 *.rom
-*.bin
+DMG_ROM.bin
 BlarggROMs/
 TestROMs/
 ROMs/
@@ -126,3 +126,10 @@ Projects/Projects.out
 .in
 .out
 .env
+
+bootrom/bootrom.map
+bootrom/bootrom.obj
+bootrom/bootrom.sym
+bootrom/logo.asm
+bootrom/pyboy.png
+bootrom/PYBOY_ROM.bin

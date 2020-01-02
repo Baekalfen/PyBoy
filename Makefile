@@ -22,6 +22,7 @@ codecov: clean
 	@echo "Finding code coverage..."
 	CFLAGS='-w -DCYTHON_TRACE=1' ${PY} setup.py build_ext --inplace --codecov-trace
 	${PY} setup.py test --codecov-trace
+	codecov
 
 build:
 	@echo "Building..."

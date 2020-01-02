@@ -34,6 +34,7 @@ class RAM:
             f.write(self.non_io_internal_ram0[n])
         for n in range(IO_PORTS):
             f.write(self.io_ports[n])
+        # TODO: Order of INTERNAL_RAM1 and NON_IO_INTERNAL_RAM1 is flipped
         for n in range(INTERNAL_RAM1):
             f.write(self.internal_ram1[n])
         for n in range(NON_IO_INTERNAL_RAM1):
@@ -48,6 +49,7 @@ class RAM:
             self.non_io_internal_ram0[n] = f.read()
         for n in range(IO_PORTS):
             self.io_ports[n] = f.read()
+        # TODO: Order of INTERNAL_RAM1 and NON_IO_INTERNAL_RAM1 is flipped
         for n in range(INTERNAL_RAM1):
             self.internal_ram1[n] = f.read()
         for n in range(NON_IO_INTERNAL_RAM1):
