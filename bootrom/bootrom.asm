@@ -12,6 +12,10 @@ main:
     ld A, $fc
     ld [$FF00+$47], A
 
+    ; ####################
+    ; Tile data copying
+    ; ####################
+
     ; Copy 96 bytes of logo data to VRAM
     ld B, 96     ; Write length
     ld C, 1      ; Use double write
@@ -20,6 +24,9 @@ main:
     call .memcpy
     dec C        ; Don't double write again
 
+    ; ####################
+    ; Tile placement
+    ; ####################
     ; Add two upper part of P for the P and B
     ld A, 1             ; P1 tile index
     ld HL, $9808+($20*8)
@@ -48,28 +55,71 @@ main:
     inc HL
     ld [HL], A
 
+    ; #########################
+    ; Graphics effect and wait
+    ; #########################
+
     ; Wait an arbitrary 60 frames
-    ld B, 60
+
+    ld C, 60        ; Frame count
+
+    xor A
+    ld D, A         ; Reset D
+    ld B, A         ; Reset B
 .wait_vblank
     ; Test vblank
     ld A, [$FF00+$44]
     cp $90
     jp Z, .exit_vblank
 
-    ; and $FF
-    add A, 180
+    ld E, A         ; Save LY in E
+
+    ; Invert frame counter to 1-60 instead of 60-1
+    ld A, C
+    xor $FF
+    sub ($ff-16*7)  ; Start X lines down. Do it in multiple of 16 to fit wave
+
+    ; Cut out one wave
+    ; Is A larger than LY? Then we want the effect
+    cp E
+    jp C, .no_effect
+    ; Is LY no more than 16 lines larger than A?
+    sub A, 16
+    cp E
+    jp C, .effect
+    ; Fall through to no effect
+
+.no_effect
+    xor a
     ld [$FF00+$43], A
-    jp NZ, .wait_vblank
+    jp .wait_vblank
+
+.wave_table
+    DB 0, 0, 1, 2, 2, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0, 0
+
+.effect
+    ld A, E         ; load LY from E
+    add A, C        ; Add frame counter for "time"
+    and $0F         ; Clamp LY value to lookup table length
+    ld E, A         ; Save LY in E
+    ld HL, .wave_table
+    add HL, DE      ; look up in wave table
+    ld A, [HL]
+
+    ld [$FF00+$43], A
+    jp .wait_vblank
 
 .exit_vblank
     ld A, [$FF00+$44]
     cp $90
     jp Z, .exit_vblank
     ; One frame has passed, decrement counter
-    dec B
+    dec C
     jp NZ, .wait_vblank
 
-    ; Recreate state
+    ; ###############################
+    ; Recreate state of DMG boot ROM
+    ; ###############################
     ld B, 6
     ld HL, .sec0
     ld DE, $FF0F
