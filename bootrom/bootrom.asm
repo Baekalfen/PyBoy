@@ -98,8 +98,8 @@ main:
     DB 0, 0, 1, 2, 2, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0, 0
 
 .effect
-    ld A, E         ; load LY from E
-    add A, C        ; Add frame counter for "time"
+    ld A, C        ; Load frame counter for "time"
+    add A, E         ; add LY from E
     and $0F         ; Clamp LY value to lookup table length
     ld E, A         ; Save LY in E
     ld HL, .wave_table
