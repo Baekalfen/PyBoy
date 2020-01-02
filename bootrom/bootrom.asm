@@ -56,10 +56,12 @@ main:
     cp $90
     jp Z, .exit_vblank
 
-    ; and $FF
-    add A, 180
+	; Divide A by 4 and center, set SCX
+	srl A
+	srl A
+    sub A, 15
     ld [$FF00+$43], A
-    jp NZ, .wait_vblank
+    jp .wait_vblank
 
 .exit_vblank
     ld A, [$FF00+$44]
