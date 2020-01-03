@@ -7,7 +7,7 @@
 import os
 import time
 
-from .logger import logger
+from pyboy.logger import logger
 
 try:
     from PIL import Image

@@ -3,18 +3,35 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import array
+
+from array import array
+from ctypes import c_void_p
+
+from ..logger import logger
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 ROWS, COLS = 144, 160
+TILES = 384
+
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
+
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 
 class LCD:
-    def __init__(self, color_palette):
-        self.VRAM = array.array('B', [0] * VIDEO_RAM)
-        self.OAM = array.array('B', [0] * OBJECT_ATTRIBUTE_MEMORY)
+    def __init__(self):
+        self.VRAM = array('B', [0] * VIDEO_RAM)
+        self.OAM = array('B', [0] * OBJECT_ATTRIBUTE_MEMORY)
 
         self.LCDC = LCDCRegister(0)
         # self.STAT = 0x00
@@ -23,9 +40,9 @@ class LCD:
         # self.LY = 0x00
         # self.LYC = 0x00
         # self.DMA = 0x00
-        self.BGP = PaletteRegister(0xFC, color_palette)
-        self.OBP0 = PaletteRegister(0xFF, color_palette)
-        self.OBP1 = PaletteRegister(0xFF, color_palette)
+        self.BGP = PaletteRegister(0xFC)
+        self.OBP0 = PaletteRegister(0xFF)
+        self.OBP1 = PaletteRegister(0xFF)
         self.WY = 0x00
         self.WX = 0x00
 
@@ -71,20 +88,19 @@ class LCD:
 
 
 class PaletteRegister:
-    def __init__(self, value, color_palette):
-        self.color_palette = color_palette
+    def __init__(self, value):
         self.value = 0
+        self.lookup = [0] * 4
         self.set(value)
 
     def set(self, value):
-        # Pokemon Blue continously sets this without changing the value
+        # Pokemon Blue continuously sets this without changing the value
         if self.value == value:
             return False
 
         self.value = value
-        self.lookup = [0] * 4
         for x in range(4):
-            self.lookup[x] = self.color_palette[(value >> x * 2) & 0b11]
+            self.lookup[x] = (value >> x * 2) & 0b11
         return True
 
     def getcolor(self, i):
@@ -107,3 +123,204 @@ class LCDCRegister:
         self.sprite_height        = value & (1 << 2)
         self.sprite_enable        = value & (1 << 1)
         self.background_enable    = value & (1 << 0)
+
+
+
+# TODO: Would a lookup-table increase performance? For example a lookup table of each 4-bit nibble?
+# That's 16**2 = 256 values. Index calculated as: (byte1 & 0xF0) | ((byte2 & 0xF0) >> 4)
+# and then: (byte1 & 0x0F) | ((byte2 & 0x0F) >> 4)
+# Then could even be preloaded for each color palette
+def getcolorcode(byte1, byte2, offset):
+    """Convert 2 bytes into color code at a given offset.
+
+    The colors are 2 bit and are found like this:
+
+    Color of the first pixel is 0b10
+    | Color of the second pixel is 0b01
+    v v
+    1 0 0 1 0 0 0 1 <- byte1
+    0 1 1 1 1 1 0 0 <- byte2
+    """
+    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
+
+
+class Renderer:
+    def __init__(self):
+        self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
+        self.alphamask = 0xFF000000
+        self.color_format = u"RGBA"
+        self.buffer_dims = (160, 144)
+
+        self.clearcache = False
+        self.tiles_changed = set([])
+
+        self._screenbuffer_raw = array('B', [0xFF] * (ROWS*COLS*4))
+        self._tilecache_raw = array('B', [0xFF] * (TILES*8*8*4))
+        self._spritecache0_raw = array('B', [0xFF] * (TILES*8*8*4))
+        self._spritecache1_raw = array('B', [0xFF] * (TILES*8*8*4))
+
+        if cythonmode:
+            self._screenbuffer = memoryview(
+                self._screenbuffer_raw).cast('I', shape=(ROWS, COLS))
+            self._tilecache = memoryview(
+                self._tilecache_raw).cast('I', shape=(TILES*8, 8))
+            self._spritecache0 = memoryview(
+                self._spritecache0_raw).cast('I', shape=(TILES*8, 8))
+            self._spritecache1 = memoryview(
+                self._spritecache1_raw).cast('I', shape=(TILES*8, 8))
+        else:
+            v = memoryview(self._screenbuffer_raw).cast('I')
+            self._screenbuffer = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
+            v = memoryview(self._tilecache_raw).cast('I')
+            self._tilecache = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
+            v = memoryview(self._spritecache0_raw).cast('I')
+            self._spritecache0 = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
+            v = memoryview(self._spritecache1_raw).cast('I')
+            self._spritecache1 = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
+            self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
+
+        self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
+
+
+    def scanline(self, y, lcd):
+        bx, by = lcd.getviewport()
+        wx, wy = lcd.getwindowpos()
+        self._scanlineparameters[y][0] = bx
+        self._scanlineparameters[y][1] = by
+        self._scanlineparameters[y][2] = wx
+        self._scanlineparameters[y][3] = wy
+
+
+    def render_screen(self, lcd):
+        # All VRAM addresses are offset by 0x8000
+        # Following addresses are 0x9800 and 0x9C00
+        background_offset = 0x1800 if lcd.LCDC.backgroundmap_select == 0 else 0x1C00
+        wmap = 0x1800 if lcd.LCDC.windowmap_select == 0 else 0x1C00
+
+        for y in range(ROWS):
+            bx, by, wx, wy = self._scanlineparameters[y]
+            # Used for the half tile at the left side when scrolling
+            offset = bx & 0b111
+
+            for x in range(COLS):
+                if lcd.LCDC.window_enable and wy <= y and wx <= x:
+                    wt = lcd.VRAM[wmap + (y-wy) // 8 * 32 % 0x400 + (x-wx) // 8 % 32]
+                    # If using signed tile indices, modify index
+                    if not lcd.LCDC.tiledata_select:
+                        # (x ^ 0x80 - 128) to convert to signed, then
+                        # add 256 for offset (reduces to + 128)
+                        wt = (wt ^ 0x80) + 128
+                    self._screenbuffer[y][x] = self._tilecache[8*wt + (y-wy) % 8][(x-wx) % 8]
+                elif lcd.LCDC.background_enable:
+                    bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
+                    # If using signed tile indices, modify index
+                    if not lcd.LCDC.tiledata_select:
+                        # (x ^ 0x80 - 128) to convert to signed, then
+                        # add 256 for offset (reduces to + 128)
+                        bt = (bt ^ 0x80) + 128
+                    self._screenbuffer[y][x] = self._tilecache[8*bt + (y+by) % 8][(x+offset) % 8]
+                else:
+                    # If background is disabled, it becomes white
+                    self._screenbuffer[y][x] = self.color_palette[0]
+
+        # Render sprites
+        # - Doesn't restrict 10 sprites per scan line
+        # - Prioritizes sprite in inverted order
+        spriteheight = 16 if lcd.LCDC.sprite_height else 8
+        bgpkey = self.color_palette[lcd.BGP.getcolor(0)]
+
+        for n in range(0x00, 0xA0, 4):
+            y = lcd.OAM[n] - 16
+            x = lcd.OAM[n+1] - 8
+            tileindex = lcd.OAM[n+2]
+            attributes = lcd.OAM[n+3]
+            xflip = attributes & 0b00100000
+            yflip = attributes & 0b01000000
+            spritepriority = attributes & 0b10000000
+            spritecache = (self._spritecache1 if attributes & 0b10000 else self._spritecache0)
+
+            if x < COLS and y < ROWS:
+                for dy in range(spriteheight):
+                    yy = spriteheight - dy - 1 if yflip else dy
+                    if 0 <= y < ROWS:
+                        for dx in range(8):
+                            xx = 7 - dx if xflip else dx
+                            pixel = spritecache[8*tileindex+yy][xx]
+
+                            if 0 <= x < COLS:
+                                if (spritepriority and not self._screenbuffer[y][x] == bgpkey):
+                                    # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
+                                    # with the next 'if', as sprites can have an alpha channel in other ways
+                                    pixel &= ~self.alphamask
+
+                                if pixel & self.alphamask:
+                                    self._screenbuffer[y][x] = pixel
+                            x += 1
+                        x -= 8
+                    y += 1
+
+    def update_cache(self, lcd):
+        if self.clearcache:
+            self.tiles_changed.clear()
+            for x in range(0x8000, 0x9800, 16):
+                self.tiles_changed.add(x)
+            self.clearcache = False
+
+        for t in self.tiles_changed:
+            for k in range(0, 16, 2): # 2 bytes for each line
+                byte1 = lcd.VRAM[t + k - 0x8000]
+                byte2 = lcd.VRAM[t + k + 1 - 0x8000]
+                y = (t + k - 0x8000)//2
+
+                for x in range(8):
+                    colorcode = getcolorcode(byte1, byte2, 7-x)
+
+                    self._tilecache[y][x] = self.color_palette[lcd.BGP.getcolor(colorcode)]
+                    self._spritecache0[y][x] = self.color_palette[lcd.OBP0.getcolor(colorcode)]
+                    self._spritecache1[y][x] = self.color_palette[lcd.OBP1.getcolor(colorcode)]
+
+                    if colorcode == 0:
+                        self._spritecache0[y][x] &= ~self.alphamask
+                        self._spritecache1[y][x] &= ~self.alphamask
+
+        self.tiles_changed.clear()
+
+    def blank_screen(self):
+        # If the screen is off, fill it with a color.
+        color = self.color_palette[0]
+        for y in range(ROWS):
+            for x in range(COLS):
+                self._screenbuffer[y][x] = color
+
+    def get_screen_buffer(self):
+        return self._screenbuffer_raw.tobytes()
+
+    def get_screen_buffer_as_ndarray(self):
+        import numpy as np
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, :-1]
+
+    def get_screen_image(self):
+        if not Image:
+            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            return None
+
+        return Image.frombytes(
+                self.color_format,
+                self.buffer_dims,
+                self.get_screen_buffer())
+
+    def save_state(self, f):
+        for y in range(ROWS):
+            f.write(self._scanlineparameters[y][0])
+            f.write(self._scanlineparameters[y][1])
+            # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
+            f.write(((self._scanlineparameters[y][2]+7) & 0xFF))
+            f.write(self._scanlineparameters[y][3])
+
+    def load_state(self, f):
+        for y in range(ROWS):
+            self._scanlineparameters[y][0] = f.read()
+            self._scanlineparameters[y][1] = f.read()
+            # Restore (WX - 7) as described above
+            self._scanlineparameters[y][2] = (f.read()-7) & 0xFF
+            self._scanlineparameters[y][3] = f.read()

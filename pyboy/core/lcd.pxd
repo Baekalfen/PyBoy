@@ -5,7 +5,7 @@
 
 import cython
 from libc.stdint cimport uint8_t, uint32_t
-from pyboy.rewind cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface
 
 cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS
@@ -56,3 +56,56 @@ cdef class LCDCRegister:
     cdef public bint sprite_height
     cdef public bint sprite_enable
     cdef public bint background_enable
+
+
+cdef class Renderer:
+    cdef array _screenbuffer_raw
+    cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw
+    cdef uint32_t[:,:] _screenbuffer
+    cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
+
+    cdef uint8_t[144][4] _scanlineparameters
+
+    @cython.locals(bx=int, by=int, wx=int, wy=int)
+    cdef void scanline(self, int, LCD)
+
+    @cython.locals(
+        y=int,
+        x=int,
+        wmap=int,
+        background_offset=int,
+        bt=int,
+        wt=int,
+        bx=int,
+        by=int,
+        wx=int,
+        wy=int,
+        offset=int,
+        bgpkey=uint32_t,
+        spriteheight=int,
+        n=int,
+        tileindex=int,
+        attributes=int,
+        xflip=bint,
+        yflip=bint,
+        spritepriority=bint,
+        spritecache=uint32_t[:,:],
+        dy=int,
+        dx=int,
+        yy=int,
+        xx=int,
+        pixel=uint32_t,
+    )
+    cdef void render_screen(self, LCD)
+
+    @cython.locals(
+        x=int,
+        t=int,
+        k=int,
+        y=int,
+        byte1=uint8_t,
+        byte2=uint8_t,
+        colorcode=uint32_t,
+        alpha=uint32_t
+        )
+    cdef void update_cache(self, LCD)

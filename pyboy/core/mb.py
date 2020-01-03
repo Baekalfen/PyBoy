@@ -13,21 +13,21 @@ STATE_VERSION = 2
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, window, enable_rewind, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, enable_rewind, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
         if profiling:
             logger.info("Profiling enabled")
 
-        self.window = window
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD(window.color_palette)
+        self.lcd = lcd.LCD()
+        self.renderer = lcd.Renderer()
         self.bootrom_enabled = True
         self.serialbuffer = u''
         self.enable_rewind = enable_rewind
@@ -42,7 +42,6 @@ class Motherboard:
             self.cpu.set_interruptflag(HIGHTOLOW)
 
     def stop(self, save):
-        self.window.stop()
         if save:
             self.cartridge.stop()
 
@@ -52,7 +51,7 @@ class Motherboard:
         f.write(self.bootrom_enabled)
         self.cpu.save_state(f)
         self.lcd.save_state(f)
-        self.window.save_state(f)
+        self.renderer.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
@@ -72,14 +71,14 @@ class Motherboard:
         self.cpu.load_state(f)
         self.lcd.load_state(f)
         if state_version >= 2:
-            self.window.load_state(f)
+            self.renderer.load_state(f)
         self.ram.load_state(f)
         self.cartridge.load_state(f)
         f.flush()
         logger.debug("State loaded.")
 
-        self.window.clearcache = True
-        self.window.update_cache(self.lcd)
+        self.renderer.clearcache = True
+        self.renderer.update_cache(self.lcd)
 
     ###################################################################
     # Coordinator
@@ -128,7 +127,7 @@ class Motherboard:
     def tickframe(self):
         lcdenabled = self.lcd.LCDC.lcd_enable
         if lcdenabled:
-            self.window.update_cache(self.lcd)
+            self.renderer.update_cache(self.lcd)
 
             # TODO: the 19, 41 and 49._ticks should correct for longer instructions
             # Iterate the 144 lines on screen
@@ -142,14 +141,14 @@ class Motherboard:
                 # Mode 3
                 self.set_STAT_mode(3)
                 self.calculate_cycles(170)
-                self.window.scanline(y, self.lcd)
+                self.renderer.scanline(y, self.lcd)
 
                 # Mode 0
                 self.set_STAT_mode(0)
                 self.calculate_cycles(206)
 
             self.cpu.set_interruptflag(VBLANK)
-            self.window.render_screen(self.lcd)
+            self.renderer.render_screen(self.lcd)
 
             # Wait for next frame
             for y in range(144, 154):
@@ -161,7 +160,7 @@ class Motherboard:
         else:
             # https://www.reddit.com/r/EmuDev/comments/6r6gf3
             # TODO: What happens if LCD gets turned on/off mid-cycle?
-            self.window.blank_screen()
+            self.renderer.blank_screen()
             self.set_STAT_mode(0)
             self.setitem(LY, 0)
 
@@ -241,7 +240,7 @@ class Motherboard:
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
                 # Mask out the byte of the tile
-                self.window.tiles_changed.add(i & 0xFFF0)
+                self.renderer.tiles_changed.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -275,11 +274,11 @@ class Motherboard:
             elif i == 0xFF46:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
-                self.window.clearcache |= self.lcd.BGP.set(value)
+                self.renderer.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
-                self.window.clearcache |= self.lcd.OBP0.set(value)
+                self.renderer.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
-                self.window.clearcache |= self.lcd.OBP1.set(value)
+                self.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:

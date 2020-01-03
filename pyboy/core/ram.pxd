@@ -4,7 +4,7 @@
 #
 
 from libc.stdint cimport uint8_t
-from pyboy.rewind cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface
 
 cdef class RAM:
     cdef void save_state(self, IntIOInterface)

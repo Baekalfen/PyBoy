@@ -7,7 +7,7 @@
 cimport pyboy.core.mb
 cimport opcodes
 
-from pyboy.rewind cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface
 
 import cython
 

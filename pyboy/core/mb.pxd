@@ -8,14 +8,11 @@ import cython
 cimport pyboy.core.cpu
 cimport pyboy.core.timer
 cimport pyboy.core.cartridge.base_mbc
-from pyboy.rewind cimport IntIOInterface
-# cimport pyboy.core.cartridge.cartridge
+from pyboy.utils cimport IntIOInterface
 cimport pyboy.core.bootrom
 cimport pyboy.core.ram
 cimport pyboy.core.lcd
 cimport pyboy.core.interaction
-cimport pyboy.window.window
-cimport pyboy.window.base_window
 
 
 cdef unsigned short STAT, LY, LYC
@@ -30,9 +27,9 @@ cdef class Motherboard:
     cdef pyboy.core.bootrom.BootROM bootrom
     cdef pyboy.core.ram.RAM ram
     cdef pyboy.core.lcd.LCD lcd
+    cdef pyboy.core.lcd.Renderer renderer
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
-    cdef pyboy.window.base_window.BaseWindow window
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
     cdef bint enable_rewind

@@ -7,7 +7,7 @@ import array
 import os
 
 from pyboy.logger import logger
-from pyboy.rewind import IntIOWrapper
+from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC
 

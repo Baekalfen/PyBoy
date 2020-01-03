@@ -12,11 +12,13 @@ import time
 
 import numpy as np
 
-from . import botsupport, window, windowevent
+from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers, IntIOWrapper  # NOQA
-from .screenrecorder import ScreenRecorder
+from .plugins.rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers  # NOQA
+from .plugins.screenrecorder import ScreenRecorder
+from .plugins.window.window import getwindow
+from .utils import IntIOWrapper
 
 addconsolehandler()
 
@@ -69,28 +71,41 @@ class PyBoy:
         """
         self.gamerom_file = gamerom_file
 
-        self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, enable_rewind, profiling=profiling)
+        self.window = getwindow(window_type, window_scale, debugging, hide_window)
+        self.mb = Motherboard(gamerom_file, bootrom_file, enable_rewind, profiling=profiling)
 
         # TODO: Get rid of this extra step
         if debugging:
             self.window.set_lcd(self.mb.lcd)
 
-        self.avg_emu = 0
-        self.avg_cpu = 0
-        self.counter = 0
+        # Performance measures
+        self.avg_pre = 0
+        self.avg_tick = 0
+        self.avg_post = 0
+
+        # Absolute frame count of the emulation
+        self.frame_count = 0
+
         self.set_emulation_speed(1)
-        self.screen_recorder = None
         self.paused = False
         self.autopause = autopause
         self.disable_input = disable_input
+        self.events = []
+        self.done = False
+
+        ###################
+        # Plugins
+
+        # Recording input for replay
         self.record_input = record_input
         if self.record_input:
             logger.info("Recording event inputs")
-        self.frame_count = 0
         self.recorded_input = []
-        self.external_input = []
 
+        # Screen recorder
+        self.screen_recorder = None
+
+        # Rewind
         self.enable_rewind = enable_rewind
         self.rewind_speed = 1.0
         if enable_rewind:
@@ -99,33 +114,40 @@ class PyBoy:
             self.rewind_buffer = DeltaFixedAllocBuffers()
 
     def tick(self):
-        """
-        Progresses the emulator ahead by one frame.
-
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-        """
-        done = False
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        self.pre_tick()
+        t_pre = time.perf_counter()
+        self._tick()
+        t_tick = time.perf_counter()
+        self.post_tick()
+        t_post = time.perf_counter()
 
-        events = self.window.get_events()
-        if self.disable_input:
-            events = []
+        secs = t_pre-t_start
+        self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
 
-        events += self.external_input
-        self.external_input = []
+        secs = t_tick-t_pre
+        self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
 
-        if self.record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(
+        secs = t_post-t_tick
+        self.avg_post = 0.9 * self.avg_post + 0.1 * secs
+
+        return self.done
+
+    def pre_tick(self):
+        self.handle_events()
+
+        # Screen recorder
+        if self.record_input and len(self.events) != 0:
+            self.recorded_input.append((self.frame_count, self.events, base64.b64encode(
                 np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
-        self.frame_count += 1
 
-        for event in events:
+    def handle_events(self):
+        if not self.disable_input:
+            self.events += self.window.get_events()
+
+        for event in self.events:
             if event == windowevent.QUIT:
-                done = True
+                self.done = True
             elif event == windowevent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
@@ -197,56 +219,50 @@ class PyBoy:
                     self.screen_recorder = None
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
+        self.events = []
 
-            if event in [
-                    windowevent.PRESS_REWIND_BACK,
-                    windowevent.PRESS_REWIND_FORWARD,
-                    windowevent.PAUSE_TOGGLE,
-                    windowevent.PAUSE,
-                    windowevent.UNPAUSE
-                    ]:
-                self.update_window_title()
+    def post_tick(self):
+        # Plugin: Rewind
+        if not self.paused and self.enable_rewind:
+            self.mb.save_state(self.rewind_buffer)
+            self.rewind_buffer.new()
 
-        # self.paused &= self.autopause # Overrules paused state, if not allowed
-
-        if not self.paused:
-            self.mb.tickframe()
-
-            if self.enable_rewind:
-                self.mb.save_state(self.rewind_buffer)
-                self.rewind_buffer.new()
-
+        # Plugin: Screen Recorder
         if self.screen_recorder:
             self.screen_recorder.add_frame(self.get_screen_image())
 
-        self.window.update_display(self.paused)
-        t_cpu = time.perf_counter()
+        # Plugin: Window
+        self.window.update_display(self.mb.renderer, self.paused)
 
         if self.paused:
             self.window.frame_limiter(1)
         elif self.target_emulationspeed > 0:
             self.window.frame_limiter(self.target_emulationspeed)
 
-        t_emu = time.perf_counter()
-
-        secs = t_emu-t_start
-        self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
-
-        secs = t_cpu-t_start
-        self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
-
-        if self.counter % 60 == 0:
+        if self.frame_count % 60 == 0:
             self.update_window_title()
-            self.counter = 0
-        self.counter += 1
 
-        return done
+    def _tick(self):
+        """
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        """
+
+        self.frame_count += 1
+        if not self.paused:
+            self.mb.tickframe()
+
 
     def update_window_title(self):
         if self.paused :
             text = "[PAUSED]"
         else:
-            text = "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
+            text = "CPU/frame: %0.2f%% Emulation: x%d" % ((self.avg_pre + self.avg_tick)/SPF*100, round(SPF/(self.avg_pre + self.avg_tick + self.avg_post)))
             if self.enable_rewind:
                 text += " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
         self.window.set_title(text)
@@ -367,7 +383,7 @@ class PyBoy:
             event (pyboy.windowevent): The event to send
         """
         # self.mb.buttonevent(event)
-        self.external_input.append(event)
+        self.events.append(event)
 
     def get_sprite(self, index):
         """

@@ -8,7 +8,7 @@ import struct
 import time
 
 from pyboy.logger import logger
-from pyboy.rewind import IntIOWrapper
+from pyboy.utils import IntIOWrapper
 
 
 class RTC:

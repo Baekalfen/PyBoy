@@ -5,5 +5,5 @@
 
 __all__ = ['pyboy', 'botsupport', 'windowevent']
 
-from . import core, window, windowevent
+from . import core, windowevent
 from .pyboy import PyBoy

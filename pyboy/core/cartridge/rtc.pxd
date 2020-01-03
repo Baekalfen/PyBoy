@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.rewind cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface
 
 cdef class RTC:
     cdef unicode filename

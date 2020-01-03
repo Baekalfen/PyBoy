@@ -3,7 +3,7 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from ..logger import logger
+from pyboy.logger import logger
 
 ROWS, COLS = 144, 160
 

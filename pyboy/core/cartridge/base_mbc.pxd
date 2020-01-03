@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.rewind cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface
 from pyboy.core.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint32_t
 

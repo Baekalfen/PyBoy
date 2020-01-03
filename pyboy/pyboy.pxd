@@ -8,7 +8,8 @@ from libc cimport time
 cimport cython
 from libc.stdint cimport uint64_t
 from pyboy.core.mb cimport Motherboard
-from pyboy.rewind cimport IntIOWrapper, IntIOInterface, FixedAllocBuffers, CompressedFixedAllocBuffers, DeltaFixedAllocBuffers
+from pyboy.utils cimport IntIOWrapper, IntIOInterface,
+from pyboy.plugins.rewind cimport FixedAllocBuffers, CompressedFixedAllocBuffers, DeltaFixedAllocBuffers
 from pyboy.window.base_window cimport BaseWindow
 
 cdef (int, int) _dummy_declaration
@@ -23,7 +24,6 @@ cdef class PyBoy:
 
     cdef double avg_emu
     cdef double avg_cpu
-    cdef unsigned int counter
     cdef bint paused
     cdef bint autopause
     cdef bint limit_emulationspeed

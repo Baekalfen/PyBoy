@@ -5,7 +5,7 @@
 
 import cython
 from libc.stdint cimport uint32_t
-from pyboy.rewind cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface
 
 from pyboy.core.lcd cimport LCD
 

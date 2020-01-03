@@ -3,7 +3,7 @@
 # GitHub: https://github.com/thomafred/PyBoy
 #
 
-from ..logger import addconsolehandler, logger
+from pyboy.logger import addconsolehandler, logger
 
 addconsolehandler()
 
@@ -20,13 +20,6 @@ class BaseWindow:
         self._scaledresolution = (scale * COLS, scale * ROWS)
         logger.info('Scale: x%s %s' % (self._scale, self._scaledresolution))
 
-        self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
-        self.alphamask = 0xFF000000
-        self.color_format = u"RGBA"
-        self.buffer_dims = (160, 144)
-
-        self.clearcache = False
-        self.tiles_changed = set([])
         self.enable_title = True
 
     def init(self, hide_window):
@@ -73,13 +66,3 @@ class BaseWindow:
 
     def set_lcd(self, lcd):
         pass
-
-    def save_state(self, f):
-        # Just to align the state between windows
-        for y in range(ROWS*4):
-            f.write(0)
-
-    def load_state(self, f):
-        # Just to align the state between windows
-        for y in range(ROWS*4):
-            f.read()
