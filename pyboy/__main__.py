@@ -35,7 +35,8 @@ parser.add_argument('-l', '--loadstate', nargs='?', default=None, const='', type
     'locate a saved state next to the ROM file.'))
 
 
-def main(argv):
+def main():
+    argv = parser.parse_args()
     if argv.no_logger:
         logger.disabled = True
     else:
@@ -109,4 +110,4 @@ def save_replay(rom, loadstate, replay_file, recorded_input):
 
 
 if __name__ == "__main__":
-    main(parser.parse_args())
+    main()

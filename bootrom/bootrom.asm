@@ -16,8 +16,8 @@ main:
     ; Tile data copying
     ; ####################
 
-    ; Copy 96 bytes of logo data to VRAM
-    ld B, 96     ; Write length
+    ; Copy 48 bytes of logo data to VRAM
+    ld B, 48     ; Write length
     ld C, 1      ; Use double write
     ld HL, .logo ; Logo data start
     ld DE, $8010 ; Place it 1 tile in, so tile 0 stays white
@@ -88,7 +88,6 @@ main:
     cp E
     jp C, .effect
     ; Fall through to no effect
-
 .no_effect
     xor a
     ld [$FF00+$43], A
