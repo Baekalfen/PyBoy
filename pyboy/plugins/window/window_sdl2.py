@@ -5,8 +5,8 @@
 
 import sdl2
 import sdl2.ext
-
 from pyboy import windowevent
+
 from .base_window import BaseWindow
 
 ROWS, COLS = 144, 160
@@ -82,9 +82,6 @@ class SDLWindow(BaseWindow):
             sdl2.SDL_HideWindow(self._window)
         else:
             sdl2.SDL_ShowWindow(self._window)
-
-    def dump(self, filename):
-        raise NotImplementedError()
 
     def set_title(self, title):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())

@@ -3,9 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-cimport sdl2
 from pyboy.core.lcd cimport LCD
-from .window_sdl2 cimport SDLWindow
 
 import cython
 cimport cython

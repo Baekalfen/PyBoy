@@ -154,6 +154,8 @@ class PyBoy:
             self.recorded_input.append((self.frame_count, self.events, base64.b64encode(
                 np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
 
+        self.events = []
+
     def handle_events(self):
         if not self.disable_input:
             self.events += self.window.get_events()
@@ -232,7 +234,6 @@ class PyBoy:
                     self.screen_recorder = None
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
-        self.events = []
 
     def post_tick(self):
         # Plugin: Rewind
@@ -309,7 +310,7 @@ class PyBoy:
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
         """
-        return self.window.get_screen_buffer()
+        return self.mb.renderer.get_screen_buffer()
 
     def get_raw_screen_buffer_dims(self):
         """
@@ -318,7 +319,7 @@ class PyBoy:
         Returns:
             tuple: A two-tuple of the buffer dimensions. E.g. (160, 144).
         """
-        return self.mb.window.buffer_dims
+        return self.mb.renderer.buffer_dims
 
     def get_raw_screen_buffer_format(self):
         """
@@ -327,7 +328,7 @@ class PyBoy:
         Returns:
             str: Color format of the raw screen buffer. E.g. 'RGB'.
         """
-        return self.mb.window.color_format
+        return self.mb.renderer.color_format
 
     def get_screen_ndarray(self):
         """
@@ -336,7 +337,7 @@ class PyBoy:
         Returns:
             numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         """
-        return self.window.get_screen_buffer_as_ndarray()
+        return self.mb.renderer.get_screen_buffer_as_ndarray()
 
     def get_screen_image(self):
         """
@@ -349,7 +350,7 @@ class PyBoy:
         Returns:
             PIL.Image: RGB image of (160, 144) pixels
         """
-        return self.mb.window.get_screen_image()
+        return self.mb.renderer.get_screen_image()
 
     def get_memory_value(self, addr):
         """

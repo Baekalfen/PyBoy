@@ -54,13 +54,13 @@ def test_tiles():
 
 
 def test_screen_buffer_and_image():
-    for window, dims, cformat, boot_logo_hash_predigested in [
+    for window, cformat, boot_logo_hash_predigested in [
             # These are different because the underlying format is different. We'll test the actual image afterwards.
-            ("SDL2", (160, 144), 'RGBA',
+            ("SDL2", 'ABGR',
                 b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
-            ("headless", (160, 144), 'RGBA',
-                b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
-            ("OpenGL", (144, 160), 'RGB',
+            ("headless", 'RGBA',
+                b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|'),
+            ("OpenGL", 'RGBA',
                 b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
             ]:
 
@@ -70,7 +70,7 @@ def test_screen_buffer_and_image():
         for n in range(275): # Iterate to boot logo
             pyboy.tick()
 
-        assert pyboy.get_raw_screen_buffer_dims() == dims
+        assert pyboy.get_raw_screen_buffer_dims() == (160, 144)
         assert pyboy.get_raw_screen_buffer_format() == cformat
 
         boot_logo_hash = hashlib.sha256()
@@ -80,8 +80,8 @@ def test_screen_buffer_and_image():
 
         # The output of `get_screen_image` is supposed to be homogeneous, which means a shared hash between versions.
         boot_logo_png_hash_predigested = (
-                b'\xf4b,(\xbe\xaa\xf8\xec\x06\x9fJ-\x84\xd3I\x16\xb8'
-                b'\xe3\xd0\xd5\xae\x80\x01\x1e\x96\xba!1\xeb\xd1\xce_'
+                b'\x1b\xab\x90r^\xfb\x0e\xef\xf1\xdb\xf8\xba\xb6:^\x01'
+                b'\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$'
             )
         boot_logo_png_hash = hashlib.sha256()
         image = pyboy.get_screen_image()
@@ -108,19 +108,6 @@ def test_screen_buffer_and_image():
 def test_tetris():
     NEXT_TETROMINO = 0xC213
 
-    def verify_screen_image(predigested):
-        screen_hash = hashlib.sha256()
-        image = pyboy.get_screen_image()
-        image_data = io.BytesIO()
-        image.save(image_data, format='BMP')
-        screen_hash.update(image_data.getvalue())
-        short_digest = screen_hash.digest()[:10] # Just for quick verification, and make the code less ugly
-        if short_digest != predigested:
-            print("Didn't match: " + str(short_digest))
-            image.show()
-            breakpoint()
-        assert short_digest == predigested, "Didn't match: " + str(short_digest)
-
     pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type='headless', disable_input=True, hide_window=True)
     pyboy.set_emulation_speed(0)
 
@@ -134,25 +121,19 @@ def test_tetris():
 
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
-        if frame == 20:
-            verify_screen_image(b"O'\tw\xa8{\xb3\xd7]\t")
-        elif frame == 144:
-            verify_screen_image(b'X37?\xb6\xa1I\xf25\xc1')
+        if frame == 144:
             pyboy.send_input(windowevent.PRESS_BUTTON_START)
         elif frame == 145:
             pyboy.send_input(windowevent.RELEASE_BUTTON_START)
         elif frame == 152:
-            verify_screen_image(b'~K\xe0\xa8"\xdb\xdd\xd9\x07\x80')
             pyboy.send_input(windowevent.PRESS_BUTTON_A)
         elif frame == 153:
             pyboy.send_input(windowevent.RELEASE_BUTTON_A)
         elif frame == 156:
-            verify_screen_image(b'x\xb0\xfb)\xa0c<?am')
             pyboy.send_input(windowevent.PRESS_BUTTON_A)
         elif frame == 157:
             pyboy.send_input(windowevent.RELEASE_BUTTON_A)
         elif frame == 162:
-            verify_screen_image(b'{\x93\xaa\xdc\xdc\xa3\xc3\x97\x8ez')
             pyboy.send_input(windowevent.PRESS_BUTTON_A)
         elif frame == 163:
             pyboy.send_input(windowevent.RELEASE_BUTTON_A)
@@ -376,7 +357,6 @@ def test_tetris():
                                 )
     os.remove('tmp.state')
 
-    verify_screen_image(b'\xd4\xc6\x12\xe5\xe9\xa8\xbaZ\x9c\xe3')
     pyboy.stop(save=False)
 
 # # Blargg's tests verifies this

@@ -12,7 +12,7 @@ ROWS, COLS = 144, 160
 
 
 class BaseWindow:
-    color_format = u""
+    color_format = u"RGBA"
 
     def __init__(self, renderer, scale, color_palette, hide_window):
         self._scale = scale
@@ -23,9 +23,6 @@ class BaseWindow:
 
         self.enable_title = True
         self.renderer = renderer
-
-    def dump(self, filename):
-        raise NotImplementedError()
 
     def set_title(self, title):
         raise NotImplementedError()

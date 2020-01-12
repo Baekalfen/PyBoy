@@ -17,17 +17,16 @@ from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_
                          glutCreateWindow, glutDisplayFunc, glutInit, glutInitDisplayMode, glutInitWindowSize,
                          glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
                          glutSpecialUpFunc)
-
 from pyboy import windowevent
 from pyboy.logger import logger
-from .window_sdl2 import SDLWindow
+
+from . import BaseWindow
 
 ROWS, COLS = 144, 160
 
 
-class OpenGLWindow(SDLWindow):
+class OpenGLWindow(BaseWindow):
     color_format = u"RGBA"
-    buffer_dims = (144, 160)
 
     def __init__(self, renderer, scale, color_palette, hide_window):
         super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
@@ -61,9 +60,6 @@ class OpenGLWindow(SDLWindow):
 
     def _specUp(self, c, x, y):
         self._glkeyboardspecial(c, x, y, True)
-
-    def dump(self, filename):
-        pass
 
     def set_title(self, title):
         glutSetWindowTitle(title)
@@ -142,18 +138,6 @@ class OpenGLWindow(SDLWindow):
     def update_display(self, paused):
         self._gldraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
-
-    def get_screen_buffer_as_ndarray(self):
-        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(144, 160, 4)[:, :, 1:]
-
-    def get_screen_image(self):
-        if not Image:
-            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
-            return None
-
-        # Convert to RGBA for consistency with SDL2
-        return Image.fromarray(np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(
-            self.buffer_dims+(4,))[:, :, 1:], self.color_format).convert(mode='RGBA')
 
     def frame_limiter(self, speed):
         pass

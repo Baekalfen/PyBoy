@@ -26,7 +26,6 @@ def verify_screen_image_np(pyboy, saved_array):
         original.show()
         new = pyboy.get_screen_image()
         new.show()
-        breakpoint()
     assert match
 
 
@@ -119,7 +118,7 @@ def test_tetris():
 
 
 def test_supermarioland_gif():
-    replay(utils.supermarioland_rom, "tests/replays/supermarioland_gif.replay", record_gif=(120, 660),
+    replay(utils.supermarioland_rom, "tests/replays/supermarioland_gif.replay", record_gif=(122, 644),
            gif_destination="README/3.gif")
 
 

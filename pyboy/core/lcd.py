@@ -7,7 +7,7 @@
 from array import array
 from ctypes import c_void_p
 
-from ..logger import logger
+from pyboy.logger import logger
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
@@ -146,10 +146,12 @@ def getcolorcode(byte1, byte2, offset):
 
 class Renderer:
     def __init__(self, color_palette, color_format):
+        self.color_format = color_format
+
         alpha_channel = 3 - color_format.index('A')
-        red_channel   = 3 - color_format.index('R')
-        green_channel = 3 - color_format.index('G')
-        blue_channel  = 3 - color_format.index('B')
+        self.red_channel   = 3 - color_format.index('R')
+        self.green_channel = 3 - color_format.index('G')
+        self.blue_channel  = 3 - color_format.index('B')
 
         # Split the colors up into each component, which makes the next step easier
         color_components = [
@@ -165,9 +167,9 @@ class Renderer:
         self.color_palette = [
             (
                 self.alphamask |
-                c[0] << (8 * red_channel) |
-                c[1] << (8 * green_channel) |
-                c[2] << (8 * blue_channel)
+                c[0] << (8 * self.red_channel) |
+                c[1] << (8 * self.green_channel) |
+                c[2] << (8 * self.blue_channel)
             ) for c in color_components
         ]
 
@@ -320,24 +322,30 @@ class Renderer:
 
     def get_screen_buffer_as_ndarray(self):
         import numpy as np
-        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, :-1]
+
+        # NOTE: Might have room for performance improvement
+        np_buffer =  np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)
+        return np.concatenate(
+            (
+                np_buffer[:, :, self.red_channel, None],
+                np_buffer[:, :, self.green_channel, None],
+                np_buffer[:, :, self.blue_channel, None]
+            ), axis=2)
 
     def get_screen_image(self):
         if not Image:
             logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
             return None
 
-        return Image.frombytes(
-                self.color_format,
-                self.buffer_dims,
-                self.get_screen_buffer())
+        # NOTE: Might have room for performance improvement
+        return Image.fromarray(self.get_screen_buffer_as_ndarray(), 'RGB')
 
     def save_state(self, f):
         for y in range(ROWS):
             f.write(self._scanlineparameters[y][0])
             f.write(self._scanlineparameters[y][1])
             # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
-            f.write(((self._scanlineparameters[y][2]+7) & 0xFF))
+            f.write((self._scanlineparameters[y][2]+7) & 0xFF)
             f.write(self._scanlineparameters[y][3])
 
     def load_state(self, f):

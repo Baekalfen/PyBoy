@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('ROM', type=str, help='Path to a Game Boy compatible ROM file')
 parser.add_argument('-b', '--bootrom', type=str, help='Path to a boot-ROM file')
 parser.add_argument('-w', '--window', default='SDL2', type=str,
-        help='Specify "window". Options: SDL2 (default), scanline, OpenGL, headless, dummy')
+        help='Specify "window". Options: SDL2 (default), OpenGL, headless, dummy')
 parser.add_argument('-d', '--debug', action='store_true', help='Enable emulator debugging mode')
 parser.add_argument('-s', '--scale', default=3, type=int, help='The scaling multiplier for the window')
 parser.add_argument('--profiling', action='store_true', help='Enable opcode profiling (internal use)')

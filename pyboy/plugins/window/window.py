@@ -19,21 +19,15 @@ def getwindow(window_type, debug):
     elif window_type == "SDL2" or window_type is None:
         from .window_sdl2 import SDLWindow
         window = SDLWindow
-    elif window_type == "scanline":
-        from .window_scanline import ScanlineWindow
-        window = ScanlineWindow
     elif window_type == "OpenGL":
         from .window_opengl import OpenGLWindow
         window = OpenGLWindow
-    elif window_type == "dummy":
+    elif window_type == "dummy" or window_type == "headless":
         from .window_dummy import DummyWindow
         window = DummyWindow
-    elif window_type == "headless":
-        from .window_headless import HeadlessWindow
-        window = HeadlessWindow
     else:
         logger.error("Invalid arguments! Usage: pypy main.py [Window] [ROM path]")
-        logger.error("Valid Windows are: 'SDL2', 'scanline', 'OpenGL', 'headless', and 'dummy'")
+        logger.error("Valid Windows are: 'SDL2', 'OpenGL', and 'dummy'")
         exit(1)
 
     return window
