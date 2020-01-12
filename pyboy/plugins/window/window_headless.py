@@ -10,8 +10,8 @@ ROWS, COLS = 144, 160
 
 
 class HeadlessWindow(SDLWindow):
-    def __init__(self, scale=1):
-        super(self.__class__, self).__init__(scale)
+    def __init__(self, renderer, scale, color_palette, hide_window):
+        super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
         self.lcd = None
 
     def init(self, hide_window):

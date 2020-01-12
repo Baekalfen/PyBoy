@@ -30,6 +30,7 @@ parser.add_argument('--no-input', action='store_true', help='Disable all user-in
 parser.add_argument('--no-logger', action='store_true', help='Disable all logging (mostly for autonomous testing)')
 parser.add_argument('--rewind', action='store_true', help='Enable rewind function')
 parser.add_argument('--record-input', type=str, help='Record user input and save to a file (internal use)')
+parser.add_argument('--color-palette', type=str, help='Four comma seperated, hexadecimal, RGB values for colors (i.e. "FFFFFF,999999,555555,000000")')
 parser.add_argument('-l', '--loadstate', nargs='?', default=None, const='', type=str, help=(
     'Load state from file. If filepath is specified, it will load the given path. Otherwise, it will automatically '
     'locate a saved state next to the ROM file.'))
@@ -46,6 +47,13 @@ def main():
         logger.warning("To replay input consistently later, it is required to load a state at boot. This will be"
                        "embedded into the .replay file.")
 
+    # Add these, only if defined, as we otherwise want the PyBoy default
+    kwargs = {}
+    if argv.color_palette is not None:
+         color_palette = [int(c.strip(), 16) for c in argv.color_palette.split(',')]
+         assert len(color_palette) == 4, f"Not the correct amount of colors! Expected four, got {len(color_palette)}"
+         kwargs['color_palette'] = color_palette
+
     # Start PyBoy and run loop
     pyboy = PyBoy(
             argv.ROM,
@@ -58,6 +66,7 @@ def main():
             record_input=argv.record_input is not None,
             disable_input=argv.no_input,
             enable_rewind=argv.rewind,
+            **kwargs
         )
 
     if argv.loadstate is not None:

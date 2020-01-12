@@ -18,23 +18,19 @@ from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_
                          glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
                          glutSpecialUpFunc)
 
-from .. import windowevent
-from ..logger import logger
+from pyboy import windowevent
+from pyboy.logger import logger
 from .window_sdl2 import SDLWindow
 
 ROWS, COLS = 144, 160
 
 
 class OpenGLWindow(SDLWindow):
-    def __init__(self, scale=1):
-        super(self.__class__, self).__init__(scale)
+    color_format = u"RGBA"
+    buffer_dims = (144, 160)
 
-    def init(self, hide_window):
-        # Shift from ARGB to RGBA
-        self.color_palette = [((x << 8) & 0xFFFFFFFF) | 0x000000FF for x in self.color_palette]
-        self.alphamask = 0x000000FF
-        self.color_format = u"RGB"
-        self.buffer_dims = (144, 160)
+    def __init__(self, renderer, scale, color_palette, hide_window):
+        super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
 
         glutInit()
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -139,7 +135,7 @@ class OpenGLWindow(SDLWindow):
 
     def _gldraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        buf = np.asarray(self._screenbuffer)[::-1, :]
+        buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
         glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
 

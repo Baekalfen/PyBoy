@@ -9,8 +9,8 @@ from ..logger import logger
 
 
 class DummyWindow(BaseWindow):
-    def __init__(self, scale):
-        super(self.__class__, self).__init__(scale)
+    def __init__(self, renderer, scale, color_palette, hide_window):
+        super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
 
     def dump(self, filename):
         pass

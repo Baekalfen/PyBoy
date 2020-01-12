@@ -26,8 +26,8 @@ ROWS, COLS = 144, 160
 
 class ScanlineWindow(BaseWindow):
 
-    def __init__(self, scale=1):
-        BaseWindow.__init__(self, scale)
+    def __init__(self, renderer, scale, color_palette, hide_window):
+        BaseWindow.__init__(self, renderer, scale, color_palette, hide_window)
 
         self._linebuf = array.array('I', [0] * COLS)
         self._linerect = {'x': 0, 'y': 0, 'w': COLS, 'h': 1}
@@ -35,7 +35,6 @@ class ScanlineWindow(BaseWindow):
             self._linerect = sdl2.SDL_Rect(0, 0, COLS, 1)
             self._linebuf_p = ctypes.c_void_p(self._linebuf.buffer_info()[0])
 
-    def init(self, hide_window):
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
         self._ticks = sdl2.SDL_GetTicks()
 

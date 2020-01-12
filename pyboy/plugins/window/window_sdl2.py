@@ -5,8 +5,8 @@
 
 import sdl2
 import sdl2.ext
-from pyboy import windowevent
 
+from pyboy import windowevent
 from .base_window import BaseWindow
 
 ROWS, COLS = 144, 160
@@ -54,10 +54,11 @@ KEY_UP = {
 
 
 class SDLWindow(BaseWindow):
-    def __init__(self, scale):
-        BaseWindow.__init__(self, scale)
+    color_format = u"ABGR"
 
-    def init(self, hide_window):
+    def __init__(self, renderer, scale, color_palette, hide_window):
+        BaseWindow.__init__(self, renderer, scale, color_palette, hide_window)
+
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
         self._ticks = sdl2.SDL_GetTicks()
 
@@ -106,9 +107,9 @@ class SDLWindow(BaseWindow):
 
         return events
 
-    def update_display(self, renderer, paused):
+    def update_display(self, paused):
         if not paused:
-            self._update_display(renderer)
+            self._update_display()
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
@@ -127,8 +128,8 @@ class SDLWindow(BaseWindow):
 # functions that are otherwise implemented as inlined cdefs in the pxd
 if not cythonmode:
     exec("""
-def _update_display(self, renderer):
-    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, renderer._screenbuffer_ptr, COLS*4)
+def _update_display(self):
+    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS*4)
     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
     sdl2.SDL_RenderPresent(self._sdlrenderer)
     sdl2.SDL_RenderClear(self._sdlrenderer)

@@ -15,7 +15,7 @@ import numpy as np
 from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .plugins.rewind import CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers  # NOQA
+from .plugins.rewind import DeltaFixedAllocBuffers
 from .plugins.screenrecorder import ScreenRecorder
 from .plugins.window.window import getwindow
 from .utils import IntIOWrapper
@@ -41,6 +41,7 @@ class PyBoy:
                 disable_input=False,
                 hide_window=False,
                 enable_rewind=False,
+                color_palette=(0xFFFFFF, 0x999999, 0x555555, 0x000000),
             ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -68,11 +69,15 @@ class PyBoy:
             profiling (bool): Profile the emulator and report opcode usage (internal use).
             record_input (bool): Enable input recording (internal use).
             disable_input (bool): Enable to ignore all user input.
+            hide_window (bool): Hide game windows (internal use).
+            enable_rewind (bool): Enable the rewind feature.
+            color_palette (tuple): Specify the color palette to use for rendering.
         """
         self.gamerom_file = gamerom_file
 
-        self.window = getwindow(window_type, window_scale, debugging, hide_window)
-        self.mb = Motherboard(gamerom_file, bootrom_file, enable_rewind, profiling=profiling)
+        window_class = getwindow(window_type, debugging)
+        self.mb = Motherboard(gamerom_file, bootrom_file, color_palette, window_class.color_format, profiling=profiling)
+        self.window = window_class(self.mb.renderer, window_scale, color_palette, hide_window)
 
         # TODO: Get rid of this extra step
         if debugging:
@@ -109,11 +114,19 @@ class PyBoy:
         self.enable_rewind = enable_rewind
         self.rewind_speed = 1.0
         if enable_rewind:
-            # self.rewind_buffer = FixedAllocBuffers()
-            # self.rewind_buffer = CompressedFixedAllocBuffers()
             self.rewind_buffer = DeltaFixedAllocBuffers()
 
     def tick(self):
+        """
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        """
+
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self.pre_tick()
         t_pre = time.perf_counter()
@@ -186,8 +199,8 @@ class PyBoy:
                 for _ in range(int(self.rewind_speed)):
                     if self.rewind_buffer.seek_frame(1):
                         self.mb.load_state(self.rewind_buffer)
-                        # self.window.update_cache(self.mb.lcd)
-                        self.window.render_screen(self.mb.lcd)
+                        # self.mb.renderer.update_cache(self.mb.lcd)
+                        self.mb.renderer.render_screen(self.mb.lcd)
                         self.window.update_display(False)
                         self.rewind_speed = min(self.rewind_speed * 1.1, 15)
                         if self.screen_recorder:
@@ -202,8 +215,8 @@ class PyBoy:
                 for _ in range(int(self.rewind_speed)):
                     if self.rewind_buffer.seek_frame(-1):
                         self.mb.load_state(self.rewind_buffer)
-                        # self.window.update_cache(self.mb.lcd)
-                        self.window.render_screen(self.mb.lcd)
+                        # self.mb.renderer.update_cache(self.mb.lcd)
+                        self.mb.renderer.render_screen(self.mb.lcd)
                         self.window.update_display(False)
                         self.rewind_speed = min(self.rewind_speed * 1.1, 15)
                         if self.screen_recorder:
@@ -232,7 +245,7 @@ class PyBoy:
             self.screen_recorder.add_frame(self.get_screen_image())
 
         # Plugin: Window
-        self.window.update_display(self.mb.renderer, self.paused)
+        self.window.update_display(self.paused)
 
         if self.paused:
             self.window.frame_limiter(1)
@@ -243,16 +256,6 @@ class PyBoy:
             self.update_window_title()
 
     def _tick(self):
-        """
-        Progresses the emulator ahead by one frame.
-
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-        """
-
         self.frame_count += 1
         if not self.paused:
             self.mb.tickframe()

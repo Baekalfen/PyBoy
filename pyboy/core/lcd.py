@@ -145,15 +145,38 @@ def getcolorcode(byte1, byte2, offset):
 
 
 class Renderer:
-    def __init__(self):
-        self.color_palette = (0xFFFFFFFF, 0xFF999999, 0xFF555555, 0xFF000000)
-        self.alphamask = 0xFF000000
-        self.color_format = u"RGBA"
+    def __init__(self, color_palette, color_format):
+        alpha_channel = 3 - color_format.index('A')
+        red_channel   = 3 - color_format.index('R')
+        green_channel = 3 - color_format.index('G')
+        blue_channel  = 3 - color_format.index('B')
+
+        # Split the colors up into each component, which makes the next step easier
+        color_components = [
+            [
+                (c & 0xFF0000) >> 2*8,
+                (c & 0x00FF00) >> 1*8,
+                (c & 0x0000FF),
+            ] for c in color_palette
+        ]
+
+        # Shift RGB colors to the right positions from the color format layout
+        self.alphamask = 0xFF << (8 * alpha_channel)
+        self.color_palette = [
+            (
+                self.alphamask |
+                c[0] << (8 * red_channel) |
+                c[1] << (8 * green_channel) |
+                c[2] << (8 * blue_channel)
+            ) for c in color_components
+        ]
+
         self.buffer_dims = (160, 144)
 
         self.clearcache = False
         self.tiles_changed = set([])
 
+        # Init buffers as white
         self._screenbuffer_raw = array('B', [0xFF] * (ROWS*COLS*4))
         self._tilecache_raw = array('B', [0xFF] * (TILES*8*8*4))
         self._spritecache0_raw = array('B', [0xFF] * (TILES*8*8*4))

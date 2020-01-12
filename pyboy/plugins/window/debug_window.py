@@ -375,8 +375,8 @@ class TileViewWindow(Window):
 
 
 class DebugWindow(SDLWindow):
-    def __init__(self, scale):
-        super(self.__class__, self).__init__(scale)
+    def __init__(self, renderer, scale, color_palette, hide_window):
+        super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
         self.scale = scale
         self.marked_tile = NO_TILE
 
@@ -385,11 +385,7 @@ class DebugWindow(SDLWindow):
         self.sprite_update = True
         self.tile_update = True
 
-        self.hide_window = False
-
-    # def init(self, hide_window):
-    #     self.hide_window = hide_window
-    #     super(self.__class__, self).__init__(hide_window)
+        self.hide_window = hide_window
 
     # Rest of the __init__, when we have the lcd instance
     def set_lcd(self, lcd):

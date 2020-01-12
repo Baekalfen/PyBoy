@@ -12,8 +12,9 @@ ROWS, COLS = 144, 160
 
 
 class BaseWindow:
+    color_format = u""
 
-    def __init__(self, scale=1):
+    def __init__(self, renderer, scale, color_palette, hide_window):
         self._scale = scale
         logger.info("%s initialization" % self.__class__.__name__)
 
@@ -21,9 +22,7 @@ class BaseWindow:
         logger.info('Scale: x%s %s' % (self._scale, self._scaledresolution))
 
         self.enable_title = True
-
-    def init(self, hide_window):
-        pass
+        self.renderer = renderer
 
     def dump(self, filename):
         raise NotImplementedError()
@@ -43,22 +42,7 @@ class BaseWindow:
     def stop(self):
         raise NotImplementedError()
 
-    def scanline(self, y, lcd):
-        raise NotImplementedError()
-
-    def render_screen(self, lc):
-        raise NotImplementedError()
-
     def blank_screen(self):
-        pass
-
-    def get_screen_buffer(self):
-        raise NotImplementedError()
-
-    def get_screen_buffer_as_ndarray(self):
-        raise NotImplementedError()
-
-    def update_cache(self, lcd):
         pass
 
     def disable_title(self):

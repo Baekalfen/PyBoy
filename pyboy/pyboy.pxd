@@ -40,6 +40,6 @@ cdef class PyBoy:
     cdef float rewind_speed
 
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
-    cpdef bint tick(self)
+    cpdef bint tick(self) nogil
     cpdef void stop(self, save=*)
     cdef void update_window_title(self)

@@ -13,7 +13,7 @@ STATE_VERSION = 2
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, enable_rewind, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, color_palette, color_format, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -27,10 +27,9 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD()
-        self.renderer = lcd.Renderer()
+        self.renderer = lcd.Renderer(color_palette, color_format)
         self.bootrom_enabled = True
         self.serialbuffer = u''
-        self.enable_rewind = enable_rewind
 
     def getserial(self):
         b = self.serialbuffer
