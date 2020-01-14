@@ -252,7 +252,7 @@ setup(
         ],
     },
     cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
-    install_requires=([] if CYTHON else ["cython"]) + [
+    install_requires=(["cython"] if CYTHON else []) + [
         "pysdl2",
         "numpy",
         "Pillow",
@@ -269,7 +269,7 @@ setup(
             "pdoc3",
         ],
     },
-    zip_safe=not CYTHON, # Cython doesn't support it
+    zip_safe=(not CYTHON), # Cython doesn't support it
     ext_modules=ext_modules,
     python_requires='>=3.6',
     package_data={'': ['*.pyx', '*.pxd', '*.c', '*.h']},
