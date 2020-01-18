@@ -246,7 +246,10 @@ class PyBoy:
         if self.paused :
             text = "[PAUSED]"
         else:
-            text = "CPU/frame: %0.2f%% Emulation: x%d" % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu))
+            text = "CPU/frame: %0.2f%% Emulation: x%d" % (
+                self.avg_cpu/SPF*100,
+                round(SPF/self.avg_emu) if self.avg_emu != 0 else 0
+            )
             if self.enable_rewind:
                 text += " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
         self.window.set_title(text)
