@@ -229,6 +229,10 @@ except FileNotFoundError:
     print('README.md not found')
     long_description = ""
 
+requirements = []
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setup(
     name='pyboy',
     version='0.1.0',
@@ -252,11 +256,7 @@ setup(
         ],
     },
     cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
-    install_requires=(["cython"] if CYTHON else []) + [
-        "pysdl2",
-        "numpy",
-        "Pillow",
-    ],
+    install_requires=requirements + (["cython"] if CYTHON else [])
     tests_require=[
         "pytest",
         "pytest-xdist",
