@@ -15,7 +15,13 @@ from setuptools.command.test import test
 CYTHON = platform.python_implementation() != "PyPy"
 
 
+dynamic_requires = (["cython"] if CYTHON else [])
+
 if CYTHON:
+    # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
+    from setuptools import dist
+    dist.Distribution().fetch_build_eggs(dynamic_requires)
+
     from Cython.Build import cythonize
     import Cython.Compiler.Options
     from Cython.Distutils import build_ext
@@ -252,11 +258,11 @@ setup(
         ],
     },
     cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
-    install_requires=(["cython"] if CYTHON else []) + [
-        "pysdl2",
+    install_requires=[
         "numpy",
-        "Pillow",
-    ],
+        "pillow",
+        "pysdl2",
+    ] + dynamic_requires,
     tests_require=[
         "pytest",
         "pytest-xdist",

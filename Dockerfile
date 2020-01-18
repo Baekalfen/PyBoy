@@ -5,9 +5,6 @@ RUN apt-get update && apt-get install -y \
   libsdl2-dev \
   && rm -rf /var/lib/apt/lists/*
 
-
-RUN pip install -r requierments.txt
-
 COPY . /source
 WORKDIR /source
 
