@@ -1,0 +1,10 @@
+Cython==0.29.14
+numpy==1.18.1
+Pillow==7.0.0
+PySDL2==0.9.6
+
+# Optional/extra requirements
+markdown [doc]
+pdoc3 [doc]
+pyopengl [opengl]
+pytest-xdist [test]
