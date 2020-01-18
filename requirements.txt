@@ -2,9 +2,3 @@ Cython
 numpy
 Pillow
 PySDL2
-
-# Optional/extra requirements
-markdown [doc]
-pdoc3 [doc]
-pyopengl [opengl]
-pytest-xdist [test]
