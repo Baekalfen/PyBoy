@@ -43,5 +43,3 @@ class PluginManager(PyBoyPlugin):
 
     def stop(self):
         pass
-
-

@@ -5,6 +5,7 @@
 #
 
 import argparse
+
 from pyboy import PyBoy, core
 from pyboy.logger import addconsolehandler, logger
 

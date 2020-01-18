@@ -12,11 +12,11 @@ import time
 from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .plugins.rewind import Rewind
+from .plugins.disable_input import DisableInput
 from .plugins.record_replay import RecordReplay
+from .plugins.rewind import Rewind
 from .plugins.screenrecorder import ScreenRecorder
 from .plugins.window.window import getwindow
-from .plugins.disable_input import DisableInput
 from .utils import IntIOWrapper
 
 addconsolehandler()

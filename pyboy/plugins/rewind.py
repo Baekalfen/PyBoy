@@ -3,12 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.logger import logger
-from pyboy import windowevent
 import array
 
-from pyboy.utils import IntIOInterface
+from pyboy import windowevent
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin
+from pyboy.utils import IntIOInterface
 
 FIXED_BUFFER_SIZE = 64*1024*128
 FIXED_BUFFER_MIN_ALLOC = 64*1024
