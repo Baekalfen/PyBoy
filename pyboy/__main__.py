@@ -5,12 +5,6 @@
 #
 
 import argparse
-import base64
-import hashlib
-import io
-import json
-import zlib
-
 from pyboy import PyBoy, core
 from pyboy.logger import addconsolehandler, logger
 
@@ -35,6 +29,7 @@ parser.add_argument('-l', '--loadstate', nargs='?', default=None, const='', type
     'Load state from file. If filepath is specified, it will load the given path. Otherwise, it will automatically '
     'locate a saved state next to the ROM file.'))
 
+# TODO: Plugin manager, der kan compiles
 
 def main():
     argv = parser.parse_args()
@@ -42,10 +37,6 @@ def main():
         logger.disabled = True
     else:
         addconsolehandler()
-
-    if argv.record_input and not argv.loadstate:
-        logger.warning("To replay input consistently later, it is required to load a state at boot. This will be"
-                       "embedded into the .replay file.")
 
     # Add these, only if defined, as we otherwise want the PyBoy default
     kwargs = {}
@@ -63,7 +54,7 @@ def main():
             autopause=argv.autopause,
             debugging=argv.debug,
             profiling=argv.profiling,
-            record_input=argv.record_input is not None,
+            record_input=argv.record_input,
             disable_input=argv.no_input,
             enable_rewind=argv.rewind,
             **kwargs
@@ -87,9 +78,6 @@ def main():
     if argv.profiling:
         print("\n".join(profiling_printer(pyboy._get_cpu_hitrate())))
 
-    if argv.record_input:
-        save_replay(argv.ROM, argv.loadstate, argv.record_input, pyboy._get_recorded_input())
-
 
 def profiling_printer(hitrate):
     print("Profiling report:")
@@ -100,22 +88,6 @@ def profiling_printer(hitrate):
         yield ("%3x %16s %s" % (n, name, hits))
 
 
-def save_replay(rom, loadstate, replay_file, recorded_input):
-    with open(rom, 'rb') as f:
-        m = hashlib.sha256()
-        m.update(f.read())
-        b64_romhash = base64.b64encode(m.digest()).decode('utf8')
-
-    if loadstate is None:
-        b64_state = None
-    else:
-        with open(loadstate, 'rb') as f:
-            b64_state = base64.b64encode(f.read()).decode('utf8')
-
-    with open(replay_file, 'wb') as f:
-        recorded_data = io.StringIO()
-        json.dump([recorded_input, b64_romhash, b64_state], recorded_data)
-        f.write(zlib.compress(recorded_data.getvalue().encode('ascii')))
 
 
 if __name__ == "__main__":

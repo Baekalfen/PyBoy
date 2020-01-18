@@ -8,6 +8,8 @@ import os
 import time
 
 from pyboy.logger import logger
+from pyboy import windowevent
+from pyboy.plugins.base_plugin import PyBoyPlugin
 
 try:
     from PIL import Image
@@ -18,17 +20,34 @@ except ImportError:
 FPS = 60
 
 
-class ScreenRecorder:
+class ScreenRecorder(PyBoyPlugin):
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
+        self.gamename = pyboy.get_cartridge_title()
+        self.recording = False
+        self.frames = []
 
-    def __init__(self, gamename):
-        self.gamename = gamename
+        if not Image:
+            logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. Screen recording is disabled.")
 
-        if Image:
-            logger.info("ScreenRecorder started")
-            self.frames = []
-        else:
-            logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. "
-                           "Screen recording is disabled.")
+    def handle_events(self, events):
+        for event in events:
+            if event == windowevent.SCREEN_RECORDING_TOGGLE:
+                self.recording ^= True
+                if not self.recording:
+                    self.save()
+                else:
+                    logger.info("ScreenRecorder started")
+                break
+        return events
+
+    def post_tick(self):
+        # Plugin: Screen Recorder
+        if self.recording:
+            self.add_frame(self.pyboy.get_screen_image())
+
+    def pre_tick(self):
+        pass
 
     def add_frame(self, frame):
         if Image:
@@ -48,7 +67,7 @@ class ScreenRecorder:
                 os.makedirs(directory, mode=0o755)
             path = os.path.join(directory, time.strftime(f"{self.gamename}-%Y.%m.%d-%H.%M.%S.gif"))
 
-        if self.frames:
+        if len(self.frames) > 0:
             self.frames[0].save(path, save_all=True, interlace=False,
                                 loop=0, optimize=True,
                                 append_images=self.frames[1:],
@@ -57,3 +76,4 @@ class ScreenRecorder:
             logger.info("Screen recording saved in {}".format(path))
         else:
             logger.error("Screen recording failed: no frames")
+        self.frames = []

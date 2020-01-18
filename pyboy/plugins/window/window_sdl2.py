@@ -86,8 +86,8 @@ class SDLWindow(BaseWindow):
     def set_title(self, title):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
-    def get_events(self):
-        events = []
+    def handle_events(self, events):
+        # Feed events into the loop
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
                 events.append(windowevent.QUIT)
@@ -98,9 +98,9 @@ class SDLWindow(BaseWindow):
             elif event.type == sdl2.SDL_WINDOWEVENT:
                 if event.window.windowID == 1:
                     if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
-                        events.append(windowevent.PAUSE)
+                        events.append(windowevent.WINDOW_UNFOCUS)
                     elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
-                        events.append(windowevent.UNPAUSE)
+                        events.append(windowevent.WINDOW_FOCUS)
 
         return events
 

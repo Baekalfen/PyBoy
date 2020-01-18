@@ -7,17 +7,16 @@
 The core module of the emulator
 """
 
-import base64
 import time
-
-import numpy as np
 
 from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .plugins.rewind import DeltaFixedAllocBuffers
+from .plugins.rewind import Rewind
+from .plugins.record_replay import RecordReplay
 from .plugins.screenrecorder import ScreenRecorder
 from .plugins.window.window import getwindow
+from .plugins.disable_input import DisableInput
 from .utils import IntIOWrapper
 
 addconsolehandler()
@@ -94,27 +93,28 @@ class PyBoy:
         self.set_emulation_speed(1)
         self.paused = False
         self.autopause = autopause
-        self.disable_input = disable_input
         self.events = []
         self.done = False
 
         ###################
         # Plugins
 
+        # TODO: Move this to 'pretick' methods in the plugins
         # Recording input for replay
-        self.record_input = record_input
-        if self.record_input:
-            logger.info("Recording event inputs")
-        self.recorded_input = []
 
-        # Screen recorder
-        self.screen_recorder = None
 
-        # Rewind
-        self.enable_rewind = enable_rewind
-        self.rewind_speed = 1.0
+        self.plugins = []
+
+        if disable_input:
+            self.plugins.append(DisableInput(self))
+
         if enable_rewind:
-            self.rewind_buffer = DeltaFixedAllocBuffers()
+            self.plugins.append(Rewind(self))
+
+        if record_input:
+            self.plugins.append(RecordReplay(self))
+
+        self.plugins.append(ScreenRecorder(self))
 
     def tick(self):
         """
@@ -130,7 +130,9 @@ class PyBoy:
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self.pre_tick()
         t_pre = time.perf_counter()
-        self._tick()
+        self.frame_count += 1
+        if not self.paused:
+            self.mb.tickframe()
         t_tick = time.perf_counter()
         self.post_tick()
         t_post = time.perf_counter()
@@ -147,20 +149,14 @@ class PyBoy:
         return self.done
 
     def pre_tick(self):
-        self.handle_events()
+        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+        events = self.window.handle_events(self.events)
+        for p in self.plugins:
+            events = p.handle_events(events)
+        self.handle_events(events)
 
-        # Screen recorder
-        if self.record_input and len(self.events) != 0:
-            self.recorded_input.append((self.frame_count, self.events, base64.b64encode(
-                np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
-
-        self.events = []
-
-    def handle_events(self):
-        if not self.disable_input:
-            self.events += self.window.get_events()
-
-        for event in self.events:
+    def handle_events(self, events):
+        for event in events:
             if event == windowevent.QUIT:
                 self.done = True
             elif event == windowevent.RELEASE_SPEED_UP:
@@ -178,74 +174,31 @@ class PyBoy:
                 pass
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
-            elif event == windowevent.PAUSE and self.autopause:
-                self.paused = True
-                logger.info("Emulation paused!")
-            elif event == windowevent.UNPAUSE and self.autopause:
-                self.paused = False
-                logger.info("Emulation unpaused!")
-                if self.enable_rewind:
-                    self.rewind_buffer.commit()
             elif event == windowevent.PAUSE_TOGGLE:
                 self.paused ^= True
                 if self.paused:
                     logger.info("Emulation paused!")
                 else:
                     logger.info("Emulation unpaused!")
-                    if self.enable_rewind:
-                        self.rewind_buffer.commit()
-            elif self.enable_rewind and event == windowevent.RELEASE_REWIND_FORWARD:
-                self.rewind_speed = 1
-            elif self.enable_rewind and event == windowevent.PRESS_REWIND_FORWARD:
+            elif event == windowevent.WINDOW_UNFOCUS:
+                if self.autopause:
+                    events.append(windowevent.PAUSE)
+            elif event == windowevent.WINDOW_FOCUS:
+                if self.autopause:
+                    events.append(windowevent.UNPAUSE)
+            elif event == windowevent.PAUSE:
                 self.paused = True
-                for _ in range(int(self.rewind_speed)):
-                    if self.rewind_buffer.seek_frame(1):
-                        self.mb.load_state(self.rewind_buffer)
-                        # self.mb.renderer.update_cache(self.mb.lcd)
-                        self.mb.renderer.render_screen(self.mb.lcd)
-                        self.window.update_display(False)
-                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-                        if self.screen_recorder:
-                            self.screen_recorder.add_frame(self.get_screen_image())
-                    else:
-                        logger.info("Rewind limit reached")
-                        break
-            elif self.enable_rewind and event == windowevent.RELEASE_REWIND_BACK:
-                self.rewind_speed = 1
-            elif self.enable_rewind and event == windowevent.PRESS_REWIND_BACK:
-                self.paused = True
-                for _ in range(int(self.rewind_speed)):
-                    if self.rewind_buffer.seek_frame(-1):
-                        self.mb.load_state(self.rewind_buffer)
-                        # self.mb.renderer.update_cache(self.mb.lcd)
-                        self.mb.renderer.render_screen(self.mb.lcd)
-                        self.window.update_display(False)
-                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-                        if self.screen_recorder:
-                            self.screen_recorder.add_frame(self.get_screen_image())
-                    else:
-                        logger.info("Rewind limit reached")
-                        break
-            elif event == windowevent.SCREEN_RECORDING_TOGGLE:
-                if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
-                else:
-                    self.screen_recorder.save()
-                    self.screen_recorder = None
+                logger.info("Emulation paused!")
+            elif event == windowevent.UNPAUSE:
+                self.paused = False
+                logger.info("Emulation unpaused!")
+
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
 
     def post_tick(self):
-        # Plugin: Rewind
-        if not self.paused and self.enable_rewind:
-            self.mb.save_state(self.rewind_buffer)
-            self.rewind_buffer.new()
-
-        # Plugin: Screen Recorder
-        if self.screen_recorder:
-            self.screen_recorder.add_frame(self.get_screen_image())
-
-        # Plugin: Window
+        for p in self.plugins:
+            p.post_tick()
         self.window.update_display(self.paused)
 
         if self.paused:
@@ -254,22 +207,21 @@ class PyBoy:
             self.window.frame_limiter(self.target_emulationspeed)
 
         if self.frame_count % 60 == 0:
-            self.update_window_title()
+            append_text = ""
+            for p in self.plugins:
+                append_text += p.window_title()
+            self.update_window_title(append_text)
 
-    def _tick(self):
-        self.frame_count += 1
-        if not self.paused:
-            self.mb.tickframe()
+        # Prepare an empty list, as the API might be used to send in events between ticks
+        self.events = []
 
 
-    def update_window_title(self):
+    def update_window_title(self, append_text):
         if self.paused :
             text = "[PAUSED]"
         else:
             text = "CPU/frame: %0.2f%% Emulation: x%d" % ((self.avg_pre + self.avg_tick)/SPF*100, round(SPF/(self.avg_pre + self.avg_tick + self.avg_post)))
-            if self.enable_rewind:
-                text += " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
-        self.window.set_title(text)
+        self.window.set_title(text + append_text)
 
     def __del__(self):
         self.stop(save=False)
@@ -285,11 +237,10 @@ class PyBoy:
         logger.info("###########################")
         logger.info("# Emulator is turning off #")
         logger.info("###########################")
+        for p in self.plugins:
+            p.stop()
         self.mb.stop(save)
-
-    def _get_recorded_input(self):
-        logger.warning("You are calling an internal function. The output and the function is subject to change.")
-        return self.recorded_input
+        self.window.stop()
 
     def _get_cpu_hitrate(self):
         logger.warning("You are calling an internal function. The output and the function is subject to change.")

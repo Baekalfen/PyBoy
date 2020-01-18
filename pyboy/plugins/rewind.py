@@ -3,13 +3,72 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from pyboy.logger import logger
+from pyboy import windowevent
 import array
 
 from pyboy.utils import IntIOInterface
+from pyboy.plugins.base_plugin import PyBoyPlugin
 
 FIXED_BUFFER_SIZE = 64*1024*128
 FIXED_BUFFER_MIN_ALLOC = 64*1024
 FILL_VALUE = 123
+
+class Rewind(PyBoyPlugin):
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
+        self.rewind_speed = 1.0
+        self.rewind_buffer = DeltaFixedAllocBuffers()
+
+    def post_tick(self):
+        if not self.pyboy.paused:
+            self.pyboy.mb.save_state(self.rewind_buffer)
+            self.rewind_buffer.new()
+
+    def window_title(self):
+        return " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
+
+    def handle_events(self, events):
+        for event in events:
+            if event == windowevent.UNPAUSE:
+                self.rewind_buffer.commit()
+            elif event == windowevent.PAUSE_TOGGLE:
+                if not self.pyboy.paused:
+                    self.rewind_buffer.commit()
+            elif event == windowevent.RELEASE_REWIND_FORWARD:
+                self.rewind_speed = 1
+            elif event == windowevent.PRESS_REWIND_FORWARD:
+                self.pyboy.paused = True
+                for _ in range(int(self.rewind_speed)):
+                    if self.rewind_buffer.seek_frame(1):
+                        self.pyboy.mb.load_state(self.rewind_buffer)
+                        # self.pyboy.mb.renderer.update_cache(self.pyboy.mb.lcd)
+                        self.pyboy.mb.renderer.render_screen(self.pyboy.mb.lcd)
+                        self.pyboy.window.update_display(False)
+                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                        # if self.screen_recorder:
+                        #     self.screen_recorder.add_frame(self.get_screen_image())
+                    else:
+                        logger.info("Rewind limit reached")
+                        break
+            elif event == windowevent.RELEASE_REWIND_BACK:
+                self.rewind_speed = 1
+            elif event == windowevent.PRESS_REWIND_BACK:
+                self.pyboy.paused = True
+                for _ in range(int(self.rewind_speed)):
+                    if self.rewind_buffer.seek_frame(-1):
+                        self.pyboy.mb.load_state(self.rewind_buffer)
+                        # self.pyboy.mb.renderer.update_cache(self.pyboy.mb.lcd)
+                        self.pyboy.mb.renderer.render_screen(self.pyboy.mb.lcd)
+                        self.pyboy.window.update_display(False)
+                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                        # if self.screen_recorder:
+                        #     self.screen_recorder.add_frame(self.get_screen_image())
+                    else:
+                        logger.info("Rewind limit reached")
+                        break
+        return events
+
 
 
 ##############################################################

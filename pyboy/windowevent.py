@@ -37,6 +37,8 @@ All supported events to send to the emulator:
     PRESS_REWIND_FORWARD
     RELEASE_REWIND_BACK
     RELEASE_REWIND_FORWARD
+    WINDOW_FOCUS
+    WINDOW_UNFOCUS
 """
 
 # ONLY ADD NEW EVENTS AT THE END OF THE LIST!
@@ -72,4 +74,6 @@ All supported events to send to the emulator:
  PRESS_REWIND_FORWARD,
  RELEASE_REWIND_BACK,
  RELEASE_REWIND_FORWARD,
- ) = range(31)
+ WINDOW_FOCUS,
+ WINDOW_UNFOCUS,
+ ) = range(33)
