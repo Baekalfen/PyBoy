@@ -263,8 +263,10 @@ setup(
         "pyopengl",
     ],
     extras_require={
-        "all": [
-            "pyopengl",
+        "extra": [
+            "pyopengl"
+        ],
+        "docs" : [
             "markdown",
             "pdoc3",
         ],
