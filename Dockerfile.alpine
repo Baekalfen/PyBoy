@@ -1,0 +1,14 @@
+FROM python:alpine
+
+RUN apk add\
+  sdl2-dev\
+  sdl2\
+  build-base\
+  zlib-dev\
+  jpeg-dev
+
+COPY . /source
+WORKDIR /source
+
+RUN pip install .
+WORKDIR /
