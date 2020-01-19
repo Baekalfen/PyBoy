@@ -15,29 +15,33 @@ from pyboy.plugins.base_plugin import PyBoyPlugin
 
 
 class RecordReplay(PyBoyPlugin):
-    def __init__(self, pyboy):
-        self.pyboy = pyboy
+    argv = [('--record-input', {"type":str, "help":'Record user input and save to a file (internal use)'})]
 
-        if not argv.loadstate:
-            logger.warning("To replay input consistently later, it is required to load a state at boot. This will be"
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        if not self.kwargs.get("loadstate"):
+            logger.warning("To replay input consistently later, it is recommended to load a state at boot. This will be"
                            "embedded into the .replay file.")
 
         logger.info("Recording event inputs")
         self.recorded_input = []
 
-
     def pre_tick(self):
         # Input recorder
-        if self.record_input and len(self.events) != 0:
-            self.recorded_input.append((self.frame_count, self.events, base64.b64encode(
-                np.ascontiguousarray(self.get_screen_ndarray())).decode('utf8')))
-
+        if len(self.pyboy.events) != 0:
+            self.recorded_input.append((self.pyboy.frame_count, self.pyboy.events, base64.b64encode(
+                np.ascontiguousarray(self.pyboy.get_screen_ndarray())).decode('utf8')))
 
     def handle_events(self, events):
         return events
 
     def stop(self):
-        save_replay(self.pyboy.gamerom_file, argv.loadstate, argv.record_input, self.recorded_input)
+        save_replay(self.pyboy.gamerom_file, self.kwargs.get("loadstate"), self.kwargs.get("record_input"), self.recorded_input)
+
+    def enabled(self):
+        return self.kwargs.get('record_input')
+
 
 def save_replay(rom, loadstate, replay_file, recorded_input):
     with open(rom, 'rb') as f:

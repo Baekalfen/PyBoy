@@ -15,8 +15,11 @@ FIXED_BUFFER_MIN_ALLOC = 64*1024
 FILL_VALUE = 123
 
 class Rewind(PyBoyPlugin):
-    def __init__(self, pyboy):
-        self.pyboy = pyboy
+    argv = [('--rewind', {"action":'store_true', "help":'Enable rewind function'})]
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
         self.rewind_speed = 1.0
         self.rewind_buffer = DeltaFixedAllocBuffers()
 
@@ -68,6 +71,9 @@ class Rewind(PyBoyPlugin):
                         logger.info("Rewind limit reached")
                         break
         return events
+
+    def enabled(self):
+        return self.kwargs.get('rewind')
 
 
 

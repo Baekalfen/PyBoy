@@ -7,4 +7,3 @@
 import sdl2  # NOQA:F401
 
 from .base_window import BaseWindow  # NOQA:F401
-from .window import getwindow  # NOQA:F401

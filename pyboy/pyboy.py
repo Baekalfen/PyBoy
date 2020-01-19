@@ -9,14 +9,12 @@ The core module of the emulator
 
 import time
 
+from pyboy.plugins.manager import PluginManager
+from pyboy.plugins.window import get_window
+
 from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .plugins.disable_input import DisableInput
-from .plugins.record_replay import RecordReplay
-from .plugins.rewind import Rewind
-from .plugins.screenrecorder import ScreenRecorder
-from .plugins.window.window import getwindow
 from .utils import IntIOWrapper
 
 addconsolehandler()
@@ -28,19 +26,19 @@ class PyBoy:
     def __init__(
                 self,
                 gamerom_file, *,
-                default_ram_file=None,
-                default_state_file=None,
-                window_type=None,
-                window_scale=3,
+                # default_ram_file=None,
+                # default_state_file=None,
+                # window_type=None,
+                # window_scale=3,
                 bootrom_file=None,
-                autopause=False,
-                debugging=False,
+                # autopause=False,
+                # debugging=False,
                 profiling=False,
-                record_input=False,
-                disable_input=False,
-                hide_window=False,
-                enable_rewind=False,
+                # disable_input=False,
+                # hide_window=False,
+                # enable_rewind=False,
                 color_palette=(0xFFFFFF, 0x999999, 0x555555, 0x000000),
+                **kwargs
             ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -66,21 +64,20 @@ class PyBoy:
             autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
             debugging (bool): Whether or not to enable some extended debugging features.
             profiling (bool): Profile the emulator and report opcode usage (internal use).
-            record_input (bool): Enable input recording (internal use).
             disable_input (bool): Enable to ignore all user input.
-            hide_window (bool): Hide game windows (internal use).
+            # hide_window (bool): Hide game windows (internal use).
             enable_rewind (bool): Enable the rewind feature.
             color_palette (tuple): Specify the color palette to use for rendering.
         """
         self.gamerom_file = gamerom_file
 
-        window_class = getwindow(window_type, debugging)
-        self.mb = Motherboard(gamerom_file, bootrom_file, color_palette, window_class.color_format, profiling=profiling)
-        self.window = window_class(self.mb.renderer, window_scale, color_palette, hide_window)
+        window_color_format, window_class = get_window(**kwargs)
+        self.mb = Motherboard(gamerom_file, bootrom_file, color_palette, window_color_format, profiling=profiling)
+        self.window = window_class(self.mb.renderer, color_palette)
 
         # TODO: Get rid of this extra step
-        if debugging:
-            self.window.set_lcd(self.mb.lcd)
+        # if debugging:
+        #     self.window.set_lcd(self.mb.lcd)
 
         # Performance measures
         self.avg_pre = 0
@@ -92,29 +89,14 @@ class PyBoy:
 
         self.set_emulation_speed(1)
         self.paused = False
-        self.autopause = autopause
+        # self.autopause = autopause
         self.events = []
         self.done = False
 
         ###################
         # Plugins
 
-        # TODO: Move this to 'pretick' methods in the plugins
-        # Recording input for replay
-
-
-        self.plugins = []
-
-        if disable_input:
-            self.plugins.append(DisableInput(self))
-
-        if enable_rewind:
-            self.plugins.append(Rewind(self))
-
-        if record_input:
-            self.plugins.append(RecordReplay(self))
-
-        self.plugins.append(ScreenRecorder(self))
+        self.plugin_manager = PluginManager(self, kwargs)
 
     def tick(self):
         """
@@ -128,6 +110,7 @@ class PyBoy:
         """
 
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        self.handle_events(self.events)
         self.pre_tick()
         t_pre = time.perf_counter()
         self.frame_count += 1
@@ -148,14 +131,11 @@ class PyBoy:
 
         return self.done
 
-    def pre_tick(self):
-        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
-        events = self.window.handle_events(self.events)
-        for p in self.plugins:
-            events = p.handle_events(events)
-        self.handle_events(events)
-
     def handle_events(self, events):
+        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+        events = self.window.handle_events(events)
+        events = self.plugin_manager.handle_events(events)
+
         for event in events:
             if event == windowevent.QUIT:
                 self.done = True
@@ -180,12 +160,6 @@ class PyBoy:
                     logger.info("Emulation paused!")
                 else:
                     logger.info("Emulation unpaused!")
-            elif event == windowevent.WINDOW_UNFOCUS:
-                if self.autopause:
-                    events.append(windowevent.PAUSE)
-            elif event == windowevent.WINDOW_FOCUS:
-                if self.autopause:
-                    events.append(windowevent.UNPAUSE)
             elif event == windowevent.PAUSE:
                 self.paused = True
                 logger.info("Emulation paused!")
@@ -196,9 +170,11 @@ class PyBoy:
             else: # Right now, everything else is a button press
                 self.mb.buttonevent(event)
 
+    def pre_tick(self):
+        self.plugin_manager.pre_tick()
+
     def post_tick(self):
-        for p in self.plugins:
-            p.post_tick()
+        self.plugin_manager.post_tick()
         self.window.update_display(self.paused)
 
         if self.paused:
@@ -207,9 +183,7 @@ class PyBoy:
             self.window.frame_limiter(self.target_emulationspeed)
 
         if self.frame_count % 60 == 0:
-            append_text = ""
-            for p in self.plugins:
-                append_text += p.window_title()
+            append_text = self.plugin_manager.window_title()
             self.update_window_title(append_text)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
@@ -237,8 +211,7 @@ class PyBoy:
         logger.info("###########################")
         logger.info("# Emulator is turning off #")
         logger.info("###########################")
-        for p in self.plugins:
-            p.stop()
+        self.plugin_manager.stop()
         self.mb.stop(save)
         self.window.stop()
 
@@ -337,7 +310,6 @@ class PyBoy:
         Args:
             event (pyboy.windowevent): The event to send
         """
-        # self.mb.buttonevent(event)
         self.events.append(event)
 
     def get_sprite(self, index):

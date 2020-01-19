@@ -21,9 +21,10 @@ FPS = 60
 
 
 class ScreenRecorder(PyBoyPlugin):
-    def __init__(self, pyboy):
-        self.pyboy = pyboy
-        self.gamename = pyboy.get_cartridge_title()
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.gamename = self.pyboy.get_cartridge_title()
         self.recording = False
         self.frames = []
 
@@ -45,9 +46,6 @@ class ScreenRecorder(PyBoyPlugin):
         # Plugin: Screen Recorder
         if self.recording:
             self.add_frame(self.pyboy.get_screen_image())
-
-    def pre_tick(self):
-        pass
 
     def add_frame(self, frame):
         if Image:

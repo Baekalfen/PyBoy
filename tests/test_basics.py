@@ -14,10 +14,10 @@ from . import utils
 
 tetris_rom = utils.tetris_rom
 any_rom = tetris_rom
-
+test_file = 'test.replay'
 
 def test_record_replay():
-    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=utils.boot_rom, record_input=True)
+    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=utils.boot_rom, record_input=test_file)
     pyboy.tick()
     pyboy.send_input(windowevent.PRESS_ARROW_DOWN)
     pyboy.tick()
@@ -29,7 +29,8 @@ def test_record_replay():
     pyboy.send_input(windowevent.PRESS_ARROW_UP)
     pyboy.tick()
 
-    events = pyboy._get_recorded_input()
+    # The first plugin will be RecordInput
+    events = pyboy.plugin_manager.plugins[0].recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
     frame_no, keys, frame_data = events[0]
     assert frame_no == 1, "We inserted the key on the second frame"
@@ -38,8 +39,6 @@ def test_record_replay():
 
     pyboy.stop(save=False)
 
-    test_file = 'test.replay'
-    main.save_replay(tetris_rom, None, test_file, events)
     with open(test_file, 'rb') as f:
         m = hashlib.sha256()
         m.update(f.read())
