@@ -1,4 +1,4 @@
-FROM python:buster
+FROM python:3.7-buster
 
 RUN apt-get update && apt-get install -y \
   build-essential \
@@ -9,5 +9,4 @@ COPY . /source
 WORKDIR /source
 
 RUN pip install .
-
 WORKDIR /
