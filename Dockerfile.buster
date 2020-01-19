@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y \
   libsdl2-dev \
   && rm -rf /var/lib/apt/lists/*
 
-COPY . /source
-WORKDIR /source
+COPY . /pyboy
+WORKDIR /pyboy
 
 RUN pip install .
 WORKDIR /

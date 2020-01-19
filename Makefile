@@ -28,6 +28,14 @@ build:
 	@echo "Building..."
 	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace
 
+docker-buster:
+	docker build -f Dockerfile.buster . -t pyboy:buster-latest
+	docker run -it pyboy:buster-latest sh -c 'python -m pip install pytest && cd pyboy; DOCKER_TEST=1 python setup.py test'
+
+docker-alpine:
+	docker build -f Dockerfile.alpine . -t pyboy:alpine-latest
+	docker run -it pyboy:alpine-latest sh -c 'python -m pip install pytest && cd pyboy; DOCKER_TEST=1 python setup.py test'
+
 clean:
 	@echo "Cleaning..."
 	CFLAGS=$(CFLAGS) ${PY} setup.py clean --inplace

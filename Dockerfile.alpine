@@ -7,8 +7,8 @@ RUN apk add\
   zlib-dev\
   jpeg-dev
 
-COPY . /source
-WORKDIR /source
+COPY . /pyboy
+WORKDIR /pyboy
 
 RUN pip install .
 WORKDIR /
