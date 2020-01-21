@@ -7,9 +7,11 @@ RUN apk add \
   sdl2-dev \
   zlib-dev
 
-COPY requirements.txt /
+WORKDIR /pyboy
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY setup.py /
-COPY pyboy /pyboy/
-RUN pip install /
+COPY . .
+RUN pip install .
+
+WORKDIR /

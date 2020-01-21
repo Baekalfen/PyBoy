@@ -5,9 +5,11 @@ RUN apt-get update && apt-get install -y \
   libsdl2-dev \
   && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /
+WORKDIR /pyboy
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY setup.py /
-COPY pyboy /pyboy/
-RUN pip install /
+COPY . .
+RUN pip install .
+
+WORKDIR /
