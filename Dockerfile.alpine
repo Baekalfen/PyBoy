@@ -1,17 +1,15 @@
 FROM python:3.7-alpine
 
-RUN apk add\
-  sdl2-dev\
-  sdl2\
-  build-base\
-  zlib-dev\
-  jpeg-dev
+RUN apk add \
+  build-base \
+  jpeg-dev \
+  sdl2 \
+  sdl2-dev \
+  zlib-dev
 
-COPY ./requirements.txt .
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY . /pyboy
-WORKDIR /pyboy
-
+COPY setup.py .
+COPY pyboy /pyboy/
 RUN pip install .
-WORKDIR /
