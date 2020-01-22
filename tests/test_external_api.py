@@ -53,6 +53,7 @@ def test_tiles():
     pyboy.stop(save=False)
 
 
+@pytest.mark.skipif(os.environ.get('TEST_NO_UI'), reason="Skipping test, as there is no UI")
 def test_screen_buffer_and_image():
     for window, dims, cformat, boot_logo_hash_predigested in [
             # These are different because the underlying format is different. We'll test the actual image afterwards.

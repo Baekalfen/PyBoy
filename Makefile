@@ -30,23 +30,27 @@ build:
 
 docker-pypy:
 	docker build -f Dockerfile.pypy . -t pyboy:pypy-latest
-	docker run -it pyboy:pypy-latest sh -c 'pip install pytest && cd pyboy; DOCKER_TEST=1 pypy3 setup.py test'
+	docker run -v ROMs:/pyboy/ROMs -it pyboy:pypy-latest sh -c 'pip install pytest && cd pyboy; DOCKER_TEST=1 TEST_NO_UI=1 pypy3 setup.py test'
 
 docker-pypy-slim:
 	docker build -f Dockerfile.pypy-slim . -t pyboy:pypy-slim-latest
-	docker run -it pyboy:pypy-slim-latest sh -c 'pip install pytest && cd pyboy; DOCKER_TEST=1 pypy3 setup.py test'
+	docker run -v ROMs:/pyboy/ROMs -it pyboy:pypy-slim-latest sh -c 'pip install pytest && cd pyboy; DOCKER_TEST=1 TEST_NO_UI=1 pypy3 setup.py test'
 
 docker-buster:
 	docker build -f Dockerfile.buster . -t pyboy:buster-latest
-	docker run -it pyboy:buster-latest sh -c 'python -m pip install pytest && cd pyboy; DOCKER_TEST=1 python setup.py test'
+	docker run -v ROMs:/pyboy/ROMs -it pyboy:buster-latest sh -c 'python -m pip install pytest && cd pyboy; DOCKER_TEST=1 TEST_NO_UI=1 python setup.py test'
 
 docker-alpine:
 	docker build -f Dockerfile.alpine . -t pyboy:alpine-latest
-	docker run -it pyboy:alpine-latest sh -c 'python -m pip install pytest && cd pyboy; DOCKER_TEST=1 python setup.py test'
+	docker run -v ROMs:/pyboy/ROMs -it pyboy:alpine-latest sh -c 'python -m pip install pytest && cd pyboy; DOCKER_TEST=1 TEST_NO_UI=1 python setup.py test'
 
 docker-ubuntu1804:
 	docker build -f Dockerfile.ubuntu1804 . -t pyboy:ubuntu1804-latest
-	docker run -it pyboy:ubuntu1804-latest sh -c 'python3 -m pip install pytest && cd pyboy; DOCKER_TEST=1 python3 setup.py test'
+	docker run -v ROMs:/pyboy/ROMs -it pyboy:ubuntu1804-latest sh -c 'python3 -m pip install pytest && cd pyboy; DOCKER_TEST=1 TEST_NO_UI=1 python3 setup.py test'
+
+docker-pypy-ubuntu1804:
+	docker build -f Dockerfile.pypy-ubuntu1804 . -t pyboy:pypy-ubuntu1804-latest
+	docker run -v ROMs:/pyboy/ROMs -it pyboy:pypy-ubuntu1804-latest sh -c 'python3 -m pip install pytest && cd pyboy; DOCKER_TEST=1 TEST_NO_UI=1 python3 setup.py test'
 
 clean:
 	@echo "Cleaning..."

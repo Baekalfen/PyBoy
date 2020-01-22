@@ -15,7 +15,7 @@ from pyboy import PyBoy
 from . import utils
 
 if platform.python_implementation() == "PyPy":
-    timeout = 30
+    timeout = 15
 else:
     timeout = 5
 
@@ -46,7 +46,7 @@ def run_rom(args):
             result = (serial_output)
             break
 
-        if time.time() - t > timeout:
+        if frame_limit == -1 and time.time() - t > timeout:
             result = ("Timeout:\n" + serial_output)
             break
         elif frame_count == frame_limit:
@@ -59,23 +59,23 @@ def run_rom(args):
 
 def test_blarggs():
     test_roms = [
-        ("tests/BlarggROMs/instr_timing/instr_timing.gb", -1),
+        ("tests/BlarggROMs/instr_timing/instr_timing.gb", 1500),
         ("tests/BlarggROMs/mem_timing/mem_timing.gb", -1),
         ("tests/BlarggROMs/mem_timing/individual/02-write_timing.gb", -1),
         ("tests/BlarggROMs/mem_timing/individual/01-read_timing.gb", -1),
         ("tests/BlarggROMs/mem_timing/individual/03-modify_timing.gb", -1),
         ("tests/BlarggROMs/cpu_instrs/cpu_instrs.gb", 5000),
-        ("tests/BlarggROMs/cpu_instrs/individual/02-interrupts.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/09-op r,r.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/11-op a,(hl).gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/10-bit ops.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/04-op r,imm.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/01-special.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/06-ld r,r.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/03-op sp,hl.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/08-misc instrs.gb", -1),
-        ("tests/BlarggROMs/cpu_instrs/individual/05-op rp.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/02-interrupts.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/09-op r,r.gb", 1000),
+        ("tests/BlarggROMs/cpu_instrs/individual/11-op a,(hl).gb", 1500),
+        ("tests/BlarggROMs/cpu_instrs/individual/10-bit ops.gb", 1500),
+        ("tests/BlarggROMs/cpu_instrs/individual/04-op r,imm.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/01-special.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/06-ld r,r.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/03-op sp,hl.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/08-misc instrs.gb", 500),
+        ("tests/BlarggROMs/cpu_instrs/individual/05-op rp.gb", 1000),
         # "tests/BlarggROMs/cgb_sound/rom_singles/11-regs after power.gb",
         # "tests/BlarggROMs/cgb_sound/rom_singles/10-wave trigger while on.gb",
         # "tests/BlarggROMs/cgb_sound/rom_singles/09-wave read while on.gb",
