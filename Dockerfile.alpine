@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3-alpine
 
 RUN apk add \
   build-base \
@@ -7,11 +7,11 @@ RUN apk add \
   sdl2-dev \
   zlib-dev
 
+COPY requirements.txt /
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+COPY . /pyboy
 WORKDIR /pyboy
-COPY requirements.txt .
-RUN pip install -r requirements.txt
 
-COPY . .
 RUN pip install .
-
 WORKDIR /

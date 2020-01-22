@@ -20,7 +20,8 @@ else:
     timeout = 5
 
 
-def run_rom(rom):
+def run_rom(args):
+    rom, frame_limit = args
     # logger.info(rom)
     pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True,
                   hide_window=True)
@@ -31,6 +32,7 @@ def run_rom(rom):
     serial_output = ""
     t = time.time()
     result = None
+    frame_count = 0
     while not pyboy.tick():
         b = pyboy.get_serial()
         if b != "":
@@ -47,29 +49,33 @@ def run_rom(rom):
         if time.time() - t > timeout:
             result = ("Timeout:\n" + serial_output)
             break
+        elif frame_count == frame_limit:
+            result = ("Frame limit reached:\n" + serial_output)
+            break
+        frame_count += 1
     pyboy.stop(save=False)
     return result
 
 
 def test_blarggs():
     test_roms = [
-        "tests/BlarggROMs/instr_timing/instr_timing.gb",
-        "tests/BlarggROMs/mem_timing/mem_timing.gb",
-        "tests/BlarggROMs/mem_timing/individual/02-write_timing.gb",
-        "tests/BlarggROMs/mem_timing/individual/01-read_timing.gb",
-        "tests/BlarggROMs/mem_timing/individual/03-modify_timing.gb",
-        "tests/BlarggROMs/cpu_instrs/cpu_instrs.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/02-interrupts.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/09-op r,r.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/11-op a,(hl).gb",
-        "tests/BlarggROMs/cpu_instrs/individual/10-bit ops.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/04-op r,imm.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/01-special.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/06-ld r,r.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/03-op sp,hl.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/08-misc instrs.gb",
-        "tests/BlarggROMs/cpu_instrs/individual/05-op rp.gb",
+        ("tests/BlarggROMs/instr_timing/instr_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing/mem_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing/individual/02-write_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing/individual/01-read_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing/individual/03-modify_timing.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/cpu_instrs.gb", 5000),
+        ("tests/BlarggROMs/cpu_instrs/individual/02-interrupts.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/09-op r,r.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/11-op a,(hl).gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/10-bit ops.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/04-op r,imm.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/01-special.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/06-ld r,r.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/03-op sp,hl.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/08-misc instrs.gb", -1),
+        ("tests/BlarggROMs/cpu_instrs/individual/05-op rp.gb", -1),
         # "tests/BlarggROMs/cgb_sound/rom_singles/11-regs after power.gb",
         # "tests/BlarggROMs/cgb_sound/rom_singles/10-wave trigger while on.gb",
         # "tests/BlarggROMs/cgb_sound/rom_singles/09-wave read while on.gb",
@@ -114,10 +120,10 @@ def test_blarggs():
         # "tests/BlarggROMs/dmg_sound/rom_singles/03-trigger.gb",
         # "tests/BlarggROMs/dmg_sound/rom_singles/06-overflow on trigger.gb",
         # "tests/BlarggROMs/dmg_sound/dmg_sound.gb",
-        "tests/BlarggROMs/mem_timing-2/rom_singles/02-write_timing.gb",
-        "tests/BlarggROMs/mem_timing-2/rom_singles/01-read_timing.gb",
-        "tests/BlarggROMs/mem_timing-2/rom_singles/03-modify_timing.gb",
-        "tests/BlarggROMs/mem_timing-2/mem_timing.gb",
+        ("tests/BlarggROMs/mem_timing-2/rom_singles/02-write_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing-2/rom_singles/01-read_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing-2/rom_singles/03-modify_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing-2/mem_timing.gb", -1),
         # "tests/BlarggROMs/dmg_sound-2/rom_singles/11-regs after power.gb",
         # "tests/BlarggROMs/dmg_sound-2/rom_singles/10-wave trigger while on.gb",
         # "tests/BlarggROMs/dmg_sound-2/rom_singles/12-wave write while on.gb",
@@ -144,19 +150,19 @@ def test_blarggs():
 
             assert len(old_blargg) == len(test_roms)
 
-            for rom in test_roms:
+            for (rom, _) in test_roms:
                 assert old_blargg.get(rom)
 
-            for rom, res in zip(test_roms, results):
+            for (rom, _), res in zip(test_roms, results):
                 assert old_blargg[rom] == res, f"Outputs don't match for {rom}"
 
     with open(blargg_json, "w") as f:
-        json.dump(dict(zip(test_roms, results)), f)
+        json.dump(dict(zip([x for x, _ in test_roms], results)), f)
 
     if not os.environ.get("DOCKER_TEST"):
         with open("../PyBoy.wiki/blargg.md", "w") as f:
             f.write("# Test results for Blargg's test ROMs\n")
             f.write("|ROM|Result|\n")
             f.write("|---|---|\n")
-            for rom, res in zip(test_roms, results):
+            for (rom, _), res in zip(test_roms, results):
                 f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))

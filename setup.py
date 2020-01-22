@@ -12,20 +12,30 @@ from multiprocessing import cpu_count
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
+
+def load_requirements(filename):
+    with open(filename, 'r') as f:
+        return [line.split(';')[0].strip() for line in f.readlines()]
+
+
+requirements = load_requirements('requirements.txt')
+
 CYTHON = platform.python_implementation() != "PyPy"
-
-
-dynamic_requires = (["cython"] if CYTHON else [])
 
 if CYTHON:
     # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
     from setuptools import dist
-    dist.Distribution().fetch_build_eggs(dynamic_requires)
+    dist.Distribution().fetch_build_eggs(["cython"])
 
     from Cython.Build import cythonize
     import Cython.Compiler.Options
     from Cython.Distutils import build_ext
 else:
+    try:
+        requirements.remove('cython')
+    except ValueError:
+        pass
+
     class build_ext(distutils.cmd.Command):
 
         def initialize_options(self):
@@ -258,11 +268,7 @@ setup(
         ],
     },
     cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
-    install_requires=[
-        "numpy",
-        "pillow",
-        "pysdl2",
-    ] + dynamic_requires,
+    install_requires=requirements,
     tests_require=[
         "pytest",
         "pytest-xdist",
