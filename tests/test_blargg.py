@@ -159,7 +159,7 @@ def test_blarggs():
     with open(blargg_json, "w") as f:
         json.dump(dict(zip([x for x, _ in test_roms], results)), f)
 
-    if not os.environ.get("DOCKER_TEST"):
+    if not os.environ.get("TEST_DOCKER"):
         with open("../PyBoy.wiki/blargg.md", "w") as f:
             f.write("# Test results for Blargg's test ROMs\n")
             f.write("|ROM|Result|\n")

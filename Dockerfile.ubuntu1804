@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
   python3-dev \
+  git \
+  valgrind vim \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /
@@ -14,5 +16,6 @@ RUN pip3 install --upgrade pip && pip3 install --no-cache-dir -r requirements.tx
 COPY . /pyboy
 WORKDIR /pyboy
 
-RUN pip3 install .
+RUN git clean -xdf
+RUN make build && pip3 install .
 WORKDIR /

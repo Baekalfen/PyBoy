@@ -66,17 +66,18 @@ class PyTest(test):
         self.test_args = []
 
     def run_tests(self):
-        script_path = os.path.dirname(os.path.realpath(__file__))
-        return_code = subprocess.Popen(
-            f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
-        ).wait()
-        if return_code != 0:
-            sys.exit(return_code)
+        if not os.environ.get("TEST_NO_EXAMPLES"):
+            script_path = os.path.dirname(os.path.realpath(__file__))
+            return_code = subprocess.Popen(
+                f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
+            ).wait()
+            if return_code != 0:
+                sys.exit(return_code)
 
-        return_code = subprocess.Popen(
-            f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
-        if return_code != 0:
-            sys.exit(return_code)
+            return_code = subprocess.Popen(
+                f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
+            if return_code != 0:
+                sys.exit(return_code)
 
         import pytest
         args = [f"-n{cpu_count()}", "-v"]
