@@ -104,12 +104,12 @@ class clean(_clean):
 
             for root, dirs, files in os.walk(ROOT_DIR):
                 if "__pycache__" in dirs:
-                    log.info(f"Removing: {os.path.join(root, '__pycache__')}")
+                    log.info(f"removing: {os.path.join(root, '__pycache__')}")
                     remove_tree(os.path.join(root, "__pycache__"))
                 for f in files:
                     if os.path.splitext(f)[1] in (".pyo", ".pyc", ".pyd", ".so", ".c", ".h",
                                                   ".dll", ".lib", ".exp", ".html"):
-                        print(f"Removing: {os.path.join(root, f)}")
+                        print(f"removing: {os.path.join(root, f)}")
                         os.remove(os.path.join(root, f))
 
 

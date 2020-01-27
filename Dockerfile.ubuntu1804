@@ -13,9 +13,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /
 RUN pip3 install --upgrade pip && pip3 install --no-cache-dir -r requirements.txt
 
-COPY . /pyboy
+ADD pyboy.tar.gz /pyboy/
 WORKDIR /pyboy
 
-RUN git clean -xdf
-RUN make build && pip3 install .
+RUN pip3 install .
 WORKDIR /

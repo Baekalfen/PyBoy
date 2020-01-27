@@ -4,7 +4,6 @@
 #
 
 import json
-import multiprocessing as mp
 import os.path
 # TODO: The timeout should be emulator-cycle based
 import platform
@@ -60,10 +59,10 @@ def run_rom(args):
 def test_blarggs():
     test_roms = [
         ("tests/BlarggROMs/instr_timing/instr_timing.gb", 1500),
-        ("tests/BlarggROMs/mem_timing/mem_timing.gb", -1),
-        ("tests/BlarggROMs/mem_timing/individual/02-write_timing.gb", -1),
-        ("tests/BlarggROMs/mem_timing/individual/01-read_timing.gb", -1),
-        ("tests/BlarggROMs/mem_timing/individual/03-modify_timing.gb", -1),
+        ("tests/BlarggROMs/mem_timing/mem_timing.gb", 430),
+        ("tests/BlarggROMs/mem_timing/individual/02-write_timing.gb", 500),
+        ("tests/BlarggROMs/mem_timing/individual/01-read_timing.gb", 500),
+        ("tests/BlarggROMs/mem_timing/individual/03-modify_timing.gb", 500),
         ("tests/BlarggROMs/cpu_instrs/cpu_instrs.gb", 5000),
         ("tests/BlarggROMs/cpu_instrs/individual/02-interrupts.gb", 500),
         ("tests/BlarggROMs/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", 500),
@@ -120,10 +119,10 @@ def test_blarggs():
         # "tests/BlarggROMs/dmg_sound/rom_singles/03-trigger.gb",
         # "tests/BlarggROMs/dmg_sound/rom_singles/06-overflow on trigger.gb",
         # "tests/BlarggROMs/dmg_sound/dmg_sound.gb",
-        ("tests/BlarggROMs/mem_timing-2/rom_singles/02-write_timing.gb", -1),
-        ("tests/BlarggROMs/mem_timing-2/rom_singles/01-read_timing.gb", -1),
-        ("tests/BlarggROMs/mem_timing-2/rom_singles/03-modify_timing.gb", -1),
-        ("tests/BlarggROMs/mem_timing-2/mem_timing.gb", -1),
+        # ("tests/BlarggROMs/mem_timing-2/rom_singles/02-write_timing.gb", -1),
+        # ("tests/BlarggROMs/mem_timing-2/rom_singles/01-read_timing.gb", -1),
+        # ("tests/BlarggROMs/mem_timing-2/rom_singles/03-modify_timing.gb", -1),
+        # ("tests/BlarggROMs/mem_timing-2/mem_timing.gb", -1),
         # "tests/BlarggROMs/dmg_sound-2/rom_singles/11-regs after power.gb",
         # "tests/BlarggROMs/dmg_sound-2/rom_singles/10-wave trigger while on.gb",
         # "tests/BlarggROMs/dmg_sound-2/rom_singles/12-wave write while on.gb",
@@ -139,8 +138,12 @@ def test_blarggs():
         # "tests/BlarggROMs/dmg_sound-2/dmg_sound.gb",
     ]
 
-    pool = mp.Pool(mp.cpu_count())
-    results = pool.map(run_rom, test_roms)
+    if os.environ.get("TEST_DOCKER"):
+        results = list(map(run_rom, test_roms))
+    else:
+        import multiprocessing as mp
+        pool = mp.Pool(mp.cpu_count())
+        results = pool.map(run_rom, test_roms)
 
     blargg_json = "tests/blargg.json"
 
