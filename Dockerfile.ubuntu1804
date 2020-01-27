@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /
 RUN pip3 install --upgrade pip && pip3 install --no-cache-dir -r requirements.txt
 
-ADD . /pyboy
+COPY . /pyboy
 WORKDIR /pyboy
 
 RUN pip3 install .
