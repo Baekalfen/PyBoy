@@ -15,7 +15,7 @@ ENV PATH="/$pypy_version/bin:${PATH}"
 COPY requirements.txt /
 RUN pypy3 -m ensurepip && pypy3 -m pip install --upgrade pip && pypy3 -m pip install --no-cache-dir -r requirements.txt
 
-ADD pyboy.tar.gz /pyboy/
+ADD . /pyboy
 WORKDIR /pyboy
 
 RUN pypy3 -m pip install .
