@@ -133,3 +133,5 @@ bootrom/bootrom.sym
 bootrom/logo.asm
 bootrom/pyboy.png
 bootrom/PYBOY_ROM.bin
+
+pyboy.tar.gz

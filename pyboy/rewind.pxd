@@ -5,6 +5,7 @@
 
 cimport cython
 
+from libc.stdlib cimport malloc, free
 from libc.stdint cimport uint8_t, uint64_t, int64_t
 
 cdef int64_t FIXED_BUFFER_SIZE = 64*1024*128
@@ -13,6 +14,12 @@ cdef int64_t FILL_VALUE
 
 DEF FIXED_BUFFER_SIZE = 64*1024*128
 DEF FIXED_BUFFER_MIN_ALLOC = 64*1024
+
+cdef inline uint8_t* _malloc(size_t n):
+    return <uint8_t*> malloc(FIXED_BUFFER_SIZE)
+
+cdef inline void _free(uint8_t* pointer):
+    free(<void *> pointer)
 
 cdef class IntIOInterface:
     cdef int64_t write(self, uint8_t)
@@ -32,7 +39,7 @@ cdef class IntIOWrapper(IntIOInterface):
 ##############################################################
 
 cdef class FixedAllocBuffers(IntIOInterface):
-    cdef uint8_t[FIXED_BUFFER_SIZE] buffer
+    cdef uint8_t* buffer
     cdef list sections
     cdef int64_t current_section
     cdef int64_t tail_pointer

@@ -6,7 +6,6 @@
 import hashlib
 import io
 import os
-from functools import reduce
 
 import numpy as np
 import PIL
@@ -53,6 +52,7 @@ def test_tiles():
     pyboy.stop(save=False)
 
 
+@pytest.mark.skipif(os.environ.get('TEST_NO_UI'), reason="Skipping test, as there is no UI")
 def test_screen_buffer_and_image():
     for window, dims, cformat, boot_logo_hash_predigested in [
             # These are different because the underlying format is different. We'll test the actual image afterwards.
@@ -244,8 +244,11 @@ def test_tetris():
                 assert first_brick
 
                 # Test that all tiles says 'low' tile data, as sprites cannot use high tile data
-                assert not reduce(lambda x, y: x | y, [s.tiles[0].index[0]
-                                                       for s in [pyboy.get_sprite(n) for n in range(40)]], False)
+                # NOTE: Would have used reduce, but Cython on Ubuntu 18.04 didn't like it
+                all_low = False
+                for s in [pyboy.get_sprite(n) for n in range(40)]:
+                    all_low |= s.tiles[0].index[0]
+                assert not all_low
 
                 s1 = pyboy.get_sprite(0)
                 s2 = pyboy.get_sprite(1)

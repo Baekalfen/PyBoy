@@ -8,6 +8,7 @@ The core module of the emulator
 """
 
 import base64
+import os
 import time
 
 import numpy as np
@@ -67,6 +68,8 @@ class PyBoy:
             record_input (bool): Enable input recording (internal use).
             disable_input (bool): Enable to ignore all user input.
         """
+        if not os.path.isfile(gamerom_file):
+            raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
         self.gamerom_file = gamerom_file
 
         self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)

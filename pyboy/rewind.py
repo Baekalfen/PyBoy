@@ -5,7 +5,23 @@
 
 import array
 
-FIXED_BUFFER_SIZE = 64*1024*128
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
+
+if not cythonmode:
+    exec("""
+def _malloc(n):
+    return array.array('B', [0]*(FIXED_BUFFER_SIZE))
+
+def _free(_):
+    pass
+""", globals(), locals())
+
+
+FIXED_BUFFER_SIZE = 32*1024*128
 FIXED_BUFFER_MIN_ALLOC = 64*1024
 FILL_VALUE = 123
 
@@ -73,7 +89,9 @@ class IntIOWrapper(IntIOInterface):
 
 class FixedAllocBuffers(IntIOInterface):
     def __init__(self):
-        self.buffer = array.array('B', [FILL_VALUE]*(FIXED_BUFFER_SIZE))
+        self.buffer = _malloc(FIXED_BUFFER_SIZE) # NOQA: F821
+        for n in range(FIXED_BUFFER_SIZE):
+            self.buffer[n] = FILL_VALUE
         self.sections = [0]
         self.current_section = 0
         self.tail_pointer = 0
@@ -82,6 +100,9 @@ class FixedAllocBuffers(IntIOInterface):
         self.section_tail = 0
         self.section_pointer = 0
         self.avg_section_size = 0.0
+
+    def stop(self):
+        _free(self.buffer) # NOQA: F821
 
     def flush(self):
         pass

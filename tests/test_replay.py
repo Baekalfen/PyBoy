@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import time
 import zlib
 
 import numpy as np
@@ -40,8 +41,15 @@ def verify_rom_hash(rom_file, b64_target_hash):
 
 def move_gif(game, dest):
     record_dir = 'recordings'
-    gif = sorted(filter(lambda x: game in x, os.listdir(record_dir)))[-1]
-    os.replace(record_dir + '/' + gif, dest)
+    for _ in range(3):
+        try:
+            gif = sorted(filter(lambda x: game in x, os.listdir(record_dir)))[-1]
+            os.replace(record_dir + '/' + gif, dest)
+            break
+        except:
+            time.sleep(1)
+    else:
+        raise FileNotFoundError(f"Couldn't find gif to move for game {game}")
 
 
 def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, enable_rewind=False):

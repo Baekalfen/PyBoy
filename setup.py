@@ -12,14 +12,30 @@ from multiprocessing import cpu_count
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
+
+def load_requirements(filename):
+    with open(filename, 'r') as f:
+        return [line.split(';')[0].strip() for line in f.readlines()]
+
+
+requirements = load_requirements('requirements.txt')
+
 CYTHON = platform.python_implementation() != "PyPy"
 
-
 if CYTHON:
+    # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
+    from setuptools import dist
+    dist.Distribution().fetch_build_eggs(["cython"])
+
     from Cython.Build import cythonize
     import Cython.Compiler.Options
     from Cython.Distutils import build_ext
 else:
+    try:
+        requirements.remove('cython')
+    except ValueError:
+        pass
+
     class build_ext(distutils.cmd.Command):
 
         def initialize_options(self):
@@ -50,17 +66,18 @@ class PyTest(test):
         self.test_args = []
 
     def run_tests(self):
-        script_path = os.path.dirname(os.path.realpath(__file__))
-        return_code = subprocess.Popen(
-            f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
-        ).wait()
-        if return_code != 0:
-            sys.exit(return_code)
+        if not os.environ.get("TEST_NO_EXAMPLES"):
+            script_path = os.path.dirname(os.path.realpath(__file__))
+            return_code = subprocess.Popen(
+                f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
+            ).wait()
+            if return_code != 0:
+                sys.exit(return_code)
 
-        return_code = subprocess.Popen(
-            f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
-        if return_code != 0:
-            sys.exit(return_code)
+            return_code = subprocess.Popen(
+                f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
+            if return_code != 0:
+                sys.exit(return_code)
 
         import pytest
         args = [f"-n{cpu_count()}", "-v"]
@@ -87,12 +104,12 @@ class clean(_clean):
 
             for root, dirs, files in os.walk(ROOT_DIR):
                 if "__pycache__" in dirs:
-                    log.info(f"Removing: {os.path.join(root, '__pycache__')}")
+                    log.info(f"removing: {os.path.join(root, '__pycache__')}")
                     remove_tree(os.path.join(root, "__pycache__"))
                 for f in files:
                     if os.path.splitext(f)[1] in (".pyo", ".pyc", ".pyd", ".so", ".c", ".h",
                                                   ".dll", ".lib", ".exp", ".html"):
-                        print(f"Removing: {os.path.join(root, f)}")
+                        print(f"removing: {os.path.join(root, f)}")
                         os.remove(os.path.join(root, f))
 
 
@@ -252,11 +269,7 @@ setup(
         ],
     },
     cmdclass={'build_ext': build_ext, 'clean': clean, 'test': PyTest},
-    install_requires=(["cython"] if CYTHON else []) + [
-        "pysdl2",
-        "numpy",
-        "Pillow",
-    ],
+    install_requires=requirements,
     tests_require=[
         "pytest",
         "pytest-xdist",

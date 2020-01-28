@@ -36,7 +36,8 @@ class OpenGLWindow(SDLWindow):
         self.color_format = u"RGB"
         self.buffer_dims = (144, 160)
 
-        glutInit()
+        if not glutInit():
+            raise Exception("OpenGL couldn't initialize!")
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*self._scaledresolution)
         glutCreateWindow("PyBoy")
