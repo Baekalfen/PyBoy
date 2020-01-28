@@ -21,4 +21,4 @@ tests/BlarggROMs
 **/*.gbc
 **/*.bin
 **/*.rom
-!bootrom.bin
+!pyboy/core/bootrom.bin
