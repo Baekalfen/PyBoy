@@ -19,3 +19,6 @@ tests/BlarggROMs
 **/*.html
 **/*.gb
 **/*.gbc
+**/*.bin
+**/*.rom
+!bootrom.bin
