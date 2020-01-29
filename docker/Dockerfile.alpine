@@ -1,0 +1,17 @@
+FROM python:3-alpine
+
+RUN apk add \
+  build-base \
+  jpeg-dev \
+  sdl2 \
+  sdl2-dev \
+  zlib-dev
+
+COPY requirements.txt /
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+COPY . /pyboy
+WORKDIR /pyboy
+
+RUN pip install .
+WORKDIR /

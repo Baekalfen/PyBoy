@@ -18,6 +18,7 @@ from .screenrecorder import ScreenRecorder
 
 plugins = [DisableInput, AutoPause, RecordReplay, Rewind, ScreenRecorder]
 
+
 def get_parser_arguments():
     for p in plugins:
         yield p.argv
@@ -39,7 +40,7 @@ class PluginManager(PyBoyPlugin):
 
     def pre_tick(self):
         for p in self.plugins:
-             p.pre_tick()
+            p.pre_tick()
 
     def post_tick(self):
         for p in self.plugins:
@@ -48,7 +49,7 @@ class PluginManager(PyBoyPlugin):
     def window_title(self):
         title = ""
         for p in self.plugins:
-            title += p.handle_events()
+            title += p.window_title()
         return title
 
     def stop(self):

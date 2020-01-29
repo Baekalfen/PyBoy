@@ -7,6 +7,7 @@
 The core module of the emulator
 """
 
+import os
 import time
 
 from pyboy.plugins.manager import PluginManager
@@ -69,6 +70,8 @@ class PyBoy:
             enable_rewind (bool): Enable the rewind feature.
             color_palette (tuple): Specify the color palette to use for rendering.
         """
+        if not os.path.isfile(gamerom_file):
+            raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
         self.gamerom_file = gamerom_file
 
         window_color_format, window_class = get_window(**kwargs)
@@ -189,13 +192,16 @@ class PyBoy:
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.events = []
 
-
     def update_window_title(self, append_text):
-        if self.paused :
+        if self.paused:
             text = "[PAUSED]"
         else:
-            text = "CPU/frame: %0.2f%% Emulation: x%d" % ((self.avg_pre + self.avg_tick)/SPF*100, round(SPF/(self.avg_pre + self.avg_tick + self.avg_post)))
-        self.window.set_title(text + append_text)
+            avg_emu = self.avg_pre + self.avg_tick + self.avg_post
+            text = "CPU/frame: %0.2f%% Emulation: x%d" % (
+                (self.avg_pre + self.avg_tick)/SPF*100,
+                round(SPF/avg_emu) if avg_emu != 0 else 0
+            )
+        self.window.set_title(text)
 
     def __del__(self):
         self.stop(save=False)

@@ -31,7 +31,8 @@ class OpenGLWindow(BaseWindow):
     def __init__(self, renderer, scale, color_palette, hide_window):
         super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
 
-        glutInit()
+        if not glutInit():
+            raise Exception("OpenGL couldn't initialize!")
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*self._scaledresolution)
         glutCreateWindow("PyBoy")
