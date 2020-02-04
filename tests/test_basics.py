@@ -5,7 +5,9 @@
 import base64
 import hashlib
 import os
+from unittest import mock
 
+import pytest
 from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy import windowevent
@@ -69,24 +71,30 @@ def test_profiling():
     pyboy.stop(save=False)
 
 
-def test_argv_parser():
+def test_argv_parser(*args):
     parser = main.parser
 
+    # Check error when ROM doesn't exist
+    with pytest.raises(FileNotFoundError):
+        parser.parse_args('not_a_rom_file_that_would_exist.rom'.split(' '))
+
+
+    file_that_exists = "setup.py"
     # Check defaults
-    empty = parser.parse_args(''.split(' ')).__dict__
+    empty = parser.parse_args(file_that_exists.split(' ')).__dict__
     for k, v in {
-            "ROM": '', "autopause": False, "bootrom": None, "debug": False, "loadstate": None, "no_input": False,
-            "no_logger": False, "profiling": False, "record_input": None, "rewind": False, "scale": 3, "window": 'SDL2'
+            "ROM": file_that_exists, "autopause": False, "bootrom": None, "debug": False, "loadstate": None, "no_input": False,
+            "no_logger": False, "profiling": False, "record_input": None, "rewind": False, "scale": 3, "window_type": 'SDL2'
             }.items():
         assert empty[k] == v
 
     # Check the assumed behavior of loadstate with and without argument
-    assert parser.parse_args(''.split(' ')).loadstate is None
-    assert parser.parse_args('rom --loadstate'.split(' ')).loadstate == ''
-    assert parser.parse_args('rom --loadstate abc.file'.split(' ')).loadstate == 'abc.file'
+    assert parser.parse_args(file_that_exists.split(' ')).loadstate is None
+    assert parser.parse_args(f'{file_that_exists} --loadstate'.split(' ')).loadstate == main.INTERNAL_LOADSTATE
+    assert parser.parse_args(f'{file_that_exists} --loadstate {file_that_exists}'.split(' ')).loadstate == file_that_exists
 
     # Check flags become True
-    flags = parser.parse_args('rom --debug --autopause --profiling --rewind --no-input --no-logger'.split(' ')).__dict__
+    flags = parser.parse_args(f'{file_that_exists} --debug --autopause --profiling --rewind --no-input --no-logger'.split(' ')).__dict__
     for k, v in {"autopause": True, "debug": True, "no_input": True, "no_logger": True, "profiling": True,
             "rewind": True}.items():
         assert flags[k] == v

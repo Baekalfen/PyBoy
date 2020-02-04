@@ -20,7 +20,10 @@ class RecordReplay(PyBoyPlugin):
     def __init__(self, *args):
         super().__init__(*args)
 
-        if not self.kwargs.get("loadstate"):
+        if not self.enabled():
+            return
+
+        if not self.argv.get("loadstate"):
             logger.warning("To replay input consistently later, it is recommended to load a state at boot. This will be"
                            "embedded into the .replay file.")
 
@@ -37,10 +40,10 @@ class RecordReplay(PyBoyPlugin):
         return events
 
     def stop(self):
-        save_replay(self.pyboy.gamerom_file, self.kwargs.get("loadstate"), self.kwargs.get("record_input"), self.recorded_input)
+        save_replay(self.pyboy.gamerom_file, self.argv.get("loadstate"), self.argv.get("record_input"), self.recorded_input)
 
     def enabled(self):
-        return self.kwargs.get('record_input')
+        return self.argv.get('record_input')
 
 
 def save_replay(rom, loadstate, replay_file, recorded_input):

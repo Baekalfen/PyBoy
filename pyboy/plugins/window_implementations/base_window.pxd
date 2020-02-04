@@ -24,7 +24,6 @@ cdef class BaseWindow:
 
     cdef public uint32_t[4] color_palette
     cdef unsigned int alphamask
-    cdef unicode color_format
     cdef (int, int) buffer_dims
 
     cdef void set_title(self, unicode)

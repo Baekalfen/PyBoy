@@ -12,4 +12,4 @@ class DisableInput(PyBoyPlugin):
         return []
 
     def enabled(self):
-        return self.kwargs.get('no_input')
+        return self.argv.get('no_input')

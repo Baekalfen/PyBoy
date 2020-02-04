@@ -19,17 +19,24 @@ from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_
                          glutSpecialUpFunc)
 from pyboy import windowevent
 from pyboy.logger import logger
-
-from . import BaseWindow
+from pyboy.plugins.base_plugin import PyBoyPlugin
 
 ROWS, COLS = 144, 160
 
 
-class OpenGLWindow(BaseWindow):
-    color_format = u"RGBA"
+class OpenGLWindow(PyBoyPlugin):
+    def __init__(self, pyboy, argv):
+        super().__init__(pyboy, argv)
 
-    def __init__(self, renderer, scale, color_palette, hide_window):
-        super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
+        if not self.enabled():
+            return
+
+        self.renderer = pyboy.mb.renderer
+        self._scale = argv.get("scale")
+        logger.info("%s initialization" % self.__class__.__name__)
+
+        self._scaledresolution = (self._scale * COLS, self._scale * ROWS)
+        logger.info('Scale: x%s %s' % (self._scale, self._scaledresolution))
 
         if not glutInit():
             raise Exception("OpenGL couldn't initialize!")
@@ -46,7 +53,7 @@ class OpenGLWindow(BaseWindow):
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
 
-        if hide_window:
+        if argv.get("hide_window"):
             logger.warning("Hiding the window is not supported in OpenGL")
 
     # Cython does not cooperate with lambdas
@@ -65,10 +72,10 @@ class OpenGLWindow(BaseWindow):
     def set_title(self, title):
         glutSetWindowTitle(title)
 
-    def get_events(self):
-        evts = self.events
+    def handle_events(self, events):
+        events += self.events
         self.events = []
-        return evts
+        return events
 
     def _glkeyboardspecial(self, c, x, y, up):
         if up:
@@ -136,7 +143,10 @@ class OpenGLWindow(BaseWindow):
         glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
 
-    def update_display(self, paused):
+    def enabled(self):
+        return self.argv.get('window_type') == 'OpenGL'
+
+    def post_tick(self):
         self._gldraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 

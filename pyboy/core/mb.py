@@ -13,7 +13,7 @@ STATE_VERSION = 2
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, color_palette, color_format, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -27,7 +27,8 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD()
-        self.renderer = lcd.Renderer(color_palette, color_format)
+        self.renderer = lcd.Renderer(color_palette, "RGBA")
+        self.disable_renderer = disable_renderer
         self.bootrom_enabled = True
         self.serialbuffer = u''
 
@@ -126,7 +127,8 @@ class Motherboard:
     def tickframe(self):
         lcdenabled = self.lcd.LCDC.lcd_enable
         if lcdenabled:
-            self.renderer.update_cache(self.lcd)
+            if not self.disable_renderer:
+                self.renderer.update_cache(self.lcd)
 
             # TODO: the 19, 41 and 49._ticks should correct for longer instructions
             # Iterate the 144 lines on screen
@@ -147,7 +149,8 @@ class Motherboard:
                 self.calculate_cycles(206)
 
             self.cpu.set_interruptflag(VBLANK)
-            self.renderer.render_screen(self.lcd)
+            if not self.disable_renderer:
+                self.renderer.render_screen(self.lcd)
 
             # Wait for next frame
             for y in range(144, 154):

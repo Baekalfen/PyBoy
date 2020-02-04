@@ -11,7 +11,6 @@ import os
 import time
 
 from pyboy.plugins.manager import PluginManager
-from pyboy.plugins.window import get_window
 
 from . import botsupport, windowevent
 from .core.mb import Motherboard
@@ -22,23 +21,20 @@ addconsolehandler()
 
 SPF = 1/60. # inverse FPS (frame-per-second)
 
+defaults = {
+    "color_palette": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
+    "scale": 3,
+    "window_type": "SDL2",
+}
+
 
 class PyBoy:
     def __init__(
                 self,
                 gamerom_file, *,
-                # default_ram_file=None,
-                # default_state_file=None,
-                # window_type=None,
-                # window_scale=3,
                 bootrom_file=None,
-                # autopause=False,
-                # debugging=False,
                 profiling=False,
-                # disable_input=False,
-                # hide_window=False,
-                # enable_rewind=False,
-                color_palette=(0xFFFFFF, 0x999999, 0x555555, 0x000000),
+                disable_renderer=False,
                 **kwargs
             ):
         """
@@ -59,28 +55,21 @@ class PyBoy:
             gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
 
         Kwargs:
-            window_type (str): Specify one of the supported window types. If unsure, specify `None` to get the default.
-            window_scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
-            debugging (bool): Whether or not to enable some extended debugging features.
             profiling (bool): Profile the emulator and report opcode usage (internal use).
-            disable_input (bool): Enable to ignore all user input.
-            # hide_window (bool): Hide game windows (internal use).
-            enable_rewind (bool): Enable the rewind feature.
+            disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
         """
+
+        for k,v in defaults.items():
+            if k not in kwargs:
+                kwargs[k] = kwargs.get(k, defaults[k])
+
         if not os.path.isfile(gamerom_file):
             raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
         self.gamerom_file = gamerom_file
 
-        window_color_format, window_class = get_window(**kwargs)
-        self.mb = Motherboard(gamerom_file, bootrom_file, color_palette, window_color_format, profiling=profiling)
-        self.window = window_class(self.mb.renderer, color_palette)
-
-        # TODO: Get rid of this extra step
-        # if debugging:
-        #     self.window.set_lcd(self.mb.lcd)
+        self.mb = Motherboard(gamerom_file, bootrom_file, kwargs["color_palette"], disable_renderer, profiling=profiling)
 
         # Performance measures
         self.avg_pre = 0
@@ -95,6 +84,8 @@ class PyBoy:
         # self.autopause = autopause
         self.events = []
         self.done = False
+        self.window_title = ""
+        self.window_title_disabled = False
 
         ###################
         # Plugins
@@ -136,7 +127,6 @@ class PyBoy:
 
     def handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
-        events = self.window.handle_events(events)
         events = self.plugin_manager.handle_events(events)
 
         for event in events:
@@ -177,31 +167,22 @@ class PyBoy:
         self.plugin_manager.pre_tick()
 
     def post_tick(self):
+        if not self.window_title_disabled and self.frame_count % 60 == 0:
+            self.update_window_title()
         self.plugin_manager.post_tick()
-        self.window.update_display(self.paused)
-
-        if self.paused:
-            self.window.frame_limiter(1)
-        elif self.target_emulationspeed > 0:
-            self.window.frame_limiter(self.target_emulationspeed)
-
-        if self.frame_count % 60 == 0:
-            append_text = self.plugin_manager.window_title()
-            self.update_window_title(append_text)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.events = []
 
-    def update_window_title(self, append_text):
+    def update_window_title(self):
         if self.paused:
-            text = "[PAUSED]"
+            self.window_title = "[PAUSED]"
         else:
             avg_emu = self.avg_pre + self.avg_tick + self.avg_post
-            text = "CPU/frame: %0.2f%% Emulation: x%d" % (
-                (self.avg_pre + self.avg_tick)/SPF*100,
-                round(SPF/avg_emu) if avg_emu != 0 else 0
-            )
-        self.window.set_title(text)
+            self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick)/SPF*100)
+            self.window_title += "Emulation: x%d" % (round(SPF/avg_emu) if avg_emu != 0 else 0)
+            self.window_title += self.plugin_manager.window_title()
+
 
     def __del__(self):
         self.stop(save=False)
@@ -219,7 +200,6 @@ class PyBoy:
         logger.info("###########################")
         self.plugin_manager.stop()
         self.mb.stop(save)
-        self.window.stop()
 
     def _get_cpu_hitrate(self):
         logger.warning("You are calling an internal function. The output and the function is subject to change.")
@@ -448,7 +428,7 @@ class PyBoy:
         """
         Disable window title updates. These are output to the log, when in `headless` or `dummy` mode.
         """
-        self.window.disable_title()
+        self.window_title_disabled = True
 
     def set_emulation_speed(self, target_speed):
         """

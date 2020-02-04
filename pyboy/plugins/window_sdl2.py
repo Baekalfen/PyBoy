@@ -6,8 +6,7 @@
 import sdl2
 import sdl2.ext
 from pyboy import windowevent
-
-from .base_window import BaseWindow
+from pyboy.plugins.base_plugin import BaseWindowPlugin
 
 ROWS, COLS = 144, 160
 
@@ -53,11 +52,12 @@ KEY_UP = {
 }
 
 
-class SDLWindow(BaseWindow):
-    color_format = u"ABGR"
+class SDLWindow(BaseWindowPlugin):
+    def __init__(self, pyboy, argv):
+        super().__init__(pyboy, argv)
 
-    def __init__(self, renderer, scale, color_palette, hide_window):
-        BaseWindow.__init__(self, renderer, scale, color_palette, hide_window)
+        if not self.enabled():
+            return
 
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
         self._ticks = sdl2.SDL_GetTicks()
@@ -73,18 +73,16 @@ class SDLWindow(BaseWindow):
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
-            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32,
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888,
             sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS)
 
-        self.blank_screen()
-
-        if hide_window:
+        if argv.get("hide_window"):
             sdl2.SDL_HideWindow(self._window)
         else:
             sdl2.SDL_ShowWindow(self._window)
 
-    def set_title(self, title):
-        sdl2.SDL_SetWindowTitle(self._window, title.encode())
+    # def set_title(self, title):
+    #     sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
     def handle_events(self, events):
         # Feed events into the loop
@@ -104,9 +102,17 @@ class SDLWindow(BaseWindow):
 
         return events
 
-    def update_display(self, paused):
-        if not paused:
+    def post_tick(self):
+        if not self.pyboy.paused:
             self._update_display()
+
+        if self.pyboy.paused:
+            self.frame_limiter(1)
+        elif self.pyboy.target_emulationspeed > 0:
+            self.frame_limiter(self.pyboy.target_emulationspeed)
+
+    def enabled(self):
+        return self.argv.get('window_type') == 'SDL2' or self.argv.get('window_type') is None
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()

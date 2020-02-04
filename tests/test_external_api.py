@@ -54,55 +54,50 @@ def test_tiles():
 
 @pytest.mark.skipif(os.environ.get('TEST_NO_UI'), reason="Skipping test, as there is no UI")
 def test_screen_buffer_and_image():
-    for window, cformat, boot_logo_hash_predigested in [
-            # These are different because the underlying format is different. We'll test the actual image afterwards.
-            ("SDL2", 'ABGR',
-                b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'),
-            ("headless", 'RGBA',
-                b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|'),
-            ("OpenGL", 'RGBA',
-                b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|')
-            ]:
+    cformat = 'RGBA'
+    boot_logo_hash_predigested = b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'
+    boot_logo_hash_predigested = b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|'
+    window = "headless"
 
-        pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True,
-                      hide_window=True)
-        pyboy.set_emulation_speed(0)
-        for n in range(275): # Iterate to boot logo
-            pyboy.tick()
+    pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True,
+                  hide_window=True)
+    pyboy.set_emulation_speed(0)
+    for n in range(275): # Iterate to boot logo
+        pyboy.tick()
 
-        assert pyboy.get_raw_screen_buffer_dims() == (160, 144)
-        assert pyboy.get_raw_screen_buffer_format() == cformat
+    assert pyboy.get_raw_screen_buffer_dims() == (160, 144)
+    assert pyboy.get_raw_screen_buffer_format() == cformat
 
-        boot_logo_hash = hashlib.sha256()
-        boot_logo_hash.update(pyboy.get_raw_screen_buffer())
-        assert boot_logo_hash.digest() == boot_logo_hash_predigested
-        assert isinstance(pyboy.get_raw_screen_buffer(), bytes)
+    boot_logo_hash = hashlib.sha256()
+    boot_logo_hash.update(pyboy.get_raw_screen_buffer())
+    assert boot_logo_hash.digest() == boot_logo_hash_predigested
+    assert isinstance(pyboy.get_raw_screen_buffer(), bytes)
 
-        # The output of `get_screen_image` is supposed to be homogeneous, which means a shared hash between versions.
-        boot_logo_png_hash_predigested = (
-                b'\x1b\xab\x90r^\xfb\x0e\xef\xf1\xdb\xf8\xba\xb6:^\x01'
-                b'\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$'
-            )
-        boot_logo_png_hash = hashlib.sha256()
-        image = pyboy.get_screen_image()
-        assert isinstance(image, PIL.Image.Image)
-        image_data = io.BytesIO()
-        image.save(image_data, format='BMP')
-        boot_logo_png_hash.update(image_data.getvalue())
-        assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
+    # The output of `get_screen_image` is supposed to be homogeneous, which means a shared hash between versions.
+    boot_logo_png_hash_predigested = (
+            b'\x1b\xab\x90r^\xfb\x0e\xef\xf1\xdb\xf8\xba\xb6:^\x01'
+            b'\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$'
+        )
+    boot_logo_png_hash = hashlib.sha256()
+    image = pyboy.get_screen_image()
+    assert isinstance(image, PIL.Image.Image)
+    image_data = io.BytesIO()
+    image.save(image_data, format='BMP')
+    boot_logo_png_hash.update(image_data.getvalue())
+    assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
 
-        # get_screen_ndarray
-        numpy_hash = hashlib.sha256()
-        numpy_array = np.ascontiguousarray(pyboy.get_screen_ndarray())
-        assert isinstance(pyboy.get_screen_ndarray(), np.ndarray)
-        assert numpy_array.shape == (144, 160, 3)
-        numpy_hash.update(numpy_array.tobytes())
-        assert numpy_hash.digest() == (
-                b'\r\t\x87\x131\xe8\x06\x82\xcaO=\n\x1e\xa2K$'
-                b'\xd6\x8e\x91R( H7\xd8a*B+\xc7\x1f\x19'
-            )
+    # get_screen_ndarray
+    numpy_hash = hashlib.sha256()
+    numpy_array = np.ascontiguousarray(pyboy.get_screen_ndarray())
+    assert isinstance(pyboy.get_screen_ndarray(), np.ndarray)
+    assert numpy_array.shape == (144, 160, 3)
+    numpy_hash.update(numpy_array.tobytes())
+    assert numpy_hash.digest() == (
+            b'\r\t\x87\x131\xe8\x06\x82\xcaO=\n\x1e\xa2K$'
+            b'\xd6\x8e\x91R( H7\xd8a*B+\xc7\x1f\x19'
+        )
 
-        pyboy.stop(save=False)
+    pyboy.stop(save=False)
 
 
 def test_tetris():

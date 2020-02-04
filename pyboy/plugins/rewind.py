@@ -64,7 +64,9 @@ class Rewind(PyBoyPlugin):
                         self.pyboy.mb.load_state(self.rewind_buffer)
                         # self.pyboy.mb.renderer.update_cache(self.pyboy.mb.lcd)
                         self.pyboy.mb.renderer.render_screen(self.pyboy.mb.lcd)
-                        self.pyboy.window.update_display(False)
+                        for w in self.pyboy.plugin_manager.windows:
+                            w.post_tick()
+                        # self.pyboy.window.update_display(False)
                         self.rewind_speed = min(self.rewind_speed * 1.1, 15)
                         # if self.screen_recorder:
                         #     self.screen_recorder.add_frame(self.get_screen_image())
@@ -80,7 +82,9 @@ class Rewind(PyBoyPlugin):
                         self.pyboy.mb.load_state(self.rewind_buffer)
                         # self.pyboy.mb.renderer.update_cache(self.pyboy.mb.lcd)
                         self.pyboy.mb.renderer.render_screen(self.pyboy.mb.lcd)
-                        self.pyboy.window.update_display(False)
+                        #self.pyboy.window.update_display(False)
+                        for w in self.pyboy.plugin_manager.windows:
+                            w.post_tick()
                         self.rewind_speed = min(self.rewind_speed * 1.1, 15)
                         # if self.screen_recorder:
                         #     self.screen_recorder.add_frame(self.get_screen_image())
@@ -90,7 +94,7 @@ class Rewind(PyBoyPlugin):
         return events
 
     def enabled(self):
-        return self.kwargs.get('rewind')
+        return self.argv.get('enable_rewind')
 
 
 ##############################################################
