@@ -145,33 +145,10 @@ def getcolorcode(byte1, byte2, offset):
 
 
 class Renderer:
-    def __init__(self, color_palette, color_format):
-        self.color_format = color_format
-
-        alpha_channel = 3 - color_format.index('A')
-        self.red_channel   = 3 - color_format.index('R')
-        self.green_channel = 3 - color_format.index('G')
-        self.blue_channel  = 3 - color_format.index('B')
-
-        # Split the colors up into each component, which makes the next step easier
-        color_components = [
-            [
-                (c & 0xFF0000) >> 2*8,
-                (c & 0x00FF00) >> 1*8,
-                (c & 0x0000FF),
-            ] for c in color_palette
-        ]
-
-        # Shift RGB colors to the right positions from the color format layout
-        self.alphamask = 0xFF << (8 * alpha_channel)
-        self.color_palette = [
-            (
-                self.alphamask |
-                c[0] << (8 * self.red_channel) |
-                c[1] << (8 * self.green_channel) |
-                c[2] << (8 * self.blue_channel)
-            ) for c in color_components
-        ]
+    def __init__(self, color_palette):
+        self.alphamask = 0xFF
+        self.color_palette = [(c << 8) | self.alphamask for c in color_palette]
+        self.color_format = "RGBA"
 
         self.buffer_dims = (160, 144)
 
@@ -322,15 +299,7 @@ class Renderer:
 
     def get_screen_buffer_as_ndarray(self):
         import numpy as np
-
-        # NOTE: Might have room for performance improvement
-        np_buffer =  np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)
-        return np.concatenate(
-            (
-                np_buffer[:, :, self.red_channel, None],
-                np_buffer[:, :, self.green_channel, None],
-                np_buffer[:, :, self.blue_channel, None]
-            ), axis=2)
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:,:,1:]
 
     def get_screen_image(self):
         if not Image:
@@ -338,6 +307,8 @@ class Renderer:
             return None
 
         # NOTE: Might have room for performance improvement
+        # It's not possible to use the following, as the byte-order (endianess) isn't supported in Pillow
+        # Image.frombytes('RGBA', self.buffer_dims, self.get_screen_buffer()).show()
         return Image.fromarray(self.get_screen_buffer_as_ndarray(), 'RGB')
 
     def save_state(self, f):

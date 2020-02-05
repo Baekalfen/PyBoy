@@ -27,7 +27,7 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD()
-        self.renderer = lcd.Renderer(color_palette, "RGBA")
+        self.renderer = lcd.Renderer(color_palette)
         self.disable_renderer = disable_renderer
         self.bootrom_enabled = True
         self.serialbuffer = u''
