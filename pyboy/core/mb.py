@@ -31,6 +31,8 @@ class Motherboard:
         self.bootrom_enabled = True
         self.serialbuffer = u''
         self.enable_rewind = enable_rewind
+        self.cycle_count = 0
+        self.cycle_target = 0
 
     def getserial(self):
         b = self.serialbuffer
@@ -102,7 +104,8 @@ class Motherboard:
             self.setitem(STAT, self.getitem(STAT) & 0b11111011)
 
     def calculate_cycles(self, x):
-        while x > 0:
+        self.cycle_target += x
+        while self.cycle_count < self.cycle_target:
             cycles = self.cpu.tick()
 
             # TODO: Benchmark whether 'if' and 'try/except' is better
@@ -115,13 +118,14 @@ class Motherboard:
                 # For HiToLo interrupt it is indistinguishable whether
                 # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
-                cycles = min(self.timer.cyclestointerrupt(), x)
+                cycles = min(self.timer.cyclestointerrupt(), self.cycle_target - self.cycle_count)
 
                 # Profiling
                 if self.cpu.profiling:
                     self.cpu.hitrate[0x76] += cycles//4
 
-            x -= cycles
+            self.cycle_count += cycles
+
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(TIMER)
 
