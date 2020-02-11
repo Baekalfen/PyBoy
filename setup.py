@@ -211,7 +211,7 @@ if CYTHON and 'clean' not in sys.argv:
 
     py_pxd_files = prep_pxd_py_files()
     cythonize_files = map(lambda src: Extension(
-        src.split('.')[0].replace('/', '.'), [src],
+        src.split('.')[0].replace(os.sep, '.'), [src],
         include_dirs=includes,
         library_dirs=libdirs,
         libraries=libs,
