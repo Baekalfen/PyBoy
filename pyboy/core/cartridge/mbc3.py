@@ -11,7 +11,17 @@ from .base_mbc import BaseMBC
 class MBC3(BaseMBC):
     def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
-            self.rambank_enabled = (value & 0b00001111) == 0b1010
+            if (value & 0b00001111) == 0b1010:
+                self.rambank_enabled = True
+            elif value == 0:
+                self.rambank_enabled = False
+            else:
+                # Pan Docs: "Practically any value with 0Ah in the
+                # lower 4 bits enables RAM, and any other value
+                # disables RAM."
+                self.rambank_enabled = False
+                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x"	
+                               % (address, value))
         elif 0x2000 <= address < 0x4000:
             value &= 0b01111111
             if value == 0:

@@ -30,11 +30,9 @@ class BaseMBC:
         self.gamename = self.getgamename(rombanks)
 
         self.memorymodel = 0
-        self.bank1 = 1
-        self.bank2 = 0
         self.rambank_enabled = False
         self.rambank_selected = 0
-        self.rombank_selected = 0
+        self.rombank_selected = 1
 
         if not os.path.exists(self.filename):
             logger.info("No RAM file found. Skipping.")
@@ -96,7 +94,7 @@ class BaseMBC:
         self.rambank_initialized = True
 
         # In real life the values in RAM are scrambled on initialization.
-        self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(n)]
+        self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(16)]
 
     def getgamename(self, rombanks):
         return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).rstrip("\0")
@@ -119,7 +117,7 @@ class BaseMBC:
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambank_selected % len(self.rombanks)][address-0xA000]
+                return self.rambanks[self.rambank_selected % self.external_ram_count][address-0xA000]
         else:
             raise logger.error("Reading address invalid: %s" % address)
 
