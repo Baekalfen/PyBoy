@@ -40,7 +40,7 @@ def load_cartridge(filename):
     )
     logger.info("Cartridge type: 0x%0.2x - %s, %s" % cartdata)
     logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" %
-                (len(rombanks), EXTERNAL_RAM_TABLE.get(external_ram_count, None)))
+                (len(rombanks), external_ram_count))
     cartmeta = CARTRIDGE_TABLE[carttype]
 
     return cartmeta[0](filename, rombanks, external_ram_count, carttype, *cartmeta[1:])

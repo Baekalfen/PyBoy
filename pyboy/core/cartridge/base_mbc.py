@@ -30,10 +30,11 @@ class BaseMBC:
         self.gamename = self.getgamename(rombanks)
 
         self.memorymodel = 0
+        self.bank1 = 1
+        self.bank2 = 0
         self.rambank_enabled = False
-        self.rambank_selected = 0 # TODO: Check this, not documented
-        # Note: TestROM 01-special.gb assumes initial value of 1
-        self.rombank_selected = 1 # TODO: Check this, not documented
+        self.rambank_selected = 0
+        self.rombank_selected = 1
 
         if not os.path.exists(self.filename):
             logger.info("No RAM file found. Skipping.")
@@ -95,8 +96,7 @@ class BaseMBC:
         self.rambank_initialized = True
 
         # In real life the values in RAM are scrambled on initialization.
-        # Allocating the maximum, as it is easier with static array sizes. And it's just 128KB...
-        self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(16)]
+        self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(n)]
 
     def getgamename(self, rombanks):
         return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).rstrip("\0")
@@ -108,15 +108,18 @@ class BaseMBC:
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected][address-0x4000]
+            return self.rombanks[self.rombank_selected % len(self.rombanks)][address-0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 raise logger.error("RAM banks not initialized: %s" % hex(address))
 
+            if not self.rambank_enabled:
+                return 0xFF
+
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambank_selected][address-0xA000]
+                return self.rambanks[self.rambank_selected % len(self.rombanks)][address-0xA000]
         else:
             raise logger.error("Reading address invalid: %s" % address)
 
