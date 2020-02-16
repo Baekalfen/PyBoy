@@ -16,6 +16,10 @@ from pyboy import PyBoy, windowevent
 
 from . import utils
 
+# Set to true to reset tests
+RESET_REPLAYS = False
+
+
 event_filter = [windowevent.PRESS_SPEED_UP, windowevent.RELEASE_SPEED_UP, windowevent.SCREEN_RECORDING_TOGGLE]
 
 
@@ -61,7 +65,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     state_data = io.BytesIO(base64.b64decode(b64_state.encode('utf8'))) if b64_state is not None else None
 
     pyboy = PyBoy(ROM, window_type=window, bootrom_file=utils.boot_rom, disable_input=True, hide_window=False,
-                  enable_rewind=enable_rewind, record_input=True)
+                  enable_rewind=enable_rewind, record_input=(RESET_REPLAYS and window in ['SDL2', 'headless', 'OpenGL']))
     pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)
@@ -111,10 +115,6 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
             f.write(zlib.compress(json.dumps((pyboy._get_recorded_input(), b64_romhash, b64_state)).encode()))
 
     pyboy.stop(save=False)
-
-
-# Set to true to reset tests
-RESET_REPLAYS = False
 
 
 def test_pokemon():
