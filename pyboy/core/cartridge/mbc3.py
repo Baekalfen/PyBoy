@@ -44,6 +44,6 @@ class MBC3(BaseMBC):
                 elif 0x08 <= self.rambank_selected <= 0x0C:
                     self.rtc.setregister(self.rambank_selected, value)
                 else:
-                    raise logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambank_selected)
+                    logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambank_selected)
         else:
-            raise logger.error("Invalid writing address: 0x%0.4x" % address)
+            logger.error("Invalid writing address: 0x%0.4x" % address)

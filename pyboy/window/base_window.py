@@ -79,7 +79,7 @@ class BaseWindow:
         for y in range(ROWS*4):
             f.write(0)
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         # Just to align the state between windows
         for y in range(ROWS*4):
             f.read()

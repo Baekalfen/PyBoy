@@ -45,7 +45,7 @@ cdef class CPU:
     cdef char fetch_and_execute(self, unsigned int)
     cdef int tick(self)
     cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)
 
     # Only char (8-bit) needed, but I'm not sure all intermittent
     # results do not overflow

@@ -3,13 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from pyboy.globals import STATE_VERSION
 from pyboy.logger import logger
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
-STATE_VERSION = 2
 
 
 class Motherboard:
@@ -69,12 +69,12 @@ class Motherboard:
             logger.debug(f"State version: 0-1")
             # HACK: The byte wasn't a state version, but the bootrom flag
             self.bootrom_enabled = state_version
-        self.cpu.load_state(f)
-        self.lcd.load_state(f)
+        self.cpu.load_state(f, state_version)
+        self.lcd.load_state(f, state_version)
         if state_version >= 2:
-            self.window.load_state(f)
-        self.ram.load_state(f)
-        self.cartridge.load_state(f)
+            self.window.load_state(f, state_version)
+        self.ram.load_state(f, state_version)
+        self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 

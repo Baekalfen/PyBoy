@@ -39,23 +39,47 @@ class MBC1(BaseMBC):
                 self.rambank_selected = self.bank_select_register2 if self.memorymodel == 1 else 0
                 self.rambanks[self.rambank_selected % self.external_ram_count][address-0xA000] = value
         else:
-            raise logger.error("Invalid writing address: %s" % hex(address))
+            logger.error("Invalid writing address: %s" % hex(address))
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
-            self.rombank_selected = (self.bank_select_register2 << 5) if self.memorymodel == 1 else 0
-            return self.rombanks[self.rombank_selected % len(self.rombanks)][address]
+            if self.memorymodel == 1:
+                self.rombank_selected = (self.bank_select_register2 << 5) % self.external_rom_count
+            else:
+                self.rombank_selected = 0
+            return self.rombanks[self.rombank_selected][address]
         elif 0x4000 <= address < 0x8000:
-            self.rombank_selected = (self.bank_select_register2 << 5) | self.bank_select_register1
-            return self.rombanks[self.rombank_selected % len(self.rombanks)][address-0x4000]
+            self.rombank_selected = \
+                    (self.bank_select_register2 << 5) % self.external_rom_count | self.bank_select_register1
+            return self.rombanks[self.rombank_selected][address-0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
-                raise logger.error("RAM banks not initialized: %s" % hex(address))
+                logger.error("RAM banks not initialized: %s" % hex(address))
 
             if not self.rambank_enabled:
                 return 0xFF
 
-            self.rambank_selected = self.bank_select_register2 if self.memorymodel == 1 else 0
+            if self.memorymodel == 1:
+                self.rambank_selected = self.bank_select_register2
+            else:
+                self.rambank_selected = 0
             return self.rambanks[self.rambank_selected % self.external_ram_count][address-0xA000]
         else:
-            raise logger.error("Reading address invalid: %s" % address)
+            logger.error("Reading address invalid: %s" % address)
+
+    def save_state(self, f):
+        # Cython doesn't like super()
+        BaseMBC.save_state(self, f)
+        f.write(self.bank_select_register1)
+        f.write(self.bank_select_register2)
+
+    def load_state(self, f, state_version):
+        # Cython doesn't like super()
+        BaseMBC.load_state(self, f, state_version)
+        if state_version >= 3:
+            self.bank_select_register1 = f.read()
+            self.bank_select_register2 = f.read()
+        else:
+            self.bank_select_register1 = self.rombank_selected & 0b00011111
+            self.bank_select_register2 = (self.rombank_selected & 0b01100000) >> 5
+            self.rambank_selected = self.bank_select_register2

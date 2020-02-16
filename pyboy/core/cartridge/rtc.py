@@ -7,6 +7,7 @@ import os
 import struct
 import time
 
+from pyboy.globals import STATE_VERSION
 from pyboy.logger import logger
 from pyboy.rewind import IntIOWrapper
 
@@ -19,7 +20,7 @@ class RTC:
             logger.info("No RTC file found. Skipping.")
         else:
             with open(self.filename, "rb") as f:
-                self.load_state(IntIOWrapper(f))
+                self.load_state(IntIOWrapper(f), STATE_VERSION)
 
         self.latch_enabled = False
 
@@ -44,7 +45,7 @@ class RTC:
         f.write(self.day_carry)
         logger.info("RTC saved.")
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         self.timezero = struct.unpack('f', bytes([f.read() for _ in range(4)]))[0]
         self.halt = f.read()
         self.day_carry = f.read()
