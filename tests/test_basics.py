@@ -56,13 +56,13 @@ def test_profiling():
     pyboy.tick()
 
     hitrate = pyboy._get_cpu_hitrate()
-    CHECK_SUM = 7546
+    CHECK_SUM = 7524
     assert sum(hitrate) == CHECK_SUM, "The amount of instructions called in the first frame of the boot-ROM has changed"
 
     assert list(main.profiling_printer(hitrate)) == [
-        ' 32       LD (HL-),A 2515',
-        '17c          BIT 7,H 2514',
-        ' 20         JR NZ,r8 2514',
+        '17c          BIT 7,H 2507',
+        ' 32       LD (HL-),A 2507',
+        ' 20         JR NZ,r8 2507',
         ' af            XOR A 1',
         ' 31        LD SP,d16 1',
         ' 21        LD HL,d16 1',

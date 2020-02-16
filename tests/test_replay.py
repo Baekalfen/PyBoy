@@ -52,7 +52,8 @@ def move_gif(game, dest):
         raise FileNotFoundError(f"Couldn't find gif to move for game {game}")
 
 
-def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, enable_rewind=False):
+def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, enable_rewind=False,
+           overwrite=False):
     with open(replay, 'rb') as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode('ascii'))
 
@@ -60,7 +61,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     state_data = io.BytesIO(base64.b64decode(b64_state.encode('utf8'))) if b64_state is not None else None
 
     pyboy = PyBoy(ROM, window_type=window, bootrom_file=utils.boot_rom, disable_input=True, hide_window=False,
-                  enable_rewind=enable_rewind)
+                  enable_rewind=enable_rewind, record_input=True)
     pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)
@@ -88,7 +89,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
             for e in next_event[1]:
                 pyboy.send_input(e)
 
-                if verify:
+                if verify and not overwrite:
                     verify_screen_image_np(pyboy, base64.b64decode(next_event[2].encode('utf8')))
             next_event = recorded_input.pop(0)
         frame_count += 1
@@ -105,41 +106,51 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     if gif_destination:
         move_gif(pyboy.get_cartridge_title(), gif_destination)
 
+    if overwrite:
+        with open(replay, 'wb') as f:
+            f.write(zlib.compress(json.dumps((pyboy._get_recorded_input(), b64_romhash, b64_state)).encode()))
+
     pyboy.stop(save=False)
 
 
+# Set to true to reset tests
+RESET_REPLAYS = False
+
+
 def test_pokemon():
-    replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue.replay")
+    replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue.replay",
+           verify=not RESET_REPLAYS, overwrite=RESET_REPLAYS)
 
 
 def test_pokemon_gif1():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif1.replay", record_gif=(630, 3540),
-           gif_destination="README/1.gif")
+           gif_destination="README/1.gif", overwrite=RESET_REPLAYS)
 
 
 def test_pokemon_gif2():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif2.replay", record_gif=(0, 180),
-           gif_destination="README/2.gif")
+           gif_destination="README/2.gif", overwrite=RESET_REPLAYS)
 
 
 def test_tetris():
-    replay(utils.tetris_rom, "tests/replays/tetris.replay")
+    replay(utils.tetris_rom, "tests/replays/tetris.replay", overwrite=RESET_REPLAYS)
 
 
 def test_supermarioland_gif():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_gif.replay", record_gif=(120, 660),
-           gif_destination="README/3.gif")
+           gif_destination="README/3.gif", overwrite=RESET_REPLAYS)
 
 
 def test_supermarioland():
-    replay(utils.supermarioland_rom, "tests/replays/supermarioland.replay")
+    replay(utils.supermarioland_rom, "tests/replays/supermarioland.replay",
+           overwrite=RESET_REPLAYS)
 
 
 def test_kirby():
     replay(utils.kirby_rom, "tests/replays/kirby_gif.replay", record_gif=(0, 360),
-           gif_destination="README/4.gif")
+           gif_destination="README/4.gif", overwrite=RESET_REPLAYS)
 
 
 def test_rewind():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(416, 643),
-           gif_destination="README/5.gif", enable_rewind=True)
+           gif_destination="README/5.gif", enable_rewind=True, overwrite=RESET_REPLAYS)
