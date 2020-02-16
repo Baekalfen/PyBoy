@@ -37,8 +37,7 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef bint enable_rewind
     cdef unicode serialbuffer
-    cdef int cycle_count
-    cdef int cycle_target
+    cdef int cycles_remaining
 
     cdef void buttonevent(self, int)
     cdef void stop(self, bint)
