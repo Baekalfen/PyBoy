@@ -51,7 +51,7 @@ class MBC1(BaseMBC):
         elif 0x4000 <= address < 0x8000:
             self.rombank_selected = \
                     (self.bank_select_register2 << 5) % self.external_rom_count | self.bank_select_register1
-            return self.rombanks[self.rombank_selected][address-0x4000]
+            return self.rombanks[self.rombank_selected % len(self.rombanks)][address-0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: %s" % hex(address))
