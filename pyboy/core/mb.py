@@ -31,6 +31,7 @@ class Motherboard:
         self.bootrom_enabled = True
         self.serialbuffer = u''
         self.enable_rewind = enable_rewind
+        self.cycles_remaining = 0
 
     def getserial(self):
         b = self.serialbuffer
