@@ -20,7 +20,7 @@ class MBC3(BaseMBC):
                 # lower 4 bits enables RAM, and any other value
                 # disables RAM."
                 self.rambank_enabled = False
-                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x"	
+                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x"
                                % (address, value))
         elif 0x2000 <= address < 0x4000:
             value &= 0b01111111
