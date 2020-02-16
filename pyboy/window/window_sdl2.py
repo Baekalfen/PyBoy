@@ -304,7 +304,7 @@ class SDLWindow(BaseWindow):
             f.write(((self._scanlineparameters[y][2]+7) & 0xFF))
             f.write(self._scanlineparameters[y][3])
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         for y in range(ROWS):
             self._scanlineparameters[y][0] = f.read()
             self._scanlineparameters[y][1] = f.read()

@@ -156,7 +156,7 @@ class CPU:
         f.write(self.halted)
         f.write(self.stopped)
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
         self.HL, self.SP, self.PC = [f.read() | (f.read() << 8) for _ in range(3)]
 

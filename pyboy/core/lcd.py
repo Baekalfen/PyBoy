@@ -46,7 +46,7 @@ class LCD:
         f.write(self.WY)
         f.write(self.WX)
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         for n in range(VIDEO_RAM):
             self.VRAM[n] = f.read()
 

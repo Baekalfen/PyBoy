@@ -19,7 +19,7 @@ cdef class RTC:
 
     cdef void stop(self)
     cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)
     cdef void latch_rtc(self)
     cdef void writecommand(self, unsigned char)
     cdef unsigned char getregister(self, unsigned char)
