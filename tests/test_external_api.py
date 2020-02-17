@@ -275,10 +275,10 @@ def test_tetris():
                      (88, 144, 130, True),
                      (88, 152, 130, True),
                      (96, 152, 130, True),
-                     (136, 128, 131, True),
-                     (144, 128, 131, True),
-                     (136, 136, 131, True),
-                     (144, 136, 131, True),
+                     (128, 128, 133, True),
+                     (136, 128, 133, True),
+                     (144, 128, 133, True),
+                     (136, 136, 133, True),
                      (0, 0, 0, False),
                      (0, 0, 0, False),
                      (0, 0, 0, False),
@@ -309,7 +309,7 @@ def test_tetris():
                      (0, 0, 0, False)]
                     )
 
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 12
+                assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
                 with open('tmp.state', 'wb') as f:
                     pyboy.save_state(f)
                 pyboy.save_state(state_data)
@@ -353,7 +353,7 @@ def test_tetris():
             for frame in range(1016, 5282):
                 pyboy.tick()
                 if frame == 1017:
-                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
+                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 8
 
                 if frame == 1865:
                     game_board_matrix = list(tile_map[2:12, :18])
@@ -374,12 +374,12 @@ def test_tetris():
                              [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                              [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                              [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                             [303, 303, 303, 303, 131, 131, 303, 130, 130, 303],
-                             [303, 303, 303, 303, 131, 131, 303, 303, 130, 130]]
+                             [303, 303, 303, 133, 133, 133, 303, 130, 130, 303],
+                             [303, 303, 303, 303, 133, 303, 303, 303, 130, 130]]
                                 )
     os.remove('tmp.state')
 
-    verify_screen_image(b'\xd4\xc6\x12\xe5\xe9\xa8\xbaZ\x9c\xe3')
+    verify_screen_image(b':\x195J\xfb4e\x1bU\xf1')
     pyboy.stop(save=False)
 
 # # Blargg's tests verifies this
