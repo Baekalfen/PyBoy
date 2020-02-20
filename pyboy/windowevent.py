@@ -76,4 +76,5 @@ All supported events to send to the emulator:
  RELEASE_REWIND_FORWARD,
  WINDOW_FOCUS,
  WINDOW_UNFOCUS,
- ) = range(33)
+ INTERNAL_RENDERER_FLUSH,
+ ) = range(34)

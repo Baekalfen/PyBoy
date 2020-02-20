@@ -34,7 +34,7 @@ cdef class SDLWindow(BaseWindow):
     cdef sdl2.SDL_Texture *_sdltexturebuffer
 
     @cython.locals(now=uint32_t, delay=cython.int)
-    cdef void frame_limiter(self, int)
+    cdef bint frame_limiter(self, int)
 
     cdef inline void _update_display(self):
         sdl2.SDL_UpdateTexture(self._sdltexturebuffer, NULL, self._screenbuffer_raw.data.as_voidptr, 160*4)

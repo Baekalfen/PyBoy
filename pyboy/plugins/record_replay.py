@@ -15,7 +15,7 @@ from pyboy.plugins.base_plugin import PyBoyPlugin
 
 
 class RecordReplay(PyBoyPlugin):
-    argv = [('--record-input', {"type":str, "help":'Record user input and save to a file (internal use)'})]
+    argv = [('--record-input', {"type": str, "help": 'Record user input and save to a file (internal use)'})]
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -30,17 +30,20 @@ class RecordReplay(PyBoyPlugin):
         logger.info("Recording event inputs")
         self.recorded_input = []
 
-    def pre_tick(self):
-        # Input recorder
-        if len(self.pyboy.events) != 0:
-            self.recorded_input.append((self.pyboy.frame_count, self.pyboy.events, base64.b64encode(
-                np.ascontiguousarray(self.pyboy.get_screen_ndarray())).decode('utf8')))
-
     def handle_events(self, events):
+        # Input recorder
+        if len(events) != 0:
+            self.recorded_input.append((self.pyboy.frame_count, events, base64.b64encode(
+                np.ascontiguousarray(self.pyboy.get_screen_ndarray())).decode('utf8')))
         return events
 
     def stop(self):
-        save_replay(self.pyboy.gamerom_file, self.argv.get("loadstate"), self.argv.get("record_input"), self.recorded_input)
+        save_replay(
+            self.pyboy.gamerom_file,
+            self.argv.get("loadstate"),
+            self.argv.get("record_input"),
+            self.recorded_input
+        )
 
     def enabled(self):
         return self.argv.get('record_input')

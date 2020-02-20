@@ -14,17 +14,17 @@ from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNS
                        glDrawPixels, glFlush, glPixelZoom)
 # from OpenGL.GLU import *
 from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
-                         glutCreateWindow, glutDisplayFunc, glutInit, glutInitDisplayMode, glutInitWindowSize,
-                         glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc,
-                         glutSpecialUpFunc)
+                         glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
+                         glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc,
+                         glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
 from pyboy import windowevent
 from pyboy.logger import logger
-from pyboy.plugins.base_plugin import PyBoyPlugin
+from pyboy.plugins.base_plugin import BaseWindowPlugin
 
 ROWS, COLS = 144, 160
 
 
-class OpenGLWindow(PyBoyPlugin):
+class OpenGLWindow(BaseWindowPlugin):
     def __init__(self, pyboy, argv):
         super().__init__(pyboy, argv)
 
@@ -150,8 +150,5 @@ class OpenGLWindow(PyBoyPlugin):
         self._gldraw()
         OpenGL.GLUT.freeglut.glutMainLoopEvent()
 
-    def frame_limiter(self, speed):
-        pass
-
     def stop(self):
-        pass
+        glutDestroyWindow(glutGetWindow())

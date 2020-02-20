@@ -81,8 +81,8 @@ class SDLWindow(BaseWindowPlugin):
         else:
             sdl2.SDL_ShowWindow(self._window)
 
-    # def set_title(self, title):
-    #     sdl2.SDL_SetWindowTitle(self._window, title.encode())
+    def set_title(self, title):
+        sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
     def handle_events(self, events):
         # Feed events into the loop
@@ -103,13 +103,7 @@ class SDLWindow(BaseWindowPlugin):
         return events
 
     def post_tick(self):
-        if not self.pyboy.paused:
-            self._update_display()
-
-        if self.pyboy.paused:
-            self.frame_limiter(1)
-        elif self.pyboy.target_emulationspeed > 0:
-            self.frame_limiter(self.pyboy.target_emulationspeed)
+        self._update_display()
 
     def enabled(self):
         return self.argv.get('window_type') == 'SDL2' or self.argv.get('window_type') is None
@@ -119,11 +113,11 @@ class SDLWindow(BaseWindowPlugin):
         delay = int(1000.0/(60.0*speed) - (now-self._ticks))
         sdl2.SDL_Delay(delay if delay > 0 else 0)
         self._ticks = sdl2.SDL_GetTicks()
+        return True
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)
         sdl2.SDL_Quit()
-
 
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to

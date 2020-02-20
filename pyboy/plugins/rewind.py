@@ -16,15 +16,6 @@ try:
 except ImportError:
     cythonmode = False
 
-if not cythonmode:
-    exec("""
-def _malloc(n):
-    return array.array('B', [0]*(FIXED_BUFFER_SIZE))
-
-def _free(_):
-    pass
-""", globals(), locals())
-
 
 FIXED_BUFFER_SIZE = 64*1024*128
 FIXED_BUFFER_MIN_ALLOC = 64*1024
@@ -53,48 +44,35 @@ class Rewind(PyBoyPlugin):
             if event == windowevent.UNPAUSE:
                 self.rewind_buffer.commit()
             elif event == windowevent.PAUSE_TOGGLE:
-                if not self.pyboy.paused:
+                if self.pyboy.paused:
                     self.rewind_buffer.commit()
             elif event == windowevent.RELEASE_REWIND_FORWARD:
                 self.rewind_speed = 1
             elif event == windowevent.PRESS_REWIND_FORWARD:
-                self.pyboy.paused = True
-                for _ in range(int(self.rewind_speed)):
-                    if self.rewind_buffer.seek_frame(1):
-                        self.pyboy.mb.load_state(self.rewind_buffer)
-                        # self.pyboy.mb.renderer.update_cache(self.pyboy.mb.lcd)
-                        self.pyboy.mb.renderer.render_screen(self.pyboy.mb.lcd)
-                        for w in self.pyboy.plugin_manager.windows:
-                            w.post_tick()
-                        # self.pyboy.window.update_display(False)
-                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-                        # if self.screen_recorder:
-                        #     self.screen_recorder.add_frame(self.get_screen_image())
-                    else:
-                        logger.info("Rewind limit reached")
-                        break
+                self.pyboy.pause()
+                if self.rewind_buffer.seek_frame(1):
+                    self.pyboy.mb.load_state(self.rewind_buffer)
+                    events.append(windowevent.INTERNAL_RENDERER_FLUSH)
+                    self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                else:
+                    logger.info("Rewind limit reached")
             elif event == windowevent.RELEASE_REWIND_BACK:
                 self.rewind_speed = 1
             elif event == windowevent.PRESS_REWIND_BACK:
-                self.pyboy.paused = True
-                for _ in range(int(self.rewind_speed)):
-                    if self.rewind_buffer.seek_frame(-1):
-                        self.pyboy.mb.load_state(self.rewind_buffer)
-                        # self.pyboy.mb.renderer.update_cache(self.pyboy.mb.lcd)
-                        self.pyboy.mb.renderer.render_screen(self.pyboy.mb.lcd)
-                        #self.pyboy.window.update_display(False)
-                        for w in self.pyboy.plugin_manager.windows:
-                            w.post_tick()
-                        self.rewind_speed = min(self.rewind_speed * 1.1, 15)
-                        # if self.screen_recorder:
-                        #     self.screen_recorder.add_frame(self.get_screen_image())
-                    else:
-                        logger.info("Rewind limit reached")
-                        break
+                self.pyboy.pause()
+                if self.rewind_buffer.seek_frame(-1):
+                    self.pyboy.mb.load_state(self.rewind_buffer)
+                    events.append(windowevent.INTERNAL_RENDERER_FLUSH)
+                    self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                else:
+                    logger.info("Rewind limit reached")
+
+        # NOTE: Disable this line, if recording for .replay files
+        self.pyboy.target_emulationspeed = int(self.rewind_speed)
         return events
 
     def enabled(self):
-        return self.argv.get('enable_rewind')
+        return self.argv.get('rewind')
 
 
 ##############################################################
@@ -309,3 +287,14 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
             return False
 
         return CompressedFixedAllocBuffers.seek_frame(self, frames)
+
+
+# Having this in the top of the file, causes glitces in Vim's syntax highlighting
+if not cythonmode:
+    exec("""
+def _malloc(n):
+    return array.array('B', [0]*(FIXED_BUFFER_SIZE))
+
+def _free(_):
+    pass
+""", globals(), locals())

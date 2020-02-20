@@ -61,7 +61,7 @@ class PyBoy:
             color_palette (tuple): Specify the color palette to use for rendering.
         """
 
-        for k,v in defaults.items():
+        for k, v in defaults.items():
             if k not in kwargs:
                 kwargs[k] = kwargs.get(k, defaults[k])
 
@@ -69,7 +69,13 @@ class PyBoy:
             raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
         self.gamerom_file = gamerom_file
 
-        self.mb = Motherboard(gamerom_file, bootrom_file, kwargs["color_palette"], disable_renderer, profiling=profiling)
+        self.mb = Motherboard(
+            gamerom_file,
+            bootrom_file,
+            kwargs["color_palette"],
+            disable_renderer,
+            profiling=profiling
+        )
 
         # Performance measures
         self.avg_pre = 0
@@ -84,7 +90,7 @@ class PyBoy:
         # self.autopause = autopause
         self.events = []
         self.done = False
-        self.window_title = ""
+        self.window_title = "PyBoy"
         self.window_title_disabled = False
 
         ###################
@@ -104,14 +110,13 @@ class PyBoy:
         """
 
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
-        self.handle_events(self.events)
-        self.pre_tick()
+        self._handle_events(self.events)
         t_pre = time.perf_counter()
         self.frame_count += 1
         if not self.paused:
             self.mb.tickframe()
         t_tick = time.perf_counter()
-        self.post_tick()
+        self._post_tick()
         t_post = time.perf_counter()
 
         secs = t_pre-t_start
@@ -125,7 +130,7 @@ class PyBoy:
 
         return self.done
 
-    def handle_events(self, events):
+    def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
 
@@ -148,41 +153,51 @@ class PyBoy:
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
             elif event == windowevent.PAUSE_TOGGLE:
-                self.paused ^= True
                 if self.paused:
-                    logger.info("Emulation paused!")
+                    self.unpause()
                 else:
-                    logger.info("Emulation unpaused!")
+                    self.pause()
             elif event == windowevent.PAUSE:
-                self.paused = True
-                logger.info("Emulation paused!")
+                self.pause()
             elif event == windowevent.UNPAUSE:
-                self.paused = False
-                logger.info("Emulation unpaused!")
-
-            else: # Right now, everything else is a button press
+                self.unpause()
+            elif event == windowevent.INTERNAL_RENDERER_FLUSH:
+                self.mb.renderer.render_screen(self.mb.lcd)
+                self.plugin_manager._post_tick_windows()
+            else:
                 self.mb.buttonevent(event)
 
-    def pre_tick(self):
-        self.plugin_manager.pre_tick()
+    def pause(self):
+        if self.paused:
+            return
+        self.paused = True
+        self.save_target_emulationspeed = self.target_emulationspeed
+        self.target_emulationspeed = 1
+        logger.info("Emulation paused!")
 
-    def post_tick(self):
+    def unpause(self):
+        if not self.paused:
+            return
+        self.paused = False
+        self.target_emulationspeed = self.save_target_emulationspeed
+        logger.info("Emulation unpaused!")
+
+    def _post_tick(self):
         if not self.window_title_disabled and self.frame_count % 60 == 0:
-            self.update_window_title()
+            self._update_window_title()
         self.plugin_manager.post_tick()
+        self.plugin_manager.frame_limiter(self.target_emulationspeed)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.events = []
 
-    def update_window_title(self):
+    def _update_window_title(self):
+        avg_emu = self.avg_pre + self.avg_tick + self.avg_post
+        self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick)/SPF*100)
+        self.window_title += "Emulation: x%d" % (round(SPF/avg_emu) if avg_emu != 0 else 0)
         if self.paused:
-            self.window_title = "[PAUSED]"
-        else:
-            avg_emu = self.avg_pre + self.avg_tick + self.avg_post
-            self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick)/SPF*100)
-            self.window_title += "Emulation: x%d" % (round(SPF/avg_emu) if avg_emu != 0 else 0)
-            self.window_title += self.plugin_manager.window_title()
-
+            self.window_title += " [PAUSED]"
+        self.window_title += self.plugin_manager.window_title()
 
     def __del__(self):
         self.stop(save=False)

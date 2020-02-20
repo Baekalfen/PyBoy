@@ -26,6 +26,8 @@ def get_parser_arguments():
 
 class PluginManager(PyBoyPlugin):
     def __init__(self, pyboy, argv):
+        super().__init__(pyboy, argv)
+
         self.windows = []
         self.plugins = []
 
@@ -45,17 +47,24 @@ class PluginManager(PyBoyPlugin):
             events = p.handle_events(events)
         return events
 
-    def pre_tick(self):
-        for w in self.windows:
-            w.pre_tick()
-        for p in self.plugins:
-            p.pre_tick()
-
     def post_tick(self):
         for p in self.plugins:
             p.post_tick()
+        if not self.pyboy.paused:
+            # This might change, if we have a HUD
+            self._post_tick_windows()
+
+    def _post_tick_windows(self):
         for w in self.windows:
             w.post_tick()
+            w.set_title(self.pyboy.window_title)
+
+    def frame_limiter(self, speed):
+        if speed <= 0:
+            return
+        for w in self.windows:
+            if w.frame_limiter(speed):
+                break
 
     def window_title(self):
         title = ""

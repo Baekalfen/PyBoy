@@ -16,7 +16,12 @@ from pyboy import PyBoy, windowevent
 
 from . import utils
 
-event_filter = [windowevent.PRESS_SPEED_UP, windowevent.RELEASE_SPEED_UP, windowevent.SCREEN_RECORDING_TOGGLE]
+event_filter = [
+    windowevent.PRESS_SPEED_UP,
+    windowevent.RELEASE_SPEED_UP,
+    windowevent.SCREEN_RECORDING_TOGGLE,
+    windowevent.INTERNAL_RENDERER_FLUSH
+]
 
 
 def verify_screen_image_np(pyboy, saved_array):
@@ -51,15 +56,16 @@ def move_gif(game, dest):
         raise FileNotFoundError(f"Couldn't find gif to move for game {game}")
 
 
-def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, enable_rewind=False):
+def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, enable_rewind=False,
+        bootrom_file=utils.boot_rom):
     with open(replay, 'rb') as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode('ascii'))
 
     verify_rom_hash(ROM, b64_romhash)
     state_data = io.BytesIO(base64.b64decode(b64_state.encode('utf8'))) if b64_state is not None else None
 
-    pyboy = PyBoy(ROM, window_type=window, bootrom_file=utils.boot_rom, disable_input=True, hide_window=False,
-                  enable_rewind=enable_rewind)
+    pyboy = PyBoy(ROM, window_type=window, bootrom_file=bootrom_file, disable_input=True, hide_window=False,
+                  rewind=enable_rewind)
     pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)
@@ -96,11 +102,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
         #     breakpoint()
         pyboy.tick()
 
-    # If end-frame in record_gif is high than frame counter
-    # if recording:
-    #     pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
-    #     recording ^= True
-
+    print(frame_count)
     if gif_destination:
         move_gif(pyboy.get_cartridge_title(), gif_destination)
 
@@ -140,5 +142,5 @@ def test_kirby():
 
 
 def test_rewind():
-    replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(416, 643),
-           gif_destination="README/5.gif", enable_rewind=True)
+    replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(130, 544),
+           gif_destination="README/5.gif", enable_rewind=True, bootrom_file=None)

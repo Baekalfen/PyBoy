@@ -18,9 +18,6 @@ class PyBoyPlugin:
     def post_tick(self):
         pass
 
-    def pre_tick(self):
-        pass
-
     def window_title(self):
         return ""
 
@@ -50,3 +47,9 @@ class BaseWindowPlugin(PyBoyPlugin):
 
         self.enable_title = True
         self.renderer = pyboy.mb.renderer
+
+    def frame_limiter(self, speed):
+        return False
+
+    def set_title(self, title):
+        pass
