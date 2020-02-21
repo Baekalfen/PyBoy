@@ -178,6 +178,15 @@ class SDLWindow(BaseWindow):
         self._scanlineparameters[y][2] = wx
         self._scanlineparameters[y][3] = wy
 
+    def get_scanline_parameters(self):
+        import numpy as np
+        return np.vstack(
+            [
+                np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
+                for line in self._scanlineparameters
+            ]
+        )
+
     def render_screen(self, lcd):
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00

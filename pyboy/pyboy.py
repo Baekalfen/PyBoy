@@ -444,6 +444,10 @@ class PyBoy:
         """
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
 
+    def get_scanline_parameters(self):
+        """Return the scanline parameters"""
+        return self.window.get_scanline_parameters()
+
     def save_state(self, file_like_object):
         """
         Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in

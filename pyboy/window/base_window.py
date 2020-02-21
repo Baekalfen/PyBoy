@@ -65,6 +65,9 @@ class BaseWindow:
     def get_screen_buffer_as_ndarray(self):
         raise NotImplementedError()
 
+    def get_scanline_parameters(self):
+        raise NotImplementedError()
+
     def update_cache(self, lcd):
         pass
 
