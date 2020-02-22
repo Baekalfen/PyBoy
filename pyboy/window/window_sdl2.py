@@ -286,6 +286,15 @@ class SDLWindow(BaseWindow):
         import numpy as np
         return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, :-1]
 
+    def get_scanline_parameters(self):
+        import numpy as np
+        return np.vstack(
+             [
+                 np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
+                 for line in self._scanlineparameters
+             ]
+         )
+
     def get_screen_image(self):
         if not Image:
             logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
