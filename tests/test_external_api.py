@@ -12,8 +12,8 @@ import PIL
 import pytest
 from pyboy import PyBoy, botsupport, windowevent
 
-boot_rom = "ROMs/DMG_ROM.bin"
-tetris_rom = "ROMs/Tetris.gb"
+from .utils import boot_rom, supermarioland_rom, tetris_rom
+
 any_rom = tetris_rom
 
 
@@ -392,4 +392,41 @@ def test_disable_title():
     pyboy = PyBoy(any_rom, window_type="dummy", disable_input=True, hide_window=True)
     pyboy.disable_title()
     pyboy.tick()
+    pyboy.stop(save=False)
+
+
+def test_screen_position_list():
+    pyboy = PyBoy(supermarioland_rom, window_type="headless", disable_input=True, hide_window=True)
+    pyboy.disable_title()
+    for _ in range(100):
+        pyboy.tick()
+
+    # Start the game
+    pyboy.send_input(windowevent.PRESS_BUTTON_START)
+    pyboy.tick()
+    pyboy.send_input(windowevent.RELEASE_BUTTON_START)
+
+    # Move right for 100 frame
+    pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
+    for _ in range(100):
+        pyboy.tick()
+
+    # Get screen positions, and verify the values
+    positions = pyboy.get_screen_position_list()
+    for y in range(1, 16):
+        assert positions[y][0] == 0 # HUD
+    for y in range(16, 144):
+        assert positions[y][0] == 49 # Actual screen position
+
+    # Progress another 10 frames to see and increase in SCX
+    for _ in range(10):
+        pyboy.tick()
+
+    # Get screen positions, and verify the values
+    positions = pyboy.get_screen_position_list()
+    for y in range(1, 16):
+        assert positions[y][0] == 0 # HUD
+    for y in range(16, 144):
+        assert positions[y][0] == 59 # Actual screen position
+
     pyboy.stop(save=False)
