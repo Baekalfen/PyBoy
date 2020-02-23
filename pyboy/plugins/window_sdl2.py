@@ -7,6 +7,7 @@ import sdl2
 import sdl2.ext
 from pyboy import windowevent
 from pyboy.plugins.base_plugin import BaseWindowPlugin
+from pyboy.utils import get_color_code
 
 ROWS, COLS = 144, 160
 

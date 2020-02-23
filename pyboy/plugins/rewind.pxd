@@ -4,9 +4,22 @@
 #
 
 cimport cython
+from pyboy.plugins.base_plugin cimport PyBoyPlugin
 
 from libc.stdlib cimport malloc, free
 from libc.stdint cimport uint8_t, uint64_t, int64_t
+from pyboy.utils cimport IntIOInterface
+
+cdef (int, int) _dummy_declaration
+cdef (int, int, int, int) _dummy_declaration2
+
+cdef class Rewind(PyBoyPlugin):
+    pass
+
+
+##############################################################
+# Homogeneous cyclic buffer
+##############################################################
 
 cdef int64_t FIXED_BUFFER_SIZE = 64*1024*128
 cdef int64_t FIXED_BUFFER_MIN_ALLOC = 64*1024
@@ -20,23 +33,6 @@ cdef inline uint8_t* _malloc(size_t n):
 
 cdef inline void _free(uint8_t* pointer):
     free(<void *> pointer)
-
-cdef class IntIOInterface:
-    cdef int64_t write(self, uint8_t)
-    cdef uint8_t read(self)
-    cdef void seek(self, int64_t)
-    cdef void flush(self)
-
-##############################################################
-# Buffer wrappers
-##############################################################
-
-cdef class IntIOWrapper(IntIOInterface):
-    cdef object buffer
-
-##############################################################
-# Homogeneous cyclic buffer
-##############################################################
 
 cdef class FixedAllocBuffers(IntIOInterface):
     cdef uint8_t* buffer

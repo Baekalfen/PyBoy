@@ -33,7 +33,7 @@ cdef class BaseWindow:
     cdef void load_state(self, IntIOInterface)
     cdef void disable_title(self)
     cdef void update_display(self, bint)
-    cdef void frame_limiter(self, int)
+    cdef bint frame_limiter(self, int)
     cdef void stop(self)
     cdef void scanline(self, int, LCD)
     cdef void render_screen(self, LCD)

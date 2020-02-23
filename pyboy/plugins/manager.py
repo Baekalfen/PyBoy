@@ -3,17 +3,17 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .autopause import AutoPause
-from .base_plugin import PyBoyPlugin
-from .debug import Debug
-from .disable_input import DisableInput
-from .record_replay import RecordReplay
-from .rewind import Rewind
-from .screenrecorder import ScreenRecorder
-from .window_dummy import DummyWindow
-from .window_headless import HeadlessWindow
-from .window_opengl import OpenGLWindow
-from .window_sdl2 import SDLWindow
+from pyboy.plugins.autopause import AutoPause
+from pyboy.plugins.base_plugin import PyBoyPlugin
+from pyboy.plugins.debug import Debug
+from pyboy.plugins.disable_input import DisableInput
+from pyboy.plugins.record_replay import RecordReplay
+from pyboy.plugins.rewind import Rewind
+from pyboy.plugins.screenrecorder import ScreenRecorder
+from pyboy.plugins.window_dummy import DummyWindow
+from pyboy.plugins.window_headless import HeadlessWindow
+from pyboy.plugins.window_opengl import OpenGLWindow
+from pyboy.plugins.window_sdl2 import SDLWindow
 
 windows = [SDLWindow, OpenGLWindow, HeadlessWindow, DummyWindow]
 plugins = [DisableInput, AutoPause, RecordReplay, Rewind, ScreenRecorder, Debug]

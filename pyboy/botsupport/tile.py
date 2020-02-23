@@ -10,23 +10,9 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 
 import numpy as np
 from PIL import Image
+from pyboy.utils import get_color_code
 
 from .constants import LOW_TILEDATA, LOW_TILEDATA_NTILES, VRAM_OFFSET
-
-
-# TODO: Import from window_sdl2
-def _getcolorcode(byte1, byte2, offset):
-    """Convert 2 bytes into color code at a given offset.
-
-    The colors are 2 bit and are found like this:
-
-    Color of the first pixel is 0b10
-    | Color of the second pixel is 0b01
-    v v
-    1 0 0 1 0 0 0 1 <- byte1
-    0 1 1 1 1 1 0 0 <- byte2
-    """
-    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
 
 class Tile:
@@ -161,7 +147,7 @@ class Tile:
             byte2 = self.mb.lcd.VRAM[self._data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
-                colorcode = _getcolorcode(byte1, byte2, 7-x)
+                colorcode = get_color_code(byte1, byte2, 7-x)
                 data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
 
         return data

@@ -8,8 +8,7 @@ from libc cimport time
 cimport cython
 from libc.stdint cimport uint64_t
 from pyboy.core.mb cimport Motherboard
-from pyboy.utils cimport IntIOWrapper, IntIOInterface,
-from pyboy.plugins.rewind cimport FixedAllocBuffers, CompressedFixedAllocBuffers, DeltaFixedAllocBuffers
+from pyboy.utils cimport IntIOWrapper, IntIOInterface
 from pyboy.window.base_window cimport BaseWindow
 
 cdef (int, int) _dummy_declaration
@@ -35,11 +34,7 @@ cdef class PyBoy:
     cdef unicode record_input_file
     cdef list recorded_input
     cdef list external_input
-    cdef DeltaFixedAllocBuffers rewind_buffer
-    cdef bint enable_rewind
-    cdef float rewind_speed
 
     @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
-    cpdef bint tick(self) nogil
+    cpdef bint tick(self)
     cpdef void stop(self, save=*)
-    cdef void update_window_title(self)

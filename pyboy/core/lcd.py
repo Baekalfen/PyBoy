@@ -8,6 +8,7 @@ from array import array
 from ctypes import c_void_p
 
 from pyboy.logger import logger
+from pyboy.utils import get_color_code
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
@@ -124,24 +125,6 @@ class LCDCRegister:
         self.sprite_enable        = value & (1 << 1)
         self.background_enable    = value & (1 << 0)
 
-
-
-# TODO: Would a lookup-table increase performance? For example a lookup table of each 4-bit nibble?
-# That's 16**2 = 256 values. Index calculated as: (byte1 & 0xF0) | ((byte2 & 0xF0) >> 4)
-# and then: (byte1 & 0x0F) | ((byte2 & 0x0F) >> 4)
-# Then could even be preloaded for each color palette
-def getcolorcode(byte1, byte2, offset):
-    """Convert 2 bytes into color code at a given offset.
-
-    The colors are 2 bit and are found like this:
-
-    Color of the first pixel is 0b10
-    | Color of the second pixel is 0b01
-    v v
-    1 0 0 1 0 0 0 1 <- byte1
-    0 1 1 1 1 1 0 0 <- byte2
-    """
-    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
 
 class Renderer:
@@ -275,7 +258,7 @@ class Renderer:
                 y = (t + k - 0x8000)//2
 
                 for x in range(8):
-                    colorcode = getcolorcode(byte1, byte2, 7-x)
+                    colorcode = get_color_code(byte1, byte2, 7-x)
 
                     self._tilecache[y][x] = self.color_palette[lcd.BGP.getcolor(colorcode)]
                     self._spritecache0[y][x] = self.color_palette[lcd.OBP0.getcolor(colorcode)]

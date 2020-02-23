@@ -3,11 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.core.lcd cimport LCD
-
 import cython
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from pyboy.plugins.base_plugin cimport BaseWindowPlugin
 
 
 cdef (int, int) _dummy_declaration
@@ -15,7 +14,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef int ROWS, COLS
 
-cdef class OpenGLWindow(SDLWindow):
+cdef class OpenGLWindow(BaseWindowPlugin):
     cdef list events
 
     cdef void _glkeyboard(self, str, int, int, bint)
