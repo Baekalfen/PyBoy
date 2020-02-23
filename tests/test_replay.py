@@ -103,9 +103,10 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
         pyboy.tick()
 
     # If end-frame in record_gif is high than frame counter
-    # if recording:
-    #     pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
-    #     recording ^= True
+    if recording:
+        pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
+        print(frame_count)
+        recording ^= True
 
     if gif_destination:
         move_gif(pyboy.get_cartridge_title(), gif_destination)
@@ -123,7 +124,7 @@ def test_pokemon():
 
 
 def test_pokemon_gif1():
-    replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif1.replay", record_gif=(630, 3540),
+    replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif1.replay", record_gif=(1, 2714),
            gif_destination="README/1.gif", overwrite=RESET_REPLAYS)
 
 
