@@ -62,6 +62,13 @@ cdef class LCDCRegister:
 
 
 cdef class Renderer:
+    cdef uint8_t alphamask
+    cdef uint32_t[4] color_palette
+    cdef str color_format
+    cdef tuple buffer_dims
+    cdef bint clearcache
+    cdef set tiles_changed
+
     cdef array _screenbuffer_raw
     cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer

@@ -16,7 +16,7 @@ import sdl2
 import sdl2.ext
 
 from .. import windowevent
-from .window_sdl2 import KEY_DOWN, KEY_UP, SDLWindow
+from .window_sdl2 import KEY_DOWN, KEY_UP, WindowSDL2
 
 # from ..botsupport import Sprite
 
@@ -374,7 +374,7 @@ class TileViewWindow(Window):
         return NO_TILE
 
 
-class DebugWindow(SDLWindow):
+class DebugWindow(WindowSDL2):
     def __init__(self, renderer, scale, color_palette, hide_window):
         super(self.__class__, self).__init__(renderer, scale, color_palette, hide_window)
         self.scale = scale

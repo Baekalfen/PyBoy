@@ -19,20 +19,20 @@ from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_
                          glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
 from pyboy import windowevent
 from pyboy.logger import logger
-from pyboy.plugins.base_plugin import BaseWindowPlugin
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 
 ROWS, COLS = 144, 160
 
 
-class OpenGLWindow(BaseWindowPlugin):
-    def __init__(self, pyboy, argv):
-        super().__init__(pyboy, argv)
+class WindowOpenGL(PyBoyWindowPlugin):
+    def __init__(self, pyboy, mb, pyboy_argv):
+        super().__init__(pyboy, mb, pyboy_argv)
 
         if not self.enabled():
             return
 
         self.renderer = pyboy.mb.renderer
-        self._scale = argv.get("scale")
+        self._scale = pyboy_argv.get("scale")
         logger.info("%s initialization" % self.__class__.__name__)
 
         self._scaledresolution = (self._scale * COLS, self._scale * ROWS)
@@ -53,7 +53,7 @@ class OpenGLWindow(BaseWindowPlugin):
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
 
-        if argv.get("hide_window"):
+        if pyboy_argv.get("hide_window"):
             logger.warning("Hiding the window is not supported in OpenGL")
 
     # Cython does not cooperate with lambdas
@@ -144,7 +144,7 @@ class OpenGLWindow(BaseWindowPlugin):
         glFlush()
 
     def enabled(self):
-        return self.argv.get('window_type') == 'OpenGL'
+        return self.pyboy_argv.get('window_type') == 'OpenGL'
 
     def post_tick(self):
         self._gldraw()

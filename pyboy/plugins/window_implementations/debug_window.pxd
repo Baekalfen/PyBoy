@@ -8,7 +8,7 @@ from array import array
 
 cimport sdl2
 from pyboy.core.lcd cimport LCD
-from .window_sdl2 cimport SDLWindow
+from .window_sdl2 cimport WindowSDL2
 
 cdef (int, int, int, int) _dummy_declaration2
 
@@ -78,7 +78,7 @@ cdef class TileViewWindow(Window):
     cdef void draw_overlay(self, int, uint8_t[144][4], int, int)
 
 
-cdef class DebugWindow(SDLWindow):
+cdef class DebugWindow(WindowSDL2):
     cdef LCD lcd
     cdef void set_lcd(self, LCD)
     cdef unsigned int scale

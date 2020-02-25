@@ -18,4 +18,4 @@ class AutoPause(PyBoyPlugin):
         return events
 
     def enabled(self):
-        return self.argv.get('autopause')
+        return self.pyboy_argv.get('autopause')

@@ -3,12 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.plugins.base_plugin import BaseWindowPlugin
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 
 
-class DummyWindow(BaseWindowPlugin):
-    def __init__(self, pyboy, argv):
-        super().__init__(pyboy, argv)
+class WindowDummy(PyBoyWindowPlugin):
+    def __init__(self, pyboy, mb, pyboy_argv):
+        super().__init__(pyboy, mb, pyboy_argv)
 
         if not self.enabled():
             return
@@ -16,4 +16,4 @@ class DummyWindow(BaseWindowPlugin):
         pyboy.mb.disable_renderer = True
 
     def enabled(self):
-        return self.argv.get('window_type') == 'dummy'
+        return self.pyboy_argv.get('window_type') == 'dummy'

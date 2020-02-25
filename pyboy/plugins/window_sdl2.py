@@ -6,8 +6,7 @@
 import sdl2
 import sdl2.ext
 from pyboy import windowevent
-from pyboy.plugins.base_plugin import BaseWindowPlugin
-from pyboy.utils import get_color_code
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 
 ROWS, COLS = 144, 160
 
@@ -53,9 +52,9 @@ KEY_UP = {
 }
 
 
-class SDLWindow(BaseWindowPlugin):
-    def __init__(self, pyboy, argv):
-        super().__init__(pyboy, argv)
+class WindowSDL2(PyBoyWindowPlugin):
+    def __init__(self, pyboy, mb, pyboy_argv):
+        super().__init__(pyboy, mb, pyboy_argv)
 
         if not self.enabled():
             return
@@ -77,7 +76,7 @@ class SDLWindow(BaseWindowPlugin):
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888,
             sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS)
 
-        if argv.get("hide_window"):
+        if pyboy_argv.get("hide_window"):
             sdl2.SDL_HideWindow(self._window)
         else:
             sdl2.SDL_ShowWindow(self._window)
@@ -107,7 +106,7 @@ class SDLWindow(BaseWindowPlugin):
         self._update_display()
 
     def enabled(self):
-        return self.argv.get('window_type') == 'SDL2' or self.argv.get('window_type') is None
+        return self.pyboy_argv.get('window_type') == 'SDL2' or self.pyboy_argv.get('window_type') is None
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
@@ -132,5 +131,5 @@ def _update_display(self):
     sdl2.SDL_RenderPresent(self._sdlrenderer)
     sdl2.SDL_RenderClear(self._sdlrenderer)
 
-SDLWindow._update_display = _update_display
+WindowSDL2._update_display = _update_display
 """, globals(), locals())

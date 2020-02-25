@@ -4,7 +4,7 @@
 #
 
 cimport sdl2
-from pyboy.plugins.base_plugin cimport BaseWindowPlugin
+from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 cimport pyboy.utils
 
 import cython
@@ -18,7 +18,7 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef int ROWS, COLS
 
 
-cdef class SDLWindow(BaseWindowPlugin):
+cdef class WindowSDL2(PyBoyWindowPlugin):
 
     cdef uint32_t _ticks
     cdef dict _key_down

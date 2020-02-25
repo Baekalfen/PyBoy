@@ -3,79 +3,196 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.plugins.autopause import AutoPause
-from pyboy.plugins.base_plugin import PyBoyPlugin
+from pyboy.plugins.auto_pause import AutoPause
 from pyboy.plugins.debug import Debug
 from pyboy.plugins.disable_input import DisableInput
 from pyboy.plugins.record_replay import RecordReplay
 from pyboy.plugins.rewind import Rewind
-from pyboy.plugins.screenrecorder import ScreenRecorder
-from pyboy.plugins.window_dummy import DummyWindow
-from pyboy.plugins.window_headless import HeadlessWindow
-from pyboy.plugins.window_opengl import OpenGLWindow
-from pyboy.plugins.window_sdl2 import SDLWindow
+from pyboy.plugins.screen_recorder import ScreenRecorder
+from pyboy.plugins.window_dummy import WindowDummy
+from pyboy.plugins.window_headless import WindowHeadless
+from pyboy.plugins.window_open_gl import WindowOpenGL
+# imports
+from pyboy.plugins.window_sdl2 import WindowSDL2
 
-windows = [SDLWindow, OpenGLWindow, HeadlessWindow, DummyWindow]
-plugins = [DisableInput, AutoPause, RecordReplay, Rewind, ScreenRecorder, Debug]
+# imports end
 
 
 def get_parser_arguments():
-    for p in plugins:
-        yield p.argv
+    # yield_plugins
+    yield WindowSDL2.argv
+    yield WindowOpenGL.argv
+    yield WindowHeadless.argv
+    yield WindowDummy.argv
+    yield DisableInput.argv
+    yield AutoPause.argv
+    yield RecordReplay.argv
+    yield Rewind.argv
+    yield ScreenRecorder.argv
+    yield Debug.argv
+    # yield_plugins end
+    pass
 
 
-class PluginManager(PyBoyPlugin):
-    def __init__(self, pyboy, argv):
-        super().__init__(pyboy, argv)
+class PluginManager:
+    def __init__(self, pyboy, mb, pyboy_argv):
+        self.pyboy = pyboy
 
-        self.windows = []
-        self.plugins = []
-
-        for plugin in plugins:
-            p = plugin(pyboy, argv)
-            if p.enabled():
-                self.plugins.append(p)
-        for window in windows:
-            w = window(pyboy, argv)
-            if w.enabled():
-                self.windows.append(w)
+        # plugins_enabled
+        self.window_sdl2 = WindowSDL2(pyboy, mb, pyboy_argv)
+        self.window_sdl2_enabled = self.window_sdl2.enabled()
+        self.window_open_gl = WindowOpenGL(pyboy, mb, pyboy_argv)
+        self.window_open_gl_enabled = self.window_open_gl.enabled()
+        self.window_headless = WindowHeadless(pyboy, mb, pyboy_argv)
+        self.window_headless_enabled = self.window_headless.enabled()
+        self.window_dummy = WindowDummy(pyboy, mb, pyboy_argv)
+        self.window_dummy_enabled = self.window_dummy.enabled()
+        self.disable_input = DisableInput(pyboy, mb, pyboy_argv)
+        self.disable_input_enabled = self.disable_input.enabled()
+        self.auto_pause = AutoPause(pyboy, mb, pyboy_argv)
+        self.auto_pause_enabled = self.auto_pause.enabled()
+        self.record_replay = RecordReplay(pyboy, mb, pyboy_argv)
+        self.record_replay_enabled = self.record_replay.enabled()
+        self.rewind = Rewind(pyboy, mb, pyboy_argv)
+        self.rewind_enabled = self.rewind.enabled()
+        self.screen_recorder = ScreenRecorder(pyboy, mb, pyboy_argv)
+        self.screen_recorder_enabled = self.screen_recorder.enabled()
+        self.debug = Debug(pyboy, mb, pyboy_argv)
+        self.debug_enabled = self.debug.enabled()
+        # plugins_enabled end
 
     def handle_events(self, events):
-        for w in self.windows:
-            events = w.handle_events(events)
-        for p in self.plugins:
-            events = p.handle_events(events)
+        # foreach windows events = [].handle_events(events)
+        if self.window_sdl2_enabled:
+            events = self.window_sdl2.handle_events(events)
+        if self.window_open_gl_enabled:
+            events = self.window_open_gl.handle_events(events)
+        if self.window_headless_enabled:
+            events = self.window_headless.handle_events(events)
+        if self.window_dummy_enabled:
+            events = self.window_dummy.handle_events(events)
+        # foreach end
+        # foreach plugins events = [].handle_events(events)
+        if self.disable_input_enabled:
+            events = self.disable_input.handle_events(events)
+        if self.auto_pause_enabled:
+            events = self.auto_pause.handle_events(events)
+        if self.record_replay_enabled:
+            events = self.record_replay.handle_events(events)
+        if self.rewind_enabled:
+            events = self.rewind.handle_events(events)
+        if self.screen_recorder_enabled:
+            events = self.screen_recorder.handle_events(events)
+        if self.debug_enabled:
+            events = self.debug.handle_events(events)
+        # foreach end
         return events
 
     def post_tick(self):
-        for p in self.plugins:
-            p.post_tick()
-        if not self.pyboy.paused:
-            # This might change, if we have a HUD
+        # foreach plugins [].post_tick()
+        if self.disable_input_enabled:
+            self.disable_input.post_tick()
+        if self.auto_pause_enabled:
+            self.auto_pause.post_tick()
+        if self.record_replay_enabled:
+            self.record_replay.post_tick()
+        if self.rewind_enabled:
+            self.rewind.post_tick()
+        if self.screen_recorder_enabled:
+            self.screen_recorder.post_tick()
+        if self.debug_enabled:
+            self.debug.post_tick()
+        # foreach end
+
+        if not self.pyboy.is_paused():
             self._post_tick_windows()
 
     def _post_tick_windows(self):
-        for w in self.windows:
-            w.post_tick()
-            w.set_title(self.pyboy.window_title)
+        # foreach windows [].post_tick(), [].set_title(self.pyboy.get_window_title())
+        if self.window_sdl2_enabled:
+            self.window_sdl2.post_tick()
+            self.window_sdl2.set_title(self.pyboy.get_window_title())
+        if self.window_open_gl_enabled:
+            self.window_open_gl.post_tick()
+            self.window_open_gl.set_title(self.pyboy.get_window_title())
+        if self.window_headless_enabled:
+            self.window_headless.post_tick()
+            self.window_headless.set_title(self.pyboy.get_window_title())
+        if self.window_dummy_enabled:
+            self.window_dummy.post_tick()
+            self.window_dummy.set_title(self.pyboy.get_window_title())
+        # foreach end
+        pass
 
     def frame_limiter(self, speed):
         if speed <= 0:
             return
-        for w in self.windows:
-            if w.frame_limiter(speed):
-                break
+        # foreach windows done = [].frame_limiter(speed), if done: return
+        if self.window_sdl2_enabled:
+            done = self.window_sdl2.frame_limiter(speed)
+            if done: return
+        if self.window_open_gl_enabled:
+            done = self.window_open_gl.frame_limiter(speed)
+            if done: return
+        if self.window_headless_enabled:
+            done = self.window_headless.frame_limiter(speed)
+            if done: return
+        if self.window_dummy_enabled:
+            done = self.window_dummy.frame_limiter(speed)
+            if done: return
+        # foreach end
 
     def window_title(self):
         title = ""
-        for w in self.windows:
-            title += w.window_title()
-        for p in self.plugins:
-            title += p.window_title()
+        # foreach windows title = [].window_title()
+        if self.window_sdl2_enabled:
+            title = self.window_sdl2.window_title()
+        if self.window_open_gl_enabled:
+            title = self.window_open_gl.window_title()
+        if self.window_headless_enabled:
+            title = self.window_headless.window_title()
+        if self.window_dummy_enabled:
+            title = self.window_dummy.window_title()
+        # foreach end
+        # foreach plugins title = [].window_title()
+        if self.disable_input_enabled:
+            title = self.disable_input.window_title()
+        if self.auto_pause_enabled:
+            title = self.auto_pause.window_title()
+        if self.record_replay_enabled:
+            title = self.record_replay.window_title()
+        if self.rewind_enabled:
+            title = self.rewind.window_title()
+        if self.screen_recorder_enabled:
+            title = self.screen_recorder.window_title()
+        if self.debug_enabled:
+            title = self.debug.window_title()
+        # foreach end
         return title
 
     def stop(self):
-        for w in self.windows:
-            w.stop()
-        for p in self.plugins:
-            p.stop()
+        # foreach windows [].stop()
+        if self.window_sdl2_enabled:
+            self.window_sdl2.stop()
+        if self.window_open_gl_enabled:
+            self.window_open_gl.stop()
+        if self.window_headless_enabled:
+            self.window_headless.stop()
+        if self.window_dummy_enabled:
+            self.window_dummy.stop()
+        # foreach end
+        # foreach plugins [].stop()
+        if self.disable_input_enabled:
+            self.disable_input.stop()
+        if self.auto_pause_enabled:
+            self.auto_pause.stop()
+        if self.record_replay_enabled:
+            self.record_replay.stop()
+        if self.rewind_enabled:
+            self.rewind.stop()
+        if self.screen_recorder_enabled:
+            self.screen_recorder.stop()
+        if self.debug_enabled:
+            self.debug.stop()
+        # foreach end
+        pass

@@ -177,7 +177,7 @@ def define_lib_includes_cflags():
 
 
 def prep_pxd_py_files():
-    ignore_py_files = ['__main__.py', 'generator.py']
+    ignore_py_files = ['__main__.py', 'manager_gen.py', 'opcodes_gen.py']
     # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
     # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):

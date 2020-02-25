@@ -3,10 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.plugins.base_plugin import BaseWindowPlugin
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 
 
-class HeadlessWindow(BaseWindowPlugin):
+class WindowHeadless(PyBoyWindowPlugin):
 
     def enabled(self):
-        return self.argv.get('window_type') == 'headless'
+        return self.pyboy_argv.get('window_type') == 'headless'

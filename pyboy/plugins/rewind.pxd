@@ -14,7 +14,8 @@ cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 
 cdef class Rewind(PyBoyPlugin):
-    pass
+    cdef float rewind_speed
+    cdef FixedAllocBuffers rewind_buffer
 
 
 ##############################################################

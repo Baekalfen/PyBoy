@@ -6,7 +6,7 @@
 from pyboy.utils cimport IntIOInterface
 
 cdef class RTC:
-    cdef unicode filename
+    cdef str filename
     cdef bint latch_enabled
     cdef double timezero
     cdef unsigned int sec_latch

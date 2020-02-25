@@ -14,7 +14,7 @@ pxd_destination = "opcodes.pxd"
 warning = """
 # THIS FILE IS AUTO-GENERATED!!!
 # DO NOT MODIFY THIS FILE.
-# CHANGES TO THE CODE SHOULD BE MADE IN 'generator.py'.
+# CHANGES TO THE CODE SHOULD BE MADE IN 'opcodes_gen.py'.
 """
 
 imports = """

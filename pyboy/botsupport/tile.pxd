@@ -5,9 +5,6 @@
 
 from libc.stdint cimport uint32_t
 
-cimport pyboy.window.window
-cimport pyboy.window.base_window
-cimport pyboy.window.window_sdl2
 from pyboy.core.mb cimport Motherboard
 
 cdef (int, int) _dummy_declaration

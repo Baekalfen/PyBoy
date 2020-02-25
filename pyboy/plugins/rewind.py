@@ -32,8 +32,8 @@ class Rewind(PyBoyPlugin):
         self.rewind_buffer = DeltaFixedAllocBuffers()
 
     def post_tick(self):
-        if not self.pyboy.paused:
-            self.pyboy.mb.save_state(self.rewind_buffer)
+        if not self.pyboy.is_paused():
+            self.mb.save_state(self.rewind_buffer)
             self.rewind_buffer.new()
 
     def window_title(self):
@@ -44,16 +44,16 @@ class Rewind(PyBoyPlugin):
             if event == windowevent.UNPAUSE:
                 self.rewind_buffer.commit()
             elif event == windowevent.PAUSE_TOGGLE:
-                if self.pyboy.paused:
+                if self.pyboy.is_paused():
                     self.rewind_buffer.commit()
             elif event == windowevent.RELEASE_REWIND_FORWARD:
                 self.rewind_speed = 1
             elif event == windowevent.PRESS_REWIND_FORWARD:
                 self.pyboy.pause()
                 if self.rewind_buffer.seek_frame(1):
-                    self.pyboy.mb.load_state(self.rewind_buffer)
+                    self.mb.load_state(self.rewind_buffer)
                     events.append(windowevent.INTERNAL_RENDERER_FLUSH)
-                    self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                    self.rewind_speed = min(self.rewind_speed * 1.1, 5)
                 else:
                     logger.info("Rewind limit reached")
             elif event == windowevent.RELEASE_REWIND_BACK:
@@ -61,18 +61,18 @@ class Rewind(PyBoyPlugin):
             elif event == windowevent.PRESS_REWIND_BACK:
                 self.pyboy.pause()
                 if self.rewind_buffer.seek_frame(-1):
-                    self.pyboy.mb.load_state(self.rewind_buffer)
+                    self.mb.load_state(self.rewind_buffer)
                     events.append(windowevent.INTERNAL_RENDERER_FLUSH)
-                    self.rewind_speed = min(self.rewind_speed * 1.1, 15)
+                    self.rewind_speed = min(self.rewind_speed * 1.1, 5)
                 else:
                     logger.info("Rewind limit reached")
 
         # NOTE: Disable this line, if recording for .replay files
-        self.pyboy.target_emulationspeed = int(self.rewind_speed)
+        self.pyboy.set_emulation_speed(int(self.rewind_speed))
         return events
 
     def enabled(self):
-        return self.argv.get('rewind')
+        return self.pyboy_argv.get('rewind')
 
 
 ##############################################################

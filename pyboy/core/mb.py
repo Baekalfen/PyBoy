@@ -30,11 +30,11 @@ class Motherboard:
         self.renderer = lcd.Renderer(color_palette)
         self.disable_renderer = disable_renderer
         self.bootrom_enabled = True
-        self.serialbuffer = u''
+        self.serialbuffer = ''
 
     def getserial(self):
         b = self.serialbuffer
-        self.serialbuffer = u''
+        self.serialbuffer = ''
         return b
 
     def buttonevent(self, key):

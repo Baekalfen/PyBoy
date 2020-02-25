@@ -27,12 +27,13 @@ cdef class Motherboard:
     cdef pyboy.core.bootrom.BootROM bootrom
     cdef pyboy.core.ram.RAM ram
     cdef pyboy.core.lcd.LCD lcd
-    cdef object renderer
+    cdef pyboy.core.lcd.Renderer renderer
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
-    cdef unicode serialbuffer
+    cdef bint disable_renderer
+    cdef str serialbuffer
 
     cdef void buttonevent(self, int)
     cdef void stop(self, bint)
@@ -42,8 +43,8 @@ cdef class Motherboard:
     cdef void calculate_cycles(self, int)
     cdef void tickframe(self)
 
-    cpdef unsigned char getitem(self, unsigned short)
-    cpdef void setitem(self, unsigned short, unsigned char)
+    cdef unsigned char getitem(self, unsigned short)
+    cdef void setitem(self, unsigned short, unsigned char)
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, unsigned char)

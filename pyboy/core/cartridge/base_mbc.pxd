@@ -8,8 +8,8 @@ from pyboy.core.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint32_t
 
 cdef class BaseMBC:
-    cdef unicode filename
-    cdef unicode gamename
+    cdef str filename
+    cdef str gamename
     cdef uint8_t[:, :] rombanks
     # 16 is absoulte max. 8KB in each bank
     cdef uint8_t[16][8 * 1024] rambanks
@@ -29,7 +29,7 @@ cdef class BaseMBC:
     cdef void save_ram(self, IntIOInterface)
     cdef void load_ram(self, IntIOInterface)
     cdef void init_rambanks(self, unsigned char)
-    cdef unicode getgamename(self, uint8_t[:,:])
+    cdef str getgamename(self, uint8_t[:,:])
 
     cdef unsigned char getitem(self, unsigned short)
     cdef void setitem(self, unsigned short, unsigned char)

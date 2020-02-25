@@ -26,7 +26,7 @@ cdef class BaseWindow:
     cdef unsigned int alphamask
     cdef (int, int) buffer_dims
 
-    cdef void set_title(self, unicode)
+    cdef void set_title(self, str)
     cdef list get_events(self)
 
     cdef void save_state(self, IntIOInterface)
