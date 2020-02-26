@@ -26,16 +26,16 @@ cdef class PluginManager:
     cdef object pyboy
 
     # plugin_cdef
-    cdef DisableInput disable_input
-    cdef AutoPause auto_pause
-    cdef RecordReplay record_replay
-    cdef Rewind rewind
-    cdef ScreenRecorder screen_recorder
-    cdef Debug debug
-    cdef WindowSDL2 window_sdl2
-    cdef WindowOpenGL window_open_gl
-    cdef WindowHeadless window_headless
-    cdef WindowDummy window_dummy
+    cdef public DisableInput disable_input
+    cdef public AutoPause auto_pause
+    cdef public RecordReplay record_replay
+    cdef public Rewind rewind
+    cdef public ScreenRecorder screen_recorder
+    cdef public Debug debug
+    cdef public WindowSDL2 window_sdl2
+    cdef public WindowOpenGL window_open_gl
+    cdef public WindowHeadless window_headless
+    cdef public WindowDummy window_dummy
     cdef bint window_sdl2_enabled
     cdef bint window_open_gl_enabled
     cdef bint window_headless_enabled

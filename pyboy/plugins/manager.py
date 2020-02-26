@@ -3,18 +3,17 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.plugins.auto_pause import AutoPause
-from pyboy.plugins.debug import Debug
-from pyboy.plugins.disable_input import DisableInput
-from pyboy.plugins.record_replay import RecordReplay
-from pyboy.plugins.rewind import Rewind
-from pyboy.plugins.screen_recorder import ScreenRecorder
-from pyboy.plugins.window_dummy import WindowDummy
-from pyboy.plugins.window_headless import WindowHeadless
-from pyboy.plugins.window_open_gl import WindowOpenGL
 # imports
-from pyboy.plugins.window_sdl2 import WindowSDL2
-
+from pyboy.plugins.window_sdl2 import WindowSDL2 # isort:skip
+from pyboy.plugins.window_open_gl import WindowOpenGL # isort:skip
+from pyboy.plugins.window_headless import WindowHeadless # isort:skip
+from pyboy.plugins.window_dummy import WindowDummy # isort:skip
+from pyboy.plugins.disable_input import DisableInput # isort:skip
+from pyboy.plugins.auto_pause import AutoPause # isort:skip
+from pyboy.plugins.record_replay import RecordReplay # isort:skip
+from pyboy.plugins.rewind import Rewind # isort:skip
+from pyboy.plugins.screen_recorder import ScreenRecorder # isort:skip
+from pyboy.plugins.debug import Debug # isort:skip
 # imports end
 
 
@@ -104,7 +103,7 @@ class PluginManager:
             self.debug.post_tick()
         # foreach end
 
-        if not self.pyboy.is_paused():
+        if not self.pyboy.paused:
             self._post_tick_windows()
 
     def _post_tick_windows(self):

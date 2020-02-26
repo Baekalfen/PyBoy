@@ -23,7 +23,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef class CPU:
 
-    cdef public bint interrupt_master_enable, break_allow, break_on, halted, stopped, profiling
+    cdef bint interrupt_master_enable, break_allow, break_on, halted, stopped, profiling
     cdef unsigned int old_pc, break_next
 
     cdef object debug_callstack

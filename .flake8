@@ -24,4 +24,6 @@ per-file-ignores =
     interface_example.py:E501
     # Ditto (btw, inline comments are broken for this option, maybe fix)
     tetris_bot.py:E501
+    # Auto generated code
+    manager.py:E701
 max-line-length = 120

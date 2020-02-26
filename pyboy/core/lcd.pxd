@@ -22,10 +22,10 @@ cdef class LCD:
     cdef int SCX
     cdef int WY
     cdef int WX
-    cdef public LCDCRegister LCDC
-    cdef public PaletteRegister BGP
-    cdef public PaletteRegister OBP0
-    cdef public PaletteRegister OBP1
+    cdef LCDCRegister LCDC
+    cdef PaletteRegister BGP
+    cdef PaletteRegister OBP0
+    cdef PaletteRegister OBP1
 
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface)

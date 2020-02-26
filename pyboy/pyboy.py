@@ -444,15 +444,6 @@ class PyBoy:
         """
         self.window_title_disabled = True
 
-    def get_window_title(self):
-        """
-        Provides string, that is normally presented in the window title.
-
-        Returns:
-            str : Current window title
-        """
-        return self.window_title
-
     def set_emulation_speed(self, target_speed):
         """
         Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high
@@ -478,33 +469,3 @@ class PyBoy:
             str : Game name
         """
         return self.mb.cartridge.gamename
-
-    def get_rom_filename(self):
-        """
-        Get the filename for the currently loaded ROM.
-
-        Returns:
-            str : filepath to game ROM
-        """
-        return self.gamerom_file
-
-    def get_tick_count(self):
-        """
-        Provides the internal counter for how many times `PyBoy.tick` has been called -- i.e. how many "frames" have
-        run.
-
-        Returns:
-            int : The total count of 'ticks' the emulator has run
-        """
-        return self.frame_count
-
-    def is_paused(self):
-        """
-        Returns True, if emulation is currently paused. This means, that calls to `PyBoy.tick` will not progress the
-        emulation (game), but it will still send inputs to the plugins. Eventhough it's paused, you'll have to keep
-        calling `PyBoy.tick`, otherwise the window might hang.
-
-        Returns:
-            bool : Returns True, if emulation is currently paused
-        """
-        return self.paused

@@ -16,11 +16,13 @@ def to_snake_case(s):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", s)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
+
 def skip_lines(iterator, stop):
     # Skip old lines
     while True:
         if next(line_iter).strip().startswith(stop):
             break
+
 
 out_lines = []
 with open('manager.py', 'r') as f:
@@ -37,7 +39,6 @@ with open('manager.py', 'r') as f:
             indentation = ' '*line.index('# foreach')
 
             skip_lines(line_iter, '# foreach end')
-
 
             _, foreach, plugin_type, fun = line.strip().split(' ', 3)
             for p in eval(plugin_type):
@@ -86,7 +87,7 @@ with open('manager.py', 'r') as f:
 
             for p in windows+plugins:
                 p_name = to_snake_case(p)
-                lines.append(f"from pyboy.plugins.{p_name} import {p}\n")
+                lines.append(f"from pyboy.plugins.{p_name} import {p} # isort:skip\n")
 
             lines.append('# imports end\n')
             out_lines.extend([indentation + l for l in lines])
@@ -115,11 +116,11 @@ with open('manager.pxd', 'r') as f:
 
             for p in plugins:
                 p_name = to_snake_case(p)
-                lines.append(f"cdef {p} {p_name}\n")
+                lines.append(f"cdef public {p} {p_name}\n")
 
             for p in windows:
                 p_name = to_snake_case(p)
-                lines.append(f"cdef {p} {p_name}\n")
+                lines.append(f"cdef public {p} {p_name}\n")
 
             for p in windows+plugins:
                 p_name = to_snake_case(p)

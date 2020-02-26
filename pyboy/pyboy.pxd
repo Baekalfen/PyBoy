@@ -17,19 +17,19 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef float SPF
 
 cdef class PyBoy:
-    cdef str gamerom_file
     cdef Motherboard mb
-    cdef PluginManager plugin_manager
+    cdef public PluginManager plugin_manager
+    cdef public uint64_t frame_count
+    cdef public str gamerom_file
+    cdef readonly bint paused
 
     cdef double avg_pre
     cdef double avg_tick
     cdef double avg_post
-    cdef uint64_t frame_count
 
-    cdef bint paused
     cdef list events
     cdef bint done
-    cdef str window_title
+    cdef public str window_title
     cdef bint window_title_disabled
 
     cdef bint limit_emulationspeed

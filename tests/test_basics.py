@@ -5,7 +5,6 @@
 import base64
 import hashlib
 import os
-import platform
 
 import pytest
 from pyboy import PyBoy
@@ -17,7 +16,6 @@ from . import utils
 tetris_rom = utils.tetris_rom
 any_rom = tetris_rom
 test_file = 'test.replay'
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_record_replay():
@@ -33,15 +31,12 @@ def test_record_replay():
     pyboy.send_input(windowevent.PRESS_ARROW_UP)
     pyboy.tick()
 
-    # pyboy.plugin_manager isn't exposed when compiled
-    if is_pypy:
-        # The first plugin will be RecordInput
-        events = pyboy.plugin_manager.record_replay.recorded_input
-        assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
-        frame_no, keys, frame_data = events[0]
-        assert frame_no == 1, "We inserted the key on the second frame"
-        assert keys[0] == windowevent.PRESS_ARROW_DOWN, "Check we have the right keypress"
-        assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
+    events = pyboy.plugin_manager.record_replay.recorded_input
+    assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
+    frame_no, keys, frame_data = events[0]
+    assert frame_no == 1, "We inserted the key on the second frame"
+    assert keys[0] == windowevent.PRESS_ARROW_DOWN, "Check we have the right keypress"
+    assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
 
     pyboy.stop(save=False)
 

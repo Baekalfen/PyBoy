@@ -9,5 +9,5 @@ cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 
 cdef class RecordReplay(PyBoyPlugin):
-    cdef list recorded_input
+    cdef public list recorded_input
 

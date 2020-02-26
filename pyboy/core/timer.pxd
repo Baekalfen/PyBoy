@@ -7,9 +7,9 @@ import cython
 
 
 cdef class Timer:
-    cdef public unsigned int DIV, TIMA, TMA, TAC
-    cdef public unsigned int DIV_counter, TIMA_counter
-    cdef public unsigned int[4] dividers
+    cdef unsigned int DIV, TIMA, TMA, TAC
+    cdef unsigned int DIV_counter, TIMA_counter
+    cdef unsigned int[4] dividers
 
     @cython.locals(divider=cython.int)
     cdef bint tick(self, unsigned int)

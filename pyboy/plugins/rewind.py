@@ -32,7 +32,7 @@ class Rewind(PyBoyPlugin):
         self.rewind_buffer = DeltaFixedAllocBuffers()
 
     def post_tick(self):
-        if not self.pyboy.is_paused():
+        if not self.pyboy.paused:
             self.mb.save_state(self.rewind_buffer)
             self.rewind_buffer.new()
 
@@ -44,7 +44,7 @@ class Rewind(PyBoyPlugin):
             if event == windowevent.UNPAUSE:
                 self.rewind_buffer.commit()
             elif event == windowevent.PAUSE_TOGGLE:
-                if self.pyboy.is_paused():
+                if self.pyboy.paused:
                     self.rewind_buffer.commit()
             elif event == windowevent.RELEASE_REWIND_FORWARD:
                 self.rewind_speed = 1

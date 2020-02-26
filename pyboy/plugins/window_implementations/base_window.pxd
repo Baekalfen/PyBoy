@@ -22,7 +22,7 @@ cdef class BaseWindow:
     cdef bint enable_title
     cdef void init(self, bint)
 
-    cdef public uint32_t[4] color_palette
+    cdef uint32_t[4] color_palette
     cdef unsigned int alphamask
     cdef (int, int) buffer_dims
 
