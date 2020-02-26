@@ -6,12 +6,12 @@
 import cython
 from cpython.array cimport array
 from array import array
-from libc.stdint cimport uint8_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 cimport pyboy.utils
 from pyboy.utils cimport IntIOInterface
 
-cdef unsigned short LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGPalette, OBP0, OBP1, WY, WX
-cdef int ROWS, COLS
+cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
+cdef int ROWS, COLS, TILES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 
 
 cdef class LCD:
@@ -119,3 +119,6 @@ cdef class Renderer:
         alpha=uint32_t
         )
     cdef void update_cache(self, LCD)
+
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface)

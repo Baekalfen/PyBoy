@@ -5,7 +5,7 @@
 import base64
 import hashlib
 import os
-from unittest import mock
+import platform
 
 import pytest
 from pyboy import PyBoy
@@ -17,6 +17,8 @@ from . import utils
 tetris_rom = utils.tetris_rom
 any_rom = tetris_rom
 test_file = 'test.replay'
+is_pypy = platform.python_implementation() == "PyPy"
+
 
 def test_record_replay():
     pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=utils.boot_rom, record_input=test_file)
@@ -31,13 +33,15 @@ def test_record_replay():
     pyboy.send_input(windowevent.PRESS_ARROW_UP)
     pyboy.tick()
 
-    # The first plugin will be RecordInput
-    events = pyboy.plugin_manager.plugins[0].recorded_input
-    assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
-    frame_no, keys, frame_data = events[0]
-    assert frame_no == 1, "We inserted the key on the second frame"
-    assert keys[0] == windowevent.PRESS_ARROW_DOWN, "Check we have the right keypress"
-    assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
+    # pyboy.plugin_manager isn't exposed when compiled
+    if is_pypy:
+        # The first plugin will be RecordInput
+        events = pyboy.plugin_manager.record_replay.recorded_input
+        assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
+        frame_no, keys, frame_data = events[0]
+        assert frame_no == 1, "We inserted the key on the second frame"
+        assert keys[0] == windowevent.PRESS_ARROW_DOWN, "Check we have the right keypress"
+        assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
 
     pyboy.stop(save=False)
 
@@ -78,23 +82,27 @@ def test_argv_parser(*args):
     with pytest.raises(FileNotFoundError):
         parser.parse_args('not_a_rom_file_that_would_exist.rom'.split(' '))
 
-
     file_that_exists = "setup.py"
     # Check defaults
     empty = parser.parse_args(file_that_exists.split(' ')).__dict__
     for k, v in {
-            "ROM": file_that_exists, "autopause": False, "bootrom": None, "debug": False, "loadstate": None, "no_input": False,
-            "no_logger": False, "profiling": False, "record_input": None, "rewind": False, "scale": 3, "window_type": 'SDL2'
+            "ROM": file_that_exists, "autopause": False, "bootrom": None, "debug": False, "loadstate": None,
+            "no_input": False, "no_logger": False, "profiling": False, "record_input": None, "rewind": False,
+            "scale": 3, "window_type": 'SDL2'
             }.items():
         assert empty[k] == v
 
     # Check the assumed behavior of loadstate with and without argument
     assert parser.parse_args(file_that_exists.split(' ')).loadstate is None
     assert parser.parse_args(f'{file_that_exists} --loadstate'.split(' ')).loadstate == main.INTERNAL_LOADSTATE
-    assert parser.parse_args(f'{file_that_exists} --loadstate {file_that_exists}'.split(' ')).loadstate == file_that_exists
+    assert parser.parse_args(
+        f'{file_that_exists} --loadstate {file_that_exists}'.split(' ')
+    ).loadstate == file_that_exists
 
     # Check flags become True
-    flags = parser.parse_args(f'{file_that_exists} --debug --autopause --profiling --rewind --no-input --no-logger'.split(' ')).__dict__
+    flags = parser.parse_args(
+        f'{file_that_exists} --debug --autopause --profiling --rewind --no-input --no-logger'.split(' ')
+    ).__dict__
     for k, v in {"autopause": True, "debug": True, "no_input": True, "no_logger": True, "profiling": True,
             "rewind": True}.items():
         assert flags[k] == v

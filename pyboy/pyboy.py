@@ -486,7 +486,7 @@ class PyBoy:
         Returns:
             str : filepath to game ROM
         """
-        return self.pyboy.gamerom_file
+        return self.gamerom_file
 
     def get_tick_count(self):
         """

@@ -31,7 +31,6 @@ class WindowOpenGL(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.renderer = pyboy.mb.renderer
         self._scale = pyboy_argv.get("scale")
         logger.info("%s initialization" % self.__class__.__name__)
 

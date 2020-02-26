@@ -28,7 +28,11 @@ class Sprite:
         indexes corresponding to players, enemies, power-ups and so on.
         """
         self.mb = mb
-        self.offset = index * 4
+        self._offset = index * 4
+
+    @property
+    def offset(self):
+        return self._offset
 
     @property
     def y(self):
@@ -64,7 +68,21 @@ class Sprite:
         """
         # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
-    tile_identifier = tile_index # Same as index, when there is no signed indexes
+
+    @property
+    def tile_identifier(self):
+        # Same as index, when there is no signed indexes
+        """
+        The index/identifier of the tile the sprite uses. To get a better representation, see the method
+        `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the index/identifier of the first tile. The second tile will
+        always be the one immediately following the first (`tile_index + 1`).
+
+        Returns:
+            int: unsigned tile index
+        """
+        return self.tile_index
 
     @property
     def attr_obj_bg_priority(self):

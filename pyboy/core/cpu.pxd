@@ -7,12 +7,13 @@
 cimport pyboy.core.mb
 cimport opcodes
 
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 from pyboy.utils cimport IntIOInterface
 
 import cython
 
 
-cdef unsigned short IF_ADDRESS, IE_ADDRESS
+cdef uint16_t IF_ADDRESS, IE_ADDRESS
 cdef short FLAGC, FLAGH, FLAGN, FLAGZ
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 
