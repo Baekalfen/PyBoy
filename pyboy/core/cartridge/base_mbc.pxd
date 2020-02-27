@@ -20,12 +20,13 @@ cdef class BaseMBC:
     cdef uint8_t memorymodel
     cdef bint rambank_enabled
     cdef int external_ram_count
+    cdef int external_rom_count
     cdef bint rambank_initialized
     cdef uint16_t rambank_selected
     cdef uint16_t rombank_selected
 
     cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)
     cdef void save_ram(self, IntIOInterface)
     cdef void load_ram(self, IntIOInterface)
     cdef void init_rambanks(self, uint8_t)

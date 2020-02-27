@@ -33,7 +33,7 @@ cdef class PyBoy:
     cdef bint window_title_disabled
 
     cdef bint limit_emulationspeed
-    cdef int emulationspeed, target_emulationspeed
+    cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
     cdef object screen_recorder
     cdef bint record_input
     cdef bint disable_input

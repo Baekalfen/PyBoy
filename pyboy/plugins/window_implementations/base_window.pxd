@@ -30,7 +30,7 @@ cdef class BaseWindow:
     cdef list get_events(self)
 
     cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)
     cdef void disable_title(self)
     cdef void update_display(self, bint)
     cdef bint frame_limiter(self, int)

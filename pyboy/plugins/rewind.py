@@ -40,6 +40,7 @@ class Rewind(PyBoyPlugin):
         return " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
 
     def handle_events(self, events):
+        old_rewind_speed = self.rewind_speed
         for event in events:
             if event == windowevent.UNPAUSE:
                 self.rewind_buffer.commit()
@@ -67,8 +68,9 @@ class Rewind(PyBoyPlugin):
                 else:
                     logger.info("Rewind limit reached")
 
-        # NOTE: Disable this line, if recording for .replay files
-        self.pyboy.set_emulation_speed(int(self.rewind_speed))
+        if old_rewind_speed != self.rewind_speed:
+            # NOTE: Disable this line, if recording for .replay files
+            self.pyboy.set_emulation_speed(int(self.rewind_speed))
         return events
 
     def enabled(self):

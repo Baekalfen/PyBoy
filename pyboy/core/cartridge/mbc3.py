@@ -23,10 +23,10 @@ class MBC3(BaseMBC):
                 logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x"
                                % (address, value))
         elif 0x2000 <= address < 0x4000:
+            value &= 0b01111111
             if value == 0:
                 value = 1
-            # print "ROM Bank switch:", value & 0b01111111
-            self.rombank_selected = value & 0b01111111 # sets 7LSB of ROM bank address
+            self.rombank_selected = value
         elif 0x4000 <= address < 0x6000:
             self.rambank_selected = value
         elif 0x6000 <= address < 0x8000:
@@ -38,11 +38,12 @@ class MBC3(BaseMBC):
                 logger.warning("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x"
                                % (address, value))
         elif 0xA000 <= address < 0xC000:
-            if self.rambank_selected <= 0x03:
-                self.rambanks[self.rambank_selected][address-0xA000] = value
-            elif 0x08 <= self.rambank_selected <= 0x0C:
-                self.rtc.setregister(self.rambank_selected, value)
-            else:
-                raise logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambank_selected)
+            if self.rambank_enabled:
+                if self.rambank_selected <= 0x03:
+                    self.rambanks[self.rambank_selected][address-0xA000] = value
+                elif 0x08 <= self.rambank_selected <= 0x0C:
+                    self.rtc.setregister(self.rambank_selected, value)
+                else:
+                    logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambank_selected)
         else:
-            raise logger.error("Invalid writing address: 0x%0.4x" % address)
+            logger.error("Invalid writing address: 0x%0.4x" % address)

@@ -107,19 +107,19 @@ class PluginManager:
             self._post_tick_windows()
 
     def _post_tick_windows(self):
-        # foreach windows [].post_tick(), [].set_title(self.pyboy.get_window_title())
+        # foreach windows [].post_tick(), [].set_title(self.pyboy.window_title)
         if self.window_sdl2_enabled:
             self.window_sdl2.post_tick()
-            self.window_sdl2.set_title(self.pyboy.get_window_title())
+            self.window_sdl2.set_title(self.pyboy.window_title)
         if self.window_open_gl_enabled:
             self.window_open_gl.post_tick()
-            self.window_open_gl.set_title(self.pyboy.get_window_title())
+            self.window_open_gl.set_title(self.pyboy.window_title)
         if self.window_headless_enabled:
             self.window_headless.post_tick()
-            self.window_headless.set_title(self.pyboy.get_window_title())
+            self.window_headless.set_title(self.pyboy.window_title)
         if self.window_dummy_enabled:
             self.window_dummy.post_tick()
-            self.window_dummy.set_title(self.pyboy.get_window_title())
+            self.window_dummy.set_title(self.pyboy.window_title)
         # foreach end
         pass
 

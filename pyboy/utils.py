@@ -3,8 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+STATE_VERSION = 3
+
 ##############################################################
 # Buffer classes
+
 
 class IntIOInterface:
     def __init__(self, buf):
@@ -56,6 +59,7 @@ class IntIOWrapper(IntIOInterface):
 
     def flush(self):
         self.buffer.flush()
+
 
 ##############################################################
 # Misc

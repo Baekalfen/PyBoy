@@ -4,12 +4,12 @@
 #
 
 from pyboy.logger import logger
+from pyboy.utils import STATE_VERSION
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
-STATE_VERSION = 2
 
 
 class Motherboard:
@@ -31,6 +31,7 @@ class Motherboard:
         self.disable_renderer = disable_renderer
         self.bootrom_enabled = True
         self.serialbuffer = ''
+        self.cycles_remaining = 0
 
     def getserial(self):
         b = self.serialbuffer
@@ -68,12 +69,12 @@ class Motherboard:
             logger.debug(f"State version: 0-1")
             # HACK: The byte wasn't a state version, but the bootrom flag
             self.bootrom_enabled = state_version
-        self.cpu.load_state(f)
-        self.lcd.load_state(f)
+        self.cpu.load_state(f, state_version)
+        self.lcd.load_state(f, state_version)
         if state_version >= 2:
-            self.renderer.load_state(f)
-        self.ram.load_state(f)
-        self.cartridge.load_state(f)
+            self.renderer.load_state(f, state_version)
+        self.ram.load_state(f, state_version)
+        self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 
@@ -100,8 +101,9 @@ class Motherboard:
         else:
             self.setitem(STAT, self.getitem(STAT) & 0b11111011)
 
-    def calculate_cycles(self, x):
-        while x > 0:
+    def calculate_cycles(self, cycles_period):
+        self.cycles_remaining += cycles_period
+        while self.cycles_remaining > 0:
             cycles = self.cpu.tick()
 
             # TODO: Benchmark whether 'if' and 'try/except' is better
@@ -114,13 +116,14 @@ class Motherboard:
                 # For HiToLo interrupt it is indistinguishable whether
                 # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
-                cycles = min(self.timer.cyclestointerrupt(), x)
+                cycles = min(self.timer.cyclestointerrupt(), self.cycles_remaining)
 
                 # Profiling
                 if self.cpu.profiling:
                     self.cpu.hitrate[0x76] += cycles//4
 
-            x -= cycles
+            self.cycles_remaining -= cycles
+
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(TIMER)
 

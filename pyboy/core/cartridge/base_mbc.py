@@ -25,15 +25,15 @@ class BaseMBC:
             self.rtc = RTC(filename)
 
         self.rambank_initialized = False
+        self.external_rom_count = len(rombanks)
         self.external_ram_count = external_ram_count
         self.init_rambanks(external_ram_count)
         self.gamename = self.getgamename(rombanks)
 
         self.memorymodel = 0
         self.rambank_enabled = False
-        self.rambank_selected = 0 # TODO: Check this, not documented
-        # Note: TestROM 01-special.gb assumes initial value of 1
-        self.rombank_selected = 1 # TODO: Check this, not documented
+        self.rambank_selected = 0
+        self.rombank_selected = 1
 
         if not os.path.exists(self.filename):
             logger.info("No RAM file found. Skipping.")
@@ -57,14 +57,14 @@ class BaseMBC:
         if self.rtc_enabled:
             self.rtc.save_state(f)
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         self.rombank_selected = f.read()
         self.rambank_selected = f.read()
         self.rambank_enabled = f.read()
         self.memorymodel = f.read()
         self.load_ram(f)
         if self.rtc_enabled:
-            self.rtc.load_state(f)
+            self.rtc.load_state(f, state_version)
 
     def save_ram(self, f):
         if not self.rambank_initialized:
@@ -95,7 +95,7 @@ class BaseMBC:
         self.rambank_initialized = True
 
         # In real life the values in RAM are scrambled on initialization.
-        # Allocating the maximum, as it is easier with static array sizes. And it's just 128KB...
+        # Allocating the maximum, as it is easier in Cython. And it's just 128KB...
         self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(16)]
 
     def getgamename(self, rombanks):
@@ -108,17 +108,20 @@ class BaseMBC:
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected][address-0x4000]
+            return self.rombanks[self.rombank_selected % len(self.rombanks)][address-0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
-                raise logger.error("RAM banks not initialized: %s" % hex(address))
+                logger.error("RAM banks not initialized: %s" % hex(address))
+
+            if not self.rambank_enabled:
+                return 0xFF
 
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambank_selected][address-0xA000]
+                return self.rambanks[self.rambank_selected % self.external_ram_count][address-0xA000]
         else:
-            raise logger.error("Reading address invalid: %s" % address)
+            logger.error("Reading address invalid: %s" % address)
 
     def __str__(self):
         return "\n".join([
@@ -127,7 +130,7 @@ class BaseMBC:
             "Game name: %s" % self.gamename,
             "GB Color: %s" % str(self.ROMBanks[0][0x143] == 0x80),
             "Cartridge type: %s" % hex(self.cartType),
-            "Number of ROM banks: %s" % len(self.rombanks),
+            "Number of ROM banks: %s" % self.external_rom_count,
             "Active ROM bank: %s" % self.rombank_selected,
             # "Memory bank type: %s" % self.ROMBankController,
             "Number of RAM banks: %s" % len(self.rambanks),

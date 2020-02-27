@@ -365,7 +365,6 @@ class PyBoy:
         """
         return botsupport.TileMap(self.mb, window=True)
 
-    # TODO: We actually need the scanline_parameters. Mario might always report (0,0) at the end of frame.
     def get_screen_position(self):
         """
         These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
@@ -380,6 +379,19 @@ class PyBoy:
             ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
         """
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
+
+    def get_screen_position_list(self):
+        """
+        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+        the end of each call to `PyBoy.tick()`. For such games, `get_screen_position` becomes useless.
+
+        See `get_screen_position` for more information.
+
+        Returns:
+            numpy.ndarray: SCX, SCY, WX and WY for each scanline (144, 4).
+        """
+        return self.mb.renderer.get_scanline_parameters()
 
     def save_state(self, file_like_object):
         """

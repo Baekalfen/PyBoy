@@ -28,7 +28,7 @@ cdef class LCD:
     cdef PaletteRegister OBP1
 
     cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)
 
     cdef (int, int) getwindowpos(self)
     cdef (int, int) getviewport(self)
@@ -121,4 +121,4 @@ cdef class Renderer:
     cdef void update_cache(self, LCD)
 
     cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)

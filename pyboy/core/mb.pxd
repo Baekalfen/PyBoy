@@ -35,6 +35,7 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef bint disable_renderer
     cdef str serialbuffer
+    cdef int cycles_remaining
 
     cdef void buttonevent(self, int)
     cdef void stop(self, bint)

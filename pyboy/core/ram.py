@@ -42,7 +42,7 @@ class RAM:
         for n in range(INTERRUPT_ENABLE_REGISTER):
             f.write(self.interrupt_register[n])
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         for n in range(INTERNAL_RAM0):
             self.internal_ram0[n] = f.read()
         for n in range(NON_IO_INTERNAL_RAM0):

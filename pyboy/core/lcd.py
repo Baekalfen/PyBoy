@@ -64,7 +64,7 @@ class LCD:
         f.write(self.WY)
         f.write(self.WX)
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         for n in range(VIDEO_RAM):
             self.VRAM[n] = f.read()
 
@@ -126,7 +126,6 @@ class LCDCRegister:
         self.background_enable    = value & (1 << 0)
 
 
-
 class Renderer:
     def __init__(self, color_palette):
         self.alphamask = 0xFF
@@ -166,7 +165,6 @@ class Renderer:
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
 
-
     def scanline(self, y, lcd):
         bx, by = lcd.getviewport()
         wx, wy = lcd.getwindowpos()
@@ -174,7 +172,6 @@ class Renderer:
         self._scanlineparameters[y][1] = by
         self._scanlineparameters[y][2] = wx
         self._scanlineparameters[y][3] = wy
-
 
     def render_screen(self, lcd):
         # All VRAM addresses are offset by 0x8000
@@ -282,7 +279,7 @@ class Renderer:
 
     def get_screen_buffer_as_ndarray(self):
         import numpy as np
-        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:,:,1:]
+        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
 
     def get_screen_image(self):
         if not Image:
@@ -294,6 +291,15 @@ class Renderer:
         # Image.frombytes('RGBA', self.buffer_dims, self.get_screen_buffer()).show()
         return Image.fromarray(self.get_screen_buffer_as_ndarray(), 'RGB')
 
+    def get_scanline_parameters(self):
+        import numpy as np
+        return np.vstack(
+             [
+                 np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
+                 for line in self._scanlineparameters
+             ]
+         )
+
     def save_state(self, f):
         for y in range(ROWS):
             f.write(self._scanlineparameters[y][0])
@@ -302,7 +308,7 @@ class Renderer:
             f.write((self._scanlineparameters[y][2]+7) & 0xFF)
             f.write(self._scanlineparameters[y][3])
 
-    def load_state(self, f):
+    def load_state(self, f, state_version):
         for y in range(ROWS):
             self._scanlineparameters[y][0] = f.read()
             self._scanlineparameters[y][1] = f.read()

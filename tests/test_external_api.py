@@ -12,8 +12,8 @@ import PIL
 import pytest
 from pyboy import PyBoy, botsupport, windowevent
 
-boot_rom = "ROMs/DMG_ROM.bin"
-tetris_rom = "ROMs/Tetris.gb"
+from .utils import boot_rom, supermarioland_rom, tetris_rom
+
 any_rom = tetris_rom
 
 
@@ -56,7 +56,8 @@ def test_tiles():
 def test_screen_buffer_and_image():
     cformat = 'RGBA'
     boot_logo_hash_predigested = b'=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C'
-    boot_logo_hash_predigested = b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|'
+    boot_logo_hash_predigested = \
+        b's\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|'
     window = "headless"
 
     pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True,
@@ -251,10 +252,10 @@ def test_tetris():
                      (88, 144, 130, True),
                      (88, 152, 130, True),
                      (96, 152, 130, True),
-                     (136, 128, 131, True),
-                     (144, 128, 131, True),
-                     (136, 136, 131, True),
-                     (144, 136, 131, True),
+                     (128, 128, 133, True),
+                     (136, 128, 133, True),
+                     (144, 128, 133, True),
+                     (136, 136, 133, True),
                      (0, 0, 0, False),
                      (0, 0, 0, False),
                      (0, 0, 0, False),
@@ -285,7 +286,7 @@ def test_tetris():
                      (0, 0, 0, False)]
                     )
 
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 12
+                assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
                 with open('tmp.state', 'wb') as f:
                     pyboy.save_state(f)
                 pyboy.save_state(state_data)
@@ -329,7 +330,7 @@ def test_tetris():
             for frame in range(1016, 5282):
                 pyboy.tick()
                 if frame == 1017:
-                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 4 # Will 11 if load_state doesn't work
+                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 8
 
                 if frame == 1865:
                     game_board_matrix = list(tile_map[2:12, :18])
@@ -350,8 +351,8 @@ def test_tetris():
                              [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                              [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                              [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                             [303, 303, 303, 303, 131, 131, 303, 130, 130, 303],
-                             [303, 303, 303, 303, 131, 131, 303, 303, 130, 130]]
+                             [303, 303, 303, 133, 133, 133, 303, 130, 130, 303],
+                             [303, 303, 303, 303, 133, 303, 303, 303, 130, 130]]
                                 )
     os.remove('tmp.state')
 
@@ -367,4 +368,41 @@ def test_disable_title():
     pyboy = PyBoy(any_rom, window_type="dummy", disable_input=True, hide_window=True)
     pyboy.disable_title()
     pyboy.tick()
+    pyboy.stop(save=False)
+
+
+def test_screen_position_list():
+    pyboy = PyBoy(supermarioland_rom, window_type="headless", disable_input=True, hide_window=True)
+    pyboy.disable_title()
+    for _ in range(100):
+        pyboy.tick()
+
+    # Start the game
+    pyboy.send_input(windowevent.PRESS_BUTTON_START)
+    pyboy.tick()
+    pyboy.send_input(windowevent.RELEASE_BUTTON_START)
+
+    # Move right for 100 frame
+    pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
+    for _ in range(100):
+        pyboy.tick()
+
+    # Get screen positions, and verify the values
+    positions = pyboy.get_screen_position_list()
+    for y in range(1, 16):
+        assert positions[y][0] == 0 # HUD
+    for y in range(16, 144):
+        assert positions[y][0] == 49 # Actual screen position
+
+    # Progress another 10 frames to see and increase in SCX
+    for _ in range(10):
+        pyboy.tick()
+
+    # Get screen positions, and verify the values
+    positions = pyboy.get_screen_position_list()
+    for y in range(1, 16):
+        assert positions[y][0] == 0 # HUD
+    for y in range(16, 144):
+        assert positions[y][0] == 59 # Actual screen position
+
     pyboy.stop(save=False)
