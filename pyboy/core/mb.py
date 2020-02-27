@@ -102,8 +102,7 @@ class Motherboard:
             self.setitem(STAT, self.getitem(STAT) & 0b11111011)
 
     def calculate_cycles(self, cycles_period):
-        # TODO: Should be +=, but that causes some errors in Super Mario Land (see test_replay.py::test_rewind)
-        self.cycles_remaining = cycles_period
+        self.cycles_remaining += cycles_period
         while self.cycles_remaining > 0:
             cycles = self.cpu.tick()
 

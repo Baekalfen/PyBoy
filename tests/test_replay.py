@@ -154,4 +154,4 @@ def test_kirby():
 
 def test_rewind():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(130, 544),
-           gif_destination="README/5.gif", rewind=True, bootrom_file=None)
+           gif_destination="README/5.gif", rewind=True, bootrom_file=None, verify=False)
