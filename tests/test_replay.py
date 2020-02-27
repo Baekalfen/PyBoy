@@ -58,7 +58,7 @@ def move_gif(game, dest):
         raise FileNotFoundError(f"Couldn't find gif to move for game {game}")
 
 
-def replay(ROM, replay, window='SDL2', verify=True, record_gif=None, gif_destination=None, rewind=False,
+def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, rewind=False,
         bootrom_file=utils.boot_rom, overwrite=RESET_REPLAYS):
     with open(replay, 'rb') as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode('ascii'))
