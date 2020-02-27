@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 import cython
 cimport pyboy.core.cpu
@@ -15,7 +16,7 @@ cimport pyboy.core.lcd
 cimport pyboy.core.interaction
 
 
-cdef unsigned short STAT, LY, LYC
+cdef uint16_t STAT, LY, LYC
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 
 cdef (int, int) _dummy_declaration
@@ -43,10 +44,10 @@ cdef class Motherboard:
     cdef void calculate_cycles(self, int)
     cdef void tickframe(self)
 
-    cdef unsigned char getitem(self, unsigned short)
-    cdef void setitem(self, unsigned short, unsigned char)
+    cdef uint8_t getitem(self, uint16_t)
+    cdef void setitem(self, uint16_t, uint8_t)
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
-    cdef void transfer_DMA(self, unsigned char)
+    cdef void transfer_DMA(self, uint8_t)
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface)

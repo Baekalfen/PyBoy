@@ -14,9 +14,9 @@ cdef (int, int, int, int) _dummy_declaration2
 
 import cython
 cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
-cdef unsigned char get_color_code(unsigned char, unsigned char, unsigned char)
+cdef uint8_t get_color_code(uint8_t, uint8_t, uint8_t)
 
 cdef int TILES, COLOR, MASK
 cdef (int, int) GAMEBOY_RESOLUTION
@@ -81,7 +81,7 @@ cdef class TileViewWindow(Window):
 cdef class DebugWindow(WindowSDL2):
     cdef LCD lcd
     cdef void set_lcd(self, LCD)
-    cdef unsigned int scale
+    cdef uint64_t scale
 
     cdef int marked_tile
     cdef void mouse(self, bint, int, long, long)

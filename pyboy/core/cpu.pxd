@@ -7,7 +7,8 @@
 cimport pyboy.core.mb
 cimport opcodes
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdint cimport int16_t
 from pyboy.utils cimport IntIOInterface
 
 import cython
@@ -24,13 +25,13 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef class CPU:
 
     cdef bint interrupt_master_enable, break_allow, break_on, halted, stopped, profiling
-    cdef unsigned int old_pc, break_next
+    cdef uint64_t old_pc, break_next
 
     cdef object debug_callstack
     cdef int[512] hitrate
 
     @cython.locals(intr_flag_enabled=cython.bint, intr_flag=cython.bint)
-    cdef bint test_interrupt(self, unsigned char, unsigned char, short)
+    cdef bint test_interrupt(self, uint8_t, uint8_t, int16_t)
 
     @cython.locals(
         ie_v=cython.uchar,
@@ -43,7 +44,7 @@ cdef class CPU:
     cdef int check_interrupts(self)
 
     @cython.locals(opcode=cython.ushort)
-    cdef char fetch_and_execute(self, unsigned int)
+    cdef char fetch_and_execute(self, uint64_t)
     cdef int tick(self)
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface)
@@ -58,8 +59,8 @@ cdef class CPU:
 
     cdef pyboy.core.mb.Motherboard mb
 
-    cdef void set_bc(CPU, int x)
-    cdef void set_de(CPU, int x)
+    cdef void set_bc(CPU, int)
+    cdef void set_de(CPU, int)
 
     cdef bint f_c(self)
     cdef bint f_h(self)
@@ -69,13 +70,13 @@ cdef class CPU:
     cdef bint f_nz(self)
 
     ### CPU Flags
-    cdef bint test_flag(self, int flag)
-    cdef void set_flag(self, int flag, bint value=*)
-    cdef void clear_flag(self, int flag)
+    cdef bint test_flag(self, int)
+    cdef void set_flag(self, int, bint value=*)
+    cdef void clear_flag(self, int)
 
     ### Interrupt flags
-    cdef void set_interruptflag(self, int flag)
+    cdef void set_interruptflag(self, int)
 
     @cython.locals(v=cython.int)
-    cdef bint test_ramregisterflag(self, int address, int flag)
-    cdef void clear_ramregisterflag(self, int address, int flag)
+    cdef bint test_ramregisterflag(self, int, int)
+    cdef void clear_ramregisterflag(self, int, int)

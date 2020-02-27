@@ -41,7 +41,7 @@ cdef uint16_t get_opcode_length(uint16_t)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t)
 
-cdef unsigned char no_opcode(cpu.CPU) except -1
+cdef uint8_t no_opcode(cpu.CPU) except -1
 """
 
 
@@ -256,17 +256,17 @@ class Code:
 
         code += "\n\t".join(self.lines)
 
-        pxd = ["cdef unsigned char %s_%0.2X(cpu.CPU) except -1 # %0.2X %s"
+        pxd = ["cdef uint8_t %s_%0.2X(cpu.CPU) except -1 # %0.2X %s"
                % (self.function_name, self.opcode, self.opcode, self.name),
                # TODO: Differentiate between 16-bit values
                # (01,11,21,31 ops) and 8-bit values for 'v'
-               "cdef unsigned char %s_%0.2X(cpu.CPU, int v) except -1 # %0.2X %s"
+               "cdef uint8_t %s_%0.2X(cpu.CPU, int v) except -1 # %0.2X %s"
                % (self.function_name, self.opcode, self.opcode, self.name)][self.takes_immediate]
 
         if self.opcode == 0x27:
-            pxd = "@cython.locals(v=int, flag=uchar, t=int, corr=ushort)\n" + pxd
+            pxd = "@cython.locals(v=int, flag=uint8_t, t=int, corr=ushort)\n" + pxd
         else:
-            pxd = "@cython.locals(v=int, flag=uchar, t=int)\n" + pxd
+            pxd = "@cython.locals(v=int, flag=uint8_t, t=int)\n" + pxd
 
         return (pxd, code)
 

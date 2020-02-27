@@ -4,7 +4,7 @@
 #
 
 import cython
-from libc.stdint cimport uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 from pyboy.utils cimport IntIOInterface
 
 from pyboy.core.lcd cimport LCD
@@ -18,12 +18,12 @@ cdef int ROWS, COLS
 
 cdef class BaseWindow:
     cdef (int, int) _scaledresolution
-    cdef unsigned int _scale
+    cdef uint64_t _scale
     cdef bint enable_title
     cdef void init(self, bint)
 
     cdef uint32_t[4] color_palette
-    cdef unsigned int alphamask
+    cdef uint64_t alphamask
     cdef (int, int) buffer_dims
 
     cdef void set_title(self, str)

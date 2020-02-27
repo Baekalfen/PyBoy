@@ -6,7 +6,7 @@
 import cython
 from cpython.array cimport array
 from array import array
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 cimport pyboy.utils
 from pyboy.utils cimport IntIOInterface
 
@@ -37,19 +37,19 @@ cdef class LCD:
 cdef class PaletteRegister:
     cdef LCD lcd
 
-    cdef unsigned char value
+    cdef uint8_t value
     cdef uint32_t[4] lookup
     cdef uint32_t[4] color_palette
 
     @cython.locals(x=cython.ushort)
-    cdef bint set(self, unsigned int)
-    cdef uint32_t getcolor(self, unsigned char)
+    cdef bint set(self, uint64_t)
+    cdef uint32_t getcolor(self, uint8_t)
 
 
 cdef class LCDCRegister:
-    cdef unsigned char value
+    cdef uint8_t value
 
-    cdef void set(self, unsigned int)
+    cdef void set(self, uint64_t)
 
     cdef public bint lcd_enable
     cdef public bint windowmap_select
