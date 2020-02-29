@@ -78,12 +78,15 @@ class Motherboard:
         f.flush()
         logger.debug("State loaded.")
 
+        # TODO: Move out of MB
         self.renderer.clearcache = True
-        self.renderer.update_cache(self.lcd)
+        self.renderer.render_screen(self.lcd)
 
     ###################################################################
     # Coordinator
     #
+
+    # TODO: Move out of MB
     def set_STAT_mode(self, mode):
         self.setitem(STAT, self.getitem(STAT) & 0b11111100) # Clearing 2 LSB
         self.setitem(STAT, self.getitem(STAT) | mode) # Apply mode to LSB
@@ -92,6 +95,7 @@ class Motherboard:
         if self.cpu.test_ramregisterflag(STAT, mode + 3) and mode != 3:
             self.cpu.set_interruptflag(LCDC)
 
+    # TODO: Move out of MB
     def check_LYC(self, y):
         self.setitem(LY, y)
         if self.getitem(LYC) == y:
@@ -130,24 +134,24 @@ class Motherboard:
     def tickframe(self):
         lcdenabled = self.lcd.LCDC.lcd_enable
         if lcdenabled:
-            if not self.disable_renderer:
-                self.renderer.update_cache(self.lcd)
-
             # TODO: the 19, 41 and 49._ticks should correct for longer instructions
             # Iterate the 144 lines on screen
             for y in range(144):
                 self.check_LYC(y)
 
                 # Mode 2
+                # TODO: Move out of MB
                 self.set_STAT_mode(2)
                 self.calculate_cycles(80)
 
                 # Mode 3
+                # TODO: Move out of MB
                 self.set_STAT_mode(3)
                 self.calculate_cycles(170)
                 self.renderer.scanline(y, self.lcd)
 
                 # Mode 0
+                # TODO: Move out of MB
                 self.set_STAT_mode(0)
                 self.calculate_cycles(206)
 
@@ -166,6 +170,7 @@ class Motherboard:
             # https://www.reddit.com/r/EmuDev/comments/6r6gf3
             # TODO: What happens if LCD gets turned on/off mid-cycle?
             self.renderer.blank_screen()
+            # TODO: Move out of MB
             self.set_STAT_mode(0)
             self.setitem(LY, 0)
 
@@ -279,10 +284,13 @@ class Motherboard:
             elif i == 0xFF46:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
+                # TODO: Move out of MB
                 self.renderer.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
+                # TODO: Move out of MB
                 self.renderer.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
+                # TODO: Move out of MB
                 self.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value

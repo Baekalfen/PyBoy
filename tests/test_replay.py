@@ -66,8 +66,8 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     verify_rom_hash(ROM, b64_romhash)
     state_data = io.BytesIO(base64.b64decode(b64_state.encode('utf8'))) if b64_state is not None else None
 
-    pyboy = PyBoy(ROM, window_type=window, bootrom_file=bootrom_file, disable_input=True, hide_window=False,
-                  rewind=rewind, record_input=(RESET_REPLAYS and window in ['SDL2', 'headless', 'OpenGL']))
+    pyboy = PyBoy(ROM, window_type=window, bootrom_file=bootrom_file, disable_input=True, rewind=rewind,
+            record_input=(RESET_REPLAYS and window in ['SDL2', 'headless', 'OpenGL']))
     # pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)

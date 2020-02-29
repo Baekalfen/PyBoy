@@ -32,41 +32,35 @@
 The core module of the emulator
 &#34;&#34;&#34;
 
-import base64
-import hashlib
-import io
-import json
+import os
 import time
-import zlib
 
-import numpy as np
+from pyboy.plugins.manager import PluginManager
 
-from . import botsupport, window, windowevent
+from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .opcode_to_name import CPU_COMMANDS, CPU_COMMANDS_EXT
-from .screenrecorder import ScreenRecorder
+from .utils import IntIOWrapper
 
 addconsolehandler()
 
 SPF = 1/60. # inverse FPS (frame-per-second)
+
+defaults = {
+    &#34;color_palette&#34;: (0xFFFFFF, 0x999999, 0x555555, 0x000000),
+    &#34;scale&#34;: 3,
+    &#34;window_type&#34;: &#34;SDL2&#34;,
+}
 
 
 class PyBoy:
     def __init__(
                 self,
                 gamerom_file, *,
-                default_ram_file=None,
-                default_state_file=None,
-                window_type=None,
-                window_scale=3,
                 bootrom_file=None,
-                autopause=False,
-                debugging=False,
                 profiling=False,
-                record_input_file=None,
-                disable_input=False,
-                hide_window=False,
+                disable_renderer=False,
+                **kwargs
             ):
         &#34;&#34;&#34;
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -86,40 +80,47 @@ class PyBoy:
             gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
 
         Kwargs:
-            window_type (str): Specify one of the supported window types. If unsure, specify `None` to get the default.
-            window_scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
-            debugging (bool): Whether or not to enable some extended debugging features.
-            profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
-            record_input_file (str): Filepath to save all recorded input for replay later.
-            disable_input (bool): Enable to ignore all user input.
+            profiling (bool): Profile the emulator and report opcode usage (internal use).
+            disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
+            color_palette (tuple): Specify the color palette to use for rendering.
         &#34;&#34;&#34;
+
+        for k, v in defaults.items():
+            if k not in kwargs:
+                kwargs[k] = kwargs.get(k, defaults[k])
+
+        if not os.path.isfile(gamerom_file):
+            raise FileNotFoundError(f&#34;ROM file {gamerom_file} was not found!&#34;)
         self.gamerom_file = gamerom_file
 
-        self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=profiling)
+        self.mb = Motherboard(
+            gamerom_file,
+            bootrom_file,
+            kwargs[&#34;color_palette&#34;],
+            disable_renderer,
+            profiling=profiling
+        )
 
-        # TODO: Get rid of this extra step
-        if debugging:
-            self.window.set_lcd(self.mb.lcd)
+        # Performance measures
+        self.avg_pre = 0
+        self.avg_tick = 0
+        self.avg_post = 0
 
-        self.avg_emu = 0
-        self.avg_cpu = 0
-        self.counter = 0
-        self.set_emulation_speed(1)
-        self.screen_recorder = None
-        self.paused = False
-        self.autopause = autopause
-        self.disable_input = disable_input
-        self.record_input = bool(record_input_file)
-        if self.record_input:
-            logger.info(&#34;Recording event inputs&#34;)
+        # Absolute frame count of the emulation
         self.frame_count = 0
-        self.record_input_file = record_input_file
-        self.recorded_input = []
-        self.external_input = []
-        self.profiling = profiling
+
+        self.set_emulation_speed(1)
+        self.paused = False
+        self.events = []
+        self.done = False
+        self.window_title = &#34;PyBoy&#34;
+        self.window_title_disabled = False
+
+        ###################
+        # Plugins
+
+        self.plugin_manager = PluginManager(self, self.mb, kwargs)
 
     def tick(self):
         &#34;&#34;&#34;
@@ -131,89 +132,103 @@ class PyBoy:
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         &#34;&#34;&#34;
-        done = False
+
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
-
-        events = self.window.get_events()
-        if self.disable_input:
-            events = []
-
-        if self.record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(
-                np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
+        self._handle_events(self.events)
+        t_pre = time.perf_counter()
         self.frame_count += 1
+        if not self.paused:
+            self.mb.tickframe()
+        t_tick = time.perf_counter()
+        self._post_tick()
+        t_post = time.perf_counter()
 
-        events += self.external_input
-        self.external_input = []
+        secs = t_pre-t_start
+        self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
+
+        secs = t_tick-t_pre
+        self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
+
+        secs = t_post-t_tick
+        self.avg_post = 0.9 * self.avg_post + 0.1 * secs
+
+        return self.done
+
+    def _handle_events(self, events):
+        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+        events = self.plugin_manager.handle_events(events)
 
         for event in events:
             if event == windowevent.QUIT:
-                done = True
+                self.done = True
             elif event == windowevent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
-                    self.mb.save_state(f)
+                    self.mb.save_state(IntIOWrapper(f))
             elif event == windowevent.LOAD_STATE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;rb&#34;) as f:
-                    self.mb.load_state(f)
+                    self.mb.load_state(IntIOWrapper(f))
             elif event == windowevent.DEBUG_TOGGLE:
                 # self.debugger.running ^= True
                 pass
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn&#39;t mapped to anything
-            elif event == windowevent.PAUSE and self.autopause:
-                self.paused = True
-                logger.info(&#34;Emulation paused!&#34;)
-            elif event == windowevent.UNPAUSE and self.autopause:
-                self.paused = False
-                logger.info(&#34;Emulation unpaused!&#34;)
             elif event == windowevent.PAUSE_TOGGLE:
-                self.paused ^= True
                 if self.paused:
-                    logger.info(&#34;Emulation paused!&#34;)
+                    self.unpause()
                 else:
-                    logger.info(&#34;Emulation unpaused!&#34;)
-            elif event == windowevent.SCREEN_RECORDING_TOGGLE:
-                if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
-                else:
-                    self.screen_recorder.save()
-                    self.screen_recorder = None
-            else: # Right now, everything else is a button press
+                    self.pause()
+            elif event == windowevent.PAUSE:
+                self.pause()
+            elif event == windowevent.UNPAUSE:
+                self.unpause()
+            elif event == windowevent.INTERNAL_RENDERER_FLUSH:
+                self.plugin_manager._post_tick_windows()
+            else:
                 self.mb.buttonevent(event)
 
-        # self.paused &amp;= self.autopause # Overrules paused state, if not allowed
+    def pause(self):
+        if self.paused:
+            return
+        self.paused = True
+        self.save_target_emulationspeed = self.target_emulationspeed
+        self.target_emulationspeed = 1
+        logger.info(&#34;Emulation paused!&#34;)
+        self._update_window_title()
+
+    def unpause(self):
         if not self.paused:
-            self.mb.tickframe()
-        self.window.update_display(self.paused)
-        t_cpu = time.perf_counter()
+            return
+        self.paused = False
+        self.target_emulationspeed = self.save_target_emulationspeed
+        logger.info(&#34;Emulation unpaused!&#34;)
+        self._update_window_title()
 
-        if self.screen_recorder:
-            self.screen_recorder.add_frame(self.get_screen_image())
+    def _post_tick(self):
+        if not self.window_title_disabled and self.frame_count % 60 == 0:
+            self._update_window_title()
+        self.plugin_manager.post_tick()
+        self.plugin_manager.frame_limiter(self.target_emulationspeed)
 
-        if self.paused or self.target_emulationspeed &gt; 0:
-            self.window.frame_limiter(self.target_emulationspeed)
+        # Prepare an empty list, as the API might be used to send in events between ticks
+        self.events = []
 
-        t_emu = time.perf_counter()
+    def _update_window_title(self):
+        avg_emu = self.avg_pre + self.avg_tick + self.avg_post
+        self.window_title = &#34;CPU/frame: %0.2f%%&#34; % ((self.avg_pre + self.avg_tick)/SPF*100)
+        self.window_title += &#34; Emulation: x%d&#34; % (round(SPF/avg_emu) if avg_emu != 0 else 0)
+        if self.paused:
+            self.window_title += &#34;[PAUSED]&#34;
+        self.window_title += self.plugin_manager.window_title()
+        self.plugin_manager._set_title()
 
-        secs = t_emu-t_start
-        self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
+    def __del__(self):
+        self.stop(save=False)
 
-        secs = t_cpu-t_start
-        self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
-
-        if self.counter % 60 == 0:
-            text = (&#34;CPU/frame: %0.2f%% Emulation: x%d&#34; % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
-            self.window.set_title(text)
-            self.counter = 0
-        self.counter += 1
-
-        return done
-
-    def stop(self, save=True, _replay_state_file=None):
+    def stop(self, save=True):
         &#34;&#34;&#34;
         Gently stops the emulator and all sub-modules.
 
@@ -224,32 +239,12 @@ class PyBoy:
         logger.info(&#34;###########################&#34;)
         logger.info(&#34;# Emulator is turning off #&#34;)
         logger.info(&#34;###########################&#34;)
+        self.plugin_manager.stop()
         self.mb.stop(save)
 
-        if self.profiling:
-            print(&#34;Profiling report:&#34;)
-            from operator import itemgetter
-            names = [CPU_COMMANDS[n] if n &lt; 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
-            for hits, n, name in sorted(
-                    filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
-                print(&#34;%3x %16s %s&#34; % (n, name, hits))
-
-        if self.record_input:
-            with open(self.gamerom_file, &#39;rb&#39;) as f:
-                m = hashlib.sha256()
-                m.update(f.read())
-                b64_romhash = base64.b64encode(m.digest()).decode(&#39;utf8&#39;)
-
-            if _replay_state_file is None:
-                b64_state = None
-            else:
-                with open(_replay_state_file, &#39;rb&#39;) as f:
-                    b64_state = base64.b64encode(f.read()).decode(&#39;utf8&#39;)
-
-            with open(self.record_input_file, &#39;wb&#39;) as f:
-                recorded_data = io.StringIO()
-                json.dump([self.recorded_input, b64_romhash, b64_state], recorded_data)
-                f.write(zlib.compress(recorded_data.getvalue().encode(&#39;ascii&#39;)))
+    def _get_cpu_hitrate(self):
+        logger.warning(&#34;You are calling an internal function. The output and the function is subject to change.&#34;)
+        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods
@@ -266,7 +261,7 @@ class PyBoy:
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
         &#34;&#34;&#34;
-        return self.window.get_screen_buffer()
+        return self.mb.renderer.get_screen_buffer()
 
     def get_raw_screen_buffer_dims(self):
         &#34;&#34;&#34;
@@ -275,7 +270,7 @@ class PyBoy:
         Returns:
             tuple: A two-tuple of the buffer dimensions. E.g. (160, 144).
         &#34;&#34;&#34;
-        return self.mb.window.buffer_dims
+        return self.mb.renderer.buffer_dims
 
     def get_raw_screen_buffer_format(self):
         &#34;&#34;&#34;
@@ -284,7 +279,7 @@ class PyBoy:
         Returns:
             str: Color format of the raw screen buffer. E.g. &#39;RGB&#39;.
         &#34;&#34;&#34;
-        return self.mb.window.color_format
+        return self.mb.renderer.color_format
 
     def get_screen_ndarray(self):
         &#34;&#34;&#34;
@@ -293,7 +288,7 @@ class PyBoy:
         Returns:
             numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
-        return self.window.get_screen_buffer_as_ndarray()
+        return self.mb.renderer.get_screen_buffer_as_ndarray()
 
     def get_screen_image(self):
         &#34;&#34;&#34;
@@ -306,7 +301,7 @@ class PyBoy:
         Returns:
             PIL.Image: RGB image of (160, 144) pixels
         &#34;&#34;&#34;
-        return self.mb.window.get_screen_image()
+        return self.mb.renderer.get_screen_image()
 
     def get_memory_value(self, addr):
         &#34;&#34;&#34;
@@ -342,8 +337,7 @@ class PyBoy:
         Args:
             event (pyboy.windowevent): The event to send
         &#34;&#34;&#34;
-        # self.mb.buttonevent(event)
-        self.external_input.append(event)
+        self.events.append(event)
 
     def get_sprite(self, index):
         &#34;&#34;&#34;
@@ -374,10 +368,10 @@ class PyBoy:
         &#34;&#34;&#34;
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_background_tile_map(self):
+    def get_tile_map_low(self):
         &#34;&#34;&#34;
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the background tiles.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide the
+        one for the memory at 0x9800-0x9BFF.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -386,7 +380,7 @@ class PyBoy:
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, window=False)
 
-    def get_window_tile_map(self):
+    def get_tile_map_high(self):
         &#34;&#34;&#34;
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the window tiles.
@@ -398,7 +392,6 @@ class PyBoy:
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, window=True)
 
-    # TODO: We actually need the scanline_parameters. Mario might always report (0,0) at the end of frame.
     def get_screen_position(self):
         &#34;&#34;&#34;
         These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
@@ -413,6 +406,19 @@ class PyBoy:
             ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
         &#34;&#34;&#34;
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
+
+    def get_screen_position_list(self):
+        &#34;&#34;&#34;
+        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+        the end of each call to `PyBoy.tick()`. For such games, `get_screen_position` becomes useless.
+
+        See `get_screen_position` for more information.
+
+        Returns:
+            numpy.ndarray: SCX, SCY, WX and WY for each scanline (144, 4).
+        &#34;&#34;&#34;
+        return self.mb.renderer.get_scanline_parameters()
 
     def save_state(self, file_like_object):
         &#34;&#34;&#34;
@@ -437,7 +443,7 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-        self.mb.save_state(file_like_object)
+        self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
         &#34;&#34;&#34;
@@ -460,7 +466,7 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-        self.mb.load_state(file_like_object)
+        self.mb.load_state(IntIOWrapper(file_like_object))
 
     def get_serial(self):
         &#34;&#34;&#34;
@@ -475,7 +481,7 @@ class PyBoy:
         &#34;&#34;&#34;
         Disable window title updates. These are output to the log, when in `headless` or `dummy` mode.
         &#34;&#34;&#34;
-        self.window.disable_title()
+        self.window_title_disabled = True
 
     def set_emulation_speed(self, target_speed):
         &#34;&#34;&#34;
@@ -515,7 +521,7 @@ class PyBoy:
 <dl>
 <dt id="pyboy.pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom_file, *, default_ram_file=None, default_state_file=None, window_type=None, window_scale=3, bootrom_file=None, autopause=False, debugging=False, profiling=False, record_input_file=None, disable_input=False, hide_window=False)</span>
+<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -534,22 +540,14 @@ for a crude "bot", which interacts with the game.</p>
 </dl>
 <h2 id="kwargs">Kwargs</h2>
 <dl>
-<dt><strong><code>window_type</code></strong> :&ensp;<code>str</code></dt>
-<dd>Specify one of the supported window types. If unsure, specify <code>None</code> to get the default.</dd>
-<dt><strong><code>window_scale</code></strong> :&ensp;<code>int</code></dt>
-<dd>Multiplier for the native resolution. This scales the host window by the given amount.</dd>
 <dt><strong><code>bootrom_file</code></strong> :&ensp;<code>str</code></dt>
 <dd>Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</dd>
-<dt><strong><code>autopause</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Wheter or not the emulator should pause, when the host window looses focus.</dd>
-<dt><strong><code>debugging</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether or not to enable some extended debugging features.</dd>
 <dt><strong><code>profiling</code></strong> :&ensp;<code>bool</code></dt>
-<dd>This will profile the emulator, and report which opcodes are being used the most.</dd>
-<dt><strong><code>record_input_file</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filepath to save all recorded input for replay later.</dd>
-<dt><strong><code>disable_input</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Enable to ignore all user input.</dd>
+<dd>Profile the emulator and report opcode usage (internal use).</dd>
+<dt><strong><code>disable_renderer</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Can be used to optimize performance, by internally disable rendering of the screen.</dd>
+<dt><strong><code>color_palette</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>Specify the color palette to use for rendering.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
@@ -557,17 +555,10 @@ for a crude "bot", which interacts with the game.</p>
     def __init__(
                 self,
                 gamerom_file, *,
-                default_ram_file=None,
-                default_state_file=None,
-                window_type=None,
-                window_scale=3,
                 bootrom_file=None,
-                autopause=False,
-                debugging=False,
                 profiling=False,
-                record_input_file=None,
-                disable_input=False,
-                hide_window=False,
+                disable_renderer=False,
+                **kwargs
             ):
         &#34;&#34;&#34;
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -587,40 +578,47 @@ for a crude "bot", which interacts with the game.</p>
             gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
 
         Kwargs:
-            window_type (str): Specify one of the supported window types. If unsure, specify `None` to get the default.
-            window_scale (int): Multiplier for the native resolution. This scales the host window by the given amount.
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            autopause (bool): Wheter or not the emulator should pause, when the host window looses focus.
-            debugging (bool): Whether or not to enable some extended debugging features.
-            profiling (bool): This will profile the emulator, and report which opcodes are being used the most.
-            record_input_file (str): Filepath to save all recorded input for replay later.
-            disable_input (bool): Enable to ignore all user input.
+            profiling (bool): Profile the emulator and report opcode usage (internal use).
+            disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
+            color_palette (tuple): Specify the color palette to use for rendering.
         &#34;&#34;&#34;
+
+        for k, v in defaults.items():
+            if k not in kwargs:
+                kwargs[k] = kwargs.get(k, defaults[k])
+
+        if not os.path.isfile(gamerom_file):
+            raise FileNotFoundError(f&#34;ROM file {gamerom_file} was not found!&#34;)
         self.gamerom_file = gamerom_file
 
-        self.window = window.window.getwindow(window_type, window_scale, debugging, hide_window)
-        self.mb = Motherboard(gamerom_file, bootrom_file, self.window, profiling=profiling)
+        self.mb = Motherboard(
+            gamerom_file,
+            bootrom_file,
+            kwargs[&#34;color_palette&#34;],
+            disable_renderer,
+            profiling=profiling
+        )
 
-        # TODO: Get rid of this extra step
-        if debugging:
-            self.window.set_lcd(self.mb.lcd)
+        # Performance measures
+        self.avg_pre = 0
+        self.avg_tick = 0
+        self.avg_post = 0
 
-        self.avg_emu = 0
-        self.avg_cpu = 0
-        self.counter = 0
-        self.set_emulation_speed(1)
-        self.screen_recorder = None
-        self.paused = False
-        self.autopause = autopause
-        self.disable_input = disable_input
-        self.record_input = bool(record_input_file)
-        if self.record_input:
-            logger.info(&#34;Recording event inputs&#34;)
+        # Absolute frame count of the emulation
         self.frame_count = 0
-        self.record_input_file = record_input_file
-        self.recorded_input = []
-        self.external_input = []
-        self.profiling = profiling
+
+        self.set_emulation_speed(1)
+        self.paused = False
+        self.events = []
+        self.done = False
+        self.window_title = &#34;PyBoy&#34;
+        self.window_title_disabled = False
+
+        ###################
+        # Plugins
+
+        self.plugin_manager = PluginManager(self, self.mb, kwargs)
 
     def tick(self):
         &#34;&#34;&#34;
@@ -632,89 +630,103 @@ for a crude "bot", which interacts with the game.</p>
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         &#34;&#34;&#34;
-        done = False
+
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
-
-        events = self.window.get_events()
-        if self.disable_input:
-            events = []
-
-        if self.record_input and len(events) != 0:
-            self.recorded_input.append((self.frame_count, events, base64.b64encode(
-                np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
+        self._handle_events(self.events)
+        t_pre = time.perf_counter()
         self.frame_count += 1
+        if not self.paused:
+            self.mb.tickframe()
+        t_tick = time.perf_counter()
+        self._post_tick()
+        t_post = time.perf_counter()
 
-        events += self.external_input
-        self.external_input = []
+        secs = t_pre-t_start
+        self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
+
+        secs = t_tick-t_pre
+        self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
+
+        secs = t_post-t_tick
+        self.avg_post = 0.9 * self.avg_post + 0.1 * secs
+
+        return self.done
+
+    def _handle_events(self, events):
+        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+        events = self.plugin_manager.handle_events(events)
 
         for event in events:
             if event == windowevent.QUIT:
-                done = True
+                self.done = True
             elif event == windowevent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
             elif event == windowevent.SAVE_STATE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
-                    self.mb.save_state(f)
+                    self.mb.save_state(IntIOWrapper(f))
             elif event == windowevent.LOAD_STATE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;rb&#34;) as f:
-                    self.mb.load_state(f)
+                    self.mb.load_state(IntIOWrapper(f))
             elif event == windowevent.DEBUG_TOGGLE:
                 # self.debugger.running ^= True
                 pass
             elif event == windowevent.PASS:
                 pass # Used in place of None in Cython, when key isn&#39;t mapped to anything
-            elif event == windowevent.PAUSE and self.autopause:
-                self.paused = True
-                logger.info(&#34;Emulation paused!&#34;)
-            elif event == windowevent.UNPAUSE and self.autopause:
-                self.paused = False
-                logger.info(&#34;Emulation unpaused!&#34;)
             elif event == windowevent.PAUSE_TOGGLE:
-                self.paused ^= True
                 if self.paused:
-                    logger.info(&#34;Emulation paused!&#34;)
+                    self.unpause()
                 else:
-                    logger.info(&#34;Emulation unpaused!&#34;)
-            elif event == windowevent.SCREEN_RECORDING_TOGGLE:
-                if not self.screen_recorder:
-                    self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
-                else:
-                    self.screen_recorder.save()
-                    self.screen_recorder = None
-            else: # Right now, everything else is a button press
+                    self.pause()
+            elif event == windowevent.PAUSE:
+                self.pause()
+            elif event == windowevent.UNPAUSE:
+                self.unpause()
+            elif event == windowevent.INTERNAL_RENDERER_FLUSH:
+                self.plugin_manager._post_tick_windows()
+            else:
                 self.mb.buttonevent(event)
 
-        # self.paused &amp;= self.autopause # Overrules paused state, if not allowed
+    def pause(self):
+        if self.paused:
+            return
+        self.paused = True
+        self.save_target_emulationspeed = self.target_emulationspeed
+        self.target_emulationspeed = 1
+        logger.info(&#34;Emulation paused!&#34;)
+        self._update_window_title()
+
+    def unpause(self):
         if not self.paused:
-            self.mb.tickframe()
-        self.window.update_display(self.paused)
-        t_cpu = time.perf_counter()
+            return
+        self.paused = False
+        self.target_emulationspeed = self.save_target_emulationspeed
+        logger.info(&#34;Emulation unpaused!&#34;)
+        self._update_window_title()
 
-        if self.screen_recorder:
-            self.screen_recorder.add_frame(self.get_screen_image())
+    def _post_tick(self):
+        if not self.window_title_disabled and self.frame_count % 60 == 0:
+            self._update_window_title()
+        self.plugin_manager.post_tick()
+        self.plugin_manager.frame_limiter(self.target_emulationspeed)
 
-        if self.paused or self.target_emulationspeed &gt; 0:
-            self.window.frame_limiter(self.target_emulationspeed)
+        # Prepare an empty list, as the API might be used to send in events between ticks
+        self.events = []
 
-        t_emu = time.perf_counter()
+    def _update_window_title(self):
+        avg_emu = self.avg_pre + self.avg_tick + self.avg_post
+        self.window_title = &#34;CPU/frame: %0.2f%%&#34; % ((self.avg_pre + self.avg_tick)/SPF*100)
+        self.window_title += &#34; Emulation: x%d&#34; % (round(SPF/avg_emu) if avg_emu != 0 else 0)
+        if self.paused:
+            self.window_title += &#34;[PAUSED]&#34;
+        self.window_title += self.plugin_manager.window_title()
+        self.plugin_manager._set_title()
 
-        secs = t_emu-t_start
-        self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
+    def __del__(self):
+        self.stop(save=False)
 
-        secs = t_cpu-t_start
-        self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
-
-        if self.counter % 60 == 0:
-            text = (&#34;CPU/frame: %0.2f%% Emulation: x%d&#34; % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
-            self.window.set_title(text)
-            self.counter = 0
-        self.counter += 1
-
-        return done
-
-    def stop(self, save=True, _replay_state_file=None):
+    def stop(self, save=True):
         &#34;&#34;&#34;
         Gently stops the emulator and all sub-modules.
 
@@ -725,32 +737,12 @@ for a crude "bot", which interacts with the game.</p>
         logger.info(&#34;###########################&#34;)
         logger.info(&#34;# Emulator is turning off #&#34;)
         logger.info(&#34;###########################&#34;)
+        self.plugin_manager.stop()
         self.mb.stop(save)
 
-        if self.profiling:
-            print(&#34;Profiling report:&#34;)
-            from operator import itemgetter
-            names = [CPU_COMMANDS[n] if n &lt; 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
-            for hits, n, name in sorted(
-                    filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
-                print(&#34;%3x %16s %s&#34; % (n, name, hits))
-
-        if self.record_input:
-            with open(self.gamerom_file, &#39;rb&#39;) as f:
-                m = hashlib.sha256()
-                m.update(f.read())
-                b64_romhash = base64.b64encode(m.digest()).decode(&#39;utf8&#39;)
-
-            if _replay_state_file is None:
-                b64_state = None
-            else:
-                with open(_replay_state_file, &#39;rb&#39;) as f:
-                    b64_state = base64.b64encode(f.read()).decode(&#39;utf8&#39;)
-
-            with open(self.record_input_file, &#39;wb&#39;) as f:
-                recorded_data = io.StringIO()
-                json.dump([self.recorded_input, b64_romhash, b64_state], recorded_data)
-                f.write(zlib.compress(recorded_data.getvalue().encode(&#39;ascii&#39;)))
+    def _get_cpu_hitrate(self):
+        logger.warning(&#34;You are calling an internal function. The output and the function is subject to change.&#34;)
+        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods
@@ -767,7 +759,7 @@ for a crude "bot", which interacts with the game.</p>
         Returns:
             bytes: 92160 bytes of screen data in a `bytes` object.
         &#34;&#34;&#34;
-        return self.window.get_screen_buffer()
+        return self.mb.renderer.get_screen_buffer()
 
     def get_raw_screen_buffer_dims(self):
         &#34;&#34;&#34;
@@ -776,7 +768,7 @@ for a crude "bot", which interacts with the game.</p>
         Returns:
             tuple: A two-tuple of the buffer dimensions. E.g. (160, 144).
         &#34;&#34;&#34;
-        return self.mb.window.buffer_dims
+        return self.mb.renderer.buffer_dims
 
     def get_raw_screen_buffer_format(self):
         &#34;&#34;&#34;
@@ -785,7 +777,7 @@ for a crude "bot", which interacts with the game.</p>
         Returns:
             str: Color format of the raw screen buffer. E.g. &#39;RGB&#39;.
         &#34;&#34;&#34;
-        return self.mb.window.color_format
+        return self.mb.renderer.color_format
 
     def get_screen_ndarray(self):
         &#34;&#34;&#34;
@@ -794,7 +786,7 @@ for a crude "bot", which interacts with the game.</p>
         Returns:
             numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
-        return self.window.get_screen_buffer_as_ndarray()
+        return self.mb.renderer.get_screen_buffer_as_ndarray()
 
     def get_screen_image(self):
         &#34;&#34;&#34;
@@ -807,7 +799,7 @@ for a crude "bot", which interacts with the game.</p>
         Returns:
             PIL.Image: RGB image of (160, 144) pixels
         &#34;&#34;&#34;
-        return self.mb.window.get_screen_image()
+        return self.mb.renderer.get_screen_image()
 
     def get_memory_value(self, addr):
         &#34;&#34;&#34;
@@ -843,8 +835,7 @@ for a crude "bot", which interacts with the game.</p>
         Args:
             event (pyboy.windowevent): The event to send
         &#34;&#34;&#34;
-        # self.mb.buttonevent(event)
-        self.external_input.append(event)
+        self.events.append(event)
 
     def get_sprite(self, index):
         &#34;&#34;&#34;
@@ -875,10 +866,10 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_background_tile_map(self):
+    def get_tile_map_low(self):
         &#34;&#34;&#34;
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the background tiles.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide the
+        one for the memory at 0x9800-0x9BFF.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -887,7 +878,7 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, window=False)
 
-    def get_window_tile_map(self):
+    def get_tile_map_high(self):
         &#34;&#34;&#34;
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the window tiles.
@@ -899,7 +890,6 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, window=True)
 
-    # TODO: We actually need the scanline_parameters. Mario might always report (0,0) at the end of frame.
     def get_screen_position(self):
         &#34;&#34;&#34;
         These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
@@ -914,6 +904,19 @@ for a crude "bot", which interacts with the game.</p>
             ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
         &#34;&#34;&#34;
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
+
+    def get_screen_position_list(self):
+        &#34;&#34;&#34;
+        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+        the end of each call to `PyBoy.tick()`. For such games, `get_screen_position` becomes useless.
+
+        See `get_screen_position` for more information.
+
+        Returns:
+            numpy.ndarray: SCX, SCY, WX and WY for each scanline (144, 4).
+        &#34;&#34;&#34;
+        return self.mb.renderer.get_scanline_parameters()
 
     def save_state(self, file_like_object):
         &#34;&#34;&#34;
@@ -938,7 +941,7 @@ for a crude "bot", which interacts with the game.</p>
         if isinstance(file_like_object, str):
             raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-        self.mb.save_state(file_like_object)
+        self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
         &#34;&#34;&#34;
@@ -961,7 +964,7 @@ for a crude "bot", which interacts with the game.</p>
         if isinstance(file_like_object, str):
             raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-        self.mb.load_state(file_like_object)
+        self.mb.load_state(IntIOWrapper(file_like_object))
 
     def get_serial(self):
         &#34;&#34;&#34;
@@ -976,7 +979,7 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         Disable window title updates. These are output to the log, when in `headless` or `dummy` mode.
         &#34;&#34;&#34;
-        self.window.disable_title()
+        self.window_title_disabled = True
 
     def set_emulation_speed(self, target_speed):
         &#34;&#34;&#34;
@@ -1017,31 +1020,7 @@ for a crude "bot", which interacts with the game.</p>
     &#34;&#34;&#34;
     Disable window title updates. These are output to the log, when in `headless` or `dummy` mode.
     &#34;&#34;&#34;
-    self.window.disable_title()</code></pre>
-</details>
-</dd>
-<dt id="pyboy.pyboy.PyBoy.get_background_tile_map"><code class="name flex">
-<span>def <span class="ident">get_background_tile_map</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-for the background tiles.</p>
-<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
-<h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the background tile map.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_background_tile_map(self):
-    &#34;&#34;&#34;
-    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-    for the background tiles.
-
-    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
-
-    Returns:
-        `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the background tile map.
-    &#34;&#34;&#34;
-    return botsupport.TileMap(self.mb, window=False)</code></pre>
+    self.window_title_disabled = True</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_cartridge_title"><code class="name flex">
@@ -1120,7 +1099,7 @@ subject to change.</p>
     Returns:
         bytes: 92160 bytes of screen data in a `bytes` object.
     &#34;&#34;&#34;
-    return self.window.get_screen_buffer()</code></pre>
+    return self.mb.renderer.get_screen_buffer()</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_raw_screen_buffer_dims"><code class="name flex">
@@ -1142,7 +1121,7 @@ subject to change.</p>
     Returns:
         tuple: A two-tuple of the buffer dimensions. E.g. (160, 144).
     &#34;&#34;&#34;
-    return self.mb.window.buffer_dims</code></pre>
+    return self.mb.renderer.buffer_dims</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_raw_screen_buffer_format"><code class="name flex">
@@ -1164,7 +1143,7 @@ subject to change.</p>
     Returns:
         str: Color format of the raw screen buffer. E.g. &#39;RGB&#39;.
     &#34;&#34;&#34;
-    return self.mb.window.color_format</code></pre>
+    return self.mb.renderer.color_format</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_screen_image"><code class="name flex">
@@ -1193,7 +1172,7 @@ and join our Discord channel for more help.</p>
     Returns:
         PIL.Image: RGB image of (160, 144) pixels
     &#34;&#34;&#34;
-    return self.mb.window.get_screen_image()</code></pre>
+    return self.mb.renderer.get_screen_image()</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_screen_ndarray"><code class="name flex">
@@ -1212,7 +1191,7 @@ and join our Discord channel for more help.</p>
     Returns:
         numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
     &#34;&#34;&#34;
-    return self.window.get_screen_buffer_as_ndarray()</code></pre>
+    return self.mb.renderer.get_screen_buffer_as_ndarray()</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_screen_position"><code class="name flex">
@@ -1243,6 +1222,32 @@ or the Pan Docs under <a href="http://bgb.bircd.org/pandocs.htm#lcdpositionandsc
         ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
     &#34;&#34;&#34;
     return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())</code></pre>
+</details>
+</dd>
+<dt id="pyboy.pyboy.PyBoy.get_screen_position_list"><code class="name flex">
+<span>def <span class="ident">get_screen_position_list</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+the end of each call to <a title="pyboy.pyboy.PyBoy.tick" href="#pyboy.pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>. For such games, <code>get_screen_position</code> becomes useless.</p>
+<p>See <code>get_screen_position</code> for more information.</p>
+<h2 id="returns">Returns</h2>
+<p>numpy.ndarray: SCX, SCY, WX and WY for each scanline (144, 4).</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_screen_position_list(self):
+    &#34;&#34;&#34;
+    This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+    screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+    the end of each call to `PyBoy.tick()`. For such games, `get_screen_position` becomes useless.
+
+    See `get_screen_position` for more information.
+
+    Returns:
+        numpy.ndarray: SCX, SCY, WX and WY for each scanline (144, 4).
+    &#34;&#34;&#34;
+    return self.mb.renderer.get_scanline_parameters()</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.get_serial"><code class="name flex">
@@ -1328,8 +1333,8 @@ the <a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsu
     return botsupport.Tile(self.mb, identifier=identifier)</code></pre>
 </details>
 </dd>
-<dt id="pyboy.pyboy.PyBoy.get_window_tile_map"><code class="name flex">
-<span>def <span class="ident">get_window_tile_map</span></span>(<span>self)</span>
+<dt id="pyboy.pyboy.PyBoy.get_tile_map_high"><code class="name flex">
+<span>def <span class="ident">get_tile_map_high</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
@@ -1339,7 +1344,7 @@ for the window tiles.</p>
 <p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the window tile map.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def get_window_tile_map(self):
+<pre><code class="python">def get_tile_map_high(self):
     &#34;&#34;&#34;
     The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
     for the window tiles.
@@ -1350,6 +1355,30 @@ for the window tiles.</p>
         `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the window tile map.
     &#34;&#34;&#34;
     return botsupport.TileMap(self.mb, window=True)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.pyboy.PyBoy.get_tile_map_low"><code class="name flex">
+<span>def <span class="ident">get_tile_map_low</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide the
+one for the memory at 0x9800-0x9BFF.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the background tile map.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_tile_map_low(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide the
+    one for the memory at 0x9800-0x9BFF.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns:
+        `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the background tile map.
+    &#34;&#34;&#34;
+    return botsupport.TileMap(self.mb, window=False)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.load_state"><code class="name flex">
@@ -1392,7 +1421,24 @@ file_like_object = open("state_file.state", "rb")
     if isinstance(file_like_object, str):
         raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-    self.mb.load_state(file_like_object)</code></pre>
+    self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.pyboy.PyBoy.pause"><code class="name flex">
+<span>def <span class="ident">pause</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def pause(self):
+    if self.paused:
+        return
+    self.paused = True
+    self.save_target_emulationspeed = self.target_emulationspeed
+    self.target_emulationspeed = 1
+    logger.info(&#34;Emulation paused!&#34;)
+    self._update_window_title()</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.save_state"><code class="name flex">
@@ -1441,7 +1487,7 @@ file_like_object.seek(0)
     if isinstance(file_like_object, str):
         raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-    self.mb.save_state(file_like_object)</code></pre>
+    self.mb.save_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.send_input"><code class="name flex">
@@ -1466,8 +1512,7 @@ file_like_object.seek(0)
     Args:
         event (pyboy.windowevent): The event to send
     &#34;&#34;&#34;
-    # self.mb.buttonevent(event)
-    self.external_input.append(event)</code></pre>
+    self.events.append(event)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.set_emulation_speed"><code class="name flex">
@@ -1547,7 +1592,7 @@ provided game-ROM.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def stop(self, save=True, _replay_state_file=None):
+<pre><code class="python">def stop(self, save=True):
     &#34;&#34;&#34;
     Gently stops the emulator and all sub-modules.
 
@@ -1558,32 +1603,8 @@ provided game-ROM.</dd>
     logger.info(&#34;###########################&#34;)
     logger.info(&#34;# Emulator is turning off #&#34;)
     logger.info(&#34;###########################&#34;)
-    self.mb.stop(save)
-
-    if self.profiling:
-        print(&#34;Profiling report:&#34;)
-        from operator import itemgetter
-        names = [CPU_COMMANDS[n] if n &lt; 0x100 else CPU_COMMANDS_EXT[n-0x100] for n in range(0x200)]
-        for hits, n, name in sorted(
-                filter(itemgetter(0), zip(self.mb.cpu.hitRate, range(0x200), names)), reverse=True):
-            print(&#34;%3x %16s %s&#34; % (n, name, hits))
-
-    if self.record_input:
-        with open(self.gamerom_file, &#39;rb&#39;) as f:
-            m = hashlib.sha256()
-            m.update(f.read())
-            b64_romhash = base64.b64encode(m.digest()).decode(&#39;utf8&#39;)
-
-        if _replay_state_file is None:
-            b64_state = None
-        else:
-            with open(_replay_state_file, &#39;rb&#39;) as f:
-                b64_state = base64.b64encode(f.read()).decode(&#39;utf8&#39;)
-
-        with open(self.record_input_file, &#39;wb&#39;) as f:
-            recorded_data = io.StringIO()
-            json.dump([self.recorded_input, b64_romhash, b64_state], recorded_data)
-            f.write(zlib.compress(recorded_data.getvalue().encode(&#39;ascii&#39;)))</code></pre>
+    self.plugin_manager.stop()
+    self.mb.stop(save)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.pyboy.PyBoy.tick"><code class="name flex">
@@ -1607,87 +1628,43 @@ otherwise with the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy
 
     _Open an issue on GitHub if you need finer control, and we will take a look at it._
     &#34;&#34;&#34;
-    done = False
+
     t_start = time.perf_counter() # Change to _ns when PyPy supports it
-
-    events = self.window.get_events()
-    if self.disable_input:
-        events = []
-
-    if self.record_input and len(events) != 0:
-        self.recorded_input.append((self.frame_count, events, base64.b64encode(
-            np.ascontiguousarray(self.get_screen_ndarray())).decode(&#39;utf8&#39;)))
+    self._handle_events(self.events)
+    t_pre = time.perf_counter()
     self.frame_count += 1
-
-    events += self.external_input
-    self.external_input = []
-
-    for event in events:
-        if event == windowevent.QUIT:
-            done = True
-        elif event == windowevent.RELEASE_SPEED_UP:
-            # Switch between unlimited and 1x real-time emulation speed
-            self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-            logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
-        elif event == windowevent.SAVE_STATE:
-            with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
-                self.mb.save_state(f)
-        elif event == windowevent.LOAD_STATE:
-            with open(self.gamerom_file + &#34;.state&#34;, &#34;rb&#34;) as f:
-                self.mb.load_state(f)
-        elif event == windowevent.DEBUG_TOGGLE:
-            # self.debugger.running ^= True
-            pass
-        elif event == windowevent.PASS:
-            pass # Used in place of None in Cython, when key isn&#39;t mapped to anything
-        elif event == windowevent.PAUSE and self.autopause:
-            self.paused = True
-            logger.info(&#34;Emulation paused!&#34;)
-        elif event == windowevent.UNPAUSE and self.autopause:
-            self.paused = False
-            logger.info(&#34;Emulation unpaused!&#34;)
-        elif event == windowevent.PAUSE_TOGGLE:
-            self.paused ^= True
-            if self.paused:
-                logger.info(&#34;Emulation paused!&#34;)
-            else:
-                logger.info(&#34;Emulation unpaused!&#34;)
-        elif event == windowevent.SCREEN_RECORDING_TOGGLE:
-            if not self.screen_recorder:
-                self.screen_recorder = ScreenRecorder(self.mb.cartridge.gamename)
-            else:
-                self.screen_recorder.save()
-                self.screen_recorder = None
-        else: # Right now, everything else is a button press
-            self.mb.buttonevent(event)
-
-    # self.paused &amp;= self.autopause # Overrules paused state, if not allowed
     if not self.paused:
         self.mb.tickframe()
-    self.window.update_display(self.paused)
-    t_cpu = time.perf_counter()
+    t_tick = time.perf_counter()
+    self._post_tick()
+    t_post = time.perf_counter()
 
-    if self.screen_recorder:
-        self.screen_recorder.add_frame(self.get_screen_image())
+    secs = t_pre-t_start
+    self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
 
-    if self.paused or self.target_emulationspeed &gt; 0:
-        self.window.frame_limiter(self.target_emulationspeed)
+    secs = t_tick-t_pre
+    self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
 
-    t_emu = time.perf_counter()
+    secs = t_post-t_tick
+    self.avg_post = 0.9 * self.avg_post + 0.1 * secs
 
-    secs = t_emu-t_start
-    self.avg_emu = 0.9 * self.avg_emu + 0.1 * secs
-
-    secs = t_cpu-t_start
-    self.avg_cpu = 0.9 * self.avg_cpu + 0.1 * secs
-
-    if self.counter % 60 == 0:
-        text = (&#34;CPU/frame: %0.2f%% Emulation: x%d&#34; % (self.avg_cpu/SPF*100, round(SPF/self.avg_emu)))
-        self.window.set_title(text)
-        self.counter = 0
-    self.counter += 1
-
-    return done</code></pre>
+    return self.done</code></pre>
+</details>
+</dd>
+<dt id="pyboy.pyboy.PyBoy.unpause"><code class="name flex">
+<span>def <span class="ident">unpause</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def unpause(self):
+    if not self.paused:
+        return
+    self.paused = False
+    self.target_emulationspeed = self.save_target_emulationspeed
+    logger.info(&#34;Emulation unpaused!&#34;)
+    self._update_window_title()</code></pre>
 </details>
 </dd>
 </dl>
@@ -1712,7 +1689,6 @@ otherwise with the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy
 <h4><code><a title="pyboy.pyboy.PyBoy" href="#pyboy.pyboy.PyBoy">PyBoy</a></code></h4>
 <ul class="">
 <li><code><a title="pyboy.pyboy.PyBoy.disable_title" href="#pyboy.pyboy.PyBoy.disable_title">disable_title</a></code></li>
-<li><code><a title="pyboy.pyboy.PyBoy.get_background_tile_map" href="#pyboy.pyboy.PyBoy.get_background_tile_map">get_background_tile_map</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_cartridge_title" href="#pyboy.pyboy.PyBoy.get_cartridge_title">get_cartridge_title</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_memory_value" href="#pyboy.pyboy.PyBoy.get_memory_value">get_memory_value</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_raw_screen_buffer" href="#pyboy.pyboy.PyBoy.get_raw_screen_buffer">get_raw_screen_buffer</a></code></li>
@@ -1721,17 +1697,21 @@ otherwise with the <a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy
 <li><code><a title="pyboy.pyboy.PyBoy.get_screen_image" href="#pyboy.pyboy.PyBoy.get_screen_image">get_screen_image</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_screen_ndarray" href="#pyboy.pyboy.PyBoy.get_screen_ndarray">get_screen_ndarray</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_screen_position" href="#pyboy.pyboy.PyBoy.get_screen_position">get_screen_position</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_screen_position_list" href="#pyboy.pyboy.PyBoy.get_screen_position_list">get_screen_position_list</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_serial" href="#pyboy.pyboy.PyBoy.get_serial">get_serial</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_sprite" href="#pyboy.pyboy.PyBoy.get_sprite">get_sprite</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.get_tile" href="#pyboy.pyboy.PyBoy.get_tile">get_tile</a></code></li>
-<li><code><a title="pyboy.pyboy.PyBoy.get_window_tile_map" href="#pyboy.pyboy.PyBoy.get_window_tile_map">get_window_tile_map</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_tile_map_high" href="#pyboy.pyboy.PyBoy.get_tile_map_high">get_tile_map_high</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.get_tile_map_low" href="#pyboy.pyboy.PyBoy.get_tile_map_low">get_tile_map_low</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.load_state" href="#pyboy.pyboy.PyBoy.load_state">load_state</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.pause" href="#pyboy.pyboy.PyBoy.pause">pause</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.save_state" href="#pyboy.pyboy.PyBoy.save_state">save_state</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.send_input" href="#pyboy.pyboy.PyBoy.send_input">send_input</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.set_emulation_speed" href="#pyboy.pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.set_memory_value" href="#pyboy.pyboy.PyBoy.set_memory_value">set_memory_value</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.stop" href="#pyboy.pyboy.PyBoy.stop">stop</a></code></li>
 <li><code><a title="pyboy.pyboy.PyBoy.tick" href="#pyboy.pyboy.PyBoy.tick">tick</a></code></li>
+<li><code><a title="pyboy.pyboy.PyBoy.unpause" href="#pyboy.pyboy.PyBoy.unpause">unpause</a></code></li>
 </ul>
 </li>
 </ul>

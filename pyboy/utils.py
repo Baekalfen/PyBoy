@@ -80,3 +80,24 @@ def get_color_code(byte1, byte2, offset):
     0 1 1 1 1 1 0 0 <- byte2
     """
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
+
+
+##############################################################
+# Window Events
+
+
+class WindowEvent:
+
+    def __init__(self, event, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_button=-1):
+        self.event = event
+        self.window_id = window_id
+        self.mouse_x = mouse_x
+        self.mouse_y = mouse_y
+        self.mouse_button = mouse_button
+
+
+    def __eq__(self, x):
+        if isinstance(x, int):
+            return self.event == x
+        else:
+            return self.event == x.event

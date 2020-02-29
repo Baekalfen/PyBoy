@@ -21,11 +21,7 @@ else:
 
 def run_rom(args):
     rom, frame_limit = args
-    # logger.info(rom)
-    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True,
-                  hide_window=True)
-    # pyboy = PyBoy(utils.boot_rom, window_type="SDL2", window_scale=1, bootrom_file=rom, disable_input=True,
-    # hide_window=True)
+    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True)
     pyboy.disable_title()
     pyboy.set_emulation_speed(0)
     serial_output = ""

@@ -8,12 +8,12 @@ from pyboy.plugins.window_sdl2 import WindowSDL2 # isort:skip
 from pyboy.plugins.window_open_gl import WindowOpenGL # isort:skip
 from pyboy.plugins.window_headless import WindowHeadless # isort:skip
 from pyboy.plugins.window_dummy import WindowDummy # isort:skip
+from pyboy.plugins.debug import Debug # isort:skip
 from pyboy.plugins.disable_input import DisableInput # isort:skip
 from pyboy.plugins.auto_pause import AutoPause # isort:skip
 from pyboy.plugins.record_replay import RecordReplay # isort:skip
 from pyboy.plugins.rewind import Rewind # isort:skip
 from pyboy.plugins.screen_recorder import ScreenRecorder # isort:skip
-from pyboy.plugins.debug import Debug # isort:skip
 # imports end
 
 
@@ -23,12 +23,12 @@ def get_parser_arguments():
     yield WindowOpenGL.argv
     yield WindowHeadless.argv
     yield WindowDummy.argv
+    yield Debug.argv
     yield DisableInput.argv
     yield AutoPause.argv
     yield RecordReplay.argv
     yield Rewind.argv
     yield ScreenRecorder.argv
-    yield Debug.argv
     # yield_plugins end
     pass
 
@@ -46,6 +46,8 @@ class PluginManager:
         self.window_headless_enabled = self.window_headless.enabled()
         self.window_dummy = WindowDummy(pyboy, mb, pyboy_argv)
         self.window_dummy_enabled = self.window_dummy.enabled()
+        self.debug = Debug(pyboy, mb, pyboy_argv)
+        self.debug_enabled = self.debug.enabled()
         self.disable_input = DisableInput(pyboy, mb, pyboy_argv)
         self.disable_input_enabled = self.disable_input.enabled()
         self.auto_pause = AutoPause(pyboy, mb, pyboy_argv)
@@ -56,8 +58,6 @@ class PluginManager:
         self.rewind_enabled = self.rewind.enabled()
         self.screen_recorder = ScreenRecorder(pyboy, mb, pyboy_argv)
         self.screen_recorder_enabled = self.screen_recorder.enabled()
-        self.debug = Debug(pyboy, mb, pyboy_argv)
-        self.debug_enabled = self.debug.enabled()
         # plugins_enabled end
 
     def handle_events(self, events):
@@ -70,6 +70,8 @@ class PluginManager:
             events = self.window_headless.handle_events(events)
         if self.window_dummy_enabled:
             events = self.window_dummy.handle_events(events)
+        if self.debug_enabled:
+            events = self.debug.handle_events(events)
         # foreach end
         # foreach plugins events = [].handle_events(events)
         if self.disable_input_enabled:
@@ -82,8 +84,6 @@ class PluginManager:
             events = self.rewind.handle_events(events)
         if self.screen_recorder_enabled:
             events = self.screen_recorder.handle_events(events)
-        if self.debug_enabled:
-            events = self.debug.handle_events(events)
         # foreach end
         return events
 
@@ -99,27 +99,39 @@ class PluginManager:
             self.rewind.post_tick()
         if self.screen_recorder_enabled:
             self.screen_recorder.post_tick()
-        if self.debug_enabled:
-            self.debug.post_tick()
         # foreach end
 
         if not self.pyboy.paused:
             self._post_tick_windows()
+            self._set_title()
 
-    def _post_tick_windows(self):
-        # foreach windows [].post_tick(), [].set_title(self.pyboy.window_title)
+    def _set_title(self):
+        # foreach windows [].set_title(self.pyboy.window_title)
         if self.window_sdl2_enabled:
-            self.window_sdl2.post_tick()
             self.window_sdl2.set_title(self.pyboy.window_title)
         if self.window_open_gl_enabled:
-            self.window_open_gl.post_tick()
             self.window_open_gl.set_title(self.pyboy.window_title)
         if self.window_headless_enabled:
-            self.window_headless.post_tick()
             self.window_headless.set_title(self.pyboy.window_title)
         if self.window_dummy_enabled:
-            self.window_dummy.post_tick()
             self.window_dummy.set_title(self.pyboy.window_title)
+        if self.debug_enabled:
+            self.debug.set_title(self.pyboy.window_title)
+        # foreach end
+        pass
+
+    def _post_tick_windows(self):
+        # foreach windows [].post_tick()
+        if self.window_sdl2_enabled:
+            self.window_sdl2.post_tick()
+        if self.window_open_gl_enabled:
+            self.window_open_gl.post_tick()
+        if self.window_headless_enabled:
+            self.window_headless.post_tick()
+        if self.window_dummy_enabled:
+            self.window_dummy.post_tick()
+        if self.debug_enabled:
+            self.debug.post_tick()
         # foreach end
         pass
 
@@ -139,6 +151,9 @@ class PluginManager:
         if self.window_dummy_enabled:
             done = self.window_dummy.frame_limiter(speed)
             if done: return
+        if self.debug_enabled:
+            done = self.debug.frame_limiter(speed)
+            if done: return
         # foreach end
 
     def window_title(self):
@@ -152,6 +167,8 @@ class PluginManager:
             title = self.window_headless.window_title()
         if self.window_dummy_enabled:
             title = self.window_dummy.window_title()
+        if self.debug_enabled:
+            title = self.debug.window_title()
         # foreach end
         # foreach plugins title = [].window_title()
         if self.disable_input_enabled:
@@ -164,8 +181,6 @@ class PluginManager:
             title = self.rewind.window_title()
         if self.screen_recorder_enabled:
             title = self.screen_recorder.window_title()
-        if self.debug_enabled:
-            title = self.debug.window_title()
         # foreach end
         return title
 
@@ -179,6 +194,8 @@ class PluginManager:
             self.window_headless.stop()
         if self.window_dummy_enabled:
             self.window_dummy.stop()
+        if self.debug_enabled:
+            self.debug.stop()
         # foreach end
         # foreach plugins [].stop()
         if self.disable_input_enabled:
@@ -191,7 +208,5 @@ class PluginManager:
             self.rewind.stop()
         if self.screen_recorder_enabled:
             self.screen_recorder.stop()
-        if self.debug_enabled:
-            self.debug.stop()
         # foreach end
         pass

@@ -53,7 +53,11 @@ class Sprite:
         indexes corresponding to players, enemies, power-ups and so on.
         &#34;&#34;&#34;
         self.mb = mb
-        self.offset = index * 4
+        self._offset = index * 4
+
+    @property
+    def offset(self):
+        return self._offset
 
     @property
     def y(self):
@@ -89,7 +93,21 @@ class Sprite:
         &#34;&#34;&#34;
         # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
-    tile_identifier = tile_index # Same as index, when there is no signed indexes
+
+    @property
+    def tile_identifier(self):
+        # Same as index, when there is no signed indexes
+        &#34;&#34;&#34;
+        The index/identifier of the tile the sprite uses. To get a better representation, see the method
+        `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the index/identifier of the first tile. The second tile will
+        always be the one immediately following the first (`tile_index + 1`).
+
+        Returns:
+            int: unsigned tile index
+        &#34;&#34;&#34;
+        return self.tile_index
 
     @property
     def attr_obj_bg_priority(self):
@@ -230,7 +248,11 @@ indexes corresponding to players, enemies, power-ups and so on.</p></section>
         indexes corresponding to players, enemies, power-ups and so on.
         &#34;&#34;&#34;
         self.mb = mb
-        self.offset = index * 4
+        self._offset = index * 4
+
+    @property
+    def offset(self):
+        return self._offset
 
     @property
     def y(self):
@@ -266,7 +288,21 @@ indexes corresponding to players, enemies, power-ups and so on.</p></section>
         &#34;&#34;&#34;
         # Sprites can only use unsigned tile indexes in the lower tile data.
         return self.mb.getitem(OAM_OFFSET + self.offset + 2)
-    tile_identifier = tile_index # Same as index, when there is no signed indexes
+
+    @property
+    def tile_identifier(self):
+        # Same as index, when there is no signed indexes
+        &#34;&#34;&#34;
+        The index/identifier of the tile the sprite uses. To get a better representation, see the method
+        `pyboy.botsupport.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the index/identifier of the first tile. The second tile will
+        always be the one immediately following the first (`tile_index + 1`).
+
+        Returns:
+            int: unsigned tile index
+        &#34;&#34;&#34;
+        return self.tile_index
 
     @property
     def attr_obj_bg_priority(self):
@@ -461,6 +497,16 @@ def attr_y_flip(self):
     return _get_bit(attr, 6)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.botsupport.sprite.Sprite.offset"><code class="name">var <span class="ident">offset</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def offset(self):
+    return self._offset</code></pre>
+</details>
+</dd>
 <dt id="pyboy.botsupport.sprite.Sprite.on_screen"><code class="name">var <span class="ident">on_screen</span></code></dt>
 <dd>
 <section class="desc"><p>To disable sprites from being rendered on screen, developers will place the sprite outside the area of the
@@ -506,7 +552,8 @@ always be the one immediately following the first (<code>tile_index + 1</code>).
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@property
-def tile_index(self):
+def tile_identifier(self):
+    # Same as index, when there is no signed indexes
     &#34;&#34;&#34;
     The index/identifier of the tile the sprite uses. To get a better representation, see the method
     `pyboy.botsupport.sprite.Sprite.tiles`.
@@ -517,8 +564,7 @@ def tile_index(self):
     Returns:
         int: unsigned tile index
     &#34;&#34;&#34;
-    # Sprites can only use unsigned tile indexes in the lower tile data.
-    return self.mb.getitem(OAM_OFFSET + self.offset + 2)</code></pre>
+    return self.tile_index</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.tile_index"><code class="name">var <span class="ident">tile_index</span></code></dt>
@@ -653,6 +699,7 @@ def y(self):
 <li><code><a title="pyboy.botsupport.sprite.Sprite.attr_palette_number" href="#pyboy.botsupport.sprite.Sprite.attr_palette_number">attr_palette_number</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.attr_x_flip" href="#pyboy.botsupport.sprite.Sprite.attr_x_flip">attr_x_flip</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.attr_y_flip" href="#pyboy.botsupport.sprite.Sprite.attr_y_flip">attr_y_flip</a></code></li>
+<li><code><a title="pyboy.botsupport.sprite.Sprite.offset" href="#pyboy.botsupport.sprite.Sprite.offset">offset</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.on_screen" href="#pyboy.botsupport.sprite.Sprite.on_screen">on_screen</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.tile_identifier" href="#pyboy.botsupport.sprite.Sprite.tile_identifier">tile_identifier</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite.Sprite.tile_index" href="#pyboy.botsupport.sprite.Sprite.tile_index">tile_index</a></code></li>

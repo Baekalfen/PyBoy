@@ -48,6 +48,12 @@ SCREEN_RECORDING_TOGGLE
 PAUSE
 UNPAUSE
 PAUSE_TOGGLE
+PRESS_REWIND_BACK
+PRESS_REWIND_FORWARD
+RELEASE_REWIND_BACK
+RELEASE_REWIND_FORWARD
+WINDOW_FOCUS
+WINDOW_UNFOCUS
 </code></pre>
 <details class="source">
 <summary>Source code</summary>
@@ -86,8 +92,16 @@ All supported events to send to the emulator:
     PAUSE
     UNPAUSE
     PAUSE_TOGGLE
+    PRESS_REWIND_BACK
+    PRESS_REWIND_FORWARD
+    RELEASE_REWIND_BACK
+    RELEASE_REWIND_FORWARD
+    WINDOW_FOCUS
+    WINDOW_UNFOCUS
 &#34;&#34;&#34;
 
+# ONLY ADD NEW EVENTS AT THE END OF THE LIST!
+# Otherwise, it will break replays, which depend on the id of the event
 (QUIT,
  PRESS_ARROW_UP,
  PRESS_ARROW_DOWN,
@@ -114,7 +128,16 @@ All supported events to send to the emulator:
  SCREEN_RECORDING_TOGGLE,
  PAUSE,
  UNPAUSE,
- PAUSE_TOGGLE,) = range(27)</code></pre>
+ PAUSE_TOGGLE,
+ PRESS_REWIND_BACK,
+ PRESS_REWIND_FORWARD,
+ RELEASE_REWIND_BACK,
+ RELEASE_REWIND_FORWARD,
+ WINDOW_FOCUS,
+ WINDOW_UNFOCUS,
+ INTERNAL_RENDERER_FLUSH,
+ INTERNAL_MOUSE,
+ ) = range(35)</code></pre>
 </details>
 </section>
 <section>

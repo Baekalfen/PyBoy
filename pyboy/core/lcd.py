@@ -174,6 +174,11 @@ class Renderer:
         self._scanlineparameters[y][3] = wy
 
     def render_screen(self, lcd):
+        if not lcd.LCDC.lcd_enable:
+            self.blank_screen()
+            return
+
+        self.update_cache(lcd)
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
         background_offset = 0x1800 if lcd.LCDC.backgroundmap_select == 0 else 0x1C00
@@ -205,6 +210,10 @@ class Renderer:
                     # If background is disabled, it becomes white
                     self._screenbuffer[y][x] = self.color_palette[0]
 
+        if lcd.LCDC.sprite_enable:
+            self.render_sprites(lcd, self._screenbuffer)
+
+    def render_sprites(self, lcd, buffer):
         # Render sprites
         # - Doesn't restrict 10 sprites per scan line
         # - Prioritizes sprite in inverted order
@@ -230,13 +239,13 @@ class Renderer:
                             pixel = spritecache[8*tileindex+yy][xx]
 
                             if 0 <= x < COLS:
-                                if (spritepriority and not self._screenbuffer[y][x] == bgpkey):
+                                if (spritepriority and not buffer[y][x] == bgpkey):
                                     # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
                                     # with the next 'if', as sprites can have an alpha channel in other ways
                                     pixel &= ~self.alphamask
 
                                 if pixel & self.alphamask:
-                                    self._screenbuffer[y][x] = pixel
+                                    buffer[y][x] = pixel
                             x += 1
                         x -= 8
                     y += 1

@@ -7,6 +7,7 @@ import sdl2
 import sdl2.ext
 from pyboy import windowevent
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.utils import WindowEvent
 
 ROWS, COLS = 144, 160
 
@@ -76,10 +77,7 @@ class WindowSDL2(PyBoyWindowPlugin):
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888,
             sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS)
 
-        if pyboy_argv.get("hide_window"):
-            sdl2.SDL_HideWindow(self._window)
-        else:
-            sdl2.SDL_ShowWindow(self._window)
+        sdl2.SDL_ShowWindow(self._window)
 
     def set_title(self, title):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
@@ -88,17 +86,43 @@ class WindowSDL2(PyBoyWindowPlugin):
         # Feed events into the loop
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
-                events.append(windowevent.QUIT)
+                events.append(WindowEvent(windowevent.QUIT))
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(KEY_DOWN.get(event.key.keysym.sym, windowevent.PASS))
+                events.append(WindowEvent(KEY_DOWN.get(event.key.keysym.sym, windowevent.PASS)))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(KEY_UP.get(event.key.keysym.sym, windowevent.PASS))
+                events.append(WindowEvent(KEY_UP.get(event.key.keysym.sym, windowevent.PASS)))
             elif event.type == sdl2.SDL_WINDOWEVENT:
                 if event.window.windowID == 1:
                     if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
                         events.append(windowevent.WINDOW_UNFOCUS)
                     elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
                         events.append(windowevent.WINDOW_FOCUS)
+            elif event.type == sdl2.SDL_MOUSEBUTTONUP:
+                mouse_button = -1
+                if event.button.button == sdl2.SDL_BUTTON_LEFT:
+                    mouse_button = 0
+                elif event.button.button == sdl2.SDL_BUTTON_RIGHT:
+                    mouse_button = 1
+
+                events.append(
+                    WindowEvent(
+                        windowevent.INTERNAL_MOUSE,
+                        window_id=event.motion.windowID,
+                        mouse_x=event.motion.x,
+                        mouse_y=event.motion.y,
+                        mouse_button=mouse_button
+                    )
+                )
+            elif event.type == sdl2.SDL_MOUSEMOTION:
+                events.append(
+                    WindowEvent(
+                        windowevent.INTERNAL_MOUSE,
+                        window_id=event.motion.windowID,
+                        mouse_x=event.motion.x,
+                        mouse_y=event.motion.y,
+                        mouse_button=0
+                    )
+                )
 
         return events
 

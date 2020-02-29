@@ -12,8 +12,8 @@ pyboy = PyBoy(
         "ROMs/POKEMON BLUE.gb",
         debugging=False,
         disable_input=True,
-        # window_type="headless", # For unattended use, for example machine learning
-        hide_window="--quiet" in sys.argv,
+         # For unattended use, for example machine learning
+        window_type="headless" if "--quiet" in sys.argv else "SDL2"
     )
 pyboy.set_emulation_speed(0)
 

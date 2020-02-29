@@ -52,9 +52,6 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
 
-        if pyboy_argv.get("hide_window"):
-            logger.warning("Hiding the window is not supported in OpenGL")
-
     # Cython does not cooperate with lambdas
     def _key(self, c, x, y):
         self._glkeyboard(c.decode("ascii"), x, y, False)

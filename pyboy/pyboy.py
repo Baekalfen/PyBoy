@@ -161,7 +161,6 @@ class PyBoy:
             elif event == windowevent.UNPAUSE:
                 self.unpause()
             elif event == windowevent.INTERNAL_RENDERER_FLUSH:
-                self.mb.renderer.render_screen(self.mb.lcd)
                 self.plugin_manager._post_tick_windows()
             else:
                 self.mb.buttonevent(event)
@@ -173,6 +172,7 @@ class PyBoy:
         self.save_target_emulationspeed = self.target_emulationspeed
         self.target_emulationspeed = 1
         logger.info("Emulation paused!")
+        self._update_window_title()
 
     def unpause(self):
         if not self.paused:
@@ -180,6 +180,7 @@ class PyBoy:
         self.paused = False
         self.target_emulationspeed = self.save_target_emulationspeed
         logger.info("Emulation unpaused!")
+        self._update_window_title()
 
     def _post_tick(self):
         if not self.window_title_disabled and self.frame_count % 60 == 0:
@@ -193,10 +194,11 @@ class PyBoy:
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
         self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick)/SPF*100)
-        self.window_title += "Emulation: x%d" % (round(SPF/avg_emu) if avg_emu != 0 else 0)
+        self.window_title += " Emulation: x%d" % (round(SPF/avg_emu) if avg_emu != 0 else 0)
         if self.paused:
-            self.window_title += " [PAUSED]"
+            self.window_title += "[PAUSED]"
         self.window_title += self.plugin_manager.window_title()
+        self.plugin_manager._set_title()
 
     def __del__(self):
         self.stop(save=False)
@@ -341,10 +343,10 @@ class PyBoy:
         """
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_background_tile_map(self):
+    def get_tile_map_low(self):
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the background tiles.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide the
+        one for the memory at 0x9800-0x9BFF.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -353,7 +355,7 @@ class PyBoy:
         """
         return botsupport.TileMap(self.mb, window=False)
 
-    def get_window_tile_map(self):
+    def get_tile_map_high(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the window tiles.

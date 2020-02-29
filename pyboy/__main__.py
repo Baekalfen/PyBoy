@@ -41,7 +41,6 @@ parser.add_argument('-l', '--loadstate', nargs='?', default=None, const=INTERNAL
     'locate a saved state next to the ROM file.'))
 parser.add_argument('-w', '--window-type', '--window', default=defaults["window_type"], type=str,
         choices=["SDL2", "OpenGL", "headless", "dummy"], help='Specify window-type to use')
-parser.add_argument('--hide_window', action='store_true', help='Hide the window (internal use)')
 parser.add_argument('--disable-renderer', action='store_true', help='Disables screen rendering for higher performance')
 parser.add_argument('-s', '--scale', default=defaults["scale"], type=int, help='The scaling multiplier for the window')
 
