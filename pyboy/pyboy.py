@@ -343,29 +343,32 @@ class PyBoy:
         """
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_tile_map_low(self):
-        """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide the
-        one for the memory at 0x9800-0x9BFF.
 
-        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
-
-        Returns:
-            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the background tile map.
-        """
-        return botsupport.TileMap(self.mb, window=False)
-
-    def get_tile_map_high(self):
+    def get_tile_map_background(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the window tiles.
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap. For consistency,
+        use the functions `PyBoy.get_tile_map_low` or `PyBoy.get_tile_map_high`.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
         Returns:
-            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the window tile map.
+            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
         """
-        return botsupport.TileMap(self.mb, window=True)
+        return botsupport.TileMap(self.mb, "BACKGROUND")
+
+    def get_tile_map_window(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap. For consistency,
+        use the functions `PyBoy.get_tile_map_low` or `PyBoy.get_tile_map_high`.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns:
+            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        """
+        return botsupport.TileMap(self.mb, "WINDOW")
 
     def get_screen_position(self):
         """

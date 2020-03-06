@@ -101,9 +101,8 @@ class PluginManager:
             self.screen_recorder.post_tick()
         # foreach end
 
-        if not self.pyboy.paused:
-            self._post_tick_windows()
-            self._set_title()
+        self._post_tick_windows()
+        self._set_title()
 
     def _set_title(self):
         # foreach windows [].set_title(self.pyboy.window_title)

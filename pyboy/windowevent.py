@@ -78,4 +78,5 @@ All supported events to send to the emulator:
  WINDOW_UNFOCUS,
  INTERNAL_RENDERER_FLUSH,
  INTERNAL_MOUSE,
- ) = range(35)
+ INTERNAL_MARK_TILE
+ ) = range(36)

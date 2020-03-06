@@ -7,7 +7,7 @@ import sdl2
 import sdl2.ext
 from pyboy import windowevent
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.utils import WindowEvent
+from pyboy.utils import WindowEvent, WindowEventMouse
 
 ROWS, COLS = 144, 160
 
@@ -97,15 +97,16 @@ class WindowSDL2(PyBoyWindowPlugin):
                         events.append(windowevent.WINDOW_UNFOCUS)
                     elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
                         events.append(windowevent.WINDOW_FOCUS)
-            elif event.type == sdl2.SDL_MOUSEBUTTONUP:
+            elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
                 mouse_button = -1
-                if event.button.button == sdl2.SDL_BUTTON_LEFT:
-                    mouse_button = 0
-                elif event.button.button == sdl2.SDL_BUTTON_RIGHT:
-                    mouse_button = 1
+                if event.type == sdl2.SDL_MOUSEBUTTONUP:
+                    if event.button.button == sdl2.SDL_BUTTON_LEFT:
+                        mouse_button = 0
+                    elif event.button.button == sdl2.SDL_BUTTON_RIGHT:
+                        mouse_button = 1
 
                 events.append(
-                    WindowEvent(
+                    WindowEventMouse(
                         windowevent.INTERNAL_MOUSE,
                         window_id=event.motion.windowID,
                         mouse_x=event.motion.x,
@@ -113,17 +114,6 @@ class WindowSDL2(PyBoyWindowPlugin):
                         mouse_button=mouse_button
                     )
                 )
-            elif event.type == sdl2.SDL_MOUSEMOTION:
-                events.append(
-                    WindowEvent(
-                        windowevent.INTERNAL_MOUSE,
-                        window_id=event.motion.windowID,
-                        mouse_x=event.motion.x,
-                        mouse_y=event.motion.y,
-                        mouse_button=0
-                    )
-                )
-
         return events
 
     def post_tick(self):

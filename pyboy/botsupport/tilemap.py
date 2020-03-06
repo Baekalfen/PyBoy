@@ -7,6 +7,7 @@
 The Game Boy has two tile maps, which defines what is rendered on the screen.
 """
 
+import numpy as np
 from pyboy.core.lcd import LCDCRegister
 
 from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_NTILES, LOW_TILEMAP
@@ -14,7 +15,7 @@ from .tile import Tile
 
 
 class TileMap:
-    def __init__(self, mb, window=False):
+    def __init__(self, mb, select):
         """
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         "background" and "window".
@@ -24,7 +25,7 @@ class TileMap:
 
         Example:
         ```
-        >>> tilemap = pyboy.get_window_tile_map()
+        >>> tilemap = pyboy.get_tile_map_window()
         >>> tile = tilemap[10,10]
         >>> print(tile)
         34
@@ -38,19 +39,49 @@ class TileMap:
         ```
         """
         self.mb = mb
-
-        LCDC = self._get_lcdc_register()
-
-        if window:
-            self.map_offset = HIGH_TILEMAP if LCDC.windowmap_select else LOW_TILEMAP
-        else:
-            self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
-
-        self.signed_tile_data = not bool(LCDC.tiledata_select)
+        self._select = select
         self._use_tile_objects = False
+        self.refresh_map_data_select()
 
-    def _get_lcdc_register(self):
-        return LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+    def refresh_map_data_select(self):
+        """
+        The tile data and view that is showed on the background and window respectively can change dynamically. If you
+        believe it has changed, you can use this method to update the tilemap from the LCDC register
+        """
+        LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+        if self._select == "WINDOW":
+            self.map_offset = HIGH_TILEMAP if LCDC.windowmap_select else LOW_TILEMAP
+            self.signed_tile_data = not bool(LCDC.tiledata_select)
+        elif self._select == "BACKGROUND":
+            self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
+            self.signed_tile_data = not bool(LCDC.tiledata_select)
+        else:
+            raise KeyError(f"Invalid tilemap selected: {self._select}")
+
+    def search_for_identifiers(self, identifiers):
+        """
+        Provided a list of tile identifiers, this function will find all occurrences of these in the tilemap and return
+        the coordinates where each identifier is found.
+
+        Example:
+        ```
+        >>> tilemap = pyboy.get_tile_map_window()
+        >>> print(tilemap.search_for_identifiers([43, 123]))
+        [[[0,0], [2,4], [8,7]], []]
+        ```
+
+        Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
+        `123`was not found anywhere.
+
+        Returns:
+            generator: For every iteration, it will output the occurrences of the next tile identifier in the provided
+            list
+        """
+        # TODO: Crude implementation
+        tilemap_identifiers = np.asarray(self[:,:])
+        for i in identifiers:
+            yield [[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)]
+
 
     @property
     def signed_tile_index(self):
@@ -89,9 +120,9 @@ class TileMap:
         """
 
         if not 0 <= x < 32:
-            raise IndexError("x is out of bounds. Value of 0 to 31 is allowed")
+            raise IndexError(f"x is out of bounds. Value of 0 to 31 is allowed. x: {x}")
         if not 0 <= y < 32:
-            raise IndexError("y is out of bounds. Value of 0 to 31 is allowed")
+            raise IndexError(f"y is out of bounds. Value of 0 to 31 is allowed. y: {y}")
         return self.map_offset + 32*y + x
 
     def get_tile(self, x, y):
