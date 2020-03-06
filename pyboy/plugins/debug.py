@@ -314,7 +314,6 @@ class TileDataWindow(DebugWindow):
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x //self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = tile_y * (self.width//8) + tile_x
-                    print(tile_identifier)
                     marked_tiles.add(
                         WindowEventMarkTile(
                             tile_identifier=tile_identifier,
@@ -379,6 +378,7 @@ class SpriteWindow(DebugWindow):
                             mark_id="SPRITE",
                             mark_color=MARK[mark_counter],
                             sprite_height=sprite_height,
+                            sprite=True,
                         )
                     )
                     mark_counter += 1
