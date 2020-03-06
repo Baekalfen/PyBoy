@@ -221,8 +221,8 @@ class Renderer:
         bgpkey = self.color_palette[lcd.BGP.getcolor(0)]
 
         for n in range(0x00, 0xA0, 4):
-            y = lcd.OAM[n] - 16
-            x = lcd.OAM[n+1] - 8
+            y = lcd.OAM[n] - 16 # Documentation states the y coordinate needs to be subtracted by 16
+            x = lcd.OAM[n+1] - 8 # Documentation states the x coordinate needs to be subtracted by 8
             tileindex = lcd.OAM[n+2]
             attributes = lcd.OAM[n+3]
             xflip = attributes & 0b00100000

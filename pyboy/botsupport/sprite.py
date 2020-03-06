@@ -42,7 +42,8 @@ class Sprite:
         Returns:
             int: Y-coordinate
         """
-        return self.mb.getitem(OAM_OFFSET + self.offset + 0)
+        # Documentation states the y coordinate needs to be subtracted by 16
+        return self.mb.getitem(OAM_OFFSET + self.offset + 0) - 16
 
     @property
     def x(self):
@@ -52,7 +53,8 @@ class Sprite:
         Returns:
             int: X-coordinate
         """
-        return self.mb.getitem(OAM_OFFSET + self.offset + 1)
+        # Documentation states the x coordinate needs to be subtracted by 8
+        return self.mb.getitem(OAM_OFFSET + self.offset + 1) - 8
 
     @property
     def tile_index(self):
@@ -170,8 +172,8 @@ class Sprite:
         """
         LCDC = self._get_lcdc_register()
         sprite_height = 16 if LCDC.sprite_height else 16
-        return (0 < self.y < 144 + sprite_height and
-                0 < self.x < 160 + 8)
+        return (-sprite_height <= self.y < 144 and
+                -8 <= self.x < 160)
 
     def __eq__(self, other):
         return self.offset == other.offset

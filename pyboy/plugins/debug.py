@@ -26,6 +26,7 @@ MASK = 0x00C0C000
 # Additive colors
 HOVER = 0xFF0000
 mark_counter = 0
+# By using a set, we avoid duplicates
 marked_tiles = set([])
 MARK = [0xFF000000, 0xFFC00000, 0xFFFC0000, 0x00FFFF00,  0xFF00FF00]
 
@@ -172,19 +173,26 @@ class DebugWindow(PyBoyPlugin):
             for x in range(8):
                 to_buffer[yy+y][xx+x] = tile_cache0[y + t*8][x]
 
-    def mark_tile(self, x, y, color, height=8, width=8):
-        if (0 <= x < self.width) and (0 <= y < self.height): # Test that we are inside screen area
-            tw = width # Tile width
-            th = height # Tile height
+    def mark_tile(self, x, y, color, height=8, width=8, grid=True):
+        tw = width # Tile width
+        th = height # Tile height
+        if grid:
             xx = x - (x % tw)
             yy = y - (y % th)
-            for i in range(th):
+        else:
+            xx = x
+            yy = y
+        for i in range(th):
+            if 0 <= (yy+i) < self.height and 0 <= xx < self.width:
                 self.buf0[yy+i][xx] = color
-            for i in range(tw):
+        for i in range(tw):
+            if 0 <= (yy) < self.height and 0 <= xx+i < self.width:
                 self.buf0[yy][xx+i] = color
-            for i in range(tw):
+        for i in range(tw):
+            if 0 <= (yy+th-1) < self.height and 0 <= xx+i < self.width:
                 self.buf0[yy+th-1][xx+i] = color
-            for i in range(th):
+        for i in range(th):
+            if 0 <= (yy+i) < self.height and 0 <= xx+tw-1 < self.width:
                 self.buf0[yy+i][xx+tw-1] = color
 
 
@@ -280,7 +288,8 @@ class TileViewWindow(DebugWindow):
         for t, match in zip(marked_tiles, self.tilemap.search_for_identifiers([m.tile_identifier for m in marked_tiles])):
             for row, column in match:
                 self.mark_tile(column * 8, row * 8, t.mark_color)
-        self.mark_tile(self.hover_x, self.hover_y, HOVER)
+        if self.hover_x != -1:
+            self.mark_tile(self.hover_x, self.hover_y, HOVER)
         # self.mark_tile(self.mouse_x, self.mouse_y, MARK)
 
 
@@ -387,18 +396,23 @@ class SpriteWindow(DebugWindow):
         # Mark selected tiles
         for i in range(constants.SPRITES):
             sprite = Sprite(self.mb, i)
-            if WindowEventMarkTile(tile_identifier=sprite.tile_identifier) in marked_tiles or \
-               (sprite_height == 16 and WindowEventMarkTile(tile_identifier=sprite.tile_identifier+1) in marked_tiles):
-                for t in marked_tiles:
-                    if t.tile_identifier == sprite.tile_identifier or \
-                       (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1):
-                        break
+            match = next(
+                filter(
+                    lambda t: \
+                        t.tile_identifier == sprite.tile_identifier or \
+                        (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1),
+                    marked_tiles
+                ),
+                None
+            )
 
+            if match is not None:
                 xx = (i * 8) % self.width
                 yy = ((i * 8) // self.width)*sprite_height
-                self.mark_tile(xx, yy, t.mark_color, height=sprite_height)
+                self.mark_tile(xx, yy, match.mark_color, height=sprite_height)
 
-        self.mark_tile(self.hover_x, self.hover_y, HOVER, height=sprite_height)
+        if self.hover_x != -1:
+            self.mark_tile(self.hover_x, self.hover_y, HOVER, height=sprite_height)
 
     def update_title(self):
         title = self.base_title
@@ -412,7 +426,26 @@ class SpriteViewWindow(DebugWindow):
                 self.buf0[y][x] = SPRITE_BACKGROUND
 
         self.mb.renderer.render_sprites(self.mb.lcd, self.buf0)
+        self.draw_overlay()
         super().post_tick()
+
+    def draw_overlay(self):
+        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        # Mark selected tiles
+        for i in range(constants.SPRITES):
+            sprite = Sprite(self.mb, i)
+            match = next(
+                filter(
+                    lambda t: \
+                        t.tile_identifier == sprite.tile_identifier or \
+                        (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1),
+                    marked_tiles
+                ),
+                None
+            )
+
+            if match is not None:
+                self.mark_tile(sprite.x, sprite.y, match.mark_color, height=sprite_height, grid=False)
 
     def update_title(self):
         title = self.base_title
