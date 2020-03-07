@@ -10,8 +10,8 @@ import sdl2
 from pyboy import windowevent
 from pyboy.botsupport import constants, tilemap  # , tile
 from pyboy.botsupport.sprite import Sprite
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin, PyBoyWindowPlugin
-from pyboy.utils import WindowEventMarkTile
 
 try:
     from cython import compiled
@@ -31,6 +31,22 @@ marked_tiles = set([])
 MARK = [0xFF000000, 0xFFC00000, 0xFFFC0000, 0x00FFFF00,  0xFF00FF00]
 
 SPRITE_BACKGROUND = MASK
+
+class MarkedTile:
+    def __init__(self, event=windowevent.INTERNAL_MARK_TILE, tile_identifier=-1, mark_id="", mark_color=0, sprite_height=8, sprite=False):
+        self.tile_identifier = tile_identifier
+        self.mark_id = mark_id
+        self.mark_color = mark_color
+        self.sprite_height = sprite_height
+        if mark_id == "TILE":
+            logger.info(f"Marked Tile - identifier: {tile_identifier}")
+        elif mark_id == "SPRITE":
+            logger.info(f"Marked Sprite - tile identifier: {tile_identifier}, sprite height: {sprite_height}")
+        else:
+            logger.info(f"Marked {mark_id} - tile identifier: {tile_identifier}")
+
+    def __hash__(self):
+        return hash(self.tile_identifier)
 
 class Debug(PyBoyWindowPlugin):
     argv = [('-d', '--debug', {"action":'store_true', "help": 'Enable emulator debugging mode'})]
@@ -240,7 +256,7 @@ class TileViewWindow(DebugWindow):
                     tile_x, tile_y = event.mouse_x //self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = self.tilemap.get_tile_identifier(tile_x, tile_y)
                     marked_tiles.add(
-                        WindowEventMarkTile(
+                        MarkedTile(
                             tile_identifier=tile_identifier,
                             mark_id="TILE",
                             mark_color=MARK[mark_counter]
@@ -248,7 +264,6 @@ class TileViewWindow(DebugWindow):
                     )
                     mark_counter += 1
                     mark_counter %= len(MARK)
-                    # event_queue.put(WindowEventMarkTile(tile_identifier=tile_identifier, mark_id="TILE"))
                 elif event.mouse_button == 1:
                     marked_tiles.clear()
             elif event == windowevent.INTERNAL_MARK_TILE:
@@ -290,7 +305,6 @@ class TileViewWindow(DebugWindow):
                 self.mark_tile(column * 8, row * 8, t.mark_color)
         if self.hover_x != -1:
             self.mark_tile(self.hover_x, self.hover_y, HOVER)
-        # self.mark_tile(self.mouse_x, self.mouse_y, MARK)
 
 
 class TileDataWindow(DebugWindow):
@@ -315,7 +329,7 @@ class TileDataWindow(DebugWindow):
                     tile_x, tile_y = event.mouse_x //self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = tile_y * (self.width//8) + tile_x
                     marked_tiles.add(
-                        WindowEventMarkTile(
+                        MarkedTile(
                             tile_identifier=tile_identifier,
                             mark_id="TILE",
                             mark_color=MARK[mark_counter]
@@ -323,7 +337,6 @@ class TileDataWindow(DebugWindow):
                     )
                     mark_counter += 1
                     mark_counter %= len(MARK)
-                    # event_queue.put(WindowEventMarkTile(tile_identifier=tile_identifier, mark_id="TILE"))
                 elif event.mouse_button == 1:
                     marked_tiles.clear()
             elif event == windowevent.INTERNAL_MARK_TILE:
@@ -373,7 +386,7 @@ class SpriteWindow(DebugWindow):
                     sprite_identifier = tile_y * (self.width//8) + tile_x
                     sprite = Sprite(self.mb, sprite_identifier)
                     marked_tiles.add(
-                        WindowEventMarkTile(
+                        MarkedTile(
                             tile_identifier=sprite.tile_identifier,
                             mark_id="SPRITE",
                             mark_color=MARK[mark_counter],
@@ -383,7 +396,6 @@ class SpriteWindow(DebugWindow):
                     )
                     mark_counter += 1
                     mark_counter %= len(MARK)
-                    # event_queue.put(WindowEventMarkTile(tile_identifier=tile_identifier, mark_id="TILE"))
                 elif event.mouse_button == 1:
                     marked_tiles.clear()
             elif event == windowevent.INTERNAL_MARK_TILE:

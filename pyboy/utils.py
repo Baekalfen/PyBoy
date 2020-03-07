@@ -3,9 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.logger import logger
-from pyboy import windowevent
-
 STATE_VERSION = 3
 
 ##############################################################
@@ -107,15 +104,3 @@ class WindowEventMouse(WindowEvent):
         self.mouse_x = mouse_x
         self.mouse_y = mouse_y
         self.mouse_button = mouse_button
-
-class WindowEventMarkTile(WindowEvent):
-    def __init__(self, event=windowevent.INTERNAL_MARK_TILE, *args, tile_identifier=-1, mark_id="", mark_color=0, sprite_height=8, sprite=False):
-        super().__init__(event, *args)
-        self.tile_identifier = tile_identifier
-        self.mark_id = mark_id
-        self.mark_color = mark_color
-        self.sprite_height = sprite_height
-        logger.info(f"Marked Tile - identifier: {tile_identifier}" + (f", sprite height: {sprite_height}" if sprite else ""))
-
-    def __hash__(self):
-        return hash(self.tile_identifier)
