@@ -24,3 +24,16 @@ cdef class IntIOWrapper(IntIOInterface):
 # Misc
 
 cpdef uint8_t get_color_code(uint8_t, uint8_t, uint8_t)
+
+##############################################################
+# Window Events
+# Temporarily placed here to not be exposed on public API
+
+cdef class WindowEvent:
+    cdef int event
+
+cdef class WindowEventMouse(WindowEvent):
+    cdef public int window_id
+    cdef public int mouse_x
+    cdef public int mouse_y
+    cdef public int mouse_button

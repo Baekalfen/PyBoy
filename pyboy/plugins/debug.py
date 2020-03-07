@@ -11,7 +11,7 @@ from pyboy import windowevent
 from pyboy.botsupport import constants, tilemap  # , tile
 from pyboy.botsupport.sprite import Sprite
 from pyboy.logger import logger
-from pyboy.plugins.base_plugin import PyBoyPlugin, PyBoyWindowPlugin
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 
 try:
     from cython import compiled
@@ -28,12 +28,14 @@ HOVER = 0xFF0000
 mark_counter = 0
 # By using a set, we avoid duplicates
 marked_tiles = set([])
-MARK = [0xFF000000, 0xFFC00000, 0xFFFC0000, 0x00FFFF00,  0xFF00FF00]
+MARK = array('I', [0xFF000000, 0xFFC00000, 0xFFFC0000, 0x00FFFF00, 0xFF00FF00])
 
 SPRITE_BACKGROUND = MASK
 
+
 class MarkedTile:
-    def __init__(self, event=windowevent.INTERNAL_MARK_TILE, tile_identifier=-1, mark_id="", mark_color=0, sprite_height=8, sprite=False):
+    def __init__(self, event=windowevent.INTERNAL_MARK_TILE, tile_identifier=-1, mark_id="", mark_color=0,
+            sprite_height=8, sprite=False):
         self.tile_identifier = tile_identifier
         self.mark_id = mark_id
         self.mark_color = mark_color
@@ -48,8 +50,9 @@ class MarkedTile:
     def __hash__(self):
         return hash(self.tile_identifier)
 
+
 class Debug(PyBoyWindowPlugin):
-    argv = [('-d', '--debug', {"action":'store_true', "help": 'Enable emulator debugging mode'})]
+    argv = [('-d', '--debug', {"action": 'store_true', "help": 'Enable emulator debugging mode'})]
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
@@ -62,21 +65,25 @@ class Debug(PyBoyWindowPlugin):
         # self.scale = 2
         window_pos = 0
 
-        self.tile1 = TileViewWindow(pyboy, mb, pyboy_argv, scale=2, title="Background", width=256, height=256, pos_x=0, pos_y=0, window_map=False, scanline_x=0, scanline_y=1)
+        self.tile1 = TileViewWindow(pyboy, mb, pyboy_argv, scale=2, title="Background", width=256, height=256, pos_x=0,
+                pos_y=0, window_map=False, scanline_x=0, scanline_y=1)
         window_pos += (256*self.tile1.scale)
 
-        self.tile2 = TileViewWindow(pyboy, mb, pyboy_argv, scale=2, title="Window", width=256, height=256, pos_x=window_pos, pos_y=0, window_map=True, scanline_x=2, scanline_y=3)
+        self.tile2 = TileViewWindow(pyboy, mb, pyboy_argv, scale=2, title="Window", width=256, height=256,
+                pos_x=window_pos, pos_y=0, window_map=True, scanline_x=2, scanline_y=3)
         window_pos += (256*self.tile2.scale)
 
-        self.spriteview = SpriteViewWindow(pyboy, mb, pyboy_argv, scale=2, title="Sprite View", width=constants.COLS, height=constants.ROWS, pos_x=window_pos, pos_y=0)
+        self.spriteview = SpriteViewWindow(pyboy, mb, pyboy_argv, scale=2, title="Sprite View", width=constants.COLS,
+                height=constants.ROWS, pos_x=window_pos, pos_y=0)
 
-        self.sprite = SpriteWindow(pyboy, mb, pyboy_argv, scale=3, title="Sprite Data", width=8*10, height=16*4, pos_x=window_pos, pos_y=self.spriteview.height*2+68)
+        self.sprite = SpriteWindow(pyboy, mb, pyboy_argv, scale=3, title="Sprite Data", width=8*10, height=16*4,
+                pos_x=window_pos, pos_y=self.spriteview.height*2+68)
         window_pos += (constants.COLS*self.spriteview.scale)
 
         tile_data_width = 16*8 # Change the 16 to however wide you want the tile window
         tile_data_height = ((constants.TILES*8) // tile_data_width)*8
-        self.tiledata = TileDataWindow(pyboy, mb, pyboy_argv, scale=3, title="Tile Data", width=tile_data_width, height=tile_data_height, pos_x=window_pos, pos_y=0)
-
+        self.tiledata = TileDataWindow(pyboy, mb, pyboy_argv, scale=3, title="Tile Data", width=tile_data_width,
+                height=tile_data_height, pos_x=window_pos, pos_y=0)
 
     def post_tick(self):
         self.tile1.post_tick()
@@ -113,7 +120,7 @@ def make_buffer(w, h):
     return buf, buf0, buf_p
 
 
-class DebugWindow(PyBoyPlugin):
+class BaseDebugWindow(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv, *, scale, title, width, height, pos_x, pos_y):
         super().__init__(pyboy, mb, pyboy_argv)
         self.scale = scale
@@ -122,33 +129,25 @@ class DebugWindow(PyBoyPlugin):
         self.hover_x = -1
         self.hover_y = -1
 
-        self.window = sdl2.SDL_CreateWindow(
+        self._window = sdl2.SDL_CreateWindow(
             self.base_title.encode('utf8'),
             pos_x,
             pos_y,
             width*scale,
             height*scale,
             sdl2.SDL_WINDOW_RESIZABLE)
-        self.window_id = sdl2.SDL_GetWindowID(self.window)
-
+        self.window_id = sdl2.SDL_GetWindowID(self._window)
 
         self.buf, self.buf0, self.buf_p = make_buffer(width, height)
 
-        self.sdlrenderer = sdl2.SDL_CreateRenderer(self.window, -1, sdl2.SDL_RENDERER_ACCELERATED)
-        self.sdl_texture_buffer = sdl2.SDL_CreateTexture(
-            self.sdlrenderer,
+        self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
+        self._sdltexturebuffer = sdl2.SDL_CreateTexture(
+            self._sdlrenderer,
             sdl2.SDL_PIXELFORMAT_RGBA8888,
             sdl2.SDL_TEXTUREACCESS_STATIC,
             width,
             height
         )
-
-        if not cythonmode:
-            self.renderer = mb.renderer
-
-    def __cinit__(self, mb, *args):
-        self.mb = mb
-        self.renderer = mb.renderer
 
     def handle_events(self, events):
         # Feed events into the loop
@@ -164,7 +163,7 @@ class DebugWindow(PyBoyPlugin):
         return events
 
     def stop(self):
-        sdl2.SDL_DestroyWindow(self.window)
+        sdl2.SDL_DestroyWindow(self._window)
 
     def update_title(self):
         pass
@@ -173,23 +172,20 @@ class DebugWindow(PyBoyPlugin):
         self.update_title()
         self._update_display()
 
-    def _update_display(self):
-        sdl2.SDL_UpdateTexture(self.sdl_texture_buffer, None, self.buf_p, self.width*4)
-        sdl2.SDL_RenderCopy(self.sdlrenderer, self.sdl_texture_buffer, None, None)
-        sdl2.SDL_RenderPresent(self.sdlrenderer)
-        sdl2.SDL_RenderClear(self.sdlrenderer)
+    # def _update_display(self):
+    #     sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width*4)
+    #     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
+    #     sdl2.SDL_RenderPresent(self._sdlrenderer)
+    #     sdl2.SDL_RenderClear(self._sdlrenderer)
 
     ##########################
     # Internal functions
-
-    def copy_tile(self, tile_cache0, t, des, to_buffer):
-        xx, yy = des
-
+    def copy_tile(self, tile_cache0, t, xx, yy, to_buffer):
         for y in range(8):
             for x in range(8):
                 to_buffer[yy+y][xx+x] = tile_cache0[y + t*8][x]
 
-    def mark_tile(self, x, y, color, height=8, width=8, grid=True):
+    def mark_tile(self, x, y, color, height, width, grid):
         tw = width # Tile width
         th = height # Tile height
         if grid:
@@ -212,11 +208,15 @@ class DebugWindow(PyBoyPlugin):
                 self.buf0[yy+i][xx+tw-1] = color
 
 
-class TileViewWindow(DebugWindow):
+class TileViewWindow(BaseDebugWindow):
     def __init__(self, *args, window_map, scanline_x, scanline_y, **kwargs):
         super().__init__(*args, **kwargs)
         self.scanline_x, self.scanline_y = scanline_x, scanline_y
 
+        if not cythonmode:
+            self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
+
+    def __cinit__(self, pyboy, mb, *args, window_map, **kwargs):
         self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
 
     def post_tick(self):
@@ -237,11 +237,10 @@ class TileViewWindow(DebugWindow):
             tile_column = (n-mem_offset) % 32
             tile_row = (n-mem_offset) // 32
 
-            des = (tile_column * 8, tile_row * 8)
-            self.copy_tile(tile_cache0, tile_index, des, self.buf0)
+            self.copy_tile(tile_cache0, tile_index, tile_column * 8, tile_row * 8, self.buf0)
 
         self.draw_overlay()
-        super().post_tick()
+        BaseDebugWindow.post_tick(self)
 
     def handle_events(self, events):
         global mark_counter, marked_tiles
@@ -249,11 +248,11 @@ class TileViewWindow(DebugWindow):
         self.tilemap.refresh_map_data_select()
 
         # Feed events into the loop
-        events = super().handle_events(events)
+        events = BaseDebugWindow.handle_events(self, events)
         for event in events:
             if event == windowevent.INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x //self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = self.tilemap.get_tile_identifier(tile_x, tile_y)
                     marked_tiles.add(
                         MarkedTile(
@@ -273,13 +272,15 @@ class TileViewWindow(DebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " [HIGH MAP 0x9C00-0x9FFF]" if self.tilemap.map_offset == constants.HIGH_TILEMAP else " [LOW MAP 0x9800-0x9BFF]"
-        title += " [HIGH DATA (SIGNED) 0x8800-0x97FF]" if self.tilemap.signed_tile_data else " [LOW DATA (UNSIGNED) 0x8000-0x8FFF]"
+        title += " [HIGH MAP 0x9C00-0x9FFF]" if self.tilemap.map_offset == constants.HIGH_TILEMAP else \
+            " [LOW MAP 0x9800-0x9BFF]"
+        title += " [HIGH DATA (SIGNED) 0x8800-0x97FF]" if self.tilemap.signed_tile_data else \
+            " [LOW DATA (UNSIGNED) 0x8000-0x8FFF]"
         if self.tilemap._select == "WINDOW":
             title += " [Window]"
         if self.tilemap._select == "BACKGROUND":
             title += " [Background]"
-        sdl2.SDL_SetWindowTitle(self.window, title.encode('utf8'))
+        sdl2.SDL_SetWindowTitle(self._window, title.encode('utf8'))
 
     def draw_overlay(self):
         global marked_tiles
@@ -299,34 +300,37 @@ class TileViewWindow(DebugWindow):
                     self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] &= MASK
                 self.buf0[(yy+y) % 0xFF][(xx+constants.COLS) % 0xFF] = COLOR
 
-        #Mark selected tiles
-        for t, match in zip(marked_tiles, self.tilemap.search_for_identifiers([m.tile_identifier for m in marked_tiles])):
+        # Mark selected tiles
+        for t, match in zip(
+            marked_tiles,
+            self.tilemap.search_for_identifiers([m.tile_identifier for m in marked_tiles])
+        ):
             for row, column in match:
-                self.mark_tile(column * 8, row * 8, t.mark_color)
+                self.mark_tile(column * 8, row * 8, t.mark_color, 8, 8, True)
         if self.hover_x != -1:
-            self.mark_tile(self.hover_x, self.hover_y, HOVER)
+            self.mark_tile(self.hover_x, self.hover_y, HOVER, 8, 8, True)
 
 
-class TileDataWindow(DebugWindow):
+class TileDataWindow(BaseDebugWindow):
     def post_tick(self):
         tile_cache0 = self.renderer._tilecache
 
         for t in range(constants.TILES):
             xx = (t * 8) % self.width
             yy = ((t * 8) // self.width)*8
-            self.copy_tile(tile_cache0, t, (xx, yy), self.buf0)
+            self.copy_tile(tile_cache0, t, xx, yy, self.buf0)
 
         self.draw_overlay()
-        super().post_tick()
+        BaseDebugWindow.post_tick(self)
 
     def handle_events(self, events):
         global mark_counter, marked_tiles
         # Feed events into the loop
-        events = super().handle_events(events)
+        events = BaseDebugWindow.handle_events(self, events)
         for event in events:
             if event == windowevent.INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x //self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = tile_y * (self.width//8) + tile_x
                     marked_tiles.add(
                         MarkedTile(
@@ -350,10 +354,20 @@ class TileDataWindow(DebugWindow):
             row = t.tile_identifier // (self.width//8)
             # Yes, we are using the height as width. This is because we present the tile data from left to right,
             # but the sprites with a height of 16, renders them stacked ontop of each other.
-            self.mark_tile(column*8, row*8, t.mark_color, width=t.sprite_height)
+            self.mark_tile(column*8, row*8, t.mark_color, t.sprite_height, 8, True)
 
 
-class SpriteWindow(DebugWindow):
+def find_sprite(mb, i, sprite, sprite_height):
+    global marked_tiles
+    sprite = Sprite(mb, i)
+    for t in marked_tiles:
+        if t.tile_identifier == sprite.tile_identifier or \
+           (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1):
+            return t
+    return None
+
+
+class SpriteWindow(BaseDebugWindow):
     def post_tick(self):
         tile_cache0 = self.renderer._tilecache
 
@@ -365,24 +379,24 @@ class SpriteWindow(DebugWindow):
             # attributes = lcd.OAM[n+3]
             xx = ((n//4) * 8) % self.width
             yy = (((n//4) * 8) // self.width)*sprite_height
-            self.copy_tile(tile_cache0, t, (xx, yy), self.buf0)
+            self.copy_tile(tile_cache0, t, xx, yy, self.buf0)
             if sprite_height:
-                self.copy_tile(tile_cache0, t+1, (xx, yy+8), self.buf0)
+                self.copy_tile(tile_cache0, t+1, xx, yy+8, self.buf0)
 
         self.draw_overlay()
-        super().post_tick()
+        BaseDebugWindow.post_tick(self)
 
     def handle_events(self, events):
         global mark_counter, marked_tiles
 
         # Feed events into the loop
-        events = super().handle_events(events)
+        events = BaseDebugWindow.handle_events(self, events)
 
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         for event in events:
             if event == windowevent.INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x //self.scale // 8, event.mouse_y // self.scale // sprite_height
+                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // sprite_height
                     sprite_identifier = tile_y * (self.width//8) + tile_x
                     sprite = Sprite(self.mb, sprite_identifier)
                     marked_tiles.add(
@@ -408,30 +422,22 @@ class SpriteWindow(DebugWindow):
         # Mark selected tiles
         for i in range(constants.SPRITES):
             sprite = Sprite(self.mb, i)
-            match = next(
-                filter(
-                    lambda t: \
-                        t.tile_identifier == sprite.tile_identifier or \
-                        (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1),
-                    marked_tiles
-                ),
-                None
-            )
-
+            match = find_sprite(self.mb, i, sprite, sprite_height)
             if match is not None:
                 xx = (i * 8) % self.width
                 yy = ((i * 8) // self.width)*sprite_height
-                self.mark_tile(xx, yy, match.mark_color, height=sprite_height)
+                self.mark_tile(xx, yy, match.mark_color, sprite_height, 8, True)
 
         if self.hover_x != -1:
-            self.mark_tile(self.hover_x, self.hover_y, HOVER, height=sprite_height)
+            self.mark_tile(self.hover_x, self.hover_y, HOVER, sprite_height, 8, True)
 
     def update_title(self):
         title = self.base_title
         title += " [8x16]" if self.mb.lcd.LCDC.sprite_height else " [8x8]"
-        sdl2.SDL_SetWindowTitle(self.window, title.encode('utf8'))
+        sdl2.SDL_SetWindowTitle(self._window, title.encode('utf8'))
 
-class SpriteViewWindow(DebugWindow):
+
+class SpriteViewWindow(BaseDebugWindow):
     def post_tick(self):
         for y in range(constants.ROWS):
             for x in range(constants.COLS):
@@ -439,27 +445,33 @@ class SpriteViewWindow(DebugWindow):
 
         self.mb.renderer.render_sprites(self.mb.lcd, self.buf0)
         self.draw_overlay()
-        super().post_tick()
+        BaseDebugWindow.post_tick(self)
 
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
         for i in range(constants.SPRITES):
             sprite = Sprite(self.mb, i)
-            match = next(
-                filter(
-                    lambda t: \
-                        t.tile_identifier == sprite.tile_identifier or \
-                        (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1),
-                    marked_tiles
-                ),
-                None
-            )
-
+            match = find_sprite(self.mb, i, sprite, sprite_height)
             if match is not None:
-                self.mark_tile(sprite.x, sprite.y, match.mark_color, height=sprite_height, grid=False)
+                self.mark_tile(sprite.x, sprite.y, match.mark_color, sprite_height, 8, False)
 
     def update_title(self):
         title = self.base_title
         title += " " if self.mb.lcd.LCDC.sprite_enable else " [Disabled]"
-        sdl2.SDL_SetWindowTitle(self.window, title.encode('utf8'))
+        sdl2.SDL_SetWindowTitle(self._window, title.encode('utf8'))
+
+
+# Unfortunately CPython/PyPy code has to be hidden in an exec call to
+# prevent Cython from trying to parse it. This block provides the
+# functions that are otherwise implemented as inlined cdefs in the pxd
+if not cythonmode:
+    exec("""
+def _update_display(self):
+    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width*4)
+    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
+    sdl2.SDL_RenderPresent(self._sdlrenderer)
+    sdl2.SDL_RenderClear(self._sdlrenderer)
+
+BaseDebugWindow._update_display = _update_display
+""", globals(), locals())

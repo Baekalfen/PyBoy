@@ -14,3 +14,4 @@ cdef class TileMap:
     cdef bint signed_tile_data
     cdef bint _use_tile_objects
     cdef int map_offset
+    cdef str _select

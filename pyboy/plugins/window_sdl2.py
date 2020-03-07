@@ -94,9 +94,9 @@ class WindowSDL2(PyBoyWindowPlugin):
             elif event.type == sdl2.SDL_WINDOWEVENT:
                 if event.window.windowID == 1:
                     if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
-                        events.append(windowevent.WINDOW_UNFOCUS)
+                        events.append(WindowEvent(windowevent.WINDOW_UNFOCUS))
                     elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
-                        events.append(windowevent.WINDOW_FOCUS)
+                        events.append(WindowEvent(windowevent.WINDOW_FOCUS))
             elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
                 mouse_button = -1
                 if event.type == sdl2.SDL_MOUSEBUTTONUP:

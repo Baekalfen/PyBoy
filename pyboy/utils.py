@@ -84,7 +84,7 @@ def get_color_code(byte1, byte2, offset):
 
 ##############################################################
 # Window Events
-
+# Temporarily placed here to not be exposed on public API
 
 class WindowEvent:
 
@@ -96,6 +96,7 @@ class WindowEvent:
             return self.event == x
         else:
             return self.event == x.event
+
 
 class WindowEventMouse(WindowEvent):
     def __init__(self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_button=-1):

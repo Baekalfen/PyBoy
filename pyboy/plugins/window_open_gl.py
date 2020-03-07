@@ -3,11 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-try:
-    from PIL import Image
-except ImportError:
-    Image = None
-
 import numpy as np
 import OpenGL.GLUT.freeglut
 from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
@@ -20,6 +15,13 @@ from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_
 from pyboy import windowevent
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.utils import WindowEvent
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
 
 ROWS, COLS = 144, 160
 
@@ -76,56 +78,56 @@ class WindowOpenGL(PyBoyWindowPlugin):
     def _glkeyboardspecial(self, c, x, y, up):
         if up:
             if c == GLUT_KEY_UP:
-                self.events.append(windowevent.RELEASE_ARROW_UP)
+                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_UP))
             if c == GLUT_KEY_DOWN:
-                self.events.append(windowevent.RELEASE_ARROW_DOWN)
+                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_DOWN))
             if c == GLUT_KEY_LEFT:
-                self.events.append(windowevent.RELEASE_ARROW_LEFT)
+                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_LEFT))
             if c == GLUT_KEY_RIGHT:
-                self.events.append(windowevent.RELEASE_ARROW_RIGHT)
+                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_RIGHT))
         else:
             if c == GLUT_KEY_UP:
-                self.events.append(windowevent.PRESS_ARROW_UP)
+                self.events.append(WindowEvent(windowevent.PRESS_ARROW_UP))
             if c == GLUT_KEY_DOWN:
-                self.events.append(windowevent.PRESS_ARROW_DOWN)
+                self.events.append(WindowEvent(windowevent.PRESS_ARROW_DOWN))
             if c == GLUT_KEY_LEFT:
-                self.events.append(windowevent.PRESS_ARROW_LEFT)
+                self.events.append(WindowEvent(windowevent.PRESS_ARROW_LEFT))
             if c == GLUT_KEY_RIGHT:
-                self.events.append(windowevent.PRESS_ARROW_RIGHT)
+                self.events.append(WindowEvent(windowevent.PRESS_ARROW_RIGHT))
 
     def _glkeyboard(self, c, x, y, up):
         if up:
             if c == 'a':
-                self.events.append(windowevent.RELEASE_BUTTON_A)
+                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_A))
             elif c == 's':
-                self.events.append(windowevent.RELEASE_BUTTON_B)
+                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_B))
             elif c == 'z':
-                self.events.append(windowevent.SAVE_STATE)
+                self.events.append(WindowEvent(windowevent.SAVE_STATE))
             elif c == 'x':
-                self.events.append(windowevent.LOAD_STATE)
+                self.events.append(WindowEvent(windowevent.LOAD_STATE))
             elif c == ' ':
-                self.events.append(windowevent.RELEASE_SPEED_UP)
+                self.events.append(WindowEvent(windowevent.RELEASE_SPEED_UP))
             elif c == chr(8):
-                self.events.append(windowevent.RELEASE_BUTTON_SELECT)
+                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_SELECT))
             elif c == chr(13):
-                self.events.append(windowevent.RELEASE_BUTTON_START)
+                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_START))
         else:
             if c == 'a':
-                self.events.append(windowevent.PRESS_BUTTON_A)
+                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_A))
             elif c == 's':
-                self.events.append(windowevent.PRESS_BUTTON_B)
+                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_B))
             elif c == chr(27):
-                self.events.append(windowevent.QUIT)
+                self.events.append(WindowEvent(windowevent.QUIT))
             elif c == 'd':
-                self.events.append(windowevent.DEBUG_TOGGLE)
+                self.events.append(WindowEvent(windowevent.DEBUG_TOGGLE))
             elif c == ' ':
-                self.events.append(windowevent.PRESS_SPEED_UP)
+                self.events.append(WindowEvent(windowevent.PRESS_SPEED_UP))
             elif c == 'i':
-                self.events.append(windowevent.SCREEN_RECORDING_TOGGLE)
+                self.events.append(WindowEvent(windowevent.SCREEN_RECORDING_TOGGLE))
             elif c == chr(8):
-                self.events.append(windowevent.PRESS_BUTTON_SELECT)
+                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_SELECT))
             elif c == chr(13):
-                self.events.append(windowevent.PRESS_BUTTON_START)
+                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_START))
 
     def _glreshape(self, width, height):
         scale = max(min(height / ROWS, width / COLS), 1)

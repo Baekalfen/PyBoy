@@ -12,6 +12,7 @@ except ImportError:
 
 ROWS, COLS = 144, 160
 
+
 class PyBoyPlugin:
     argv = []
 
@@ -21,7 +22,7 @@ class PyBoyPlugin:
             self.mb = mb
             self.pyboy_argv = pyboy_argv
 
-    def __cinit__(self, pyboy, mb, pyboy_argv):
+    def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.pyboy = pyboy
         self.mb = mb
         self.pyboy_argv = pyboy_argv
@@ -43,8 +44,8 @@ class PyBoyPlugin:
 
 
 class PyBoyWindowPlugin(PyBoyPlugin):
-    def __init__(self, pyboy, mb, pyboy_argv):
-        super().__init__(pyboy, mb, pyboy_argv)
+    def __init__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
+        super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
 
         if not self.enabled():
             return
@@ -60,7 +61,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         if not cythonmode:
             self.renderer = mb.renderer
 
-    def __cinit__(self, *args):
+    def __cinit__(self, *args, **kwargs):
         self.renderer = self.mb.renderer
 
     def frame_limiter(self, speed):

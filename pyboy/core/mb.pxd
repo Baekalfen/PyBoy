@@ -14,6 +14,7 @@ cimport pyboy.core.bootrom
 cimport pyboy.core.ram
 cimport pyboy.core.lcd
 cimport pyboy.core.interaction
+from pyboy.utils cimport WindowEvent
 
 
 cdef uint16_t STAT, LY, LYC
@@ -37,7 +38,7 @@ cdef class Motherboard:
     cdef str serialbuffer
     cdef int cycles_remaining
 
-    cdef void buttonevent(self, int)
+    cdef void buttonevent(self, WindowEvent)
     cdef void stop(self, bint)
     cdef void set_STAT_mode(self, int)
     cdef void check_LYC(self, int)

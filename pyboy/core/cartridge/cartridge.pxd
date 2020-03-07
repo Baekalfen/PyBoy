@@ -6,7 +6,7 @@
 from .base_mbc cimport BaseMBC
 
 from cpython.array cimport array
-from array import array
+# from array import array
 
 import cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t

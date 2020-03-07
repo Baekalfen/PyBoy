@@ -11,11 +11,11 @@ import os
 import time
 
 from pyboy.plugins.manager import PluginManager
+from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport, windowevent
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
-from .utils import IntIOWrapper
 
 addconsolehandler()
 
@@ -312,7 +312,7 @@ class PyBoy:
         Args:
             event (pyboy.windowevent): The event to send
         """
-        self.events.append(event)
+        self.events.append(WindowEvent(event))
 
     def get_sprite(self, index):
         """
@@ -343,12 +343,11 @@ class PyBoy:
         """
         return botsupport.Tile(self.mb, identifier=identifier)
 
-
     def get_tile_map_background(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap. For consistency,
-        use the functions `PyBoy.get_tile_map_low` or `PyBoy.get_tile_map_high`.
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap. For
+        consistency, use the functions `PyBoy.get_tile_map_low` or `PyBoy.get_tile_map_high`.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -356,6 +355,7 @@ class PyBoy:
             `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
         """
         return botsupport.TileMap(self.mb, "BACKGROUND")
+    get_background_tile_map = get_tile_map_background
 
     def get_tile_map_window(self):
         """
@@ -369,6 +369,7 @@ class PyBoy:
             `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
         """
         return botsupport.TileMap(self.mb, "WINDOW")
+    get_window_tile_map = get_tile_map_window
 
     def get_screen_position(self):
         """

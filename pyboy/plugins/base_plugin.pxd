@@ -2,8 +2,10 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+cimport cython
 from pyboy.core.mb cimport Motherboard
 from pyboy.core.lcd cimport Renderer
+from pyboy.utils cimport WindowEvent
 
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
@@ -14,6 +16,7 @@ cdef class PyBoyPlugin:
     cdef object pyboy
     cdef Motherboard mb
     cdef dict pyboy_argv
+    @cython.locals(event=WindowEvent)
     cdef list handle_events(self, list)
     cdef void post_tick(self)
     cdef str window_title(self)
@@ -23,7 +26,7 @@ cdef class PyBoyPlugin:
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):
 
-    cdef int _scale
+    cdef int scale
     cdef tuple _scaledresolution
     cdef bint enable_title
     cdef Renderer renderer

@@ -2,7 +2,7 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
+cimport cython
 from pyboy.core.mb cimport Motherboard
 
 cdef (int, int) _dummy_declaration

@@ -5,7 +5,7 @@
 
 import cython
 from cpython.array cimport array
-from array import array
+# from array import array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 cimport pyboy.utils
 from pyboy.utils cimport IntIOInterface
@@ -84,13 +84,19 @@ cdef class Renderer:
         x=int,
         wmap=int,
         background_offset=int,
-        bt=int,
-        wt=int,
         bx=int,
         by=int,
         wx=int,
         wy=int,
+        wt=int,
+        bt=int,
         offset=int,
+    )
+    cdef void render_screen(self, LCD)
+
+    @cython.locals(
+        y=int,
+        x=int,
         bgpkey=uint32_t,
         spriteheight=int,
         n=int,
@@ -106,7 +112,7 @@ cdef class Renderer:
         xx=int,
         pixel=uint32_t,
     )
-    cdef void render_screen(self, LCD)
+    cdef void render_sprites(self, LCD, uint32_t[:,:])
 
     @cython.locals(
         x=int,
