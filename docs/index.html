@@ -27,9 +27,17 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__all__ = [&#39;pyboy&#39;, &#39;botsupport&#39;, &#39;windowevent&#39;]
+__pdoc__ = {
+   &#39;core&#39;: False,
+   &#39;logger&#39;: False,
+   &#39;plugins&#39;: False,
+   &#39;pyboy&#39;: False,
+   &#39;utils&#39;: False,
+   &#39;botsupport.constants&#39;: False,
+}
+__all__ = [&#39;PyBoy&#39;, &#39;botsupport&#39;, &#39;WindowEvent&#39;]
 
-from . import bootrom, cartridge, interaction, lcd, mb, ram, window, windowevent
+from .utils import WindowEvent
 from .pyboy import PyBoy</code></pre>
 </details>
 </section>
@@ -40,14 +48,6 @@ from .pyboy import PyBoy</code></pre>
 <dd>
 <section class="desc"><p>Tools to help interfacing with the Game Boy hardware</p></section>
 </dd>
-<dt><code class="name"><a title="pyboy.pyboy" href="pyboy.html">pyboy.pyboy</a></code></dt>
-<dd>
-<section class="desc"><p>The core module of the emulator</p></section>
-</dd>
-<dt><code class="name"><a title="pyboy.windowevent" href="windowevent.html">pyboy.windowevent</a></code></dt>
-<dd>
-<section class="desc"><p>All supported events to send to the emulator: …</p></section>
-</dd>
 </dl>
 </section>
 <section>
@@ -55,6 +55,1159 @@ from .pyboy import PyBoy</code></pre>
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.PyBoy"><code class="flex name class">
+<span>class <span class="ident">PyBoy</span></span>
+<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
+controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
+multiple times.</p>
+<p>This object, <a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a>, and the <a title="pyboy.botsupport" href="botsupport/index.html"><code>pyboy.botsupport</code></a> module, are the only official user-facing
+interfaces. All other parts of the emulator, are subject to change.</p>
+<p>A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
+GitHub, if other methods are needed for your projects. Take a look at <code>interface_example.py</code> or <code>tetris_bot.py</code>
+for a crude "bot", which interacts with the game.</p>
+<p>Only the <code>gamerom_file</code> argument is required.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>gamerom_file</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filepath to a game-ROM for the original Game Boy.</dd>
+</dl>
+<h2 id="kwargs">Kwargs</h2>
+<dl>
+<dt><strong><code>bootrom_file</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</dd>
+<dt><strong><code>profiling</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Profile the emulator and report opcode usage (internal use).</dd>
+<dt><strong><code>disable_renderer</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Can be used to optimize performance, by internally disable rendering of the screen.</dd>
+<dt><strong><code>color_palette</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>Specify the color palette to use for rendering.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class PyBoy:
+    def __init__(
+                self,
+                gamerom_file, *,
+                bootrom_file=None,
+                profiling=False,
+                disable_renderer=False,
+                **kwargs
+            ):
+        &#34;&#34;&#34;
+        PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
+        controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
+        multiple times.
+
+        This object, `pyboy.WindowEvent`, and the `pyboy.botsupport` module, are the only official user-facing
+        interfaces. All other parts of the emulator, are subject to change.
+
+        A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
+        GitHub, if other methods are needed for your projects. Take a look at `interface_example.py` or `tetris_bot.py`
+        for a crude &#34;bot&#34;, which interacts with the game.
+
+        Only the `gamerom_file` argument is required.
+
+        Args:
+            gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+
+        Kwargs:
+            bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
+            profiling (bool): Profile the emulator and report opcode usage (internal use).
+            disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
+            color_palette (tuple): Specify the color palette to use for rendering.
+        &#34;&#34;&#34;
+
+        for k, v in defaults.items():
+            if k not in kwargs:
+                kwargs[k] = kwargs.get(k, defaults[k])
+
+        if not os.path.isfile(gamerom_file):
+            raise FileNotFoundError(f&#34;ROM file {gamerom_file} was not found!&#34;)
+        self.gamerom_file = gamerom_file
+
+        self.mb = Motherboard(
+            gamerom_file,
+            bootrom_file,
+            kwargs[&#34;color_palette&#34;],
+            disable_renderer,
+            profiling=profiling
+        )
+
+        # Performance measures
+        self.avg_pre = 0
+        self.avg_tick = 0
+        self.avg_post = 0
+
+        # Absolute frame count of the emulation
+        self.frame_count = 0
+
+        self.set_emulation_speed(1)
+        self.paused = False
+        self.events = []
+        self.done = False
+        self.window_title = &#34;PyBoy&#34;
+
+        ###################
+        # Plugins
+
+        self.plugin_manager = PluginManager(self, self.mb, kwargs)
+
+    def tick(self):
+        &#34;&#34;&#34;
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        &#34;&#34;&#34;
+
+        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        self._handle_events(self.events)
+        t_pre = time.perf_counter()
+        self.frame_count += 1
+        if not self.paused:
+            self.mb.tickframe()
+        t_tick = time.perf_counter()
+        self._post_tick()
+        t_post = time.perf_counter()
+
+        secs = t_pre-t_start
+        self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
+
+        secs = t_tick-t_pre
+        self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
+
+        secs = t_post-t_tick
+        self.avg_post = 0.9 * self.avg_post + 0.1 * secs
+
+        return self.done
+
+    def _handle_events(self, events):
+        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+        events = self.plugin_manager.handle_events(events)
+
+        for event in events:
+            if event == WindowEvent.QUIT:
+                self.done = True
+            elif event == WindowEvent.RELEASE_SPEED_UP:
+                # Switch between unlimited and 1x real-time emulation speed
+                self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
+                logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
+            elif event == WindowEvent.STATE_SAVE:
+                with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
+                    self.mb.save_state(IntIOWrapper(f))
+            elif event == WindowEvent.STATE_LOAD:
+                with open(self.gamerom_file + &#34;.state&#34;, &#34;rb&#34;) as f:
+                    self.mb.load_state(IntIOWrapper(f))
+            elif event == WindowEvent.PASS:
+                pass # Used in place of None in Cython, when key isn&#39;t mapped to anything
+            elif event == WindowEvent.PAUSE_TOGGLE:
+                if self.paused:
+                    self._unpause()
+                else:
+                    self._pause()
+            elif event == WindowEvent.PAUSE:
+                self._pause()
+            elif event == WindowEvent.UNPAUSE:
+                self._unpause()
+            elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
+                self.plugin_manager._post_tick_windows()
+            else:
+                self.mb.buttonevent(event)
+
+    def _pause(self):
+        if self.paused:
+            return
+        self.paused = True
+        self.save_target_emulationspeed = self.target_emulationspeed
+        self.target_emulationspeed = 1
+        logger.info(&#34;Emulation paused!&#34;)
+        self._update_window_title()
+
+    def _unpause(self):
+        if not self.paused:
+            return
+        self.paused = False
+        self.target_emulationspeed = self.save_target_emulationspeed
+        logger.info(&#34;Emulation unpaused!&#34;)
+        self._update_window_title()
+
+    def _post_tick(self):
+        if self.frame_count % 60 == 0:
+            self._update_window_title()
+        self.plugin_manager.post_tick()
+        self.plugin_manager.frame_limiter(self.target_emulationspeed)
+
+        # Prepare an empty list, as the API might be used to send in events between ticks
+        self.events = []
+
+    def _update_window_title(self):
+        avg_emu = self.avg_pre + self.avg_tick + self.avg_post
+        self.window_title = &#34;CPU/frame: %0.2f%%&#34; % ((self.avg_pre + self.avg_tick)/SPF*100)
+        self.window_title += &#34; Emulation: x%d&#34; % (round(SPF/avg_emu) if avg_emu != 0 else 0)
+        if self.paused:
+            self.window_title += &#34;[PAUSED]&#34;
+        self.window_title += self.plugin_manager.window_title()
+        self.plugin_manager._set_title()
+
+    def __del__(self):
+        self.stop(save=False)
+
+    def stop(self, save=True):
+        &#34;&#34;&#34;
+        Gently stops the emulator and all sub-modules.
+
+        Args:
+            save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
+                provided game-ROM.
+        &#34;&#34;&#34;
+        logger.info(&#34;###########################&#34;)
+        logger.info(&#34;# Emulator is turning off #&#34;)
+        logger.info(&#34;###########################&#34;)
+        self.plugin_manager.stop()
+        self.mb.stop(save)
+
+    def _get_cpu_hitrate(self):
+        logger.warning(&#34;You are calling an internal function. The output and the function is subject to change.&#34;)
+        return self.mb.cpu.hitrate
+
+    ###################################################################
+    # Scripts and bot methods
+    #
+
+    def get_screen(self):
+        &#34;&#34;&#34;
+        Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
+
+        It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.botsupport.screen.Screen.get_tilemap_position` for more information.
+
+        Returns:
+            `pyboy.botsupport.screen.Screen`: A Screen object with helper functions for reading the screen buffer.
+        &#34;&#34;&#34;
+        return botsupport.screen.Screen(self.mb)
+
+    def get_memory_value(self, addr):
+        &#34;&#34;&#34;
+        Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
+        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
+        MBC commands to the virtual cartridge.
+
+        Returns:
+            int: An integer with the value of the memory address
+        &#34;&#34;&#34;
+        return self.mb.getitem(addr)
+
+    def set_memory_value(self, addr, value):
+        &#34;&#34;&#34;
+        Write one byte to a given memory address of the Game Boy&#39;s current memory state.
+
+        This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is
+        needed, or use this function to send &#34;Memory Bank Controller&#34; (MBC) commands to the virtual cartridge. You can
+        read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            addr (int): Address to write the byte
+            value (int): A byte of data
+        &#34;&#34;&#34;
+        self.mb.setitem(addr, value)
+
+    def send_input(self, event):
+        &#34;&#34;&#34;
+        Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
+
+        See `pyboy.WindowEvent` for which events to send.
+
+        Args:
+            event (pyboy.WindowEvent): The event to send
+        &#34;&#34;&#34;
+        self.events.append(WindowEvent(event))
+
+    def get_sprite(self, sprite_index):
+        &#34;&#34;&#34;
+        Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+        corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
+
+        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+        Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            index (int): Sprite index from 0 to 39.
+        Returns:
+            `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
+        &#34;&#34;&#34;
+        return botsupport.Sprite(self.mb, sprite_index)
+
+    def get_sprite_by_tile_identifier(self, tile_identifiers):
+        &#34;&#34;&#34;
+        Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+        identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+        `pyboy.PyBoy.get_sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+
+        Example:
+        ```
+        &gt;&gt;&gt; print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+        [[0, 2, 4], []]
+        ```
+
+        Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+        `123` was not found anywhere.
+
+        Args:
+            identifiers (list): List of tile identifiers (int)
+
+        Returns:
+            list: list of sprite matches for every tile identifier in the input
+        &#34;&#34;&#34;
+
+        matches = []
+        for i in tile_identifiers:
+            match = []
+            for s in range(botsupport.constants.SPRITES):
+                sprite = botsupport.sprite.Sprite(self.mb, s)
+                for t in sprite.tiles:
+                    if t.tile_identifier == i:
+                        match.append(s)
+            matches.append(match)
+        return matches
+
+    def get_tile(self, identifier):
+        &#34;&#34;&#34;
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+        `pyboy.botsupport.tile.Tile`-object for given identifier.
+
+        The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+        the `pyboy.botsupport.tile.Tile` object for more information.
+
+        Returns:
+            `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+        &#34;&#34;&#34;
+        return botsupport.Tile(self.mb, identifier=identifier)
+
+    def get_tilemap_background(self):
+        &#34;&#34;&#34;
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns:
+            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        &#34;&#34;&#34;
+        return botsupport.TileMap(self.mb, &#34;BACKGROUND&#34;)
+
+    def get_tilemap_window(self):
+        &#34;&#34;&#34;
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns:
+            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        &#34;&#34;&#34;
+        return botsupport.TileMap(self.mb, &#34;WINDOW&#34;)
+
+    def save_state(self, file_like_object):
+        &#34;&#34;&#34;
+        Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
+        a game.
+
+        You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
+        case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
+
+            # Save to file
+            file_like_object = open(&#34;state_file.state&#34;, &#34;wb&#34;)
+
+            # Save to memory
+            import io
+            file_like_object = io.BytesIO()
+            file_like_object.seek(0)
+
+        Args:
+            file_like_object (io.BufferedIOBase): A file-like object for which to write the emulator state.
+        &#34;&#34;&#34;
+
+        if isinstance(file_like_object, str):
+            raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+
+        self.mb.save_state(IntIOWrapper(file_like_object))
+
+    def load_state(self, file_like_object):
+        &#34;&#34;&#34;
+        Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress
+        in a game.
+
+        You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you
+        can load it here.
+
+        To load a file, remember to load it as bytes:
+
+            # Load file
+            file_like_object = open(&#34;state_file.state&#34;, &#34;rb&#34;)
+
+
+        Args:
+            file_like_object (io.BufferedIOBase): A file-like object for which to read the emulator state.
+        &#34;&#34;&#34;
+
+        if isinstance(file_like_object, str):
+            raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+
+        self.mb.load_state(IntIOWrapper(file_like_object))
+
+    def _get_serial(self):
+        &#34;&#34;&#34;
+        Provides all data that has been sent over the serial port since last call to this function.
+
+        Returns:
+            str : Buffer data
+        &#34;&#34;&#34;
+        return self.mb.getserial()
+
+    def set_emulation_speed(self, target_speed):
+        &#34;&#34;&#34;
+        Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high
+        `target_speed`.
+
+        The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
+
+        A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
+
+        Args:
+            target_speed (int): Target emulation speed as multiplier of real-time.
+        &#34;&#34;&#34;
+        if target_speed &gt; 5:
+            logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
+        self.target_emulationspeed = target_speed
+
+    def get_cartridge_title(self):
+        &#34;&#34;&#34;
+        Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
+        have been truncated to 11 characters.
+
+        Returns:
+            str : Game title
+        &#34;&#34;&#34;
+        return self.mb.cartridge.gamename</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.PyBoy.get_cartridge_title"><code class="name flex">
+<span>def <span class="ident">get_cartridge_title</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
+have been truncated to 11 characters.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>str</code></strong> :&ensp;<code>Game</code> <code>title</code></dt>
+<dd>&nbsp;</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_cartridge_title(self):
+    &#34;&#34;&#34;
+    Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
+    have been truncated to 11 characters.
+
+    Returns:
+        str : Game title
+    &#34;&#34;&#34;
+    return self.mb.cartridge.gamename</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_memory_value"><code class="name flex">
+<span>def <span class="ident">get_memory_value</span></span>(<span>self, addr)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
+all switchable memory banks. Open an issue on GitHub if that is needed, or use <a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value"><code>PyBoy.set_memory_value()</code></a> to send
+MBC commands to the virtual cartridge.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>int</code></strong></dt>
+<dd>An integer with the value of the memory address</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_memory_value(self, addr):
+    &#34;&#34;&#34;
+    Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
+    all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
+    MBC commands to the virtual cartridge.
+
+    Returns:
+        int: An integer with the value of the memory address
+    &#34;&#34;&#34;
+    return self.mb.getitem(addr)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_screen"><code class="name flex">
+<span>def <span class="ident">get_screen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Use this method to get a <a title="pyboy.botsupport.screen.Screen" href="botsupport/screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a> object. This can be used to get the screen buffer in
+a variety of formats.</p>
+<p>It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+<a title="pyboy.botsupport.screen.Screen.get_tilemap_position" href="botsupport/screen.html#pyboy.botsupport.screen.Screen.get_tilemap_position"><code>Screen.get_tilemap_position()</code></a> for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.screen.Screen" href="botsupport/screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a>: A Screen object with helper functions for reading the screen buffer.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_screen(self):
+    &#34;&#34;&#34;
+    Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
+    a variety of formats.
+
+    It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+    `pyboy.botsupport.screen.Screen.get_tilemap_position` for more information.
+
+    Returns:
+        `pyboy.botsupport.screen.Screen`: A Screen object with helper functions for reading the screen buffer.
+    &#34;&#34;&#34;
+    return botsupport.screen.Screen(self.mb)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_sprite"><code class="name flex">
+<span>def <span class="ident">get_sprite</span></span>(<span>self, sprite_index)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provides a <a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object, which makes the OAM data more presentable. The given index
+corresponds to index of the sprite in the "Object Attribute Memory" (OAM).</p>
+<p>The Game Boy supports 40 sprites in total. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan
+Docs</a>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>index</code></strong> :&ensp;<code>int</code></dt>
+<dd>Sprite index from 0 to 39.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a>: Sprite corresponding to the given index.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_sprite(self, sprite_index):
+    &#34;&#34;&#34;
+    Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+    corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
+
+    The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+    Docs](http://bgb.bircd.org/pandocs.htm).
+
+    Args:
+        index (int): Sprite index from 0 to 39.
+    Returns:
+        `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
+    &#34;&#34;&#34;
+    return botsupport.Sprite(self.mb, sprite_index)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_sprite_by_tile_identifier"><code class="name flex">
+<span>def <span class="ident">get_sprite_by_tile_identifier</span></span>(<span>self, tile_identifiers)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+<a title="pyboy.PyBoy.get_sprite" href="#pyboy.PyBoy.get_sprite"><code>PyBoy.get_sprite()</code></a> function to get a <a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+[[0, 2, 4], []]
+</code></pre>
+<p>Meaning, that tile identifier <code>43</code> is found at the sprite indexes: 0, 2, and 4, while tile identifier
+<code>123</code> was not found anywhere.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>identifiers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of tile identifiers (int)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>list</code></strong></dt>
+<dd>list of sprite matches for every tile identifier in the input</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_sprite_by_tile_identifier(self, tile_identifiers):
+    &#34;&#34;&#34;
+    Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+    identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+    `pyboy.PyBoy.get_sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+
+    Example:
+    ```
+    &gt;&gt;&gt; print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+    [[0, 2, 4], []]
+    ```
+
+    Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+    `123` was not found anywhere.
+
+    Args:
+        identifiers (list): List of tile identifiers (int)
+
+    Returns:
+        list: list of sprite matches for every tile identifier in the input
+    &#34;&#34;&#34;
+
+    matches = []
+    for i in tile_identifiers:
+        match = []
+        for s in range(botsupport.constants.SPRITES):
+            sprite = botsupport.sprite.Sprite(self.mb, s)
+            for t in sprite.tiles:
+                if t.tile_identifier == i:
+                    match.append(s)
+        matches.append(match)
+    return matches</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_tile"><code class="name flex">
+<span>def <span class="ident">get_tile</span></span>(<span>self, identifier)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+<a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>-object for given identifier.</p>
+<p>The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+the <a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>: A Tile object for the given identifier.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_tile(self, identifier):
+    &#34;&#34;&#34;
+    The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+    `pyboy.botsupport.tile.Tile`-object for given identifier.
+
+    The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+    the `pyboy.botsupport.tile.Tile` object for more information.
+
+    Returns:
+        `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+    &#34;&#34;&#34;
+    return botsupport.Tile(self.mb, identifier=identifier)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_tilemap_background"><code class="name flex">
+<span>def <span class="ident">get_tilemap_background</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+for the <em>background</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the tile map.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_tilemap_background(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+    for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns:
+        `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+    &#34;&#34;&#34;
+    return botsupport.TileMap(self.mb, &#34;BACKGROUND&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.get_tilemap_window"><code class="name flex">
+<span>def <span class="ident">get_tilemap_window</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+for the <em>window</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the tile map.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_tilemap_window(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+    for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns:
+        `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+    &#34;&#34;&#34;
+    return botsupport.TileMap(self.mb, &#34;WINDOW&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.load_state"><code class="name flex">
+<span>def <span class="ident">load_state</span></span>(<span>self, file_like_object)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress
+in a game.</p>
+<p>You can either load it from a file, or from memory. See <a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state"><code>PyBoy.save_state()</code></a> for how to save the state, before you
+can load it here.</p>
+<p>To load a file, remember to load it as bytes:</p>
+<pre><code># Load file
+file_like_object = open("state_file.state", "rb")
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>file_like_object</code></strong> :&ensp;<code>io.BufferedIOBase</code></dt>
+<dd>A file-like object for which to read the emulator state.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_state(self, file_like_object):
+    &#34;&#34;&#34;
+    Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress
+    in a game.
+
+    You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you
+    can load it here.
+
+    To load a file, remember to load it as bytes:
+
+        # Load file
+        file_like_object = open(&#34;state_file.state&#34;, &#34;rb&#34;)
+
+
+    Args:
+        file_like_object (io.BufferedIOBase): A file-like object for which to read the emulator state.
+    &#34;&#34;&#34;
+
+    if isinstance(file_like_object, str):
+        raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+
+    self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.save_state"><code class="name flex">
+<span>def <span class="ident">save_state</span></span>(<span>self, file_like_object)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
+a game.</p>
+<p>You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
+case. Remember to <code>seek</code> the in-memory buffer to the beginning before calling <a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state"><code>PyBoy.load_state()</code></a>:</p>
+<pre><code># Save to file
+file_like_object = open("state_file.state", "wb")
+
+# Save to memory
+import io
+file_like_object = io.BytesIO()
+file_like_object.seek(0)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>file_like_object</code></strong> :&ensp;<code>io.BufferedIOBase</code></dt>
+<dd>A file-like object for which to write the emulator state.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def save_state(self, file_like_object):
+    &#34;&#34;&#34;
+    Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
+    a game.
+
+    You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
+    case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
+
+        # Save to file
+        file_like_object = open(&#34;state_file.state&#34;, &#34;wb&#34;)
+
+        # Save to memory
+        import io
+        file_like_object = io.BytesIO()
+        file_like_object.seek(0)
+
+    Args:
+        file_like_object (io.BufferedIOBase): A file-like object for which to write the emulator state.
+    &#34;&#34;&#34;
+
+    if isinstance(file_like_object, str):
+        raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+
+    self.mb.save_state(IntIOWrapper(file_like_object))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.send_input"><code class="name flex">
+<span>def <span class="ident">send_input</span></span>(<span>self, event)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.</p>
+<p>See <a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a> for which events to send.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>event</code></strong> :&ensp;<a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a></dt>
+<dd>The event to send</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def send_input(self, event):
+    &#34;&#34;&#34;
+    Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
+
+    See `pyboy.WindowEvent` for which events to send.
+
+    Args:
+        event (pyboy.WindowEvent): The event to send
+    &#34;&#34;&#34;
+    self.events.append(WindowEvent(event))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.set_emulation_speed"><code class="name flex">
+<span>def <span class="ident">set_emulation_speed</span></span>(<span>self, target_speed)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high
+<code>target_speed</code>.</p>
+<p>The speed is defined as a multiple of real-time. I.e <code>target_speed=2</code> is double speed.</p>
+<p>A <code>target_speed</code> of <code>0</code> means unlimited. I.e. fastest possible execution.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>target_speed</code></strong> :&ensp;<code>int</code></dt>
+<dd>Target emulation speed as multiplier of real-time.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def set_emulation_speed(self, target_speed):
+    &#34;&#34;&#34;
+    Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high
+    `target_speed`.
+
+    The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
+
+    A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
+
+    Args:
+        target_speed (int): Target emulation speed as multiplier of real-time.
+    &#34;&#34;&#34;
+    if target_speed &gt; 5:
+        logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
+    self.target_emulationspeed = target_speed</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.set_memory_value"><code class="name flex">
+<span>def <span class="ident">set_memory_value</span></span>(<span>self, addr, value)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Write one byte to a given memory address of the Game Boy's current memory state.</p>
+<p>This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is
+needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can
+read about the MBC at <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>addr</code></strong> :&ensp;<code>int</code></dt>
+<dd>Address to write the byte</dd>
+<dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
+<dd>A byte of data</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def set_memory_value(self, addr, value):
+    &#34;&#34;&#34;
+    Write one byte to a given memory address of the Game Boy&#39;s current memory state.
+
+    This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is
+    needed, or use this function to send &#34;Memory Bank Controller&#34; (MBC) commands to the virtual cartridge. You can
+    read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+    Args:
+        addr (int): Address to write the byte
+        value (int): A byte of data
+    &#34;&#34;&#34;
+    self.mb.setitem(addr, value)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self, save=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Gently stops the emulator and all sub-modules.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>save</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Specify whether to save the game upon stopping. It will always be saved in a file next to the
+provided game-ROM.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stop(self, save=True):
+    &#34;&#34;&#34;
+    Gently stops the emulator and all sub-modules.
+
+    Args:
+        save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
+            provided game-ROM.
+    &#34;&#34;&#34;
+    logger.info(&#34;###########################&#34;)
+    logger.info(&#34;# Emulator is turning off #&#34;)
+    logger.info(&#34;###########################&#34;)
+    self.plugin_manager.stop()
+    self.mb.stop(save)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tick"><code class="name flex">
+<span>def <span class="ident">tick</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Progresses the emulator ahead by one frame.</p>
+<p>To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed"><code>PyBoy.set_emulation_speed()</code></a> method.</p>
+<p><em>Open an issue on GitHub if you need finer control, and we will take a look at it.</em></p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def tick(self):
+    &#34;&#34;&#34;
+    Progresses the emulator ahead by one frame.
+
+    To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+    This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+    otherwise with the `PyBoy.set_emulation_speed` method.
+
+    _Open an issue on GitHub if you need finer control, and we will take a look at it._
+    &#34;&#34;&#34;
+
+    t_start = time.perf_counter() # Change to _ns when PyPy supports it
+    self._handle_events(self.events)
+    t_pre = time.perf_counter()
+    self.frame_count += 1
+    if not self.paused:
+        self.mb.tickframe()
+    t_tick = time.perf_counter()
+    self._post_tick()
+    t_post = time.perf_counter()
+
+    secs = t_pre-t_start
+    self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
+
+    secs = t_tick-t_pre
+    self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
+
+    secs = t_post-t_tick
+    self.avg_post = 0.9 * self.avg_post + 0.1 * secs
+
+    return self.done</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.WindowEvent"><code class="flex name class">
+<span>class <span class="ident">WindowEvent</span></span>
+<span>(</span><span>event)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>All supported events can be found in the class description below.</p>
+<p>It can be used as follows:</p>
+<pre><code>&gt;&gt;&gt; from pyboy import PyBoy, WindowEvent
+&gt;&gt;&gt; pyboy = PyBoy('file.rom')
+&gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+</code></pre></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class WindowEvent:
+    &#34;&#34;&#34;
+    All supported events can be found in the class description below.
+
+    It can be used as follows:
+
+    &gt;&gt;&gt; from pyboy import PyBoy, WindowEvent
+    &gt;&gt;&gt; pyboy = PyBoy(&#39;file.rom&#39;)
+    &gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+    &#34;&#34;&#34;
+
+    # ONLY ADD NEW EVENTS AT THE END OF THE LIST!
+    # Otherwise, it will break replays, which depend on the id of the event
+    (QUIT,
+     PRESS_ARROW_UP,
+     PRESS_ARROW_DOWN,
+     PRESS_ARROW_RIGHT,
+     PRESS_ARROW_LEFT,
+     PRESS_BUTTON_A,
+     PRESS_BUTTON_B,
+     PRESS_BUTTON_SELECT,
+     PRESS_BUTTON_START,
+     RELEASE_ARROW_UP,
+     RELEASE_ARROW_DOWN,
+     RELEASE_ARROW_RIGHT,
+     RELEASE_ARROW_LEFT,
+     RELEASE_BUTTON_A,
+     RELEASE_BUTTON_B,
+     RELEASE_BUTTON_SELECT,
+     RELEASE_BUTTON_START,
+     _INTERNAL_TOGGLE_DEBUG,
+     PRESS_SPEED_UP,
+     RELEASE_SPEED_UP,
+     STATE_SAVE,
+     STATE_LOAD,
+     PASS,
+     SCREEN_RECORDING_TOGGLE,
+     PAUSE,
+     UNPAUSE,
+     PAUSE_TOGGLE,
+     PRESS_REWIND_BACK,
+     PRESS_REWIND_FORWARD,
+     RELEASE_REWIND_BACK,
+     RELEASE_REWIND_FORWARD,
+     WINDOW_FOCUS,
+     WINDOW_UNFOCUS,
+     _INTERNAL_RENDERER_FLUSH,
+     _INTERNAL_MOUSE,
+     _INTERNAL_MARK_TILE
+     ) = range(36)
+
+    def __init__(self, event):
+        self.event = event
+
+    def __eq__(self, x):
+        if isinstance(x, int):
+            return self.event == x
+        else:
+            return self.event == x.event</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>pyboy.utils.WindowEventMouse</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.WindowEvent.PASS"><code class="name">var <span class="ident">PASS</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PAUSE"><code class="name">var <span class="ident">PAUSE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PAUSE_TOGGLE"><code class="name">var <span class="ident">PAUSE_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_ARROW_DOWN"><code class="name">var <span class="ident">PRESS_ARROW_DOWN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_ARROW_LEFT"><code class="name">var <span class="ident">PRESS_ARROW_LEFT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_ARROW_RIGHT"><code class="name">var <span class="ident">PRESS_ARROW_RIGHT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_ARROW_UP"><code class="name">var <span class="ident">PRESS_ARROW_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_BUTTON_A"><code class="name">var <span class="ident">PRESS_BUTTON_A</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_BUTTON_B"><code class="name">var <span class="ident">PRESS_BUTTON_B</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_BUTTON_SELECT"><code class="name">var <span class="ident">PRESS_BUTTON_SELECT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_BUTTON_START"><code class="name">var <span class="ident">PRESS_BUTTON_START</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_REWIND_BACK"><code class="name">var <span class="ident">PRESS_REWIND_BACK</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_REWIND_FORWARD"><code class="name">var <span class="ident">PRESS_REWIND_FORWARD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.PRESS_SPEED_UP"><code class="name">var <span class="ident">PRESS_SPEED_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.QUIT"><code class="name">var <span class="ident">QUIT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_ARROW_DOWN"><code class="name">var <span class="ident">RELEASE_ARROW_DOWN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_ARROW_LEFT"><code class="name">var <span class="ident">RELEASE_ARROW_LEFT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_ARROW_RIGHT"><code class="name">var <span class="ident">RELEASE_ARROW_RIGHT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_ARROW_UP"><code class="name">var <span class="ident">RELEASE_ARROW_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_BUTTON_A"><code class="name">var <span class="ident">RELEASE_BUTTON_A</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_BUTTON_B"><code class="name">var <span class="ident">RELEASE_BUTTON_B</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_BUTTON_SELECT"><code class="name">var <span class="ident">RELEASE_BUTTON_SELECT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_BUTTON_START"><code class="name">var <span class="ident">RELEASE_BUTTON_START</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_REWIND_BACK"><code class="name">var <span class="ident">RELEASE_REWIND_BACK</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_REWIND_FORWARD"><code class="name">var <span class="ident">RELEASE_REWIND_FORWARD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.RELEASE_SPEED_UP"><code class="name">var <span class="ident">RELEASE_SPEED_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.SCREEN_RECORDING_TOGGLE"><code class="name">var <span class="ident">SCREEN_RECORDING_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.STATE_LOAD"><code class="name">var <span class="ident">STATE_LOAD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.STATE_SAVE"><code class="name">var <span class="ident">STATE_SAVE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.UNPAUSE"><code class="name">var <span class="ident">UNPAUSE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.WINDOW_FOCUS"><code class="name">var <span class="ident">WINDOW_FOCUS</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.WINDOW_UNFOCUS"><code class="name">var <span class="ident">WINDOW_UNFOCUS</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -66,8 +1219,67 @@ from .pyboy import PyBoy</code></pre>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code></li>
-<li><code><a title="pyboy.pyboy" href="pyboy.html">pyboy.pyboy</a></code></li>
-<li><code><a title="pyboy.windowevent" href="windowevent.html">pyboy.windowevent</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.PyBoy" href="#pyboy.PyBoy">PyBoy</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.PyBoy.get_cartridge_title" href="#pyboy.PyBoy.get_cartridge_title">get_cartridge_title</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_memory_value" href="#pyboy.PyBoy.get_memory_value">get_memory_value</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_screen" href="#pyboy.PyBoy.get_screen">get_screen</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_sprite" href="#pyboy.PyBoy.get_sprite">get_sprite</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_sprite_by_tile_identifier" href="#pyboy.PyBoy.get_sprite_by_tile_identifier">get_sprite_by_tile_identifier</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_tile" href="#pyboy.PyBoy.get_tile">get_tile</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_tilemap_background" href="#pyboy.PyBoy.get_tilemap_background">get_tilemap_background</a></code></li>
+<li><code><a title="pyboy.PyBoy.get_tilemap_window" href="#pyboy.PyBoy.get_tilemap_window">get_tilemap_window</a></code></li>
+<li><code><a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state">load_state</a></code></li>
+<li><code><a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state">save_state</a></code></li>
+<li><code><a title="pyboy.PyBoy.send_input" href="#pyboy.PyBoy.send_input">send_input</a></code></li>
+<li><code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
+<li><code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">set_memory_value</a></code></li>
+<li><code><a title="pyboy.PyBoy.stop" href="#pyboy.PyBoy.stop">stop</a></code></li>
+<li><code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">tick</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.WindowEvent.PASS" href="#pyboy.WindowEvent.PASS">PASS</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PAUSE" href="#pyboy.WindowEvent.PAUSE">PAUSE</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PAUSE_TOGGLE" href="#pyboy.WindowEvent.PAUSE_TOGGLE">PAUSE_TOGGLE</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_ARROW_DOWN" href="#pyboy.WindowEvent.PRESS_ARROW_DOWN">PRESS_ARROW_DOWN</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_ARROW_LEFT" href="#pyboy.WindowEvent.PRESS_ARROW_LEFT">PRESS_ARROW_LEFT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_ARROW_RIGHT" href="#pyboy.WindowEvent.PRESS_ARROW_RIGHT">PRESS_ARROW_RIGHT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_ARROW_UP" href="#pyboy.WindowEvent.PRESS_ARROW_UP">PRESS_ARROW_UP</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_BUTTON_A" href="#pyboy.WindowEvent.PRESS_BUTTON_A">PRESS_BUTTON_A</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_BUTTON_B" href="#pyboy.WindowEvent.PRESS_BUTTON_B">PRESS_BUTTON_B</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_BUTTON_SELECT" href="#pyboy.WindowEvent.PRESS_BUTTON_SELECT">PRESS_BUTTON_SELECT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_BUTTON_START" href="#pyboy.WindowEvent.PRESS_BUTTON_START">PRESS_BUTTON_START</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_REWIND_BACK" href="#pyboy.WindowEvent.PRESS_REWIND_BACK">PRESS_REWIND_BACK</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_REWIND_FORWARD" href="#pyboy.WindowEvent.PRESS_REWIND_FORWARD">PRESS_REWIND_FORWARD</a></code></li>
+<li><code><a title="pyboy.WindowEvent.PRESS_SPEED_UP" href="#pyboy.WindowEvent.PRESS_SPEED_UP">PRESS_SPEED_UP</a></code></li>
+<li><code><a title="pyboy.WindowEvent.QUIT" href="#pyboy.WindowEvent.QUIT">QUIT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_ARROW_DOWN" href="#pyboy.WindowEvent.RELEASE_ARROW_DOWN">RELEASE_ARROW_DOWN</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_ARROW_LEFT" href="#pyboy.WindowEvent.RELEASE_ARROW_LEFT">RELEASE_ARROW_LEFT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_ARROW_RIGHT" href="#pyboy.WindowEvent.RELEASE_ARROW_RIGHT">RELEASE_ARROW_RIGHT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_ARROW_UP" href="#pyboy.WindowEvent.RELEASE_ARROW_UP">RELEASE_ARROW_UP</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_BUTTON_A" href="#pyboy.WindowEvent.RELEASE_BUTTON_A">RELEASE_BUTTON_A</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_BUTTON_B" href="#pyboy.WindowEvent.RELEASE_BUTTON_B">RELEASE_BUTTON_B</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_BUTTON_SELECT" href="#pyboy.WindowEvent.RELEASE_BUTTON_SELECT">RELEASE_BUTTON_SELECT</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_BUTTON_START" href="#pyboy.WindowEvent.RELEASE_BUTTON_START">RELEASE_BUTTON_START</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_REWIND_BACK" href="#pyboy.WindowEvent.RELEASE_REWIND_BACK">RELEASE_REWIND_BACK</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_REWIND_FORWARD" href="#pyboy.WindowEvent.RELEASE_REWIND_FORWARD">RELEASE_REWIND_FORWARD</a></code></li>
+<li><code><a title="pyboy.WindowEvent.RELEASE_SPEED_UP" href="#pyboy.WindowEvent.RELEASE_SPEED_UP">RELEASE_SPEED_UP</a></code></li>
+<li><code><a title="pyboy.WindowEvent.SCREEN_RECORDING_TOGGLE" href="#pyboy.WindowEvent.SCREEN_RECORDING_TOGGLE">SCREEN_RECORDING_TOGGLE</a></code></li>
+<li><code><a title="pyboy.WindowEvent.STATE_LOAD" href="#pyboy.WindowEvent.STATE_LOAD">STATE_LOAD</a></code></li>
+<li><code><a title="pyboy.WindowEvent.STATE_SAVE" href="#pyboy.WindowEvent.STATE_SAVE">STATE_SAVE</a></code></li>
+<li><code><a title="pyboy.WindowEvent.UNPAUSE" href="#pyboy.WindowEvent.UNPAUSE">UNPAUSE</a></code></li>
+<li><code><a title="pyboy.WindowEvent.WINDOW_FOCUS" href="#pyboy.WindowEvent.WINDOW_FOCUS">WINDOW_FOCUS</a></code></li>
+<li><code><a title="pyboy.WindowEvent.WINDOW_UNFOCUS" href="#pyboy.WindowEvent.WINDOW_UNFOCUS">WINDOW_UNFOCUS</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

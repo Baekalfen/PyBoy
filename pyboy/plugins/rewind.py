@@ -5,10 +5,9 @@
 
 import array
 
-from pyboy import windowevent
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin
-from pyboy.utils import IntIOInterface
+from pyboy.utils import IntIOInterface, WindowEvent
 
 try:
     from cython import compiled
@@ -42,28 +41,28 @@ class Rewind(PyBoyPlugin):
     def handle_events(self, events):
         old_rewind_speed = self.rewind_speed
         for event in events:
-            if event == windowevent.UNPAUSE:
+            if event == WindowEvent.UNPAUSE:
                 self.rewind_buffer.commit()
-            elif event == windowevent.PAUSE_TOGGLE:
+            elif event == WindowEvent.PAUSE_TOGGLE:
                 if self.pyboy.paused:
                     self.rewind_buffer.commit()
-            elif event == windowevent.RELEASE_REWIND_FORWARD:
+            elif event == WindowEvent.RELEASE_REWIND_FORWARD:
                 self.rewind_speed = 1
-            elif event == windowevent.PRESS_REWIND_FORWARD:
-                self.pyboy.pause()
+            elif event == WindowEvent.PRESS_REWIND_FORWARD:
+                self.pyboy._pause()
                 if self.rewind_buffer.seek_frame(1):
                     self.mb.load_state(self.rewind_buffer)
-                    events.append(windowevent.INTERNAL_RENDERER_FLUSH)
+                    events.append(WindowEvent._INTERNAL_RENDERER_FLUSH)
                     self.rewind_speed = min(self.rewind_speed * 1.1, 5)
                 else:
                     logger.info("Rewind limit reached")
-            elif event == windowevent.RELEASE_REWIND_BACK:
+            elif event == WindowEvent.RELEASE_REWIND_BACK:
                 self.rewind_speed = 1
-            elif event == windowevent.PRESS_REWIND_BACK:
-                self.pyboy.pause()
+            elif event == WindowEvent.PRESS_REWIND_BACK:
+                self.pyboy._pause()
                 if self.rewind_buffer.seek_frame(-1):
                     self.mb.load_state(self.rewind_buffer)
-                    events.append(windowevent.INTERNAL_RENDERER_FLUSH)
+                    events.append(WindowEvent._INTERNAL_RENDERER_FLUSH)
                     self.rewind_speed = min(self.rewind_speed * 1.1, 5)
                 else:
                     logger.info("Rewind limit reached")

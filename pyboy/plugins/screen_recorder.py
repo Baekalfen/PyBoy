@@ -7,9 +7,9 @@
 import os
 import time
 
-from pyboy import windowevent
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin
+from pyboy.utils import WindowEvent
 
 try:
     from PIL import Image
@@ -33,7 +33,7 @@ class ScreenRecorder(PyBoyPlugin):
 
     def handle_events(self, events):
         for event in events:
-            if event == windowevent.SCREEN_RECORDING_TOGGLE:
+            if event == WindowEvent.SCREEN_RECORDING_TOGGLE:
                 self.recording ^= True
                 if not self.recording:
                     self.save()
@@ -45,7 +45,7 @@ class ScreenRecorder(PyBoyPlugin):
     def post_tick(self):
         # Plugin: Screen Recorder
         if self.recording:
-            self.add_frame(self.pyboy.get_screen_image())
+            self.add_frame(self.pyboy.get_screen().get_screen_image())
 
     def add_frame(self, frame):
         if Image:

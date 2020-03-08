@@ -7,11 +7,11 @@ import ctypes
 from array import array
 
 import sdl2
-from pyboy import windowevent
 from pyboy.botsupport import constants, tilemap  # , tile
 from pyboy.botsupport.sprite import Sprite
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.utils import WindowEvent
 
 try:
     from cython import compiled
@@ -34,13 +34,14 @@ SPRITE_BACKGROUND = MASK
 
 
 class MarkedTile:
-    def __init__(self, event=windowevent.INTERNAL_MARK_TILE, tile_identifier=-1, mark_id="", mark_color=0,
+    def __init__(self, event=WindowEvent._INTERNAL_MARK_TILE, tile_identifier=-1, mark_id="", mark_color=0,
             sprite_height=8, sprite=False):
         self.tile_identifier = tile_identifier
         self.mark_id = mark_id
         self.mark_color = mark_color
         self.sprite_height = sprite_height
         if mark_id == "TILE":
+            # TODO: Use __str__ of the Tile and Sprite classes
             logger.info(f"Marked Tile - identifier: {tile_identifier}")
         elif mark_id == "SPRITE":
             logger.info(f"Marked Sprite - tile identifier: {tile_identifier}, sprite height: {sprite_height}")
@@ -152,7 +153,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
     def handle_events(self, events):
         # Feed events into the loop
         for event in events:
-            if event == windowevent.INTERNAL_MOUSE:
+            if event == WindowEvent._INTERNAL_MOUSE:
                 if event.window_id == self.window_id:
                     self.hover_x = event.mouse_x // self.scale
                     self.hover_y = event.mouse_y // self.scale
@@ -171,12 +172,6 @@ class BaseDebugWindow(PyBoyWindowPlugin):
     def post_tick(self):
         self.update_title()
         self._update_display()
-
-    # def _update_display(self):
-    #     sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width*4)
-    #     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
-    #     sdl2.SDL_RenderPresent(self._sdlrenderer)
-    #     sdl2.SDL_RenderClear(self._sdlrenderer)
 
     ##########################
     # Internal functions
@@ -245,12 +240,12 @@ class TileViewWindow(BaseDebugWindow):
     def handle_events(self, events):
         global mark_counter, marked_tiles
 
-        self.tilemap.refresh_map_data_select()
+        self.tilemap.refresh_lcdc()
 
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
         for event in events:
-            if event == windowevent.INTERNAL_MOUSE and event.window_id == self.window_id:
+            if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = self.tilemap.get_tile_identifier(tile_x, tile_y)
@@ -265,7 +260,7 @@ class TileViewWindow(BaseDebugWindow):
                     mark_counter %= len(MARK)
                 elif event.mouse_button == 1:
                     marked_tiles.clear()
-            elif event == windowevent.INTERNAL_MARK_TILE:
+            elif event == WindowEvent._INTERNAL_MARK_TILE:
                 marked_tiles.add(event.tile_identifier)
 
         return events
@@ -284,7 +279,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.get_screen_position_list()
+        scanlineparameters = self.pyboy.get_screen().get_tilemap_position_list()
 
         # Mark screen area
         for y in range(constants.ROWS):
@@ -293,7 +288,6 @@ class TileViewWindow(BaseDebugWindow):
             if y == 0 or y == constants.ROWS-1:
                 for x in range(constants.COLS):
                     self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] = COLOR
-
             else:
                 self.buf0[(yy+y) % 0xFF][xx % 0xFF] = COLOR
                 for x in range(constants.COLS):
@@ -328,7 +322,7 @@ class TileDataWindow(BaseDebugWindow):
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
         for event in events:
-            if event == windowevent.INTERNAL_MOUSE and event.window_id == self.window_id:
+            if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = tile_y * (self.width//8) + tile_x
@@ -343,7 +337,7 @@ class TileDataWindow(BaseDebugWindow):
                     mark_counter %= len(MARK)
                 elif event.mouse_button == 1:
                     marked_tiles.clear()
-            elif event == windowevent.INTERNAL_MARK_TILE:
+            elif event == WindowEvent._INTERNAL_MARK_TILE:
                 marked_tiles.add(event.tile_identifier)
         return events
 
@@ -356,15 +350,6 @@ class TileDataWindow(BaseDebugWindow):
             # but the sprites with a height of 16, renders them stacked ontop of each other.
             self.mark_tile(column*8, row*8, t.mark_color, t.sprite_height, 8, True)
 
-
-def find_sprite(mb, i, sprite, sprite_height):
-    global marked_tiles
-    sprite = Sprite(mb, i)
-    for t in marked_tiles:
-        if t.tile_identifier == sprite.tile_identifier or \
-           (sprite_height == 16 and t.tile_identifier == sprite.tile_identifier+1):
-            return t
-    return None
 
 
 class SpriteWindow(BaseDebugWindow):
@@ -394,7 +379,7 @@ class SpriteWindow(BaseDebugWindow):
 
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         for event in events:
-            if event == windowevent.INTERNAL_MOUSE and event.window_id == self.window_id:
+            if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // sprite_height
                     sprite_identifier = tile_y * (self.width//8) + tile_x
@@ -412,21 +397,18 @@ class SpriteWindow(BaseDebugWindow):
                     mark_counter %= len(MARK)
                 elif event.mouse_button == 1:
                     marked_tiles.clear()
-            elif event == windowevent.INTERNAL_MARK_TILE:
+            elif event == WindowEvent._INTERNAL_MARK_TILE:
                 marked_tiles.add(event.tile_identifier)
-
         return events
 
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
-        for i in range(constants.SPRITES):
-            sprite = Sprite(self.mb, i)
-            match = find_sprite(self.mb, i, sprite, sprite_height)
-            if match is not None:
-                xx = (i * 8) % self.width
-                yy = ((i * 8) // self.width)*sprite_height
-                self.mark_tile(xx, yy, match.mark_color, sprite_height, 8, True)
+        for m, matched_sprites in zip(marked_tiles, self.pyboy.get_sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
+            for sprite_index in matched_sprites:
+                xx = (sprite_index * 8) % self.width
+                yy = ((sprite_index * 8) // self.width)*sprite_height
+                self.mark_tile(xx, yy, m.mark_color, sprite_height, 8, True)
 
         if self.hover_x != -1:
             self.mark_tile(self.hover_x, self.hover_y, HOVER, sprite_height, 8, True)
@@ -450,11 +432,10 @@ class SpriteViewWindow(BaseDebugWindow):
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
-        for i in range(constants.SPRITES):
-            sprite = Sprite(self.mb, i)
-            match = find_sprite(self.mb, i, sprite, sprite_height)
-            if match is not None:
-                self.mark_tile(sprite.x, sprite.y, match.mark_color, sprite_height, 8, False)
+        for m, matched_sprites in zip(marked_tiles, self.pyboy.get_sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
+            for sprite_index in matched_sprites:
+                sprite = Sprite(self.mb, sprite_index)
+                self.mark_tile(sprite.x, sprite.y, m.mark_color, sprite_height, 8, False)
 
     def update_title(self):
         title = self.base_title

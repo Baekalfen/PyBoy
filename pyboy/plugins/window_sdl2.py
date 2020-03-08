@@ -5,7 +5,6 @@
 
 import sdl2
 import sdl2.ext
-from pyboy import windowevent
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
 
@@ -19,37 +18,36 @@ except ImportError:
 
 # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
 KEY_DOWN = {
-    sdl2.SDLK_UP        : windowevent.PRESS_ARROW_UP,
-    sdl2.SDLK_DOWN      : windowevent.PRESS_ARROW_DOWN,
-    sdl2.SDLK_RIGHT     : windowevent.PRESS_ARROW_RIGHT,
-    sdl2.SDLK_LEFT      : windowevent.PRESS_ARROW_LEFT,
-    sdl2.SDLK_a         : windowevent.PRESS_BUTTON_A,
-    sdl2.SDLK_s         : windowevent.PRESS_BUTTON_B,
-    sdl2.SDLK_RETURN    : windowevent.PRESS_BUTTON_START,
-    sdl2.SDLK_BACKSPACE : windowevent.PRESS_BUTTON_SELECT,
-    sdl2.SDLK_SPACE     : windowevent.PRESS_SPEED_UP,
-    sdl2.SDLK_COMMA     : windowevent.PRESS_REWIND_BACK,
-    sdl2.SDLK_PERIOD    : windowevent.PRESS_REWIND_FORWARD,
+    sdl2.SDLK_UP        : WindowEvent.PRESS_ARROW_UP,
+    sdl2.SDLK_DOWN      : WindowEvent.PRESS_ARROW_DOWN,
+    sdl2.SDLK_RIGHT     : WindowEvent.PRESS_ARROW_RIGHT,
+    sdl2.SDLK_LEFT      : WindowEvent.PRESS_ARROW_LEFT,
+    sdl2.SDLK_a         : WindowEvent.PRESS_BUTTON_A,
+    sdl2.SDLK_s         : WindowEvent.PRESS_BUTTON_B,
+    sdl2.SDLK_RETURN    : WindowEvent.PRESS_BUTTON_START,
+    sdl2.SDLK_BACKSPACE : WindowEvent.PRESS_BUTTON_SELECT,
+    sdl2.SDLK_SPACE     : WindowEvent.PRESS_SPEED_UP,
+    sdl2.SDLK_COMMA     : WindowEvent.PRESS_REWIND_BACK,
+    sdl2.SDLK_PERIOD    : WindowEvent.PRESS_REWIND_FORWARD,
 }
 
 KEY_UP = {
-    sdl2.SDLK_UP        : windowevent.RELEASE_ARROW_UP,
-    sdl2.SDLK_DOWN      : windowevent.RELEASE_ARROW_DOWN,
-    sdl2.SDLK_RIGHT     : windowevent.RELEASE_ARROW_RIGHT,
-    sdl2.SDLK_LEFT      : windowevent.RELEASE_ARROW_LEFT,
-    sdl2.SDLK_a         : windowevent.RELEASE_BUTTON_A,
-    sdl2.SDLK_s         : windowevent.RELEASE_BUTTON_B,
-    sdl2.SDLK_RETURN    : windowevent.RELEASE_BUTTON_START,
-    sdl2.SDLK_BACKSPACE : windowevent.RELEASE_BUTTON_SELECT,
-    sdl2.SDLK_z         : windowevent.SAVE_STATE,
-    sdl2.SDLK_x         : windowevent.LOAD_STATE,
-    sdl2.SDLK_SPACE     : windowevent.RELEASE_SPEED_UP,
-    sdl2.SDLK_p         : windowevent.PAUSE_TOGGLE,
-    sdl2.SDLK_i         : windowevent.SCREEN_RECORDING_TOGGLE,
-    sdl2.SDLK_ESCAPE    : windowevent.QUIT,
-    sdl2.SDLK_d         : windowevent.DEBUG_TOGGLE,
-    sdl2.SDLK_COMMA     : windowevent.RELEASE_REWIND_BACK,
-    sdl2.SDLK_PERIOD    : windowevent.RELEASE_REWIND_FORWARD,
+    sdl2.SDLK_UP        : WindowEvent.RELEASE_ARROW_UP,
+    sdl2.SDLK_DOWN      : WindowEvent.RELEASE_ARROW_DOWN,
+    sdl2.SDLK_RIGHT     : WindowEvent.RELEASE_ARROW_RIGHT,
+    sdl2.SDLK_LEFT      : WindowEvent.RELEASE_ARROW_LEFT,
+    sdl2.SDLK_a         : WindowEvent.RELEASE_BUTTON_A,
+    sdl2.SDLK_s         : WindowEvent.RELEASE_BUTTON_B,
+    sdl2.SDLK_RETURN    : WindowEvent.RELEASE_BUTTON_START,
+    sdl2.SDLK_BACKSPACE : WindowEvent.RELEASE_BUTTON_SELECT,
+    sdl2.SDLK_z         : WindowEvent.STATE_SAVE,
+    sdl2.SDLK_x         : WindowEvent.STATE_LOAD,
+    sdl2.SDLK_SPACE     : WindowEvent.RELEASE_SPEED_UP,
+    sdl2.SDLK_p         : WindowEvent.PAUSE_TOGGLE,
+    sdl2.SDLK_i         : WindowEvent.SCREEN_RECORDING_TOGGLE,
+    sdl2.SDLK_ESCAPE    : WindowEvent.QUIT,
+    sdl2.SDLK_COMMA     : WindowEvent.RELEASE_REWIND_BACK,
+    sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
 }
 
 
@@ -86,17 +84,17 @@ class WindowSDL2(PyBoyWindowPlugin):
         # Feed events into the loop
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT:
-                events.append(WindowEvent(windowevent.QUIT))
+                events.append(WindowEvent(WindowEvent.QUIT))
             elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(WindowEvent(KEY_DOWN.get(event.key.keysym.sym, windowevent.PASS)))
+                events.append(WindowEvent(KEY_DOWN.get(event.key.keysym.sym, WindowEvent.PASS)))
             elif event.type == sdl2.SDL_KEYUP:
-                events.append(WindowEvent(KEY_UP.get(event.key.keysym.sym, windowevent.PASS)))
+                events.append(WindowEvent(KEY_UP.get(event.key.keysym.sym, WindowEvent.PASS)))
             elif event.type == sdl2.SDL_WINDOWEVENT:
                 if event.window.windowID == 1:
                     if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
-                        events.append(WindowEvent(windowevent.WINDOW_UNFOCUS))
+                        events.append(WindowEvent(WindowEvent.WINDOW_UNFOCUS))
                     elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
-                        events.append(WindowEvent(windowevent.WINDOW_FOCUS))
+                        events.append(WindowEvent(WindowEvent.WINDOW_FOCUS))
             elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
                 mouse_button = -1
                 if event.type == sdl2.SDL_MOUSEBUTTONUP:
@@ -107,7 +105,7 @@ class WindowSDL2(PyBoyWindowPlugin):
 
                 events.append(
                     WindowEventMouse(
-                        windowevent.INTERNAL_MOUSE,
+                        WindowEvent._INTERNAL_MOUSE,
                         window_id=event.motion.windowID,
                         mouse_x=event.motion.x,
                         mouse_y=event.motion.y,

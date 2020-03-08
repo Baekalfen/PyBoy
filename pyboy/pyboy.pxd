@@ -30,7 +30,6 @@ cdef class PyBoy:
     cdef list events
     cdef bint done
     cdef public str window_title
-    cdef bint window_title_disabled
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed

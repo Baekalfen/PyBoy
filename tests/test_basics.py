@@ -7,52 +7,52 @@ import hashlib
 import os
 
 import pytest
-from pyboy import PyBoy
+from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
-from pyboy import windowevent
+from pyboy.botsupport.tile import Tile
 
-from . import utils
+from .utils import boot_rom, kirby_rom, tetris_rom
 
-tetris_rom = utils.tetris_rom
 any_rom = tetris_rom
-test_file = 'test.replay'
 
 
 def test_record_replay():
-    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=utils.boot_rom, record_input=test_file)
+    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
+    pyboy.set_emulation_speed(0)
     pyboy.tick()
-    pyboy.send_input(windowevent.PRESS_ARROW_DOWN)
+    pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
     pyboy.tick()
-    pyboy.send_input(windowevent.PRESS_ARROW_UP)
+    pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
     pyboy.tick()
     pyboy.tick()
-    pyboy.send_input(windowevent.PRESS_ARROW_DOWN)
+    pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
     pyboy.tick()
-    pyboy.send_input(windowevent.PRESS_ARROW_UP)
+    pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
     pyboy.tick()
 
     events = pyboy.plugin_manager.record_replay.recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
     frame_no, keys, frame_data = events[0]
     assert frame_no == 1, "We inserted the key on the second frame"
-    assert keys[0] == windowevent.PRESS_ARROW_DOWN, "Check we have the right keypress"
+    assert keys[0] == WindowEvent.PRESS_ARROW_DOWN, "Check we have the right keypress"
     assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
 
     pyboy.stop(save=False)
 
-    with open(test_file, 'rb') as f:
+    with open(tetris_rom+'.replay', 'rb') as f:
         m = hashlib.sha256()
         m.update(f.read())
         digest = m.digest()
 
-    os.remove(test_file)
+    os.remove(tetris_rom+'.replay')
 
     assert digest == b'\xd1\xe2\x13B\xf0$\xaa\xaa\xe2\xf2\xf3Iz\x9aj\x98\xc8^\xc4J:\x08\x1d\xf4n}\x80\x08o\x03)\xda', \
         "The replay did not result in the expected output"
 
 
 def test_profiling():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=utils.boot_rom, profiling=True)
+    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
+    pyboy.set_emulation_speed(0)
     pyboy.tick()
 
     hitrate = pyboy._get_cpu_hitrate()
@@ -82,7 +82,7 @@ def test_argv_parser(*args):
     empty = parser.parse_args(file_that_exists.split(' ')).__dict__
     for k, v in {
             "ROM": file_that_exists, "autopause": False, "bootrom": None, "debug": False, "loadstate": None,
-            "no_input": False, "no_logger": False, "profiling": False, "record_input": None, "rewind": False,
+            "no_input": False, "no_logger": False, "profiling": False, "record_input": False, "rewind": False,
             "scale": 3, "window_type": 'SDL2'
             }.items():
         assert empty[k] == v
@@ -102,8 +102,55 @@ def test_argv_parser(*args):
             "rewind": True}.items():
         assert flags[k] == v
 
+def test_tilemaps():
+    pyboy = PyBoy(kirby_rom, window_type="dummy")
+    pyboy.set_emulation_speed(0)
+    for _ in range(120):
+        pyboy.tick()
 
-def test_all_buttons():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=utils.boot_rom)
-    pyboy.tick()
+    bck_tilemap = pyboy.get_tilemap_background()
+    wdw_tilemap = pyboy.get_tilemap_window()
+
+    assert bck_tilemap[0,0] == 256
+    assert bck_tilemap[:5,0] == [256, 256, 256, 256, 170]
+    assert bck_tilemap[:20,:10] == [
+        [256, 256, 256, 256, 170, 176, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 171, 173, 177, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 172, 174, 178, 256, 256, 256, 256, 256, 256, 256, 256, 347, 363, 256, 256, 256, 256],
+        [256, 256, 256, 288, 175, 179, 336, 352, 368, 268, 284, 300, 316, 332, 348, 364, 380, 256, 256, 256],
+        [256, 257, 273, 289, 305, 321, 337, 353, 369, 269, 285, 301, 317, 333, 349, 365, 381, 256, 256, 256],
+        [256, 258, 274, 290, 306, 322, 338, 354, 370, 270, 286, 302, 318, 334, 350, 366, 382, 256, 256, 256],
+        [256, 259, 275, 291, 307, 323, 339, 355, 371, 271, 287, 303, 319, 335, 351, 367, 383, 256, 256, 256],
+        [256, 256, 276, 292, 308, 324, 340, 356, 372, 272, 320, 260, 261, 262, 361, 182, 346, 256, 256, 256],
+        [256, 256, 277, 293, 309, 325, 341, 357, 373, 128, 181, 362, 378, 299, 315, 331, 256, 256, 256, 256],
+        [256, 256, 278, 294, 310, 326, 342, 358, 374, 129, 164, 132, 136, 140, 143, 146, 150, 167, 157, 168]
+    ]
+    assert isinstance(bck_tilemap.get_tile(0,0), Tile)
+    assert bck_tilemap.get_tile_identifier(0,0) == 256
+    bck_tilemap.use_tile_objects(True)
+    assert isinstance(bck_tilemap.get_tile(0,0), Tile)
+    assert bck_tilemap.get_tile_identifier(0,0) == 256
+    assert isinstance(bck_tilemap[0,0], Tile)
+
+    assert wdw_tilemap[0,0] == 256
+    assert wdw_tilemap[:5,0] == [256, 256, 256, 256, 256]
+    assert wdw_tilemap[:20,:10] == [
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 230, 224, 236, 228, 256, 241, 242, 224, 240, 242, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 241, 238, 243, 237, 227, 256, 242, 228, 241, 242, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256]
+    ]
+    assert isinstance(wdw_tilemap.get_tile(0,0), Tile)
+    assert wdw_tilemap.get_tile_identifier(0,0) == 256
+    wdw_tilemap.use_tile_objects(True)
+    assert isinstance(wdw_tilemap.get_tile(0,0), Tile)
+    assert wdw_tilemap.get_tile_identifier(0,0) == 256
+    assert isinstance(wdw_tilemap[0,0], Tile)
+
     pyboy.stop(save=False)

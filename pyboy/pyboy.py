@@ -13,7 +13,7 @@ import time
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from . import botsupport, windowevent
+from . import botsupport
 from .core.mb import Motherboard
 from .logger import addconsolehandler, logger
 
@@ -42,7 +42,7 @@ class PyBoy:
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
         multiple times.
 
-        This object, `pyboy.windowevent`, and the `pyboy.botsupport` module, are the only official user-facing
+        This object, `pyboy.WindowEvent`, and the `pyboy.botsupport` module, are the only official user-facing
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
@@ -90,7 +90,6 @@ class PyBoy:
         self.events = []
         self.done = False
         self.window_title = "PyBoy"
-        self.window_title_disabled = False
 
         ###################
         # Plugins
@@ -134,38 +133,35 @@ class PyBoy:
         events = self.plugin_manager.handle_events(events)
 
         for event in events:
-            if event == windowevent.QUIT:
+            if event == WindowEvent.QUIT:
                 self.done = True
-            elif event == windowevent.RELEASE_SPEED_UP:
+            elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.info("Speed limit: %s" % self.target_emulationspeed)
-            elif event == windowevent.SAVE_STATE:
+            elif event == WindowEvent.STATE_SAVE:
                 with open(self.gamerom_file + ".state", "wb") as f:
                     self.mb.save_state(IntIOWrapper(f))
-            elif event == windowevent.LOAD_STATE:
+            elif event == WindowEvent.STATE_LOAD:
                 with open(self.gamerom_file + ".state", "rb") as f:
                     self.mb.load_state(IntIOWrapper(f))
-            elif event == windowevent.DEBUG_TOGGLE:
-                # self.debugger.running ^= True
-                pass
-            elif event == windowevent.PASS:
+            elif event == WindowEvent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything
-            elif event == windowevent.PAUSE_TOGGLE:
+            elif event == WindowEvent.PAUSE_TOGGLE:
                 if self.paused:
-                    self.unpause()
+                    self._unpause()
                 else:
-                    self.pause()
-            elif event == windowevent.PAUSE:
-                self.pause()
-            elif event == windowevent.UNPAUSE:
-                self.unpause()
-            elif event == windowevent.INTERNAL_RENDERER_FLUSH:
+                    self._pause()
+            elif event == WindowEvent.PAUSE:
+                self._pause()
+            elif event == WindowEvent.UNPAUSE:
+                self._unpause()
+            elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
                 self.plugin_manager._post_tick_windows()
             else:
                 self.mb.buttonevent(event)
 
-    def pause(self):
+    def _pause(self):
         if self.paused:
             return
         self.paused = True
@@ -174,7 +170,7 @@ class PyBoy:
         logger.info("Emulation paused!")
         self._update_window_title()
 
-    def unpause(self):
+    def _unpause(self):
         if not self.paused:
             return
         self.paused = False
@@ -183,7 +179,7 @@ class PyBoy:
         self._update_window_title()
 
     def _post_tick(self):
-        if not self.window_title_disabled and self.frame_count % 60 == 0:
+        if self.frame_count % 60 == 0:
             self._update_window_title()
         self.plugin_manager.post_tick()
         self.plugin_manager.frame_limiter(self.target_emulationspeed)
@@ -225,58 +221,18 @@ class PyBoy:
     # Scripts and bot methods
     #
 
-    def get_raw_screen_buffer(self):
+    def get_screen(self):
         """
-        Provides a raw, unfiltered `bytes` object with the data from the screen. Check
-        `PyBoy.get_raw_screen_buffer_format` to see which dataformat is used. The returned type and dataformat are
-        subject to change.
+        Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
 
-        Use this, only if you need to bypass the overhead of `PyBoy.get_screen_image` or `PyBoy.get_screen_ndarray`.
+        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.botsupport.screen.Screen.get_tilemap_position` for more information.
 
         Returns:
-            bytes: 92160 bytes of screen data in a `bytes` object.
+            `pyboy.botsupport.screen.Screen`: A Screen object with helper functions for reading the screen buffer.
         """
-        return self.mb.renderer.get_screen_buffer()
-
-    def get_raw_screen_buffer_dims(self):
-        """
-        Returns the dimensions of the raw screen buffer.
-
-        Returns:
-            tuple: A two-tuple of the buffer dimensions. E.g. (160, 144).
-        """
-        return self.mb.renderer.buffer_dims
-
-    def get_raw_screen_buffer_format(self):
-        """
-        Returns the color format of the raw screen buffer.
-
-        Returns:
-            str: Color format of the raw screen buffer. E.g. 'RGB'.
-        """
-        return self.mb.renderer.color_format
-
-    def get_screen_ndarray(self):
-        """
-        Provides the screen data in NumPy format. The dataformat is always RGB.
-
-        Returns:
-            numpy.ndarray: Screendata in `ndarray` of bytes with shape (160, 144, 3)
-        """
-        return self.mb.renderer.get_screen_buffer_as_ndarray()
-
-    def get_screen_image(self):
-        """
-        Generates a PIL Image from the screen buffer.
-
-        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
-        and join our Discord channel for more help.
-
-        Returns:
-            PIL.Image: RGB image of (160, 144) pixels
-        """
-        return self.mb.renderer.get_screen_image()
+        return botsupport.screen.Screen(self.mb)
 
     def get_memory_value(self, addr):
         """
@@ -307,14 +263,14 @@ class PyBoy:
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
 
-        See `pyboy.windowevent` for which events to send.
+        See `pyboy.WindowEvent` for which events to send.
 
         Args:
-            event (pyboy.windowevent): The event to send
+            event (pyboy.WindowEvent): The event to send
         """
         self.events.append(WindowEvent(event))
 
-    def get_sprite(self, index):
+    def get_sprite(self, sprite_index):
         """
         Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
         corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
@@ -327,14 +283,46 @@ class PyBoy:
         Returns:
             `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
         """
-        return botsupport.Sprite(self.mb, index)
+        return botsupport.Sprite(self.mb, sprite_index)
+
+    def get_sprite_by_tile_identifier(self, tile_identifiers):
+        """
+        Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+        identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+        `pyboy.PyBoy.get_sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+
+        Example:
+        ```
+        >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+        [[0, 2, 4], []]
+        ```
+
+        Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+        `123` was not found anywhere.
+
+        Args:
+            identifiers (list): List of tile identifiers (int)
+
+        Returns:
+            list: list of sprite matches for every tile identifier in the input
+        """
+
+        matches = []
+        for i in tile_identifiers:
+            match = []
+            for s in range(botsupport.constants.SPRITES):
+                sprite = botsupport.sprite.Sprite(self.mb, s)
+                for t in sprite.tiles:
+                    if t.tile_identifier == i:
+                        match.append(s)
+            matches.append(match)
+        return matches
 
     def get_tile(self, identifier):
         """
         The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
         `pyboy.botsupport.tile.Tile`-object for given identifier.
 
-        The `pyboy.botsupport.tile.Tile.identifier` should not be confused with the `pyboy.botsupport.tile.Tile.index`.
         The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
         the `pyboy.botsupport.tile.Tile` object for more information.
 
@@ -343,11 +331,10 @@ class PyBoy:
         """
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_tile_map_background(self):
+    def get_tilemap_background(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap. For
-        consistency, use the functions `PyBoy.get_tile_map_low` or `PyBoy.get_tile_map_high`.
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -355,13 +342,11 @@ class PyBoy:
             `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
         """
         return botsupport.TileMap(self.mb, "BACKGROUND")
-    get_background_tile_map = get_tile_map_background
 
-    def get_tile_map_window(self):
+    def get_tilemap_window(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap. For consistency,
-        use the functions `PyBoy.get_tile_map_low` or `PyBoy.get_tile_map_high`.
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
@@ -369,35 +354,6 @@ class PyBoy:
             `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
         """
         return botsupport.TileMap(self.mb, "WINDOW")
-    get_window_tile_map = get_tile_map_window
-
-    def get_screen_position(self):
-        """
-        These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
-        that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
-        to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
-        of the tile map.
-
-        For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf),
-        or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
-
-        Returns:
-            ((int, int), (int, int)): Returns the registers (SCX, SCY), (WX - 7, WY)
-        """
-        return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())
-
-    def get_screen_position_list(self):
-        """
-        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
-        screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
-        the end of each call to `PyBoy.tick()`. For such games, `get_screen_position` becomes useless.
-
-        See `get_screen_position` for more information.
-
-        Returns:
-            numpy.ndarray: SCX, SCY, WX and WY for each scanline (144, 4).
-        """
-        return self.mb.renderer.get_scanline_parameters()
 
     def save_state(self, file_like_object):
         """
@@ -447,7 +403,7 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def get_serial(self):
+    def _get_serial(self):
         """
         Provides all data that has been sent over the serial port since last call to this function.
 
@@ -455,12 +411,6 @@ class PyBoy:
             str : Buffer data
         """
         return self.mb.getserial()
-
-    def disable_title(self):
-        """
-        Disable window title updates. These are output to the log, when in `headless` or `dummy` mode.
-        """
-        self.window_title_disabled = True
 
     def set_emulation_speed(self, target_speed):
         """
@@ -484,6 +434,6 @@ class PyBoy:
         have been truncated to 11 characters.
 
         Returns:
-            str : Game name
+            str : Game title
         """
         return self.mb.cartridge.gamename

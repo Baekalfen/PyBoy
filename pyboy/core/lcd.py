@@ -23,12 +23,6 @@ except ImportError:
     cythonmode = False
 
 
-try:
-    from PIL import Image
-except ImportError:
-    Image = None
-
-
 class LCD:
     def __init__(self):
         self.VRAM = array('B', [0] * VIDEO_RAM)
@@ -282,32 +276,6 @@ class Renderer:
         for y in range(ROWS):
             for x in range(COLS):
                 self._screenbuffer[y][x] = color
-
-    def get_screen_buffer(self):
-        return self._screenbuffer_raw.tobytes()
-
-    def get_screen_buffer_as_ndarray(self):
-        import numpy as np
-        return np.frombuffer(self.get_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-
-    def get_screen_image(self):
-        if not Image:
-            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
-            return None
-
-        # NOTE: Might have room for performance improvement
-        # It's not possible to use the following, as the byte-order (endianess) isn't supported in Pillow
-        # Image.frombytes('RGBA', self.buffer_dims, self.get_screen_buffer()).show()
-        return Image.fromarray(self.get_screen_buffer_as_ndarray(), 'RGB')
-
-    def get_scanline_parameters(self):
-        import numpy as np
-        return np.vstack(
-             [
-                 np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
-                 for line in self._scanlineparameters
-             ]
-         )
 
     def save_state(self, f):
         for y in range(ROWS):

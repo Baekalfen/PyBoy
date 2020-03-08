@@ -30,7 +30,7 @@ cpdef uint8_t get_color_code(uint8_t, uint8_t, uint8_t)
 # Temporarily placed here to not be exposed on public API
 
 cdef class WindowEvent:
-    cdef int event
+    cdef public int event
 
 cdef class WindowEventMouse(WindowEvent):
     cdef public int window_id

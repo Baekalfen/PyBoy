@@ -91,10 +91,6 @@ cdef class TileDataWindow(BaseDebugWindow):
     cdef void draw_overlay(self)
 
 
-@cython.locals(sprite=Sprite, t=MarkedTile)
-cdef MarkedTile find_sprite(Motherboard, int, Sprite, int)
-
-
 cdef class SpriteWindow(BaseDebugWindow):
     @cython.locals(tile_x=int, tile_y=int, sprite_identifier=int, sprite=Sprite)
     cdef list handle_events(self, list)

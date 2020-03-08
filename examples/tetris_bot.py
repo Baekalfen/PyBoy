@@ -9,7 +9,7 @@ import sys
 import traceback
 from pprint import pprint
 
-from pyboy import PyBoy, windowevent
+from pyboy import PyBoy, WindowEvent
 
 
 def getROM(ROMdir):
@@ -54,10 +54,10 @@ if __name__ == "__main__":
             window = 'SDL2'
         pyboy = PyBoy(filename, window_type=window, window_scale=3, bootrom_file=bootROM)
         pyboy.set_emulation_speed(0)
-        print("Screen pos:", pyboy.get_screen_position())
+        print("Screen pos:", pyboy.get_tilemap_position())
 
         first_brick = False
-        tile_map = pyboy.get_window_tile_map()
+        tile_map = pyboy.get_tilemap_window()
         for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
             pyboy.tick()
             # print ("frame:", frame)
@@ -65,21 +65,21 @@ if __name__ == "__main__":
             # Start game. Just press Start and A when the game allows us.
             # The frames are not 100% accurate.
             if frame == 144:
-                pyboy.send_input(windowevent.PRESS_BUTTON_START)
+                pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             elif frame == 145:
-                pyboy.send_input(windowevent.RELEASE_BUTTON_START)
+                pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
             elif frame == 152:
-                pyboy.send_input(windowevent.PRESS_BUTTON_A)
+                pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
             elif frame == 153:
-                pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+                pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
             elif frame == 156:
-                pyboy.send_input(windowevent.PRESS_BUTTON_A)
+                pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
             elif frame == 157:
-                pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+                pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
             elif frame == 162:
-                pyboy.send_input(windowevent.PRESS_BUTTON_A)
+                pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
             elif frame == 163:
-                pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+                pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
 
             elif frame == 4480:
                 # Illustrating how we can extract the game board quite simply. This can be used to read the tile indexes
@@ -132,9 +132,9 @@ if __name__ == "__main__":
             # The "technique" is just to move the Tetromino to the right.
             elif frame > 168:
                 if frame % 2 == 0:
-                    pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
+                    pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
                 elif frame % 2 == 1:
-                    pyboy.send_input(windowevent.RELEASE_ARROW_RIGHT)
+                    pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
 
                 # As an example, it could be useful to know the coordinates
                 # of the sprites on the screen and which they look like.

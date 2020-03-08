@@ -12,7 +12,6 @@ from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_
                          glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
                          glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc,
                          glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
-from pyboy import windowevent
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent
@@ -78,56 +77,54 @@ class WindowOpenGL(PyBoyWindowPlugin):
     def _glkeyboardspecial(self, c, x, y, up):
         if up:
             if c == GLUT_KEY_UP:
-                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_UP))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
             if c == GLUT_KEY_DOWN:
-                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_DOWN))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
             if c == GLUT_KEY_LEFT:
-                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_LEFT))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
             if c == GLUT_KEY_RIGHT:
-                self.events.append(WindowEvent(windowevent.RELEASE_ARROW_RIGHT))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
         else:
             if c == GLUT_KEY_UP:
-                self.events.append(WindowEvent(windowevent.PRESS_ARROW_UP))
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_UP))
             if c == GLUT_KEY_DOWN:
-                self.events.append(WindowEvent(windowevent.PRESS_ARROW_DOWN))
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_DOWN))
             if c == GLUT_KEY_LEFT:
-                self.events.append(WindowEvent(windowevent.PRESS_ARROW_LEFT))
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_LEFT))
             if c == GLUT_KEY_RIGHT:
-                self.events.append(WindowEvent(windowevent.PRESS_ARROW_RIGHT))
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_RIGHT))
 
     def _glkeyboard(self, c, x, y, up):
         if up:
             if c == 'a':
-                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_A))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
             elif c == 's':
-                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_B))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
             elif c == 'z':
-                self.events.append(WindowEvent(windowevent.SAVE_STATE))
+                self.events.append(WindowEvent(WindowEvent.STATE_SAVE))
             elif c == 'x':
-                self.events.append(WindowEvent(windowevent.LOAD_STATE))
+                self.events.append(WindowEvent(WindowEvent.STATE_LOAD))
             elif c == ' ':
-                self.events.append(WindowEvent(windowevent.RELEASE_SPEED_UP))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_SPEED_UP))
             elif c == chr(8):
-                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_SELECT))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
             elif c == chr(13):
-                self.events.append(WindowEvent(windowevent.RELEASE_BUTTON_START))
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
         else:
             if c == 'a':
-                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_A))
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_A))
             elif c == 's':
-                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_B))
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_B))
             elif c == chr(27):
-                self.events.append(WindowEvent(windowevent.QUIT))
-            elif c == 'd':
-                self.events.append(WindowEvent(windowevent.DEBUG_TOGGLE))
+                self.events.append(WindowEvent(WindowEvent.QUIT))
             elif c == ' ':
-                self.events.append(WindowEvent(windowevent.PRESS_SPEED_UP))
+                self.events.append(WindowEvent(WindowEvent.PRESS_SPEED_UP))
             elif c == 'i':
-                self.events.append(WindowEvent(windowevent.SCREEN_RECORDING_TOGGLE))
+                self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE))
             elif c == chr(8):
-                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_SELECT))
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_SELECT))
             elif c == chr(13):
-                self.events.append(WindowEvent(windowevent.PRESS_BUTTON_START))
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_START))
 
     def _glreshape(self, width, height):
         scale = max(min(height / ROWS, width / COLS), 1)

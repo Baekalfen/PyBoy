@@ -15,7 +15,7 @@ from pyboy.plugins.base_plugin import PyBoyPlugin
 
 
 class RecordReplay(PyBoyPlugin):
-    argv = [('--record-input', {"type": str, "help": 'Record user input and save to a file (internal use)'})]
+    argv = [('--record-input', {"action": 'store_true',  "help": 'Record user input and save to a file (internal use)'})]
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -34,14 +34,14 @@ class RecordReplay(PyBoyPlugin):
         # Input recorder
         if len(events) != 0:
             self.recorded_input.append((self.pyboy.frame_count, [e.event for e in events], base64.b64encode(
-                np.ascontiguousarray(self.pyboy.get_screen_ndarray())).decode('utf8')))
+                np.ascontiguousarray(self.pyboy.get_screen().get_screen_ndarray())).decode('utf8')))
         return events
 
     def stop(self):
         save_replay(
             self.pyboy.gamerom_file,
             self.pyboy_argv.get("loadstate"),
-            self.pyboy_argv.get("record_input"),
+            self.pyboy.gamerom_file+".replay",
             self.recorded_input
         )
 

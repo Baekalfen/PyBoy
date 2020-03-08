@@ -39,67 +39,44 @@ import numpy as np
 from PIL import Image
 from pyboy.utils import get_color_code
 
-from .constants import LOW_TILEDATA, LOW_TILEDATA_NTILES, VRAM_OFFSET
+from .constants import LOW_TILEDATA, VRAM_OFFSET
 
 
 class Tile:
-    def __init__(self, mb, identifier=None, index=None):
+    def __init__(self, mb, identifier):
         &#34;&#34;&#34;
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-        `pyboy.pyboy.PyBoy.get_tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
+        `pyboy.PyBoy.get_tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
         refering to graphics.
 
         This class is not meant to be instantiated by developers reading this documentation, but it will be created
-        internaly and returned by `pyboy.botsupport.sprite.Sprite.tiles` and
+        internally and returned by `pyboy.botsupport.sprite.Sprite.tiles` and
         `pyboy.botsupport.tilemap.TileMap.get_tile`.
 
         The data of this class is static, apart from the image data, which is loaded from the Game Boy&#39;s memory when
-        needed. Be aware, that the graphics for the tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        needed. Beware that the graphics for the tile can change between each call to `pyboy.PyBoy.tick`.
         &#34;&#34;&#34;
-
         self.mb = mb
 
-        if index is not None:
-            assert isinstance(index, tuple), &#34;Index parameters needs to be a tuple of (int:index, bool:signed)&#34;
-            index, signed = index
-            assert isinstance(signed, bool), &#34;signed is not instance of bool&#34;
-            if signed:
-                assert -128 &lt;= index &lt;= 127, &#34;index out of range&#34;
-            else:
-                assert 0 &lt;= index &lt; LOW_TILEDATA_NTILES, &#34;index out of range&#34;
-            self._signed_tile_data = signed
-            self._index = index
-            # The offset is not HIGH_TILEDATA, as it start 128 tiles after LOW_TILEDATA. We need the middle of
-            # the high tile data area -- i.e. 256 tiles of 16 bytes into LOW_TILEDATA.
-            offset = LOW_TILEDATA + 16*LOW_TILEDATA_NTILES if signed else LOW_TILEDATA
-            self._data_address = offset + (16*index) # _OFFSET + self._index * 2
-        elif identifier is not None:
-            assert 0 &lt;= identifier &lt; 384, &#34;Identifier out of range&#34;
-            self._signed_tile_data = identifier &gt;= LOW_TILEDATA_NTILES
-            self._index = identifier
-            if self._signed_tile_data:
-                self._index -= LOW_TILEDATA_NTILES
-            self._data_address = LOW_TILEDATA + (16*identifier)
-        else:
-            raise Exception(&#34;No identifier or index specified&#34;)
+        assert 0 &lt;= identifier &lt; 384, &#34;Identifier out of range&#34;
+        self._data_address = LOW_TILEDATA + (16*identifier)
 
-    def get_identifier(self):
+    def _get_identifier(self):
         &#34;&#34;&#34;
-        The Game Boy has a slightly complicated indexing system for tiles. Use this attribute instead to get a unified
-        and easy way to compare and identify tiles. If you want to modify the state of the tilemap or tile data
-        directly in the emulator, you&#39;ll need to look at `pyboy.botsupport.tile.Tile.get_index`.
+        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
 
         Returns:
             int: Unique identifier for the tile
         &#34;&#34;&#34;
         return (self._data_address - LOW_TILEDATA) // 16
-    identifier = property(get_identifier)
+    tile_identifier = property(_get_identifier)
 
-    def get_data_address(self):
+    def _get_data_address(self):
         &#34;&#34;&#34;
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-        corresponding to the tile index. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the other
-        `image`-functions if you want to view the tile.
+        corresponding to the tile identifier. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the
+        other `image`-functions if you want to view the tile.
 
         You can read how the data is read in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
@@ -108,36 +85,13 @@ class Tile:
             int: address in VRAM where tile data starts
         &#34;&#34;&#34;
         return self._data_address
-    data_address = property(get_data_address)
-
-    def get_index(self):
-        &#34;&#34;&#34;
-        If you need to compare two tiles, consider using `pyboy.botsupport.tile.Tile.identifier` instead, or simply the
-        equal operator: `tile1 == tile2`. The index returned here is mostly for use when interfacing directly with the
-        Game Boy.
-
-        Each tile of the Game Boy is referred to by an index. This function returns the tile index this object
-        corresponds to. It also returns a bool which specify whether the index is signed (True) or not (False). Both
-        the bool and the index are needed to correctly identify a tile.
-
-        The signed indexes also uses another starting address than the unsigned indexes. Use the
-        `pyboy.botsupport.tile.Tile.data_address` attribute if you want the address of the tile data.
-
-        You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
-
-        Returns:
-            tuple (bool, int): First value indicates if the index is signed. The second value is the index.
-            Both are needed for comparison.
-        &#34;&#34;&#34;
-        return (self._signed_tile_data, self._index)
-    index = property(get_index)
+    data_address = property(_get_data_address)
 
     def image(self):
         &#34;&#34;&#34;
         Use this function to get an easy-to-use `PIL.Image` object of the tile. The image is 8x8 pixels in RGBA colors.
 
-        Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns:
             PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
@@ -150,7 +104,7 @@ class Tile:
         and each value is of `numpy.uint8`. The values corresponds to and RGBA image of 8x8 pixels with each sub-color
         in a separate cell.
 
-        Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns:
             numpy.ndarray : Array of shape (8, 8, 4) with data type of `numpy.uint8`.
@@ -162,7 +116,7 @@ class Tile:
         Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
         colors.
 
-        Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns:
             memoryview : Image data of tile in 8x8 pixels and RGBA colors.
@@ -179,18 +133,21 @@ class Tile:
 
         return data
 
-    # def highlight(self):
-    #     &#34;&#34;&#34;
-    #     Not yet implemented. Will be used to highlight the tile when debug windows are enabled.
-    #     &#34;&#34;&#34;
-    #     pass
+    @property
+    def shape(self):
+        &#34;&#34;&#34;
+        Tiles are always 8x8 pixels.
+
+        Returns:
+            (int, int): The width and height of the tile.
+        &#34;&#34;&#34;
+        return (8, 8)
 
     def __eq__(self, other):
-        return self.identifier == other.identifier
+        return self.tile_identifier == other.tile_identifier
 
     def __str__(self):
-        high_low = &#39;H&#39; if self._signed_tile_data else &#39;L&#39;
-        return f&#34;Tile: {high_low}, {self.index}&#34;</code></pre>
+        return f&#34;Tile: {self.tile_identifier}&#34;</code></pre>
 </details>
 </section>
 <section>
@@ -204,77 +161,54 @@ class Tile:
 <dl>
 <dt id="pyboy.botsupport.tile.Tile"><code class="flex name class">
 <span>class <span class="ident">Tile</span></span>
-<span>(</span><span>mb, identifier=None, index=None)</span>
+<span>(</span><span>mb, identifier)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-<a title="pyboy.pyboy.PyBoy.get_tile" href="../pyboy.html#pyboy.pyboy.PyBoy.get_tile"><code>PyBoy.get_tile()</code></a>, <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and <a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>, when
+<a title="pyboy.PyBoy.get_tile" href="../index.html#pyboy.PyBoy.get_tile"><code>PyBoy.get_tile()</code></a>, <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and <a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>, when
 refering to graphics.</p>
 <p>This class is not meant to be instantiated by developers reading this documentation, but it will be created
-internaly and returned by <a title="pyboy.botsupport.sprite.Sprite.tiles" href="sprite.html#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a> and
+internally and returned by <a title="pyboy.botsupport.sprite.Sprite.tiles" href="sprite.html#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a> and
 <a title="pyboy.botsupport.tilemap.TileMap.get_tile" href="tilemap.html#pyboy.botsupport.tilemap.TileMap.get_tile"><code>TileMap.get_tile()</code></a>.</p>
 <p>The data of this class is static, apart from the image data, which is loaded from the Game Boy's memory when
-needed. Be aware, that the graphics for the tile can change between each call to <a title="pyboy.pyboy.PyBoy.tick" href="../pyboy.html#pyboy.pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p></section>
+needed. Beware that the graphics for the tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">class Tile:
-    def __init__(self, mb, identifier=None, index=None):
+    def __init__(self, mb, identifier):
         &#34;&#34;&#34;
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-        `pyboy.pyboy.PyBoy.get_tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
+        `pyboy.PyBoy.get_tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
         refering to graphics.
 
         This class is not meant to be instantiated by developers reading this documentation, but it will be created
-        internaly and returned by `pyboy.botsupport.sprite.Sprite.tiles` and
+        internally and returned by `pyboy.botsupport.sprite.Sprite.tiles` and
         `pyboy.botsupport.tilemap.TileMap.get_tile`.
 
         The data of this class is static, apart from the image data, which is loaded from the Game Boy&#39;s memory when
-        needed. Be aware, that the graphics for the tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        needed. Beware that the graphics for the tile can change between each call to `pyboy.PyBoy.tick`.
         &#34;&#34;&#34;
-
         self.mb = mb
 
-        if index is not None:
-            assert isinstance(index, tuple), &#34;Index parameters needs to be a tuple of (int:index, bool:signed)&#34;
-            index, signed = index
-            assert isinstance(signed, bool), &#34;signed is not instance of bool&#34;
-            if signed:
-                assert -128 &lt;= index &lt;= 127, &#34;index out of range&#34;
-            else:
-                assert 0 &lt;= index &lt; LOW_TILEDATA_NTILES, &#34;index out of range&#34;
-            self._signed_tile_data = signed
-            self._index = index
-            # The offset is not HIGH_TILEDATA, as it start 128 tiles after LOW_TILEDATA. We need the middle of
-            # the high tile data area -- i.e. 256 tiles of 16 bytes into LOW_TILEDATA.
-            offset = LOW_TILEDATA + 16*LOW_TILEDATA_NTILES if signed else LOW_TILEDATA
-            self._data_address = offset + (16*index) # _OFFSET + self._index * 2
-        elif identifier is not None:
-            assert 0 &lt;= identifier &lt; 384, &#34;Identifier out of range&#34;
-            self._signed_tile_data = identifier &gt;= LOW_TILEDATA_NTILES
-            self._index = identifier
-            if self._signed_tile_data:
-                self._index -= LOW_TILEDATA_NTILES
-            self._data_address = LOW_TILEDATA + (16*identifier)
-        else:
-            raise Exception(&#34;No identifier or index specified&#34;)
+        assert 0 &lt;= identifier &lt; 384, &#34;Identifier out of range&#34;
+        self._data_address = LOW_TILEDATA + (16*identifier)
 
-    def get_identifier(self):
+    def _get_identifier(self):
         &#34;&#34;&#34;
-        The Game Boy has a slightly complicated indexing system for tiles. Use this attribute instead to get a unified
-        and easy way to compare and identify tiles. If you want to modify the state of the tilemap or tile data
-        directly in the emulator, you&#39;ll need to look at `pyboy.botsupport.tile.Tile.get_index`.
+        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
 
         Returns:
             int: Unique identifier for the tile
         &#34;&#34;&#34;
         return (self._data_address - LOW_TILEDATA) // 16
-    identifier = property(get_identifier)
+    tile_identifier = property(_get_identifier)
 
-    def get_data_address(self):
+    def _get_data_address(self):
         &#34;&#34;&#34;
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-        corresponding to the tile index. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the other
-        `image`-functions if you want to view the tile.
+        corresponding to the tile identifier. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the
+        other `image`-functions if you want to view the tile.
 
         You can read how the data is read in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
@@ -283,36 +217,13 @@ needed. Be aware, that the graphics for the tile can change between each call to
             int: address in VRAM where tile data starts
         &#34;&#34;&#34;
         return self._data_address
-    data_address = property(get_data_address)
-
-    def get_index(self):
-        &#34;&#34;&#34;
-        If you need to compare two tiles, consider using `pyboy.botsupport.tile.Tile.identifier` instead, or simply the
-        equal operator: `tile1 == tile2`. The index returned here is mostly for use when interfacing directly with the
-        Game Boy.
-
-        Each tile of the Game Boy is referred to by an index. This function returns the tile index this object
-        corresponds to. It also returns a bool which specify whether the index is signed (True) or not (False). Both
-        the bool and the index are needed to correctly identify a tile.
-
-        The signed indexes also uses another starting address than the unsigned indexes. Use the
-        `pyboy.botsupport.tile.Tile.data_address` attribute if you want the address of the tile data.
-
-        You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
-
-        Returns:
-            tuple (bool, int): First value indicates if the index is signed. The second value is the index.
-            Both are needed for comparison.
-        &#34;&#34;&#34;
-        return (self._signed_tile_data, self._index)
-    index = property(get_index)
+    data_address = property(_get_data_address)
 
     def image(self):
         &#34;&#34;&#34;
         Use this function to get an easy-to-use `PIL.Image` object of the tile. The image is 8x8 pixels in RGBA colors.
 
-        Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns:
             PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
@@ -325,7 +236,7 @@ needed. Be aware, that the graphics for the tile can change between each call to
         and each value is of `numpy.uint8`. The values corresponds to and RGBA image of 8x8 pixels with each sub-color
         in a separate cell.
 
-        Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns:
             numpy.ndarray : Array of shape (8, 8, 4) with data type of `numpy.uint8`.
@@ -337,7 +248,7 @@ needed. Be aware, that the graphics for the tile can change between each call to
         Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
         colors.
 
-        Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns:
             memoryview : Image data of tile in 8x8 pixels and RGBA colors.
@@ -354,26 +265,29 @@ needed. Be aware, that the graphics for the tile can change between each call to
 
         return data
 
-    # def highlight(self):
-    #     &#34;&#34;&#34;
-    #     Not yet implemented. Will be used to highlight the tile when debug windows are enabled.
-    #     &#34;&#34;&#34;
-    #     pass
+    @property
+    def shape(self):
+        &#34;&#34;&#34;
+        Tiles are always 8x8 pixels.
+
+        Returns:
+            (int, int): The width and height of the tile.
+        &#34;&#34;&#34;
+        return (8, 8)
 
     def __eq__(self, other):
-        return self.identifier == other.identifier
+        return self.tile_identifier == other.tile_identifier
 
     def __str__(self):
-        high_low = &#39;H&#39; if self._signed_tile_data else &#39;L&#39;
-        return f&#34;Tile: {high_low}, {self.index}&#34;</code></pre>
+        return f&#34;Tile: {self.tile_identifier}&#34;</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
 <dt id="pyboy.botsupport.tile.Tile.data_address"><code class="name">var <span class="ident">data_address</span></code></dt>
 <dd>
 <section class="desc"><p>The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-corresponding to the tile index. It is advised to use <a title="pyboy.botsupport.tile.Tile.image" href="#pyboy.botsupport.tile.Tile.image"><code>Tile.image()</code></a> or one of the other
-<code>image</code>-functions if you want to view the tile.</p>
+corresponding to the tile identifier. It is advised to use <a title="pyboy.botsupport.tile.Tile.image" href="#pyboy.botsupport.tile.Tile.image"><code>Tile.image()</code></a> or one of the
+other <code>image</code>-functions if you want to view the tile.</p>
 <p>You can read how the data is read in the
 <a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
 <h2 id="returns">Returns</h2>
@@ -383,11 +297,11 @@ corresponding to the tile index. It is advised to use <a title="pyboy.botsupport
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def get_data_address(self):
+<pre><code class="python">def _get_data_address(self):
     &#34;&#34;&#34;
     The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-    corresponding to the tile index. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the other
-    `image`-functions if you want to view the tile.
+    corresponding to the tile identifier. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the
+    other `image`-functions if you want to view the tile.
 
     You can read how the data is read in the
     [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
@@ -398,11 +312,28 @@ corresponding to the tile index. It is advised to use <a title="pyboy.botsupport
     return self._data_address</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.tile.Tile.identifier"><code class="name">var <span class="ident">identifier</span></code></dt>
+<dt id="pyboy.botsupport.tile.Tile.shape"><code class="name">var <span class="ident">shape</span></code></dt>
 <dd>
-<section class="desc"><p>The Game Boy has a slightly complicated indexing system for tiles. Use this attribute instead to get a unified
-and easy way to compare and identify tiles. If you want to modify the state of the tilemap or tile data
-directly in the emulator, you'll need to look at <a title="pyboy.botsupport.tile.Tile.get_index" href="#pyboy.botsupport.tile.Tile.get_index"><code>Tile.get_index()</code></a>.</p>
+<section class="desc"><p>Tiles are always 8x8 pixels.</p>
+<h2 id="returns">Returns</h2>
+<p>(int, int): The width and height of the tile.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@property
+def shape(self):
+    &#34;&#34;&#34;
+    Tiles are always 8x8 pixels.
+
+    Returns:
+        (int, int): The width and height of the tile.
+    &#34;&#34;&#34;
+    return (8, 8)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.botsupport.tile.Tile.tile_identifier"><code class="name">var <span class="ident">tile_identifier</span></code></dt>
+<dd>
+<section class="desc"><p>The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+complicated indexing system on the Game Boy into a single range of 0-383 (both included).</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>int</code></strong></dt>
@@ -410,172 +341,26 @@ directly in the emulator, you'll need to look at <a title="pyboy.botsupport.tile
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def get_identifier(self):
+<pre><code class="python">def _get_identifier(self):
     &#34;&#34;&#34;
-    The Game Boy has a slightly complicated indexing system for tiles. Use this attribute instead to get a unified
-    and easy way to compare and identify tiles. If you want to modify the state of the tilemap or tile data
-    directly in the emulator, you&#39;ll need to look at `pyboy.botsupport.tile.Tile.get_index`.
+    The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+    complicated indexing system on the Game Boy into a single range of 0-383 (both included).
 
     Returns:
         int: Unique identifier for the tile
     &#34;&#34;&#34;
     return (self._data_address - LOW_TILEDATA) // 16</code></pre>
-</details>
-</dd>
-<dt id="pyboy.botsupport.tile.Tile.index"><code class="name">var <span class="ident">index</span></code></dt>
-<dd>
-<section class="desc"><p>If you need to compare two tiles, consider using <a title="pyboy.botsupport.tile.Tile.identifier" href="#pyboy.botsupport.tile.Tile.identifier"><code>Tile.identifier</code></a> instead, or simply the
-equal operator: <code>tile1 == tile2</code>. The index returned here is mostly for use when interfacing directly with the
-Game Boy.</p>
-<p>Each tile of the Game Boy is referred to by an index. This function returns the tile index this object
-corresponds to. It also returns a bool which specify whether the index is signed (True) or not (False). Both
-the bool and the index are needed to correctly identify a tile.</p>
-<p>The signed indexes also uses another starting address than the unsigned indexes. Use the
-<a title="pyboy.botsupport.tile.Tile.data_address" href="#pyboy.botsupport.tile.Tile.data_address"><code>Tile.data_address</code></a> attribute if you want the address of the tile data.</p>
-<p>You can read how the indexes work in the
-<a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>tuple</code></strong> :&ensp;<code>bool</code>, <code>int</code></dt>
-<dd>First value indicates if the index is signed. The second value is the index.</dd>
-</dl>
-<p>Both are needed for comparison.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_index(self):
-    &#34;&#34;&#34;
-    If you need to compare two tiles, consider using `pyboy.botsupport.tile.Tile.identifier` instead, or simply the
-    equal operator: `tile1 == tile2`. The index returned here is mostly for use when interfacing directly with the
-    Game Boy.
-
-    Each tile of the Game Boy is referred to by an index. This function returns the tile index this object
-    corresponds to. It also returns a bool which specify whether the index is signed (True) or not (False). Both
-    the bool and the index are needed to correctly identify a tile.
-
-    The signed indexes also uses another starting address than the unsigned indexes. Use the
-    `pyboy.botsupport.tile.Tile.data_address` attribute if you want the address of the tile data.
-
-    You can read how the indexes work in the
-    [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
-
-    Returns:
-        tuple (bool, int): First value indicates if the index is signed. The second value is the index.
-        Both are needed for comparison.
-    &#34;&#34;&#34;
-    return (self._signed_tile_data, self._index)</code></pre>
 </details>
 </dd>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="pyboy.botsupport.tile.Tile.get_data_address"><code class="name flex">
-<span>def <span class="ident">get_data_address</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-corresponding to the tile index. It is advised to use <a title="pyboy.botsupport.tile.Tile.image" href="#pyboy.botsupport.tile.Tile.image"><code>Tile.image()</code></a> or one of the other
-<code>image</code>-functions if you want to view the tile.</p>
-<p>You can read how the data is read in the
-<a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>int</code></strong></dt>
-<dd>address in VRAM where tile data starts</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_data_address(self):
-    &#34;&#34;&#34;
-    The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-    corresponding to the tile index. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the other
-    `image`-functions if you want to view the tile.
-
-    You can read how the data is read in the
-    [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
-
-    Returns:
-        int: address in VRAM where tile data starts
-    &#34;&#34;&#34;
-    return self._data_address</code></pre>
-</details>
-</dd>
-<dt id="pyboy.botsupport.tile.Tile.get_identifier"><code class="name flex">
-<span>def <span class="ident">get_identifier</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The Game Boy has a slightly complicated indexing system for tiles. Use this attribute instead to get a unified
-and easy way to compare and identify tiles. If you want to modify the state of the tilemap or tile data
-directly in the emulator, you'll need to look at <a title="pyboy.botsupport.tile.Tile.get_index" href="#pyboy.botsupport.tile.Tile.get_index"><code>Tile.get_index()</code></a>.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>int</code></strong></dt>
-<dd>Unique identifier for the tile</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_identifier(self):
-    &#34;&#34;&#34;
-    The Game Boy has a slightly complicated indexing system for tiles. Use this attribute instead to get a unified
-    and easy way to compare and identify tiles. If you want to modify the state of the tilemap or tile data
-    directly in the emulator, you&#39;ll need to look at `pyboy.botsupport.tile.Tile.get_index`.
-
-    Returns:
-        int: Unique identifier for the tile
-    &#34;&#34;&#34;
-    return (self._data_address - LOW_TILEDATA) // 16</code></pre>
-</details>
-</dd>
-<dt id="pyboy.botsupport.tile.Tile.get_index"><code class="name flex">
-<span>def <span class="ident">get_index</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>If you need to compare two tiles, consider using <a title="pyboy.botsupport.tile.Tile.identifier" href="#pyboy.botsupport.tile.Tile.identifier"><code>Tile.identifier</code></a> instead, or simply the
-equal operator: <code>tile1 == tile2</code>. The index returned here is mostly for use when interfacing directly with the
-Game Boy.</p>
-<p>Each tile of the Game Boy is referred to by an index. This function returns the tile index this object
-corresponds to. It also returns a bool which specify whether the index is signed (True) or not (False). Both
-the bool and the index are needed to correctly identify a tile.</p>
-<p>The signed indexes also uses another starting address than the unsigned indexes. Use the
-<a title="pyboy.botsupport.tile.Tile.data_address" href="#pyboy.botsupport.tile.Tile.data_address"><code>Tile.data_address</code></a> attribute if you want the address of the tile data.</p>
-<p>You can read how the indexes work in the
-<a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>tuple</code></strong> :&ensp;<code>bool</code>, <code>int</code></dt>
-<dd>First value indicates if the index is signed. The second value is the index.</dd>
-</dl>
-<p>Both are needed for comparison.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_index(self):
-    &#34;&#34;&#34;
-    If you need to compare two tiles, consider using `pyboy.botsupport.tile.Tile.identifier` instead, or simply the
-    equal operator: `tile1 == tile2`. The index returned here is mostly for use when interfacing directly with the
-    Game Boy.
-
-    Each tile of the Game Boy is referred to by an index. This function returns the tile index this object
-    corresponds to. It also returns a bool which specify whether the index is signed (True) or not (False). Both
-    the bool and the index are needed to correctly identify a tile.
-
-    The signed indexes also uses another starting address than the unsigned indexes. Use the
-    `pyboy.botsupport.tile.Tile.data_address` attribute if you want the address of the tile data.
-
-    You can read how the indexes work in the
-    [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
-
-    Returns:
-        tuple (bool, int): First value indicates if the index is signed. The second value is the index.
-        Both are needed for comparison.
-    &#34;&#34;&#34;
-    return (self._signed_tile_data, self._index)</code></pre>
-</details>
-</dd>
 <dt id="pyboy.botsupport.tile.Tile.image"><code class="name flex">
 <span>def <span class="ident">image</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Use this function to get an easy-to-use <code>PIL.Image</code> object of the tile. The image is 8x8 pixels in RGBA colors.</p>
-<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.pyboy.PyBoy.tick" href="../pyboy.html#pyboy.pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
 <h2 id="returns">Returns</h2>
 <p>PIL.Image : Image of tile in 8x8 pixels and RGBA colors.</p></section>
 <details class="source">
@@ -584,7 +369,7 @@ the bool and the index are needed to correctly identify a tile.</p>
     &#34;&#34;&#34;
     Use this function to get an easy-to-use `PIL.Image` object of the tile. The image is 8x8 pixels in RGBA colors.
 
-    Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+    Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
     Returns:
         PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
@@ -598,7 +383,7 @@ the bool and the index are needed to correctly identify a tile.</p>
 <dd>
 <section class="desc"><p>Use this function to get the raw tile data. The data is a <code>memoryview</code> corresponding to 8x8 pixels in RGBA
 colors.</p>
-<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.pyboy.PyBoy.tick" href="../pyboy.html#pyboy.pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
 <h2 id="returns">Returns</h2>
 <p>memoryview : Image data of tile in 8x8 pixels and RGBA colors.</p></section>
 <details class="source">
@@ -608,7 +393,7 @@ colors.</p>
     Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
     colors.
 
-    Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+    Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
     Returns:
         memoryview : Image data of tile in 8x8 pixels and RGBA colors.
@@ -633,7 +418,7 @@ colors.</p>
 <section class="desc"><p>Use this function to get an easy-to-use <code>numpy.ndarray</code> object of the tile. The array has a shape of (8, 8, 4)
 and each value is of <code>numpy.uint8</code>. The values corresponds to and RGBA image of 8x8 pixels with each sub-color
 in a separate cell.</p>
-<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.pyboy.PyBoy.tick" href="../pyboy.html#pyboy.pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
 <h2 id="returns">Returns</h2>
 <p>numpy.ndarray : Array of shape (8, 8, 4) with data type of <code>numpy.uint8</code>.</p></section>
 <details class="source">
@@ -644,7 +429,7 @@ in a separate cell.</p>
     and each value is of `numpy.uint8`. The values corresponds to and RGBA image of 8x8 pixels with each sub-color
     in a separate cell.
 
-    Be aware, that the graphics for this tile can change between each call to `pyboy.pyboy.PyBoy.tick`.
+    Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
     Returns:
         numpy.ndarray : Array of shape (8, 8, 4) with data type of `numpy.uint8`.
@@ -674,14 +459,11 @@ in a separate cell.</p>
 <h4><code><a title="pyboy.botsupport.tile.Tile" href="#pyboy.botsupport.tile.Tile">Tile</a></code></h4>
 <ul class="two-column">
 <li><code><a title="pyboy.botsupport.tile.Tile.data_address" href="#pyboy.botsupport.tile.Tile.data_address">data_address</a></code></li>
-<li><code><a title="pyboy.botsupport.tile.Tile.get_data_address" href="#pyboy.botsupport.tile.Tile.get_data_address">get_data_address</a></code></li>
-<li><code><a title="pyboy.botsupport.tile.Tile.get_identifier" href="#pyboy.botsupport.tile.Tile.get_identifier">get_identifier</a></code></li>
-<li><code><a title="pyboy.botsupport.tile.Tile.get_index" href="#pyboy.botsupport.tile.Tile.get_index">get_index</a></code></li>
-<li><code><a title="pyboy.botsupport.tile.Tile.identifier" href="#pyboy.botsupport.tile.Tile.identifier">identifier</a></code></li>
 <li><code><a title="pyboy.botsupport.tile.Tile.image" href="#pyboy.botsupport.tile.Tile.image">image</a></code></li>
 <li><code><a title="pyboy.botsupport.tile.Tile.image_data" href="#pyboy.botsupport.tile.Tile.image_data">image_data</a></code></li>
 <li><code><a title="pyboy.botsupport.tile.Tile.image_ndarray" href="#pyboy.botsupport.tile.Tile.image_ndarray">image_ndarray</a></code></li>
-<li><code><a title="pyboy.botsupport.tile.Tile.index" href="#pyboy.botsupport.tile.Tile.index">index</a></code></li>
+<li><code><a title="pyboy.botsupport.tile.Tile.shape" href="#pyboy.botsupport.tile.Tile.shape">shape</a></code></li>
+<li><code><a title="pyboy.botsupport.tile.Tile.tile_identifier" href="#pyboy.botsupport.tile.Tile.tile_identifier">tile_identifier</a></code></li>
 </ul>
 </li>
 </ul>

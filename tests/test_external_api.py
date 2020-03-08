@@ -10,7 +10,7 @@ import os
 import numpy as np
 import PIL
 import pytest
-from pyboy import PyBoy, botsupport, windowevent
+from pyboy import PyBoy, WindowEvent, botsupport
 
 from .utils import boot_rom, supermarioland_rom, tetris_rom
 
@@ -27,7 +27,7 @@ def test_tiles():
     pyboy = PyBoy(tetris_rom, window_type='headless', disable_input=True)
     pyboy.set_emulation_speed(0)
 
-    tile = pyboy.get_window_tile_map().get_tile(0, 0)
+    tile = pyboy.get_tilemap_window().get_tile(0, 0)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
     ndarray = tile.image_ndarray()
@@ -39,11 +39,7 @@ def test_tiles():
 
     for identifier in range(384):
         t = pyboy.get_tile(identifier)
-        assert t.identifier == identifier
-        if identifier > 0xFF:
-            assert t.index[1] == identifier - botsupport.constants.LOW_TILEDATA_NTILES
-        else:
-            assert t.index[1] == identifier
+        assert t.tile_identifier == identifier
     with pytest.raises(Exception):
         pyboy.get_tile(-1)
     with pytest.raises(Exception):
@@ -65,13 +61,13 @@ def test_screen_buffer_and_image():
     for n in range(275): # Iterate to boot logo
         pyboy.tick()
 
-    assert pyboy.get_raw_screen_buffer_dims() == (160, 144)
-    assert pyboy.get_raw_screen_buffer_format() == cformat
+    assert pyboy.get_screen().get_raw_screen_buffer_dims() == (160, 144)
+    assert pyboy.get_screen().get_raw_screen_buffer_format() == cformat
 
     boot_logo_hash = hashlib.sha256()
-    boot_logo_hash.update(pyboy.get_raw_screen_buffer())
+    boot_logo_hash.update(pyboy.get_screen().get_raw_screen_buffer())
     assert boot_logo_hash.digest() == boot_logo_hash_predigested
-    assert isinstance(pyboy.get_raw_screen_buffer(), bytes)
+    assert isinstance(pyboy.get_screen().get_raw_screen_buffer(), bytes)
 
     # The output of `get_screen_image` is supposed to be homogeneous, which means a shared hash between versions.
     boot_logo_png_hash_predigested = (
@@ -79,7 +75,7 @@ def test_screen_buffer_and_image():
             b'\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$'
         )
     boot_logo_png_hash = hashlib.sha256()
-    image = pyboy.get_screen_image()
+    image = pyboy.get_screen().get_screen_image()
     assert isinstance(image, PIL.Image.Image)
     image_data = io.BytesIO()
     image.save(image_data, format='BMP')
@@ -88,8 +84,8 @@ def test_screen_buffer_and_image():
 
     # get_screen_ndarray
     numpy_hash = hashlib.sha256()
-    numpy_array = np.ascontiguousarray(pyboy.get_screen_ndarray())
-    assert isinstance(pyboy.get_screen_ndarray(), np.ndarray)
+    numpy_array = np.ascontiguousarray(pyboy.get_screen().get_screen_ndarray())
+    assert isinstance(pyboy.get_screen().get_screen_ndarray(), np.ndarray)
     assert numpy_array.shape == (144, 160, 3)
     numpy_hash.update(numpy_array.tobytes())
     assert numpy_hash.digest() == (
@@ -107,39 +103,39 @@ def test_tetris():
     pyboy.set_emulation_speed(0)
 
     first_brick = False
-    tile_map = pyboy.get_window_tile_map()
+    tile_map = pyboy.get_tilemap_window()
     state_data = io.BytesIO()
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while not pyboy.tick():`
         pyboy.tick()
 
-        assert pyboy.get_screen_position() == ((0, 0), (-7, 0))
+        assert pyboy.get_screen().get_tilemap_position() == ((0, 0), (-7, 0))
 
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
         if frame == 144:
-            pyboy.send_input(windowevent.PRESS_BUTTON_START)
+            pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         elif frame == 145:
-            pyboy.send_input(windowevent.RELEASE_BUTTON_START)
+            pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
         elif frame == 152:
-            pyboy.send_input(windowevent.PRESS_BUTTON_A)
+            pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
         elif frame == 153:
-            pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+            pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         elif frame == 156:
-            pyboy.send_input(windowevent.PRESS_BUTTON_A)
+            pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
         elif frame == 157:
-            pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+            pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         elif frame == 162:
-            pyboy.send_input(windowevent.PRESS_BUTTON_A)
+            pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
         elif frame == 163:
-            pyboy.send_input(windowevent.RELEASE_BUTTON_A)
+            pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
 
         # Play game. When we are passed the 168th frame, the game has begone.
         # The "technique" is just to move the Tetromino to the right.
         elif frame > 168:
             if frame % 2 == 0:
-                pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
+                pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
             elif frame % 2 == 1:
-                pyboy.send_input(windowevent.RELEASE_ARROW_RIGHT)
+                pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
 
             # Show how we can read the tile data for the screen. We can use
             # this to see when one of the Tetrominos touch the bottom. This
@@ -190,7 +186,7 @@ def test_tetris():
                     assert t1 == t2, "Testing __eq__ method of Tile object"
                     assert t1 != t3, "Testing not __eq__ method of Tile object"
 
-                    game_board_matrix = [[x.identifier for x in row] for row in tile_map[2:12, :18]]
+                    game_board_matrix = [[x.tile_identifier for x in row] for row in tile_map[2:12, :18]]
                     tile_map.use_tile_objects(False)
                     assert game_board_matrix == (
                             [[303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
@@ -219,27 +215,18 @@ def test_tetris():
             if frame == 1015:
                 assert first_brick
 
-                # Test that all tiles says 'low' tile data, as sprites cannot use high tile data
-                # NOTE: Would have used reduce, but Cython on Ubuntu 18.04 didn't like it
-                all_low = False
-                for s in [pyboy.get_sprite(n) for n in range(40)]:
-                    all_low |= s.tiles[0].index[0]
-                assert not all_low
-
                 s1 = pyboy.get_sprite(0)
                 s2 = pyboy.get_sprite(1)
                 assert s1 == s1
                 assert s1 != s2
                 assert s1.tiles[0] == s2.tiles[0], "Testing equal tiles of two different sprites"
 
-                # Test that both ways of getting indexes works and provides the same result.
-                all_sprites = [(s.x, s.y, s.tiles[0].index[1], s.on_screen)
+                # Test that both ways of getting identifiers work and provides the same result.
+                all_sprites = [(s.x, s.y, s.tiles[0].tile_identifier, s.on_screen)
                                for s in [pyboy.get_sprite(n) for n in range(40)]]
-                all_sprites2 = [(s.x, s.y, s.tile_index, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]]
-                all_sprites3 = [(s.x, s.y, s.tile_identifier, s.on_screen)
+                all_sprites2 = [(s.x, s.y, s.tile_identifier, s.on_screen)
                                 for s in [pyboy.get_sprite(n) for n in range(40)]]
                 assert all_sprites == all_sprites2
-                assert all_sprites == all_sprites3
 
                 # Verify data with known reference
                 assert all_sprites == (
@@ -357,37 +344,24 @@ def test_tetris():
 
     pyboy.stop(save=False)
 
-# # Blargg's tests verifies this
-# def test_get_serial():
-#     pass
 
-
-def test_disable_title():
-    # Simply tests, that no exception is generated
-    pyboy = PyBoy(any_rom, window_type="dummy", disable_input=True)
-    pyboy.disable_title()
-    pyboy.tick()
-    pyboy.stop(save=False)
-
-
-def test_screen_position_list():
+def test_tilemap_position_list():
     pyboy = PyBoy(supermarioland_rom, window_type="headless", disable_input=True)
-    pyboy.disable_title()
     for _ in range(100):
         pyboy.tick()
 
     # Start the game
-    pyboy.send_input(windowevent.PRESS_BUTTON_START)
+    pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
     pyboy.tick()
-    pyboy.send_input(windowevent.RELEASE_BUTTON_START)
+    pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
     # Move right for 100 frame
-    pyboy.send_input(windowevent.PRESS_ARROW_RIGHT)
+    pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
     for _ in range(100):
         pyboy.tick()
 
     # Get screen positions, and verify the values
-    positions = pyboy.get_screen_position_list()
+    positions = pyboy.get_screen().get_tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
@@ -398,7 +372,7 @@ def test_screen_position_list():
         pyboy.tick()
 
     # Get screen positions, and verify the values
-    positions = pyboy.get_screen_position_list()
+    positions = pyboy.get_screen().get_tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):

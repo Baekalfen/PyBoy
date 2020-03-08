@@ -77,7 +77,5 @@ test_all: test docker-pypy docker-pypy-slim docker-buster docker-alpine docker-u
 
 docs: clean
 	pdoc --html --force pyboy
-	cp html/pyboy/windowevent.html ${ROOT_DIR}/docs/
-	cp html/pyboy/pyboy.html ${ROOT_DIR}/docs/
-	cp -r html/pyboy/botsupport ${ROOT_DIR}/docs/
+	cp -r html/pyboy/ ${ROOT_DIR}/docs/
 	rm -rf html

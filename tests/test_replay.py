@@ -12,27 +12,27 @@ import time
 import zlib
 
 import numpy as np
-from pyboy import PyBoy, windowevent
+from pyboy import PyBoy, WindowEvent
 
 from . import utils
 
 event_filter = [
-    windowevent.PRESS_SPEED_UP,
-    windowevent.RELEASE_SPEED_UP,
-    windowevent.SCREEN_RECORDING_TOGGLE,
-    windowevent.INTERNAL_RENDERER_FLUSH
+    WindowEvent.PRESS_SPEED_UP,
+    WindowEvent.RELEASE_SPEED_UP,
+    WindowEvent.SCREEN_RECORDING_TOGGLE,
+    WindowEvent._INTERNAL_RENDERER_FLUSH
 ]
 # Set to true to reset tests
 RESET_REPLAYS = False
 
 
 def verify_screen_image_np(pyboy, saved_array):
-    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.get_screen_ndarray())
+    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.get_screen().get_screen_ndarray())
     if not match:
         from PIL import Image
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()
-        new = pyboy.get_screen_image()
+        new = pyboy.get_screen().get_screen_image()
         new.show()
     assert match
 
@@ -88,7 +88,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     recording = False
     while recorded_input != []:
         if record_gif is not None and (frame_count in record_gif):
-            pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
+            pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
             recording ^= True
 
         if next_event[0] == frame_count:
@@ -107,7 +107,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     print(frame_count)
     # If end-frame in record_gif is high than frame counter
     if recording:
-        pyboy.send_input(windowevent.SCREEN_RECORDING_TOGGLE)
+        pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
         print(frame_count)
         recording ^= True
 

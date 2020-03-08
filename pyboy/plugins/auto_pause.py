@@ -2,8 +2,8 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from pyboy import windowevent
 from pyboy.plugins.base_plugin import PyBoyPlugin
+from pyboy.utils import WindowEvent
 
 
 class AutoPause(PyBoyPlugin):
@@ -11,10 +11,10 @@ class AutoPause(PyBoyPlugin):
 
     def handle_events(self, events):
         for event in events:
-            if event == windowevent.WINDOW_UNFOCUS:
-                events.append(windowevent.PAUSE)
-            elif event == windowevent.WINDOW_FOCUS:
-                events.append(windowevent.UNPAUSE)
+            if event == WindowEvent.WINDOW_UNFOCUS:
+                events.append(WindowEvent.PAUSE)
+            elif event == WindowEvent.WINDOW_FOCUS:
+                events.append(WindowEvent.UNPAUSE)
         return events
 
     def enabled(self):
