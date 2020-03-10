@@ -168,10 +168,6 @@ class Renderer:
         self._scanlineparameters[y][3] = wy
 
     def render_screen(self, lcd):
-        if not lcd.LCDC.lcd_enable:
-            self.blank_screen()
-            return
-
         self.update_cache(lcd)
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
