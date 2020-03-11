@@ -187,7 +187,8 @@ class Sprite:
         return self._offset == other._offset
 
     def __str__(self):
-        return f"Sprite [{self.sprite_index}]: Position ({self.x}, {self.y}), shape {self.shape}, tiles {', '.join(self.tiles)}, on screen: {self.on_screen}"
+        tiles = ', '.join([str(t) for t in self.tiles])
+        return f"Sprite [{self.sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}"
 
 
 def _get_bit(val, bit):

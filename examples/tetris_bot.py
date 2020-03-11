@@ -54,7 +54,7 @@ if __name__ == "__main__":
             window = 'SDL2'
         pyboy = PyBoy(filename, window_type=window, window_scale=3, bootrom_file=bootROM)
         pyboy.set_emulation_speed(0)
-        print("Screen pos:", pyboy.get_tilemap_position())
+        print("Screen pos:", pyboy.get_screen().get_tilemap_position())
 
         first_brick = False
         tile_map = pyboy.get_tilemap_window()
@@ -142,7 +142,7 @@ if __name__ == "__main__":
                     for n in range(40):
                         sprite = pyboy.get_sprite(n)
                         if sprite.on_screen:
-                            print("Sprite:", sprite.x, sprite.y, sprite.tile_index, sprite.tiles, sprite.on_screen)
+                            print(sprite)
 
                 # Show how we can read the tile data for the screen. We can use
                 # this to see when one of the Tetrominos touch the bottom. This

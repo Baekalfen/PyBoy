@@ -47,7 +47,7 @@ def verify_rom_hash(rom_file, b64_target_hash):
 
 def move_gif(game, dest):
     record_dir = 'recordings'
-    for _ in range(3):
+    for _ in range(5):
         try:
             gif = sorted(filter(lambda x: game in x, os.listdir(record_dir)))[-1]
             os.replace(record_dir + '/' + gif, dest)
