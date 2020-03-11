@@ -12,4 +12,4 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef class Sprite:
     cdef Motherboard mb
-    cdef int _offset
+    cdef public int _offset

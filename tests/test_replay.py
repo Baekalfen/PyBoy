@@ -108,6 +108,8 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
     # If end-frame in record_gif is high than frame counter
     if recording:
         pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
+        # We need to run an extra cycle for the screen recording to save
+        pyboy.tick()
         print(frame_count)
         recording ^= True
 

@@ -32,12 +32,6 @@ class WindowOpenGL(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self._scale = pyboy_argv.get("scale")
-        logger.info("%s initialization" % self.__class__.__name__)
-
-        self._scaledresolution = (self._scale * COLS, self._scale * ROWS)
-        logger.info('Scale: x%s %s' % (self._scale, self._scaledresolution))
-
         if not glutInit():
             raise Exception("OpenGL couldn't initialize!")
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -49,7 +43,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glutSpecialUpFunc(self._specUp)
         self.events = []
 
-        glPixelZoom(self._scale, self._scale)
+        glPixelZoom(self.scale, self.scale)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
 
