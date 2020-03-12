@@ -44,6 +44,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2"; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install wheel; fi
 
 install: make build
 
