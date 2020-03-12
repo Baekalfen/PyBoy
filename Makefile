@@ -87,6 +87,6 @@ docs: clean
 	rm -rf html
 
 repackage_secrets:
-	tar cvf ci_secrets.tar $(python -c "import codecs, sys; print(codecs.encode('EBZf', 'rot13'), end='')")
-	travis encrypt-file ci_secrets.tar
+	tar cvf ci_secrets.tar $(shell ${PY} -c "import codecs, sys; print(codecs.encode('EBZf', 'rot13'), end='')")
+	travis encrypt-file ci_secrets.tar --pro
 	rm ci_secrets.tar
