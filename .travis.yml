@@ -1,7 +1,7 @@
-language: python
+language: generic
 
 os:
-  - linux
+  # - linux
   - osx
 
 compiler:
@@ -13,6 +13,9 @@ addons:
     packages:
       - libsdl2-dev
       - build-essential
+      - python3
+      - python3-pip
+      - python3-dev
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
