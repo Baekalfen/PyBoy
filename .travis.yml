@@ -3,17 +3,9 @@ language: generic
 matrix:
   include:
     # - os: linux
+    #   dist: xenial
     - os: osx
       osx_image: xcode11.3
-
-jobs:
-  include:
-    - stage: compile
-      script: make build
-    - stage: test
-      script: make test_no_clean
-    - stage: deploy
-      script: skip
 
 compiler:
   - gcc
@@ -34,8 +26,13 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew unlink python@2; fi
   # - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew upgrade python3; fi
 
-stages:
-  - compile
-  - test
-  - name: deploy
-    if: branch = master
+install: make build
+
+script: make test_no_build
+
+deploy:
+  provider: pypi
+  distributions: "sdist bdist_wheel"
+  on:
+    branch: master
+    tags: true
