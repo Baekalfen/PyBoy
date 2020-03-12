@@ -66,9 +66,11 @@ install: build
 uninstall:
 	${PY} -m pip uninstall pyboy
 
-test: clean build
+test_no_clean: build
 	${PY} setup.py test
 	${PYPY} setup.py test
+
+test: clean test_no_clean
 
 test_quick: clean build
 	${PY} setup.py test

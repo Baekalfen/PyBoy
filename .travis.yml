@@ -5,7 +5,12 @@ jobs:
     # - os: linux
     - os: osx
       osx_image: xcode11.3
-
+    - stage: compile
+      script: make build
+    - stage: test
+      script: make test_no_clean
+    - stage: deploy
+      script: skip
 compiler:
   - gcc
   - clang
@@ -25,5 +30,8 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew unlink python@2; fi
   # - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew upgrade python3; fi
 
-script:
-  - make
+stages:
+  - compile
+  - test
+  - name: deploy
+    if: branch = master
