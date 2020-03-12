@@ -41,7 +41,7 @@ before_install:
   # PyPy Linux
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2"; fi
-  - export PATH=/$pypy_version/bin:$PATH
+  - export PATH=$pypy_version/bin:$PATH
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install wheel; fi
