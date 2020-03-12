@@ -1,16 +1,20 @@
 language: generic
 
-jobs:
+matrix:
   include:
     # - os: linux
     - os: osx
       osx_image: xcode11.3
+
+jobs:
+  include:
     - stage: compile
       script: make build
     - stage: test
       script: make test_no_clean
     - stage: deploy
       script: skip
+
 compiler:
   - gcc
   - clang
