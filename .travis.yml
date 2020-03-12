@@ -1,0 +1,22 @@
+language: python
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+      - libsdl2-dev
+      - build-essential
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install sdl2; fi
+
+script:
+  - make
