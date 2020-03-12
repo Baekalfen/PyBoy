@@ -2,8 +2,8 @@ language: generic
 
 matrix:
   include:
-    # - os: linux
-    #   dist: xenial
+    - os: linux
+      dist: bionic
     - os: osx
       osx_image: xcode11.3
 
@@ -28,7 +28,7 @@ before_install:
 
 install: make build
 
-script: make test_no_build
+script: make test_no_clean
 
 deploy:
   provider: pypi
