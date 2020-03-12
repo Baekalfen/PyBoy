@@ -40,8 +40,8 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install pypy3; fi
   # PyPy Linux
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "$pypy_version.tar.bz2"; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH="/$pypy_version/bin:${PATH}"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH="/${pypy_version}/bin:${PATH}"; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
 
