@@ -31,7 +31,7 @@ addons:
 
 before_install:
   - openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
-  - tar xvf ci_secrets.tar
+  - tar xf ci_secrets.tar
   # Python and PyPy
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install sdl2 zlib; fi
