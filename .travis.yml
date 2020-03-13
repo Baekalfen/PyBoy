@@ -57,6 +57,10 @@ script: make test_ci
 
 deploy:
   provider: pypi
+  user: "__token__"
+  password:
+    secure: GlvvLxqRvdheZoa13r/oG3BEqt/TD97g/YMj/SDBMG/YomyOJrFxhOzpj6ikLMmr0p4Z5TOpZHeu8hK5H2YpTUU++vj7gVQDp1CfQZVj6HA6pyyPUNuI216TOrV1ouT8khYuGKUleyIUsvHzmI/nK2d7vBOj2Cu2Ifghq21xjfI8pund9sw9T5jkDlPhFXPl7OtGvo5Dy+U4BVyzIH2hne6RvZom5DDPCDrxfzxeG1qqm5yjT3SnmrpYy+PdNoki+GrJ8M7Ns/S5OloyLBvaexxfgsRyTzB2++c+GBGdmhaqFZxlIJ8w1cMzFbdsuZHxbOAXoVLv6uXEEZARft+bepVKE+/0mBfX8W7boVxSXwfuj3hY6NWAVKWdn3zPNVteAln+KDzpi0rBtgZ3uFW6XYDxKtbPQ2TbHAxtFfKCO+lQiBdI4BZ19rguGwlLkN0vgyS1JxY6cMT0wY008EZWTf+MitgXmo5zEHULNGA2CnBcaii5T02Y8L8oeWnUH6bnnc+m0KS+Bv+6SGEM/yyOM/086Vz8xYfomxd2XijUnBiFXPFN8qey31NGfNRRNhw463og9kzPe8Na2IvQl2/dv+cy4JB42itHR+lQ2kia7dnBfcmvzt2UyRwQwiYqYKvxUQZJfL8cgfrNy/BbmT1vC/PNPdKWBbhB1I3pw9UrnYQ=
+  skip_existing: true
   distributions: "sdist bdist_wheel"
   on:
     branch: master
