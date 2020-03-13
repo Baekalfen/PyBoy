@@ -23,7 +23,6 @@ addons:
       - python3-pip
       - python3-dev
       - python3-setuptools
-      # - python3-distutils
       # PyPy
       - libtiff5-dev
       - libjpeg8-dev
