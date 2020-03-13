@@ -5,8 +5,8 @@ matrix:
     - os: linux
       dist: bionic
       env: pypy_version=pypy3.6-v7.3.0-linux64
-    - os: osx
-      osx_image: xcode11.3
+    # - os: osx
+    #   osx_image: xcode11.3
 
 compiler:
   - gcc
@@ -47,6 +47,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$HOME/$pypy_version/bin:$PATH; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install cython; fi
   # PyPy MacOS and Linux
   - pypy3 -m pip install wheel
 
