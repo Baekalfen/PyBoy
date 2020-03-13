@@ -67,8 +67,11 @@ uninstall:
 	${PY} -m pip uninstall pyboy
 
 test_ci:
+	@echo "PyPy testing..."
 	TEST_CI=1 TEST_NO_UI=1 ${PYPY} setup.py test
-	clean
+	@echo "Removing PyPy files"
+	$(MAKE) clean
+	@echo "Python/Cython testing..."
 	TEST_CI=1 TEST_NO_UI=1 ${PY} setup.py test
 
 test: clean build
