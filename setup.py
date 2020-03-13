@@ -81,7 +81,7 @@ class PyTest(test):
 
         import pytest
         # args = [f"-n{cpu_count()}", "-v"]
-        args = ['-v']
+        args = ['tests/', '-v']
         if codecov: # TODO: There's probably a more correct way to read the argv flags
             args += ['--cov=./']
         sys.exit(pytest.main(args))
