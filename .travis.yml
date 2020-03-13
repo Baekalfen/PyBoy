@@ -37,6 +37,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install sdl2 zlib; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew unlink python@2; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then python3 -m pip install -U --force-reinstall pip; fi
   # PyPy MacOS
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install pypy3; fi
   # PyPy Linux
