@@ -70,7 +70,6 @@ test_ci:
 	@echo "PyPy testing..."
 	TEST_CI=1 TEST_NO_UI=1 ${PYPY} setup.py test
 	@echo "Removing PyPy files"
-	$(MAKE) clean
 	rm -rf .eggs
 	@echo "Python/Cython testing..."
 	TEST_CI=1 TEST_NO_UI=1 ${PY} setup.py test
