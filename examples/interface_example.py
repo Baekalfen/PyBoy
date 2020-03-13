@@ -8,12 +8,14 @@ from pprint import pprint
 
 from pyboy import PyBoy
 
+hide_window = "--quiet" in sys.argv
+
 pyboy = PyBoy(
         "ROMs/POKEMON BLUE.gb",
         debugging=False,
         disable_input=True,
         # window_type="headless", # For unattended use, for example machine learning
-        hide_window="--quiet" in sys.argv,
+        hide_window=hide_window,
     )
 pyboy.set_emulation_speed(0)
 
@@ -72,4 +74,6 @@ pprint(list(tile_map[13:20, 8:14]))
 #  [5, 10, 15, 1, 24, 30, 32]]
 
 # For unattended use, the screen buffer can be displayed using the following:
-pyboy.get_screen_image().show()
+screen_image = pyboy.get_screen_image()
+if not hide_window:
+    screen_image.show()
