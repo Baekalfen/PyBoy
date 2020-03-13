@@ -43,8 +43,8 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"; fi
   # PyPy Linux
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2"; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$pypy_version/bin:$PATH; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2" -C $HOME/; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$HOME/$pypy_version/bin:$PATH; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
   # PyPy MacOS and Linux
