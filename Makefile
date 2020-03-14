@@ -66,20 +66,13 @@ install: build
 uninstall:
 	${PY} -m pip uninstall pyboy
 
-test_ci:
-	@echo "PyPy testing..."
-	TEST_CI=1 TEST_NO_UI=1 ${PYPY} setup.py test
-	@echo "Removing PyPy files"
-	rm -rf .eggs
-	@echo "Python/Cython testing..."
-	TEST_CI=1 TEST_NO_UI=1 ${PY} setup.py test
+test: clean build test_cython test_pypy
 
-test: clean build
+test_cython: clean build
 	${PY} setup.py test
+
+test_pypy: clean build
 	${PYPY} setup.py test
-
-test_quick: clean build
-	${PY} setup.py test
 
 test_all: test docker-pypy docker-pypy-slim docker-buster docker-alpine docker-ubuntu1804 docker-pypy-ubuntu1804
 

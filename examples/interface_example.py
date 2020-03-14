@@ -72,6 +72,6 @@ pprint(list(tile_map[13:20, 8:14]))
 #  [5, 10, 15, 1, 24, 30, 32]]
 
 # For unattended use, the screen buffer can be displayed using the following:
-screen_image = pyboy.get_screen_image()
+screen_image = pyboy.get_screen().get_screen_image()
 if not hide_window:
     screen_image.show()
