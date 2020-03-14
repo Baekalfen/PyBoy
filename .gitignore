@@ -136,3 +136,4 @@ bootrom/PYBOY_ROM.bin
 
 pyboy.tar.gz
 test.replay
+ci_secrets.tar

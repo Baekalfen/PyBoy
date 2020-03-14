@@ -1,0 +1,66 @@
+language: generic
+
+matrix:
+  include:
+    - os: linux
+      dist: bionic
+      env: pypy_version=pypy3.6-v7.3.0-linux64
+    - os: osx
+      osx_image: xcode11.3
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+      # Python and PyPy
+      - libsdl2-dev
+      - build-essential
+      # Python
+      - python3
+      - python3-pip
+      - python3-dev
+      - python3-setuptools
+      # PyPy
+      - libtiff5-dev
+      - libjpeg8-dev
+      - zlib1g-dev
+      - curl
+
+before_install:
+  - openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+  - tar xf ci_secrets.tar
+  # Python and PyPy
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install sdl2 zlib; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew unlink python@2; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then python3 -m pip install -U --force-reinstall pip; fi
+  # PyPy MacOS
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install pypy3; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"; fi
+  # PyPy Linux
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2" -C $HOME/; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$HOME/$pypy_version/bin:$PATH; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install cython; fi # Needed for building NumPy, but only on Travis
+  # PyPy MacOS and Linux
+  - pypy3 -m pip install wheel
+
+install: make build
+
+script: make test_ci
+
+deploy:
+  provider: pypi
+  user: "__token__"
+  password:
+    secure: GlvvLxqRvdheZoa13r/oG3BEqt/TD97g/YMj/SDBMG/YomyOJrFxhOzpj6ikLMmr0p4Z5TOpZHeu8hK5H2YpTUU++vj7gVQDp1CfQZVj6HA6pyyPUNuI216TOrV1ouT8khYuGKUleyIUsvHzmI/nK2d7vBOj2Cu2Ifghq21xjfI8pund9sw9T5jkDlPhFXPl7OtGvo5Dy+U4BVyzIH2hne6RvZom5DDPCDrxfzxeG1qqm5yjT3SnmrpYy+PdNoki+GrJ8M7Ns/S5OloyLBvaexxfgsRyTzB2++c+GBGdmhaqFZxlIJ8w1cMzFbdsuZHxbOAXoVLv6uXEEZARft+bepVKE+/0mBfX8W7boVxSXwfuj3hY6NWAVKWdn3zPNVteAln+KDzpi0rBtgZ3uFW6XYDxKtbPQ2TbHAxtFfKCO+lQiBdI4BZ19rguGwlLkN0vgyS1JxY6cMT0wY008EZWTf+MitgXmo5zEHULNGA2CnBcaii5T02Y8L8oeWnUH6bnnc+m0KS+Bv+6SGEM/yyOM/086Vz8xYfomxd2XijUnBiFXPFN8qey31NGfNRRNhw463og9kzPe8Na2IvQl2/dv+cy4JB42itHR+lQ2kia7dnBfcmvzt2UyRwQwiYqYKvxUQZJfL8cgfrNy/BbmT1vC/PNPdKWBbhB1I3pw9UrnYQ=
+  skip_existing: true
+  distributions: "sdist bdist_wheel"
+  on:
+    branch: master
+    tags: true
