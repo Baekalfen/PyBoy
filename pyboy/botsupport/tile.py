@@ -119,5 +119,5 @@ class Tile:
     def __eq__(self, other):
         return self.tile_identifier == other.tile_identifier
 
-    def __str__(self):
+    def __repr__(self):
         return f"Tile: {self.tile_identifier}"

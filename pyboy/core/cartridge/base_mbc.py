@@ -123,7 +123,7 @@ class BaseMBC:
         else:
             logger.error("Reading address invalid: %s" % address)
 
-    def __str__(self):
+    def __repr__(self):
         return "\n".join([
             "Cartridge:",
             "Filename: %s" % self.filename,

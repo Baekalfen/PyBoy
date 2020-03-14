@@ -81,6 +81,12 @@ def get_color_code(byte1, byte2, offset):
     """
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
+def flatten_list(l):
+    flat_list = []
+    for sublist in l:
+        for item in sublist:
+            flat_list.append(item)
+    return flat_list
 
 ##############################################################
 # Window Events

@@ -34,15 +34,13 @@ parser.add_argument('--profiling', action='store_true', help='Enable opcode prof
 parser.add_argument('--no-logger', action='store_true', help='Disable all logging (mostly for autonomous testing)')
 parser.add_argument('--color-palette', type=color_tuple, default=defaults["color_palette"], help=(
     'Four comma seperated, hexadecimal, RGB values for colors (i.e. "FFFFFF,999999,555555,000000")'))
-parser.add_argument('--window-color-format', type=str, help=(
-    'Four-letter order of red, green, blue and alpha. (internal use)'))
 parser.add_argument('-l', '--loadstate', nargs='?', default=None, const=INTERNAL_LOADSTATE, type=valid_file_path, help=(
     'Load state from file. If filepath is specified, it will load the given path. Otherwise, it will automatically '
     'locate a saved state next to the ROM file.'))
 parser.add_argument('-w', '--window-type', '--window', default=defaults["window_type"], type=str,
         choices=["SDL2", "OpenGL", "headless", "dummy"], help='Specify window-type to use')
-parser.add_argument('--disable-renderer', action='store_true', help='Disables screen rendering for higher performance')
 parser.add_argument('-s', '--scale', default=defaults["scale"], type=int, help='The scaling multiplier for the window')
+parser.add_argument('--disable-renderer', action='store_true', help='Disables screen rendering for higher performance')
 
 for arguments in get_parser_arguments():
     for a in arguments:

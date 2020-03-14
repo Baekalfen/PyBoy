@@ -69,3 +69,10 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
     def set_title(self, title):
         pass
+
+
+class PyBoyGameWrapper(PyBoyPlugin):
+    argv = [('--game-wrapper', {"action": 'store_true', "help": 'Enable game wrapper for the current game'})]
+
+    def enabled(self):
+        return self.pyboy_argv.get('game_wrapper') and self.pyboy.get_cartridge_title() == self.cartridge_title

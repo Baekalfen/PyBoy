@@ -33,3 +33,7 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
 
     cdef bint frame_limiter(self, int)
     cdef void set_title(self, str)
+
+cdef class PyBoyGameWrapper(PyBoyPlugin):
+    pass
+

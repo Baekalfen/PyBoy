@@ -7,7 +7,8 @@ import re
 # Plugins and priority!
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowHeadless", "WindowDummy", "Debug"]
-plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder"]
+plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "GameWrapperSuperMarioLand"]
+all_plugins = windows+plugins
 
 destination = "opcodes.py"
 
@@ -58,7 +59,7 @@ if __name__ == "__main__":
 
                 skip_lines(line_iter, '# plugins_enabled end')
 
-                for p in windows+plugins:
+                for p in all_plugins:
                     p_name = to_snake_case(p)
                     lines.append(f"self.{p_name} = {p}(pyboy, mb, pyboy_argv)\n")
                     lines.append(f"self.{p_name}_enabled = self.{p_name}.enabled()\n")
@@ -72,7 +73,7 @@ if __name__ == "__main__":
 
                 skip_lines(line_iter, '# yield_plugins end')
 
-                for p in windows+plugins:
+                for p in all_plugins:
                     p_name = to_snake_case(p)
                     lines.append(f"yield {p}.argv\n")
 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
 
                 skip_lines(line_iter, '# imports end')
 
-                for p in windows+plugins:
+                for p in all_plugins:
                     p_name = to_snake_case(p)
                     lines.append(f"from pyboy.plugins.{p_name} import {p} # isort:skip\n")
 
@@ -114,15 +115,11 @@ if __name__ == "__main__":
 
                 skip_lines(line_iter, '# plugin_cdef end')
 
-                for p in plugins:
+                for p in all_plugins:
                     p_name = to_snake_case(p)
                     lines.append(f"cdef public {p} {p_name}\n")
 
-                for p in windows:
-                    p_name = to_snake_case(p)
-                    lines.append(f"cdef public {p} {p_name}\n")
-
-                for p in windows+plugins:
+                for p in all_plugins:
                     p_name = to_snake_case(p)
                     lines.append(f"cdef bint {p_name}_enabled\n")
 
@@ -135,7 +132,7 @@ if __name__ == "__main__":
 
                 skip_lines(line_iter, '# imports end')
 
-                for p in windows+plugins:
+                for p in all_plugins:
                     p_name = to_snake_case(p)
                     lines.append(f"from pyboy.plugins.{p_name} cimport {p}\n")
 

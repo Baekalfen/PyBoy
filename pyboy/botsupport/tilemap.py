@@ -165,7 +165,7 @@ class TileMap:
         else:
             return tile
 
-    def __str__(self):
+    def __repr__(self):
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)

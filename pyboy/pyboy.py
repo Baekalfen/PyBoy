@@ -285,7 +285,7 @@ class PyBoy:
         """
         return botsupport.Sprite(self.mb, sprite_index)
 
-    def get_sprite_by_tile_identifier(self, tile_identifiers):
+    def get_sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
         """
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
@@ -302,6 +302,7 @@ class PyBoy:
 
         Args:
             identifiers (list): List of tile identifiers (int)
+            on_screen (bool): Require that the matched sprite is on screen
 
         Returns:
             list: list of sprite matches for every tile identifier in the input
@@ -313,7 +314,7 @@ class PyBoy:
             for s in range(botsupport.constants.SPRITES):
                 sprite = botsupport.sprite.Sprite(self.mb, s)
                 for t in sprite.tiles:
-                    if t.tile_identifier == i:
+                    if t.tile_identifier == i and sprite.on_screen:
                         match.append(s)
             matches.append(match)
         return matches

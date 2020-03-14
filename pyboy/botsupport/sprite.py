@@ -49,7 +49,7 @@ class Sprite:
     @property
     def y(self):
         """
-        The Y-coordinate on the screen to show the Sprite.
+        The Y-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.
 
         Returns:
             int: Y-coordinate
@@ -60,7 +60,7 @@ class Sprite:
     @property
     def x(self):
         """
-        The X-coordinate on the screen to show the Sprite.
+        The X-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.
 
         Returns:
             int: X-coordinate
@@ -149,7 +149,7 @@ class Sprite:
             list: A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
         """
         _, sprite_height = self.shape
-        if sprite_height:
+        if sprite_height == 16:
             return [Tile(self.mb, self.tile_identifier), Tile(self.mb, self.tile_identifier+1)]
         else:
             return [Tile(self.mb, self.tile_identifier)]
@@ -167,8 +167,7 @@ class Sprite:
             bool: True if the sprite has at least one pixel on screen.
         """
         _, sprite_height = self.shape
-        return (-sprite_height <= self.y < 144 and
-                -8 <= self.x < 160)
+        return (-sprite_height < self.y < 144 and -8 < self.x < 160)
 
     @property
     def shape(self):
@@ -180,13 +179,13 @@ class Sprite:
             (int, int): The width and height of the sprite.
         """
         LCDC = self._get_lcdc_register()
-        sprite_height = 16 if LCDC.sprite_height else 16
+        sprite_height = 16 if LCDC.sprite_height else 8
         return (8, sprite_height)
 
     def __eq__(self, other):
         return self._offset == other._offset
 
-    def __str__(self):
+    def __repr__(self):
         tiles = ', '.join([str(t) for t in self.tiles])
         return f"Sprite [{self.sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}"
 
