@@ -69,4 +69,4 @@ deploy:
   on:
     branch: master
     tags: true
-    condition: "$PYPY_TESTING" = ""
+    condition: $PYPY_TESTING = 0
