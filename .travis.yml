@@ -46,14 +46,14 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" && "$PYPY_TESTING" = 1 ]; then brew install pypy3 zlib; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" && "$PYPY_TESTING" = 1 ]; then export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"; fi
   # PyPy Linux
-  - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 && "$PYPY_TESTING" = 1 ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 ]; then tar -xvf "${pypy_version}.tar.bz2" -C $HOME/; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 ]; then export PATH=$HOME/$pypy_version/bin:$PATH; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 ]; then pypy3 -m ensurepip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 ]; then pypy3 -m pip install --upgrade pip; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" && "$PYPY_TESTING" = 1 ]; then pypy3 -m pip install cython; fi # Needed for building NumPy, but only on Travis
   # PyPy MacOS and Linux
-  - pypy3 -m pip install wheel
+  - if [ "$PYPY_TESTING" = 1 ]; then pypy3 -m pip install wheel; fi
 
 install: make build
 
