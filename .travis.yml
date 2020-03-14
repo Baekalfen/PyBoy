@@ -59,8 +59,8 @@ install:
   - if [ "$PYPY_TESTING" = "" ]; then make build; fi
 
 script:
-  - if [ "$PYPY_TESTING" = "" ]; then make test_cython; fi
-  - if [ "$PYPY_TESTING" = "1" ]; then make test_pypy; fi
+  - if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 make test_cython; fi
+  - if [ "$PYPY_TESTING" = "1" ]; then TEST_CI=1 make test_pypy; fi
 
 deploy:
   provider: pypi

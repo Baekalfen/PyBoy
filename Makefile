@@ -68,10 +68,10 @@ uninstall:
 
 test: clean build test_cython test_pypy
 
-test_cython: clean build
+test_cython:
 	${PY} setup.py test
 
-test_pypy: clean build
+test_pypy:
 	${PYPY} setup.py test
 
 test_all: test docker-pypy docker-pypy-slim docker-buster docker-alpine docker-ubuntu1804 docker-pypy-ubuntu1804
