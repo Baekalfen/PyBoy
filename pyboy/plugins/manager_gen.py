@@ -7,7 +7,7 @@ import re
 # Plugins and priority!
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowHeadless", "WindowDummy", "Debug"]
-plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "GameWrapperSuperMarioLand"]
+plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "GameWrapperSuperMarioLand", "GameWrapperTetris"]
 all_plugins = windows+plugins
 
 destination = "opcodes.py"

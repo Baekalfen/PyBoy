@@ -8,8 +8,8 @@ from pyboy.botsupport.sprite import Sprite
 from .base_plugin import PyBoyGameWrapper
 
 
-class GameWrapperSuperMarioLand(PyBoyGameWrapper):
-    cartridge_title = "SUPER MARIOLAN"
+class GameWrapperTetris(PyBoyGameWrapper):
+    cartridge_title = "TETRIS"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,13 +22,13 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         tiles_matrix = self.tiles_on_screen()
         sprites = self.sprites_on_screen()
         for s in sprites:
-            tiles_matrix[s.y//8-2][s.x//8] = s.tile_identifier
+            if s.x < 12*8:
+                tiles_matrix[s.y//8][s.x//8-2] = s.tile_identifier
         return tiles_matrix
 
     def tiles_on_screen(self):
         if self._tile_cache_invalid:
-            scroll_x = self.pyboy.get_screen().get_tilemap_position_list()[16, 0]
-            self._cached_tiles_on_screen = [[self.tilemap_background.get_tile_identifier(x%32, y) for x in range(scroll_x//8,scroll_x//8+20)] for y in range(2, 18)]
+            self._cached_tiles_on_screen = self.tilemap_background[2:12, 0:18]
             self._tile_cache_invalid = False
         return self._cached_tiles_on_screen
 
@@ -42,7 +42,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
         if not self.game_has_started:
-            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280]: # "MARIO" in the title bar
+            self.tilemap_background.refresh_lcdc()
+            if self.tilemap_background[14:19, 1] == [28, 12, 24, 27, 14]: # "SCORSCORE the title bar
                 self.game_has_started = True
             return 0
 
@@ -50,56 +51,41 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             print(self)
 
     @property
-    def world(self):
-        return self.tilemap_background[12, 1]-256, self.tilemap_background[14, 1]-256
-
-    @property
-    def coins(self):
-        return (self.tilemap_background[9, 1]-256)*10 + self.tilemap_background[10, 1]-256
-
-    @property
-    def lives_left(self):
-        return (self.tilemap_background[6, 0]-256)*10 + self.tilemap_background[7, 0]-256
-
-    @property
     def score(self):
-        blank = 300
-        return sum([0 if x==blank else (x-256)*(10**(5-i)) for i, x in enumerate(self.tilemap_background[0:6, 1])])
+        blank = 47
+        return sum([0 if x==blank else x*(10**(5-i)) for i, x in enumerate(self.tilemap_background[13:19, 3])])
 
     @property
-    def time_left(self):
-        blank = 300
-        return sum([0 if x==blank else (x-256)*(10**(2-i)) for i, x in enumerate(self.tilemap_background[17:20, 1])])
+    def level(self):
+        blank = 47
+        return sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 7])])
 
     @property
-    def level_progress(self):
-        level_block = self.pyboy.get_memory_value(0xC0AB)
-        mario_x = self.pyboy.get_memory_value(0xC202)
-        scx = self.pyboy.get_screen().get_tilemap_position_list()[16, 0]
-        return level_block*16 + (scx-7)%16 + mario_x
+    def lines(self):
+        blank = 47
+        return sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 10])])
 
     @property
     def fitness(self):
         if self.game_has_started:
-            end_score = self.score + self.time_left*10
-            return self.lives_left*10000 + end_score + self.level_progress*10
+            return self.score
+        else:
+            return 0
 
     def __repr__(self):
         adjust = 4
         return_data = (
-                f"Super Mario Land: World {'-'.join([str(i) for i in self.world])}\n" +
-                f"Coins: {self.coins}\n" +
-                f"lives_left: {self.lives_left}\n" +
+                f"Tetris:\n" +
                 f"Score: {self.score}\n" +
-                f"Time left: {self.time_left}\n" +
-                f"Level progress: {self.level_progress}\n" +
+                f"Level: {self.level}\n" +
+                f"Lines: {self.lines}\n" +
                 f"Fitness: {self.fitness}\n" +
                 "Sprites on screen:\n" +
                 "\n".join([str(s) for s in self.sprites_on_screen()]) +
                 "\n" +
                 "Tiles on screen:\n" +
-                " "*5 + "".join([f"{i: <4}" for i in range(20)]) + "\n" +
-                "_"*(adjust*20+4) +
+                " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
+                "_"*(adjust*10+4) +
                 "\n" +
                 "\n".join(
                     [

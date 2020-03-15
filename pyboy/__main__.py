@@ -45,7 +45,8 @@ parser.add_argument('--disable-renderer', action='store_true', help='Disables sc
 for arguments in get_parser_arguments():
     for a in arguments:
         *args, kwargs = a
-        parser.add_argument(*args, **kwargs)
+        if args[0] not in parser._option_string_actions:
+            parser.add_argument(*args, **kwargs)
 
 
 def main():

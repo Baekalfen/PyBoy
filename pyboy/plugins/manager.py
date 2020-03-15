@@ -15,6 +15,7 @@ from pyboy.plugins.record_replay import RecordReplay # isort:skip
 from pyboy.plugins.rewind import Rewind # isort:skip
 from pyboy.plugins.screen_recorder import ScreenRecorder # isort:skip
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # isort:skip
+from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 # imports end
 
 
@@ -31,6 +32,7 @@ def get_parser_arguments():
     yield Rewind.argv
     yield ScreenRecorder.argv
     yield GameWrapperSuperMarioLand.argv
+    yield GameWrapperTetris.argv
     # yield_plugins end
     pass
 
@@ -62,6 +64,8 @@ class PluginManager:
         self.screen_recorder_enabled = self.screen_recorder.enabled()
         self.game_wrapper_super_mario_land = GameWrapperSuperMarioLand(pyboy, mb, pyboy_argv)
         self.game_wrapper_super_mario_land_enabled = self.game_wrapper_super_mario_land.enabled()
+        self.game_wrapper_tetris = GameWrapperTetris(pyboy, mb, pyboy_argv)
+        self.game_wrapper_tetris_enabled = self.game_wrapper_tetris.enabled()
         # plugins_enabled end
 
     def handle_events(self, events):
@@ -90,6 +94,8 @@ class PluginManager:
             events = self.screen_recorder.handle_events(events)
         if self.game_wrapper_super_mario_land_enabled:
             events = self.game_wrapper_super_mario_land.handle_events(events)
+        if self.game_wrapper_tetris_enabled:
+            events = self.game_wrapper_tetris.handle_events(events)
         # foreach end
         return events
 
@@ -107,6 +113,8 @@ class PluginManager:
             self.screen_recorder.post_tick()
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.post_tick()
+        if self.game_wrapper_tetris_enabled:
+            self.game_wrapper_tetris.post_tick()
         # foreach end
 
         self._post_tick_windows()
@@ -190,6 +198,8 @@ class PluginManager:
             title = self.screen_recorder.window_title()
         if self.game_wrapper_super_mario_land_enabled:
             title = self.game_wrapper_super_mario_land.window_title()
+        if self.game_wrapper_tetris_enabled:
+            title = self.game_wrapper_tetris.window_title()
         # foreach end
         return title
 
@@ -219,5 +229,7 @@ class PluginManager:
             self.screen_recorder.stop()
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.stop()
+        if self.game_wrapper_tetris_enabled:
+            self.game_wrapper_tetris.stop()
         # foreach end
         pass

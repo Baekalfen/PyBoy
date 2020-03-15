@@ -249,6 +249,7 @@ class TileViewWindow(BaseDebugWindow):
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
                     tile_identifier = self.tilemap.get_tile_identifier(tile_x, tile_y)
+                    logger.info(f"Tile clicked on {tile_x}, {tile_y}")
                     marked_tiles.add(
                         MarkedTile(
                             tile_identifier=tile_identifier,
