@@ -7,7 +7,6 @@
 from array import array
 from ctypes import c_void_p
 
-from pyboy.logger import logger
 from pyboy.utils import get_color_code
 
 VIDEO_RAM = 8 * 1024 # 8KB
@@ -138,14 +137,10 @@ class Renderer:
         self._spritecache1_raw = array('B', [0xFF] * (TILES*8*8*4))
 
         if cythonmode:
-            self._screenbuffer = memoryview(
-                self._screenbuffer_raw).cast('I', shape=(ROWS, COLS))
-            self._tilecache = memoryview(
-                self._tilecache_raw).cast('I', shape=(TILES*8, 8))
-            self._spritecache0 = memoryview(
-                self._spritecache0_raw).cast('I', shape=(TILES*8, 8))
-            self._spritecache1 = memoryview(
-                self._spritecache1_raw).cast('I', shape=(TILES*8, 8))
+            self._screenbuffer = memoryview(self._screenbuffer_raw).cast('I', shape=(ROWS, COLS))
+            self._tilecache = memoryview(self._tilecache_raw).cast('I', shape=(TILES*8, 8))
+            self._spritecache0 = memoryview(self._spritecache0_raw).cast('I', shape=(TILES*8, 8))
+            self._spritecache1 = memoryview(self._spritecache1_raw).cast('I', shape=(TILES*8, 8))
         else:
             v = memoryview(self._screenbuffer_raw).cast('I')
             self._screenbuffer = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]

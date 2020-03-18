@@ -2,7 +2,11 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
+from cpython.array cimport array
+from libc.stdint cimport uint8_t, uint32_t
 cimport cython
+from pyboy.botsupport.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
 from pyboy.core.lcd cimport Renderer
 from pyboy.utils cimport WindowEvent
@@ -34,6 +38,19 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
     cdef bint frame_limiter(self, int)
     cdef void set_title(self, str)
 
-cdef class PyBoyGameWrapper(PyBoyPlugin):
-    pass
 
+cdef class PyBoyGameWrapper(PyBoyPlugin):
+    cdef bint game_has_started
+    cdef TileMap tilemap_background
+
+    cdef bint _tile_cache_invalid
+    cdef array _cached_tiles_on_screen_raw
+    cdef uint32_t[:,:] _cached_tiles_on_screen
+    cpdef uint32_t[:,:] screen_matrix(self)
+    cpdef uint32_t[:,:] tiles_on_screen(self)
+
+    cdef bint _sprite_cache_invalid
+    cdef list _cached_sprites_on_screen
+    cpdef list sprites_on_screen(self)
+
+    cpdef void post_tick(self)

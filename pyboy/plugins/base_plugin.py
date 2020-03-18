@@ -2,6 +2,8 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
+from pyboy.botsupport.sprite import Sprite
 from pyboy.logger import logger
 
 try:
@@ -74,5 +76,31 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 class PyBoyGameWrapper(PyBoyPlugin):
     argv = [('--game-wrapper', {"action": 'store_true', "help": 'Enable game wrapper for the current game'})]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tilemap_background = self.pyboy.get_tilemap_background()
+        self.game_has_started = False
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
     def enabled(self):
         return self.pyboy_argv.get('game_wrapper') and self.pyboy.get_cartridge_title() == self.cartridge_title
+
+    def screen_matrix(self):
+        raise NotImplementedError("screen_matrix not implemented in game wrapper")
+
+    def tiles_on_screen(self):
+        raise NotImplementedError("tiles_on_screen not implemented in game wrapper")
+
+    def sprites_on_screen(self):
+        if self._sprite_cache_invalid:
+            self._cached_sprites_on_screen = []
+            for s in range(40):
+                sprite = Sprite(self.mb, s)
+                if sprite.on_screen:
+                    self._cached_sprites_on_screen.append(sprite)
+            self._sprite_cache_invalid = False
+        return self._cached_sprites_on_screen
+
+    def post_tick(self):
+        raise NotImplementedError("post_tick not implemented in game wrapper")

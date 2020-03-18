@@ -3,20 +3,40 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.botsupport.sprite import Sprite
+from array import array
+
+import numpy as np
 
 from .base_plugin import PyBoyGameWrapper
 
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
 
 class GameWrapperTetris(PyBoyGameWrapper):
     cartridge_title = "TETRIS"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.get_tilemap_background()
-        self.game_has_started = False
-        self._tile_cache_invalid = True
-        self._sprite_cache_invalid = True
+
+        self.score = 0
+        self.level = 0
+        self.lines = 0
+        self.fitness = 0
+
+        ROWS, COLS = 10, 18
+        self._cached_tiles_on_screen_raw = array('B', [0xFF] * (ROWS*COLS*4))
+
+        if cythonmode:
+            self._cached_tiles_on_screen = memoryview(self._cached_tiles_on_screen_raw).cast('I', shape=(ROWS, COLS))
+        else:
+            v = memoryview(self._cached_tiles_on_screen_raw).cast('I')
+            self._cached_tiles_on_screen = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
+
+    def screen_matrix_np(self):
+        return np.asarray(self.screen_matrix())
 
     def screen_matrix(self):
         tiles_matrix = self.tiles_on_screen()
@@ -28,49 +48,28 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
     def tiles_on_screen(self):
         if self._tile_cache_invalid:
-            self._cached_tiles_on_screen = self.tilemap_background[2:12, 0:18]
+            self._cached_tiles_on_screen = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
             self._tile_cache_invalid = False
         return self._cached_tiles_on_screen
-
-    def sprites_on_screen(self):
-        if self._sprite_cache_invalid:
-            self._cached_sprites_on_screen = [sprite for sprite in (Sprite(self.mb, s) for s in range(40)) if sprite.on_screen]
-            self._sprite_cache_invalid = False
-        return self._cached_sprites_on_screen
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
         if not self.game_has_started:
             self.tilemap_background.refresh_lcdc()
-            if self.tilemap_background[14:19, 1] == [28, 12, 24, 27, 14]: # "SCORSCORE the title bar
+            if self.tilemap_background[14:19, 1] == [28, 12, 24, 27, 14]: # "SCORE" the title bar
                 self.game_has_started = True
-            return 0
 
         if self.game_has_started:
             print(self)
 
-    @property
-    def score(self):
         blank = 47
-        return sum([0 if x==blank else x*(10**(5-i)) for i, x in enumerate(self.tilemap_background[13:19, 3])])
+        self.score = sum([0 if x==blank else x*(10**(5-i)) for i, x in enumerate(self.tilemap_background[13:19, 3])])
+        self.level = sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 7])])
+        self.lines = sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 10])])
 
-    @property
-    def level(self):
-        blank = 47
-        return sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 7])])
-
-    @property
-    def lines(self):
-        blank = 47
-        return sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 10])])
-
-    @property
-    def fitness(self):
         if self.game_has_started:
-            return self.score
-        else:
-            return 0
+            self.fitness = self.score
 
     def __repr__(self):
         adjust = 4
@@ -90,7 +89,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 "\n".join(
                     [
                         f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self.screen_matrix())
+                        for i, line in enumerate(self.screen_matrix_np())
                     ]
                 )
             )
