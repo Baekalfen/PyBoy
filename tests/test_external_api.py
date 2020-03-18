@@ -10,7 +10,7 @@ import os
 import numpy as np
 import PIL
 import pytest
-from pyboy import PyBoy, WindowEvent, botsupport
+from pyboy import PyBoy, WindowEvent
 
 from .utils import boot_rom, supermarioland_rom, tetris_rom
 
@@ -230,10 +230,10 @@ def test_tetris():
 
                 # Verify data with known reference
                 assert all_sprites == (
-                    [(-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
+                    [(-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
                      (72, 128, 130, True),
                      (80, 128, 130, True),
                      (80, 136, 130, True),
@@ -242,34 +242,34 @@ def test_tetris():
                      (128, 112, 133, True),
                      (136, 112, 133, True),
                      (128, 120, 133, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True),
-                     (-8, -16, 0, True)]
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False),
+                     (-8, -16, 0, False)]
                     )
 
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
