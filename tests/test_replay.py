@@ -37,7 +37,7 @@ def verify_screen_image_np(pyboy, saved_array):
     assert match
 
 
-def verify_rom_hash(rom_file, b64_target_hash):
+def verify_file_hash(rom_file, b64_target_hash):
     with open(rom_file, 'rb') as f:
         m = hashlib.sha256()
         m.update(f.read())
@@ -47,7 +47,7 @@ def verify_rom_hash(rom_file, b64_target_hash):
 
 def move_gif(game, dest):
     record_dir = 'recordings'
-    for _ in range(5):
+    for _ in range(10):
         try:
             gif = sorted(filter(lambda x: game in x, os.listdir(record_dir)))[-1]
             os.replace(record_dir + '/' + gif, dest)
@@ -59,11 +59,11 @@ def move_gif(game, dest):
 
 
 def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_destination=None, rewind=False,
-        bootrom_file=utils.boot_rom, overwrite=RESET_REPLAYS):
+        bootrom_file=utils.boot_rom, overwrite=RESET_REPLAYS, gif_hash=None):
     with open(replay, 'rb') as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode('ascii'))
 
-    verify_rom_hash(ROM, b64_romhash)
+    verify_file_hash(ROM, b64_romhash)
     state_data = io.BytesIO(base64.b64decode(b64_state.encode('utf8'))) if b64_state is not None else None
 
     pyboy = PyBoy(ROM, window_type=window, bootrom_file=bootrom_file, disable_input=True, rewind=rewind,
@@ -115,6 +115,8 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
 
     if gif_destination:
         move_gif(pyboy.get_cartridge_title(), gif_destination)
+        if gif_hash is not None and not overwrite:
+            verify_file_hash(gif_destination, gif_hash)
 
     if overwrite:
         with open(replay, 'wb') as f:
@@ -129,12 +131,14 @@ def test_pokemon():
 
 def test_pokemon_gif1():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif1.replay", record_gif=(1, 2714),
-           gif_destination="README/1.gif")
+           gif_destination="README/1.gif",
+           gif_hash="IlT5ixD6Fw2A4gzd+PaA1l9wXs2JkpkzA0JBj9DSU08=")
 
 
 def test_pokemon_gif2():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue_gif2.replay", record_gif=(0, 180),
-           gif_destination="README/2.gif")
+           gif_destination="README/2.gif",
+           gif_hash="wMaLgnVQO/S+VJH96FeHyv9evQEo08qi5i6zZhNm/qo=")
 
 
 def test_tetris():
@@ -143,7 +147,8 @@ def test_tetris():
 
 def test_supermarioland_gif():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_gif.replay", record_gif=(122, 644),
-           gif_destination="README/3.gif")
+            gif_destination="README/3.gif",
+            gif_hash="15aVUmwtTq38E3SB91moQLYSTZVWuTNTUmzYVSgTg38=")
 
 
 def test_supermarioland():
@@ -151,9 +156,11 @@ def test_supermarioland():
 
 
 def test_kirby():
-    replay(utils.kirby_rom, "tests/replays/kirby_gif.replay", record_gif=(0, 360), gif_destination="README/4.gif")
+    replay(utils.kirby_rom, "tests/replays/kirby_gif.replay", record_gif=(0, 360), gif_destination="README/4.gif",
+           gif_hash="8f2Ambx4mzaaT5Obyb5/3NszEdGkUObHo9J0rR1AJUc=")
 
 
 def test_rewind():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland_rewind.replay", record_gif=(130, 544),
-           gif_destination="README/5.gif", rewind=True, bootrom_file=None, verify=False)
+           gif_destination="README/5.gif", rewind=True, bootrom_file=None, verify=False,
+           gif_hash="EoISd0SrD8clVa/KtNKX+NDOM3uG4yq0bTtbIMssOX0=")
