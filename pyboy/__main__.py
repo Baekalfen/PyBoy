@@ -8,7 +8,7 @@ import argparse
 import os
 
 from pyboy import PyBoy, core
-from pyboy.logger import addconsolehandler
+from pyboy.logger import log_level
 from pyboy.plugins.manager import get_parser_arguments
 from pyboy.pyboy import defaults
 
@@ -31,7 +31,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('ROM', type=valid_file_path, help='Path to a Game Boy compatible ROM file')
 parser.add_argument('-b', '--bootrom', type=valid_file_path, help='Path to a boot-ROM file')
 parser.add_argument('--profiling', action='store_true', help='Enable opcode profiling (internal use)')
-parser.add_argument('--no-logger', action='store_true', help='Disable all logging (mostly for autonomous testing)')
+parser.add_argument('--log-level', default=defaults["window_type"], type=str,
+        choices=["ERROR", "WARNING", "INFO", "DEBUG", "DISABLE"], help='Set logging level')
 parser.add_argument('--color-palette', type=color_tuple, default=defaults["color_palette"], help=(
     'Four comma seperated, hexadecimal, RGB values for colors (i.e. "FFFFFF,999999,555555,000000")'))
 parser.add_argument('-l', '--loadstate', nargs='?', default=None, const=INTERNAL_LOADSTATE, type=valid_file_path, help=(
@@ -51,8 +52,7 @@ for arguments in get_parser_arguments():
 
 def main():
     argv = parser.parse_args()
-    if not argv.no_logger:
-        addconsolehandler()
+    log_level(argv.log_level)
 
     # Start PyBoy and run loop
     pyboy = PyBoy(argv.ROM, **vars(argv))
