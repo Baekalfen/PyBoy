@@ -66,10 +66,10 @@ class ScreenRecorder(PyBoyPlugin):
             path = os.path.join(directory, time.strftime(f"{self.gamename}-%Y.%m.%d-%H.%M.%S.gif"))
 
         if len(self.frames) > 0:
-            self.frames[0].save(path, save_all=True, interlace=False,
-                                loop=0, optimize=True,
-                                append_images=self.frames[1:],
-                                duration=int(round(1000 / fps, -1)))
+            self.frames[0].save(
+                path, save_all=True, interlace=False, loop=0, optimize=True, append_images=self.frames[1:],
+                duration=int(round(1000 / fps, -1))
+            )
 
             logger.info("Screen recording saved in {}".format(path))
         else:

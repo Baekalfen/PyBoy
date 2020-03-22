@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import sys
 import time
 import zlib
 
@@ -115,7 +116,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
 
     if gif_destination:
         move_gif(pyboy.get_cartridge_title(), gif_destination)
-        if gif_hash is not None and not overwrite:
+        if gif_hash is not None and not overwrite and sys.platform == "darwin":
             verify_file_hash(gif_destination, gif_hash)
 
     if overwrite:
