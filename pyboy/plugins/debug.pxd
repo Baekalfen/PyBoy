@@ -6,6 +6,7 @@ cimport cython
 from cpython.array cimport array
 
 cimport sdl2
+cimport pyboy.plugins.window_sdl2
 from pyboy.core.mb cimport Motherboard
 from pyboy.botsupport.sprite cimport Sprite
 from pyboy.botsupport.tilemap cimport TileMap
@@ -37,6 +38,7 @@ cdef class Debug(PyBoyWindowPlugin):
     cdef SpriteViewWindow spriteview
     cdef SpriteWindow sprite
     cdef TileDataWindow tiledata
+    cdef bint sdl2_event_pump
 
 
 cdef class BaseDebugWindow(PyBoyWindowPlugin):

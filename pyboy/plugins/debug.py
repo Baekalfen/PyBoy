@@ -11,6 +11,7 @@ from pyboy.botsupport import constants, tilemap  # , tile
 from pyboy.botsupport.sprite import Sprite
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
 
 try:
@@ -61,7 +62,10 @@ class Debug(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
+
+        self.sdl2_event_pump = self.pyboy_argv.get('window_type') != 'SDL2'
+        if self.sdl2_event_pump:
+            sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
 
         # self.scale = 2
         window_pos = 0
@@ -86,6 +90,7 @@ class Debug(PyBoyWindowPlugin):
         self.tiledata = TileDataWindow(pyboy, mb, pyboy_argv, scale=3, title="Tile Data", width=tile_data_width,
                 height=tile_data_height, pos_x=window_pos, pos_y=0)
 
+
     def post_tick(self):
         self.tile1.post_tick()
         self.tile2.post_tick()
@@ -94,6 +99,8 @@ class Debug(PyBoyWindowPlugin):
         self.spriteview.post_tick()
 
     def handle_events(self, events):
+        if self.sdl2_event_pump:
+            events = sdl2_event_pump(events)
         events = self.tile1.handle_events(events)
         events = self.tile2.handle_events(events)
         events = self.tiledata.handle_events(events)
@@ -102,8 +109,8 @@ class Debug(PyBoyWindowPlugin):
         return events
 
     def stop(self):
-        # sdl2.SDL_DestroyWindow(self._window)
-        sdl2.SDL_Quit()
+        if self.sdl2_event_pump:
+            sdl2.SDL_Quit()
 
     def enabled(self):
         return self.pyboy_argv.get('debug')

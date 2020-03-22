@@ -16,9 +16,7 @@ try:
 except ImportError:
     Image = None
 
-
 FPS = 60
-
 
 class ScreenRecorder(PyBoyPlugin):
     def __init__(self, *args):
@@ -27,9 +25,6 @@ class ScreenRecorder(PyBoyPlugin):
         self.gamename = self.pyboy.get_cartridge_title()
         self.recording = False
         self.frames = []
-
-        if not Image:
-            logger.warning("ScreenRecorder: Dependency \"Pillow\" could not be imported. Screen recording is disabled.")
 
     def handle_events(self, events):
         for event in events:
@@ -48,15 +43,10 @@ class ScreenRecorder(PyBoyPlugin):
             self.add_frame(self.pyboy.get_screen().get_screen_image())
 
     def add_frame(self, frame):
-        if Image:
-            # Pillow makes artifacts in the output, if we use 'RGB', which is PyBoy's default format
-            self.frames.append(frame.convert('RGBA'))
+        # Pillow makes artifacts in the output, if we use 'RGB', which is PyBoy's default format
+        self.frames.append(frame.convert('RGBA'))
 
     def save(self, path=None, fps=60):
-        if not Image:
-            logger.warning("ScreenRecorder: No recording to save. Missing dependency \"Pillow\".")
-            return
-
         logger.info("ScreenRecorder saving...")
 
         if path is None:
@@ -75,3 +65,9 @@ class ScreenRecorder(PyBoyPlugin):
         else:
             logger.error("Screen recording failed: no frames")
         self.frames = []
+
+    def enabled(self):
+        if Image is None:
+            logger.warning(f"{__name__}: Missing dependency \"Pillow\". Recording disabled")
+            return False
+        return True

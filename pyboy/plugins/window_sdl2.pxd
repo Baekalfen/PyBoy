@@ -17,6 +17,8 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef int ROWS, COLS
 
+cpdef list sdl2_event_pump(list)
+
 
 cdef class WindowSDL2(PyBoyWindowPlugin):
 

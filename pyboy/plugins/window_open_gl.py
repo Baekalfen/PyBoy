@@ -4,23 +4,22 @@
 #
 
 import numpy as np
-import OpenGL.GLUT.freeglut
-from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
-                       glDrawPixels, glFlush, glPixelZoom)
-# from OpenGL.GLU import *
-from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
-                         glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
-                         glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc,
-                         glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent
 
 try:
-    from PIL import Image
+    import OpenGL.GLUT.freeglut
+    from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
+                           glDrawPixels, glFlush, glPixelZoom)
+    # from OpenGL.GLU import *
+    from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
+                             glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
+                             glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc,
+                             glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
+    opengl_enabled = True
 except ImportError:
-    Image = None
-
+    opengl_enabled = False
 
 ROWS, COLS = 144, 160
 
@@ -133,7 +132,12 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glFlush()
 
     def enabled(self):
-        return self.pyboy_argv.get('window_type') == 'OpenGL'
+        if self.pyboy_argv.get('window_type') == 'OpenGL':
+            if opengl_enabled:
+                return True
+            else:
+                logger.error("Missing depencency \"PyOpenGL\". OpenGL window disabled")
+        return False
 
     def post_tick(self):
         self._gldraw()

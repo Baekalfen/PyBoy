@@ -50,6 +50,40 @@ KEY_UP = {
     sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
 }
 
+def sdl2_event_pump(events):
+    # Feed events into the loop
+    for event in sdl2.ext.get_events():
+        if event.type == sdl2.SDL_QUIT:
+            events.append(WindowEvent(WindowEvent.QUIT))
+        elif event.type == sdl2.SDL_KEYDOWN:
+            events.append(WindowEvent(KEY_DOWN.get(event.key.keysym.sym, WindowEvent.PASS)))
+        elif event.type == sdl2.SDL_KEYUP:
+            events.append(WindowEvent(KEY_UP.get(event.key.keysym.sym, WindowEvent.PASS)))
+        elif event.type == sdl2.SDL_WINDOWEVENT:
+            if event.window.windowID == 1:
+                if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
+                    events.append(WindowEvent(WindowEvent.WINDOW_UNFOCUS))
+                elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
+                    events.append(WindowEvent(WindowEvent.WINDOW_FOCUS))
+        elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
+            mouse_button = -1
+            if event.type == sdl2.SDL_MOUSEBUTTONUP:
+                if event.button.button == sdl2.SDL_BUTTON_LEFT:
+                    mouse_button = 0
+                elif event.button.button == sdl2.SDL_BUTTON_RIGHT:
+                    mouse_button = 1
+
+            events.append(
+                WindowEventMouse(
+                    WindowEvent._INTERNAL_MOUSE,
+                    window_id=event.motion.windowID,
+                    mouse_x=event.motion.x,
+                    mouse_y=event.motion.y,
+                    mouse_button=mouse_button
+                )
+            )
+    return events
+
 
 class WindowSDL2(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv):
@@ -81,38 +115,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
     def handle_events(self, events):
-        # Feed events into the loop
-        for event in sdl2.ext.get_events():
-            if event.type == sdl2.SDL_QUIT:
-                events.append(WindowEvent(WindowEvent.QUIT))
-            elif event.type == sdl2.SDL_KEYDOWN:
-                events.append(WindowEvent(KEY_DOWN.get(event.key.keysym.sym, WindowEvent.PASS)))
-            elif event.type == sdl2.SDL_KEYUP:
-                events.append(WindowEvent(KEY_UP.get(event.key.keysym.sym, WindowEvent.PASS)))
-            elif event.type == sdl2.SDL_WINDOWEVENT:
-                if event.window.windowID == 1:
-                    if event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST:
-                        events.append(WindowEvent(WindowEvent.WINDOW_UNFOCUS))
-                    elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
-                        events.append(WindowEvent(WindowEvent.WINDOW_FOCUS))
-            elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
-                mouse_button = -1
-                if event.type == sdl2.SDL_MOUSEBUTTONUP:
-                    if event.button.button == sdl2.SDL_BUTTON_LEFT:
-                        mouse_button = 0
-                    elif event.button.button == sdl2.SDL_BUTTON_RIGHT:
-                        mouse_button = 1
-
-                events.append(
-                    WindowEventMouse(
-                        WindowEvent._INTERNAL_MOUSE,
-                        window_id=event.motion.windowID,
-                        mouse_x=event.motion.x,
-                        mouse_y=event.motion.y,
-                        mouse_button=mouse_button
-                    )
-                )
-        return events
+        return sdl2_event_pump(events)
 
     def post_tick(self):
         self._update_display()

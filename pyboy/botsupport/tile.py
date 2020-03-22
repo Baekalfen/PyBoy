@@ -9,10 +9,15 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 """
 
 import numpy as np
-from PIL import Image
+from pyboy.logger import logger
 from pyboy.utils import get_color_code
 
 from .constants import LOW_TILEDATA, VRAM_OFFSET
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 
 class Tile:
@@ -69,6 +74,9 @@ class Tile:
         Returns:
             PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
         """
+        if Image is None:
+            logger.error(f"{__name__}: Missing dependency \"Pillow\".")
+            return None
         return Image.frombytes('RGBA', (8, 8), bytes(self.image_data()))
 
     def image_ndarray(self):
