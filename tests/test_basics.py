@@ -82,7 +82,7 @@ def test_argv_parser(*args):
     empty = parser.parse_args(file_that_exists.split(' ')).__dict__
     for k, v in {
             "ROM": file_that_exists, "autopause": False, "bootrom": None, "debug": False, "loadstate": None,
-            "no_input": False, "no_logger": False, "profiling": False, "record_input": False, "rewind": False,
+            "no_input": False, "log_level": 'INFO', "profiling": False, "record_input": False, "rewind": False,
             "scale": 3, "window_type": 'SDL2'
             }.items():
         assert empty[k] == v
@@ -96,9 +96,9 @@ def test_argv_parser(*args):
 
     # Check flags become True
     flags = parser.parse_args(
-        f'{file_that_exists} --debug --autopause --profiling --rewind --no-input --no-logger'.split(' ')
+        f'{file_that_exists} --debug --autopause --profiling --rewind --no-input --log-level INFO'.split(' ')
     ).__dict__
-    for k, v in {"autopause": True, "debug": True, "no_input": True, "no_logger": True, "profiling": True,
+    for k, v in {"autopause": True, "debug": True, "no_input": True, "log_level": 'INFO', "profiling": True,
             "rewind": True}.items():
         assert flags[k] == v
 

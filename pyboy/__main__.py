@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('ROM', type=valid_file_path, help='Path to a Game Boy compatible ROM file')
 parser.add_argument('-b', '--bootrom', type=valid_file_path, help='Path to a boot-ROM file')
 parser.add_argument('--profiling', action='store_true', help='Enable opcode profiling (internal use)')
-parser.add_argument('--log-level', default=defaults["window_type"], type=str,
+parser.add_argument('--log-level', default='INFO', type=str,
         choices=["ERROR", "WARNING", "INFO", "DEBUG", "DISABLE"], help='Set logging level')
 parser.add_argument('--color-palette', type=color_tuple, default=defaults["color_palette"], help=(
     'Four comma seperated, hexadecimal, RGB values for colors (i.e. "FFFFFF,999999,555555,000000")'))
