@@ -3,15 +3,17 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
 from array import array
-
-from pyboy.logger import logger
 
 from .base_mbc import ROMOnly
 from .mbc1 import MBC1
 from .mbc2 import MBC2
 from .mbc3 import MBC3
 from .mbc5 import MBC5
+
+logger = logging.getLogger(__name__)
+
 
 try:
     from cython import compiled

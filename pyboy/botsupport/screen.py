@@ -7,10 +7,14 @@
 This class gives access to the frame buffer and other screen parameters of PyBoy.
 """
 
+import logging
+
 import numpy as np
-from pyboy.logger import logger
 
 from .constants import COLS, ROWS
+
+logger = logging.getLogger(__name__)
+
 
 try:
     from PIL import Image

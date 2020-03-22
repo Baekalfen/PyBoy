@@ -24,7 +24,7 @@ def addconsolehandler():
         ch.setLevel(log_level)
 
         # create formatter
-        formatter = logging.Formatter('%(relativeCreated)-8d %(levelname)-8s %(message)s')
+        formatter = logging.Formatter('%(relativeCreated)-8d %(name)-30s %(levelname)-8s %(message)s')
 
         # add formatter to ch
         ch.setFormatter(formatter)

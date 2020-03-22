@@ -3,9 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.logger import logger
+import logging
 
 from .base_mbc import BaseMBC
+
+logger = logging.getLogger(__name__)
+
 
 
 class MBC1(BaseMBC):

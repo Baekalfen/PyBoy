@@ -8,7 +8,7 @@ import argparse
 import os
 
 from pyboy import PyBoy, core
-from pyboy.logger import addconsolehandler, logger
+from pyboy.logger import addconsolehandler
 from pyboy.plugins.manager import get_parser_arguments
 from pyboy.pyboy import defaults
 
@@ -51,9 +51,7 @@ for arguments in get_parser_arguments():
 
 def main():
     argv = parser.parse_args()
-    if argv.no_logger:
-        logger.disabled = True
-    else:
+    if not argv.no_logger:
         addconsolehandler()
 
     # Start PyBoy and run loop

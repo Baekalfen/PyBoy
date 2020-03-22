@@ -3,12 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 
 
+import logging
 import os
 import struct
 import time
 
-from pyboy.logger import logger
 from pyboy.utils import STATE_VERSION, IntIOWrapper
+
+logger = logging.getLogger(__name__)
 
 
 class RTC:

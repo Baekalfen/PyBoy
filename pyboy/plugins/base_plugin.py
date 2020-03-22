@@ -3,8 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
+
 from pyboy.botsupport.sprite import Sprite
-from pyboy.logger import logger
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled

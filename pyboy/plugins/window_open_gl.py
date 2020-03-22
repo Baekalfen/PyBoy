@@ -3,10 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
+
 import numpy as np
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent
+
+logger = logging.getLogger(__name__)
 
 try:
     import OpenGL.GLUT.freeglut

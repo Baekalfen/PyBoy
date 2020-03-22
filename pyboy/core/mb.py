@@ -3,10 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.logger import logger
+import logging
+
 from pyboy.utils import STATE_VERSION
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
+
+logger = logging.getLogger(__name__)
+
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
