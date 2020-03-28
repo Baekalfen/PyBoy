@@ -30,15 +30,13 @@
 __pdoc__ = {
    &#39;core&#39;: False,
    &#39;logger&#39;: False,
-   &#39;plugins&#39;: False,
    &#39;pyboy&#39;: False,
    &#39;utils&#39;: False,
-   &#39;botsupport.constants&#39;: False,
 }
-__all__ = [&#39;PyBoy&#39;, &#39;botsupport&#39;, &#39;WindowEvent&#39;]
+__all__ = [&#39;PyBoy&#39;, &#39;WindowEvent&#39;]
 
-from .utils import WindowEvent
-from .pyboy import PyBoy</code></pre>
+from .pyboy import PyBoy
+from .utils import WindowEvent</code></pre>
 </details>
 </section>
 <section>
@@ -47,6 +45,10 @@ from .pyboy import PyBoy</code></pre>
 <dt><code class="name"><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code></dt>
 <dd>
 <section class="desc"><p>Tools to help interfacing with the Game Boy hardware</p></section>
+</dd>
+<dt><code class="name"><a title="pyboy.plugins" href="plugins/index.html">pyboy.plugins</a></code></dt>
+<dd>
+<section class="desc"></section>
 </dd>
 </dl>
 </section>
@@ -274,7 +276,7 @@ for a crude "bot", which interacts with the game.</p>
         self.plugin_manager.stop()
         self.mb.stop(save)
 
-    def _get_cpu_hitrate(self):
+    def _cpu_hitrate(self):
         logger.warning(&#34;You are calling an internal function. The output and the function is subject to change.&#34;)
         return self.mb.cpu.hitrate
 
@@ -282,27 +284,31 @@ for a crude "bot", which interacts with the game.</p>
     # Scripts and bot methods
     #
 
-    def get_screen(self):
+    def screen(self):
         &#34;&#34;&#34;
         Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
         a variety of formats.
 
         It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-        `pyboy.botsupport.screen.Screen.get_tilemap_position` for more information.
+        `pyboy.botsupport.screen.Screen.tilemap_position` for more information.
 
-        Returns:
-            `pyboy.botsupport.screen.Screen`: A Screen object with helper functions for reading the screen buffer.
+        Returns
+        -------
+        `pyboy.botsupport.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
         &#34;&#34;&#34;
         return botsupport.screen.Screen(self.mb)
 
-    def get_memory_value(self, addr):
+    def memory_value(self, addr):
         &#34;&#34;&#34;
         Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
         all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
         MBC commands to the virtual cartridge.
 
-        Returns:
-            int: An integer with the value of the memory address
+        Returns
+        -------
+        int:
+            An integer with the value of the memory address
         &#34;&#34;&#34;
         return self.mb.getitem(addr)
 
@@ -331,7 +337,7 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         self.events.append(WindowEvent(event))
 
-    def get_sprite(self, sprite_index):
+    def sprite(self, sprite_index):
         &#34;&#34;&#34;
         Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
         corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
@@ -341,20 +347,22 @@ for a crude "bot", which interacts with the game.</p>
 
         Args:
             index (int): Sprite index from 0 to 39.
-        Returns:
-            `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
+        Returns
+        -------
+        `pyboy.botsupport.sprite.Sprite`:
+            Sprite corresponding to the given index.
         &#34;&#34;&#34;
         return botsupport.Sprite(self.mb, sprite_index)
 
-    def get_sprite_by_tile_identifier(self, tile_identifiers):
+    def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
         &#34;&#34;&#34;
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-        `pyboy.PyBoy.get_sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+        `pyboy.PyBoy.sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
 
         Example:
         ```
-        &gt;&gt;&gt; print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+        &gt;&gt;&gt; print(pyboy.sprite_by_tile_identifier([43, 123]))
         [[0, 2, 4], []]
         ```
 
@@ -363,9 +371,12 @@ for a crude "bot", which interacts with the game.</p>
 
         Args:
             identifiers (list): List of tile identifiers (int)
+            on_screen (bool): Require that the matched sprite is on screen
 
-        Returns:
-            list: list of sprite matches for every tile identifier in the input
+        Returns
+        -------
+        list:
+            list of sprite matches for every tile identifier in the input
         &#34;&#34;&#34;
 
         matches = []
@@ -374,12 +385,12 @@ for a crude "bot", which interacts with the game.</p>
             for s in range(botsupport.constants.SPRITES):
                 sprite = botsupport.sprite.Sprite(self.mb, s)
                 for t in sprite.tiles:
-                    if t.tile_identifier == i:
+                    if t.tile_identifier == i and sprite.on_screen:
                         match.append(s)
             matches.append(match)
         return matches
 
-    def get_tile(self, identifier):
+    def tile(self, identifier):
         &#34;&#34;&#34;
         The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
         `pyboy.botsupport.tile.Tile`-object for given identifier.
@@ -387,32 +398,38 @@ for a crude "bot", which interacts with the game.</p>
         The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
         the `pyboy.botsupport.tile.Tile` object for more information.
 
-        Returns:
-            `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+        Returns
+        -------
+        `pyboy.botsupport.tile.Tile`:
+            A Tile object for the given identifier.
         &#34;&#34;&#34;
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_tilemap_background(self):
+    def tilemap_background(self):
         &#34;&#34;&#34;
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
-        Returns:
-            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        Returns
+        -------
+        `pyboy.botsupport.tilemap.TileMap`:
+            A TileMap object for the tile map.
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, &#34;BACKGROUND&#34;)
 
-    def get_tilemap_window(self):
+    def tilemap_window(self):
         &#34;&#34;&#34;
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
-        Returns:
-            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        Returns
+        -------
+        `pyboy.botsupport.tilemap.TileMap`:
+            A TileMap object for the tile map.
         &#34;&#34;&#34;
         return botsupport.TileMap(self.mb, &#34;WINDOW&#34;)
 
@@ -464,12 +481,14 @@ for a crude "bot", which interacts with the game.</p>
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def _get_serial(self):
+    def _serial(self):
         &#34;&#34;&#34;
         Provides all data that has been sent over the serial port since last call to this function.
 
-        Returns:
-            str : Buffer data
+        Returns
+        -------
+        str :
+            Buffer data
         &#34;&#34;&#34;
         return self.mb.getserial()
 
@@ -489,258 +508,44 @@ for a crude "bot", which interacts with the game.</p>
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
         self.target_emulationspeed = target_speed
 
-    def get_cartridge_title(self):
+    def cartridge_title(self):
         &#34;&#34;&#34;
         Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
         have been truncated to 11 characters.
 
-        Returns:
-            str : Game title
+        Returns
+        -------
+        str :
+            Game title
         &#34;&#34;&#34;
         return self.mb.cartridge.gamename</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="pyboy.PyBoy.get_cartridge_title"><code class="name flex">
-<span>def <span class="ident">get_cartridge_title</span></span>(<span>self)</span>
+<dt id="pyboy.PyBoy.cartridge_title"><code class="name flex">
+<span>def <span class="ident">cartridge_title</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
 have been truncated to 11 characters.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>str</code></strong> :&ensp;<code>Game</code> <code>title</code></dt>
-<dd>&nbsp;</dd>
+<dt><code>str</code> :</dt>
+<dd>Game title</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def get_cartridge_title(self):
+<pre><code class="python">def cartridge_title(self):
     &#34;&#34;&#34;
     Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
     have been truncated to 11 characters.
 
-    Returns:
-        str : Game title
+    Returns
+    -------
+    str :
+        Game title
     &#34;&#34;&#34;
     return self.mb.cartridge.gamename</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_memory_value"><code class="name flex">
-<span>def <span class="ident">get_memory_value</span></span>(<span>self, addr)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-all switchable memory banks. Open an issue on GitHub if that is needed, or use <a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value"><code>PyBoy.set_memory_value()</code></a> to send
-MBC commands to the virtual cartridge.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>int</code></strong></dt>
-<dd>An integer with the value of the memory address</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_memory_value(self, addr):
-    &#34;&#34;&#34;
-    Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
-    all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-    MBC commands to the virtual cartridge.
-
-    Returns:
-        int: An integer with the value of the memory address
-    &#34;&#34;&#34;
-    return self.mb.getitem(addr)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_screen"><code class="name flex">
-<span>def <span class="ident">get_screen</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Use this method to get a <a title="pyboy.botsupport.screen.Screen" href="botsupport/screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a> object. This can be used to get the screen buffer in
-a variety of formats.</p>
-<p>It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-<a title="pyboy.botsupport.screen.Screen.get_tilemap_position" href="botsupport/screen.html#pyboy.botsupport.screen.Screen.get_tilemap_position"><code>Screen.get_tilemap_position()</code></a> for more information.</p>
-<h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.screen.Screen" href="botsupport/screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a>: A Screen object with helper functions for reading the screen buffer.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_screen(self):
-    &#34;&#34;&#34;
-    Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
-    a variety of formats.
-
-    It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-    `pyboy.botsupport.screen.Screen.get_tilemap_position` for more information.
-
-    Returns:
-        `pyboy.botsupport.screen.Screen`: A Screen object with helper functions for reading the screen buffer.
-    &#34;&#34;&#34;
-    return botsupport.screen.Screen(self.mb)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_sprite"><code class="name flex">
-<span>def <span class="ident">get_sprite</span></span>(<span>self, sprite_index)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Provides a <a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object, which makes the OAM data more presentable. The given index
-corresponds to index of the sprite in the "Object Attribute Memory" (OAM).</p>
-<p>The Game Boy supports 40 sprites in total. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan
-Docs</a>.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>index</code></strong> :&ensp;<code>int</code></dt>
-<dd>Sprite index from 0 to 39.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a>: Sprite corresponding to the given index.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_sprite(self, sprite_index):
-    &#34;&#34;&#34;
-    Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
-    corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
-
-    The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
-    Docs](http://bgb.bircd.org/pandocs.htm).
-
-    Args:
-        index (int): Sprite index from 0 to 39.
-    Returns:
-        `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
-    &#34;&#34;&#34;
-    return botsupport.Sprite(self.mb, sprite_index)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_sprite_by_tile_identifier"><code class="name flex">
-<span>def <span class="ident">get_sprite_by_tile_identifier</span></span>(<span>self, tile_identifiers)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
-identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-<a title="pyboy.PyBoy.get_sprite" href="#pyboy.PyBoy.get_sprite"><code>PyBoy.get_sprite()</code></a> function to get a <a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object.</p>
-<p>Example:</p>
-<pre><code>&gt;&gt;&gt; print(pyboy.get_sprite_by_tile_identifier([43, 123]))
-[[0, 2, 4], []]
-</code></pre>
-<p>Meaning, that tile identifier <code>43</code> is found at the sprite indexes: 0, 2, and 4, while tile identifier
-<code>123</code> was not found anywhere.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>identifiers</code></strong> :&ensp;<code>list</code></dt>
-<dd>List of tile identifiers (int)</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>list</code></strong></dt>
-<dd>list of sprite matches for every tile identifier in the input</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_sprite_by_tile_identifier(self, tile_identifiers):
-    &#34;&#34;&#34;
-    Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
-    identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-    `pyboy.PyBoy.get_sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
-
-    Example:
-    ```
-    &gt;&gt;&gt; print(pyboy.get_sprite_by_tile_identifier([43, 123]))
-    [[0, 2, 4], []]
-    ```
-
-    Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
-    `123` was not found anywhere.
-
-    Args:
-        identifiers (list): List of tile identifiers (int)
-
-    Returns:
-        list: list of sprite matches for every tile identifier in the input
-    &#34;&#34;&#34;
-
-    matches = []
-    for i in tile_identifiers:
-        match = []
-        for s in range(botsupport.constants.SPRITES):
-            sprite = botsupport.sprite.Sprite(self.mb, s)
-            for t in sprite.tiles:
-                if t.tile_identifier == i:
-                    match.append(s)
-        matches.append(match)
-    return matches</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_tile"><code class="name flex">
-<span>def <span class="ident">get_tile</span></span>(<span>self, identifier)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
-<a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>-object for given identifier.</p>
-<p>The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
-the <a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object for more information.</p>
-<h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>: A Tile object for the given identifier.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_tile(self, identifier):
-    &#34;&#34;&#34;
-    The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
-    `pyboy.botsupport.tile.Tile`-object for given identifier.
-
-    The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
-    the `pyboy.botsupport.tile.Tile` object for more information.
-
-    Returns:
-        `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
-    &#34;&#34;&#34;
-    return botsupport.Tile(self.mb, identifier=identifier)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_tilemap_background"><code class="name flex">
-<span>def <span class="ident">get_tilemap_background</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-for the <em>background</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
-<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
-<h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the tile map.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_tilemap_background(self):
-    &#34;&#34;&#34;
-    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-    for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
-
-    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
-
-    Returns:
-        `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
-    &#34;&#34;&#34;
-    return botsupport.TileMap(self.mb, &#34;BACKGROUND&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.get_tilemap_window"><code class="name flex">
-<span>def <span class="ident">get_tilemap_window</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-for the <em>window</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
-<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
-<h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>: A TileMap object for the tile map.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_tilemap_window(self):
-    &#34;&#34;&#34;
-    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-    for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
-
-    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
-
-    Returns:
-        `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
-    &#34;&#34;&#34;
-    return botsupport.TileMap(self.mb, &#34;WINDOW&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.load_state"><code class="name flex">
@@ -784,6 +589,34 @@ file_like_object = open("state_file.state", "rb")
         raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
     self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.memory_value"><code class="name flex">
+<span>def <span class="ident">memory_value</span></span>(<span>self, addr)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
+all switchable memory banks. Open an issue on GitHub if that is needed, or use <a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value"><code>PyBoy.set_memory_value()</code></a> to send
+MBC commands to the virtual cartridge.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code>:</dt>
+<dd>An integer with the value of the memory address</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def memory_value(self, addr):
+    &#34;&#34;&#34;
+    Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
+    all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
+    MBC commands to the virtual cartridge.
+
+    Returns
+    -------
+    int:
+        An integer with the value of the memory address
+    &#34;&#34;&#34;
+    return self.mb.getitem(addr)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.save_state"><code class="name flex">
@@ -833,6 +666,35 @@ file_like_object.seek(0)
         raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
     self.mb.save_state(IntIOWrapper(file_like_object))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.screen"><code class="name flex">
+<span>def <span class="ident">screen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Use this method to get a <a title="pyboy.botsupport.screen.Screen" href="botsupport/screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a> object. This can be used to get the screen buffer in
+a variety of formats.</p>
+<p>It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+<a title="pyboy.botsupport.screen.Screen.tilemap_position" href="botsupport/screen.html#pyboy.botsupport.screen.Screen.tilemap_position"><code>Screen.tilemap_position()</code></a> for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.screen.Screen" href="botsupport/screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a>:
+A Screen object with helper functions for reading the screen buffer.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def screen(self):
+    &#34;&#34;&#34;
+    Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
+    a variety of formats.
+
+    It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+    `pyboy.botsupport.screen.Screen.tilemap_position` for more information.
+
+    Returns
+    -------
+    `pyboy.botsupport.screen.Screen`:
+        A Screen object with helper functions for reading the screen buffer.
+    &#34;&#34;&#34;
+    return botsupport.screen.Screen(self.mb)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.send_input"><code class="name flex">
@@ -924,6 +786,106 @@ read about the MBC at <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</
     self.mb.setitem(addr, value)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.PyBoy.sprite"><code class="name flex">
+<span>def <span class="ident">sprite</span></span>(<span>self, sprite_index)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provides a <a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object, which makes the OAM data more presentable. The given index
+corresponds to index of the sprite in the "Object Attribute Memory" (OAM).</p>
+<p>The Game Boy supports 40 sprites in total. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan
+Docs</a>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>index</code></strong> :&ensp;<code>int</code></dt>
+<dd>Sprite index from 0 to 39.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a>:
+Sprite corresponding to the given index.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sprite(self, sprite_index):
+    &#34;&#34;&#34;
+    Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+    corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
+
+    The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+    Docs](http://bgb.bircd.org/pandocs.htm).
+
+    Args:
+        index (int): Sprite index from 0 to 39.
+    Returns
+    -------
+    `pyboy.botsupport.sprite.Sprite`:
+        Sprite corresponding to the given index.
+    &#34;&#34;&#34;
+    return botsupport.Sprite(self.mb, sprite_index)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.sprite_by_tile_identifier"><code class="name flex">
+<span>def <span class="ident">sprite_by_tile_identifier</span></span>(<span>self, tile_identifiers, on_screen=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+<a title="pyboy.PyBoy.sprite" href="#pyboy.PyBoy.sprite"><code>PyBoy.sprite()</code></a> function to get a <a title="pyboy.botsupport.sprite.Sprite" href="botsupport/sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; print(pyboy.sprite_by_tile_identifier([43, 123]))
+[[0, 2, 4], []]
+</code></pre>
+<p>Meaning, that tile identifier <code>43</code> is found at the sprite indexes: 0, 2, and 4, while tile identifier
+<code>123</code> was not found anywhere.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>identifiers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of tile identifiers (int)</dd>
+<dt><strong><code>on_screen</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Require that the matched sprite is on screen</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code>:</dt>
+<dd>list of sprite matches for every tile identifier in the input</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+    &#34;&#34;&#34;
+    Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+    identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+    `pyboy.PyBoy.sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+
+    Example:
+    ```
+    &gt;&gt;&gt; print(pyboy.sprite_by_tile_identifier([43, 123]))
+    [[0, 2, 4], []]
+    ```
+
+    Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+    `123` was not found anywhere.
+
+    Args:
+        identifiers (list): List of tile identifiers (int)
+        on_screen (bool): Require that the matched sprite is on screen
+
+    Returns
+    -------
+    list:
+        list of sprite matches for every tile identifier in the input
+    &#34;&#34;&#34;
+
+    matches = []
+    for i in tile_identifiers:
+        match = []
+        for s in range(botsupport.constants.SPRITES):
+            sprite = botsupport.sprite.Sprite(self.mb, s)
+            for t in sprite.tiles:
+                if t.tile_identifier == i and sprite.on_screen:
+                    match.append(s)
+        matches.append(match)
+    return matches</code></pre>
+</details>
+</dd>
 <dt id="pyboy.PyBoy.stop"><code class="name flex">
 <span>def <span class="ident">stop</span></span>(<span>self, save=True)</span>
 </code></dt>
@@ -994,6 +956,89 @@ otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy
     self.avg_post = 0.9 * self.avg_post + 0.1 * secs
 
     return self.done</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tile"><code class="name flex">
+<span>def <span class="ident">tile</span></span>(<span>self, identifier)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+<a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>-object for given identifier.</p>
+<p>The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+the <a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tile.Tile" href="botsupport/tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>:
+A Tile object for the given identifier.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def tile(self, identifier):
+    &#34;&#34;&#34;
+    The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+    `pyboy.botsupport.tile.Tile`-object for given identifier.
+
+    The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+    the `pyboy.botsupport.tile.Tile` object for more information.
+
+    Returns
+    -------
+    `pyboy.botsupport.tile.Tile`:
+        A Tile object for the given identifier.
+    &#34;&#34;&#34;
+    return botsupport.Tile(self.mb, identifier=identifier)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tilemap_background"><code class="name flex">
+<span>def <span class="ident">tilemap_background</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+for the <em>background</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>:
+A TileMap object for the tile map.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def tilemap_background(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+    for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns
+    -------
+    `pyboy.botsupport.tilemap.TileMap`:
+        A TileMap object for the tile map.
+    &#34;&#34;&#34;
+    return botsupport.TileMap(self.mb, &#34;BACKGROUND&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tilemap_window"><code class="name flex">
+<span>def <span class="ident">tilemap_window</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+for the <em>window</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><a title="pyboy.botsupport.tilemap.TileMap" href="botsupport/tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>:
+A TileMap object for the tile map.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def tilemap_window(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+    for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns
+    -------
+    `pyboy.botsupport.tilemap.TileMap`:
+        A TileMap object for the tile map.
+    &#34;&#34;&#34;
+    return botsupport.TileMap(self.mb, &#34;WINDOW&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1219,6 +1264,7 @@ otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code></li>
+<li><code><a title="pyboy.plugins" href="plugins/index.html">pyboy.plugins</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -1226,21 +1272,21 @@ otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy
 <li>
 <h4><code><a title="pyboy.PyBoy" href="#pyboy.PyBoy">PyBoy</a></code></h4>
 <ul class="">
-<li><code><a title="pyboy.PyBoy.get_cartridge_title" href="#pyboy.PyBoy.get_cartridge_title">get_cartridge_title</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_memory_value" href="#pyboy.PyBoy.get_memory_value">get_memory_value</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_screen" href="#pyboy.PyBoy.get_screen">get_screen</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_sprite" href="#pyboy.PyBoy.get_sprite">get_sprite</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_sprite_by_tile_identifier" href="#pyboy.PyBoy.get_sprite_by_tile_identifier">get_sprite_by_tile_identifier</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_tile" href="#pyboy.PyBoy.get_tile">get_tile</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_tilemap_background" href="#pyboy.PyBoy.get_tilemap_background">get_tilemap_background</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_tilemap_window" href="#pyboy.PyBoy.get_tilemap_window">get_tilemap_window</a></code></li>
+<li><code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title">cartridge_title</a></code></li>
 <li><code><a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state">load_state</a></code></li>
+<li><code><a title="pyboy.PyBoy.memory_value" href="#pyboy.PyBoy.memory_value">memory_value</a></code></li>
 <li><code><a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state">save_state</a></code></li>
+<li><code><a title="pyboy.PyBoy.screen" href="#pyboy.PyBoy.screen">screen</a></code></li>
 <li><code><a title="pyboy.PyBoy.send_input" href="#pyboy.PyBoy.send_input">send_input</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">set_memory_value</a></code></li>
+<li><code><a title="pyboy.PyBoy.sprite" href="#pyboy.PyBoy.sprite">sprite</a></code></li>
+<li><code><a title="pyboy.PyBoy.sprite_by_tile_identifier" href="#pyboy.PyBoy.sprite_by_tile_identifier">sprite_by_tile_identifier</a></code></li>
 <li><code><a title="pyboy.PyBoy.stop" href="#pyboy.PyBoy.stop">stop</a></code></li>
 <li><code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">tick</a></code></li>
+<li><code><a title="pyboy.PyBoy.tile" href="#pyboy.PyBoy.tile">tile</a></code></li>
+<li><code><a title="pyboy.PyBoy.tilemap_background" href="#pyboy.PyBoy.tilemap_background">tilemap_background</a></code></li>
+<li><code><a title="pyboy.PyBoy.tilemap_window" href="#pyboy.PyBoy.tilemap_window">tilemap_window</a></code></li>
 </ul>
 </li>
 <li>

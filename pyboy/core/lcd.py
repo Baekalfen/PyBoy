@@ -7,7 +7,7 @@
 from array import array
 from ctypes import c_void_p
 
-from pyboy.utils import get_color_code
+from pyboy.utils import color_code
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
@@ -249,7 +249,7 @@ class Renderer:
                 y = (t + k - 0x8000)//2
 
                 for x in range(8):
-                    colorcode = get_color_code(byte1, byte2, 7-x)
+                    colorcode = color_code(byte1, byte2, 7-x)
 
                     self._tilecache[y][x] = self.color_palette[lcd.BGP.getcolor(colorcode)]
                     self._spritecache0[y][x] = self.color_palette[lcd.OBP0.getcolor(colorcode)]

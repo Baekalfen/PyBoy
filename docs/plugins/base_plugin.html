@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.6.3" />
+<title>pyboy.plugins.base_plugin API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.plugins.base_plugin</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">#
+# License: See LICENSE file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+__pdoc__ = {
+   &#39;PyBoyPlugin&#39;: False,
+   &#39;PyBoyWindowPlugin&#39;: False,
+}
+
+from array import array
+import numpy as np
+
+import logging
+
+from pyboy.botsupport.sprite import Sprite
+
+logger = logging.getLogger(__name__)
+
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
+
+ROWS, COLS = 144, 160
+
+
+class PyBoyPlugin:
+    argv = []
+
+    def __init__(self, pyboy, mb, pyboy_argv):
+        if not cythonmode:
+            self.pyboy = pyboy
+            self.mb = mb
+            self.pyboy_argv = pyboy_argv
+
+    def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
+        self.pyboy = pyboy
+        self.mb = mb
+        self.pyboy_argv = pyboy_argv
+
+    def handle_events(self, events):
+        return events
+
+    def post_tick(self):
+        pass
+
+    def window_title(self):
+        return &#34;&#34;
+
+    def stop(self):
+        pass
+
+    def enabled(self):
+        return True
+
+
+class PyBoyWindowPlugin(PyBoyPlugin):
+    def __init__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
+        super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
+
+        if not self.enabled():
+            return
+
+        scale = pyboy_argv.get(&#34;scale&#34;)
+        self.scale = scale
+        logger.info(&#34;%s initialization&#34; % self.__class__.__name__)
+
+        self._scaledresolution = (scale * COLS, scale * ROWS)
+        logger.info(&#39;Scale: x%s %s&#39; % (self.scale, self._scaledresolution))
+
+        self.enable_title = True
+        if not cythonmode:
+            self.renderer = mb.renderer
+
+    def __cinit__(self, *args, **kwargs):
+        self.renderer = self.mb.renderer
+
+    def frame_limiter(self, speed):
+        return False
+
+    def set_title(self, title):
+        pass
+
+
+class PyBoyGameWrapper(PyBoyPlugin):
+    argv = [(&#39;--game-wrapper&#39;, {&#34;action&#34;: &#39;store_true&#39;, &#34;help&#34;: &#39;Enable game wrapper for the current game&#39;})]
+
+    def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tilemap_background = self.pyboy.tilemap_background()
+        self.game_has_started = False
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
+        self.game_area_section = game_area_section
+        self.game_area_wrap_around = game_area_wrap_around
+        width = self.game_area_section[2] - self.game_area_section[0]
+        height = self.game_area_section[3] - self.game_area_section[1]
+        self._cached_tiles_on_screen_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+
+        if cythonmode:
+            self._cached_tiles_on_screen = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;, shape=(width, height))
+        else:
+            v = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;)
+            self._cached_tiles_on_screen = [v[i:i+height] for i in range(0, height*width, height)]
+
+    def enabled(self):
+        return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title
+
+    def post_tick(self):
+        raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
+
+    def sprites_on_screen(self):
+        &#34;&#34;&#34;
+        All sprites with their bounding box inside the screen area
+        &#34;&#34;&#34;
+        if self._sprite_cache_invalid:
+            self._cached_sprites_on_screen = []
+            for s in range(40):
+                sprite = Sprite(self.mb, s)
+                if sprite.on_screen:
+                    self._cached_sprites_on_screen.append(sprite)
+            self._sprite_cache_invalid = False
+        return self._cached_sprites_on_screen
+
+    def tiles_on_screen(self):
+        &#34;&#34;&#34;
+        All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.
+        &#34;&#34;&#34;
+        if self._tile_cache_invalid:
+            xx = self.game_area_section[0]
+            yy = self.game_area_section[1]
+            width = self.game_area_section[2]
+            height = self.game_area_section[3]
+            scanline_parameters = self.pyboy.screen().tilemap_position_list()
+
+            if self.game_area_wrap_around:
+                self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
+                for y in range(height):
+                    SCX = scanline_parameters[(yy+y)*8][0]//8
+                    SCY = scanline_parameters[(yy+y)*8][1]//8
+                    for x in range(width):
+                        _x = (xx+x+SCX)%32
+                        _y = (yy+y+SCY)%32
+                        self._cached_tiles_on_screen[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+            else:
+                self._cached_tiles_on_screen = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+            self._tile_cache_invalid = False
+        return self._cached_tiles_on_screen
+
+    def game_area(self):
+        &#34;&#34;&#34;
+        Only the essential part of the screen with out HUD etc.
+        &#34;&#34;&#34;
+        tiles_matrix = self.tiles_on_screen()
+        sprites = self.sprites_on_screen()
+        xx = self.game_area_section[0]
+        yy = self.game_area_section[1]
+        width = self.game_area_section[2]
+        height = self.game_area_section[3]
+        for s in sprites:
+            _x = (s.x//8)-xx
+            _y = (s.y//8)-yy
+            if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
+                tiles_matrix[_y][_x] = s.tile_identifier
+        return tiles_matrix
+
+    def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
+        number = 0
+        for i, x in enumerate(self.tilemap_background[x:x+length, y]):
+            if x != blank_tile_identifier:
+                number += (x+tile_identifier_offset)*(10**(length-1-i))
+        return number</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper"><code class="flex name class">
+<span>class <span class="ident">PyBoyGameWrapper</span></span>
+<span>(</span><span>*args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class PyBoyGameWrapper(PyBoyPlugin):
+    argv = [(&#39;--game-wrapper&#39;, {&#34;action&#34;: &#39;store_true&#39;, &#34;help&#34;: &#39;Enable game wrapper for the current game&#39;})]
+
+    def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tilemap_background = self.pyboy.tilemap_background()
+        self.game_has_started = False
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
+        self.game_area_section = game_area_section
+        self.game_area_wrap_around = game_area_wrap_around
+        width = self.game_area_section[2] - self.game_area_section[0]
+        height = self.game_area_section[3] - self.game_area_section[1]
+        self._cached_tiles_on_screen_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+
+        if cythonmode:
+            self._cached_tiles_on_screen = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;, shape=(width, height))
+        else:
+            v = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;)
+            self._cached_tiles_on_screen = [v[i:i+height] for i in range(0, height*width, height)]
+
+    def enabled(self):
+        return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title
+
+    def post_tick(self):
+        raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
+
+    def sprites_on_screen(self):
+        &#34;&#34;&#34;
+        All sprites with their bounding box inside the screen area
+        &#34;&#34;&#34;
+        if self._sprite_cache_invalid:
+            self._cached_sprites_on_screen = []
+            for s in range(40):
+                sprite = Sprite(self.mb, s)
+                if sprite.on_screen:
+                    self._cached_sprites_on_screen.append(sprite)
+            self._sprite_cache_invalid = False
+        return self._cached_sprites_on_screen
+
+    def tiles_on_screen(self):
+        &#34;&#34;&#34;
+        All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.
+        &#34;&#34;&#34;
+        if self._tile_cache_invalid:
+            xx = self.game_area_section[0]
+            yy = self.game_area_section[1]
+            width = self.game_area_section[2]
+            height = self.game_area_section[3]
+            scanline_parameters = self.pyboy.screen().tilemap_position_list()
+
+            if self.game_area_wrap_around:
+                self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
+                for y in range(height):
+                    SCX = scanline_parameters[(yy+y)*8][0]//8
+                    SCY = scanline_parameters[(yy+y)*8][1]//8
+                    for x in range(width):
+                        _x = (xx+x+SCX)%32
+                        _y = (yy+y+SCY)%32
+                        self._cached_tiles_on_screen[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+            else:
+                self._cached_tiles_on_screen = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+            self._tile_cache_invalid = False
+        return self._cached_tiles_on_screen
+
+    def game_area(self):
+        &#34;&#34;&#34;
+        Only the essential part of the screen with out HUD etc.
+        &#34;&#34;&#34;
+        tiles_matrix = self.tiles_on_screen()
+        sprites = self.sprites_on_screen()
+        xx = self.game_area_section[0]
+        yy = self.game_area_section[1]
+        width = self.game_area_section[2]
+        height = self.game_area_section[3]
+        for s in sprites:
+            _x = (s.x//8)-xx
+            _y = (s.y//8)-yy
+            if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
+                tiles_matrix[_y][_x] = s.tile_identifier
+        return tiles_matrix
+
+    def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
+        number = 0
+        for i, x in enumerate(self.tilemap_background[x:x+length, y]):
+            if x != blank_tile_identifier:
+                number += (x+tile_identifier_offset)*(10**(length-1-i))
+        return number</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pyboy.plugins.base_plugin.PyBoyPlugin</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand" href="game_wrapper_super_mario_land.html#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand">GameWrapperSuperMarioLand</a></li>
+<li><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="game_wrapper_tetris.html#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv"><code class="name">var <span class="ident">argv</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled"><code class="name flex">
+<span>def <span class="ident">enabled</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def enabled(self):
+    return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area"><code class="name flex">
+<span>def <span class="ident">game_area</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Only the essential part of the screen with out HUD etc.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def game_area(self):
+    &#34;&#34;&#34;
+    Only the essential part of the screen with out HUD etc.
+    &#34;&#34;&#34;
+    tiles_matrix = self.tiles_on_screen()
+    sprites = self.sprites_on_screen()
+    xx = self.game_area_section[0]
+    yy = self.game_area_section[1]
+    width = self.game_area_section[2]
+    height = self.game_area_section[3]
+    for s in sprites:
+        _x = (s.x//8)-xx
+        _y = (s.y//8)-yy
+        if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
+            tiles_matrix[_y][_x] = s.tile_identifier
+    return tiles_matrix</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.post_tick"><code class="name flex">
+<span>def <span class="ident">post_tick</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def post_tick(self):
+    raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.sprites_on_screen"><code class="name flex">
+<span>def <span class="ident">sprites_on_screen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>All sprites with their bounding box inside the screen area</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sprites_on_screen(self):
+    &#34;&#34;&#34;
+    All sprites with their bounding box inside the screen area
+    &#34;&#34;&#34;
+    if self._sprite_cache_invalid:
+        self._cached_sprites_on_screen = []
+        for s in range(40):
+            sprite = Sprite(self.mb, s)
+            if sprite.on_screen:
+                self._cached_sprites_on_screen.append(sprite)
+        self._sprite_cache_invalid = False
+    return self._cached_sprites_on_screen</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.tiles_on_screen"><code class="name flex">
+<span>def <span class="ident">tiles_on_screen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def tiles_on_screen(self):
+    &#34;&#34;&#34;
+    All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.
+    &#34;&#34;&#34;
+    if self._tile_cache_invalid:
+        xx = self.game_area_section[0]
+        yy = self.game_area_section[1]
+        width = self.game_area_section[2]
+        height = self.game_area_section[3]
+        scanline_parameters = self.pyboy.screen().tilemap_position_list()
+
+        if self.game_area_wrap_around:
+            self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
+            for y in range(height):
+                SCX = scanline_parameters[(yy+y)*8][0]//8
+                SCY = scanline_parameters[(yy+y)*8][1]//8
+                for x in range(width):
+                    _x = (xx+x+SCX)%32
+                    _y = (yy+y+SCY)%32
+                    self._cached_tiles_on_screen[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+        else:
+            self._cached_tiles_on_screen = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+        self._tile_cache_invalid = False
+    return self._cached_tiles_on_screen</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy.plugins" href="index.html">pyboy.plugins</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.argv">argv</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled">enabled</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area">game_area</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.post_tick" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.post_tick">post_tick</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.sprites_on_screen" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.sprites_on_screen">sprites_on_screen</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.tiles_on_screen" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.tiles_on_screen">tiles_on_screen</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.6.3</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

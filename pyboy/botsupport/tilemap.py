@@ -20,7 +20,7 @@ class TileMap:
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         "background" and "window".
 
-        Use `pyboy.PyBoy.get_tilemap_background` and `pyboy.PyBoy.get_tilemap_window` to instantiate this
+        Use `pyboy.PyBoy.tilemap_background` and `pyboy.PyBoy.tilemap_window` to instantiate this
         object.
 
         This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
@@ -28,7 +28,7 @@ class TileMap:
 
         Example:
         ```
-        >>> tilemap = pyboy.get_tilemap_window()
+        >>> tilemap = pyboy.tilemap_window
         >>> tile = tilemap[10,10]
         >>> print(tile)
         34
@@ -48,6 +48,16 @@ class TileMap:
         self._select = select
         self._use_tile_objects = False
         self.refresh_lcdc()
+
+        self.shape = (32, 32)
+        """
+        Tile maps are always 32x32 tiles.
+
+        Returns
+        -------
+        (int, int):
+            The width and height of the tile map.
+        """
 
     def refresh_lcdc(self):
         """
@@ -71,7 +81,7 @@ class TileMap:
 
         Example:
         ```
-        >>> tilemap = pyboy.get_tilemap_window()
+        >>> tilemap = pyboy.tilemap_window
         >>> print(tilemap.search_for_identifiers([43, 123]))
         [[[0,0], [2,4], [8,7]], []]
         ```
@@ -82,18 +92,20 @@ class TileMap:
         Args:
             identifiers (list): List of tile identifiers (int)
 
-        Returns:
-            list: list of matches for every tile identifier in the input
+        Returns
+        -------
+        list:
+            list of matches for every tile identifier in the input
         """
         # TODO: Crude implementation
-        tilemap_identifiers = np.asarray(self[:,:])
+        tilemap_identifiers = np.asarray(self[:,:], dtype=np.uint32)
         matches = []
         for i in identifiers:
             matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)])
         return matches
 
 
-    def _get_tile_address(self, column, row):
+    def _tile_address(self, column, row):
         """
         Returns the memory address in the tilemap for the tile at the given coordinate. The address contains the index
         of tile which will be shown at this position. This should not be confused with the actual tile data of
@@ -114,8 +126,10 @@ class TileMap:
             column (int): Column in this tile map.
             row (int): Row in this tile map.
 
-        Returns:
-            int: Address in the tile map to read a tile index.
+        Returns
+        -------
+        int:
+            Address in the tile map to read a tile index.
         """
 
         if not 0 <= column < 32:
@@ -124,7 +138,7 @@ class TileMap:
             raise IndexError("row is out of bounds. Value of 0 to 31 is allowed")
         return self.map_offset + 32*row + column
 
-    def get_tile(self, column, row):
+    def tile(self, column, row):
         """
         Provides a `pyboy.botsupport.tile.Tile`-object which allows for easy interpretation of the tile data. The
         object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.botsupport.tile.Tile`-objects might
@@ -134,13 +148,15 @@ class TileMap:
             column (int): Column in this tile map.
             row (int): Row in this tile map.
 
-        Returns:
-            `pyboy.botsupport.tile.Tile`: Tile object corresponding to the tile index at the given coordinate in the
+        Returns
+        -------
+        `pyboy.botsupport.tile.Tile`:
+            Tile object corresponding to the tile index at the given coordinate in the
             tile map.
         """
-        return Tile(self.mb, self.get_tile_identifier(column, row))
+        return Tile(self.mb, self.tile_identifier(column, row))
 
-    def get_tile_identifier(self, column, row):
+    def tile_identifier(self, column, row):
         """
         Returns an identifier (integer) of the tile at the given coordinate in the tile map. The identifier can be used
         to quickly recognize what is on the screen through this tile view.
@@ -155,11 +171,13 @@ class TileMap:
             column (int): Column in this tile map.
             row (int): Row in this tile map.
 
-        Returns:
-            int: Tile identifier.
+        Returns
+        -------
+        int:
+            Tile identifier.
         """
 
-        tile = self.mb.getitem(self._get_tile_address(column, row))
+        tile = self.mb.getitem(self._tile_address(column, row))
         if self.signed_tile_data:
             return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
         else:
@@ -194,16 +212,6 @@ class TileMap:
         """
         self._use_tile_objects = switch
 
-    @property
-    def shape(self):
-        """
-        Tile maps are always 32x32 tiles.
-
-        Returns:
-            (int, int): The width and height of the tile map.
-        """
-        return (32, 32)
-
     def __getitem__(self, xy):
         x, y = xy
 
@@ -219,9 +227,9 @@ class TileMap:
         assert y_slice or isinstance(y, int)
 
         if self._use_tile_objects:
-            tile_fun = self.get_tile
+            tile_fun = self.tile
         else:
-            tile_fun = lambda x, y: self.get_tile_identifier(x, y)
+            tile_fun = lambda x, y: self.tile_identifier(x, y)
 
         if x_slice and y_slice:
             return [[tile_fun(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]

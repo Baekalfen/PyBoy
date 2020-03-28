@@ -213,7 +213,7 @@ class PyBoy:
         self.plugin_manager.stop()
         self.mb.stop(save)
 
-    def _get_cpu_hitrate(self):
+    def _cpu_hitrate(self):
         logger.warning("You are calling an internal function. The output and the function is subject to change.")
         return self.mb.cpu.hitrate
 
@@ -221,27 +221,31 @@ class PyBoy:
     # Scripts and bot methods
     #
 
-    def get_screen(self):
+    def screen(self):
         """
         Use this method to get a `pyboy.botsupport.screen.Screen` object. This can be used to get the screen buffer in
         a variety of formats.
 
         It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-        `pyboy.botsupport.screen.Screen.get_tilemap_position` for more information.
+        `pyboy.botsupport.screen.Screen.tilemap_position` for more information.
 
-        Returns:
-            `pyboy.botsupport.screen.Screen`: A Screen object with helper functions for reading the screen buffer.
+        Returns
+        -------
+        `pyboy.botsupport.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
         """
         return botsupport.screen.Screen(self.mb)
 
-    def get_memory_value(self, addr):
+    def memory_value(self, addr):
         """
         Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
         all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
         MBC commands to the virtual cartridge.
 
-        Returns:
-            int: An integer with the value of the memory address
+        Returns
+        -------
+        int:
+            An integer with the value of the memory address
         """
         return self.mb.getitem(addr)
 
@@ -270,7 +274,7 @@ class PyBoy:
         """
         self.events.append(WindowEvent(event))
 
-    def get_sprite(self, sprite_index):
+    def sprite(self, sprite_index):
         """
         Provides a `pyboy.botsupport.sprite.Sprite` object, which makes the OAM data more presentable. The given index
         corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
@@ -280,20 +284,22 @@ class PyBoy:
 
         Args:
             index (int): Sprite index from 0 to 39.
-        Returns:
-            `pyboy.botsupport.sprite.Sprite`: Sprite corresponding to the given index.
+        Returns
+        -------
+        `pyboy.botsupport.sprite.Sprite`:
+            Sprite corresponding to the given index.
         """
         return botsupport.Sprite(self.mb, sprite_index)
 
-    def get_sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+    def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
         """
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-        `pyboy.PyBoy.get_sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+        `pyboy.PyBoy.sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
 
         Example:
         ```
-        >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+        >>> print(pyboy.sprite_by_tile_identifier([43, 123]))
         [[0, 2, 4], []]
         ```
 
@@ -304,8 +310,10 @@ class PyBoy:
             identifiers (list): List of tile identifiers (int)
             on_screen (bool): Require that the matched sprite is on screen
 
-        Returns:
-            list: list of sprite matches for every tile identifier in the input
+        Returns
+        -------
+        list:
+            list of sprite matches for every tile identifier in the input
         """
 
         matches = []
@@ -319,7 +327,7 @@ class PyBoy:
             matches.append(match)
         return matches
 
-    def get_tile(self, identifier):
+    def tile(self, identifier):
         """
         The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
         `pyboy.botsupport.tile.Tile`-object for given identifier.
@@ -327,32 +335,38 @@ class PyBoy:
         The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
         the `pyboy.botsupport.tile.Tile` object for more information.
 
-        Returns:
-            `pyboy.botsupport.tile.Tile`: A Tile object for the given identifier.
+        Returns
+        -------
+        `pyboy.botsupport.tile.Tile`:
+            A Tile object for the given identifier.
         """
         return botsupport.Tile(self.mb, identifier=identifier)
 
-    def get_tilemap_background(self):
+    def tilemap_background(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
-        Returns:
-            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        Returns
+        -------
+        `pyboy.botsupport.tilemap.TileMap`:
+            A TileMap object for the tile map.
         """
         return botsupport.TileMap(self.mb, "BACKGROUND")
 
-    def get_tilemap_window(self):
+    def tilemap_window(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
 
-        Returns:
-            `pyboy.botsupport.tilemap.TileMap`: A TileMap object for the tile map.
+        Returns
+        -------
+        `pyboy.botsupport.tilemap.TileMap`:
+            A TileMap object for the tile map.
         """
         return botsupport.TileMap(self.mb, "WINDOW")
 
@@ -404,12 +418,14 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def _get_serial(self):
+    def _serial(self):
         """
         Provides all data that has been sent over the serial port since last call to this function.
 
-        Returns:
-            str : Buffer data
+        Returns
+        -------
+        str :
+            Buffer data
         """
         return self.mb.getserial()
 
@@ -429,12 +445,14 @@ class PyBoy:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
 
-    def get_cartridge_title(self):
+    def cartridge_title(self):
         """
         Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
         have been truncated to 11 characters.
 
-        Returns:
-            str : Game title
+        Returns
+        -------
+        str :
+            Game title
         """
         return self.mb.cartridge.gamename

@@ -55,7 +55,7 @@ def test_profiling():
     pyboy.set_emulation_speed(0)
     pyboy.tick()
 
-    hitrate = pyboy._get_cpu_hitrate()
+    hitrate = pyboy._cpu_hitrate()
     CHECK_SUM = 7524
     assert sum(hitrate) == CHECK_SUM, "The amount of instructions called in the first frame of the boot-ROM has changed"
 
@@ -108,8 +108,8 @@ def test_tilemaps():
     for _ in range(120):
         pyboy.tick()
 
-    bck_tilemap = pyboy.get_tilemap_background()
-    wdw_tilemap = pyboy.get_tilemap_window()
+    bck_tilemap = pyboy.tilemap_background()
+    wdw_tilemap = pyboy.tilemap_window()
 
     assert bck_tilemap[0,0] == 256
     assert bck_tilemap[:5,0] == [256, 256, 256, 256, 170]
@@ -125,11 +125,11 @@ def test_tilemaps():
         [256, 256, 277, 293, 309, 325, 341, 357, 373, 128, 181, 362, 378, 299, 315, 331, 256, 256, 256, 256],
         [256, 256, 278, 294, 310, 326, 342, 358, 374, 129, 164, 132, 136, 140, 143, 146, 150, 167, 157, 168]
     ]
-    assert isinstance(bck_tilemap.get_tile(0,0), Tile)
-    assert bck_tilemap.get_tile_identifier(0,0) == 256
+    assert isinstance(bck_tilemap.tile(0,0), Tile)
+    assert bck_tilemap.tile_identifier(0,0) == 256
     bck_tilemap.use_tile_objects(True)
-    assert isinstance(bck_tilemap.get_tile(0,0), Tile)
-    assert bck_tilemap.get_tile_identifier(0,0) == 256
+    assert isinstance(bck_tilemap.tile(0,0), Tile)
+    assert bck_tilemap.tile_identifier(0,0) == 256
     assert isinstance(bck_tilemap[0,0], Tile)
 
     assert wdw_tilemap[0,0] == 256
@@ -146,11 +146,11 @@ def test_tilemaps():
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256]
     ]
-    assert isinstance(wdw_tilemap.get_tile(0,0), Tile)
-    assert wdw_tilemap.get_tile_identifier(0,0) == 256
+    assert isinstance(wdw_tilemap.tile(0,0), Tile)
+    assert wdw_tilemap.tile_identifier(0,0) == 256
     wdw_tilemap.use_tile_objects(True)
-    assert isinstance(wdw_tilemap.get_tile(0,0), Tile)
-    assert wdw_tilemap.get_tile_identifier(0,0) == 256
+    assert isinstance(wdw_tilemap.tile(0,0), Tile)
+    assert wdw_tilemap.tile_identifier(0,0) == 256
     assert isinstance(wdw_tilemap[0,0], Tile)
 
     pyboy.stop(save=False)

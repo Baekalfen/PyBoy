@@ -7,10 +7,9 @@ import re
 # Plugins and priority!
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowHeadless", "WindowDummy", "Debug"]
-plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "GameWrapperSuperMarioLand", "GameWrapperTetris"]
+game_wrappers = ["GameWrapperSuperMarioLand", "GameWrapperTetris"]
+plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder"] + game_wrappers
 all_plugins = windows+plugins
-
-destination = "opcodes.py"
 
 
 def to_snake_case(s):
@@ -142,4 +141,33 @@ if __name__ == "__main__":
                 out_lines.append(line)
 
     with open('manager.pxd', 'w') as f:
+        f.writelines(out_lines)
+
+
+    out_lines = []
+    with open('__init__.py', 'r') as f:
+        line_iter = iter(f.readlines())
+        while True:
+            line = next(line_iter, None)
+            if line is None:
+                break
+
+            # Find place to inject
+            if line.strip().startswith('# docs exclude'):
+
+                lines = [line.strip()+'\n']
+                indentation = ' '*line.index('# docs exclude')
+
+                skip_lines(line_iter, '# docs exclude end')
+
+                for p in (set(all_plugins)-set(game_wrappers)) | set(['manager', 'manager_gen']):
+                    p_name = to_snake_case(p)
+                    lines.append(f"'{p_name}': False,\n")
+
+                lines.append('# docs exclude end\n')
+                out_lines.extend([indentation + l for l in lines])
+            else:
+                out_lines.append(line)
+
+    with open('__init__.py', 'w') as f:
         f.writelines(out_lines)

@@ -4714,12 +4714,12 @@ def no_opcode(cpu):
     return 0
 
 
-def get_opcode_length(opcode):
+def opcode_length(opcode):
     return OPCODE_LENGTHS[opcode]
 
 
 def execute_opcode(cpu, opcode):
-    oplen = get_opcode_length(opcode)
+    oplen = opcode_length(opcode)
     v = 0
     pc = cpu.PC
     if oplen == 2:

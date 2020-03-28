@@ -14,7 +14,7 @@ class BaseTracker:
         # self.tile_identifiers = tile_identifiers
         # self.singleton = singleton
 
-    def get_objects(self):
+    def objects(self):
         return []
 
 
@@ -28,7 +28,7 @@ class BaseTracker:
 #         y1 = max([s.y for s in self.sprites]) + sprite_height # We want the outer coordinates
 #         self.bbox = (x0, y0, x1, y1)
 
-#     def get_objects(self):
+#     def objects(self):
 #         return [Sprite(s) for s in self.sprites]
 
 #     @property
@@ -69,9 +69,9 @@ class BaseTracker:
 
 
 class SpriteTracker(BaseTracker):
-    def get_objects(self):
+    def objects(self):
         return [sprite for sprite in (Sprite(self.mb, s) for s in range(40)) if sprite.on_screen]
-        # matching_sprites = flatten_list(self.pyboy.get_sprite_by_tile_identifier(self.tile_identifiers))
+        # matching_sprites = flatten_list(self.pyboy.sprite_by_tile_identifier(self.tile_identifiers))
         # sprites = [Sprite(self.mb, s) for s in matching_sprites]
         # if self.singleton:
         #     if matching_sprites == []:

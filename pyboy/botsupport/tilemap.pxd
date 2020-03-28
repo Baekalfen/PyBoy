@@ -15,3 +15,4 @@ cdef class TileMap:
     cdef bint _use_tile_objects
     cdef int map_offset
     cdef str _select
+    cdef public tuple shape

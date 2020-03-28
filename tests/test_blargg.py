@@ -28,7 +28,7 @@ def run_rom(args):
     result = None
     frame_count = 0
     while not pyboy.tick():
-        b = pyboy._get_serial()
+        b = pyboy._serial()
         if b != "":
             serial_output += b
             t = time.time()

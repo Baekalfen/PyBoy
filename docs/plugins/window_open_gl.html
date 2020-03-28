@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.6.3" />
+<title>pyboy.plugins.window_open_gl API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.plugins.window_open_gl</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">#
+# License: See LICENSE file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+import logging
+
+import numpy as np
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.utils import WindowEvent
+
+logger = logging.getLogger(__name__)
+
+try:
+    import OpenGL.GLUT.freeglut
+    from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
+                           glDrawPixels, glFlush, glPixelZoom)
+    # from OpenGL.GLU import *
+    from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
+                             glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
+                             glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc,
+                             glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
+    opengl_enabled = True
+except ImportError:
+    opengl_enabled = False
+
+ROWS, COLS = 144, 160
+
+
+class WindowOpenGL(PyBoyWindowPlugin):
+    def __init__(self, pyboy, mb, pyboy_argv):
+        super().__init__(pyboy, mb, pyboy_argv)
+
+        if not self.enabled():
+            return
+
+        if not glutInit():
+            raise Exception(&#34;OpenGL couldn&#39;t initialize!&#34;)
+        glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
+        glutInitWindowSize(*self._scaledresolution)
+        glutCreateWindow(&#34;PyBoy&#34;)
+        glutKeyboardFunc(self._key)
+        glutKeyboardUpFunc(self._keyUp)
+        glutSpecialFunc(self._spec)
+        glutSpecialUpFunc(self._specUp)
+        self.events = []
+
+        glPixelZoom(self.scale, self.scale)
+        glutReshapeFunc(self._glreshape)
+        glutDisplayFunc(self._gldraw)
+
+    # Cython does not cooperate with lambdas
+    def _key(self, c, x, y):
+        self._glkeyboard(c.decode(&#34;ascii&#34;), x, y, False)
+
+    def _keyUp(self, c, x, y):
+        self._glkeyboard(c.decode(&#34;ascii&#34;), x, y, True)
+
+    def _spec(self, c, x, y):
+        self._glkeyboardspecial(c, x, y, False)
+
+    def _specUp(self, c, x, y):
+        self._glkeyboardspecial(c, x, y, True)
+
+    def set_title(self, title):
+        glutSetWindowTitle(title)
+
+    def handle_events(self, events):
+        events += self.events
+        self.events = []
+        return events
+
+    def _glkeyboardspecial(self, c, x, y, up):
+        if up:
+            if c == GLUT_KEY_UP:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
+            if c == GLUT_KEY_DOWN:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
+            if c == GLUT_KEY_LEFT:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
+            if c == GLUT_KEY_RIGHT:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
+        else:
+            if c == GLUT_KEY_UP:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_UP))
+            if c == GLUT_KEY_DOWN:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_DOWN))
+            if c == GLUT_KEY_LEFT:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_LEFT))
+            if c == GLUT_KEY_RIGHT:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_RIGHT))
+
+    def _glkeyboard(self, c, x, y, up):
+        if up:
+            if c == &#39;a&#39;:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
+            elif c == &#39;s&#39;:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
+            elif c == &#39;z&#39;:
+                self.events.append(WindowEvent(WindowEvent.STATE_SAVE))
+            elif c == &#39;x&#39;:
+                self.events.append(WindowEvent(WindowEvent.STATE_LOAD))
+            elif c == &#39; &#39;:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_SPEED_UP))
+            elif c == chr(8):
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
+            elif c == chr(13):
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
+        else:
+            if c == &#39;a&#39;:
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_A))
+            elif c == &#39;s&#39;:
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_B))
+            elif c == chr(27):
+                self.events.append(WindowEvent(WindowEvent.QUIT))
+            elif c == &#39; &#39;:
+                self.events.append(WindowEvent(WindowEvent.PRESS_SPEED_UP))
+            elif c == &#39;i&#39;:
+                self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE))
+            elif c == chr(8):
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_SELECT))
+            elif c == chr(13):
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_START))
+
+    def _glreshape(self, width, height):
+        scale = max(min(height / ROWS, width / COLS), 1)
+        self._scaledresolution = (round(scale * COLS), round(scale * ROWS))
+        glPixelZoom(scale, scale)
+        # glutReshapeWindow(*self._scaledresolution);
+
+    def _gldraw(self):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
+        glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
+        glFlush()
+
+    def enabled(self):
+        if self.pyboy_argv.get(&#39;window_type&#39;) == &#39;OpenGL&#39;:
+            if opengl_enabled:
+                return True
+            else:
+                logger.error(&#34;Missing depencency \&#34;PyOpenGL\&#34;. OpenGL window disabled&#34;)
+        return False
+
+    def post_tick(self):
+        self._gldraw()
+        OpenGL.GLUT.freeglut.glutMainLoopEvent()
+
+    def stop(self):
+        glutDestroyWindow(glutGetWindow())</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.plugins.window_open_gl.WindowOpenGL"><code class="flex name class">
+<span>class <span class="ident">WindowOpenGL</span></span>
+<span>(</span><span>pyboy, mb, pyboy_argv)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class WindowOpenGL(PyBoyWindowPlugin):
+    def __init__(self, pyboy, mb, pyboy_argv):
+        super().__init__(pyboy, mb, pyboy_argv)
+
+        if not self.enabled():
+            return
+
+        if not glutInit():
+            raise Exception(&#34;OpenGL couldn&#39;t initialize!&#34;)
+        glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
+        glutInitWindowSize(*self._scaledresolution)
+        glutCreateWindow(&#34;PyBoy&#34;)
+        glutKeyboardFunc(self._key)
+        glutKeyboardUpFunc(self._keyUp)
+        glutSpecialFunc(self._spec)
+        glutSpecialUpFunc(self._specUp)
+        self.events = []
+
+        glPixelZoom(self.scale, self.scale)
+        glutReshapeFunc(self._glreshape)
+        glutDisplayFunc(self._gldraw)
+
+    # Cython does not cooperate with lambdas
+    def _key(self, c, x, y):
+        self._glkeyboard(c.decode(&#34;ascii&#34;), x, y, False)
+
+    def _keyUp(self, c, x, y):
+        self._glkeyboard(c.decode(&#34;ascii&#34;), x, y, True)
+
+    def _spec(self, c, x, y):
+        self._glkeyboardspecial(c, x, y, False)
+
+    def _specUp(self, c, x, y):
+        self._glkeyboardspecial(c, x, y, True)
+
+    def set_title(self, title):
+        glutSetWindowTitle(title)
+
+    def handle_events(self, events):
+        events += self.events
+        self.events = []
+        return events
+
+    def _glkeyboardspecial(self, c, x, y, up):
+        if up:
+            if c == GLUT_KEY_UP:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
+            if c == GLUT_KEY_DOWN:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
+            if c == GLUT_KEY_LEFT:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
+            if c == GLUT_KEY_RIGHT:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
+        else:
+            if c == GLUT_KEY_UP:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_UP))
+            if c == GLUT_KEY_DOWN:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_DOWN))
+            if c == GLUT_KEY_LEFT:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_LEFT))
+            if c == GLUT_KEY_RIGHT:
+                self.events.append(WindowEvent(WindowEvent.PRESS_ARROW_RIGHT))
+
+    def _glkeyboard(self, c, x, y, up):
+        if up:
+            if c == &#39;a&#39;:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
+            elif c == &#39;s&#39;:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
+            elif c == &#39;z&#39;:
+                self.events.append(WindowEvent(WindowEvent.STATE_SAVE))
+            elif c == &#39;x&#39;:
+                self.events.append(WindowEvent(WindowEvent.STATE_LOAD))
+            elif c == &#39; &#39;:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_SPEED_UP))
+            elif c == chr(8):
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
+            elif c == chr(13):
+                self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
+        else:
+            if c == &#39;a&#39;:
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_A))
+            elif c == &#39;s&#39;:
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_B))
+            elif c == chr(27):
+                self.events.append(WindowEvent(WindowEvent.QUIT))
+            elif c == &#39; &#39;:
+                self.events.append(WindowEvent(WindowEvent.PRESS_SPEED_UP))
+            elif c == &#39;i&#39;:
+                self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE))
+            elif c == chr(8):
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_SELECT))
+            elif c == chr(13):
+                self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_START))
+
+    def _glreshape(self, width, height):
+        scale = max(min(height / ROWS, width / COLS), 1)
+        self._scaledresolution = (round(scale * COLS), round(scale * ROWS))
+        glPixelZoom(scale, scale)
+        # glutReshapeWindow(*self._scaledresolution);
+
+    def _gldraw(self):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
+        glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
+        glFlush()
+
+    def enabled(self):
+        if self.pyboy_argv.get(&#39;window_type&#39;) == &#39;OpenGL&#39;:
+            if opengl_enabled:
+                return True
+            else:
+                logger.error(&#34;Missing depencency \&#34;PyOpenGL\&#34;. OpenGL window disabled&#34;)
+        return False
+
+    def post_tick(self):
+        self._gldraw()
+        OpenGL.GLUT.freeglut.glutMainLoopEvent()
+
+    def stop(self):
+        glutDestroyWindow(glutGetWindow())</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.plugins.base_plugin.PyBoyWindowPlugin" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyWindowPlugin">PyBoyWindowPlugin</a></li>
+<li><a title="pyboy.plugins.base_plugin.PyBoyPlugin" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyPlugin">PyBoyPlugin</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.plugins.window_open_gl.WindowOpenGL.enabled"><code class="name flex">
+<span>def <span class="ident">enabled</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def enabled(self):
+    if self.pyboy_argv.get(&#39;window_type&#39;) == &#39;OpenGL&#39;:
+        if opengl_enabled:
+            return True
+        else:
+            logger.error(&#34;Missing depencency \&#34;PyOpenGL\&#34;. OpenGL window disabled&#34;)
+    return False</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.window_open_gl.WindowOpenGL.handle_events"><code class="name flex">
+<span>def <span class="ident">handle_events</span></span>(<span>self, events)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def handle_events(self, events):
+    events += self.events
+    self.events = []
+    return events</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.window_open_gl.WindowOpenGL.post_tick"><code class="name flex">
+<span>def <span class="ident">post_tick</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def post_tick(self):
+    self._gldraw()
+    OpenGL.GLUT.freeglut.glutMainLoopEvent()</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.window_open_gl.WindowOpenGL.set_title"><code class="name flex">
+<span>def <span class="ident">set_title</span></span>(<span>self, title)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def set_title(self, title):
+    glutSetWindowTitle(title)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.window_open_gl.WindowOpenGL.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stop(self):
+    glutDestroyWindow(glutGetWindow())</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy.plugins" href="index.html">pyboy.plugins</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.plugins.window_open_gl.WindowOpenGL" href="#pyboy.plugins.window_open_gl.WindowOpenGL">WindowOpenGL</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.plugins.window_open_gl.WindowOpenGL.enabled" href="#pyboy.plugins.window_open_gl.WindowOpenGL.enabled">enabled</a></code></li>
+<li><code><a title="pyboy.plugins.window_open_gl.WindowOpenGL.handle_events" href="#pyboy.plugins.window_open_gl.WindowOpenGL.handle_events">handle_events</a></code></li>
+<li><code><a title="pyboy.plugins.window_open_gl.WindowOpenGL.post_tick" href="#pyboy.plugins.window_open_gl.WindowOpenGL.post_tick">post_tick</a></code></li>
+<li><code><a title="pyboy.plugins.window_open_gl.WindowOpenGL.set_title" href="#pyboy.plugins.window_open_gl.WindowOpenGL.set_title">set_title</a></code></li>
+<li><code><a title="pyboy.plugins.window_open_gl.WindowOpenGL.stop" href="#pyboy.plugins.window_open_gl.WindowOpenGL.stop">stop</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.6.3</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

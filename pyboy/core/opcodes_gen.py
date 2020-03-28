@@ -36,7 +36,7 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
-cdef uint16_t get_opcode_length(uint16_t)
+cdef uint16_t opcode_length(uint16_t)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t)
 
@@ -44,7 +44,7 @@ cdef uint8_t no_opcode(cpu.CPU) except -1
 """
 
 
-def inline_get_signed_int8(arg):
+def inline_signed_int8(arg):
     return "(({} ^ 0x80) - 0x80)".format(arg)
 
 
@@ -141,7 +141,7 @@ class Operand:
             self.signed = True
 
             # post operation set in LD handler!
-            return "cpu.SP + " + inline_get_signed_int8("v")
+            return "cpu.SP + " + inline_signed_int8("v")
 
         elif operand.startswith('(') and operand.endswith(')'):
             self.pointer = True
@@ -197,7 +197,7 @@ class Operand:
             self.immediate = True
 
             if operand == 'r8':
-                code = inline_get_signed_int8(code)
+                code = inline_signed_int8(code)
                 self.signed = True
             elif operand == 'a8':
                 code += " + 0xFF00"
@@ -871,14 +871,14 @@ class OpcodeData:
                     self.cycles, branch_op=True)
         if left is None:
             code.addlines([
-                "cpu.PC += %d + " % self.length + inline_get_signed_int8("v"),
+                "cpu.PC += %d + " % self.length + inline_signed_int8("v"),
                 "cpu.PC &= 0xFFFF",
                 "return " + self.cycles[0]])
         else:
             code.addlines([
                 "cpu.PC += %d" % self.length,
                 "if %s:" % l_code,
-                "\tcpu.PC += " + inline_get_signed_int8("v"),
+                "\tcpu.PC += " + inline_signed_int8("v"),
                 "\tcpu.PC &= 0xFFFF",
                 "\treturn " + self.cycles[0],
                 "else:",
@@ -1186,10 +1186,10 @@ def update():
 
         f.write("def no_opcode(cpu):\n    return 0\n\n\n")
 
-        f.write("def get_opcode_length(opcode):\n    return OPCODE_LENGTHS[opcode]\n\n")
+        f.write("def opcode_length(opcode):\n    return OPCODE_LENGTHS[opcode]\n\n")
         f.write("""
 def execute_opcode(cpu, opcode):
-    oplen = get_opcode_length(opcode)
+    oplen = opcode_length(opcode)
     v = 0
     pc = cpu.PC
     if oplen == 2:

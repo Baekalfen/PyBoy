@@ -32,19 +32,18 @@
 Tools to help interfacing with the Game Boy hardware
 &#34;&#34;&#34;
 
-from .sprite import Sprite
-from .tile import Tile
-from .tilemap import TileMap
-from .screen import Screen</code></pre>
+__pdoc__ = {
+   &#39;constants&#39;: False,
+   &#39;manager&#39;: False,
+}
+__all__ = [&#39;Manager&#39;]
+
+from .manager import Manager</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="pyboy.botsupport.constants" href="constants.html">pyboy.botsupport.constants</a></code></dt>
-<dd>
-<section class="desc"><p>Memory constants used internally to calculate tile and tile map addresses.</p></section>
-</dd>
 <dt><code class="name"><a title="pyboy.botsupport.screen" href="screen.html">pyboy.botsupport.screen</a></code></dt>
 <dd>
 <section class="desc"><p>This class gives access to the frame buffer and other screen parameters of PyBoy.</p></section>
@@ -66,6 +65,10 @@ from .screen import Screen</code></pre>
 <dd>
 <section class="desc"><p>The Game Boy has two tile maps, which defines what is rendered on the screen.</p></section>
 </dd>
+<dt><code class="name"><a title="pyboy.botsupport.trackers" href="trackers.html">pyboy.botsupport.trackers</a></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
 </dl>
 </section>
 <section>
@@ -73,6 +76,21 @@ from .screen import Screen</code></pre>
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.botsupport.Manager"><code class="flex name class">
+<span>class <span class="ident">Manager</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Manager:
+    pass</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -88,12 +106,19 @@ from .screen import Screen</code></pre>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="pyboy.botsupport.constants" href="constants.html">pyboy.botsupport.constants</a></code></li>
 <li><code><a title="pyboy.botsupport.screen" href="screen.html">pyboy.botsupport.screen</a></code></li>
 <li><code><a title="pyboy.botsupport.sprite" href="sprite.html">pyboy.botsupport.sprite</a></code></li>
 <li><code><a title="pyboy.botsupport.spritetracker" href="spritetracker.html">pyboy.botsupport.spritetracker</a></code></li>
 <li><code><a title="pyboy.botsupport.tile" href="tile.html">pyboy.botsupport.tile</a></code></li>
 <li><code><a title="pyboy.botsupport.tilemap" href="tilemap.html">pyboy.botsupport.tilemap</a></code></li>
+<li><code><a title="pyboy.botsupport.trackers" href="trackers.html">pyboy.botsupport.trackers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.botsupport.Manager" href="#pyboy.botsupport.Manager">Manager</a></code></h4>
+</li>
 </ul>
 </li>
 </ul>

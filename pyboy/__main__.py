@@ -9,7 +9,7 @@ import os
 
 from pyboy import PyBoy, core
 from pyboy.logger import log_level
-from pyboy.plugins.manager import get_parser_arguments
+from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
@@ -43,7 +43,7 @@ parser.add_argument('-w', '--window-type', '--window', default=defaults["window_
 parser.add_argument('-s', '--scale', default=defaults["scale"], type=int, help='The scaling multiplier for the window')
 parser.add_argument('--disable-renderer', action='store_true', help='Disables screen rendering for higher performance')
 
-for arguments in get_parser_arguments():
+for arguments in parser_arguments():
     for a in arguments:
         *args, kwargs = a
         if args[0] not in parser._option_string_actions:
@@ -75,7 +75,7 @@ def main():
     pyboy.stop()
 
     if argv.profiling:
-        print("\n".join(profiling_printer(pyboy._get_cpu_hitrate())))
+        print("\n".join(profiling_printer(pyboy._cpu_hitrate())))
 
 
 def profiling_printer(hitrate):

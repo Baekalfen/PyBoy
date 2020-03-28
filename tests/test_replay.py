@@ -28,12 +28,12 @@ RESET_REPLAYS = False
 
 
 def verify_screen_image_np(pyboy, saved_array):
-    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.get_screen().get_screen_ndarray())
+    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.screen().screen_ndarray())
     if not match:
         from PIL import Image
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()
-        new = pyboy.get_screen().get_screen_image()
+        new = pyboy.screen().screen_image()
         new.show()
     assert match
 
@@ -115,7 +115,7 @@ def replay(ROM, replay, window='headless', verify=True, record_gif=None, gif_des
         recording ^= True
 
     if gif_destination:
-        move_gif(pyboy.get_cartridge_title(), gif_destination)
+        move_gif(pyboy.cartridge_title(), gif_destination)
         if gif_hash is not None and not overwrite and sys.platform == "darwin":
             verify_file_hash(gif_destination, gif_hash)
 

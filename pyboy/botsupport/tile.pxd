@@ -13,13 +13,10 @@ cdef (int, int, int, int) _dummy_declaration2
 
 cdef class Tile:
     cdef Motherboard mb
-    cdef bint _signed_tile_data
-    cdef int _index
-    cdef int _data_address
 
-    cpdef int _get_identifier(self)
-    cpdef int _get_data_address(self)
-    cpdef uint32_t[:,:] image_data(self)
+    cdef public int tile_identifier
+    cdef public int data_address
+    cdef public tuple shape
     cpdef object image(self)
     cpdef object image_ndarray(self)
-    # cpdef void highlight(self)
+    cpdef uint32_t[:,:] image_data(self)

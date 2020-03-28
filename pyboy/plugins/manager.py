@@ -19,7 +19,7 @@ from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 # imports end
 
 
-def get_parser_arguments():
+def parser_arguments():
     # yield_plugins
     yield WindowSDL2.argv
     yield WindowOpenGL.argv

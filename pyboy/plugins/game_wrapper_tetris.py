@@ -35,10 +35,10 @@ class GameWrapperTetris(PyBoyGameWrapper):
             v = memoryview(self._cached_tiles_on_screen_raw).cast('I')
             self._cached_tiles_on_screen = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
 
-    def screen_matrix_np(self):
-        return np.asarray(self.screen_matrix())
+    def game_area_np(self):
+        return np.asarray(self.game_area())
 
-    def screen_matrix(self):
+    def game_area(self):
         tiles_matrix = self.tiles_on_screen()
         sprites = self.sprites_on_screen()
         for s in sprites:
@@ -89,7 +89,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 "\n".join(
                     [
                         f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self.screen_matrix_np())
+                        for i, line in enumerate(self.game_area_np())
                     ]
                 )
             )

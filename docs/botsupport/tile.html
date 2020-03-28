@@ -35,23 +35,32 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when refering to graphics.
 &#34;&#34;&#34;
 
+import logging
+
 import numpy as np
-from PIL import Image
-from pyboy.utils import get_color_code
+from pyboy.utils import color_code
 
 from .constants import LOW_TILEDATA, VRAM_OFFSET
+
+logger = logging.getLogger(__name__)
+
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 
 class Tile:
     def __init__(self, mb, identifier):
         &#34;&#34;&#34;
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-        `pyboy.PyBoy.get_tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
+        `pyboy.PyBoy.tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
         refering to graphics.
 
         This class is not meant to be instantiated by developers reading this documentation, but it will be created
         internally and returned by `pyboy.botsupport.sprite.Sprite.tiles` and
-        `pyboy.botsupport.tilemap.TileMap.get_tile`.
+        `pyboy.botsupport.tilemap.TileMap.tile`.
 
         The data of this class is static, apart from the image data, which is loaded from the Game Boy&#39;s memory when
         needed. Beware that the graphics for the tile can change between each call to `pyboy.PyBoy.tick`.
@@ -59,20 +68,8 @@ class Tile:
         self.mb = mb
 
         assert 0 &lt;= identifier &lt; 384, &#34;Identifier out of range&#34;
-        self._data_address = LOW_TILEDATA + (16*identifier)
 
-    def _get_identifier(self):
-        &#34;&#34;&#34;
-        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
-        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
-
-        Returns:
-            int: Unique identifier for the tile
-        &#34;&#34;&#34;
-        return (self._data_address - LOW_TILEDATA) // 16
-    tile_identifier = property(_get_identifier)
-
-    def _get_data_address(self):
+        self.data_address = LOW_TILEDATA + (16*identifier)
         &#34;&#34;&#34;
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the
@@ -81,11 +78,32 @@ class Tile:
         You can read how the data is read in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
-        Returns:
-            int: address in VRAM where tile data starts
+        Returns
+        -------
+        int:
+            address in VRAM where tile data starts
         &#34;&#34;&#34;
-        return self._data_address
-    data_address = property(_get_data_address)
+
+        self.tile_identifier = (self.data_address - LOW_TILEDATA) // 16
+        &#34;&#34;&#34;
+        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
+
+        Returns
+        -------
+        int:
+            Unique identifier for the tile
+        &#34;&#34;&#34;
+
+        self.shape = (8, 8)
+        &#34;&#34;&#34;
+        Tiles are always 8x8 pixels.
+
+        Returns
+        -------
+        (int, int):
+            The width and height of the tile.
+        &#34;&#34;&#34;
 
     def image(self):
         &#34;&#34;&#34;
@@ -93,9 +111,14 @@ class Tile:
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-        Returns:
-            PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
+        Returns
+        -------
+        PIL.Image :
+            Image of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
+        if Image is None:
+            logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
+            return None
         return Image.frombytes(&#39;RGBA&#39;, (8, 8), bytes(self.image_data()))
 
     def image_ndarray(self):
@@ -106,8 +129,10 @@ class Tile:
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-        Returns:
-            numpy.ndarray : Array of shape (8, 8, 4) with data type of `numpy.uint8`.
+        Returns
+        -------
+        numpy.ndarray :
+            Array of shape (8, 8, 4) with data type of `numpy.uint8`.
         &#34;&#34;&#34;
         return np.asarray(self.image_data()).view(dtype=np.uint8).reshape(8, 8, 4)
 
@@ -118,35 +143,27 @@ class Tile:
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-        Returns:
-            memoryview : Image data of tile in 8x8 pixels and RGBA colors.
+        Returns
+        -------
+        memoryview :
+            Image data of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
         data = np.zeros((8, 8), dtype=np.uint32)
 
         for k in range(0, 16, 2): # 2 bytes for each line
-            byte1 = self.mb.lcd.VRAM[self._data_address + k - VRAM_OFFSET]
-            byte2 = self.mb.lcd.VRAM[self._data_address + k + 1 - VRAM_OFFSET]
+            byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
+            byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
-                colorcode = get_color_code(byte1, byte2, 7-x)
+                colorcode = color_code(byte1, byte2, 7-x)
                 data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
 
         return data
 
-    @property
-    def shape(self):
-        &#34;&#34;&#34;
-        Tiles are always 8x8 pixels.
-
-        Returns:
-            (int, int): The width and height of the tile.
-        &#34;&#34;&#34;
-        return (8, 8)
-
     def __eq__(self, other):
-        return self.tile_identifier == other.tile_identifier
+        return self.data_address == other.data_address
 
-    def __str__(self):
+    def __repr__(self):
         return f&#34;Tile: {self.tile_identifier}&#34;</code></pre>
 </details>
 </section>
@@ -165,11 +182,11 @@ class Tile:
 </code></dt>
 <dd>
 <section class="desc"><p>The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-<a title="pyboy.PyBoy.get_tile" href="../index.html#pyboy.PyBoy.get_tile"><code>PyBoy.get_tile()</code></a>, <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and <a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>, when
+<a title="pyboy.PyBoy.tile" href="../index.html#pyboy.PyBoy.tile"><code>PyBoy.tile()</code></a>, <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and <a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>, when
 refering to graphics.</p>
 <p>This class is not meant to be instantiated by developers reading this documentation, but it will be created
 internally and returned by <a title="pyboy.botsupport.sprite.Sprite.tiles" href="sprite.html#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a> and
-<a title="pyboy.botsupport.tilemap.TileMap.get_tile" href="tilemap.html#pyboy.botsupport.tilemap.TileMap.get_tile"><code>TileMap.get_tile()</code></a>.</p>
+<a title="pyboy.botsupport.tilemap.TileMap.tile" href="tilemap.html#pyboy.botsupport.tilemap.TileMap.tile"><code>TileMap.tile()</code></a>.</p>
 <p>The data of this class is static, apart from the image data, which is loaded from the Game Boy's memory when
 needed. Beware that the graphics for the tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p></section>
 <details class="source">
@@ -178,12 +195,12 @@ needed. Beware that the graphics for the tile can change between each call to <a
     def __init__(self, mb, identifier):
         &#34;&#34;&#34;
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-        `pyboy.PyBoy.get_tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
+        `pyboy.PyBoy.tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
         refering to graphics.
 
         This class is not meant to be instantiated by developers reading this documentation, but it will be created
         internally and returned by `pyboy.botsupport.sprite.Sprite.tiles` and
-        `pyboy.botsupport.tilemap.TileMap.get_tile`.
+        `pyboy.botsupport.tilemap.TileMap.tile`.
 
         The data of this class is static, apart from the image data, which is loaded from the Game Boy&#39;s memory when
         needed. Beware that the graphics for the tile can change between each call to `pyboy.PyBoy.tick`.
@@ -191,20 +208,8 @@ needed. Beware that the graphics for the tile can change between each call to <a
         self.mb = mb
 
         assert 0 &lt;= identifier &lt; 384, &#34;Identifier out of range&#34;
-        self._data_address = LOW_TILEDATA + (16*identifier)
 
-    def _get_identifier(self):
-        &#34;&#34;&#34;
-        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
-        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
-
-        Returns:
-            int: Unique identifier for the tile
-        &#34;&#34;&#34;
-        return (self._data_address - LOW_TILEDATA) // 16
-    tile_identifier = property(_get_identifier)
-
-    def _get_data_address(self):
+        self.data_address = LOW_TILEDATA + (16*identifier)
         &#34;&#34;&#34;
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the
@@ -213,11 +218,32 @@ needed. Beware that the graphics for the tile can change between each call to <a
         You can read how the data is read in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
-        Returns:
-            int: address in VRAM where tile data starts
+        Returns
+        -------
+        int:
+            address in VRAM where tile data starts
         &#34;&#34;&#34;
-        return self._data_address
-    data_address = property(_get_data_address)
+
+        self.tile_identifier = (self.data_address - LOW_TILEDATA) // 16
+        &#34;&#34;&#34;
+        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
+
+        Returns
+        -------
+        int:
+            Unique identifier for the tile
+        &#34;&#34;&#34;
+
+        self.shape = (8, 8)
+        &#34;&#34;&#34;
+        Tiles are always 8x8 pixels.
+
+        Returns
+        -------
+        (int, int):
+            The width and height of the tile.
+        &#34;&#34;&#34;
 
     def image(self):
         &#34;&#34;&#34;
@@ -225,9 +251,14 @@ needed. Beware that the graphics for the tile can change between each call to <a
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-        Returns:
-            PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
+        Returns
+        -------
+        PIL.Image :
+            Image of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
+        if Image is None:
+            logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
+            return None
         return Image.frombytes(&#39;RGBA&#39;, (8, 8), bytes(self.image_data()))
 
     def image_ndarray(self):
@@ -238,8 +269,10 @@ needed. Beware that the graphics for the tile can change between each call to <a
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-        Returns:
-            numpy.ndarray : Array of shape (8, 8, 4) with data type of `numpy.uint8`.
+        Returns
+        -------
+        numpy.ndarray :
+            Array of shape (8, 8, 4) with data type of `numpy.uint8`.
         &#34;&#34;&#34;
         return np.asarray(self.image_data()).view(dtype=np.uint8).reshape(8, 8, 4)
 
@@ -250,35 +283,27 @@ needed. Beware that the graphics for the tile can change between each call to <a
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-        Returns:
-            memoryview : Image data of tile in 8x8 pixels and RGBA colors.
+        Returns
+        -------
+        memoryview :
+            Image data of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
         data = np.zeros((8, 8), dtype=np.uint32)
 
         for k in range(0, 16, 2): # 2 bytes for each line
-            byte1 = self.mb.lcd.VRAM[self._data_address + k - VRAM_OFFSET]
-            byte2 = self.mb.lcd.VRAM[self._data_address + k + 1 - VRAM_OFFSET]
+            byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
+            byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
-                colorcode = get_color_code(byte1, byte2, 7-x)
+                colorcode = color_code(byte1, byte2, 7-x)
                 data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
 
         return data
 
-    @property
-    def shape(self):
-        &#34;&#34;&#34;
-        Tiles are always 8x8 pixels.
-
-        Returns:
-            (int, int): The width and height of the tile.
-        &#34;&#34;&#34;
-        return (8, 8)
-
     def __eq__(self, other):
-        return self.tile_identifier == other.tile_identifier
+        return self.data_address == other.data_address
 
-    def __str__(self):
+    def __repr__(self):
         return f&#34;Tile: {self.tile_identifier}&#34;</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -292,43 +317,16 @@ other <code>image</code>-functions if you want to view the tile.</p>
 <a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>int</code></strong></dt>
+<dt><code>int</code>:</dt>
 <dd>address in VRAM where tile data starts</dd>
 </dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def _get_data_address(self):
-    &#34;&#34;&#34;
-    The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-    corresponding to the tile identifier. It is advised to use `pyboy.botsupport.tile.Tile.image` or one of the
-    other `image`-functions if you want to view the tile.
-
-    You can read how the data is read in the
-    [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
-
-    Returns:
-        int: address in VRAM where tile data starts
-    &#34;&#34;&#34;
-    return self._data_address</code></pre>
-</details>
 </dd>
 <dt id="pyboy.botsupport.tile.Tile.shape"><code class="name">var <span class="ident">shape</span></code></dt>
 <dd>
 <section class="desc"><p>Tiles are always 8x8 pixels.</p>
 <h2 id="returns">Returns</h2>
-<p>(int, int): The width and height of the tile.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">@property
-def shape(self):
-    &#34;&#34;&#34;
-    Tiles are always 8x8 pixels.
-
-    Returns:
-        (int, int): The width and height of the tile.
-    &#34;&#34;&#34;
-    return (8, 8)</code></pre>
-</details>
+<p>(int, int):
+The width and height of the tile.</p></section>
 </dd>
 <dt id="pyboy.botsupport.tile.Tile.tile_identifier"><code class="name">var <span class="ident">tile_identifier</span></code></dt>
 <dd>
@@ -336,21 +334,9 @@ def shape(self):
 complicated indexing system on the Game Boy into a single range of 0-383 (both included).</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>int</code></strong></dt>
+<dt><code>int</code>:</dt>
 <dd>Unique identifier for the tile</dd>
 </dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def _get_identifier(self):
-    &#34;&#34;&#34;
-    The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
-    complicated indexing system on the Game Boy into a single range of 0-383 (both included).
-
-    Returns:
-        int: Unique identifier for the tile
-    &#34;&#34;&#34;
-    return (self._data_address - LOW_TILEDATA) // 16</code></pre>
-</details>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -362,7 +348,10 @@ complicated indexing system on the Game Boy into a single range of 0-383 (both i
 <section class="desc"><p>Use this function to get an easy-to-use <code>PIL.Image</code> object of the tile. The image is 8x8 pixels in RGBA colors.</p>
 <p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
 <h2 id="returns">Returns</h2>
-<p>PIL.Image : Image of tile in 8x8 pixels and RGBA colors.</p></section>
+<dl>
+<dt><code>PIL.Image</code> :</dt>
+<dd>Image of tile in 8x8 pixels and RGBA colors.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def image(self):
@@ -371,9 +360,14 @@ complicated indexing system on the Game Boy into a single range of 0-383 (both i
 
     Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-    Returns:
-        PIL.Image : Image of tile in 8x8 pixels and RGBA colors.
+    Returns
+    -------
+    PIL.Image :
+        Image of tile in 8x8 pixels and RGBA colors.
     &#34;&#34;&#34;
+    if Image is None:
+        logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
+        return None
     return Image.frombytes(&#39;RGBA&#39;, (8, 8), bytes(self.image_data()))</code></pre>
 </details>
 </dd>
@@ -385,7 +379,10 @@ complicated indexing system on the Game Boy into a single range of 0-383 (both i
 colors.</p>
 <p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
 <h2 id="returns">Returns</h2>
-<p>memoryview : Image data of tile in 8x8 pixels and RGBA colors.</p></section>
+<dl>
+<dt><code>memoryview</code> :</dt>
+<dd>Image data of tile in 8x8 pixels and RGBA colors.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def image_data(self):
@@ -395,17 +392,19 @@ colors.</p>
 
     Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-    Returns:
-        memoryview : Image data of tile in 8x8 pixels and RGBA colors.
+    Returns
+    -------
+    memoryview :
+        Image data of tile in 8x8 pixels and RGBA colors.
     &#34;&#34;&#34;
     data = np.zeros((8, 8), dtype=np.uint32)
 
     for k in range(0, 16, 2): # 2 bytes for each line
-        byte1 = self.mb.lcd.VRAM[self._data_address + k - VRAM_OFFSET]
-        byte2 = self.mb.lcd.VRAM[self._data_address + k + 1 - VRAM_OFFSET]
+        byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
+        byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
         for x in range(8):
-            colorcode = get_color_code(byte1, byte2, 7-x)
+            colorcode = color_code(byte1, byte2, 7-x)
             data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
 
     return data</code></pre>
@@ -420,7 +419,10 @@ and each value is of <code>numpy.uint8</code>. The values corresponds to and RGB
 in a separate cell.</p>
 <p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
 <h2 id="returns">Returns</h2>
-<p>numpy.ndarray : Array of shape (8, 8, 4) with data type of <code>numpy.uint8</code>.</p></section>
+<dl>
+<dt><code>numpy.ndarray</code> :</dt>
+<dd>Array of shape (8, 8, 4) with data type of <code>numpy.uint8</code>.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def image_ndarray(self):
@@ -431,8 +433,10 @@ in a separate cell.</p>
 
     Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
-    Returns:
-        numpy.ndarray : Array of shape (8, 8, 4) with data type of `numpy.uint8`.
+    Returns
+    -------
+    numpy.ndarray :
+        Array of shape (8, 8, 4) with data type of `numpy.uint8`.
     &#34;&#34;&#34;
     return np.asarray(self.image_data()).view(dtype=np.uint8).reshape(8, 8, 4)</code></pre>
 </details>

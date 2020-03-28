@@ -9,7 +9,6 @@ cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 
 cdef class ScreenRecorder(PyBoyPlugin):
-    cdef str gamename
     cdef bint recording
     cdef frames
 

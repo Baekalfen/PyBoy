@@ -24,7 +24,9 @@ except ImportError:
 
 # Mask colors:
 COLOR = 0x00000000
-MASK = 0x00C0C000
+# MASK = 0x00C0C000
+COLOR_BACKGROUND = 0x00C0C000
+COLOR_WINDOW = 0xC179D400
 
 # Additive colors
 HOVER = 0xFF0000
@@ -33,7 +35,7 @@ mark_counter = 0
 marked_tiles = set([])
 MARK = array('I', [0xFF000000, 0xFFC00000, 0xFFFC0000, 0x00FFFF00, 0xFF00FF00])
 
-SPRITE_BACKGROUND = MASK
+SPRITE_BACKGROUND = COLOR_BACKGROUND
 
 
 class MarkedTile:
@@ -216,6 +218,7 @@ class TileViewWindow(BaseDebugWindow):
     def __init__(self, *args, window_map, scanline_x, scanline_y, **kwargs):
         super().__init__(*args, **kwargs)
         self.scanline_x, self.scanline_y = scanline_x, scanline_y
+        self.color = COLOR_WINDOW if window_map else COLOR_BACKGROUND
 
         if not cythonmode:
             self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
@@ -257,7 +260,7 @@ class TileViewWindow(BaseDebugWindow):
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
-                    tile_identifier = self.tilemap.get_tile_identifier(tile_x, tile_y)
+                    tile_identifier = self.tilemap.tile_identifier(tile_x, tile_y)
                     logger.info(f"Tile clicked on {tile_x}, {tile_y}")
                     marked_tiles.add(
                         MarkedTile(
@@ -289,7 +292,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.get_screen().get_tilemap_position_list()
+        scanlineparameters = self.pyboy.screen().tilemap_position_list()
 
         # Mark screen area
         for y in range(constants.ROWS):
@@ -301,7 +304,7 @@ class TileViewWindow(BaseDebugWindow):
             else:
                 self.buf0[(yy+y) % 0xFF][xx % 0xFF] = COLOR
                 for x in range(constants.COLS):
-                    self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] &= MASK
+                    self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] &= self.color
                 self.buf0[(yy+y) % 0xFF][(xx+constants.COLS) % 0xFF] = COLOR
 
         # Mark selected tiles
@@ -414,7 +417,7 @@ class SpriteWindow(BaseDebugWindow):
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
-        for m, matched_sprites in zip(marked_tiles, self.pyboy.get_sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
+        for m, matched_sprites in zip(marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
             for sprite_index in matched_sprites:
                 xx = (sprite_index * 8) % self.width
                 yy = ((sprite_index * 8) // self.width)*sprite_height
@@ -442,7 +445,7 @@ class SpriteViewWindow(BaseDebugWindow):
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
-        for m, matched_sprites in zip(marked_tiles, self.pyboy.get_sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
+        for m, matched_sprites in zip(marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
             for sprite_index in matched_sprites:
                 sprite = Sprite(self.mb, sprite_index)
                 self.mark_tile(sprite.x, sprite.y, m.mark_color, sprite_height, 8, False)
