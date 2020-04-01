@@ -54,7 +54,7 @@ if __name__ == "__main__":
             window = 'SDL2'
         pyboy = PyBoy(filename, window_type=window, window_scale=3, bootrom_file=bootROM)
         pyboy.set_emulation_speed(0)
-        print("Screen pos:", pyboy.screen().tilemap_position())
+        print("Screen pos:", pyboy.botsupport_manager().screen().tilemap_position())
 
         first_brick = False
         tile_map = pyboy.tilemap_window()
@@ -140,7 +140,7 @@ if __name__ == "__main__":
                 # of the sprites on the screen and which they look like.
                 if frame == 170: # Arbitrary frame where we read out all sprite on the screen
                     for n in range(40):
-                        sprite = pyboy.sprite(n)
+                        sprite = pyboy.botsupport_manager().sprite(n)
                         if sprite.on_screen:
                             print(sprite)
 
