@@ -74,11 +74,13 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef int scanline_x
     cdef int scanline_y
     cdef TileMap tilemap
+    cdef uint32_t color
 
     @cython.locals(mem_offset=uint16_t, tile_index=int, tile_column=int, tile_row=int)
     cdef void post_tick(self)
 
-    @cython.locals(scanlineparameters=uint8_t[:,:], x=int, y=int, xx=int, yy=int, row=int, column=int)
+    # scanlineparameters=uint8_t[:,:],
+    @cython.locals(x=int, y=int, xx=int, yy=int, row=int, column=int)
     cdef void draw_overlay(self)
 
 

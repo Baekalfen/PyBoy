@@ -108,8 +108,8 @@ def test_tilemaps():
     for _ in range(120):
         pyboy.tick()
 
-    bck_tilemap = pyboy.tilemap_background()
-    wdw_tilemap = pyboy.tilemap_window()
+    bck_tilemap = pyboy.botsupport_manager().tilemap_background()
+    wdw_tilemap = pyboy.botsupport_manager().tilemap_window()
 
     assert bck_tilemap[0,0] == 256
     assert bck_tilemap[:5,0] == [256, 256, 256, 256, 170]

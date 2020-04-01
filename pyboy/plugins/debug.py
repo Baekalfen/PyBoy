@@ -292,7 +292,8 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.screen().tilemap_position_list()
+        # scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
+        scanlineparameters = [[1,1,1,1] for _ in range(144)]
 
         # Mark screen area
         for y in range(constants.ROWS):
@@ -417,7 +418,7 @@ class SpriteWindow(BaseDebugWindow):
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
-        for m, matched_sprites in zip(marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
+        for m, matched_sprites in zip(marked_tiles, self.pyboy.botsupport_manager().sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
             for sprite_index in matched_sprites:
                 xx = (sprite_index * 8) % self.width
                 yy = ((sprite_index * 8) // self.width)*sprite_height
@@ -445,7 +446,7 @@ class SpriteViewWindow(BaseDebugWindow):
     def draw_overlay(self):
         sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
         # Mark selected tiles
-        for m, matched_sprites in zip(marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
+        for m, matched_sprites in zip(marked_tiles, self.pyboy.botsupport_manager().sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])):
             for sprite_index in matched_sprites:
                 sprite = Sprite(self.mb, sprite_index)
                 self.mark_tile(sprite.x, sprite.y, m.mark_color, sprite_height, 8, False)

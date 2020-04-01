@@ -36,7 +36,7 @@ class RecordReplay(PyBoyPlugin):
         # Input recorder
         if len(events) != 0:
             self.recorded_input.append((self.pyboy.frame_count, [e.event for e in events], base64.b64encode(
-                np.ascontiguousarray(self.pyboy.screen().screen_ndarray())).decode('utf8')))
+                np.ascontiguousarray(self.pyboy.botsupport_manager().screen().screen_ndarray())).decode('utf8')))
         return events
 
     def stop(self):

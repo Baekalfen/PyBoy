@@ -5,17 +5,17 @@
 
 __pdoc__ = {
    # docs exclude
-   'window_sdl2': False,
-   'window_headless': False,
-   'auto_pause': False,
    'rewind': False,
-   'manager_gen': False,
-   'manager': False,
    'screen_recorder': False,
-   'disable_input': False,
+   'manager_gen': False,
    'window_dummy': False,
-   'debug': False,
-   'record_replay': False,
+   'window_sdl2': False,
+   'manager': False,
    'window_open_gl': False,
+   'disable_input': False,
+   'auto_pause': False,
+   'record_replay': False,
+   'debug': False,
+   'window_headless': False,
    # docs exclude end
 }

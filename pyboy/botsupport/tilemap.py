@@ -98,7 +98,7 @@ class TileMap:
             list of matches for every tile identifier in the input
         """
         # TODO: Crude implementation
-        tilemap_identifiers = np.asarray(self[:,:], dtype=np.uint32)
+        tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
         matches = []
         for i in identifiers:
             matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)])

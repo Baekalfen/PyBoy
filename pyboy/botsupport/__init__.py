@@ -11,6 +11,6 @@ __pdoc__ = {
    'constants': False,
    'manager': False,
 }
-__all__ = ['Manager']
+__all__ = ['BotSupportManager']
 
-from .manager import Manager
+from .manager import BotSupportManager

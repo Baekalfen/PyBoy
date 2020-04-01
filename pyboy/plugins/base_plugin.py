@@ -88,7 +88,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.tilemap_background()
+        self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
         self.game_has_started = False
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
@@ -133,7 +133,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             yy = self.game_area_section[1]
             width = self.game_area_section[2]
             height = self.game_area_section[3]
-            scanline_parameters = self.pyboy.screen().tilemap_position_list()
+            scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
             if self.game_area_wrap_around:
                 self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
@@ -172,3 +172,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
             if x != blank_tile_identifier:
                 number += (x+tile_identifier_offset)*(10**(length-1-i))
         return number
+
+
+    def start_game(self):
+        pass
+
+    def reset_game(self):
+        pass

@@ -25,3 +25,4 @@ cdef class Sprite:
     cdef public tuple shape
     cdef public list tiles
     cdef public bint on_screen
+    cdef int _sprite_index

@@ -91,6 +91,19 @@ if __name__ == "__main__":
 
                 lines.append('# imports end\n')
                 out_lines.extend([indentation + l for l in lines])
+            elif line.strip().startswith('# gamewrapper'):
+
+                lines = [line.strip()+'\n']
+                indentation = ' '*line.index('# gamewrapper')
+
+                skip_lines(line_iter, '# gamewrapper end')
+
+                for p in game_wrappers:
+                    p_name = to_snake_case(p)
+                    lines.append(f"if self.{p_name}_enabled: return self.{p_name}\n")
+
+                lines.append('# gamewrapper end\n')
+                out_lines.extend([indentation + l for l in lines])
             else:
                 out_lines.append(line)
 

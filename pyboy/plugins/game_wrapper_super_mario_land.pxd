@@ -18,4 +18,5 @@ cdef class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     cdef public int score
     cdef public int time_left
     cdef public int level_progress
+    cdef public int _level_progress_max
     cdef public int fitness

@@ -35,7 +35,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             v = memoryview(self._cached_tiles_on_screen_raw).cast('I')
             self._cached_tiles_on_screen = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
 
-    def game_area_np(self):
+    def _game_area_np(self):
         return np.asarray(self.game_area())
 
     def game_area(self):
@@ -89,7 +89,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 "\n".join(
                     [
                         f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self.game_area_np())
+                        for i, line in enumerate(self._game_area_np())
                     ]
                 )
             )

@@ -68,6 +68,13 @@ class PluginManager:
         self.game_wrapper_tetris_enabled = self.game_wrapper_tetris.enabled()
         # plugins_enabled end
 
+    def gamewrapper(self):
+        # gamewrapper
+        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
+        if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
+        # gamewrapper end
+        return None
+
     def handle_events(self, events):
         # foreach windows events = [].handle_events(events)
         if self.window_sdl2_enabled:
