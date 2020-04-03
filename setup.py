@@ -75,11 +75,6 @@ class PyTest(test):
                 sys.exit(return_code)
 
             return_code = subprocess.Popen(
-                f"{sys.executable} {script_path}/examples/botsupport_example.py --quiet".split(' ')).wait()
-            if return_code != 0:
-                sys.exit(return_code)
-
-            return_code = subprocess.Popen(
                 f"{sys.executable} {script_path}/examples/gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet".split(' ')).wait()
             if return_code != 0:
                 sys.exit(return_code)
