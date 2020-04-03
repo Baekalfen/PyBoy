@@ -2,7 +2,13 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+import logging
+
+from pyboy.utils import WindowEvent
+
 from .base_plugin import PyBoyGameWrapper
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
@@ -29,10 +35,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
-        if not self.game_has_started:
-            self.tilemap_background.refresh_lcdc()
-            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280]: # "MARIO" in the title bar
-                self.game_has_started = True
 
         self.world = self.tilemap_background[12, 1]-256, self.tilemap_background[14, 1]-256
         blank = 300
@@ -50,7 +52,41 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             self._level_progress_max = max(self.level_progress, self._level_progress_max)
             end_score = self.score + self.time_left*10
             self.fitness = self.lives_left*10000 + end_score + self._level_progress_max*10
-            print(self)
+
+    def start_game(self):
+        if not self.pyboy.frame_count == 0:
+            logger.warning('Calling start_game from an already running game. This might not work.')
+
+        # Boot screen
+        while True:
+            self.pyboy.tick()
+            if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # "START" on the main menu
+                break
+        self.pyboy.tick()
+        self.pyboy.tick()
+        self.pyboy.tick()
+
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        while True:
+            self.pyboy.tick()
+            self.tilemap_background.refresh_lcdc()
+
+            # "MARIO" in the title bar and 0 is placed at score
+            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
+               self.tilemap_background[5, 1] == 256:
+                self.game_has_started = True
+                break
+
+        self.saved_state.seek(0)
+        self.pyboy.save_state(self.saved_state)
+
+    def reset_game(self):
+        self.saved_state.seek(0)
+        self.pyboy.load_state(self.saved_state)
+        self.post_tick()
 
     def __repr__(self):
         adjust = 4

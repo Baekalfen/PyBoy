@@ -3,11 +3,15 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
 from array import array
 
 import numpy as np
+from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
@@ -55,21 +59,55 @@ class GameWrapperTetris(PyBoyGameWrapper):
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
-        if not self.game_has_started:
-            self.tilemap_background.refresh_lcdc()
-            if self.tilemap_background[14:19, 1] == [28, 12, 24, 27, 14]: # "SCORE" the title bar
-                self.game_has_started = True
-
-        if self.game_has_started:
-            print(self)
 
         blank = 47
-        self.score = sum([0 if x==blank else x*(10**(5-i)) for i, x in enumerate(self.tilemap_background[13:19, 3])])
-        self.level = sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 7])])
-        self.lines = sum([0 if x==blank else x*(10**(3-i)) for i, x in enumerate(self.tilemap_background[14:18, 10])])
+        self.score = self._sum_number_on_screen(13, 3, 6, blank, 0)
+        self.level = self._sum_number_on_screen(14, 7, 4, blank, 0)
+        self.lines = self._sum_number_on_screen(14, 10, 4, blank, 0)
 
         if self.game_has_started:
             self.fitness = self.score
+
+    def start_game(self):
+        if not self.pyboy.frame_count == 0:
+            logger.warning('Calling start_game from an already running game. This might not work.')
+
+        # Boot screen
+        while True:
+            self.pyboy.tick()
+            self.tilemap_background.refresh_lcdc()
+            if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # '1PLAYER' on the first screen
+                break
+
+        # Start game. Just press Start when the game allows us.
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
+
+        self.game_has_started = True
+
+        self.saved_state.seek(0)
+        self.pyboy.save_state(self.saved_state)
+
+    def reset_game(self):
+        self.saved_state.seek(0)
+        self.pyboy.load_state(self.saved_state)
+        self.post_tick()
 
     def __repr__(self):
         adjust = 4

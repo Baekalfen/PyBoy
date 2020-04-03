@@ -8,6 +8,7 @@ __pdoc__ = {
    'PyBoyWindowPlugin': False,
 }
 
+import io
 import logging
 from array import array
 
@@ -99,6 +100,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
         height = self.game_area_section[3] - self.game_area_section[1]
         self._cached_tiles_on_screen_raw = array('B', [0xFF] * (width*height*4))
 
+        self.saved_state = io.BytesIO()
+
         if cythonmode:
             self._cached_tiles_on_screen = memoryview(self._cached_tiles_on_screen_raw).cast('I', shape=(width, height))
         else:
@@ -172,7 +175,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
             if x != blank_tile_identifier:
                 number += (x+tile_identifier_offset)*(10**(length-1-i))
         return number
-
 
     def start_game(self):
         pass

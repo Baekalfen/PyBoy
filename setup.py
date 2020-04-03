@@ -69,13 +69,18 @@ class PyTest(test):
         if not os.environ.get("TEST_NO_EXAMPLES"):
             script_path = os.path.dirname(os.path.realpath(__file__))
             return_code = subprocess.Popen(
-                f"{sys.executable} {script_path}/examples/tetris_bot.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
+                f"{sys.executable} {script_path}/examples/gamewrapper_tetris.py {script_path}/ROMs/Tetris.gb --quiet".split(' ')
             ).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
             return_code = subprocess.Popen(
-                f"{sys.executable} {script_path}/examples/interface_example.py --quiet".split(' ')).wait()
+                f"{sys.executable} {script_path}/examples/botsupport_example.py --quiet".split(' ')).wait()
+            if return_code != 0:
+                sys.exit(return_code)
+
+            return_code = subprocess.Popen(
+                f"{sys.executable} {script_path}/examples/gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet".split(' ')).wait()
             if return_code != 0:
                 sys.exit(return_code)
 

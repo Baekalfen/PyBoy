@@ -45,14 +45,16 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
 
     cdef bint _tile_cache_invalid
     cdef array _cached_tiles_on_screen_raw
-    cdef uint32_t[:,:] _cached_tiles_on_screen
+    cdef uint32_t[:, :] _cached_tiles_on_screen
     cdef bint game_area_wrap_around
     cdef tuple game_area_section
-    cpdef uint32_t[:,:] game_area(self)
-    cpdef uint32_t[:,:] tiles_on_screen(self)
+    cpdef uint32_t[:, :] game_area(self)
+    cpdef uint32_t[:, :] tiles_on_screen(self)
 
     cdef bint _sprite_cache_invalid
     cdef list _cached_sprites_on_screen
     cpdef list sprites_on_screen(self)
+
+    cdef object saved_state
 
     cpdef void post_tick(self)
