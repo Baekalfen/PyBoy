@@ -3,8 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 __pdoc__ = {
-   'GameWrapperTetris.cartridge_title': False,
-   'GameWrapperTetris.post_tick': False,
+    "GameWrapperTetris.cartridge_title": False,
+    "GameWrapperTetris.post_tick": False,
 }
 
 import logging
@@ -22,6 +22,7 @@ try:
     cythonmode = compiled
 except ImportError:
     cythonmode = False
+
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
@@ -49,15 +50,14 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         super().__init__(*args, **kwargs)
 
-
         ROWS, COLS = self.shape
-        self._cached_game_area_tiles_raw = array('B', [0xFF] * (ROWS*COLS*4))
+        self._cached_game_area_tiles_raw = array("B", [0xFF] * (ROWS*COLS*4))
 
         if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast('I', shape=(ROWS, COLS))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(ROWS, COLS))
         else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast('I')
-            self._cached_game_area_tiles = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast("I")
+            self._cached_game_area_tiles = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]
 
     def _game_area_tiles(self):
         if self._tile_cache_invalid:
@@ -87,7 +87,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         instantly.
         """
         if not self.pyboy.frame_count == 0:
-            logger.warning('Calling start_game from an already running game. This might not work.')
+            logger.warning("Calling start_game from an already running game. This might not work.")
 
         # Boot screen
         while True:
@@ -160,30 +160,31 @@ class GameWrapperTetris(PyBoyGameWrapper):
         tiles_matrix = self._game_area_tiles()
         sprites = self._sprites_on_screen()
         for s in sprites:
-            if s.x < 12*8:
-                tiles_matrix[s.y//8][s.x//8-2] = s.tile_identifier
+            if s.x < 12 * 8:
+                tiles_matrix[s.y // 8][s.x // 8 - 2] = s.tile_identifier
         return tiles_matrix
 
     def __repr__(self):
         adjust = 4
-        return_data = (
-                f"Tetris:\n" +
-                f"Score: {self.score}\n" +
-                f"Level: {self.level}\n" +
-                f"Lines: {self.lines}\n" +
-                f"Fitness: {self.fitness}\n" +
-                "Sprites on screen:\n" +
-                "\n".join([str(s) for s in self._sprites_on_screen()]) +
-                "\n" +
-                "Tiles on screen:\n" +
-                " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
-                "_"*(adjust*10+4) +
-                "\n" +
-                "\n".join(
-                    [
-                        f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self._game_area_np())
-                    ]
-                )
+        # yapf: disable
+        return (
+            f"Tetris:\n" +
+            f"Score: {self.score}\n" +
+            f"Level: {self.level}\n" +
+            f"Lines: {self.lines}\n" +
+            f"Fitness: {self.fitness}\n" +
+            "Sprites on screen:\n" +
+            "\n".join([str(s) for s in self._sprites_on_screen()]) +
+            "\n" +
+            "Tiles on screen:\n" +
+            " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
+            "_"*(adjust*10+4) +
+            "\n" +
+            "\n".join(
+                [
+                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self._game_area_np())
+                ]
             )
-        return return_data
+        )
+        # yapf: enable

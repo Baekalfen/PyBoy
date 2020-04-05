@@ -2,7 +2,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 """
 This class presents an interface to the sprites held in the OAM data on the Game Boy.
 """
@@ -157,7 +156,7 @@ class Sprite:
             A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
         """
         if sprite_height == 16:
-            self.tiles += [Tile(self.mb, self.tile_identifier+1)]
+            self.tiles += [Tile(self.mb, self.tile_identifier + 1)]
 
         self.on_screen = (-sprite_height < self.y < 144 and -8 < self.x < 160)
         """
@@ -177,7 +176,7 @@ class Sprite:
         return self._offset == other._offset
 
     def __repr__(self):
-        tiles = ', '.join([str(t) for t in self.tiles])
+        tiles = ", ".join([str(t) for t in self.tiles])
         return f"Sprite [{self._sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}"
 
 

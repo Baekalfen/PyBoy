@@ -3,8 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 __pdoc__ = {
-   'GameWrapperSuperMarioLand.cartridge_title': False,
-   'GameWrapperSuperMarioLand.post_tick': False,
+    "GameWrapperSuperMarioLand.cartridge_title": False,
+    "GameWrapperSuperMarioLand.post_tick": False,
 }
 
 import logging
@@ -55,13 +55,13 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
         """
 
-        super().__init__(*args, game_area_section = (0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        self.world = self.tilemap_background[12, 1]-256, self.tilemap_background[14, 1]-256
+        self.world = self.tilemap_background[12, 1] - 256, self.tilemap_background[14, 1] - 256
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
         self.lives_left = self._sum_number_on_screen(6, 0, 2, blank, -256)
@@ -71,12 +71,12 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         level_block = self.pyboy.get_memory_value(0xC0AB)
         mario_x = self.pyboy.get_memory_value(0xC202)
         scx = self.pyboy.botsupport_manager().screen().tilemap_position_list()[16][0]
-        self.level_progress = level_block*16 + (scx-7)%16 + mario_x
+        self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
 
         if self.game_has_started:
             self._level_progress_max = max(self.level_progress, self._level_progress_max)
-            end_score = self.score + self.time_left*10
-            self.fitness = self.lives_left*10000 + end_score + self._level_progress_max*10
+            end_score = self.score + self.time_left * 10
+            self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
     def start_game(self):
         """
@@ -87,7 +87,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         instantly.
         """
         if not self.pyboy.frame_count == 0:
-            logger.warning('Calling start_game from an already running game. This might not work.')
+            logger.warning("Calling start_game from an already running game. This might not work.")
 
         # Boot screen
         while True:
@@ -168,6 +168,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     def __repr__(self):
         adjust = 4
+        # yapf: disable
         return (
             f"Super Mario Land: World {'-'.join([str(i) for i in self.world])}\n" +
             f"Coins: {self.coins}\n" +
@@ -190,3 +191,4 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
                 ]
             )
         )
+        # yapf: enable

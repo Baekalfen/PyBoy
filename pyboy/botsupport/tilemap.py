@@ -2,7 +2,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 """
 The Game Boy has two tile maps, which defines what is rendered on the screen.
 """
@@ -101,9 +100,8 @@ class TileMap:
         tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
         matches = []
         for i in identifiers:
-            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)])
+            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers == i)])
         return matches
-
 
     def _tile_address(self, column, row):
         """
@@ -187,18 +185,20 @@ class TileMap:
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
+        # yapf: disable
         return_data = (
-                f"Tile Map Address: {self.map_offset:#0{6}x}, " +
-                f"Signed Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n" +
-                " "*5 + "".join([f"{i: <4}" for i in range(32)]) + "\n" +
-                "_"*(adjust*32+2) + "\n" +
-                "\n".join(
-                    [
-                        f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self[:, :])
-                    ]
-                )
+            f"Tile Map Address: {self.map_offset:#0{6}x}, " +
+            f"Signed Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n" +
+            " "*5 + "".join([f"{i: <4}" for i in range(32)]) + "\n" +
+            "_"*(adjust*32+2) + "\n" +
+            "\n".join(
+                [
+                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self[:, :])
+                ]
             )
+        )
+        # yapf: enable
         self.use_tile_objects(_use_tile_objects)
         return return_data
 

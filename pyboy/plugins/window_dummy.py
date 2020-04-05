@@ -22,4 +22,4 @@ class WindowDummy(PyBoyWindowPlugin):
         self.mb.disable_renderer = True
 
     def enabled(self):
-        return self.pyboy_argv.get('window_type') == 'dummy'
+        return self.pyboy_argv.get("window_type") == "dummy"

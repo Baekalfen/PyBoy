@@ -46,7 +46,7 @@ class IntIOWrapper(IntIOInterface):
     def write(self, byte):
         assert isinstance(byte, int)
         assert 0 <= byte <= 0xFF
-        return self.buffer.write(byte.to_bytes(1, 'little'))
+        return self.buffer.write(byte.to_bytes(1, "little"))
 
     def read(self):
         # assert count == 1, "Only a count of 1 is supported"
@@ -63,6 +63,7 @@ class IntIOWrapper(IntIOInterface):
 
 ##############################################################
 # Misc
+
 
 # TODO: Would a lookup-table increase performance? For example a lookup table of each 4-bit nibble?
 # That's 16**2 = 256 values. Index calculated as: (byte1 & 0xF0) | ((byte2 & 0xF0) >> 4)
@@ -81,6 +82,7 @@ def color_code(byte1, byte2, offset):
     """
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
+
 def flatten_list(l):
     flat_list = []
     for sublist in l:
@@ -88,9 +90,11 @@ def flatten_list(l):
             flat_list.append(item)
     return flat_list
 
+
 ##############################################################
 # Window Events
 # Temporarily placed here to not be exposed on public API
+
 
 class WindowEvent:
     """
@@ -105,43 +109,44 @@ class WindowEvent:
 
     # ONLY ADD NEW EVENTS AT THE END OF THE LIST!
     # Otherwise, it will break replays, which depend on the id of the event
-    (QUIT,
-     PRESS_ARROW_UP,
-     PRESS_ARROW_DOWN,
-     PRESS_ARROW_RIGHT,
-     PRESS_ARROW_LEFT,
-     PRESS_BUTTON_A,
-     PRESS_BUTTON_B,
-     PRESS_BUTTON_SELECT,
-     PRESS_BUTTON_START,
-     RELEASE_ARROW_UP,
-     RELEASE_ARROW_DOWN,
-     RELEASE_ARROW_RIGHT,
-     RELEASE_ARROW_LEFT,
-     RELEASE_BUTTON_A,
-     RELEASE_BUTTON_B,
-     RELEASE_BUTTON_SELECT,
-     RELEASE_BUTTON_START,
-     _INTERNAL_TOGGLE_DEBUG,
-     PRESS_SPEED_UP,
-     RELEASE_SPEED_UP,
-     STATE_SAVE,
-     STATE_LOAD,
-     PASS,
-     SCREEN_RECORDING_TOGGLE,
-     PAUSE,
-     UNPAUSE,
-     PAUSE_TOGGLE,
-     PRESS_REWIND_BACK,
-     PRESS_REWIND_FORWARD,
-     RELEASE_REWIND_BACK,
-     RELEASE_REWIND_FORWARD,
-     WINDOW_FOCUS,
-     WINDOW_UNFOCUS,
-     _INTERNAL_RENDERER_FLUSH,
-     _INTERNAL_MOUSE,
-     _INTERNAL_MARK_TILE
-     ) = range(36)
+    (
+        QUIT,
+        PRESS_ARROW_UP,
+        PRESS_ARROW_DOWN,
+        PRESS_ARROW_RIGHT,
+        PRESS_ARROW_LEFT,
+        PRESS_BUTTON_A,
+        PRESS_BUTTON_B,
+        PRESS_BUTTON_SELECT,
+        PRESS_BUTTON_START,
+        RELEASE_ARROW_UP,
+        RELEASE_ARROW_DOWN,
+        RELEASE_ARROW_RIGHT,
+        RELEASE_ARROW_LEFT,
+        RELEASE_BUTTON_A,
+        RELEASE_BUTTON_B,
+        RELEASE_BUTTON_SELECT,
+        RELEASE_BUTTON_START,
+        _INTERNAL_TOGGLE_DEBUG,
+        PRESS_SPEED_UP,
+        RELEASE_SPEED_UP,
+        STATE_SAVE,
+        STATE_LOAD,
+        PASS,
+        SCREEN_RECORDING_TOGGLE,
+        PAUSE,
+        UNPAUSE,
+        PAUSE_TOGGLE,
+        PRESS_REWIND_BACK,
+        PRESS_REWIND_FORWARD,
+        RELEASE_REWIND_BACK,
+        RELEASE_REWIND_FORWARD,
+        WINDOW_FOCUS,
+        WINDOW_UNFOCUS,
+        _INTERNAL_RENDERER_FLUSH,
+        _INTERNAL_MOUSE,
+        _INTERNAL_MARK_TILE,
+    ) = range(36)
 
     def __init__(self, event):
         self.event = event

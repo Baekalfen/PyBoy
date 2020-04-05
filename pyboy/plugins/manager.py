@@ -70,8 +70,10 @@ class PluginManager:
 
     def gamewrapper(self):
         # gamewrapper
-        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
-        if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
+        if self.game_wrapper_super_mario_land_enabled:
+            return self.game_wrapper_super_mario_land
+        if self.game_wrapper_tetris_enabled:
+            return self.game_wrapper_tetris
         # gamewrapper end
         return None
 
@@ -163,19 +165,24 @@ class PluginManager:
         # foreach windows done = [].frame_limiter(speed), if done: return
         if self.window_sdl2_enabled:
             done = self.window_sdl2.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_open_gl_enabled:
             done = self.window_open_gl.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_headless_enabled:
             done = self.window_headless.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_dummy_enabled:
             done = self.window_dummy.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.debug_enabled:
             done = self.debug.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         # foreach end
 
     def window_title(self):

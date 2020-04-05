@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 from array import array
 from ctypes import c_void_p
 
@@ -24,8 +23,8 @@ except ImportError:
 
 class LCD:
     def __init__(self):
-        self.VRAM = array('B', [0] * VIDEO_RAM)
-        self.OAM = array('B', [0] * OBJECT_ATTRIBUTE_MEMORY)
+        self.VRAM = array("B", [0] * VIDEO_RAM)
+        self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
         self.LCDC = LCDCRegister(0)
         # self.STAT = 0x00
@@ -109,6 +108,7 @@ class LCDCRegister:
         self.value = value
 
         # No need to convert to bool. Any non-zero value is true.
+        # yapf: disable
         self.lcd_enable           = value & (1 << 7)
         self.windowmap_select     = value & (1 << 6)
         self.window_enable        = value & (1 << 5)
@@ -117,6 +117,7 @@ class LCDCRegister:
         self.sprite_height        = value & (1 << 2)
         self.sprite_enable        = value & (1 << 1)
         self.background_enable    = value & (1 << 0)
+        # yapf: enable
 
 
 class Renderer:
@@ -131,25 +132,25 @@ class Renderer:
         self.tiles_changed = set([])
 
         # Init buffers as white
-        self._screenbuffer_raw = array('B', [0xFF] * (ROWS*COLS*4))
-        self._tilecache_raw = array('B', [0xFF] * (TILES*8*8*4))
-        self._spritecache0_raw = array('B', [0xFF] * (TILES*8*8*4))
-        self._spritecache1_raw = array('B', [0xFF] * (TILES*8*8*4))
+        self._screenbuffer_raw = array("B", [0xFF] * (ROWS*COLS*4))
+        self._tilecache_raw = array("B", [0xFF] * (TILES*8*8*4))
+        self._spritecache0_raw = array("B", [0xFF] * (TILES*8*8*4))
+        self._spritecache1_raw = array("B", [0xFF] * (TILES*8*8*4))
 
         if cythonmode:
-            self._screenbuffer = memoryview(self._screenbuffer_raw).cast('I', shape=(ROWS, COLS))
-            self._tilecache = memoryview(self._tilecache_raw).cast('I', shape=(TILES*8, 8))
-            self._spritecache0 = memoryview(self._spritecache0_raw).cast('I', shape=(TILES*8, 8))
-            self._spritecache1 = memoryview(self._spritecache1_raw).cast('I', shape=(TILES*8, 8))
+            self._screenbuffer = memoryview(self._screenbuffer_raw).cast("I", shape=(ROWS, COLS))
+            self._tilecache = memoryview(self._tilecache_raw).cast("I", shape=(TILES * 8, 8))
+            self._spritecache0 = memoryview(self._spritecache0_raw).cast("I", shape=(TILES * 8, 8))
+            self._spritecache1 = memoryview(self._spritecache1_raw).cast("I", shape=(TILES * 8, 8))
         else:
-            v = memoryview(self._screenbuffer_raw).cast('I')
-            self._screenbuffer = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
-            v = memoryview(self._tilecache_raw).cast('I')
-            self._tilecache = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
-            v = memoryview(self._spritecache0_raw).cast('I')
-            self._spritecache0 = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
-            v = memoryview(self._spritecache1_raw).cast('I')
-            self._spritecache1 = [v[i:i+8] for i in range(0, TILES*8*8, 8)]
+            v = memoryview(self._screenbuffer_raw).cast("I")
+            self._screenbuffer = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]
+            v = memoryview(self._tilecache_raw).cast("I")
+            self._tilecache = [v[i:i + 8] for i in range(0, TILES * 8 * 8, 8)]
+            v = memoryview(self._spritecache0_raw).cast("I")
+            self._spritecache0 = [v[i:i + 8] for i in range(0, TILES * 8 * 8, 8)]
+            v = memoryview(self._spritecache1_raw).cast("I")
+            self._spritecache1 = [v[i:i + 8] for i in range(0, TILES * 8 * 8, 8)]
             self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
@@ -207,9 +208,9 @@ class Renderer:
 
         for n in range(0x00, 0xA0, 4):
             y = lcd.OAM[n] - 16 # Documentation states the y coordinate needs to be subtracted by 16
-            x = lcd.OAM[n+1] - 8 # Documentation states the x coordinate needs to be subtracted by 8
-            tileindex = lcd.OAM[n+2]
-            attributes = lcd.OAM[n+3]
+            x = lcd.OAM[n + 1] - 8 # Documentation states the x coordinate needs to be subtracted by 8
+            tileindex = lcd.OAM[n + 2]
+            attributes = lcd.OAM[n + 3]
             xflip = attributes & 0b00100000
             yflip = attributes & 0b01000000
             spritepriority = attributes & 0b10000000
@@ -221,7 +222,7 @@ class Renderer:
                     if 0 <= y < ROWS:
                         for dx in range(8):
                             xx = 7 - dx if xflip else dx
-                            pixel = spritecache[8*tileindex+yy][xx]
+                            pixel = spritecache[8*tileindex + yy][xx]
 
                             if 0 <= x < COLS:
                                 if (spritepriority and not buffer[y][x] == bgpkey):
@@ -246,10 +247,10 @@ class Renderer:
             for k in range(0, 16, 2): # 2 bytes for each line
                 byte1 = lcd.VRAM[t + k - 0x8000]
                 byte2 = lcd.VRAM[t + k + 1 - 0x8000]
-                y = (t + k - 0x8000)//2
+                y = (t+k-0x8000) // 2
 
                 for x in range(8):
-                    colorcode = color_code(byte1, byte2, 7-x)
+                    colorcode = color_code(byte1, byte2, 7 - x)
 
                     self._tilecache[y][x] = self.color_palette[lcd.BGP.getcolor(colorcode)]
                     self._spritecache0[y][x] = self.color_palette[lcd.OBP0.getcolor(colorcode)]
@@ -273,7 +274,7 @@ class Renderer:
             f.write(self._scanlineparameters[y][0])
             f.write(self._scanlineparameters[y][1])
             # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
-            f.write((self._scanlineparameters[y][2]+7) & 0xFF)
+            f.write((self._scanlineparameters[y][2] + 7) & 0xFF)
             f.write(self._scanlineparameters[y][3])
 
     def load_state(self, f, state_version):
@@ -281,5 +282,5 @@ class Renderer:
             self._scanlineparameters[y][0] = f.read()
             self._scanlineparameters[y][1] = f.read()
             # Restore (WX - 7) as described above
-            self._scanlineparameters[y][2] = (f.read()-7) & 0xFF
+            self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
             self._scanlineparameters[y][3] = f.read()

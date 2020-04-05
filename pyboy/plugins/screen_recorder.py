@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 import logging
 import os
 import time
@@ -19,6 +18,7 @@ except ImportError:
     Image = None
 
 FPS = 60
+
 
 class ScreenRecorder(PyBoyPlugin):
     def __init__(self, *args):
@@ -45,7 +45,7 @@ class ScreenRecorder(PyBoyPlugin):
 
     def add_frame(self, frame):
         # Pillow makes artifacts in the output, if we use 'RGB', which is PyBoy's default format
-        self.frames.append(frame.convert('RGBA'))
+        self.frames.append(frame.convert("RGBA"))
 
     def save(self, path=None, fps=60):
         logger.info("ScreenRecorder saving...")
@@ -58,7 +58,12 @@ class ScreenRecorder(PyBoyPlugin):
 
         if len(self.frames) > 0:
             self.frames[0].save(
-                path, save_all=True, interlace=False, loop=0, optimize=True, append_images=self.frames[1:],
+                path,
+                save_all=True,
+                interlace=False,
+                loop=0,
+                optimize=True,
+                append_images=self.frames[1:],
                 duration=int(round(1000 / fps, -1))
             )
 

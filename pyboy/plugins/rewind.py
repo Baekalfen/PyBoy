@@ -17,14 +17,13 @@ try:
 except ImportError:
     cythonmode = False
 
-
-FIXED_BUFFER_SIZE = 64*1024*128
-FIXED_BUFFER_MIN_ALLOC = 64*1024
+FIXED_BUFFER_SIZE = 64 * 1024 * 128
+FIXED_BUFFER_MIN_ALLOC = 64 * 1024
 FILL_VALUE = 123
 
 
 class Rewind(PyBoyPlugin):
-    argv = [('--rewind', {"action": 'store_true', "help": 'Enable rewind function'})]
+    argv = [("--rewind", {"action": "store_true", "help": "Enable rewind function"})]
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -38,7 +37,7 @@ class Rewind(PyBoyPlugin):
             self.rewind_buffer.new()
 
     def window_title(self):
-        return " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size*60)/1024)
+        return " Rewind: %0.2fKB/s" % ((self.rewind_buffer.avg_section_size * 60) / 1024)
 
     def handle_events(self, events):
         old_rewind_speed = self.rewind_speed
@@ -75,7 +74,7 @@ class Rewind(PyBoyPlugin):
         return events
 
     def enabled(self):
-        return self.pyboy_argv.get('rewind')
+        return self.pyboy_argv.get("rewind")
 
 
 ##############################################################
@@ -110,7 +109,7 @@ class FixedAllocBuffers(IntIOInterface):
         self.current_section += 1
         section_size = (self.section_head - self.section_tail + FIXED_BUFFER_SIZE) % FIXED_BUFFER_SIZE
         # Exponentially decaying moving average
-        self.avg_section_size = (0.9 * self.avg_section_size) + (0.1 * section_size)
+        self.avg_section_size = (0.9 * self.avg_section_size) + (0.1*section_size)
         self.section_tail = self.section_pointer
 
     def write(self, val):
@@ -135,7 +134,7 @@ class FixedAllocBuffers(IntIOInterface):
     def commit(self):
         if not self.section_head == self.section_pointer:
             raise Exception("Section wasn't read to finish. This would likely be unintentional")
-        self.sections = self.sections[:self.current_section+1]
+        self.sections = self.sections[:self.current_section + 1]
 
     def seek_frame(self, frames):
         # TODO: Move for loop to Delta version
@@ -149,7 +148,7 @@ class FixedAllocBuffers(IntIOInterface):
                 self.current_section -= 1
                 tail = self.sections[self.current_section]
             else:
-                if self.current_section == len(self.sections)-1:
+                if self.current_section == len(self.sections) - 1:
                     return False
 
                 # Increment the active section and fetch its pointer position
@@ -227,7 +226,7 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         self.prev_internal_pointer = 0
         # The initial values needs to be 0 to act as the "null-frame" and make the first frame a one-to-one copy
         # TODO: It would work with any values, but it makes it easier to debug
-        self.internal_buffer = array.array('B', [0]*FIXED_BUFFER_MIN_ALLOC)
+        self.internal_buffer = array.array("B", [0] * FIXED_BUFFER_MIN_ALLOC)
         self.internal_buffer_dirty = False
 
         # A side effect of the implementation will create a zero-frame in the beginning. Keep track of this,
@@ -284,9 +283,9 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
             self.flush_internal_buffer()
         self.internal_pointer = 0
 
-        if frames > 0 and self.injected_zero_frame-1 == self.current_section:
+        if frames > 0 and self.injected_zero_frame - 1 == self.current_section:
             return False
-        elif frames < 0 and self.current_section-1 == self.base_frame:
+        elif frames < 0 and self.current_section - 1 == self.base_frame:
             return False
 
         return CompressedFixedAllocBuffers.seek_frame(self, frames)
@@ -294,10 +293,12 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
 
 # Having this in the top of the file, causes glitces in Vim's syntax highlighting
 if not cythonmode:
-    exec("""
+    exec(
+        """
 def _malloc(n):
     return array.array('B', [0]*(FIXED_BUFFER_SIZE))
 
 def _free(_):
     pass
-""", globals(), locals())
+""", globals(), locals()
+    )

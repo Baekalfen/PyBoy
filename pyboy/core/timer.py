@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-
 # http://problemkaputt.de/pandocs.htm#gameboytechnicaldata Unless the
 # oscillator frequency is multiplied or divided before it gets to the
 # CPU, it must be running at 4.194304MHz (or if the CPU has an

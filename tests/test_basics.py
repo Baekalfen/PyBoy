@@ -39,14 +39,14 @@ def test_record_replay():
 
     pyboy.stop(save=False)
 
-    with open(tetris_rom+'.replay', 'rb') as f:
+    with open(tetris_rom + ".replay", "rb") as f:
         m = hashlib.sha256()
         m.update(f.read())
         digest = m.digest()
 
-    os.remove(tetris_rom+'.replay')
+    os.remove(tetris_rom + ".replay")
 
-    assert digest == b'\xd1\xe2\x13B\xf0$\xaa\xaa\xe2\xf2\xf3Iz\x9aj\x98\xc8^\xc4J:\x08\x1d\xf4n}\x80\x08o\x03)\xda', \
+    assert digest == b"\xd1\xe2\x13B\xf0$\xaa\xaa\xe2\xf2\xf3Iz\x9aj\x98\xc8^\xc4J:\x08\x1d\xf4n}\x80\x08o\x03)\xda", \
         "The replay did not result in the expected output"
 
 
@@ -60,12 +60,12 @@ def test_profiling():
     assert sum(hitrate) == CHECK_SUM, "The amount of instructions called in the first frame of the boot-ROM has changed"
 
     assert list(main.profiling_printer(hitrate)) == [
-        '17c          BIT 7,H 2507',
-        ' 32       LD (HL-),A 2507',
-        ' 20         JR NZ,r8 2507',
-        ' af            XOR A 1',
-        ' 31        LD SP,d16 1',
-        ' 21        LD HL,d16 1',
+        "17c          BIT 7,H 2507",
+        " 32       LD (HL-),A 2507",
+        " 20         JR NZ,r8 2507",
+        " af            XOR A 1",
+        " 31        LD SP,d16 1",
+        " 21        LD HL,d16 1",
     ], "The output of the profiling formatter has changed. Either the output is wrong, or the formatter has changed."
     pyboy.stop(save=False)
 
@@ -75,32 +75,48 @@ def test_argv_parser(*args):
 
     # Check error when ROM doesn't exist
     with pytest.raises(FileNotFoundError):
-        parser.parse_args('not_a_rom_file_that_would_exist.rom'.split(' '))
+        parser.parse_args("not_a_rom_file_that_would_exist.rom".split(" "))
 
     file_that_exists = "setup.py"
     # Check defaults
-    empty = parser.parse_args(file_that_exists.split(' ')).__dict__
+    empty = parser.parse_args(file_that_exists.split(" ")).__dict__
     for k, v in {
-            "ROM": file_that_exists, "autopause": False, "bootrom": None, "debug": False, "loadstate": None,
-            "no_input": False, "log_level": 'INFO', "profiling": False, "record_input": False, "rewind": False,
-            "scale": 3, "window_type": 'SDL2'
-            }.items():
+        "ROM": file_that_exists,
+        "autopause": False,
+        "bootrom": None,
+        "debug": False,
+        "loadstate": None,
+        "no_input": False,
+        "log_level": "INFO",
+        "profiling": False,
+        "record_input": False,
+        "rewind": False,
+        "scale": 3,
+        "window_type": "SDL2"
+    }.items():
         assert empty[k] == v
 
     # Check the assumed behavior of loadstate with and without argument
-    assert parser.parse_args(file_that_exists.split(' ')).loadstate is None
-    assert parser.parse_args(f'{file_that_exists} --loadstate'.split(' ')).loadstate == main.INTERNAL_LOADSTATE
+    assert parser.parse_args(file_that_exists.split(" ")).loadstate is None
+    assert parser.parse_args(f"{file_that_exists} --loadstate".split(" ")).loadstate == main.INTERNAL_LOADSTATE
     assert parser.parse_args(
-        f'{file_that_exists} --loadstate {file_that_exists}'.split(' ')
+        f"{file_that_exists} --loadstate {file_that_exists}".split(" ")
     ).loadstate == file_that_exists
 
     # Check flags become True
     flags = parser.parse_args(
-        f'{file_that_exists} --debug --autopause --profiling --rewind --no-input --log-level INFO'.split(' ')
+        f"{file_that_exists} --debug --autopause --profiling --rewind --no-input --log-level INFO".split(" ")
     ).__dict__
-    for k, v in {"autopause": True, "debug": True, "no_input": True, "log_level": 'INFO', "profiling": True,
-            "rewind": True}.items():
+    for k, v in {
+        "autopause": True,
+        "debug": True,
+        "no_input": True,
+        "log_level": "INFO",
+        "profiling": True,
+        "rewind": True
+    }.items():
         assert flags[k] == v
+
 
 def test_tilemaps():
     pyboy = PyBoy(kirby_rom, window_type="dummy")
@@ -111,9 +127,9 @@ def test_tilemaps():
     bck_tilemap = pyboy.botsupport_manager().tilemap_background()
     wdw_tilemap = pyboy.botsupport_manager().tilemap_window()
 
-    assert bck_tilemap[0,0] == 256
-    assert bck_tilemap[:5,0] == [256, 256, 256, 256, 170]
-    assert bck_tilemap[:20,:10] == [
+    assert bck_tilemap[0, 0] == 256
+    assert bck_tilemap[:5, 0] == [256, 256, 256, 256, 170]
+    assert bck_tilemap[:20, :10] == [
         [256, 256, 256, 256, 170, 176, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 171, 173, 177, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 172, 174, 178, 256, 256, 256, 256, 256, 256, 256, 256, 347, 363, 256, 256, 256, 256],
@@ -125,16 +141,16 @@ def test_tilemaps():
         [256, 256, 277, 293, 309, 325, 341, 357, 373, 128, 181, 362, 378, 299, 315, 331, 256, 256, 256, 256],
         [256, 256, 278, 294, 310, 326, 342, 358, 374, 129, 164, 132, 136, 140, 143, 146, 150, 167, 157, 168]
     ]
-    assert isinstance(bck_tilemap.tile(0,0), Tile)
-    assert bck_tilemap.tile_identifier(0,0) == 256
+    assert isinstance(bck_tilemap.tile(0, 0), Tile)
+    assert bck_tilemap.tile_identifier(0, 0) == 256
     bck_tilemap.use_tile_objects(True)
-    assert isinstance(bck_tilemap.tile(0,0), Tile)
-    assert bck_tilemap.tile_identifier(0,0) == 256
-    assert isinstance(bck_tilemap[0,0], Tile)
+    assert isinstance(bck_tilemap.tile(0, 0), Tile)
+    assert bck_tilemap.tile_identifier(0, 0) == 256
+    assert isinstance(bck_tilemap[0, 0], Tile)
 
-    assert wdw_tilemap[0,0] == 256
-    assert wdw_tilemap[:5,0] == [256, 256, 256, 256, 256]
-    assert wdw_tilemap[:20,:10] == [
+    assert wdw_tilemap[0, 0] == 256
+    assert wdw_tilemap[:5, 0] == [256, 256, 256, 256, 256]
+    assert wdw_tilemap[:20, :10] == [
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 256, 256, 256, 230, 224, 236, 228, 256, 241, 242, 224, 240, 242, 256, 256, 256, 256],
         [256, 256, 256, 256, 256, 256, 241, 238, 243, 237, 227, 256, 242, 228, 241, 242, 256, 256, 256, 256],
@@ -146,11 +162,11 @@ def test_tilemaps():
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256]
     ]
-    assert isinstance(wdw_tilemap.tile(0,0), Tile)
-    assert wdw_tilemap.tile_identifier(0,0) == 256
+    assert isinstance(wdw_tilemap.tile(0, 0), Tile)
+    assert wdw_tilemap.tile_identifier(0, 0) == 256
     wdw_tilemap.use_tile_objects(True)
-    assert isinstance(wdw_tilemap.tile(0,0), Tile)
-    assert wdw_tilemap.tile_identifier(0,0) == 256
-    assert isinstance(wdw_tilemap[0,0], Tile)
+    assert isinstance(wdw_tilemap.tile(0, 0), Tile)
+    assert wdw_tilemap.tile_identifier(0, 0) == 256
+    assert isinstance(wdw_tilemap[0, 0], Tile)
 
     pyboy.stop(save=False)

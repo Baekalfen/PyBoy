@@ -54,15 +54,14 @@ class CPU:
         if intr_flag_enabled and intr_flag:
 
             # Clear interrupt flag
-            self.mb.setitem(
-                0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
+            self.mb.setitem(0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
 
             self.interrupt_master_enable = False
             if self.halted:
                 self.PC += 1 # Escape HALT on return
 
-            self.mb.setitem(self.SP-1, self.PC >> 8) # High
-            self.mb.setitem(self.SP-2, self.PC & 0xFF) # Low
+            self.mb.setitem(self.SP - 1, self.PC >> 8) # High
+            self.mb.setitem(self.SP - 2, self.PC & 0xFF) # Low
             self.SP -= 2
 
             return True
@@ -142,7 +141,7 @@ class CPU:
         # Profiling
         self.profiling = profiling
         if profiling:
-            self.hitrate = array.array('L', [0] * 512)
+            self.hitrate = array.array("L", [0] * 512)
 
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:

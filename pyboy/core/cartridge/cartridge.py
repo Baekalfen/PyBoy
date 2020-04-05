@@ -14,7 +14,6 @@ from .mbc5 import MBC5
 
 logger = logging.getLogger(__name__)
 
-
 try:
     from cython import compiled
     cythonmode = compiled
@@ -36,13 +35,10 @@ def load_cartridge(filename):
         raise Exception("Catridge type invalid: %s" % carttype)
 
     cartdata = (
-        carttype,
-        cartinfo[0].__name__,
-        ", ".join([x for x, y in zip(["SRAM", "Battery", "RTC"], cartinfo[1:]) if y])
+        carttype, cartinfo[0].__name__, ", ".join([x for x, y in zip(["SRAM", "Battery", "RTC"], cartinfo[1:]) if y])
     )
     logger.info("Cartridge type: 0x%0.2x - %s, %s" % cartdata)
-    logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" %
-                (len(rombanks), external_ram_count))
+    logger.info("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB" % (len(rombanks), external_ram_count))
     cartmeta = CARTRIDGE_TABLE[carttype]
 
     return cartmeta[0](filename, rombanks, external_ram_count, carttype, *cartmeta[1:])
@@ -57,17 +53,18 @@ def validate_checksum(rombanks):
 
 
 def load_romfile(filename):
-    with open(filename, 'rb') as romfile:
-        romdata = array('B', romfile.read())
+    with open(filename, "rb") as romfile:
+        romdata = array("B", romfile.read())
 
     banksize = 16 * 1024
     if cythonmode:
-        return memoryview(romdata).cast('B', shape=(len(romdata) // banksize, banksize))
+        return memoryview(romdata).cast("B", shape=(len(romdata) // banksize, banksize))
     else:
         v = memoryview(romdata)
-        return [v[i:i+banksize] for i in range(0, len(romdata), banksize)]
+        return [v[i:i + banksize] for i in range(0, len(romdata), banksize)]
 
 
+# yapf: disable
 CARTRIDGE_TABLE = {
     #      MBC     , SRAM  , Battery , RTC
     0x00: (ROMOnly , False , False   , False) , # ROM
@@ -87,6 +84,7 @@ CARTRIDGE_TABLE = {
     0x1A: (MBC5    , True  , False   , False) , # MBC5+RAM
     0x1B: (MBC5    , True  , True    , False) , # MBC5+RAM+BATT
 }
+# yapf: enable
 
 # Number of external 8KB banks in the cartridge
 EXTERNAL_RAM_TABLE = {

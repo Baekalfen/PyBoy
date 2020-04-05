@@ -2,7 +2,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 """
 This class gives access to the frame buffer and other screen parameters of PyBoy.
 """
@@ -14,7 +13,6 @@ import numpy as np
 from .constants import COLS, ROWS
 
 logger = logging.getLogger(__name__)
-
 
 try:
     from PIL import Image
@@ -141,4 +139,4 @@ class Screen:
         # NOTE: Might have room for performance improvement
         # It's not possible to use the following, as the byte-order (endianess) isn't supported in Pillow
         # Image.frombytes('RGBA', self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), 'RGB')
+        return Image.fromarray(self.screen_ndarray(), "RGB")

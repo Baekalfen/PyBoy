@@ -17,6 +17,7 @@ except ImportError:
     cythonmode = False
 
 # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
+# yapf: disable
 KEY_DOWN = {
     sdl2.SDLK_UP        : WindowEvent.PRESS_ARROW_UP,
     sdl2.SDLK_DOWN      : WindowEvent.PRESS_ARROW_DOWN,
@@ -49,6 +50,8 @@ KEY_UP = {
     sdl2.SDLK_COMMA     : WindowEvent.RELEASE_REWIND_BACK,
     sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
 }
+# yapf: enable
+
 
 def sdl2_event_pump(events):
     # Feed events into the loop
@@ -96,18 +99,15 @@ class WindowSDL2(PyBoyWindowPlugin):
         self._ticks = sdl2.SDL_GetTicks()
 
         self._window = sdl2.SDL_CreateWindow(
-            b"PyBoy",
-            sdl2.SDL_WINDOWPOS_CENTERED,
-            sdl2.SDL_WINDOWPOS_CENTERED,
-            self._scaledresolution[0],
-            self._scaledresolution[1],
-            sdl2.SDL_WINDOW_RESIZABLE)
+            b"PyBoy", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, self._scaledresolution[0],
+            self._scaledresolution[1], sdl2.SDL_WINDOW_RESIZABLE
+        )
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
-            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888,
-            sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS)
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888, sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS
+        )
 
         sdl2.SDL_ShowWindow(self._window)
 
@@ -121,11 +121,11 @@ class WindowSDL2(PyBoyWindowPlugin):
         self._update_display()
 
     def enabled(self):
-        return self.pyboy_argv.get('window_type') == 'SDL2' or self.pyboy_argv.get('window_type') is None
+        return self.pyboy_argv.get("window_type") == "SDL2" or self.pyboy_argv.get("window_type") is None
 
     def frame_limiter(self, speed):
         now = sdl2.SDL_GetTicks()
-        delay = int(1000.0/(60.0*speed) - (now-self._ticks))
+        delay = int(1000.0 / (60.0*speed) - (now - self._ticks))
         sdl2.SDL_Delay(delay if delay > 0 else 0)
         self._ticks = sdl2.SDL_GetTicks()
         return True
@@ -139,7 +139,8 @@ class WindowSDL2(PyBoyWindowPlugin):
 # prevent Cython from trying to parse it. This block provides the
 # functions that are otherwise implemented as inlined cdefs in the pxd
 if not cythonmode:
-    exec("""
+    exec(
+        """
 def _update_display(self):
     sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS*4)
     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
@@ -147,4 +148,5 @@ def _update_display(self):
     sdl2.SDL_RenderClear(self._sdlrenderer)
 
 WindowSDL2._update_display = _update_display
-""", globals(), locals())
+""", globals(), locals()
+    )

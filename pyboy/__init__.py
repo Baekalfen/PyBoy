@@ -4,12 +4,12 @@
 #
 
 __pdoc__ = {
-   'core': False,
-   'logger': False,
-   'pyboy': False,
-   'utils': False,
+    "core": False,
+    "logger": False,
+    "pyboy": False,
+    "utils": False,
 }
-__all__ = ['PyBoy', 'WindowEvent']
+__all__ = ["PyBoy", "WindowEvent"]
 
 from .pyboy import PyBoy
 from .utils import WindowEvent

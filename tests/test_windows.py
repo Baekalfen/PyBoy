@@ -14,23 +14,23 @@ replay_file = "tests/replays/kirby_gif.replay"
 
 
 def test_headless():
-    replay(utils.kirby_rom, replay_file, 'headless')
+    replay(utils.kirby_rom, replay_file, "headless")
 
 
 def test_dummy():
-    replay(utils.kirby_rom, replay_file, 'dummy', verify=False)
+    replay(utils.kirby_rom, replay_file, "dummy", verify=False)
 
 
-@pytest.mark.skipif(os.environ.get('TEST_NO_UI'), reason="Skipping test, as there is no UI")
+@pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")
 def test_opengl():
-    replay(utils.kirby_rom, replay_file, 'OpenGL')
+    replay(utils.kirby_rom, replay_file, "OpenGL")
 
 
-@pytest.mark.skipif(os.environ.get('TEST_NO_UI'), reason="Skipping test, as there is no UI")
+@pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")
 def test_sdl2():
-    replay(utils.kirby_rom, replay_file, 'SDL2')
+    replay(utils.kirby_rom, replay_file, "SDL2")
 
 
-@pytest.mark.skipif(os.environ.get('TEST_NO_UI'), reason="Skipping test, as there is no UI")
+@pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")
 def test_scanline():
-    replay(utils.kirby_rom, replay_file, 'scanline', verify=False)
+    replay(utils.kirby_rom, replay_file, "scanline", verify=False)

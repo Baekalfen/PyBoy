@@ -2,7 +2,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 """
 The core module of the emulator
 """
@@ -19,7 +18,7 @@ from .core.mb import Motherboard
 
 logger = logging.getLogger(__name__)
 
-SPF = 1/60. # inverse FPS (frame-per-second)
+SPF = 1 / 60. # inverse FPS (frame-per-second)
 
 defaults = {
     "color_palette": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
@@ -29,14 +28,7 @@ defaults = {
 
 
 class PyBoy:
-    def __init__(
-                self,
-                gamerom_file, *,
-                bootrom_file=None,
-                profiling=False,
-                disable_renderer=False,
-                **kwargs
-            ):
+    def __init__(self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, **kwargs):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
@@ -70,11 +62,7 @@ class PyBoy:
         self.gamerom_file = gamerom_file
 
         self.mb = Motherboard(
-            gamerom_file,
-            bootrom_file,
-            kwargs["color_palette"],
-            disable_renderer,
-            profiling=profiling
+            gamerom_file, bootrom_file, kwargs["color_palette"], disable_renderer, profiling=profiling
         )
 
         # Performance measures
@@ -117,14 +105,14 @@ class PyBoy:
         self._post_tick()
         t_post = time.perf_counter()
 
-        secs = t_pre-t_start
-        self.avg_pre = 0.9 * self.avg_pre + 0.1 * secs
+        secs = t_pre - t_start
+        self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
 
-        secs = t_tick-t_pre
-        self.avg_tick = 0.9 * self.avg_tick + 0.1 * secs
+        secs = t_tick - t_pre
+        self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
 
-        secs = t_post-t_tick
-        self.avg_post = 0.9 * self.avg_post + 0.1 * secs
+        secs = t_post - t_tick
+        self.avg_post = 0.9 * self.avg_post + 0.1*secs
 
         return self.done
 
@@ -189,8 +177,8 @@ class PyBoy:
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
-        self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick)/SPF*100)
-        self.window_title += " Emulation: x%d" % (round(SPF/avg_emu) if avg_emu != 0 else 0)
+        self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick) / SPF * 100)
+        self.window_title += " Emulation: x%d" % (round(SPF / avg_emu) if avg_emu != 0 else 0)
         if self.paused:
             self.window_title += "[PAUSED]"
         self.window_title += self.plugin_manager.window_title()

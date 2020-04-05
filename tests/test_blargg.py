@@ -163,4 +163,4 @@ def test_blarggs():
             f.write("|ROM|Result|\n")
             f.write("|---|---|\n")
             for (rom, _), res in zip(test_roms, results):
-                f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))
+                f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))

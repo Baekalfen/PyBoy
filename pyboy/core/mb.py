@@ -11,7 +11,6 @@ from . import bootrom, cartridge, cpu, interaction, lcd, ram, timer
 
 logger = logging.getLogger(__name__)
 
-
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
@@ -34,12 +33,12 @@ class Motherboard:
         self.renderer = lcd.Renderer(color_palette)
         self.disable_renderer = disable_renderer
         self.bootrom_enabled = True
-        self.serialbuffer = ''
+        self.serialbuffer = ""
         self.cycles_remaining = 0
 
     def getserial(self):
         b = self.serialbuffer
-        self.serialbuffer = ''
+        self.serialbuffer = ""
         return b
 
     def buttonevent(self, key):
@@ -128,7 +127,7 @@ class Motherboard:
 
                 # Profiling
                 if self.cpu.profiling:
-                    self.cpu.hitrate[0x76] += cycles//4
+                    self.cpu.hitrate[0x76] += cycles // 4
 
             self.cycles_remaining -= cycles
 
@@ -235,7 +234,7 @@ class Motherboard:
         elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
-            return self.ram.internal_ram1[i-0xFF80]
+            return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF: # Interrupt Enable Register
             return self.ram.interrupt_register[0]
         else:
@@ -307,7 +306,7 @@ class Motherboard:
                 self.bootrom_enabled = False
             self.ram.non_io_internal_ram1[i - 0xFF4C] = value
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
-            self.ram.internal_ram1[i-0xFF80] = value
+            self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
             self.ram.interrupt_register[0] = value
         else:

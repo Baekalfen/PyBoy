@@ -2,7 +2,6 @@
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 """
 The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used both for
 `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when refering to graphics.
@@ -16,7 +15,6 @@ from pyboy.utils import color_code
 from .constants import LOW_TILEDATA, VRAM_OFFSET
 
 logger = logging.getLogger(__name__)
-
 
 try:
     from PIL import Image
@@ -92,7 +90,7 @@ class Tile:
         if Image is None:
             logger.error(f"{__name__}: Missing dependency \"Pillow\".")
             return None
-        return Image.frombytes('RGBA', (8, 8), bytes(self.image_data()))
+        return Image.frombytes("RGBA", (8, 8), bytes(self.image_data()))
 
     def image_ndarray(self):
         """
@@ -128,8 +126,8 @@ class Tile:
             byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
-                colorcode = color_code(byte1, byte2, 7-x)
-                data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
+                colorcode = color_code(byte1, byte2, 7 - x)
+                data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode)
 
         return data
 
