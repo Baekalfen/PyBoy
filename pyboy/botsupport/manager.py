@@ -61,7 +61,7 @@ class BotSupportManager:
         """
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-        `pyboy.PyBoy.sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
+        `pyboy.botsupport.BotSupportManager.sprite` function to get a `pyboy.botsupport.sprite.Sprite` object.
 
         Example:
         ```

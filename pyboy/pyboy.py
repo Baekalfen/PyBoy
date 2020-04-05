@@ -225,7 +225,7 @@ class PyBoy:
 
         Returns
         -------
-        `pyboy.botsupport.Manager`:
+        `pyboy.botsupport.BotSupportManager`:
             The manager, which gives easier access to the emulated game through the classes in `pyboy.botsupport`.
         """
         return botsupport.BotSupportManager(self, self.mb)

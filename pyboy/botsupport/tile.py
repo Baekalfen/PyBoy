@@ -28,7 +28,7 @@ class Tile:
     def __init__(self, mb, identifier):
         """
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-        `pyboy.PyBoy.tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
+        `pyboy.botsupport.BotSupportManager.tile`, `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when
         refering to graphics.
 
         This class is not meant to be instantiated by developers reading this documentation, but it will be created

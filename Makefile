@@ -77,7 +77,7 @@ test_pypy:
 test_all: test docker-pypy docker-pypy-slim docker-buster docker-alpine docker-ubuntu1804 docker-pypy-ubuntu1804
 
 docs: clean
-	pdoc --html --force pyboy
+	pdoc --html --force -c latex_math=True -c sort_identifiers=False -c show_type_annotations=True --template-dir docs/templates pyboy
 	cp -r html/pyboy/ ${ROOT_DIR}/docs/
 	rm -rf html
 

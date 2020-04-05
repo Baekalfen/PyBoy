@@ -40,20 +40,22 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
 
 
 cdef class PyBoyGameWrapper(PyBoyPlugin):
+    cdef public shape
     cdef bint game_has_started
     cdef TileMap tilemap_background
 
     cdef bint _tile_cache_invalid
-    cdef array _cached_tiles_on_screen_raw
-    cdef uint32_t[:, :] _cached_tiles_on_screen
+    cdef array _cached_game_area_tiles_raw
+    cdef uint32_t[:, :] _cached_game_area_tiles
+    cpdef uint32_t[:, :] _game_area_tiles(self)
+
     cdef bint game_area_wrap_around
     cdef tuple game_area_section
     cpdef uint32_t[:, :] game_area(self)
-    cpdef uint32_t[:, :] tiles_on_screen(self)
 
     cdef bint _sprite_cache_invalid
     cdef list _cached_sprites_on_screen
-    cpdef list sprites_on_screen(self)
+    cpdef list _sprites_on_screen(self)
 
     cdef object saved_state
 

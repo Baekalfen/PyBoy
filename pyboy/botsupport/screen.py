@@ -28,8 +28,8 @@ class Screen:
     to make it possible to read this buffer out.
 
     If you're making an AI or bot, it's highly recommended to _not_ use this class for detecting objects on the screen.
-    It's much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and
-    `pyboy.PyBoy.sprite` instead.
+    It's much more efficient to use `pyboy.botsupport.BotSupportManager.tilemap_background`, `pyboy.botsupport.BotSupportManager.tilemap_window`, and
+    `pyboy.botsupport.BotSupportManager.sprite` instead.
     """
     def __init__(self, mb):
         self.mb = mb

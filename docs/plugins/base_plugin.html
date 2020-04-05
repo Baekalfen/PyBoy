@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.6.3" />
+<meta name="generator" content="pdoc 0.7.5" />
 <title>pyboy.plugins.base_plugin API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
-<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
 </head>
 <body>
 <main>
@@ -21,7 +22,9 @@
 </header>
 <section id="section-intro">
 <details class="source">
-<summary>Source code</summary>
+<summary>
+<span>Expand source code</span>
+</summary>
 <pre><code class="python">#
 # License: See LICENSE file
 # GitHub: https://github.com/Baekalfen/PyBoy
@@ -30,13 +33,16 @@
 __pdoc__ = {
    &#39;PyBoyPlugin&#39;: False,
    &#39;PyBoyWindowPlugin&#39;: False,
+   &#39;PyBoyGameWrapper.post_tick&#39;: False,
+   &#39;PyBoyGameWrapper.enabled&#39;: False,
+   &#39;PyBoyGameWrapper.argv&#39;: False,
 }
 
-from array import array
-import numpy as np
-
+import io
 import logging
+from array import array
 
+import numpy as np
 from pyboy.botsupport.sprite import Sprite
 
 logger = logging.getLogger(__name__)
@@ -109,11 +115,17 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
 
 class PyBoyGameWrapper(PyBoyPlugin):
+
+    &#34;&#34;&#34;
+    This is the base-class for the game-wrappers. It provides some generic game-wrapping functionality, like `game_area`
+    , which shows both sprites and tiles on the screen as a simple matrix.
+    &#34;&#34;&#34;
+
     argv = [(&#39;--game-wrapper&#39;, {&#34;action&#34;: &#39;store_true&#39;, &#34;help&#34;: &#39;Enable game wrapper for the current game&#39;})]
 
     def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.tilemap_background()
+        self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
         self.game_has_started = False
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
@@ -122,13 +134,15 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.game_area_wrap_around = game_area_wrap_around
         width = self.game_area_section[2] - self.game_area_section[0]
         height = self.game_area_section[3] - self.game_area_section[1]
-        self._cached_tiles_on_screen_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+        self._cached_game_area_tiles_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+
+        self.saved_state = io.BytesIO()
 
         if cythonmode:
-            self._cached_tiles_on_screen = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;, shape=(width, height))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;, shape=(width, height))
         else:
-            v = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;)
-            self._cached_tiles_on_screen = [v[i:i+height] for i in range(0, height*width, height)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;)
+            self._cached_game_area_tiles = [v[i:i+height] for i in range(0, height*width, height)]
 
     def enabled(self):
         return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title
@@ -136,10 +150,23 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
 
-    def sprites_on_screen(self):
+    def start_game(self):
         &#34;&#34;&#34;
-        All sprites with their bounding box inside the screen area
+        Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+        first playable state.
+
+        The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+        instantly.
         &#34;&#34;&#34;
+        raise NotImplementedError(&#34;start_game not implemented in game wrapper&#34;)
+
+    def reset_game(self):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to reset the game.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)
+
+    def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
             self._cached_sprites_on_screen = []
             for s in range(40):
@@ -149,36 +176,38 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self._sprite_cache_invalid = False
         return self._cached_sprites_on_screen
 
-    def tiles_on_screen(self):
-        &#34;&#34;&#34;
-        All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.
-        &#34;&#34;&#34;
+    def _game_area_tiles(self):
         if self._tile_cache_invalid:
             xx = self.game_area_section[0]
             yy = self.game_area_section[1]
             width = self.game_area_section[2]
             height = self.game_area_section[3]
-            scanline_parameters = self.pyboy.screen().tilemap_position_list()
+            scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
             if self.game_area_wrap_around:
-                self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
+                self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
                     SCX = scanline_parameters[(yy+y)*8][0]//8
                     SCY = scanline_parameters[(yy+y)*8][1]//8
                     for x in range(width):
                         _x = (xx+x+SCX)%32
                         _y = (yy+y+SCY)%32
-                        self._cached_tiles_on_screen[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                        self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
             else:
-                self._cached_tiles_on_screen = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+                self._cached_game_area_tiles = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
             self._tile_cache_invalid = False
-        return self._cached_tiles_on_screen
+        return self._cached_game_area_tiles
 
     def game_area(self):
         &#34;&#34;&#34;
-        Only the essential part of the screen with out HUD etc.
+        This method returns a cut-out of the screen as a simplified matrix for use in machine learning applications.
+
+        Returns
+        -------
+        memoryview:
+            Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        tiles_matrix = self.tiles_on_screen()
+        tiles_matrix = self.game_area_tiles()
         sprites = self.sprites_on_screen()
         xx = self.game_area_section[0]
         yy = self.game_area_section[1]
@@ -213,15 +242,24 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <span>(</span><span>*args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>This is the base-class for the game-wrappers. It provides some generic game-wrapping functionality, like <code>game_area</code>
+, which shows both sprites and tiles on the screen as a simple matrix.</p></section>
 <details class="source">
-<summary>Source code</summary>
+<summary>
+<span>Expand source code</span>
+</summary>
 <pre><code class="python">class PyBoyGameWrapper(PyBoyPlugin):
+
+    &#34;&#34;&#34;
+    This is the base-class for the game-wrappers. It provides some generic game-wrapping functionality, like `game_area`
+    , which shows both sprites and tiles on the screen as a simple matrix.
+    &#34;&#34;&#34;
+
     argv = [(&#39;--game-wrapper&#39;, {&#34;action&#34;: &#39;store_true&#39;, &#34;help&#34;: &#39;Enable game wrapper for the current game&#39;})]
 
     def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.tilemap_background()
+        self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
         self.game_has_started = False
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
@@ -230,13 +268,15 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.game_area_wrap_around = game_area_wrap_around
         width = self.game_area_section[2] - self.game_area_section[0]
         height = self.game_area_section[3] - self.game_area_section[1]
-        self._cached_tiles_on_screen_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+        self._cached_game_area_tiles_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+
+        self.saved_state = io.BytesIO()
 
         if cythonmode:
-            self._cached_tiles_on_screen = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;, shape=(width, height))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;, shape=(width, height))
         else:
-            v = memoryview(self._cached_tiles_on_screen_raw).cast(&#39;I&#39;)
-            self._cached_tiles_on_screen = [v[i:i+height] for i in range(0, height*width, height)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;)
+            self._cached_game_area_tiles = [v[i:i+height] for i in range(0, height*width, height)]
 
     def enabled(self):
         return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title
@@ -244,10 +284,23 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
 
-    def sprites_on_screen(self):
+    def start_game(self):
         &#34;&#34;&#34;
-        All sprites with their bounding box inside the screen area
+        Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+        first playable state.
+
+        The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+        instantly.
         &#34;&#34;&#34;
+        raise NotImplementedError(&#34;start_game not implemented in game wrapper&#34;)
+
+    def reset_game(self):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to reset the game.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)
+
+    def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
             self._cached_sprites_on_screen = []
             for s in range(40):
@@ -257,36 +310,38 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self._sprite_cache_invalid = False
         return self._cached_sprites_on_screen
 
-    def tiles_on_screen(self):
-        &#34;&#34;&#34;
-        All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.
-        &#34;&#34;&#34;
+    def _game_area_tiles(self):
         if self._tile_cache_invalid:
             xx = self.game_area_section[0]
             yy = self.game_area_section[1]
             width = self.game_area_section[2]
             height = self.game_area_section[3]
-            scanline_parameters = self.pyboy.screen().tilemap_position_list()
+            scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
             if self.game_area_wrap_around:
-                self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
+                self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
                     SCX = scanline_parameters[(yy+y)*8][0]//8
                     SCY = scanline_parameters[(yy+y)*8][1]//8
                     for x in range(width):
                         _x = (xx+x+SCX)%32
                         _y = (yy+y+SCY)%32
-                        self._cached_tiles_on_screen[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                        self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
             else:
-                self._cached_tiles_on_screen = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+                self._cached_game_area_tiles = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
             self._tile_cache_invalid = False
-        return self._cached_tiles_on_screen
+        return self._cached_game_area_tiles
 
     def game_area(self):
         &#34;&#34;&#34;
-        Only the essential part of the screen with out HUD etc.
+        This method returns a cut-out of the screen as a simplified matrix for use in machine learning applications.
+
+        Returns
+        -------
+        memoryview:
+            Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        tiles_matrix = self.tiles_on_screen()
+        tiles_matrix = self.game_area_tiles()
         sprites = self.sprites_on_screen()
         xx = self.game_area_section[0]
         yy = self.game_area_section[1]
@@ -315,38 +370,71 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <li><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand" href="game_wrapper_super_mario_land.html#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand">GameWrapperSuperMarioLand</a></li>
 <li><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="game_wrapper_tetris.html#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></li>
 </ul>
-<h3>Class variables</h3>
-<dl>
-<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv"><code class="name">var <span class="ident">argv</span></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-</dl>
 <h3>Methods</h3>
 <dl>
-<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled"><code class="name flex">
-<span>def <span class="ident">enabled</span></span>(<span>self)</span>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game"><code class="name flex">
+<span>def <span class="ident">start_game</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+first playable state.</p>
+<p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
+instantly.</p></section>
 <details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def enabled(self):
-    return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title</code></pre>
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_game(self):
+    &#34;&#34;&#34;
+    Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+    first playable state.
+
+    The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+    instantly.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#34;start_game not implemented in game wrapper&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game"><code class="name flex">
+<span>def <span class="ident">reset_game</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_game(self):
+    &#34;&#34;&#34;
+    After calling `start_game`, you can call this method at any time to reset the game.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area"><code class="name flex">
 <span>def <span class="ident">game_area</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Only the essential part of the screen with out HUD etc.</p></section>
+<section class="desc"><p>This method returns a cut-out of the screen as a simplified matrix for use in machine learning applications.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>memoryview</code>:</dt>
+<dd>Simplified 2-dimensional memoryview of the screen</dd>
+</dl></section>
 <details class="source">
-<summary>Source code</summary>
+<summary>
+<span>Expand source code</span>
+</summary>
 <pre><code class="python">def game_area(self):
     &#34;&#34;&#34;
-    Only the essential part of the screen with out HUD etc.
+    This method returns a cut-out of the screen as a simplified matrix for use in machine learning applications.
+
+    Returns
+    -------
+    memoryview:
+        Simplified 2-dimensional memoryview of the screen
     &#34;&#34;&#34;
-    tiles_matrix = self.tiles_on_screen()
+    tiles_matrix = self.game_area_tiles()
     sprites = self.sprites_on_screen()
     xx = self.game_area_section[0]
     yy = self.game_area_section[1]
@@ -358,71 +446,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
         if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
             tiles_matrix[_y][_x] = s.tile_identifier
     return tiles_matrix</code></pre>
-</details>
-</dd>
-<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.post_tick"><code class="name flex">
-<span>def <span class="ident">post_tick</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def post_tick(self):
-    raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.sprites_on_screen"><code class="name flex">
-<span>def <span class="ident">sprites_on_screen</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>All sprites with their bounding box inside the screen area</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def sprites_on_screen(self):
-    &#34;&#34;&#34;
-    All sprites with their bounding box inside the screen area
-    &#34;&#34;&#34;
-    if self._sprite_cache_invalid:
-        self._cached_sprites_on_screen = []
-        for s in range(40):
-            sprite = Sprite(self.mb, s)
-            if sprite.on_screen:
-                self._cached_sprites_on_screen.append(sprite)
-        self._sprite_cache_invalid = False
-    return self._cached_sprites_on_screen</code></pre>
-</details>
-</dd>
-<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.tiles_on_screen"><code class="name flex">
-<span>def <span class="ident">tiles_on_screen</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def tiles_on_screen(self):
-    &#34;&#34;&#34;
-    All tiles visible on the screen corrected for scanline parameters. Includes HUD and stuff outside of the screen.
-    &#34;&#34;&#34;
-    if self._tile_cache_invalid:
-        xx = self.game_area_section[0]
-        yy = self.game_area_section[1]
-        width = self.game_area_section[2]
-        height = self.game_area_section[3]
-        scanline_parameters = self.pyboy.screen().tilemap_position_list()
-
-        if self.game_area_wrap_around:
-            self._cached_tiles_on_screen = np.ndarray(shape=(height, width), dtype=np.uint32)
-            for y in range(height):
-                SCX = scanline_parameters[(yy+y)*8][0]//8
-                SCY = scanline_parameters[(yy+y)*8][1]//8
-                for x in range(width):
-                    _x = (xx+x+SCX)%32
-                    _y = (yy+y+SCY)%32
-                    self._cached_tiles_on_screen[y][x] = self.tilemap_background.tile_identifier(_x, _y)
-        else:
-            self._cached_tiles_on_screen = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
-        self._tile_cache_invalid = False
-    return self._cached_tiles_on_screen</code></pre>
 </details>
 </dd>
 </dl>
@@ -445,13 +468,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <ul>
 <li>
 <h4><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></code></h4>
-<ul class="two-column">
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.argv">argv</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled">enabled</a></code></li>
+<ul class="">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area">game_area</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.post_tick" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.post_tick">post_tick</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.sprites_on_screen" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.sprites_on_screen">sprites_on_screen</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.tiles_on_screen" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.tiles_on_screen">tiles_on_screen</a></code></li>
 </ul>
 </li>
 </ul>
@@ -460,7 +480,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.6.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

@@ -20,8 +20,8 @@ class TileMap:
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         "background" and "window".
 
-        Use `pyboy.PyBoy.tilemap_background` and `pyboy.PyBoy.tilemap_window` to instantiate this
-        object.
+        Use `pyboy.botsupport.BotSupportManager.tilemap_background` and
+        `pyboy.botsupport.BotSupportManager.tilemap_window` to instantiate this object.
 
         This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
         identifier at a given coordinate.

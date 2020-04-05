@@ -29,7 +29,7 @@ class Sprite:
         call to `pyboy.PyBoy.tick`, so make sure to verify the `Sprite.tile_identifier` hasn't changed.
 
         By knowing the tile identifiers of players, enemies, power-ups and so on, you'll be able to search for them
-        using `pyboy.PyBoy.sprite_by_tile_identifier` and feed it to your bot or AI.
+        using `pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier` and feed it to your bot or AI.
         """
         assert 0 <= sprite_index < SPRITES, f"Sprite index of {sprite_index} is out of range (0-{SPRITES})"
         self.mb = mb

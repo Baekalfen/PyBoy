@@ -3,6 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+"""
+Plugins that extend PyBoy's functionality. The only publicly exposed, are the game wrappers.
+"""
+
 __pdoc__ = {
    # docs exclude
    'rewind': False,

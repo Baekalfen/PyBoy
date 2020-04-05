@@ -3,9 +3,15 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import os
 import sys
 
 from pyboy import PyBoy, WindowEvent
+
+# Makes us able to import PyBoy from the directory below
+file_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, file_path + '/..')
+
 
 # Check if the ROM is given through argv
 if len(sys.argv) > 1:
@@ -47,13 +53,14 @@ for frame in range(1000): # Enough frames for the test. Otherwise do: `while not
         print("First brick touched the bottom!")
         print(tetris)
 
-    # As an example, it could be useful to know the coordinates of the sprites on the screen.
-    if frame == 170: # Arbitrary frame where we read out all sprite on the screen
-        for s in tetris.sprites_on_screen():
-            print(s)
-
 print("Final game board mask:")
 print(tetris)
+
+# We shouldn't have made any progress with the moves we made
+assert tetris.score == 0
+assert tetris.level == 0
+assert tetris.lines == 0
+assert tetris.fitness == 0 # A built-in fitness score for AI development
 
 # Assert there is something on the bottom of the game area
 assert any(filter(lambda x: x != blank_tile, game_area[-1,:]))
