@@ -111,7 +111,7 @@ cdef class Renderer:
         xx=int,
         pixel=uint32_t,
     )
-    cdef void render_sprites(self, LCD, uint32_t[:,:])
+    cdef void render_sprites(self, LCD, uint32_t[:,:], bint)
 
     @cython.locals(
         x=int,

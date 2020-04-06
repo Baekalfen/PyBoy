@@ -197,9 +197,9 @@ class Renderer:
                     self._screenbuffer[y][x] = self.color_palette[0]
 
         if lcd.LCDC.sprite_enable:
-            self.render_sprites(lcd, self._screenbuffer)
+            self.render_sprites(lcd, self._screenbuffer, False)
 
-    def render_sprites(self, lcd, buffer):
+    def render_sprites(self, lcd, buffer, ignore_priority):
         # Render sprites
         # - Doesn't restrict 10 sprites per scan line
         # - Prioritizes sprite in inverted order
@@ -213,28 +213,28 @@ class Renderer:
             attributes = lcd.OAM[n + 3]
             xflip = attributes & 0b00100000
             yflip = attributes & 0b01000000
-            spritepriority = attributes & 0b10000000
+            spritepriority = (attributes & 0b10000000) and not ignore_priority
             spritecache = (self._spritecache1 if attributes & 0b10000 else self._spritecache0)
 
-            if x < COLS and y < ROWS:
-                for dy in range(spriteheight):
-                    yy = spriteheight - dy - 1 if yflip else dy
-                    if 0 <= y < ROWS:
-                        for dx in range(8):
-                            xx = 7 - dx if xflip else dx
-                            pixel = spritecache[8*tileindex + yy][xx]
+            for dy in range(spriteheight):
+                yy = spriteheight - dy - 1 if yflip else dy
+                if 0 <= y < ROWS:
+                    for dx in range(8):
+                        xx = 7 - dx if xflip else dx
+                        pixel = spritecache[8*tileindex + yy][xx]
+                        if 0 <= x < COLS:
+                            # import pdb; pdb.set_trace()
+                            # TODO: Checking `buffer[y][x] == bgpkey` is a bit of a hack
+                            if (spritepriority and not buffer[y][x] == bgpkey):
+                                # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
+                                # with the next 'if', as sprites can have an alpha channel in other ways
+                                pixel &= ~self.alphamask
 
-                            if 0 <= x < COLS:
-                                if (spritepriority and not buffer[y][x] == bgpkey):
-                                    # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
-                                    # with the next 'if', as sprites can have an alpha channel in other ways
-                                    pixel &= ~self.alphamask
-
-                                if pixel & self.alphamask:
-                                    buffer[y][x] = pixel
-                            x += 1
-                        x -= 8
-                    y += 1
+                            if pixel & self.alphamask:
+                                buffer[y][x] = pixel
+                        x += 1
+                    x -= 8
+                y += 1
 
     def update_cache(self, lcd):
         if self.clearcache:

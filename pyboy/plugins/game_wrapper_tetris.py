@@ -59,6 +59,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
             v = memoryview(self._cached_game_area_tiles_raw).cast("I")
             self._cached_game_area_tiles = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]
 
+        super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+
     def _game_area_tiles(self):
         if self._tile_cache_invalid:
             self._cached_game_area_tiles = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
@@ -114,9 +116,12 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
         """
-        self.saved_state.seek(0)
-        self.pyboy.load_state(self.saved_state)
-        self.post_tick()
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error("Tried to reset game, but it hasn't been started yet!")
 
     def _game_area_np(self):
         return np.asarray(self.game_area())
@@ -157,12 +162,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         """
-        tiles_matrix = self._game_area_tiles()
-        sprites = self._sprites_on_screen()
-        for s in sprites:
-            if s.x < 12 * 8:
-                tiles_matrix[s.y // 8][s.x // 8 - 2] = s.tile_identifier
-        return tiles_matrix
+        return PyBoyGameWrapper.game_area(self)
 
     def __repr__(self):
         adjust = 4
