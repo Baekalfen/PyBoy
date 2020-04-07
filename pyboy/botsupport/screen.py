@@ -59,16 +59,10 @@ class Screen:
 
         Returns
         -------
-        numpy.ndarray:
-            SCX, SCY, WX and WY for each scanline (144, 4).
+        list:
+            Nested list of SCX, SCY, WX and WY for each scanline (144x4).
         """
         return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]
-        # return np.vstack(
-        #     [
-        #         np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
-        #         for line in self.mb.renderer._scanlineparameters
-        #         ]
-        #     )
 
     def raw_screen_buffer(self):
         """
