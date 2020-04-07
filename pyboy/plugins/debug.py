@@ -336,21 +336,39 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        # scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
-        scanlineparameters = [[1, 1, 1, 1] for _ in range(144)]
+        scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
+        # TODO: Refactor this
         # Mark screen area
         for y in range(constants.ROWS):
             xx = int(scanlineparameters[y][self.scanline_x])
             yy = int(scanlineparameters[y][self.scanline_y])
-            if y == 0 or y == constants.ROWS - 1:
-                for x in range(constants.COLS):
-                    self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] = COLOR
-            else:
-                self.buf0[(yy+y) % 0xFF][xx % 0xFF] = COLOR
-                for x in range(constants.COLS):
-                    self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] &= self.color
-                self.buf0[(yy+y) % 0xFF][(xx + constants.COLS) % 0xFF] = COLOR
+
+            if self.scanline_x == 0: # Background
+                # Wraps around edges of the screen
+                if y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
+                    for x in range(constants.COLS):
+                        self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] = COLOR
+                else: # Draw body
+                    self.buf0[(yy+y) % 0xFF][xx % 0xFF] = COLOR
+                    for x in range(constants.COLS):
+                        self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] &= self.color
+                    self.buf0[(yy+y) % 0xFF][(xx + constants.COLS) % 0xFF] = COLOR
+            else: # Window
+                # Takes a cut of the screen
+                xx = -xx
+                yy = -yy
+                if yy + y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
+                    for x in range(constants.COLS):
+                        if 0 <= xx + x < constants.COLS:
+                            self.buf0[yy + y][xx + x] = COLOR
+                else: # Draw body
+                    if 0 <= yy + y:
+                        self.buf0[yy + y][max(xx, 0)] = COLOR
+                        for x in range(constants.COLS):
+                            if 0 <= xx + x < constants.COLS:
+                                self.buf0[yy + y][xx + x] &= self.color
+                        self.buf0[yy + y][xx + constants.COLS] = COLOR
 
         # Mark selected tiles
         for t, match in zip(
