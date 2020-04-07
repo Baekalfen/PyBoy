@@ -31,7 +31,7 @@ def load_cartridge(filename):
 
     carttype = rombanks[0][0x0147]
     cartinfo = CARTRIDGE_TABLE.get(carttype, None)
-    if carttype is None:
+    if cartinfo is None:
         raise Exception("Catridge type invalid: %s" % carttype)
 
     cartdata = (
@@ -83,6 +83,9 @@ CARTRIDGE_TABLE = {
     0x19: (MBC5    , False , False   , False) , # MBC5
     0x1A: (MBC5    , True  , False   , False) , # MBC5+RAM
     0x1B: (MBC5    , True  , True    , False) , # MBC5+RAM+BATT
+    0x1C: (MBC5    , False , False   , False) , # MBC5+RUMBLE
+    0x1D: (MBC5    , True  , False   , False) , # MBC5+RUMBLE+RAM
+    0x1E: (MBC5    , True  , True    , False) , # MBC5+RUMBLE+RAM+BATT
 }
 # yapf: enable
 

@@ -73,7 +73,7 @@ cdef class Renderer:
     cdef uint32_t[:,:] _screenbuffer
     cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
 
-    cdef uint8_t[144][4] _scanlineparameters
+    cdef uint8_t[144][5] _scanlineparameters
 
     @cython.locals(bx=int, by=int, wx=int, wy=int)
     cdef void scanline(self, int, LCD)

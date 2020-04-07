@@ -153,7 +153,7 @@ class Renderer:
             self._spritecache1 = [v[i:i + 8] for i in range(0, TILES * 8 * 8, 8)]
             self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
-        self._scanlineparameters = [[0, 0, 0, 0] for _ in range(ROWS)]
+        self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
 
     def scanline(self, y, lcd):
         bx, by = lcd.getviewport()
@@ -162,6 +162,7 @@ class Renderer:
         self._scanlineparameters[y][1] = by
         self._scanlineparameters[y][2] = wx
         self._scanlineparameters[y][3] = wy
+        self._scanlineparameters[y][4] = lcd.LCDC.tiledata_select
 
     def render_screen(self, lcd):
         self.update_cache(lcd)
@@ -171,7 +172,7 @@ class Renderer:
         wmap = 0x1800 if lcd.LCDC.windowmap_select == 0 else 0x1C00
 
         for y in range(ROWS):
-            bx, by, wx, wy = self._scanlineparameters[y]
+            bx, by, wx, wy, tile_data_select = self._scanlineparameters[y]
             # Used for the half tile at the left side when scrolling
             offset = bx & 0b111
 
@@ -187,7 +188,7 @@ class Renderer:
                 elif lcd.LCDC.background_enable:
                     bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
                     # If using signed tile indices, modify index
-                    if not lcd.LCDC.tiledata_select:
+                    if not tile_data_select:
                         # (x ^ 0x80 - 128) to convert to signed, then
                         # add 256 for offset (reduces to + 128)
                         bt = (bt ^ 0x80) + 128
@@ -276,6 +277,7 @@ class Renderer:
             # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
             f.write((self._scanlineparameters[y][2] + 7) & 0xFF)
             f.write(self._scanlineparameters[y][3])
+            f.write(self._scanlineparameters[y][4])
 
     def load_state(self, f, state_version):
         for y in range(ROWS):
@@ -284,3 +286,5 @@ class Renderer:
             # Restore (WX - 7) as described above
             self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
             self._scanlineparameters[y][3] = f.read()
+            if state_version > 3:
+                self._scanlineparameters[y][4] = f.read()
