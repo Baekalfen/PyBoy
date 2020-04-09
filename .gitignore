@@ -27,32 +27,7 @@ var/
 .installed.cfg
 *.egg
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
 coverage.xml
-*,cover
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
 
 # Sphinx documentation
 docs/_build/
@@ -64,16 +39,6 @@ target/
 Report/*.pdf
 Report/*.aux
 Report/*.log
-
-profile0
-profile1
-profile2
-profile3
-
-# Avoid uploading output of CoreDump
-*.dump
-*.dump.bmp
-dump*.bmp
 
 # Don't want to see any ROMs being uploaded
 # This project is not for pirating games!
@@ -98,15 +63,6 @@ tmp.state
 
 /recordings
 
-# Files from venv and dependencies
-/bin
-/include
-/lib-python
-/lib_pypy
-/pip-selfcheck.json
-/site-packages
-/share
-
 /bin
 /include
 /lib-python
@@ -121,11 +77,7 @@ Projects/Projects.aux
 Projects/Projects.bbl
 Projects/Projects.blg
 Projects/Projects.out
-
-# Autoenv scripts
-.in
-.out
-.env
+Projects/Projects.log
 
 bootrom/bootrom.map
 bootrom/bootrom.obj
@@ -134,6 +86,5 @@ bootrom/logo.asm
 bootrom/pyboy.png
 bootrom/PYBOY_ROM.bin
 
-pyboy.tar.gz
 test.replay
 ci_secrets.tar

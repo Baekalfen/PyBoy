@@ -1,3 +1,8 @@
+#
+# License: See LICENSE.SDL2_PXD.txt file
+# BitBucket: https://bitbucket.org/tgjones/sdl2_cython
+#
+
 # Cython PXD file for SDL2 2.0.3
 
 # Wrapped headers:
