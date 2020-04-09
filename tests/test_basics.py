@@ -74,7 +74,7 @@ def test_argv_parser(*args):
     parser = main.parser
 
     # Check error when ROM doesn't exist
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(SystemExit):
         parser.parse_args("not_a_rom_file_that_would_exist.rom".split(" "))
 
     file_that_exists = "setup.py"
