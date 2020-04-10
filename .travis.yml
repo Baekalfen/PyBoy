@@ -42,9 +42,9 @@ before_install:
         openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
         tar xf ci_secrets.tar
         # MacOS Python and PyPy
-        brew update ; fi
-        brew install sdl2; fi
-        python3 -m pip install -U --force-reinstall pip; fi
+        brew update
+        brew install sdl2
+        python3 -m pip install -U --force-reinstall pip
         # MacOS PyPy
         if [ "$PYPY_TESTING" = "1" ]; then brew install pypy3 zlib; fi
         if [ "$PYPY_TESTING" = "1" ]; then export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"; fi
