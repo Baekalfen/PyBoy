@@ -1,4 +1,4 @@
-language: generic
+language: bash # Randomly fixes Windows not booting
 
 matrix:
   include:
