@@ -111,8 +111,8 @@ script:
   - |-
     case $TRAVIS_OS_NAME in
       windows)
-        TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
-        TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy
+        if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython; fi
+        if [ "$PYPY_TESTING" = "1" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy; fi
       ;;
       *)
         if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 make test_cython; fi
