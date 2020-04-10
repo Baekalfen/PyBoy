@@ -76,9 +76,9 @@ before_install:
         taskkill //IM gpg-agent.exe //F  # https://travis-ci.community/t/4967
         export PATH=/C/tools/msys64/mingw64/bin:$PATH
         export MAKE=mingw32-make  # so that Autotools can find it
-        $msys2 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
-        $msys2 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
-        $msys2 tar xf ci_secrets.tar
+        $mingw64 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
+        $mingw64 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+        $mingw64 tar xf ci_secrets.tar
         ;;
     esac
 
@@ -87,7 +87,7 @@ before_install:
 #     case $TRAVIS_OS_NAME in
 #       windows)
 #         # https://unix.stackexchange.com/a/137322/107554
-#         $msys2 pacman --sync --clean --noconfirm
+#         $mingw64 pacman --sync --clean --noconfirm
 #         ;;
 #     esac
 
@@ -100,7 +100,7 @@ install:
   - |-
     case $TRAVIS_OS_NAME in
       windows)
-        $msys2 make build
+        $mingw64 make build
       ;;
       *)
         if [ "$PYPY_TESTING" = "" ]; then make build; fi
@@ -111,8 +111,8 @@ script:
   - |-
     case $TRAVIS_OS_NAME in
       windows)
-        $msys2 TEST_CI=1 TEST_NO_UI=1 make test_cython
-        $msys2 TEST_CI=1 TEST_NO_UI=1 make test_pypy
+        $mingw64 TEST_CI=1 TEST_NO_UI=1 make test_cython
+        $mingw64 TEST_CI=1 TEST_NO_UI=1 make test_pypy
       ;;
       *)
         if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 make test_cython; fi
