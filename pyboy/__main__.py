@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 

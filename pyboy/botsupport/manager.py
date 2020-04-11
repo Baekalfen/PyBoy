@@ -1,5 +1,5 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 from . import constants as _constants

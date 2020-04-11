@@ -1,5 +1,5 @@
 #
-# License: See LICENSE.SDL2_PXD.txt file
+# License: See LICENSE.md.SDL2_PXD.txt file
 # BitBucket: https://bitbucket.org/tgjones/sdl2_cython
 #
 
