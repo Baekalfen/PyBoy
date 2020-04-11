@@ -86,7 +86,7 @@ before_install:
           ;;
           *)
             powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe', 'python-3.7.6-amd64.exe')"
-            python-3.7.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1
+            powershell -Command "start-Process -FilePath python-3.7.6-amd64.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
             powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
             powershell -Command "Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\\SDL2\\"
             setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\x64
