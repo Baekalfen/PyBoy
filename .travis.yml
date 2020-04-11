@@ -90,6 +90,7 @@ before_install:
             powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
             powershell -Command "Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\\SDL2\\"
             setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\x64
+            setx PATH "%PATH%;C:\\SDL2\\SDL2-2.0.10\\lib\\x64"
           ;;
         esac
       ;;
@@ -118,7 +119,7 @@ install:
             $mingw64 make build
           ;;
           *)
-            python setup.py build_ext --inplace
+            "C:\\Program Files\\Python37\\python.exe" setup.py build_ext --inplace
           ;;
         esac
       ;;
