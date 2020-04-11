@@ -453,6 +453,9 @@ class SpriteWindow(BaseDebugWindow):
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // sprite_height
                     sprite_identifier = tile_y * (self.width // 8) + tile_x
+                    if sprite_identifier > constants.SPRITES:
+                        # Out of bounds
+                        continue
                     sprite = Sprite(self.mb, sprite_identifier)
                     marked_tiles.add(
                         MarkedTile(

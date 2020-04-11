@@ -119,7 +119,7 @@ class clean(_clean):
 # Locate the directory with SDL2 headers and library
 def locate_sdl2_config():
     print("Searching for SDL2 installation")
-    if sys.platform == "win32" and any(map(lambda x: "msys" in x, sys.path)):
+    if sys.platform == "win32" and "GCC" in platform.python_compiler():
         print("Detected msys, looking for sdl2-config")
         msys_sh = None
         msys_sdl2_config = None
@@ -138,9 +138,14 @@ def locate_sdl2_config():
         else:
             print(f"Could not find shell ({msys_sh}) and sdl2-config ({msys_sdl2_config})")
             return None
-    else:
+    elif sys.platform == "win32" and "MSC" in platform.python_compiler():
+        return [] # Defaults to env var PYSDL2_DLL_PATH
+    elif sys.platform in ["darmin", "linux"]:
         print("Didn't detect msys2 environment, trying sdl2-config assuming Unix environment")
         return os.popen("sdl2-config --cflags --libs").read().split()
+    else:
+        print(f"Unsupported OS type: {sys.platform}")
+        sys.exit(1)
 
 
 # Define libs, libdirs, includes and cflags for SDL2
@@ -168,15 +173,15 @@ def define_lib_includes_cflags():
         sdl2_path = os.path.abspath(sdl2_path[:sdl2_path.index("lib")])
         if not os.path.isdir(sdl2_path):
             print(f"Error locating SDL2: {sdl2_path} is not a directory")
-            sys.exit(1)
+            sys.exit(2)
         else:
             print(f"Found SDL2 at {sdl2_path}")
             libs += ["SDL2"]
             libdirs += [os.path.join(sdl2_path, "lib", sdl2_lib_arch)]
             includes += [os.path.join(sdl2_path, "include", p) for p in ("", "SDL2")]
     else:
-        print("SDL2 cannot be found through either sdl2-config or PYSDL2_DLL_PATH")
-        sys.exit(1)
+        print("SDL2 cannot be found through neither sdl2-config nor PYSDL2_DLL_PATH")
+        sys.exit(3)
 
     return libs, libdirs, includes, cflags
 
