@@ -8,6 +8,7 @@ from distutils.command.clean import clean as _clean
 from distutils.command.clean import log
 from distutils.dir_util import remove_tree
 from multiprocessing import cpu_count
+from pathlib import Path
 
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
@@ -78,16 +79,17 @@ class PyTest(test):
     def run_tests(self):
         if not os.environ.get("TEST_NO_EXAMPLES"):
             script_path = os.path.dirname(os.path.realpath(__file__))
-            base = f"{sys.executable} {script_path}/examples/"
-            return_code = subprocess.Popen(
-                (base + f"gamewrapper_tetris.py {script_path}/ROMs/Tetris.gb --quiet").split(" ")
-            ).wait()
+            base = Path(f"{script_path}/examples/")
+
+            tetris_script = base / f"gamewrapper_tetris.py"
+            tetris_rom = Path(f"{script_path}/ROMs/Tetris.gb")
+            return_code = subprocess.Popen([sys.executable, tetris_script, tetris_rom, "--quiet"]).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
-            return_code = subprocess.Popen(
-                (base + f"gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet").split(" ")
-            ).wait()
+            mario_script = base / f"gamewrapper_mario.py"
+            mario_rom = Path(f"{script_path}/ROMs/SuperMarioLand.gb")
+            return_code = subprocess.Popen([sys.executable, mario_script, mario_rom, "--quiet"]).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
