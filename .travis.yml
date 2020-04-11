@@ -118,7 +118,7 @@ install:
             $mingw64 make build
           ;;
           *)
-            python3 setup.py build_ext --inplace
+            python setup.py build_ext --inplace
           ;;
         esac
       ;;
@@ -161,5 +161,5 @@ deploy:
     distributions: "sdist bdist_wheel"
     on:
       branch: plugin_refactor
-      # tags: true
+      tags: true
       # condition: $PYPY_TESTING = 0
