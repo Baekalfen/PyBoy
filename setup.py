@@ -12,10 +12,21 @@ from multiprocessing import cpu_count
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
+# The requirements.txt file will not be included in the PyPi package
+REQUIREMENTS = """\
+# Change in setup.py
+cython; platform_python_implementation == 'CPython'
+numpy
+pillow
+pysdl2
+"""
+
 
 def load_requirements(filename):
-    with open(filename, "r") as f:
-        return [line.split(";")[0].strip() for line in f.readlines()]
+    if os.path.isfile(filename):
+        with open(filename, "w") as f:
+            f.write(REQUIREMENTS)
+    return [line.split(";")[0].strip() for line in REQUIREMENTS.splitlines()]
 
 
 requirements = load_requirements("requirements.txt")
@@ -258,7 +269,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="0.9.0",
+    version="0.9.3",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
