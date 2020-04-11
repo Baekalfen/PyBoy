@@ -80,13 +80,13 @@ class PyTest(test):
             script_path = os.path.dirname(os.path.realpath(__file__))
             base = f"{sys.executable} {script_path}/examples/"
             return_code = subprocess.Popen(
-                base + "gamewrapper_tetris.py {script_path}/ROMs/Tetris.gb --quiet".split(" ")
+                (base + f"gamewrapper_tetris.py {script_path}/ROMs/Tetris.gb --quiet").split(" ")
             ).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
             return_code = subprocess.Popen(
-                base + "gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet".split(" ")
+                (base + f"gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet").split(" ")
             ).wait()
             if return_code != 0:
                 sys.exit(return_code)
