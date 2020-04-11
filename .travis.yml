@@ -119,7 +119,7 @@ install:
             $mingw64 make build
           ;;
           *)
-            "C:\\Program Files\\Python37\\python.exe" setup.py build_ext --inplace
+            python setup.py build_ext --inplace
           ;;
         esac
       ;;
