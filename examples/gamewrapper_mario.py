@@ -6,11 +6,11 @@
 import os
 import sys
 
-from pyboy import PyBoy, WindowEvent
-
 # Makes us able to import PyBoy from the directory below
 file_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, file_path + "/..")
+
+from pyboy import PyBoy, WindowEvent # isort:skip
 
 # Check if the ROM is given through argv
 if len(sys.argv) > 1:
