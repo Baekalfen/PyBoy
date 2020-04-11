@@ -78,16 +78,15 @@ class PyTest(test):
     def run_tests(self):
         if not os.environ.get("TEST_NO_EXAMPLES"):
             script_path = os.path.dirname(os.path.realpath(__file__))
+            base = f"{sys.executable} {script_path}/examples/"
             return_code = subprocess.Popen(
-                f"{sys.executable} {script_path}/examples/gamewrapper_tetris.py {script_path}/ROMs/Tetris.gb --quiet".
-                split(" ")
+                base + "gamewrapper_tetris.py {script_path}/ROMs/Tetris.gb --quiet".split(" ")
             ).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
             return_code = subprocess.Popen(
-                f"{sys.executable} {script_path}/examples/gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet"
-                .split(" ")
+                base + "gamewrapper_mario.py {script_path}/ROMs/SuperMarioLand.gb --quiet".split(" ")
             ).wait()
             if return_code != 0:
                 sys.exit(return_code)
@@ -269,7 +268,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="0.9.3",
+    version="0.9.4",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
