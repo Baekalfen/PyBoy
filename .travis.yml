@@ -119,7 +119,7 @@ install:
             $mingw64 make build
           ;;
           *)
-            python setup.py build_ext --inplace
+            powershell -Command "python setup.py build_ext --inplace"
           ;;
         esac
       ;;
