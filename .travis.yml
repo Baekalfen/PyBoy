@@ -161,5 +161,5 @@ deploy:
     distributions: "sdist bdist_wheel"
     on:
       branch: plugin_refactor
-      tags: true
-      condition: $PYPY_TESTING = 0
+      # tags: true
+      # condition: $PYPY_TESTING = 0

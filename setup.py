@@ -140,7 +140,7 @@ def locate_sdl2_config():
             return None
     elif sys.platform == "win32" and "MSC" in platform.python_compiler():
         return [] # Defaults to env var PYSDL2_DLL_PATH
-    elif sys.platform in ["darmin", "linux"]:
+    elif sys.platform in ["darwin", "linux"]:
         print("Didn't detect msys2 environment, trying sdl2-config assuming Unix environment")
         return os.popen("sdl2-config --cflags --libs").read().split()
     else:
@@ -258,7 +258,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="0.1.0",
+    version="0.9.0",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
