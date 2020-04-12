@@ -194,5 +194,4 @@ deploy:
     deploy.skip_cleanup: true
     on:
       branch: plugin_refactor
-      tags: true
       condition: $PYPY_TESTING = ""
