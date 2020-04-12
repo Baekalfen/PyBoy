@@ -1,4 +1,7 @@
-language: bash # Randomly fixes Windows not booting
+language: python
+python:
+  - "3.6"
+# language: bash # Randomly fixes Windows not booting
 
 matrix:
   include:
@@ -151,6 +154,23 @@ script:
       ;;
     esac
 
+before_deploy:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        case $MSYS in
+          1)
+            python3 -m pip install twine
+          ;;
+          *)
+            /c/Program\ Files/Python37/python.exe -m pip install twine
+          ;;
+        esac
+      ;;
+      *)
+        python3 -m pip install twine
+      ;;
+    esac
 deploy:
   - provider: pypi
     user: "__token__"
@@ -158,6 +178,7 @@ deploy:
       secure: GlvvLxqRvdheZoa13r/oG3BEqt/TD97g/YMj/SDBMG/YomyOJrFxhOzpj6ikLMmr0p4Z5TOpZHeu8hK5H2YpTUU++vj7gVQDp1CfQZVj6HA6pyyPUNuI216TOrV1ouT8khYuGKUleyIUsvHzmI/nK2d7vBOj2Cu2Ifghq21xjfI8pund9sw9T5jkDlPhFXPl7OtGvo5Dy+U4BVyzIH2hne6RvZom5DDPCDrxfzxeG1qqm5yjT3SnmrpYy+PdNoki+GrJ8M7Ns/S5OloyLBvaexxfgsRyTzB2++c+GBGdmhaqFZxlIJ8w1cMzFbdsuZHxbOAXoVLv6uXEEZARft+bepVKE+/0mBfX8W7boVxSXwfuj3hY6NWAVKWdn3zPNVteAln+KDzpi0rBtgZ3uFW6XYDxKtbPQ2TbHAxtFfKCO+lQiBdI4BZ19rguGwlLkN0vgyS1JxY6cMT0wY008EZWTf+MitgXmo5zEHULNGA2CnBcaii5T02Y8L8oeWnUH6bnnc+m0KS+Bv+6SGEM/yyOM/086Vz8xYfomxd2XijUnBiFXPFN8qey31NGfNRRNhw463og9kzPe8Na2IvQl2/dv+cy4JB42itHR+lQ2kia7dnBfcmvzt2UyRwQwiYqYKvxUQZJfL8cgfrNy/BbmT1vC/PNPdKWBbhB1I3pw9UrnYQ=
     skip_existing: true
     distributions: "sdist bdist_wheel"
+    deploy.skip_cleanup: true
     on:
       branch: master
       tags: true
@@ -170,6 +191,7 @@ deploy:
       secure: V3DdGDUy6yzhtS7WQKKhmwFb4breHkNNpWQ8EBUK9BL85JStNckbKtkQczOfJdqfSmu5m5BeTbVHvfktrcEY+y6uuOJj0oE3leBxX9Y2lPq3niKPTidEruys+/uIDBqlXbvTK7eKVnmlQtCjnGm8Cb1CejkFT9lDGyUBrCTsjpyw3yGwLBnsfWH/e3BjzyUJdMIrxYUy3rlxG/ffiMSxyC2TNNFRJSrGQE1yKxOLclbmCbnSddYc3F+qF0byydfbEjPxMxHeVKmzI2dm9oEZlhFMyb66wZX3iUQSUEvuYpgwlJxPL617jLozKpypcgLwsMP+Uk/oRJtrTuAvrOG4gEvXq4sB+0k5QoWnlAOL74X4+6PuOw/oDcI/W1MCSqv3XqxkfvFQy6djwkfc1voW+qlMpVHOLUZ2m3MbiEBR7deLbb0DRxl/y0h99KdzNftxHU0qBjlWzcS9jJ/ygDL9cu0KBJH5+yUzuF/1sRJ1xApOlRbkgfMdPJaaywaYgKhJLsmW93bDpBR/nqzmjSXpZMRbt+GMxI4nPlrDBg5CevTmuThZLAx42ghO+ZibbomXnjxXHAm/Qgdel/o40kPxWzOEeeWvsj256eqs66b3zhCZqr4NudYR9xsvYoodFn7NW7/NqGSH3np26pc/myo1mgVHd0FkpqJ113Cn8k4SDoc=
     skip_existing: true
     distributions: "sdist bdist_wheel"
+    deploy.skip_cleanup: true
     on:
       branch: plugin_refactor
       tags: true
