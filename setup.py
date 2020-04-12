@@ -83,13 +83,13 @@ class PyTest(test):
 
             tetris_script = base / f"gamewrapper_tetris.py"
             tetris_rom = Path(f"{script_path}/ROMs/Tetris.gb")
-            return_code = subprocess.Popen([sys.executable, tetris_script, tetris_rom, "--quiet"]).wait()
+            return_code = subprocess.Popen([sys.executable, str(tetris_script), str(tetris_rom), "--quiet"]).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
             mario_script = base / f"gamewrapper_mario.py"
             mario_rom = Path(f"{script_path}/ROMs/SuperMarioLand.gb")
-            return_code = subprocess.Popen([sys.executable, mario_script, mario_rom, "--quiet"]).wait()
+            return_code = subprocess.Popen([sys.executable, str(mario_script), str(mario_rom), "--quiet"]).wait()
             if return_code != 0:
                 sys.exit(return_code)
 

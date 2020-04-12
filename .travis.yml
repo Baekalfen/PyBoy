@@ -139,8 +139,15 @@ script:
   - |-
     case $TRAVIS_OS_NAME in
       windows)
-        if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython; fi
-        if [ "$PYPY_TESTING" = "1" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy; fi
+        case $MSYS in
+          1)
+            if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython; fi
+            if [ "$PYPY_TESTING" = "1" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy; fi
+          ;;
+          *)
+            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" /c/Program\ Files/Python37/python.exe setup.py test
+          ;;
+        esac
       ;;
       *)
         if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 make test_cython; fi
