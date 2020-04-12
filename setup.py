@@ -157,7 +157,7 @@ def locate_sdl2_config():
         return os.popen("sdl2-config --cflags --libs").read().split()
     else:
         print(f"Unsupported OS type: {sys.platform}")
-        sys.exit(1)
+        sys.exit(121)
 
 
 # Define libs, libdirs, includes and cflags for SDL2
@@ -185,7 +185,7 @@ def define_lib_includes_cflags():
         sdl2_path = os.path.abspath(sdl2_path[:sdl2_path.index("lib")])
         if not os.path.isdir(sdl2_path):
             print(f"Error locating SDL2: {sdl2_path} is not a directory")
-            sys.exit(2)
+            sys.exit(122)
         else:
             print(f"Found SDL2 at {sdl2_path}")
             libs += ["SDL2"]
@@ -193,7 +193,7 @@ def define_lib_includes_cflags():
             includes += [os.path.join(sdl2_path, "include", p) for p in ("", "SDL2")]
     else:
         print("SDL2 cannot be found through neither sdl2-config nor PYSDL2_DLL_PATH")
-        sys.exit(3)
+        sys.exit(123)
 
     return libs, libdirs, includes, cflags
 
