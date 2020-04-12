@@ -85,7 +85,6 @@ before_install:
             $mingw64 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
           ;;
           *)
-            choco uninstall -y python
             powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe', 'python-3.7.6-amd64.exe')"
             powershell -Command "start-Process -FilePath python-3.7.6-amd64.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
             powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
@@ -121,11 +120,11 @@ install:
           ;;
           *)
             # choco uninstall -y python2-x86_32 python3-x86_32 python-x86_32 python.pypy python2 python
-            choco list --local-only
+            # choco list --local-only
             echo $PATH
-            powershell -Command "echo $PATH"
-            powershell -Command "echo $PYSDL2_DLL_PATH"
-            powershell -Command "echo (Get-Command python).Path"
+            # powershell -Command "echo $PATH"
+            # powershell -Command "echo $PYSDL2_DLL_PATH"
+            # powershell -Command "echo (Get-Command python).Path"
             PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
             # powershell -Command "\"C:\\Program Files\\Python37\\python.exe\" setup.py build_ext --inplace"
           ;;
