@@ -119,10 +119,10 @@ install:
             $mingw64 make build
           ;;
           *)
+            # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
             export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64
             export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64"
-            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64" /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
-            # powershell -Command "\"C:\\Program Files\\Python37\\python.exe\" setup.py build_ext --inplace"
+            /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
           ;;
         esac
       ;;
