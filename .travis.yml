@@ -119,13 +119,9 @@ install:
             $mingw64 make build
           ;;
           *)
-            # choco uninstall -y python2-x86_32 python3-x86_32 python-x86_32 python.pypy python2 python
-            # choco list --local-only
-            echo $PATH
-            # powershell -Command "echo $PATH"
-            # powershell -Command "echo $PYSDL2_DLL_PATH"
-            # powershell -Command "echo (Get-Command python).Path"
-            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
+            export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64
+            export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64"
+            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64" /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
             # powershell -Command "\"C:\\Program Files\\Python37\\python.exe\" setup.py build_ext --inplace"
           ;;
         esac
