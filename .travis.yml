@@ -161,7 +161,7 @@ deploy:
     on:
       branch: master
       tags: true
-      condition: $PYPY_TESTING = 0
+      condition: $PYPY_TESTING = ""
 
   - provider: pypi
     server: https://test.pypi.org/legacy/
@@ -173,4 +173,4 @@ deploy:
     on:
       branch: plugin_refactor
       tags: true
-      condition: $PYPY_TESTING = 0
+      condition: $PYPY_TESTING = ""
