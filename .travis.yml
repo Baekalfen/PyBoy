@@ -1,7 +1,4 @@
-language: python
-python:
-  - "3.6"
-# language: bash # Randomly fixes Windows not booting
+language: bash # Randomly fixes Windows not booting
 
 matrix:
   include:
