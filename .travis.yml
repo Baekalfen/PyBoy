@@ -126,7 +126,8 @@ install:
             powershell -Command "echo $PATH"
             powershell -Command "echo $PYSDL2_DLL_PATH"
             powershell -Command "echo (Get-Command python).Path"
-            powershell -Command "\"C:\\Program Files\\Python37\\python.exe\" setup.py build_ext --inplace"
+            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
+            # powershell -Command "\"C:\\Program Files\\Python37\\python.exe\" setup.py build_ext --inplace"
           ;;
         esac
       ;;
