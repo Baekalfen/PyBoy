@@ -120,11 +120,12 @@ install:
             $mingw64 make build
           ;;
           *)
-            choco uninstall -y python2
-            choco list
+            # choco uninstall -y python2-x86_32 python3-x86_32 python-x86_32 python.pypy python2 python
+            choco list --local-only
             echo $PATH
             powershell -Command "echo $PATH"
-            powershell -Command "(Get-Command python).Path"
+            powershell -Command "echo $PYSDL2_DLL_PATH"
+            powershell -Command "echo (Get-Command python).Path"
             powershell -Command "\"C:\\Program Files\\Python37\\python.exe\" setup.py build_ext --inplace"
           ;;
         esac
