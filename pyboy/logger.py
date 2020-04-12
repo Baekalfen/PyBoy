@@ -6,7 +6,7 @@
 import logging
 
 logger = logging.getLogger()
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 logging.basicConfig(format="%(relativeCreated)-8d %(name)-30s %(levelname)-8s %(message)s")
 
 

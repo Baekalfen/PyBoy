@@ -7,6 +7,7 @@ import json
 import os.path
 # TODO: The timeout should be emulator-cycle based
 import platform
+import sys
 import time
 
 from pyboy import PyBoy
@@ -133,7 +134,7 @@ def test_blarggs():
         # "ROMs/BlarggROMs/dmg_sound-2/dmg_sound.gb",
     ]
 
-    if os.environ.get("TEST_CI"):
+    if os.environ.get("TEST_CI") or sys.platform == "win32":
         results = list(map(run_rom, test_roms))
     else:
         import multiprocessing as mp

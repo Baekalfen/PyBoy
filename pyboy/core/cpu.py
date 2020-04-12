@@ -4,6 +4,7 @@
 #
 
 import array
+import logging
 
 from . import opcodes
 
@@ -11,6 +12,8 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 IF_ADDRESS = 0xFF0F
 IE_ADDRESS = 0xFFFF
+
+logger = logging.getLogger(__name__)
 
 
 class CPU:
@@ -157,11 +160,16 @@ class CPU:
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
-        self.HL, self.SP, self.PC = [f.read() | (f.read() << 8) for _ in range(3)]
+        self.HL = f.read_16bit()
+        self.SP = f.read_16bit()
+        self.PC = f.read_16bit()
 
         self.interrupt_master_enable = f.read()
         self.halted = f.read()
         self.stopped = f.read()
+        logger.debug(
+            f"State loaded: A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, IME:{self.interrupt_master_enable}, halted:{self.halted}, stopped:{self.stopped}"
+        )
 
     def fetch_and_execute(self, pc):
         opcode = self.mb.getitem(pc)
