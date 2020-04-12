@@ -120,7 +120,10 @@ install:
             $mingw64 make build
           ;;
           *)
-            powershell -Command "python setup.py build_ext --inplace"
+            echo $PATH
+            powershell -Command "echo $PATH"
+            powershell -Command "(Get-Command python).Path"
+            powershell -Command "python3 setup.py build_ext --inplace"
           ;;
         esac
       ;;
