@@ -95,6 +95,7 @@ class PyTest(test):
 
         import pytest
         args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
+        args = ["tests/", "-v"]
         if codecov: # TODO: There's probably a more correct way to read the argv flags
             args += ["--cov=./"]
         sys.exit(pytest.main(args))
