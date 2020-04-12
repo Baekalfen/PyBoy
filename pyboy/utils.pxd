@@ -15,6 +15,7 @@ cdef class IntIOInterface:
     cdef uint8_t read(self)
     cdef void seek(self, int64_t)
     cdef void flush(self)
+    cdef int read_16bit(self)
 
 
 cdef class IntIOWrapper(IntIOInterface):

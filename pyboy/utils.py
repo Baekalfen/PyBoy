@@ -16,6 +16,11 @@ class IntIOInterface:
     def write(self, byte):
         raise Exception("Not implemented!")
 
+    def read_16bit(self):
+        a = self.read()
+        b = self.read()
+        return int(a | (b << 8))
+
     def read(self):
         raise Exception("Not implemented!")
 
@@ -47,11 +52,6 @@ class IntIOWrapper(IntIOInterface):
         assert isinstance(byte, int)
         assert 0 <= byte <= 0xFF
         return self.buffer.write(byte.to_bytes(1, "little"))
-
-    def read_16bit(self):
-        a = self.read()
-        b = self.read()
-        return int(a | (b << 8))
 
     def read(self):
         # assert count == 1, "Only a count of 1 is supported"
