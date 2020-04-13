@@ -18,8 +18,8 @@ jobs:
     # - os: osx
     #   osx_image: xcode11.3
     #   env: PYPY_TESTING=1
-    - os: windows
-      env: MSYS=1
+    # - os: windows
+    #   env: MSYS=1
     - os: windows
       env: PYPI=1
     - services: docker
