@@ -2,7 +2,7 @@
 
 set -e
 
-if [[ "$OS" == "Windows_NT" || "$MSYS" == "" ]]; then
+if [[ "$OS" == "Windows_NT" && "$MSYS" == "" ]]; then
     echo "Native Windows"
     PY=/c/Program\ Files/Python37/python.exe
 else
