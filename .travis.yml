@@ -9,24 +9,24 @@ matrix:
   include:
     - os: linux
       dist: bionic
-    - os: linux
-      dist: bionic
-      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+    # - os: linux
+    #   dist: bionic
+    #   env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
     - os: osx
       osx_image: xcode11.3
       env: PYPI=1
-    - os: osx
-      osx_image: xcode11.3
-      env: PYPY_TESTING=1
+    # - os: osx
+    #   osx_image: xcode11.3
+    #   env: PYPY_TESTING=1
     - os: windows
       env: MSYS=1
     - os: windows
       env: PYPI=1
     - services: docker
       sudo: required
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
-           PLAT=manylinux2010_x86_64
-           # PYPI=1
+      env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
+           PLAT=manylinux2014_x86_64
+           PYPI=1
 
 compiler:
   - gcc
@@ -75,6 +75,8 @@ before_install:
         if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install --upgrade pip; fi
         if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install cython; fi # Needed for building NumPy, but only on Travis
         if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install wheel; fi
+        if [ "$PLAT" = "manylinux2014_x86_64" ]; then ln -s /opt/python/cp36-cp36m/bin/python /usr/local/bin/python3; fi
+        if [ "$PLAT" = "manylinux2014_x86_64" ]; then yum install SDL2-devel; fi
       ;;
       windows)
         $mingw64 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
