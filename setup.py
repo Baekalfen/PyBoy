@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import distutils.cmd
 import os
 import platform
@@ -9,14 +7,14 @@ import sys
 from distutils.command.clean import clean as _clean
 from distutils.command.clean import log
 from distutils.dir_util import remove_tree
-from io import open  # Python 2 support for 'encoding' kwarg
 from multiprocessing import cpu_count
+from pathlib import Path
 
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
 # The requirements.txt file will not be included in the PyPi package
-REQUIREMENTS = u"""\
+REQUIREMENTS = """\
 # Change in setup.py
 cython; platform_python_implementation == 'CPython'
 numpy
@@ -81,22 +79,22 @@ class PyTest(test):
     def run_tests(self):
         if not os.environ.get("TEST_NO_EXAMPLES"):
             script_path = os.path.dirname(os.path.realpath(__file__))
-            base = os.path.join(script_path, "examples")
+            base = Path(f"{script_path}/examples/")
 
-            tetris_script = os.path.join(base, "gamewrapper_tetris.py")
-            tetris_rom = os.path.join(script_path, "ROMs", "Tetris.gb")
+            tetris_script = base / f"gamewrapper_tetris.py"
+            tetris_rom = Path(f"{script_path}/ROMs/Tetris.gb")
             return_code = subprocess.Popen([sys.executable, str(tetris_script), str(tetris_rom), "--quiet"]).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
-            mario_script = os.path.join(base, "gamewrapper_mario.py")
-            mario_rom = os.path.join(script_path, "ROMs", "SuperMarioLand.gb")
+            mario_script = base / f"gamewrapper_mario.py"
+            mario_rom = Path(f"{script_path}/ROMs/SuperMarioLand.gb")
             return_code = subprocess.Popen([sys.executable, str(mario_script), str(mario_rom), "--quiet"]).wait()
             if return_code != 0:
                 sys.exit(return_code)
 
         import pytest
-        args = ["tests/", "-n%s" % cpu_count(), "-v", "--dist=loadfile"]
+        args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
         # args = ["tests/", "-v", "-x"]
         if codecov: # TODO: There's probably a more correct way to read the argv flags
             args += ["--cov=./"]
@@ -104,16 +102,16 @@ class PyTest(test):
 
 
 # Add inplace functionality to the clean command
-class clean(_clean, object): # Support for python 2
+class clean(_clean):
     user_options = _clean.user_options + [("inplace", "i", "remove all output from an inplace build")]
     boolean_options = _clean.boolean_options + ["inplace"]
 
     def initialize_options(self):
-        super(self.__class__, self).initialize_options()
+        super().initialize_options()
         self.inplace = None
 
     def run(self):
-        super(self.__class__, self).run()
+        super().run()
         if self.inplace:
             for p in ("PyBoy.egg-info", "build", "dist"):
                 if os.path.isdir(p):
@@ -121,13 +119,13 @@ class clean(_clean, object): # Support for python 2
 
             for root, dirs, files in os.walk(ROOT_DIR):
                 if "__pycache__" in dirs:
-                    log.info("removing: %s" % os.path.join(root, "__pycache__"))
+                    log.info(f"removing: {os.path.join(root, '__pycache__')}")
                     remove_tree(os.path.join(root, "__pycache__"))
                 for f in files:
                     if os.path.splitext(f)[1] in (
                         ".pyo", ".pyc", ".pyd", ".so", ".c", ".h", ".dll", ".lib", ".exp", ".html"
                     ):
-                        print("removing: %s" % os.path.join(root, f))
+                        print(f"removing: {os.path.join(root, f)}")
                         os.remove(os.path.join(root, f))
 
 
@@ -140,18 +138,18 @@ def locate_sdl2_config():
         msys_sdl2_config = None
         for path in os.getenv("PATH").split(";"):
             if not msys_sh and os.path.isfile(os.path.join(path, "sh.exe")):
-                msys_sh = path + "\\sh.exe"
+                msys_sh = f"{path}\\sh.exe"
             if not msys_sdl2_config and os.path.isfile(os.path.join(path, "sdl2-config")):
-                msys_sdl2_config = path + "\\sdl2-config"
+                msys_sdl2_config = f"{path}\\sdl2-config"
         if msys_sh and msys_sdl2_config:
-            print("Found sdl2-config at %s and shell at %s" % (msys_sdl2_config, msys_sh))
+            print(f"Found sdl2-config at {msys_sdl2_config} and shell at {msys_sh}")
             msys_sdl2_config = msys_sdl2_config.replace("\\", "/")
             msys_mingw_prefix = msys_sdl2_config[:msys_sdl2_config.index("/bin")]
-            msys_sdl2_config = os.path.join(msys_sdl2_config[0].lower(), msys_sdl2_config[2:])
-            return os.popen("%s -c '%s --prefix=%s --cflags --libs'" % (msys_sh, msys_sdl2_config, msys_mingw_prefix)
-                           ).read().split()
+            msys_sdl2_config = f"/{msys_sdl2_config[0].lower()}/{msys_sdl2_config[2:]}"
+            return os.popen(f"{msys_sh} -c '{msys_sdl2_config} --prefix={msys_mingw_prefix}"
+                            f" --cflags --libs'").read().split()
         else:
-            print("Could not find shell (%s) and sdl2-config (%s)" % (msys_sh, msys_sdl2_config))
+            print(f"Could not find shell ({msys_sh}) and sdl2-config ({msys_sdl2_config})")
             return None
     elif sys.platform == "win32" and "MSC" in platform.python_compiler():
         return [] # Defaults to env var PYSDL2_DLL_PATH
@@ -159,7 +157,7 @@ def locate_sdl2_config():
         print("Didn't detect msys2 environment, trying sdl2-config assuming Unix environment")
         return os.popen("sdl2-config --cflags --libs").read().split()
     else:
-        print("Unsupported OS type: " + sys.platform)
+        print(f"Unsupported OS type: {sys.platform}")
         sys.exit(121)
 
 
@@ -187,10 +185,10 @@ def define_lib_includes_cflags():
         sdl2_lib_arch = "x86" if "x86" in sdl2_path else "x64" if "x64" in sdl2_path else ""
         sdl2_path = os.path.abspath(sdl2_path[:sdl2_path.index("lib")])
         if not os.path.isdir(sdl2_path):
-            print("Error locating SDL2: %s is not a directory" % sdl2_path)
+            print(f"Error locating SDL2: {sdl2_path} is not a directory")
             sys.exit(122)
         else:
-            print("Found SDL2 at " + sdl2_path)
+            print(f"Found SDL2 at {sdl2_path}")
             libs += ["SDL2"]
             libdirs += [os.path.join(sdl2_path, "lib", sdl2_lib_arch)]
             includes += [os.path.join(sdl2_path, "include", p) for p in ("", "SDL2")]
@@ -245,7 +243,7 @@ if CYTHON and "clean" not in sys.argv:
         ), list(py_pxd_files)
     )
     ext_modules = cythonize(
-        list(cythonize_files), # This runs even if build_ext isn't invoked...
+        [*cythonize_files], # This runs even if build_ext isn't invoked...
         nthreads=thread_count,
         annotate=False,
         gdb_debug=False,
@@ -267,7 +265,7 @@ try:
     this_directory = os.path.abspath(os.path.dirname(__file__))
     with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
         long_description = f.read()
-except IOError: # Python 2/3 compatible
+except FileNotFoundError:
     print("README.md not found")
     long_description = ""
 

@@ -158,7 +158,8 @@ before_deploy:
         case $MSYS in
           1)
             python3 -m pip install twine
-            alias python=python3
+            alias python='python3'
+            alias pip='pip3'
           ;;
           *)
             /c/Program\ Files/Python37/python.exe -m pip install twine
@@ -166,8 +167,9 @@ before_deploy:
         esac
       ;;
       *)
-        python3 -m pip install twine
-        alias python=python3
+        # python3 -m pip install twine
+        alias python='python3'
+        alias pip='pip3'
       ;;
     esac
 deploy:
