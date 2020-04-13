@@ -22,10 +22,10 @@ jobs:
     #   env: MSYS=1
     - os: windows
       env: PYPI=1
-    - services: docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
-           PLAT=manylinux2014_x86_64
-           PYPI=1
+    # - services: docker
+    #   env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
+    #        PLAT=manylinux2014_x86_64
+    #        PYPI=1
 
 compiler:
   - gcc
