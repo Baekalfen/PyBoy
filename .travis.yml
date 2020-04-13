@@ -25,7 +25,6 @@ matrix:
     - services: docker
       sudo: required
       env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
-           PLAT=manylinux2014_x86_64
            PYPI=1
 
 compiler:
@@ -60,69 +59,59 @@ before_install:
         brew install sdl2
         python3 -m pip install -U --force-reinstall pip
         # MacOS PyPy
-        if [ "$PYPY_TESTING" = "1" ]; then brew install pypy3 zlib; fi
-        if [ "$PYPY_TESTING" = "1" ]; then export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"; fi
-        if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install wheel; fi
+        if [ "$PYPY_TESTING" = "1" ]; then
+          brew install pypy3 zlib
+          export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
+          pypy3 -m pip install wheel
+        fi
       ;;
       linux)
         openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
         tar xf ci_secrets.tar
-        # Linux PyPy
-        if [ "$PYPY_TESTING" = "1" ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
-        if [ "$PYPY_TESTING" = "1" ]; then tar -xvf "${pypy_version}.tar.bz2" -C $HOME/; fi
-        if [ "$PYPY_TESTING" = "1" ]; then export PATH=$HOME/$pypy_version/bin:$PATH; fi
-        if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m ensurepip; fi
-        if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install --upgrade pip; fi
-        if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install cython; fi # Needed for building NumPy, but only on Travis
-        if [ "$PYPY_TESTING" = "1" ]; then pypy3 -m pip install wheel; fi
-        if [ "$PLAT" = "manylinux2014_x86_64" ]; then ln -s /opt/python/cp36-cp36m/bin/python /usr/local/bin/python3; fi
-        if [ "$PLAT" = "manylinux2014_x86_64" ]; then yum install SDL2-devel; fi
+        if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+          docker pull $DOCKER_IMAGE
+          docker run -id --name 'manylinux' -v `pwd`:/pyboy -w '/pyboy' quay.io/pypa/manylinux2014_x86_64:latest
+          docker exec manylinux 'ln -s /opt/python/cp36-cp36m/bin/python /usr/local/bin/python3'
+          docker exec manylinux 'yum install SDL2-devel'
+        elif [ "$PYPY_TESTING" = "1" ]; then
+          # Linux PyPy
+          curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"
+          tar -xvf "${pypy_version}.tar.bz2" -C $HOME/
+          export PATH=$HOME/$pypy_version/bin:$PATH
+          pypy3 -m ensurepip
+          pypy3 -m pip install --upgrade pip
+          pypy3 -m pip install cython # Needed for building NumPy, but only on Travis
+          pypy3 -m pip install wheel
+        fi
       ;;
       windows)
         $mingw64 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
         $mingw64 tar xf ci_secrets.tar
-        case $MSYS in
-          1)
-            [[ ! -f C:/tools/msys64/msys2_shell.cmd ]] && rm -rf C:/tools/msys64
-            choco uninstall -y mingw
-            choco upgrade --no-progress -y msys2
-            export msys2='cmd //C RefreshEnv.cmd '
-            export msys2+='& set MSYS=winsymlinks:nativestrict '
-            export msys2+='& C:\\tools\\msys64\\msys2_shell.cmd -defterm -no-start'
-            export mingw64="$msys2 -mingw64 -full-path -here -c "\"\$@"\" --"
-            export msys2+=" -msys2 -c "\"\$@"\" --"
-            $msys2 pacman --sync --noconfirm --needed mingw-w64-x86_64-toolchain
-            ## Install more MSYS2 packages from https://packages.msys2.org/base here
-            taskkill //IM gpg-agent.exe //F  # https://travis-ci.community/t/4967
-            export PATH=/C/tools/msys64/mingw64/bin:$PATH
-            export MAKE=mingw32-make  # so that Autotools can find it
-            $mingw64 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
-          ;;
-          *)
-            powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe', 'python-3.7.6-amd64.exe')"
-            powershell -Command "start-Process -FilePath python-3.7.6-amd64.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
-            powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
-            powershell -Command "Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\\SDL2\\"
-            powershell -Command "setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\x64"
-            powershell -Command "setx PATH \"%PATH%;C:\\SDL2\\SDL2-2.0.10\\lib\\x64\""
-          ;;
-        esac
+        if [ "$MSYS" = "1" ]; then
+          [[ ! -f C:/tools/msys64/msys2_shell.cmd ]] && rm -rf C:/tools/msys64
+          choco uninstall -y mingw
+          choco upgrade --no-progress -y msys2
+          export msys2='cmd //C RefreshEnv.cmd '
+          export msys2+='& set MSYS=winsymlinks:nativestrict '
+          export msys2+='& C:\\tools\\msys64\\msys2_shell.cmd -defterm -no-start'
+          export mingw64="$msys2 -mingw64 -full-path -here -c "\"\$@"\" --"
+          export msys2+=" -msys2 -c "\"\$@"\" --"
+          $msys2 pacman --sync --noconfirm --needed mingw-w64-x86_64-toolchain
+          ## Install more MSYS2 packages from https://packages.msys2.org/base here
+          taskkill //IM gpg-agent.exe //F  # https://travis-ci.community/t/4967
+          export PATH=/C/tools/msys64/mingw64/bin:$PATH
+          export MAKE=mingw32-make  # so that Autotools can find it
+          $mingw64 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
+        else
+          powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe', 'python-3.7.6-amd64.exe')"
+          powershell -Command "start-Process -FilePath python-3.7.6-amd64.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
+          powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
+          powershell -Command "Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\\SDL2\\"
+          powershell -Command "setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\x64"
+          powershell -Command "setx PATH \"%PATH%;C:\\SDL2\\SDL2-2.0.10\\lib\\x64\""
+        fi
       ;;
     esac
-
-# before_cache:
-#   - |-
-#     case $TRAVIS_OS_NAME in
-#       windows)
-#         # https://unix.stackexchange.com/a/137322/107554
-#         $mingw64 pacman --sync --clean --noconfirm
-#         ;;
-#     esac
-
-# cache:
-#   directories:
-#   - $HOME/AppData/Local/Temp/chocolatey
-#   - /C/tools/msys64
 
 install:
   - |-
@@ -141,7 +130,11 @@ install:
         esac
       ;;
       *)
-        if [ "$PYPY_TESTING" = "" ]; then make build; fi
+        if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+          docker exec manylinux 'make build'
+        elif [ "$PYPY_TESTING" = "" ]; then
+          make build
+        fi
       ;;
     esac
 
@@ -151,8 +144,11 @@ script:
       windows)
         case $MSYS in
           1)
-            if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython; fi
-            if [ "$PYPY_TESTING" = "1" ]; then TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy; fi
+            if [ "$PYPY_TESTING" = "1" ]; then
+              TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy
+            else
+              TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
+            fi
           ;;
           *)
             PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
@@ -160,15 +156,18 @@ script:
         esac
       ;;
       *)
-        if [ "$PYPY_TESTING" = "" ]; then TEST_CI=1 TEST_NO_UI=1 make test_cython; fi
-        if [ "$PYPY_TESTING" = "1" ]; then TEST_CI=1 TEST_NO_UI=1 make test_pypy; fi
+        if [ "$PYPY_TESTING" = "1" ]; then
+          TEST_CI=1 TEST_NO_UI=1 make test_pypy
+        else
+          TEST_CI=1 TEST_NO_UI=1 make test_cython
+        fi
       ;;
     esac
 
 deploy:
   - provider: script
     skip_cleanup: true
-    script: bash .deploy.sh
+    script: if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec manylinux 'bash .deploy.sh'; else bash .deploy.sh; fi
     on:
       branch: plugin_refactor
       condition: $PYPI = 1
