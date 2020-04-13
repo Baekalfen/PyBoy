@@ -146,7 +146,7 @@ def locate_sdl2_config():
             msys_sdl2_config = msys_sdl2_config.replace("\\", "/")
             msys_mingw_prefix = msys_sdl2_config[:msys_sdl2_config.index("/bin")]
             msys_sdl2_config = f"/{msys_sdl2_config[0].lower()}/{msys_sdl2_config[2:]}"
-            cmd = f"{msys_sh} -c '{msys_sdl2_config} --prefix={msys_mingw_prefix} --cflags --libs'"
+            cmd = f"'{msys_sh}' -c '{msys_sdl2_config} --prefix={msys_mingw_prefix} --cflags --libs'"
             print(cmd)
             return os.popen(cmd).read().split()
         else:

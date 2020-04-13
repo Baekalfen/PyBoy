@@ -10,8 +10,8 @@ else
     PY=python3
 fi
 
-$PY -m pip install wheel twine
+"$PY" -m pip install wheel twine
 
-$PY setup.py sdist bdist_wheel
+"$PY" setup.py sdist bdist_wheel
 # $PY -m twine upload --non-interactive -u '__token__' -p $PYPI_TOKEN dist/*
-$PY -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/* --verbose
+"$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/* --verbose
