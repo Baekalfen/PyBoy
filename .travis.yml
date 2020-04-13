@@ -14,12 +14,19 @@ matrix:
       env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
     - os: osx
       osx_image: xcode11.3
+      env: PYPI=1
     - os: osx
       osx_image: xcode11.3
       env: PYPY_TESTING=1
     - os: windows
       env: MSYS=1
     - os: windows
+      env: PYPI=1
+    - services: docker
+      sudo: required
+      env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
+           PLAT=manylinux2010_x86_64
+           # PYPI=1
 
 compiler:
   - gcc
@@ -162,4 +169,4 @@ deploy:
     script: bash .deploy.sh
     on:
       branch: plugin_refactor
-      condition: $PYPY_TESTING = ""
+      condition: $PYPI = 1
