@@ -1,11 +1,11 @@
-language: bash # Randomly fixes Windows not booting
+language: shell # Randomly fixes Windows not booting
 
 env:
   global:
     - secure: "AOVdljoKZaG06BPc8FGbVyTiu59ZHS4KFiCqJ8ehmG31/s7cwkeBx2UMgyvZQMeM8hCeczgec59H6p6urMENAEJEYbHZzurBAq0EIB2JvurncL2SZeJoePosBRkrVrJ7p9n2wnPIg7xqlUuVa6T+RKiMhl/9qmac6k+J2svFROjNkLD47hZyt3ZgHSfILWkRw7SVv7ZxwjxioiANLmWDZXcr0ZS3E6i4YmDJfHeqQWoo0e6jtgF6vAyPkeKmG31Ce/gnUWZuwG9CNNN8YrTvG83fsDdCeDDJMFJ+w1JdV/8jrsvb8LbE7UsqNWB6EjOea0lfel35Orl4N/LOuv9JSQ3Oyq13AdXtPwTqBFwp0InSVFWMwqzG+2L+hKOZM9VEaiVEBAOTcwkbKb2CQxw+FVgXjg3rNv05oIyZkuEzztF9a/CHlWE6hbvtdwU1G2CrEHvu5EFou7aqT9GhYmnVGzGRvHMBdEkhJc8ZLvUdTw8w5zolxYyqv6C8LL3B2GMNh7iRFXaIjqiwyDKLwhVdkgBxrbjdKKwluJqDgC4yVIO3eq5AU/x4QMeZFYPGSeMqInGJV+L2vFvbgxZWKh/zVssGv6axJgJRThjSYWHveYlZxBnq1sr4B4yaCBayk7O3GS52UxubWMWk8RKLZ3l/CIFkiU9mGmZHj2xA1mFoFe0="
     - secure: "j29jFfzenEZj8dvDjkBKP0sMfxp/VwXlaJ7OUO0tYunf9Et9QbH8zAWyfZXqB3Kdn+9rxxoRCxqhaJ/WHjSe/FJ1JI3bKvKqLbu2X6p43tHC3FA6NMfv3f3KYmPIL1zHruRUm1KEex7tVrZq2HL4Hu6fHTc3ta8C3qHPx/HKK/YWrQIq7x1CxO/b97GJuS+jN0GR9tsHht5nHH+fsItJD6FLXOERdkLXfDkZ7VEENxSV70kG3KJKg5ZCI2FRRnqyzLbqy7/M6KrrpRdxQ/Kn4Ima9n7c6CW0BjPpS0RkS3zak6gfF0NuO+dRARxLzDAgZpFprV1brveLZALPqE5wAjJY3ANIl0FMepDfr41J/Bm/Fdt9TjS+AtEbLtcYhU2LQPHFlV45MO4SMLSw82ZKCGGh0q+W7vnGYjeDcJee4BL9eg8h/1Gi39QBHZ/0qrTRGo2mEtA/lMh6Bj7bC/QbnuRBYOAJ5If/u/tZI3WgOvIG7kgSAo/VK5p3qlu8D8OQ/j7kobwDzhGfAI22/SkaRz6dW3tctsTBEQE+wwu/aUNFkmUm058xB4dZizTUw0xS7FWygGQl3THFklCfWbpQkxrFlJFWyXI4OmJc270ok1ooi5hgnEWkqppplUrCKYcV8/IPBnyxDHyIhEkXHbyPiQgj7mNHSluP2c/GgXnWK40="
 
-matrix:
+jobs:
   include:
     - os: linux
       dist: bionic
@@ -23,8 +23,8 @@ matrix:
     - os: windows
       env: PYPI=1
     - services: docker
-      sudo: required
       env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
+           PLAT=manylinux2014_x86_64
            PYPI=1
 
 compiler:
@@ -168,7 +168,7 @@ script:
 
 deploy:
   - provider: script
-    skip_cleanup: true
+    cleanup: false
     script: if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec manylinux 'bash .deploy.sh'; else bash .deploy.sh; fi
     on:
       branch: plugin_refactor
