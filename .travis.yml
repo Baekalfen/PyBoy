@@ -153,32 +153,6 @@ script:
       ;;
     esac
 
-# before_deploy:
-#   - |-
-#     case $TRAVIS_OS_NAME in
-#       windows)
-#         case $MSYS in
-#           1)
-#             python3 -m pip install twine
-#             alias python='python3'
-#             alias pip='pip3'
-#           ;;
-#           *)
-#             /c/Program\ Files/Python37/python.exe -m pip install twine
-#           ;;
-#         esac
-#       ;;
-#       linux)
-#         rm /usr/bin/python
-#         ln -s /usr/bin/python3 /usr/bin/python
-#         # update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-#       ;;
-#       osx)
-#         alias python='python3'
-#         alias pip='pip3'
-#       ;;
-#     esac
-
 deploy:
   - provider: script
     skip_cleanup: true
