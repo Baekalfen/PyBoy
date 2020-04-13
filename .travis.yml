@@ -72,8 +72,8 @@ before_install:
           echo "ManyLinux"
           docker pull $DOCKER_IMAGE
           docker run -id --name 'manylinux' -v `pwd`:/pyboy -w '/pyboy' quay.io/pypa/manylinux2014_x86_64:latest
-          docker exec manylinux 'ln -s /opt/python/cp36-cp36m/bin/python3 /usr/local/bin/python3'
-          docker exec manylinux 'yum install SDL2-devel'
+          docker exec manylinux ln -s /opt/python/cp36-cp36m/bin/python3 /usr/local/bin/python3
+          docker exec manylinux yum install SDL2-devel
         elif [ "$PYPY_TESTING" = "1" ]; then
           # Linux PyPy
           curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"
@@ -133,7 +133,7 @@ install:
       *)
         if [ "$PLAT" = "manylinux2014_x86_64" ]; then
           echo "ManyLinux"
-          docker exec manylinux 'make build'
+          docker exec manylinux make build
         elif [ "$PYPY_TESTING" = "" ]; then
           make build
         fi
@@ -169,7 +169,7 @@ script:
 deploy:
   - provider: script
     cleanup: false
-    script: if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec manylinux 'bash .deploy.sh'; else bash .deploy.sh; fi
+    script: if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec manylinux bash .deploy.sh; else bash .deploy.sh; fi
     on:
       branch: plugin_refactor
       condition: $PYPI = 1
