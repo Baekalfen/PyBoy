@@ -148,9 +148,6 @@ def locate_sdl2_config():
             msys_sdl2_config = f"/{msys_sdl2_config[0].lower()}/{msys_sdl2_config[2:]}"
             return os.popen(f"{msys_sh} -c '{msys_sdl2_config} --prefix={msys_mingw_prefix}"
                             f" --cflags --libs'").read().split()
-            # cmd = f"'{msys_sh}' -c '{msys_sdl2_config} --prefix={msys_mingw_prefix} --cflags --libs'"
-            # print(cmd)
-            # return os.popen(cmd).read().split()
         else:
             print(f"Could not find shell ({msys_sh}) and sdl2-config ({msys_sdl2_config})")
             return None
@@ -274,7 +271,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="0.9.9",
+    version="0.9.10",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",

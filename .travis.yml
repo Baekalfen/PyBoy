@@ -7,25 +7,25 @@ env:
 
 jobs:
   include:
-    # - os: linux
-    #   dist: bionic
-    # - os: linux
-    #   dist: bionic
-    #   env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
-    # - os: osx
-    #   osx_image: xcode11.3
-    #   env: PYPI=1
-    # - os: osx
-    #   osx_image: xcode11.3
-    #   env: PYPY_TESTING=1
+    - os: linux
+      dist: bionic
+    - os: linux
+      dist: bionic
+      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+    - os: osx
+      osx_image: xcode11.3
+      env: PYPI=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYPY_TESTING=1
     - os: windows
       env: MSYS=1
-    # - os: windows
-    #   env: PYPI=1
-    # - services: docker
-    #   env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
-    #        PLAT=manylinux2014_x86_64
-    #        PYPI=1
+    - os: windows
+      env: PYPI=1
+    - services: docker
+      env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
+           PLAT=manylinux2014_x86_64
+           PYPI=1
 
 compiler:
   - gcc
