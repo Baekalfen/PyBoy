@@ -7,25 +7,25 @@ env:
 
 jobs:
   include:
-    - os: linux
-      dist: bionic
-    - os: linux
-      dist: bionic
-      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
-    - os: osx
-      osx_image: xcode11.3
-      env: PYPI=1
-    - os: osx
-      osx_image: xcode11.3
-      env: PYPY_TESTING=1
+    # - os: linux
+    #   dist: bionic
+    # - os: linux
+    #   dist: bionic
+    #   env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+    # - os: osx
+    #   osx_image: xcode11.3
+    #   env: PYPI=1
+    # - os: osx
+    #   osx_image: xcode11.3
+    #   env: PYPY_TESTING=1
     - os: windows
       env: MSYS=1
-    - os: windows
-      env: PYPI=1
-    - services: docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
-           PLAT=manylinux2014_x86_64
-           PYPI=1
+    # - os: windows
+    #   env: PYPI=1
+    # - services: docker
+    #   env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
+    #        PLAT=manylinux2014_x86_64
+    #        PYPI=1
 
 compiler:
   - gcc
@@ -118,14 +118,14 @@ install:
   - |-
     case $TRAVIS_OS_NAME in
       windows)
-        # The paths are weird, because we are actually running in Git Bash. Windows support is still a little beta
-        export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64
-        export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64"
         case $MSYS in
           1)
             $mingw64 make build
           ;;
           *)
+            # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
+            export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64
+            export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64"
             /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
           ;;
         esac
@@ -146,11 +146,7 @@ script:
       windows)
         case $MSYS in
           1)
-            if [ "$PYPY_TESTING" = "1" ]; then
-              TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_pypy
-            else
-              TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
-            fi
+            TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
             PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
