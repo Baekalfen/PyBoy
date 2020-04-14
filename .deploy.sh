@@ -18,7 +18,9 @@ if [ "$PLAT" = "manylinux2014_x86_64" ]; then
     auditwheel repair dist/*.whl
     rm -rf dist/*.whl
     mv wheelhouse/*.whl dist/
+    # Pure source. We can only upload it once. It's randomly done from the manylinux platform
+    "$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.tar.gz --verbose
 fi
 
 # "$PY" -m twine upload --non-interactive -u '__token__' -p $PYPI_TOKEN dist/*
-"$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/* --verbose
+"$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.whl --verbose
