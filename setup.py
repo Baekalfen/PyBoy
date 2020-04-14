@@ -145,10 +145,12 @@ def locate_sdl2_config():
             print(f"Found sdl2-config at {msys_sdl2_config} and shell at {msys_sh}")
             msys_sdl2_config = msys_sdl2_config.replace("\\", "/")
             msys_mingw_prefix = msys_sdl2_config[:msys_sdl2_config.index("/bin")]
-            msys_sdl2_config = f"/{msys_sdl2_config[0].lower()}{msys_sdl2_config[2:]}"
-            cmd = f"'{msys_sh}' -c '{msys_sdl2_config} --prefix={msys_mingw_prefix} --cflags --libs'"
-            print(cmd)
-            return os.popen(cmd).read().split()
+            msys_sdl2_config = f"/{msys_sdl2_config[0].lower()}/{msys_sdl2_config[2:]}"
+            return os.popen(f"{msys_sh} -c '{msys_sdl2_config} --prefix={msys_mingw_prefix}"
+                            f" --cflags --libs'").read().split()
+            # cmd = f"'{msys_sh}' -c '{msys_sdl2_config} --prefix={msys_mingw_prefix} --cflags --libs'"
+            # print(cmd)
+            # return os.popen(cmd).read().split()
         else:
             print(f"Could not find shell ({msys_sh}) and sdl2-config ({msys_sdl2_config})")
             return None
