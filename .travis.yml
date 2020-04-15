@@ -153,7 +153,7 @@ script:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: bash -c 'if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e PLAT=$PLAT manylinux bash .deploy.sh; else bash .deploy.sh; fi'
+    script: bash -c 'if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e PLAT=$PLAT -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST manylinux bash .deploy.sh; else bash .deploy.sh; fi'
     on:
       branch: plugin_refactor
       tags: true
