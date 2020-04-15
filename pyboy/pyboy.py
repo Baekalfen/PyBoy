@@ -131,7 +131,11 @@ class PyBoy:
                 with open(self.gamerom_file + ".state", "wb") as f:
                     self.mb.save_state(IntIOWrapper(f))
             elif event == WindowEvent.STATE_LOAD:
-                with open(self.gamerom_file + ".state", "rb") as f:
+                state_path = self.gamerom_file + ".state"
+                if not os.path.isfile(state_path):
+                    logger.error(f"State file not found: {state_path}")
+                    continue
+                with open(state_path, "rb") as f:
                     self.mb.load_state(IntIOWrapper(f))
             elif event == WindowEvent.PASS:
                 pass # Used in place of None in Cython, when key isn't mapped to anything

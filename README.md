@@ -20,9 +20,20 @@ __If you are looking to make a bot or AI__, you can find all the external compon
 
 Installation
 ============
-The instructions are simple, if you already have a functioning Python environment on your machine. Install SDL2 through your package manager and install PyBoy using `pip install pyboy`. Now you're ready! Either use PyBoy directly from the terminal `pyboy file.rom` or use it in your Python scripts with `import pyboy`.
+The instructions are simple, if you already have a functioning Python environment on your machine.
 
-If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian) and Linux (Ubuntu).
+ 1. Install SDL2 through your package manager (__`sudo apt install libsdl2-dev`__ or __`brew install sdl2`__)
+ 2. Install PyBoy using __`pip install pyboy`__.
+
+Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.rom`__ or use it in your Python scripts:
+```python
+from pyboy import PyBoy
+pyboy = PyBoy('ROMs/POKEMON BLUE.gb')
+while not pyboy.tick():
+    pass
+```
+
+If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
 
 At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
 
