@@ -8,11 +8,6 @@ RUN apt-get update && apt-get install -y \
   python3-dev \
   && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /
-RUN pip3 install --upgrade pip && pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --upgrade pip && pip3 install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple pyboy
 
-COPY . /pyboy
-WORKDIR /pyboy
-
-RUN pip3 install .
 WORKDIR /
