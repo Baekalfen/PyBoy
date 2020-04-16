@@ -13,6 +13,30 @@ jobs:
     - os: linux
       dist: bionic
       env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp36-cp36m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp37-cp37m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp38-cp38
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp36-cp36m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp37-cp37m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp38-cp38
+           PYPI=1
     - os: osx
       osx_image: xcode11.3
       env: PYTHON_VERSION=3.6.10
@@ -33,30 +57,6 @@ jobs:
       env: MSYS=1
     - os: windows
       env: PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2010_x86_64
-           PYTHON_VERSION=cp36-cp36m
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2010_x86_64
-           PYTHON_VERSION=cp37-cp37m
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2010_x86_64
-           PYTHON_VERSION=cp38-cp38
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2014_x86_64
-           PYTHON_VERSION=cp36-cp36m
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2014_x86_64
-           PYTHON_VERSION=cp37-cp37m
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2014_x86_64
-           PYTHON_VERSION=cp38-cp38
-           PYPI=1
 
 before_install:
   - |-
@@ -76,9 +76,9 @@ before_install:
         else
           brew install pyenv
           pyenv install $PYTHON_VERSION
-          pyenv global $PYTHON_VERSION
-          # rm /usr/local/bin/python3
-          # ln -s "~/.pyenv/versions/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
+          # pyenv global $PYTHON_VERSION
+          rm /usr/local/bin/python3
+          ln -s "~/.pyenv/versions/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
         fi
       ;;
       linux)
