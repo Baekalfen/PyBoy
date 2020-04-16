@@ -226,6 +226,9 @@ if CYTHON and "clean" not in sys.argv:
         # Override function in Cython to fix symbol collision
         build_ext.get_export_symbols = get_export_symbols
         thread_count = 0 # Disables multiprocessing (windows)
+    elif platform.python_version().startswith("3.8"):
+        # Causes infinite recursion
+        thread_count = 0
     else:
         thread_count = cpu_count()
 
@@ -271,7 +274,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="0.9.18",
+    version="0.9.19",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
