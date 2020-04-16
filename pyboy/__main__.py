@@ -86,6 +86,38 @@ def main():
     argv = parser.parse_args()
     log_level(argv.log_level)
 
+    logger.info(
+        """
+The Game Boy controls are as follows:
+
+| Keyboard key | GameBoy equivalant |
+| ---          | ---                |
+| Up           | Up                 |
+| Down         | Down               |
+| Left         | Left               |
+| Right        | Right              |
+| A            | A                  |
+| S            | B                  |
+| Return       | Start              |
+| Backspace    | Select             |
+
+The other controls for the emulator:
+
+| Keyboard key | Emulator function       |
+| ---          | ---                     |
+| Escape       | Quit                    |
+| D            | Debug                   |
+| Space        | Unlimited FPS           |
+| Z            | Save state              |
+| X            | Load state              |
+| I            | Toggle screen recording |
+| ,            | Rewind backwards        |
+| .            | Rewind forward          |
+
+See "pyboy --help" for how to enable rewind and other awesome features!
+"""
+    )
+
     # Start PyBoy and run loop
     pyboy = PyBoy(argv.ROM, **vars(argv))
 
