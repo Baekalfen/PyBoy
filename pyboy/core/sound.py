@@ -18,7 +18,7 @@ class Sound:
         self.registers = array.array('B', [0] * 0x30)
 
         # Initialization is handled in the windows, otherwise we'd need this
-        # sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
+        sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
 
         # Open audio device
         # self.spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64, sdl2.SDL_AudioCallback(self.callback))
@@ -27,9 +27,9 @@ class Sound:
         self.device = sdl2.SDL_OpenAudioDevice(None, 0, self.spec_want, self.spec_have, 0)
         # ...sdl2.SDL_AUDIO_ALLOW_ANY_CHANGE)
 
-        # print(self.spec_have.format)
-        # print(self.spec_have.freq)
-        # print(self.spec_have.samples)
+        print(self.spec_have.format)
+        print(self.spec_have.freq)
+        print(self.spec_have.samples)
 
         # self.sampleclocks = 0x400000 // self.spec_have.freq  # Clocks per sample (TODO: what if it's not an integer?)
         self.sampleclocks = 0x404ac0 / self.spec_have.freq
