@@ -16,6 +16,7 @@ jobs:
     - os: osx
       osx_image: xcode11.3
       env: PYPI=1
+           PYPI_SOURCE=1
     - os: osx
       osx_image: xcode11.3
       env: PYPY_TESTING=1
@@ -24,8 +25,28 @@ jobs:
     - os: windows
       env: PYPI=1
     - services: docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
-           PLAT=manylinux2014_x86_64
+      env: MANYLINUX=manylinux1_x86_64
+           PYTHON_VERSION=cp36-cp36m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux1_x86_64
+           PYTHON_VERSION=cp37-cp37m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux1_x86_64
+           PYTHON_VERSION=cp38-cp38
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp36-cp36m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp37-cp37m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp38-cp38
            PYPI=1
 
 before_install:
@@ -48,11 +69,11 @@ before_install:
       linux)
         openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
         tar xf ci_secrets.tar
-        if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+        if [ "$MANYLINUX" ]; then
           echo "ManyLinux"
-          docker pull $DOCKER_IMAGE
-          docker run -id --name 'manylinux' -v `pwd`:/pyboy -w '/pyboy' quay.io/pypa/manylinux2014_x86_64:latest
-          docker exec manylinux ln -s /opt/python/cp36-cp36m/bin/python3 /usr/local/bin/python3
+          docker pull "quay.io/pypa/$MANYLINUX"
+          docker run -id --name 'manylinux' -v `pwd`:/pyboy -w '/pyboy' "quay.io/pypa/$MANYLINUX:latest"
+          docker exec manylinux ln -s "/opt/python/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
           docker exec manylinux yum -y install SDL2-devel
         elif [ "$PYPY_TESTING" = "1" ]; then
           sudo apt update
@@ -116,7 +137,7 @@ install:
         esac
       ;;
       *)
-        if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+        if [ "$MANYLINUX" ]; then
           echo "ManyLinux"
           docker exec manylinux make build
         elif [ "$PYPY_TESTING" = "" ]; then
@@ -139,7 +160,7 @@ script:
         esac
       ;;
       *)
-        if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+        if [ "$MANYLINUX" ]; then
           echo "ManyLinux"
           docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
         elif [ "$PYPY_TESTING" = "1" ]; then
@@ -153,7 +174,7 @@ script:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: bash -c 'if [ "$PLAT" = "manylinux2014_x86_64" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e PLAT=$PLAT -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST manylinux bash .deploy.sh; else bash .deploy.sh; fi'
+    script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e PLAT=$PLAT -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE manylinux bash .deploy.sh; else bash .deploy.sh; fi'
     on:
       branch: plugin_refactor
       tags: true

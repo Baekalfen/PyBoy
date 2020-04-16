@@ -25,7 +25,7 @@ fi
 # "$PY" -m twine upload --non-interactive -u '__token__' -p $PYPI_TOKEN dist/*
 "$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.whl --verbose
 
-if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+if [ "$PYPI_SOURCE" ]; then
     # Initiate the Docker Hub build process
     curl -X POST $DOCKER_HUB_BUILD_POST
 fi
