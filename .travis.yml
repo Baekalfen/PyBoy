@@ -25,15 +25,15 @@ jobs:
     - os: windows
       env: PYPI=1
     - services: docker
-      env: MANYLINUX=manylinux1_x86_64
+      env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp36-cp36m
            PYPI=1
     - services: docker
-      env: MANYLINUX=manylinux1_x86_64
+      env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp37-cp37m
            PYPI=1
     - services: docker
-      env: MANYLINUX=manylinux1_x86_64
+      env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp38-cp38
            PYPI=1
     - services: docker
@@ -74,7 +74,16 @@ before_install:
           docker pull "quay.io/pypa/$MANYLINUX"
           docker run -id --name 'manylinux' -v `pwd`:/pyboy -w '/pyboy' "quay.io/pypa/$MANYLINUX:latest"
           docker exec manylinux ln -s "/opt/python/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
-          docker exec manylinux yum -y install SDL2-devel
+          if [ "$MANYLINUX" = "manylinux2014_x86_64" ]; then
+            # Install SDL2 from Yum
+            docker exec manylinux yum -y install SDL2-devel
+          elif [ "$MANYLINUX" = "manylinux2010_x86_64" ]; then
+            # Build SDL2 from source
+            docker exec manylinux bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
+            docker exec manylinux ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
+          else
+            exit 33
+          fi
         elif [ "$PYPY_TESTING" = "1" ]; then
           sudo apt update
           sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev curl
