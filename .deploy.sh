@@ -13,7 +13,7 @@ fi
 "$PY" -m pip install wheel twine
 "$PY" setup.py sdist bdist_wheel
 
-if [ "$PLAT" = "manylinux2014_x86_64" ]; then
+if [ "$MANYLINUX" ]; then
     "$PY" -m pip install auditwheel
     auditwheel repair dist/*.whl
     rm -rf dist/*.whl
