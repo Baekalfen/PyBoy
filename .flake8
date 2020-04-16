@@ -1,19 +1,27 @@
 [flake8]
-# E261: Adds no improvement to readability: Two spaces before inline comment
-# E123: flake8 is either buggy, or the rule is nonsensical. Doesn't work when nested: Closing brackets should match indentation of opening bracket.
-# E221: Sometimes alignment of operators is better. Use common sense: "multiple spaces before operator"
-# E203: Sometimes alignment of commas is better. Use common sense: "whitespace before ','"
-# W503: Sometimes common sense prevail: "line break before binary operator"
-# W504: Sometimes common sense prevail: "line break after binary operator"
-# E226: "If operators with different priorities are used, __consider__ adding whitespace around the operators with the lowest priority(ies). Use your own judgment;..."
-# E722: Use common sense: "do not use bare 'except'"
-# E126: Do what feels right
-# E121: Do what feels right
-# E731: "E731 do not assign a lambda expression, use a def" -- don't tell me how to use lambdas
-# E402: isort will take care of that
-ignore = E261, E123, E221, E203, W503, W504, E226, E722, E126, E121, E731, E402
-exclude = .git, __pycache__, opcodes.py, __init__.py
+exclude =
+    .git        # Save time trawling directories
+    __pycache__ # Ditto
+    opcodes.py  # Just crashes anyway, too big
+ignore =
+    E121 # Continuation line under-indented for hanging indent
+    E123 # Closing bracket does not match indentation of opening bracket's line
+    E126 # Continuation line over-indented for hanging indent
+    E128 # Continuation line under-indented for visual indent
+    E203 # Whitespace before ':' or ',' (ignored for aligning arrays of data, could be per-file)
+    E221 # Multiple spaces before operator (ignored to align operators across lines)
+    E226 # Missing whitespace around arithmetic operator (ignored to improve readability when mixing operator precedence)
+    E261 # At least two spaces before inline comment
+    E402 # Module level import not at top of file (ignored because isort manages imports for us)
+    W503 # Line break before binary operator
+    W504 # Line break after binary operator
+    E722 # Do not use bare 'except'
+    E731 # Do not assign a lambda expression, use a def
 per-file-ignores =
+    # Unused imports (would need __all__ populated, possibly)
+    __init__.py:F401
+    # Line too long (comments contain large tables of example output)
     interface_example.py:E501
+    # Ditto (btw, inline comments are broken for this option, maybe fix)
     tetris_bot.py:E501
 max-line-length = 120

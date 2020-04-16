@@ -4,6 +4,9 @@ __pycache__/
 
 # C extensions
 *.so
+*.lib
+*.exp
+*.dll
 
 # Distribution / packaging
 .Python
@@ -77,7 +80,7 @@ dump*.bmp
 *.gb
 *.gbc
 *.rom
-*.bin
+DMG_ROM.bin
 BlarggROMs/
 TestROMs/
 ROMs/
@@ -88,21 +91,21 @@ tmp.state
 *.gb*.ram
 *.gb*.rtc
 
-Source/pyboy/**/*.c
-Source/pyboy/**/*.h
-Source/pyboy/**/*.html
-Source/pyboy/**/*.so
+/pyboy/**/*.c
+/pyboy/**/*.h
+/pyboy/**/*.html
+/pyboy/**/*.so
 
-/Source/recordings
+/recordings
 
 # Files from venv and dependencies
-/Source/bin
-/Source/include
-/Source/lib-python
-/Source/lib_pypy
-/Source/pip-selfcheck.json
-/Source/site-packages
-/Source/share
+/bin
+/include
+/lib-python
+/lib_pypy
+/pip-selfcheck.json
+/site-packages
+/share
 
 /bin
 /include
@@ -122,3 +125,14 @@ Projects/Projects.out
 .in
 .out
 .env
+
+bootrom/bootrom.map
+bootrom/bootrom.obj
+bootrom/bootrom.sym
+bootrom/logo.asm
+bootrom/pyboy.png
+bootrom/PYBOY_ROM.bin
+
+pyboy.tar.gz
+test.replay
+ci_secrets.tar
