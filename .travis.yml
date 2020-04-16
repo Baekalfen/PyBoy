@@ -74,11 +74,12 @@ before_install:
           export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
           pypy3 -m pip install wheel
         else
-          brew install pyenv
+          brew upgrade pyenv
           pyenv install $PYTHON_VERSION
           # pyenv global $PYTHON_VERSION
           rm /usr/local/bin/python3
-          ln -s "~/.pyenv/versions/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
+          ln -s "$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
+          echo "$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python3"
         fi
       ;;
       linux)
