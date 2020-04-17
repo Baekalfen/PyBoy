@@ -1,15 +1,17 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
 import array
+import logging
 import os
 
-from pyboy.logger import logger
-from pyboy.rewind import IntIOWrapper
+from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC
+
+logger = logging.getLogger(__name__)
 
 
 class BaseMBC:
@@ -72,7 +74,7 @@ class BaseMBC:
             return
 
         for bank in range(self.external_ram_count):
-            for byte in range(8*1024):
+            for byte in range(8 * 1024):
                 f.write(self.rambanks[bank][byte])
 
         logger.debug("RAM saved.")
@@ -83,7 +85,7 @@ class BaseMBC:
             return
 
         for bank in range(self.external_ram_count):
-            for byte in range(8*1024):
+            for byte in range(8 * 1024):
                 self.rambanks[bank][byte] = f.read()
 
         logger.debug("RAM loaded.")
@@ -96,7 +98,7 @@ class BaseMBC:
 
         # In real life the values in RAM are scrambled on initialization.
         # Allocating the maximum, as it is easier in Cython. And it's just 128KB...
-        self.rambanks = [array.array('B', [0] * (8*1024)) for _ in range(16)]
+        self.rambanks = [array.array("B", [0] * (8*1024)) for _ in range(16)]
 
     def getgamename(self, rombanks):
         return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).rstrip("\0")
@@ -108,7 +110,7 @@ class BaseMBC:
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected % len(self.rombanks)][address-0x4000]
+            return self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: %s" % hex(address))
@@ -119,11 +121,11 @@ class BaseMBC:
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambank_selected % self.external_ram_count][address-0xA000]
+                return self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000]
         else:
             logger.error("Reading address invalid: %s" % address)
 
-    def __str__(self):
+    def __repr__(self):
         return "\n".join([
             "Cartridge:",
             "Filename: %s" % self.filename,
@@ -136,7 +138,8 @@ class BaseMBC:
             "Number of RAM banks: %s" % len(self.rambanks),
             "Active RAM bank: %s" % self.rambank_selected,
             "Battery: %s" % self.battery,
-            "RTC: %s" % self.rtc])
+            "RTC: %s" % self.rtc
+        ])
 
 
 class ROMOnly(BaseMBC):
@@ -149,10 +152,12 @@ class ROMOnly(BaseMBC):
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 from . import EXTERNAL_RAM_TABLE
-                logger.warning("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but "
-                               "RAM banks are not initialized. Initializing %d RAM banks as "
-                               "precaution" % (value, address, EXTERNAL_RAM_TABLE[0x02]))
+                logger.warning(
+                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but "
+                    "RAM banks are not initialized. Initializing %d RAM banks as "
+                    "precaution" % (value, address, EXTERNAL_RAM_TABLE[0x02])
+                )
                 self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
-            self.rambanks[self.rambank_selected][address-0xA000] = value
+            self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:
             logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))

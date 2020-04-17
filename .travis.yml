@@ -1,66 +1,207 @@
-language: generic
+language: shell # Randomly fixes Windows not booting
 
-matrix:
+env:
+  global:
+    - secure: "AOVdljoKZaG06BPc8FGbVyTiu59ZHS4KFiCqJ8ehmG31/s7cwkeBx2UMgyvZQMeM8hCeczgec59H6p6urMENAEJEYbHZzurBAq0EIB2JvurncL2SZeJoePosBRkrVrJ7p9n2wnPIg7xqlUuVa6T+RKiMhl/9qmac6k+J2svFROjNkLD47hZyt3ZgHSfILWkRw7SVv7ZxwjxioiANLmWDZXcr0ZS3E6i4YmDJfHeqQWoo0e6jtgF6vAyPkeKmG31Ce/gnUWZuwG9CNNN8YrTvG83fsDdCeDDJMFJ+w1JdV/8jrsvb8LbE7UsqNWB6EjOea0lfel35Orl4N/LOuv9JSQ3Oyq13AdXtPwTqBFwp0InSVFWMwqzG+2L+hKOZM9VEaiVEBAOTcwkbKb2CQxw+FVgXjg3rNv05oIyZkuEzztF9a/CHlWE6hbvtdwU1G2CrEHvu5EFou7aqT9GhYmnVGzGRvHMBdEkhJc8ZLvUdTw8w5zolxYyqv6C8LL3B2GMNh7iRFXaIjqiwyDKLwhVdkgBxrbjdKKwluJqDgC4yVIO3eq5AU/x4QMeZFYPGSeMqInGJV+L2vFvbgxZWKh/zVssGv6axJgJRThjSYWHveYlZxBnq1sr4B4yaCBayk7O3GS52UxubWMWk8RKLZ3l/CIFkiU9mGmZHj2xA1mFoFe0="
+    - secure: "j29jFfzenEZj8dvDjkBKP0sMfxp/VwXlaJ7OUO0tYunf9Et9QbH8zAWyfZXqB3Kdn+9rxxoRCxqhaJ/WHjSe/FJ1JI3bKvKqLbu2X6p43tHC3FA6NMfv3f3KYmPIL1zHruRUm1KEex7tVrZq2HL4Hu6fHTc3ta8C3qHPx/HKK/YWrQIq7x1CxO/b97GJuS+jN0GR9tsHht5nHH+fsItJD6FLXOERdkLXfDkZ7VEENxSV70kG3KJKg5ZCI2FRRnqyzLbqy7/M6KrrpRdxQ/Kn4Ima9n7c6CW0BjPpS0RkS3zak6gfF0NuO+dRARxLzDAgZpFprV1brveLZALPqE5wAjJY3ANIl0FMepDfr41J/Bm/Fdt9TjS+AtEbLtcYhU2LQPHFlV45MO4SMLSw82ZKCGGh0q+W7vnGYjeDcJee4BL9eg8h/1Gi39QBHZ/0qrTRGo2mEtA/lMh6Bj7bC/QbnuRBYOAJ5If/u/tZI3WgOvIG7kgSAo/VK5p3qlu8D8OQ/j7kobwDzhGfAI22/SkaRz6dW3tctsTBEQE+wwu/aUNFkmUm058xB4dZizTUw0xS7FWygGQl3THFklCfWbpQkxrFlJFWyXI4OmJc270ok1ooi5hgnEWkqppplUrCKYcV8/IPBnyxDHyIhEkXHbyPiQgj7mNHSluP2c/GgXnWK40="
+    - secure: "F+02kK3JefOSDPz57M2ZSBqhPn0IWj6szOsnKCPYC3FiYdvKxayCl2W8Vy0oqdNwzrPx2rDUonW1SPtfS7eVuDAxtqwfINP8g2tKKf+V2MeLwfREeky6lkSOos4LlhU9QNYzaoa3kqYo3x87yQKooowVhDs8JhRNiiZAiMlUSdmNWQQ1YOJ+CafPLiI2Y4kqxoWp2aeAkb4ACj8nP8DG7o8fSUtmb4O42+sZ6NlAr42qMZzQI3GXxjFlijE0vxop6QlwXqxmQz5YEruZYA1lxC3hOur5rDEv1dlW0VvfG6nc4xd2HoyKF9XzrSDiJPE7it8wD4AHII/Q/StbqJSWXW5xpVInvcigJ8DvSsnHjao1BBFSs6Dy1filJTQDKaBiTz8tK+yhDZW3Ce7IhDL27kFtXyG+U6YCs9vheZMSHudPLsktgWMrFyJwVBchkDqk6da3w/smg7WojmbMnH6i5beBgw2cRFFQA9I33V+hujDm9fo2k36ek/owKfLVeTblNf2SKXtCZdBGlwNqoXE23A5imGkypBKJryrAdKH4qzRln86gMZPn7y9TOuz5lKW+qkLkV0LQkv5bZVQAvlyQFik0ax8myQ3F22WPZM2v3nNifQhy4LWjUrlvAGWk2vuNJWTdnN4SXRbWvWMUpBrRoEe8ZNwkRie3EWPAhIE4xVM="
+
+jobs:
   include:
     - os: linux
       dist: bionic
-      env: pypy_version=pypy3.6-v7.3.0-linux64
+    - os: linux
+      dist: bionic
+      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp36-cp36m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp37-cp37m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2014_x86_64
+           PYTHON_VERSION=cp38-cp38
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp36-cp36m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp37-cp37m
+           PYPI=1
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp38-cp38
+           PYPI=1
     - os: osx
       osx_image: xcode11.3
-
-compiler:
-  - gcc
-  - clang
-
-addons:
-  apt:
-    packages:
-      # Python and PyPy
-      - libsdl2-dev
-      - build-essential
-      # Python
-      - python3
-      - python3-pip
-      - python3-dev
-      - python3-setuptools
-      # PyPy
-      - libtiff5-dev
-      - libjpeg8-dev
-      - zlib1g-dev
-      - curl
+      env: PYTHON_VERSION=3.6.10
+           PYPI=1
+           PYPI_SOURCE=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYTHON_VERSION=3.7.7
+           PYPI=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYTHON_VERSION=3.8.2
+           PYPI=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYPY_TESTING=1
+    - os: windows
+      env: MSYS=1
+    - os: windows
+      env: PYPI=1
 
 before_install:
-  - openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
-  - tar xf ci_secrets.tar
-  # Python and PyPy
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install sdl2 zlib; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew unlink python@2; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then python3 -m pip install -U --force-reinstall pip; fi
-  # PyPy MacOS
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install pypy3; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"; fi
-  # PyPy Linux
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar -xvf "${pypy_version}.tar.bz2" -C $HOME/; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$HOME/$pypy_version/bin:$PATH; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m ensurepip; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install --upgrade pip; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pypy3 -m pip install cython; fi # Needed for building NumPy, but only on Travis
-  # PyPy MacOS and Linux
-  - pypy3 -m pip install wheel
+  - |-
+    case $TRAVIS_OS_NAME in
+      osx)
+        openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+        tar xf ci_secrets.tar
+        # MacOS Python and PyPy
+        brew update
+        brew install sdl2
+        python3 -m pip install -U --force-reinstall pip
+        # MacOS PyPy
+        if [ "$PYPY_TESTING" = "1" ]; then
+          brew install pypy3 zlib
+          export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
+          pypy3 -m pip install wheel
+        else
+          brew upgrade pyenv
+          pyenv install $PYTHON_VERSION
+          # pyenv global $PYTHON_VERSION
+          rm /usr/local/bin/python3
+          ln -s "$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
+          echo "$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python3"
+        fi
+      ;;
+      linux)
+        openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+        tar xf ci_secrets.tar
+        if [ "$MANYLINUX" ]; then
+          echo "ManyLinux"
+          docker pull "quay.io/pypa/$MANYLINUX"
+          docker run -id --name 'manylinux' -v `pwd`:/pyboy -w '/pyboy' "quay.io/pypa/$MANYLINUX:latest"
+          docker exec manylinux ln -s "/opt/python/$PYTHON_VERSION/bin/python3" /usr/local/bin/python3
+          if [ "$MANYLINUX" = "manylinux2014_x86_64" ]; then
+            # Install SDL2 from Yum
+            docker exec manylinux yum -y install SDL2-devel
+          elif [ "$MANYLINUX" = "manylinux2010_x86_64" ]; then
+            # Build SDL2 from source
+            docker exec manylinux yum -y install mercurial
+            docker exec manylinux bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
+            docker exec manylinux ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
+          else
+            exit 33
+          fi
+        elif [ "$PYPY_TESTING" = "1" ]; then
+          sudo apt update
+          sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev curl
+          # Linux PyPy
+          curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"
+          tar -xvf "${pypy_version}.tar.bz2" -C $HOME/
+          export PATH=$HOME/$pypy_version/bin:$PATH
+          pypy3 -m ensurepip
+          pypy3 -m pip install --upgrade pip
+          pypy3 -m pip install cython # Needed for building NumPy, but only on Travis
+          pypy3 -m pip install wheel
+        else
+          sudo apt update
+          sudo apt install -y libsdl2-dev build-essential python3 python3-pip python3-dev python3-setuptools
+        fi
+      ;;
+      windows)
+        $mingw64 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+        $mingw64 tar xf ci_secrets.tar
+        if [ "$MSYS" = "1" ]; then
+          [[ ! -f C:/tools/msys64/msys2_shell.cmd ]] && rm -rf C:/tools/msys64
+          choco uninstall -y mingw
+          choco upgrade --no-progress -y msys2
+          export msys2='cmd //C RefreshEnv.cmd '
+          export msys2+='& set MSYS=winsymlinks:nativestrict '
+          export msys2+='& C:\\tools\\msys64\\msys2_shell.cmd -defterm -no-start'
+          export mingw64="$msys2 -mingw64 -full-path -here -c "\"\$@"\" --"
+          export msys2+=" -msys2 -c "\"\$@"\" --"
+          $msys2 pacman --sync --noconfirm --needed mingw-w64-x86_64-toolchain
+          ## Install more MSYS2 packages from https://packages.msys2.org/base here
+          taskkill //IM gpg-agent.exe //F  # https://travis-ci.community/t/4967
+          export PATH=/C/tools/msys64/mingw64/bin:$PATH
+          export MAKE=mingw32-make  # so that Autotools can find it
+          $mingw64 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
+        else
+          powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe', 'python-3.7.6-amd64.exe')"
+          powershell -Command "start-Process -FilePath python-3.7.6-amd64.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
+          powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
+          powershell -Command "Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\\SDL2\\"
+          powershell -Command "setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\x64"
+          powershell -Command "setx PATH \"%PATH%;C:\\SDL2\\SDL2-2.0.10\\lib\\x64\""
+        fi
+      ;;
+    esac
 
-install: make build
+install:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        case $MSYS in
+          1)
+            $mingw64 make build
+          ;;
+          *)
+            # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
+            export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64
+            export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64"
+            /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
+          ;;
+        esac
+      ;;
+      *)
+        if [ "$MANYLINUX" ]; then
+          echo "ManyLinux"
+          docker exec manylinux make build
+        elif [ "$PYPY_TESTING" = "" ]; then
+          make build
+        fi
+      ;;
+    esac
 
-script: make test_ci
+script:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        case $MSYS in
+          1)
+            TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
+          ;;
+          *)
+            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
+          ;;
+        esac
+      ;;
+      *)
+        if [ "$MANYLINUX" ]; then
+          echo "ManyLinux"
+          docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
+        elif [ "$PYPY_TESTING" = "1" ]; then
+          TEST_CI=1 TEST_NO_UI=1 make test_pypy
+        else
+          TEST_CI=1 TEST_NO_UI=1 make test_cython
+        fi
+      ;;
+    esac
 
 deploy:
-  provider: pypi
-  user: "__token__"
-  password:
-    secure: GlvvLxqRvdheZoa13r/oG3BEqt/TD97g/YMj/SDBMG/YomyOJrFxhOzpj6ikLMmr0p4Z5TOpZHeu8hK5H2YpTUU++vj7gVQDp1CfQZVj6HA6pyyPUNuI216TOrV1ouT8khYuGKUleyIUsvHzmI/nK2d7vBOj2Cu2Ifghq21xjfI8pund9sw9T5jkDlPhFXPl7OtGvo5Dy+U4BVyzIH2hne6RvZom5DDPCDrxfzxeG1qqm5yjT3SnmrpYy+PdNoki+GrJ8M7Ns/S5OloyLBvaexxfgsRyTzB2++c+GBGdmhaqFZxlIJ8w1cMzFbdsuZHxbOAXoVLv6uXEEZARft+bepVKE+/0mBfX8W7boVxSXwfuj3hY6NWAVKWdn3zPNVteAln+KDzpi0rBtgZ3uFW6XYDxKtbPQ2TbHAxtFfKCO+lQiBdI4BZ19rguGwlLkN0vgyS1JxY6cMT0wY008EZWTf+MitgXmo5zEHULNGA2CnBcaii5T02Y8L8oeWnUH6bnnc+m0KS+Bv+6SGEM/yyOM/086Vz8xYfomxd2XijUnBiFXPFN8qey31NGfNRRNhw463og9kzPe8Na2IvQl2/dv+cy4JB42itHR+lQ2kia7dnBfcmvzt2UyRwQwiYqYKvxUQZJfL8cgfrNy/BbmT1vC/PNPdKWBbhB1I3pw9UrnYQ=
-  skip_existing: true
-  distributions: "sdist bdist_wheel"
-  on:
-    branch: master
-    tags: true
+  - provider: script
+    skip_cleanup: true
+    script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e MANYLINUX=$MANYLINUX -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE manylinux bash .deploy.sh; else bash .deploy.sh; fi'
+    on:
+      branch: plugin_refactor
+      tags: true
+      condition: $PYPI = 1

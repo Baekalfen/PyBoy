@@ -1,42 +1,45 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.globals import STATE_VERSION
-from pyboy.logger import logger
+import logging
+
+from pyboy.utils import STATE_VERSION
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
+
+logger = logging.getLogger(__name__)
 
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, window, enable_rewind, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
         if profiling:
             logger.info("Profiling enabled")
 
-        self.window = window
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD(window.color_palette)
+        self.lcd = lcd.LCD()
+        self.renderer = lcd.Renderer(color_palette)
+        self.disable_renderer = disable_renderer
         self.sound = sound.Sound()
         self.bootrom_enabled = True
-        self.serialbuffer = u''
-        self.enable_rewind = enable_rewind
+        self.serialbuffer = ""
         self.cycles_remaining = 0
 
     def getserial(self):
         b = self.serialbuffer
-        self.serialbuffer = u''
+        self.serialbuffer = ""
         return b
 
     def buttonevent(self, key):
@@ -44,7 +47,6 @@ class Motherboard:
             self.cpu.set_interruptflag(HIGHTOLOW)
 
     def stop(self, save):
-        self.window.stop()
         self.sound.stop()
         if save:
             self.cartridge.stop()
@@ -56,7 +58,7 @@ class Motherboard:
         self.cpu.save_state(f)
         self.lcd.save_state(f)
         self.sound.save_state(f)
-        self.window.save_state(f)
+        self.renderer.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
@@ -78,18 +80,21 @@ class Motherboard:
         if state_version >= 5:
             self.sound.load_state(f)
         if state_version >= 2:
-            self.window.load_state(f, state_version)
+            self.renderer.load_state(f, state_version)
         self.ram.load_state(f, state_version)
         self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 
-        self.window.clearcache = True
-        self.window.update_cache(self.lcd)
+        # TODO: Move out of MB
+        self.renderer.clearcache = True
+        self.renderer.render_screen(self.lcd)
 
     ###################################################################
     # Coordinator
     #
+
+    # TODO: Move out of MB
     def set_STAT_mode(self, mode):
         self.setitem(STAT, self.getitem(STAT) & 0b11111100) # Clearing 2 LSB
         self.setitem(STAT, self.getitem(STAT) | mode) # Apply mode to LSB
@@ -98,6 +103,7 @@ class Motherboard:
         if self.cpu.test_ramregisterflag(STAT, mode + 3) and mode != 3:
             self.cpu.set_interruptflag(LCDC)
 
+    # TODO: Move out of MB
     def check_LYC(self, y):
         self.setitem(LY, y)
         if self.getitem(LYC) == y:
@@ -126,7 +132,7 @@ class Motherboard:
 
                 # Profiling
                 if self.cpu.profiling:
-                    self.cpu.hitrate[0x76] += cycles//4
+                    self.cpu.hitrate[0x76] += cycles // 4
 
             self.sound.clock += cycles
             self.cycles_remaining -= cycles
@@ -137,28 +143,30 @@ class Motherboard:
     def tickframe(self):
         lcdenabled = self.lcd.LCDC.lcd_enable
         if lcdenabled:
-            self.window.update_cache(self.lcd)
-
             # TODO: the 19, 41 and 49._ticks should correct for longer instructions
             # Iterate the 144 lines on screen
             for y in range(144):
                 self.check_LYC(y)
 
                 # Mode 2
+                # TODO: Move out of MB
                 self.set_STAT_mode(2)
                 self.calculate_cycles(80)
 
                 # Mode 3
+                # TODO: Move out of MB
                 self.set_STAT_mode(3)
                 self.calculate_cycles(170)
-                self.window.scanline(y, self.lcd)
+                self.renderer.scanline(y, self.lcd)
 
                 # Mode 0
+                # TODO: Move out of MB
                 self.set_STAT_mode(0)
                 self.calculate_cycles(206)
 
             self.cpu.set_interruptflag(VBLANK)
-            self.window.render_screen(self.lcd)
+            if not self.disable_renderer:
+                self.renderer.render_screen(self.lcd)
 
             # Wait for next frame
             for y in range(144, 154):
@@ -170,7 +178,8 @@ class Motherboard:
         else:
             # https://www.reddit.com/r/EmuDev/comments/6r6gf3
             # TODO: What happens if LCD gets turned on/off mid-cycle?
-            self.window.blank_screen()
+            self.renderer.blank_screen()
+            # TODO: Move out of MB
             self.set_STAT_mode(0)
             self.setitem(LY, 0)
 
@@ -234,7 +243,7 @@ class Motherboard:
         elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
-            return self.ram.internal_ram1[i-0xFF80]
+            return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF: # Interrupt Enable Register
             return self.ram.interrupt_register[0]
         else:
@@ -253,7 +262,7 @@ class Motherboard:
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
                 # Mask out the byte of the tile
-                self.window.tiles_changed.add(i & 0xFFF0)
+                self.renderer.tiles_changed.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -289,11 +298,14 @@ class Motherboard:
             elif i == 0xFF46:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
-                self.window.clearcache |= self.lcd.BGP.set(value)
+                # TODO: Move out of MB
+                self.renderer.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
-                self.window.clearcache |= self.lcd.OBP0.set(value)
+                # TODO: Move out of MB
+                self.renderer.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
-                self.window.clearcache |= self.lcd.OBP1.set(value)
+                # TODO: Move out of MB
+                self.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:
@@ -305,7 +317,7 @@ class Motherboard:
                 self.bootrom_enabled = False
             self.ram.non_io_internal_ram1[i - 0xFF4C] = value
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
-            self.ram.internal_ram1[i-0xFF80] = value
+            self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
             self.ram.interrupt_register[0] = value
         else:

@@ -1,9 +1,15 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__all__ = ['pyboy', 'botsupport', 'windowevent']
+__pdoc__ = {
+    "core": False,
+    "logger": False,
+    "pyboy": False,
+    "utils": False,
+}
+__all__ = ["PyBoy", "WindowEvent"]
 
-from . import core, window, windowevent
 from .pyboy import PyBoy
+from .utils import WindowEvent

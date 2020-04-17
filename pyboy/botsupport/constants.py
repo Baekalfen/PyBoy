@@ -1,5 +1,5 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 """
@@ -14,3 +14,6 @@ HIGH_TILEMAP = 0x1C00 + VRAM_OFFSET
 LOW_TILEDATA = VRAM_OFFSET
 LOW_TILEDATA_NTILES = 0x100
 HIGH_TILEDATA = 0x800 + VRAM_OFFSET
+TILES = 384
+SPRITES = 40
+ROWS, COLS = 144, 160

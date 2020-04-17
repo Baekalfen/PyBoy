@@ -1,14 +1,17 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-cdef unsigned char P10, P11, P12, P13, P14, P15
-cdef unsigned char reset_bit(unsigned char, unsigned char)
-cdef unsigned char set_bit(unsigned char, unsigned char)
+from pyboy.utils cimport WindowEvent
+from libc.stdint cimport uint8_t
+
+cdef uint8_t P10, P11, P12, P13, P14, P15
+cdef uint8_t reset_bit(uint8_t, uint8_t)
+cdef uint8_t set_bit(uint8_t, uint8_t)
 
 
 cdef class Interaction:
-    cdef unsigned char directional, standard
-    cdef bint key_event(self, int)
-    cdef unsigned char pull(self, unsigned char)
+    cdef uint8_t directional, standard
+    cdef bint key_event(self, WindowEvent)
+    cdef uint8_t pull(self, uint8_t)

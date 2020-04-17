@@ -1,17 +1,18 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 import cython
 
 
 cdef class Timer:
-    cdef public unsigned int DIV, TIMA, TMA, TAC
-    cdef public unsigned int DIV_counter, TIMA_counter
-    cdef public unsigned int[4] dividers
+    cdef uint64_t DIV, TIMA, TMA, TAC
+    cdef uint64_t DIV_counter, TIMA_counter
+    cdef uint64_t[4] dividers
 
     @cython.locals(divider=cython.int)
-    cdef bint tick(self, unsigned int)
+    cdef bint tick(self, uint64_t)
     @cython.locals(divider=cython.int, cyclesleft=cython.uint)
-    cdef unsigned int cyclestointerrupt(self)
+    cdef uint64_t cyclestointerrupt(self)

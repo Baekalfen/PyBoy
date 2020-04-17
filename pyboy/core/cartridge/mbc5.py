@@ -1,11 +1,13 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.logger import logger
+import logging
 
 from .base_mbc import BaseMBC
+
+logger = logging.getLogger(__name__)
 
 
 class MBC5(BaseMBC):
@@ -23,11 +25,13 @@ class MBC5(BaseMBC):
             self.rambank_selected = value & 0xF
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
-                logger.warning("Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM "
-                               "banks are not initialized. Initializing %d RAM banks as "
-                               "precaution" % (value, address, self.external_ram_count))
+                logger.warning(
+                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM "
+                    "banks are not initialized. Initializing %d RAM banks as "
+                    "precaution" % (value, address, self.external_ram_count)
+                )
                 self.init_rambanks(self.external_ram_count)
             if self.rambank_enabled:
-                self.rambanks[self.rambank_selected % self.external_ram_count][address-0xA000] = value
+                self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000] = value
         else:
             logger.error("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
