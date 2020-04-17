@@ -14,27 +14,22 @@ import sdl2
 
 
 class Sound:
-    def __init__(self, enable_sound):
+    def __init__(self):
         self.registers = array.array("B", [0] * 0x30)
-        self.enable_sound = enable_sound
 
-        if enable_sound:
-            # Initialization is handled in the windows, otherwise we'd need this
-            sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
+        # Initialization is handled in the windows, otherwise we'd need this
+        sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
 
-            # Open audio device
-            # spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64, sdl2.SDL_AudioCallback(self.callback))
-            spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
-            spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
-            self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
-            # ...sdl2.SDL_AUDIO_ALLOW_ANY_CHANGE)
+        # Open audio device
+        # spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64, sdl2.SDL_AudioCallback(self.callback))
+        spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
+        spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
+        self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
+        # ...sdl2.SDL_AUDIO_ALLOW_ANY_CHANGE)
 
-            print(spec_have.format)
-            print(spec_have.freq)
-            print(spec_have.samples)
-        else:
-            DummySpec = namedtuple("DummySpec", ["format", "freq", "samples"])
-            spec_have = DummySpec(32776, 32768, 64)
+        print(spec_have.format)
+        print(spec_have.freq)
+        print(spec_have.samples)
 
         # self.sampleclocks = 0x400000 // spec_have.freq  # Clocks per sample (TODO: what if it's not an integer?)
         self.sampleclocks = 0x404ac0 / spec_have.freq
@@ -46,9 +41,8 @@ class Sound:
         self.sweepchannel = SweepChannel()
         self.tonechannel = ToneChannel()
 
-        if enable_sound:
-            # Start playback (move out of __init__ if needed, maybe for headless)
-            sdl2.SDL_PauseAudioDevice(self.device, 0)
+        # Start playback (move out of __init__ if needed, maybe for headless)
+        sdl2.SDL_PauseAudioDevice(self.device, 0)
 
     def get(self, offset):
         self.sync()
@@ -82,12 +76,12 @@ class Sound:
         for i in range(min(2048, nsamples)):
             self.sweepchannel.run(self.sampleclocks)
             self.tonechannel.run(self.sampleclocks)
-            sample = 4 * (self.sweepchannel.sample() + self.tonechannel.sample())
+            sample = 4 * max(-32, min(self.sweepchannel.sample() + self.tonechannel.sample(), 31))
+            # print(self.sweepchannel.sample(), self.tonechannel.sample())
             self.audiobuffer[2 * i] = sample
             self.audiobuffer[2*i + 1] = sample
             self.clock -= self.sampleclocks
-        if self.enable_sound:
-            sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
+        sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
         self.clock %= self.sampleclocks
 
     # Audio filling callback
@@ -108,8 +102,7 @@ class Sound:
             stream[2*i + 1] += 0x3F if self.sq2state else -0x40
 
     def stop(self):
-        if self.enable_sound:
-            sdl2.SDL_CloseAudioDevice(self.device)
+        sdl2.SDL_CloseAudioDevice(self.device)
 
     def save_state(self, file):
         pass

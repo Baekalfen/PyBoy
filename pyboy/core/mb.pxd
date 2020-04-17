@@ -32,6 +32,7 @@ cdef class Motherboard:
     cdef pyboy.core.lcd.Renderer renderer
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
+    cdef bint sound_enabled
     cdef object sound
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
