@@ -28,7 +28,9 @@ defaults = {
 
 
 class PyBoy:
-    def __init__(self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, **kwargs):
+    def __init__(
+        self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, **kwargs
+    ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
@@ -62,7 +64,12 @@ class PyBoy:
         self.gamerom_file = gamerom_file
 
         self.mb = Motherboard(
-            gamerom_file, bootrom_file, kwargs["color_palette"], disable_renderer, profiling=profiling
+            gamerom_file,
+            bootrom_file,
+            kwargs["color_palette"],
+            disable_renderer,
+            sound,
+            profiling=profiling,
         )
 
         # Performance measures

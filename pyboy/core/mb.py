@@ -16,7 +16,7 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, enable_sound, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -32,7 +32,7 @@ class Motherboard:
         self.lcd = lcd.LCD()
         self.renderer = lcd.Renderer(color_palette)
         self.disable_renderer = disable_renderer
-        self.sound = sound.Sound()
+        self.sound = sound.Sound(enable_sound)
         self.bootrom_enabled = True
         self.serialbuffer = ""
         self.cycles_remaining = 0
