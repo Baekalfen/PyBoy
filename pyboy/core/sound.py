@@ -234,8 +234,12 @@ class ToneChannel:
         if self.frame == 7 and self.envelopetimer != 0:
             self.envelopetimer -= 1
             if self.envelopetimer == 0:
-                self.volume += self.envdir or -1
-                self.envelopetimer = 0 if self.volume in (0, 15) else self.envper
+                newvolume = self.volume + (self.envdir or -1)
+                if newvolume < 0 or newvolume > 15:
+                    self.envelopetimer = 0
+                else:
+                    self.envelopetimer = self.envper
+                    self.volume = newvolume
                 # Note that setting envelopetimer to 0 disables it
 
     def sample(self):
@@ -516,8 +520,12 @@ class NoiseChannel:
         if self.frame == 7 and self.envelopetimer != 0:
             self.envelopetimer -= 1
             if self.envelopetimer == 0:
-                self.volume += self.envdir or -1
-                self.envelopetimer = 0 if self.volume in (0, 15) else self.envper
+                newvolume = self.volume + (self.envdir or -1)
+                if newvolume < 0 or newvolume > 15:
+                    self.envelopetimer = 0
+                else:
+                    self.envelopetimer = self.envper
+                    self.volume = newvolume
                 # Note that setting envelopetimer to 0 disables it
 
     def sample(self):
