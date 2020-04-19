@@ -5,6 +5,8 @@
 # Based on specs from:
 # http://gbdev.gg8.se/wiki/articles/Sound_Controller
 # http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
+# http://www.devrs.com/gb/files/hosted/GBSOUND.txt
+
 
 from array import array
 from ctypes import c_void_p
@@ -95,7 +97,9 @@ class Sound:
             self.sweepchannel.run(self.sampleclocks)
             self.tonechannel.run(self.sampleclocks)
             self.wavechannel.run(self.sampleclocks)
-            sample = min(self.sweepchannel.sample() + self.tonechannel.sample() + self.wavechannel.sample(), 45)
+            self.noisechannel.run(self.sampleclocks)
+            sample = max(min(self.sweepchannel.sample() + self.tonechannel.sample() +
+                             self.wavechannel.sample() + self.noisechannel.sample(), 64), 0)
             self.audiobuffer[2 * i] = sample
             self.audiobuffer[2*i + 1] = sample
             self.clock -= self.sampleclocks
@@ -169,7 +173,7 @@ class ToneChannel:
         elif reg == 1:
             return self.wavsel << 6 # Other bits are write-only
         elif reg == 2:
-            return self.envini << 4 + self.envdir << 3 + self.envper
+            return self.envini << 4 | self.envdir << 3 | self.envper
         elif reg == 3:
             return 0 # Write-only register?
         elif reg == 4:
@@ -261,7 +265,7 @@ class SweepChannel(ToneChannel):
 
     def getreg(self, reg):
         if reg == 0:
-            return self.swpper << 4 + self.swpdir << 3 + self.swpmag
+            return self.swpper << 4 | self.swpdir << 3 | self.swpmag
         else:
             return ToneChannel.getreg(self, reg)
 
@@ -416,11 +420,116 @@ class WaveChannel:
 
 
 class NoiseChannel:
+    """Fourth sound channel--white noise generator"""
+    DIVTABLE = (8, 16, 32, 48, 64, 80, 96, 112)
+
     def __init__(self):
-        pass
+        # Register values (abbreviated to keep track of what's external)
+        # Register 0 is unused in the noise channel
+        self.sndlen = 0 # Register 1 bits 5-0: time to play sound before stop (64-x)
+        self.envini = 0 # Register 2 bits 7-4: volume envelope initial volume
+        self.envdir = 0 # Register 2 bit 3: volume envelope change direction (0: decrease)
+        self.envper = 0 # Register 2 bits 2-0: volume envelope period (0: disabled)
+        self.clkpow = 0 # Register 3 bits 7-4: lfsr clock shift
+        self.regwid = 0 # Register 3 bit 3: lfsr bit width (0: 15, 1: 7)
+        self.clkdiv = 0 # Register 3 bits 2-0: base divider for lfsr clock
+        # Register 4 bit 7: Write-only trigger bit. Process immediately.
+        self.uselen = 0 # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
 
-    def getreg(self, offset):
-        pass
+        # Internal values
+        self.enable = False # Enable flag, turned on by trigger bit and off by length timer
+        self.lengthtimer = 64 # Length timer, counts down to disable channel automatically
+        self.periodtimer = 0 # Period timer, counts down to signal change in wave frame
+        self.envelopetimer = 0 # Volume envelope timer, counts down to signal change in volume
+        self.period = 8 # Calculated copy of period, 8 << 0
+        self.shiftregister = 1 # Internal shift register value
+        self.lfsrfeed = 0x4000 # Bit mask for inserting feedback in shift register
+        self.frametimer = 0x2000 # Frame sequencer timer, underflows to signal change in frame sequences
+        self.frame = 0 # Frame sequencer value, generates clocks for length/envelope/(sweep)
+        self.volume = 0 # Current volume level, modulated by envelope
 
-    def setreg(self, offset, value):
-        pass
+    def getreg(self, reg):
+        if reg == 0:
+            return 0xFF
+        elif reg == 1:
+            return 0xFF
+        elif reg == 2:
+            return self.envini << 4 | self.envdir << 3 | self.envper
+        elif reg == 3:
+            return self.clkpow << 4 | self.regwid << 3 | self.clkdiv
+        elif reg == 4:
+            return self.uselen << 6 | 0xBF
+        else:
+            raise IndexError("Attempt to read register {} in NoiseChannel".format(reg))
+
+    def setreg(self, reg, val):
+        if reg == 0:
+            return
+        elif reg == 1:
+            self.sndlen = val & 0x1F
+            self.lengthtimer = 64 - self.sndlen
+        elif reg == 2:
+            self.envini = val >> 4 & 0x0F
+            self.envdir = val >> 3 & 0x01
+            self.envper = val & 0x07
+        elif reg == 3:
+            self.clkpow = val >> 4 & 0x0F
+            self.regwid = val >> 3 & 0x01
+            self.clkdiv = val & 0x07
+            self.period = self.DIVTABLE[self.clkdiv] << self.clkpow
+            self.lfsrfeed = 0x4040 if self.regwid else 0x4000
+        elif reg == 4:
+            self.uselen = val >> 6 & 0x01
+            if val & 0x80:
+                self.trigger() # Sync is called first in Sound.set so it's okay to trigger immediately
+        else:
+            raise IndexError("Attempt to write register {} in ToneChannel".format(reg))
+
+    def run(self, clocks):
+        """Advances time to sync with system state."""
+        self.periodtimer -= clocks
+        while self.periodtimer <= 0:
+            self.periodtimer += self.period
+            # Advance shift register
+            # This is good C, but terrible Python
+            tap = self.shiftregister
+            self.shiftregister >>= 1
+            tap ^= self.shiftregister
+            if tap & 0x01:
+                self.shiftregister |= self.lfsrfeed
+            else:
+                self.shiftregister &= ~self.lfsrfeed
+
+        self.frametimer -= clocks
+        while self.frametimer <= 0:
+            self.frametimer += 0x2000
+            self.tickframe()
+
+    def tickframe(self):
+        self.frame = (self.frame + 1) % 8
+        # Clock length timer on 0, 2, 4, 6
+        if self.uselen and self.frame & 1 == 0 and self.lengthtimer > 0:
+            self.lengthtimer -= 1
+            if self.lengthtimer == 0:
+                self.enable = False
+        # Clock envelope timer on 7
+        if self.frame == 7 and self.envelopetimer != 0:
+            self.envelopetimer -= 1
+            if self.envelopetimer == 0:
+                self.volume += self.envdir or -1
+                self.envelopetimer = 0 if self.volume in (0, 15) else self.envper
+                # Note that setting envelopetimer to 0 disables it
+
+    def sample(self):
+        if self.enable:
+            return self.volume if self.shiftregister & 0x01 == 0 else 0
+        else:
+            return 0
+
+    def trigger(self):
+        self.enable = True
+        self.lengthtimer = self.lengthtimer or 64
+        self.periodtimer = self.period
+        self.envelopetimer = self.envper
+        self.volume = self.envini
+        self.shiftregister = 0x7FFF
