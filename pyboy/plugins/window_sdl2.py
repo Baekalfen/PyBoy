@@ -59,7 +59,6 @@ KEY_UP = {
 def sdl2_event_pump(events):
     # Feed events into the loop
     for event in sdl2.ext.get_events():
-        logger.error(f"SDL2 event: {event}")
         if event.type == sdl2.SDL_QUIT:
             events.append(WindowEvent(WindowEvent.QUIT))
         elif event.type == sdl2.SDL_KEYDOWN:
