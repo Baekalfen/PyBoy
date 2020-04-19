@@ -29,6 +29,7 @@ if [ "$MANYLINUX" ]; then
         # Updating single SDL2 file in the .zip (.whl)
         zip $f $SDLNAME
     done
+    cd ..
 
     rm -rf dist/*.whl
     mv wheelhouse/*.whl dist/
