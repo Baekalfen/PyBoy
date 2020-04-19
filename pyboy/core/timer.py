@@ -1,8 +1,7 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 
 # http://problemkaputt.de/pandocs.htm#gameboytechnicaldata Unless the
 # oscillator frequency is multiplied or divided before it gets to the

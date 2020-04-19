@@ -1,9 +1,10 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
 import array
+import logging
 
 from . import opcodes
 
@@ -11,6 +12,8 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 IF_ADDRESS = 0xFF0F
 IE_ADDRESS = 0xFFFF
+
+logger = logging.getLogger(__name__)
 
 
 class CPU:
@@ -54,15 +57,14 @@ class CPU:
         if intr_flag_enabled and intr_flag:
 
             # Clear interrupt flag
-            self.mb.setitem(
-                0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
+            self.mb.setitem(0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
 
             self.interrupt_master_enable = False
             if self.halted:
                 self.PC += 1 # Escape HALT on return
 
-            self.mb.setitem(self.SP-1, self.PC >> 8) # High
-            self.mb.setitem(self.SP-2, self.PC & 0xFF) # Low
+            self.mb.setitem(self.SP - 1, self.PC >> 8) # High
+            self.mb.setitem(self.SP - 2, self.PC & 0xFF) # Low
             self.SP -= 2
 
             return True
@@ -142,7 +144,7 @@ class CPU:
         # Profiling
         self.profiling = profiling
         if profiling:
-            self.hitrate = array.array('L', [0] * 512)
+            self.hitrate = array.array("L", [0] * 512)
 
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
@@ -158,11 +160,16 @@ class CPU:
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
-        self.HL, self.SP, self.PC = [f.read() | (f.read() << 8) for _ in range(3)]
+        self.HL = f.read_16bit()
+        self.SP = f.read_16bit()
+        self.PC = f.read_16bit()
 
         self.interrupt_master_enable = f.read()
         self.halted = f.read()
         self.stopped = f.read()
+        logger.debug(
+            f"State loaded: A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, IME:{self.interrupt_master_enable}, halted:{self.halted}, stopped:{self.stopped}"
+        )
 
     def fetch_and_execute(self, pc):
         opcode = self.mb.getitem(pc)

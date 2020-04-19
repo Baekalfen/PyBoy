@@ -7,11 +7,6 @@ RUN apk add \
   sdl2-dev \
   zlib-dev
 
-COPY requirements.txt /
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple pyboy
 
-COPY . /pyboy
-WORKDIR /pyboy
-
-RUN pip install .
 WORKDIR /

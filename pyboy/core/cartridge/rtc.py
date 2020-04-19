@@ -1,15 +1,15 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 
-
+import logging
 import os
 import struct
 import time
 
-from pyboy.globals import STATE_VERSION
-from pyboy.logger import logger
-from pyboy.rewind import IntIOWrapper
+from pyboy.utils import STATE_VERSION, IntIOWrapper
+
+logger = logging.getLogger(__name__)
 
 
 class RTC:
@@ -39,14 +39,14 @@ class RTC:
             self.save_state(IntIOWrapper(f))
 
     def save_state(self, f):
-        for b in struct.pack('f', self.timezero):
+        for b in struct.pack("f", self.timezero):
             f.write(b)
         f.write(self.halt)
         f.write(self.day_carry)
         logger.info("RTC saved.")
 
     def load_state(self, f, state_version):
-        self.timezero = struct.unpack('f', bytes([f.read() for _ in range(4)]))[0]
+        self.timezero = struct.unpack("f", bytes([f.read() for _ in range(4)]))[0]
         self.halt = f.read()
         self.day_carry = f.read()
         logger.info("RTC loaded.")

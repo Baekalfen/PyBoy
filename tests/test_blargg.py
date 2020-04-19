@@ -1,5 +1,5 @@
 #
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
@@ -7,6 +7,7 @@ import json
 import os.path
 # TODO: The timeout should be emulator-cycle based
 import platform
+import sys
 import time
 
 from pyboy import PyBoy
@@ -21,19 +22,14 @@ else:
 
 def run_rom(args):
     rom, frame_limit = args
-    # logger.info(rom)
-    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True,
-                  hide_window=True)
-    # pyboy = PyBoy(utils.boot_rom, window_type="SDL2", window_scale=1, bootrom_file=rom, disable_input=True,
-    # hide_window=True)
-    pyboy.disable_title()
+    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, bootrom_file=utils.boot_rom, disable_input=True)
     pyboy.set_emulation_speed(0)
     serial_output = ""
     t = time.time()
     result = None
     frame_count = 0
     while not pyboy.tick():
-        b = pyboy.get_serial()
+        b = pyboy._serial()
         if b != "":
             serial_output += b
             t = time.time()
@@ -138,7 +134,7 @@ def test_blarggs():
         # "ROMs/BlarggROMs/dmg_sound-2/dmg_sound.gb",
     ]
 
-    if os.environ.get("TEST_CI"):
+    if os.environ.get("TEST_CI") or sys.platform == "win32":
         results = list(map(run_rom, test_roms))
     else:
         import multiprocessing as mp
@@ -168,4 +164,4 @@ def test_blarggs():
             f.write("|ROM|Result|\n")
             f.write("|---|---|\n")
             for (rom, _), res in zip(test_roms, results):
-                f.write("|%s|%s|\n" % (rom, res.replace('\n', ' ').rstrip(':')))
+                f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))

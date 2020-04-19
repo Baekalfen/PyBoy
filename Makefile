@@ -66,28 +66,19 @@ install: build
 uninstall:
 	${PY} -m pip uninstall pyboy
 
-test_ci:
-	@echo "PyPy testing..."
-	TEST_CI=1 TEST_NO_UI=1 ${PYPY} setup.py test
-	@echo "Removing PyPy files"
-	rm -rf .eggs
-	@echo "Python/Cython testing..."
-	TEST_CI=1 TEST_NO_UI=1 ${PY} setup.py test
+test: clean build test_cython test_pypy
 
-test: clean build
+test_cython:
 	${PY} setup.py test
+
+test_pypy:
 	${PYPY} setup.py test
-
-test_quick: clean build
-	${PY} setup.py test
 
 test_all: test docker-pypy docker-pypy-slim docker-buster docker-alpine docker-ubuntu1804 docker-pypy-ubuntu1804
 
 docs: clean
-	pdoc --html --force pyboy
-	cp html/pyboy/windowevent.html ${ROOT_DIR}/docs/
-	cp html/pyboy/pyboy.html ${ROOT_DIR}/docs/
-	cp -r html/pyboy/botsupport ${ROOT_DIR}/docs/
+	pdoc --html --force -c latex_math=True -c sort_identifiers=False -c show_type_annotations=True --template-dir docs/templates pyboy
+	cp -r html/pyboy/ ${ROOT_DIR}/docs/
 	rm -rf html
 
 repackage_secrets:

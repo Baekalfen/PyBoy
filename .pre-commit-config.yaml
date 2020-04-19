@@ -1,9 +1,18 @@
+exclude: opcodes.py
 repos:
+- repo: local
+  hooks:
+    - id: unify
+      name: unify
+      entry: unify --quote '"' --in-place --recursive
+      language: system
+      types: [python]
+      pass_filenames: true
+- repo: https://github.com/pre-commit/mirrors-yapf
+  rev: ''  # Use the sha / tag you want to point at
+  hooks:
+  - id: yapf
 - repo: https://github.com/pre-commit/mirrors-isort
   rev: v4.3.21
   hooks:
   - id: isort
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.4.0
-  hooks:
-  - id: flake8
