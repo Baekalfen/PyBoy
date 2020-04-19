@@ -35,12 +35,13 @@ if [ "$MANYLINUX" ]; then
     mv wheelhouse/*.whl dist/
 fi
 
-# "$PY" -m twine upload --non-interactive -u '__token__' -p $PYPI_TOKEN dist/*
-"$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.whl --verbose
+"$PY" -m twine upload --non-interactive -u '__token__' -p $PYPI_TOKEN dist/*
+# "$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.whl --verbose
 
 if [ "$PYPI_SOURCE" ]; then
     # Pure source. We can only upload it once. It's randomly done from the manylinux platform
-    "$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.tar.gz --verbose
+    "$PY" -m twine upload --non-interactive -u '__token__' -p $PYPI_TOKEN dist/*.tar.gz
+    # "$PY" -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ -u '__token__' -p $PYPI_TOKEN_TEST dist/*.tar.gz
 
     # Initiate the Docker Hub build process
     curl -X POST $DOCKER_HUB_BUILD_POST

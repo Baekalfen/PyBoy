@@ -8,11 +8,11 @@ env:
 
 jobs:
   include:
-    # - os: linux
-    #   dist: bionic
-    # - os: linux
-    #   dist: bionic
-    #   env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+    - os: linux
+      dist: bionic
+    - os: linux
+      dist: bionic
+      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
     #        PYTHON_VERSION=cp36-cp36m
@@ -37,26 +37,26 @@ jobs:
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp38-cp38
            PYPI=1
-    # - os: osx
-    #   osx_image: xcode11.3
-    #   env: PYTHON_VERSION=3.6.10
-    #        PYPI=1
-    #        PYPI_SOURCE=1
-    # - os: osx
-    #   osx_image: xcode11.3
-    #   env: PYTHON_VERSION=3.7.7
-    #        PYPI=1
-    # - os: osx
-    #   osx_image: xcode11.3
-    #   env: PYTHON_VERSION=3.8.2
-    #        PYPI=1
-    # - os: osx
-    #   osx_image: xcode11.3
-    #   env: PYPY_TESTING=1
-    # - os: windows
-    #   env: MSYS=1
-    # - os: windows
-    #   env: PYPI=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYTHON_VERSION=3.6.10
+           PYPI=1
+           PYPI_SOURCE=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYTHON_VERSION=3.7.7
+           PYPI=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYTHON_VERSION=3.8.2
+           PYPI=1
+    - os: osx
+      osx_image: xcode11.3
+      env: PYPY_TESTING=1
+    - os: windows
+      env: MSYS=1
+    - os: windows
+      env: PYPI=1
 
 before_install:
   - |-
@@ -172,36 +172,36 @@ install:
       ;;
     esac
 
-# script:
-#   - |-
-#     case $TRAVIS_OS_NAME in
-#       windows)
-#         case $MSYS in
-#           1)
-#             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
-#           ;;
-#           *)
-#             PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
-#           ;;
-#         esac
-#       ;;
-#       *)
-#         if [ "$MANYLINUX" ]; then
-#           echo "ManyLinux"
-#           docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
-#         elif [ "$PYPY_TESTING" = "1" ]; then
-#           TEST_CI=1 TEST_NO_UI=1 make test_pypy
-#         else
-#           TEST_CI=1 TEST_NO_UI=1 make test_cython
-#         fi
-#       ;;
-#     esac
+script:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        case $MSYS in
+          1)
+            TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
+          ;;
+          *)
+            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
+          ;;
+        esac
+      ;;
+      *)
+        if [ "$MANYLINUX" ]; then
+          echo "ManyLinux"
+          docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
+        elif [ "$PYPY_TESTING" = "1" ]; then
+          TEST_CI=1 TEST_NO_UI=1 make test_pypy
+        else
+          TEST_CI=1 TEST_NO_UI=1 make test_cython
+        fi
+      ;;
+    esac
 
 deploy:
   - provider: script
     skip_cleanup: true
     script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e MANYLINUX=$MANYLINUX -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE manylinux bash .deploy.sh; else bash .deploy.sh; fi'
     on:
-      branch: plugin_refactor
+      branch: master
       tags: true
       condition: $PYPI = 1
