@@ -2,11 +2,14 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+import logging
 
 import sdl2
 import sdl2.ext
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
+
+logger = logging.getLogger(__name__)
 
 ROWS, COLS = 144, 160
 
@@ -56,6 +59,7 @@ KEY_UP = {
 def sdl2_event_pump(events):
     # Feed events into the loop
     for event in sdl2.ext.get_events():
+        logger.error(f"SDL2 event: {event}")
         if event.type == sdl2.SDL_QUIT:
             events.append(WindowEvent(WindowEvent.QUIT))
         elif event.type == sdl2.SDL_KEYDOWN:
@@ -95,7 +99,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
+        sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
         self._ticks = sdl2.SDL_GetTicks()
 
         self._window = sdl2.SDL_CreateWindow(
