@@ -172,30 +172,30 @@ install:
       ;;
     esac
 
-script:
-  - |-
-    case $TRAVIS_OS_NAME in
-      windows)
-        case $MSYS in
-          1)
-            TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
-          ;;
-          *)
-            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
-          ;;
-        esac
-      ;;
-      *)
-        if [ "$MANYLINUX" ]; then
-          echo "ManyLinux"
-          docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
-        elif [ "$PYPY_TESTING" = "1" ]; then
-          TEST_CI=1 TEST_NO_UI=1 make test_pypy
-        else
-          TEST_CI=1 TEST_NO_UI=1 make test_cython
-        fi
-      ;;
-    esac
+# script:
+#   - |-
+#     case $TRAVIS_OS_NAME in
+#       windows)
+#         case $MSYS in
+#           1)
+#             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
+#           ;;
+#           *)
+#             PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
+#           ;;
+#         esac
+#       ;;
+#       *)
+#         if [ "$MANYLINUX" ]; then
+#           echo "ManyLinux"
+#           docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
+#         elif [ "$PYPY_TESTING" = "1" ]; then
+#           TEST_CI=1 TEST_NO_UI=1 make test_pypy
+#         else
+#           TEST_CI=1 TEST_NO_UI=1 make test_cython
+#         fi
+#       ;;
+#     esac
 
 deploy:
   - provider: script
