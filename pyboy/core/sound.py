@@ -20,15 +20,9 @@ class Sound:
         sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
 
         # Open audio device
-        # spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64, sdl2.SDL_AudioCallback(self.callback))
         spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
         spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
         self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
-        # ...sdl2.SDL_AUDIO_ALLOW_ANY_CHANGE)
-
-        print(spec_have.format)
-        print(spec_have.freq)
-        print(spec_have.samples)
 
         self.sampleclocks = 0x404ac0 / spec_have.freq
         self.audiobuffer = array("b", [0] * 4096)  # Over 2 frames
@@ -105,23 +99,6 @@ class Sound:
             self.clock -= self.sampleclocks
         sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
         self.clock %= self.sampleclocks
-
-    # Audio filling callback
-    def callback(self, data, stream, length):
-        for i in range(length // 2):
-            self.sq1counter -= self.sampleclocks
-            self.sq2counter -= self.sampleclocks
-            if self.sq1counter < 0:
-                self.sq1state ^= 1
-                self.sq1counter = 16 * (2048 - (((0x7 & self.registers[4]) << 8) + self.registers[3]))
-                # print(self.sq1counter)
-            if self.sq2counter < 0:
-                self.sq2state ^= 1
-                self.sq2counter = 16 * (2048 - (((0x7 & self.registers[9]) << 8) + self.registers[8]))
-            stream[2 * i] = 0x40 if self.sq1state else 0xB0
-            stream[2 * i] += 0x3F if self.sq2state else -0x40
-            stream[2*i + 1] = 0x00 if self.sq1state else 0xB0
-            stream[2*i + 1] += 0x3F if self.sq2state else -0x40
 
     def stop(self):
         sdl2.SDL_CloseAudioDevice(self.device)
