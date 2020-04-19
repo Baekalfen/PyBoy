@@ -16,6 +16,20 @@ fi
 if [ "$MANYLINUX" ]; then
     "$PY" -m pip install auditwheel
     auditwheel repair dist/*.whl
+
+    # Patching in the correct SDL2
+    cd wheelhouse
+
+    yum -y install zip
+    for f in *.whl; do
+        echo "Patching $f file..."
+        SDLNAME=$(unzip -l $f | egrep -wo "(pyboy.libs/libSDL2.*$)")
+        mkdir pyboy.libs
+        cp /SDL/build/build/.libs/libSDL2.so $SDLNAME
+        # Updating single SDL2 file in the .zip (.whl)
+        zip $f $SDLNAME
+    done
+
     rm -rf dist/*.whl
     mv wheelhouse/*.whl dist/
 fi
