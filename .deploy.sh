@@ -24,7 +24,7 @@ if [ "$MANYLINUX" ]; then
     for f in *.whl; do
         echo "Patching $f file..."
         SDLNAME=$(unzip -l $f | egrep -wo "(pyboy.libs/libSDL2.*$)")
-        mkdir pyboy.libs
+        mkdir -p pyboy.libs
         cp /usr/local/lib/libSDL2-2.0.so.0 $SDLNAME
         # Updating single SDL2 file in the .zip (.whl)
         zip $f $SDLNAME
