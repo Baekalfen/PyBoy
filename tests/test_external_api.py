@@ -11,6 +11,7 @@ import numpy as np
 import PIL
 import pytest
 from pyboy import PyBoy, WindowEvent
+from pyboy.botsupport.tile import Tile
 
 from .utils import boot_rom, supermarioland_rom, tetris_rom
 
@@ -26,8 +27,13 @@ def test_misc():
 def test_tiles():
     pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True)
     pyboy.set_emulation_speed(0)
+    pyboy.tick()
+    pyboy.tick()
 
     tile = pyboy.botsupport_manager().tilemap_window().tile(0, 0)
+    assert isinstance(tile, Tile)
+
+    tile = pyboy.botsupport_manager().tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
     ndarray = tile.image_ndarray()
@@ -36,6 +42,16 @@ def test_tiles():
     assert ndarray.dtype == np.uint8
     data = tile.image_data()
     assert data.shape == (8, 8)
+
+    assert [[x for x in y] for y in data
+           ] == [[0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
+                 [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
+                 [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
+                 [0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff],
+                 [0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xffffffff],
+                 [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff],
+                 [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff],
+                 [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff]]
 
     for identifier in range(384):
         t = pyboy.botsupport_manager().tile(identifier)
