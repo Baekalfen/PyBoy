@@ -35,3 +35,6 @@ class MBC5(BaseMBC):
                 self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000] = value
         else:
             logger.error("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+
+    def overrideitem(self, address, value):
+        raise NotImplementedError()

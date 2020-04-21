@@ -45,6 +45,20 @@ class MBC1(BaseMBC):
         else:
             logger.error("Invalid writing address: %s" % hex(address))
 
+    def overrideitem(self, address, value):
+        if 0x0000 <= address < 0x4000:
+            if self.memorymodel == 1:
+                self.rombank_selected = (self.bank_select_register2 << 5) % self.external_rom_count
+            else:
+                self.rombank_selected = 0
+            self.rombanks[self.rombank_selected][address] = value
+        elif 0x4000 <= address < 0x8000:
+            self.rombank_selected = \
+                    (self.bank_select_register2 << 5) % self.external_rom_count | self.bank_select_register1
+            self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000] = value
+        else:
+            logger.error("Invalid override address: %s" % hex(address))
+
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             if self.memorymodel == 1:

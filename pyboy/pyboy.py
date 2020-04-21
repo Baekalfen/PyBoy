@@ -265,6 +265,19 @@ class PyBoy:
         """
         self.mb.setitem(addr, value)
 
+    def override_memory_value(self, addr, value):
+        """
+        Write one byte to a given memory address of the Game Boy's current memory state.
+
+        This will override data in the main Memory Banks if you write to an adress in the
+        first 32k of memory.
+
+        Args:
+            addr (int): Address to write the byte
+            value (int): A byte of data
+        """
+        self.mb.overrideitem(addr, value)
+
     def send_input(self, event):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.

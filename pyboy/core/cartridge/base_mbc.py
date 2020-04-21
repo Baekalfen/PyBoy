@@ -106,6 +106,9 @@ class BaseMBC:
     def setitem(self, address, value):
         raise Exception("Cannot set item in MBC")
 
+    def overrideitem(self, address, value):
+        raise Exception("Cannot override item in MBC")
+
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
