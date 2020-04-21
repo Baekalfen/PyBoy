@@ -62,8 +62,8 @@ GitHub Collaborators
 Student Projects
 ----------------
 
- * __Rewind Time:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
- * __Link Cable:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
+ * __Rewind Time:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
+ * __Link Cable:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
 
 Contribute
 ==========
