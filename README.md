@@ -23,9 +23,9 @@ Installation
 The instructions are simple, if you already have a functioning Python environment on your machine.
 
  1. Install SDL2 through your package manager:
- - Ubuntu: __`sudo apt install libsdl2-dev`__
- - Fedora: __`sudo dnf install SDL2-devel`__
- - macOS: __`brew install sdl2`__
+    - Ubuntu: __`sudo apt install libsdl2-dev`__
+    - Fedora: __`sudo dnf install SDL2-devel`__
+    - macOS: __`brew install sdl2`__
 
  2. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
 
