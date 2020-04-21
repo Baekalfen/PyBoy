@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from time import perf_counter
 import sdl2
 import sdl2.ext
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
@@ -96,7 +97,7 @@ class WindowSDL2(PyBoyWindowPlugin):
             return
 
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
-        self._ticks = sdl2.SDL_GetTicks()
+        self._ftime = 0.0
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, self._scaledresolution[0],
@@ -124,10 +125,13 @@ class WindowSDL2(PyBoyWindowPlugin):
         return self.pyboy_argv.get("window_type") == "SDL2" or self.pyboy_argv.get("window_type") is None
 
     def frame_limiter(self, speed):
-        now = sdl2.SDL_GetTicks()
-        delay = int(1000.0 / (60.0*speed) - (now - self._ticks))
-        sdl2.SDL_Delay(delay if delay > 0 else 0)
-        self._ticks = sdl2.SDL_GetTicks()
+        self._ftime += 1.0 / (60.0*speed)
+        now = perf_counter()
+        if (self._ftime > now):
+            delay = int(1000 * (self._ftime - now))
+            sdl2.SDL_Delay(delay)
+        else:
+            self._ftime = now
         return True
 
     def stop(self):
