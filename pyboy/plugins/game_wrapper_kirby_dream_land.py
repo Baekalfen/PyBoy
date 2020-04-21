@@ -8,6 +8,7 @@ __pdoc__ = {
 }
 
 import logging
+from math import floor
 from array import array
 
 import numpy as np
@@ -57,15 +58,14 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         multiplier = 100000
         index = 0
         score = 0
-        while multiplier > 0:
+        while multiplier > 10:
           score += self.pyboy.get_memory_value(0xD06F + index) * multiplier
           multiplier /= 10
           index += 1
 
-        self.score = round(score)
+        self.score = floor(score)
         self.health = self.pyboy.get_memory_value(0xD086)
         self.lives_left = self.pyboy.get_memory_value(0xD089) - 1
-        self.level = 1
 
         if self.game_has_started:
           self.fitness = self.score * self.health * self.lives_left
