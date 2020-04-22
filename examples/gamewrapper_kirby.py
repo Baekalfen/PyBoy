@@ -22,7 +22,6 @@ else:
 quiet = "--quiet" in sys.argv
 pyboy = PyBoy(filename, window_type="headless" if quiet else "SDL2", window_scale=3, debug=not quiet, game_wrapper=True)
 pyboy.set_emulation_speed(0)
-print(pyboy.cartridge_title())
 assert pyboy.cartridge_title() == "KIRBY DREAM LA"
 
 kirby = pyboy.game_wrapper()
@@ -35,10 +34,10 @@ assert kirby.health == 6
 pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
 for _ in range(280): # Walk for 280 ticks
-  pyboy.tick()
+    pyboy.tick()
 
 assert kirby.score == 800
-assert kirby.health == 4
+assert kirby.health == 5
 
 print(kirby)
 

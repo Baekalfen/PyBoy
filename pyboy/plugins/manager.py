@@ -34,6 +34,7 @@ def parser_arguments():
     yield ScreenRecorder.argv
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
+    yield GameWrapperKirbyDreamLand.argv
     # yield_plugins end
     pass
 

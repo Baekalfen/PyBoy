@@ -8,10 +8,7 @@ __pdoc__ = {
 }
 
 import logging
-from math import floor
-from array import array
 
-import numpy as np
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
@@ -44,10 +41,10 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         """The lives remaining provided by the game"""
         self.fitness = 0
         """
-        A built-in fitness scoring. The scoring is equals to `score`.
+        A built-in fitness scoring. Taking score, health, and lives left into account.
 
         .. math::
-            fitness = score * health * lives_left
+            fitness = score \\cdot health \\cdot lives\\_left
         """
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
 
@@ -55,20 +52,15 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        multiplier = 100000
-        index = 0
-        score = 0
-        while multiplier > 10:
-          score += self.pyboy.get_memory_value(0xD06F + index) * multiplier
-          multiplier /= 10
-          index += 1
+        self.score = 0
+        for n in range(4):
+            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**n
 
-        self.score = floor(score)
         self.health = self.pyboy.get_memory_value(0xD086)
         self.lives_left = self.pyboy.get_memory_value(0xD089) - 1
 
         if self.game_has_started:
-          self.fitness = self.score * self.health * self.lives_left
+            self.fitness = self.score * self.health * self.lives_left
 
     def start_game(self):
         """
@@ -86,18 +78,28 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[0:3, 16] == [231, 224, 235]: # 'HAL' on the first screen
                 break
-        for _ in range(25): # Wait for transition to finish (start screen)
-          self.pyboy.tick()
+
+        # Wait for transition to finish (start screen)
+        for _ in range(25):
+            self.pyboy.tick()
+
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         self.pyboy.tick()
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-        for _ in range(60): # Wait for transition to finish (exit start screen, enter level intro screen)
-          self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START) # Skip level intro
+
+        # Wait for transition to finish (exit start screen, enter level intro screen)
+        for _ in range(60):
+            self.pyboy.tick()
+
+        # Skip level intro
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         self.pyboy.tick()
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-        for _ in range(60): # Wait for transition to finish (exit level intro screen, enter game)
-          self.pyboy.tick()
+
+        # Wait for transition to finish (exit level intro screen, enter game)
+        for _ in range(60):
+            self.pyboy.tick()
+
         self.game_has_started = True
 
         self.saved_state.seek(0)
