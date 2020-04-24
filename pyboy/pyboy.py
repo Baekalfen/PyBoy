@@ -119,7 +119,6 @@ class PyBoy:
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
-
         for event in events:
             if event == WindowEvent.QUIT:
                 self.done = True
@@ -275,6 +274,23 @@ class PyBoy:
             event (pyboy.WindowEvent): The event to send
         """
         self.events.append(WindowEvent(event))
+
+    def get_input(self, ignore=(22,33,34,35)): # Ignore = _INTERNAL_MOUSE, PASS..
+        """
+        Get current inputs except the events specified in "ignore" tuple.
+        This is both Game Boy buttons and emulator controls.
+
+        See `pyboy.WindowEvent` for which events to get.
+
+        Args:
+            ignore (List(WindowEvent/Int)): Events this function will not return
+
+        Returns
+        -------
+        List(pyboy.WindowEvent):
+            Current events (Standard (A/B..) x Directional (Up/Down..))
+        """
+        return (x for x in self.plugin_manager.handle_events(self.events) if x not in ignore)
 
     def save_state(self, file_like_object):
         """
