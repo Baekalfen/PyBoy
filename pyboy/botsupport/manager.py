@@ -7,6 +7,7 @@ from . import screen as _screen
 from . import sprite as _sprite
 from . import tile as _tile
 from . import tilemap as _tilemap
+from .gymboy import GymBoy
 
 try:
     from cython import compiled
@@ -135,3 +136,31 @@ class BotSupportManager:
             A TileMap object for the tile map.
         """
         return _tilemap.TileMap(self.mb, "WINDOW")
+    
+    def get_gymboy(self, observation_type='tiles', buttons_press_mode='press', simultaneous_actions=False):
+        """
+        For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
+        The pyboy need a game_wrapper with a fitness function in order to build a reward system.
+
+        Arguments
+        ---------
+        observation_type: str
+            Define what the agent will be able to see :
+                - 'raw' gives the raw pixels color
+                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
+
+        buttons_press_mode: str
+            Define how the agent will interact with button inputs:
+                - 'press' the agent will only press inputs for 1 frame an then release it.
+                - 'toggle' the agent will toggle inputs, first time it press and second time it release.
+                - 'all' the agent have acces to all inputs, press and release are separated.
+
+        simultaneous_actions: bool
+            If true, the agent is allowed to inject multiple inputs at the same time. Caution, this also means that the action_space is way bigger (n -> 2^n)!
+
+        Returns
+        -------
+        `pyboy.botsupport.gymboy.Gymboy`:
+            A Gym environment based on the `Pyboy` object.
+        """
+        return GymBoy(self.pyboy, observation_type, buttons_press_mode, simultaneous_actions)
