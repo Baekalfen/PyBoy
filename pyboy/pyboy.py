@@ -285,7 +285,7 @@ class PyBoy:
         """
         # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
         # what the game writes to the address. This can be used so freeze the value for health, cash etc.
-        self.mb.overrideitem(addr, value)
+        self.mb.overrideitem(rom_bank, addr, value)
 
     def send_input(self, event):
         """
@@ -298,7 +298,13 @@ class PyBoy:
         """
         self.events.append(WindowEvent(event))
 
-    def get_input(self, ignore=(WindowEvent.PASS, WindowEvent._INTERNAL_TOGGLE_DEBUG, WindowEvent._INTERNAL_RENDERER_FLUSH, WindowEvent._INTERNAL_MOUSE, WindowEvent._INTERNAL_MARK_TILE)):
+    def get_input(
+        self,
+        ignore=(
+            WindowEvent.PASS, WindowEvent._INTERNAL_TOGGLE_DEBUG, WindowEvent._INTERNAL_RENDERER_FLUSH,
+            WindowEvent._INTERNAL_MOUSE, WindowEvent._INTERNAL_MARK_TILE
+        )
+    ):
         """
         Get current inputs except the events specified in "ignore" tuple.
         This is both Game Boy buttons and emulator controls.

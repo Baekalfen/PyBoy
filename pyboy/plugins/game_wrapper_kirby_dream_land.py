@@ -54,7 +54,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
         self.score = 0
         for n in range(4):
-            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**n
+            self.score += self.pyboy.get_memory_value(0xD070 + n) * 10**n
 
         self.health = self.pyboy.get_memory_value(0xD086)
         self.lives_left = self.pyboy.get_memory_value(0xD089) - 1

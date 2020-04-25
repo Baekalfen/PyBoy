@@ -386,3 +386,18 @@ def test_tilemap_position_list():
         assert positions[y][0] == 59 # Actual screen position
 
     pyboy.stop(save=False)
+
+
+def get_set_override():
+    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
+    pyboy.tick()
+
+    assert pyboy.get_memory_value(0xFF40) == 0x91
+    assert pyboy.set_memory_value(0xFF40) == 0x12
+    assert pyboy.get_memory_value(0xFF40) == 0x12
+
+    assert pyboy.get_memory_value(0x0002) == 0xFE
+    assert pyboy.override_memory_value(0x0002) == 0x12
+    assert pyboy.get_memory_value(0x0002) == 0x12
+
+    pyboy.stop(save=False)
