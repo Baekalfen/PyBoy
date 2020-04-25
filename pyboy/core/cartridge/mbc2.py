@@ -9,6 +9,3 @@ from .base_mbc import BaseMBC
 class MBC2(BaseMBC):
     def setitem(self, address, value):
         raise NotImplementedError()
-
-    def overrideitem(self, address, value):
-        raise NotImplementedError()

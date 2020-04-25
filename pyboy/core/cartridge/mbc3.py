@@ -47,6 +47,3 @@ class MBC3(BaseMBC):
                     logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambank_selected)
         else:
             logger.error("Invalid writing address: 0x%0.4x" % address)
-    
-    def overrideitem(self, address, value):
-        raise NotImplementedError()
