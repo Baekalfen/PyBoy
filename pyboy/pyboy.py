@@ -256,15 +256,36 @@ class PyBoy:
         """
         Write one byte to a given memory address of the Game Boy's current memory state.
 
-        This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is
-        needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can
-        read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        This will not directly give you access to all switchable memory banks.
+
+        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
+        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
+        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
 
         Args:
             addr (int): Address to write the byte
             value (int): A byte of data
         """
         self.mb.setitem(addr, value)
+
+    def override_memory_value(self, rom_bank, addr, value):
+        """
+        Override one byte at a given memory address of the Game Boy's ROM.
+
+        This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
+
+        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+
+        Args:
+            rom_bank (int): ROM bank to do the overwrite in
+            addr (int): Address to write the byte inside the ROM bank
+            value (int): A byte of data
+        """
+        # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
+        # what the game writes to the address. This can be used so freeze the value for health, cash etc.
+        self.mb.overrideitem(addr, value)
 
     def send_input(self, event):
         """
