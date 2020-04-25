@@ -246,7 +246,7 @@ class PyBoy:
 
         Returns
         -------
-        `pyboy.botsupport.gymboy.GymBoy`:
+        `pyboy.gymboy.GymBoy`:
             A Gym environment based on the `Pyboy` object.
         """
         return GymBoy(self, observation_type, buttons_press_mode, simultaneous_actions)
