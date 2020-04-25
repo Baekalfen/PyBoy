@@ -27,6 +27,7 @@ cdef class PyBoy:
     cdef double avg_tick
     cdef double avg_post
 
+    cdef list old_events
     cdef list events
     cdef bint done
     cdef public str window_title
