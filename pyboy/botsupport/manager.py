@@ -160,7 +160,7 @@ class BotSupportManager:
 
         Returns
         -------
-        `pyboy.botsupport.gymboy.Gymboy`:
+        `pyboy.botsupport.gymboy.GymBoy`:
             A Gym environment based on the `Pyboy` object.
         """
         return GymBoy(self.pyboy, observation_type, buttons_press_mode, simultaneous_actions)
