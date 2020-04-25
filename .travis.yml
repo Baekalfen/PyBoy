@@ -13,18 +13,18 @@ jobs:
     - os: linux
       dist: bionic
       env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
-    - services: docker
-      env: MANYLINUX=manylinux2014_x86_64
-           PYTHON_VERSION=cp36-cp36m
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2014_x86_64
-           PYTHON_VERSION=cp37-cp37m
-           PYPI=1
-    - services: docker
-      env: MANYLINUX=manylinux2014_x86_64
-           PYTHON_VERSION=cp38-cp38
-           PYPI=1
+    # - services: docker
+    #   env: MANYLINUX=manylinux2014_x86_64
+    #        PYTHON_VERSION=cp36-cp36m
+    #        PYPI=1
+    # - services: docker
+    #   env: MANYLINUX=manylinux2014_x86_64
+    #        PYTHON_VERSION=cp37-cp37m
+    #        PYPI=1
+    # - services: docker
+    #   env: MANYLINUX=manylinux2014_x86_64
+    #        PYTHON_VERSION=cp38-cp38
+    #        PYPI=1
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp36-cp36m
@@ -200,8 +200,8 @@ script:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e MANYLINUX=$MANYLINUX -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE manylinux bash .deploy.sh; else bash .deploy.sh; fi'
+    script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN=$PYPI_TOKEN -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e MANYLINUX=$MANYLINUX -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE manylinux bash .deploy.sh; else bash .deploy.sh; fi'
     on:
-      branch: plugin_refactor
+      branch: master
       tags: true
       condition: $PYPI = 1

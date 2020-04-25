@@ -1,11 +1,11 @@
 <p align="center">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/pyboy.svg" width="480">
+<img src="README/pyboy.svg" width="480">
 </p>
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
 
-It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
+It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
@@ -22,8 +22,12 @@ Installation
 ============
 The instructions are simple, if you already have a functioning Python environment on your machine.
 
- 1. Install SDL2 through your package manager (__`sudo apt install libsdl2-dev`__ or __`brew install sdl2`__)
- 2. Install PyBoy using __`pip install pyboy`__
+ 1. Install SDL2 through your package manager:
+    - Ubuntu: __`sudo apt install libsdl2-dev`__
+    - Fedora: __`sudo dnf install SDL2-devel`__
+    - macOS: __`brew install sdl2`__
+
+ 2. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
 
 Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.rom`__ or use it in your Python scripts:
 ```python
@@ -58,15 +62,14 @@ GitHub Collaborators
 Student Projects
 ----------------
 
- * __Rewind Time:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
- * __Link Cable:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
+ * __Rewind Time:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
+ * __Link Cable:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
 
 Contribute
 ==========
 Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
 
 For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
-* Sound
 * Color
 * Link Cable
 * _(Experimental)_ AI - use the `botsupport` or game wrappers to train a neural network

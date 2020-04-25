@@ -11,6 +11,8 @@ from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
 logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+
 VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 

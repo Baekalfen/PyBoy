@@ -3,11 +3,15 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
 from time import perf_counter
+
 import sdl2
 import sdl2.ext
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
+
+logger = logging.getLogger(__name__)
 
 ROWS, COLS = 144, 160
 

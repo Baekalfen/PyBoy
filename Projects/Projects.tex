@@ -199,42 +199,6 @@
 \begin{document}
 \onecolumn
 
-\chapter*{Emulation -- Sound}
-\section*{Introduction}
-The current implementation of PyBoy does not emulate the built-in sound controller.
-
-The sound controller supports 4 primitive types of tone and noise generators. These are described in detail in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#soundcontroller}}.
-
-\section*{Tasks}
-\begin{description}
-    \item [Read and find documentation]
-        The Pan Docs do provide a lot of information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
-
-    \item [Find library, which supports the requirements]
-        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide support for sound as well. See if SDL2 has the required functionality to implement the tone generators. Alternatively, find a way for Python to generate the sound as needed.
-
-    \item [Implement prototype in standalone Python script]
-        It might be hard to implement the emulated sound controller directly into PyBoy. I recommend to implement it separately, if it is too big of a task to do both at once.
-
-    \item [Find test ROMs or games for reference]
-        To consistently debug the sound controller, you should find some dedicated test ROMs or a game which has simple sound usage. This will make it easier to debug possible issues. We will later test on games with complex sounds.
-
-    \item [Modify PyBoy to support the sound control registers]
-        The Game Boy interfaces with the sound controller through some dedicated registers in memory (see Pan Docs). These will need to be implemented and hooked up to a placeholder for the sound controller code.
-
-    \item [Move the prototype into PyBoy]
-        When the registers are in place, move the prototype into the Game Boy and see if we can produce sound. Test if there are any oversights in the implementation, and keep improving the code until it works.
-
-    \item [Final polishing and testing]
-        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the sound control registers, but also listening tests. If possible, compare the sounds produced to a physical Game Boy.
-
-    \item [Conclude results]
-        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
-
-\end{description}
-
-
-
 \chapter*{Emulation -- Color}
 \section*{Introduction}
 The current implementation of PyBoy only supports the original black-and-white Game Boy from 1989. The Game Boy Color shares almost all of the same architecture of the original Game Boy, but adds a little more memory, a modified video controller and double the CPU frequency. The current implementation trivially supports doubling the CPU speed, so this won't be an issue.
@@ -369,7 +333,6 @@ The details of the Game Boy are described in the Pan Docs\footnote{\url{http://b
 \chapter*{Completed Projects}
 \newpage
 
-
 \chapter*{Experimental -- Rewind Time}
 \section*{Introduction}
 This is not a Game Boy feature itself, but something we can do when emulating. I imagine a feature, where it is possible to go back in time and redo something that went wrong in the game. It could be fine-grained at CPU-cycle level, less fine at each produced frame (60 FPS), or coarse at larger intervals. It depending on what is possible to implement.
@@ -399,5 +362,41 @@ There are already examples of other people implementing a rewind feature\footnot
         Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
 
 \end{description}
+
+
+\chapter*{Emulation -- Sound}
+\section*{Introduction}
+The current implementation of PyBoy does not emulate the built-in sound controller.
+
+The sound controller supports 4 primitive types of tone and noise generators. These are described in detail in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#soundcontroller}}.
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs do provide a lot of information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Find library, which supports the requirements]
+        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide support for sound as well. See if SDL2 has the required functionality to implement the tone generators. Alternatively, find a way for Python to generate the sound as needed.
+
+    \item [Implement prototype in standalone Python script]
+        It might be hard to implement the emulated sound controller directly into PyBoy. I recommend to implement it separately, if it is too big of a task to do both at once.
+
+    \item [Find test ROMs or games for reference]
+        To consistently debug the sound controller, you should find some dedicated test ROMs or a game which has simple sound usage. This will make it easier to debug possible issues. We will later test on games with complex sounds.
+
+    \item [Modify PyBoy to support the sound control registers]
+        The Game Boy interfaces with the sound controller through some dedicated registers in memory (see Pan Docs). These will need to be implemented and hooked up to a placeholder for the sound controller code.
+
+    \item [Move the prototype into PyBoy]
+        When the registers are in place, move the prototype into the Game Boy and see if we can produce sound. Test if there are any oversights in the implementation, and keep improving the code until it works.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the sound control registers, but also listening tests. If possible, compare the sounds produced to a physical Game Boy.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
 
 \end{document}
