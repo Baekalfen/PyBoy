@@ -76,6 +76,7 @@ class PyBoy:
         self.set_emulation_speed(1)
         self.paused = False
         self.events = []
+        self.old_events = []
         self.done = False
         self.window_title = "PyBoy"
 
@@ -119,7 +120,6 @@ class PyBoy:
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
-
         for event in events:
             if event == WindowEvent.QUIT:
                 self.done = True
@@ -177,6 +177,7 @@ class PyBoy:
         self.plugin_manager.frame_limiter(self.target_emulationspeed)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
+        self.old_events = self.events
         self.events = []
 
     def _update_window_title(self):
@@ -275,6 +276,23 @@ class PyBoy:
             event (pyboy.WindowEvent): The event to send
         """
         self.events.append(WindowEvent(event))
+
+    def get_input(self, ignore=(WindowEvent.PASS, WindowEvent._INTERNAL_TOGGLE_DEBUG, WindowEvent._INTERNAL_RENDERER_FLUSH, WindowEvent._INTERNAL_MOUSE, WindowEvent._INTERNAL_MARK_TILE)):
+        """
+        Get current inputs except the events specified in "ignore" tuple.
+        This is both Game Boy buttons and emulator controls.
+
+        See `pyboy.WindowEvent` for which events to get.
+
+        Args:
+            ignore (tuple): Events this function should ignore
+
+        Returns
+        -------
+        list:
+            List of the `pyboy.utils.WindowEvent`s processed for the last call to `pyboy.PyBoy.tick`
+        """
+        return [x for x in self.old_events if x not in ignore]
 
     def save_state(self, file_like_object):
         """

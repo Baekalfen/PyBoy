@@ -162,6 +162,47 @@ class WindowEvent:
         else:
             return self.event == x.event
 
+    def __int__(self):
+        return self.event
+
+    def __str__(self):
+        return ("QUIT",
+                "PRESS_ARROW_UP",
+                "PRESS_ARROW_DOWN",
+                "PRESS_ARROW_RIGHT",
+                "PRESS_ARROW_LEFT",
+                "PRESS_BUTTON_A",
+                "PRESS_BUTTON_B",
+                "PRESS_BUTTON_SELECT",
+                "PRESS_BUTTON_START",
+                "RELEASE_ARROW_UP",
+                "RELEASE_ARROW_DOWN",
+                "RELEASE_ARROW_RIGHT",
+                "RELEASE_ARROW_LEFT",
+                "RELEASE_BUTTON_A",
+                "RELEASE_BUTTON_B",
+                "RELEASE_BUTTON_SELECT",
+                "RELEASE_BUTTON_START",
+                "_INTERNAL_TOGGLE_DEBUG",
+                "PRESS_SPEED_UP",
+                "RELEASE_SPEED_UP",
+                "STATE_SAVE",
+                "STATE_LOAD",
+                "PASS",
+                "SCREEN_RECORDING_TOGGLE",
+                "PAUSE",
+                "UNPAUSE",
+                "PAUSE_TOGGLE",
+                "PRESS_REWIND_BACK",
+                "PRESS_REWIND_FORWARD",
+                "RELEASE_REWIND_BACK",
+                "RELEASE_REWIND_FORWARD",
+                "WINDOW_FOCUS",
+                "WINDOW_UNFOCUS",
+                "_INTERNAL_RENDERER_FLUSH",
+                "_INTERNAL_MOUSE",
+                "_INTERNAL_MARK_TILE")[self.event]
+
 
 class WindowEventMouse(WindowEvent):
     def __init__(self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_button=-1):
