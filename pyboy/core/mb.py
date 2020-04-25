@@ -313,10 +313,7 @@ class Motherboard:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 
     def overrideitem(self, i, value):
-        if 0x0000 <= i < 0x8000:
-            self.cartridge.overrideitem(i, value)
-        else:
-            raise Exception("Memory access violation. Tried to write: %s" % hex(i))
+        self.cartridge.overrideitem(i, value)
 
     def transfer_DMA(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
