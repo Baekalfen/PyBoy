@@ -11,7 +11,7 @@ import os
 import time
 
 from pyboy.plugins.manager import PluginManager
-from pyboy.gymboy import GymBoy
+from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport
@@ -226,7 +226,7 @@ class PyBoy:
     def openai_gymboy(self, observation_type='tiles', buttons_press_mode='press', simultaneous_actions=False):
         """
         For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
-        The pyboy need a game_wrapper with a fitness function in order to build a reward system.
+        This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
 
         Arguments
         ---------
@@ -246,10 +246,10 @@ class PyBoy:
 
         Returns
         -------
-        `pyboy.gymboy.GymBoy`:
+        `pyboy.openai_gym.PyBoyGymEnv`:
             A Gym environment based on the `Pyboy` object.
         """
-        return GymBoy(self, observation_type, buttons_press_mode, simultaneous_actions)
+        return PyBoyGymEnv(self, observation_type, buttons_press_mode, simultaneous_actions)
 
     def game_wrapper(self):
         """

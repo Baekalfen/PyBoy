@@ -2,14 +2,15 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-# File Contributors : MathisFederico 2020,
 
 import numpy as np
 
 from gym import Env
 from gym.spaces import Discrete, MultiDiscrete, Box
 
-class GymBoy(Env):
+from pyboy.botsupport.constants import TILES
+
+class PyBoyGymEnv(Env):
 
     """ A gym environement built from a `pyboy.PyBoy`
     
@@ -42,11 +43,11 @@ class GymBoy(Env):
         observation_type: str
             Define what the agent will be able to see :
                 - 'raw' gives the raw RGB pixels color
-                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
+                - 'tiles' gives the id of the sprites and tiles in 8x8 pixel zones of the game_area defined by the game_wrapper.
 
         buttons_press_mode: str
             Define how the agent will interact with button inputs:
-                - 'press' the agent will only press inputs for 1 frame an then release it.
+                - 'press' the agent will only press inputs for 1 frame and then release it.
                 - 'toggle' the agent will toggle inputs, first time it press and second time it release.
                 - 'all' the agent have acces to all inputs, press and release are separated.
         
@@ -90,12 +91,12 @@ class GymBoy(Env):
         self.actions = [self._DO_NOTHING] + self._buttons
         if buttons_press_mode == 'all':
             self.actions += self._buttons_release
-        elif not (buttons_press_mode == 'press' or buttons_press_mode == 'toggle'):
+        elif buttons_press_mode not in ['press', 'toggle']:
             raise ValueError(f'buttons_press_mode {buttons_press_mode} is unknowed')
         self.buttons_press_mode = buttons_press_mode
 
         if simultaneous_actions:
-            raise NotImplementedError("Not implemented yet, raise an issue if needed")
+            raise NotImplementedError("Not implemented yet, raise an issue on GitHub if needed")
         else:
             self.action_space = Discrete(len(self.actions))
 
@@ -104,7 +105,7 @@ class GymBoy(Env):
             screen = np.asarray(self.game.botsupport_manager().screen().screen_ndarray())
             self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint32)
         elif observation_type == 'tiles':
-            nvec = 384 * np.ones(self.game_wrapper.shape)
+            nvec = TILES * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
         else:
             raise NotImplementedError(f"observation_type {observation_type} is unknowed")
