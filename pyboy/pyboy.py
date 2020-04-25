@@ -273,7 +273,7 @@ class PyBoy:
         """
         Override one byte at a given memory address of the Game Boy's ROM.
 
-        This will let you override data in the ROM banks from address 0x0000 to 0x8000.
+        This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
 
         If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
 
