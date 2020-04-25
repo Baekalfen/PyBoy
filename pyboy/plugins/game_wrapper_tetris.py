@@ -164,6 +164,9 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         return PyBoyGameWrapper.game_area(self)
 
+    def is_game_done(self):
+        return np.any(self._game_area_np() == 135)
+
     def __repr__(self):
         adjust = 4
         # yapf: disable
