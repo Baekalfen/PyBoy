@@ -1,10 +1,13 @@
+#
+# License: See LICENSE.md file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+# File Contributors : MathisFederico 2020,
+
 import numpy as np
 
 from gym import Env
-from gym.spaces import Discrete, MultiDiscrete
-
-from pyboy.plugins.base_plugin import PyBoyGameWrapper
-from pyboy import PyBoy, WindowEvent
+from gym.spaces import Discrete, MultiDiscrete, Box
 
 class GymBoy(Env):
 
@@ -38,7 +41,7 @@ class GymBoy(Env):
         
         observation_type: str
             Define what the agent will be able to see :
-                - 'raw' gives the raw pixels color
+                - 'raw' gives the raw RGB pixels color
                 - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
 
         buttons_press_mode: str
@@ -73,56 +76,63 @@ class GymBoy(Env):
     def __init__(self, game, observation_type='tiles', buttons_press_mode='toggle', simultaneous_actions=False):
         # Build game
         self.game = game
-        if not isinstance(game, PyBoy):
+        if str(type(game)) != "<class 'pyboy.pyboy.PyBoy'>":
             raise TypeError("game must be a Pyboy object")
         
         # Build game_wrapper
         self.game_wrapper = game.game_wrapper()
         if self.game_wrapper is None:
-            raise ValueError("You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly.")
+            raise ValueError("You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly (for now).")
         self.last_fitness = self.game_wrapper.fitness
 
         # Building the action_space
         self._DO_NOTHING = -1
-        buttons = [WindowEvent.PRESS_ARROW_UP, WindowEvent.PRESS_ARROW_DOWN,
-                    WindowEvent.PRESS_ARROW_RIGHT, WindowEvent.PRESS_ARROW_LEFT,
-                    WindowEvent.PRESS_BUTTON_A, WindowEvent.PRESS_BUTTON_B,
-                    WindowEvent.PRESS_BUTTON_SELECT, WindowEvent.PRESS_BUTTON_START]
-        self.button_is_pressed = {button:False for button in buttons}
+        self._buttons = list(range(1, 9)) # UP DOWN RIGHT LEFT A B SELECT START
+        self.button_is_pressed = {button:False for button in self._buttons}
         
-        buttons_release = [WindowEvent.RELEASE_ARROW_UP, WindowEvent.RELEASE_ARROW_DOWN,
-                    WindowEvent.RELEASE_ARROW_RIGHT, WindowEvent.RELEASE_ARROW_LEFT,
-                    WindowEvent.RELEASE_BUTTON_A, WindowEvent.RELEASE_BUTTON_B,
-                    WindowEvent.RELEASE_BUTTON_SELECT, WindowEvent.RELEASE_BUTTON_START]
-        self.release_button = {button:r_button for button, r_button in zip(buttons, buttons_release)}
+        self._buttons_release = list(range(9, 17)) # UP DOWN RIGHT LEFT A B SELECT START
+        self.release_button = {button:r_button for button, r_button in zip(self._buttons, self._buttons_release)}
         
-        self.actions = [self._DO_NOTHING] + buttons
+        self.actions = [self._DO_NOTHING] + self._buttons
         if buttons_press_mode == 'all':
-            self.actions += buttons_release
+            self.actions += self._buttons_release
         elif not (buttons_press_mode == 'press' or buttons_press_mode == 'toggle'):
             raise ValueError(f'buttons_press_mode {buttons_press_mode} is unknowed')
         self.buttons_press_mode = buttons_press_mode
 
         if simultaneous_actions:
-            raise NotImplementedError("Not yet implemented, raise an issue if needed")
+            raise NotImplementedError("Not implemented yet, raise an issue if needed")
         else:
             self.action_space = Discrete(len(self.actions))
 
         # Building the observation_space
-        if observation_type == 'raw' or observation_type != 'tiles':
-            raise NotImplementedError(f"observation_type {observation_type} is not implemented yet raise an issue if needed")         
-        if observation_type == 'tiles':
-            nvec = np.ones(self.game_wrapper.shape)
+        if observation_type == 'raw':
+            screen = np.asarray(self.game.botsupport_manager().screen().screen_ndarray())
+            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint32)
+        elif observation_type == 'tiles':
+            nvec = 384 * np.ones(self.game_wrapper.shape)
+            self.observation_space = MultiDiscrete(nvec)
+        else:
+            raise NotImplementedError(f"observation_type {observation_type} is unknowed")
         self.observation_type = observation_type
-        self.observation_space = MultiDiscrete(nvec)
+
+        self._started = False
+    
+    def get_observation(self):
+        if self.observation_type == 'raw':
+            observation = np.asarray(self.game.botsupport_manager().screen().screen_ndarray(), dtype=np.uint32)
+        elif self.observation_type == 'tiles':
+            observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint32)
+        else:
+            raise NotImplementedError(f"observation_type {self.observation_type} is unknowed")
+        return observation
     
     def step(self, action_id):
-        observation = 0
         info = {}
 
         action = self.actions[action_id]
         if action == self._DO_NOTHING:
-            done = self.game.tick()
+            pyboy_done = self.game.tick()
         else:
             if self.buttons_press_mode == 'toggle':
                 if self.button_is_pressed[action]:
@@ -132,7 +142,7 @@ class GymBoy(Env):
                     self.button_is_pressed[action] = True
 
             self.game.send_input(action)
-            done = self.game.tick()
+            pyboy_done = self.game.tick()
         
             if self.buttons_press_mode == 'press':
                 self.game.send_input(self.release_button[action])
@@ -141,12 +151,21 @@ class GymBoy(Env):
         reward = new_fitness - self.last_fitness
         self.last_fitness = new_fitness
 
+        observation = self.get_observation()
+        done = pyboy_done or self.game_wrapper.is_game_done(observation)
+
         return observation, reward, done, info
 
     def reset(self):
-        # self.game.reset()
-        if self.game_wrapper is not None: self.game_wrapper.start_game()
-        return 0
+        """ Reset (or start) the gym environment throught the game_wrapper """
+        if not self._started: 
+            self.game_wrapper.start_game()
+            self._started = True
+        else:
+            self.game_wrapper.reset_game()
+        self.last_fitness = self.game_wrapper.fitness
+        self.button_is_pressed = {button:False for button in self._buttons}
+        return self.get_observation()
 
     def render(self):
-        raise NotImplementedError
+        pass
