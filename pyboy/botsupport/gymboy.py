@@ -64,12 +64,6 @@ class GymBoy(Env):
 
         actions: list
             The list of input IDs of allowed input for the agent (depends of buttons_press_mode).
-
-        button_is_pressed: dict
-            The dictionary of state 0/1 or released/press for every button (only used if buttons_press_mode=='toggle' or 'all').
-
-        release_button: dict
-            The dictionary of input IDs for releasing a button.
     
     """
 
@@ -88,10 +82,10 @@ class GymBoy(Env):
         # Building the action_space
         self._DO_NOTHING = -1
         self._buttons = list(range(1, 9)) # UP DOWN RIGHT LEFT A B SELECT START
-        self.button_is_pressed = {button:False for button in self._buttons}
+        self._button_is_pressed = {button:False for button in self._buttons}
         
         self._buttons_release = list(range(9, 17)) # UP DOWN RIGHT LEFT A B SELECT START
-        self.release_button = {button:r_button for button, r_button in zip(self._buttons, self._buttons_release)}
+        self._release_button = {button:r_button for button, r_button in zip(self._buttons, self._buttons_release)}
         
         self.actions = [self._DO_NOTHING] + self._buttons
         if buttons_press_mode == 'all':
@@ -135,17 +129,17 @@ class GymBoy(Env):
             pyboy_done = self.game.tick()
         else:
             if self.buttons_press_mode == 'toggle':
-                if self.button_is_pressed[action]:
-                    self.button_is_pressed[action] = False
-                    action = self.release_button[action]
+                if self._button_is_pressed[action]:
+                    self._button_is_pressed[action] = False
+                    action = self._release_button[action]
                 else:
-                    self.button_is_pressed[action] = True
+                    self._button_is_pressed[action] = True
 
             self.game.send_input(action)
             pyboy_done = self.game.tick()
         
             if self.buttons_press_mode == 'press':
-                self.game.send_input(self.release_button[action])
+                self.game.send_input(self._release_button[action])
 
         new_fitness = self.game_wrapper.fitness
         reward = new_fitness - self.last_fitness
