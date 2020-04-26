@@ -192,9 +192,9 @@ install:
             # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
             export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH
             export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
-            bash -c "$PYTHON_EXEC -m pip install --upgrade pip"
-            bash -c "$PYTHON_EXEC -m pip install --upgrade Pillow"
-            bash -c "$PYTHON_EXEC setup.py build_ext --inplace"
+            bash -c "'$PYTHON_EXEC' -m pip install --upgrade pip"
+            bash -c "'$PYTHON_EXEC' -m pip install --upgrade Pillow"
+            bash -c "'$PYTHON_EXEC' setup.py build_ext --inplace"
           ;;
         esac
       ;;
@@ -221,7 +221,7 @@ script:
             export PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
             export TEST_CI=1
             export TEST_NO_UI=1
-            bash -c "$PYTHON_EXEC setup.py test"
+            bash -c "'$PYTHON_EXEC' setup.py test"
           ;;
         esac
       ;;
