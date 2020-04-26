@@ -195,6 +195,8 @@ install:
             $mingw64 make build
           ;;
           *)
+            PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files$PROGRAM_ARCH/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
+            PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files$PROGRAM_ARCH/Python$PYTHON_PATH/python.exe -m pip install --upgrade Pillow
             # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
             export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH
             export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
@@ -221,7 +223,6 @@ script:
             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
-            PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files$PROGRAM_ARCH/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
             PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files$PROGRAM_ARCH/Python$PYTHON_PATH/python.exe setup.py test
           ;;
         esac
