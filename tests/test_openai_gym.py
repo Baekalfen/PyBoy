@@ -8,11 +8,12 @@ import numpy as np
 
 from pyboy import PyBoy
 from pyboy.botsupport.constants import ROWS, COLS
-# from .utils import tetris_rom
+
+try: from .utils import tetris_rom
+except: tetris_rom = 'ROMs/Tetris.GB'
 
 @pytest.fixture
 def game():
-    tetris_rom = 'ROMs/Tetris.GB'
     game = PyBoy(tetris_rom, window_type="headless", game_wrapper=True)
     game.set_emulation_speed(0)
     return game
