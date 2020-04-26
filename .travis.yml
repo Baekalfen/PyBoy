@@ -193,11 +193,13 @@ install:
             export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH
             export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
 
-            case $PYTHON_ARCH in
-              -amd64)
+            case $SDL2_ARCH in
+              x64)
+                /c/Program\ Files/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
                 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
               ;;
-              *)
+              x86)
+                /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
                 /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
               ;;
             esac
@@ -223,11 +225,11 @@ script:
             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
-            case $PYTHON_ARCH in
-              -amd64)
+            case $SDL2_ARCH in
+              x64)
                 PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py test
               ;;
-              *)
+              x86)
                 PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe setup.py test
               ;;
             esac
