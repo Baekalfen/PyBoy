@@ -47,38 +47,38 @@ jobs:
       env: PYPI=1
            PYTHON_VERSION=3.6.8
            PYTHON_ARCH=-amd64
+           PYTHON_PATH=36
            SDL2_ARCH=x64
-           PYTHON_EXEC=/c/Program\\ Files/Python36/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=-amd64
+           PYTHON_PATH=37
            SDL2_ARCH=x64
-           PYTHON_EXEC=/c/Program\\ Files/Python37/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=-amd64
+           PYTHON_PATH=38
            SDL2_ARCH=x64
-           PYTHON_EXEC=/c/Program\\ Files/Python38/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.6.8
            PYTHON_ARCH=
+           PYTHON_PATH=36
            SDL2_ARCH=x86
-           PYTHON_EXEC=/c/Program\\ Files\\ \\(x86\\)/Python36/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=
+           PYTHON_PATH=37
            SDL2_ARCH=x86
-           PYTHON_EXEC=/c/Program\\ Files\\ \\(x86\\)/Python37/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=
+           PYTHON_PATH=38
            SDL2_ARCH=x86
-           PYTHON_EXEC=/c/Program\\ Files\\ \\(x86\\)/Python38/python.exe
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
     #        PYTHON_VERSION=cp36-cp36m
@@ -192,9 +192,15 @@ install:
             # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
             export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH
             export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
-            bash -c "'$PYTHON_EXEC' -m pip install --upgrade pip"
-            bash -c "'$PYTHON_EXEC' -m pip install --upgrade Pillow"
-            bash -c "'$PYTHON_EXEC' setup.py build_ext --inplace"
+
+            case $PYTHON_ARCH in
+              -amd64)
+                /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
+              ;;
+              *)
+                /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
+              ;;
+            esac
           ;;
         esac
       ;;
@@ -217,11 +223,14 @@ script:
             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
-            export PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
-            export PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
-            export TEST_CI=1
-            export TEST_NO_UI=1
-            bash -c "'$PYTHON_EXEC' setup.py test"
+            case $PYTHON_ARCH in
+              -amd64)
+                PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py test
+              ;;
+              *)
+                PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe setup.py test
+              ;;
+            esac
           ;;
         esac
       ;;
