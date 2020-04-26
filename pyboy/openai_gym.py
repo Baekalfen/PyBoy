@@ -25,7 +25,7 @@ class PyBoyGymEnv(Env):
                 - 'raw' gives the raw pixels color
                 - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
 
-        buttons_press_mode: str
+        action_type: str
             Define how the agent will interact with button inputs:
                 - 'press' the agent will only press inputs for 1 frame an then release it.
                 - 'toggle' the agent will toggle inputs, first time it press and second time it release.
@@ -45,7 +45,7 @@ class PyBoyGymEnv(Env):
                 - 'raw' gives the raw RGB pixels color
                 - 'tiles' gives the id of the sprites and tiles in 8x8 pixel zones of the game_area defined by the game_wrapper.
 
-        buttons_press_mode: str
+        action_type: str
             Define how the agent will interact with button inputs:
                 - 'press' the agent will only press inputs for 1 frame and then release it.
                 - 'toggle' the agent will toggle inputs, first time it press and second time it release.
@@ -64,11 +64,11 @@ class PyBoyGymEnv(Env):
             The last observed fitness, used to compute the reward at each step
 
         actions: list
-            The list of input IDs of allowed input for the agent (depends of buttons_press_mode).
+            The list of input IDs of allowed input for the agent (depends of action_type).
     
     """
 
-    def __init__(self, game, observation_type='tiles', buttons_press_mode='toggle', simultaneous_actions=False):
+    def __init__(self, game, observation_type='tiles', action_type='toggle', simultaneous_actions=False):
         # Build game
         self.game = game
         if str(type(game)) != "<class 'pyboy.pyboy.PyBoy'>":
@@ -89,11 +89,11 @@ class PyBoyGymEnv(Env):
         self._release_button = {button:r_button for button, r_button in zip(self._buttons, self._buttons_release)}
         
         self.actions = [self._DO_NOTHING] + self._buttons
-        if buttons_press_mode == 'all':
+        if action_type == 'all':
             self.actions += self._buttons_release
-        elif buttons_press_mode not in ['press', 'toggle']:
-            raise ValueError(f'buttons_press_mode {buttons_press_mode} is unknowed')
-        self.buttons_press_mode = buttons_press_mode
+        elif action_type not in ['press', 'toggle']:
+            raise ValueError(f'action_type {action_type} is unknowed')
+        self.action_type = action_type
 
         if simultaneous_actions:
             raise NotImplementedError("Not implemented yet, raise an issue on GitHub if needed")
@@ -129,7 +129,7 @@ class PyBoyGymEnv(Env):
         if action == self._DO_NOTHING:
             pyboy_done = self.game.tick()
         else:
-            if self.buttons_press_mode == 'toggle':
+            if self.action_type == 'toggle':
                 if self._button_is_pressed[action]:
                     self._button_is_pressed[action] = False
                     action = self._release_button[action]
@@ -139,7 +139,7 @@ class PyBoyGymEnv(Env):
             self.game.send_input(action)
             pyboy_done = self.game.tick()
         
-            if self.buttons_press_mode == 'press':
+            if self.action_type == 'press':
                 self.game.send_input(self._release_button[action])
 
         new_fitness = self.game_wrapper.fitness

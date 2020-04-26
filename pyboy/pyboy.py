@@ -223,7 +223,7 @@ class PyBoy:
         """
         return botsupport.BotSupportManager(self, self.mb)
     
-    def openai_gymboy(self, observation_type='tiles', buttons_press_mode='press', simultaneous_actions=False):
+    def openai_gymboy(self, observation_type='tiles', action_type='press', simultaneous_actions=False):
         """
         For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
         This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
@@ -235,7 +235,7 @@ class PyBoy:
                 - 'raw' gives the raw pixels color
                 - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
 
-        buttons_press_mode: str
+        action_type: str
             Define how the agent will interact with button inputs:
                 - 'press' the agent will only press inputs for 1 frame an then release it.
                 - 'toggle' the agent will toggle inputs, first time it press and second time it release.
@@ -249,7 +249,7 @@ class PyBoy:
         `pyboy.openai_gym.PyBoyGymEnv`:
             A Gym environment based on the `Pyboy` object.
         """
-        return PyBoyGymEnv(self, observation_type, buttons_press_mode, simultaneous_actions)
+        return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions)
 
     def game_wrapper(self):
         """
