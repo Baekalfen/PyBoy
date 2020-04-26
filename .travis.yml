@@ -13,18 +13,6 @@ jobs:
     - os: linux
       dist: bionic
       env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
-    # - services: docker
-    #   env: MANYLINUX=manylinux2014_x86_64
-    #        PYTHON_VERSION=cp36-cp36m
-    #        PYPI=1
-    # - services: docker
-    #   env: MANYLINUX=manylinux2014_x86_64
-    #        PYTHON_VERSION=cp37-cp37m
-    #        PYPI=1
-    # - services: docker
-    #   env: MANYLINUX=manylinux2014_x86_64
-    #        PYTHON_VERSION=cp38-cp38
-    #        PYPI=1
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp36-cp36m
@@ -57,6 +45,55 @@ jobs:
       env: MSYS=1
     - os: windows
       env: PYPI=1
+           PYTHON_VERSION=3.6.8
+           PYTHON_ARCH=-amd64
+           PYTHON_PATH=36
+           SDL2_ARCH=x64
+    - os: windows
+      env: PYPI=1
+           PYTHON_VERSION=3.7.6
+           PYTHON_ARCH=-amd64
+           PYTHON_PATH=37
+           SDL2_ARCH=x64
+    # Needs fix from PySDL2
+    # - os: windows
+    #   env: PYPI=1
+    #        PYTHON_VERSION=3.8.2
+    #        PYTHON_ARCH=-amd64
+    #        PYTHON_PATH=38
+    #        SDL2_ARCH=x64
+    - os: windows
+      env: PYPI=1
+           PYTHON_VERSION=3.6.8
+           PYTHON_ARCH=
+           PYTHON_PATH=36
+           SDL2_ARCH=x86
+    - os: windows
+      env: PYPI=1
+           PYTHON_VERSION=3.7.6
+           PYTHON_ARCH=
+           PYTHON_PATH=37
+           SDL2_ARCH=x86
+    # Needs fix from PySDL2
+    # - os: windows
+    #   env: PYPI=1
+    #        PYTHON_VERSION=3.8.2
+    #        PYTHON_ARCH=
+    #        PYTHON_PATH=38
+    #        SDL2_ARCH=x86
+
+    # - services: docker
+    #   env: MANYLINUX=manylinux2014_x86_64
+    #        PYTHON_VERSION=cp36-cp36m
+    #        PYPI=1
+    # - services: docker
+    #   env: MANYLINUX=manylinux2014_x86_64
+    #        PYTHON_VERSION=cp37-cp37m
+    #        PYPI=1
+    # - services: docker
+    #   env: MANYLINUX=manylinux2014_x86_64
+    #        PYTHON_VERSION=cp38-cp38
+    #        PYPI=1
 
 before_install:
   - |-
@@ -136,12 +173,12 @@ before_install:
           export MAKE=mingw32-make  # so that Autotools can find it
           $mingw64 pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-pip mingw-w64-x86_64-python3-numpy mingw-w64-x86_64-python3-pillow git
         else
-          powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe', 'python-3.7.6-amd64.exe')"
-          powershell -Command "start-Process -FilePath python-3.7.6-amd64.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
+          powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.python.org/ftp/python/$PYTHON_VERSION/python-$PYTHON_VERSION$PYTHON_ARCH.exe', 'python-$PYTHON_VERSION$PYTHON_ARCH.exe')"
+          powershell -Command "start-Process -FilePath python-$PYTHON_VERSION$PYTHON_ARCH.exe -ArgumentList '/quiet','InstallAllUsers=1','PrependPath=1' -wait"
           powershell -Command "(New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')"
           powershell -Command "Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\\SDL2\\"
-          powershell -Command "setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\x64"
-          powershell -Command "setx PATH \"%PATH%;C:\\SDL2\\SDL2-2.0.10\\lib\\x64\""
+          powershell -Command "setx PYSDL2_DLL_PATH C:\\SDL2\\SDL2-2.0.10\\lib\\$SDL2_ARCH"
+          powershell -Command "setx PATH \"%PATH%;C:\\SDL2\\SDL2-2.0.10\\lib\\$SDL2_ARCH\""
         fi
       ;;
     esac
@@ -156,9 +193,22 @@ install:
           ;;
           *)
             # The paths are weird, because we are actually running in Git Bash. Windwows support is still a little beta
-            export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64
-            export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/x64"
-            /c/Program\ Files/Python37/python.exe setup.py build_ext --inplace
+            export PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH
+            export PATH="${PATH}:/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH"
+
+            case $SDL2_ARCH in
+              x64)
+                # /c/Users/Mads/AppData/Local/Programs/Python/Python38/python.exe
+                /c/Program\ Files/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
+                /c/Program\ Files/Python$PYTHON_PATH/python.exe -m pip install --upgrade Pillow numpy
+                /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
+              ;;
+              x86)
+                /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe -m pip install --upgrade pip
+                /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe -m pip install --upgrade Pillow numpy
+                /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe setup.py build_ext --inplace
+              ;;
+            esac
           ;;
         esac
       ;;
@@ -181,7 +231,14 @@ script:
             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
-            PYSDL2_DLL_PATH=/c/SDL2/SDL2-2.0.10/lib/x64 PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/x64" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python37/python.exe setup.py test
+            case $SDL2_ARCH in
+              x64)
+                PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py test
+              ;;
+              x86)
+                PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe setup.py test
+              ;;
+            esac
           ;;
         esac
       ;;
