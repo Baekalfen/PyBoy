@@ -48,37 +48,37 @@ jobs:
            PYTHON_VERSION=3.6.8
            PYTHON_ARCH=-amd64
            SDL2_ARCH=x64
-           PYTHON_EXEC=/c/Program\\ Files/Python36/python.exe
+           PYTHON_EXEC=/c/Program\\\\ Files/Python36/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=-amd64
            SDL2_ARCH=x64
-           PYTHON_EXEC=/c/Program\\ Files/Python37/python.exe
+           PYTHON_EXEC=/c/Program\\\\ Files/Python37/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=-amd64
            SDL2_ARCH=x64
-           PYTHON_EXEC=/c/Program\\ Files/Python38/python.exe
+           PYTHON_EXEC=/c/Program\\\\ Files/Python38/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.6.8
            PYTHON_ARCH=
            SDL2_ARCH=x86
-           PYTHON_EXEC=/c/Program\\ Files\\ (x86)/Python36/python.exe
+           PYTHON_EXEC=/c/Program\\\\ Files\\\\ (x86)/Python36/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=
            SDL2_ARCH=x86
-           PYTHON_EXEC=/c/Program\\ Files\\ (x86)/Python37/python.exe
+           PYTHON_EXEC=/c/Program\\\\ Files\\\\ (x86)/Python37/python.exe
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=
            SDL2_ARCH=x86
-           PYTHON_EXEC=/c/Program\\ Files\\ (x86)/Python38/python.exe
+           PYTHON_EXEC=/c/Program\\\\ Files\\\\ (x86)/Python38/python.exe
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
     #        PYTHON_VERSION=cp36-cp36m
