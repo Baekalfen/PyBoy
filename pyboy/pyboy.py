@@ -407,3 +407,9 @@ class PyBoy:
             Game title
         """
         return self.mb.cartridge.gamename
+
+    def _rendering(self, value):
+        """
+        Disable or enable rendering
+        """
+        self.mb.disable_renderer = not value
