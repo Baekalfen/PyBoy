@@ -147,7 +147,7 @@ class PyBoyGymEnv(Env):
         self.last_fitness = new_fitness
 
         observation = self.get_observation()
-        done = pyboy_done or self.game_wrapper.game_over(observation)
+        done = pyboy_done or self.game_wrapper.game_over()
 
         return observation, reward, done, info
 
