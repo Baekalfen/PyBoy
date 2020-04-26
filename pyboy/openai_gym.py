@@ -103,7 +103,7 @@ class PyBoyGymEnv(Env):
         # Building the observation_space
         if observation_type == 'raw':
             screen = np.asarray(self.game.botsupport_manager().screen().screen_ndarray())
-            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint32)
+            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
         elif observation_type == 'tiles':
             nvec = TILES * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
@@ -113,11 +113,11 @@ class PyBoyGymEnv(Env):
 
         self._started = False
     
-    def get_observation(self):
+    def _get_observation(self):
         if self.observation_type == 'raw':
-            observation = np.asarray(self.game.botsupport_manager().screen().screen_ndarray(), dtype=np.uint32)
+            observation = np.asarray(self.game.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
         elif self.observation_type == 'tiles':
-            observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint32)
+            observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint16)
         else:
             raise NotImplementedError(f"observation_type {self.observation_type} is unknowed")
         return observation
@@ -146,7 +146,7 @@ class PyBoyGymEnv(Env):
         reward = new_fitness - self.last_fitness
         self.last_fitness = new_fitness
 
-        observation = self.get_observation()
+        observation = self._get_observation()
         done = pyboy_done or self.game_wrapper.game_over()
 
         return observation, reward, done, info
@@ -160,7 +160,7 @@ class PyBoyGymEnv(Env):
             self.game_wrapper.reset_game()
         self.last_fitness = self.game_wrapper.fitness
         self.button_is_pressed = {button:False for button in self._buttons}
-        return self.get_observation()
+        return self._get_observation()
 
     def render(self):
         pass
