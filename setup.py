@@ -20,6 +20,8 @@ cython; platform_python_implementation == 'CPython'
 numpy
 pillow
 pysdl2
+gym
+
 """
 
 
