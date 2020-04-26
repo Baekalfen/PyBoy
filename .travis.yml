@@ -47,37 +47,37 @@ jobs:
       env: PYPI=1
            PYTHON_VERSION=3.6.10
            PYTHON_ARCH=-amd64
-           PyTHON_PATH=36
+           PYTHON_PATH=36
            SDL2_ARCH=x64
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=-amd64
-           PyTHON_PATH=37
+           PYTHON_PATH=37
            SDL2_ARCH=x64
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=-amd64
-           PyTHON_PATH=38
+           PYTHON_PATH=38
            SDL2_ARCH=x64
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.6.10
            PYTHON_ARCH=
-           PyTHON_PATH=36
+           PYTHON_PATH=36
            SDL2_ARCH=x86
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=
-           PyTHON_PATH=37
+           PYTHON_PATH=37
            SDL2_ARCH=x86
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=
-           PyTHON_PATH=38
+           PYTHON_PATH=38
            SDL2_ARCH=x86
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
