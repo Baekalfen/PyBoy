@@ -197,10 +197,12 @@ install:
               x64)
                 # /c/Users/Mads/AppData/Local/Programs/Python/Python38/python.exe
                 /c/Program\ Files/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
+                /c/Program\ Files/Python$PYTHON_PATH/python.exe -m pip install --upgrade Pillow -vvvv
                 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
               ;;
               x86)
                 /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe -m pip install --upgrade pip
+                /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe -m pip install --upgrade Pillow -vvvv
                 /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH-32/python.exe setup.py build_ext --inplace
               ;;
             esac
