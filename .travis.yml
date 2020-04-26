@@ -49,42 +49,42 @@ jobs:
            PYTHON_ARCH=-amd64
            PYTHON_PATH=36
            SDL2_ARCH=x64
-           $PROGRAM_ARCH=
+           PROGRAM_ARCH=
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=-amd64
            PYTHON_PATH=37
            SDL2_ARCH=x64
-           $PROGRAM_ARCH=
+           PROGRAM_ARCH=
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=-amd64
            PYTHON_PATH=38
            SDL2_ARCH=x64
-           $PROGRAM_ARCH=
+           PROGRAM_ARCH=
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.6.8
            PYTHON_ARCH=
            PYTHON_PATH=36
            SDL2_ARCH=x86
-           $PROGRAM_ARCH=" (x86)"
+           PROGRAM_ARCH=" (x86)"
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=
            PYTHON_PATH=37
            SDL2_ARCH=x86
-           $PROGRAM_ARCH=" (x86)"
+           PROGRAM_ARCH=" (x86)"
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=
            PYTHON_PATH=38
            SDL2_ARCH=x86
-           $PROGRAM_ARCH=" (x86)"
+           PROGRAM_ARCH=" (x86)"
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
     #        PYTHON_VERSION=cp36-cp36m
@@ -221,6 +221,7 @@ script:
             TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
+            PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files$PROGRAM_ARCH/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
             PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files$PROGRAM_ARCH/Python$PYTHON_PATH/python.exe setup.py test
           ;;
         esac
