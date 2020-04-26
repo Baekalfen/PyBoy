@@ -70,21 +70,21 @@ jobs:
            PYTHON_ARCH=
            PYTHON_PATH=36
            SDL2_ARCH=x86
-           $PROGRAM_ARCH= (x86)
+           $PROGRAM_ARCH=" (x86)"
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.7.6
            PYTHON_ARCH=
            PYTHON_PATH=37
            SDL2_ARCH=x86
-           $PROGRAM_ARCH= (x86)
+           $PROGRAM_ARCH=" (x86)"
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
            PYTHON_ARCH=
            PYTHON_PATH=38
            SDL2_ARCH=x86
-           $PROGRAM_ARCH= (x86)
+           $PROGRAM_ARCH=" (x86)"
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
     #        PYTHON_VERSION=cp36-cp36m
