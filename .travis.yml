@@ -199,8 +199,8 @@ install:
                 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
               ;;
               x86)
-                /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
-                /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
+                /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH/python.exe -m pip install --upgrade pip
+                /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH/python.exe setup.py build_ext --inplace
               ;;
             esac
           ;;
@@ -230,7 +230,7 @@ script:
                 PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files/Python$PYTHON_PATH/python.exe setup.py test
               ;;
               x86)
-                PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files\ (x86)/Python$PYTHON_PATH/python.exe setup.py test
+                PYSDL2_DLL_PATH="/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" PATH="${PATH};/c/SDL2/SDL2-2.0.10/lib/$SDL2_ARCH" TEST_CI=1 TEST_NO_UI=1 /c/Program\ Files\ \(x86\)/Python$PYTHON_PATH/python.exe setup.py test
               ;;
             esac
           ;;
