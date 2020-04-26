@@ -21,7 +21,6 @@ numpy
 pillow
 pysdl2
 gym
-
 """
 
 
