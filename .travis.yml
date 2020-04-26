@@ -45,7 +45,7 @@ jobs:
     #   env: MSYS=1
     - os: windows
       env: PYPI=1
-           PYTHON_VERSION=3.6.10
+           PYTHON_VERSION=3.6.8
            PYTHON_ARCH=-amd64
            PYTHON_PATH=36
            SDL2_ARCH=x64
@@ -63,7 +63,7 @@ jobs:
            SDL2_ARCH=x64
     - os: windows
       env: PYPI=1
-           PYTHON_VERSION=3.6.10
+           PYTHON_VERSION=3.6.8
            PYTHON_ARCH=
            PYTHON_PATH=36
            SDL2_ARCH=x86
