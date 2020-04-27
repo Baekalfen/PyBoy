@@ -18,7 +18,7 @@ class PyBoyGymEnv(Env):
     Arguments
     ---------
 
-        game: `pyboy.PyBoy`
+        pyboy: `pyboy.PyBoy`
             A PyBoy game instance
 
         observation_type: str
@@ -38,7 +38,7 @@ class PyBoyGymEnv(Env):
     Attributes
     ----------
 
-        game: `pyboy.PyBoy`
+        pyboy: `pyboy.PyBoy`
             The PyBoy game instance over which the environment is built.
         
         observation_type: str
@@ -69,14 +69,14 @@ class PyBoyGymEnv(Env):
     
     """
 
-    def __init__(self, game, observation_type='tiles', action_type='toggle', simultaneous_actions=False):
-        # Build game
-        self.game = game
-        if str(type(game)) != "<class 'pyboy.pyboy.PyBoy'>":
-            raise TypeError("game must be a Pyboy object")
+    def __init__(self, pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False):
+        # Build pyboy game
+        self.pyboy = pyboy
+        if str(type(pyboy)) != "<class 'pyboy.pyboy.PyBoy'>":
+            raise TypeError("pyboy must be a Pyboy object")
         
         # Build game_wrapper
-        self.game_wrapper = game.game_wrapper()
+        self.game_wrapper = pyboy.game_wrapper()
         if self.game_wrapper is None:
             raise ValueError("You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly (for now).")
         self.last_fitness = self.game_wrapper.fitness
@@ -121,7 +121,7 @@ class PyBoyGymEnv(Env):
 
         # Building the observation_space
         if observation_type == 'raw':
-            screen = np.asarray(self.game.botsupport_manager().screen().screen_ndarray())
+            screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
             self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
         elif observation_type == 'tiles':
             nvec = TILES * np.ones(self.game_wrapper.shape)
@@ -134,7 +134,7 @@ class PyBoyGymEnv(Env):
     
     def _get_observation(self):
         if self.observation_type == 'raw':
-            observation = np.asarray(self.game.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
+            observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
         elif self.observation_type == 'tiles':
             observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint16)
         else:
@@ -146,7 +146,7 @@ class PyBoyGymEnv(Env):
 
         action = self.actions[action_id]
         if action == self._DO_NOTHING:
-            pyboy_done = self.game.tick()
+            pyboy_done = self.pyboy.tick()
         else:
             if self.action_type == 'toggle':
                 if self._button_is_pressed[action]:
@@ -155,11 +155,11 @@ class PyBoyGymEnv(Env):
                 else:
                     self._button_is_pressed[action] = True
 
-            self.game.send_input(action)
-            pyboy_done = self.game.tick()
+            self.pyboy.send_input(action)
+            pyboy_done = self.pyboy.tick()
         
             if self.action_type == 'press':
-                self.game.send_input(self._release_button[action])
+                self.pyboy.send_input(self._release_button[action])
 
         new_fitness = self.game_wrapper.fitness
         reward = new_fitness - self.last_fitness
