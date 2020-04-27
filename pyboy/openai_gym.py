@@ -9,6 +9,7 @@ from gym import Env
 from gym.spaces import Discrete, MultiDiscrete, Box
 
 from pyboy.botsupport.constants import TILES
+from pyboy import WindowEvent
 
 class PyBoyGymEnv(Env):
 
@@ -82,10 +83,28 @@ class PyBoyGymEnv(Env):
 
         # Building the action_space
         self._DO_NOTHING = -1
-        self._buttons = list(range(1, 9)) # UP DOWN RIGHT LEFT A B SELECT START
+        self._buttons = [
+            WindowEvent.PRESS_ARROW_UP,
+            WindowEvent.PRESS_ARROW_DOWN,
+            WindowEvent.PRESS_ARROW_RIGHT,
+            WindowEvent.PRESS_ARROW_LEFT,
+            WindowEvent.PRESS_BUTTON_A,
+            WindowEvent.PRESS_BUTTON_B,
+            WindowEvent.PRESS_BUTTON_SELECT,
+            WindowEvent.PRESS_BUTTON_START
+        ]
         self._button_is_pressed = {button:False for button in self._buttons}
         
-        self._buttons_release = list(range(9, 17)) # UP DOWN RIGHT LEFT A B SELECT START
+        self._buttons_release = [
+            WindowEvent.RELEASE_ARROW_UP,
+            WindowEvent.RELEASE_ARROW_DOWN,
+            WindowEvent.RELEASE_ARROW_RIGHT,
+            WindowEvent.RELEASE_ARROW_LEFT,
+            WindowEvent.RELEASE_BUTTON_A,
+            WindowEvent.RELEASE_BUTTON_B,
+            WindowEvent.RELEASE_BUTTON_SELECT,
+            WindowEvent.RELEASE_BUTTON_START
+        ]
         self._release_button = {button:r_button for button, r_button in zip(self._buttons, self._buttons_release)}
         
         self.actions = [self._DO_NOTHING] + self._buttons
