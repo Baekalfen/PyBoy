@@ -69,6 +69,8 @@ def test_tiles(game, game_area_shape, tiles_id, id0_block, id1_block):
 
 def test_press(game, game_area_shape, tiles_id, id0_block, id1_block):
     env = game.openai_gymboy(observation_type='tiles', action_type='press')
+    assert env.action_space.n == 9
+    
     env.reset()
     action = 3 # RIGHT
     observation, _, _, _ = env.step(action) # Press RIGHT
@@ -85,6 +87,8 @@ def test_press(game, game_area_shape, tiles_id, id0_block, id1_block):
 
 def test_toggle(game, game_area_shape, tiles_id, id0_block, id1_block):
     env = game.openai_gymboy(observation_type='tiles', action_type='toggle')
+    assert env.action_space.n == 9
+
     env.reset()
     action = 3 # RIGHT
     observation, _, _, _ = env.step(action) # Press RIGHT
@@ -104,3 +108,6 @@ def test_toggle(game, game_area_shape, tiles_id, id0_block, id1_block):
     expected_observation[id0_block, id1_block + 2] = tiles_id['TBLOCK']
     assert np.all(observation == expected_observation)
 
+def test_all(game):
+    env = game.openai_gymboy(observation_type='tiles', action_type='all')
+    assert env.action_space.n == 17
