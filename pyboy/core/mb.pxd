@@ -48,6 +48,7 @@ cdef class Motherboard:
 
     cdef uint8_t getitem(self, uint16_t)
     cdef void setitem(self, uint16_t, uint8_t)
+    cdef void overrideitem(self, int, uint16_t, uint8_t)
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t)

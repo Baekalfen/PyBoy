@@ -77,6 +77,7 @@ class PyBoy:
         self.set_emulation_speed(1)
         self.paused = False
         self.events = []
+        self.old_events = []
         self.done = False
         self.window_title = "PyBoy"
 
@@ -120,7 +121,6 @@ class PyBoy:
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
-
         for event in events:
             if event == WindowEvent.QUIT:
                 self.done = True
@@ -178,6 +178,7 @@ class PyBoy:
         self.plugin_manager.frame_limiter(self.target_emulationspeed)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
+        self.old_events = self.events
         self.events = []
 
     def _update_window_title(self):
@@ -284,15 +285,36 @@ class PyBoy:
         """
         Write one byte to a given memory address of the Game Boy's current memory state.
 
-        This will not directly give you access to all switchable memory banks. Open an issue on GitHub if that is
-        needed, or use this function to send "Memory Bank Controller" (MBC) commands to the virtual cartridge. You can
-        read about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+        This will not directly give you access to all switchable memory banks.
+
+        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
+        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
+        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
 
         Args:
             addr (int): Address to write the byte
             value (int): A byte of data
         """
         self.mb.setitem(addr, value)
+
+    def override_memory_value(self, rom_bank, addr, value):
+        """
+        Override one byte at a given memory address of the Game Boy's ROM.
+
+        This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
+
+        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+
+        Args:
+            rom_bank (int): ROM bank to do the overwrite in
+            addr (int): Address to write the byte inside the ROM bank
+            value (int): A byte of data
+        """
+        # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
+        # what the game writes to the address. This can be used so freeze the value for health, cash etc.
+        self.mb.overrideitem(rom_bank, addr, value)
 
     def send_input(self, event):
         """
@@ -304,6 +326,29 @@ class PyBoy:
             event (pyboy.WindowEvent): The event to send
         """
         self.events.append(WindowEvent(event))
+
+    def get_input(
+        self,
+        ignore=(
+            WindowEvent.PASS, WindowEvent._INTERNAL_TOGGLE_DEBUG, WindowEvent._INTERNAL_RENDERER_FLUSH,
+            WindowEvent._INTERNAL_MOUSE, WindowEvent._INTERNAL_MARK_TILE
+        )
+    ):
+        """
+        Get current inputs except the events specified in "ignore" tuple.
+        This is both Game Boy buttons and emulator controls.
+
+        See `pyboy.WindowEvent` for which events to get.
+
+        Args:
+            ignore (tuple): Events this function should ignore
+
+        Returns
+        -------
+        list:
+            List of the `pyboy.utils.WindowEvent`s processed for the last call to `pyboy.PyBoy.tick`
+        """
+        return [x for x in self.old_events if x not in ignore]
 
     def save_state(self, file_like_object):
         """
@@ -391,3 +436,9 @@ class PyBoy:
             Game title
         """
         return self.mb.cartridge.gamename
+
+    def _rendering(self, value):
+        """
+        Disable or enable rendering
+        """
+        self.mb.disable_renderer = not value
