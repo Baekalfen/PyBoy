@@ -82,7 +82,7 @@ class PyBoyGymEnv(Env):
         self.last_fitness = self.game_wrapper.fitness
 
         # Building the action_space
-        self._DO_NOTHING = -1
+        self._DO_NOTHING = WindowEvent.PASS
         self._buttons = [
             WindowEvent.PRESS_ARROW_UP,
             WindowEvent.PRESS_ARROW_DOWN,
