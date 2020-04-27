@@ -233,13 +233,13 @@ class PyBoy:
         observation_type: str
             Define what the agent will be able to see :
                 - 'raw' gives the raw pixels color
-                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
+                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
 
         action_type: str
             Define how the agent will interact with button inputs:
                 - 'press' the agent will only press inputs for 1 frame an then release it.
                 - 'toggle' the agent will toggle inputs, first time it press and second time it release.
-                - 'all' the agent have acces to all inputs, press and release are separated.
+                - 'all' the agent will have acces to all inputs, press and release are separated.
 
         simultaneous_actions: bool
             If true, the agent is allowed to inject multiple inputs at the same time. Caution, this also means that the action_space is way bigger (n -> 2^n)!

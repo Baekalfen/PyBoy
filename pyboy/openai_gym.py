@@ -24,33 +24,19 @@ class PyBoyGymEnv(Env):
         observation_type: str
             Define what the agent will be able to see :
                 - 'raw' gives the raw pixels color
-                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
+                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
 
         action_type: str
             Define how the agent will interact with button inputs:
                 - 'press' the agent will only press inputs for 1 frame an then release it.
                 - 'toggle' the agent will toggle inputs, first time it press and second time it release.
-                - 'all' the agent have acces to all inputs, press and release are separated.
+                - 'all' the agent will have acces to all inputs, press and release are separated.
 
         simultaneous_actions: bool
             If true, the agent is allowed to inject multiple inputs at the same time. Caution, this also means that the action_space is way bigger (n -> 2^n)!
 
     Attributes
     ----------
-
-        pyboy: `pyboy.PyBoy`
-            The PyBoy game instance over which the environment is built.
-        
-        observation_type: str
-            Define what the agent will be able to see :
-                - 'raw' gives the raw RGB pixels color
-                - 'tiles' gives the id of the sprites and tiles in 8x8 pixel zones of the game_area defined by the game_wrapper.
-
-        action_type: str
-            Define how the agent will interact with button inputs:
-                - 'press' the agent will only press inputs for 1 frame and then release it.
-                - 'toggle' the agent will toggle inputs, first time it press and second time it release.
-                - 'all' the agent have acces to all inputs, press and release are separated.
         
         game_wrapper: `pyboy.plugins.base_plugin.PyBoyGameWrapper`
             The game_wrapper of the PyBoy game instance over which the environment is built.
@@ -78,7 +64,7 @@ class PyBoyGymEnv(Env):
         # Build game_wrapper
         self.game_wrapper = pyboy.game_wrapper()
         if self.game_wrapper is None:
-            raise ValueError("You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly (for now).")
+            raise ValueError("You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly.")
         self.last_fitness = self.game_wrapper.fitness
 
         # Building the action_space
@@ -111,7 +97,7 @@ class PyBoyGymEnv(Env):
         if action_type == 'all':
             self.actions += self._buttons_release
         elif action_type not in ['press', 'toggle']:
-            raise ValueError(f'action_type {action_type} is unknowed')
+            raise ValueError(f'action_type {action_type} is invalid')
         self.action_type = action_type
 
         if simultaneous_actions:
@@ -127,7 +113,7 @@ class PyBoyGymEnv(Env):
             nvec = TILES * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
         else:
-            raise NotImplementedError(f"observation_type {observation_type} is unknowed")
+            raise NotImplementedError(f"observation_type {observation_type} is invalid")
         self.observation_type = observation_type
 
         self._started = False
@@ -138,7 +124,7 @@ class PyBoyGymEnv(Env):
         elif self.observation_type == 'tiles':
             observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint16)
         else:
-            raise NotImplementedError(f"observation_type {self.observation_type} is unknowed")
+            raise NotImplementedError(f"observation_type {self.observation_type} is invalid")
         return observation
     
     def step(self, action_id):
