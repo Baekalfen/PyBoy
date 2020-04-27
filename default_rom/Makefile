@@ -9,6 +9,7 @@ build:
 	rgbasm -o default_rom.obj default_rom.asm
 	rgblink -m default_rom.map -n default_rom.sym -o ${ROOT_DIR}/pyboy/default_rom.gb default_rom.obj
 	rgbfix -p0 -v ${ROOT_DIR}/pyboy/default_rom.gb
+	printf '\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11' | dd of="${ROOT_DIR}/pyboy/default_rom.gb" bs=1 seek=260 count=48 conv=notrunc
 
 clean:
 	rm default_rom.map default_rom.sym default_rom.obj

@@ -86,5 +86,10 @@ bootrom/logo.asm
 bootrom/pyboy.png
 bootrom/PYBOY_ROM.bin
 
+default_rom/default_rom.map
+default_rom/default_rom.obj
+default_rom/default_rom.sym
+!/pyboy/default_rom.gb
+
 test.replay
 ci_secrets.tar
