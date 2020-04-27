@@ -10,8 +10,8 @@ import logging
 import os
 import time
 
-from pyboy.plugins.manager import PluginManager
 from pyboy.openai_gym import PyBoyGymEnv
+from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport
@@ -223,27 +223,24 @@ class PyBoy:
             The manager, which gives easier access to the emulated game through the classes in `pyboy.botsupport`.
         """
         return botsupport.BotSupportManager(self, self.mb)
-    
-    def openai_gymboy(self, observation_type='tiles', action_type='press', simultaneous_actions=False):
+
+    def openai_gym(self, observation_type="tiles", action_type="press", simultaneous_actions=False):
         """
         For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
         This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
 
-        Arguments
-        ---------
-        observation_type: str
-            Define what the agent will be able to see :
-                - 'raw' gives the raw pixels color
-                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper (Only useful in grid-based games).
+        Args:
+            observation_type (str): Define what the agent will be able to see:
+            * `"press"`: The agent will only press inputs for 1 frame an then release it.
+            * `"toggle"`: The agent will toggle inputs, first time it press and second time it release.
+            * `"all"`: The agent have acces to all inputs, press and release are separated.
 
-        action_type: str
-            Define how the agent will interact with button inputs:
-                - 'press' the agent will only press inputs for 1 frame an then release it.
-                - 'toggle' the agent will toggle inputs, first time it press and second time it release.
-                - 'all' the agent have acces to all inputs, press and release are separated.
+            action_type (str): Define how the agent will interact with button inputs
+            * `"raw"`: Gives the raw pixels color
+            * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper
+                (recommended).
 
-        simultaneous_actions: bool
-            If true, the agent is allowed to inject multiple inputs at the same time. Caution, this also means that the action_space is way bigger (n -> 2^n)!
+            simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
         Returns
         -------
@@ -305,6 +302,9 @@ class PyBoy:
 
         This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
 
+        __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+        any overrides when reloading the ROM.
+
         If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
 
         Args:
@@ -314,7 +314,7 @@ class PyBoy:
         """
         # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
         # what the game writes to the address. This can be used so freeze the value for health, cash etc.
-        self.mb.overrideitem(rom_bank, addr, value)
+        self.mb.cartridge.overrideitem(rom_bank, addr, value)
 
     def send_input(self, event):
         """

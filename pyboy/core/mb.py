@@ -312,9 +312,6 @@ class Motherboard:
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 
-    def overrideitem(self, rom_bank, i, value):
-        self.cartridge.overrideitem(rom_bank, i, value)
-
     def transfer_DMA(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
         # TODO: Add timing delay of 160µs and disallow access to RAM!
