@@ -159,3 +159,6 @@ class PyBoyGymEnv(Env):
 
     def render(self):
         pass
+
+    def close(self):
+        self.pyboy.stop(save=False)
