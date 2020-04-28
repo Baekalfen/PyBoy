@@ -13,19 +13,17 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
 
-from .utils import boot_rom, supermarioland_rom, tetris_rom
-
-any_rom = tetris_rom
+from .utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
 def test_misc():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
+    pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
     pyboy.tick()
     pyboy.stop(save=False)
 
 
 def test_tiles():
-    pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True)
+    pyboy = PyBoy(default_rom, window_type="headless", disable_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.tick()
