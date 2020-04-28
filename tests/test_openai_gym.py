@@ -124,7 +124,7 @@ def test_tetris():
     pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="SDL2", disable_input=True, game_wrapper=True)
     pyboy.set_emulation_speed(0)
     tetris = pyboy.game_wrapper()
-    tetris.set_tetromino("X")
+    tetris.set_tetromino("I")
     tetris.start_game()
 
     assert tetris.score == 0
@@ -183,5 +183,5 @@ def test_tetris():
 
 
 def test_all(game):
-    env = game.openai_gymboy(observation_type="tiles", action_type="all")
+    env = game.openai_gym(observation_type="tiles", action_type="all")
     assert env.action_space.n == 17

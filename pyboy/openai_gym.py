@@ -4,17 +4,15 @@
 #
 
 import numpy as np
-
 from gym import Env
-from gym.spaces import Discrete, MultiDiscrete, Box
-
+from gym.spaces import Box, Discrete, MultiDiscrete
 from pyboy.botsupport.constants import TILES
-from pyboy import WindowEvent
+from pyboy.utils import WindowEvent
+
 
 class PyBoyGymEnv(Env):
-
     """ A gym environement built from a `pyboy.PyBoy`
-    
+
     Arguments
     ---------
 
@@ -37,7 +35,7 @@ class PyBoyGymEnv(Env):
 
     Attributes
     ----------
-        
+
         game_wrapper: `pyboy.plugins.base_plugin.PyBoyGameWrapper`
             The game_wrapper of the PyBoy game instance over which the environment is built.
 
@@ -46,58 +44,49 @@ class PyBoyGymEnv(Env):
 
         observation_space: Gym space
             The observation space of the environment (depends of observation_type).
-        
+
         last_fitness: float or int
             The last observed fitness, used to compute the reward at each step
 
         actions: list
             The list of input IDs of allowed input for the agent (depends of action_type).
-    
-    """
 
-    def __init__(self, pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False):
+    """
+    def __init__(self, pyboy, observation_type="tiles", action_type="toggle", simultaneous_actions=False):
         # Build pyboy game
         self.pyboy = pyboy
         if str(type(pyboy)) != "<class 'pyboy.pyboy.PyBoy'>":
             raise TypeError("pyboy must be a Pyboy object")
-        
+
         # Build game_wrapper
         self.game_wrapper = pyboy.game_wrapper()
         if self.game_wrapper is None:
-            raise ValueError("You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly.")
+            raise ValueError(
+                "You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly."
+            )
         self.last_fitness = self.game_wrapper.fitness
 
         # Building the action_space
         self._DO_NOTHING = WindowEvent.PASS
         self._buttons = [
-            WindowEvent.PRESS_ARROW_UP,
-            WindowEvent.PRESS_ARROW_DOWN,
-            WindowEvent.PRESS_ARROW_RIGHT,
-            WindowEvent.PRESS_ARROW_LEFT,
-            WindowEvent.PRESS_BUTTON_A,
-            WindowEvent.PRESS_BUTTON_B,
-            WindowEvent.PRESS_BUTTON_SELECT,
-            WindowEvent.PRESS_BUTTON_START
+            WindowEvent.PRESS_ARROW_UP, WindowEvent.PRESS_ARROW_DOWN, WindowEvent.PRESS_ARROW_RIGHT,
+            WindowEvent.PRESS_ARROW_LEFT, WindowEvent.PRESS_BUTTON_A, WindowEvent.PRESS_BUTTON_B,
+            WindowEvent.PRESS_BUTTON_SELECT, WindowEvent.PRESS_BUTTON_START
         ]
-        self._button_is_pressed = {button:False for button in self._buttons}
-        
+        self._button_is_pressed = {button: False for button in self._buttons}
+
         self._buttons_release = [
-            WindowEvent.RELEASE_ARROW_UP,
-            WindowEvent.RELEASE_ARROW_DOWN,
-            WindowEvent.RELEASE_ARROW_RIGHT,
-            WindowEvent.RELEASE_ARROW_LEFT,
-            WindowEvent.RELEASE_BUTTON_A,
-            WindowEvent.RELEASE_BUTTON_B,
-            WindowEvent.RELEASE_BUTTON_SELECT,
-            WindowEvent.RELEASE_BUTTON_START
+            WindowEvent.RELEASE_ARROW_UP, WindowEvent.RELEASE_ARROW_DOWN, WindowEvent.RELEASE_ARROW_RIGHT,
+            WindowEvent.RELEASE_ARROW_LEFT, WindowEvent.RELEASE_BUTTON_A, WindowEvent.RELEASE_BUTTON_B,
+            WindowEvent.RELEASE_BUTTON_SELECT, WindowEvent.RELEASE_BUTTON_START
         ]
-        self._release_button = {button:r_button for button, r_button in zip(self._buttons, self._buttons_release)}
-        
+        self._release_button = {button: r_button for button, r_button in zip(self._buttons, self._buttons_release)}
+
         self.actions = [self._DO_NOTHING] + self._buttons
-        if action_type == 'all':
+        if action_type == "all":
             self.actions += self._buttons_release
-        elif action_type not in ['press', 'toggle']:
-            raise ValueError(f'action_type {action_type} is invalid')
+        elif action_type not in ["press", "toggle"]:
+            raise ValueError(f"action_type {action_type} is invalid")
         self.action_type = action_type
 
         if simultaneous_actions:
@@ -106,10 +95,10 @@ class PyBoyGymEnv(Env):
             self.action_space = Discrete(len(self.actions))
 
         # Building the observation_space
-        if observation_type == 'raw':
+        if observation_type == "raw":
             screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
             self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
-        elif observation_type == 'tiles':
+        elif observation_type == "tiles":
             nvec = TILES * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
         else:
@@ -117,16 +106,16 @@ class PyBoyGymEnv(Env):
         self.observation_type = observation_type
 
         self._started = False
-    
+
     def _get_observation(self):
-        if self.observation_type == 'raw':
+        if self.observation_type == "raw":
             observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
-        elif self.observation_type == 'tiles':
+        elif self.observation_type == "tiles":
             observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint16)
         else:
             raise NotImplementedError(f"observation_type {self.observation_type} is invalid")
         return observation
-    
+
     def step(self, action_id):
         info = {}
 
@@ -134,7 +123,7 @@ class PyBoyGymEnv(Env):
         if action == self._DO_NOTHING:
             pyboy_done = self.pyboy.tick()
         else:
-            if self.action_type == 'toggle':
+            if self.action_type == "toggle":
                 if self._button_is_pressed[action]:
                     self._button_is_pressed[action] = False
                     action = self._release_button[action]
@@ -143,8 +132,8 @@ class PyBoyGymEnv(Env):
 
             self.pyboy.send_input(action)
             pyboy_done = self.pyboy.tick()
-        
-            if self.action_type == 'press':
+
+            if self.action_type == "press":
                 self.pyboy.send_input(self._release_button[action])
 
         new_fitness = self.game_wrapper.fitness
@@ -158,13 +147,13 @@ class PyBoyGymEnv(Env):
 
     def reset(self):
         """ Reset (or start) the gym environment throught the game_wrapper """
-        if not self._started: 
+        if not self._started:
             self.game_wrapper.start_game()
             self._started = True
         else:
             self.game_wrapper.reset_game()
         self.last_fitness = self.game_wrapper.fitness
-        self.button_is_pressed = {button:False for button in self._buttons}
+        self.button_is_pressed = {button: False for button in self._buttons}
         return self._get_observation()
 
     def render(self):
