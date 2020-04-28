@@ -138,6 +138,12 @@ class PyBoyGameWrapper(PyBoyPlugin):
         """
         raise NotImplementedError("reset_game not implemented in game wrapper")
 
+    def game_over(self):
+        """
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+        """
+        raise NotImplementedError("game_over not implemented in game wrapper")
+
     def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
             self._cached_sprites_on_screen = []
