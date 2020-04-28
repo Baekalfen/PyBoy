@@ -11,7 +11,7 @@ from pyboy.botsupport.constants import COLS, ROWS
 try:
     from .utils import tetris_rom
 except:
-    tetris_rom = "ROMs/Tetris.GB"
+    tetris_rom = "ROMs/tetris.gb"
 
 
 @pytest.fixture
@@ -33,17 +33,17 @@ def game_area_shape(pyboy):
 
 @pytest.fixture
 def id0_block():
-    return np.array((1, 1, 1, 2))
+    return np.array((1, 1, 2, 2))
 
 
 @pytest.fixture
 def id1_block():
-    return np.array((3, 4, 5, 5))
+    return np.array((3, 4, 4, 5))
 
 
 @pytest.fixture
 def tiles_id():
-    return {"BLANK": 47, "J": 129, "DEADBLOCK": 135}
+    return {"BLANK": 47, "Z": 130, "DEADBLOCK": 135}
 
 
 def test_raw(pyboy, screen_shape):
@@ -63,7 +63,7 @@ def test_tiles(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
 
     # Build the expected first observation
     expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
-    expected_observation[id0_block, id1_block] = tiles_id["J"]
+    expected_observation[id0_block, id1_block] = tiles_id["Z"]
     print(observation, expected_observation)
     assert np.all(observation == expected_observation)
 
@@ -74,7 +74,7 @@ def test_tiles(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     observation, _, _, _ = env.step(action) # Press DOWN
 
     # Build the expected second observation
-    expected_observation[id0_block + 1, id1_block] = tiles_id["J"]
+    expected_observation[id0_block + 1, id1_block] = tiles_id["Z"]
     print(observation, expected_observation)
     assert np.all(observation == expected_observation)
 
@@ -89,7 +89,7 @@ def test_press(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     observation, _, _, _ = env.step(0) # Press NOTHING
 
     expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
-    expected_observation[id0_block, id1_block + 1] = tiles_id["J"]
+    expected_observation[id0_block, id1_block + 1] = tiles_id["Z"]
     print(observation, expected_observation)
     assert np.all(observation == expected_observation)
 
@@ -110,7 +110,7 @@ def test_toggle(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     observation, _, _, _ = env.step(0) # Press NOTHING
 
     expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
-    expected_observation[id0_block, id1_block + 1] = tiles_id["J"]
+    expected_observation[id0_block, id1_block + 1] = tiles_id["Z"]
     print(observation, expected_observation)
     assert np.all(observation == expected_observation)
 
@@ -120,7 +120,7 @@ def test_toggle(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     for _ in range(25):
         observation, _, _, _ = env.step(action) # Press NOTHING
     print(observation, expected_observation)
-    expected_observation[id0_block, id1_block + 2] = tiles_id["J"]
+    expected_observation[id0_block, id1_block + 2] = tiles_id["Z"]
     assert np.all(observation == expected_observation)
 
 
