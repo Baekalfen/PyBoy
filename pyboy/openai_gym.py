@@ -8,8 +8,8 @@ import numpy as np
 from gym import Env
 from gym.spaces import Discrete, MultiDiscrete, Box
 
-from pyboy.botsupport.constants import TILES
-from pyboy import WindowEvent
+from .botsupport.constants import TILES
+from .utils import WindowEvent
 
 class PyBoyGymEnv(Env):
 
