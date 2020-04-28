@@ -164,6 +164,71 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         return PyBoyGameWrapper.game_area(self)
 
+    def set_tetromino(self, shape):
+        """
+        This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.
+
+        __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+        any overrides when reloading the ROM. This also applies to
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game` and
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game`.
+
+        Args:
+            shape (str): Define which Tetromino to use:
+            * `"L"`: L-shape
+            * `"J"`: reverse L-shape
+            * `"I"`: I-shape
+            * `"O"`: square-shape
+            * `"Z"`: zig-zag left to right
+            * `"S"`: zig-zag right to left
+            * `"T"`: T-shape
+        """
+
+        conversion_table = {
+            "L": 0,
+            "J": 4,
+            "I": 8,
+            "O": 12,
+            "Z": 16,
+            "S": 20,
+            "T": 24,
+        }
+
+        if shape not in conversion_table:
+            raise KeyError("Invalid Tetromino shape!")
+
+        shape_number = conversion_table[shape]
+
+        # http://149.154.154.153/wiki/Tetris_(Game_Boy):ROM_map
+        # Replacing:
+        # ROM0:206E FA 13 C2         ld   a,(C213)             ;load next Tetromino in accumulator
+        # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
+
+        patch1 = [
+            0x3E, # LD A, Tetromino
+            shape_number, # Tetromino
+            0x00, # NOOP
+        ]
+
+        for i, byte in enumerate(patch1):
+            self.pyboy.override_memory_value(0, 0x206E + i, byte)
+
+        patch2 = [
+            0x3E, # LD A, Tetromino
+            shape_number, # Tetromino
+        ]
+
+        for i, byte in enumerate(patch2):
+            self.pyboy.override_memory_value(0, 0x20B0 + i, byte)
+
+    def game_over(self):
+        """
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+
+        Game over happens, when the game area is filled with Tetrominos without clearing any rows.
+        """
+        return self.tilemap_background[5:9, 6] == [24, 31, 14, 27] # "GAME" in "GAME OVER"
+
     def __repr__(self):
         adjust = 4
         # yapf: disable
