@@ -113,6 +113,10 @@ The other controls for the emulator:
 | O            | Save screenshot         |
 | ,            | Rewind backwards        |
 | .            | Rewind forward          |
+| J            | Memory Window + 0x100   |
+| K            | Memory Window - 0x100   |
+| Left Shift   | Memory Window + 0x1000  |
+| Right Shift  | Memory Window - 0x1000  |
 
 See "pyboy --help" for how to enable rewind and other awesome features!
 """
