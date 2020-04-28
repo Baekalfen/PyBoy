@@ -156,7 +156,11 @@ class WindowEvent:
         _INTERNAL_MOUSE,
         _INTERNAL_MARK_TILE,
         SCREENSHOT_RECORD,
-    ) = range(37)
+        PRESS_BUTTON_J,
+        PRESS_BUTTON_K,
+        PRESS_BUTTON_LSHIFT,
+        PRESS_BUTTON_RSHIFT
+    ) = range(41)
 
     def __init__(self, event):
         self.event = event

@@ -33,6 +33,10 @@ KEY_DOWN = {
     sdl2.SDLK_SPACE     : WindowEvent.PRESS_SPEED_UP,
     sdl2.SDLK_COMMA     : WindowEvent.PRESS_REWIND_BACK,
     sdl2.SDLK_PERIOD    : WindowEvent.PRESS_REWIND_FORWARD,
+    sdl2.SDLK_j         : WindowEvent.PRESS_BUTTON_J,
+    sdl2.SDLK_k         : WindowEvent.PRESS_BUTTON_K,
+    sdl2.SDLK_LSHIFT    : WindowEvent.PRESS_BUTTON_LSHIFT,
+    sdl2.SDLK_RSHIFT    : WindowEvent.PRESS_BUTTON_RSHIFT
 }
 
 KEY_UP = {
