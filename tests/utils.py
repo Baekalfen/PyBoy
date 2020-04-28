@@ -47,7 +47,7 @@ rom_entries = locate_roms()
 boot_rom = locate_bootrom()
 default_rom = str(Path("pyboy/default_rom.gb"))
 pokemon_blue_rom = locate_sha256(rom_entries, b"2a951313c2640e8c2cb21f25d1db019ae6245d9c7121f754fa61afd7bee6452d")
-tetris_rom = locate_sha256(rom_entries, b"8fde11dd4e594a6905deccd57943d2909ecb37665a030741c42155aeb346323b")
+tetris_rom = locate_sha256(rom_entries, b"7fde11dd4e594a6905deccd57943d2909ecb37665a030741c42155aeb346323b")
 supermarioland_rom = locate_sha256(rom_entries, b"470d6c45c9bcf7f0397d00c1ae6de727c63dd471049c8eedbefdc540ceea80b4")
 kirby_rom = locate_sha256(rom_entries, b"0f6dba94fae248d419083001c42c02a78be6bd3dff679c895517559e72c98d58")
 
