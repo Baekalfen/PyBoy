@@ -55,6 +55,8 @@ def test_raw(pyboy, screen_shape):
 
 def test_tiles(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     env = pyboy.openai_gym(observation_type="tiles", action_type="press")
+    tetris = pyboy.game_wrapper()
+    tetris.set_tetromino("Z")
     observation = env.reset()
 
     # Build the expected first observation
@@ -77,6 +79,8 @@ def test_tiles(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
 
 def test_press(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     env = pyboy.openai_gym(observation_type="tiles", action_type="press")
+    tetris = pyboy.game_wrapper()
+    tetris.set_tetromino("Z")
     assert env.action_space.n == 9
 
     env.reset()
@@ -98,6 +102,8 @@ def test_press(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
 
 def test_toggle(pyboy, game_area_shape, tiles_id, id0_block, id1_block):
     env = pyboy.openai_gym(observation_type="tiles", action_type="toggle")
+    tetris = pyboy.game_wrapper()
+    tetris.set_tetromino("Z")
     assert env.action_space.n == 9
 
     env.reset()
