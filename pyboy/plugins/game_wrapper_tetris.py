@@ -196,7 +196,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         # Bitmask, as the last two bits determine the direction
         return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) & 0b11111100]
-    
+
     def set_tetromino(self, shape):
         """
         This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.
