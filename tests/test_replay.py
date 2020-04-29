@@ -88,7 +88,7 @@ def replay(
         rewind=rewind,
         record_input=(RESET_REPLAYS and window in ["SDL2", "headless", "OpenGL"])
     )
-    # pyboy.set_emulation_speed(0)
+    pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)
 

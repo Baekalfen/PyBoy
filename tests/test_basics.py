@@ -11,9 +11,7 @@ from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
 
-from .utils import boot_rom, kirby_rom, tetris_rom
-
-any_rom = tetris_rom
+from .utils import boot_rom, default_rom, kirby_rom, tetris_rom
 
 
 def test_record_replay():
@@ -51,7 +49,7 @@ def test_record_replay():
 
 
 def test_profiling():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
+    pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
 
