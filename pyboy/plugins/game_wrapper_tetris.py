@@ -23,6 +23,17 @@ try:
 except ImportError:
     cythonmode = False
 
+tetromino_table = {
+    "L": 0,
+    "J": 4,
+    "I": 8,
+    "O": 12,
+    "Z": 16,
+    "S": 20,
+    "T": 24,
+}
+inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
+
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
@@ -164,6 +175,28 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         return PyBoyGameWrapper.game_area(self)
 
+    def next_tetromino(self):
+        """
+        Returns the next Tetromino to drop.
+
+        __NOTE:__ Don't use this function together with
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino`.
+
+        Returns
+        -------
+        shape:
+            `str` of which Tetromino will drop:
+            * `"L"`: L-shape
+            * `"J"`: reverse L-shape
+            * `"I"`: I-shape
+            * `"O"`: square-shape
+            * `"Z"`: zig-zag left to right
+            * `"S"`: zig-zag right to left
+            * `"T"`: T-shape
+        """
+        # Bitmask, as the last two bits determine the direction
+        return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) & 0b11111100]
+
     def set_tetromino(self, shape):
         """
         This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.
@@ -184,20 +217,10 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `"T"`: T-shape
         """
 
-        conversion_table = {
-            "L": 0,
-            "J": 4,
-            "I": 8,
-            "O": 12,
-            "Z": 16,
-            "S": 20,
-            "T": 24,
-        }
-
-        if shape not in conversion_table:
+        if shape not in tetromino_table:
             raise KeyError("Invalid Tetromino shape!")
 
-        shape_number = conversion_table[shape]
+        shape_number = tetromino_table[shape]
 
         # http://149.154.154.153/wiki/Tetris_(Game_Boy):ROM_map
         # Replacing:
