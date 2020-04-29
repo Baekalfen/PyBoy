@@ -151,7 +151,8 @@ class WindowEvent:
         _INTERNAL_RENDERER_FLUSH,
         _INTERNAL_MOUSE,
         _INTERNAL_MARK_TILE,
-    ) = range(36)
+        SCREENSHOT_RECORD,
+    ) = range(37)
 
     def __init__(self, event):
         self.event = event
@@ -201,7 +202,8 @@ class WindowEvent:
                 "WINDOW_UNFOCUS",
                 "_INTERNAL_RENDERER_FLUSH",
                 "_INTERNAL_MOUSE",
-                "_INTERNAL_MARK_TILE")[self.event]
+                "_INTERNAL_MARK_TILE",
+                "SCREENSHOT_RECORD")[self.event]
 
 
 class WindowEventMouse(WindowEvent):
