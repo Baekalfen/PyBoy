@@ -7,16 +7,12 @@ import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
-
-try:
-    from .utils import tetris_rom
-except:
-    tetris_rom = "ROMs/tetris.gb"
+from .utils import tetris_rom
 
 
 @pytest.fixture
 def pyboy():
-    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file="pyboy_fast", disable_input=True, game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True, game_wrapper=True)
     pyboy.set_emulation_speed(0)
     return pyboy
 
