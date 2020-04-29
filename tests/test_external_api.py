@@ -13,19 +13,17 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
 
-from .utils import boot_rom, supermarioland_rom, tetris_rom
-
-any_rom = tetris_rom
+from .utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
 def test_misc():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
+    pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
     pyboy.tick()
     pyboy.stop(save=False)
 
 
 def test_tiles():
-    pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True)
+    pyboy = PyBoy(default_rom, window_type="headless", disable_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.tick()
@@ -114,7 +112,7 @@ def test_screen_buffer_and_image():
 def test_tetris():
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", disable_input=True)
+    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", disable_input=True, game_wrapper=True)
     pyboy.set_emulation_speed(0)
 
     first_brick = False
@@ -284,11 +282,15 @@ def test_tetris():
                 ])
 
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
+                tetris = pyboy.game_wrapper()
+                assert tetris.next_tetromino() == "T"
+
                 with open("tmp.state", "wb") as f:
                     pyboy.save_state(f)
                 pyboy.save_state(state_data)
                 pyboy.set_memory_value(NEXT_TETROMINO, 11)
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 11
+                assert tetris.next_tetromino() == "I"
                 break
 
     for frame in range(1016, 1866):
