@@ -14,45 +14,27 @@ from .utils import WindowEvent
 class PyBoyGymEnv(Env):
     """ A gym environement built from a `pyboy.PyBoy`
 
-    Arguments
-    ---------
+    This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
 
-        pyboy: `pyboy.PyBoy`
-            A PyBoy game instance
+    Args:
+        observation_type (str): Define what the agent will be able to see:
+        * `"raw"`: Gives the raw pixels color
+        * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
+        * `"compressed"`: Gives only the id of used grouped sprites defined by the game_wrapper.
+        * `"minimal"`: Gives a minimal representation defined by the game_wrapper (recommended).
 
-        observation_type: str
-            Define what the agent will be able to see :
-                - 'raw' gives the raw pixels color
-                - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
-                - 'compressed' gives only the id of used grouped sprites defined by the game_wrapper.
-                - 'minimal' gives a minimal representation defined by the game_wrapper.
+        action_type (str): Define how the agent will interact with button inputs
+        * `"press"`: The agent will only press inputs for 1 frame an then release it.
+        * `"toggle"`: The agent will toggle inputs, first time it press and second time it release.
+        * `"all"`: The agent have acces to all inputs, press and release are separated.
 
-        action_type: str
-            Define how the agent will interact with button inputs:
-                - 'press' the agent will only press inputs for 1 frame an then release it.
-                - 'toggle' the agent will toggle inputs, first time it press and second time it release.
-                - 'all' the agent will have acces to all inputs, press and release are separated.
+        simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
-        simultaneous_actions: bool
-            If true, the agent is allowed to inject multiple inputs at the same time. Caution, this also means that the action_space is way bigger (n -> 2^n)!
-
-    Attributes
-    ----------
-
-        game_wrapper: `pyboy.plugins.base_plugin.PyBoyGameWrapper`
-            The game_wrapper of the PyBoy game instance over which the environment is built.
-
-        action_space: Gym space
-            The action space of the environment.
-
-        observation_space: Gym space
-            The observation space of the environment (depends of observation_type).
-
-        last_fitness: float or int
-            The last observed fitness, used to compute the reward at each step
-
-        actions: list
-            The list of input IDs of allowed input for the agent (depends of action_type).
+    Attributes:
+        game_wrapper (`pyboy.plugins.base_plugin.PyBoyGameWrapper`): The game_wrapper of the PyBoy game instance over which the environment is built.
+        action_space (Gym space): The action space of the environment.
+        observation_space (Gym space): The observation space of the environment (depends of observation_type).
+        actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
 
     """
     def __init__(self, pyboy, observation_type="tiles", action_type="toggle", simultaneous_actions=False):
