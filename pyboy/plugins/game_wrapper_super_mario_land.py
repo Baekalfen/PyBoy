@@ -8,6 +8,7 @@ __pdoc__ = {
 }
 
 import logging
+import numpy as np
 
 from pyboy.utils import WindowEvent
 
@@ -21,6 +22,61 @@ try:
 except ImportError:
     cythonmode = False
 
+TILES = 384
+tiles_compressed = np.array(range(TILES), dtype=np.uint16)
+# Empty
+for ids in [87, 91] + [145]+ [128, 246, 248, 300, 308, 310, 311, 316, 350, 338, 339, 89, 88, 98] + list(range(328, 333))+ list(range(320, 328)) + list(range(305, 308)):
+    tiles_compressed[ids] = 0
+
+# Mario
+for ids in list(range(12)) + list(range(16, 28)) + list(range(32, 44)) + list(range(48, 60)):
+    tiles_compressed[ids] = 1
+
+# Dying Mario
+for ids in [15, 31]:
+    tiles_compressed[ids] = 2
+
+# Ennemies
+for ids in [144, 150, 151, 152, 153, 154, 155, 157, 158, 160, 161, 162, 168, 163, 169, 172, 176, 177, 178, 179, 188, 192, 193, 209]:
+    tiles_compressed[ids] = 3
+
+# Coins
+for ids in [244, 247, 254]:
+    tiles_compressed[ids] = 4
+
+# Flower
+for ids in [224, 229]:
+    tiles_compressed[ids] = 11
+
+# Fireball
+tiles_compressed[96] = 12
+
+# Star
+tiles_compressed[ids] = 13
+
+# Mushroom
+for ids in [131]:
+    tiles_compressed[ids] = 6
+
+# Solid block
+for ids in [130, 142, 143, 232, 352, 353, 355, 360, 361, 362, 383]:
+    tiles_compressed[ids] = 10
+
+# Moving block 
+for ids in [239]:
+    tiles_compressed[ids] = 14
+
+# Pipes
+for ids in list(range(368, 377)):
+    tiles_compressed[ids] = 8
+
+
+for ids in [129]:
+    tiles_compressed[ids] = 9
+
+# Hole in ground
+for ids in [336]:
+    tiles_compressed[ids] = 7
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
@@ -30,6 +86,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = "SUPER MARIOLAN"
+    tiles_compressed = tiles_compressed
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 16)
@@ -165,6 +222,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             Simplified 2-dimensional memoryview of the screen
         """
         return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        return self.lives_left == 0 and (np.any(self._game_area_np() == 15) or np.any(self._game_area_np('compressed')[-1, :] == 1))
 
     def __repr__(self):
         adjust = 4
