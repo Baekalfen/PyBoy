@@ -20,5 +20,6 @@ __pdoc__ = {
     "window_headless": False,
     "rewind": False,
     "manager": False,
+    "screenshot_recorder": False,
     # docs exclude end
 }
