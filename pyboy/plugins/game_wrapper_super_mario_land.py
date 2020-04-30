@@ -29,7 +29,8 @@ for ids in [87, 91] + [145]+ [128, 246, 248, 300, 308, 310, 311, 316, 350, 338, 
     tiles_compressed[ids] = 0
 
 # Mario
-for ids in list(range(12)) + list(range(16, 28)) + list(range(32, 44)) + list(range(48, 60)):
+mario_spites = list(range(12)) + list(range(16, 28)) + list(range(32, 44)) + list(range(48, 60))
+for ids in mario_spites:
     tiles_compressed[ids] = 1
 
 # Dying Mario
@@ -70,13 +71,15 @@ for ids in [239]:
 for ids in list(range(368, 377)):
     tiles_compressed[ids] = 8
 
-
+# ? block
 for ids in [129]:
     tiles_compressed[ids] = 9
 
 # Hole in ground
 for ids in [336]:
     tiles_compressed[ids] = 7
+
+np_in_mario_tiles = np.vectorize(lambda x: x in mario_spites)
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
@@ -224,7 +227,11 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         return PyBoyGameWrapper.game_area(self)
 
     def game_over(self):
-        return self.lives_left == 0 and (np.any(self._game_area_np() == 15) or np.any(self._game_area_np('compressed')[-1, :] == 1))
+        if self.lives_left > 0:
+            return False
+        tiles = self._game_area_np()
+        mario_at_bottom = np.any(np_in_mario_tiles(tiles[-1, :]))
+        return np.any(tiles == 15) or mario_at_bottom
 
     def __repr__(self):
         adjust = 4
