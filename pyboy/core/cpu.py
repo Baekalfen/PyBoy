@@ -71,7 +71,7 @@ class CPU:
         return False
 
     def check_interrupts(self):
-        # GPCPUman.pdf p. 40 about priorities
+        # GBCPUman.pdf p. 40 about priorities
         # If an interrupt occours, the PC is pushed to the stack.
         # It is up to the interrupt routine to return it.
         if not self.interrupt_master_enable:
