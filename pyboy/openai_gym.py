@@ -24,6 +24,8 @@ class PyBoyGymEnv(Env):
             Define what the agent will be able to see :
                 - 'raw' gives the raw pixels color
                 - 'tiles' gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
+                - 'compressed' gives only the id of used grouped sprites defined by the game_wrapper.
+                - 'minimal' gives a minimal representation defined by the game_wrapper.
 
         action_type: str
             Define how the agent will interact with button inputs:
@@ -99,8 +101,19 @@ class PyBoyGymEnv(Env):
         if observation_type == "raw":
             screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
             self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
-        elif observation_type == "tiles":
-            nvec = TILES * np.ones(self.game_wrapper.shape)
+        elif observation_type in ["tiles", "compressed", "minimal"]:
+            size_IDs = TILES
+            if observation_type == "compressed":
+                try:
+                    size_IDs = np.max(self.game_wrapper.tiles_compressed) + 1
+                except AttributeError:
+                    raise AttributeError('You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type')
+            elif observation_type == "minimal":
+                try:
+                    size_IDs = np.max(self.game_wrapper.tiles_minimal) + 1
+                except AttributeError:
+                    raise AttributeError('You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type')
+            nvec = size_IDs * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
         else:
             raise NotImplementedError(f"observation_type {observation_type} is invalid")
@@ -111,8 +124,8 @@ class PyBoyGymEnv(Env):
     def _get_observation(self):
         if self.observation_type == "raw":
             observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
-        elif self.observation_type == "tiles":
-            observation = np.asarray(self.game_wrapper.game_area(), dtype=np.uint16)
+        elif self.observation_type in ["tiles", "compressed", "minimal"]:
+            observation = self.game_wrapper._game_area_np(self.observation_type)
         else:
             raise NotImplementedError(f"observation_type {self.observation_type} is invalid")
         return observation

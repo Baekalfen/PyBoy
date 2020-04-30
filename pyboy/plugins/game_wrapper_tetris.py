@@ -34,6 +34,17 @@ tetromino_table = {
 }
 inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
 
+TILES = 384
+tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+# Blank, J, Z, O, L, T, S, I, Black
+tiles_types = [[47], [129], [130], [131], [132], [133], [134], [128, 136, 137, 138, 139, 143], [135]]
+for tiles_type_ID, tiles_type in enumerate(tiles_types):
+    for tile_ID in tiles_type:
+        tiles_compressed[tile_ID] = tiles_type_ID
+
+tiles_minimal = np.ones(TILES, dtype=np.uint8)
+tiles_minimal[47] = 0
+tiles_minimal[135] = 2
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
@@ -42,6 +53,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = "TETRIS"
+    tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (10, 18)
@@ -133,9 +146,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
             self.post_tick()
         else:
             logger.error("Tried to reset game, but it hasn't been started yet!")
-
-    def _game_area_np(self):
-        return np.asarray(self.game_area())
 
     def game_area(self):
         """
@@ -250,7 +260,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         Game over happens, when the game area is filled with Tetrominos without clearing any rows.
         """
-        return self.tilemap_background[5:9, 6] == [24, 31, 14, 27] # "GAME" in "GAME OVER"
+        return np.any(self._game_area_np() == 135)
 
     def __repr__(self):
         adjust = 4
