@@ -94,7 +94,7 @@ class PyBoyGymEnv(Env):
                 try:
                     size_IDs = np.max(self.game_wrapper.tiles_minimal) + 1
                 except AttributeError:
-                    raise AttributeError('You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type')
+                    raise AttributeError('You need to add the tiles_minimal attibute to the game_wrapper to use the minimal observation_type')
             nvec = size_IDs * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
         else:
