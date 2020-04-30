@@ -250,7 +250,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         Game over happens, when the game area is filled with Tetrominos without clearing any rows.
         """
-        return self.tilemap_background[5:9, 6] == [24, 31, 14, 27] # "GAME" in "GAME OVER"
+        return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over
 
     def __repr__(self):
         adjust = 4

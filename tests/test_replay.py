@@ -13,6 +13,7 @@ import time
 import zlib
 
 import numpy as np
+import pytest
 from pyboy import PyBoy, WindowEvent
 
 from . import utils
@@ -148,10 +149,12 @@ def replay(
     pyboy.stop(save=False)
 
 
+@pytest.mark.skipif(not utils.pokemon_blue_rom, reason="ROM not present")
 def test_pokemon():
     replay(utils.pokemon_blue_rom, "tests/replays/pokemon_blue.replay")
 
 
+@pytest.mark.skipif(not utils.pokemon_blue_rom, reason="ROM not present")
 def test_pokemon_gif1():
     replay(
         utils.pokemon_blue_rom,
@@ -162,6 +165,7 @@ def test_pokemon_gif1():
     )
 
 
+@pytest.mark.skipif(not utils.pokemon_blue_rom, reason="ROM not present")
 def test_pokemon_gif2():
     replay(
         utils.pokemon_blue_rom,
@@ -172,10 +176,12 @@ def test_pokemon_gif2():
     )
 
 
+@pytest.mark.skipif(not utils.tetris_rom, reason="ROM not present")
 def test_tetris():
     replay(utils.tetris_rom, "tests/replays/tetris.replay")
 
 
+@pytest.mark.skipif(not utils.supermarioland_rom, reason="ROM not present")
 def test_supermarioland_gif():
     replay(
         utils.supermarioland_rom,
@@ -186,10 +192,12 @@ def test_supermarioland_gif():
     )
 
 
+@pytest.mark.skipif(not utils.supermarioland_rom, reason="ROM not present")
 def test_supermarioland():
     replay(utils.supermarioland_rom, "tests/replays/supermarioland.replay")
 
 
+@pytest.mark.skipif(not utils.kirby_rom, reason="ROM not present")
 def test_kirby():
     replay(
         utils.kirby_rom,
@@ -200,6 +208,7 @@ def test_kirby():
     )
 
 
+@pytest.mark.skipif(not utils.supermarioland_rom, reason="ROM not present")
 def test_rewind():
     replay(
         utils.supermarioland_rom,
