@@ -14,8 +14,10 @@ from pyboy.plugins.auto_pause import AutoPause # isort:skip
 from pyboy.plugins.record_replay import RecordReplay # isort:skip
 from pyboy.plugins.rewind import Rewind # isort:skip
 from pyboy.plugins.screen_recorder import ScreenRecorder # isort:skip
+from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # isort:skip
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # isort:skip
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
+from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
 # imports end
 
 
@@ -31,8 +33,10 @@ def parser_arguments():
     yield RecordReplay.argv
     yield Rewind.argv
     yield ScreenRecorder.argv
+    yield ScreenshotRecorder.argv
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
+    yield GameWrapperKirbyDreamLand.argv
     # yield_plugins end
     pass
 
@@ -62,10 +66,14 @@ class PluginManager:
         self.rewind_enabled = self.rewind.enabled()
         self.screen_recorder = ScreenRecorder(pyboy, mb, pyboy_argv)
         self.screen_recorder_enabled = self.screen_recorder.enabled()
+        self.screenshot_recorder = ScreenshotRecorder(pyboy, mb, pyboy_argv)
+        self.screenshot_recorder_enabled = self.screenshot_recorder.enabled()
         self.game_wrapper_super_mario_land = GameWrapperSuperMarioLand(pyboy, mb, pyboy_argv)
         self.game_wrapper_super_mario_land_enabled = self.game_wrapper_super_mario_land.enabled()
         self.game_wrapper_tetris = GameWrapperTetris(pyboy, mb, pyboy_argv)
         self.game_wrapper_tetris_enabled = self.game_wrapper_tetris.enabled()
+        self.game_wrapper_kirby_dream_land = GameWrapperKirbyDreamLand(pyboy, mb, pyboy_argv)
+        self.game_wrapper_kirby_dream_land_enabled = self.game_wrapper_kirby_dream_land.enabled()
         # plugins_enabled end
 
     def gamewrapper(self):
@@ -74,6 +82,8 @@ class PluginManager:
             return self.game_wrapper_super_mario_land
         if self.game_wrapper_tetris_enabled:
             return self.game_wrapper_tetris
+        if self.game_wrapper_kirby_dream_land_enabled:
+            return self.game_wrapper_kirby_dream_land
         # gamewrapper end
         return None
 
@@ -101,10 +111,14 @@ class PluginManager:
             events = self.rewind.handle_events(events)
         if self.screen_recorder_enabled:
             events = self.screen_recorder.handle_events(events)
+        if self.screenshot_recorder_enabled:
+            events = self.screenshot_recorder.handle_events(events)
         if self.game_wrapper_super_mario_land_enabled:
             events = self.game_wrapper_super_mario_land.handle_events(events)
         if self.game_wrapper_tetris_enabled:
             events = self.game_wrapper_tetris.handle_events(events)
+        if self.game_wrapper_kirby_dream_land_enabled:
+            events = self.game_wrapper_kirby_dream_land.handle_events(events)
         # foreach end
         return events
 
@@ -124,6 +138,8 @@ class PluginManager:
             self.game_wrapper_super_mario_land.post_tick()
         if self.game_wrapper_tetris_enabled:
             self.game_wrapper_tetris.post_tick()
+        if self.game_wrapper_kirby_dream_land_enabled:
+            self.game_wrapper_kirby_dream_land.post_tick()
         # foreach end
 
         self._post_tick_windows()
@@ -214,6 +230,8 @@ class PluginManager:
             title = self.game_wrapper_super_mario_land.window_title()
         if self.game_wrapper_tetris_enabled:
             title = self.game_wrapper_tetris.window_title()
+        if self.game_wrapper_kirby_dream_land_enabled:
+            title = self.game_wrapper_kirby_dream_land.window_title()
         # foreach end
         return title
 
@@ -241,9 +259,13 @@ class PluginManager:
             self.rewind.stop()
         if self.screen_recorder_enabled:
             self.screen_recorder.stop()
+        if self.screenshot_recorder_enabled:
+            self.screenshot_recorder.stop()            
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.stop()
         if self.game_wrapper_tetris_enabled:
             self.game_wrapper_tetris.stop()
+        if self.game_wrapper_kirby_dream_land_enabled:
+            self.game_wrapper_kirby_dream_land.stop()
         # foreach end
         pass

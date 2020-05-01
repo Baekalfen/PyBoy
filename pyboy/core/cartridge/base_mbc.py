@@ -106,6 +106,16 @@ class BaseMBC:
     def setitem(self, address, value):
         raise Exception("Cannot set item in MBC")
 
+    def overrideitem(self, rom_bank, address, value):
+        if 0x0000 <= address < 0x4000:
+            logger.debug(
+                "Performing overwrite on address: %s:%s. New value: %s Old value: %s" %
+                (hex(rom_bank), hex(address), hex(value), self.rombanks[rom_bank][address])
+            )
+            self.rombanks[rom_bank][address] = value
+        else:
+            logger.error("Invalid override address: %s" % hex(address))
+
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]

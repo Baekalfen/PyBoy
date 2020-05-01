@@ -112,6 +112,7 @@ The other controls for the emulator:
 | Z            | Save state              |
 | X            | Load state              |
 | I            | Toggle screen recording |
+| O            | Save screenshot         |
 | ,            | Rewind backwards        |
 | .            | Rewind forward          |
 

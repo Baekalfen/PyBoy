@@ -11,11 +11,8 @@ cdef (int, int, int, int) _dummy_declaration2
 cdef int ROWS, COLS
 
 
-cdef class GameWrapperTetris(PyBoyGameWrapper):
+cdef class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     cdef public int score
-    cdef public int level
-    cdef public int lines
+    cdef public int health
+    cdef public int lives_left
     cdef public int fitness
-
-    cpdef void set_tetromino(self, str)
-    cpdef str next_tetromino(self)

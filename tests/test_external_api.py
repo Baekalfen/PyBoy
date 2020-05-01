@@ -13,19 +13,17 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
 
-from .utils import boot_rom, supermarioland_rom, tetris_rom
-
-any_rom = tetris_rom
+from .utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
 def test_misc():
-    pyboy = PyBoy(any_rom, window_type="dummy", bootrom_file=boot_rom, disable_input=True)
+    pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.tick()
     pyboy.stop(save=False)
 
 
 def test_tiles():
-    pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True)
+    pyboy = PyBoy(default_rom, window_type="headless")
     pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.tick()
@@ -64,7 +62,7 @@ def test_tiles():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")
+@pytest.mark.skipif(not (boot_rom and any_rom), reason="ROM not present")
 def test_screen_buffer_and_image():
     cformat = "RGBA"
     boot_logo_hash_predigested = b"=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C"
@@ -72,7 +70,7 @@ def test_screen_buffer_and_image():
         b"s\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|"
     window = "headless"
 
-    pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom, disable_input=True)
+    pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom)
     pyboy.set_emulation_speed(0)
     for n in range(275): # Iterate to boot logo
         pyboy.tick()
@@ -111,10 +109,11 @@ def test_screen_buffer_and_image():
     pyboy.stop(save=False)
 
 
+@pytest.mark.skipif(not tetris_rom, reason="ROM not present")
 def test_tetris():
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", disable_input=True)
+    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", game_wrapper=True)
     pyboy.set_emulation_speed(0)
 
     first_brick = False
@@ -284,11 +283,15 @@ def test_tetris():
                 ])
 
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
+                tetris = pyboy.game_wrapper()
+                assert tetris.next_tetromino() == "T"
+
                 with open("tmp.state", "wb") as f:
                     pyboy.save_state(f)
                 pyboy.save_state(state_data)
                 pyboy.set_memory_value(NEXT_TETROMINO, 11)
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 11
+                assert tetris.next_tetromino() == "I"
                 break
 
     for frame in range(1016, 1866):
@@ -352,8 +355,9 @@ def test_tetris():
     pyboy.stop(save=False)
 
 
+@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
 def test_tilemap_position_list():
-    pyboy = PyBoy(supermarioland_rom, window_type="headless", disable_input=True)
+    pyboy = PyBoy(supermarioland_rom, window_type="headless")
     for _ in range(100):
         pyboy.tick()
 
@@ -384,5 +388,20 @@ def test_tilemap_position_list():
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
         assert positions[y][0] == 59 # Actual screen position
+
+    pyboy.stop(save=False)
+
+
+def get_set_override():
+    pyboy = PyBoy(default_rom, window_type="dummy")
+    pyboy.tick()
+
+    assert pyboy.get_memory_value(0xFF40) == 0x91
+    assert pyboy.set_memory_value(0xFF40) == 0x12
+    assert pyboy.get_memory_value(0xFF40) == 0x12
+
+    assert pyboy.get_memory_value(0x0002) == 0xFE
+    assert pyboy.override_memory_value(0x0002) == 0x12
+    assert pyboy.get_memory_value(0x0002) == 0x12
 
     pyboy.stop(save=False)

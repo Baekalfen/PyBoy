@@ -3,7 +3,6 @@ import platform
 import pytest
 
 is_pypy = platform.python_implementation() == "PyPy"
-pytestmark = pytest.mark.skipif(not is_pypy, reason="This test doesn't work in Cython")
 
 if is_pypy:
     from pyboy.plugins.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, \
@@ -15,7 +14,7 @@ def write_bytes(buf, values):
         buf.write(v % 0x100)
 
 
-@pytestmark
+@pytest.mark.skipif(not is_pypy, reason="This test doesn't work in Cython")
 class TestRewind:
     def test_all(self):
         for buf in [FixedAllocBuffers(), CompressedFixedAllocBuffers(), DeltaFixedAllocBuffers()]:

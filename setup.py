@@ -81,17 +81,17 @@ class PyTest(test):
             script_path = os.path.dirname(os.path.realpath(__file__))
             base = Path(f"{script_path}/examples/")
 
-            tetris_script = base / f"gamewrapper_tetris.py"
-            tetris_rom = Path(f"{script_path}/ROMs/Tetris.gb")
-            return_code = subprocess.Popen([sys.executable, str(tetris_script), str(tetris_rom), "--quiet"]).wait()
-            if return_code != 0:
-                sys.exit(return_code)
+            for gamewrapper, rom in [
+                ("gamewrapper_tetris.py", f"{script_path}/ROMs/Tetris.gb"),
+                ("gamewrapper_mario.py", f"{script_path}/ROMs/SuperMarioLand.gb"),
+                ("gamewrapper_kirby.py", f"{script_path}/ROMs/Kirby.gb"),
+            ]:
 
-            mario_script = base / f"gamewrapper_mario.py"
-            mario_rom = Path(f"{script_path}/ROMs/SuperMarioLand.gb")
-            return_code = subprocess.Popen([sys.executable, str(mario_script), str(mario_rom), "--quiet"]).wait()
-            if return_code != 0:
-                sys.exit(return_code)
+                return_code = subprocess.Popen([sys.executable,
+                                                str(base / gamewrapper),
+                                                str(Path(rom)), "--quiet"]).wait()
+                if return_code != 0:
+                    sys.exit(return_code)
 
         import pytest
         args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
@@ -302,12 +302,14 @@ setup(
         "pytest",
         "pytest-xdist",
         "pyopengl",
+        "gym" if CYTHON else "",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
+            "gym" if CYTHON else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it

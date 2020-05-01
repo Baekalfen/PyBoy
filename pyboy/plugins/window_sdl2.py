@@ -51,6 +51,7 @@ KEY_UP = {
     sdl2.SDLK_SPACE     : WindowEvent.RELEASE_SPEED_UP,
     sdl2.SDLK_p         : WindowEvent.PAUSE_TOGGLE,
     sdl2.SDLK_i         : WindowEvent.SCREEN_RECORDING_TOGGLE,
+    sdl2.SDLK_o         : WindowEvent.SCREENSHOT_RECORD,
     sdl2.SDLK_ESCAPE    : WindowEvent.QUIT,
     sdl2.SDLK_COMMA     : WindowEvent.RELEASE_REWIND_BACK,
     sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
