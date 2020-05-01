@@ -12,6 +12,9 @@ from ctypes import c_void_p
 
 import sdl2
 
+SOUND_DESYNC_THRESHOLD = 5
+CPU_FREQ = 4213440 # hz
+
 
 class Sound:
     def __init__(self):
@@ -23,7 +26,8 @@ class Sound:
         spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
         self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
 
-        self.sampleclocks = 0x404ac0 / spec_have.freq
+        self.sample_rate = spec_have.freq
+        self.sampleclocks = CPU_FREQ / self.sample_rate
         self.audiobuffer = array("b", [0] * 4096) # Over 2 frames
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
@@ -34,15 +38,21 @@ class Sound:
         self.wavechannel = WaveChannel()
         self.noisechannel = NoiseChannel()
 
-        self.channels = (self.sweepchannel, self.tonechannel, self.wavechannel, self.noisechannel)
-
         # Start playback (move out of __init__ if needed, maybe for headless)
         sdl2.SDL_PauseAudioDevice(self.device, 0)
 
     def get(self, offset):
         self.sync()
         if offset < 20:
-            return self.channels[offset // 5].getreg(offset % 5)
+            i = offset // 5
+            if i == 0:
+                return self.sweepchannel.getreg(offset % 5)
+            elif i == 1:
+                return self.tonechannel.getreg(offset % 5)
+            elif i == 2:
+                return self.wavechannel.getreg(offset % 5)
+            elif i == 3:
+                return self.noisechannel.getreg(offset % 5)
         elif offset == 20: # Control register NR50
             return 0
         elif offset == 21: # Control register NR51
@@ -59,7 +69,15 @@ class Sound:
     def set(self, offset, value):
         self.sync()
         if offset < 20:
-            self.channels[offset // 5].setreg(offset % 5, value)
+            i = offset // 5
+            if i == 0:
+                self.sweepchannel.setreg(offset % 5, value)
+            elif i == 1:
+                self.tonechannel.setreg(offset % 5, value)
+            elif i == 2:
+                self.wavechannel.setreg(offset % 5, value)
+            elif i == 3:
+                self.noisechannel.setreg(offset % 5, value)
         elif offset == 20: # Control register NR50
             return
         elif offset == 21: # Control register NR51
@@ -77,12 +95,6 @@ class Sound:
         """Run the audio for the number of clock cycles stored in self.clock"""
         nsamples = int(self.clock / self.sampleclocks)
 
-        # print(self.clock, self.sampleclocks, nsamples)
-        # print(sdl2.SDL_GetQueuedAudioSize(self.device))
-        # if nsamples > 2048:
-        #     self.clock = 0
-        #     sdl2.SDL_ClearQueuedAudio(self.device)
-        #     return
         for i in range(min(2048, nsamples)):
             self.sweepchannel.run(self.sampleclocks)
             self.tonechannel.run(self.sampleclocks)
@@ -97,9 +109,13 @@ class Sound:
             self.audiobuffer[2 * i] = sample
             self.audiobuffer[2*i + 1] = sample
             self.clock -= self.sampleclocks
+
+        # Clear queue, if we are behind
         queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
-        if queued_time > self.sampleclocks * 10:
+        samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
+        if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
             sdl2.SDL_ClearQueuedAudio(self.device)
+
         sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
         self.clock %= self.sampleclocks
 
@@ -109,7 +125,7 @@ class Sound:
     def save_state(self, file):
         pass
 
-    def load_state(self, file):
+    def load_state(self, file, state_version):
         pass
 
 
@@ -405,9 +421,9 @@ class WaveChannel:
 
 class NoiseChannel:
     """Fourth sound channel--white noise generator"""
-    DIVTABLE = (8, 16, 32, 48, 64, 80, 96, 112)
-
     def __init__(self):
+        self.DIVTABLE = (8, 16, 32, 48, 64, 80, 96, 112)
+
         # Register values (abbreviated to keep track of what's external)
         # Register 0 is unused in the noise channel
         self.sndlen = 0 # Register 1 bits 5-0: time to play sound before stop (64-x)

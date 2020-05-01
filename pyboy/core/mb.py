@@ -84,7 +84,7 @@ class Motherboard:
         self.cpu.load_state(f, state_version)
         self.lcd.load_state(f, state_version)
         if state_version >= 5:
-            self.sound.load_state(f)
+            self.sound.load_state(f, state_version)
         if state_version >= 2:
             self.renderer.load_state(f, state_version)
         self.ram.load_state(f, state_version)
