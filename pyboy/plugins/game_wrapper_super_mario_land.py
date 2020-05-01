@@ -22,63 +22,139 @@ try:
 except ImportError:
     cythonmode = False
 
-TILES = 384
-tiles_compressed = np.array(range(TILES), dtype=np.uint16)
-# Empty
-for ids in [87, 91] + [145]+ [128, 246, 248, 300, 308, 310, 311, 316, 350, 338, 339, 89, 88, 98] + list(range(328, 333))+ list(range(320, 328)) + list(range(305, 308)):
-    tiles_compressed[ids] = 0
+tiles_minimal = np.zeros((24, 16), dtype=np.uint8)
+tiles_compressed = np.zeros((24, 16), dtype=np.uint8)
 
-# Mario
-mario_spites = list(range(12)) + list(range(16, 28)) + list(range(32, 44)) + list(range(48, 60))
-for ids in mario_spites:
-    tiles_compressed[ids] = 1
+# Mario and Daisy
+tiles_minimal[:5, :] = 1     # Base scripts
+tiles_compressed[:5, :] = 1
 
-# Dying Mario
-for ids in [15, 31]:
-    tiles_compressed[ids] = 2
+tiles_minimal[5, :2] = 1     # Daisy foots
+tiles_compressed[5, :2] = 1
 
-# Ennemies
-for ids in [144, 150, 151, 152, 153, 154, 155, 157, 158, 160, 161, 162, 168, 163, 169, 172, 176, 177, 178, 179, 188, 192, 193, 209]:
-    tiles_compressed[ids] = 3
+tiles_minimal[6, 3:14] = 1   # Plane
+tiles_compressed[6, 3:14] = 2
 
-# Coins
-for ids in [244, 247, 254]:
-    tiles_compressed[ids] = 4
+tiles_minimal[7, :10] = 1    # Submarine
+tiles_compressed[7, :10] = 3
 
-# Flower
-for ids in [224, 229]:
-    tiles_compressed[ids] = 11
+# Mario shoots
+coords = [(6, 0), (6, 14),(7, 10)]
+for coord in coords:
+    tiles_minimal[coord] = 2
+    tiles_compressed[coord] = 4
 
-# Fireball
-tiles_compressed[96] = 12
+# Bonuses
+coin = (15, 4)
+tiles_compressed[coin] = 5
+mushroom = (8, 3)
+tiles_compressed[mushroom] = 6
+heart = (8, 4)
+tiles_compressed[heart] = 7
+star = (8, 6)
+tiles_compressed[star] = 8
+flower = (14, 0)
+tiles_compressed[flower] = 6
+flower2 = (14, 5)
+tiles_compressed[flower2] = 6
+for coord in [mushroom, heart, star, flower, flower2]:
+    tiles_minimal[coord] = 3
 
-# Star
-tiles_compressed[ids] = 13
+# Lever for level end
+lever = (14, 1)
+tiles_minimal[lever] = 3
+tiles_compressed[lever] = 9
 
-# Mushroom
-for ids in [131]:
-    tiles_compressed[ids] = 6
+# Solid blocks
+tiles_minimal[22, :2] = 4           # Neutral blocks
+tiles_minimal[22, 3:11] = 4
+tiles_minimal[23, 13:] = 4
+tiles_minimal[8, 14:] = 4
+tiles_minimal[13, 13:15] = 4
+tiles_minimal[14, 7:13] = 4
+tiles_minimal[18, 13:] = 4
+tiles_minimal[19, 0] = 4
+tiles_minimal[19, 15] = 4
+tiles_minimal[21, 3:5] = 4
+tiles_compressed[22, :2] = 10
+tiles_compressed[22, 3:11] = 10
+tiles_compressed[23, 13:] = 10
+tiles_compressed[8, 14:] = 10
+tiles_compressed[13, 13:15] = 10
+tiles_compressed[14, 7:13] = 10
+tiles_compressed[18, 13:] = 10
+tiles_compressed[19, 0] = 10
+tiles_compressed[19, 15] = 10
+tiles_compressed[21, 3:5] = 10
 
-# Solid block
-for ids in [130, 142, 143, 232, 352, 353, 355, 360, 361, 362, 383]:
-    tiles_compressed[ids] = 10
+tiles_minimal[14, 6] = 4            # Moving blocks
+tiles_compressed[14, 6] = 11
+tiles_minimal[14, 14:] = 4
+tiles_compressed[14, 14:] = 11
 
-# Moving block 
-for ids in [239]:
-    tiles_compressed[ids] = 14
+coords = [(8, 0), (8, 2),(22, 2)]   # Pushable blocks
+for coord in coords:
+    tiles_minimal[coord] = 4
+    tiles_compressed[coord] = 12
 
-# Pipes
-for ids in list(range(368, 377)):
-    tiles_compressed[ids] = 8
+tiles_minimal[8, 1] = 4             # ? blocks
+tiles_compressed[8, 1] = 13
 
-# ? block
-for ids in [129]:
-    tiles_compressed[ids] = 9
+tiles_minimal[23, :13] = 4          # Pipes
+tiles_compressed[23, :13] = 14
 
-# Hole in ground
-for ids in [336]:
-    tiles_compressed[ids] = 7
+# Enemies
+tiles_minimal[9, 0] = 5             # Goomba
+tiles_compressed[9, 0] = 15
 
+tiles_minimal[9, 2:6] = 5           # Plant
+tiles_compressed[9, 2:6] = 16
+
+tiles_minimal[9, 6:10] = 5          # Koopa
+tiles_compressed[9, 2:6] = 17
+
+tiles_minimal[10:12, :4] = 5        # Moth
+tiles_compressed[10:12, :4] = 18
+
+tiles_minimal[12:14, :4] = 5        # Flying Moth
+tiles_compressed[12:14, :4] = 19
+
+tiles_minimal[10:12, 4:8] = 5       # Sphinx
+tiles_compressed[10:12, 4:8] = 20
+
+tiles_minimal[12:14, 6:8] = 5       # BossSphinx
+tiles_compressed[12:14, 6:8] = 21
+tiles_minimal[12:14, 9:12] = 5
+tiles_compressed[12:14, 9:12] = 21
+tiles_minimal[12, 12:14] = 5
+tiles_compressed[12, 12:14] = 21
+
+tiles_minimal[15, :4] = 5           # Fist
+tiles_compressed[15, :4] = 22
+
+tiles_minimal[15, 9] = 5            # Bill
+tiles_compressed[15, 9] = 23
+
+tiles_minimal[12:14, 4:6] = 5       # Flames and projectiles
+tiles_compressed[12:14, 4:6] = 24
+tiles_minimal[14, 2:4] = 5       
+tiles_compressed[14, 2:4] = 24
+tiles_minimal[10:12, 12] = 5        # Moth dagger
+tiles_compressed[10:12, 12] = 24
+
+tiles_minimal[9, 10:12] = 5         # Koopa shell
+tiles_compressed[9, 10:12] = 25
+
+tiles_minimal[9, 13:15] = 5         # Explosion
+tiles_compressed[9, 13:15] = 26
+
+tiles_minimal[14, 13] = 5           # Spike
+tiles_compressed[14, 13] = 27
+
+tiles_minimal = tiles_minimal.flatten()
+tiles_compressed = tiles_compressed.flatten()
+
+mario_spites = list(range(82)) + list(range(99, 110)) + list(range(112, 122))
 np_in_mario_tiles = np.vectorize(lambda x: x in mario_spites)
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
@@ -90,6 +166,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
     cartridge_title = "SUPER MARIOLAN"
     tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 16)
