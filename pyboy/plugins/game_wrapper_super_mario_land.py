@@ -308,7 +308,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             return False
         tiles = self._game_area_np()
         mario_at_bottom = np.any(np_in_mario_tiles(tiles[-1, :]))
-        return np.any(tiles == 15) or mario_at_bottom
+        return mario_at_bottom or np.any(tiles == 15)
 
     def __repr__(self):
         adjust = 4
