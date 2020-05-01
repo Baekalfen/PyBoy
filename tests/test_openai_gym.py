@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import os
 import platform
 
 import numpy as np
@@ -47,7 +48,9 @@ def tiles_id():
     return {"BLANK": 47, "Z": 130, "DEADBLOCK": 135}
 
 
-@pytest.mark.skipif(is_pypy or (not tetris_rom), reason="This requires gym, which doesn't install on PyPy")
+@pytest.mark.skipif(
+    is_pypy or os.getenv("MSYS") or (not tetris_rom), reason="This requires gym, which doesn't install on PyPy"
+)
 class TestOpenAIGym:
     def test_raw(self, pyboy, screen_shape):
         env = pyboy.openai_gym(observation_type="raw", action_type="press")
