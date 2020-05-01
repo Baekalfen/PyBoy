@@ -8,6 +8,7 @@ __pdoc__ = {
 }
 
 import logging
+import random
 from array import array
 
 import numpy as np
@@ -91,16 +92,32 @@ class GameWrapperTetris(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score
 
-    def start_game(self):
+    def _set_seed(self, seed, randomize):
+        if randomize:
+            self.pyboy.mb.timer.DIV = random.getrandbits(8)
+        elif seed is not None:
+            self.pyboy.mb.timer.DIV = seed & 0xFF
+
+    def start_game(self, seed=None, randomize=False):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
+        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
+
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Args:
+            seed (int): Value to use for the seed
+            randomize (bool): Whether to randomize the seed or not
         """
+
         if not self.pyboy.frame_count == 0:
             logger.warning("Calling start_game from an already running game. This might not work.")
+
+        # Randomization
+        self._set_seed(seed, randomize)
 
         # Boot screen
         while True:
@@ -123,14 +140,21 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-    def reset_game(self):
+    def reset_game(self, seed=None, randomize=False):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
+
+        Args:
+            seed (int): Value to use for the seed
+            randomize (bool): Whether to randomize the seed or not
         """
         if self.game_has_started:
             self.saved_state.seek(0)
             self.pyboy.load_state(self.saved_state)
             self.post_tick()
+            self._set_seed(seed, randomize)
         else:
             logger.error("Tried to reset game, but it hasn't been started yet!")
 

@@ -122,19 +122,31 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError("post_tick not implemented in game wrapper")
 
-    def start_game(self):
+    def start_game(self, seed=None, randomize=False):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
+        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
+
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Args:
+            seed (int): Value to use for the seed
+            randomize (bool): Whether to randomize the seed or not
         """
         raise NotImplementedError("start_game not implemented in game wrapper")
 
-    def reset_game(self):
+    def reset_game(self, seed=None, randomize=False):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
+
+        Args:
+            seed (int): Value to use for the seed
+            randomize (bool): Whether to randomize the seed or not
         """
         raise NotImplementedError("reset_game not implemented in game wrapper")
 
