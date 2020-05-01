@@ -8,7 +8,7 @@ import re
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowHeadless", "WindowDummy", "Debug"]
 game_wrappers = ["GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand"]
-plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder"] + game_wrappers
+plugins = ["DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder"] + game_wrappers
 all_plugins = windows + plugins
 
 

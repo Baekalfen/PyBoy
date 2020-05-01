@@ -127,7 +127,7 @@ class Screen:
             RGB image of (160, 144) pixels
         """
         if not Image:
-            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            logger.error("Cannot generate screen image. Missing dependency \"Pillow\".")
             return None
 
         # NOTE: Might have room for performance improvement

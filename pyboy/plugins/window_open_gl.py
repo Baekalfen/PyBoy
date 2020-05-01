@@ -109,6 +109,8 @@ class WindowOpenGL(PyBoyWindowPlugin):
                 self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
             elif c == chr(13):
                 self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
+            elif c == "o":
+                self.events.append(WindowEvent(WindowEvent.SCREENSHOT_RECORD))
         else:
             if c == "a":
                 self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_A))

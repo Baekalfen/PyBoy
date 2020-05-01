@@ -11,11 +11,11 @@ from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
 
-from .utils import boot_rom, default_rom, kirby_rom, tetris_rom
+from .utils import boot_rom, default_rom, kirby_rom
 
 
 def test_record_replay():
-    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
+    pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
@@ -37,17 +37,18 @@ def test_record_replay():
 
     pyboy.stop(save=False)
 
-    with open(tetris_rom + ".replay", "rb") as f:
+    with open(default_rom + ".replay", "rb") as f:
         m = hashlib.sha256()
         m.update(f.read())
         digest = m.digest()
 
-    os.remove(tetris_rom + ".replay")
+    os.remove(default_rom + ".replay")
 
-    assert digest == b"\xd1\xe2\x13B\xf0$\xaa\xaa\xe2\xf2\xf3Iz\x9aj\x98\xc8^\xc4J:\x08\x1d\xf4n}\x80\x08o\x03)\xda", \
+    assert digest == b"\xc0\xfe\x0f\xaa\x1b0YY\x1a\x174\x8c\xad\xeaDZ\x1dQ\xa8\xa2\x9fA\xaap\x15(\xc9\xd9#\xd4]{", \
         "The replay did not result in the expected output"
 
 
+@pytest.mark.skipif(not boot_rom, reason="ROM not present")
 def test_profiling():
     pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
     pyboy.set_emulation_speed(0)
@@ -116,6 +117,7 @@ def test_argv_parser(*args):
         assert flags[k] == v
 
 
+@pytest.mark.skipif(not kirby_rom, reason="ROM not present")
 def test_tilemaps():
     pyboy = PyBoy(kirby_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)

@@ -20,7 +20,6 @@ cython; platform_python_implementation == 'CPython'
 numpy
 pillow
 pysdl2
-gym
 """
 
 
@@ -303,12 +302,14 @@ setup(
         "pytest",
         "pytest-xdist",
         "pyopengl",
+        "gym" if CYTHON else "",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
+            "gym" if CYTHON else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it

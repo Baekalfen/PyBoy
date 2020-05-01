@@ -4,11 +4,20 @@
 #
 
 import numpy as np
-from gym import Env
-from gym.spaces import Discrete, MultiDiscrete, Box
 
 from .botsupport.constants import TILES
 from .utils import WindowEvent
+
+try:
+    from gym import Env
+    from gym.spaces import Discrete, MultiDiscrete, Box
+    enabled = True
+except ImportError:
+
+    class Env:
+        pass
+
+    enabled = False
 
 
 class PyBoyGymEnv(Env):
