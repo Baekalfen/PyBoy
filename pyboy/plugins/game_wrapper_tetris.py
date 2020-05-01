@@ -36,15 +36,15 @@ inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
 
 TILES = 384
 tiles_compressed = np.zeros(TILES, dtype=np.uint8)
-# Blank, J, Z, O, L, T, S, I, Black
+# BLANK, J, Z, O, L, T, S, I, BLACK
 tiles_types = [[47], [129], [130], [131], [132], [133], [134], [128, 136, 137, 138, 139, 143], [135]]
 for tiles_type_ID, tiles_type in enumerate(tiles_types):
     for tile_ID in tiles_type:
         tiles_compressed[tile_ID] = tiles_type_ID
 
-tiles_minimal = np.ones(TILES, dtype=np.uint8)
-tiles_minimal[47] = 0
-tiles_minimal[135] = 2
+tiles_minimal = np.ones(TILES, dtype=np.uint8)  # For minimal everything is 1
+tiles_minimal[47] = 0                           # Except BLANK which is 0
+tiles_minimal[135] = 2                          # And background losing tiles BLACK which is 2
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
