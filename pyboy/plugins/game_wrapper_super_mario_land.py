@@ -22,140 +22,71 @@ try:
 except ImportError:
     cythonmode = False
 
-tiles_minimal = np.zeros((24, 16), dtype=np.uint8)
-tiles_compressed = np.zeros((24, 16), dtype=np.uint8)
-
 # Mario and Daisy
-tiles_minimal[:5, :] = 1     # Base scripts
-tiles_compressed[:5, :] = 1
-
-tiles_minimal[5, :2] = 1     # Daisy foots
-tiles_compressed[5, :2] = 1
-
-tiles_minimal[6, 3:14] = 1   # Plane
-tiles_compressed[6, 3:14] = 2
-
-tiles_minimal[7, :10] = 1    # Submarine
-tiles_compressed[7, :10] = 3
+base_scripts = list(range(81))
+plane = list(range(99, 110))
+submarine = list(range(112, 122))
 
 # Mario shoots
-coords = [(6, 0), (6, 14),(7, 10)]
-for coord in coords:
-    tiles_minimal[coord] = 2
-    tiles_compressed[coord] = 4
+shoots = [96, 110, 122]
 
 # Bonuses
-coin = (15, 4)
-tiles_compressed[coin] = 5
-mushroom = (8, 3)
-tiles_compressed[mushroom] = 6
-heart = (8, 4)
-tiles_compressed[heart] = 7
-star = (8, 6)
-tiles_compressed[star] = 8
-flower = (14, 0)
-tiles_compressed[flower] = 6
-flower2 = (14, 5)
-tiles_compressed[flower2] = 6
-for coord in [mushroom, heart, star, flower, flower2]:
-    tiles_minimal[coord] = 3
+coin = [244]
+mushroom = [131]
+heart = [132]
+star = [134]
+flower = [224, 229]
 
 # Lever for level end
-lever = (14, 1)
-tiles_minimal[lever] = 3
-tiles_compressed[lever] = 9
+lever = [255]
 
 # Solid blocks
-tiles_minimal[22, :2] = 4           # Neutral blocks
-tiles_minimal[22, 3:11] = 4
-tiles_minimal[23, 13:] = 4
-tiles_minimal[8, 14:] = 4
-tiles_minimal[13, 13:15] = 4
-tiles_minimal[14, 7:13] = 4
-tiles_minimal[18, 13:] = 4
-tiles_minimal[19, 0] = 4
-tiles_minimal[19, 15] = 4
-tiles_minimal[21, 3:5] = 4
-tiles_compressed[22, :2] = 10
-tiles_compressed[22, 3:11] = 10
-tiles_compressed[23, 13:] = 10
-tiles_compressed[8, 14:] = 10
-tiles_compressed[13, 13:15] = 10
-tiles_compressed[14, 7:13] = 10
-tiles_compressed[18, 13:] = 10
-tiles_compressed[19, 0] = 10
-tiles_compressed[19, 15] = 10
-tiles_compressed[21, 3:5] = 10
-
-tiles_minimal[14, 6] = 4            # Moving blocks
-tiles_compressed[14, 6] = 11
-tiles_minimal[14, 14:] = 4
-tiles_compressed[14, 14:] = 11
-
-coords = [(8, 0), (8, 2),(22, 2)]   # Pushable blocks
-for coord in coords:
-    tiles_minimal[coord] = 4
-    tiles_compressed[coord] = 12
-
-tiles_minimal[8, 1] = 4             # ? blocks
-tiles_compressed[8, 1] = 13
-
-tiles_minimal[23, :13] = 4          # Pipes
-tiles_compressed[23, :13] = 14
+neutral_blocks = [142, 143, 221, 222, 231, 232, 233, 234, 235, 236,
+                  301, 302, 303, 304, 319, 339, 340, 352, 353, 355,
+                  356, 357, 358, 359, 360, 361, 362, 381, 382, 383]
+moving_blocks = [230, 238, 239]
+pushable_blokcs = [128, 130, 354]
+question_block = [129]
+pipes = list(range(368, 381))
 
 # Enemies
-tiles_minimal[9, 0] = 5             # Goomba
-tiles_compressed[9, 0] = 15
+goomba = [144]
+koopa = [150, 151, 152, 153]
+plant = [146, 147, 148, 149]
+moth = [160, 161, 162, 163, 176, 177, 178, 179]
+flying_moth = [192, 193, 194, 195, 208, 209, 210, 211]
+sphinx = [164, 165, 166, 167, 180, 181, 182, 183]
+big_sphinx = [198, 199, 201, 202, 203, 204, 205, 214, 215, 217, 218, 219]
+fist = [240, 241, 242, 243]
+bill = [249]
+projectiles = [172, 188, 196, 197, 212, 213, 226, 227]
+shell = [154, 155]
+explosion = [157, 158]
+spike = [237]
 
-tiles_minimal[9, 2:6] = 5           # Plant
-tiles_compressed[9, 2:6] = 16
+TILES = 384
+tiles_minimal = np.zeros(TILES, dtype=np.uint8)
+minimal_list = [
+    base_scripts + plane + submarine,
+    coin + mushroom + heart + star + lever,
+    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
+    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion + spike
+]
+for i, tile_list in enumerate(minimal_list):
+    for tile in tile_list:
+        tiles_minimal[tile] = i + 1
 
-tiles_minimal[9, 6:10] = 5          # Koopa
-tiles_compressed[9, 2:6] = 17
+tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+compressed_list = [
+    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever,
+    neutral_blocks, moving_blocks, pushable_blokcs, question_block, pipes,
+    goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill, projectiles, shell, explosion, spike
+]
+for i, tile_list in enumerate(compressed_list):
+    for tile in tile_list:
+        tiles_compressed[tile] = i + 1
 
-tiles_minimal[10:12, :4] = 5        # Moth
-tiles_compressed[10:12, :4] = 18
-
-tiles_minimal[12:14, :4] = 5        # Flying Moth
-tiles_compressed[12:14, :4] = 19
-
-tiles_minimal[10:12, 4:8] = 5       # Sphinx
-tiles_compressed[10:12, 4:8] = 20
-
-tiles_minimal[12:14, 6:8] = 5       # BossSphinx
-tiles_compressed[12:14, 6:8] = 21
-tiles_minimal[12:14, 9:12] = 5
-tiles_compressed[12:14, 9:12] = 21
-tiles_minimal[12, 12:14] = 5
-tiles_compressed[12, 12:14] = 21
-
-tiles_minimal[15, :4] = 5           # Fist
-tiles_compressed[15, :4] = 22
-
-tiles_minimal[15, 9] = 5            # Bill
-tiles_compressed[15, 9] = 23
-
-tiles_minimal[12:14, 4:6] = 5       # Flames and projectiles
-tiles_compressed[12:14, 4:6] = 24
-tiles_minimal[14, 2:4] = 5       
-tiles_compressed[14, 2:4] = 24
-tiles_minimal[10:12, 12] = 5        # Moth dagger
-tiles_compressed[10:12, 12] = 24
-
-tiles_minimal[9, 10:12] = 5         # Koopa shell
-tiles_compressed[9, 10:12] = 25
-
-tiles_minimal[9, 13:15] = 5         # Explosion
-tiles_compressed[9, 13:15] = 26
-
-tiles_minimal[14, 13] = 5           # Spike
-tiles_compressed[14, 13] = 27
-
-tiles_minimal = tiles_minimal.flatten()
-tiles_compressed = tiles_compressed.flatten()
-
-mario_spites = list(range(82)) + list(range(99, 110)) + list(range(112, 122))
-np_in_mario_tiles = np.vectorize(lambda x: x in mario_spites)
+np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
