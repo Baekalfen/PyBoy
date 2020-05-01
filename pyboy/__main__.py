@@ -74,6 +74,7 @@ parser.add_argument(
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
 parser.add_argument("--disable-renderer", action="store_true", help="Disables screen rendering for higher performance")
+parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
 
 for arguments in parser_arguments():
     for a in arguments:
