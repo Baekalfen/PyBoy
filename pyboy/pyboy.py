@@ -11,6 +11,7 @@ import os
 import time
 
 from pyboy.openai_gym import PyBoyGymEnv
+from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
@@ -248,7 +249,11 @@ class PyBoy:
         `pyboy.openai_gym.PyBoyGymEnv`:
             A Gym environment based on the `Pyboy` object.
         """
-        return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions)
+        if gym_enabled:
+            return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions)
+        else:
+            logger.error(f"{__name__}: Missing dependency \"gym\". ")
+            return None
 
     def game_wrapper(self):
         """
