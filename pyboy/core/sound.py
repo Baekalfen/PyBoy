@@ -7,7 +7,6 @@
 # http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 # http://www.devrs.com/gb/files/hosted/GBSOUND.txt
 
-
 from array import array
 from ctypes import c_void_p
 
@@ -25,7 +24,7 @@ class Sound:
         self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
 
         self.sampleclocks = 0x404ac0 / spec_have.freq
-        self.audiobuffer = array("b", [0] * 4096)  # Over 2 frames
+        self.audiobuffer = array("b", [0] * 4096) # Over 2 frames
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
         self.clock = 0
@@ -35,10 +34,7 @@ class Sound:
         self.wavechannel = WaveChannel()
         self.noisechannel = NoiseChannel()
 
-        self.channels = (self.sweepchannel,
-                         self.tonechannel,
-                         self.wavechannel,
-                         self.noisechannel)
+        self.channels = (self.sweepchannel, self.tonechannel, self.wavechannel, self.noisechannel)
 
         # Start playback (move out of __init__ if needed, maybe for headless)
         sdl2.SDL_PauseAudioDevice(self.device, 0)
@@ -92,11 +88,18 @@ class Sound:
             self.tonechannel.run(self.sampleclocks)
             self.wavechannel.run(self.sampleclocks)
             self.noisechannel.run(self.sampleclocks)
-            sample = max(min(self.sweepchannel.sample() + self.tonechannel.sample() +
-                             self.wavechannel.sample() + self.noisechannel.sample(), 64), 0)
+            sample = max(
+                min(
+                    self.sweepchannel.sample() + self.tonechannel.sample() + self.wavechannel.sample() +
+                    self.noisechannel.sample(), 64
+                ), 0
+            )
             self.audiobuffer[2 * i] = sample
             self.audiobuffer[2*i + 1] = sample
             self.clock -= self.sampleclocks
+        queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
+        if queued_time > self.sampleclocks * 10:
+            sdl2.SDL_ClearQueuedAudio(self.device)
         sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
         self.clock %= self.sampleclocks
 
@@ -295,7 +298,7 @@ class WaveChannel:
     """Third sound channel--sample-based playback"""
     def __init__(self):
         # Memory for wave sample
-        self.wavetable = array('B', [0xFF]*16)
+        self.wavetable = array("B", [0xFF] * 16)
 
         # Register values (abbreviated to keep track of what's external)
         # Register 0 is unused in the wave channel
@@ -304,7 +307,7 @@ class WaveChannel:
         self.volreg = 0 # Register 2 bits 6-5: volume code
         self.sndper = 0 # Register 4 bits 2-0 MSB + register 3 all: period of tone ("frequency" on gg8 wiki)
         # Register 4 bit 7: Write-only trigger bit. Process immediately.
-        self.uselen = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
+        self.uselen = 0 # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
 
         # Internal values
         self.enable = False # Enable flag, turned on by trigger bit and off by length timer
