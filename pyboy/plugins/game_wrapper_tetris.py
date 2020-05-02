@@ -46,6 +46,7 @@ tiles_minimal = np.ones(TILES, dtype=np.uint8)  # For minimal everything is 1
 tiles_minimal[47] = 0                           # Except BLANK which is 0
 tiles_minimal[135] = 2                          # And background losing tiles BLACK which is 2
 
+
 class GameWrapperTetris(PyBoyGameWrapper):
     """
     This class wraps Tetris, and provides easy access to score, lines, level and a "fitness" score for AIs.
