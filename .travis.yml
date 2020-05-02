@@ -99,8 +99,10 @@ before_install:
   - |-
     case $TRAVIS_OS_NAME in
       osx)
-        openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
-        tar xf ci_secrets.tar
+        if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+          openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+          tar xf ci_secrets.tar
+        fi
         # MacOS Python and PyPy
         brew update
         brew install sdl2
@@ -120,8 +122,10 @@ before_install:
         fi
       ;;
       linux)
-        openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
-        tar xf ci_secrets.tar
+        if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+          openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+          tar xf ci_secrets.tar
+        fi
         if [ "$MANYLINUX" ]; then
           echo "ManyLinux"
           docker pull "quay.io/pypa/$MANYLINUX"
@@ -155,8 +159,11 @@ before_install:
         fi
       ;;
       windows)
-        $mingw64 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
-        $mingw64 tar xf ci_secrets.tar
+        if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+          $mingw64 openssl aes-256-cbc -K $encrypted_e987e62fd955_key -iv $encrypted_e987e62fd955_iv -in ci_secrets.tar.enc -out ci_secrets.tar -d
+          $mingw64 tar xf ci_secrets.tar
+        fi
+
         if [ "$MSYS" = "1" ]; then
           [[ ! -f C:/tools/msys64/msys2_shell.cmd ]] && rm -rf C:/tools/msys64
           choco uninstall -y mingw
