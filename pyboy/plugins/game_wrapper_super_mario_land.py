@@ -88,6 +88,7 @@ for i, tile_list in enumerate(compressed_list):
 
 np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
 
+
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
     This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left, world and a
