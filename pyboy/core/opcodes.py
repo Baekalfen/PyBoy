@@ -10,18 +10,21 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
 def NOP_00(cpu): # 00 NOP
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_01(cpu, v): # 01 LD BC,d16
     cpu.set_bc(v)
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_02(cpu): # 02 LD (BC),A
     cpu.mb.setitem(((cpu.B << 8) + cpu.C), cpu.A)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -31,6 +34,7 @@ def INC_03(cpu): # 03 INC BC
     t &= 0xFFFF
     cpu.set_bc(t)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -44,6 +48,7 @@ def INC_04(cpu): # 04 INC B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -57,12 +62,14 @@ def DEC_05(cpu): # 05 DEC B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_06(cpu, v): # 06 LD B,d8
     cpu.B = v
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -75,6 +82,7 @@ def RLCA_07(cpu): # 07 RLCA
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -82,6 +90,7 @@ def LD_08(cpu, v): # 08 LD (a16),SP
     cpu.mb.setitem(v, cpu.SP & 0xFF)
     cpu.mb.setitem(v+1, cpu.SP >> 8)
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 20
 
 
@@ -95,12 +104,14 @@ def ADD_09(cpu): # 09 ADD HL,BC
     t &= 0xFFFF
     cpu.HL = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_0A(cpu): # 0A LD A,(BC)
     cpu.A = cpu.mb.getitem(((cpu.B << 8) + cpu.C))
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -110,6 +121,7 @@ def DEC_0B(cpu): # 0B DEC BC
     t &= 0xFFFF
     cpu.set_bc(t)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -123,6 +135,7 @@ def INC_0C(cpu): # 0C INC C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -136,12 +149,14 @@ def DEC_0D(cpu): # 0D DEC C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_0E(cpu, v): # 0E LD C,d8
     cpu.C = v
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -154,24 +169,28 @@ def RRCA_0F(cpu): # 0F RRCA
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def STOP_10(cpu, v): # 10 STOP 0
     pass
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_11(cpu, v): # 11 LD DE,d16
     cpu.set_de(v)
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_12(cpu): # 12 LD (DE),A
     cpu.mb.setitem(((cpu.D << 8) + cpu.E), cpu.A)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -181,6 +200,7 @@ def INC_13(cpu): # 13 INC DE
     t &= 0xFFFF
     cpu.set_de(t)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -194,6 +214,7 @@ def INC_14(cpu): # 14 INC D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -207,12 +228,14 @@ def DEC_15(cpu): # 15 DEC D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_16(cpu, v): # 16 LD D,d8
     cpu.D = v
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -225,6 +248,7 @@ def RLA_17(cpu): # 17 RLA
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -244,12 +268,14 @@ def ADD_19(cpu): # 19 ADD HL,DE
     t &= 0xFFFF
     cpu.HL = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_1A(cpu): # 1A LD A,(DE)
     cpu.A = cpu.mb.getitem(((cpu.D << 8) + cpu.E))
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -259,6 +285,7 @@ def DEC_1B(cpu): # 1B DEC DE
     t &= 0xFFFF
     cpu.set_de(t)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -272,6 +299,7 @@ def INC_1C(cpu): # 1C INC E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -285,12 +313,14 @@ def DEC_1D(cpu): # 1D DEC E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_1E(cpu, v): # 1E LD E,d8
     cpu.E = v
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -303,6 +333,7 @@ def RRA_1F(cpu): # 1F RRA
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -320,13 +351,16 @@ def JR_20(cpu, v): # 20 JR NZ,r8
 def LD_21(cpu, v): # 21 LD HL,d16
     cpu.HL = v
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_22(cpu): # 22 LD (HL+),A
     cpu.mb.setitem(cpu.HL, cpu.A)
     cpu.HL += 1
+    cpu.HL &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -336,6 +370,7 @@ def INC_23(cpu): # 23 INC HL
     t &= 0xFFFF
     cpu.HL = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -349,6 +384,7 @@ def INC_24(cpu): # 24 INC H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -362,12 +398,14 @@ def DEC_25(cpu): # 25 DEC H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_26(cpu, v): # 26 LD H,d8
     cpu.HL = (cpu.HL & 0x00FF) | (v << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -390,6 +428,7 @@ def DAA_27(cpu): # 27 DAA
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -414,13 +453,16 @@ def ADD_29(cpu): # 29 ADD HL,HL
     t &= 0xFFFF
     cpu.HL = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_2A(cpu): # 2A LD A,(HL+)
     cpu.A = cpu.mb.getitem(cpu.HL)
     cpu.HL += 1
+    cpu.HL &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -430,6 +472,7 @@ def DEC_2B(cpu): # 2B DEC HL
     t &= 0xFFFF
     cpu.HL = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -443,6 +486,7 @@ def INC_2C(cpu): # 2C INC L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -456,12 +500,14 @@ def DEC_2D(cpu): # 2D DEC L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_2E(cpu, v): # 2E LD L,d8
     cpu.HL = (cpu.HL & 0xFF00) | (v & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -471,6 +517,7 @@ def CPL_2F(cpu): # 2F CPL
     cpu.F &= 0b10010000
     cpu.F |= flag
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -488,13 +535,16 @@ def JR_30(cpu, v): # 30 JR NC,r8
 def LD_31(cpu, v): # 31 LD SP,d16
     cpu.SP = v
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_32(cpu): # 32 LD (HL-),A
     cpu.mb.setitem(cpu.HL, cpu.A)
     cpu.HL -= 1
+    cpu.HL &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -504,6 +554,7 @@ def INC_33(cpu): # 33 INC SP
     t &= 0xFFFF
     cpu.SP = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -517,6 +568,7 @@ def INC_34(cpu): # 34 INC (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 12
 
 
@@ -530,12 +582,14 @@ def DEC_35(cpu): # 35 DEC (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_36(cpu, v): # 36 LD (HL),d8
     cpu.mb.setitem(cpu.HL, v)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 12
 
 
@@ -544,6 +598,7 @@ def SCF_37(cpu): # 37 SCF
     cpu.F &= 0b10000000
     cpu.F |= flag
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -568,13 +623,16 @@ def ADD_39(cpu): # 39 ADD HL,SP
     t &= 0xFFFF
     cpu.HL = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_3A(cpu): # 3A LD A,(HL-)
     cpu.A = cpu.mb.getitem(cpu.HL)
     cpu.HL -= 1
+    cpu.HL &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -584,6 +642,7 @@ def DEC_3B(cpu): # 3B DEC SP
     t &= 0xFFFF
     cpu.SP = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -597,6 +656,7 @@ def INC_3C(cpu): # 3C INC A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -610,12 +670,14 @@ def DEC_3D(cpu): # 3D DEC A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_3E(cpu, v): # 3E LD A,d8
     cpu.A = v
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -624,330 +686,385 @@ def CCF_3F(cpu): # 3F CCF
     cpu.F &= 0b10000000
     cpu.F |= flag
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_40(cpu): # 40 LD B,B
     cpu.B = cpu.B
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_41(cpu): # 41 LD B,C
     cpu.B = cpu.C
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_42(cpu): # 42 LD B,D
     cpu.B = cpu.D
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_43(cpu): # 43 LD B,E
     cpu.B = cpu.E
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_44(cpu): # 44 LD B,H
     cpu.B = (cpu.HL >> 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_45(cpu): # 45 LD B,L
     cpu.B = (cpu.HL & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_46(cpu): # 46 LD B,(HL)
     cpu.B = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_47(cpu): # 47 LD B,A
     cpu.B = cpu.A
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_48(cpu): # 48 LD C,B
     cpu.C = cpu.B
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_49(cpu): # 49 LD C,C
     cpu.C = cpu.C
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_4A(cpu): # 4A LD C,D
     cpu.C = cpu.D
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_4B(cpu): # 4B LD C,E
     cpu.C = cpu.E
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_4C(cpu): # 4C LD C,H
     cpu.C = (cpu.HL >> 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_4D(cpu): # 4D LD C,L
     cpu.C = (cpu.HL & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_4E(cpu): # 4E LD C,(HL)
     cpu.C = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_4F(cpu): # 4F LD C,A
     cpu.C = cpu.A
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_50(cpu): # 50 LD D,B
     cpu.D = cpu.B
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_51(cpu): # 51 LD D,C
     cpu.D = cpu.C
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_52(cpu): # 52 LD D,D
     cpu.D = cpu.D
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_53(cpu): # 53 LD D,E
     cpu.D = cpu.E
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_54(cpu): # 54 LD D,H
     cpu.D = (cpu.HL >> 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_55(cpu): # 55 LD D,L
     cpu.D = (cpu.HL & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_56(cpu): # 56 LD D,(HL)
     cpu.D = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_57(cpu): # 57 LD D,A
     cpu.D = cpu.A
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_58(cpu): # 58 LD E,B
     cpu.E = cpu.B
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_59(cpu): # 59 LD E,C
     cpu.E = cpu.C
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_5A(cpu): # 5A LD E,D
     cpu.E = cpu.D
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_5B(cpu): # 5B LD E,E
     cpu.E = cpu.E
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_5C(cpu): # 5C LD E,H
     cpu.E = (cpu.HL >> 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_5D(cpu): # 5D LD E,L
     cpu.E = (cpu.HL & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_5E(cpu): # 5E LD E,(HL)
     cpu.E = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_5F(cpu): # 5F LD E,A
     cpu.E = cpu.A
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_60(cpu): # 60 LD H,B
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.B << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_61(cpu): # 61 LD H,C
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.C << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_62(cpu): # 62 LD H,D
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.D << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_63(cpu): # 63 LD H,E
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.E << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_64(cpu): # 64 LD H,H
     cpu.HL = (cpu.HL & 0x00FF) | ((cpu.HL >> 8) << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_65(cpu): # 65 LD H,L
     cpu.HL = (cpu.HL & 0x00FF) | ((cpu.HL & 0xFF) << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_66(cpu): # 66 LD H,(HL)
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.mb.getitem(cpu.HL) << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_67(cpu): # 67 LD H,A
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.A << 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_68(cpu): # 68 LD L,B
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.B & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_69(cpu): # 69 LD L,C
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.C & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_6A(cpu): # 6A LD L,D
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.D & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_6B(cpu): # 6B LD L,E
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.E & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_6C(cpu): # 6C LD L,H
     cpu.HL = (cpu.HL & 0xFF00) | ((cpu.HL >> 8) & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_6D(cpu): # 6D LD L,L
     cpu.HL = (cpu.HL & 0xFF00) | ((cpu.HL & 0xFF) & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_6E(cpu): # 6E LD L,(HL)
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.mb.getitem(cpu.HL) & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_6F(cpu): # 6F LD L,A
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.A & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_70(cpu): # 70 LD (HL),B
     cpu.mb.setitem(cpu.HL, cpu.B)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_71(cpu): # 71 LD (HL),C
     cpu.mb.setitem(cpu.HL, cpu.C)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_72(cpu): # 72 LD (HL),D
     cpu.mb.setitem(cpu.HL, cpu.D)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_73(cpu): # 73 LD (HL),E
     cpu.mb.setitem(cpu.HL, cpu.E)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_74(cpu): # 74 LD (HL),H
     cpu.mb.setitem(cpu.HL, (cpu.HL >> 8))
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_75(cpu): # 75 LD (HL),L
     cpu.mb.setitem(cpu.HL, (cpu.HL & 0xFF))
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -956,60 +1073,70 @@ def HALT_76(cpu): # 76 HALT
         cpu.halted = True
     else:
         cpu.PC += 1
+        cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_77(cpu): # 77 LD (HL),A
     cpu.mb.setitem(cpu.HL, cpu.A)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_78(cpu): # 78 LD A,B
     cpu.A = cpu.B
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_79(cpu): # 79 LD A,C
     cpu.A = cpu.C
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_7A(cpu): # 7A LD A,D
     cpu.A = cpu.D
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_7B(cpu): # 7B LD A,E
     cpu.A = cpu.E
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_7C(cpu): # 7C LD A,H
     cpu.A = (cpu.HL >> 8)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_7D(cpu): # 7D LD A,L
     cpu.A = (cpu.HL & 0xFF)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
 def LD_7E(cpu): # 7E LD A,(HL)
     cpu.A = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_7F(cpu): # 7F LD A,A
     cpu.A = cpu.A
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1024,6 +1151,7 @@ def ADD_80(cpu): # 80 ADD A,B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1038,6 +1166,7 @@ def ADD_81(cpu): # 81 ADD A,C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1052,6 +1181,7 @@ def ADD_82(cpu): # 82 ADD A,D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1066,6 +1196,7 @@ def ADD_83(cpu): # 83 ADD A,E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1080,6 +1211,7 @@ def ADD_84(cpu): # 84 ADD A,H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1094,6 +1226,7 @@ def ADD_85(cpu): # 85 ADD A,L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1108,6 +1241,7 @@ def ADD_86(cpu): # 86 ADD A,(HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1122,6 +1256,7 @@ def ADD_87(cpu): # 87 ADD A,A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1136,6 +1271,7 @@ def ADC_88(cpu): # 88 ADC A,B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1150,6 +1286,7 @@ def ADC_89(cpu): # 89 ADC A,C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1164,6 +1301,7 @@ def ADC_8A(cpu): # 8A ADC A,D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1178,6 +1316,7 @@ def ADC_8B(cpu): # 8B ADC A,E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1192,6 +1331,7 @@ def ADC_8C(cpu): # 8C ADC A,H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1206,6 +1346,7 @@ def ADC_8D(cpu): # 8D ADC A,L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1220,6 +1361,7 @@ def ADC_8E(cpu): # 8E ADC A,(HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1234,6 +1376,7 @@ def ADC_8F(cpu): # 8F ADC A,A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1248,6 +1391,7 @@ def SUB_90(cpu): # 90 SUB B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1262,6 +1406,7 @@ def SUB_91(cpu): # 91 SUB C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1276,6 +1421,7 @@ def SUB_92(cpu): # 92 SUB D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1290,6 +1436,7 @@ def SUB_93(cpu): # 93 SUB E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1304,6 +1451,7 @@ def SUB_94(cpu): # 94 SUB H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1318,6 +1466,7 @@ def SUB_95(cpu): # 95 SUB L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1332,6 +1481,7 @@ def SUB_96(cpu): # 96 SUB (HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1346,6 +1496,7 @@ def SUB_97(cpu): # 97 SUB A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1360,6 +1511,7 @@ def SBC_98(cpu): # 98 SBC A,B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1374,6 +1526,7 @@ def SBC_99(cpu): # 99 SBC A,C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1388,6 +1541,7 @@ def SBC_9A(cpu): # 9A SBC A,D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1402,6 +1556,7 @@ def SBC_9B(cpu): # 9B SBC A,E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1416,6 +1571,7 @@ def SBC_9C(cpu): # 9C SBC A,H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1430,6 +1586,7 @@ def SBC_9D(cpu): # 9D SBC A,L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1444,6 +1601,7 @@ def SBC_9E(cpu): # 9E SBC A,(HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1458,6 +1616,7 @@ def SBC_9F(cpu): # 9F SBC A,A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1470,6 +1629,7 @@ def AND_A0(cpu): # A0 AND B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1482,6 +1642,7 @@ def AND_A1(cpu): # A1 AND C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1494,6 +1655,7 @@ def AND_A2(cpu): # A2 AND D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1506,6 +1668,7 @@ def AND_A3(cpu): # A3 AND E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1518,6 +1681,7 @@ def AND_A4(cpu): # A4 AND H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1530,6 +1694,7 @@ def AND_A5(cpu): # A5 AND L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1542,6 +1707,7 @@ def AND_A6(cpu): # A6 AND (HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1554,6 +1720,7 @@ def AND_A7(cpu): # A7 AND A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1566,6 +1733,7 @@ def XOR_A8(cpu): # A8 XOR B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1578,6 +1746,7 @@ def XOR_A9(cpu): # A9 XOR C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1590,6 +1759,7 @@ def XOR_AA(cpu): # AA XOR D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1602,6 +1772,7 @@ def XOR_AB(cpu): # AB XOR E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1614,6 +1785,7 @@ def XOR_AC(cpu): # AC XOR H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1626,6 +1798,7 @@ def XOR_AD(cpu): # AD XOR L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1638,6 +1811,7 @@ def XOR_AE(cpu): # AE XOR (HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1650,6 +1824,7 @@ def XOR_AF(cpu): # AF XOR A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1662,6 +1837,7 @@ def OR_B0(cpu): # B0 OR B
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1674,6 +1850,7 @@ def OR_B1(cpu): # B1 OR C
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1686,6 +1863,7 @@ def OR_B2(cpu): # B2 OR D
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1698,6 +1876,7 @@ def OR_B3(cpu): # B3 OR E
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1710,6 +1889,7 @@ def OR_B4(cpu): # B4 OR H
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1722,6 +1902,7 @@ def OR_B5(cpu): # B5 OR L
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1734,6 +1915,7 @@ def OR_B6(cpu): # B6 OR (HL)
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1746,6 +1928,7 @@ def OR_B7(cpu): # B7 OR A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1759,6 +1942,7 @@ def CP_B8(cpu): # B8 CP B
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1772,6 +1956,7 @@ def CP_B9(cpu): # B9 CP C
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1785,6 +1970,7 @@ def CP_BA(cpu): # BA CP D
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1798,6 +1984,7 @@ def CP_BB(cpu): # BB CP E
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1811,6 +1998,7 @@ def CP_BC(cpu): # BC CP H
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1824,6 +2012,7 @@ def CP_BD(cpu): # BD CP L
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1837,6 +2026,7 @@ def CP_BE(cpu): # BE CP (HL)
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -1850,6 +2040,7 @@ def CP_BF(cpu): # BF CP A
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1858,6 +2049,7 @@ def RET_C0(cpu): # C0 RET NZ
         cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
+        cpu.SP &= 0xFFFF
         return 20
     else:
         cpu.PC += 1
@@ -1869,7 +2061,9 @@ def POP_C1(cpu): # C1 POP BC
     cpu.B = cpu.mb.getitem(cpu.SP+1) # High
     cpu.C = cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 12
 
 
@@ -1879,6 +2073,7 @@ def JP_C2(cpu, v): # C2 JP NZ,a16
         return 16
     else:
         cpu.PC += 3
+        cpu.PC &= 0xFFFF
         return 12
 
 
@@ -1894,6 +2089,7 @@ def CALL_C4(cpu, v): # C4 CALL NZ,a16
         cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
         cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
+        cpu.SP &= 0xFFFF
         cpu.PC = v
         return 24
     else:
@@ -1904,7 +2100,9 @@ def PUSH_C5(cpu): # C5 PUSH BC
     cpu.mb.setitem(cpu.SP-1, cpu.B) # High
     cpu.mb.setitem(cpu.SP-2, cpu.C) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -1919,14 +2117,17 @@ def ADD_C6(cpu, v): # C6 ADD A,d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_C7(cpu): # C7 RST 00H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 0
     return 16
 
@@ -1936,6 +2137,7 @@ def RET_C8(cpu): # C8 RET Z
         cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
+        cpu.SP &= 0xFFFF
         return 20
     else:
         cpu.PC += 1
@@ -1947,6 +2149,7 @@ def RET_C9(cpu): # C9 RET
     cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High
     cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
+    cpu.SP &= 0xFFFF
     return 16
 
 
@@ -1956,12 +2159,14 @@ def JP_CA(cpu, v): # CA JP Z,a16
         return 16
     else:
         cpu.PC += 3
+        cpu.PC &= 0xFFFF
         return 12
 
 
 def PREFIX_CB(cpu): # CB PREFIX CB
     raise Exception('CB cannot be called!')
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -1972,6 +2177,7 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
         cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
         cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
+        cpu.SP &= 0xFFFF
         cpu.PC = v
         return 24
     else:
@@ -1984,6 +2190,7 @@ def CALL_CD(cpu, v): # CD CALL a16
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = v
     return 24
 
@@ -1999,14 +2206,17 @@ def ADC_CE(cpu, v): # CE ADC A,d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_CF(cpu): # CF RST 08H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 8
     return 16
 
@@ -2016,6 +2226,7 @@ def RET_D0(cpu): # D0 RET NC
         cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
+        cpu.SP &= 0xFFFF
         return 20
     else:
         cpu.PC += 1
@@ -2027,7 +2238,9 @@ def POP_D1(cpu): # D1 POP DE
     cpu.D = cpu.mb.getitem(cpu.SP+1) # High
     cpu.E = cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 12
 
 
@@ -2037,6 +2250,7 @@ def JP_D2(cpu, v): # D2 JP NC,a16
         return 16
     else:
         cpu.PC += 3
+        cpu.PC &= 0xFFFF
         return 12
 
 
@@ -2047,6 +2261,7 @@ def CALL_D4(cpu, v): # D4 CALL NC,a16
         cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
         cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
+        cpu.SP &= 0xFFFF
         cpu.PC = v
         return 24
     else:
@@ -2057,7 +2272,9 @@ def PUSH_D5(cpu): # D5 PUSH DE
     cpu.mb.setitem(cpu.SP-1, cpu.D) # High
     cpu.mb.setitem(cpu.SP-2, cpu.E) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2072,14 +2289,17 @@ def SUB_D6(cpu, v): # D6 SUB d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_D7(cpu): # D7 RST 10H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 16
     return 16
 
@@ -2089,6 +2309,7 @@ def RET_D8(cpu): # D8 RET C
         cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
+        cpu.SP &= 0xFFFF
         return 20
     else:
         cpu.PC += 1
@@ -2101,6 +2322,7 @@ def RETI_D9(cpu): # D9 RETI
     cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High
     cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
+    cpu.SP &= 0xFFFF
     return 16
 
 
@@ -2110,6 +2332,7 @@ def JP_DA(cpu, v): # DA JP C,a16
         return 16
     else:
         cpu.PC += 3
+        cpu.PC &= 0xFFFF
         return 12
 
 
@@ -2120,6 +2343,7 @@ def CALL_DC(cpu, v): # DC CALL C,a16
         cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
         cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
+        cpu.SP &= 0xFFFF
         cpu.PC = v
         return 24
     else:
@@ -2137,14 +2361,17 @@ def SBC_DE(cpu, v): # DE SBC A,d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_DF(cpu): # DF RST 18H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 24
     return 16
 
@@ -2152,19 +2379,23 @@ def RST_DF(cpu): # DF RST 18H
 def LDH_E0(cpu, v): # E0 LDH (a8),A
     cpu.mb.setitem(v + 0xFF00, cpu.A)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def POP_E1(cpu): # E1 POP HL
     cpu.HL = (cpu.mb.getitem(cpu.SP+1) << 8) + cpu.mb.getitem(cpu.SP) # High
     cpu.SP += 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_E2(cpu): # E2 LD (C),A
     cpu.mb.setitem(0xFF00 + cpu.C, cpu.A)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2172,7 +2403,9 @@ def PUSH_E5(cpu): # E5 PUSH HL
     cpu.mb.setitem(cpu.SP-1, cpu.HL >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.HL & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2185,14 +2418,17 @@ def AND_E6(cpu, v): # E6 AND d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_E7(cpu): # E7 RST 20H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 32
     return 16
 
@@ -2207,6 +2443,7 @@ def ADD_E8(cpu, v): # E8 ADD SP,r8
     t &= 0xFFFF
     cpu.SP = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2218,6 +2455,7 @@ def JP_E9(cpu): # E9 JP (HL)
 def LD_EA(cpu, v): # EA LD (a16),A
     cpu.mb.setitem(v, cpu.A)
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2230,14 +2468,17 @@ def XOR_EE(cpu, v): # EE XOR d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_EF(cpu): # EF RST 28H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 40
     return 16
 
@@ -2245,6 +2486,7 @@ def RST_EF(cpu): # EF RST 28H
 def LDH_F0(cpu, v): # F0 LDH A,(a8)
     cpu.A = cpu.mb.getitem(v + 0xFF00)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 12
 
 
@@ -2252,19 +2494,23 @@ def POP_F1(cpu): # F1 POP AF
     cpu.A = cpu.mb.getitem(cpu.SP+1) # High
     cpu.F = cpu.mb.getitem(cpu.SP) & 0xF0 & 0xF0 # Low
     cpu.SP += 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_F2(cpu): # F2 LD A,(C)
     cpu.A = cpu.mb.getitem(0xFF00 + cpu.C)
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def DI_F3(cpu): # F3 DI
     cpu.interrupt_master_enable = False
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -2272,7 +2518,9 @@ def PUSH_F5(cpu): # F5 PUSH AF
     cpu.mb.setitem(cpu.SP-1, cpu.A) # High
     cpu.mb.setitem(cpu.SP-2, cpu.F & 0xF0) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2285,14 +2533,17 @@ def OR_F6(cpu, v): # F6 OR d8
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_F7(cpu): # F7 RST 30H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 48
     return 16
 
@@ -2307,24 +2558,28 @@ def LD_F8(cpu, v): # F8 LD HL,SP+r8
     cpu.F |= flag
     cpu.HL &= 0xFFFF
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 12
 
 
 def LD_F9(cpu): # F9 LD SP,HL
     cpu.SP = cpu.HL
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def LD_FA(cpu, v): # FA LD A,(a16)
     cpu.A = cpu.mb.getitem(v)
     cpu.PC += 3
+    cpu.PC &= 0xFFFF
     return 16
 
 
 def EI_FB(cpu): # FB EI
     cpu.interrupt_master_enable = True
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     return 4
 
 
@@ -2338,14 +2593,17 @@ def CP_FE(cpu, v): # FE CP d8
     cpu.F |= flag
     t &= 0xFF
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
 def RST_FF(cpu): # FF RST 38H
     cpu.PC += 1
+    cpu.PC &= 0xFFFF
     cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High
     cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
+    cpu.SP &= 0xFFFF
     cpu.PC = 56
     return 16
 
@@ -2360,6 +2618,7 @@ def RLC_100(cpu): # 100 RLC B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2373,6 +2632,7 @@ def RLC_101(cpu): # 101 RLC C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2386,6 +2646,7 @@ def RLC_102(cpu): # 102 RLC D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2399,6 +2660,7 @@ def RLC_103(cpu): # 103 RLC E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2412,6 +2674,7 @@ def RLC_104(cpu): # 104 RLC H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2425,6 +2688,7 @@ def RLC_105(cpu): # 105 RLC L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2438,6 +2702,7 @@ def RLC_106(cpu): # 106 RLC (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2451,6 +2716,7 @@ def RLC_107(cpu): # 107 RLC A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2464,6 +2730,7 @@ def RRC_108(cpu): # 108 RRC B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2477,6 +2744,7 @@ def RRC_109(cpu): # 109 RRC C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2490,6 +2758,7 @@ def RRC_10A(cpu): # 10A RRC D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2503,6 +2772,7 @@ def RRC_10B(cpu): # 10B RRC E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2516,6 +2786,7 @@ def RRC_10C(cpu): # 10C RRC H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2529,6 +2800,7 @@ def RRC_10D(cpu): # 10D RRC L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2542,6 +2814,7 @@ def RRC_10E(cpu): # 10E RRC (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2555,6 +2828,7 @@ def RRC_10F(cpu): # 10F RRC A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2568,6 +2842,7 @@ def RL_110(cpu): # 110 RL B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2581,6 +2856,7 @@ def RL_111(cpu): # 111 RL C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2594,6 +2870,7 @@ def RL_112(cpu): # 112 RL D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2607,6 +2884,7 @@ def RL_113(cpu): # 113 RL E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2620,6 +2898,7 @@ def RL_114(cpu): # 114 RL H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2633,6 +2912,7 @@ def RL_115(cpu): # 115 RL L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2646,6 +2926,7 @@ def RL_116(cpu): # 116 RL (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2659,6 +2940,7 @@ def RL_117(cpu): # 117 RL A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2672,6 +2954,7 @@ def RR_118(cpu): # 118 RR B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2685,6 +2968,7 @@ def RR_119(cpu): # 119 RR C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2698,6 +2982,7 @@ def RR_11A(cpu): # 11A RR D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2711,6 +2996,7 @@ def RR_11B(cpu): # 11B RR E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2724,6 +3010,7 @@ def RR_11C(cpu): # 11C RR H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2737,6 +3024,7 @@ def RR_11D(cpu): # 11D RR L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2750,6 +3038,7 @@ def RR_11E(cpu): # 11E RR (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2763,6 +3052,7 @@ def RR_11F(cpu): # 11F RR A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2776,6 +3066,7 @@ def SLA_120(cpu): # 120 SLA B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2789,6 +3080,7 @@ def SLA_121(cpu): # 121 SLA C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2802,6 +3094,7 @@ def SLA_122(cpu): # 122 SLA D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2815,6 +3108,7 @@ def SLA_123(cpu): # 123 SLA E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2828,6 +3122,7 @@ def SLA_124(cpu): # 124 SLA H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2841,6 +3136,7 @@ def SLA_125(cpu): # 125 SLA L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2854,6 +3150,7 @@ def SLA_126(cpu): # 126 SLA (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2867,6 +3164,7 @@ def SLA_127(cpu): # 127 SLA A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2880,6 +3178,7 @@ def SRA_128(cpu): # 128 SRA B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2893,6 +3192,7 @@ def SRA_129(cpu): # 129 SRA C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2906,6 +3206,7 @@ def SRA_12A(cpu): # 12A SRA D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2919,6 +3220,7 @@ def SRA_12B(cpu): # 12B SRA E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2932,6 +3234,7 @@ def SRA_12C(cpu): # 12C SRA H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2945,6 +3248,7 @@ def SRA_12D(cpu): # 12D SRA L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2958,6 +3262,7 @@ def SRA_12E(cpu): # 12E SRA (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -2971,6 +3276,7 @@ def SRA_12F(cpu): # 12F SRA A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2983,6 +3289,7 @@ def SWAP_130(cpu): # 130 SWAP B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -2995,6 +3302,7 @@ def SWAP_131(cpu): # 131 SWAP C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3007,6 +3315,7 @@ def SWAP_132(cpu): # 132 SWAP D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3019,6 +3328,7 @@ def SWAP_133(cpu): # 133 SWAP E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3031,6 +3341,7 @@ def SWAP_134(cpu): # 134 SWAP H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3043,6 +3354,7 @@ def SWAP_135(cpu): # 135 SWAP L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3055,6 +3367,7 @@ def SWAP_136(cpu): # 136 SWAP (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3067,6 +3380,7 @@ def SWAP_137(cpu): # 137 SWAP A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3080,6 +3394,7 @@ def SRL_138(cpu): # 138 SRL B
     t &= 0xFF
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3093,6 +3408,7 @@ def SRL_139(cpu): # 139 SRL C
     t &= 0xFF
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3106,6 +3422,7 @@ def SRL_13A(cpu): # 13A SRL D
     t &= 0xFF
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3119,6 +3436,7 @@ def SRL_13B(cpu): # 13B SRL E
     t &= 0xFF
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3132,6 +3450,7 @@ def SRL_13C(cpu): # 13C SRL H
     t &= 0xFF
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3145,6 +3464,7 @@ def SRL_13D(cpu): # 13D SRL L
     t &= 0xFF
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3158,6 +3478,7 @@ def SRL_13E(cpu): # 13E SRL (HL)
     t &= 0xFF
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3171,6 +3492,7 @@ def SRL_13F(cpu): # 13F SRL A
     t &= 0xFF
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3181,6 +3503,7 @@ def BIT_140(cpu): # 140 BIT 0,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3191,6 +3514,7 @@ def BIT_141(cpu): # 141 BIT 0,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3201,6 +3525,7 @@ def BIT_142(cpu): # 142 BIT 0,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3211,6 +3536,7 @@ def BIT_143(cpu): # 143 BIT 0,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3221,6 +3547,7 @@ def BIT_144(cpu): # 144 BIT 0,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3231,6 +3558,7 @@ def BIT_145(cpu): # 145 BIT 0,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3241,6 +3569,7 @@ def BIT_146(cpu): # 146 BIT 0,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3251,6 +3580,7 @@ def BIT_147(cpu): # 147 BIT 0,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3261,6 +3591,7 @@ def BIT_148(cpu): # 148 BIT 1,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3271,6 +3602,7 @@ def BIT_149(cpu): # 149 BIT 1,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3281,6 +3613,7 @@ def BIT_14A(cpu): # 14A BIT 1,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3291,6 +3624,7 @@ def BIT_14B(cpu): # 14B BIT 1,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3301,6 +3635,7 @@ def BIT_14C(cpu): # 14C BIT 1,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3311,6 +3646,7 @@ def BIT_14D(cpu): # 14D BIT 1,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3321,6 +3657,7 @@ def BIT_14E(cpu): # 14E BIT 1,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3331,6 +3668,7 @@ def BIT_14F(cpu): # 14F BIT 1,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3341,6 +3679,7 @@ def BIT_150(cpu): # 150 BIT 2,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3351,6 +3690,7 @@ def BIT_151(cpu): # 151 BIT 2,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3361,6 +3701,7 @@ def BIT_152(cpu): # 152 BIT 2,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3371,6 +3712,7 @@ def BIT_153(cpu): # 153 BIT 2,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3381,6 +3723,7 @@ def BIT_154(cpu): # 154 BIT 2,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3391,6 +3734,7 @@ def BIT_155(cpu): # 155 BIT 2,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3401,6 +3745,7 @@ def BIT_156(cpu): # 156 BIT 2,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3411,6 +3756,7 @@ def BIT_157(cpu): # 157 BIT 2,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3421,6 +3767,7 @@ def BIT_158(cpu): # 158 BIT 3,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3431,6 +3778,7 @@ def BIT_159(cpu): # 159 BIT 3,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3441,6 +3789,7 @@ def BIT_15A(cpu): # 15A BIT 3,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3451,6 +3800,7 @@ def BIT_15B(cpu): # 15B BIT 3,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3461,6 +3811,7 @@ def BIT_15C(cpu): # 15C BIT 3,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3471,6 +3822,7 @@ def BIT_15D(cpu): # 15D BIT 3,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3481,6 +3833,7 @@ def BIT_15E(cpu): # 15E BIT 3,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3491,6 +3844,7 @@ def BIT_15F(cpu): # 15F BIT 3,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3501,6 +3855,7 @@ def BIT_160(cpu): # 160 BIT 4,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3511,6 +3866,7 @@ def BIT_161(cpu): # 161 BIT 4,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3521,6 +3877,7 @@ def BIT_162(cpu): # 162 BIT 4,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3531,6 +3888,7 @@ def BIT_163(cpu): # 163 BIT 4,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3541,6 +3899,7 @@ def BIT_164(cpu): # 164 BIT 4,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3551,6 +3910,7 @@ def BIT_165(cpu): # 165 BIT 4,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3561,6 +3921,7 @@ def BIT_166(cpu): # 166 BIT 4,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3571,6 +3932,7 @@ def BIT_167(cpu): # 167 BIT 4,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3581,6 +3943,7 @@ def BIT_168(cpu): # 168 BIT 5,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3591,6 +3954,7 @@ def BIT_169(cpu): # 169 BIT 5,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3601,6 +3965,7 @@ def BIT_16A(cpu): # 16A BIT 5,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3611,6 +3976,7 @@ def BIT_16B(cpu): # 16B BIT 5,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3621,6 +3987,7 @@ def BIT_16C(cpu): # 16C BIT 5,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3631,6 +3998,7 @@ def BIT_16D(cpu): # 16D BIT 5,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3641,6 +4009,7 @@ def BIT_16E(cpu): # 16E BIT 5,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3651,6 +4020,7 @@ def BIT_16F(cpu): # 16F BIT 5,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3661,6 +4031,7 @@ def BIT_170(cpu): # 170 BIT 6,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3671,6 +4042,7 @@ def BIT_171(cpu): # 171 BIT 6,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3681,6 +4053,7 @@ def BIT_172(cpu): # 172 BIT 6,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3691,6 +4064,7 @@ def BIT_173(cpu): # 173 BIT 6,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3701,6 +4075,7 @@ def BIT_174(cpu): # 174 BIT 6,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3711,6 +4086,7 @@ def BIT_175(cpu): # 175 BIT 6,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3721,6 +4097,7 @@ def BIT_176(cpu): # 176 BIT 6,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3731,6 +4108,7 @@ def BIT_177(cpu): # 177 BIT 6,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3741,6 +4119,7 @@ def BIT_178(cpu): # 178 BIT 7,B
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3751,6 +4130,7 @@ def BIT_179(cpu): # 179 BIT 7,C
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3761,6 +4141,7 @@ def BIT_17A(cpu): # 17A BIT 7,D
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3771,6 +4152,7 @@ def BIT_17B(cpu): # 17B BIT 7,E
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3781,6 +4163,7 @@ def BIT_17C(cpu): # 17C BIT 7,H
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3791,6 +4174,7 @@ def BIT_17D(cpu): # 17D BIT 7,L
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3801,6 +4185,7 @@ def BIT_17E(cpu): # 17E BIT 7,(HL)
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3811,6 +4196,7 @@ def BIT_17F(cpu): # 17F BIT 7,A
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3818,6 +4204,7 @@ def RES_180(cpu): # 180 RES 0,B
     t = cpu.B & ~(1 << 0)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3825,6 +4212,7 @@ def RES_181(cpu): # 181 RES 0,C
     t = cpu.C & ~(1 << 0)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3832,6 +4220,7 @@ def RES_182(cpu): # 182 RES 0,D
     t = cpu.D & ~(1 << 0)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3839,6 +4228,7 @@ def RES_183(cpu): # 183 RES 0,E
     t = cpu.E & ~(1 << 0)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3846,6 +4236,7 @@ def RES_184(cpu): # 184 RES 0,H
     t = (cpu.HL >> 8) & ~(1 << 0)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3853,6 +4244,7 @@ def RES_185(cpu): # 185 RES 0,L
     t = (cpu.HL & 0xFF) & ~(1 << 0)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3860,6 +4252,7 @@ def RES_186(cpu): # 186 RES 0,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 0)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3867,6 +4260,7 @@ def RES_187(cpu): # 187 RES 0,A
     t = cpu.A & ~(1 << 0)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3874,6 +4268,7 @@ def RES_188(cpu): # 188 RES 1,B
     t = cpu.B & ~(1 << 1)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3881,6 +4276,7 @@ def RES_189(cpu): # 189 RES 1,C
     t = cpu.C & ~(1 << 1)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3888,6 +4284,7 @@ def RES_18A(cpu): # 18A RES 1,D
     t = cpu.D & ~(1 << 1)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3895,6 +4292,7 @@ def RES_18B(cpu): # 18B RES 1,E
     t = cpu.E & ~(1 << 1)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3902,6 +4300,7 @@ def RES_18C(cpu): # 18C RES 1,H
     t = (cpu.HL >> 8) & ~(1 << 1)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3909,6 +4308,7 @@ def RES_18D(cpu): # 18D RES 1,L
     t = (cpu.HL & 0xFF) & ~(1 << 1)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3916,6 +4316,7 @@ def RES_18E(cpu): # 18E RES 1,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 1)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3923,6 +4324,7 @@ def RES_18F(cpu): # 18F RES 1,A
     t = cpu.A & ~(1 << 1)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3930,6 +4332,7 @@ def RES_190(cpu): # 190 RES 2,B
     t = cpu.B & ~(1 << 2)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3937,6 +4340,7 @@ def RES_191(cpu): # 191 RES 2,C
     t = cpu.C & ~(1 << 2)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3944,6 +4348,7 @@ def RES_192(cpu): # 192 RES 2,D
     t = cpu.D & ~(1 << 2)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3951,6 +4356,7 @@ def RES_193(cpu): # 193 RES 2,E
     t = cpu.E & ~(1 << 2)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3958,6 +4364,7 @@ def RES_194(cpu): # 194 RES 2,H
     t = (cpu.HL >> 8) & ~(1 << 2)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3965,6 +4372,7 @@ def RES_195(cpu): # 195 RES 2,L
     t = (cpu.HL & 0xFF) & ~(1 << 2)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3972,6 +4380,7 @@ def RES_196(cpu): # 196 RES 2,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 2)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -3979,6 +4388,7 @@ def RES_197(cpu): # 197 RES 2,A
     t = cpu.A & ~(1 << 2)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3986,6 +4396,7 @@ def RES_198(cpu): # 198 RES 3,B
     t = cpu.B & ~(1 << 3)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -3993,6 +4404,7 @@ def RES_199(cpu): # 199 RES 3,C
     t = cpu.C & ~(1 << 3)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4000,6 +4412,7 @@ def RES_19A(cpu): # 19A RES 3,D
     t = cpu.D & ~(1 << 3)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4007,6 +4420,7 @@ def RES_19B(cpu): # 19B RES 3,E
     t = cpu.E & ~(1 << 3)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4014,6 +4428,7 @@ def RES_19C(cpu): # 19C RES 3,H
     t = (cpu.HL >> 8) & ~(1 << 3)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4021,6 +4436,7 @@ def RES_19D(cpu): # 19D RES 3,L
     t = (cpu.HL & 0xFF) & ~(1 << 3)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4028,6 +4444,7 @@ def RES_19E(cpu): # 19E RES 3,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 3)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4035,6 +4452,7 @@ def RES_19F(cpu): # 19F RES 3,A
     t = cpu.A & ~(1 << 3)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4042,6 +4460,7 @@ def RES_1A0(cpu): # 1A0 RES 4,B
     t = cpu.B & ~(1 << 4)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4049,6 +4468,7 @@ def RES_1A1(cpu): # 1A1 RES 4,C
     t = cpu.C & ~(1 << 4)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4056,6 +4476,7 @@ def RES_1A2(cpu): # 1A2 RES 4,D
     t = cpu.D & ~(1 << 4)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4063,6 +4484,7 @@ def RES_1A3(cpu): # 1A3 RES 4,E
     t = cpu.E & ~(1 << 4)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4070,6 +4492,7 @@ def RES_1A4(cpu): # 1A4 RES 4,H
     t = (cpu.HL >> 8) & ~(1 << 4)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4077,6 +4500,7 @@ def RES_1A5(cpu): # 1A5 RES 4,L
     t = (cpu.HL & 0xFF) & ~(1 << 4)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4084,6 +4508,7 @@ def RES_1A6(cpu): # 1A6 RES 4,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 4)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4091,6 +4516,7 @@ def RES_1A7(cpu): # 1A7 RES 4,A
     t = cpu.A & ~(1 << 4)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4098,6 +4524,7 @@ def RES_1A8(cpu): # 1A8 RES 5,B
     t = cpu.B & ~(1 << 5)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4105,6 +4532,7 @@ def RES_1A9(cpu): # 1A9 RES 5,C
     t = cpu.C & ~(1 << 5)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4112,6 +4540,7 @@ def RES_1AA(cpu): # 1AA RES 5,D
     t = cpu.D & ~(1 << 5)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4119,6 +4548,7 @@ def RES_1AB(cpu): # 1AB RES 5,E
     t = cpu.E & ~(1 << 5)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4126,6 +4556,7 @@ def RES_1AC(cpu): # 1AC RES 5,H
     t = (cpu.HL >> 8) & ~(1 << 5)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4133,6 +4564,7 @@ def RES_1AD(cpu): # 1AD RES 5,L
     t = (cpu.HL & 0xFF) & ~(1 << 5)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4140,6 +4572,7 @@ def RES_1AE(cpu): # 1AE RES 5,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 5)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4147,6 +4580,7 @@ def RES_1AF(cpu): # 1AF RES 5,A
     t = cpu.A & ~(1 << 5)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4154,6 +4588,7 @@ def RES_1B0(cpu): # 1B0 RES 6,B
     t = cpu.B & ~(1 << 6)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4161,6 +4596,7 @@ def RES_1B1(cpu): # 1B1 RES 6,C
     t = cpu.C & ~(1 << 6)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4168,6 +4604,7 @@ def RES_1B2(cpu): # 1B2 RES 6,D
     t = cpu.D & ~(1 << 6)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4175,6 +4612,7 @@ def RES_1B3(cpu): # 1B3 RES 6,E
     t = cpu.E & ~(1 << 6)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4182,6 +4620,7 @@ def RES_1B4(cpu): # 1B4 RES 6,H
     t = (cpu.HL >> 8) & ~(1 << 6)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4189,6 +4628,7 @@ def RES_1B5(cpu): # 1B5 RES 6,L
     t = (cpu.HL & 0xFF) & ~(1 << 6)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4196,6 +4636,7 @@ def RES_1B6(cpu): # 1B6 RES 6,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 6)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4203,6 +4644,7 @@ def RES_1B7(cpu): # 1B7 RES 6,A
     t = cpu.A & ~(1 << 6)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4210,6 +4652,7 @@ def RES_1B8(cpu): # 1B8 RES 7,B
     t = cpu.B & ~(1 << 7)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4217,6 +4660,7 @@ def RES_1B9(cpu): # 1B9 RES 7,C
     t = cpu.C & ~(1 << 7)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4224,6 +4668,7 @@ def RES_1BA(cpu): # 1BA RES 7,D
     t = cpu.D & ~(1 << 7)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4231,6 +4676,7 @@ def RES_1BB(cpu): # 1BB RES 7,E
     t = cpu.E & ~(1 << 7)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4238,6 +4684,7 @@ def RES_1BC(cpu): # 1BC RES 7,H
     t = (cpu.HL >> 8) & ~(1 << 7)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4245,6 +4692,7 @@ def RES_1BD(cpu): # 1BD RES 7,L
     t = (cpu.HL & 0xFF) & ~(1 << 7)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4252,6 +4700,7 @@ def RES_1BE(cpu): # 1BE RES 7,(HL)
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 7)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4259,6 +4708,7 @@ def RES_1BF(cpu): # 1BF RES 7,A
     t = cpu.A & ~(1 << 7)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4266,6 +4716,7 @@ def SET_1C0(cpu): # 1C0 SET 0,B
     t = cpu.B | (1 << 0)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4273,6 +4724,7 @@ def SET_1C1(cpu): # 1C1 SET 0,C
     t = cpu.C | (1 << 0)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4280,6 +4732,7 @@ def SET_1C2(cpu): # 1C2 SET 0,D
     t = cpu.D | (1 << 0)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4287,6 +4740,7 @@ def SET_1C3(cpu): # 1C3 SET 0,E
     t = cpu.E | (1 << 0)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4294,6 +4748,7 @@ def SET_1C4(cpu): # 1C4 SET 0,H
     t = (cpu.HL >> 8) | (1 << 0)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4301,6 +4756,7 @@ def SET_1C5(cpu): # 1C5 SET 0,L
     t = (cpu.HL & 0xFF) | (1 << 0)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4308,6 +4764,7 @@ def SET_1C6(cpu): # 1C6 SET 0,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 0)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4315,6 +4772,7 @@ def SET_1C7(cpu): # 1C7 SET 0,A
     t = cpu.A | (1 << 0)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4322,6 +4780,7 @@ def SET_1C8(cpu): # 1C8 SET 1,B
     t = cpu.B | (1 << 1)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4329,6 +4788,7 @@ def SET_1C9(cpu): # 1C9 SET 1,C
     t = cpu.C | (1 << 1)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4336,6 +4796,7 @@ def SET_1CA(cpu): # 1CA SET 1,D
     t = cpu.D | (1 << 1)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4343,6 +4804,7 @@ def SET_1CB(cpu): # 1CB SET 1,E
     t = cpu.E | (1 << 1)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4350,6 +4812,7 @@ def SET_1CC(cpu): # 1CC SET 1,H
     t = (cpu.HL >> 8) | (1 << 1)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4357,6 +4820,7 @@ def SET_1CD(cpu): # 1CD SET 1,L
     t = (cpu.HL & 0xFF) | (1 << 1)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4364,6 +4828,7 @@ def SET_1CE(cpu): # 1CE SET 1,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 1)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4371,6 +4836,7 @@ def SET_1CF(cpu): # 1CF SET 1,A
     t = cpu.A | (1 << 1)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4378,6 +4844,7 @@ def SET_1D0(cpu): # 1D0 SET 2,B
     t = cpu.B | (1 << 2)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4385,6 +4852,7 @@ def SET_1D1(cpu): # 1D1 SET 2,C
     t = cpu.C | (1 << 2)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4392,6 +4860,7 @@ def SET_1D2(cpu): # 1D2 SET 2,D
     t = cpu.D | (1 << 2)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4399,6 +4868,7 @@ def SET_1D3(cpu): # 1D3 SET 2,E
     t = cpu.E | (1 << 2)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4406,6 +4876,7 @@ def SET_1D4(cpu): # 1D4 SET 2,H
     t = (cpu.HL >> 8) | (1 << 2)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4413,6 +4884,7 @@ def SET_1D5(cpu): # 1D5 SET 2,L
     t = (cpu.HL & 0xFF) | (1 << 2)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4420,6 +4892,7 @@ def SET_1D6(cpu): # 1D6 SET 2,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 2)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4427,6 +4900,7 @@ def SET_1D7(cpu): # 1D7 SET 2,A
     t = cpu.A | (1 << 2)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4434,6 +4908,7 @@ def SET_1D8(cpu): # 1D8 SET 3,B
     t = cpu.B | (1 << 3)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4441,6 +4916,7 @@ def SET_1D9(cpu): # 1D9 SET 3,C
     t = cpu.C | (1 << 3)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4448,6 +4924,7 @@ def SET_1DA(cpu): # 1DA SET 3,D
     t = cpu.D | (1 << 3)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4455,6 +4932,7 @@ def SET_1DB(cpu): # 1DB SET 3,E
     t = cpu.E | (1 << 3)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4462,6 +4940,7 @@ def SET_1DC(cpu): # 1DC SET 3,H
     t = (cpu.HL >> 8) | (1 << 3)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4469,6 +4948,7 @@ def SET_1DD(cpu): # 1DD SET 3,L
     t = (cpu.HL & 0xFF) | (1 << 3)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4476,6 +4956,7 @@ def SET_1DE(cpu): # 1DE SET 3,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 3)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4483,6 +4964,7 @@ def SET_1DF(cpu): # 1DF SET 3,A
     t = cpu.A | (1 << 3)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4490,6 +4972,7 @@ def SET_1E0(cpu): # 1E0 SET 4,B
     t = cpu.B | (1 << 4)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4497,6 +4980,7 @@ def SET_1E1(cpu): # 1E1 SET 4,C
     t = cpu.C | (1 << 4)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4504,6 +4988,7 @@ def SET_1E2(cpu): # 1E2 SET 4,D
     t = cpu.D | (1 << 4)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4511,6 +4996,7 @@ def SET_1E3(cpu): # 1E3 SET 4,E
     t = cpu.E | (1 << 4)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4518,6 +5004,7 @@ def SET_1E4(cpu): # 1E4 SET 4,H
     t = (cpu.HL >> 8) | (1 << 4)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4525,6 +5012,7 @@ def SET_1E5(cpu): # 1E5 SET 4,L
     t = (cpu.HL & 0xFF) | (1 << 4)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4532,6 +5020,7 @@ def SET_1E6(cpu): # 1E6 SET 4,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 4)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4539,6 +5028,7 @@ def SET_1E7(cpu): # 1E7 SET 4,A
     t = cpu.A | (1 << 4)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4546,6 +5036,7 @@ def SET_1E8(cpu): # 1E8 SET 5,B
     t = cpu.B | (1 << 5)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4553,6 +5044,7 @@ def SET_1E9(cpu): # 1E9 SET 5,C
     t = cpu.C | (1 << 5)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4560,6 +5052,7 @@ def SET_1EA(cpu): # 1EA SET 5,D
     t = cpu.D | (1 << 5)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4567,6 +5060,7 @@ def SET_1EB(cpu): # 1EB SET 5,E
     t = cpu.E | (1 << 5)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4574,6 +5068,7 @@ def SET_1EC(cpu): # 1EC SET 5,H
     t = (cpu.HL >> 8) | (1 << 5)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4581,6 +5076,7 @@ def SET_1ED(cpu): # 1ED SET 5,L
     t = (cpu.HL & 0xFF) | (1 << 5)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4588,6 +5084,7 @@ def SET_1EE(cpu): # 1EE SET 5,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 5)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4595,6 +5092,7 @@ def SET_1EF(cpu): # 1EF SET 5,A
     t = cpu.A | (1 << 5)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4602,6 +5100,7 @@ def SET_1F0(cpu): # 1F0 SET 6,B
     t = cpu.B | (1 << 6)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4609,6 +5108,7 @@ def SET_1F1(cpu): # 1F1 SET 6,C
     t = cpu.C | (1 << 6)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4616,6 +5116,7 @@ def SET_1F2(cpu): # 1F2 SET 6,D
     t = cpu.D | (1 << 6)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4623,6 +5124,7 @@ def SET_1F3(cpu): # 1F3 SET 6,E
     t = cpu.E | (1 << 6)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4630,6 +5132,7 @@ def SET_1F4(cpu): # 1F4 SET 6,H
     t = (cpu.HL >> 8) | (1 << 6)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4637,6 +5140,7 @@ def SET_1F5(cpu): # 1F5 SET 6,L
     t = (cpu.HL & 0xFF) | (1 << 6)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4644,6 +5148,7 @@ def SET_1F6(cpu): # 1F6 SET 6,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 6)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4651,6 +5156,7 @@ def SET_1F7(cpu): # 1F7 SET 6,A
     t = cpu.A | (1 << 6)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4658,6 +5164,7 @@ def SET_1F8(cpu): # 1F8 SET 7,B
     t = cpu.B | (1 << 7)
     cpu.B = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4665,6 +5172,7 @@ def SET_1F9(cpu): # 1F9 SET 7,C
     t = cpu.C | (1 << 7)
     cpu.C = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4672,6 +5180,7 @@ def SET_1FA(cpu): # 1FA SET 7,D
     t = cpu.D | (1 << 7)
     cpu.D = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4679,6 +5188,7 @@ def SET_1FB(cpu): # 1FB SET 7,E
     t = cpu.E | (1 << 7)
     cpu.E = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4686,6 +5196,7 @@ def SET_1FC(cpu): # 1FC SET 7,H
     t = (cpu.HL >> 8) | (1 << 7)
     cpu.HL = (cpu.HL & 0x00FF) | (t << 8)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4693,6 +5204,7 @@ def SET_1FD(cpu): # 1FD SET 7,L
     t = (cpu.HL & 0xFF) | (1 << 7)
     cpu.HL = (cpu.HL & 0xFF00) | (t & 0xFF)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
@@ -4700,6 +5212,7 @@ def SET_1FE(cpu): # 1FE SET 7,(HL)
     t = cpu.mb.getitem(cpu.HL) | (1 << 7)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 16
 
 
@@ -4707,6 +5220,7 @@ def SET_1FF(cpu): # 1FF SET 7,A
     t = cpu.A | (1 << 7)
     cpu.A = t
     cpu.PC += 2
+    cpu.PC &= 0xFFFF
     return 8
 
 
