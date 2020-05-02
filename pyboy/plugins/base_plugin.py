@@ -156,6 +156,13 @@ class PyBoyGameWrapper(PyBoyPlugin):
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
 
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error("Tried to reset game, but it hasn't been started yet!")
+
         self._set_timer_div(timer_div)
 
     def game_over(self):

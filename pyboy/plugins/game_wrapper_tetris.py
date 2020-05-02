@@ -139,14 +139,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
             randomize_tetromino (bool): Whether to randomize the next Tetromino or not
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
-
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error("Tried to reset game, but it hasn't been started yet!")
-
         self._randomize_next_tetromino(randomize_tetromino)
 
     def _game_area_np(self):

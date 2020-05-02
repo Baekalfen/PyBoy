@@ -129,13 +129,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error("Tried to reset game, but it hasn't been started yet!")
-
     def game_area(self):
         """
         Use this method to get a matrix of the "game area" of the screen. This view is simplified to be perfect for
