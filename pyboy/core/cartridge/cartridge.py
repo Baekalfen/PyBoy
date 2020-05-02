@@ -56,6 +56,7 @@ def load_romfile(filename):
     with open(filename, "rb") as romfile:
         romdata = array("B", romfile.read())
 
+    logger.debug(f"Loading ROM file: {len(romdata)} bytes")
     banksize = 16 * 1024
     if cythonmode:
         return memoryview(romdata).cast("B", shape=(len(romdata) // banksize, banksize))

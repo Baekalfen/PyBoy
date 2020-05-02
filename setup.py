@@ -13,6 +13,8 @@ from pathlib import Path
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
+from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
+
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
@@ -32,6 +34,7 @@ def load_requirements(filename):
 
 requirements = load_requirements("requirements.txt")
 
+MSYS = os.getenv("MSYS")
 CYTHON = platform.python_implementation() != "PyPy"
 
 if CYTHON:
@@ -82,10 +85,12 @@ class PyTest(test):
             base = Path(f"{script_path}/examples/")
 
             for gamewrapper, rom in [
-                ("gamewrapper_tetris.py", f"{script_path}/ROMs/Tetris.gb"),
-                ("gamewrapper_mario.py", f"{script_path}/ROMs/SuperMarioLand.gb"),
-                ("gamewrapper_kirby.py", f"{script_path}/ROMs/Kirby.gb"),
+                ("gamewrapper_tetris.py", tetris_rom),
+                ("gamewrapper_mario.py", supermarioland_rom),
+                ("gamewrapper_kirby.py", kirby_rom),
             ]:
+                if rom is None:
+                    continue
 
                 return_code = subprocess.Popen([sys.executable,
                                                 str(base / gamewrapper),
@@ -95,7 +100,7 @@ class PyTest(test):
 
         import pytest
         args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
-        # args = ["tests/", "-v", "-x"]
+        # args = ["tests/", "-v", "-x"] # No multithreading, fail fast
         if codecov: # TODO: There's probably a more correct way to read the argv flags
             args += ["--cov=./"]
         sys.exit(pytest.main(args))
@@ -299,17 +304,17 @@ setup(
     },
     install_requires=requirements,
     tests_require=[
-        "pytest",
+        "pytest<=5.3", # Bug with pytest and xdist https://github.com/pytest-dev/pytest/issues/6925
         "pytest-xdist",
         "pyopengl",
-        "gym" if CYTHON else "",
+        "gym" if CYTHON and not MSYS else "",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
-            "gym" if CYTHON else "",
+            "gym" if CYTHON and not MSYS else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it

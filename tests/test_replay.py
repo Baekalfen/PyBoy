@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
 
-from . import utils
+from tests import utils
 
 event_filter = [
     WindowEvent.PRESS_SPEED_UP,

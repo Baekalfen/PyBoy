@@ -72,7 +72,6 @@ tmp.state
 /site-packages
 /share
 
-
 # LaTeX files
 Projects/Projects.aux
 Projects/Projects.bbl
@@ -94,3 +93,6 @@ default_rom/default_rom.sym
 
 test.replay
 ci_secrets.tar
+
+mooneye/
+blargg/
