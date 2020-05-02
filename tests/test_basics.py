@@ -11,7 +11,7 @@ from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
 
-from .utils import boot_rom, default_rom, kirby_rom
+from tests.utils import boot_rom, default_rom, kirby_rom
 
 
 @pytest.mark.skipif(not boot_rom, reason="ROM not present")
