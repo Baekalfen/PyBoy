@@ -22,7 +22,7 @@ cpdef list sdl2_event_pump(list)
 
 cdef class WindowSDL2(PyBoyWindowPlugin):
 
-    cdef uint32_t _ticks
+    cdef float _ftime
     cdef dict _key_down
     cdef dict _key_up
 
@@ -30,7 +30,7 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
     cdef sdl2.SDL_Renderer *_sdlrenderer
     cdef sdl2.SDL_Texture *_sdltexturebuffer
 
-    @cython.locals(now=uint32_t, delay=cython.int)
+    @cython.locals(now=float, delay=cython.int)
     cdef bint frame_limiter(self, int)
 
     cdef inline void _update_display(self):

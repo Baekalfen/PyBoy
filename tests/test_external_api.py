@@ -13,7 +13,7 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
 
-from .utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
+from tests.utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
 def test_misc():
@@ -62,15 +62,14 @@ def test_tiles():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not (boot_rom and any_rom), reason="ROM not present")
+@pytest.mark.skipif(not boot_rom or any_rom == default_rom, reason="ROM not present")
 def test_screen_buffer_and_image():
     cformat = "RGBA"
     boot_logo_hash_predigested = b"=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C"
     boot_logo_hash_predigested = \
         b"s\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|"
-    window = "headless"
 
-    pyboy = PyBoy(any_rom, window_type=window, window_scale=1, bootrom_file=boot_rom)
+    pyboy = PyBoy(any_rom, window_type="headless", bootrom_file=boot_rom)
     pyboy.set_emulation_speed(0)
     for n in range(275): # Iterate to boot logo
         pyboy.tick()
