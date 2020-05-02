@@ -78,16 +78,18 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             end_score = self.score + self.time_left * 10
             self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
-    def start_game(self):
+    def start_game(self, timer_div=None):
         """
         Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
         the first frame it's possible.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Args:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
-        if not self.pyboy.frame_count == 0:
-            logger.warning("Calling start_game from an already running game. This might not work.")
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         # Boot screen
         while True:
@@ -115,13 +117,18 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-    def reset_game(self):
+    def reset_game(self, timer_div=None):
         """
         After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
 
         If you want to reset to later parts of the game -- for example world 1-2 or 3-1 -- use the methods
         `pyboy.PyBoy.save_state` and `pyboy.PyBoy.load_state`.
+
+        Args:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
         if self.game_has_started:
             self.saved_state.seek(0)
             self.pyboy.load_state(self.saved_state)

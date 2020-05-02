@@ -35,6 +35,8 @@ tetromino_table = {
 }
 inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
 
+NEXT_TETROMINO_ADDR = 0xC213
+
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
@@ -92,32 +94,19 @@ class GameWrapperTetris(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score
 
-    def _set_seed(self, seed, randomize):
-        if randomize:
-            self.pyboy.mb.timer.DIV = random.getrandbits(8)
-        elif seed is not None:
-            self.pyboy.mb.timer.DIV = seed & 0xFF
-
-    def start_game(self, seed=None, randomize=False):
+    def start_game(self, timer_div=None, randomize_tetromino=False):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
-
-        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
 
         Args:
-            seed (int): Value to use for the seed
-            randomize (bool): Whether to randomize the seed or not
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            randomize_tetromino (bool): Whether to randomize the next Tetromino or not
         """
-
-        if not self.pyboy.frame_count == 0:
-            logger.warning("Calling start_game from an already running game. This might not work.")
-
-        # Randomization
-        self._set_seed(seed, randomize)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         # Boot screen
         while True:
@@ -139,24 +128,26 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
+        self._randomize_next_tetromino(randomize_tetromino)
 
-    def reset_game(self, seed=None, randomize=False):
+    def reset_game(self, timer_div=None, randomize_tetromino=False):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
-        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
-
         Args:
-            seed (int): Value to use for the seed
-            randomize (bool): Whether to randomize the seed or not
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            randomize_tetromino (bool): Whether to randomize the next Tetromino or not
         """
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
         if self.game_has_started:
             self.saved_state.seek(0)
             self.pyboy.load_state(self.saved_state)
             self.post_tick()
-            self._set_seed(seed, randomize)
         else:
             logger.error("Tried to reset game, but it hasn't been started yet!")
+
+        self._randomize_next_tetromino(randomize_tetromino)
 
     def _game_area_np(self):
         return np.asarray(self.game_area())
@@ -219,7 +210,12 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `"T"`: T-shape
         """
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) & 0b11111100]
+        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) & 0b11111100]
+
+    def _randomize_next_tetromino(self, randomize):
+        random_tetromino = random.choice(list(tetromino_table.keys()))
+        tetromino_id = tetromino_table[random_tetromino]
+        self.pyboy.set_memory_value(NEXT_TETROMINO_ADDR, tetromino_id)
 
     def set_tetromino(self, shape):
         """

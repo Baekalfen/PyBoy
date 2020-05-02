@@ -9,7 +9,7 @@ cimport cython
 cdef (int, int) _dummy_declaration
 cdef (int, int, int, int) _dummy_declaration2
 cdef int ROWS, COLS
-
+cdef int NEXT_TETROMINO_ADDR
 
 cdef class GameWrapperTetris(PyBoyGameWrapper):
     cdef public int score
@@ -19,3 +19,6 @@ cdef class GameWrapperTetris(PyBoyGameWrapper):
 
     cpdef void set_tetromino(self, str)
     cpdef str next_tetromino(self)
+
+    cpdef void start_game(self, timer_div=*, randomize_tetromino=*)
+    cpdef void reset_game(self, timer_div=*, randomize_tetromino=*)
