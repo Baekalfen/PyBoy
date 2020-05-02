@@ -13,6 +13,8 @@ from pathlib import Path
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
+from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
+
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
@@ -83,10 +85,12 @@ class PyTest(test):
             base = Path(f"{script_path}/examples/")
 
             for gamewrapper, rom in [
-                ("gamewrapper_tetris.py", f"{script_path}/ROMs/Tetris.gb"),
-                ("gamewrapper_mario.py", f"{script_path}/ROMs/SuperMarioLand.gb"),
-                ("gamewrapper_kirby.py", f"{script_path}/ROMs/Kirby.gb"),
+                ("gamewrapper_tetris.py", tetris_rom),
+                ("gamewrapper_mario.py", supermarioland_rom),
+                ("gamewrapper_kirby.py", kirby_rom),
             ]:
+                if rom is None:
+                    continue
 
                 return_code = subprocess.Popen([sys.executable,
                                                 str(base / gamewrapper),
