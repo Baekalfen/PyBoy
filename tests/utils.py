@@ -9,6 +9,10 @@ from pathlib import Path
 
 
 def locate_bootrom(path="ROMs/"):
+    if not os.path.isdir(path):
+        print(f"No directory found: {path}")
+        return None
+
     files = map(lambda x: path + x, filter(lambda x: x.endswith(".bin"), os.listdir("ROMs")))
     target_digest = b"cf053eccb4ccafff9e67339d4e78e98dce7d1ed59be819d2a1ba2232c6fce1c7"
     digest_bytes = bytes.fromhex(target_digest.decode("ASCII"))
@@ -22,6 +26,10 @@ def locate_bootrom(path="ROMs/"):
 
 
 def locate_roms(path="ROMs/"):
+    if not os.path.isdir(path):
+        print(f"No directory found: {path}")
+        return {}
+
     gb_files = map(
         lambda x: path + x,
         filter(lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc"), os.listdir("ROMs"))

@@ -14,6 +14,7 @@ from pyboy.botsupport.tile import Tile
 from .utils import boot_rom, default_rom, kirby_rom
 
 
+@pytest.mark.skipif(not boot_rom, reason="ROM not present")
 def test_record_replay():
     pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
