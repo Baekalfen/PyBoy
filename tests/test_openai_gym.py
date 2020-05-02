@@ -60,7 +60,7 @@ class TestOpenAIGym:
         assert observation.dtype == np.uint8
 
     def test_tiles(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
-        env = pyboy.openai_gym(observation_type="tiles", action_type="press")
+        env = pyboy.openai_gym(observation_type="tiles")
         tetris = pyboy.game_wrapper()
         tetris.set_tetromino("Z")
         observation = env.reset()
@@ -81,6 +81,53 @@ class TestOpenAIGym:
         expected_observation[id0_block + 1, id1_block] = tiles_id["Z"]
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
+
+    def test_compressed(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+        env = pyboy.openai_gym(observation_type="compressed")
+        tetris = pyboy.game_wrapper()
+        tetris.set_tetromino("Z")
+        observation = env.reset()
+
+        # Build the expected first observation
+        expected_observation = np.zeros(game_area_shape, dtype=np.uint16)
+        expected_observation[id0_block, id1_block] = 2
+        print(observation, expected_observation)
+        assert np.all(observation == expected_observation)
+
+        expected_observation[id0_block, id1_block] = 0
+
+        action = 2 # DOWN
+        observation, _, _, _ = env.step(action) # Press DOWN
+        observation, _, _, _ = env.step(action) # Press DOWN
+
+        # Build the expected second observation
+        expected_observation[id0_block + 1, id1_block] = 2
+        print(observation, expected_observation)
+        assert np.all(observation == expected_observation)
+    
+    def test_minimal(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+        env = pyboy.openai_gym(observation_type="minimal")
+        tetris = pyboy.game_wrapper()
+        tetris.set_tetromino("Z")
+        observation = env.reset()
+
+        # Build the expected first observation
+        expected_observation = np.zeros(game_area_shape, dtype=np.uint16)
+        expected_observation[id0_block, id1_block] = 1
+        print(observation, expected_observation)
+        assert np.all(observation == expected_observation)
+
+        expected_observation[id0_block, id1_block] = 0
+
+        action = 2 # DOWN
+        observation, _, _, _ = env.step(action) # Press DOWN
+        observation, _, _, _ = env.step(action) # Press DOWN
+
+        # Build the expected second observation
+        expected_observation[id0_block + 1, id1_block] = 1
+        print(observation, expected_observation)
+        assert np.all(observation == expected_observation)
+ 
 
     def test_press(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="press")
