@@ -95,8 +95,8 @@ class PyTest(test):
                     sys.exit(return_code)
 
         import pytest
-        # args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
-        args = ["tests/", "-v", "-x"] # No multithreading, fail fast
+        args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
+        # args = ["tests/", "-v", "-x"] # No multithreading, fail fast
         if codecov: # TODO: There's probably a more correct way to read the argv flags
             args += ["--cov=./"]
         sys.exit(pytest.main(args))
