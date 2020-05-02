@@ -128,7 +128,6 @@ class TestOpenAIGym:
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
  
-
     def test_press(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="press")
         tetris = pyboy.game_wrapper()
