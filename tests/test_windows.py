@@ -7,8 +7,8 @@ import os
 
 import pytest
 
-from .test_replay import replay
-from .utils import default_rom
+from tests.test_replay import replay
+from tests.utils import default_rom
 
 replay_file = "tests/replays/default_rom.replay"
 
