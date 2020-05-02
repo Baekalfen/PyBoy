@@ -49,7 +49,7 @@ def tiles_id():
 
 
 @pytest.mark.skipif(
-    is_pypy or os.getenv("MSYS") or (not tetris_rom), reason="This requires gym, which doesn't install on PyPy"
+    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom), reason="This requires gym, which doesn't install on PyPy"
 )
 class TestOpenAIGym:
     def test_raw(self, pyboy, screen_shape):
