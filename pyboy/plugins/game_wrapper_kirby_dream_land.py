@@ -62,7 +62,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score * self.health * self.lives_left
 
-    def start_game(self, timer_div=None):
+    def start_game(self, timer_div=None, randomize_div=False):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
@@ -71,9 +71,10 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         instantly.
 
         Args:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            timer_div (int): Replace timer's DIV register with this value
+            randomize_div (bool): Whether to randomize the DIV register or not
         """
-        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div, randomize_div=randomize_div)
 
         # Boot screen
         while True:
@@ -108,14 +109,15 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-    def reset_game(self, timer_div=None):
+    def reset_game(self, timer_div=None, randomize_div=False):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
         Args:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            timer_div (int): Replace timer's DIV register with this value
+            randomize_div (bool): Whether to randomize the DIV register or not
         """
-        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div, randomize_div=randomize_div)
 
     def game_area(self):
         """

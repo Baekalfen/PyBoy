@@ -94,7 +94,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score
 
-    def start_game(self, timer_div=None, randomize_tetromino=False):
+    def start_game(self, timer_div=None, randomize_div=True):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
@@ -103,11 +103,9 @@ class GameWrapperTetris(PyBoyGameWrapper):
         instantly.
 
         Args:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
-            randomize_tetromino (bool): Whether to randomize the next Tetromino or not
+            timer_div (int): Replace timer's DIV register with this value
+            randomize_div (bool): Whether to randomize the DIV register or not
         """
-        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
-
         # Boot screen
         while True:
             self.pyboy.tick()
@@ -116,7 +114,11 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 break
 
         # Start game. Just press Start when the game allows us.
-        for _ in range(3):
+        for i in range(3):
+            if i == 2:
+                PyBoyGameWrapper._set_timer_div(self, timer_div, randomize_div)
+                self.saved_state.seek(0)
+                self.pyboy.save_state(self.saved_state)
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.tick()
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -126,20 +128,22 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         self.game_has_started = True
 
-        self.saved_state.seek(0)
-        self.pyboy.save_state(self.saved_state)
-        self._randomize_next_tetromino(randomize_tetromino)
-
-    def reset_game(self, timer_div=None, randomize_tetromino=False):
+    def reset_game(self, timer_div=None, randomize_div=True):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
         Args:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
-            randomize_tetromino (bool): Whether to randomize the next Tetromino or not
+            timer_div (int): Replace timer's DIV register with this value
+            randomize_div (bool): Whether to randomize the DIV register or not
         """
-        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
-        self._randomize_next_tetromino(randomize_tetromino)
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div, randomize_div=randomize_div)
+
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
 
     def _game_area_np(self):
         return np.asarray(self.game_area())
@@ -203,11 +207,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         # Bitmask, as the last two bits determine the direction
         return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) & 0b11111100]
-
-    def _randomize_next_tetromino(self, randomize):
-        random_tetromino = random.choice(list(tetromino_table.keys()))
-        tetromino_id = tetromino_table[random_tetromino]
-        self.pyboy.set_memory_value(NEXT_TETROMINO_ADDR, tetromino_id)
 
     def set_tetromino(self, shape):
         """
