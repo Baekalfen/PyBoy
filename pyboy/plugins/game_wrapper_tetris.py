@@ -10,8 +10,8 @@ __pdoc__ = {
 import logging
 import random
 from array import array
-
 import numpy as np
+
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
