@@ -20,25 +20,6 @@ if platform.python_implementation() == "PyPy":
 else:
     timeout = 5
 
-blargg_dir = Path("blargg")
-if not os.path.isdir(blargg_dir):
-    for name in [
-        "cgb_sound",
-        "cpu_instrs",
-        "dmg_sound",
-        "halt_bug",
-        "instr_timing",
-        "interrupt_time",
-        "mem_timing-2",
-        "mem_timing",
-        "oam_bug",
-    ]:
-        blargg_data = io.BytesIO(
-            urllib.request.urlopen(f"https://gbdev.gg8.se/files/roms/blargg-gb-tests/{name}.zip").read()
-        )
-        with ZipFile(blargg_data) as _zip:
-            _zip.extractall(blargg_dir)
-
 OVERWRITE_JSON = False
 
 
@@ -75,6 +56,26 @@ def run_rom(args):
 
 
 def test_blarggs():
+    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
+    blargg_dir = Path("blargg")
+    if not os.path.isdir(blargg_dir):
+        for name in [
+            "cgb_sound",
+            "cpu_instrs",
+            "dmg_sound",
+            "halt_bug",
+            "instr_timing",
+            "interrupt_time",
+            "mem_timing-2",
+            "mem_timing",
+            "oam_bug",
+        ]:
+            blargg_data = io.BytesIO(
+                urllib.request.urlopen(f"https://gbdev.gg8.se/files/roms/blargg-gb-tests/{name}.zip").read()
+            )
+            with ZipFile(blargg_data) as _zip:
+                _zip.extractall(blargg_dir)
+
     test_roms = [
         # ("blargg/cgb_sound/cgb_sound.gb", -1),
         # ("blargg/cgb_sound/rom_singles/01-registers.gb", -1),

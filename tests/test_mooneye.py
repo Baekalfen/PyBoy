@@ -20,18 +20,19 @@ if platform.python_implementation() == "PyPy":
 else:
     timeout = 5
 
-mooneye_dir = "mooneye"
-if not os.path.isdir(mooneye_dir):
-    mooneye_data = io.BytesIO(
-        urllib.request.urlopen("https://gekkio.fi/files/mooneye-gb/latest/mooneye-gb_hwtests.zip").read()
-    )
-    with ZipFile(mooneye_data) as _zip:
-        _zip.extractall(mooneye_dir)
-
 OVERWRITE_PNGS = False
 
 
 def test_mooneye():
+    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
+    mooneye_dir = "mooneye"
+    if not os.path.isdir(mooneye_dir):
+        mooneye_data = io.BytesIO(
+            urllib.request.urlopen("https://gekkio.fi/files/mooneye-gb/latest/mooneye-gb_hwtests.zip").read()
+        )
+        with ZipFile(mooneye_data) as _zip:
+            _zip.extractall(mooneye_dir)
+
     test_roms = [
         (False, "mooneye/misc/boot_hwio-C.gb"),
         (False, "mooneye/misc/boot_regs-A.gb"),
