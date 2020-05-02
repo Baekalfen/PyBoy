@@ -6,10 +6,11 @@
 import io
 import os.path
 import platform
+import urllib.request
 from pathlib import Path
+from zipfile import ZipFile
 
 import PIL
-import pytest
 from pyboy import PyBoy
 
 from .utils import default_rom
@@ -19,10 +20,17 @@ if platform.python_implementation() == "PyPy":
 else:
     timeout = 5
 
+mooneye_dir = "mooneye"
+if not os.path.isdir(mooneye_dir):
+    mooneye_data = io.BytesIO(
+        urllib.request.urlopen("https://gekkio.fi/files/mooneye-gb/latest/mooneye-gb_hwtests.zip").read()
+    )
+    with ZipFile(mooneye_data) as zip:
+        zip.extractall(mooneye_dir)
+
 OVERWRITE_PNGS = False
 
 
-@pytest.mark.skipif(not os.path.isdir("mooneye"), reason="ROM not present")
 def test_mooneye():
     test_roms = [
         (False, "mooneye/misc/boot_hwio-C.gb"),

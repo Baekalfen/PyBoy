@@ -1,17 +1,14 @@
 import distutils.cmd
-import io
 import os
 import platform
 import shutil
 import subprocess
 import sys
-import urllib.request
 from distutils.command.clean import clean as _clean
 from distutils.command.clean import log
 from distutils.dir_util import remove_tree
 from multiprocessing import cpu_count
 from pathlib import Path
-from zipfile import ZipFile
 
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
@@ -96,14 +93,6 @@ class PyTest(test):
                                                 str(Path(rom)), "--quiet"]).wait()
                 if return_code != 0:
                     sys.exit(return_code)
-
-        mooneye_dir = "mooneye"
-        if not os.path.isdir(mooneye_dir):
-            mooneye_data = io.BytesIO(
-                urllib.request.urlopen("https://gekkio.fi/files/mooneye-gb/latest/mooneye-gb_hwtests.zip").read()
-            )
-            with ZipFile(mooneye_data) as zip:
-                zip.extractall(mooneye_dir)
 
         import pytest
         args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
