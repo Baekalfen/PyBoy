@@ -62,10 +62,12 @@ class CPU:
             self.interrupt_master_enable = False
             if self.halted:
                 self.PC += 1 # Escape HALT on return
+                self.PC &= 0xFFFF
 
-            self.mb.setitem(self.SP - 1, self.PC >> 8) # High
-            self.mb.setitem(self.SP - 2, self.PC & 0xFF) # Low
+            self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
+            self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
             self.SP -= 2
+            self.SP &= 0xFFFF
 
             return True
         return False
