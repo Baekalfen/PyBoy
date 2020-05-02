@@ -25,8 +25,8 @@ if not os.path.isdir(mooneye_dir):
     mooneye_data = io.BytesIO(
         urllib.request.urlopen("https://gekkio.fi/files/mooneye-gb/latest/mooneye-gb_hwtests.zip").read()
     )
-    with ZipFile(mooneye_data) as zip:
-        zip.extractall(mooneye_dir)
+    with ZipFile(mooneye_data) as _zip:
+        _zip.extractall(mooneye_dir)
 
 OVERWRITE_PNGS = False
 

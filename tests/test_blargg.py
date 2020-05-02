@@ -36,8 +36,8 @@ if not os.path.isdir(blargg_dir):
         blargg_data = io.BytesIO(
             urllib.request.urlopen(f"https://gbdev.gg8.se/files/roms/blargg-gb-tests/{name}.zip").read()
         )
-        with ZipFile(blargg_data) as zip:
-            zip.extractall(blargg_dir)
+        with ZipFile(blargg_data) as _zip:
+            _zip.extractall(blargg_dir)
 
 OVERWRITE_JSON = False
 
