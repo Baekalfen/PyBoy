@@ -32,6 +32,7 @@ def load_requirements(filename):
 
 requirements = load_requirements("requirements.txt")
 
+MSYS = os.getenv("MSYS")
 CYTHON = platform.python_implementation() != "PyPy"
 
 if CYTHON:
@@ -302,14 +303,14 @@ setup(
         "pytest",
         "pytest-xdist",
         "pyopengl",
-        "gym" if CYTHON else "",
+        "gym" if CYTHON and not MSYS else "",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
-            "gym" if CYTHON else "",
+            "gym" if CYTHON and not MSYS else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it
