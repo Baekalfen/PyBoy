@@ -11,7 +11,7 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
 
-from .utils import tetris_rom
+from tests.utils import tetris_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
 
