@@ -20,7 +20,7 @@ else:
 
 def run_rom(args):
     rom, frame_limit = args
-    pyboy = PyBoy(rom, window_type="dummy", window_scale=1, disable_input=True)
+    pyboy = PyBoy(rom, window_type="dummy", disable_input=True)
     pyboy.set_emulation_speed(0)
     serial_output = ""
     t = time.time()
