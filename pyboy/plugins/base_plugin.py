@@ -140,7 +140,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         instantly.
 
         Args:
-            timer_div (int): Value to use for the seed. Use `None` to randomize.
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
 
         if not self.pyboy.frame_count == 0:
@@ -152,11 +152,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
-        A seed can be passed to set registers for games that depend on randomization. The seed can also be set randomly.
-
         Args:
-            seed (int): Value to use for the seed
-            randomize (bool): Whether to randomize the seed or not
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
 
         self._set_timer_div(timer_div)
