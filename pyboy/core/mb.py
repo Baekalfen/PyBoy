@@ -27,7 +27,7 @@ class Motherboard:
         self.interaction = interaction.Interaction()
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         self.bootrom = bootrom.BootROM(bootrom_file)
-        self.ram = ram.RAM(random=False)
+        self.ram = ram.RAM(is_random=True)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD()
         self.renderer = lcd.Renderer(color_palette)
