@@ -4,9 +4,12 @@
 #
 
 import array
+import random
+
+import numpy
 
 # MEMORY SIZES
-INTERNAL_RAM0 = 8 * 1024 # 8KB
+INTERNAL_RAM0 = 8 * 1024 # 8KiB
 NON_IO_INTERNAL_RAM0 = 0x60
 IO_PORTS = 0x4C
 NON_IO_INTERNAL_RAM1 = 0x34
@@ -15,16 +18,24 @@ INTERRUPT_ENABLE_REGISTER = 1
 
 
 class RAM:
-    def __init__(self, random=False):
-        if random: # NOTE: In real life, the RAM is scrambled with random data on boot.
-            raise Exception("Random RAM not implemented")
+    def __init__(self, is_random=False):
+        typecode = "B"
 
-        self.internal_ram0 = array.array("B", [0] * (INTERNAL_RAM0))
-        self.non_io_internal_ram0 = array.array("B", [0] * (NON_IO_INTERNAL_RAM0))
-        self.io_ports = array.array("B", [0] * (IO_PORTS))
-        self.internal_ram1 = array.array("B", [0] * (INTERNAL_RAM1))
-        self.non_io_internal_ram1 = array.array("B", [0] * (NON_IO_INTERNAL_RAM1))
-        self.interrupt_register = array.array("B", [0] * (INTERRUPT_ENABLE_REGISTER))
+        self.internal_ram0 = array.array(typecode, [0] * (INTERNAL_RAM0))
+        self.non_io_internal_ram0 = array.array(typecode, [0] * (NON_IO_INTERNAL_RAM0))
+        self.io_ports = array.array(typecode, [0] * (IO_PORTS))
+        self.internal_ram1 = array.array(typecode, [0] * (INTERNAL_RAM1))
+        self.non_io_internal_ram1 = array.array(typecode, [0] * (NON_IO_INTERNAL_RAM1))
+        self.interrupt_register = array.array(typecode, [0] * (INTERRUPT_ENABLE_REGISTER))
+
+        if is_random: # NOTE: In real life, the RAM is scrambled with random data on boot.
+            # Gives us the upper bound value of the "B" typecode
+            typecode_max = numpy.iinfo(numpy.dtype(typecode)).max
+
+            for a in (self.internal_ram0, self.non_io_internal_ram0, self.io_ports, self.internal_ram1,
+                      self.non_io_internal_ram1, self.interrupt_register):
+                for i in range(len(a)):
+                    a[i] = random.randrange(typecode_max + 1)
 
     def save_state(self, f):
         for n in range(INTERNAL_RAM0):
