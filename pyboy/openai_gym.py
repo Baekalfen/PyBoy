@@ -28,9 +28,9 @@ class PyBoyGymEnv(Env):
     Args:
         observation_type (str): Define what the agent will be able to see:
         * `"raw"`: Gives the raw pixels color
-        * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
-        * `"compressed"`: Gives only the id of used grouped sprites defined by the game_wrapper.
-        * `"minimal"`: Gives a minimal representation defined by the game_wrapper (recommended).
+        * `"tiles"`:  Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+        * `"compressed"`: Like `"tiles"` but with slightly simplified id's (i.e. each type of enemy has a unique id).
+        * `"minimal"`: Like `"compressed"` but gives a minimal representation (recommended; i.e. all enemies have the same id).
 
         action_type (str): Define how the agent will interact with button inputs
         * `"press"`: The agent will only press inputs for 1 frame an then release it.
@@ -98,12 +98,16 @@ class PyBoyGymEnv(Env):
                 try:
                     size_ids = np.max(self.game_wrapper.tiles_compressed) + 1
                 except AttributeError:
-                    raise AttributeError('You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type')
+                    raise AttributeError(
+                        "You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type"
+                    )
             elif observation_type == "minimal":
                 try:
                     size_ids = np.max(self.game_wrapper.tiles_minimal) + 1
                 except AttributeError:
-                    raise AttributeError('You need to add the tiles_minimal attibute to the game_wrapper to use the minimal observation_type')
+                    raise AttributeError(
+                        "You need to add the tiles_minimal attibute to the game_wrapper to use the minimal observation_type"
+                    )
             nvec = size_ids * np.ones(self.game_wrapper.shape)
             self.observation_space = MultiDiscrete(nvec)
         else:

@@ -13,7 +13,7 @@ from zipfile import ZipFile
 import PIL
 from pyboy import PyBoy
 
-from .utils import default_rom
+from tests.utils import default_rom
 
 if platform.python_implementation() == "PyPy":
     timeout = 15

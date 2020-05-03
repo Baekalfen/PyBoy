@@ -23,6 +23,7 @@ try:
 except ImportError:
     cythonmode = False
 
+# Table for translating game-representation of Tetromino types (8-bit int) to string
 tetromino_table = {
     "L": 0,
     "J": 4,
@@ -34,7 +35,10 @@ tetromino_table = {
 }
 inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
 
+# Construct a translation table for tile ID's to a minimal/compressed id system
 TILES = 384
+
+# Compressed assigns an ID to each Tetromino type
 tiles_compressed = np.zeros(TILES, dtype=np.uint8)
 # BLANK, J, Z, O, L, T, S, I, BLACK
 tiles_types = [[47], [129], [130], [131], [132], [133], [134], [128, 136, 137, 138, 139, 143], [135]]
@@ -42,9 +46,11 @@ for tiles_type_ID, tiles_type in enumerate(tiles_types):
     for tile_ID in tiles_type:
         tiles_compressed[tile_ID] = tiles_type_ID
 
-tiles_minimal = np.ones(TILES, dtype=np.uint8)  # For minimal everything is 1
-tiles_minimal[47] = 0                           # Except BLANK which is 0
-tiles_minimal[135] = 2                          # And background losing tiles BLACK which is 2
+# Minimal has 3 id's: Background, Tetromino and "losing tile" (which fills the board when losing)
+tiles_minimal = np.ones(TILES, dtype=np.uint8) # For minimal everything is 1
+tiles_minimal[47] = 0 # Except BLANK which is 0
+tiles_minimal[135] = 2 # And background losing tiles BLACK which is 2
+
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
