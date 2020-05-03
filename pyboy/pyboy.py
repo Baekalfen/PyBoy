@@ -240,8 +240,9 @@ class PyBoy:
         Args:
             observation_type (str): Define what the agent will be able to see:
             * `"raw"`: Gives the raw pixels color
-            * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper
-                (recommended).
+            * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
+            * `"compressed"`: Gives a more detailled but heavier representation than `"minimal"`.
+            * `"minimal"`: Gives a minimal representation defined by the game_wrapper (recommended).
 
             action_type (str): Define how the agent will interact with button inputs
             * `"press"`: The agent will only press inputs for 1 frame an then release it.
