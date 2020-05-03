@@ -200,6 +200,22 @@ class PyBoyGameWrapper(PyBoyPlugin):
                 tiles_matrix[_y][_x] = s.tile_identifier
         return tiles_matrix
 
+    def _game_area_np(self, observation_type='tiles'):
+        if observation_type == 'tiles':
+            return np.asarray(self.game_area(), dtype=np.uint16)
+        elif observation_type == 'compressed':
+            try:
+                return self.tiles_compressed[np.asarray(self.game_area(), dtype=np.uint16)]
+            except AttributeError:
+                raise AttributeError(f'Game wrapper miss the attribute tiles_compressed for observation_type : {observation_type}')
+        elif observation_type == 'minimal':
+            try:
+                return self.tiles_minimal[np.asarray(self.game_area(), dtype=np.uint16)]
+            except AttributeError:
+                raise AttributeError(f'Game wrapper miss the attribute tiles_minimal for observation_type : {observation_type}')
+        else:
+            raise ValueError(f'Invalid observation_type : {observation_type}')
+
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0
         for i, x in enumerate(self.tilemap_background[x:x + length, y]):
