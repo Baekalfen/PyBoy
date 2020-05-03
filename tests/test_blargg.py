@@ -59,6 +59,8 @@ def test_blarggs():
     # Has to be in here. Otherwise all test workers will import the file, and cause an error.
     blargg_dir = Path("blargg")
     if not os.path.isdir(blargg_dir):
+        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.blargg.txt").read())
+
         for name in [
             "cgb_sound",
             "cpu_instrs",
@@ -70,9 +72,7 @@ def test_blarggs():
             "mem_timing",
             "oam_bug",
         ]:
-            blargg_data = io.BytesIO(
-                urllib.request.urlopen(f"https://gbdev.gg8.se/files/roms/blargg-gb-tests/{name}.zip").read()
-            )
+            blargg_data = io.BytesIO(urllib.request.urlopen(f"https://pyboy.dk/mirror/blargg/{name}.zip").read())
             with ZipFile(blargg_data) as _zip:
                 _zip.extractall(blargg_dir)
 
