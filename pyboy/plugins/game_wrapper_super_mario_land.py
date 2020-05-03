@@ -8,6 +8,7 @@ __pdoc__ = {
 }
 
 import logging
+import numpy as np
 
 from pyboy.utils import WindowEvent
 
@@ -21,6 +22,72 @@ try:
 except ImportError:
     cythonmode = False
 
+# Mario and Daisy
+base_scripts = list(range(81))
+plane = list(range(99, 110))
+submarine = list(range(112, 122))
+
+# Mario shoots
+shoots = [96, 110, 122]
+
+# Bonuses
+coin = [244]
+mushroom = [131]
+heart = [132]
+star = [134]
+flower = [224, 229]
+
+# Lever for level end
+lever = [255]
+
+# Solid blocks
+neutral_blocks = [142, 143, 221, 222, 231, 232, 233, 234, 235, 236,
+                  301, 302, 303, 304, 319, 339, 340, 352, 353, 355,
+                  356, 357, 358, 359, 360, 361, 362, 381, 382, 383]
+moving_blocks = [230, 238, 239]
+pushable_blokcs = [128, 130, 354]
+question_block = [129]
+pipes = list(range(368, 381))
+
+# Enemies
+goomba = [144]
+koopa = [150, 151, 152, 153]
+plant = [146, 147, 148, 149]
+moth = [160, 161, 162, 163, 176, 177, 178, 179]
+flying_moth = [192, 193, 194, 195, 208, 209, 210, 211]
+sphinx = [164, 165, 166, 167, 180, 181, 182, 183]
+big_sphinx = [198, 199, 201, 202, 203, 204, 205, 214, 215, 217, 218, 219]
+fist = [240, 241, 242, 243]
+bill = [249]
+projectiles = [172, 188, 196, 197, 212, 213, 226, 227]
+shell = [154, 155]
+explosion = [157, 158]
+spike = [237]
+
+TILES = 384
+tiles_minimal = np.zeros(TILES, dtype=np.uint8)
+minimal_list = [
+    base_scripts + plane + submarine,
+    coin + mushroom + heart + star + lever,
+    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
+    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion + spike
+]
+for i, tile_list in enumerate(minimal_list):
+    for tile in tile_list:
+        tiles_minimal[tile] = i + 1
+
+tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+compressed_list = [
+    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever,
+    neutral_blocks, moving_blocks, pushable_blokcs, question_block, pipes,
+    goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill, projectiles, shell, explosion, spike
+]
+for i, tile_list in enumerate(compressed_list):
+    for tile in tile_list:
+        tiles_compressed[tile] = i + 1
+
+np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
+
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
@@ -30,6 +97,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = "SUPER MARIOLAN"
+    tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 16)
@@ -165,6 +234,13 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             Simplified 2-dimensional memoryview of the screen
         """
         return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        if self.lives_left > 0:
+            return False
+        tiles = self._game_area_np()
+        mario_at_bottom = np.any(np_in_mario_tiles(tiles[-1, :]))
+        return mario_at_bottom or np.any(tiles == 15)
 
     def __repr__(self):
         adjust = 4
