@@ -17,9 +17,8 @@ def test_dmg_acid():
     # Has to be in here. Otherwise all test workers will import the file, and cause an error.
     dmg_acid_file = "dmg_acid2.gb"
     if not os.path.isfile(dmg_acid_file):
-        dmg_acid_data = urllib.request.urlopen(
-            "https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb"
-        ).read()
+        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.dmg-acid2.txt").read())
+        dmg_acid_data = urllib.request.urlopen("https://pyboy.dk/mirror/dmg-acid2.gb").read()
         with open(dmg_acid_file, "wb") as rom_file:
             rom_file.write(dmg_acid_data)
 

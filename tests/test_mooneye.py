@@ -12,7 +12,6 @@ from zipfile import ZipFile
 
 import PIL
 from pyboy import PyBoy
-
 from tests.utils import default_rom
 
 if platform.python_implementation() == "PyPy":
@@ -27,9 +26,8 @@ def test_mooneye():
     # Has to be in here. Otherwise all test workers will import the file, and cause an error.
     mooneye_dir = "mooneye"
     if not os.path.isdir(mooneye_dir):
-        mooneye_data = io.BytesIO(
-            urllib.request.urlopen("https://gekkio.fi/files/mooneye-gb/latest/mooneye-gb_hwtests.zip").read()
-        )
+        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.mooneye.txt").read())
+        mooneye_data = io.BytesIO(urllib.request.urlopen("https://pyboy.dk/mirror/mooneye.zip").read())
         with ZipFile(mooneye_data) as _zip:
             _zip.extractall(mooneye_dir)
 
