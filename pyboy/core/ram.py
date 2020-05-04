@@ -6,8 +6,6 @@
 import array
 import random
 
-REGISTER_MAX = 0xFF
-
 # MEMORY SIZES
 INTERNAL_RAM0 = 8 * 1024 # 8KiB
 NON_IO_INTERNAL_RAM0 = 0x60
