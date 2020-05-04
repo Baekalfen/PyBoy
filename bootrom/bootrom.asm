@@ -1,34 +1,43 @@
 SECTION "bootrom", ROM0[$0000]
-main:
-.loop:
     ; Init stackpointer
-    ld SP, $FFFE
+    ld sp, $fffe
 
-    ; Enable LCD and background tilemap
-    ld A, $91
-    ld [$FF00+$40], A
-
-    ; Set color palette to 11111100
-    ld A, $fc
-    ld [$FF00+$47], A
+    ; Erase VRAM - it is filled with garbage on startup on hardware
+    xor A
+	ld HL,$9fff
+Erase:
+	ld [HL-],A
+	bit 7,H
+	jr nz, Erase
 
     ; ####################
     ; Tile data copying
     ; ####################
 
     ; Copy 48 bytes of logo data to VRAM
-    ld B, 48     ; Write length
-    ld C, 1      ; Use double write
-    ld HL, .logo ; Logo data start
+    ; Write length
+    ; Use double write
+    ld BC, 48 << 8 | 1
+    ld HL, Logo ; Logo data start
     ld DE, $8010 ; Place it 1 tile in, so tile 0 stays white
-    call .memcpy
-    dec C        ; Don't double write again
+Memcpy:
+    ; Logo memcpy. HL is source, DE is target, B is length
+    ld A, [HL+]
+
+    ; Double up memory values for VRAM, as source image is 1-bit
+    ld [DE], A
+    inc DE
+    ld [DE], A
+    inc DE
+
+    dec B
+    jr NZ, Memcpy
 
     ; ####################
     ; Tile placement
     ; ####################
     ; Add two upper part of P for the P and B
-    ld A, 1             ; P1 tile index
+    ld a, 1 ; A is 0 from before so just increment
     ld HL, $9808+($20*8)
     ld [HL+], A         ; The P position
     inc HL              ; Empty space above y
@@ -38,11 +47,11 @@ main:
     ld B, 4             ; Loop counter
     ld A, 2             ; P2 tile index
     ld HL, $9808+($20*9)
-.four_range
+FourRange:
     ld [HL+], A
     inc A
     dec B
-    jp NZ, .four_range
+    jr NZ, FourRange
 
     ; Add the upper part of the last Y at the current HL position
     ld A, 3             ; Y1 tile index
@@ -55,6 +64,24 @@ main:
     inc HL
     ld [HL], A
 
+    ; Enable LCD and background tilemap
+    ld A, $91
+    ldh [$FF00+$40], A
+
+    ; Set color palette to 11111100
+    ld A, $fc
+    ldh [$FF00+$47], A
+
+    ; Sound Setup
+    ld a, $80
+    ldh [$26], a ; Enable sound - NR52
+    ldh [$11], a ; Use 50% duty cycle - NR11
+    ld a, $f3
+    ldh [$12], a
+    ldh [$25], a
+    ld a, $77
+    ldh [$24], a
+
     ; #########################
     ; Graphics effect and wait
     ; #########################
@@ -66,114 +93,97 @@ main:
     xor A
     ld D, A         ; Reset D
     ld B, A         ; Reset B
-.wait_vblank
+WaitVblank:
     ; Test vblank
-    ld A, [$FF00+$44]
+    ldh A, [$FF00+$44]
     cp $90
-    jp Z, .exit_vblank
+    jr Z, ExitVblank
 
     ld E, A         ; Save LY in E
 
     ; Invert frame counter to 1-60 instead of 60-1
     ld A, C
-    xor $FF
+    cpl
     sub ($ff-16*7)  ; Start X lines down. Do it in multiple of 16 to fit wave
 
     ; Cut out one wave
     ; Is A larger than LY? Then we want the effect
     cp E
-    jp C, .no_effect
+    jr C, NoEffect
     ; Is LY no more than 16 lines larger than A?
     sub A, 16
     cp E
-    jp C, .effect
+    jr C, Effect
     ; Fall through to no effect
-.no_effect
+NoEffect:
     xor a
-    ld [$FF00+$43], A
-    jp .wait_vblank
+    ldh [$FF00+$43], A
+    jr WaitVblank
 
-.wave_table
+PlaySound:
+    ; Adjust frequency sweep
+    ld a, %0010011
+    ldh [$10], a
+
+    ld a, $48
+    ldh [$13], a
+
+    ; Trigger
+    ld a, $81
+    ldh [$14], a
+    ret
+
+AdjSound:
+    ; Adjust frequency sweep
+    ld a, %0011001
+    ldh [$10], a
+
+    ; Trigger
+    ld a, $81
+    ldh [$14], a
+    ret
+
+
+WaveTable:
     DB 0, 0, 1, 2, 2, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0, 0
 
-.effect
+Effect:
     ld A, C        ; Load frame counter for "time"
     add A, E         ; add LY from E
     and $0F         ; Clamp LY value to lookup table length
     ld E, A         ; Save LY in E
-    ld HL, .wave_table
+    ld HL, WaveTable
     add HL, DE      ; look up in wave table
     ld A, [HL]
 
-    ld [$FF00+$43], A
-    jp .wait_vblank
+    ldh [$FF00+$43], A
+    jr WaitVblank
 
-.exit_vblank
-    ld A, [$FF00+$44]
+ExitVblank:
+    ldh A, [$FF00+$44]
     cp $90
-    jp Z, .exit_vblank
+    jr Z, ExitVblank
+    ld a, c
+
+    cp 27
+    call z, PlaySound
+
+    cp 31
+    call z, AdjSound
+
     ; One frame has passed, decrement counter
     dec C
-    jp NZ, .wait_vblank
-
-    ; ###############################
-    ; Recreate state of DMG boot ROM
-    ; ###############################
-    ld B, 6
-    ld HL, .sec0
-    ld DE, $FF0F
-    call .memcpy
-
-    ld B, 3
-    ld HL, .sec1
-    ld DE, $FF24
-    call .memcpy
-
-    ld B, 4
-    ld HL, .sec2
-    ld DE, $FF41
-    call .memcpy
-
-    ; Call stack.. Hard to leave in exact state
-    ; ld B, 3
-    ; ld HL, .sec3
-    ; ld DE, $FFFA
-    ; call .memcpy
+    jr NZ, WaitVblank
 
     ; TODO: Restore register values?
-    jp end
-
-.memcpy
-    ; Regular memcpy. HL is source, DE is target, B is length
-    ; If first bit of C is non-zero, write all value double. Because the logo is black and white, we can use the same
-    ; pixel data twice. This gives colors in the color palette of '00' and '11'. For more info, see documentation of
-    ; the tile graphics format.
-    ld A, [HL+]
-    ld [DE], A
-    inc DE
-    BIT 0,C                 ; Test C for zero
-    jp Z, .memcpy_not_double
-    ld [DE], A
-    inc DE
-.memcpy_not_double
-    dec B
-    jp NZ, .memcpy
-    RET
-
-; Section 0, 1, 2 and 3 of arbitrary values, which the original boot ROM writes.
-.sec0: ; 0xFF0F
-    DB $01, $00, $80, $F3, $C1, $87
-.sec1: ; 0xFF24
-    DB $77, $F3, $80
-.sec2: ; 0xFF41
-    DB $01, $00, $00, $99
-;.sec3: ; 0xFFFA
-;    DB $39, $01, $2E
+    jr Exit
 
 ; Logo generated by png_to_tiles.py. Remember to update values for 'logo_memcpy' and 'range' if dimensions change
 INCLUDE "logo.asm"
 
 SECTION "epilog", ROM0[$00FC]
-end
+Exit:
+    ; A is the register that matters
+    ; Games check a for $01 and $11, for DMG and CGB respectively
     ld A, $01
-    ld [$FF00+$50], A
+    ldh [$FF00+$50], A
