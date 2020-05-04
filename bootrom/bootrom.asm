@@ -3,11 +3,12 @@ SECTION "bootrom", ROM0[$0000]
     ld sp, $fffe
 
     ; Erase VRAM - it is filled with garbage on startup on hardware
-    xor A
-    ld HL,$9fff
+    ld HL,$8000
 Erase:
-    ld [HL-],A
-    bit 7,H
+    xor A
+    ld [HL+],A
+    ld A, H
+    cp $A0 ; Once HL hits $A000, break out of loop
     jr nz, Erase
 
     ; ####################
