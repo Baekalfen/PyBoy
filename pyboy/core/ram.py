@@ -32,7 +32,7 @@ class RAM:
             for a in (self.internal_ram0, self.non_io_internal_ram0, self.io_ports, self.internal_ram1,
                       self.non_io_internal_ram1, self.interrupt_register):
                 for i in range(len(a)):
-                    a[i] = random.randrange(REGISTER_MAX + 1)
+                    a[i] = random.getrandbits(8)
 
     def save_state(self, f):
         for n in range(INTERNAL_RAM0):
