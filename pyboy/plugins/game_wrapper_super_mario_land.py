@@ -68,9 +68,11 @@ spike = [237]
 TILES = 384
 tiles_minimal = np.zeros(TILES, dtype=np.uint8)
 minimal_list = [
-    base_scripts + plane + submarine, coin + mushroom + heart + star + lever,
-    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes, goomba + koopa + plant + moth +
-    flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion + spike
+    base_scripts + plane + submarine,
+    coin + mushroom + heart + star + lever,
+    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
+    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion +
+    spike,
 ]
 for i, tile_list in enumerate(minimal_list):
     for tile in tile_list:
