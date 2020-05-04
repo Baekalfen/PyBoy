@@ -12,7 +12,6 @@ import PIL
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
-
 from tests.utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
