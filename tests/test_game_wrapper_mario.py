@@ -15,7 +15,7 @@ def test_mario_basics():
     assert pyboy.cartridge_title() == "SUPER MARIOLAN"
 
     mario = pyboy.game_wrapper()
-    mario.start_game(world_level=(1, 1), win_count=0)
+    mario.start_game(world_level=(1, 1))
 
     assert mario.score == 0
     assert mario.lives_left == 2
@@ -32,8 +32,7 @@ def test_mario_advanced():
     assert pyboy.cartridge_title() == "SUPER MARIOLAN"
 
     mario = pyboy.game_wrapper()
-    mario.start_game(world_level=(3, 2), win_count=2)
-    # assert pyboy.get_memory_value(0xFF9A) == 2 # Win count
+    mario.start_game(world_level=(3, 2))
     lives = 99
     mario.set_lives_left(lives)
     pyboy.tick()
