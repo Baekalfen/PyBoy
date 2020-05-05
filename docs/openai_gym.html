@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.5" />
+<title>pyboy.openai_gym API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.openai_gym</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#
+# License: See LICENSE.md file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+import numpy as np
+
+from .botsupport.constants import TILES
+from .utils import WindowEvent
+
+try:
+    from gym import Env
+    from gym.spaces import Discrete, MultiDiscrete, Box
+    enabled = True
+except ImportError:
+
+    class Env:
+        pass
+
+    enabled = False
+
+
+class PyBoyGymEnv(Env):
+    &#34;&#34;&#34; A gym environement built from a `pyboy.PyBoy`
+
+    This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+
+    Args:
+        observation_type (str): Define what the agent will be able to see:
+        * `&#34;raw&#34;`: Gives the raw pixels color
+        * `&#34;tiles&#34;`:  Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+        * `&#34;compressed&#34;`: Like `&#34;tiles&#34;` but with slightly simplified id&#39;s (i.e. each type of enemy has a unique id).
+        * `&#34;minimal&#34;`: Like `&#34;compressed&#34;` but gives a minimal representation (recommended; i.e. all enemies have the same id).
+
+        action_type (str): Define how the agent will interact with button inputs
+        * `&#34;press&#34;`: The agent will only press inputs for 1 frame an then release it.
+        * `&#34;toggle&#34;`: The agent will toggle inputs, first time it press and second time it release.
+        * `&#34;all&#34;`: The agent have acces to all inputs, press and release are separated.
+
+        simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
+
+    Attributes:
+        game_wrapper (`pyboy.plugins.base_plugin.PyBoyGameWrapper`): The game_wrapper of the PyBoy game instance over which the environment is built.
+        action_space (Gym space): The action space of the environment.
+        observation_space (Gym space): The observation space of the environment (depends of observation_type).
+        actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
+
+    &#34;&#34;&#34;
+    def __init__(self, pyboy, observation_type=&#34;tiles&#34;, action_type=&#34;toggle&#34;, simultaneous_actions=False):
+        # Build pyboy game
+        self.pyboy = pyboy
+        if str(type(pyboy)) != &#34;&lt;class &#39;pyboy.pyboy.PyBoy&#39;&gt;&#34;:
+            raise TypeError(&#34;pyboy must be a Pyboy object&#34;)
+
+        # Build game_wrapper
+        self.game_wrapper = pyboy.game_wrapper()
+        if self.game_wrapper is None:
+            raise ValueError(
+                &#34;You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly.&#34;
+            )
+        self.last_fitness = self.game_wrapper.fitness
+
+        # Building the action_space
+        self._DO_NOTHING = WindowEvent.PASS
+        self._buttons = [
+            WindowEvent.PRESS_ARROW_UP, WindowEvent.PRESS_ARROW_DOWN, WindowEvent.PRESS_ARROW_RIGHT,
+            WindowEvent.PRESS_ARROW_LEFT, WindowEvent.PRESS_BUTTON_A, WindowEvent.PRESS_BUTTON_B,
+            WindowEvent.PRESS_BUTTON_SELECT, WindowEvent.PRESS_BUTTON_START
+        ]
+        self._button_is_pressed = {button: False for button in self._buttons}
+
+        self._buttons_release = [
+            WindowEvent.RELEASE_ARROW_UP, WindowEvent.RELEASE_ARROW_DOWN, WindowEvent.RELEASE_ARROW_RIGHT,
+            WindowEvent.RELEASE_ARROW_LEFT, WindowEvent.RELEASE_BUTTON_A, WindowEvent.RELEASE_BUTTON_B,
+            WindowEvent.RELEASE_BUTTON_SELECT, WindowEvent.RELEASE_BUTTON_START
+        ]
+        self._release_button = {button: r_button for button, r_button in zip(self._buttons, self._buttons_release)}
+
+        self.actions = [self._DO_NOTHING] + self._buttons
+        if action_type == &#34;all&#34;:
+            self.actions += self._buttons_release
+        elif action_type not in [&#34;press&#34;, &#34;toggle&#34;]:
+            raise ValueError(f&#34;action_type {action_type} is invalid&#34;)
+        self.action_type = action_type
+
+        if simultaneous_actions:
+            raise NotImplementedError(&#34;Not implemented yet, raise an issue on GitHub if needed&#34;)
+        else:
+            self.action_space = Discrete(len(self.actions))
+
+        # Building the observation_space
+        if observation_type == &#34;raw&#34;:
+            screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
+            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
+        elif observation_type in [&#34;tiles&#34;, &#34;compressed&#34;, &#34;minimal&#34;]:
+            size_ids = TILES
+            if observation_type == &#34;compressed&#34;:
+                try:
+                    size_ids = np.max(self.game_wrapper.tiles_compressed) + 1
+                except AttributeError:
+                    raise AttributeError(
+                        &#34;You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type&#34;
+                    )
+            elif observation_type == &#34;minimal&#34;:
+                try:
+                    size_ids = np.max(self.game_wrapper.tiles_minimal) + 1
+                except AttributeError:
+                    raise AttributeError(
+                        &#34;You need to add the tiles_minimal attibute to the game_wrapper to use the minimal observation_type&#34;
+                    )
+            nvec = size_ids * np.ones(self.game_wrapper.shape)
+            self.observation_space = MultiDiscrete(nvec)
+        else:
+            raise NotImplementedError(f&#34;observation_type {observation_type} is invalid&#34;)
+        self.observation_type = observation_type
+
+        self._started = False
+
+    def _get_observation(self):
+        if self.observation_type == &#34;raw&#34;:
+            observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
+        elif self.observation_type in [&#34;tiles&#34;, &#34;compressed&#34;, &#34;minimal&#34;]:
+            observation = self.game_wrapper._game_area_np(self.observation_type)
+        else:
+            raise NotImplementedError(f&#34;observation_type {self.observation_type} is invalid&#34;)
+        return observation
+
+    def step(self, action_id):
+        info = {}
+
+        action = self.actions[action_id]
+        if action == self._DO_NOTHING:
+            pyboy_done = self.pyboy.tick()
+        else:
+            if self.action_type == &#34;toggle&#34;:
+                if self._button_is_pressed[action]:
+                    self._button_is_pressed[action] = False
+                    action = self._release_button[action]
+                else:
+                    self._button_is_pressed[action] = True
+
+            self.pyboy.send_input(action)
+            pyboy_done = self.pyboy.tick()
+
+            if self.action_type == &#34;press&#34;:
+                self.pyboy.send_input(self._release_button[action])
+
+        new_fitness = self.game_wrapper.fitness
+        reward = new_fitness - self.last_fitness
+        self.last_fitness = new_fitness
+
+        observation = self._get_observation()
+        done = pyboy_done or self.game_wrapper.game_over()
+
+        return observation, reward, done, info
+
+    def reset(self):
+        &#34;&#34;&#34; Reset (or start) the gym environment throught the game_wrapper &#34;&#34;&#34;
+        if not self._started:
+            self.game_wrapper.start_game()
+            self._started = True
+        else:
+            self.game_wrapper.reset_game()
+        self.last_fitness = self.game_wrapper.fitness
+        self.button_is_pressed = {button: False for button in self._buttons}
+        return self._get_observation()
+
+    def render(self):
+        pass
+
+    def close(self):
+        self.pyboy.stop(save=False)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.openai_gym.PyBoyGymEnv"><code class="flex name class">
+<span>class <span class="ident">PyBoyGymEnv</span></span>
+<span>(</span><span>pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>A gym environement built from a <a title="pyboy.PyBoy" href="index.html#pyboy.PyBoy"><code>PyBoy</code></a></p>
+<p>This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>observation_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Define what the agent will be able to see:</dd>
+</dl>
+<ul>
+<li><code>"raw"</code>: Gives the raw pixels color</li>
+<li><code>"tiles"</code>:
+Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
+<li><code>"compressed"</code>: Like <code>"tiles"</code> but with slightly simplified id's (i.e. each type of enemy has a unique id).</li>
+<li><code>"minimal"</code>: Like <code>"compressed"</code> but gives a minimal representation (recommended; i.e. all enemies have the same id).</li>
+</ul>
+<dl>
+<dt><strong><code>action_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Define how the agent will interact with button inputs</dd>
+</dl>
+<ul>
+<li><code>"press"</code>: The agent will only press inputs for 1 frame an then release it.</li>
+<li><code>"toggle"</code>: The agent will toggle inputs, first time it press and second time it release.</li>
+<li><code>"all"</code>: The agent have acces to all inputs, press and release are separated.</li>
+</ul>
+<dl>
+<dt><strong><code>simultaneous_actions</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Allow to inject multiple input at once. This dramatically increases the action_space: <span><span class="MathJax_Preview">n \rightarrow 2^n</span><script type="math/tex">n \rightarrow 2^n</script></span></dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt>game_wrapper (<a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="plugins/base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper"><code>PyBoyGameWrapper</code></a>): The game_wrapper of the PyBoy game instance over which the environment is built.</dt>
+<dt><strong><code>action_space</code></strong> :&ensp;<code>Gym</code> <code>space</code></dt>
+<dd>The action space of the environment.</dd>
+<dt><strong><code>observation_space</code></strong> :&ensp;<code>Gym</code> <code>space</code></dt>
+<dd>The observation space of the environment (depends of observation_type).</dd>
+<dt><strong><code>actions</code></strong> :&ensp;<code>list</code></dt>
+<dd>The list of input IDs of allowed input for the agent (depends of action_type).</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyGymEnv(Env):
+    &#34;&#34;&#34; A gym environement built from a `pyboy.PyBoy`
+
+    This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+
+    Args:
+        observation_type (str): Define what the agent will be able to see:
+        * `&#34;raw&#34;`: Gives the raw pixels color
+        * `&#34;tiles&#34;`:  Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+        * `&#34;compressed&#34;`: Like `&#34;tiles&#34;` but with slightly simplified id&#39;s (i.e. each type of enemy has a unique id).
+        * `&#34;minimal&#34;`: Like `&#34;compressed&#34;` but gives a minimal representation (recommended; i.e. all enemies have the same id).
+
+        action_type (str): Define how the agent will interact with button inputs
+        * `&#34;press&#34;`: The agent will only press inputs for 1 frame an then release it.
+        * `&#34;toggle&#34;`: The agent will toggle inputs, first time it press and second time it release.
+        * `&#34;all&#34;`: The agent have acces to all inputs, press and release are separated.
+
+        simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
+
+    Attributes:
+        game_wrapper (`pyboy.plugins.base_plugin.PyBoyGameWrapper`): The game_wrapper of the PyBoy game instance over which the environment is built.
+        action_space (Gym space): The action space of the environment.
+        observation_space (Gym space): The observation space of the environment (depends of observation_type).
+        actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
+
+    &#34;&#34;&#34;
+    def __init__(self, pyboy, observation_type=&#34;tiles&#34;, action_type=&#34;toggle&#34;, simultaneous_actions=False):
+        # Build pyboy game
+        self.pyboy = pyboy
+        if str(type(pyboy)) != &#34;&lt;class &#39;pyboy.pyboy.PyBoy&#39;&gt;&#34;:
+            raise TypeError(&#34;pyboy must be a Pyboy object&#34;)
+
+        # Build game_wrapper
+        self.game_wrapper = pyboy.game_wrapper()
+        if self.game_wrapper is None:
+            raise ValueError(
+                &#34;You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly.&#34;
+            )
+        self.last_fitness = self.game_wrapper.fitness
+
+        # Building the action_space
+        self._DO_NOTHING = WindowEvent.PASS
+        self._buttons = [
+            WindowEvent.PRESS_ARROW_UP, WindowEvent.PRESS_ARROW_DOWN, WindowEvent.PRESS_ARROW_RIGHT,
+            WindowEvent.PRESS_ARROW_LEFT, WindowEvent.PRESS_BUTTON_A, WindowEvent.PRESS_BUTTON_B,
+            WindowEvent.PRESS_BUTTON_SELECT, WindowEvent.PRESS_BUTTON_START
+        ]
+        self._button_is_pressed = {button: False for button in self._buttons}
+
+        self._buttons_release = [
+            WindowEvent.RELEASE_ARROW_UP, WindowEvent.RELEASE_ARROW_DOWN, WindowEvent.RELEASE_ARROW_RIGHT,
+            WindowEvent.RELEASE_ARROW_LEFT, WindowEvent.RELEASE_BUTTON_A, WindowEvent.RELEASE_BUTTON_B,
+            WindowEvent.RELEASE_BUTTON_SELECT, WindowEvent.RELEASE_BUTTON_START
+        ]
+        self._release_button = {button: r_button for button, r_button in zip(self._buttons, self._buttons_release)}
+
+        self.actions = [self._DO_NOTHING] + self._buttons
+        if action_type == &#34;all&#34;:
+            self.actions += self._buttons_release
+        elif action_type not in [&#34;press&#34;, &#34;toggle&#34;]:
+            raise ValueError(f&#34;action_type {action_type} is invalid&#34;)
+        self.action_type = action_type
+
+        if simultaneous_actions:
+            raise NotImplementedError(&#34;Not implemented yet, raise an issue on GitHub if needed&#34;)
+        else:
+            self.action_space = Discrete(len(self.actions))
+
+        # Building the observation_space
+        if observation_type == &#34;raw&#34;:
+            screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
+            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
+        elif observation_type in [&#34;tiles&#34;, &#34;compressed&#34;, &#34;minimal&#34;]:
+            size_ids = TILES
+            if observation_type == &#34;compressed&#34;:
+                try:
+                    size_ids = np.max(self.game_wrapper.tiles_compressed) + 1
+                except AttributeError:
+                    raise AttributeError(
+                        &#34;You need to add the tiles_compressed attibute to the game_wrapper to use the compressed observation_type&#34;
+                    )
+            elif observation_type == &#34;minimal&#34;:
+                try:
+                    size_ids = np.max(self.game_wrapper.tiles_minimal) + 1
+                except AttributeError:
+                    raise AttributeError(
+                        &#34;You need to add the tiles_minimal attibute to the game_wrapper to use the minimal observation_type&#34;
+                    )
+            nvec = size_ids * np.ones(self.game_wrapper.shape)
+            self.observation_space = MultiDiscrete(nvec)
+        else:
+            raise NotImplementedError(f&#34;observation_type {observation_type} is invalid&#34;)
+        self.observation_type = observation_type
+
+        self._started = False
+
+    def _get_observation(self):
+        if self.observation_type == &#34;raw&#34;:
+            observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
+        elif self.observation_type in [&#34;tiles&#34;, &#34;compressed&#34;, &#34;minimal&#34;]:
+            observation = self.game_wrapper._game_area_np(self.observation_type)
+        else:
+            raise NotImplementedError(f&#34;observation_type {self.observation_type} is invalid&#34;)
+        return observation
+
+    def step(self, action_id):
+        info = {}
+
+        action = self.actions[action_id]
+        if action == self._DO_NOTHING:
+            pyboy_done = self.pyboy.tick()
+        else:
+            if self.action_type == &#34;toggle&#34;:
+                if self._button_is_pressed[action]:
+                    self._button_is_pressed[action] = False
+                    action = self._release_button[action]
+                else:
+                    self._button_is_pressed[action] = True
+
+            self.pyboy.send_input(action)
+            pyboy_done = self.pyboy.tick()
+
+            if self.action_type == &#34;press&#34;:
+                self.pyboy.send_input(self._release_button[action])
+
+        new_fitness = self.game_wrapper.fitness
+        reward = new_fitness - self.last_fitness
+        self.last_fitness = new_fitness
+
+        observation = self._get_observation()
+        done = pyboy_done or self.game_wrapper.game_over()
+
+        return observation, reward, done, info
+
+    def reset(self):
+        &#34;&#34;&#34; Reset (or start) the gym environment throught the game_wrapper &#34;&#34;&#34;
+        if not self._started:
+            self.game_wrapper.start_game()
+            self._started = True
+        else:
+            self.game_wrapper.reset_game()
+        self.last_fitness = self.game_wrapper.fitness
+        self.button_is_pressed = {button: False for button in self._buttons}
+        return self._get_observation()
+
+    def render(self):
+        pass
+
+    def close(self):
+        self.pyboy.stop(save=False)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>gym.core.Env</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.openai_gym.PyBoyGymEnv.step"><code class="name flex">
+<span>def <span class="ident">step</span></span>(<span>self, action_id)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Run one timestep of the environment's dynamics. When end of
+episode is reached, you are responsible for calling <code>reset()</code>
+to reset this environment's state.</p>
+<p>Accepts an action and returns a tuple (observation, reward, done, info).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>action</code></strong> :&ensp;<code>object</code></dt>
+<dd>an action provided by the agent</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>observation</code></strong> :&ensp;<code>object</code></dt>
+<dd>agent's observation of the current environment</dd>
+<dt><code>reward</code> (<code>float</code>) : <code>amount</code> of <code>reward</code> <code>returned</code> <code>after</code> <code>previous</code> <code>action</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>done</code></strong> :&ensp;<code>bool</code></dt>
+<dd>whether the episode has ended, in which case further step() calls will return undefined results</dd>
+<dt><strong><code>info</code></strong> :&ensp;<code>dict</code></dt>
+<dd>contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def step(self, action_id):
+    info = {}
+
+    action = self.actions[action_id]
+    if action == self._DO_NOTHING:
+        pyboy_done = self.pyboy.tick()
+    else:
+        if self.action_type == &#34;toggle&#34;:
+            if self._button_is_pressed[action]:
+                self._button_is_pressed[action] = False
+                action = self._release_button[action]
+            else:
+                self._button_is_pressed[action] = True
+
+        self.pyboy.send_input(action)
+        pyboy_done = self.pyboy.tick()
+
+        if self.action_type == &#34;press&#34;:
+            self.pyboy.send_input(self._release_button[action])
+
+    new_fitness = self.game_wrapper.fitness
+    reward = new_fitness - self.last_fitness
+    self.last_fitness = new_fitness
+
+    observation = self._get_observation()
+    done = pyboy_done or self.game_wrapper.game_over()
+
+    return observation, reward, done, info</code></pre>
+</details>
+</dd>
+<dt id="pyboy.openai_gym.PyBoyGymEnv.reset"><code class="name flex">
+<span>def <span class="ident">reset</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reset (or start) the gym environment throught the game_wrapper</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset(self):
+    &#34;&#34;&#34; Reset (or start) the gym environment throught the game_wrapper &#34;&#34;&#34;
+    if not self._started:
+        self.game_wrapper.start_game()
+        self._started = True
+    else:
+        self.game_wrapper.reset_game()
+    self.last_fitness = self.game_wrapper.fitness
+    self.button_is_pressed = {button: False for button in self._buttons}
+    return self._get_observation()</code></pre>
+</details>
+</dd>
+<dt id="pyboy.openai_gym.PyBoyGymEnv.render"><code class="name flex">
+<span>def <span class="ident">render</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Renders the environment.</p>
+<p>The set of supported modes varies per environment. (And some
+environments do not support rendering at all.) By convention,
+if mode is:</p>
+<ul>
+<li>human: render to the current display or terminal and
+return nothing. Usually for human consumption.</li>
+<li>rgb_array: Return an numpy.ndarray with shape (x, y, 3),
+representing RGB values for an x-by-y pixel image, suitable
+for turning into a video.</li>
+<li>ansi: Return a string (str) or StringIO.StringIO containing a
+terminal-style text representation. The text can include newlines
+and ANSI escape sequences (e.g. for colors).</li>
+</ul>
+<h2 id="note">Note</h2>
+<p>Make sure that your class's metadata 'render.modes' key includes
+the list of supported modes. It's recommended to call super()
+in implementations to use the functionality of this method.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mode</code></strong> :&ensp;<code>str</code></dt>
+<dd>the mode to render with</dd>
+</dl>
+<p>Example:</p>
+<p>class MyEnv(Env):
+metadata = {'render.modes': ['human', 'rgb_array']}</p>
+<pre><code>def render(self, mode='human'):
+    if mode == 'rgb_array':
+        return np.array(...) # return RGB frame suitable for video
+    elif mode == 'human':
+        ... # pop up a window and render
+    else:
+        super(MyEnv, self).render(mode=mode) # just raise an exception
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render(self):
+    pass</code></pre>
+</details>
+</dd>
+<dt id="pyboy.openai_gym.PyBoyGymEnv.close"><code class="name flex">
+<span>def <span class="ident">close</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Override close in your subclass to perform any necessary cleanup.</p>
+<p>Environments will automatically close() themselves when
+garbage collected or when the program exits.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def close(self):
+    self.pyboy.stop(save=False)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy" href="index.html">pyboy</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.openai_gym.PyBoyGymEnv" href="#pyboy.openai_gym.PyBoyGymEnv">PyBoyGymEnv</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.openai_gym.PyBoyGymEnv.step" href="#pyboy.openai_gym.PyBoyGymEnv.step">step</a></code></li>
+<li><code><a title="pyboy.openai_gym.PyBoyGymEnv.reset" href="#pyboy.openai_gym.PyBoyGymEnv.reset">reset</a></code></li>
+<li><code><a title="pyboy.openai_gym.PyBoyGymEnv.render" href="#pyboy.openai_gym.PyBoyGymEnv.render">render</a></code></li>
+<li><code><a title="pyboy.openai_gym.PyBoyGymEnv.close" href="#pyboy.openai_gym.PyBoyGymEnv.close">close</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
