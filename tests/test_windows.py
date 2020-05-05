@@ -6,7 +6,6 @@
 import os
 
 import pytest
-
 from tests.test_replay import replay
 from tests.utils import default_rom
 

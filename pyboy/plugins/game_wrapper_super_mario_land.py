@@ -8,8 +8,8 @@ __pdoc__ = {
 }
 
 import logging
-import numpy as np
 
+import numpy as np
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
@@ -41,9 +41,10 @@ flower = [224, 229]
 lever = [255]
 
 # Solid blocks
-neutral_blocks = [142, 143, 221, 222, 231, 232, 233, 234, 235, 236,
-                  301, 302, 303, 304, 319, 339, 340, 352, 353, 355,
-                  356, 357, 358, 359, 360, 361, 362, 381, 382, 383]
+neutral_blocks = [
+    142, 143, 221, 222, 231, 232, 233, 234, 235, 236, 301, 302, 303, 304, 319, 339, 340, 352, 353, 355, 356, 357, 358,
+    359, 360, 361, 362, 381, 382, 383
+]
 moving_blocks = [230, 238, 239]
 pushable_blokcs = [128, 130, 354]
 question_block = [129]
@@ -67,10 +68,9 @@ spike = [237]
 TILES = 384
 tiles_minimal = np.zeros(TILES, dtype=np.uint8)
 minimal_list = [
-    base_scripts + plane + submarine,
-    coin + mushroom + heart + star + lever,
-    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
-    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion + spike
+    base_scripts + plane + submarine, coin + mushroom + heart + star + lever,
+    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes, goomba + koopa + plant + moth +
+    flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion + spike
 ]
 for i, tile_list in enumerate(minimal_list):
     for tile in tile_list:
@@ -78,9 +78,9 @@ for i, tile_list in enumerate(minimal_list):
 
 tiles_compressed = np.zeros(TILES, dtype=np.uint8)
 compressed_list = [
-    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever,
-    neutral_blocks, moving_blocks, pushable_blokcs, question_block, pipes,
-    goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill, projectiles, shell, explosion, spike
+    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever, neutral_blocks, moving_blocks,
+    pushable_blokcs, question_block, pipes, goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill,
+    projectiles, shell, explosion, spike
 ]
 for i, tile_list in enumerate(compressed_list):
     for tile in tile_list:

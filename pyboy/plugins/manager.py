@@ -260,7 +260,7 @@ class PluginManager:
         if self.screen_recorder_enabled:
             self.screen_recorder.stop()
         if self.screenshot_recorder_enabled:
-            self.screenshot_recorder.stop()            
+            self.screenshot_recorder.stop()
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.stop()
         if self.game_wrapper_tetris_enabled:
