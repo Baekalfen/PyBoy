@@ -25,6 +25,7 @@ def test_mario_basics():
     pyboy.stop()
 
 
+@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
 def test_mario_advanced():
     pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
@@ -45,6 +46,7 @@ def test_mario_advanced():
     pyboy.stop()
 
 
+@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
 def test_mario_game_over():
     pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
