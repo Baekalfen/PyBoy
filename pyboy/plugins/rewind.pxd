@@ -10,8 +10,6 @@ from libc.stdlib cimport malloc, free
 from libc.stdint cimport uint8_t, uint64_t, int64_t
 from pyboy.utils cimport IntIOInterface
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 cdef class Rewind(PyBoyPlugin):
     cdef float rewind_speed

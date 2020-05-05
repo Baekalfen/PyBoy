@@ -11,8 +11,6 @@ from pyboy.core.mb cimport Motherboard
 from pyboy.core.lcd cimport Renderer
 from pyboy.utils cimport WindowEvent
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 cdef int ROWS, COLS
 
 

@@ -22,8 +22,6 @@ cdef int mark_counter
 cdef set marked_tiles
 cdef uint32_t[:] MARK
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 cdef class MarkedTile:
     cdef public int tile_identifier
