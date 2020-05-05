@@ -21,7 +21,6 @@ FPS = 60
 
 
 class ScreenshotRecorder(PyBoyPlugin):
-
     def handle_events(self, events):
         for event in events:
             if event == WindowEvent.SCREENSHOT_RECORD:

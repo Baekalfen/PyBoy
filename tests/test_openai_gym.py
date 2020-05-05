@@ -10,7 +10,6 @@ import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
-
 from tests.utils import tetris_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
@@ -107,7 +106,7 @@ class TestOpenAIGym:
         expected_observation[id0_block + 1, id1_block] = 2
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
-    
+
     def test_minimal(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="minimal")
         tetris = pyboy.game_wrapper()
@@ -130,7 +129,7 @@ class TestOpenAIGym:
         expected_observation[id0_block + 1, id1_block] = 1
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
- 
+
     def test_press(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="press")
         tetris = pyboy.game_wrapper()
