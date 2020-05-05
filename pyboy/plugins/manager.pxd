@@ -22,8 +22,6 @@ from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLa
 # imports end
 from pyboy.plugins.base_plugin cimport PyBoyPlugin, PyBoyWindowPlugin
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class PluginManager:

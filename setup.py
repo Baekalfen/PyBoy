@@ -18,7 +18,7 @@ from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
-cython; platform_python_implementation == 'CPython'
+cython>=0.29.16; platform_python_implementation == 'CPython'
 numpy
 pillow
 pysdl2
@@ -40,14 +40,19 @@ CYTHON = platform.python_implementation() != "PyPy"
 if CYTHON:
     # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
     from setuptools import dist
-    dist.Distribution().fetch_build_eggs(["cython"])
+    dist.Distribution().fetch_build_eggs(["cython>=0.29.16"])
 
     from Cython.Build import cythonize
     import Cython.Compiler.Options
     from Cython.Distutils import build_ext
 else:
     try:
-        requirements.remove("cython")
+        for r in requirements:
+            if "cython" in r:
+                break
+        else:
+            r = None
+        requirements.remove(r)
     except ValueError:
         pass
 

@@ -18,8 +18,6 @@ cdef uint16_t IF_ADDRESS, IE_ADDRESS
 cdef short FLAGC, FLAGH, FLAGN, FLAGZ
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class CPU:

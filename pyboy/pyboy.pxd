@@ -11,8 +11,6 @@ from pyboy.core.mb cimport Motherboard
 from pyboy.utils cimport IntIOWrapper, IntIOInterface
 from pyboy.plugins.manager cimport PluginManager
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 cdef float SPF
 
