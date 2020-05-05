@@ -9,8 +9,6 @@ from pyboy.botsupport.sprite cimport Sprite
 from pyboy.botsupport.tile cimport Tile
 from pyboy.botsupport.tilemap cimport TileMap
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class BotSupportManager:

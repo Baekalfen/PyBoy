@@ -8,8 +8,6 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
