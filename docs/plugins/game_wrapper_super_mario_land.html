@@ -26,16 +26,17 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 __pdoc__ = {
-   &#39;GameWrapperSuperMarioLand.cartridge_title&#39;: False,
-   &#39;GameWrapperSuperMarioLand.post_tick&#39;: False,
+    &#34;GameWrapperSuperMarioLand.cartridge_title&#34;: False,
+    &#34;GameWrapperSuperMarioLand.post_tick&#34;: False,
 }
 
 import logging
 
+import numpy as np
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
@@ -48,6 +49,85 @@ try:
 except ImportError:
     cythonmode = False
 
+# Mario and Daisy
+base_scripts = list(range(81))
+plane = list(range(99, 110))
+submarine = list(range(112, 122))
+
+# Mario shoots
+shoots = [96, 110, 122]
+
+# Bonuses
+coin = [244]
+mushroom = [131]
+heart = [132]
+star = [134]
+flower = [224, 229]
+
+# Lever for level end
+lever = [255]
+
+# Solid blocks
+neutral_blocks = [
+    142, 143, 221, 222, 231, 232, 233, 234, 235, 236, 301, 302, 303, 304, 319, 339, 340, 352, 353, 355, 356, 357, 358,
+    359, 360, 361, 362, 381, 382, 383
+]
+moving_blocks = [230, 238, 239]
+pushable_blokcs = [128, 130, 354]
+question_block = [129]
+pipes = list(range(368, 381))
+
+# Enemies
+goomba = [144]
+koopa = [150, 151, 152, 153]
+plant = [146, 147, 148, 149]
+moth = [160, 161, 162, 163, 176, 177, 178, 179]
+flying_moth = [192, 193, 194, 195, 208, 209, 210, 211]
+sphinx = [164, 165, 166, 167, 180, 181, 182, 183]
+big_sphinx = [198, 199, 201, 202, 203, 204, 205, 214, 215, 217, 218, 219]
+fist = [240, 241, 242, 243]
+bill = [249]
+projectiles = [172, 188, 196, 197, 212, 213, 226, 227]
+shell = [154, 155]
+explosion = [157, 158]
+spike = [237]
+
+TILES = 384
+tiles_minimal = np.zeros(TILES, dtype=np.uint8)
+minimal_list = [
+    base_scripts + plane + submarine,
+    coin + mushroom + heart + star + lever,
+    neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
+    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion +
+    spike,
+]
+for i, tile_list in enumerate(minimal_list):
+    for tile in tile_list:
+        tiles_minimal[tile] = i + 1
+
+tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+compressed_list = [
+    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever, neutral_blocks, moving_blocks,
+    pushable_blokcs, question_block, pipes, goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill,
+    projectiles, shell, explosion, spike
+]
+for i, tile_list in enumerate(compressed_list):
+    for tile in tile_list:
+        tiles_compressed[tile] = i + 1
+
+np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
+
+# Apparantly that address is for lives left
+# https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
+ADDR_LIVES_LEFT = 0xDA15
+ADDR_LIVES_LEFT_DISPLAY = 0x9806
+ADDR_WORLD_LEVEL = 0xFFB4
+ADDR_WIN_COUNT = 0xFF9A
+
+
+def _bcm_to_dec(value):
+    return (value &gt;&gt; 4) * 10 + (value &amp; 0x0F)
+
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     &#34;&#34;&#34;
@@ -57,6 +137,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
     cartridge_title = &#34;SUPER MARIOLAN&#34;
+    tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 16)
@@ -82,39 +164,94 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
         &#34;&#34;&#34;
 
-        super().__init__(*args, game_area_section = (0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        self.world = self.tilemap_background[12, 1]-256, self.tilemap_background[14, 1]-256
+        world_level = self.pyboy.get_memory_value(ADDR_WORLD_LEVEL)
+        self.world = world_level &gt;&gt; 4, world_level &amp; 0x0F
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
-        self.lives_left = self._sum_number_on_screen(6, 0, 2, blank, -256)
+        self.lives_left = _bcm_to_dec(self.pyboy.get_memory_value(ADDR_LIVES_LEFT))
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
         self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
 
         level_block = self.pyboy.get_memory_value(0xC0AB)
         mario_x = self.pyboy.get_memory_value(0xC202)
         scx = self.pyboy.botsupport_manager().screen().tilemap_position_list()[16][0]
-        self.level_progress = level_block*16 + (scx-7)%16 + mario_x
+        self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
 
         if self.game_has_started:
             self._level_progress_max = max(self.level_progress, self._level_progress_max)
-            end_score = self.score + self.time_left*10
-            self.fitness = self.lives_left*10000 + end_score + self._level_progress_max*10
+            end_score = self.score + self.time_left * 10
+            self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
-    def start_game(self):
+    def set_lives_left(self, amount):
+        &#34;&#34;&#34;
+        Set the amount lives to any number between 0 and 99.
+
+        This should only be called when the game has started.
+
+        Args:
+            amount (int): The wanted number of lives
+        &#34;&#34;&#34;
+        if not self.game_has_started:
+            logger.warning(&#34;Please call set_lives_left after starting the game&#34;)
+
+        if 0 &lt;= amount &lt;= 99:
+            tens = amount // 10
+            ones = amount % 10
+            self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens &lt;&lt; 4) | ones)
+            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
+            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+        else:
+            logger.error(f&#34;{amount} is out of bounds. Only values between 0 and 99 allowed.&#34;)
+
+    def set_world_level(self, world, level):
+        &#34;&#34;&#34;
+        Patches the handler for pressing start in the menu. It hardcodes a world and level to always &#34;continue&#34; from.
+
+        Args:
+            world (int): The wanted number of lives
+            level (int): The wanted number of lives
+        &#34;&#34;&#34;
+
+        for i in range(0x450, 0x461):
+            self.pyboy.override_memory_value(0, i, 0x00)
+
+        patch1 = [
+            0x3E, # LD A, d8
+            (world &lt;&lt; 4) | (level &amp; 0x0F), # d8
+        ]
+
+        for i, byte in enumerate(patch1):
+            self.pyboy.override_memory_value(0, 0x451 + i, byte)
+
+    def start_game(self, world_level=None, unlock_level_select=False):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
         the first frame it&#39;s possible.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        The game has 4 major worlds with each 3 level. to start at a specific world and level, provide it as a tuple for
+        the optional keyword-argument `world_level`.
+
+        If you&#39;re not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
+        Enabling the selector, will make this function return before entering the game.
+
+        Kwargs:
+            world_level (tuple): (world, level) to start the game from
+            unlock_level_select (bool): Unlock level selector menu
         &#34;&#34;&#34;
         if not self.pyboy.frame_count == 0:
-            logger.warning(&#39;Calling start_game from an already running game. This might not work.&#39;)
+            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+
+        if world_level is not None:
+            self.set_world_level(*world_level)
 
         # Boot screen
         while True:
@@ -130,6 +267,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         while True:
+            if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
+                self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+                break
             self.pyboy.tick()
             self.tilemap_background.refresh_lcdc()
 
@@ -191,10 +331,16 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        return super().game_area()
+        return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        # Apparantly that address is for game over
+        # https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
+        return self.pyboy.get_memory_value(0xC0A4) == 0x39
 
     def __repr__(self):
         adjust = 4
+        # yapf: disable
         return (
             f&#34;Super Mario Land: World {&#39;-&#39;.join([str(i) for i in self.world])}\n&#34; +
             f&#34;Coins: {self.coins}\n&#34; +
@@ -204,7 +350,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             f&#34;Level progress: {self.level_progress}\n&#34; +
             f&#34;Fitness: {self.fitness}\n&#34; +
             &#34;Sprites on screen:\n&#34; +
-            &#34;\n&#34;.join([str(s) for s in self.sprites_on_screen()]) +
+            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
             &#34;\n&#34; +
             &#34;Tiles on screen:\n&#34; +
             &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(20)]) + &#34;\n&#34; +
@@ -216,7 +362,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
                     for i, line in enumerate(self.game_area())
                 ]
             )
-        )</code></pre>
+        )
+        # yapf: enable</code></pre>
 </details>
 </section>
 <section>
@@ -248,6 +395,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
     cartridge_title = &#34;SUPER MARIOLAN&#34;
+    tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 16)
@@ -273,39 +422,94 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
         &#34;&#34;&#34;
 
-        super().__init__(*args, game_area_section = (0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        self.world = self.tilemap_background[12, 1]-256, self.tilemap_background[14, 1]-256
+        world_level = self.pyboy.get_memory_value(ADDR_WORLD_LEVEL)
+        self.world = world_level &gt;&gt; 4, world_level &amp; 0x0F
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
-        self.lives_left = self._sum_number_on_screen(6, 0, 2, blank, -256)
+        self.lives_left = _bcm_to_dec(self.pyboy.get_memory_value(ADDR_LIVES_LEFT))
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
         self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
 
         level_block = self.pyboy.get_memory_value(0xC0AB)
         mario_x = self.pyboy.get_memory_value(0xC202)
         scx = self.pyboy.botsupport_manager().screen().tilemap_position_list()[16][0]
-        self.level_progress = level_block*16 + (scx-7)%16 + mario_x
+        self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
 
         if self.game_has_started:
             self._level_progress_max = max(self.level_progress, self._level_progress_max)
-            end_score = self.score + self.time_left*10
-            self.fitness = self.lives_left*10000 + end_score + self._level_progress_max*10
+            end_score = self.score + self.time_left * 10
+            self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
-    def start_game(self):
+    def set_lives_left(self, amount):
+        &#34;&#34;&#34;
+        Set the amount lives to any number between 0 and 99.
+
+        This should only be called when the game has started.
+
+        Args:
+            amount (int): The wanted number of lives
+        &#34;&#34;&#34;
+        if not self.game_has_started:
+            logger.warning(&#34;Please call set_lives_left after starting the game&#34;)
+
+        if 0 &lt;= amount &lt;= 99:
+            tens = amount // 10
+            ones = amount % 10
+            self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens &lt;&lt; 4) | ones)
+            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
+            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+        else:
+            logger.error(f&#34;{amount} is out of bounds. Only values between 0 and 99 allowed.&#34;)
+
+    def set_world_level(self, world, level):
+        &#34;&#34;&#34;
+        Patches the handler for pressing start in the menu. It hardcodes a world and level to always &#34;continue&#34; from.
+
+        Args:
+            world (int): The wanted number of lives
+            level (int): The wanted number of lives
+        &#34;&#34;&#34;
+
+        for i in range(0x450, 0x461):
+            self.pyboy.override_memory_value(0, i, 0x00)
+
+        patch1 = [
+            0x3E, # LD A, d8
+            (world &lt;&lt; 4) | (level &amp; 0x0F), # d8
+        ]
+
+        for i, byte in enumerate(patch1):
+            self.pyboy.override_memory_value(0, 0x451 + i, byte)
+
+    def start_game(self, world_level=None, unlock_level_select=False):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
         the first frame it&#39;s possible.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        The game has 4 major worlds with each 3 level. to start at a specific world and level, provide it as a tuple for
+        the optional keyword-argument `world_level`.
+
+        If you&#39;re not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
+        Enabling the selector, will make this function return before entering the game.
+
+        Kwargs:
+            world_level (tuple): (world, level) to start the game from
+            unlock_level_select (bool): Unlock level selector menu
         &#34;&#34;&#34;
         if not self.pyboy.frame_count == 0:
-            logger.warning(&#39;Calling start_game from an already running game. This might not work.&#39;)
+            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+
+        if world_level is not None:
+            self.set_world_level(*world_level)
 
         # Boot screen
         while True:
@@ -321,6 +525,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         while True:
+            if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
+                self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+                break
             self.pyboy.tick()
             self.tilemap_background.refresh_lcdc()
 
@@ -382,10 +589,16 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        return super().game_area()
+        return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        # Apparantly that address is for game over
+        # https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
+        return self.pyboy.get_memory_value(0xC0A4) == 0x39
 
     def __repr__(self):
         adjust = 4
+        # yapf: disable
         return (
             f&#34;Super Mario Land: World {&#39;-&#39;.join([str(i) for i in self.world])}\n&#34; +
             f&#34;Coins: {self.coins}\n&#34; +
@@ -395,7 +608,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             f&#34;Level progress: {self.level_progress}\n&#34; +
             f&#34;Fitness: {self.fitness}\n&#34; +
             &#34;Sprites on screen:\n&#34; +
-            &#34;\n&#34;.join([str(s) for s in self.sprites_on_screen()]) +
+            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
             &#34;\n&#34; +
             &#34;Tiles on screen:\n&#34; +
             &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(20)]) + &#34;\n&#34; +
@@ -414,6 +627,17 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 <li><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></li>
 <li>pyboy.plugins.base_plugin.PyBoyPlugin</li>
 </ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_compressed"><code class="name">var <span class="ident">tiles_compressed</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_minimal"><code class="name">var <span class="ident">tiles_minimal</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
 <h3>Instance variables</h3>
 <dl>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.shape"><code class="name">var <span class="ident">shape</span></code></dt>
@@ -452,28 +676,126 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_lives_left"><code class="name flex">
+<span>def <span class="ident">set_lives_left</span></span>(<span>self, amount)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set the amount lives to any number between 0 and 99.</p>
+<p>This should only be called when the game has started.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>amount</code></strong> :&ensp;<code>int</code></dt>
+<dd>The wanted number of lives</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_lives_left(self, amount):
+    &#34;&#34;&#34;
+    Set the amount lives to any number between 0 and 99.
+
+    This should only be called when the game has started.
+
+    Args:
+        amount (int): The wanted number of lives
+    &#34;&#34;&#34;
+    if not self.game_has_started:
+        logger.warning(&#34;Please call set_lives_left after starting the game&#34;)
+
+    if 0 &lt;= amount &lt;= 99:
+        tens = amount // 10
+        ones = amount % 10
+        self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens &lt;&lt; 4) | ones)
+        self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
+        self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+    else:
+        logger.error(f&#34;{amount} is out of bounds. Only values between 0 and 99 allowed.&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_world_level"><code class="name flex">
+<span>def <span class="ident">set_world_level</span></span>(<span>self, world, level)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Patches the handler for pressing start in the menu. It hardcodes a world and level to always "continue" from.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>world</code></strong> :&ensp;<code>int</code></dt>
+<dd>The wanted number of lives</dd>
+<dt><strong><code>level</code></strong> :&ensp;<code>int</code></dt>
+<dd>The wanted number of lives</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_world_level(self, world, level):
+    &#34;&#34;&#34;
+    Patches the handler for pressing start in the menu. It hardcodes a world and level to always &#34;continue&#34; from.
+
+    Args:
+        world (int): The wanted number of lives
+        level (int): The wanted number of lives
+    &#34;&#34;&#34;
+
+    for i in range(0x450, 0x461):
+        self.pyboy.override_memory_value(0, i, 0x00)
+
+    patch1 = [
+        0x3E, # LD A, d8
+        (world &lt;&lt; 4) | (level &amp; 0x0F), # d8
+    ]
+
+    for i, byte in enumerate(patch1):
+        self.pyboy.override_memory_value(0, 0x451 + i, byte)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.start_game"><code class="name flex">
-<span>def <span class="ident">start_game</span></span>(<span>self)</span>
+<span>def <span class="ident">start_game</span></span>(<span>self, world_level=None, unlock_level_select=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
 the first frame it's possible.</p>
 <p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
-instantly.</p></section>
+instantly.</p>
+<p>The game has 4 major worlds with each 3 level. to start at a specific world and level, provide it as a tuple for
+the optional keyword-argument <code>world_level</code>.</p>
+<p>If you're not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
+Enabling the selector, will make this function return before entering the game.</p>
+<h2 id="kwargs">Kwargs</h2>
+<dl>
+<dt><strong><code>world_level</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>(world, level) to start the game from</dd>
+<dt><strong><code>unlock_level_select</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Unlock level selector menu</dd>
+</dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def start_game(self):
+<pre><code class="python">def start_game(self, world_level=None, unlock_level_select=False):
     &#34;&#34;&#34;
     Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
     the first frame it&#39;s possible.
 
     The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
     instantly.
+
+    The game has 4 major worlds with each 3 level. to start at a specific world and level, provide it as a tuple for
+    the optional keyword-argument `world_level`.
+
+    If you&#39;re not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
+    Enabling the selector, will make this function return before entering the game.
+
+    Kwargs:
+        world_level (tuple): (world, level) to start the game from
+        unlock_level_select (bool): Unlock level selector menu
     &#34;&#34;&#34;
     if not self.pyboy.frame_count == 0:
-        logger.warning(&#39;Calling start_game from an already running game. This might not work.&#39;)
+        logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+
+    if world_level is not None:
+        self.set_world_level(*world_level)
 
     # Boot screen
     while True:
@@ -489,6 +811,9 @@ instantly.</p></section>
     self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
     while True:
+        if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
+            self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+            break
         self.pyboy.tick()
         self.tilemap_background.refresh_lcdc()
 
@@ -600,10 +925,18 @@ ________________________________________________________________________________
     memoryview:
         Simplified 2-dimensional memoryview of the screen
     &#34;&#34;&#34;
-    return super().game_area()</code></pre>
+    return PyBoyGameWrapper.game_area(self)</code></pre>
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -624,6 +957,8 @@ ________________________________________________________________________________
 <li>
 <h4><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand">GameWrapperSuperMarioLand</a></code></h4>
 <ul class="two-column">
+<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_lives_left" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_lives_left">set_lives_left</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_world_level" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_world_level">set_world_level</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.start_game" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.start_game">start_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.reset_game" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.game_area" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.game_area">game_area</a></code></li>
@@ -635,6 +970,8 @@ ________________________________________________________________________________
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.time_left" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.time_left">time_left</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.level_progress" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.level_progress">level_progress</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.fitness" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.fitness">fitness</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_compressed" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_compressed">tiles_compressed</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_minimal" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_minimal">tiles_minimal</a></code></li>
 </ul>
 </li>
 </ul>

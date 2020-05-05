@@ -27,10 +27,9 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 &#34;&#34;&#34;
 The Game Boy has two tile maps, which defines what is rendered on the screen.
 &#34;&#34;&#34;
@@ -129,9 +128,8 @@ class TileMap:
         tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
         matches = []
         for i in identifiers:
-            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)])
+            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers == i)])
         return matches
-
 
     def _tile_address(self, column, row):
         &#34;&#34;&#34;
@@ -215,18 +213,20 @@ class TileMap:
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
+        # yapf: disable
         return_data = (
-                f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34; +
-                f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
-                &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
-                &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
-                &#34;\n&#34;.join(
-                    [
-                        f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self[:, :])
-                    ]
-                )
+            f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34; +
+            f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
+            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
+            &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
+            &#34;\n&#34;.join(
+                [
+                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self[:, :])
+                ]
             )
+        )
+        # yapf: enable
         self.use_tile_objects(_use_tile_objects)
         return return_data
 
@@ -395,9 +395,8 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
         matches = []
         for i in identifiers:
-            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)])
+            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers == i)])
         return matches
-
 
     def _tile_address(self, column, row):
         &#34;&#34;&#34;
@@ -481,18 +480,20 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
+        # yapf: disable
         return_data = (
-                f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34; +
-                f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
-                &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
-                &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
-                &#34;\n&#34;.join(
-                    [
-                        f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self[:, :])
-                    ]
-                )
+            f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34; +
+            f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34; +
+            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)]) + &#34;\n&#34; +
+            &#34;_&#34;*(adjust*32+2) + &#34;\n&#34; +
+            &#34;\n&#34;.join(
+                [
+                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self[:, :])
+                ]
             )
+        )
+        # yapf: enable
         self.use_tile_objects(_use_tile_objects)
         return return_data
 
@@ -626,7 +627,7 @@ the coordinates where each identifier is found.</p>
     tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
     matches = []
     for i in identifiers:
-        matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers==i)])
+        matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers == i)])
     return matches</code></pre>
 </details>
 </dd>

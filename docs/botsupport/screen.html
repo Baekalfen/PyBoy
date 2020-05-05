@@ -27,10 +27,9 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 &#34;&#34;&#34;
 This class gives access to the frame buffer and other screen parameters of PyBoy.
 &#34;&#34;&#34;
@@ -42,7 +41,6 @@ import numpy as np
 from .constants import COLS, ROWS
 
 logger = logging.getLogger(__name__)
-
 
 try:
     from PIL import Image
@@ -89,16 +87,10 @@ class Screen:
 
         Returns
         -------
-        numpy.ndarray:
-            SCX, SCY, WX and WY for each scanline (144, 4).
+        list:
+            Nested list of SCX, SCY, WX and WY for each scanline (144x4).
         &#34;&#34;&#34;
         return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]
-        # return np.vstack(
-        #     [
-        #         np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
-        #         for line in self.mb.renderer._scanlineparameters
-        #         ]
-        #     )
 
     def raw_screen_buffer(self):
         &#34;&#34;&#34;
@@ -163,13 +155,13 @@ class Screen:
             RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if not Image:
-            logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+            logger.error(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
             return None
 
         # NOTE: Might have room for performance improvement
         # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
         # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), &#39;RGB&#39;)</code></pre>
+        return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -234,16 +226,10 @@ It's much more efficient to use <a title="pyboy.botsupport.BotSupportManager.til
 
         Returns
         -------
-        numpy.ndarray:
-            SCX, SCY, WX and WY for each scanline (144, 4).
+        list:
+            Nested list of SCX, SCY, WX and WY for each scanline (144x4).
         &#34;&#34;&#34;
         return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]
-        # return np.vstack(
-        #     [
-        #         np.array([line[0], line[1], line[2], line[3]], dtype=np.uint8)
-        #         for line in self.mb.renderer._scanlineparameters
-        #         ]
-        #     )
 
     def raw_screen_buffer(self):
         &#34;&#34;&#34;
@@ -308,13 +294,13 @@ It's much more efficient to use <a title="pyboy.botsupport.BotSupportManager.til
             RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if not Image:
-            logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+            logger.error(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
             return None
 
         # NOTE: Might have room for performance improvement
         # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
         # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), &#39;RGB&#39;)</code></pre>
+        return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -365,8 +351,8 @@ the end of each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.Py
 <p>See <a title="pyboy.botsupport.screen.Screen.tilemap_position" href="#pyboy.botsupport.screen.Screen.tilemap_position"><code>Screen.tilemap_position()</code></a> for more information.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>numpy.ndarray</code>:</dt>
-<dd>SCX, SCY, WX and WY for each scanline (144, 4).</dd>
+<dt><code>list</code>:</dt>
+<dd>Nested list of SCX, SCY, WX and WY for each scanline (144x4).</dd>
 </dl></section>
 <details class="source">
 <summary>
@@ -382,8 +368,8 @@ the end of each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.Py
 
     Returns
     -------
-    numpy.ndarray:
-        SCX, SCY, WX and WY for each scanline (144, 4).
+    list:
+        Nested list of SCX, SCY, WX and WY for each scanline (144x4).
     &#34;&#34;&#34;
     return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]</code></pre>
 </details>
@@ -530,13 +516,13 @@ and join our Discord channel for more help.</p>
         RGB image of (160, 144) pixels
     &#34;&#34;&#34;
     if not Image:
-        logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+        logger.error(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
         return None
 
     # NOTE: Might have room for performance improvement
     # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
     # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-    return Image.fromarray(self.screen_ndarray(), &#39;RGB&#39;)</code></pre>
+    return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
 </details>
 </dd>
 </dl>

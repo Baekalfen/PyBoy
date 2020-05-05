@@ -26,16 +26,16 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
 __pdoc__ = {
-   &#39;PyBoyPlugin&#39;: False,
-   &#39;PyBoyWindowPlugin&#39;: False,
-   &#39;PyBoyGameWrapper.post_tick&#39;: False,
-   &#39;PyBoyGameWrapper.enabled&#39;: False,
-   &#39;PyBoyGameWrapper.argv&#39;: False,
+    &#34;PyBoyPlugin&#34;: False,
+    &#34;PyBoyWindowPlugin&#34;: False,
+    &#34;PyBoyGameWrapper.post_tick&#34;: False,
+    &#34;PyBoyGameWrapper.enabled&#34;: False,
+    &#34;PyBoyGameWrapper.argv&#34;: False,
 }
 
 import io
@@ -98,7 +98,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         logger.info(&#34;%s initialization&#34; % self.__class__.__name__)
 
         self._scaledresolution = (scale * COLS, scale * ROWS)
-        logger.info(&#39;Scale: x%s %s&#39; % (self.scale, self._scaledresolution))
+        logger.info(&#34;Scale: x%s %s&#34; % (self.scale, self._scaledresolution))
 
         self.enable_title = True
         if not cythonmode:
@@ -115,15 +115,14 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
 
 class PyBoyGameWrapper(PyBoyPlugin):
-
     &#34;&#34;&#34;
     This is the base-class for the game-wrappers. It provides some generic game-wrapping functionality, like `game_area`
     , which shows both sprites and tiles on the screen as a simple matrix.
     &#34;&#34;&#34;
 
-    argv = [(&#39;--game-wrapper&#39;, {&#34;action&#34;: &#39;store_true&#39;, &#34;help&#34;: &#39;Enable game wrapper for the current game&#39;})]
+    argv = [(&#34;--game-wrapper&#34;, {&#34;action&#34;: &#34;store_true&#34;, &#34;help&#34;: &#34;Enable game wrapper for the current game&#34;})]
 
-    def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
+    def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
         self.game_has_started = False
@@ -134,18 +133,18 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.game_area_wrap_around = game_area_wrap_around
         width = self.game_area_section[2] - self.game_area_section[0]
         height = self.game_area_section[3] - self.game_area_section[1]
-        self._cached_game_area_tiles_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+        self._cached_game_area_tiles_raw = array(&#34;B&#34;, [0xFF] * (width*height*4))
 
         self.saved_state = io.BytesIO()
 
         if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;, shape=(width, height))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;, shape=(width, height))
         else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;)
-            self._cached_game_area_tiles = [v[i:i+height] for i in range(0, height*width, height)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;)
+            self._cached_game_area_tiles = [v[i:i + height] for i in range(0, height * width, height)]
 
     def enabled(self):
-        return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title
+        return self.pyboy_argv.get(&#34;game_wrapper&#34;) and self.pyboy.cartridge_title() == self.cartridge_title
 
     def post_tick(self):
         raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
@@ -165,6 +164,12 @@ class PyBoyGameWrapper(PyBoyPlugin):
         After calling `start_game`, you can call this method at any time to reset the game.
         &#34;&#34;&#34;
         raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)
+
+    def game_over(self):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)
 
     def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
@@ -187,14 +192,16 @@ class PyBoyGameWrapper(PyBoyPlugin):
             if self.game_area_wrap_around:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
-                    SCX = scanline_parameters[(yy+y)*8][0]//8
-                    SCY = scanline_parameters[(yy+y)*8][1]//8
+                    SCX = scanline_parameters[(yy+y) * 8][0] // 8
+                    SCY = scanline_parameters[(yy+y) * 8][1] // 8
                     for x in range(width):
-                        _x = (xx+x+SCX)%32
-                        _y = (yy+y+SCY)%32
+                        _x = (xx+x+SCX) % 32
+                        _y = (yy+y+SCY) % 32
                         self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
             else:
-                self._cached_game_area_tiles = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+                self._cached_game_area_tiles = np.asarray(
+                    self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
+                )
             self._tile_cache_invalid = False
         return self._cached_game_area_tiles
 
@@ -207,24 +214,44 @@ class PyBoyGameWrapper(PyBoyPlugin):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        tiles_matrix = self.game_area_tiles()
-        sprites = self.sprites_on_screen()
+        tiles_matrix = self._game_area_tiles()
+        sprites = self._sprites_on_screen()
         xx = self.game_area_section[0]
         yy = self.game_area_section[1]
         width = self.game_area_section[2]
         height = self.game_area_section[3]
         for s in sprites:
-            _x = (s.x//8)-xx
-            _y = (s.y//8)-yy
+            _x = (s.x // 8) - xx
+            _y = (s.y // 8) - yy
             if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
                 tiles_matrix[_y][_x] = s.tile_identifier
         return tiles_matrix
 
+    def _game_area_np(self, observation_type=&#34;tiles&#34;):
+        if observation_type == &#34;tiles&#34;:
+            return np.asarray(self.game_area(), dtype=np.uint16)
+        elif observation_type == &#34;compressed&#34;:
+            try:
+                return self.tiles_compressed[np.asarray(self.game_area(), dtype=np.uint16)]
+            except AttributeError:
+                raise AttributeError(
+                    f&#34;Game wrapper miss the attribute tiles_compressed for observation_type : {observation_type}&#34;
+                )
+        elif observation_type == &#34;minimal&#34;:
+            try:
+                return self.tiles_minimal[np.asarray(self.game_area(), dtype=np.uint16)]
+            except AttributeError:
+                raise AttributeError(
+                    f&#34;Game wrapper miss the attribute tiles_minimal for observation_type : {observation_type}&#34;
+                )
+        else:
+            raise ValueError(f&#34;Invalid observation_type : {observation_type}&#34;)
+
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0
-        for i, x in enumerate(self.tilemap_background[x:x+length, y]):
+        for i, x in enumerate(self.tilemap_background[x:x + length, y]):
             if x != blank_tile_identifier:
-                number += (x+tile_identifier_offset)*(10**(length-1-i))
+                number += (x+tile_identifier_offset) * (10**(length - 1 - i))
         return number</code></pre>
 </details>
 </section>
@@ -249,15 +276,14 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PyBoyGameWrapper(PyBoyPlugin):
-
     &#34;&#34;&#34;
     This is the base-class for the game-wrappers. It provides some generic game-wrapping functionality, like `game_area`
     , which shows both sprites and tiles on the screen as a simple matrix.
     &#34;&#34;&#34;
 
-    argv = [(&#39;--game-wrapper&#39;, {&#34;action&#34;: &#39;store_true&#39;, &#34;help&#34;: &#39;Enable game wrapper for the current game&#39;})]
+    argv = [(&#34;--game-wrapper&#34;, {&#34;action&#34;: &#34;store_true&#34;, &#34;help&#34;: &#34;Enable game wrapper for the current game&#34;})]
 
-    def __init__(self, *args, game_area_section=(0,0,32,32), game_area_wrap_around=False, **kwargs):
+    def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
         self.game_has_started = False
@@ -268,18 +294,18 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.game_area_wrap_around = game_area_wrap_around
         width = self.game_area_section[2] - self.game_area_section[0]
         height = self.game_area_section[3] - self.game_area_section[1]
-        self._cached_game_area_tiles_raw = array(&#39;B&#39;, [0xFF] * (width*height*4))
+        self._cached_game_area_tiles_raw = array(&#34;B&#34;, [0xFF] * (width*height*4))
 
         self.saved_state = io.BytesIO()
 
         if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;, shape=(width, height))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;, shape=(width, height))
         else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;)
-            self._cached_game_area_tiles = [v[i:i+height] for i in range(0, height*width, height)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;)
+            self._cached_game_area_tiles = [v[i:i + height] for i in range(0, height * width, height)]
 
     def enabled(self):
-        return self.pyboy_argv.get(&#39;game_wrapper&#39;) and self.pyboy.cartridge_title() == self.cartridge_title
+        return self.pyboy_argv.get(&#34;game_wrapper&#34;) and self.pyboy.cartridge_title() == self.cartridge_title
 
     def post_tick(self):
         raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
@@ -299,6 +325,12 @@ class PyBoyGameWrapper(PyBoyPlugin):
         After calling `start_game`, you can call this method at any time to reset the game.
         &#34;&#34;&#34;
         raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)
+
+    def game_over(self):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)
 
     def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
@@ -321,14 +353,16 @@ class PyBoyGameWrapper(PyBoyPlugin):
             if self.game_area_wrap_around:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
-                    SCX = scanline_parameters[(yy+y)*8][0]//8
-                    SCY = scanline_parameters[(yy+y)*8][1]//8
+                    SCX = scanline_parameters[(yy+y) * 8][0] // 8
+                    SCY = scanline_parameters[(yy+y) * 8][1] // 8
                     for x in range(width):
-                        _x = (xx+x+SCX)%32
-                        _y = (yy+y+SCY)%32
+                        _x = (xx+x+SCX) % 32
+                        _y = (yy+y+SCY) % 32
                         self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
             else:
-                self._cached_game_area_tiles = np.asarray(self.tilemap_background[xx:xx+width, yy:yy+height], dtype=np.uint32)
+                self._cached_game_area_tiles = np.asarray(
+                    self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
+                )
             self._tile_cache_invalid = False
         return self._cached_game_area_tiles
 
@@ -341,24 +375,44 @@ class PyBoyGameWrapper(PyBoyPlugin):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        tiles_matrix = self.game_area_tiles()
-        sprites = self.sprites_on_screen()
+        tiles_matrix = self._game_area_tiles()
+        sprites = self._sprites_on_screen()
         xx = self.game_area_section[0]
         yy = self.game_area_section[1]
         width = self.game_area_section[2]
         height = self.game_area_section[3]
         for s in sprites:
-            _x = (s.x//8)-xx
-            _y = (s.y//8)-yy
+            _x = (s.x // 8) - xx
+            _y = (s.y // 8) - yy
             if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
                 tiles_matrix[_y][_x] = s.tile_identifier
         return tiles_matrix
 
+    def _game_area_np(self, observation_type=&#34;tiles&#34;):
+        if observation_type == &#34;tiles&#34;:
+            return np.asarray(self.game_area(), dtype=np.uint16)
+        elif observation_type == &#34;compressed&#34;:
+            try:
+                return self.tiles_compressed[np.asarray(self.game_area(), dtype=np.uint16)]
+            except AttributeError:
+                raise AttributeError(
+                    f&#34;Game wrapper miss the attribute tiles_compressed for observation_type : {observation_type}&#34;
+                )
+        elif observation_type == &#34;minimal&#34;:
+            try:
+                return self.tiles_minimal[np.asarray(self.game_area(), dtype=np.uint16)]
+            except AttributeError:
+                raise AttributeError(
+                    f&#34;Game wrapper miss the attribute tiles_minimal for observation_type : {observation_type}&#34;
+                )
+        else:
+            raise ValueError(f&#34;Invalid observation_type : {observation_type}&#34;)
+
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0
-        for i, x in enumerate(self.tilemap_background[x:x+length, y]):
+        for i, x in enumerate(self.tilemap_background[x:x + length, y]):
             if x != blank_tile_identifier:
-                number += (x+tile_identifier_offset)*(10**(length-1-i))
+                number += (x+tile_identifier_offset) * (10**(length - 1 - i))
         return number</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -367,6 +421,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand" href="game_wrapper_kirby_dream_land.html#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand">GameWrapperKirbyDreamLand</a></li>
 <li><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand" href="game_wrapper_super_mario_land.html#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand">GameWrapperSuperMarioLand</a></li>
 <li><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="game_wrapper_tetris.html#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></li>
 </ul>
@@ -411,6 +466,22 @@ instantly.</p></section>
     raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over"><code class="name flex">
+<span>def <span class="ident">game_over</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to know if the game is over.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def game_over(self):
+    &#34;&#34;&#34;
+    After calling `start_game`, you can call this method at any time to know if the game is over.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area"><code class="name flex">
 <span>def <span class="ident">game_area</span></span>(<span>self)</span>
 </code></dt>
@@ -434,15 +505,15 @@ instantly.</p></section>
     memoryview:
         Simplified 2-dimensional memoryview of the screen
     &#34;&#34;&#34;
-    tiles_matrix = self.game_area_tiles()
-    sprites = self.sprites_on_screen()
+    tiles_matrix = self._game_area_tiles()
+    sprites = self._sprites_on_screen()
     xx = self.game_area_section[0]
     yy = self.game_area_section[1]
     width = self.game_area_section[2]
     height = self.game_area_section[3]
     for s in sprites:
-        _x = (s.x//8)-xx
-        _y = (s.y//8)-yy
+        _x = (s.x // 8) - xx
+        _y = (s.y // 8) - yy
         if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
             tiles_matrix[_y][_x] = s.tile_identifier
     return tiles_matrix</code></pre>
@@ -471,6 +542,7 @@ instantly.</p></section>
 <ul class="">
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area">game_area</a></code></li>
 </ul>
 </li>
