@@ -29,10 +29,9 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 &#34;&#34;&#34;
 The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used both for
 `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when refering to graphics.
@@ -46,7 +45,6 @@ from pyboy.utils import color_code
 from .constants import LOW_TILEDATA, VRAM_OFFSET
 
 logger = logging.getLogger(__name__)
-
 
 try:
     from PIL import Image
@@ -122,7 +120,7 @@ class Tile:
         if Image is None:
             logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
             return None
-        return Image.frombytes(&#39;RGBA&#39;, (8, 8), bytes(self.image_data()))
+        return Image.frombytes(&#34;RGBA&#34;, (8, 8), bytes(self.image_data()))
 
     def image_ndarray(self):
         &#34;&#34;&#34;
@@ -152,14 +150,16 @@ class Tile:
             Image data of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
         data = np.zeros((8, 8), dtype=np.uint32)
+        # Converting from RGBA to ABGR
+        color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
 
         for k in range(0, 16, 2): # 2 bytes for each line
             byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
             byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
-                colorcode = color_code(byte1, byte2, 7-x)
-                data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
+                colorcode = color_code(byte1, byte2, 7 - x)
+                data[k // 2][x] = color_palette[self.mb.lcd.BGP.getcolor(colorcode)]
 
         return data
 
@@ -264,7 +264,7 @@ needed. Beware that the graphics for the tile can change between each call to <a
         if Image is None:
             logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
             return None
-        return Image.frombytes(&#39;RGBA&#39;, (8, 8), bytes(self.image_data()))
+        return Image.frombytes(&#34;RGBA&#34;, (8, 8), bytes(self.image_data()))
 
     def image_ndarray(self):
         &#34;&#34;&#34;
@@ -294,14 +294,16 @@ needed. Beware that the graphics for the tile can change between each call to <a
             Image data of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
         data = np.zeros((8, 8), dtype=np.uint32)
+        # Converting from RGBA to ABGR
+        color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
 
         for k in range(0, 16, 2): # 2 bytes for each line
             byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
             byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
-                colorcode = color_code(byte1, byte2, 7-x)
-                data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
+                colorcode = color_code(byte1, byte2, 7 - x)
+                data[k // 2][x] = color_palette[self.mb.lcd.BGP.getcolor(colorcode)]
 
         return data
 
@@ -375,7 +377,7 @@ The width and height of the tile.</p></section>
     if Image is None:
         logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
         return None
-    return Image.frombytes(&#39;RGBA&#39;, (8, 8), bytes(self.image_data()))</code></pre>
+    return Image.frombytes(&#34;RGBA&#34;, (8, 8), bytes(self.image_data()))</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.tile.Tile.image_ndarray"><code class="name flex">
@@ -440,14 +442,16 @@ colors.</p>
         Image data of tile in 8x8 pixels and RGBA colors.
     &#34;&#34;&#34;
     data = np.zeros((8, 8), dtype=np.uint32)
+    # Converting from RGBA to ABGR
+    color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
 
     for k in range(0, 16, 2): # 2 bytes for each line
         byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
         byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
 
         for x in range(8):
-            colorcode = color_code(byte1, byte2, 7-x)
-            data[k//2][x] = self.mb.lcd.BGP.getcolor(colorcode)
+            colorcode = color_code(byte1, byte2, 7 - x)
+            data[k // 2][x] = color_palette[self.mb.lcd.BGP.getcolor(colorcode)]
 
     return data</code></pre>
 </details>

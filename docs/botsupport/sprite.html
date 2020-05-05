@@ -27,10 +27,9 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
 &#34;&#34;&#34;
 This class presents an interface to the sprites held in the OAM data on the Game Boy.
 &#34;&#34;&#34;
@@ -185,7 +184,7 @@ class Sprite:
             A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
         &#34;&#34;&#34;
         if sprite_height == 16:
-            self.tiles += [Tile(self.mb, self.tile_identifier+1)]
+            self.tiles += [Tile(self.mb, self.tile_identifier + 1)]
 
         self.on_screen = (-sprite_height &lt; self.y &lt; 144 and -8 &lt; self.x &lt; 160)
         &#34;&#34;&#34;
@@ -205,7 +204,7 @@ class Sprite:
         return self._offset == other._offset
 
     def __repr__(self):
-        tiles = &#39;, &#39;.join([str(t) for t in self.tiles])
+        tiles = &#34;, &#34;.join([str(t) for t in self.tiles])
         return f&#34;Sprite [{self._sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}&#34;
 
 
@@ -386,7 +385,7 @@ using <a title="pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier" hr
             A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
         &#34;&#34;&#34;
         if sprite_height == 16:
-            self.tiles += [Tile(self.mb, self.tile_identifier+1)]
+            self.tiles += [Tile(self.mb, self.tile_identifier + 1)]
 
         self.on_screen = (-sprite_height &lt; self.y &lt; 144 and -8 &lt; self.x &lt; 160)
         &#34;&#34;&#34;
@@ -406,7 +405,7 @@ using <a title="pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier" hr
         return self._offset == other._offset
 
     def __repr__(self):
-        tiles = &#39;, &#39;.join([str(t) for t in self.tiles])
+        tiles = &#34;, &#34;.join([str(t) for t in self.tiles])
         return f&#34;Sprite [{self._sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}&#34;</code></pre>
 </details>
 <h3>Instance variables</h3>
