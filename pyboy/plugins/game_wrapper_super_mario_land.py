@@ -163,7 +163,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     def set_lives_left(self, amount):
         """
-        Set the amount lives to any number between 0 and 255.
+        Set the amount lives to any number between 0 and 99.
+
+        This should only be called when the game has started.
 
         Args:
             amount (int): The wanted number of lives
@@ -182,7 +184,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     def set_world_level(self, world, level):
         """
-        Patches the handler for pressing start in the menu. It hardcodes a level to always "continue" from.
+        Patches the handler for pressing start in the menu. It hardcodes a world and level to always "continue" from.
 
         Args:
             world (int): The wanted number of lives
@@ -200,16 +202,23 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         for i, byte in enumerate(patch1):
             self.pyboy.override_memory_value(0, 0x451 + i, byte)
 
-    def _set_win_count(self, amount):
-        self.pyboy.set_memory_value(ADDR_WIN_COUNT, amount)
-
-    def start_game(self, world_level=None, win_count=0):
+    def start_game(self, world_level=None, unlock_level_select=False):
         """
         Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
         the first frame it's possible.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        The game has 4 major worlds with each 3 level. to start at a specific world and level, provide it as a tuple for
+        the optional keyword-argument `world_level`.
+
+        If you're not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
+        Enabling the selector, will make this function return before entering the game.
+
+        Kwargs:
+            world_level (tuple): (world, level) to start the game from
+            unlock_level_select (bool): Unlock level selector menu
         """
         if not self.pyboy.frame_count == 0:
             logger.warning("Calling start_game from an already running game. This might not work.")
@@ -231,8 +240,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         while True:
-            if self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
-                self._set_win_count(win_count)
+            if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
+                self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+                break
             self.pyboy.tick()
             self.tilemap_background.refresh_lcdc()
 
