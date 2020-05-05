@@ -21,8 +21,6 @@ from pyboy.utils cimport WindowEvent
 cdef uint16_t STAT, LY, LYC
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class Motherboard:

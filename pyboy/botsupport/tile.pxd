@@ -7,8 +7,6 @@ from libc.stdint cimport uint32_t
 
 from pyboy.core.mb cimport Motherboard
 
-cdef (int, int) _dummy_declaration
-cdef (int, int, int, int) _dummy_declaration2
 
 
 cdef class Tile:
