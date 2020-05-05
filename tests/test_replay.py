@@ -15,7 +15,6 @@ import zlib
 import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
-
 from tests import utils
 
 event_filter = [
