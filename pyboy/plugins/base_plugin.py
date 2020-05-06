@@ -123,13 +123,13 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError("post_tick not implemented in game wrapper")
 
-    def _set_timer_div(self, timer_div, randomize_div):
-        if timer_div is not None:
-            self.pyboy.mb.timer.DIV = timer_div & 0xFF
-        elif randomize_div:
+    def _set_timer_div(self, timer_div):
+        if timer_div is None:
             self.pyboy.mb.timer.DIV = random.getrandbits(8)
+        else:
+            self.pyboy.mb.timer.DIV = timer_div & 0xFF
 
-    def start_game(self, timer_div=None, randomize_div=False):
+    def start_game(self, timer_div=None):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
@@ -140,22 +140,20 @@ class PyBoyGameWrapper(PyBoyPlugin):
         instantly.
 
         Args:
-            timer_div (int): Replace timer's DIV register with this value
-            randomize_div (bool): Whether to randomize the DIV register or not
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
 
         if not self.pyboy.frame_count == 0:
             logger.warning("Calling start_game from an already running game. This might not work.")
 
-        self._set_timer_div(timer_div, randomize_div)
+        self._set_timer_div(timer_div)
 
-    def reset_game(self, timer_div=None, randomize_div=False):
+    def reset_game(self, timer_div=None):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
         Args:
-            timer_div (int): Replace timer's DIV register with this value
-            randomize_div (bool): Whether to randomize the DIV register or not
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
 
         if self.game_has_started:
@@ -165,7 +163,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         else:
             logger.error("Tried to reset game, but it hasn't been started yet!")
 
-        self._set_timer_div(timer_div, randomize_div)
+        self._set_timer_div(timer_div)
 
     def game_over(self):
         """
