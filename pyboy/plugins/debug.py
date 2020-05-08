@@ -545,15 +545,15 @@ class MemoryWindow(BaseDebugWindow):
         super().__init__(*args, **kwargs)
         self.start_address = 0x0000
         self.end_address = self.start_address + 0x100
-        self.font_path = os.path.join("pyboy", "plugins", "assets", "Mono_Hack_Font.ttf").encode()
+        self.font_path = os.path.join("pyboy", "plugins", "assets", "Mono_Hack_Font.ttf")
         self.font_size = 18
-        self.text_color = sdl2.SDL_Color(0xFF, 0xFF, 0xFF)
+        self.text_color = sdl2.SDL_Color(0xFF, 0xFF, 0xFF, 0x00)
 
         if sdl2_ttf.TTF_Init() < 0:
             logger.error("Failed initializing SDL2 TTF!")
 
         sdl2.SDL_ClearError()
-        self.font = sdl2_ttf.TTF_OpenFont(self.font_path, self.font_size)
+        self.font = sdl2_ttf.TTF_OpenFont(self.font_path.encode(), self.font_size)
         if not sdl2.SDL_GetError() == b"":
             logger.error(f"TTF_OpenFont error: {sdl2.SDL_GetError()}")
 

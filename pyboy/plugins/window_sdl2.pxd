@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-cimport sdl2
+from . cimport sdl2
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 cimport pyboy.utils
 
