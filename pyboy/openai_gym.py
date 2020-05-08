@@ -24,6 +24,7 @@ class PyBoyGymEnv(Env):
     """ A gym environement built from a `pyboy.PyBoy`
 
     This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+    Additional kwargs are passed to the start_game method of the game_wrapper.
 
     Args:
         observation_type (str): Define what the agent will be able to see:
@@ -46,7 +47,7 @@ class PyBoyGymEnv(Env):
         actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
 
     """
-    def __init__(self, pyboy, observation_type="tiles", action_type="toggle", simultaneous_actions=False):
+    def __init__(self, pyboy, observation_type="tiles", action_type="toggle", simultaneous_actions=False, **kwargs):
         # Build pyboy game
         self.pyboy = pyboy
         if str(type(pyboy)) != "<class 'pyboy.pyboy.PyBoy'>":
@@ -115,6 +116,7 @@ class PyBoyGymEnv(Env):
         self.observation_type = observation_type
 
         self._started = False
+        self._kwargs = kwargs
 
     def _get_observation(self):
         if self.observation_type == "raw":
@@ -157,7 +159,7 @@ class PyBoyGymEnv(Env):
     def reset(self):
         """ Reset (or start) the gym environment throught the game_wrapper """
         if not self._started:
-            self.game_wrapper.start_game()
+            self.game_wrapper.start_game(**self._kwargs)
             self._started = True
         else:
             self.game_wrapper.reset_game()
