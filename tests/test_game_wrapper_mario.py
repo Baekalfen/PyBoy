@@ -4,8 +4,13 @@
 #
 
 import pytest
+import platform
+import os
+
 from pyboy import PyBoy, WindowEvent
 from tests.utils import supermarioland_rom
+
+is_pypy = platform.python_implementation() == "PyPy"
 
 
 @pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
@@ -59,3 +64,64 @@ def test_mario_game_over():
         if mario.game_over():
             break
     pyboy.stop()
+
+
+@pytest.mark.skipif(
+    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom), reason="This requires gym, which doesn't install on PyPy"
+)
+class TestOpenAIGym:
+
+    def test_observation_type_compressed(self):
+        pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+        pyboy.set_emulation_speed(0)
+
+        env = pyboy.openai_gym(observation_type='compressed')
+        observation = env.reset()
+
+        expected_observation = np.zeros_like(observation)
+        expected_observation[-4:-2, 4:6] = 1 # Mario
+        expected_observation[-2:, :] = 10  # Ground
+        expected_observation[-4:-2, 1:3] = 14 # Pipe
+        expected_observation[9, 5] = 13 # ? Block
+
+        print(observation)
+        print(expected_observation)
+        assert np.all(observation == expected_observation)
+
+
+    def test_observation_type_compressed(self):
+        pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+        pyboy.set_emulation_speed(0)
+
+        env = pyboy.openai_gym(observation_type='minimal')
+        observation = env.reset()
+
+        expected_observation = np.zeros_like(observation)
+        expected_observation[-4:-2, 4:6] = 1 # Mario
+        expected_observation[-2:, :] = 3  # Ground
+        expected_observation[-4:-2, 1:3] = 3 # Pipe
+        expected_observation[9, 5] = 3 # ? Block
+
+        print(observation)
+        print(expected_observation)
+        assert np.all(observation == expected_observation)
+
+
+    def test_start_level(self):
+        pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+        pyboy.set_emulation_speed(0)
+
+        starting_level = (2, 1)
+        env = pyboy.openai_gym(observation_type='minimal', action_type='toggle', world_level=starting_level)
+        observation = env.reset()
+
+        print(env.game_wrapper.world, starting_level)
+        assert env.game_wrapper.world == starting_level
+
+        env.game_wrapper.set_lives_left(0)
+        env.step(4) # PRESS LEFT
+
+        for _ in range(200):
+            env.step(0)
+        assert env.game_wrapper.time_left == 400
+        assert env.game_wrapper.world == starting_level
