@@ -8,7 +8,7 @@ import os
 from array import array
 
 import sdl2
-from sdl2.sdlttf import *
+import sdl2.sdlttf as sdl2_ttf
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
 from pyboy.logger import logger
@@ -17,10 +17,12 @@ from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
 
 try:
-    from cython import compiled
+    from cython import compiled, NULL
+    import cython
     cythonmode = compiled
 except ImportError:
     cythonmode = False
+    exec("NULL = None", globals(), locals())
 
 
 # Mask colors:
@@ -149,7 +151,7 @@ class Debug(PyBoyWindowPlugin):
             pos_x=sdl2.SDL_WINDOWPOS_UNDEFINED,
             pos_y=sdl2.SDL_WINDOWPOS_UNDEFINED
         )
-        window_pos += (constants.COLS*self.spriteview.scale)
+        window_pos += (constants.COLS * self.spriteview.scale)
 
         tile_data_width = 16 * 8 # Change the 16 to however wide you want the tile window
         tile_data_height = ((constants.TILES * 8) // tile_data_width) * 8
@@ -543,71 +545,80 @@ class MemoryWindow(BaseDebugWindow):
         super().__init__(*args, **kwargs)
         self.start_address = 0x0000
         self.end_address = self.start_address + 0x100
-        self.memory_row = lambda x, y: " ".join([f"{self.pyboy.get_memory_value(i):02x}" for i in range(x, y + 1)])
         self.font_path = os.path.join("pyboy", "plugins", "assets", "Mono_Hack_Font.ttf").encode()
         self.font_size = 18
+        self.text_color = sdl2.SDL_Color(0xFF, 0xFF, 0xFF)
 
-        if TTF_Init() < 0:
-            logger.error("Failed initializing the TTF API!")
+        if sdl2_ttf.TTF_Init() < 0:
+            logger.error("Failed initializing SDL2 TTF!")
 
         sdl2.SDL_ClearError()
-        self.font = TTF_OpenFont(self.font_path, self.font_size)
-        if not sdl2.SDL_GetError() == b'':
+        self.font = sdl2_ttf.TTF_OpenFont(self.font_path, self.font_size)
+        if not sdl2.SDL_GetError() == b"":
             logger.error(f"TTF_OpenFont error: {sdl2.SDL_GetError()}")
 
+    def memory_row(self, x, y):
+        return " ".join([f"{self.pyboy.get_memory_value(i):02x}" for i in range(x, y + 1)])
+
     def post_tick(self):
-        self.row= ""
-        self.text_color = sdl2.SDL_Color(0xFF, 0xFF, 0xFF)
+        self.row = ""
         self.address_index = self.start_address
         self.row_index = 0x0
         sdl2.SDL_RenderClear(self._sdlrenderer)
-        self.header(self.row_index)
+        self.header()
         while self.address_index < self.end_address:
             if self.address_index + 0x8 <= self.end_address:
                 self.row = f"| 0x{self.address_index:04x} | {self.memory_row(self.address_index, self.address_index + 0x7)}  |"
             else:
                 self.row = f"| 0x{self.address_index:04x} | {self.memory_row(self.address_index, self.end_address)}  |"
-            self.body(self.row_index)
-        self.footer(self.row_index)
+            self.body()
+        self.footer()
         sdl2.SDL_RenderPresent(self._sdlrenderer)
 
-    def header(self, row_index):
-            end_address = 0xffff if self.end_address == 0x10000 else self.end_address
-            header_rows = [
-                "-" * 37,
-                f"| Memory dump from 0x{self.start_address:04x} to 0x{end_address:04x} |",
-                "| " + "-" * 33 + " |"
-            ]
+    def header(self):
+        end_address = 0xffff if self.end_address == 0x10000 else self.end_address
+        header_rows = [
+            "-" * 37, f"| Memory dump from 0x{self.start_address:04x} to 0x{end_address:04x} |", "| " + "-"*33 + " |"
+        ]
 
-            for row in header_rows:
-                self.surface = TTF_RenderText_Solid(self.font, row.encode(), self.text_color)
-                self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
-                self.get_destination(self.row_index)
-                sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, None, self.destination)
-                self.row_index += 18
-
-    def body(self, row_index):
-            self.surface = TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
+        for row in header_rows:
+            self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, row.encode(), self.text_color)
             self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
-            self.get_destination(self.row_index)
-            sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, None, self.destination)
-            self.address_index += 0x8
+            self.get_destination()
+            sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, self.destination)
             self.row_index += 18
 
-    def footer(self, row_index):
-            self.row = "-" * 37
-            self.surface = TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
-            self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
-            self.get_destination(self.row_index)
-            sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, None, self.destination)
+    def body(self):
+        self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
+        self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
+        self.get_destination()
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, self.destination)
+        self.address_index += 0x8
+        self.row_index += 18
 
-    def get_destination(self, row_index):
-            self.destination = sdl2.SDL_Rect(int(0), int(row_index))
-            w = ctypes.pointer(ctypes.c_int(0))
-            h = ctypes.pointer(ctypes.c_int(0))
-            sdl2.SDL_QueryTexture(self.texture, None, None, w, h)
-            self.destination.w = w.contents.value
-            self.destination.h = h.contents.value
+    def footer(self):
+        self.row = "-" * 37
+        self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
+        self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
+        self.get_destination()
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, self.destination)
+
+    def get_destination(self):
+        if cythonmode:
+            w = 0
+            h = 0
+        # else:
+        #     self.destination = sdl2.SDL_Rect(0, self.row_index)
+        #     w = ctypes.pointer(ctypes.c_int(0))
+        #     h = ctypes.pointer(ctypes.c_int(0))
+        sdl2.SDL_QueryTexture(self.texture, NULL, NULL, cython.address(w), cython.address(h))
+        if cythonmode:
+            # self.destination.w = cython.operator.dereference(w
+            self.destination.w = w
+            self.destination.h = h
+        # else:
+        #     self.destination.w = w.contents.value
+        #     self.destination.h = h.contents.value
 
     def handle_events(self, events):
         events = BaseDebugWindow.handle_events(self, events)
