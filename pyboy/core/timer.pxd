@@ -4,6 +4,7 @@
 #
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+from pyboy.utils cimport IntIOInterface
 import cython
 
 
@@ -16,3 +17,6 @@ cdef class Timer:
     cdef bint tick(self, uint64_t)
     @cython.locals(divider=cython.int, cyclesleft=cython.uint)
     cdef uint64_t cyclestointerrupt(self)
+
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)

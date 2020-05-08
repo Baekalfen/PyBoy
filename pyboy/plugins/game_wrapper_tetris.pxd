@@ -20,5 +20,5 @@ cdef class GameWrapperTetris(PyBoyGameWrapper):
     cpdef void set_tetromino(self, str)
     cpdef str next_tetromino(self)
 
-    cpdef void start_game(self, timer_div=*, randomize_tetromino=*)
-    cpdef void reset_game(self, timer_div=*, randomize_tetromino=*)
+    cpdef void start_game(self, timer_div=*)
+    cpdef void reset_game(self, timer_div=*)
