@@ -147,6 +147,9 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             Simplified 2-dimensional memoryview of the screen
         """
         return PyBoyGameWrapper.game_area(self)
+    
+    def game_over(self):
+        return self.health == 0
 
     def __repr__(self):
         adjust = 4
