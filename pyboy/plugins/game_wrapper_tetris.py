@@ -123,6 +123,9 @@ class GameWrapperTetris(PyBoyGameWrapper):
         Kwargs:
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
+        # We don't supply the timer_div arg here, as it won't have the desired effect
+        PyBoyGameWrapper.start_game(self)
+
         # Boot screen
         while True:
             self.pyboy.tick()
