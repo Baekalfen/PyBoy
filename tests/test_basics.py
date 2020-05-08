@@ -10,7 +10,6 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
-
 from tests.utils import boot_rom, default_rom, kirby_rom
 
 

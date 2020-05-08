@@ -10,7 +10,6 @@ import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
-
 from tests.utils import tetris_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
@@ -21,16 +20,6 @@ def pyboy():
     pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True, game_wrapper=True)
     pyboy.set_emulation_speed(0)
     return pyboy
-
-
-@pytest.fixture
-def screen_shape(pyboy):
-    return (ROWS, COLS, 3)
-
-
-@pytest.fixture
-def game_area_shape(pyboy):
-    return pyboy.game_wrapper().shape[::-1]
 
 
 @pytest.fixture
@@ -52,23 +41,24 @@ def tiles_id():
     is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom), reason="This requires gym, which doesn't install on PyPy"
 )
 class TestOpenAIGym:
-    def test_raw(self, pyboy, screen_shape):
+    def test_raw(self, pyboy):
         env = pyboy.openai_gym(observation_type="raw", action_type="press")
         observation = env.reset()
-        assert observation.shape == screen_shape
+        assert observation.shape == (ROWS, COLS, 3)
         assert observation.dtype == np.uint8
 
         observation, _, _, _ = env.step(0)
-        assert observation.shape == screen_shape
+        assert observation.shape == (ROWS, COLS, 3)
         assert observation.dtype == np.uint8
 
-    def test_tiles(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+    def test_tiles(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles")
         tetris = pyboy.game_wrapper()
         tetris.set_tetromino("Z")
         observation = env.reset()
 
         # Build the expected first observation
+        game_area_shape = pyboy.game_wrapper().shape[::-1]
         expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block] = tiles_id["Z"]
         print(observation, expected_observation)
@@ -85,13 +75,14 @@ class TestOpenAIGym:
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
 
-    def test_compressed(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+    def test_compressed(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="compressed")
         tetris = pyboy.game_wrapper()
         tetris.set_tetromino("Z")
         observation = env.reset()
 
         # Build the expected first observation
+        game_area_shape = pyboy.game_wrapper().shape[::-1]
         expected_observation = np.zeros(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block] = 2
         print(observation, expected_observation)
@@ -107,14 +98,15 @@ class TestOpenAIGym:
         expected_observation[id0_block + 1, id1_block] = 2
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
-    
-    def test_minimal(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+
+    def test_minimal(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="minimal")
         tetris = pyboy.game_wrapper()
         tetris.set_tetromino("Z")
         observation = env.reset()
 
         # Build the expected first observation
+        game_area_shape = pyboy.game_wrapper().shape[::-1]
         expected_observation = np.zeros(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block] = 1
         print(observation, expected_observation)
@@ -130,8 +122,8 @@ class TestOpenAIGym:
         expected_observation[id0_block + 1, id1_block] = 1
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
- 
-    def test_press(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+
+    def test_press(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="press")
         tetris = pyboy.game_wrapper()
         tetris.set_tetromino("Z")
@@ -142,6 +134,7 @@ class TestOpenAIGym:
         observation, _, _, _ = env.step(action) # Press RIGHT
         observation, _, _, _ = env.step(0) # Press NOTHING
 
+        game_area_shape = pyboy.game_wrapper().shape[::-1]
         expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block + 1] = tiles_id["Z"]
         print(observation, expected_observation)
@@ -153,7 +146,7 @@ class TestOpenAIGym:
         print(observation, expected_observation)
         assert np.all(observation == expected_observation)
 
-    def test_toggle(self, pyboy, game_area_shape, tiles_id, id0_block, id1_block):
+    def test_toggle(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="toggle")
         tetris = pyboy.game_wrapper()
         tetris.set_tetromino("Z")
@@ -164,6 +157,7 @@ class TestOpenAIGym:
         observation, _, _, _ = env.step(action) # Press RIGHT
         observation, _, _, _ = env.step(0) # Press NOTHING
 
+        game_area_shape = pyboy.game_wrapper().shape[::-1]
         expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block + 1] = tiles_id["Z"]
         print(observation, expected_observation)

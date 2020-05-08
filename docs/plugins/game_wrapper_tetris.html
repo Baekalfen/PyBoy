@@ -26,12 +26,12 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">#
-# License: See LICENSE file
+# License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 __pdoc__ = {
-   &#39;GameWrapperTetris.cartridge_title&#39;: False,
-   &#39;GameWrapperTetris.post_tick&#39;: False,
+    &#34;GameWrapperTetris.cartridge_title&#34;: False,
+    &#34;GameWrapperTetris.post_tick&#34;: False,
 }
 
 import logging
@@ -50,6 +50,35 @@ try:
 except ImportError:
     cythonmode = False
 
+# Table for translating game-representation of Tetromino types (8-bit int) to string
+tetromino_table = {
+    &#34;L&#34;: 0,
+    &#34;J&#34;: 4,
+    &#34;I&#34;: 8,
+    &#34;O&#34;: 12,
+    &#34;Z&#34;: 16,
+    &#34;S&#34;: 20,
+    &#34;T&#34;: 24,
+}
+inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
+
+# Construct a translation table for tile ID&#39;s to a minimal/compressed id system
+TILES = 384
+
+# Compressed assigns an ID to each Tetromino type
+tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+# BLANK, J, Z, O, L, T, S, I, BLACK
+tiles_types = [[47], [129], [130], [131], [132], [133], [134], [128, 136, 137, 138, 139, 143], [135]]
+for tiles_type_ID, tiles_type in enumerate(tiles_types):
+    for tile_ID in tiles_type:
+        tiles_compressed[tile_ID] = tiles_type_ID
+
+# Minimal has 3 id&#39;s: Background, Tetromino and &#34;losing tile&#34; (which fills the board when losing)
+tiles_minimal = np.ones(TILES, dtype=np.uint8) # For minimal everything is 1
+tiles_minimal[47] = 0 # Except BLANK which is 0
+tiles_minimal[135] = 2 # And background losing tiles BLACK which is 2
+
+
 class GameWrapperTetris(PyBoyGameWrapper):
     &#34;&#34;&#34;
     This class wraps Tetris, and provides easy access to score, lines, level and a &#34;fitness&#34; score for AIs.
@@ -57,6 +86,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
     cartridge_title = &#34;TETRIS&#34;
+    tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (10, 18)
@@ -76,17 +107,18 @@ class GameWrapperTetris(PyBoyGameWrapper):
         &#34;&#34;&#34;
         super().__init__(*args, **kwargs)
 
-
         ROWS, COLS = self.shape
-        self._cached_game_area_tiles_raw = array(&#39;B&#39;, [0xFF] * (ROWS*COLS*4))
+        self._cached_game_area_tiles_raw = array(&#34;B&#34;, [0xFF] * (ROWS*COLS*4))
 
         if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;, shape=(ROWS, COLS))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;, shape=(ROWS, COLS))
         else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;)
-            self._cached_game_area_tiles = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;)
+            self._cached_game_area_tiles = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]
 
-    def game_area_tiles(self):
+        super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+
+    def _game_area_tiles(self):
         if self._tile_cache_invalid:
             self._cached_game_area_tiles = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
             self._tile_cache_invalid = False
@@ -114,7 +146,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         instantly.
         &#34;&#34;&#34;
         if not self.pyboy.frame_count == 0:
-            logger.warning(&#39;Calling start_game from an already running game. This might not work.&#39;)
+            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
 
         # Boot screen
         while True:
@@ -141,12 +173,12 @@ class GameWrapperTetris(PyBoyGameWrapper):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
         &#34;&#34;&#34;
-        self.saved_state.seek(0)
-        self.pyboy.load_state(self.saved_state)
-        self.post_tick()
-
-    def _game_area_np(self):
-        return np.asarray(self.game_area())
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -184,36 +216,109 @@ class GameWrapperTetris(PyBoyGameWrapper):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        tiles_matrix = self.game_area_tiles()
-        sprites = self.sprites_on_screen()
-        for s in sprites:
-            if s.x &lt; 12*8:
-                tiles_matrix[s.y//8][s.x//8-2] = s.tile_identifier
-        return tiles_matrix
+        return PyBoyGameWrapper.game_area(self)
+
+    def next_tetromino(self):
+        &#34;&#34;&#34;
+        Returns the next Tetromino to drop.
+
+        __NOTE:__ Don&#39;t use this function together with
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino`.
+
+        Returns
+        -------
+        shape:
+            `str` of which Tetromino will drop:
+            * `&#34;L&#34;`: L-shape
+            * `&#34;J&#34;`: reverse L-shape
+            * `&#34;I&#34;`: I-shape
+            * `&#34;O&#34;`: square-shape
+            * `&#34;Z&#34;`: zig-zag left to right
+            * `&#34;S&#34;`: zig-zag right to left
+            * `&#34;T&#34;`: T-shape
+        &#34;&#34;&#34;
+        # Bitmask, as the last two bits determine the direction
+        return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) &amp; 0b11111100]
+
+    def set_tetromino(self, shape):
+        &#34;&#34;&#34;
+        This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.
+
+        __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+        any overrides when reloading the ROM. This also applies to
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game` and
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game`.
+
+        Args:
+            shape (str): Define which Tetromino to use:
+            * `&#34;L&#34;`: L-shape
+            * `&#34;J&#34;`: reverse L-shape
+            * `&#34;I&#34;`: I-shape
+            * `&#34;O&#34;`: square-shape
+            * `&#34;Z&#34;`: zig-zag left to right
+            * `&#34;S&#34;`: zig-zag right to left
+            * `&#34;T&#34;`: T-shape
+        &#34;&#34;&#34;
+
+        if shape not in tetromino_table:
+            raise KeyError(&#34;Invalid Tetromino shape!&#34;)
+
+        shape_number = tetromino_table[shape]
+
+        # http://149.154.154.153/wiki/Tetris_(Game_Boy):ROM_map
+        # Replacing:
+        # ROM0:206E FA 13 C2         ld   a,(C213)             ;load next Tetromino in accumulator
+        # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
+
+        patch1 = [
+            0x3E, # LD A, Tetromino
+            shape_number, # Tetromino
+            0x00, # NOOP
+        ]
+
+        for i, byte in enumerate(patch1):
+            self.pyboy.override_memory_value(0, 0x206E + i, byte)
+
+        patch2 = [
+            0x3E, # LD A, Tetromino
+            shape_number, # Tetromino
+        ]
+
+        for i, byte in enumerate(patch2):
+            self.pyboy.override_memory_value(0, 0x20B0 + i, byte)
+
+    def game_over(self):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+
+        Game over happens, when the game area is filled with Tetrominos without clearing any rows.
+        &#34;&#34;&#34;
+        return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over
 
     def __repr__(self):
         adjust = 4
-        return_data = (
-                f&#34;Tetris:\n&#34; +
-                f&#34;Score: {self.score}\n&#34; +
-                f&#34;Level: {self.level}\n&#34; +
-                f&#34;Lines: {self.lines}\n&#34; +
-                f&#34;Fitness: {self.fitness}\n&#34; +
-                &#34;Sprites on screen:\n&#34; +
-                &#34;\n&#34;.join([str(s) for s in self.sprites_on_screen()]) +
-                &#34;\n&#34; +
-                &#34;Tiles on screen:\n&#34; +
-                &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(10)]) + &#34;\n&#34; +
-                &#34;_&#34;*(adjust*10+4) +
-                &#34;\n&#34; +
-                &#34;\n&#34;.join(
-                    [
-                        f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self._game_area_np())
-                    ]
-                )
+        # yapf: disable
+        return (
+            f&#34;Tetris:\n&#34; +
+            f&#34;Score: {self.score}\n&#34; +
+            f&#34;Level: {self.level}\n&#34; +
+            f&#34;Lines: {self.lines}\n&#34; +
+            f&#34;Fitness: {self.fitness}\n&#34; +
+            &#34;Sprites on screen:\n&#34; +
+            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
+            &#34;\n&#34; +
+            &#34;Tiles on screen:\n&#34; +
+            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(10)]) + &#34;\n&#34; +
+            &#34;_&#34;*(adjust*10+4) +
+            &#34;\n&#34; +
+            &#34;\n&#34;.join(
+                [
+                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self._game_area_np())
+                ]
             )
-        return return_data</code></pre>
+        )
+        # yapf: enable</code></pre>
 </details>
 </section>
 <section>
@@ -243,6 +348,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
     cartridge_title = &#34;TETRIS&#34;
+    tiles_compressed = tiles_compressed
+    tiles_minimal = tiles_minimal
 
     def __init__(self, *args, **kwargs):
         self.shape = (10, 18)
@@ -262,17 +369,18 @@ class GameWrapperTetris(PyBoyGameWrapper):
         &#34;&#34;&#34;
         super().__init__(*args, **kwargs)
 
-
         ROWS, COLS = self.shape
-        self._cached_game_area_tiles_raw = array(&#39;B&#39;, [0xFF] * (ROWS*COLS*4))
+        self._cached_game_area_tiles_raw = array(&#34;B&#34;, [0xFF] * (ROWS*COLS*4))
 
         if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;, shape=(ROWS, COLS))
+            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;, shape=(ROWS, COLS))
         else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast(&#39;I&#39;)
-            self._cached_game_area_tiles = [v[i:i+COLS] for i in range(0, COLS*ROWS, COLS)]
+            v = memoryview(self._cached_game_area_tiles_raw).cast(&#34;I&#34;)
+            self._cached_game_area_tiles = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]
 
-    def game_area_tiles(self):
+        super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+
+    def _game_area_tiles(self):
         if self._tile_cache_invalid:
             self._cached_game_area_tiles = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
             self._tile_cache_invalid = False
@@ -300,7 +408,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         instantly.
         &#34;&#34;&#34;
         if not self.pyboy.frame_count == 0:
-            logger.warning(&#39;Calling start_game from an already running game. This might not work.&#39;)
+            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
 
         # Boot screen
         while True:
@@ -327,12 +435,12 @@ class GameWrapperTetris(PyBoyGameWrapper):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
         &#34;&#34;&#34;
-        self.saved_state.seek(0)
-        self.pyboy.load_state(self.saved_state)
-        self.post_tick()
-
-    def _game_area_np(self):
-        return np.asarray(self.game_area())
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -370,42 +478,125 @@ class GameWrapperTetris(PyBoyGameWrapper):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        tiles_matrix = self.game_area_tiles()
-        sprites = self.sprites_on_screen()
-        for s in sprites:
-            if s.x &lt; 12*8:
-                tiles_matrix[s.y//8][s.x//8-2] = s.tile_identifier
-        return tiles_matrix
+        return PyBoyGameWrapper.game_area(self)
+
+    def next_tetromino(self):
+        &#34;&#34;&#34;
+        Returns the next Tetromino to drop.
+
+        __NOTE:__ Don&#39;t use this function together with
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino`.
+
+        Returns
+        -------
+        shape:
+            `str` of which Tetromino will drop:
+            * `&#34;L&#34;`: L-shape
+            * `&#34;J&#34;`: reverse L-shape
+            * `&#34;I&#34;`: I-shape
+            * `&#34;O&#34;`: square-shape
+            * `&#34;Z&#34;`: zig-zag left to right
+            * `&#34;S&#34;`: zig-zag right to left
+            * `&#34;T&#34;`: T-shape
+        &#34;&#34;&#34;
+        # Bitmask, as the last two bits determine the direction
+        return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) &amp; 0b11111100]
+
+    def set_tetromino(self, shape):
+        &#34;&#34;&#34;
+        This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.
+
+        __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+        any overrides when reloading the ROM. This also applies to
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game` and
+        `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game`.
+
+        Args:
+            shape (str): Define which Tetromino to use:
+            * `&#34;L&#34;`: L-shape
+            * `&#34;J&#34;`: reverse L-shape
+            * `&#34;I&#34;`: I-shape
+            * `&#34;O&#34;`: square-shape
+            * `&#34;Z&#34;`: zig-zag left to right
+            * `&#34;S&#34;`: zig-zag right to left
+            * `&#34;T&#34;`: T-shape
+        &#34;&#34;&#34;
+
+        if shape not in tetromino_table:
+            raise KeyError(&#34;Invalid Tetromino shape!&#34;)
+
+        shape_number = tetromino_table[shape]
+
+        # http://149.154.154.153/wiki/Tetris_(Game_Boy):ROM_map
+        # Replacing:
+        # ROM0:206E FA 13 C2         ld   a,(C213)             ;load next Tetromino in accumulator
+        # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
+
+        patch1 = [
+            0x3E, # LD A, Tetromino
+            shape_number, # Tetromino
+            0x00, # NOOP
+        ]
+
+        for i, byte in enumerate(patch1):
+            self.pyboy.override_memory_value(0, 0x206E + i, byte)
+
+        patch2 = [
+            0x3E, # LD A, Tetromino
+            shape_number, # Tetromino
+        ]
+
+        for i, byte in enumerate(patch2):
+            self.pyboy.override_memory_value(0, 0x20B0 + i, byte)
+
+    def game_over(self):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+
+        Game over happens, when the game area is filled with Tetrominos without clearing any rows.
+        &#34;&#34;&#34;
+        return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over
 
     def __repr__(self):
         adjust = 4
-        return_data = (
-                f&#34;Tetris:\n&#34; +
-                f&#34;Score: {self.score}\n&#34; +
-                f&#34;Level: {self.level}\n&#34; +
-                f&#34;Lines: {self.lines}\n&#34; +
-                f&#34;Fitness: {self.fitness}\n&#34; +
-                &#34;Sprites on screen:\n&#34; +
-                &#34;\n&#34;.join([str(s) for s in self.sprites_on_screen()]) +
-                &#34;\n&#34; +
-                &#34;Tiles on screen:\n&#34; +
-                &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(10)]) + &#34;\n&#34; +
-                &#34;_&#34;*(adjust*10+4) +
-                &#34;\n&#34; +
-                &#34;\n&#34;.join(
-                    [
-                        f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                        for i, line in enumerate(self._game_area_np())
-                    ]
-                )
+        # yapf: disable
+        return (
+            f&#34;Tetris:\n&#34; +
+            f&#34;Score: {self.score}\n&#34; +
+            f&#34;Level: {self.level}\n&#34; +
+            f&#34;Lines: {self.lines}\n&#34; +
+            f&#34;Fitness: {self.fitness}\n&#34; +
+            &#34;Sprites on screen:\n&#34; +
+            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
+            &#34;\n&#34; +
+            &#34;Tiles on screen:\n&#34; +
+            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(10)]) + &#34;\n&#34; +
+            &#34;_&#34;*(adjust*10+4) +
+            &#34;\n&#34; +
+            &#34;\n&#34;.join(
+                [
+                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self._game_area_np())
+                ]
             )
-        return return_data</code></pre>
+        )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></li>
 <li>pyboy.plugins.base_plugin.PyBoyPlugin</li>
 </ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.tiles_compressed"><code class="name">var <span class="ident">tiles_compressed</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.tiles_minimal"><code class="name">var <span class="ident">tiles_minimal</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
 <h3>Instance variables</h3>
 <dl>
 <dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.shape"><code class="name">var <span class="ident">shape</span></code></dt>
@@ -432,22 +623,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area_tiles"><code class="name flex">
-<span>def <span class="ident">game_area_tiles</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def game_area_tiles(self):
-    if self._tile_cache_invalid:
-        self._cached_game_area_tiles = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
-        self._tile_cache_invalid = False
-    return self._cached_game_area_tiles</code></pre>
-</details>
-</dd>
 <dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area"><code class="name flex">
 <span>def <span class="ident">game_area</span></span>(<span>self)</span>
 </code></dt>
@@ -522,12 +697,147 @@ ____________________________________________
     memoryview:
         Simplified 2-dimensional memoryview of the screen
     &#34;&#34;&#34;
-    tiles_matrix = self.game_area_tiles()
-    sprites = self.sprites_on_screen()
-    for s in sprites:
-        if s.x &lt; 12*8:
-            tiles_matrix[s.y//8][s.x//8-2] = s.tile_identifier
-    return tiles_matrix</code></pre>
+    return PyBoyGameWrapper.game_area(self)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.next_tetromino"><code class="name flex">
+<span>def <span class="ident">next_tetromino</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns the next Tetromino to drop.</p>
+<p><strong>NOTE:</strong> Don't use this function together with
+<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino"><code>GameWrapperTetris.set_tetromino()</code></a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>shape</code>:</dt>
+<dd><code>str</code> of which Tetromino will drop:
+* <code>"L"</code>: L-shape
+* <code>"J"</code>: reverse L-shape
+* <code>"I"</code>: I-shape
+* <code>"O"</code>: square-shape
+* <code>"Z"</code>: zig-zag left to right
+* <code>"S"</code>: zig-zag right to left
+* <code>"T"</code>: T-shape</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def next_tetromino(self):
+    &#34;&#34;&#34;
+    Returns the next Tetromino to drop.
+
+    __NOTE:__ Don&#39;t use this function together with
+    `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino`.
+
+    Returns
+    -------
+    shape:
+        `str` of which Tetromino will drop:
+        * `&#34;L&#34;`: L-shape
+        * `&#34;J&#34;`: reverse L-shape
+        * `&#34;I&#34;`: I-shape
+        * `&#34;O&#34;`: square-shape
+        * `&#34;Z&#34;`: zig-zag left to right
+        * `&#34;S&#34;`: zig-zag right to left
+        * `&#34;T&#34;`: T-shape
+    &#34;&#34;&#34;
+    # Bitmask, as the last two bits determine the direction
+    return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) &amp; 0b11111100]</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino"><code class="name flex">
+<span>def <span class="ident">set_tetromino</span></span>(<span>self, shape)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.</p>
+<p><strong>NOTE</strong>: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+any overrides when reloading the ROM. This also applies to
+<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game"><code>GameWrapperTetris.start_game()</code></a> and
+<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game"><code>GameWrapperTetris.reset_game()</code></a>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>shape</code></strong> :&ensp;<code>str</code></dt>
+<dd>Define which Tetromino to use:</dd>
+</dl>
+<ul>
+<li><code>"L"</code>: L-shape</li>
+<li><code>"J"</code>: reverse L-shape</li>
+<li><code>"I"</code>: I-shape</li>
+<li><code>"O"</code>: square-shape</li>
+<li><code>"Z"</code>: zig-zag left to right</li>
+<li><code>"S"</code>: zig-zag right to left</li>
+<li><code>"T"</code>: T-shape</li>
+</ul></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_tetromino(self, shape):
+    &#34;&#34;&#34;
+    This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.
+
+    __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+    any overrides when reloading the ROM. This also applies to
+    `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game` and
+    `pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game`.
+
+    Args:
+        shape (str): Define which Tetromino to use:
+        * `&#34;L&#34;`: L-shape
+        * `&#34;J&#34;`: reverse L-shape
+        * `&#34;I&#34;`: I-shape
+        * `&#34;O&#34;`: square-shape
+        * `&#34;Z&#34;`: zig-zag left to right
+        * `&#34;S&#34;`: zig-zag right to left
+        * `&#34;T&#34;`: T-shape
+    &#34;&#34;&#34;
+
+    if shape not in tetromino_table:
+        raise KeyError(&#34;Invalid Tetromino shape!&#34;)
+
+    shape_number = tetromino_table[shape]
+
+    # http://149.154.154.153/wiki/Tetris_(Game_Boy):ROM_map
+    # Replacing:
+    # ROM0:206E FA 13 C2         ld   a,(C213)             ;load next Tetromino in accumulator
+    # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
+
+    patch1 = [
+        0x3E, # LD A, Tetromino
+        shape_number, # Tetromino
+        0x00, # NOOP
+    ]
+
+    for i, byte in enumerate(patch1):
+        self.pyboy.override_memory_value(0, 0x206E + i, byte)
+
+    patch2 = [
+        0x3E, # LD A, Tetromino
+        shape_number, # Tetromino
+    ]
+
+    for i, byte in enumerate(patch2):
+        self.pyboy.override_memory_value(0, 0x20B0 + i, byte)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_over"><code class="name flex">
+<span>def <span class="ident">game_over</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to know if the game is over.</p>
+<p>Game over happens, when the game area is filled with Tetrominos without clearing any rows.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def game_over(self):
+    &#34;&#34;&#34;
+    After calling `start_game`, you can call this method at any time to know if the game is over.
+
+    Game over happens, when the game area is filled with Tetrominos without clearing any rows.
+    &#34;&#34;&#34;
+    return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over</code></pre>
 </details>
 </dd>
 </dl>
@@ -560,13 +870,17 @@ ____________________________________________
 <li>
 <h4><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></code></h4>
 <ul class="two-column">
-<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area_tiles" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area_tiles">game_area_tiles</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area">game_area</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.next_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.next_tetromino">next_tetromino</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino">set_tetromino</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_over" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_over">game_over</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.shape" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.shape">shape</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.score" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.score">score</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.level" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.level">level</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.lines" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.lines">lines</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.fitness" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.fitness">fitness</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.tiles_compressed" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.tiles_compressed">tiles_compressed</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.tiles_minimal" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.tiles_minimal">tiles_minimal</a></code></li>
 </ul>
 </li>
 </ul>

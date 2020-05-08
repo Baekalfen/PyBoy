@@ -70,7 +70,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
 
-        Args:
+        Kwargs:
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
@@ -112,7 +112,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
-        Args:
+        Kwargs:
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
@@ -148,6 +148,9 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             Simplified 2-dimensional memoryview of the screen
         """
         return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        return self.health == 0
 
     def __repr__(self):
         adjust = 4

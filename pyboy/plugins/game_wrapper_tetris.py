@@ -8,10 +8,9 @@ __pdoc__ = {
 }
 
 import logging
-import random
 from array import array
-import numpy as np
 
+import numpy as np
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
@@ -121,7 +120,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
 
-        Args:
+        Kwargs:
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         # Boot screen
@@ -150,7 +149,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
 
-        Args:
+        Kwargs:
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
