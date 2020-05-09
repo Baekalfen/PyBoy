@@ -124,7 +124,7 @@ cdef class MemoryWindow(BaseDebugWindow):
     cdef sdl2_ttf.TTF_Font* font
     cdef sdl2.SDL_Color text_color
     cdef sdl2.SDL_Texture* texture
-    cdef sdl2.SDL_Rect* destination
+    cdef sdl2.SDL_Rect destination
     cdef sdl2.SDL_Surface* surface
 
     cdef str memory_row(self, int, int)

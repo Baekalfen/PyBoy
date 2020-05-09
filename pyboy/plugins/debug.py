@@ -557,6 +557,8 @@ class MemoryWindow(BaseDebugWindow):
         if not sdl2.SDL_GetError() == b"":
             logger.error(f"TTF_OpenFont error: {sdl2.SDL_GetError()}")
 
+        self.destination = sdl2.SDL_Rect(0, 0, 0, 0)
+
     def memory_row(self, x, y):
         return " ".join([f"{self.pyboy.get_memory_value(i):02x}" for i in range(x, y + 1)])
 
@@ -585,14 +587,18 @@ class MemoryWindow(BaseDebugWindow):
             self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, row.encode(), self.text_color)
             self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
             self.get_destination()
-            sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, self.destination)
+            sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, cython.address(self.destination))
             self.row_index += 18
+            sdl2.SDL_FreeSurface(self.surface)
+            sdl2.SDL_DestroyTexture(self.texture)
 
     def body(self):
         self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
         self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
         self.get_destination()
-        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, self.destination)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, cython.address(self.destination))
+        sdl2.SDL_FreeSurface(self.surface)
+        sdl2.SDL_DestroyTexture(self.texture)
         self.address_index += 0x8
         self.row_index += 18
 
@@ -601,7 +607,9 @@ class MemoryWindow(BaseDebugWindow):
         self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
         self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
         self.get_destination()
-        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, self.destination)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, cython.address(self.destination))
+        sdl2.SDL_FreeSurface(self.surface)
+        sdl2.SDL_DestroyTexture(self.texture)
 
     def get_destination(self):
         if cythonmode:
@@ -614,6 +622,7 @@ class MemoryWindow(BaseDebugWindow):
         sdl2.SDL_QueryTexture(self.texture, NULL, NULL, cython.address(w), cython.address(h))
         if cythonmode:
             # self.destination.w = cython.operator.dereference(w
+            self.destination.y = self.row_index
             self.destination.w = w
             self.destination.h = h
         # else:
