@@ -51,6 +51,7 @@ class PyBoyGymEnv(Env):
     &#34;&#34;&#34; A gym environement built from a `pyboy.PyBoy`
 
     This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+    Additional kwargs are passed to the start_game method of the game_wrapper.
 
     Args:
         observation_type (str): Define what the agent will be able to see:
@@ -73,7 +74,7 @@ class PyBoyGymEnv(Env):
         actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
 
     &#34;&#34;&#34;
-    def __init__(self, pyboy, observation_type=&#34;tiles&#34;, action_type=&#34;toggle&#34;, simultaneous_actions=False):
+    def __init__(self, pyboy, observation_type=&#34;tiles&#34;, action_type=&#34;toggle&#34;, simultaneous_actions=False, **kwargs):
         # Build pyboy game
         self.pyboy = pyboy
         if str(type(pyboy)) != &#34;&lt;class &#39;pyboy.pyboy.PyBoy&#39;&gt;&#34;:
@@ -142,6 +143,7 @@ class PyBoyGymEnv(Env):
         self.observation_type = observation_type
 
         self._started = False
+        self._kwargs = kwargs
 
     def _get_observation(self):
         if self.observation_type == &#34;raw&#34;:
@@ -184,7 +186,7 @@ class PyBoyGymEnv(Env):
     def reset(self):
         &#34;&#34;&#34; Reset (or start) the gym environment throught the game_wrapper &#34;&#34;&#34;
         if not self._started:
-            self.game_wrapper.start_game()
+            self.game_wrapper.start_game(**self._kwargs)
             self._started = True
         else:
             self.game_wrapper.reset_game()
@@ -210,11 +212,12 @@ class PyBoyGymEnv(Env):
 <dl>
 <dt id="pyboy.openai_gym.PyBoyGymEnv"><code class="flex name class">
 <span>class <span class="ident">PyBoyGymEnv</span></span>
-<span>(</span><span>pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False)</span>
+<span>(</span><span>pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>A gym environement built from a <a title="pyboy.PyBoy" href="index.html#pyboy.PyBoy"><code>PyBoy</code></a></p>
-<p>This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.</p>
+<p>This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+Additional kwargs are passed to the start_game method of the game_wrapper.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>observation_type</code></strong> :&ensp;<code>str</code></dt>
@@ -258,6 +261,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
     &#34;&#34;&#34; A gym environement built from a `pyboy.PyBoy`
 
     This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+    Additional kwargs are passed to the start_game method of the game_wrapper.
 
     Args:
         observation_type (str): Define what the agent will be able to see:
@@ -280,7 +284,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
         actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
 
     &#34;&#34;&#34;
-    def __init__(self, pyboy, observation_type=&#34;tiles&#34;, action_type=&#34;toggle&#34;, simultaneous_actions=False):
+    def __init__(self, pyboy, observation_type=&#34;tiles&#34;, action_type=&#34;toggle&#34;, simultaneous_actions=False, **kwargs):
         # Build pyboy game
         self.pyboy = pyboy
         if str(type(pyboy)) != &#34;&lt;class &#39;pyboy.pyboy.PyBoy&#39;&gt;&#34;:
@@ -349,6 +353,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
         self.observation_type = observation_type
 
         self._started = False
+        self._kwargs = kwargs
 
     def _get_observation(self):
         if self.observation_type == &#34;raw&#34;:
@@ -391,7 +396,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
     def reset(self):
         &#34;&#34;&#34; Reset (or start) the gym environment throught the game_wrapper &#34;&#34;&#34;
         if not self._started:
-            self.game_wrapper.start_game()
+            self.game_wrapper.start_game(**self._kwargs)
             self._started = True
         else:
             self.game_wrapper.reset_game()
@@ -481,7 +486,7 @@ to reset this environment's state.</p>
 <pre><code class="python">def reset(self):
     &#34;&#34;&#34; Reset (or start) the gym environment throught the game_wrapper &#34;&#34;&#34;
     if not self._started:
-        self.game_wrapper.start_game()
+        self.game_wrapper.start_game(**self._kwargs)
         self._started = True
     else:
         self.game_wrapper.reset_game()
