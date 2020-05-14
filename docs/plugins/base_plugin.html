@@ -40,6 +40,7 @@ __pdoc__ = {
 
 import io
 import logging
+import random
 from array import array
 
 import numpy as np
@@ -149,21 +150,47 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
 
-    def start_game(self):
+    def _set_timer_div(self, timer_div):
+        if timer_div is None:
+            self.mb.timer.DIV = random.getrandbits(8)
+        else:
+            self.mb.timer.DIV = timer_div &amp; 0xFF
+
+    def start_game(self, timer_div=None):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
+        A value can be passed to set the timer&#39;s DIV register. Some games depend on it for randomization.
+
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
-        &#34;&#34;&#34;
-        raise NotImplementedError(&#34;start_game not implemented in game wrapper&#34;)
 
-    def reset_game(self):
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+        &#34;&#34;&#34;
+
+        if not self.pyboy.frame_count == 0:
+            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+
+        self._set_timer_div(timer_div)
+
+    def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)
+
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+
+        self._set_timer_div(timer_div)
 
     def game_over(self):
         &#34;&#34;&#34;
@@ -310,21 +337,47 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError(&#34;post_tick not implemented in game wrapper&#34;)
 
-    def start_game(self):
+    def _set_timer_div(self, timer_div):
+        if timer_div is None:
+            self.mb.timer.DIV = random.getrandbits(8)
+        else:
+            self.mb.timer.DIV = timer_div &amp; 0xFF
+
+    def start_game(self, timer_div=None):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
+        A value can be passed to set the timer&#39;s DIV register. Some games depend on it for randomization.
+
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
-        &#34;&#34;&#34;
-        raise NotImplementedError(&#34;start_game not implemented in game wrapper&#34;)
 
-    def reset_game(self):
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+        &#34;&#34;&#34;
+
+        if not self.pyboy.frame_count == 0:
+            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+
+        self._set_timer_div(timer_div)
+
+    def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)
+
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+
+        self._set_timer_div(timer_div)
 
     def game_over(self):
         &#34;&#34;&#34;
@@ -428,42 +481,73 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <h3>Methods</h3>
 <dl>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game"><code class="name flex">
-<span>def <span class="ident">start_game</span></span>(<span>self)</span>
+<span>def <span class="ident">start_game</span></span>(<span>self, timer_div=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
 first playable state.</p>
+<p>A value can be passed to set the timer's DIV register. Some games depend on it for randomization.</p>
 <p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
-instantly.</p></section>
+instantly.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def start_game(self):
+<pre><code class="python">def start_game(self, timer_div=None):
     &#34;&#34;&#34;
     Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
     first playable state.
 
+    A value can be passed to set the timer&#39;s DIV register. Some games depend on it for randomization.
+
     The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
     instantly.
+
+    Args:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
-    raise NotImplementedError(&#34;start_game not implemented in game wrapper&#34;)</code></pre>
+
+    if not self.pyboy.frame_count == 0:
+        logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game"><code class="name flex">
-<span>def <span class="ident">reset_game</span></span>(<span>self)</span>
+<span>def <span class="ident">reset_game</span></span>(<span>self, timer_div=None)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p></section>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def reset_game(self):
+<pre><code class="python">def reset_game(self, timer_div=None):
     &#34;&#34;&#34;
     After calling `start_game`, you can call this method at any time to reset the game.
+
+    Args:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
-    raise NotImplementedError(&#34;reset_game not implemented in game wrapper&#34;)</code></pre>
+
+    if self.game_has_started:
+        self.saved_state.seek(0)
+        self.pyboy.load_state(self.saved_state)
+        self.post_tick()
+    else:
+        logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over"><code class="name flex">

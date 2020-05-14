@@ -62,6 +62,8 @@ tetromino_table = {
 }
 inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
 
+NEXT_TETROMINO_ADDR = 0xC213
+
 # Construct a translation table for tile ID&#39;s to a minimal/compressed id system
 TILES = 384
 
@@ -137,16 +139,19 @@ class GameWrapperTetris(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score
 
-    def start_game(self):
+    def start_game(self, timer_div=None):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if not self.pyboy.frame_count == 0:
-            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+        # We don&#39;t supply the timer_div arg here, as it won&#39;t have the desired effect
+        PyBoyGameWrapper.start_game(self)
 
         # Boot screen
         while True:
@@ -156,7 +161,11 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 break
 
         # Start game. Just press Start when the game allows us.
-        for _ in range(3):
+        for i in range(3):
+            if i == 2:
+                PyBoyGameWrapper._set_timer_div(self, timer_div)
+                self.saved_state.seek(0)
+                self.pyboy.save_state(self.saved_state)
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.tick()
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -166,19 +175,21 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         self.game_has_started = True
 
-        self.saved_state.seek(0)
-        self.pyboy.save_state(self.saved_state)
-
-    def reset_game(self):
+    def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -238,7 +249,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `&#34;T&#34;`: T-shape
         &#34;&#34;&#34;
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) &amp; 0b11111100]
+        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) &amp; 0b11111100]
 
     def set_tetromino(self, shape):
         &#34;&#34;&#34;
@@ -399,16 +410,19 @@ class GameWrapperTetris(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score
 
-    def start_game(self):
+    def start_game(self, timer_div=None):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if not self.pyboy.frame_count == 0:
-            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+        # We don&#39;t supply the timer_div arg here, as it won&#39;t have the desired effect
+        PyBoyGameWrapper.start_game(self)
 
         # Boot screen
         while True:
@@ -418,7 +432,11 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 break
 
         # Start game. Just press Start when the game allows us.
-        for _ in range(3):
+        for i in range(3):
+            if i == 2:
+                PyBoyGameWrapper._set_timer_div(self, timer_div)
+                self.saved_state.seek(0)
+                self.pyboy.save_state(self.saved_state)
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.tick()
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -428,19 +446,21 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         self.game_has_started = True
 
-        self.saved_state.seek(0)
-        self.pyboy.save_state(self.saved_state)
-
-    def reset_game(self):
+    def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -500,7 +520,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `&#34;T&#34;`: T-shape
         &#34;&#34;&#34;
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) &amp; 0b11111100]
+        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) &amp; 0b11111100]
 
     def set_tetromino(self, shape):
         &#34;&#34;&#34;
@@ -623,6 +643,91 @@ class GameWrapperTetris(PyBoyGameWrapper):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game"><code class="name flex">
+<span>def <span class="ident">start_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+first playable state.</p>
+<p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
+instantly.</p>
+<h2 id="kwargs">Kwargs</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+    first playable state.
+
+    The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+    instantly.
+
+    Kwargs:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+    &#34;&#34;&#34;
+    # We don&#39;t supply the timer_div arg here, as it won&#39;t have the desired effect
+    PyBoyGameWrapper.start_game(self)
+
+    # Boot screen
+    while True:
+        self.pyboy.tick()
+        self.tilemap_background.refresh_lcdc()
+        if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
+            break
+
+    # Start game. Just press Start when the game allows us.
+    for i in range(3):
+        if i == 2:
+            PyBoyGameWrapper._set_timer_div(self, timer_div)
+            self.saved_state.seek(0)
+            self.pyboy.save_state(self.saved_state)
+        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick()
+        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+        for _ in range(6):
+            self.pyboy.tick()
+
+    self.game_has_started = True</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game"><code class="name flex">
+<span>def <span class="ident">reset_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p>
+<h2 id="kwargs">Kwargs</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    After calling `start_game`, you can call this method at any time to reset the game.
+
+    Kwargs:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+    &#34;&#34;&#34;
+    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+    self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+    self.pyboy.tick()
+    self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+    for _ in range(6):
+        self.pyboy.tick()</code></pre>
+</details>
+</dd>
 <dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area"><code class="name flex">
 <span>def <span class="ident">game_area</span></span>(<span>self)</span>
 </code></dt>
@@ -743,7 +848,7 @@ ____________________________________________
         * `&#34;T&#34;`: T-shape
     &#34;&#34;&#34;
     # Bitmask, as the last two bits determine the direction
-    return inverse_tetromino_table[self.pyboy.get_memory_value(0xC213) &amp; 0b11111100]</code></pre>
+    return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) &amp; 0b11111100]</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino"><code class="name flex">
@@ -753,8 +858,8 @@ ____________________________________________
 <section class="desc"><p>This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.</p>
 <p><strong>NOTE</strong>: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
 any overrides when reloading the ROM. This also applies to
-<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game"><code>GameWrapperTetris.start_game()</code></a> and
-<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game"><code>GameWrapperTetris.reset_game()</code></a>.</p>
+<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game"><code>GameWrapperTetris.start_game()</code></a> and
+<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game"><code>GameWrapperTetris.reset_game()</code></a>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>shape</code></strong> :&ensp;<code>str</code></dt>
@@ -841,15 +946,6 @@ any overrides when reloading the ROM. This also applies to
 </details>
 </dd>
 </dl>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
-<ul class="hlist">
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
-</ul>
-</li>
-</ul>
 </dd>
 </dl>
 </section>
@@ -870,6 +966,8 @@ any overrides when reloading the ROM. This also applies to
 <li>
 <h4><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></code></h4>
 <ul class="two-column">
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game">start_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area">game_area</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.next_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.next_tetromino">next_tetromino</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino">set_tetromino</a></code></li>
