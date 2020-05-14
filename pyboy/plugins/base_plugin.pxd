@@ -58,3 +58,6 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef object saved_state
 
     cpdef void post_tick(self)
+
+    cpdef void start_game(self, timer_div=*)
+    cpdef void reset_game(self, timer_div=*)

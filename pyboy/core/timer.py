@@ -60,3 +60,19 @@ class Timer:
         cyclesleft = ((0x100 - self.TIMA) * divider) - self.TIMA_counter
 
         return cyclesleft
+
+    def save_state(self, f):
+        f.write(self.DIV)
+        f.write(self.TIMA)
+        f.write(self.DIV_counter)
+        f.write(self.TIMA_counter)
+        f.write(self.TMA)
+        f.write(self.TAC)
+
+    def load_state(self, f, state_version):
+        self.DIV = f.read()
+        self.TIMA = f.read()
+        self.DIV_counter = f.read()
+        self.TIMA_counter = f.read()
+        self.TMA = f.read()
+        self.TAC = f.read()
