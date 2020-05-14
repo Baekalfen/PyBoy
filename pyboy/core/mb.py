@@ -66,6 +66,7 @@ class Motherboard:
             pass
         self.renderer.save_state(f)
         self.ram.save_state(f)
+        self.timer.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
         logger.debug("State saved.")
@@ -83,11 +84,13 @@ class Motherboard:
             self.bootrom_enabled = state_version
         self.cpu.load_state(f, state_version)
         self.lcd.load_state(f, state_version)
-        if state_version >= 5:
+        if state_version >= 6:
             self.sound.load_state(f, state_version)
         if state_version >= 2:
             self.renderer.load_state(f, state_version)
         self.ram.load_state(f, state_version)
+        if state_version >= 5:
+            self.timer.load_state(f, state_version)
         self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")

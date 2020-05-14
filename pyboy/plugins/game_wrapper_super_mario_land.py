@@ -204,7 +204,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         for i, byte in enumerate(patch1):
             self.pyboy.override_memory_value(0, 0x451 + i, byte)
 
-    def start_game(self, world_level=None, unlock_level_select=False):
+    def start_game(self, timer_div=None, world_level=None, unlock_level_select=False):
         """
         Call this function right after initializing PyBoy. This will start a game in world 1-1 and give back control on
         the first frame it's possible.
@@ -219,11 +219,11 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         Enabling the selector, will make this function return before entering the game.
 
         Kwargs:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
             world_level (tuple): (world, level) to start the game from
             unlock_level_select (bool): Unlock level selector menu
         """
-        if not self.pyboy.frame_count == 0:
-            logger.warning("Calling start_game from an already running game. This might not work.")
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         if world_level is not None:
             self.set_world_level(*world_level)
@@ -257,19 +257,17 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-    def reset_game(self):
+    def reset_game(self, timer_div=None):
         """
         After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
 
         If you want to reset to later parts of the game -- for example world 1-2 or 3-1 -- use the methods
         `pyboy.PyBoy.save_state` and `pyboy.PyBoy.load_state`.
+
+        Kwargs:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error("Tried to reset game, but it hasn't been started yet!")
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
     def game_area(self):
         """
