@@ -11,6 +11,7 @@ from pyboy.utils import color_code
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
 LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
+INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 ROWS, COLS = 144, 160
 TILES = 384
 
@@ -22,22 +23,100 @@ except ImportError:
 
 
 class LCD:
-    def __init__(self):
+    def __init__(self, color_palette, disable_renderer):
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
         self.LCDC = LCDCRegister(0)
-        # self.STAT = 0x00
+        self.STAT = 0x00
         self.SCY = 0x00
         self.SCX = 0x00
-        # self.LY = 0x00
-        # self.LYC = 0x00
+        self.LY = 0x00
+        self.LYC = 0x00
         # self.DMA = 0x00
         self.BGP = PaletteRegister(0xFC)
         self.OBP0 = PaletteRegister(0xFF)
         self.OBP1 = PaletteRegister(0xFF)
         self.WY = 0x00
         self.WX = 0x00
+        self.clock = 0
+        self.clock_target = 80
+        self.mode = 2
+
+        self.renderer = Renderer(color_palette)
+        self.disable_renderer = disable_renderer
+
+    def STAT_mode_enabled(self, mode):
+        return self.STAT & (1 << (mode + 3))
+
+    def set_STAT_mode(self, mode):
+        if self.STAT & 0b11 == mode:
+            # Mode already set
+            return 0
+
+        self.STAT &= 0b11111100 # Clearing 2 LSB
+        self.STAT |= mode # Apply mode to LSB
+
+        # Check if interrupt is enabled for this mode
+        # Mode "3" is not interruptable
+        if mode != 3 and self.STAT_mode_enabled(mode):
+            return INTR_LCDC
+        return 0
+
+    def check_LYC(self):
+        if self.LYC == self.LY:
+            # TODO: Only set when reaching LY==LYC the first time
+            self.STAT |= 0b100 # Sets the LYC flag
+            if self.STAT & 0b01000000: # LYC interrupt enabled flag
+                return INTR_LCDC
+        else:
+            # Clear LYC flag
+            self.STAT &= 0b11111011
+        return 0
+
+    def cyclestointerrupt(self):
+        return self.clock_target - self.clock
+
+    def tick(self, cycles):
+        interrupt_flag = 0
+
+        if self.LCDC.lcd_enable:
+            self.clock += cycles
+
+            self.LY = (self.clock % 70224) // 456
+            interrupt_flag |= self.check_LYC()
+
+            if self.clock >= self.clock_target:
+                # Change to next mode
+                if self.mode == 0 and self.LY != 144:
+                    self.mode = 2
+                else:
+                    self.mode += 1
+                    self.mode %= 4
+
+                # Handle new mode
+                if self.mode == 0: # HBLANK
+                    interrupt_flag |= self.set_STAT_mode(0)
+                    self.clock_target += 206
+                elif self.mode == 1: # VBLANK
+                    interrupt_flag |= INTR_VBLANK
+                    interrupt_flag |= self.set_STAT_mode(1)
+                    self.clock_target += 456 * 10
+                    if not self.disable_renderer:
+                        self.renderer.render_screen(self)
+                elif self.mode == 2: # Searching OAM
+                    interrupt_flag |= self.set_STAT_mode(2)
+                    self.clock_target += 80
+                elif self.mode == 3: # Transferring data to LCD driver
+                    interrupt_flag |= self.set_STAT_mode(3)
+                    self.clock_target += 170
+                    if self.LY < 144:
+                        self.renderer.scanline(self.LY, self)
+        else:
+            self.clock = 0
+            self.clock_target = 1 << 16
+            self.LY = 0
+        return interrupt_flag
 
     def save_state(self, f):
         for n in range(VIDEO_RAM):
@@ -50,6 +129,10 @@ class LCD:
         f.write(self.BGP.value)
         f.write(self.OBP0.value)
         f.write(self.OBP1.value)
+
+        f.write(self.STAT)
+        f.write(self.LY)
+        f.write(self.LYC)
 
         f.write(self.SCY)
         f.write(self.SCX)
@@ -67,6 +150,11 @@ class LCD:
         self.BGP.set(f.read())
         self.OBP0.set(f.read())
         self.OBP1.set(f.read())
+
+        if state_version >= 5:
+            self.STAT = f.read()
+            self.LY = f.read()
+            self.LYC = f.read()
 
         self.SCY = f.read()
         self.SCX = f.read()

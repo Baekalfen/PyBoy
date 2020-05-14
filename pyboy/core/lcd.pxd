@@ -7,8 +7,9 @@ import cython
 from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 cimport pyboy.utils
+from pyboy.utils cimport color_code
 from pyboy.utils cimport IntIOInterface
-
+cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS, TILES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 
@@ -17,14 +18,30 @@ cdef class LCD:
     cdef uint8_t[8 * 1024] VRAM
     cdef uint8_t[0xA0] OAM
 
-    cdef int SCY
-    cdef int SCX
-    cdef int WY
-    cdef int WX
+    cdef uint8_t STAT
+    cdef uint8_t SCY
+    cdef uint8_t SCX
+    cdef uint8_t LY
+    cdef uint8_t LYC
+    cdef uint8_t WY
+    cdef uint8_t WX
+    cdef uint64_t clock
+    cdef uint64_t clock_target
+    cdef uint8_t mode
     cdef LCDCRegister LCDC
     cdef PaletteRegister BGP
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
+
+    cdef Renderer renderer
+    cdef bint disable_renderer
+
+    cdef bint STAT_mode_enabled(self, uint8_t)
+    cdef uint8_t set_STAT_mode(self, int)
+    cdef uint8_t check_LYC(self)
+    @cython.locals(interrupt_flag=uint8_t)
+    cdef uint8_t tick(self, int)
+    cdef uint64_t cyclestointerrupt(self)
 
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface, int)

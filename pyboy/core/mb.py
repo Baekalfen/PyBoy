@@ -11,12 +11,21 @@ from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
 logger = logging.getLogger(__name__)
 
-VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
+INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, sound_enabled, profiling=False):
+    def __init__(
+        self,
+        gamerom_file,
+        bootrom_file,
+        color_palette,
+        disable_renderer,
+        sound_enabled,
+        profiling=False,
+        enable_breakpoints=False
+    ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -29,15 +38,21 @@ class Motherboard:
         self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD()
-        self.renderer = lcd.Renderer(color_palette)
-        self.disable_renderer = disable_renderer
+        self.lcd = lcd.LCD(color_palette, disable_renderer)
         self.sound_enabled = sound_enabled
         if sound_enabled:
             self.sound = sound.Sound()
         self.bootrom_enabled = True
         self.serialbuffer = ""
-        self.cycles_remaining = 0
+
+        self.enable_breakpoints = True # enable_breakpoints
+        self.breakpoints = [(0, 0x0048)]
+
+    def add_breakpoint(self, bank, addr):
+        self.breakpoints.append((bank, addr))
+
+    def remove_breakpoint(self, index):
+        self.breakpoints.pop(index)
 
     def getserial(self):
         b = self.serialbuffer
@@ -46,7 +61,7 @@ class Motherboard:
 
     def buttonevent(self, key):
         if self.interaction.key_event(key):
-            self.cpu.set_interruptflag(HIGHTOLOW)
+            self.cpu.set_interruptflag(INTR_HIGHTOLOW)
 
     def stop(self, save):
         if self.sound_enabled:
@@ -64,7 +79,7 @@ class Motherboard:
             self.sound.save_state(f)
         else:
             pass
-        self.renderer.save_state(f)
+        self.lcd.renderer.save_state(f)
         self.ram.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
@@ -86,45 +101,27 @@ class Motherboard:
         if state_version >= 5:
             self.sound.load_state(f, state_version)
         if state_version >= 2:
-            self.renderer.load_state(f, state_version)
+            self.lcd.renderer.load_state(f, state_version)
         self.ram.load_state(f, state_version)
+        if state_version < 5:
+            # Interrupt register moved from RAM to CPU
+            self.cpu.interrupts_enabled = f.read()
         self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 
         # TODO: Move out of MB
-        self.renderer.clearcache = True
-        self.renderer.render_screen(self.lcd)
+        self.lcd.renderer.clearcache = True
+        self.lcd.renderer.render_screen(self.lcd)
 
     ###################################################################
     # Coordinator
     #
 
-    # TODO: Move out of MB
-    def set_STAT_mode(self, mode):
-        self.setitem(STAT, self.getitem(STAT) & 0b11111100) # Clearing 2 LSB
-        self.setitem(STAT, self.getitem(STAT) | mode) # Apply mode to LSB
-
-        # Mode "3" is not interruptable
-        if self.cpu.test_ramregisterflag(STAT, mode + 3) and mode != 3:
-            self.cpu.set_interruptflag(LCDC)
-
-    # TODO: Move out of MB
-    def check_LYC(self, y):
-        self.setitem(LY, y)
-        if self.getitem(LYC) == y:
-            self.setitem(STAT, self.getitem(STAT) | 0b100) # Sets the LYC flag
-            if self.getitem(STAT) & 0b01000000:
-                self.cpu.set_interruptflag(LCDC)
-        else:
-            self.setitem(STAT, self.getitem(STAT) & 0b11111011)
-
-    def calculate_cycles(self, cycles_period):
-        self.cycles_remaining += cycles_period
-        while self.cycles_remaining > 0:
+    def tick(self, cycles_period, skip_breakpoint):
+        while cycles_period > 0:
             cycles = self.cpu.tick()
 
-            # TODO: Benchmark whether 'if' and 'try/except' is better
             if cycles == -1: # CPU has HALTED
                 # Fast-forward to next interrupt:
                 # VBLANK and LCDC are covered by just returning.
@@ -134,66 +131,49 @@ class Motherboard:
                 # For HiToLo interrupt it is indistinguishable whether
                 # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
-                cycles = min(self.timer.cyclestointerrupt(), self.cycles_remaining)
+                cycles = cycles_period
+                cycles = min(self.timer.cyclestointerrupt(), cycles)
+                cycles = min(self.lcd.cyclestointerrupt(), cycles)
+                # cycles = min(self.serial.cyclestointerrupt(), cycles)
+                # cycles = 4 # Disable time warping
 
                 # Profiling
                 if self.cpu.profiling:
                     self.cpu.hitrate[0x76] += cycles // 4
 
+            # TODO: Unify interface
             if self.sound_enabled:
                 self.sound.clock += cycles
-            self.cycles_remaining -= cycles
 
             if self.timer.tick(cycles):
-                self.cpu.set_interruptflag(TIMER)
+                self.cpu.set_interruptflag(INTR_TIMER)
 
-    def tickframe(self):
-        lcdenabled = self.lcd.LCDC.lcd_enable
-        if lcdenabled:
-            # TODO: the 19, 41 and 49._ticks should correct for longer instructions
-            # Iterate the 144 lines on screen
-            for y in range(144):
-                self.check_LYC(y)
+            lcd_interrupt = self.lcd.tick(cycles)
+            if lcd_interrupt:
+                self.cpu.set_interruptflag(lcd_interrupt)
 
-                # Mode 2
-                # TODO: Move out of MB
-                self.set_STAT_mode(2)
-                self.calculate_cycles(80)
+            cycles_period -= cycles
 
-                # Mode 3
-                # TODO: Move out of MB
-                self.set_STAT_mode(3)
-                self.calculate_cycles(170)
-                self.renderer.scanline(y, self.lcd)
+            if self.cpu.PC == 0x0048:
+                print("TIMER")
+                import pdb
+                pdb.set_trace()
+            if not skip_breakpoint and self.enable_breakpoints:
+                for bank, pc in self.breakpoints:
+                    if self.cpu.PC == pc and (
+                        (pc < 0x4000 and bank == 0) or \
+                        (0x4000 <= pc < 0x8000 and bank != 0 and self.cartridge.rombank_selected == bank) or \
+                        (0xA000 <= pc < 0xC000 and bank != 0 and self.cartridge.rambank_selected == bank) or \
+                        (self.bootrom_enabled and bank == -1)
+                    ):
+                        print("breakpoint")
+                        return cycles_period
 
-                # Mode 0
-                # TODO: Move out of MB
-                self.set_STAT_mode(0)
-                self.calculate_cycles(206)
-
-            self.cpu.set_interruptflag(VBLANK)
-            if not self.disable_renderer:
-                self.renderer.render_screen(self.lcd)
-
-            # Wait for next frame
-            for y in range(144, 154):
-                self.check_LYC(y)
-
-                # Mode 1
-                self.set_STAT_mode(1)
-                self.calculate_cycles(456)
-        else:
-            # https://www.reddit.com/r/EmuDev/comments/6r6gf3
-            # TODO: What happens if LCD gets turned on/off mid-cycle?
-            self.renderer.blank_screen()
-            # TODO: Move out of MB
-            self.set_STAT_mode(0)
-            self.setitem(LY, 0)
-
-            for y in range(154):
-                self.calculate_cycles(456)
+        # TODO: Move SDL2 sync to plugin
         if self.sound_enabled:
             self.sound.sync()
+
+        return cycles_period
 
     ###################################################################
     # MemoryManager
@@ -228,6 +208,8 @@ class Motherboard:
                 return self.timer.TMA
             elif i == 0xFF07:
                 return self.timer.TAC
+            elif i == 0xFF0F:
+                return self.cpu.interrupts_flag
             elif 0xFF10 <= i < 0xFF40:
                 if self.sound_enabled:
                     return self.sound.get(i - 0xFF10)
@@ -235,10 +217,18 @@ class Motherboard:
                     return 0
             elif i == 0xFF40:
                 return self.lcd.LCDC.value
+            elif i == 0xFF41:
+                return self.lcd.STAT
             elif i == 0xFF42:
                 return self.lcd.SCY
             elif i == 0xFF43:
                 return self.lcd.SCX
+            elif i == 0xFF44:
+                return self.lcd.LY
+            elif i == 0xFF45:
+                return self.lcd.LYC
+            elif i == 0xFF46:
+                return 0x00 # DMA
             elif i == 0xFF47:
                 return self.lcd.BGP.value
             elif i == 0xFF48:
@@ -256,7 +246,7 @@ class Motherboard:
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF: # Interrupt Enable Register
-            return self.ram.interrupt_register[0]
+            return self.cpu.interrupts_enabled
         else:
             raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
 
@@ -273,7 +263,7 @@ class Motherboard:
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
                 # Mask out the byte of the tile
-                self.renderer.tiles_changed.add(i & 0xFFF0)
+                self.lcd.renderer.tiles_changed.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -291,33 +281,42 @@ class Motherboard:
                 self.serialbuffer += chr(value)
                 self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF04:
-                self.timer.DIV = 0
+                self.timer.reset()
             elif i == 0xFF05:
                 self.timer.TIMA = value
             elif i == 0xFF06:
                 self.timer.TMA = value
             elif i == 0xFF07:
                 self.timer.TAC = value & 0b111
+            elif i == 0xFF0F:
+                self.cpu.interrupts_flag = value
             elif 0xFF10 <= i < 0xFF40:
                 if self.sound_enabled:
                     self.sound.set(i - 0xFF10, value)
             elif i == 0xFF40:
                 self.lcd.LCDC.set(value)
+            elif i == 0xFF40:
+                self.lcd.STAT = value
             elif i == 0xFF42:
                 self.lcd.SCY = value
             elif i == 0xFF43:
+                # print(f"SCX: {value}, {self.lcd.LY}, {self.lcd.mode}, {self.lcd.clock%456}")
                 self.lcd.SCX = value
+            elif i == 0xFF44:
+                self.lcd.LY = value
+            elif i == 0xFF45:
+                self.lcd.LYC = value
             elif i == 0xFF46:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
                 # TODO: Move out of MB
-                self.renderer.clearcache |= self.lcd.BGP.set(value)
+                self.lcd.renderer.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
                 # TODO: Move out of MB
-                self.renderer.clearcache |= self.lcd.OBP0.set(value)
+                self.lcd.renderer.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
                 # TODO: Move out of MB
-                self.renderer.clearcache |= self.lcd.OBP1.set(value)
+                self.lcd.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:
@@ -331,7 +330,7 @@ class Motherboard:
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
-            self.ram.interrupt_register[0] = value
+            self.cpu.interrupts_enabled = value
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 

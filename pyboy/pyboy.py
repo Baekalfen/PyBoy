@@ -88,6 +88,7 @@ class PyBoy:
         self.old_events = []
         self.done = False
         self.window_title = "PyBoy"
+        self.cycles_remaining = 154 * 456 # One frame worth of cycles (144 + 10 scanlines times 456 clock cycles per line)
 
         ###################
         # Plugins
@@ -108,9 +109,28 @@ class PyBoy:
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self._handle_events(self.events)
         t_pre = time.perf_counter()
-        self.frame_count += 1
         if not self.paused:
-            self.mb.tickframe()
+            self.cycles_remaining = self.mb.tick(self.cycles_remaining, False)
+            if self.cycles_remaining > 0:
+                # breakpoint reached
+                # self.plugin_manager.breakpoint()
+                from pyboy.core.opcodes import CPU_COMMANDS
+                while True:
+                    print(
+                        f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X}"
+                    )
+                    opcode = self.mb.getitem(self.mb.cpu.PC)
+                    print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
+                    print(f"Interrupts: {self.mb.cpu.interrupts_enabled:08b}, {self.mb.cpu.interrupts_flag:08b}")
+                    cmd = input()
+                    if cmd == "c":
+                        self.cycles_remaining = self.mb.tick(self.cycles_remaining, False)
+                    else:
+                        self.mb.tick(4, True)
+                        self.cycles_remaining -= 4
+            else:
+                self.frame_count += 1
+                self.cycles_remaining += 154 * 456 # One frame worth of cycles (144 + 10 scanlines times 456 clock cycles per line)
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()

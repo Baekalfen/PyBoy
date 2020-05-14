@@ -440,14 +440,9 @@ class OpcodeData:
     def HALT(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles, branch_op=True)
 
-        # TODO: Implement HALT bug. If master interrupt is disabled,
-        # the intruction following HALT is skipped
+        # TODO: Implement HALT bug.
         code.addlines([
-            "if cpu.interrupt_master_enable:",
-            "\tcpu.halted = True",
-            "else:",
-            "\tcpu.PC += 1",
-            "\tcpu.PC &= 0xFFFF",
+            "cpu.halted = True",
             "return " + self.cycles[0],
         ])
         return code.getcode()

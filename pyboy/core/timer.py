@@ -27,6 +27,11 @@ class Timer:
         self.TAC = 0
         self.dividers = [1024, 16, 64, 256]
 
+    def reset(self):
+        self.DIV_counter = 0
+        self.TIMA_counter = 0
+        self.DIV = 0
+
     def tick(self, cycles):
         self.DIV_counter += cycles
         self.DIV += (self.DIV_counter >> 8) # Add overflown bits to DIV

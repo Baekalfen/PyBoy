@@ -121,7 +121,7 @@ class Tile:
         """
         data = np.zeros((8, 8), dtype=np.uint32)
         # Converting from RGBA to ABGR
-        color_palette = [(x >> 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
+        color_palette = [(x >> 8) | 0xFF000000 for x in self.mb.lcd.renderer.color_palette]
 
         for k in range(0, 16, 2): # 2 bytes for each line
             byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]

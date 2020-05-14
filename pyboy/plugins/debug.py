@@ -501,7 +501,7 @@ class SpriteViewWindow(BaseDebugWindow):
             for x in range(constants.COLS):
                 self.buf0[y][x] = SPRITE_BACKGROUND
 
-        self.mb.renderer.render_sprites(self.mb.lcd, self.buf0, True)
+        self.mb.lcd.renderer.render_sprites(self.mb.lcd, self.buf0, True)
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
 
