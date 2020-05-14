@@ -42,8 +42,8 @@ lever = [255]
 
 # Solid blocks
 neutral_blocks = [
-    142, 143, 221, 222, 231, 232, 233, 234, 235, 236, 301, 302, 303, 304, 319, 340, 352, 353, 355, 356, 357, 358,
-    359, 360, 361, 362, 381, 382, 383
+    142, 143, 221, 222, 231, 232, 233, 234, 235, 236, 301, 302, 303, 304, 319, 340, 352, 353, 355, 356, 357, 358, 359,
+    360, 361, 362, 381, 382, 383
 ]
 moving_blocks = [230, 238, 239]
 pushable_blokcs = [128, 130, 354]
@@ -106,6 +106,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
     This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left, world and a
     "fitness" score for AIs.
+
+    __Only world 1-1 is officially supported at the moment. Support for more worlds coming soon.__
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
