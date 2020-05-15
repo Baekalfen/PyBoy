@@ -16,6 +16,10 @@ class IntIOInterface:
     def write(self, byte):
         raise Exception("Not implemented!")
 
+    def write_16bit(self, value):
+        self.write(value & 0xFF)
+        self.write((value & 0xFF00) >> 8)
+
     def read_16bit(self):
         a = self.read()
         b = self.read()
