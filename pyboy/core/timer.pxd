@@ -10,7 +10,7 @@ import cython
 
 cdef class Timer:
     cdef uint64_t DIV, TIMA, TMA, TAC
-    cdef uint64_t DIV_counter, TIMA_counter
+    cdef uint16_t DIV_counter, TIMA_counter
     cdef uint64_t[4] dividers
 
     @cython.locals(divider=cython.int)

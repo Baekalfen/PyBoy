@@ -64,15 +64,15 @@ class Timer:
     def save_state(self, f):
         f.write(self.DIV)
         f.write(self.TIMA)
-        f.write(self.DIV_counter)
-        f.write(self.TIMA_counter)
+        f.write_16bit(self.DIV_counter)
+        f.write_16bit(self.TIMA_counter)
         f.write(self.TMA)
         f.write(self.TAC)
 
     def load_state(self, f, state_version):
         self.DIV = f.read()
         self.TIMA = f.read()
-        self.DIV_counter = f.read()
-        self.TIMA_counter = f.read()
+        self.DIV_counter = f.read_16bit()
+        self.TIMA_counter = f.read_16bit()
         self.TMA = f.read()
         self.TAC = f.read()

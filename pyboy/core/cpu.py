@@ -153,8 +153,7 @@ class CPU:
             f.write(n & 0xFF)
 
         for n in [self.HL, self.SP, self.PC]:
-            f.write(n & 0xFF)
-            f.write((n & 0xFF00) >> 8)
+            f.write_16bit(n)
 
         f.write(self.interrupt_master_enable)
         f.write(self.halted)
