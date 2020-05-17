@@ -287,7 +287,7 @@ script:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN=$PYPI_TOKEN -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e MANYLINUX=$MANYLINUX -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE manylinux bash .deploy.sh; else bash .deploy.sh; fi'
+    script: bash -c 'if [ "$MANYLINUX" ]; then docker exec -e PYPI_TOKEN=$PYPI_TOKEN -e PYPI_TOKEN_TEST=$PYPI_TOKEN_TEST -e MANYLINUX=$MANYLINUX -e DOCKER_HUB_BUILD_POST=$DOCKER_HUB_BUILD_POST -e PYPI_SOURCE=$PYPI_SOURCE -e PYTHON_PATH=$PYTHON_PATH -e SDL2_ARCH=$SDL2_ARCH manylinux bash .deploy.sh; else bash .deploy.sh; fi'
     on:
       branch: master
       tags: true
