@@ -46,7 +46,9 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.enable_breakpoints = True # enable_breakpoints
-        self.breakpoints = [(0, 0x0048)]
+        self.breakpoints = [(0, 0x0048), (0, 0x0050), (0, 0x0040)]
+        self.break_release = False
+        self.did_interrupt = False
 
     def add_breakpoint(self, bank, addr):
         self.breakpoints.append((bank, addr))
@@ -118,9 +120,25 @@ class Motherboard:
     # Coordinator
     #
 
-    def tick(self, cycles_period, skip_breakpoint):
+    def tick(self, cycles_period, break_next=False):
         while cycles_period > 0:
-            cycles = self.cpu.tick()
+            if not self.did_interrupt:
+                self.did_interrupt = self.cpu.check_interrupts()
+
+            if not self.break_release and self.enable_breakpoints:
+                for bank, pc in self.breakpoints:
+                    if self.cpu.PC == pc and (
+                        (not self.bootrom_enabled and pc < 0x4000 and bank == 0) or \
+                        (0x4000 <= pc < 0x8000 and bank != 0 and self.cartridge.rombank_selected == bank) or \
+                        (0xA000 <= pc < 0xC000 and bank != 0 and self.cartridge.rambank_selected == bank) or \
+                        (self.bootrom_enabled and bank == -1)
+                    ):
+                        print("breakpoint")
+                        return cycles_period
+            self.break_release = False
+
+            cycles = self.cpu.tick(self.did_interrupt)
+            self.did_interrupt = False
 
             if cycles == -1: # CPU has HALTED
                 # Fast-forward to next interrupt:
@@ -153,21 +171,8 @@ class Motherboard:
                 self.cpu.set_interruptflag(lcd_interrupt)
 
             cycles_period -= cycles
-
-            if self.cpu.PC == 0x0048:
-                print("TIMER")
-                import pdb
-                pdb.set_trace()
-            if not skip_breakpoint and self.enable_breakpoints:
-                for bank, pc in self.breakpoints:
-                    if self.cpu.PC == pc and (
-                        (pc < 0x4000 and bank == 0) or \
-                        (0x4000 <= pc < 0x8000 and bank != 0 and self.cartridge.rombank_selected == bank) or \
-                        (0xA000 <= pc < 0xC000 and bank != 0 and self.cartridge.rambank_selected == bank) or \
-                        (self.bootrom_enabled and bank == -1)
-                    ):
-                        print("breakpoint")
-                        return cycles_period
+            # if break_next:
+            #     return cycles_period
 
         # TODO: Move SDL2 sync to plugin
         if self.sound_enabled:
@@ -295,12 +300,11 @@ class Motherboard:
                     self.sound.set(i - 0xFF10, value)
             elif i == 0xFF40:
                 self.lcd.LCDC.set(value)
-            elif i == 0xFF40:
+            elif i == 0xFF41:
                 self.lcd.STAT = value
             elif i == 0xFF42:
                 self.lcd.SCY = value
             elif i == 0xFF43:
-                # print(f"SCX: {value}, {self.lcd.LY}, {self.lcd.mode}, {self.lcd.clock%456}")
                 self.lcd.SCX = value
             elif i == 0xFF44:
                 self.lcd.LY = value

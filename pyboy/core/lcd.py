@@ -46,9 +46,6 @@ class LCD:
         self.renderer = Renderer(color_palette)
         self.disable_renderer = disable_renderer
 
-    def STAT_mode_enabled(self, mode):
-        return self.STAT & (1 << (mode + 3))
-
     def set_STAT_mode(self, mode):
         if self.STAT & 0b11 == mode:
             # Mode already set
@@ -59,7 +56,7 @@ class LCD:
 
         # Check if interrupt is enabled for this mode
         # Mode "3" is not interruptable
-        if mode != 3 and self.STAT_mode_enabled(mode):
+        if mode != 3 and self.STAT & (1 << (mode + 3)):
             return INTR_LCDC
         return 0
 

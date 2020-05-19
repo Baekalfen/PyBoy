@@ -98,14 +98,7 @@ class CPU:
     def set_interruptflag(self, flag):
         self.interrupts_flag |= flag
 
-    def tick(self):
-        # "The interrupt will be acknowledged during opcode fetch period of each instruction."
-        did_interrupt = self.check_interrupts()
-
-        # if self.PC == 0x0048:
-        #     print("TIMER")
-        # import pdb; pdb.set_trace()
-
+    def tick(self, did_interrupt):
         if self.halted and did_interrupt:
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
@@ -119,19 +112,14 @@ class CPU:
     def check_interrupts(self):
         if (self.interrupts_flag & 0b11111) & (self.interrupts_enabled & 0b11111):
             if self.handle_interrupt(INTR_VBLANK, 0x0040):
-                print("VBLANK")
                 return True
             elif self.handle_interrupt(INTR_LCDC, 0x0048):
-                print("LCDC")
                 return True
             elif self.handle_interrupt(INTR_TIMER, 0x0050):
-                print("TIMER")
                 return True
             elif self.handle_interrupt(INTR_SERIAL, 0x0058):
-                print("SERIAL")
                 return True
             elif self.handle_interrupt(INTR_HIGHTOLOW, 0x0060):
-                print("HIGHTOLOW")
                 return True
             else:
                 logger.error("No interrupt triggered, but it should!")

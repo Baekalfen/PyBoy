@@ -113,20 +113,32 @@ class PyBoy:
             self.cycles_remaining = self.mb.tick(self.cycles_remaining, False)
             if self.cycles_remaining > 0:
                 # breakpoint reached
+
                 # self.plugin_manager.breakpoint()
                 from pyboy.core.opcodes import CPU_COMMANDS
                 while True:
                     print(
-                        f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X}"
+                        f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
+                        f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
+                        f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X}"
                     )
                     opcode = self.mb.getitem(self.mb.cpu.PC)
                     print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
-                    print(f"Interrupts: {self.mb.cpu.interrupts_enabled:08b}, {self.mb.cpu.interrupts_flag:08b}")
+                    print(
+                        f"Interrupts - IE: {self.mb.cpu.interrupts_enabled:08b}, IF: {self.mb.cpu.interrupts_flag:08b}"
+                    )
                     cmd = input()
+
+                    self.mb.break_release = True
                     if cmd == "c":
-                        self.cycles_remaining = self.mb.tick(self.cycles_remaining, False)
+                        break
+                    elif cmd == "pdb":
+                        import pdb
+                        pdb.set_trace()
+                        break
                     else:
-                        self.mb.tick(4, True)
+                        self.mb.break_release = True
+                        self.mb.tick(4)
                         self.cycles_remaining -= 4
             else:
                 self.frame_count += 1
