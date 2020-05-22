@@ -52,9 +52,10 @@ class CPU:
         self.SP = 0
         self.PC = 0
 
-        self.interrupts_flag = 0
-        self.interrupts_enabled = 0
+        self.interrupts_flag_register = 0
+        self.interrupts_enabled_register = 0
         self.interrupt_master_enable = False
+        self.interrupt_queued = False
 
         self.mb = mb
 
@@ -77,7 +78,7 @@ class CPU:
         f.write(self.interrupt_master_enable)
         f.write(self.halted)
         f.write(self.stopped)
-        f.write(self.interrupts_enabled)
+        f.write(self.interrupts_enabled_register)
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
@@ -90,16 +91,16 @@ class CPU:
         self.stopped = f.read()
         if state_version >= 5:
             # Interrupt register moved from RAM to CPU
-            self.interrupts_enabled = f.read()
+            self.interrupts_enabled_register = f.read()
         logger.debug(
             f"State loaded: A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, IME:{self.interrupt_master_enable}, halted:{self.halted}, stopped:{self.stopped}"
         )
 
     def set_interruptflag(self, flag):
-        self.interrupts_flag |= flag
+        self.interrupts_flag_register |= flag
 
-    def tick(self, did_interrupt):
-        if self.halted and did_interrupt:
+    def tick(self):
+        if self.halted and self.interrupt_queued:
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
             # disabled (DI) on the GB,GBP, and SGB.
@@ -107,36 +108,42 @@ class CPU:
         elif self.halted:
             return -1
 
-        return self.fetch_and_execute(self.PC)
+        cycles = self.fetch_and_execute(self.PC)
+        self.interrupt_queued = False
+        return cycles
 
     def check_interrupts(self):
-        if (self.interrupts_flag & 0b11111) & (self.interrupts_enabled & 0b11111):
+        if self.interrupt_queued:
+            # Interrupt already queued. This happens only when using a debugger.
+            return
+
+        if (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111):
             if self.handle_interrupt(INTR_VBLANK, 0x0040):
-                return True
+                self.interrupt_queued = True
             elif self.handle_interrupt(INTR_LCDC, 0x0048):
-                return True
+                self.interrupt_queued = True
             elif self.handle_interrupt(INTR_TIMER, 0x0050):
-                return True
+                self.interrupt_queued = True
             elif self.handle_interrupt(INTR_SERIAL, 0x0058):
-                return True
+                self.interrupt_queued = True
             elif self.handle_interrupt(INTR_HIGHTOLOW, 0x0060):
-                return True
+                self.interrupt_queued = True
             else:
                 logger.error("No interrupt triggered, but it should!")
-                return False
-        return False
+                self.interrupt_queued = False
+        else:
+            self.interrupt_queued = False
 
     def handle_interrupt(self, flag, addr):
-        if (self.interrupts_enabled & flag) and (self.interrupts_flag & flag):
+        if (self.interrupts_enabled_register & flag) and (self.interrupts_flag_register & flag):
             # Clear interrupt flag
-
             if self.halted:
                 self.PC += 1 # Escape HALT on return
                 self.PC &= 0xFFFF
 
             # Handle interrupt vectors
             if self.interrupt_master_enable:
-                self.interrupts_flag ^= flag # Remove flag
+                self.interrupts_flag_register ^= flag # Remove flag
                 self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
                 self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
                 self.SP -= 2

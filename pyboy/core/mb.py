@@ -24,7 +24,7 @@ class Motherboard:
         disable_renderer,
         sound_enabled,
         profiling=False,
-        enable_breakpoints=False
+        breakpoints_enabled=False
     ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
@@ -45,16 +45,15 @@ class Motherboard:
         self.bootrom_enabled = True
         self.serialbuffer = ""
 
-        self.enable_breakpoints = True # enable_breakpoints
-        self.breakpoints = [(0, 0x0048), (0, 0x0050), (0, 0x0040)]
-        self.break_release = False
-        self.did_interrupt = False
+        self.breakpoints_enabled = True # breakpoints_enabled
+        self.breakpoints_list = [(0, 0x0048), (0, 0x0050), (0, 0x0040)]
+        self.breakpoint_release = False
 
     def add_breakpoint(self, bank, addr):
-        self.breakpoints.append((bank, addr))
+        self.breakpoints_list.append((bank, addr))
 
     def remove_breakpoint(self, index):
-        self.breakpoints.pop(index)
+        self.breakpoints_list.pop(index)
 
     def getserial(self):
         b = self.serialbuffer
@@ -107,7 +106,7 @@ class Motherboard:
         self.ram.load_state(f, state_version)
         if state_version < 5:
             # Interrupt register moved from RAM to CPU
-            self.cpu.interrupts_enabled = f.read()
+            self.cpu.interrupts_enabled_register = f.read()
         self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
@@ -122,23 +121,21 @@ class Motherboard:
 
     def tick(self, cycles_period, break_next=False):
         while cycles_period > 0:
-            if not self.did_interrupt:
-                self.did_interrupt = self.cpu.check_interrupts()
+            self.cpu.check_interrupts()
 
-            if not self.break_release and self.enable_breakpoints:
-                for bank, pc in self.breakpoints:
+            if not self.breakpoint_release and self.breakpoints_enabled:
+                for bank, pc in self.breakpoints_list:
                     if self.cpu.PC == pc and (
-                        (not self.bootrom_enabled and pc < 0x4000 and bank == 0) or \
-                        (0x4000 <= pc < 0x8000 and bank != 0 and self.cartridge.rombank_selected == bank) or \
-                        (0xA000 <= pc < 0xC000 and bank != 0 and self.cartridge.rambank_selected == bank) or \
-                        (self.bootrom_enabled and bank == -1)
+                        (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
+                        (0x4000 <= pc < 0x8000 and self.cartridge.rombank_selected == bank) or \
+                        (0xA000 <= pc < 0xC000 and self.cartridge.rambank_selected == bank) or \
+                        (pc < 0x100 and bank == -1 and self.bootrom_enabled)
                     ):
-                        print("breakpoint")
+                        # Breakpoint hit
                         return cycles_period
-            self.break_release = False
+            self.breakpoint_release = False
 
-            cycles = self.cpu.tick(self.did_interrupt)
-            self.did_interrupt = False
+            cycles = self.cpu.tick()
 
             if cycles == -1: # CPU has HALTED
                 # Fast-forward to next interrupt:
@@ -214,7 +211,7 @@ class Motherboard:
             elif i == 0xFF07:
                 return self.timer.TAC
             elif i == 0xFF0F:
-                return self.cpu.interrupts_flag
+                return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
                 if self.sound_enabled:
                     return self.sound.get(i - 0xFF10)
@@ -251,7 +248,7 @@ class Motherboard:
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF: # Interrupt Enable Register
-            return self.cpu.interrupts_enabled
+            return self.cpu.interrupts_enabled_register
         else:
             raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
 
@@ -294,7 +291,7 @@ class Motherboard:
             elif i == 0xFF07:
                 self.timer.TAC = value & 0b111
             elif i == 0xFF0F:
-                self.cpu.interrupts_flag = value
+                self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
                 if self.sound_enabled:
                     self.sound.set(i - 0xFF10, value)
@@ -334,7 +331,7 @@ class Motherboard:
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
-            self.cpu.interrupts_enabled = value
+            self.cpu.interrupts_enabled_register = value
         else:
             raise Exception("Memory access violation. Tried to write: %s" % hex(i))
 

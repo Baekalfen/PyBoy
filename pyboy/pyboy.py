@@ -125,11 +125,11 @@ class PyBoy:
                     opcode = self.mb.getitem(self.mb.cpu.PC)
                     print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
                     print(
-                        f"Interrupts - IE: {self.mb.cpu.interrupts_enabled:08b}, IF: {self.mb.cpu.interrupts_flag:08b}"
+                        f"Interrupts - IE: {self.mb.cpu.interrupts_enabled_register:08b}, IF: {self.mb.cpu.interrupts_flag_register:08b}"
                     )
                     cmd = input()
 
-                    self.mb.break_release = True
+                    self.mb.breakpoint_release = True
                     if cmd == "c":
                         break
                     elif cmd == "pdb":
@@ -137,7 +137,7 @@ class PyBoy:
                         pdb.set_trace()
                         break
                     else:
-                        self.mb.break_release = True
+                        self.mb.breakpoint_release = True
                         self.mb.tick(4)
                         self.cycles_remaining -= 4
             else:
