@@ -46,8 +46,7 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.breakpoints_enabled = True # breakpoints_enabled
-        self.breakpoints_list = [(0, 0x0048), (0, 0x0050), (0, 0x0040)]
-        self.breakpoint_release = False
+        self.breakpoints_list = [] #[(0, 0x0048), (0, 0x0050), (0, 0x0040)]
 
     def add_breakpoint(self, bank, addr):
         self.breakpoints_list.append((bank, addr))
@@ -121,9 +120,10 @@ class Motherboard:
 
     def tick(self, cycles_period, break_next=False):
         while cycles_period > 0:
-            self.cpu.check_interrupts()
+            # self.cpu.check_interrupts()
+            cycles = self.cpu.tick()
 
-            if not self.breakpoint_release and self.breakpoints_enabled:
+            if self.breakpoints_enabled:
                 for bank, pc in self.breakpoints_list:
                     if self.cpu.PC == pc and (
                         (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
@@ -133,9 +133,6 @@ class Motherboard:
                     ):
                         # Breakpoint hit
                         return cycles_period
-            self.breakpoint_release = False
-
-            cycles = self.cpu.tick()
 
             if cycles == -1: # CPU has HALTED
                 # Fast-forward to next interrupt:

@@ -100,6 +100,9 @@ class CPU:
         self.interrupts_flag_register |= flag
 
     def tick(self):
+        if self.check_interrupts():
+            return 0
+
         if self.halted and self.interrupt_queued:
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
@@ -115,7 +118,7 @@ class CPU:
     def check_interrupts(self):
         if self.interrupt_queued:
             # Interrupt already queued. This happens only when using a debugger.
-            return
+            return False
 
         if (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111):
             if self.handle_interrupt(INTR_VBLANK, 0x0040):
@@ -131,8 +134,10 @@ class CPU:
             else:
                 logger.error("No interrupt triggered, but it should!")
                 self.interrupt_queued = False
+            return True
         else:
             self.interrupt_queued = False
+        return False
 
     def handle_interrupt(self, flag, addr):
         if (self.interrupts_enabled_register & flag) and (self.interrupts_flag_register & flag):
