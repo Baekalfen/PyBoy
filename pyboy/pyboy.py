@@ -6,7 +6,6 @@
 The core module of the emulator
 """
 
-import logging
 import os
 import time
 
@@ -17,8 +16,8 @@ from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport
 from .core.mb import Motherboard
+from pyboy.logger import logger
 
-logger = logging.getLogger(__name__)
 
 SPF = 1 / 60. # inverse FPS (frame-per-second)
 
