@@ -2,11 +2,9 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-import logging
 
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-
-logger = logging.getLogger(__name__)
+from pyboy.logger import logger
 
 
 class WindowHeadless(PyBoyWindowPlugin):
