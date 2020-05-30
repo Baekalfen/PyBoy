@@ -5,17 +5,15 @@
 #
 
 import argparse
-import logging
 import os
 
 from pyboy import PyBoy, core
 from pyboy.logger import log_level
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
+from pyboy.logger import logger
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
-
-logger = logging.getLogger(__name__)
 
 
 def color_tuple(string):
