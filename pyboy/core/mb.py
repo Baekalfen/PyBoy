@@ -46,7 +46,7 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.breakpoints_enabled = True # breakpoints_enabled
-        self.breakpoints_list = [] #[(0, 0x0048), (0, 0x0050), (0, 0x0040)]
+        self.breakpoints_list = [(0, 0x0048), (0, 0x0050), (0, 0x0040)]
 
     def add_breakpoint(self, bank, addr):
         self.breakpoints_list.append((bank, addr))
@@ -118,21 +118,24 @@ class Motherboard:
     # Coordinator
     #
 
-    def tick(self, cycles_period, break_next=False):
+    def breakpoint_reached(self):
+        for bank, pc in self.breakpoints_list:
+            if self.cpu.PC == pc and (
+                (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
+                (0x4000 <= pc < 0x8000 and self.cartridge.rombank_selected == bank) or \
+                (0xA000 <= pc < 0xC000 and self.cartridge.rambank_selected == bank) or \
+                (pc < 0x100 and bank == -1 and self.bootrom_enabled)
+            ):
+                # Breakpoint hit
+                return True
+        return False
+
+    def tick(self, cycles_period): # break_next=False
         while cycles_period > 0:
-            # self.cpu.check_interrupts()
             cycles = self.cpu.tick()
 
-            if self.breakpoints_enabled:
-                for bank, pc in self.breakpoints_list:
-                    if self.cpu.PC == pc and (
-                        (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
-                        (0x4000 <= pc < 0x8000 and self.cartridge.rombank_selected == bank) or \
-                        (0xA000 <= pc < 0xC000 and self.cartridge.rambank_selected == bank) or \
-                        (pc < 0x100 and bank == -1 and self.bootrom_enabled)
-                    ):
-                        # Breakpoint hit
-                        return cycles_period
+            if self.breakpoints_enabled and self.breakpoint_reached():
+                return cycles_period
 
             if cycles == -1: # CPU has HALTED
                 # Fast-forward to next interrupt:

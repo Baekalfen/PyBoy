@@ -37,13 +37,13 @@ cdef class Motherboard:
     cdef str serialbuffer
     cdef int cycles_remaining
 
-    cdef bint enable_breakpoints
-    cdef list breakpoints
+    cdef bint breakpoints_enabled
+    cdef list breakpoints_list
 
     cdef void buttonevent(self, WindowEvent)
     cdef void stop(self, bint)
     @cython.locals(cycles=cython.int)
-    cdef void tick(self)
+    cdef int tick(self, int)
 
     cdef uint8_t getitem(self, uint16_t)
     cdef void setitem(self, uint16_t, uint8_t)

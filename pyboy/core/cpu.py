@@ -101,6 +101,7 @@ class CPU:
 
     def tick(self):
         if self.check_interrupts():
+            # TODO: We return with the cycles it took to handle the interrupt
             return 0
 
         if self.halted and self.interrupt_queued:

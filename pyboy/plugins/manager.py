@@ -269,3 +269,7 @@ class PluginManager:
             self.game_wrapper_kirby_dream_land.stop()
         # foreach end
         pass
+
+    def handle_breakpoint(self):
+        if self.debug_enabled:
+            self.debug.handle_breakpoint()

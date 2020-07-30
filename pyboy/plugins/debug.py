@@ -10,6 +10,7 @@ from array import array
 import sdl2
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
+from pyboy.core.opcodes import CPU_COMMANDS
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -174,6 +175,47 @@ class Debug(PyBoyWindowPlugin):
 
     def enabled(self):
         return self.pyboy_argv.get("debug")
+
+    def handle_breakpoint(self):
+        while True:
+            print(
+                f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
+                f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
+                f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X}"
+            )
+            opcode = self.mb.getitem(self.mb.cpu.PC)
+            print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
+            print(
+                f"Interrupts - IE: {self.mb.cpu.interrupts_enabled_register:08b}, IF: {self.mb.cpu.interrupts_flag_register:08b}"
+            )
+            cmd = input()
+
+            # self.mb.breakpoint_release = True
+            if cmd == "c":
+                break
+            elif cmd == "d":
+                # TODO: Share this code with breakpoint_reached
+                for i, (bank, pc) in enumerate(self.mb.breakpoints_list):
+                    if self.mb.cpu.PC == pc and (
+                        (pc < 0x4000 and bank == 0 and not self.mb.bootrom_enabled) or \
+                        (0x4000 <= pc < 0x8000 and self.mb.cartridge.rombank_selected == bank) or \
+                        (0xA000 <= pc < 0xC000 and self.mb.cartridge.rambank_selected == bank) or \
+                        (pc < 0x100 and bank == -1 and self.mb.bootrom_enabled)
+                    ):
+                        break
+                else:
+                    print("Breakpoint couldn't be deleted for current PC. Not Found.")
+                    continue
+                print(f"Removing breakpoint: {bank}:{pc}")
+                self.mb.breakpoints_list.pop(i)
+            elif cmd == "pdb":
+                import pdb
+                pdb.set_trace()
+                break
+            else:
+                # self.mb.breakpoint_release = True
+                self.mb.tick(4)
+                self.pyboy.cycles_remaining -= 4
 
 
 def make_buffer(w, h):

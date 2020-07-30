@@ -36,7 +36,6 @@ cdef class LCD:
     cdef Renderer renderer
     cdef bint disable_renderer
 
-    cdef bint STAT_mode_enabled(self, uint8_t)
     cdef uint8_t set_STAT_mode(self, int)
     cdef uint8_t check_LYC(self)
     @cython.locals(interrupt_flag=uint8_t)
