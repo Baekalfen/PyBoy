@@ -1069,7 +1069,11 @@ def LD_75(cpu): # 75 LD (HL),L
 
 
 def HALT_76(cpu): # 76 HALT
-    cpu.halted = True
+    if cpu.interrupt_master_enable:
+        cpu.halted = True
+    else:
+        cpu.PC += 1
+        cpu.PC &= 0xFFFF
     return 4
 
 

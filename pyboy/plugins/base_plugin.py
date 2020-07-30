@@ -13,6 +13,7 @@ __pdoc__ = {
 
 import io
 import logging
+import random
 from array import array
 
 import numpy as np
@@ -122,21 +123,53 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def post_tick(self):
         raise NotImplementedError("post_tick not implemented in game wrapper")
 
-    def start_game(self):
+    def _set_timer_div(self, timer_div):
+        if timer_div is None:
+            self.mb.timer.DIV = random.getrandbits(8)
+        else:
+            self.mb.timer.DIV = timer_div & 0xFF
+
+    def start_game(self, timer_div=None):
         """
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
+        A value can be passed to set the timer's DIV register. Some games depend on it for randomization.
+
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
-        """
-        raise NotImplementedError("start_game not implemented in game wrapper")
 
-    def reset_game(self):
+        Args:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+        """
+
+        if not self.pyboy.frame_count == 0:
+            logger.warning("Calling start_game from an already running game. This might not work.")
+
+        self._set_timer_div(timer_div)
+
+    def reset_game(self, timer_div=None):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Args:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
-        raise NotImplementedError("reset_game not implemented in game wrapper")
+
+        if self.game_has_started:
+            self.saved_state.seek(0)
+            self.pyboy.load_state(self.saved_state)
+            self.post_tick()
+        else:
+            logger.error("Tried to reset game, but it hasn't been started yet!")
+
+        self._set_timer_div(timer_div)
+
+    def game_over(self):
+        """
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+        """
+        raise NotImplementedError("game_over not implemented in game wrapper")
 
     def game_over(self):
         """

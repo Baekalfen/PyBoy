@@ -89,16 +89,19 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score * self.health * self.lives_left
 
-    def start_game(self):
+    def start_game(self, timer_div=None):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if not self.pyboy.frame_count == 0:
-            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
         # Boot screen
         while True:
             self.pyboy.tick()
@@ -132,16 +135,14 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-    def reset_game(self):
+    def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -174,6 +175,9 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
         return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        return self.health == 0
 
     def __repr__(self):
         adjust = 4
@@ -261,16 +265,19 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         if self.game_has_started:
             self.fitness = self.score * self.health * self.lives_left
 
-    def start_game(self):
+    def start_game(self, timer_div=None):
         &#34;&#34;&#34;
         Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
         first playable state.
 
         The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
         instantly.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if not self.pyboy.frame_count == 0:
-            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
         # Boot screen
         while True:
             self.pyboy.tick()
@@ -304,16 +311,14 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-    def reset_game(self):
+    def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
+
+        Kwargs:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
-        if self.game_has_started:
-            self.saved_state.seek(0)
-            self.pyboy.load_state(self.saved_state)
-            self.post_tick()
-        else:
-            logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -346,6 +351,9 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
         return PyBoyGameWrapper.game_area(self)
+
+    def game_over(self):
+        return self.health == 0
 
     def __repr__(self):
         adjust = 4
@@ -402,6 +410,94 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.start_game"><code class="name flex">
+<span>def <span class="ident">start_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+first playable state.</p>
+<p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
+instantly.</p>
+<h2 id="kwargs">Kwargs</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    Call this function right after initializing PyBoy. This will navigate through menus to start the game at the
+    first playable state.
+
+    The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+    instantly.
+
+    Kwargs:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+    &#34;&#34;&#34;
+    PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
+    # Boot screen
+    while True:
+        self.pyboy.tick()
+        self.tilemap_background.refresh_lcdc()
+        if self.tilemap_background[0:3, 16] == [231, 224, 235]: # &#39;HAL&#39; on the first screen
+            break
+
+    # Wait for transition to finish (start screen)
+    for _ in range(25):
+        self.pyboy.tick()
+
+    self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+    self.pyboy.tick()
+    self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+    # Wait for transition to finish (exit start screen, enter level intro screen)
+    for _ in range(60):
+        self.pyboy.tick()
+
+    # Skip level intro
+    self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+    self.pyboy.tick()
+    self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+
+    # Wait for transition to finish (exit level intro screen, enter game)
+    for _ in range(60):
+        self.pyboy.tick()
+
+    self.game_has_started = True
+
+    self.saved_state.seek(0)
+    self.pyboy.save_state(self.saved_state)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.reset_game"><code class="name flex">
+<span>def <span class="ident">reset_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p>
+<h2 id="kwargs">Kwargs</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    After calling `start_game`, you can call this method at any time to reset the game.
+
+    Kwargs:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+    &#34;&#34;&#34;
+    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.game_area"><code class="name flex">
 <span>def <span class="ident">game_area</span></span>(<span>self)</span>
 </code></dt>
@@ -474,8 +570,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 <li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
 <ul class="hlist">
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
 </ul>
 </li>
 </ul>
@@ -499,6 +593,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 <li>
 <h4><code><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand" href="#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand">GameWrapperKirbyDreamLand</a></code></h4>
 <ul class="two-column">
+<li><code><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.start_game" href="#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.start_game">start_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.reset_game" href="#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.game_area" href="#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.game_area">game_area</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.shape" href="#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.shape">shape</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.score" href="#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.score">score</a></code></li>

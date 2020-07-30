@@ -303,10 +303,11 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         return botsupport.BotSupportManager(self, self.mb)
 
-    def openai_gym(self, observation_type=&#34;tiles&#34;, action_type=&#34;press&#34;, simultaneous_actions=False):
+    def openai_gym(self, observation_type=&#34;tiles&#34;, action_type=&#34;press&#34;, simultaneous_actions=False, **kwargs):
         &#34;&#34;&#34;
         For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
         This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+        Additional kwargs are passed to the start_game method of the game_wrapper.
 
         Args:
             observation_type (str): Define what the agent will be able to see:
@@ -328,7 +329,7 @@ for a crude "bot", which interacts with the game.</p>
             A Gym environment based on the `Pyboy` object.
         &#34;&#34;&#34;
         if gym_enabled:
-            return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions)
+            return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions, **kwargs)
         else:
             logger.error(f&#34;{__name__}: Missing dependency \&#34;gym\&#34;. &#34;)
             return None
@@ -628,11 +629,12 @@ The manager, which gives easier access to the emulated game through the classes 
 </details>
 </dd>
 <dt id="pyboy.PyBoy.openai_gym"><code class="name flex">
-<span>def <span class="ident">openai_gym</span></span>(<span>self, observation_type='tiles', action_type='press', simultaneous_actions=False)</span>
+<span>def <span class="ident">openai_gym</span></span>(<span>self, observation_type='tiles', action_type='press', simultaneous_actions=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
-This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.</p>
+This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+Additional kwargs are passed to the start_game method of the game_wrapper.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>observation_type</code></strong> :&ensp;<code>str</code></dt>
@@ -665,10 +667,11 @@ A Gym environment based on the <code>Pyboy</code> object.</p></section>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def openai_gym(self, observation_type=&#34;tiles&#34;, action_type=&#34;press&#34;, simultaneous_actions=False):
+<pre><code class="python">def openai_gym(self, observation_type=&#34;tiles&#34;, action_type=&#34;press&#34;, simultaneous_actions=False, **kwargs):
     &#34;&#34;&#34;
     For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
     This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+    Additional kwargs are passed to the start_game method of the game_wrapper.
 
     Args:
         observation_type (str): Define what the agent will be able to see:
@@ -690,7 +693,7 @@ A Gym environment based on the <code>Pyboy</code> object.</p></section>
         A Gym environment based on the `Pyboy` object.
     &#34;&#34;&#34;
     if gym_enabled:
-        return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions)
+        return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions, **kwargs)
     else:
         logger.error(f&#34;{__name__}: Missing dependency \&#34;gym\&#34;. &#34;)
         return None</code></pre>

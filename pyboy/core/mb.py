@@ -16,16 +16,7 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(
-        self,
-        gamerom_file,
-        bootrom_file,
-        color_palette,
-        disable_renderer,
-        sound_enabled,
-        profiling=False,
-        breakpoints_enabled=False
-    ):
+    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, sound_enabled, profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -38,7 +29,9 @@ class Motherboard:
         self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD(color_palette, disable_renderer)
+        self.lcd = lcd.LCD()
+        self.renderer = lcd.Renderer(color_palette)
+        self.disable_renderer = disable_renderer
         self.sound_enabled = sound_enabled
         if sound_enabled:
             self.sound = sound.Sound()
@@ -79,8 +72,9 @@ class Motherboard:
             self.sound.save_state(f)
         else:
             pass
-        self.lcd.renderer.save_state(f)
+        self.renderer.save_state(f)
         self.ram.save_state(f)
+        self.timer.save_state(f)
         self.cartridge.save_state(f)
         f.flush()
         logger.debug("State saved.")
@@ -98,7 +92,7 @@ class Motherboard:
             self.bootrom_enabled = state_version
         self.cpu.load_state(f, state_version)
         self.lcd.load_state(f, state_version)
-        if state_version >= 5:
+        if state_version >= 6:
             self.sound.load_state(f, state_version)
         if state_version >= 2:
             self.lcd.renderer.load_state(f, state_version)
@@ -106,6 +100,8 @@ class Motherboard:
         if state_version < 5:
             # Interrupt register moved from RAM to CPU
             self.cpu.interrupts_enabled_register = f.read()
+        if state_version >= 5:
+            self.timer.load_state(f, state_version)
         self.cartridge.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")

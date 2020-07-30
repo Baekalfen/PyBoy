@@ -442,7 +442,11 @@ class OpcodeData:
 
         # TODO: Implement HALT bug.
         code.addlines([
-            "cpu.halted = True",
+            "if cpu.interrupt_master_enable:",
+            "\tcpu.halted = True",
+            "else:",
+            "\tcpu.PC += 1",
+            "\tcpu.PC &= 0xFFFF",
             "return " + self.cycles[0],
         ])
         return code.getcode()

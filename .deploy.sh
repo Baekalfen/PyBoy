@@ -4,12 +4,19 @@ set -e
 
 if [[ "$OS" == "Windows_NT" && "$MSYS" == "" ]]; then
     echo "Native Windows"
-    PY='/c/Program Files/Python37/python.exe'
+    if [[ "$SDL2_ARCH" == "x64" ]]; then
+        echo "x64 $PYTHON_PATH"
+        PY="/c/Program Files/Python$PYTHON_PATH/python.exe"
+    else
+        echo "x86 $PYTHON_PATH"
+        PY="/c/Program Files (x86)/Python$PYTHON_PATH-32/python.exe"
+    fi
 else
     echo "Unix-like"
     PY=python3
 fi
 
+echo "$PY"
 "$PY" -m pip install wheel twine
 "$PY" setup.py sdist bdist_wheel
 
