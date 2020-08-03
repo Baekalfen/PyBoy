@@ -3,8 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.logger import logger
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 
 
 class WindowDummy(PyBoyWindowPlugin):
@@ -14,7 +14,7 @@ class WindowDummy(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.mb.disable_renderer = True
+        self.mb.renderer.disable_renderer = True
 
     def enabled(self):
         return self.pyboy_argv.get("window_type") == "dummy"

@@ -33,9 +33,6 @@ cdef class LCD:
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
 
-    cdef Renderer renderer
-    cdef bint disable_renderer
-
     cdef uint8_t set_STAT_mode(self, int)
     cdef uint8_t check_LYC(self)
     @cython.locals(interrupt_flag=uint8_t)
@@ -83,6 +80,7 @@ cdef class Renderer:
     cdef tuple buffer_dims
     cdef bint clearcache
     cdef set tiles_changed
+    cdef bint disable_renderer
 
     cdef array _screenbuffer_raw
     cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw
@@ -90,6 +88,8 @@ cdef class Renderer:
     cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
 
     cdef int[144][5] _scanlineparameters
+
+    cdef void tick(self, LCD, int)
 
     @cython.locals(bx=int, by=int, wx=int, wy=int)
     cdef void scanline(self, int, LCD)

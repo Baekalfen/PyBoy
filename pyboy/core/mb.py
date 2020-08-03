@@ -30,8 +30,7 @@ class Motherboard:
         self.ram = ram.RAM(random=False)
         self.cpu = cpu.CPU(self, profiling)
         self.lcd = lcd.LCD()
-        self.renderer = lcd.Renderer(color_palette)
-        self.disable_renderer = disable_renderer
+        self.renderer = lcd.Renderer(disable_renderer, color_palette)
         self.sound_enabled = sound_enabled
         if sound_enabled:
             self.sound = sound.Sound()
@@ -95,7 +94,7 @@ class Motherboard:
         if state_version >= 6:
             self.sound.load_state(f, state_version)
         if state_version >= 2:
-            self.lcd.renderer.load_state(f, state_version)
+            self.renderer.load_state(f, state_version)
         self.ram.load_state(f, state_version)
         if state_version < 5:
             # Interrupt register moved from RAM to CPU
@@ -107,8 +106,8 @@ class Motherboard:
         logger.debug("State loaded.")
 
         # TODO: Move out of MB
-        self.lcd.renderer.clearcache = True
-        self.lcd.renderer.render_screen(self.lcd)
+        self.renderer.clearcache = True
+        self.renderer.render_screen(self.lcd)
 
     ###################################################################
     # Coordinator
@@ -160,6 +159,7 @@ class Motherboard:
                 self.cpu.set_interruptflag(INTR_TIMER)
 
             lcd_interrupt = self.lcd.tick(cycles)
+            self.renderer.tick(self.lcd, lcd_interrupt)
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
 
@@ -261,7 +261,7 @@ class Motherboard:
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
                 # Mask out the byte of the tile
-                self.lcd.renderer.tiles_changed.add(i & 0xFFF0)
+                self.renderer.tiles_changed.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -307,13 +307,13 @@ class Motherboard:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
                 # TODO: Move out of MB
-                self.lcd.renderer.clearcache |= self.lcd.BGP.set(value)
+                self.renderer.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
                 # TODO: Move out of MB
-                self.lcd.renderer.clearcache |= self.lcd.OBP0.set(value)
+                self.renderer.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
                 # TODO: Move out of MB
-                self.lcd.renderer.clearcache |= self.lcd.OBP1.set(value)
+                self.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:

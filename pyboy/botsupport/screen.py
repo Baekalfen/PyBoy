@@ -62,7 +62,7 @@ class Screen:
         list:
             Nested list of SCX, SCY, WX and WY for each scanline (144x4).
         """
-        return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd.renderer._scanlineparameters]
+        return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]
 
     def raw_screen_buffer(self):
         """
@@ -77,7 +77,7 @@ class Screen:
         bytes:
             92160 bytes of screen data in a `bytes` object.
         """
-        return self.mb.lcd.renderer._screenbuffer_raw.tobytes()
+        return self.mb.renderer._screenbuffer_raw.tobytes()
 
     def raw_screen_buffer_dims(self):
         """
@@ -88,7 +88,7 @@ class Screen:
         tuple:
             A two-tuple of the buffer dimensions. E.g. (160, 144).
         """
-        return self.mb.lcd.renderer.buffer_dims
+        return self.mb.renderer.buffer_dims
 
     def raw_screen_buffer_format(self):
         """
@@ -99,7 +99,7 @@ class Screen:
         str:
             Color format of the raw screen buffer. E.g. 'RGB'.
         """
-        return self.mb.lcd.renderer.color_format
+        return self.mb.renderer.color_format
 
     def screen_ndarray(self):
         """
@@ -111,7 +111,7 @@ class Screen:
             Screendata in `ndarray` of bytes with shape (160, 144, 3)
         """
         return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-        # return self.mb.lcd.renderer.screen_buffer_as_ndarray()
+        # return self.mb.renderer.screen_buffer_as_ndarray()
 
     def screen_image(self):
         """

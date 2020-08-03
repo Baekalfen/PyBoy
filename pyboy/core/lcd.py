@@ -23,7 +23,7 @@ except ImportError:
 
 
 class LCD:
-    def __init__(self, color_palette, disable_renderer):
+    def __init__(self):
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
@@ -42,9 +42,6 @@ class LCD:
         self.clock = 0
         self.clock_target = 80
         self.mode = 2
-
-        self.renderer = Renderer(color_palette)
-        self.disable_renderer = disable_renderer
 
     def set_STAT_mode(self, mode):
         if self.STAT & 0b11 == mode:
@@ -99,16 +96,14 @@ class LCD:
                     interrupt_flag |= INTR_VBLANK
                     interrupt_flag |= self.set_STAT_mode(1)
                     self.clock_target += 456 * 10
-                    if not self.disable_renderer:
-                        self.renderer.render_screen(self)
+                    # Interrupt will trigger renderer.render_screen
                 elif self.mode == 2: # Searching OAM
                     interrupt_flag |= self.set_STAT_mode(2)
                     self.clock_target += 80
                 elif self.mode == 3: # Transferring data to LCD driver
                     interrupt_flag |= self.set_STAT_mode(3)
                     self.clock_target += 170
-                    if self.LY < 144:
-                        self.renderer.scanline(self.LY, self)
+                    # Interrupt will trigger renderer.scanline
         else:
             self.clock = 0
             self.clock_target = 1 << 16
@@ -206,7 +201,7 @@ class LCDCRegister:
 
 
 class Renderer:
-    def __init__(self, color_palette):
+    def __init__(self, disable_renderer, color_palette):
         self.alphamask = 0xFF
         self.color_palette = [(c << 8) | self.alphamask for c in color_palette]
         self.color_format = "RGBA"
@@ -215,6 +210,7 @@ class Renderer:
 
         self.clearcache = False
         self.tiles_changed = set([])
+        self.disable_renderer = disable_renderer
 
         # Init buffers as white
         self._screenbuffer_raw = array("B", [0xFF] * (ROWS*COLS*4))
@@ -239,6 +235,14 @@ class Renderer:
             self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
+
+    def tick(self, lcd, lcd_interrupt):
+        if lcd.LCDC.lcd_enable:
+            if lcd_interrupt & INTR_VBLANK and not self.disable_renderer:
+                self.render_screen(lcd)
+            elif lcd.STAT & 0b11 == 3:
+                if lcd.LY < 144:
+                    self.scanline(lcd.LY, lcd)
 
     def scanline(self, y, lcd):
         bx, by = lcd.getviewport()

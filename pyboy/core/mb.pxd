@@ -28,6 +28,7 @@ cdef class Motherboard:
     cdef pyboy.core.bootrom.BootROM bootrom
     cdef pyboy.core.ram.RAM ram
     cdef pyboy.core.lcd.LCD lcd
+    cdef pyboy.core.lcd.Renderer renderer
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
     cdef bint sound_enabled
