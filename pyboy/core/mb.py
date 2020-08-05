@@ -3,13 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
-
+from pyboy.core.opcodes import CPU_COMMANDS
+from pyboy.logger import logger
 from pyboy.utils import STATE_VERSION
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
-
-logger = logging.getLogger(__name__)
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
@@ -38,7 +36,7 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.breakpoints_enabled = True # breakpoints_enabled
-        self.breakpoints_list = [(0, 0x0048), (0, 0x0050), (0, 0x0040)]
+        self.breakpoints_list = [] # (0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
 
     def add_breakpoint(self, bank, addr):
         self.breakpoints_list.append((bank, addr))
@@ -119,20 +117,19 @@ class Motherboard:
                 (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
                 (0x4000 <= pc < 0x8000 and self.cartridge.rombank_selected == bank) or \
                 (0xA000 <= pc < 0xC000 and self.cartridge.rambank_selected == bank) or \
+                (0xC000 <= pc <= 0xFFFF and bank == -1) or \
                 (pc < 0x100 and bank == -1 and self.bootrom_enabled)
             ):
                 # Breakpoint hit
                 return True
         return False
 
-    def tick(self, cycles_period): # break_next=False
+    def tick(self, cycles_period):
         while cycles_period > 0:
+            opcode = self.getitem(self.cpu.PC)
             cycles = self.cpu.tick()
 
-            if self.breakpoints_enabled and self.breakpoint_reached():
-                return cycles_period
-
-            if cycles == -1: # CPU has HALTED
+            if self.cpu.halted:
                 # Fast-forward to next interrupt:
                 # VBLANK and LCDC are covered by just returning.
                 # Timer has to be determined.
@@ -164,8 +161,9 @@ class Motherboard:
                 self.cpu.set_interruptflag(lcd_interrupt)
 
             cycles_period -= cycles
-            # if break_next:
-            #     return cycles_period
+
+            if self.breakpoints_enabled and self.breakpoint_reached():
+                return cycles_period
 
         # TODO: Move SDL2 sync to plugin
         if self.sound_enabled:

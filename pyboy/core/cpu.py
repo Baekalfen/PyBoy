@@ -108,8 +108,10 @@ class CPU:
             # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
             # disabled (DI) on the GB,GBP, and SGB.
             self.halted = False
+            self.PC += 1
+            self.PC &= 0xFFFF
         elif self.halted:
-            return -1
+            return 4 # TODO: Number of cycles for a HALT in effect?
 
         cycles = self.fetch_and_execute(self.PC)
         self.interrupt_queued = False

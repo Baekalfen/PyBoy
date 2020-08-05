@@ -184,7 +184,7 @@ class Debug(PyBoyWindowPlugin):
             opcode = self.mb.getitem(self.mb.cpu.PC)
             print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
             print(
-                f"Interrupts - IE: {self.mb.cpu.interrupts_enabled_register:08b}, IF: {self.mb.cpu.interrupts_flag_register:08b}"
+                f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, IE: {self.mb.cpu.interrupts_enabled_register:08b}, IF: {self.mb.cpu.interrupts_flag_register:08b}"
             )
             cmd = input()
 
