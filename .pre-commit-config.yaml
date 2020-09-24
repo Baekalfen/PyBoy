@@ -1,13 +1,12 @@
 exclude: opcodes.py
 repos:
-- repo: local
+- repo: https://github.com/myint/unify
+  rev: fb5414ff51bda124c8b0932a95e979d4ef2ea451
   hooks:
     - id: unify
-      name: unify
-      entry: unify --quote '"' --in-place --recursive
-      language: system
+      args: [--quote, '"', --in-place]
+      language: python
       types: [python]
-      pass_filenames: true
 - repo: https://github.com/pre-commit/mirrors-yapf
   rev: ''  # Use the sha / tag you want to point at
   hooks:
