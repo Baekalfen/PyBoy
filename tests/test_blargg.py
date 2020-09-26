@@ -51,7 +51,10 @@ def run_rom(args):
             result = ("Frame limit reached:\n" + serial_output)
             break
         frame_count += 1
+    for _ in range(10):
+        pyboy.tick()
     pyboy.stop(save=False)
+    result += pyboy._serial() # Getting the absolute last. Some times the tests says "Failed X tests".
     return result
 
 

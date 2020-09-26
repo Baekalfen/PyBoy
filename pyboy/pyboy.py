@@ -113,11 +113,9 @@ class PyBoy:
             if self.mb.breakpoints_enabled and self.mb.breakpoint_reached(): # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
 
-            # if self.cycles_remaining > 0: # breakpoint reached
-            #     self.plugin_manager.handle_breakpoint()
-            # else:
             if self.cycles_remaining <= 0:
                 self.frame_count += 1
+                # TODO: cycles_remaining doesn't belong in pyboy.py. Move it to mb.py
                 self.cycles_remaining += 154 * 456 # One frame worth of cycles (144 + 10 scanlines times 456 clock cycles per line)
         t_tick = time.perf_counter()
         self._post_tick()

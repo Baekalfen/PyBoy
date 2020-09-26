@@ -10,7 +10,7 @@ from pyboy.utils import color_code
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
-LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
+# LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX = range(0xFF40, 0xFF4C)
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 ROWS, COLS = 144, 160
 TILES = 384
@@ -27,8 +27,8 @@ class LCD:
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
-        self.LCDC = LCDCRegister(0)
-        self.STAT = 0x00
+        self._LCDC = LCDCRegister(0)
+        self._STAT = STATRegister() # Bit 7 is always set.
         self.SCY = 0x00
         self.SCX = 0x00
         self.LY = 0x00
@@ -41,32 +41,24 @@ class LCD:
         self.WX = 0x00
         self.clock = 0
         self.clock_target = 80
-        self.mode = 2
 
-    def set_STAT_mode(self, mode):
-        if self.STAT & 0b11 == mode:
-            # Mode already set
-            return 0
+    def get_lcdc(self):
+        return self._LCDC.value
 
-        self.STAT &= 0b11111100 # Clearing 2 LSB
-        self.STAT |= mode # Apply mode to LSB
+    def set_lcdc(self, value):
+        self._LCDC.set(value)
 
-        # Check if interrupt is enabled for this mode
-        # Mode "3" is not interruptable
-        if mode != 3 and self.STAT & (1 << (mode + 3)):
-            return INTR_LCDC
-        return 0
+        if not self._LCDC.lcd_enable:
+            self.clock = 0
+            self.clock_target = 80
+            self._STAT.set_mode(0)
+            self.LY = 0
 
-    def check_LYC(self):
-        if self.LYC == self.LY:
-            # TODO: Only set when reaching LY==LYC the first time
-            self.STAT |= 0b100 # Sets the LYC flag
-            if self.STAT & 0b01000000: # LYC interrupt enabled flag
-                return INTR_LCDC
-        else:
-            # Clear LYC flag
-            self.STAT &= 0b11111011
-        return 0
+    def get_stat(self):
+        return self._STAT.value
+
+    def set_stat(self, value):
+        self._STAT.set(value)
 
     def cyclestointerrupt(self):
         return self.clock_target - self.clock
@@ -74,40 +66,26 @@ class LCD:
     def tick(self, cycles):
         interrupt_flag = 0
 
-        if self.LCDC.lcd_enable:
+        if self._LCDC.lcd_enable:
             self.clock += cycles
 
             self.LY = (self.clock % 70224) // 456
-            interrupt_flag |= self.check_LYC()
+            interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
             if self.clock >= self.clock_target:
                 # Change to next mode
-                if self.mode == 0 and self.LY != 144:
-                    self.mode = 2
-                else:
-                    self.mode += 1
-                    self.mode %= 4
+                interrupt_flag |= self._STAT.next_mode(self.LY)
 
                 # Handle new mode
-                if self.mode == 0: # HBLANK
-                    interrupt_flag |= self.set_STAT_mode(0)
+                if self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206
-                elif self.mode == 1: # VBLANK
+                elif self._STAT._mode == 1: # VBLANK
                     interrupt_flag |= INTR_VBLANK
-                    interrupt_flag |= self.set_STAT_mode(1)
                     self.clock_target += 456 * 10
                     # Interrupt will trigger renderer.render_screen
-                elif self.mode == 2: # Searching OAM
-                    interrupt_flag |= self.set_STAT_mode(2)
-                    self.clock_target += 80
-                elif self.mode == 3: # Transferring data to LCD driver
-                    interrupt_flag |= self.set_STAT_mode(3)
+                elif self._STAT._mode == 2: # Searching OAM
                     self.clock_target += 170
                     # Interrupt will trigger renderer.scanline
-        else:
-            self.clock = 0
-            self.clock_target = 1 << 16
-            self.LY = 0
         return interrupt_flag
 
     def save_state(self, f):
@@ -117,12 +95,12 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             f.write(self.OAM[n])
 
-        f.write(self.LCDC.value)
+        f.write(self._LCDC.value)
         f.write(self.BGP.value)
         f.write(self.OBP0.value)
         f.write(self.OBP1.value)
 
-        f.write(self.STAT)
+        f.write(self._STAT)
         f.write(self.LY)
         f.write(self.LYC)
 
@@ -138,13 +116,13 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             self.OAM[n] = f.read()
 
-        self.LCDC.set(f.read())
+        self._LCDC.set(f.read())
         self.BGP.set(f.read())
         self.OBP0.set(f.read())
         self.OBP1.set(f.read())
 
         if state_version >= 5:
-            self.STAT = f.read()
+            self._STAT = f.read()
             self.LY = f.read()
             self.LYC = f.read()
 
@@ -178,6 +156,49 @@ class PaletteRegister:
 
     def getcolor(self, i):
         return self.lookup[i]
+
+
+class STATRegister:
+    def __init__(self):
+        self.value = 0b1000_0000
+        self._mode = 0
+
+    def set(self, value):
+        value &= 0b0111_1000 # Bit 7 is always set, and bit 0-2 are read-only
+        self.value &= 0b1000_0111 # Preserve read-only bits and clear the rest
+        self.value |= value # Combine the two
+
+    def update_LYC(self, LYC, LY):
+        if LYC == LY:
+            if not self.value & 0b100: # Check the LYC flag is not already set
+                self.value |= 0b100 # Sets the LYC flag
+                if self.value & 0b0100_0000: # LYC interrupt enabled flag
+                    return INTR_LCDC
+        else:
+            # Clear LYC flag
+            self.value &= 0b1111_1011
+        return 0
+
+    def next_mode(self, LY):
+        if self._mode == 0 and LY != 144:
+            return self.set_mode(2)
+        else:
+            return self.set_mode((self._mode + 1) % 4)
+
+    def set_mode(self, mode):
+        if self._mode == mode:
+            # Mode already set
+            return 0
+
+        self._mode = mode
+        self.value &= 0b11111100 # Clearing 2 LSB
+        self.value |= mode # Apply mode to LSB
+
+        # Check if interrupt is enabled for this mode
+        # Mode "3" is not interruptable
+        if mode != 3 and self.value & (1 << (mode + 3)):
+            return INTR_LCDC
+        return 0
 
 
 class LCDCRegister:
@@ -240,7 +261,7 @@ class Renderer:
         if lcd.LCDC.lcd_enable:
             if lcd_interrupt & INTR_VBLANK and not self.disable_renderer:
                 self.render_screen(lcd)
-            elif lcd.STAT & 0b11 == 3:
+            elif lcd._STAT._mode == 3:
                 if lcd.LY < 144:
                     self.scanline(lcd.LY, lcd)
 

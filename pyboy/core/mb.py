@@ -10,7 +10,6 @@ from pyboy.utils import STATE_VERSION
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
-STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
@@ -142,7 +141,7 @@ class Motherboard:
                 cycles = min(self.timer.cyclestointerrupt(), cycles)
                 cycles = min(self.lcd.cyclestointerrupt(), cycles)
                 # cycles = min(self.serial.cyclestointerrupt(), cycles)
-                # cycles = 4 # Disable time warping
+                cycles = 4 # Disable time warping
 
                 # Profiling
                 if self.cpu.profiling:
@@ -212,9 +211,9 @@ class Motherboard:
                 else:
                     return 0
             elif i == 0xFF40:
-                return self.lcd.LCDC.value
+                return self.lcd.get_lcdc()
             elif i == 0xFF41:
-                return self.lcd.STAT
+                return self.lcd.get_stat()
             elif i == 0xFF42:
                 return self.lcd.SCY
             elif i == 0xFF43:
@@ -283,16 +282,16 @@ class Motherboard:
             elif i == 0xFF06:
                 self.timer.TMA = value
             elif i == 0xFF07:
-                self.timer.TAC = value & 0b111
+                self.timer.TAC = value & 0b111 # TODO: Move ogic to Timer class
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
                 if self.sound_enabled:
                     self.sound.set(i - 0xFF10, value)
             elif i == 0xFF40:
-                self.lcd.LCDC.set(value)
+                self.lcd.set_lcdc(value)
             elif i == 0xFF41:
-                self.lcd.STAT = value
+                self.lcd.set_stat(value)
             elif i == 0xFF42:
                 self.lcd.SCY = value
             elif i == 0xFF43:
