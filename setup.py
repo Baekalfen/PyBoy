@@ -309,7 +309,7 @@ setup(
     },
     install_requires=requirements,
     tests_require=[
-        "pytest<=5.3", # Bug with pytest and xdist https://github.com/pytest-dev/pytest/issues/6925
+        "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
         "gym" if CYTHON and not MSYS else "",
