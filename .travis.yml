@@ -73,13 +73,14 @@ jobs:
            PYTHON_PATH=37
            SDL2_ARCH=x64
       if: type != pull_request
-    - os: windows
-      env: PYPI=1
-           PYTHON_VERSION=3.8.2
-           PYTHON_ARCH=-amd64
-           PYTHON_PATH=38
-           SDL2_ARCH=x64
-      if: type != pull_request
+    # TODO: SciPy: No lapack/blas resources found.
+    # - os: windows
+    #   env: PYPI=1
+    #        PYTHON_VERSION=3.8.2
+    #        PYTHON_ARCH=-amd64
+    #        PYTHON_PATH=38
+    #        SDL2_ARCH=x64
+    #   if: type != pull_request
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.6.8
@@ -95,13 +96,14 @@ jobs:
            PYTHON_PATH=37
            SDL2_ARCH=x86
       if: type != pull_request
-    - os: windows
-      env: PYPI=1
-           PYTHON_VERSION=3.8.2
-           PYTHON_ARCH=
-           PYTHON_PATH=38
-           SDL2_ARCH=x86
-      if: type != pull_request
+    # TODO: SciPy: No lapack/blas resources found.
+    # - os: windows
+    #   env: PYPI=1
+    #        PYTHON_VERSION=3.8.2
+    #        PYTHON_ARCH=
+    #        PYTHON_PATH=38
+    #        SDL2_ARCH=x86
+    #   if: type != pull_request
 
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
@@ -130,6 +132,13 @@ before_install:
         python3 -m pip install -U --force-reinstall pip
         # MacOS PyPy
         if [ "$PYPY_TESTING" = "1" ]; then
+          #############################
+          # FIX ISSUE WITH NUMPY AND PolyFit: https://github.com/numpy/numpy/issues/15947
+          rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
+          brew install openblas
+          OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
+          #############################
+
           brew install pypy3 zlib
           export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
           pypy3 -m pip install wheel
