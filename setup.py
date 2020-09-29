@@ -135,7 +135,7 @@ class clean(_clean):
                     if os.path.splitext(f)[1] in (
                         ".pyo", ".pyc", ".pyd", ".so", ".c", ".h", ".dll", ".lib", ".exp", ".html"
                     ):
-                        print(f"removing: {os.path.joinwindows_travis(root, f)}")
+                        print(f"removing: {os.path.join(root, f)}")
                         os.remove(os.path.join(root, f))
 
 
@@ -284,7 +284,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="1.2.0",
+    version="1.2.1",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
