@@ -32,15 +32,19 @@ cdef class Sound:
 
     cdef int clock
 
+    cdef bint poweron
+
     cdef SweepChannel sweepchannel
     cdef ToneChannel tonechannel
     cdef WaveChannel wavechannel
     cdef NoiseChannel noisechannel
 
+    cdef bint leftnoise, leftwave, lefttone, leftsweep, rightnoise, rightwave, righttone, rightsweep
+
     cdef uint8_t get(self, uint8_t)
     cdef void set(self, uint8_t, uint8_t)
 
-    @cython.locals(nsamples=int, i=int, queued_time=int, )
+    @cython.locals(nsamples=int, sample=int, i=int, queued_time=int, )
     cdef void sync(self)
 
 

@@ -33,10 +33,21 @@ class Sound:
 
         self.clock = 0
 
+        self.poweron = True
+
         self.sweepchannel = SweepChannel()
         self.tonechannel = ToneChannel()
         self.wavechannel = WaveChannel()
         self.noisechannel = NoiseChannel()
+
+        self.leftnoise = False
+        self.leftwave = False
+        self.lefttone = False
+        self.leftsweep = False
+        self.rightnoise = False
+        self.rightwave = False
+        self.righttone = False
+        self.rightsweep = False
 
         # Start playback (move out of __init__ if needed, maybe for headless)
         sdl2.SDL_PauseAudioDevice(self.device, 0)
@@ -53,12 +64,17 @@ class Sound:
                 return self.wavechannel.getreg(offset % 5)
             elif i == 3:
                 return self.noisechannel.getreg(offset % 5)
-        elif offset == 20: # Control register NR50
+        elif offset == 20: # Control register NR50: Vin enable and volume -- not implemented
             return 0
-        elif offset == 21: # Control register NR51
-            return 0
-        elif offset == 22: # Control register NR52
-            return 0
+        elif offset == 21: # Control register NR51: Channel stereo enable/panning
+            return ((0x80 if self.leftnoise else 0) | (0x40 if self.leftwave else 0) | (0x20 if self.lefttone else 0) |
+                    (0x10 if self.leftsweep else 0) | (0x08 if self.rightnoise else 0) |
+                    (0x04 if self.rightwave else 0) | (0x02 if self.righttone else 0) |
+                    (0x01 if self.rightsweep else 0))
+        elif offset == 22: # Control register NR52: Sound/channel enable
+            return 0x70 | ((0x80 if self.poweron else 0) | (0x08 if self.noisechannel.enable else 0) |
+                           (0x04 if self.wavechannel.enable else 0) | (0x02 if self.tonechannel.enable else 0) |
+                           (0x01 if self.sweepchannel.enable else 0))
         elif offset < 32: # Unused registers, read as 0xFF
             return 0xFF
         elif offset < 48: # Wave Table
@@ -68,7 +84,7 @@ class Sound:
 
     def set(self, offset, value):
         self.sync()
-        if offset < 20:
+        if offset < 20 and self.poweron:
             i = offset // 5
             if i == 0:
                 self.sweepchannel.setreg(offset % 5, value)
@@ -78,11 +94,25 @@ class Sound:
                 self.wavechannel.setreg(offset % 5, value)
             elif i == 3:
                 self.noisechannel.setreg(offset % 5, value)
-        elif offset == 20: # Control register NR50
+        elif offset == 20 and self.poweron: # Control register NR50: Vin enable and volume -- not implemented
             return
-        elif offset == 21: # Control register NR51
+        elif offset == 21 and self.poweron: # Control register NR51: Channel stereo enable/panning
+            self.leftnoise = bool(value & 0x80)
+            self.leftwave = bool(value & 0x40)
+            self.lefttone = bool(value & 0x20)
+            self.leftsweep = bool(value & 0x10)
+            self.rightnoise = bool(value & 0x08)
+            self.rightwave = bool(value & 0x04)
+            self.righttone = bool(value & 0x02)
+            self.rightsweep = bool(value & 0x01)
             return
-        elif offset == 22: # Control register NR52
+        elif offset == 22: # Control register NR52: Sound on/off
+            if value & 0x80 == 0: # Sound power off
+                for n in range(22):
+                    self.set(n, 0)
+                self.poweron = False
+            else:
+                self.poweron = True
             return
         elif offset < 32: # Unused registers, unwritable?
             return
@@ -96,20 +126,27 @@ class Sound:
         nsamples = int(self.clock / self.sampleclocks)
 
         for i in range(min(2048, nsamples)):
-            self.sweepchannel.run(self.sampleclocks)
-            self.tonechannel.run(self.sampleclocks)
-            self.wavechannel.run(self.sampleclocks)
-            self.noisechannel.run(self.sampleclocks)
-            sample = max(
-                min(
-                    self.sweepchannel.sample() + self.tonechannel.sample() + self.wavechannel.sample() +
-                    self.noisechannel.sample(), 64
-                ), 0
-            )
-            self.audiobuffer[2 * i] = sample
-            self.audiobuffer[2*i + 1] = sample
-            self.clock -= self.sampleclocks
-
+            if self.poweron:
+                self.sweepchannel.run(self.sampleclocks)
+                self.tonechannel.run(self.sampleclocks)
+                self.wavechannel.run(self.sampleclocks)
+                self.noisechannel.run(self.sampleclocks)
+                # print(self.leftsweep, self.lefttone, self.leftwave, self.leftnoise)
+                # print(self.rightsweep, self.righttone, self.rightwave, self.rightnoise)
+                sample = ((self.sweepchannel.sample() if self.leftsweep else 0) +
+                          (self.tonechannel.sample() if self.lefttone else 0) +
+                          (self.wavechannel.sample() if self.leftwave else 0) +
+                          (self.noisechannel.sample() if self.leftnoise else 0))
+                self.audiobuffer[2 * i] = min(max(sample, 0), 127)
+                sample = ((self.sweepchannel.sample() if self.rightsweep else 0) +
+                          (self.tonechannel.sample() if self.righttone else 0) +
+                          (self.wavechannel.sample() if self.rightwave else 0) +
+                          (self.noisechannel.sample() if self.rightnoise else 0))
+                self.audiobuffer[2*i + 1] = min(max(sample, 0), 127)
+                self.clock -= self.sampleclocks
+            else:
+                self.audiobuffer[2 * i] = 0
+                self.audiobuffer[2*i + 1] = 0
         # Clear queue, if we are behind
         queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
         samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
@@ -292,7 +329,7 @@ class SweepChannel(ToneChannel):
         ToneChannel.trigger(self)
         self.shadow = self.sndper
         self.sweeptimer = self.swpper
-        self.sweepenable = True if self.swpper or self.swpmag else False
+        self.sweepenable = True if (self.swpper or self.swpmag) else False
         if self.swpmag:
             self.sweep(False)
 

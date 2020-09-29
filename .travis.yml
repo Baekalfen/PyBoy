@@ -13,7 +13,7 @@ jobs:
 
     - os: linux
       dist: bionic
-      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.0-linux64
+      env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.2-linux64
 
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
@@ -73,14 +73,14 @@ jobs:
            PYTHON_PATH=37
            SDL2_ARCH=x64
       if: type != pull_request
-
-    # Needs fix from PySDL2
+    # TODO: SciPy: No lapack/blas resources found.
     # - os: windows
     #   env: PYPI=1
     #        PYTHON_VERSION=3.8.2
     #        PYTHON_ARCH=-amd64
     #        PYTHON_PATH=38
     #        SDL2_ARCH=x64
+    #   if: type != pull_request
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.6.8
@@ -96,14 +96,14 @@ jobs:
            PYTHON_PATH=37
            SDL2_ARCH=x86
       if: type != pull_request
-
-    # Needs fix from PySDL2
+    # TODO: SciPy: No lapack/blas resources found.
     # - os: windows
     #   env: PYPI=1
     #        PYTHON_VERSION=3.8.2
     #        PYTHON_ARCH=
     #        PYTHON_PATH=38
     #        SDL2_ARCH=x86
+    #   if: type != pull_request
 
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
@@ -135,6 +135,13 @@ before_install:
           brew install pypy3 zlib
           export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
           pypy3 -m pip install wheel
+
+          #############################
+          # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
+          rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
+          brew install openblas
+          OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
+          #############################
         else
           brew upgrade pyenv
           pyenv install $PYTHON_VERSION
@@ -169,7 +176,7 @@ before_install:
           sudo apt update
           sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev curl
           # Linux PyPy
-          curl -OL "https://bitbucket.org/pypy/pypy/downloads/$pypy_version.tar.bz2"
+          curl -OL "https://downloads.python.org/pypy/$pypy_version.tar.bz2"
           tar -xvf "${pypy_version}.tar.bz2" -C $HOME/
           export PATH=$HOME/$pypy_version/bin:$PATH
           pypy3 -m ensurepip
