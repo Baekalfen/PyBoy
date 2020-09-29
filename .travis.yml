@@ -132,16 +132,16 @@ before_install:
         python3 -m pip install -U --force-reinstall pip
         # MacOS PyPy
         if [ "$PYPY_TESTING" = "1" ]; then
+          brew install pypy3 zlib
+          export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
+          pypy3 -m pip install wheel
+
           #############################
-          # FIX ISSUE WITH NUMPY AND PolyFit: https://github.com/numpy/numpy/issues/15947
+          # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
           rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
           brew install openblas
           OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
           #############################
-
-          brew install pypy3 zlib
-          export PKG_CONFIG_PATH="/usr/local/opt/zlib/lib/pkgconfig"
-          pypy3 -m pip install wheel
         else
           brew upgrade pyenv
           pyenv install $PYTHON_VERSION
