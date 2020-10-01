@@ -18,7 +18,6 @@ cdef class LCD:
     cdef uint8_t[8 * 1024] VRAM
     cdef uint8_t[0xA0] OAM
 
-    cdef uint8_t STAT
     cdef uint8_t SCY
     cdef uint8_t SCX
     cdef uint8_t LY
@@ -28,13 +27,13 @@ cdef class LCD:
     cdef uint64_t clock
     cdef uint64_t clock_target
     cdef uint8_t mode
-    cdef LCDCRegister LCDC
+    cdef LCDCRegister _LCDC
+    cdef STATRegister _STAT
     cdef PaletteRegister BGP
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
 
-    cdef uint8_t set_STAT_mode(self, int)
-    cdef uint8_t check_LYC(self)
+    # cdef uint8_t set_STAT_mode(self, int)
     @cython.locals(interrupt_flag=uint8_t)
     cdef uint8_t tick(self, int)
     cdef uint64_t cyclestointerrupt(self)
@@ -57,6 +56,13 @@ cdef class PaletteRegister:
     cdef bint set(self, uint64_t)
     cdef uint32_t getcolor(self, uint8_t)
 
+cdef class STATRegister:
+    cdef uint8_t value
+    cdef uint8_t _mode
+    cdef void set(self, uint64_t)
+    cdef uint8_t update_LYC(self, uint8_t, uint8_t)
+    cdef uint8_t next_mode(self, uint8_t)
+    cdef uint8_t set_mode(self, uint8_t)
 
 cdef class LCDCRegister:
     cdef uint8_t value

@@ -125,7 +125,6 @@ class Motherboard:
 
     def tick(self, cycles_period):
         while cycles_period > 0:
-            opcode = self.getitem(self.cpu.PC)
             cycles = self.cpu.tick()
 
             if self.cpu.halted:

@@ -258,7 +258,7 @@ class Renderer:
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
 
     def tick(self, lcd, lcd_interrupt):
-        if lcd.LCDC.lcd_enable:
+        if lcd._LCDC.lcd_enable:
             if lcd_interrupt & INTR_VBLANK and not self.disable_renderer:
                 self.render_screen(lcd)
             elif lcd._STAT._mode == 3:
@@ -272,14 +272,14 @@ class Renderer:
         self._scanlineparameters[y][1] = by
         self._scanlineparameters[y][2] = wx
         self._scanlineparameters[y][3] = wy
-        self._scanlineparameters[y][4] = lcd.LCDC.tiledata_select
+        self._scanlineparameters[y][4] = lcd._LCDC.tiledata_select
 
     def render_screen(self, lcd):
         self.update_cache(lcd)
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
-        background_offset = 0x1800 if lcd.LCDC.backgroundmap_select == 0 else 0x1C00
-        wmap = 0x1800 if lcd.LCDC.windowmap_select == 0 else 0x1C00
+        background_offset = 0x1800 if lcd._LCDC.backgroundmap_select == 0 else 0x1C00
+        wmap = 0x1800 if lcd._LCDC.windowmap_select == 0 else 0x1C00
 
         for y in range(ROWS):
             bx, by, wx, wy, tile_data_select = self._scanlineparameters[y]
@@ -287,15 +287,15 @@ class Renderer:
             offset = bx & 0b111
 
             for x in range(COLS):
-                if lcd.LCDC.window_enable and wy <= y and wx <= x:
+                if lcd._LCDC.window_enable and wy <= y and wx <= x:
                     wt = lcd.VRAM[wmap + (y-wy) // 8 * 32 % 0x400 + (x-wx) // 8 % 32]
                     # If using signed tile indices, modify index
-                    if not lcd.LCDC.tiledata_select:
+                    if not lcd._LCDC.tiledata_select:
                         # (x ^ 0x80 - 128) to convert to signed, then
                         # add 256 for offset (reduces to + 128)
                         wt = (wt ^ 0x80) + 128
                     self._screenbuffer[y][x] = self._tilecache[8*wt + (y-wy) % 8][(x-wx) % 8]
-                elif lcd.LCDC.background_enable:
+                elif lcd._LCDC.background_enable:
                     bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
                     # If using signed tile indices, modify index
                     if not tile_data_select:
@@ -307,14 +307,14 @@ class Renderer:
                     # If background is disabled, it becomes white
                     self._screenbuffer[y][x] = self.color_palette[0]
 
-        if lcd.LCDC.sprite_enable:
+        if lcd._LCDC.sprite_enable:
             self.render_sprites(lcd, self._screenbuffer, False)
 
     def render_sprites(self, lcd, buffer, ignore_priority):
         # Render sprites
         # - Doesn't restrict 10 sprites per scan line
         # - Prioritizes sprite in inverted order
-        spriteheight = 16 if lcd.LCDC.sprite_height else 8
+        spriteheight = 16 if lcd._LCDC.sprite_height else 8
         bgpkey = self.color_palette[lcd.BGP.getcolor(0)]
 
         for n in range(0x00, 0xA0, 4):

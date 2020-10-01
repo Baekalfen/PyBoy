@@ -325,7 +325,7 @@ class TileViewWindow(BaseDebugWindow):
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if self.mb.lcd.LCDC.tiledata_select == 0:
+            if self.mb.lcd._LCDC.tiledata_select == 0:
                 # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset (reduces to + 128)
                 tile_index = (tile_index ^ 0x80) + 128
 
@@ -466,7 +466,7 @@ class SpriteWindow(BaseDebugWindow):
     def post_tick(self):
         tile_cache0 = self.renderer._tilecache
 
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for n in range(0, 0xA0, 4):
             # x = lcd.OAM[n]
             # y = lcd.OAM[n+1]
@@ -487,7 +487,7 @@ class SpriteWindow(BaseDebugWindow):
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
 
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
@@ -515,7 +515,7 @@ class SpriteWindow(BaseDebugWindow):
         return events
 
     def draw_overlay(self):
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
             marked_tiles,
@@ -531,7 +531,7 @@ class SpriteWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " [8x16]" if self.mb.lcd.LCDC.sprite_height else " [8x8]"
+        title += " [8x16]" if self.mb.lcd._LCDC.sprite_height else " [8x8]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 
@@ -546,7 +546,7 @@ class SpriteViewWindow(BaseDebugWindow):
         BaseDebugWindow.post_tick(self)
 
     def draw_overlay(self):
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
             marked_tiles,
@@ -558,7 +558,7 @@ class SpriteViewWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " " if self.mb.lcd.LCDC.sprite_enable else " [Disabled]"
+        title += " " if self.mb.lcd._LCDC.sprite_enable else " [Disabled]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 

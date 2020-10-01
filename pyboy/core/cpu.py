@@ -91,8 +91,18 @@ class CPU:
         if state_version >= 5:
             # Interrupt register moved from RAM to CPU
             self.interrupts_enabled_register = f.read()
-        logger.debug(
-            f"State loaded: A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, IME:{self.interrupt_master_enable}, halted:{self.halted}, stopped:{self.stopped}"
+        logger.debug("State loaded: " + self.dump_state())
+
+    def dump_state(self):
+        return (
+            f"A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, "
+            f"HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, "
+            f"Opcode:{self.mb.getitem(self.PC):02x}, "
+            f"Opcode+1:{self.mb.getitem((self.PC+1) & 0xFFFF):02x}, "
+            f"Opcode+2:{self.mb.getitem((self.PC+2) & 0xFFFF):02x}, "
+            f"IME:{self.interrupt_master_enable}, halted:{self.halted}, "
+            f"interrupt_queued:{self.interrupt_queued} "
+            f"stopped:{self.stopped}"
         )
 
     def set_interruptflag(self, flag):
@@ -100,6 +110,7 @@ class CPU:
 
     def tick(self):
         if self.check_interrupts():
+            self.halted = False
             # TODO: We return with the cycles it took to handle the interrupt
             return 0
 
@@ -113,7 +124,10 @@ class CPU:
         elif self.halted:
             return 4 # TODO: Number of cycles for a HALT in effect?
 
+        old_pc = self.PC
         cycles = self.fetch_and_execute(self.PC)
+        if not self.halted and old_pc == self.PC:
+            raise Exception("CPU is stuck: " + self.dump_state())
         self.interrupt_queued = False
         return cycles
 
