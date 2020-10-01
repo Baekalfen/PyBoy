@@ -83,8 +83,6 @@ CONTROLLER_UP = {
 }
 # yapf: enable
 
-_sdlcontroller = None
-
 def sdl2_event_pump(events):
     global _sdlcontroller
     # Feed events into the loop
@@ -126,7 +124,6 @@ def sdl2_event_pump(events):
             events.append(WindowEvent(CONTROLLER_DOWN.get(event.cbutton.button, WindowEvent.PASS)))
         elif event.type == sdl2.SDL_CONTROLLERBUTTONUP:
             events.append(WindowEvent(CONTROLLER_UP.get(event.cbutton.button, WindowEvent.PASS)))
-
     return events
 
 

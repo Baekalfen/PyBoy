@@ -12,8 +12,9 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
 
 
-
 cdef int ROWS, COLS
+
+cdef sdl2.SDL_GameController *_sdlcontroller = NULL
 
 cpdef list sdl2_event_pump(list)
 
