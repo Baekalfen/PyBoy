@@ -30,7 +30,8 @@ defaults = {
 
 class PyBoy:
     def __init__(
-        self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, **kwargs
+            self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False,
+            randomize=False, **kwargs
     ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -70,6 +71,7 @@ class PyBoy:
             kwargs["color_palette"],
             disable_renderer,
             sound,
+            randomize=randomize,
             profiling=profiling,
         )
 
