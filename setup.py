@@ -284,7 +284,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="1.2.0",
+    version="1.2.1",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
@@ -309,7 +309,7 @@ setup(
     },
     install_requires=requirements,
     tests_require=[
-        "pytest<=5.3", # Bug with pytest and xdist https://github.com/pytest-dev/pytest/issues/6925
+        "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
         "gym" if CYTHON and not MSYS else "",
