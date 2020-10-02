@@ -36,6 +36,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
 parser.add_argument("-b", "--bootrom", type=valid_file_path, help="Path to a boot-ROM file")
 parser.add_argument("--profiling", action="store_true", help="Enable opcode profiling (internal use)")
+parser.add_argument("--randomize-ram", action="store_true", help="Randomize Game Boy RAM on startup")
 parser.add_argument(
     "--log-level",
     default="INFO",

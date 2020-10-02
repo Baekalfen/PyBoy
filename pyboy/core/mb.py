@@ -16,7 +16,8 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, sound_enabled, profiling=False):
+    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, sound_enabled, randomize=False,
+                 profiling=False):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -27,9 +28,9 @@ class Motherboard:
         self.interaction = interaction.Interaction()
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         self.bootrom = bootrom.BootROM(bootrom_file)
-        self.ram = ram.RAM(random=False)
+        self.ram = ram.RAM(randomize=randomize)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD()
+        self.lcd = lcd.LCD(randomize=randomize)
         self.renderer = lcd.Renderer(color_palette)
         self.disable_renderer = disable_renderer
         self.sound_enabled = sound_enabled
