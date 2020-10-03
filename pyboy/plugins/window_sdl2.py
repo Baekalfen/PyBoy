@@ -55,10 +55,36 @@ KEY_UP = {
     sdl2.SDLK_COMMA     : WindowEvent.RELEASE_REWIND_BACK,
     sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
 }
+
+CONTROLLER_DOWN = {
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_UP       : WindowEvent.PRESS_ARROW_UP,
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_DOWN     : WindowEvent.PRESS_ARROW_DOWN,
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_RIGHT    : WindowEvent.PRESS_ARROW_RIGHT,
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_LEFT     : WindowEvent.PRESS_ARROW_LEFT,
+    sdl2.SDL_CONTROLLER_BUTTON_B             : WindowEvent.PRESS_BUTTON_A,
+    sdl2.SDL_CONTROLLER_BUTTON_A             : WindowEvent.PRESS_BUTTON_B,
+    sdl2.SDL_CONTROLLER_BUTTON_START         : WindowEvent.PRESS_BUTTON_START,
+    sdl2.SDL_CONTROLLER_BUTTON_BACK          : WindowEvent.PRESS_BUTTON_SELECT,
+    sdl2.SDL_CONTROLLER_BUTTON_GUIDE         : WindowEvent.PRESS_SPEED_UP,
+}
+
+CONTROLLER_UP = {
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_UP       : WindowEvent.RELEASE_ARROW_UP,
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_DOWN     : WindowEvent.RELEASE_ARROW_DOWN,
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_RIGHT    : WindowEvent.RELEASE_ARROW_RIGHT,
+    sdl2.SDL_CONTROLLER_BUTTON_DPAD_LEFT     : WindowEvent.RELEASE_ARROW_LEFT,
+    sdl2.SDL_CONTROLLER_BUTTON_B             : WindowEvent.RELEASE_BUTTON_A,
+    sdl2.SDL_CONTROLLER_BUTTON_A             : WindowEvent.RELEASE_BUTTON_B,
+    sdl2.SDL_CONTROLLER_BUTTON_START         : WindowEvent.RELEASE_BUTTON_START,
+    sdl2.SDL_CONTROLLER_BUTTON_BACK          : WindowEvent.RELEASE_BUTTON_SELECT,
+    sdl2.SDL_CONTROLLER_BUTTON_LEFTSHOULDER  : WindowEvent.STATE_SAVE,
+    sdl2.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER : WindowEvent.STATE_LOAD,
+    sdl2.SDL_CONTROLLER_BUTTON_GUIDE         : WindowEvent.RELEASE_SPEED_UP,
+}
 # yapf: enable
 
-
 def sdl2_event_pump(events):
+    global _sdlcontroller
     # Feed events into the loop
     for event in sdl2.ext.get_events():
         if event.type == sdl2.SDL_QUIT:
@@ -90,6 +116,14 @@ def sdl2_event_pump(events):
                     mouse_button=mouse_button
                 )
             )
+        elif event.type == sdl2.SDL_CONTROLLERDEVICEADDED:
+            _sdlcontroller = sdl2.SDL_GameControllerOpen(event.cdevice.which)
+        elif event.type == sdl2.SDL_CONTROLLERDEVICEREMOVED:
+            sdl2.SDL_GameControllerClose(_sdlcontroller)
+        elif event.type == sdl2.SDL_CONTROLLERBUTTONDOWN:
+            events.append(WindowEvent(CONTROLLER_DOWN.get(event.cbutton.button, WindowEvent.PASS)))
+        elif event.type == sdl2.SDL_CONTROLLERBUTTONUP:
+            events.append(WindowEvent(CONTROLLER_UP.get(event.cbutton.button, WindowEvent.PASS)))
     return events
 
 
@@ -100,7 +134,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
+        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
         self._ftime = 0.0
 
         self._window = sdl2.SDL_CreateWindow(
