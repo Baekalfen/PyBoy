@@ -151,3 +151,5 @@ class WindowOpenGL(PyBoyWindowPlugin):
 
     def stop(self):
         glutDestroyWindow(glutGetWindow())
+        for _ in range(10): # At least 2 to close
+            OpenGL.GLUT.freeglut.glutMainLoopEvent()

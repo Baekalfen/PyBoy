@@ -87,7 +87,8 @@ class PyBoy:
         self.paused = False
         self.events = []
         self.old_events = []
-        self.done = False
+        self.quitting = False
+        self.stopped = False
         self.window_title = "PyBoy"
 
         ###################
@@ -105,6 +106,8 @@ class PyBoy:
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         """
+        if self.stopped:
+            return True
 
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self._handle_events(self.events)
@@ -125,14 +128,14 @@ class PyBoy:
         secs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + 0.1*secs
 
-        return self.done
+        return self.quitting
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
-                self.done = True
+                self.quitting = True
             elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
@@ -210,11 +213,13 @@ class PyBoy:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         """
-        logger.info("###########################")
-        logger.info("# Emulator is turning off #")
-        logger.info("###########################")
-        self.plugin_manager.stop()
-        self.mb.stop(save)
+        if not self.stopped:
+            logger.info("###########################")
+            logger.info("# Emulator is turning off #")
+            logger.info("###########################")
+            self.plugin_manager.stop()
+            self.mb.stop(save)
+            self.stopped = True
 
     def _cpu_hitrate(self):
         return self.mb.cpu.hitrate
