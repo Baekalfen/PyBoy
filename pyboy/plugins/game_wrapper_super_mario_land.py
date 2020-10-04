@@ -7,12 +7,11 @@ __pdoc__ = {
     "GameWrapperSuperMarioLand.post_tick": False,
 }
 
-
 import numpy as np
-from pyboy.utils import WindowEvent
 from pyboy.logger import logger
-from .base_plugin import PyBoyGameWrapper
+from pyboy.utils import WindowEvent
 
+from .base_plugin import PyBoyGameWrapper
 
 try:
     from cython import compiled
