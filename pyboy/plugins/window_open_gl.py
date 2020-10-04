@@ -4,10 +4,9 @@
 #
 
 import numpy as np
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent
-from pyboy.logger import logger
-
 
 try:
     import OpenGL.GLUT.freeglut

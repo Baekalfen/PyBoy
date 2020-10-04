@@ -9,6 +9,7 @@ The core module of the emulator
 import os
 import time
 
+from pyboy.logger import logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
@@ -16,8 +17,6 @@ from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport
 from .core.mb import Motherboard
-from pyboy.logger import logger
-
 
 SPF = 1 / 60. # inverse FPS (frame-per-second)
 
@@ -30,8 +29,15 @@ defaults = {
 
 class PyBoy:
     def __init__(
-            self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False,
-            randomize=False, **kwargs
+        self,
+        gamerom_file,
+        *,
+        bootrom_file=None,
+        profiling=False,
+        disable_renderer=False,
+        sound=False,
+        randomize=False,
+        **kwargs
     ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be

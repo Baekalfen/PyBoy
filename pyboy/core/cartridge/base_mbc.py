@@ -7,11 +7,10 @@ import array
 import logging
 import os
 
+from pyboy.logger import logger
 from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC
-
-from pyboy.logger import logger
 
 
 class BaseMBC:

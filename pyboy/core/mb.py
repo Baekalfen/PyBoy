@@ -16,8 +16,16 @@ STAT, _, _, LY, LYC = range(0xFF41, 0xFF46)
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, sound_enabled, randomize=False,
-                 profiling=False):
+    def __init__(
+        self,
+        gamerom_file,
+        bootrom_file,
+        color_palette,
+        disable_renderer,
+        sound_enabled,
+        randomize=False,
+        profiling=False
+    ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
