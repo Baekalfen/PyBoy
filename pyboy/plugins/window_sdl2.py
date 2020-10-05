@@ -174,6 +174,8 @@ class WindowSDL2(PyBoyWindowPlugin):
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)
+        for _ in range(10): # At least 2 to close
+            sdl2.ext.get_events()
         sdl2.SDL_Quit()
 
 
