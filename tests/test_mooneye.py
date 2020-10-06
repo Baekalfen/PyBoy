@@ -32,17 +32,20 @@ def test_mooneye():
             _zip.extractall(mooneye_dir)
 
     test_roms = [
-        (False, "mooneye/misc/boot_hwio-C.gb"),
-        (False, "mooneye/misc/boot_regs-A.gb"),
-        (False, "mooneye/misc/bits/unused_hwio-C.gb"),
-        (False, "mooneye/misc/boot_div-A.gb"),
-        (False, "mooneye/misc/boot_regs-cgb.gb"),
-        (False, "mooneye/misc/boot_div-cgbABCDE.gb"),
-        (False, "mooneye/misc/ppu/vblank_stat_intr-C.gb"),
-        (False, "mooneye/misc/boot_div-cgb0.gb"),
-        (False, "mooneye/manual-only/sprite_priority.gb"),
+        ####################
+        # These are meant to fail on DMG:
+        # (False, "mooneye/misc/boot_div-A.gb"),
+        # (False, "mooneye/misc/boot_div-cgb0.gb"),
+        # (False, "mooneye/misc/boot_div-cgbABCDE.gb"),
+        # (False, "mooneye/misc/boot_hwio-C.gb"),
+        # (False, "mooneye/misc/boot_regs-A.gb"),
+        # (False, "mooneye/misc/boot_regs-cgb.gb"),
+        # (False, "mooneye/misc/ppu/vblank_stat_intr-C.gb"),
+        # (False, "mooneye/misc/bits/unused_hwio-C.gb"),
+
         # (False, "mooneye/utils/bootrom_dumper.gb"),
-        (False, "mooneye/utils/dump_boot_hwio.gb"),
+        # (False, "mooneye/utils/dump_boot_hwio.gb"),
+        (False, "mooneye/manual-only/sprite_priority.gb"),
         (False, "mooneye/acceptance/rapid_di_ei.gb"),
         (False, "mooneye/acceptance/oam_dma_start.gb"),
         (False, "mooneye/acceptance/boot_regs-dmgABC.gb"),
@@ -168,7 +171,7 @@ def test_mooneye():
         else:
             pyboy.load_state(saved_state)
 
-        for _ in range(20):
+        for _ in range(40):
             pyboy.tick()
 
         png_path = Path(f"test_results/{rom}.png")
@@ -178,7 +181,12 @@ def test_mooneye():
             image.save(png_path)
         else:
             old_image = PIL.Image.open(png_path)
-            diff = PIL.ImageChops.difference(image, old_image)
+            if "acceptance" in rom:
+                # The registers are too volatile to depend on. We crop the top out, and only match the assertions.
+                diff = PIL.ImageChops.difference(image.crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144)))
+            else:
+                diff = PIL.ImageChops.difference(image, old_image)
+
             if diff.getbbox() and not os.environ.get("TEST_CI"):
                 image.show()
                 old_image.show()
