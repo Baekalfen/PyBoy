@@ -4,10 +4,9 @@
 #
 
 import numpy as np
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent
-from pyboy.logger import logger
-
 
 try:
     import OpenGL.GLUT.freeglut
@@ -151,3 +150,5 @@ class WindowOpenGL(PyBoyWindowPlugin):
 
     def stop(self):
         glutDestroyWindow(glutGetWindow())
+        for _ in range(10): # At least 2 to close
+            OpenGL.GLUT.freeglut.glutMainLoopEvent()

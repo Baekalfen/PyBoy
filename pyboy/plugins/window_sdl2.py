@@ -7,10 +7,9 @@ from time import perf_counter
 
 import sdl2
 import sdl2.ext
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
-from pyboy.logger import logger
-
 
 ROWS, COLS = 144, 160
 
@@ -82,6 +81,7 @@ CONTROLLER_UP = {
     sdl2.SDL_CONTROLLER_BUTTON_GUIDE         : WindowEvent.RELEASE_SPEED_UP,
 }
 # yapf: enable
+
 
 def sdl2_event_pump(events):
     global _sdlcontroller
@@ -174,6 +174,8 @@ class WindowSDL2(PyBoyWindowPlugin):
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)
+        for _ in range(10): # At least 2 to close
+            sdl2.ext.get_events()
         sdl2.SDL_Quit()
 
 
