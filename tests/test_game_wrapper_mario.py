@@ -77,6 +77,8 @@ class TestOpenAIGym:
         pyboy.set_emulation_speed(0)
 
         env = pyboy.openai_gym(observation_type="compressed")
+        if env is None:
+            raise Exception("'env' is None. Did you remember to install 'gym'?")
         observation = env.reset()
 
         expected_observation = np.zeros_like(observation)
