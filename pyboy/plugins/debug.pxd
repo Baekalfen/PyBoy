@@ -6,7 +6,6 @@ cimport cython
 from cpython.array cimport array
 
 from . cimport sdl2
-from . cimport sdl2_ttf
 cimport pyboy.plugins.window_sdl2
 from pyboy.core.mb cimport Motherboard
 from pyboy.botsupport.sprite cimport Sprite
@@ -14,7 +13,7 @@ from pyboy.botsupport.tilemap cimport TileMap
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cdef uint32_t COLOR
 cdef uint32_t MASK
@@ -117,24 +116,13 @@ cdef class SpriteViewWindow(BaseDebugWindow):
 
 cdef class MemoryWindow(BaseDebugWindow):
     cdef int start_address
-    cdef int end_address
-    cdef str font_path
-    cdef int font_size
+    cdef object bg_color, fg_color
+    cdef sdl2.SDL_Texture* font_texture
 
-    cdef sdl2_ttf.TTF_Font* font
-    cdef sdl2.SDL_Color text_color
-    cdef sdl2.SDL_Texture* texture
-    cdef sdl2.SDL_Rect destination
-    cdef sdl2.SDL_Surface* surface
+    #@cython.locals(font_path=str, font_bytes=char*, fbuf=array, fbuf0=uint32[;,;], fbuf_p=object)
+    #cdef __init__(self, ...)
 
-    cdef str memory_row(self, int, int)
-    cdef void header(self)
-    cdef void body(self)
-    cdef void footer(self)
-    # @cython.locals(w=p_int, h=p_int)
-    @cython.locals(w=int, h=int)
-    cdef void get_destination(self)
-
-    cdef str row
-    cdef int address_index
-    cdef int row_index
+    cdef str memory_row(self, int)
+    cdef void draw_header(self)
+    @cython.locals(src=sdl2.SDL_Rect, dst=sdl2.SDL_Rect, i=int, c=char)
+    cdef void draw_text(self, int, int, str)

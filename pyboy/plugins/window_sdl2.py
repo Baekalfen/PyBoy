@@ -33,10 +33,10 @@ KEY_DOWN = {
     sdl2.SDLK_SPACE     : WindowEvent.PRESS_SPEED_UP,
     sdl2.SDLK_COMMA     : WindowEvent.PRESS_REWIND_BACK,
     sdl2.SDLK_PERIOD    : WindowEvent.PRESS_REWIND_FORWARD,
-    sdl2.SDLK_j         : WindowEvent.PRESS_BUTTON_J,
-    sdl2.SDLK_k         : WindowEvent.PRESS_BUTTON_K,
-    sdl2.SDLK_LSHIFT    : WindowEvent.PRESS_BUTTON_LSHIFT,
-    sdl2.SDLK_RSHIFT    : WindowEvent.PRESS_BUTTON_RSHIFT
+    sdl2.SDLK_j         : WindowEvent.DEBUG_MEMORY_SCROLL_DOWN,
+    sdl2.SDLK_k         : WindowEvent.DEBUG_MEMORY_SCROLL_UP,
+    sdl2.SDLK_LSHIFT    : WindowEvent.MOD_SHIFT_ON,
+    sdl2.SDLK_RSHIFT    : WindowEvent.MOD_SHIFT_ON,
 }
 
 KEY_UP = {
@@ -57,6 +57,8 @@ KEY_UP = {
     sdl2.SDLK_ESCAPE    : WindowEvent.QUIT,
     sdl2.SDLK_COMMA     : WindowEvent.RELEASE_REWIND_BACK,
     sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
+    sdl2.SDLK_LSHIFT    : WindowEvent.MOD_SHIFT_OFF,
+    sdl2.SDLK_RSHIFT    : WindowEvent.MOD_SHIFT_OFF,
 }
 
 CONTROLLER_DOWN = {

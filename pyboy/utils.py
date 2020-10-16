@@ -156,10 +156,10 @@ class WindowEvent:
         _INTERNAL_MOUSE,
         _INTERNAL_MARK_TILE,
         SCREENSHOT_RECORD,
-        PRESS_BUTTON_J,
-        PRESS_BUTTON_K,
-        PRESS_BUTTON_LSHIFT,
-        PRESS_BUTTON_RSHIFT
+        DEBUG_MEMORY_SCROLL_DOWN,
+        DEBUG_MEMORY_SCROLL_UP,
+        MOD_SHIFT_ON,
+        MOD_SHIFT_OFF,
     ) = range(41)
 
     def __init__(self, event):
@@ -213,6 +213,10 @@ class WindowEvent:
             "_INTERNAL_MOUSE",
             "_INTERNAL_MARK_TILE",
             "SCREENSHOT_RECORD",
+            "DEBUG_MEMORY_SCROLL_DOWN",
+            "DEBUG_MEMORY_SCROLL_UP",
+            "MOD_SHIFT_ON",
+            "MOD_SHIFT_OFF",
         )[self.event]
 
 
