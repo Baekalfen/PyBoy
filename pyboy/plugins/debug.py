@@ -4,11 +4,11 @@
 #
 
 import ctypes
+import gzip
 import os
 from array import array
 
 import sdl2
-import sdl2.sdlttf as sdl2_ttf
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
 from pyboy.logger import logger
@@ -18,12 +18,10 @@ from pyboy.utils import WindowEvent
 
 try:
     from cython import compiled, NULL
-    import cython
     cythonmode = compiled
 except ImportError:
     cythonmode = False
     exec("NULL = None", globals(), locals())
-
 
 # Mask colors:
 COLOR = 0x00000000
@@ -144,10 +142,10 @@ class Debug(PyBoyWindowPlugin):
             pyboy,
             mb,
             pyboy_argv,
-            scale=3,
+            scale=1,
             title="Memory",
-            width=136,
-            height=216,
+            width=8 * 60,
+            height=16 * 36,
             pos_x=sdl2.SDL_WINDOWPOS_UNDEFINED,
             pos_y=sdl2.SDL_WINDOWPOS_UNDEFINED
         )
@@ -543,132 +541,94 @@ class SpriteViewWindow(BaseDebugWindow):
 class MemoryWindow(BaseDebugWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.shift_down = False
         self.start_address = 0x0000
-        self.end_address = self.start_address + 0x100
-        self.font_path = os.path.join("pyboy", "plugins", "assets", "Mono_Hack_Font.ttf")
-        self.font_size = 18
-        self.text_color = sdl2.SDL_Color(0xFF, 0xFF, 0xFF, 0x00)
+        self.bg_color = [0xFF, 0xFF, 0xFF]
+        self.fg_color = [0x00, 0x00, 0x00]
 
-        if sdl2_ttf.TTF_Init() < 0:
-            logger.error("Failed initializing SDL2 TTF!")
+        font_path = os.path.join("font", "ter-16b-ibm437.txt.gz")
+        with gzip.open(font_path) as font_file:
+            font_bytes = b"".join(bytes.fromhex(x.strip().decode()) for x in font_file.readlines())
 
-        sdl2.SDL_ClearError()
-        self.font = sdl2_ttf.TTF_OpenFont(self.font_path.encode(), self.font_size)
-        if not sdl2.SDL_GetError() == b"":
-            logger.error(f"TTF_OpenFont error: {sdl2.SDL_GetError()}")
+        fbuf, fbuf0, fbuf_p = make_buffer(8, 16 * 256)
+        for y, b in enumerate(font_bytes):
+            for x in range(8):
+                fbuf0[y][x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
 
-        self.destination = sdl2.SDL_Rect(0, 0, 0, 0)
+        self.font_texture = sdl2.SDL_CreateTexture(
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
+        )
+        sdl2.SDL_UpdateTexture(self.font_texture, NULL, fbuf_p, 4 * 8)
+        sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+        sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
+        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
 
-    def memory_row(self, x, y):
-        return " ".join([f"{self.pyboy.get_memory_value(i):02x}" for i in range(x, y + 1)])
+    def memory_row(self, addr):
+        return " ".join([f"{self.pyboy.get_memory_value(i):02x}" for i in range(addr, addr + 0x10)])
 
     def post_tick(self):
-        self.row = ""
-        self.address_index = self.start_address
-        self.row_index = 0x0
         sdl2.SDL_RenderClear(self._sdlrenderer)
-        self.header()
-        while self.address_index < self.end_address:
-            if self.address_index + 0x8 <= self.end_address:
-                self.row = f"| 0x{self.address_index:04x} | {self.memory_row(self.address_index, self.address_index + 0x7)}  |"
-            else:
-                self.row = f"| 0x{self.address_index:04x} | {self.memory_row(self.address_index, self.end_address)}  |"
-            self.body()
-        self.footer()
+        self.draw_header()
+        for i in range(32):
+            addr = self.start_address + 0x20*i
+            self.draw_text(
+                0, 16 * (i+3), b"\xBA" + f" 0x{addr:04x} ".encode("cp437") + b"\xB3" +
+                f" {self.memory_row(addr)} ".encode("cp437") + b"\xBA"
+            )
+        self.draw_text(0, 16 * 35, b"\xC8" + b"\xCD"*8 + b"\xCF" + b"\xCD"*49 + b"\xBC")
         sdl2.SDL_RenderPresent(self._sdlrenderer)
 
-    def header(self):
-        end_address = 0xffff if self.end_address == 0x10000 else self.end_address
+    def draw_header(self):
         header_rows = [
-            "-" * 37, f"| Memory dump from 0x{self.start_address:04x} to 0x{end_address:04x} |", "| " + "-"*33 + " |"
+            b"\xC9" + b"\xCD"*58 + b"\xBB",
+            b"\xBA " + f"Memory from 0x{self.start_address:04x} to 0x{self.start_address+0x3FF:04x}".encode("cp437") +
+            b" "*29 + b"\xBA", b"\xCC" + b"\xCD"*8 + b"\xD1" + b"\xCD"*49 + b"\xB9"
         ]
 
-        for row in header_rows:
-            self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, row.encode(), self.text_color)
-            self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
-            self.get_destination()
-            sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, cython.address(self.destination))
-            self.row_index += 18
-            sdl2.SDL_FreeSurface(self.surface)
-            sdl2.SDL_DestroyTexture(self.texture)
+        for i, row in enumerate(header_rows):
+            self.draw_text(0, 16 * i, row)
 
-    def body(self):
-        self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
-        self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
-        self.get_destination()
-        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, cython.address(self.destination))
-        sdl2.SDL_FreeSurface(self.surface)
-        sdl2.SDL_DestroyTexture(self.texture)
-        self.address_index += 0x8
-        self.row_index += 18
-
-    def footer(self):
-        self.row = "-" * 37
-        self.surface = sdl2_ttf.TTF_RenderText_Solid(self.font, self.row.encode(), self.text_color)
-        self.texture = sdl2.SDL_CreateTextureFromSurface(self._sdlrenderer, self.surface)
-        self.get_destination()
-        sdl2.SDL_RenderCopy(self._sdlrenderer, self.texture, NULL, cython.address(self.destination))
-        sdl2.SDL_FreeSurface(self.surface)
-        sdl2.SDL_DestroyTexture(self.texture)
-
-    def get_destination(self):
-        if cythonmode:
-            w = 0
-            h = 0
-        # else:
-        #     self.destination = sdl2.SDL_Rect(0, self.row_index)
-        #     w = ctypes.pointer(ctypes.c_int(0))
-        #     h = ctypes.pointer(ctypes.c_int(0))
-        sdl2.SDL_QueryTexture(self.texture, NULL, NULL, cython.address(w), cython.address(h))
-        if cythonmode:
-            # self.destination.w = cython.operator.dereference(w
-            self.destination.y = self.row_index
-            self.destination.w = w
-            self.destination.h = h
-        # else:
-        #     self.destination.w = w.contents.value
-        #     self.destination.h = h.contents.value
+    def draw_text(self, x, y, text):
+        src = sdl2.SDL_Rect(0, 0, 8, 16)
+        dst = sdl2.SDL_Rect(x, y, 8, 16)
+        for i, c in enumerate(text):
+            if not 0 <= c < 256:
+                logger.warn(f"Invalid character {c} in {text.decode('cp437')}") # This may error too...
+                c = 0
+            src.y = 16 * c
+            if dst.x > self.width - 8:
+                logger.warn(f"Text overrun while printing {text.decode('cp437')}")
+                break
+            sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, src, dst)
+            dst.x += 8
 
     def handle_events(self, events):
         events = BaseDebugWindow.handle_events(self, events)
+
         for event in events:
             # j - Next 256 bytes
-            if event == WindowEvent.PRESS_BUTTON_J:
-                if self.end_address + 0x100 <= 0x10000:
-                    self.start_address += 0x100
-                    self.end_address += 0x100
-            # k - Last 256 bytes
-            elif event == WindowEvent.PRESS_BUTTON_K:
-                if self.start_address - 0x100 >= 0x0000:
-                    self.start_address -= 0x100
-                    self.end_address -= 0x100
-            # left shift - Forward 4096 bytes
-            elif event == WindowEvent.PRESS_BUTTON_LSHIFT:
-                if self.end_address + 0x1000 <= 0x10000:
+            if event == WindowEvent.DEBUG_MEMORY_SCROLL_DOWN:
+                if self.shift_down:
                     self.start_address += 0x1000
-                    self.end_address += 0x1000
                 else:
-                    self.start_address = 0xff00
-                    self.end_address = 0x10000
-            # right shift - Back 4096 bytes
-            elif event == WindowEvent.PRESS_BUTTON_RSHIFT:
-                if self.start_address - 0x1000 >= 0x0000:
+                    self.start_address += 0x100
+                if self.start_address + 0x400 > 0x10000:
+                    self.start_address = 0x10000 - 0x400
+            # k - Last 256 bytes
+            elif event == WindowEvent.DEBUG_MEMORY_SCROLL_UP:
+                if self.shift_down:
                     self.start_address -= 0x1000
-                    self.end_address -= 0x1000
                 else:
-                    self.start_address = 0x0000
-                    self.end_address = 0x100
+                    self.start_address -= 0x100
+                if self.start_address < 0:
+                    self.start_address = 0
+            # shift tracking
+            elif event == WindowEvent.MOD_SHIFT_ON:
+                self.shift_down = True
+            elif event == WindowEvent.MOD_SHIFT_OFF:
+                self.shift_down = False
 
         return events
-
-    def draw_overlay(self):
-        pass
-
-    def copy_tile(self, tile_cache0, t, xx, yy, to_buffer):
-        pass
-
-    def mark_tile(self, x, y, color, height, width, grid):
-        pass
 
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to

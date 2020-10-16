@@ -115,8 +115,8 @@ The other controls for the emulator:
 | .            | Rewind forward          |
 | J            | Memory Window + 0x100   |
 | K            | Memory Window - 0x100   |
-| Left Shift   | Memory Window + 0x1000  |
-| Right Shift  | Memory Window - 0x1000  |
+| Shift + J    | Memory Window + 0x1000  |
+| Shift + K    | Memory Window - 0x1000  |
 
 See "pyboy --help" for how to enable rewind and other awesome features!
 """

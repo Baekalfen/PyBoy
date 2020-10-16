@@ -23,9 +23,9 @@ Installation
 The instructions are simple, if you already have a functioning Python environment on your machine.
 
  1. Install SDL2 through your package manager:
-    - Ubuntu: __`sudo apt install libsdl2-dev libsdl2-ttf-dev`__
-    - Fedora: __`sudo dnf install SDL2-devel SDL2_ttf`__
-    - macOS: __`brew install sdl2 sdl2_ttf`__
+    - Ubuntu: __`sudo apt install libsdl2-dev`__
+    - Fedora: __`sudo dnf install SDL2-devel`__
+    - macOS: __`brew install sdl2`__
 
  2. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
 
@@ -58,7 +58,6 @@ GitHub Collaborators
 --------------------
 
  * Kristian Sims - [krs013](https://github.com/krs013)
- * Noah Kritz - [kr1tzy](https://github.com/kr1tzy)
 
 Student Projects
 ----------------
@@ -77,4 +76,3 @@ For the more major features, there are the following that you can give a try. Th
 * _(Experimental)_ Game Wrappers - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
-
