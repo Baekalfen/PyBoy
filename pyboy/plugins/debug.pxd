@@ -114,15 +114,29 @@ cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(title=str)
     cdef void update_title(self)
 
+
 cdef class MemoryWindow(BaseDebugWindow):
+    cdef bint shift_down
     cdef int start_address
     cdef object bg_color, fg_color
+    cdef array _text_buffer_raw
+    cdef uint8_t[:,:] text_buffer
     cdef sdl2.SDL_Texture* font_texture
+    cdef array fbuf
+    cdef uint32_t[:,:] fbuf0
+    cdef object fbuf_p
+    cdef sdl2.SDL_Rect src, dst
 
-    #@cython.locals(font_path=str, font_bytes=char*, fbuf=array, fbuf0=uint32[;,;], fbuf_p=object)
-    #cdef __init__(self, ...)
+    cdef inline void _prepare_font_texture(self):
+        sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf.data.as_voidptr, 4*8)
+        sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+        sdl2.SDL_SetTextureColorMod(self.font_texture, self.fg_color[0], self.fg_color[1], self.fg_color[2])
+        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, self.bg_color[0], self.bg_color[1], self.bg_color[2], 0xFF)
 
-    cdef str memory_row(self, int)
-    cdef void draw_header(self)
-    @cython.locals(src=sdl2.SDL_Rect, dst=sdl2.SDL_Rect, i=int, c=char)
-    cdef void draw_text(self, int, int, str)
+    cdef void write_border(self)
+    @cython.locals(header=bytes, addr=bytes)
+    cdef void write_addresses(self)
+    cdef void write_memory(self)
+    cdef void render_text(self)
+    @cython.locals(i=int, c=uint8_t)
+    cdef void draw_text(self, int, int, uint8_t[:])
