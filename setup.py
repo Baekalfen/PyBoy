@@ -190,8 +190,6 @@ def define_lib_includes_cflags():
             else:
                 cflags += [arg]
         print("SDL2 found using sdl2-config")
-        print("Manually adding 'SDL2_ttf' to libs")
-        libs += ["SDL2_ttf"]
     elif sdl2_path:
         print("No sdl2-config found, using PYSDL2_DLL_PATH variable")
         sdl2_lib_arch = "x86" if "x86" in sdl2_path else "x64" if "x64" in sdl2_path else ""
@@ -201,7 +199,7 @@ def define_lib_includes_cflags():
             sys.exit(122)
         else:
             print(f"Found SDL2 at {sdl2_path}")
-            libs += ["SDL2", "SDL2_ttf"]
+            libs += ["SDL2"]
             libdirs += [os.path.join(sdl2_path, "lib", sdl2_lib_arch)]
             includes += [os.path.join(sdl2_path, "include", p) for p in ("", "SDL2")]
     else:
