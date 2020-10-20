@@ -116,16 +116,18 @@ cdef class SpriteViewWindow(BaseDebugWindow):
 
 
 cdef class MemoryWindow(BaseDebugWindow):
+    cdef int NCOLS, NROWS
     cdef bint shift_down
     cdef int start_address
-    cdef object bg_color, fg_color
-    cdef array _text_buffer_raw
+    cdef uint8_t[:] _text_buffer_raw
     cdef uint8_t[:,:] text_buffer
     cdef sdl2.SDL_Texture* font_texture
     cdef array fbuf
     cdef uint32_t[:,:] fbuf0
     cdef object fbuf_p
     cdef sdl2.SDL_Rect src, dst
+    cdef int[3] fg_color
+    cdef int[3] bg_color
 
     cdef inline void _prepare_font_texture(self):
         sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf.data.as_voidptr, 4*8)

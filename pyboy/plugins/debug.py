@@ -140,17 +140,9 @@ class Debug(PyBoyWindowPlugin):
         window_pos += (constants.COLS * self.spriteview.scale)
 
         self.memory = MemoryWindow(
-            pyboy,
-            mb,
-            pyboy_argv,
-            scale=1,
-            title="Memory",
-            width=8 * 60,
-            height=16 * 36,
-            pos_x=sdl2.SDL_WINDOWPOS_UNDEFINED,
-            pos_y=sdl2.SDL_WINDOWPOS_UNDEFINED
+            pyboy, mb, pyboy_argv, scale=1, title="Memory", width=8 * 60, height=16 * 36, pos_x=window_pos, pos_y=0
         )
-        window_pos += (constants.COLS * self.spriteview.scale)
+        window_pos += 8 * 60
 
         tile_data_width = 16 * 8 # Change the 16 to however wide you want the tile window
         tile_data_height = ((constants.TILES * 8) // tile_data_width) * 8
@@ -540,11 +532,10 @@ class SpriteViewWindow(BaseDebugWindow):
 
 
 class MemoryWindow(BaseDebugWindow):
-    NCOLS = 60
-    NROWS = 36
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.NCOLS = 60
+        self.NROWS = 36
         self.shift_down = False
         self.start_address = 0x0000
         self.bg_color = [0xFF, 0xFF, 0xFF]
@@ -555,7 +546,7 @@ class MemoryWindow(BaseDebugWindow):
             self.text_buffer = memoryview(self._text_buffer_raw).cast("B", shape=(self.NROWS, self.NCOLS))
         else:
             view = memoryview(self._text_buffer_raw)
-            self.text_buffer = [view[i:i+self.NCOLS] for i in range(0, self.NROWS*self.NCOLS, self.NCOLS)]
+            self.text_buffer = [view[i:i + self.NCOLS] for i in range(0, self.NROWS * self.NCOLS, self.NCOLS)]
         # self.text_buffer = [bytearray([0x20]*self.NCOLS) for _ in range(self.NROWS)]
         self.write_border()
         self.write_addresses()
@@ -582,56 +573,55 @@ class MemoryWindow(BaseDebugWindow):
         for x in range(self.NCOLS):
             self.text_buffer[0][x] = 0xCD
             self.text_buffer[2][x] = 0xCD
-            self.text_buffer[self.NROWS-1][x] = 0xCD
+            self.text_buffer[self.NROWS - 1][x] = 0xCD
 
         for y in range(3, self.NROWS):
             self.text_buffer[y][0] = 0xBA
             self.text_buffer[y][9] = 0xB3
-            self.text_buffer[y][self.NCOLS-1] = 0xBA
+            self.text_buffer[y][self.NCOLS - 1] = 0xBA
 
         self.text_buffer[0][0] = 0xC9
         self.text_buffer[1][0] = 0xBA
-        self.text_buffer[0][self.NCOLS-1] = 0xBB
-        self.text_buffer[1][self.NCOLS-1] = 0xBA
+        self.text_buffer[0][self.NCOLS - 1] = 0xBB
+        self.text_buffer[1][self.NCOLS - 1] = 0xBA
 
         self.text_buffer[2][0] = 0xCC
         self.text_buffer[2][9] = 0xD1
-        self.text_buffer[2][self.NCOLS-1] = 0xB9
+        self.text_buffer[2][self.NCOLS - 1] = 0xB9
 
-        self.text_buffer[self.NROWS-1][0] = 0xC8
-        self.text_buffer[self.NROWS-1][9] = 0xCF
-        self.text_buffer[self.NROWS-1][self.NCOLS-1] = 0xBC
+        self.text_buffer[self.NROWS - 1][0] = 0xC8
+        self.text_buffer[self.NROWS - 1][9] = 0xCF
+        self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
 
     def write_addresses(self):
-        header = (f"Memory from 0x{self.start_address:04x} "
-                  f"to 0x{self.start_address+0x3FF:04x}").encode("cp437")
+        header = (f"Memory from 0x{self.start_address:04x} " f"to 0x{self.start_address+0x3FF:04x}").encode("cp437")
         if cythonmode:
             for x in range(28):
-                self.text_buffer[1][x+2] = header[x]
+                self.text_buffer[1][x + 2] = header[x]
         else:
             self.text_buffer[1][2:30] = header
         for y in range(32):
             addr = f"0x{self.start_address + (0x20*y):04x}".encode("cp437")
             if cythonmode:
                 for x in range(6):
-                    self.text_buffer[y+3][x+2] = addr[x]
+                    self.text_buffer[y + 3][x + 2] = addr[x]
             else:
-                self.text_buffer[y+3][2:8] = addr
+                self.text_buffer[y + 3][2:8] = addr
 
     def write_memory(self):
         for y in range(32):
             for x in range(16):
-                mem = self.pyboy.get_memory_value(self.start_address + 16*y + x)
+                mem = self.mb.getitem(self.start_address + 16*y + x)
                 if cythonmode:
                     a = hex(mem)[2:].zfill(2).encode("cp437")
-                    self.text_buffer[y+3][3*x+11] = a[0]
-                    self.text_buffer[y+3][3*x+12] = a[1]
+                    self.text_buffer[y + 3][3*x + 11] = a[0]
+                    self.text_buffer[y + 3][3*x + 12] = a[1]
                 else:
-                    self.text_buffer[y+3][3*x+11:3*x+13] = bytes([mem]).hex().encode("cp437")
+                    self.text_buffer[y + 3][3*x + 11:3*x + 13] = bytes([mem]).hex().encode("cp437")
 
     def render_text(self):
         for y in range(self.NROWS):
-            self.draw_text(0, 16*y, self.text_buffer[y])
+            self.draw_text(0, 16 * y, self.text_buffer[y])
 
     def draw_text(self, x, y, text):
         self.dst.x = x
@@ -647,8 +637,9 @@ class MemoryWindow(BaseDebugWindow):
             if cythonmode:
                 sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, address(self.src), address(self.dst))
             else:
-                exec("sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)",
-                     globals(), locals())
+                exec(
+                    "sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)", globals(), locals()
+                )
             self.dst.x += 8
 
     def post_tick(self):

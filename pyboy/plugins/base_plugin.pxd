@@ -45,7 +45,7 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef bint _tile_cache_invalid
     cdef array _cached_game_area_tiles_raw
     cdef uint32_t[:, :] _cached_game_area_tiles
-    @cython.locals(xx=int, yy=int, width=int, height=int, scanline_parameters=int[:, :], SCX=int, SCY=int, _x=int, _y=int)
+    @cython.locals(xx=int, yy=int, width=int, height=int, SCX=int, SCY=int, _x=int, _y=int)
     cdef uint32_t[:, :] _game_area_tiles(self)
 
     cdef bint game_area_wrap_around
