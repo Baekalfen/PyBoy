@@ -127,7 +127,7 @@ class CPU:
         old_pc = self.PC
         cycles = self.fetch_and_execute(self.PC)
         if not self.halted and old_pc == self.PC:
-            raise Exception("CPU is stuck: " + self.dump_state())
+            logger.error("CPU is stuck: " + self.dump_state())
         self.interrupt_queued = False
         return cycles
 

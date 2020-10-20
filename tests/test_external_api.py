@@ -113,6 +113,7 @@ def test_tetris():
 
     pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", game_wrapper=True)
     pyboy.set_emulation_speed(0)
+    tetris = pyboy.game_wrapper()
 
     first_brick = False
     tile_map = pyboy.botsupport_manager().tilemap_window()
@@ -125,6 +126,7 @@ def test_tetris():
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
         if frame == 144:
+            tetris._set_timer_div(0x00)
             pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         elif frame == 145:
             pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -185,8 +187,8 @@ def test_tetris():
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 130, 130, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 130, 130]])
+                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
+                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
 
                     tile_map.use_tile_objects(True)
 
@@ -214,13 +216,13 @@ def test_tetris():
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 130, 130, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 130, 130]])
+                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
+                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
 
-            if frame == 1014:
+            if frame == 1013:
                 assert not first_brick
 
-            if frame == 1015:
+            if frame == 1014:
                 assert first_brick
 
                 s1 = pyboy.botsupport_manager().sprite(0)
@@ -242,14 +244,14 @@ def test_tetris():
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
-                    (72, 128, 130, True),
-                    (80, 128, 130, True),
-                    (80, 136, 130, True),
-                    (88, 136, 130, True),
-                    (120, 112, 133, True),
-                    (128, 112, 133, True),
-                    (136, 112, 133, True),
-                    (128, 120, 133, True),
+                    (72, 128, 133, True),
+                    (80, 128, 133, True),
+                    (88, 128, 133, True),
+                    (80, 136, 133, True),
+                    (120, 112, 138, True),
+                    (128, 112, 139, True),
+                    (136, 112, 139, True),
+                    (144, 112, 143, True),
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
@@ -280,24 +282,18 @@ def test_tetris():
                     (-8, -16, 0, False),
                 ])
 
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
-                tetris = pyboy.game_wrapper()
-                assert tetris.next_tetromino() == "T"
+                assert pyboy.get_memory_value(NEXT_TETROMINO) == 8
+                assert tetris.next_tetromino() == "I"
 
                 with open("tmp.state", "wb") as f:
                     pyboy.save_state(f)
                 pyboy.save_state(state_data)
-                pyboy.set_memory_value(NEXT_TETROMINO, 11)
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 11
-                assert tetris.next_tetromino() == "I"
                 break
 
-    for frame in range(1016, 1866):
+    for frame in range(1015, 1866):
         pyboy.tick()
-        if frame == 1017:
-            assert pyboy.get_memory_value(NEXT_TETROMINO) == 11 # Would have been 4 otherwise
 
-        if frame == 1865:
+        if frame == 1864:
             game_board_matrix = list(tile_map[2:12, :18])
             assert game_board_matrix == ([[303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
@@ -313,22 +309,20 @@ def test_tetris():
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 128, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 136, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 136, 303, 303, 130, 130, 303],
-                                          [303, 303, 303, 303, 137, 303, 303, 303, 130, 130]])
+                                          [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
+                                          [303, 303, 303, 303, 303, 303, 138, 139, 139, 143],
+                                          [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
+                                          [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
 
     state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
     with open("tmp.state", "rb") as f:
         for _f in [f, state_data]: # Tests both file-written state and in-memory state
             pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
             pyboy.tick()
-            for frame in range(1016, 5282):
+            for frame in range(1015, 5282):
                 pyboy.tick()
-                if frame == 1017:
-                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 8
 
-                if frame == 1865:
+                if frame == 1864:
                     game_board_matrix = list(tile_map[2:12, :18])
                     assert game_board_matrix == ([[303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
@@ -345,9 +339,10 @@ def test_tetris():
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 133, 133, 133, 303, 130, 130, 303],
-                                                  [303, 303, 303, 303, 133, 303, 303, 303, 130, 130]])
+                                                  [303, 303, 303, 303, 303, 303, 138, 139, 139, 143],
+                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
+                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
+                    break
     os.remove("tmp.state")
 
     pyboy.stop(save=False)

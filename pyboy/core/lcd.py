@@ -100,7 +100,7 @@ class LCD:
         f.write(self.OBP0.value)
         f.write(self.OBP1.value)
 
-        f.write(self._STAT)
+        f.write(self._STAT.value)
         f.write(self.LY)
         f.write(self.LYC)
 
@@ -116,13 +116,13 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             self.OAM[n] = f.read()
 
-        self._LCDC.set(f.read())
+        self.set_lcdc(f.read())
         self.BGP.set(f.read())
         self.OBP0.set(f.read())
         self.OBP1.set(f.read())
 
         if state_version >= 5:
-            self._STAT = f.read()
+            self.set_stat(f.read())
             self.LY = f.read()
             self.LYC = f.read()
 

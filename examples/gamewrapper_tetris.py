@@ -16,7 +16,7 @@ from pyboy import PyBoy, WindowEvent # isort:skip
 if len(sys.argv) > 1:
     filename = sys.argv[1]
 else:
-    print("Usage: python mario_boiler_plate.py [ROM file]")
+    print("Usage: python gamewrapper_tetris.py [ROM file]")
     exit(1)
 
 quiet = "--quiet" in sys.argv
