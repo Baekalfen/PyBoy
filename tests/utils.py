@@ -7,6 +7,9 @@ import hashlib
 import os
 from pathlib import Path
 
+BOOTROM_FRAMES_UNTIL_LOGO = 6
+BOOTROM_FRAMES_UNTIL_END = 60 + BOOTROM_FRAMES_UNTIL_LOGO
+
 
 def locate_bootrom(path="ROMs/"):
     if not os.path.isdir(path):

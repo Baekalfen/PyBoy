@@ -76,4 +76,3 @@ For the more major features, there are the following that you can give a try. Th
 * _(Experimental)_ Game Wrappers - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
-

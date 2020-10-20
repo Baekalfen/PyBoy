@@ -146,8 +146,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
         if not self.pyboy.frame_count == 0:
             logger.warning("Calling start_game from an already running game. This might not work.")
 
-        self._set_timer_div(timer_div)
-
     def reset_game(self, timer_div=None):
         """
         After calling `start_game`, you can call this method at any time to reset the game.
@@ -162,8 +160,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self.post_tick()
         else:
             logger.error("Tried to reset game, but it hasn't been started yet!")
-
-        self._set_timer_div(timer_div)
 
     def game_over(self):
         """

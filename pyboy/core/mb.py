@@ -13,7 +13,16 @@ INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x 
 
 
 class Motherboard:
-    def __init__(self, gamerom_file, bootrom_file, color_palette, disable_renderer, sound_enabled, profiling=False):
+    def __init__(
+        self,
+        gamerom_file,
+        bootrom_file,
+        color_palette,
+        disable_renderer,
+        sound_enabled,
+        randomize=False,
+        profiling=False
+    ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
@@ -24,9 +33,9 @@ class Motherboard:
         self.interaction = interaction.Interaction()
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         self.bootrom = bootrom.BootROM(bootrom_file)
-        self.ram = ram.RAM(random=False)
+        self.ram = ram.RAM(randomize=randomize)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD()
+        self.lcd = lcd.LCD(randomize=randomize)
         self.renderer = lcd.Renderer(disable_renderer, color_palette)
         self.sound_enabled = sound_enabled
         if sound_enabled:

@@ -3,27 +3,34 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import array
+from array import array
+from random import getrandbits
 
 # MEMORY SIZES
-INTERNAL_RAM0 = 8 * 1024 # 8KB
+INTERNAL_RAM0 = 8 * 1024 # 8KiB
 NON_IO_INTERNAL_RAM0 = 0x60
 IO_PORTS = 0x4C
 NON_IO_INTERNAL_RAM1 = 0x34
 INTERNAL_RAM1 = 0x7F
-INTERRUPT_ENABLE_REGISTER = 1
 
 
 class RAM:
-    def __init__(self, random=False):
-        if random: # NOTE: In real life, the RAM is scrambled with random data on boot.
-            raise Exception("Random RAM not implemented")
+    def __init__(self, randomize=False):
+        self.internal_ram0 = array("B", [0] * (INTERNAL_RAM0))
+        self.non_io_internal_ram0 = array("B", [0] * (NON_IO_INTERNAL_RAM0))
+        self.io_ports = array("B", [0] * (IO_PORTS))
+        self.internal_ram1 = array("B", [0] * (INTERNAL_RAM1))
+        self.non_io_internal_ram1 = array("B", [0] * (NON_IO_INTERNAL_RAM1))
 
-        self.internal_ram0 = array.array("B", [0] * (INTERNAL_RAM0))
-        self.non_io_internal_ram0 = array.array("B", [0] * (NON_IO_INTERNAL_RAM0))
-        self.io_ports = array.array("B", [0] * (IO_PORTS))
-        self.internal_ram1 = array.array("B", [0] * (INTERNAL_RAM1))
-        self.non_io_internal_ram1 = array.array("B", [0] * (NON_IO_INTERNAL_RAM1))
+        if randomize:
+            for i in range(INTERNAL_RAM0):
+                self.internal_ram0[i] = getrandbits(8)
+            for i in range(NON_IO_INTERNAL_RAM0):
+                self.non_io_internal_ram0[i] = getrandbits(8)
+            for i in range(INTERNAL_RAM1):
+                self.internal_ram1[i] = getrandbits(8)
+            for i in range(NON_IO_INTERNAL_RAM1):
+                self.non_io_internal_ram1[i] = getrandbits(8)
 
     def save_state(self, f):
         for n in range(INTERNAL_RAM0):

@@ -8,10 +8,9 @@ import argparse
 import os
 
 from pyboy import PyBoy, core
-from pyboy.logger import log_level
+from pyboy.logger import log_level, logger
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
-from pyboy.logger import logger
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
 
@@ -36,6 +35,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
 parser.add_argument("-b", "--bootrom", type=valid_file_path, help="Path to a boot-ROM file")
 parser.add_argument("--profiling", action="store_true", help="Enable opcode profiling (internal use)")
+parser.add_argument("--randomize-ram", action="store_true", help="Randomize Game Boy RAM on startup")
 parser.add_argument(
     "--log-level",
     default="INFO",
@@ -113,6 +113,10 @@ The other controls for the emulator:
 | O            | Save screenshot         |
 | ,            | Rewind backwards        |
 | .            | Rewind forward          |
+| J            | Memory Window + 0x100   |
+| K            | Memory Window - 0x100   |
+| Shift + J    | Memory Window + 0x1000  |
+| Shift + K    | Memory Window - 0x1000  |
 
 See "pyboy --help" for how to enable rewind and other awesome features!
 """

@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-cimport sdl2
+from . cimport sdl2
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 cimport pyboy.utils
 
@@ -12,8 +12,9 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
 
 
-
 cdef int ROWS, COLS
+
+cdef sdl2.SDL_GameController *_sdlcontroller = NULL
 
 cpdef list sdl2_event_pump(list)
 

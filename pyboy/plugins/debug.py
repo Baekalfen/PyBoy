@@ -4,6 +4,8 @@
 #
 
 import ctypes
+import gzip
+import os
 from array import array
 
 import sdl2
@@ -16,10 +18,12 @@ from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
 
 try:
-    from cython import compiled
+    from cython import address, compiled
     cythonmode = compiled
 except ImportError:
     cythonmode = False
+if not cythonmode:
+    exec("NULL = None", globals(), locals())
 
 # Mask colors:
 COLOR = 0x00000000
@@ -136,6 +140,11 @@ class Debug(PyBoyWindowPlugin):
         )
         window_pos += (constants.COLS * self.spriteview.scale)
 
+        self.memory = MemoryWindow(
+            pyboy, mb, pyboy_argv, scale=1, title="Memory", width=8 * 60, height=16 * 36, pos_x=window_pos, pos_y=0
+        )
+        window_pos += 8 * 60
+
         tile_data_width = 16 * 8 # Change the 16 to however wide you want the tile window
         tile_data_height = ((constants.TILES * 8) // tile_data_width) * 8
         self.tiledata = TileDataWindow(
@@ -156,6 +165,7 @@ class Debug(PyBoyWindowPlugin):
         self.tiledata.post_tick()
         self.sprite.post_tick()
         self.spriteview.post_tick()
+        self.memory.post_tick()
 
     def handle_events(self, events):
         if self.sdl2_event_pump:
@@ -165,6 +175,7 @@ class Debug(PyBoyWindowPlugin):
         events = self.tiledata.handle_events(events)
         events = self.sprite.handle_events(events)
         events = self.spriteview.handle_events(events)
+        events = self.memory.handle_events(events)
         return events
 
     def stop(self):
@@ -562,6 +573,154 @@ class SpriteViewWindow(BaseDebugWindow):
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 
+class MemoryWindow(BaseDebugWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.NCOLS = 60
+        self.NROWS = 36
+        self.shift_down = False
+        self.start_address = 0x0000
+        self.bg_color = [0xFF, 0xFF, 0xFF]
+        self.fg_color = [0x00, 0x00, 0x00]
+
+        self._text_buffer_raw = array("B", [0x20] * (self.NROWS * self.NCOLS))
+        if cythonmode:
+            self.text_buffer = memoryview(self._text_buffer_raw).cast("B", shape=(self.NROWS, self.NCOLS))
+        else:
+            view = memoryview(self._text_buffer_raw)
+            self.text_buffer = [view[i:i + self.NCOLS] for i in range(0, self.NROWS * self.NCOLS, self.NCOLS)]
+        # self.text_buffer = [bytearray([0x20]*self.NCOLS) for _ in range(self.NROWS)]
+        self.write_border()
+        self.write_addresses()
+
+        font_path = os.path.join("font", "ter-16b-ibm437.txt.gz")
+        with gzip.open(font_path) as font_file:
+            font_bytes = b"".join(bytes.fromhex(x.strip().decode()) for x in font_file.readlines())
+
+        self.fbuf, self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
+        for y, b in enumerate(font_bytes):
+            for x in range(8):
+                self.fbuf0[y][x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
+
+        self.font_texture = sdl2.SDL_CreateTexture(
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
+        )
+        self._prepare_font_texture()
+
+        # Persistent to make Cython happy...
+        self.src = sdl2.SDL_Rect(0, 0, 8, 16)
+        self.dst = sdl2.SDL_Rect(0, 0, 8, 16)
+
+    def write_border(self):
+        for x in range(self.NCOLS):
+            self.text_buffer[0][x] = 0xCD
+            self.text_buffer[2][x] = 0xCD
+            self.text_buffer[self.NROWS - 1][x] = 0xCD
+
+        for y in range(3, self.NROWS):
+            self.text_buffer[y][0] = 0xBA
+            self.text_buffer[y][9] = 0xB3
+            self.text_buffer[y][self.NCOLS - 1] = 0xBA
+
+        self.text_buffer[0][0] = 0xC9
+        self.text_buffer[1][0] = 0xBA
+        self.text_buffer[0][self.NCOLS - 1] = 0xBB
+        self.text_buffer[1][self.NCOLS - 1] = 0xBA
+
+        self.text_buffer[2][0] = 0xCC
+        self.text_buffer[2][9] = 0xD1
+        self.text_buffer[2][self.NCOLS - 1] = 0xB9
+
+        self.text_buffer[self.NROWS - 1][0] = 0xC8
+        self.text_buffer[self.NROWS - 1][9] = 0xCF
+        self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
+
+    def write_addresses(self):
+        header = (f"Memory from 0x{self.start_address:04x} " f"to 0x{self.start_address+0x3FF:04x}").encode("cp437")
+        if cythonmode:
+            for x in range(28):
+                self.text_buffer[1][x + 2] = header[x]
+        else:
+            self.text_buffer[1][2:30] = header
+        for y in range(32):
+            addr = f"0x{self.start_address + (0x20*y):04x}".encode("cp437")
+            if cythonmode:
+                for x in range(6):
+                    self.text_buffer[y + 3][x + 2] = addr[x]
+            else:
+                self.text_buffer[y + 3][2:8] = addr
+
+    def write_memory(self):
+        for y in range(32):
+            for x in range(16):
+                mem = self.mb.getitem(self.start_address + 16*y + x)
+                if cythonmode:
+                    a = hex(mem)[2:].zfill(2).encode("cp437")
+                    self.text_buffer[y + 3][3*x + 11] = a[0]
+                    self.text_buffer[y + 3][3*x + 12] = a[1]
+                else:
+                    self.text_buffer[y + 3][3*x + 11:3*x + 13] = bytes([mem]).hex().encode("cp437")
+
+    def render_text(self):
+        for y in range(self.NROWS):
+            self.draw_text(0, 16 * y, self.text_buffer[y])
+
+    def draw_text(self, x, y, text):
+        self.dst.x = x
+        self.dst.y = y
+        for i, c in enumerate(text):
+            if not 0 <= c < 256:
+                logger.warn(f"Invalid character {c} in {bytes(text).decode('cp437')}") # This may error too...
+                c = 0
+            self.src.y = 16 * c
+            if self.dst.x > self.width - 8:
+                logger.warn(f"Text overrun while printing {bytes(text).decode('cp437')}")
+                break
+            if cythonmode:
+                sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, address(self.src), address(self.dst))
+            else:
+                exec(
+                    "sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)", globals(), locals()
+                )
+            self.dst.x += 8
+
+    def post_tick(self):
+        sdl2.SDL_RenderClear(self._sdlrenderer)
+        self.write_memory()
+        self.render_text()
+        sdl2.SDL_RenderPresent(self._sdlrenderer)
+
+    def handle_events(self, events):
+        events = BaseDebugWindow.handle_events(self, events)
+
+        for event in events:
+            # j - Next 256 bytes
+            if event == WindowEvent.DEBUG_MEMORY_SCROLL_DOWN:
+                if self.shift_down:
+                    self.start_address += 0x1000
+                else:
+                    self.start_address += 0x100
+                if self.start_address + 0x400 > 0x10000:
+                    self.start_address = 0x10000 - 0x400
+                self.write_addresses()
+            # k - Last 256 bytes
+            elif event == WindowEvent.DEBUG_MEMORY_SCROLL_UP:
+                if self.shift_down:
+                    self.start_address -= 0x1000
+                else:
+                    self.start_address -= 0x100
+                if self.start_address < 0:
+                    self.start_address = 0
+                self.write_addresses()
+            # shift tracking
+            elif event == WindowEvent.MOD_SHIFT_ON:
+                self.shift_down = True
+            elif event == WindowEvent.MOD_SHIFT_OFF:
+                self.shift_down = False
+
+        return events
+
+
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to
 # prevent Cython from trying to parse it. This block provides the
 # functions that are otherwise implemented as inlined cdefs in the pxd
@@ -575,5 +734,14 @@ def _update_display(self):
     sdl2.SDL_RenderClear(self._sdlrenderer)
 
 BaseDebugWindow._update_display = _update_display
+
+
+def _prepare_font_texture(self):
+    sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf_p, 4 * 8)
+    sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+    sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
+    sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
+
+MemoryWindow._prepare_font_texture = _prepare_font_texture
 """, globals(), locals()
     )

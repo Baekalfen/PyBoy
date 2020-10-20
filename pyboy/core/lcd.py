@@ -5,6 +5,7 @@
 
 from array import array
 from ctypes import c_void_p
+from random import getrandbits
 
 from pyboy.utils import color_code
 
@@ -23,7 +24,7 @@ except ImportError:
 
 
 class LCD:
-    def __init__(self):
+    def __init__(self, randomize=False):
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
@@ -87,6 +88,12 @@ class LCD:
                     self.clock_target += 170
                     # Interrupt will trigger renderer.scanline
         return interrupt_flag
+
+        if randomize:
+            for i in range(VIDEO_RAM):
+                self.VRAM[i] = getrandbits(8)
+            for i in range(OBJECT_ATTRIBUTE_MEMORY):
+                self.OAM[i] = getrandbits(8)
 
     def save_state(self, f):
         for n in range(VIDEO_RAM):

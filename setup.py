@@ -260,7 +260,7 @@ if CYTHON and "clean" not in sys.argv:
         nthreads=thread_count,
         annotate=False,
         gdb_debug=False,
-        language_level=2,
+        language_level=3,
         compiler_directives={
             "boundscheck": False,
             "cdivision": True,
@@ -284,7 +284,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="1.2.1",
+    version="1.2.5",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",

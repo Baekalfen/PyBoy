@@ -72,7 +72,9 @@ def replay(
     rewind=False,
     bootrom_file=utils.boot_rom,
     overwrite=RESET_REPLAYS,
-    gif_hash=None
+    gif_hash=None,
+    randomize=False,
+    padding_frames=0,
 ):
     with open(replay, "rb") as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode("ascii"))
@@ -86,11 +88,15 @@ def replay(
         bootrom_file=bootrom_file,
         disable_input=True,
         rewind=rewind,
+        randomize=randomize,
         record_input=(RESET_REPLAYS and window in ["SDL2", "headless", "OpenGL"])
     )
     pyboy.set_emulation_speed(0)
     if state_data is not None:
         pyboy.load_state(state_data)
+    else:
+        for _ in range(padding_frames):
+            pyboy.tick()
 
     # Filters out the blacklisted events
     recorded_input = list(
@@ -187,7 +193,8 @@ def test_supermarioland_gif():
         "tests/replays/supermarioland_gif.replay",
         record_gif=(122, 644),
         gif_destination="README/3.gif",
-        gif_hash="15aVUmwtTq38E3SB91moQLYSTZVWuTNTUmzYVSgTg38="
+        gif_hash="15aVUmwtTq38E3SB91moQLYSTZVWuTNTUmzYVSgTg38=",
+        randomize=True
     )
 
 

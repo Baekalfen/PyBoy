@@ -12,7 +12,7 @@ import PIL
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
-from tests.utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
+from tests.utils import BOOTROM_FRAMES_UNTIL_LOGO, any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
 def test_misc():
@@ -24,8 +24,8 @@ def test_misc():
 def test_tiles():
     pyboy = PyBoy(default_rom, window_type="headless")
     pyboy.set_emulation_speed(0)
-    pyboy.tick()
-    pyboy.tick()
+    for _ in range(BOOTROM_FRAMES_UNTIL_LOGO):
+        pyboy.tick()
 
     tile = pyboy.botsupport_manager().tilemap_window().tile(0, 0)
     assert isinstance(tile, Tile)
