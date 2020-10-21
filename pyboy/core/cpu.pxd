@@ -21,6 +21,7 @@ cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 
 cdef class CPU:
+    cdef bint is_stuck
     cdef bint interrupt_master_enable, interrupt_queued, halted, stopped, profiling
 
     cdef uint8_t interrupts_flag, interrupts_enabled, interrupts_flag_register, interrupts_enabled_register

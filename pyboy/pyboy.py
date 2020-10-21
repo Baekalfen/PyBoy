@@ -476,3 +476,6 @@ class PyBoy:
         Disable or enable rendering
         """
         self.mb.renderer.disable_renderer = not value
+
+    def _is_cpu_stuck(self):
+        return self.mb.cpu.is_stuck

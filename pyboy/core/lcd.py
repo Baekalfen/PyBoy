@@ -28,6 +28,12 @@ class LCD:
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
+        if randomize:
+            for i in range(VIDEO_RAM):
+                self.VRAM[i] = getrandbits(8)
+            for i in range(OBJECT_ATTRIBUTE_MEMORY):
+                self.OAM[i] = getrandbits(8)
+
         self._LCDC = LCDCRegister(0)
         self._STAT = STATRegister() # Bit 7 is always set.
         self.SCY = 0x00

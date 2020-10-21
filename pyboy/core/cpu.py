@@ -61,6 +61,7 @@ class CPU:
 
         self.halted = False
         self.stopped = False
+        self.is_stuck = False
 
         # Profiling
         self.profiling = profiling
@@ -126,8 +127,9 @@ class CPU:
 
         old_pc = self.PC
         cycles = self.fetch_and_execute(self.PC)
-        if not self.halted and old_pc == self.PC:
+        if not self.halted and old_pc == self.PC and not self.is_stuck:
             logger.error("CPU is stuck: " + self.dump_state())
+            self.is_stuck = True
         self.interrupt_queued = False
         return cycles
 
