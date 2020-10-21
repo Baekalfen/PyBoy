@@ -11,6 +11,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import PIL
+import pytest
 from pyboy import PyBoy
 from tests.utils import default_rom
 
@@ -21,17 +22,12 @@ else:
 
 OVERWRITE_PNGS = False
 
+saved_state = None
 
-def test_mooneye():
-    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
-    mooneye_dir = "mooneye"
-    if not os.path.isdir(mooneye_dir):
-        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.mooneye.txt").read())
-        mooneye_data = io.BytesIO(urllib.request.urlopen("https://pyboy.dk/mirror/mooneye.zip").read())
-        with ZipFile(mooneye_data) as _zip:
-            _zip.extractall(mooneye_dir)
 
-    test_roms = [
+@pytest.mark.parametrize(
+    "clean, rom",
+    [
         ####################
         # These are meant to fail on DMG:
         # (False, "mooneye/misc/boot_div-A.gb"),
@@ -150,47 +146,57 @@ def test_mooneye():
         (True, "mooneye/emulator-only/mbc1/rom_8Mb.gb"),
         (True, "mooneye/emulator-only/mbc1/rom_16Mb.gb"),
     ]
+)
+def test_mooneye(clean, rom):
+    global saved_state
+    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
+    mooneye_dir = "mooneye"
+    if not os.path.isdir(mooneye_dir):
+        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.mooneye.txt").read())
+        mooneye_data = io.BytesIO(urllib.request.urlopen("https://pyboy.dk/mirror/mooneye.zip").read())
+        with ZipFile(mooneye_data) as _zip:
+            _zip.extractall(mooneye_dir)
 
-    # HACK: We load any rom and load it until the last frame in the boot rom.
-    # Then we save it, so we won't need to redo it.
-    pyboy = PyBoy(default_rom, window_type="dummy")
-    pyboy.set_emulation_speed(0)
-    saved_state = io.BytesIO()
-    for _ in range(59):
-        pyboy.tick()
-    pyboy.save_state(saved_state)
-    pyboy.stop(save=False)
-
-    for clean, rom in test_roms:
-        pyboy = PyBoy(rom, window_type="headless")
+    if saved_state is None:
+        # HACK: We load any rom and load it until the last frame in the boot rom.
+        # Then we save it, so we won't need to redo it.
+        pyboy = PyBoy(default_rom, window_type="dummy")
         pyboy.set_emulation_speed(0)
-        saved_state.seek(0)
-        if clean:
-            for _ in range(59):
-                pyboy.tick()
-        else:
-            pyboy.load_state(saved_state)
-
-        for _ in range(40):
+        saved_state = io.BytesIO()
+        for _ in range(59):
             pyboy.tick()
-
-        png_path = Path(f"test_results/{rom}.png")
-        image = pyboy.botsupport_manager().screen().screen_image()
-        if OVERWRITE_PNGS:
-            png_path.parents[0].mkdir(parents=True, exist_ok=True)
-            image.save(png_path)
-        else:
-            old_image = PIL.Image.open(png_path)
-            if "acceptance" in rom:
-                # The registers are too volatile to depend on. We crop the top out, and only match the assertions.
-                diff = PIL.ImageChops.difference(image.crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144)))
-            else:
-                diff = PIL.ImageChops.difference(image, old_image)
-
-            if diff.getbbox() and not os.environ.get("TEST_CI"):
-                image.show()
-                old_image.show()
-                diff.show()
-            assert not diff.getbbox(), f"Images are different! {rom}"
-
+        pyboy.save_state(saved_state)
         pyboy.stop(save=False)
+
+    pyboy = PyBoy(rom, window_type="headless")
+    pyboy.set_emulation_speed(0)
+    saved_state.seek(0)
+    if clean:
+        for _ in range(59):
+            pyboy.tick()
+    else:
+        pyboy.load_state(saved_state)
+
+    for _ in range(40):
+        pyboy.tick()
+
+    png_path = Path(f"test_results/{rom}.png")
+    image = pyboy.botsupport_manager().screen().screen_image()
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
+    else:
+        old_image = PIL.Image.open(png_path)
+        if "acceptance" in rom:
+            # The registers are too volatile to depend on. We crop the top out, and only match the assertions.
+            diff = PIL.ImageChops.difference(image.crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144)))
+        else:
+            diff = PIL.ImageChops.difference(image, old_image)
+
+        if diff.getbbox() and not os.environ.get("TEST_CI"):
+            image.show()
+            old_image.show()
+            diff.show()
+        assert not diff.getbbox(), f"Images are different! {rom}"
+
+    pyboy.stop(save=False)
