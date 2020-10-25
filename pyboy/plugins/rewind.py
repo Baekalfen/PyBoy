@@ -4,10 +4,12 @@
 #
 
 import array
+import logging
 
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.utils import IntIOInterface, WindowEvent
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled

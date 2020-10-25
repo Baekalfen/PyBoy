@@ -5,6 +5,7 @@
 
 import ctypes
 import gzip
+import logging
 import os
 from array import array
 
@@ -12,10 +13,11 @@ import sdl2
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
 from pyboy.core.opcodes import CPU_COMMANDS
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import address, compiled

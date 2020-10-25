@@ -3,13 +3,16 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
+
 from pyboy.core.opcodes import CPU_COMMANDS
-from pyboy.logger import logger
 from pyboy.utils import STATE_VERSION
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
+
+logger = logging.getLogger(__name__)
 
 
 class Motherboard:
@@ -45,6 +48,7 @@ class Motherboard:
 
         self.breakpoints_enabled = True # breakpoints_enabled
         self.breakpoints_list = [] # (0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
+        self.breakpoint_latch = -1
 
     def add_breakpoint(self, bank, addr):
         self.breakpoints_list.append((bank, addr))
@@ -120,6 +124,10 @@ class Motherboard:
     #
 
     def breakpoint_reached(self):
+        if self.breakpoint_latch > 0:
+            self.breakpoint_latch -= 1
+            return True
+
         for bank, pc in self.breakpoints_list:
             if self.cpu.PC == pc and (
                 (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
@@ -303,6 +311,7 @@ class Motherboard:
             elif i == 0xFF42:
                 self.lcd.SCY = value
             elif i == 0xFF43:
+                # self.breakpoint_latch = 2
                 self.lcd.SCX = value
             elif i == 0xFF44:
                 self.lcd.LY = value

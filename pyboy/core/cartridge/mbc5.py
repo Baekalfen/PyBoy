@@ -5,9 +5,9 @@
 
 import logging
 
-from pyboy.logger import logger
-
 from .base_mbc import BaseMBC
+
+logger = logging.getLogger(__name__)
 
 
 class MBC5(BaseMBC):

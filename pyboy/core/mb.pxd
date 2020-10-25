@@ -40,6 +40,7 @@ cdef class Motherboard:
 
     cdef bint breakpoints_enabled
     cdef list breakpoints_list
+    cdef int breakpoint_latch
 
     cdef void buttonevent(self, WindowEvent)
     cdef void stop(self, bint)

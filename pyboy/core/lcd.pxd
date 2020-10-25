@@ -87,6 +87,7 @@ cdef class Renderer:
     cdef bint clearcache
     cdef set tiles_changed
     cdef bint disable_renderer
+    cdef int old_stat_mode
 
     cdef array _screenbuffer_raw
     cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw

@@ -3,11 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
 from array import array
 from ctypes import c_void_p
 from random import getrandbits
 
 from pyboy.utils import color_code
+
+logger = logging.getLogger(__name__)
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
@@ -47,7 +50,7 @@ class LCD:
         self.WY = 0x00
         self.WX = 0x00
         self.clock = 0
-        self.clock_target = 80
+        self.clock_target = 0
 
     def get_lcdc(self):
         return self._LCDC.value
@@ -76,30 +79,36 @@ class LCD:
         if self._LCDC.lcd_enable:
             self.clock += cycles
 
+            old_LY = self.LY
             self.LY = (self.clock % 70224) // 456
-            interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+            if old_LY != self.LY:
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
             if self.clock >= self.clock_target:
                 # Change to next mode
                 interrupt_flag |= self._STAT.next_mode(self.LY)
 
+                # Pan Docs:
+                # The following are typical when the display is enabled:
+                #   Mode 2  2_____2_____2_____2_____2_____2___________________2____
+                #   Mode 3  _33____33____33____33____33____33__________________3___
+                #   Mode 0  ___000___000___000___000___000___000________________000
+                #   Mode 1  ____________________________________11111111111111_____
+
                 # Handle new mode
-                if self._STAT._mode == 0: # HBLANK
+                if self._STAT._mode == 2: # Searching OAM
+                    self.clock_target += 80
+                    # self.clock_target += 170
+                    # Interrupt will trigger renderer.scanline
+                elif self._STAT._mode == 3:
+                    self.clock_target += 170
+                elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206
                 elif self._STAT._mode == 1: # VBLANK
                     interrupt_flag |= INTR_VBLANK
                     self.clock_target += 456 * 10
                     # Interrupt will trigger renderer.render_screen
-                elif self._STAT._mode == 2: # Searching OAM
-                    self.clock_target += 170
-                    # Interrupt will trigger renderer.scanline
         return interrupt_flag
-
-        if randomize:
-            for i in range(VIDEO_RAM):
-                self.VRAM[i] = getrandbits(8)
-            for i in range(OBJECT_ATTRIBUTE_MEMORY):
-                self.OAM[i] = getrandbits(8)
 
     def save_state(self, f):
         for n in range(VIDEO_RAM):
@@ -193,7 +202,7 @@ class STATRegister:
         return 0
 
     def next_mode(self, LY):
-        if self._mode == 0 and LY != 144:
+        if self._mode == 0 and LY != 143:
             return self.set_mode(2)
         else:
             return self.set_mode((self._mode + 1) % 4)
@@ -251,6 +260,7 @@ class Renderer:
         self._tilecache_raw = array("B", [0xFF] * (TILES*8*8*4))
         self._spritecache0_raw = array("B", [0xFF] * (TILES*8*8*4))
         self._spritecache1_raw = array("B", [0xFF] * (TILES*8*8*4))
+        self.old_stat_mode = -1
 
         if cythonmode:
             self._screenbuffer = memoryview(self._screenbuffer_raw).cast("I", shape=(ROWS, COLS))
@@ -274,12 +284,14 @@ class Renderer:
         if lcd._LCDC.lcd_enable:
             if lcd_interrupt & INTR_VBLANK and not self.disable_renderer:
                 self.render_screen(lcd)
-            elif lcd._STAT._mode == 3:
+            elif lcd._STAT._mode == 2 and lcd._STAT._mode != self.old_stat_mode:
                 if lcd.LY < 144:
                     self.scanline(lcd.LY, lcd)
+            self.old_stat_mode = lcd._STAT._mode
 
     def scanline(self, y, lcd):
         bx, by = lcd.getviewport()
+        logger.warning(f"scanline SCX: {bx}")
         wx, wy = lcd.getwindowpos()
         self._scanlineparameters[y][0] = bx
         self._scanlineparameters[y][1] = by

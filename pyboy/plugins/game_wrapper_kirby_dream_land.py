@@ -7,10 +7,13 @@ __pdoc__ = {
     "GameWrapperKirbyDreamLand.post_tick": False,
 }
 
-from pyboy.logger import logger
+import logging
+
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
