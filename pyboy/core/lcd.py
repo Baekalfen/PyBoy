@@ -19,7 +19,7 @@ INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x 
 ROWS, COLS = 144, 160
 TILES = 384
 
-FRAME_CYCLES = 70224
+FRAME_CYCLES = 456 * 155 # 70224
 
 try:
     from cython import compiled
@@ -113,7 +113,7 @@ class LCD:
                 elif self._STAT._mode == 1: # VBLANK
                     self.vblank_flag = True
                     interrupt_flag |= INTR_VBLANK
-                    self.clock_target += 456 * 10
+                    self.clock_target += 456 * 11 # 456 * 10
                     # Interrupt will trigger renderer.render_screen
         return interrupt_flag
 
@@ -209,7 +209,7 @@ class STATRegister:
         return 0
 
     def next_mode(self, LY):
-        if self._mode == 0 and LY != 143:
+        if self._mode == 0 and LY != 144:
             return self.set_mode(2)
         else:
             return self.set_mode((self._mode + 1) % 4)
