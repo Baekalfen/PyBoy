@@ -26,6 +26,7 @@ cdef class LCD:
     cdef uint8_t WX
     cdef uint64_t clock
     cdef uint64_t clock_target
+    cdef bint vblank_flag
     cdef uint8_t mode
     cdef LCDCRegister _LCDC
     cdef STATRegister _STAT

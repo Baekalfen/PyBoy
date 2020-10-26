@@ -60,9 +60,12 @@ class Screen:
         Returns
         -------
         list:
-            Nested list of SCX, SCY, WX and WY for each scanline (144x4).
+            Nested list of SCX, SCY, WX and WY for each scanline (144x4). Returns (0, 0, 0, 0) when LCD is off.
         """
-        return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]
+        if self.mb.lcd._LCDC.lcd_enable:
+            return [[line[0], line[1], line[2], line[3]] for line in self.mb.renderer._scanlineparameters]
+        else:
+            return [[0, 0, 0, 0] for line in range(144)]
 
     def raw_screen_buffer(self):
         """

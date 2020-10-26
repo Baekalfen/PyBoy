@@ -141,23 +141,22 @@ class Motherboard:
         return False
 
     def tick(self, cycles_period):
-        while cycles_period > 0:
+        while not self.lcd.vblank_flag:
             cycles = self.cpu.tick()
 
             if self.cpu.halted:
                 # Fast-forward to next interrupt:
-                # VBLANK and LCDC are covered by just returning.
-                # Timer has to be determined.
                 # As we are halted, we are guaranteed, that our state
                 # cannot be altered by other factors than time.
                 # For HiToLo interrupt it is indistinguishable whether
                 # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
-                cycles = cycles_period
-                cycles = min(self.timer.cyclestointerrupt(), cycles)
-                cycles = min(self.lcd.cyclestointerrupt(), cycles)
-                # cycles = min(self.serial.cyclestointerrupt(), cycles)
-                cycles = 4 # Disable time warping
+                cycles = min(
+                    self.lcd.cyclestointerrupt(),
+                    self.timer.cyclestointerrupt(),
+                    # self.serial.cyclestointerrupt(),
+                    4 # Disable time warping
+                )
 
                 # Profiling
                 if self.cpu.profiling:

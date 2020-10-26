@@ -19,6 +19,8 @@ INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x 
 ROWS, COLS = 144, 160
 TILES = 384
 
+FRAME_CYCLES = 70224
+
 try:
     from cython import compiled
     cythonmode = compiled
@@ -51,6 +53,7 @@ class LCD:
         self.WX = 0x00
         self.clock = 0
         self.clock_target = 0
+        self.vblank_flag = False
 
     def get_lcdc(self):
         return self._LCDC.value
@@ -60,7 +63,7 @@ class LCD:
 
         if not self._LCDC.lcd_enable:
             self.clock = 0
-            self.clock_target = 80
+            self.clock_target = FRAME_CYCLES # Doesn't render anything for the first frame
             self._STAT.set_mode(0)
             self.LY = 0
 
@@ -71,7 +74,10 @@ class LCD:
         self._STAT.set(value)
 
     def cyclestointerrupt(self):
-        return self.clock_target - self.clock
+        if self._LCDC.lcd_enable:
+            return self.clock_target - self.clock
+        else:
+            return FRAME_CYCLES
 
     def tick(self, cycles):
         interrupt_flag = 0
@@ -80,7 +86,7 @@ class LCD:
             self.clock += cycles
 
             old_LY = self.LY
-            self.LY = (self.clock % 70224) // 456
+            self.LY = (self.clock % FRAME_CYCLES) // 456
             if old_LY != self.LY:
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
@@ -105,6 +111,7 @@ class LCD:
                 elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206
                 elif self._STAT._mode == 1: # VBLANK
+                    self.vblank_flag = True
                     interrupt_flag |= INTR_VBLANK
                     self.clock_target += 456 * 10
                     # Interrupt will trigger renderer.render_screen
@@ -284,14 +291,16 @@ class Renderer:
         if lcd._LCDC.lcd_enable:
             if lcd_interrupt & INTR_VBLANK and not self.disable_renderer:
                 self.render_screen(lcd)
-            elif lcd._STAT._mode == 2 and lcd._STAT._mode != self.old_stat_mode:
+            elif (lcd._STAT._mode == 2 or lcd._STAT._mode == 1) and lcd._STAT._mode != self.old_stat_mode:
+                # Just switched to mode 2 or 1 means that we completed a scanline
+                # mode 2 -> line 0-142
+                # mode 1 -> 143 (vblank)
                 if lcd.LY < 144:
                     self.scanline(lcd.LY, lcd)
             self.old_stat_mode = lcd._STAT._mode
 
     def scanline(self, y, lcd):
         bx, by = lcd.getviewport()
-        logger.warning(f"scanline SCX: {bx}")
         wx, wy = lcd.getwindowpos()
         self._scanlineparameters[y][0] = bx
         self._scanlineparameters[y][1] = by
@@ -300,6 +309,11 @@ class Renderer:
         self._scanlineparameters[y][4] = lcd._LCDC.tiledata_select
 
     def render_screen(self, lcd):
+        # Actual frame rendering, otherwise we show a blank screen to emulate a turned-off display.
+        if not lcd.vblank_flag:
+            self.blank_screen()
+            return
+
         self.update_cache(lcd)
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00

@@ -122,18 +122,17 @@ class PyBoy:
         self._handle_events(self.events)
         t_pre = time.perf_counter()
         if not self.paused:
-            self.cycles_remaining = self.mb.tick(self.cycles_remaining)
+            self.mb.tick(0)
+
             # TODO: Change check, so it's not performed once in mb.py and then once here right after.
             if self.mb.breakpoints_enabled and self.mb.breakpoint_reached(): # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
 
-            if self.cycles_remaining <= 0:
-                self.frame_count += 1
-                # TODO: cycles_remaining doesn't belong in pyboy.py. Move it to mb.py
-                self.cycles_remaining += 154 * 456 # One frame worth of cycles (144 + 10 scanlines times 456 clock cycles per line)
+            self.frame_count += 1
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()
+        self.mb.lcd.vblank_flag = False # Clear potential vblank flag, as it should have been handled by post_tick
 
         secs = t_pre - t_start
         self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
