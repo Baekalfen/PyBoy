@@ -7,9 +7,19 @@ import re
 # Plugins and priority!
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowHeadless", "WindowDummy", "Debug"]
-game_wrappers = ["GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand"]
+game_wrappers = [
+    "GameWrapperSuperMarioLand",
+    "GameWrapperTetris",
+    "GameWrapperKirbyDreamLand",
+    "GameWrapperPokemonBlue",
+]
 plugins = [
-    "DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder"
+    "DisableInput",
+    "AutoPause",
+    "RecordReplay",
+    "Rewind",
+    "ScreenRecorder",
+    "ScreenshotRecorder",
 ] + game_wrappers
 all_plugins = windows + plugins
 
@@ -90,7 +100,9 @@ if __name__ == "__main__":
 
                 for p in all_plugins:
                     p_name = to_snake_case(p)
-                    lines.append(f"from pyboy.plugins.{p_name} import {p} # isort:skip\n")
+                    lines.append(
+                        f"from pyboy.plugins.{p_name} import {p} # isort:skip\n"
+                    )
 
                 lines.append("# imports end\n")
                 out_lines.extend([indentation + l for l in lines])
@@ -174,9 +186,11 @@ if __name__ == "__main__":
 
                 skip_lines(line_iter, "# docs exclude end")
 
-                for p in (set(all_plugins) - set(game_wrappers)) | set(["manager", "manager_gen"]):
+                for p in (set(all_plugins) - set(game_wrappers)) | set(
+                    ["manager", "manager_gen"]
+                ):
                     p_name = to_snake_case(p)
-                    lines.append(f"\"{p_name}\": False,\n")
+                    lines.append(f'"{p_name}": False,\n')
 
                 lines.append("# docs exclude end\n")
                 out_lines.extend([indentation + l for l in lines])
