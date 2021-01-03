@@ -306,7 +306,7 @@ class Name:
         return cls(
             [
                 Alphabet(game_wrapper.pyboy.get_memory_value(addr)).name
-                for addr in range(0xD158, 0xD163)
+                for addr in range(cls.START_ADDRESS, cls.END_ADDRESS + 1)
             ]
         )
 
