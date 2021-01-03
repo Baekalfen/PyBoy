@@ -2,6 +2,7 @@ import inspect
 import logging
 from argparse import ZERO_OR_MORE
 from enum import Enum
+from functools import cached_property
 from typing import Any, List
 
 from .base_plugin import PyBoyGameWrapper
@@ -222,6 +223,7 @@ class InGameOptions:
 # Because Cython does not support dataclass
 class EventFlags:
     class EventAddresses(Enum):
+        STARTERS_BACK = 0xD5AB
         HAVE_TOWN_MAP = 0xD5F3
         HAVE_OAKS_PARCEL = 0xD60D
         HAVE_LAPRAS = 0xD72E
@@ -243,6 +245,7 @@ class EventFlags:
 
     def __init__(
         self,
+        starters_back,
         have_town_map,
         have_oaks_parcel,
         have_lapras,
@@ -262,6 +265,8 @@ class EventFlags:
         fought_moltres,
         ss_anne_here,
     ):
+        # TODO: Make all of these properties. I wish I had dataclasses...
+        self.starters_back = starters_back
         self.have_town_map = have_town_map
         self.have_oaks_parcel = have_oaks_parcel
         self.have_lapras = have_lapras
@@ -281,6 +286,13 @@ class EventFlags:
         self.fought_moltres = fought_moltres
         self.ss_anne_here = ss_anne_here
 
+    # 0100 0001 START
+    # 0000 1001 CHOOSE CHARM
+    # 0001 1001 RIVAL CHOOSE SQUIRT
+    # 0001 0001 CHOOSE SQUIRT
+    # 0011 0001 RIVAL CHOOSE BULBA
+    # 0010 0001 CHOOSE BULBA
+    # 0010 1001 RIVAL CHOOSE CHARM
     @classmethod
     def get(cls, game_wrapper: PyBoyGameWrapper):
         return cls(
@@ -314,11 +326,97 @@ class Name:
         return f"Name({self.name})"
 
 
-EXPECTED_OPTIONS = InGameOptions(
-    TextSpeed.FAST,
-    BattleAnimation.OFF,
-    BattleStyle.SHIFT,
-)
+class Badges:
+    ADDRESS = 0xD356
+
+    def __init__(self, badges: int):
+        """
+        Args:
+            badges (int): A bitset that refers to badges 0-8
+        """
+        self.badges = badges
+        as_bits = f"{badges:08b}"
+
+        @cached_property
+        def boulder(self) -> bool:
+            return bool(as_bits[0])
+
+        @cached_property
+        def cascade(self) -> bool:
+            return bool(as_bits[1])
+
+        @cached_property
+        def thunder(self) -> bool:
+            return bool(as_bits[2])
+
+        @cached_property
+        def rainbow(self) -> bool:
+            return bool(as_bits[3])
+
+        @cached_property
+        def soul(self) -> bool:
+            return bool(as_bits[4])
+
+        @cached_property
+        def marsh(self) -> bool:
+            return bool(as_bits[5])
+
+        @cached_property
+        def volcano(self) -> bool:
+            return bool(as_bits[6])
+
+        @cached_property
+        def earth(self) -> bool:
+            return bool(as_bits[7])
+
+    @classmethod
+    def get(cls, game_wrapper: PyBoyGameWrapper):
+        return cls(game_wrapper.pyboy.get_memory_value(cls.ADDRESS))
+
+    def __repr__(self) -> str:
+        return f"Badges({hex(self.badges)})"
+
+
+class GameTime:
+    HOURS_ADDRESS_MSB = 0xDA40
+    HOURS_ADDRESS_LSB = 0xDA41
+
+    MINUTES_ADDRESS_MSB = 0xDA42
+    MINUTES_ADDRESS_LSB = 0xDA43
+
+    SECONDS_ADDRESS = 0xDA44
+
+    SECONDS = 1
+    MINUTES = 60
+    HOURS = MINUTES * 60
+
+    def __init__(self, hours: int, minutes: int, seconds: int):
+        self.hours = hours
+        self.minutes = minutes
+        self.seconds = seconds
+
+    @cached_property
+    def total_seconds(self) -> int:
+        return (
+            self.hours * self.HOURS
+            + self.minutes * self.MINUTES
+            + self.seconds * self.SECONDS
+        )
+
+    @classmethod
+    def get(cls, game_wrapper: PyBoyGameWrapper):
+        hours = (
+            game_wrapper.pyboy.get_memory_value(cls.HOURS_ADDRESS_MSB) << 8
+        ) + game_wrapper.pyboy.get_memory_value(cls.HOURS_ADDRESS_LSB)
+        minutes = (
+            game_wrapper.pyboy.get_memory_value(cls.MINUTES_ADDRESS_MSB) << 8
+        ) + game_wrapper.pyboy.get_memory_value(cls.MINUTES_ADDRESS_LSB)
+        seconds = game_wrapper.pyboy.get_memory_value(cls.SECONDS_ADDRESS)
+
+        return cls(hours, minutes, seconds)
+
+    def __repr__(self) -> str:
+        return f"GameTime(hours={self.hours}, minutes={self.minutes}, seconds={self.seconds})"
 
 
 class GameWrapperPokemonBlue(PyBoyGameWrapper):
@@ -368,14 +466,38 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
     def post_tick(self):
         if self.game_has_started:
             options = InGameOptions.get(self)
-            self.fitness = (
-                int(options.text_speed == EXPECTED_OPTIONS.text_speed)
-                + int(options.battle_animation == EXPECTED_OPTIONS.battle_animation)
-                + int(options.battle_style == EXPECTED_OPTIONS.battle_style)
+            events = EventFlags.get(self)
+            badges = Badges.get(self)
+
+            # The fitness score is a combination of "bitset"
+            # We have 3 ranges of values that we will eventually concatenate into one big value.
+            # This is cause pathing in the game can be variable as
+            # Misty, Blaine, Erika, Sabrina, Koga, Lt. Surge can be fought in a variety of orders.
+            # Because Brock and Giovanni have requirements has to be fought separately they'll be in their own ranges
+            # Ranges:
+            # Gyms (A counter between 1 and 6 as each one is equally valuable imo)
+            # TODO: Find a way to score the elite 4/hall of fame. The data is at 0xA598 - 0xB857 in SRAM Bank 0, but I'm not sure what's stored there.
+            # TODO: Add scoring for end of game based on time spent + level (lower is better).
+            #       Proposal is to do 100-level of pokemon for each pokemon in the party
+            #       One way to do it would be to countdown starting from ~24 hours based on
+            #       Jrose11's Abra run which took 17 hours 18 minutes
+            bitset = (
+                f"{badges.giovanni:01b}"
+                f"{(badges.badges & 0x7E) >> 1:06b}"  # Middle six badges any order
+                f"{badges.brock:01b}"
+                f"{events.have_oaks_parcel > 0:01b}"
+                f"{events.debug_new_game > 0:01b}"
+                f"{options.battle_animation == BattleAnimation.OFF:01b}"
+                f"{options.text_speed == TextSpeed.FAST:01b}"
             )
+            self.fitness = int(bitset, 2)
 
     def game_over(self) -> bool:
-        return self.parse_options() == EXPECTED_OPTIONS
+        # Game over when we hit 24 hours or oak's parcel. Incrementally relax the second condition
+        return (
+            GameTime.get(self).total_seconds > 24 * GameTime.HOURS
+            or EventFlags.get(self).have_oaks_parcel
+        )
 
     def __repr__(self) -> str:
         return (
@@ -384,4 +506,6 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
             f"\tOptions: {InGameOptions.get(self)}\n"
             f"\tYour Name: {Name.get(self)}\n"
             f"\tEvent Flags: {EventFlags.get(self)}\n"
+            f"\tBadges: {Badges.get(self)}\n"
+            f"\tGame Time: {GameTime.get(self)}"
         )
