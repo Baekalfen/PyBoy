@@ -1,7 +1,8 @@
-from argparse import ZERO_OR_MORE
+import inspect
 import logging
+from argparse import ZERO_OR_MORE
 from enum import Enum
-from typing import Any
+from typing import Any, List
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -14,8 +15,12 @@ try:
 except ImportError:
     cythonmode = False
 
+# TODO: Find a good way of adding typing for a classmethod that returns cls. See get()
+# Addresses come from https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map#Miscellaneous
 
+# I keep this separate because it may be useful if we ever have to debug text boxes
 class Alphabet(Enum):
+    INVALID = 0
     END_OF_NAME = 0x50
     BOLD_A = 0x60
     BOLD_B = 0x61
@@ -31,17 +36,17 @@ class Alphabet(Enum):
     BOLD_L = 0x6B
     BOLD_M = 0x6C
     BOLD_COLON = 0x6D
-    ぃ = 0x6E
-    ぅ = 0x6F
+    HIRAGANA_I = 0x6E  # い
+    HIRAGANA_U = 0x6F  # う
     BOLD_OPEN_SINGLE_QUOTE = 0x70
     BOLD_CLOSING_SINGLE_QUOTE = 0x71
     BOLD_OPEN_DOUBLE_QUOTE = 0x72
     BOLD_CLOSING_DOUBLE_QUOTE = 0x73
     BOLD_PERIOD = 0x74
     ELLIPSIS = 0x75
-    ぁ = 0x76
-    ぇ = 0x77
-    ぉ = 0x78
+    HIRAGANA_A = 0x76  # あ
+    HIRAGANA_E = 0x77  # え
+    HIRAGANA_O = 0x78  # お
     POKEBALL_BORDER_TOP_LEFT = 0x79
     POKEBALL_BORDER_HORIZONTAL = 0x7A
     POKEBALL_BORDER_TOP_RIGHT = 0x7B
@@ -107,7 +112,7 @@ class Alphabet(Enum):
     x = 0xB7
     y = 0xB8
     z = 0xB9
-    é = 0xBA
+    e_WITH_FORWARD_ACCENT = 0xBA  # é
     APOSTROPHE_d = 0xBB
     APOSTROPHE_l = 0xBC
     APOSTROPHE_s = 0xBD
@@ -122,9 +127,9 @@ class Alphabet(Enum):
     QUESTION_MARK = 0xE6
     EXCLAMATION_MARK = 0xE7
     PERIOD = 0xE8
-    ァ = 0xE9
-    ゥ = 0xEA
-    ェ = 0xEB
+    KATAKANA_A = 0xE9  # ァ
+    KATAKANA_U = 0xEA  # ゥ
+    KATAKANA_E = 0xEB  # ェ
     OUTLINE_RIGHT_ARROW = 0xEC
     RIGHT_ARROW = 0xED
     DOWN_ARROW = 0xEE
@@ -145,6 +150,10 @@ class Alphabet(Enum):
     SEVEN = 0xFD
     EIGHT = 0xFE
     NINE = 0xFF
+
+    @classmethod
+    def _missing_(cls, value: object) -> Any:
+        return cls.INVALID
 
 
 class TextSpeed(Enum):
@@ -180,6 +189,9 @@ class BattleStyle(Enum):
 
 # Because Cython does not support dataclass
 class InGameOptions:
+
+    ADDRESS = 0xD355
+
     def __init__(
         self,
         text_speed: TextSpeed,
@@ -190,12 +202,116 @@ class InGameOptions:
         self.battle_animation = battle_animation
         self.battle_style = battle_style
 
+    @classmethod
+    def get(cls, game_wrapper: PyBoyGameWrapper):
+        options = game_wrapper.pyboy.get_memory_value(cls.ADDRESS)
+        return InGameOptions(
+            TextSpeed(options & 0x0F),
+            BattleAnimation((options & 0x80) >> 7),
+            BattleStyle((options & 0x40) >> 6),
+        )
+
     def __repr__(self) -> str:
         return (
             f"InGameOptions(text_speed={self.text_speed}, "
             f"battle_animation={self.battle_animation}, "
             f"battle_style={self.battle_style})"
         )
+
+
+# Because Cython does not support dataclass
+class EventFlags:
+    class EventAddresses(Enum):
+        HAVE_TOWN_MAP = 0xD5F3
+        HAVE_OAKS_PARCEL = 0xD60D
+        HAVE_LAPRAS = 0xD72E
+        DEBUG_NEW_GAME = 0xD732
+        FOUGHT_GIOVANNI = 0xD751
+        FOUGHT_BROCK = 0xD755
+        FOUGHT_MISTY = 0xD75E
+        FOUGHT_LT_SURGE = 0xD773
+        FOUGHT_ERIKA = 0xD77C
+        FOUGHT_ARTICUNO = 0xD782
+        FOUGHT_KOGA = 0xD792
+        FOUGHT_BLAINE = 0xD79A
+        FOUGHT_SABRINA = 0xD7B3
+        FOUGHT_ZAPDOS = 0xD7D4
+        FOUGHT_VERMILLION_SNORLAX = 0xD7D8
+        FOUGHT_CELADON_SNORLAX = 0xD7E0
+        FOUGHT_MOLTRES = 0xD7EE
+        SS_ANNE_HERE = 0xD803
+
+    def __init__(
+        self,
+        have_town_map,
+        have_oaks_parcel,
+        have_lapras,
+        debug_new_game,
+        fought_giovanni,
+        fought_brock,
+        fought_misty,
+        fought_lt_surge,
+        fought_erika,
+        fought_articuno,
+        fought_koga,
+        fought_blaine,
+        fought_sabrina,
+        fought_zapdos,
+        fought_vermillion_snorlax,
+        fought_celadon_snorlax,
+        fought_moltres,
+        ss_anne_here,
+    ):
+        self.have_town_map = have_town_map
+        self.have_oaks_parcel = have_oaks_parcel
+        self.have_lapras = have_lapras
+        self.debug_new_game = debug_new_game
+        self.fought_giovanni = fought_giovanni
+        self.fought_brock = fought_brock
+        self.fought_misty = fought_misty
+        self.fought_lt_surge = fought_lt_surge
+        self.fought_erika = fought_erika
+        self.fought_articuno = fought_articuno
+        self.fought_koga = fought_koga
+        self.fought_blaine = fought_blaine
+        self.fought_sabrina = fought_sabrina
+        self.fought_zapdos = fought_zapdos
+        self.fought_vermillion_snorlax = fought_vermillion_snorlax
+        self.fought_celdaon_snorlax = fought_celadon_snorlax
+        self.fought_moltres = fought_moltres
+        self.ss_anne_here = ss_anne_here
+
+    @classmethod
+    def get(cls, game_wrapper: PyBoyGameWrapper):
+        return cls(
+            **{
+                address.name.lower(): game_wrapper.pyboy.get_memory_value(address.value)
+                for address in EventFlags.EventAddresses
+            }
+        )
+
+    def __repr__(self) -> str:
+        return f'EventFlags({", ".join(f"{k}={v}" for k, v in self.__dict__.items())})'
+
+
+class Name:
+    START_ADDRESS = 0xD158
+    END_ADDRESS = 0xD162
+
+    def __init__(self, name: List[Alphabet]):
+        self.name = name
+
+    @classmethod
+    def get(cls, game_wrapper: PyBoyGameWrapper):
+        return cls(
+            [
+                Alphabet(game_wrapper.pyboy.get_memory_value(addr)).name
+                for addr in range(0xD158, 0xD163)
+            ]
+        )
+
+    def __repr__(self) -> str:
+        return f"Name({self.name})"
 
 
 EXPECTED_OPTIONS = InGameOptions(
@@ -251,14 +367,7 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
 
     def post_tick(self):
         if self.game_has_started:
-            options = self.parse_options()
-            print(f"OPTIONS: {options}")
-            your_name = [
-                Alphabet(self.pyboy.get_memory_value(addr))
-                for addr in range(0xD158, 0xD163)
-            ]
-            print(f"YOUR NAME: {your_name}")
-            print(f"DEBUG NEW GAME: {self.pyboy.get_memory_value(0xD732)}")
+            options = InGameOptions.get(self)
             self.fitness = (
                 int(options.text_speed == EXPECTED_OPTIONS.text_speed)
                 + int(options.battle_animation == EXPECTED_OPTIONS.battle_animation)
@@ -269,13 +378,10 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
         return self.parse_options() == EXPECTED_OPTIONS
 
     def __repr__(self) -> str:
-        return f"Pokemon Blue:\n\tFitness: {self.fitness}"
-
-    def parse_options(self) -> InGameOptions:
-        # https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map#Miscellaneous
-        options = self.pyboy.get_memory_value(0xD355)
-        return InGameOptions(
-            TextSpeed(options & 0x0F),
-            BattleAnimation((options & 0x80) >> 7),
-            BattleStyle((options & 0x40) >> 6),
+        return (
+            f"Pokemon Blue:\n"
+            f"\tFitness: {self.fitness}\n"
+            f"\tOptions: {InGameOptions.get(self)}\n"
+            f"\tYour Name: {Name.get(self)}\n"
+            f"\tEvent Flags: {EventFlags.get(self)}\n"
         )
