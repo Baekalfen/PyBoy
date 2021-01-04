@@ -495,7 +495,7 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
     def game_over(self) -> bool:
         # Game over when we hit 24 hours or oak's parcel. Incrementally relax the second condition
         return (
-            GameTime.get(self).total_seconds > 24 * GameTime.HOURS
+            GameTime.get(self).total_seconds > 30 * GameTime.MINUTES
             or EventFlags.get(self).have_oaks_parcel
         )
 
