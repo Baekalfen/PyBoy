@@ -286,7 +286,16 @@ class EventFlags:
         self.fought_moltres = fought_moltres
         self.ss_anne_here = ss_anne_here
 
+    @property
+    def met_oak(self) -> bool:
+        return self.starters_back == 1
+
+    @property
+    def selected_first_pokemon(self) -> bool:
+        return self.starters_back != 1 and self.starters_back != 65
+
     # 0100 0001 START
+    # 0000 0001 MET OAK, HAVEN'T SELECTED STARTER
     # 0000 1001 CHOOSE CHARM
     # 0001 1001 RIVAL CHOOSE SQUIRT
     # 0001 0001 CHOOSE SQUIRT
@@ -335,39 +344,42 @@ class Badges:
             badges (int): A bitset that refers to badges 0-8
         """
         self.badges = badges
-        as_bits = f"{badges:08b}"
 
-        @cached_property
-        def boulder(self) -> bool:
-            return bool(as_bits[0])
+    @cached_property
+    def as_bits(self) -> str:
+        return f"{self.badges:08b}"
 
-        @cached_property
-        def cascade(self) -> bool:
-            return bool(as_bits[1])
+    @cached_property
+    def boulder(self) -> bool:
+        return bool(self.as_bits[0])
 
-        @cached_property
-        def thunder(self) -> bool:
-            return bool(as_bits[2])
+    @cached_property
+    def cascade(self) -> bool:
+        return bool(self.as_bits[1])
 
-        @cached_property
-        def rainbow(self) -> bool:
-            return bool(as_bits[3])
+    @cached_property
+    def thunder(self) -> bool:
+        return bool(self.as_bits[2])
 
-        @cached_property
-        def soul(self) -> bool:
-            return bool(as_bits[4])
+    @cached_property
+    def rainbow(self) -> bool:
+        return bool(self.as_bits[3])
 
-        @cached_property
-        def marsh(self) -> bool:
-            return bool(as_bits[5])
+    @cached_property
+    def soul(self) -> bool:
+        return bool(self.as_bits[4])
 
-        @cached_property
-        def volcano(self) -> bool:
-            return bool(as_bits[6])
+    @cached_property
+    def marsh(self) -> bool:
+        return bool(self.as_bits[5])
 
-        @cached_property
-        def earth(self) -> bool:
-            return bool(as_bits[7])
+    @cached_property
+    def volcano(self) -> bool:
+        return bool(self.as_bits[6])
+
+    @cached_property
+    def earth(self) -> bool:
+        return bool(self.as_bits[7])
 
     @classmethod
     def get(cls, game_wrapper: PyBoyGameWrapper):
@@ -395,7 +407,7 @@ class GameTime:
         self.minutes = minutes
         self.seconds = seconds
 
-    @cached_property
+    @property
     def total_seconds(self) -> int:
         return (
             self.hours * self.HOURS
@@ -481,21 +493,34 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
             #       Proposal is to do 100-level of pokemon for each pokemon in the party
             #       One way to do it would be to countdown starting from ~24 hours based on
             #       Jrose11's Abra run which took 17 hours 18 minutes
+            badges_bitset = (
+                f"{badges.earth:01b}"
+                f"{badges.as_bits[1:-1]}"  # Middle six badges any order
+                f"{badges.boulder:01b}"
+            )
+            started_game_bitset = (
+                f"{int(events.have_oaks_parcel == 1):01b}"
+                f"{events.selected_first_pokemon:01b}"
+                f"{events.met_oak:01b}"
+            )
             bitset = (
-                f"{badges.giovanni:01b}"
-                f"{(badges.badges & 0x7E) >> 1:06b}"  # Middle six badges any order
-                f"{badges.brock:01b}"
-                f"{events.have_oaks_parcel > 0:01b}"
                 f"{events.debug_new_game > 0:01b}"
                 f"{options.battle_animation == BattleAnimation.OFF:01b}"
                 f"{options.text_speed == TextSpeed.FAST:01b}"
             )
+            if events.debug_new_game:
+                bitset = started_game_bitset + bitset
+            if events.have_oaks_parcel:
+                bitset = badges_bitset + bitset
             self.fitness = int(bitset, 2)
 
     def game_over(self) -> bool:
         # Game over when we hit 24 hours or oak's parcel. Incrementally relax the second condition
+
+        # TODO: Randomize the fitness function upon game over for training purposes
+        #       Why? So the model doesn't overfit. Should game over get randomized similarly?
         return (
-            GameTime.get(self).total_seconds > 30 * GameTime.MINUTES
+            GameTime.get(self).total_seconds > 10 * GameTime.MINUTES
             or EventFlags.get(self).have_oaks_parcel
         )
 
