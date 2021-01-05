@@ -1,9 +1,9 @@
-import inspect
 import logging
+import random
 from argparse import ZERO_OR_MORE
 from enum import Enum
 from functools import cached_property
-from typing import Any, List
+from typing import Any, List, Optional, Type
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -431,12 +431,55 @@ class GameTime:
         return f"GameTime(hours={self.hours}, minutes={self.minutes}, seconds={self.seconds})"
 
 
+class Map:
+    CURRENT_MAP_NUMBER_ADDRESS = 0xD35E
+    CURRENT_Y_ADDRESS = 0xD361
+    CURRENT_X_ADDRESS = 0xD362
+
+    def __init__(self, map_number: int, y: int, x: int):
+        # Is this unique for all locations or per tileset?
+        self.map_number = map_number
+        self.y = y
+        self.x = x
+
+    @classmethod
+    def get(cls, game_wrapper: PyBoyGameWrapper):
+        return cls(
+            game_wrapper.pyboy.get_memory_value(cls.CURRENT_MAP_NUMBER_ADDRESS),
+            game_wrapper.pyboy.get_memory_value(cls.CURRENT_Y_ADDRESS),
+            game_wrapper.pyboy.get_memory_value(cls.CURRENT_X_ADDRESS),
+        )
+
+    def __repr__(self) -> str:
+        return f"Map(map_number={self.map_number}, y={self.y}, x={self.x}"
+
+
+# Grumble grumble Cython and abstract base classes
+class Fitness:
+    @property
+    def description(self):
+        return "Not implemented"
+
+    def __init__(self, game_wrapper: PyBoyGameWrapper):
+        self.game_wrapper = game_wrapper
+
+    def fitness(self) -> int:
+        raise NotImplementedError
+
+    def game_over(self) -> bool:
+        raise NotImplementedError
+
+    def reset(self):
+        raise NotImplementedError
+
+
 class GameWrapperPokemonBlue(PyBoyGameWrapper):
     cartridge_title = "POKEMON BLUE"
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 18)
         self.fitness = 0
+        self.fitness_impl = Fitness(self)
 
         super().__init__(
             *args,
@@ -472,57 +515,19 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+        self.fitness_impl.reset()
 
         self._set_timer_div(timer_div)
 
     def post_tick(self):
         if self.game_has_started:
-            options = InGameOptions.get(self)
-            events = EventFlags.get(self)
-            badges = Badges.get(self)
-
-            # The fitness score is a combination of "bitset"
-            # We have 3 ranges of values that we will eventually concatenate into one big value.
-            # This is cause pathing in the game can be variable as
-            # Misty, Blaine, Erika, Sabrina, Koga, Lt. Surge can be fought in a variety of orders.
-            # Because Brock and Giovanni have requirements has to be fought separately they'll be in their own ranges
-            # Ranges:
-            # Gyms (A counter between 1 and 6 as each one is equally valuable imo)
-            # TODO: Find a way to score the elite 4/hall of fame. The data is at 0xA598 - 0xB857 in SRAM Bank 0, but I'm not sure what's stored there.
-            # TODO: Add scoring for end of game based on time spent + level (lower is better).
-            #       Proposal is to do 100-level of pokemon for each pokemon in the party
-            #       One way to do it would be to countdown starting from ~24 hours based on
-            #       Jrose11's Abra run which took 17 hours 18 minutes
-            badges_bitset = (
-                f"{badges.earth:01b}"
-                f"{badges.as_bits[1:-1]}"  # Middle six badges any order
-                f"{badges.boulder:01b}"
-            )
-            started_game_bitset = (
-                f"{int(events.have_oaks_parcel == 1):01b}"
-                f"{events.selected_first_pokemon:01b}"
-                f"{events.met_oak:01b}"
-            )
-            bitset = (
-                f"{events.debug_new_game > 0:01b}"
-                f"{options.battle_animation == BattleAnimation.OFF:01b}"
-                f"{options.text_speed == TextSpeed.FAST:01b}"
-            )
-            if events.debug_new_game:
-                bitset = started_game_bitset + bitset
-            if events.have_oaks_parcel:
-                bitset = badges_bitset + bitset
-            self.fitness = int(bitset, 2)
+            self.fitness = self.fitness_impl.fitness()
 
     def game_over(self) -> bool:
-        # Game over when we hit 24 hours or oak's parcel. Incrementally relax the second condition
+        return self.fitness_impl.game_over()
 
-        # TODO: Randomize the fitness function upon game over for training purposes
-        #       Why? So the model doesn't overfit. Should game over get randomized similarly?
-        return (
-            GameTime.get(self).total_seconds > 10 * GameTime.MINUTES
-            or EventFlags.get(self).have_oaks_parcel
-        )
+    def set_fitness_impl(self, fitness_impl: Fitness):
+        self.fitness_impl = fitness_impl
 
     def __repr__(self) -> str:
         return (
@@ -534,3 +539,137 @@ class GameWrapperPokemonBlue(PyBoyGameWrapper):
             f"\tBadges: {Badges.get(self)}\n"
             f"\tGame Time: {GameTime.get(self)}"
         )
+
+
+class Strict(Fitness):
+    @property
+    def description(self) -> str:
+        return "Follow all required objectives in order."
+
+    def fitness(self) -> int:
+        options = InGameOptions.get(self.game_wrapper)
+        events = EventFlags.get(self.game_wrapper)
+        badges = Badges.get(self.game_wrapper)
+
+        # The fitness score is a combination of "bitset"
+        # We have 3 ranges of values that we will eventually concatenate into one big value.
+        # This is cause pathing in the game can be variable as
+        # Misty, Blaine, Erika, Sabrina, Koga, Lt. Surge can be fought in a variety of orders.
+        # Because Brock and Giovanni have requirements has to be fought separately they'll be in their own ranges
+        # Ranges:
+        # Gyms (A counter between 1 and 6 as each one is equally valuable imo)
+        # TODO: Find a way to score the elite 4/hall of fame. The data is at 0xA598 - 0xB857 in SRAM Bank 0, but I'm not sure what's stored there.
+        # TODO: Add scoring for end of game based on time spent + level (lower is better).
+        #       Proposal is to do 100-level of pokemon for each pokemon in the party
+        #       One way to do it would be to countdown starting from ~24 hours based on
+        #       Jrose11's Abra run which took 17 hours 18 minutes
+        badges_bitset = (
+            f"{badges.earth:01b}"
+            f"{badges.as_bits[1:-1]}"  # Middle six badges any order
+            f"{badges.boulder:01b}"
+        )
+        started_game_bitset = (
+            f"{int(events.have_oaks_parcel == 1):01b}"
+            f"{events.selected_first_pokemon:01b}"
+            f"{events.met_oak:01b}"
+        )
+        bitset = (
+            f"{events.debug_new_game > 0:01b}"
+            f"{options.battle_animation == BattleAnimation.OFF:01b}"
+            f"{options.text_speed == TextSpeed.FAST:01b}"
+        )
+        if events.debug_new_game:
+            bitset = started_game_bitset + bitset
+        if events.have_oaks_parcel:
+            bitset = badges_bitset + bitset
+        return int(bitset, 2)
+
+    def game_over(self) -> bool:
+        # Game over when we hit 24 hours or oak's parcel. Incrementally relax the second condition
+
+        # TODO: Randomize the fitness function upon game over for training purposes
+        #       Why? So the model doesn't overfit. Should game over get randomized similarly?
+        return (
+            GameTime.get(self.game_wrapper).total_seconds > 10 * GameTime.MINUTES
+            or EventFlags.get(self.game_wrapper).have_oaks_parcel
+        )
+
+    def reset(self):
+        pass
+
+
+class OptimalOptions(Fitness):
+    @property
+    def description(self) -> str:
+        return "Find options for fastest run"
+
+    def fitness(self) -> int:
+        options = InGameOptions.get(self.game_wrapper)
+        bitset = (
+            f"{options.battle_animation == BattleAnimation.OFF:01b}"
+            f"{options.text_speed == TextSpeed.FAST:01b}"
+        )
+        return int(bitset, 2)
+
+    def game_over(self) -> bool:
+        options = InGameOptions.get(self.game_wrapper)
+        # TODO: Either clean up save files between resets or find a way to determine that you are still in the
+        # starting screen
+        return (
+            options.battle_animation == BattleAnimation.OFF
+            and options.text_speed == TextSpeed.FAST
+        )
+
+    def reset(self):
+        pass
+
+
+class FindAllMaps(Fitness):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A cache of visited maps
+        self.map_cache = {}
+
+    @property
+    def description(self) -> str:
+        return "Go through all warp points"
+
+    def fitness(self) -> int:
+        map = Map.get(self.game_wrapper)
+        # self.map_cache[Map.get(self.game_wrapper).map_number] = 1
+        self.map_cache[(map.map_number, map.y, map.x)] = 1
+        return len(self.map_cache)
+
+    def game_over(self) -> bool:
+        # According to https://bulbapedia.bulbagarden.net/wiki/List_of_locations_by_index_number_(Generation_I)
+        # there are 256-13 Invalid - 1 ?? - 17 unused = 225 unique map locations (not including unused rock tunnel)
+        return (
+            # len(self.map_cache) == 225
+            # or
+            GameTime.get(self.game_wrapper).total_seconds
+            > 3 * GameTime.MINUTES
+        )
+
+    def reset(self):
+        self.map_cache = {}
+
+
+class RandomizeOnReset(Fitness):
+    def __init__(self, fitness_impls: List[Fitness], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fitness_impls = fitness_impls
+        self.current_fitness_impl = random.randint(len(self.fitness_impls))
+
+    @property
+    def description(self) -> str:
+        return f"Random! Currently {self.fitness_impls[self.current_fitness_impl].description}"
+
+    def fitness(self) -> int:
+        return self.fitness_impls[self.current_fitness_impl].fitness()
+
+    def game_over(self) -> bool:
+        return self.fitness_impls[self.current_fitness_impl].game_over()
+
+    def reset(self):
+        self.current_fitness_impl.reset()
+        self.current_fitness_impl = random.randint(len(self.fitness_impls))
