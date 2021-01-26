@@ -1,5 +1,5 @@
 # Change in setup.py
 cython>=0.29.16; platform_python_implementation == 'CPython'
 numpy
-pillow
+pillow>=8.0.0
 pysdl2

@@ -1,4 +1,5 @@
 import distutils.cmd
+import multiprocessing
 import os
 import platform
 import shutil
@@ -20,7 +21,7 @@ REQUIREMENTS = """\
 # Change in setup.py
 cython>=0.29.16; platform_python_implementation == 'CPython'
 numpy
-pillow
+pillow>=8.0.0
 pysdl2
 """
 
@@ -36,6 +37,7 @@ requirements = load_requirements("requirements.txt")
 
 MSYS = os.getenv("MSYS")
 CYTHON = platform.python_implementation() != "PyPy"
+py_version = platform.python_version()[:3]
 
 if CYTHON:
     # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
@@ -236,11 +238,12 @@ if CYTHON and "clean" not in sys.argv:
         # Override function in Cython to fix symbol collision
         build_ext.get_export_symbols = get_export_symbols
         thread_count = 0 # Disables multiprocessing (windows)
-    elif platform.python_version().startswith("3.8"):
-        # Causes infinite recursion
-        thread_count = 0
     else:
         thread_count = cpu_count()
+
+    # Fixing issue with nthreads in Cython
+    if py_version in ["3.8", "3.9"] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
+        multiprocessing.set_start_method("fork", force=True)
 
     # Set up some values for use in setup()
     libs, libdirs, includes, cflags = define_lib_includes_cflags()
@@ -312,14 +315,14 @@ setup(
         "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
-        "gym" if CYTHON and not MSYS else "",
+        "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
-            "gym" if CYTHON and not MSYS else "",
+            "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it
