@@ -75,7 +75,7 @@ class PyBoy:
 
         self.mb = Motherboard(
             gamerom_file,
-            bootrom_file,
+            bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
             kwargs["color_palette"],
             disable_renderer,
             sound,
@@ -98,7 +98,6 @@ class PyBoy:
         self.quitting = False
         self.stopped = False
         self.window_title = "PyBoy"
-        self.cycles_remaining = 154 * 456 # One frame worth of cycles (144 + 10 scanlines times 456 clock cycles per line)
 
         ###################
         # Plugins
@@ -122,13 +121,11 @@ class PyBoy:
         self._handle_events(self.events)
         t_pre = time.perf_counter()
         if not self.paused:
-            self.mb.tick(0)
-
-            # TODO: Change check, so it's not performed once in mb.py and then once here right after.
-            if self.mb.breakpoints_enabled and self.mb.breakpoint_reached(): # breakpoint reached
+            if self.mb.tick():
+                # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
-
-            self.frame_count += 1
+            else:
+                self.frame_count += 1
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()

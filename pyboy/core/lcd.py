@@ -19,7 +19,7 @@ INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x 
 ROWS, COLS = 144, 160
 TILES = 384
 
-FRAME_CYCLES = 456 * 155 # 70224
+FRAME_CYCLES = 70224
 
 try:
     from cython import compiled
@@ -62,6 +62,11 @@ class LCD:
         self._LCDC.set(value)
 
         if not self._LCDC.lcd_enable:
+            # https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/
+            # 1. LY (current rendering line) resets to zero. A few games rely on this behavior, namely Mr. Do! When LY
+            # is reset to zero, no LYC check is done, so no STAT interrupt happens either.
+            # 2. The LCD clock is reset to zero as far as I can tell.
+            # 3. I believe the LCD enters Mode 0.
             self.clock = 0
             self.clock_target = FRAME_CYCLES # Doesn't render anything for the first frame
             self._STAT.set_mode(0)
@@ -88,6 +93,7 @@ class LCD:
             old_LY = self.LY
             self.LY = (self.clock % FRAME_CYCLES) // 456
             if old_LY != self.LY:
+                # TODO: Move to mode 2? Should provide single-fire update of LY and LYC
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
             if self.clock >= self.clock_target:
@@ -113,8 +119,9 @@ class LCD:
                 elif self._STAT._mode == 1: # VBLANK
                     self.vblank_flag = True
                     interrupt_flag |= INTR_VBLANK
-                    self.clock_target += 456 * 11 # 456 * 10
+                    self.clock_target += 456 * 10
                     # Interrupt will trigger renderer.render_screen
+        # else: see `self.set_lcdc`
         return interrupt_flag
 
     def save_state(self, f):
@@ -209,7 +216,7 @@ class STATRegister:
         return 0
 
     def next_mode(self, LY):
-        if self._mode == 0 and LY != 144:
+        if self._mode == 0 and LY != 143:
             return self.set_mode(2)
         else:
             return self.set_mode((self._mode + 1) % 4)
@@ -428,6 +435,11 @@ class Renderer:
             f.write(self._scanlineparameters[y][3])
             f.write(self._scanlineparameters[y][4])
 
+        for y in range(ROWS):
+            for x in range(COLS):
+                z = self._screenbuffer[y][x]
+                f.write_32bit(z)
+
     def load_state(self, f, state_version):
         for y in range(ROWS):
             self._scanlineparameters[y][0] = f.read()
@@ -437,3 +449,10 @@ class Renderer:
             self._scanlineparameters[y][3] = f.read()
             if state_version > 3:
                 self._scanlineparameters[y][4] = f.read()
+
+        if state_version >= 6:
+            for y in range(ROWS):
+                for x in range(COLS):
+                    self._screenbuffer[y][x] = f.read_32bit()
+
+        self.clearcache = True

@@ -36,7 +36,6 @@ cdef class Motherboard:
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
     cdef str serialbuffer
-    cdef int cycles_remaining
 
     cdef bint breakpoints_enabled
     cdef list breakpoints_list
@@ -45,7 +44,7 @@ cdef class Motherboard:
     cdef void buttonevent(self, WindowEvent)
     cdef void stop(self, bint)
     @cython.locals(cycles=cython.int)
-    cdef int tick(self, int)
+    cdef bint tick(self)
 
     cdef uint8_t getitem(self, uint16_t)
     cdef void setitem(self, uint16_t, uint8_t)

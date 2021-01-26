@@ -225,8 +225,8 @@ class Debug(PyBoyWindowPlugin):
                 break
             else:
                 # self.mb.breakpoint_release = True
-                self.mb.tick(4)
-                self.pyboy.cycles_remaining -= 4
+                # self.mb.tick(4)
+                self.mb.tick()
 
 
 def make_buffer(w, h):

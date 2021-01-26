@@ -69,7 +69,7 @@ uninstall:
 test: clean build test_cython test_pypy
 
 test_cython:
-	${PY} setup.py test
+	DEBUG=1 ${PY} setup.py test
 
 test_pypy:
 	${PYPY} setup.py test

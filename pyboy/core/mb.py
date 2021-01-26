@@ -115,10 +115,6 @@ class Motherboard:
         f.flush()
         logger.debug("State loaded.")
 
-        # TODO: Move out of MB
-        self.renderer.clearcache = True
-        self.renderer.render_screen(self.lcd)
-
     ###################################################################
     # Coordinator
     #
@@ -140,8 +136,9 @@ class Motherboard:
                 return True
         return False
 
-    def tick(self, cycles_period):
-        while not self.lcd.vblank_flag:
+    def tick(self):
+        cycles_period = 0
+        while not self.lcd.vblank_flag and cycles_period < 70224: # Move this logic to lcd.py
             cycles = self.cpu.tick()
 
             if self.cpu.halted:
@@ -155,12 +152,11 @@ class Motherboard:
                     self.lcd.cyclestointerrupt(),
                     self.timer.cyclestointerrupt(),
                     # self.serial.cyclestointerrupt(),
-                    4 # Disable time warping
+                    70224 - cycles_period,
                 )
 
                 # Profiling
-                if self.cpu.profiling:
-                    self.cpu.hitrate[0x76] += cycles // 4
+                self.cpu.add_opcode_hit(0x76, cycles // 4)
 
             # TODO: Unify interface
             if self.sound_enabled:
@@ -174,16 +170,16 @@ class Motherboard:
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
 
-            cycles_period -= cycles
+            cycles_period += cycles
 
             if self.breakpoints_enabled and self.breakpoint_reached():
-                return cycles_period
+                return True
 
         # TODO: Move SDL2 sync to plugin
         if self.sound_enabled:
             self.sound.sync()
 
-        return cycles_period
+        return False
 
     ###################################################################
     # MemoryManager

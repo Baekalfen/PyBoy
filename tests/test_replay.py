@@ -32,7 +32,7 @@ def verify_screen_image_np(pyboy, saved_array):
         np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) ==
         pyboy.botsupport_manager().screen().screen_ndarray()
     )
-    if not match:
+    if not match and not os.environ.get("TEST_CI"):
         from PIL import Image
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()

@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-STATE_VERSION = 5
+STATE_VERSION = 6
 
 ##############################################################
 # Buffer classes
@@ -15,6 +15,19 @@ class IntIOInterface:
 
     def write(self, byte):
         raise Exception("Not implemented!")
+
+    def write_32bit(self, value):
+        self.write(value & 0xFF)
+        self.write((value & 0xFF00) >> 8)
+        self.write((value & 0xFF0000) >> 16)
+        self.write((value & 0xFF000000) >> 24)
+
+    def read_32bit(self):
+        a = self.read()
+        b = self.read()
+        c = self.read()
+        d = self.read()
+        return int(a | (b << 8) | (c << 16) | (d << 24))
 
     def write_16bit(self, value):
         self.write(value & 0xFF)

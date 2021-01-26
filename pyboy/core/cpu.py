@@ -178,6 +178,11 @@ class CPU:
             return True
         return False
 
+    def add_opcode_hit(self, opcode, count):
+        # Profiling
+        if self.profiling:
+            self.hitrate[opcode] += 1
+
     def fetch_and_execute(self, pc):
         opcode = self.mb.getitem(pc)
         if opcode == 0xCB: # Extension code
@@ -185,8 +190,6 @@ class CPU:
             opcode = self.mb.getitem(pc)
             opcode += 0x100 # Internally shifting look-up table
 
-        # Profiling
-        if self.profiling:
-            self.hitrate[opcode] += 1
+        self.add_opcode_hit(opcode, 1)
 
         return opcodes.execute_opcode(self, opcode)

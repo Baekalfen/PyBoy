@@ -20,7 +20,6 @@ cdef class PyBoy:
     cdef public uint64_t frame_count
     cdef public str gamerom_file
     cdef readonly bint paused
-    cdef int cycles_remaining
 
     cdef double avg_pre
     cdef double avg_tick

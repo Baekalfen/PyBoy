@@ -12,10 +12,13 @@ from libc.stdint cimport uint8_t, int64_t
 
 cdef class IntIOInterface:
     cdef int64_t write(self, uint8_t)
+    cdef int64_t write_16bit(self, uint16_t)
+    cdef int64_t write_32bit(self, uint32_t)
     cdef uint8_t read(self)
     cdef void seek(self, int64_t)
     cdef void flush(self)
     cdef int read_16bit(self)
+    cdef int read_32bit(self)
 
 
 cdef class IntIOWrapper(IntIOInterface):
