@@ -79,16 +79,22 @@ class LCD:
         self._STAT.set(value)
 
     def cyclestointerrupt(self):
-        if self._LCDC.lcd_enable:
-            return self.clock_target - self.clock
-        else:
-            return FRAME_CYCLES
+        return self.clock_target - self.clock
+
+    def processing_frame(self):
+        b = (not self.vblank_flag) and self.clock < FRAME_CYCLES
+        if not b:
+            self.vblank_flag = False # Clear vblank flag for next iteration
+        return b
 
     def tick(self, cycles):
         interrupt_flag = 0
 
+        self.clock += cycles
+        self.clock %= FRAME_CYCLES
+        self.clock_target %= FRAME_CYCLES
+
         if self._LCDC.lcd_enable:
-            self.clock += cycles
 
             old_LY = self.LY
             self.LY = (self.clock % FRAME_CYCLES) // 456
@@ -317,7 +323,7 @@ class Renderer:
 
     def render_screen(self, lcd):
         # Actual frame rendering, otherwise we show a blank screen to emulate a turned-off display.
-        if not lcd.vblank_flag:
+        if not lcd._LCDC.lcd_enable:
             self.blank_screen()
             return
 

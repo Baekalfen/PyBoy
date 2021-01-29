@@ -201,10 +201,12 @@ class Debug(PyBoyWindowPlugin):
             )
             cmd = input()
 
-            # self.mb.breakpoint_release = True
             if cmd == "c":
+                # continue
                 break
             elif cmd == "d":
+                # Remove current breakpoint
+
                 # TODO: Share this code with breakpoint_reached
                 for i, (bank, pc) in enumerate(self.mb.breakpoints_list):
                     if self.mb.cpu.PC == pc and (
@@ -220,12 +222,13 @@ class Debug(PyBoyWindowPlugin):
                 print(f"Removing breakpoint: {bank}:{pc}")
                 self.mb.breakpoints_list.pop(i)
             elif cmd == "pdb":
+                # Start pdb
                 import pdb
                 pdb.set_trace()
                 break
             else:
-                # self.mb.breakpoint_release = True
-                # self.mb.tick(4)
+                # Step once
+                self.mb.breakpoint_latch = 1
                 self.mb.tick()
 
 

@@ -129,7 +129,6 @@ class PyBoy:
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()
-        self.mb.lcd.vblank_flag = False # Clear potential vblank flag, as it should have been handled by post_tick
 
         secs = t_pre - t_start
         self.avg_pre = 0.9 * self.avg_pre + 0.1*secs

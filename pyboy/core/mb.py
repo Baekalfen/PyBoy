@@ -47,8 +47,8 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.breakpoints_enabled = True # breakpoints_enabled
-        self.breakpoints_list = [] # (0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
-        self.breakpoint_latch = -1
+        self.breakpoints_list = [(0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
+        self.breakpoint_latch = 0
 
     def add_breakpoint(self, bank, addr):
         self.breakpoints_list.append((bank, addr))
@@ -137,8 +137,7 @@ class Motherboard:
         return False
 
     def tick(self):
-        cycles_period = 0
-        while not self.lcd.vblank_flag and cycles_period < 70224: # Move this logic to lcd.py
+        while self.lcd.processing_frame():
             cycles = self.cpu.tick()
 
             if self.cpu.halted:
@@ -152,7 +151,6 @@ class Motherboard:
                     self.lcd.cyclestointerrupt(),
                     self.timer.cyclestointerrupt(),
                     # self.serial.cyclestointerrupt(),
-                    70224 - cycles_period,
                 )
 
                 # Profiling
@@ -169,8 +167,6 @@ class Motherboard:
             self.renderer.tick(self.lcd, lcd_interrupt)
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
-
-            cycles_period += cycles
 
             if self.breakpoints_enabled and self.breakpoint_reached():
                 return True
@@ -306,7 +302,6 @@ class Motherboard:
             elif i == 0xFF42:
                 self.lcd.SCY = value
             elif i == 0xFF43:
-                # self.breakpoint_latch = 2
                 self.lcd.SCX = value
             elif i == 0xFF44:
                 self.lcd.LY = value
