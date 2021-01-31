@@ -43,6 +43,7 @@ cdef class LCD:
     cdef PaletteRegister BGP
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
+    cdef Renderer renderer
 
     # cdef uint8_t set_STAT_mode(self, int)
     @cython.locals(interrupt_flag=uint8_t)
@@ -112,8 +113,6 @@ cdef class Renderer:
     cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
 
     cdef int[144][5] _scanlineparameters
-
-    cdef void tick(self, LCD, int)
 
     @cython.locals(bx=int, by=int, wx=int, wy=int)
     cdef void scanline(self, int, LCD)

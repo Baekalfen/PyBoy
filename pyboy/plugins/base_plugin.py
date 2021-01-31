@@ -76,10 +76,10 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
         self.enable_title = True
         if not cythonmode:
-            self.renderer = mb.renderer
+            self.renderer = mb.lcd.renderer
 
     def __cinit__(self, *args, **kwargs):
-        self.renderer = self.mb.renderer
+        self.renderer = self.mb.lcd.renderer
 
     def frame_limiter(self, speed):
         return False

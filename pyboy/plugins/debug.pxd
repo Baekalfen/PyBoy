@@ -31,6 +31,7 @@ cdef class MarkedTile:
 
 
 cdef class Debug(PyBoyWindowPlugin):
+    cdef dict rom_symbols
     cdef TileViewWindow tile1
     cdef TileViewWindow tile2
     cdef SpriteViewWindow spriteview

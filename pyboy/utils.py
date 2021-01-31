@@ -234,9 +234,13 @@ class WindowEvent:
 
 
 class WindowEventMouse(WindowEvent):
-    def __init__(self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_button=-1):
+    def __init__(
+        self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_scroll_x=-1, mouse_scroll_y=-1, mouse_button=-1
+    ):
         super().__init__(*args)
         self.window_id = window_id
         self.mouse_x = mouse_x
         self.mouse_y = mouse_y
+        self.mouse_scroll_x = mouse_scroll_x
+        self.mouse_scroll_y = mouse_scroll_y
         self.mouse_button = mouse_button

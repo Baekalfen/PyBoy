@@ -38,8 +38,7 @@ class Motherboard:
         self.bootrom = bootrom.BootROM(bootrom_file)
         self.ram = ram.RAM(randomize=randomize)
         self.cpu = cpu.CPU(self, profiling)
-        self.lcd = lcd.LCD(randomize=randomize)
-        self.renderer = lcd.Renderer(disable_renderer, color_palette)
+        self.lcd = lcd.LCD(disable_renderer, color_palette, randomize=randomize)
         self.sound_enabled = sound_enabled
         if sound_enabled:
             self.sound = sound.Sound()
@@ -47,7 +46,7 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.breakpoints_enabled = True # breakpoints_enabled
-        self.breakpoints_list = [(0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
+        self.breakpoints_list = [(0, 0x150)] #[(0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
         self.breakpoint_latch = 0
 
     def add_breakpoint(self, bank, addr):
@@ -81,7 +80,7 @@ class Motherboard:
             self.sound.save_state(f)
         else:
             pass
-        self.renderer.save_state(f)
+        self.lcd.renderer.save_state(f)
         self.ram.save_state(f)
         self.timer.save_state(f)
         self.cartridge.save_state(f)
@@ -104,7 +103,7 @@ class Motherboard:
         if state_version >= 6:
             self.sound.load_state(f, state_version)
         if state_version >= 2:
-            self.renderer.load_state(f, state_version)
+            self.lcd.renderer.load_state(f, state_version)
         self.ram.load_state(f, state_version)
         if state_version < 5:
             # Interrupt register moved from RAM to CPU
@@ -164,11 +163,13 @@ class Motherboard:
                 self.cpu.set_interruptflag(INTR_TIMER)
 
             lcd_interrupt = self.lcd.tick(cycles)
-            self.renderer.tick(self.lcd, lcd_interrupt)
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
 
-            if self.breakpoints_enabled and self.breakpoint_reached():
+            # Escape halt. This happens when pressing 'return' in the debugger. It will make us skip breaking on halt
+            # for every cycle, but do break on the next instruction -- even in an interrupt.
+            escape_halt = self.cpu.halted and self.breakpoint_latch == 1
+            if self.breakpoints_enabled and (not escape_halt) and self.breakpoint_reached():
                 return True
 
         # TODO: Move SDL2 sync to plugin
@@ -265,7 +266,7 @@ class Motherboard:
             self.lcd.VRAM[i - 0x8000] = value
             if i < 0x9800: # Is within tile data -- not tile maps
                 # Mask out the byte of the tile
-                self.renderer.tiles_changed.add(i & 0xFFF0)
+                self.lcd.renderer.tiles_changed.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -311,13 +312,13 @@ class Motherboard:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
                 # TODO: Move out of MB
-                self.renderer.clearcache |= self.lcd.BGP.set(value)
+                self.lcd.renderer.clearcache |= self.lcd.BGP.set(value)
             elif i == 0xFF48:
                 # TODO: Move out of MB
-                self.renderer.clearcache |= self.lcd.OBP0.set(value)
+                self.lcd.renderer.clearcache |= self.lcd.OBP0.set(value)
             elif i == 0xFF49:
                 # TODO: Move out of MB
-                self.renderer.clearcache |= self.lcd.OBP1.set(value)
+                self.lcd.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:

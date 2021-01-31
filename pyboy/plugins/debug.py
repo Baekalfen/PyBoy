@@ -7,6 +7,7 @@ import ctypes
 import gzip
 import logging
 import os
+import re
 from array import array
 
 import sdl2
@@ -77,6 +78,23 @@ class Debug(PyBoyWindowPlugin):
 
         if not self.enabled():
             return
+
+        self.rom_symbols = {}
+        gamerom_file_no_ext, rom_ext = os.path.splitext(pyboy_argv.get("ROM"))
+        for sym_ext in [".sym", rom_ext + ".sym"]:
+            sym_path = gamerom_file_no_ext + sym_ext
+            if os.path.isfile(sym_path):
+                with open(sym_path) as f:
+                    for line in f.readlines():
+                        if line.startswith(";"):
+                            continue
+                        bank, addr, sym_label = re.split(":| ", line.strip())
+                        bank = int(bank, 16)
+                        addr = int(addr, 16)
+                        if not bank in self.rom_symbols:
+                            self.rom_symbols[bank] = {}
+
+                        self.rom_symbols[bank][addr] = sym_label
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -187,23 +205,80 @@ class Debug(PyBoyWindowPlugin):
     def enabled(self):
         return self.pyboy_argv.get("debug")
 
+    def parse_bank_addr_sym_label(self, command):
+        if ":" in command:
+            bank, addr = command.split(":")
+            bank = int(bank, 16)
+            addr = int(addr, 16)
+            return bank, addr
+        else:
+            for bank, addresses in self.rom_symbols.items():
+                for addr, label in addresses.items():
+                    if label == command:
+                        return bank, addr
+        return None
+
     def handle_breakpoint(self):
         while True:
+            self.post_tick()
+
+            if self.mb.cpu.PC < 0x4000:
+                bank = 0
+            else:
+                bank = self.mb.cartridge.rombank_selected
+            sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
+
             print(
+                "\n"
                 f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
                 f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
-                f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X}"
+                f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})"
             )
             opcode = self.mb.getitem(self.mb.cpu.PC)
             print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
             print(
-                f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, IE: {self.mb.cpu.interrupts_enabled_register:08b}, IF: {self.mb.cpu.interrupts_flag_register:08b}"
+                f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
+                f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
+                f"IF: {self.mb.cpu.interrupts_flag_register:08b}, "
+                f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, "
+                f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}"
             )
             cmd = input()
 
-            if cmd == "c":
+            if cmd == "c" or cmd.startswith("c "):
                 # continue
-                break
+                if cmd.startswith("c "):
+                    _, command = cmd.split(" ", 1)
+                    bank_addr = self.parse_bank_addr_sym_label(command)
+                    if bank_addr is None:
+                        print("Couldn't parse address or label!")
+                    else:
+                        # TODO: Possibly add a counter of 1, and remove the breakpoint after hitting it the first time
+                        self.mb.add_breakpoint(*bank_addr)
+                        break
+                else:
+                    break
+            elif cmd == "sl":
+                for bank, addresses in self.rom_symbols.items():
+                    for addr, label in addresses.items():
+                        print(f"{bank:02X}:{addr:04X} {label}")
+            elif cmd == "bl":
+                for bank, addr in self.mb.breakpoints_list:
+                    print(f"{bank:02X}:{addr:04X} {self.rom_symbols.get(bank, {}).get(addr, '')}")
+            elif cmd == "b" or cmd.startswith("b "):
+                if cmd.startswith("b "):
+                    _, command = cmd.split(" ", 1)
+                else:
+                    command = input(
+                        'Write address in the format of "00:0150" or search for a symbol label like "Main"\n'
+                    )
+
+                bank_addr = self.parse_bank_addr_sym_label(command)
+                if bank_addr is None:
+                    print("Couldn't parse address or label!")
+                else:
+                    self.mb.add_breakpoint(*bank_addr)
+
             elif cmd == "d":
                 # Remove current breakpoint
 
@@ -220,7 +295,7 @@ class Debug(PyBoyWindowPlugin):
                     print("Breakpoint couldn't be deleted for current PC. Not Found.")
                     continue
                 print(f"Removing breakpoint: {bank}:{pc}")
-                self.mb.breakpoints_list.pop(i)
+                self.mb.remove_breakpoint(i)
             elif cmd == "pdb":
                 # Start pdb
                 import pdb
@@ -557,7 +632,7 @@ class SpriteViewWindow(BaseDebugWindow):
             for x in range(constants.COLS):
                 self.buf0[y][x] = SPRITE_BACKGROUND
 
-        self.mb.renderer.render_sprites(self.mb.lcd, self.buf0, True)
+        self.mb.lcd.renderer.render_sprites(self.mb.lcd, self.buf0, True)
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
 
@@ -695,6 +770,15 @@ class MemoryWindow(BaseDebugWindow):
         self.render_text()
         sdl2.SDL_RenderPresent(self._sdlrenderer)
 
+    def _scroll_view(self, movement):
+        self.start_address += movement
+        self.start_address = max(0, min(self.start_address, 0x10000 - 0x400))
+        # if self.start_address + 0x400 > 0x10000:
+        #     self.start_address = 0x10000 - 0x400
+        # if self.start_address < 0:
+        #     self.start_address = 0
+        self.write_addresses()
+
     def handle_events(self, events):
         events = BaseDebugWindow.handle_events(self, events)
 
@@ -702,26 +786,24 @@ class MemoryWindow(BaseDebugWindow):
             # j - Next 256 bytes
             if event == WindowEvent.DEBUG_MEMORY_SCROLL_DOWN:
                 if self.shift_down:
-                    self.start_address += 0x1000
+                    self._scroll_view(0x1000)
                 else:
-                    self.start_address += 0x100
-                if self.start_address + 0x400 > 0x10000:
-                    self.start_address = 0x10000 - 0x400
-                self.write_addresses()
+                    self._scroll_view(0x100)
             # k - Last 256 bytes
             elif event == WindowEvent.DEBUG_MEMORY_SCROLL_UP:
                 if self.shift_down:
-                    self.start_address -= 0x1000
+                    self._scroll_view(-0x1000)
                 else:
-                    self.start_address -= 0x100
-                if self.start_address < 0:
-                    self.start_address = 0
-                self.write_addresses()
+                    self._scroll_view(-0x100)
             # shift tracking
             elif event == WindowEvent.MOD_SHIFT_ON:
                 self.shift_down = True
             elif event == WindowEvent.MOD_SHIFT_OFF:
                 self.shift_down = False
+            elif event == WindowEvent._INTERNAL_MOUSE:
+                # Scrolling
+                if event.window_id == self.window_id:
+                    self._scroll_view(event.mouse_scroll_y * -0x100)
 
         return events
 

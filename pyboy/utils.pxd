@@ -40,4 +40,6 @@ cdef class WindowEventMouse(WindowEvent):
     cdef public int window_id
     cdef public int mouse_x
     cdef public int mouse_y
+    cdef public int mouse_scroll_x
+    cdef public int mouse_scroll_y
     cdef public int mouse_button

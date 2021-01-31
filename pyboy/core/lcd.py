@@ -29,7 +29,7 @@ except ImportError:
 
 
 class LCD:
-    def __init__(self, randomize=False):
+    def __init__(self, disable_renderer, color_palette, randomize=False):
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
@@ -54,6 +54,7 @@ class LCD:
         self.clock = 0
         self.clock_target = 0
         self.vblank_flag = False
+        self.renderer = Renderer(disable_renderer, color_palette)
 
     def get_lcdc(self):
         return self._LCDC.value
@@ -82,7 +83,7 @@ class LCD:
         return self.clock_target - self.clock
 
     def processing_frame(self):
-        b = (not self.vblank_flag) and self.clock < FRAME_CYCLES
+        b = (not self.vblank_flag) # and self.clock < FRAME_CYCLES
         if not b:
             self.vblank_flag = False # Clear vblank flag for next iteration
         return b
@@ -91,18 +92,13 @@ class LCD:
         interrupt_flag = 0
 
         self.clock += cycles
-        self.clock %= FRAME_CYCLES
-        self.clock_target %= FRAME_CYCLES
+        # self.clock %= FRAME_CYCLES
+        # self.clock_target %= FRAME_CYCLES
 
         if self._LCDC.lcd_enable:
-
-            old_LY = self.LY
             self.LY = (self.clock % FRAME_CYCLES) // 456
-            if old_LY != self.LY:
-                # TODO: Move to mode 2? Should provide single-fire update of LY and LYC
-                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
-
             if self.clock >= self.clock_target:
+
                 # Change to next mode
                 interrupt_flag |= self._STAT.next_mode(self.LY)
 
@@ -116,17 +112,26 @@ class LCD:
                 # Handle new mode
                 if self._STAT._mode == 2: # Searching OAM
                     self.clock_target += 80
-                    # self.clock_target += 170
-                    # Interrupt will trigger renderer.scanline
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+                    # Renderer
+                    # if self.LY == 0:
+                    self.renderer.update_cache(self)
+                    if self.LY < 144:
+                        self.renderer.scanline(self.LY, self)
+
                 elif self._STAT._mode == 3:
                     self.clock_target += 170
                 elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206
                 elif self._STAT._mode == 1: # VBLANK
                     self.vblank_flag = True
-                    interrupt_flag |= INTR_VBLANK
                     self.clock_target += 456 * 10
-                    # Interrupt will trigger renderer.render_screen
+                    interrupt_flag |= INTR_VBLANK
+
+                    # Renderer
+                    self.renderer.render_screen(self)
+
         # else: see `self.set_lcdc`
         return interrupt_flag
 
@@ -280,7 +285,6 @@ class Renderer:
         self._tilecache_raw = array("B", [0xFF] * (TILES*8*8*4))
         self._spritecache0_raw = array("B", [0xFF] * (TILES*8*8*4))
         self._spritecache1_raw = array("B", [0xFF] * (TILES*8*8*4))
-        self.old_stat_mode = -1
 
         if cythonmode:
             self._screenbuffer = memoryview(self._screenbuffer_raw).cast("I", shape=(ROWS, COLS))
@@ -300,18 +304,6 @@ class Renderer:
 
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
 
-    def tick(self, lcd, lcd_interrupt):
-        if lcd._LCDC.lcd_enable:
-            if lcd_interrupt & INTR_VBLANK and not self.disable_renderer:
-                self.render_screen(lcd)
-            elif (lcd._STAT._mode == 2 or lcd._STAT._mode == 1) and lcd._STAT._mode != self.old_stat_mode:
-                # Just switched to mode 2 or 1 means that we completed a scanline
-                # mode 2 -> line 0-142
-                # mode 1 -> 143 (vblank)
-                if lcd.LY < 144:
-                    self.scanline(lcd.LY, lcd)
-            self.old_stat_mode = lcd._STAT._mode
-
     def scanline(self, y, lcd):
         bx, by = lcd.getviewport()
         wx, wy = lcd.getwindowpos()
@@ -321,43 +313,44 @@ class Renderer:
         self._scanlineparameters[y][3] = wy
         self._scanlineparameters[y][4] = lcd._LCDC.tiledata_select
 
+        # All VRAM addresses are offset by 0x8000
+        # Following addresses are 0x9800 and 0x9C00
+        background_offset = 0x1800 if lcd._LCDC.backgroundmap_select == 0 else 0x1C00
+        wmap = 0x1800 if lcd._LCDC.windowmap_select == 0 else 0x1C00
+
+        tile_data_select = lcd._LCDC.tiledata_select
+        # bx, by, wx, wy, tile_data_select = self._scanlineparameters[y]
+        # Used for the half tile at the left side when scrolling
+        offset = bx & 0b111
+
+        for x in range(COLS):
+            if lcd._LCDC.window_enable and wy <= y and wx <= x:
+                wt = lcd.VRAM[wmap + (y-wy) // 8 * 32 % 0x400 + (x-wx) // 8 % 32]
+                # If using signed tile indices, modify index
+                if not lcd._LCDC.tiledata_select:
+                    # (x ^ 0x80 - 128) to convert to signed, then
+                    # add 256 for offset (reduces to + 128)
+                    wt = (wt ^ 0x80) + 128
+                self._screenbuffer[y][x] = self._tilecache[8*wt + (y-wy) % 8][(x-wx) % 8]
+            elif lcd._LCDC.background_enable:
+                bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
+                # If using signed tile indices, modify index
+                if not tile_data_select:
+                    # (x ^ 0x80 - 128) to convert to signed, then
+                    # add 256 for offset (reduces to + 128)
+                    bt = (bt ^ 0x80) + 128
+                self._screenbuffer[y][x] = self._tilecache[8*bt + (y+by) % 8][(x+offset) % 8]
+            else:
+                # If background is disabled, it becomes white
+                self._screenbuffer[y][x] = self.color_palette[0]
+
     def render_screen(self, lcd):
         # Actual frame rendering, otherwise we show a blank screen to emulate a turned-off display.
         if not lcd._LCDC.lcd_enable:
             self.blank_screen()
             return
 
-        self.update_cache(lcd)
-        # All VRAM addresses are offset by 0x8000
-        # Following addresses are 0x9800 and 0x9C00
-        background_offset = 0x1800 if lcd._LCDC.backgroundmap_select == 0 else 0x1C00
-        wmap = 0x1800 if lcd._LCDC.windowmap_select == 0 else 0x1C00
-
-        for y in range(ROWS):
-            bx, by, wx, wy, tile_data_select = self._scanlineparameters[y]
-            # Used for the half tile at the left side when scrolling
-            offset = bx & 0b111
-
-            for x in range(COLS):
-                if lcd._LCDC.window_enable and wy <= y and wx <= x:
-                    wt = lcd.VRAM[wmap + (y-wy) // 8 * 32 % 0x400 + (x-wx) // 8 % 32]
-                    # If using signed tile indices, modify index
-                    if not lcd._LCDC.tiledata_select:
-                        # (x ^ 0x80 - 128) to convert to signed, then
-                        # add 256 for offset (reduces to + 128)
-                        wt = (wt ^ 0x80) + 128
-                    self._screenbuffer[y][x] = self._tilecache[8*wt + (y-wy) % 8][(x-wx) % 8]
-                elif lcd._LCDC.background_enable:
-                    bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
-                    # If using signed tile indices, modify index
-                    if not tile_data_select:
-                        # (x ^ 0x80 - 128) to convert to signed, then
-                        # add 256 for offset (reduces to + 128)
-                        bt = (bt ^ 0x80) + 128
-                    self._screenbuffer[y][x] = self._tilecache[8*bt + (y+by) % 8][(x+offset) % 8]
-                else:
-                    # If background is disabled, it becomes white
-                    self._screenbuffer[y][x] = self.color_palette[0]
+        # self.update_cache(lcd)
 
         if lcd._LCDC.sprite_enable:
             self.render_sprites(lcd, self._screenbuffer, False)

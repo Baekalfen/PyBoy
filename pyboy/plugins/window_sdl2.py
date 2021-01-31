@@ -107,6 +107,15 @@ def sdl2_event_pump(events):
                     events.append(WindowEvent(WindowEvent.WINDOW_UNFOCUS))
                 elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
                     events.append(WindowEvent(WindowEvent.WINDOW_FOCUS))
+        elif event.type == sdl2.SDL_MOUSEWHEEL:
+            events.append(
+                WindowEventMouse(
+                    WindowEvent._INTERNAL_MOUSE,
+                    window_id=event.motion.windowID,
+                    mouse_scroll_x=event.wheel.x,
+                    mouse_scroll_y=event.wheel.y
+                )
+            )
         elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
             mouse_button = -1
             if event.type == sdl2.SDL_MOUSEBUTTONUP:
