@@ -47,7 +47,7 @@ from .utils import WindowEvent</code></pre>
 <dl>
 <dt><code class="name"><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code></dt>
 <dd>
-<section class="desc"><p>Tools to help interfacing with the Game Boy hardware</p></section>
+<section class="desc"><p>Tools to help interface with the Game Boy hardware</p></section>
 </dd>
 <dt><code class="name"><a title="pyboy.openai_gym" href="openai_gym.html">pyboy.openai_gym</a></code></dt>
 <dd>
@@ -55,7 +55,7 @@ from .utils import WindowEvent</code></pre>
 </dd>
 <dt><code class="name"><a title="pyboy.plugins" href="plugins/index.html">pyboy.plugins</a></code></dt>
 <dd>
-<section class="desc"><p>Plugins that extend PyBoy's functionality. The only publicly exposed, are the game wrappers.</p></section>
+<section class="desc"><p>Plugins that extend PyBoy's functionality. The game wrappers are the only publicly exposed plugins.</p></section>
 </dd>
 </dl>
 </section>
@@ -72,7 +72,7 @@ from .utils import WindowEvent</code></pre>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
-controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
+controlled and probed by the script. It can support and spawn multiple emulators, by intantiating the class
 multiple times.</p>
 <p>This object, <a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a>, and the <a title="pyboy.botsupport" href="botsupport/index.html"><code>pyboy.botsupport</code></a> module, are the only official user-facing
 interfaces. All other parts of the emulator, are subject to change.</p>
@@ -305,7 +305,7 @@ for a crude "bot", which interacts with the game.</p>
 
     def openai_gym(self, observation_type=&#34;tiles&#34;, action_type=&#34;press&#34;, simultaneous_actions=False, **kwargs):
         &#34;&#34;&#34;
-        For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
+        For reinforcement based learning, it is often easier to use the standard gym environment. This method will provide one.
         This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
         Additional kwargs are passed to the start_game method of the game_wrapper.
 
