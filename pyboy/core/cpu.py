@@ -207,8 +207,9 @@ class CPU:
         elif self.halted:
             return -1
 
+        # TODO move this logic to the Motherboard?
         breakpoint_callback = self.breakpoints.get(self.PC)
         if breakpoint_callback:
-            breakpoint_callback(self.PC)
+            breakpoint_callback(self.PC, self.mb.cartridge.rambank_selected, self.mb.cartridge.rombank_selected)
 
         return self.fetch_and_execute(self.PC)

@@ -348,13 +348,19 @@ class PyBoy:
 
         This will allow you to examine or set memory at arbitrary points in execution, not just between ticks.
 
-        The callback should take a single argument which will be the address the CPU is about to execute.  This allows you to register multiple breakpoints to the same callback function.
+        The callback should take three positional arguments:
+            1. The address the CPU is about to execute
+            2. The currently selected RAM Bank
+            3. The currently selected ROM Bank
+        This allows you to register multiple breakpoints to the same callback function.
 
-        Only one callback will be delivered per address - calling this function again with the same address will register the new callback in place of the old one
+        Only one callback will be delivered per address -
+        calling this function again with the same address
+        will register the new callback in place of the old one
 
         Args:
             addr (int): Emulated address at which the CPU should break and call your code before executing
-            callback (function): The function to call when the CPU breaks - e.g. on_cpu_breakpoint(addr)
+            callback (function): The function to call when the CPU breaks - e.g. on_cpu_breakpoint(addr, rambank, rombank)
         """
         self.mb.cpu.set_breakpoint(addr, callback)
 
