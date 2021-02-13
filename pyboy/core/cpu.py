@@ -143,6 +143,8 @@ class CPU:
         self.halted = False
         self.stopped = False
 
+        self.breakpoints = {}
+
         # Profiling
         self.profiling = profiling
         if profiling:
@@ -172,6 +174,12 @@ class CPU:
             f"State loaded: A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, IME:{self.interrupt_master_enable}, halted:{self.halted}, stopped:{self.stopped}"
         )
 
+    def set_breakpoint(self, addr, callback):
+        self.breakpoints[addr] = callback
+
+    def remove_breakpoint(self, addr):
+        self.breakpoints.pop(addr, None)
+
     def fetch_and_execute(self, pc):
         opcode = self.mb.getitem(pc)
         if opcode == 0xCB: # Extension code
@@ -198,5 +206,9 @@ class CPU:
             self.halted = False
         elif self.halted:
             return -1
+
+        breakpoint_callback = self.breakpoints.get(self.PC)
+        if breakpoint_callback:
+            breakpoint_callback(self.PC)
 
         return self.fetch_and_execute(self.PC)

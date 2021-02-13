@@ -78,3 +78,5 @@ cdef class CPU:
     @cython.locals(v=cython.int)
     cdef bint test_ramregisterflag(self, int, int)
     cdef void clear_ramregisterflag(self, int, int)
+
+    cdef dict breakpoints

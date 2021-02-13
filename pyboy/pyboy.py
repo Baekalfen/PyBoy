@@ -342,6 +342,33 @@ class PyBoy:
         # what the game writes to the address. This can be used so freeze the value for health, cash etc.
         self.mb.cartridge.overrideitem(rom_bank, addr, value)
 
+    def set_breakpoint(self, addr, callback):
+        """
+        Set a breakpoint to receive a callback to the given function when the CPU's program counter reaches the address specified.
+
+        This will allow you to examine or set memory at arbitrary points in execution, not just between ticks.
+
+        The callback should take a single argument which will be the address the CPU is about to execute.  This allows you to register multiple breakpoints to the same callback function.
+
+        Only one callback will be delivered per address - calling this function again with the same address will register the new callback in place of the old one
+
+        Args:
+            addr (int): Emulated address at which the CPU should break and call your code before executing
+            callback (function): The function to call when the CPU breaks - e.g. on_cpu_breakpoint(addr)
+        """
+        self.mb.cpu.set_breakpoint(addr, callback)
+
+    def remove_breakpoint(self, addr):
+        """
+        Removes a previously defined breakpoint such that no callbacks will be made when the program counter reaches the given address.
+
+        If the address was never previously set with set_breakpoint(), this function has no effect.
+
+        Args:
+            addr (int): Emulated address at which the CPU should no longer break
+        """
+        self.mb.cpu.remove_breakpoint(addr)
+
     def send_input(self, event):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
