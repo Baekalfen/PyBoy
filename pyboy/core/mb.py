@@ -45,7 +45,7 @@ class Motherboard:
         self.bootrom_enabled = True
         self.serialbuffer = ""
 
-        self.breakpoints_enabled = True # breakpoints_enabled
+        self.breakpoints_enabled = False # breakpoints_enabled
         self.breakpoints_list = [(0, 0x150)] #[(0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
         self.breakpoint_latch = 0
 
@@ -136,6 +136,7 @@ class Motherboard:
         return False
 
     def tick(self):
+        # print("MB TICK")
         while self.lcd.processing_frame():
             cycles = self.cpu.tick()
 
@@ -301,12 +302,15 @@ class Motherboard:
             elif i == 0xFF41:
                 self.lcd.set_stat(value)
             elif i == 0xFF42:
+                # print(f"SCY: {value}")
                 self.lcd.SCY = value
             elif i == 0xFF43:
+                # print(f"SCX: {value}")
                 self.lcd.SCX = value
             elif i == 0xFF44:
                 self.lcd.LY = value
             elif i == 0xFF45:
+                # print(f"LYC: {value}")
                 self.lcd.LYC = value
             elif i == 0xFF46:
                 self.transfer_DMA(value)
@@ -320,8 +324,10 @@ class Motherboard:
                 # TODO: Move out of MB
                 self.lcd.renderer.clearcache |= self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
+                # print(f"WY: {value}")
                 self.lcd.WY = value
             elif i == 0xFF4B:
+                # print(f"WX: {value}")
                 self.lcd.WX = value
             else:
                 self.ram.io_ports[i - 0xFF00] = value

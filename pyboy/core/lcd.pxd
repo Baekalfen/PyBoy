@@ -24,8 +24,8 @@ cdef class LCD:
     cdef uint8_t SCX
     cdef uint8_t WY
     cdef uint8_t WX
-    cdef bint vblank_flag
-    cdef uint8_t mode
+    cdef uint8_t next_stat_mode
+    cdef bint frame_done
     IF DEBUG:
         cdef public uint8_t LY
         cdef public uint8_t LYC
@@ -45,7 +45,6 @@ cdef class LCD:
     cdef PaletteRegister OBP1
     cdef Renderer renderer
 
-    # cdef uint8_t set_STAT_mode(self, int)
     @cython.locals(interrupt_flag=uint8_t)
     cdef uint8_t tick(self, int)
     cdef uint64_t cyclestointerrupt(self)

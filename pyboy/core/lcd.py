@@ -41,6 +41,7 @@ class LCD:
 
         self._LCDC = LCDCRegister(0)
         self._STAT = STATRegister() # Bit 7 is always set.
+        self.next_stat_mode = 2
         self.SCY = 0x00
         self.SCX = 0x00
         self.LY = 0x00
@@ -53,7 +54,7 @@ class LCD:
         self.WX = 0x00
         self.clock = 0
         self.clock_target = 0
-        self.vblank_flag = False
+        self.frame_done = False
         self.renderer = Renderer(disable_renderer, color_palette)
 
     def get_lcdc(self):
@@ -71,7 +72,9 @@ class LCD:
             self.clock = 0
             self.clock_target = FRAME_CYCLES # Doesn't render anything for the first frame
             self._STAT.set_mode(0)
+            self.next_stat_mode = 2
             self.LY = 0
+            # print("LCD OFF")
 
     def get_stat(self):
         return self._STAT.value
@@ -83,24 +86,39 @@ class LCD:
         return self.clock_target - self.clock
 
     def processing_frame(self):
-        b = (not self.vblank_flag) # and self.clock < FRAME_CYCLES
+        b = (not self.frame_done)
         if not b:
-            self.vblank_flag = False # Clear vblank flag for next iteration
+            self.frame_done = False # Clear vblank flag for next iteration
         return b
 
     def tick(self, cycles):
         interrupt_flag = 0
 
+        # old_ly = self.LY
+        # self.LY = (self.clock % FRAME_CYCLES) // 456
+
+        # if old_ly != self.LY:
+        #     print(self.LY)
+        #     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+        #     if self.LY < 144:
         self.clock += cycles
-        # self.clock %= FRAME_CYCLES
-        # self.clock_target %= FRAME_CYCLES
 
         if self._LCDC.lcd_enable:
-            self.LY = (self.clock % FRAME_CYCLES) // 456
             if self.clock >= self.clock_target:
 
+                # TODO: No sweep animation on boot
+                # print(f"LY: {self.LY}, LYC: {self.LYC}, {self._STAT._mode}")
+
+                # print(self._STAT._mode, self.next_stat_mode, self.LY, self.clock_target)
+                if self.LY == 153:
+                    # Reset to new frame and start from mode 2
+                    self.next_stat_mode = 2
+                    self.LY = -1
+                    self.clock %= FRAME_CYCLES
+                    self.clock_target %= FRAME_CYCLES
+
                 # Change to next mode
-                interrupt_flag |= self._STAT.next_mode(self.LY)
+                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
 
                 # Pan Docs:
                 # The following are typical when the display is enabled:
@@ -109,30 +127,47 @@ class LCD:
                 #   Mode 0  ___000___000___000___000___000___000________________000
                 #   Mode 1  ____________________________________11111111111111_____
 
-                # Handle new mode
+                # LCD state machine
                 if self._STAT._mode == 2: # Searching OAM
                     self.clock_target += 80
+                    self.next_stat_mode = 3
+                    self.LY += 1
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
-
-                    # Renderer
-                    # if self.LY == 0:
-                    self.renderer.update_cache(self)
-                    if self.LY < 144:
-                        self.renderer.scanline(self.LY, self)
-
                 elif self._STAT._mode == 3:
                     self.clock_target += 170
+                    self.next_stat_mode = 0
                 elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206
+                    self.renderer.update_cache(self)
+                    self.renderer.scanline(self.LY, self)
+                    if self.LY <= 143:
+                        self.next_stat_mode = 2
+                    else:
+                        self.next_stat_mode = 1
                 elif self._STAT._mode == 1: # VBLANK
-                    self.vblank_flag = True
-                    self.clock_target += 456 * 10
-                    interrupt_flag |= INTR_VBLANK
+                    self.clock_target += 456
+                    self.next_stat_mode = 1
 
-                    # Renderer
-                    self.renderer.render_screen(self)
+                    if self.LY == 144:
+                        # print("INTR_VBLANK")
+                        interrupt_flag |= INTR_VBLANK
+                        self.frame_done = True
 
-        # else: see `self.set_lcdc`
+                        # Renderer
+                        self.renderer.render_screen(self)
+
+                    self.LY += 1
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+        else:
+            # See also `self.set_lcdc`
+            if self.clock >= FRAME_CYCLES:
+                self.frame_done = True
+                self.clock %= FRAME_CYCLES
+
+                # Renderer
+                self.renderer.render_screen(self)
+
         return interrupt_flag
 
     def save_state(self, f):
@@ -214,20 +249,21 @@ class STATRegister:
         value &= 0b0111_1000 # Bit 7 is always set, and bit 0-2 are read-only
         self.value &= 0b1000_0111 # Preserve read-only bits and clear the rest
         self.value |= value # Combine the two
+        # print(f"STAT SET LYC interrupt: {bool(self.value & 0b0100_0000)}")
 
     def update_LYC(self, LYC, LY):
         if LYC == LY:
-            if not self.value & 0b100: # Check the LYC flag is not already set
-                self.value |= 0b100 # Sets the LYC flag
-                if self.value & 0b0100_0000: # LYC interrupt enabled flag
-                    return INTR_LCDC
+            self.value |= 0b100 # Sets the LYC flag
+            if self.value & 0b0100_0000: # LYC interrupt enabled flag
+                # print(f"INTR_LCDC LYC {LYC}")
+                return INTR_LCDC
         else:
             # Clear LYC flag
             self.value &= 0b1111_1011
         return 0
 
     def next_mode(self, LY):
-        if self._mode == 0 and LY != 143:
+        if self._mode == 0 and LY != 144:
             return self.set_mode(2)
         else:
             return self.set_mode((self._mode + 1) % 4)
@@ -244,6 +280,7 @@ class STATRegister:
         # Check if interrupt is enabled for this mode
         # Mode "3" is not interruptable
         if mode != 3 and self.value & (1 << (mode + 3)):
+            # print(f"INTR_LCDC STAT {mode}")
             return INTR_LCDC
         return 0
 
@@ -305,6 +342,7 @@ class Renderer:
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
 
     def scanline(self, y, lcd):
+        # print(f"scanline {y}")
         bx, by = lcd.getviewport()
         wx, wy = lcd.getwindowpos()
         self._scanlineparameters[y][0] = bx

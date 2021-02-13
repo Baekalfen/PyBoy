@@ -239,10 +239,10 @@ class Debug(PyBoyWindowPlugin):
             print(
                 f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
                 f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
-                f"IF: {self.mb.cpu.interrupts_flag_register:08b}, "
-                f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, "
-                f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}"
+                f"IF: {self.mb.cpu.interrupts_flag_register:08b}"
             )
+            print(f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}")
+            print(f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}")
             cmd = input()
 
             if cmd == "c" or cmd.startswith("c "):
@@ -469,13 +469,15 @@ class TileViewWindow(BaseDebugWindow):
         global marked_tiles
         scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
+        background_view = self.scanline_x == 0
+
         # TODO: Refactor this
         # Mark screen area
         for y in range(constants.ROWS):
             xx = int(scanlineparameters[y][self.scanline_x])
             yy = int(scanlineparameters[y][self.scanline_y])
 
-            if self.scanline_x == 0: # Background
+            if background_view: # Background
                 # Wraps around edges of the screen
                 if y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
                     for x in range(constants.COLS):
@@ -509,6 +511,14 @@ class TileViewWindow(BaseDebugWindow):
                 self.mark_tile(column * 8, row * 8, t.mark_color, 8, 8, True)
         if self.hover_x != -1:
             self.mark_tile(self.hover_x, self.hover_y, HOVER, 8, 8, True)
+
+        # Mark current scanline directly from LY,SCX,SCY,WX,WY
+        if background_view:
+            for x in range(constants.COLS):
+                self.buf0[(self.mb.lcd.SCY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.SCX + x) % 0xFF] = 0xFF00CE12
+        else:
+            for x in range(constants.COLS):
+                self.buf0[(self.mb.lcd.WY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.WX + x) % 0xFF] = 0xFF00CE12
 
 
 class TileDataWindow(BaseDebugWindow):
