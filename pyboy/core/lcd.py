@@ -74,7 +74,6 @@ class LCD:
             self._STAT.set_mode(0)
             self.next_stat_mode = 2
             self.LY = 0
-            # print("LCD OFF")
 
     def get_stat(self):
         return self._STAT.value
@@ -93,23 +92,10 @@ class LCD:
 
     def tick(self, cycles):
         interrupt_flag = 0
-
-        # old_ly = self.LY
-        # self.LY = (self.clock % FRAME_CYCLES) // 456
-
-        # if old_ly != self.LY:
-        #     print(self.LY)
-        #     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
-        #     if self.LY < 144:
         self.clock += cycles
 
         if self._LCDC.lcd_enable:
             if self.clock >= self.clock_target:
-
-                # TODO: No sweep animation on boot
-                # print(f"LY: {self.LY}, LYC: {self.LYC}, {self._STAT._mode}")
-
-                # print(self._STAT._mode, self.next_stat_mode, self.LY, self.clock_target)
                 if self.LY == 153:
                     # Reset to new frame and start from mode 2
                     self.next_stat_mode = 2
@@ -138,9 +124,10 @@ class LCD:
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206
-                    self.renderer.update_cache(self)
-                    self.renderer.scanline(self.LY, self)
                     if self.LY <= 143:
+                        self.renderer.update_cache(self)
+                        self.renderer.scanline(self.LY, self)
+                        self.renderer.scanline_sprites(self, self.LY, self.renderer._screenbuffer, False)
                         self.next_stat_mode = 2
                     else:
                         self.next_stat_mode = 1
@@ -149,12 +136,8 @@ class LCD:
                     self.next_stat_mode = 1
 
                     if self.LY == 144:
-                        # print("INTR_VBLANK")
                         interrupt_flag |= INTR_VBLANK
                         self.frame_done = True
-
-                        # Renderer
-                        self.renderer.render_screen(self)
 
                     self.LY += 1
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
@@ -166,7 +149,7 @@ class LCD:
                 self.clock %= FRAME_CYCLES
 
                 # Renderer
-                self.renderer.render_screen(self)
+                self.renderer.blank_screen()
 
         return interrupt_flag
 
@@ -249,13 +232,11 @@ class STATRegister:
         value &= 0b0111_1000 # Bit 7 is always set, and bit 0-2 are read-only
         self.value &= 0b1000_0111 # Preserve read-only bits and clear the rest
         self.value |= value # Combine the two
-        # print(f"STAT SET LYC interrupt: {bool(self.value & 0b0100_0000)}")
 
     def update_LYC(self, LYC, LY):
         if LYC == LY:
             self.value |= 0b100 # Sets the LYC flag
             if self.value & 0b0100_0000: # LYC interrupt enabled flag
-                # print(f"INTR_LCDC LYC {LYC}")
                 return INTR_LCDC
         else:
             # Clear LYC flag
@@ -280,7 +261,6 @@ class STATRegister:
         # Check if interrupt is enabled for this mode
         # Mode "3" is not interruptable
         if mode != 3 and self.value & (1 << (mode + 3)):
-            # print(f"INTR_LCDC STAT {mode}")
             return INTR_LCDC
         return 0
 
@@ -340,9 +320,9 @@ class Renderer:
             self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
+        self.ly_window = 0
 
     def scanline(self, y, lcd):
-        # print(f"scanline {y}")
         bx, by = lcd.getviewport()
         wx, wy = lcd.getwindowpos()
         self._scanlineparameters[y][0] = bx
@@ -356,24 +336,27 @@ class Renderer:
         background_offset = 0x1800 if lcd._LCDC.backgroundmap_select == 0 else 0x1C00
         wmap = 0x1800 if lcd._LCDC.windowmap_select == 0 else 0x1C00
 
-        tile_data_select = lcd._LCDC.tiledata_select
-        # bx, by, wx, wy, tile_data_select = self._scanlineparameters[y]
         # Used for the half tile at the left side when scrolling
         offset = bx & 0b111
 
+        # Weird behavior, where the window has it's own internal line counter. It's only incremented whenever the
+        # window is drawing something on the screen.
+        if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+            self.ly_window += 1
+
         for x in range(COLS):
             if lcd._LCDC.window_enable and wy <= y and wx <= x:
-                wt = lcd.VRAM[wmap + (y-wy) // 8 * 32 % 0x400 + (x-wx) // 8 % 32]
+                wt = lcd.VRAM[wmap + (self.ly_window) // 8 * 32 % 0x400 + (x-wx) // 8 % 32]
                 # If using signed tile indices, modify index
                 if not lcd._LCDC.tiledata_select:
                     # (x ^ 0x80 - 128) to convert to signed, then
                     # add 256 for offset (reduces to + 128)
                     wt = (wt ^ 0x80) + 128
-                self._screenbuffer[y][x] = self._tilecache[8*wt + (y-wy) % 8][(x-wx) % 8]
+                self._screenbuffer[y][x] = self._tilecache[8*wt + (self.ly_window) % 8][(x-wx) % 8]
             elif lcd._LCDC.background_enable:
                 bt = lcd.VRAM[background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32]
                 # If using signed tile indices, modify index
-                if not tile_data_select:
+                if not lcd._LCDC.tiledata_select:
                     # (x ^ 0x80 - 128) to convert to signed, then
                     # add 256 for offset (reduces to + 128)
                     bt = (bt ^ 0x80) + 128
@@ -382,23 +365,90 @@ class Renderer:
                 # If background is disabled, it becomes white
                 self._screenbuffer[y][x] = self.color_palette[0]
 
-    def render_screen(self, lcd):
-        # Actual frame rendering, otherwise we show a blank screen to emulate a turned-off display.
-        if not lcd._LCDC.lcd_enable:
-            self.blank_screen()
+        if y == 143:
+            # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
+            self.ly_window = -1
+
+    def key_priority(self, x):
+        # NOTE: Cython is being insufferable, and demands a non-lambda function
+        return (self.sprites_to_render_x[x], self.sprites_to_render_n[x])
+
+    def scanline_sprites(self, lcd, ly, buffer, ignore_priority):
+
+        if not lcd._LCDC.sprite_enable:
             return
 
-        # self.update_cache(lcd)
+        spriteheight = 16 if lcd._LCDC.sprite_height else 8
+        bgpkey = self.color_palette[lcd.BGP.getcolor(0)]
 
-        if lcd._LCDC.sprite_enable:
-            self.render_sprites(lcd, self._screenbuffer, False)
+        sprite_count = 0
+        self.sprites_to_render_n = [0] * 10
+        self.sprites_to_render_x = [0] * 10
+
+        # Find the first 10 sprites in OAM that appears on this scanline.
+        # The lowest X-coordinate has priority, when overlapping
+
+        # Loop through OAM, find 10 first sprites for scanline. Order based on X-coordinate high-to-low. Render them.
+        for n in range(0x00, 0xA0, 4):
+            y = lcd.OAM[n] - 16 # Documentation states the y coordinate needs to be subtracted by 16
+            x = lcd.OAM[n + 1] - 8 # Documentation states the x coordinate needs to be subtracted by 8
+
+            if y <= ly < y + spriteheight:
+                self.sprites_to_render_n[sprite_count] = n
+                self.sprites_to_render_x[sprite_count] = x # Used for sorting for priority
+                sprite_count += 1
+
+            if sprite_count == 10:
+                break
+
+        # Pan docs:
+        # When these 10 sprites overlap, the highest priority one will appear above all others, etc. (Thus, no
+        # Z-fighting.) In CGB mode, the first sprite in OAM ($FE00-$FE03) has the highest priority, and so on. In
+        # Non-CGB mode, the smaller the X coordinate, the higher the priority. The tie breaker (same X coordinates) is
+        # the same priority as in CGB mode.
+        sprites_priority = sorted(range(sprite_count), key=self.key_priority)
+
+        for _n in sprites_priority[::-1]:
+            n = self.sprites_to_render_n[_n]
+            y = lcd.OAM[n] - 16 # Documentation states the y coordinate needs to be subtracted by 16
+            x = lcd.OAM[n + 1] - 8 # Documentation states the x coordinate needs to be subtracted by 8
+            tileindex = lcd.OAM[n + 2]
+            if spriteheight == 16:
+                tileindex &= 0b11111110
+            attributes = lcd.OAM[n + 3]
+            xflip = attributes & 0b00100000
+            yflip = attributes & 0b01000000
+            spritepriority = (attributes & 0b10000000) and not ignore_priority
+            spritecache = (self._spritecache1 if attributes & 0b10000 else self._spritecache0)
+
+            dy = ly - y
+            yy = spriteheight - dy - 1 if yflip else dy
+
+            for dx in range(8):
+                xx = 7 - dx if xflip else dx
+                pixel = spritecache[8*tileindex + yy][xx]
+                if 0 <= x < COLS:
+                    # TODO: Checking `buffer[y][x] == bgpkey` is a bit of a hack
+                    if (spritepriority and not buffer[ly][x] == bgpkey):
+                        # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
+                        # with the next 'if', as sprites can have an alpha channel in other ways
+                        pixel &= ~self.alphamask
+
+                    if pixel & self.alphamask:
+                        buffer[ly][x] = pixel
+                x += 1
+            x -= 8
 
     def render_sprites(self, lcd, buffer, ignore_priority):
+        # NOTE: LEGACY FUNCTION FOR DEBUG WINDOW! Use scanline_sprites instead
+
         # Render sprites
         # - Doesn't restrict 10 sprites per scan line
         # - Prioritizes sprite in inverted order
         spriteheight = 16 if lcd._LCDC.sprite_height else 8
         bgpkey = self.color_palette[lcd.BGP.getcolor(0)]
+
+        sprites_on_ly = [0] * 144
 
         for n in range(0x00, 0xA0, 4):
             y = lcd.OAM[n] - 16 # Documentation states the y coordinate needs to be subtracted by 16
@@ -412,12 +462,19 @@ class Renderer:
 
             for dy in range(spriteheight):
                 yy = spriteheight - dy - 1 if yflip else dy
+
+                # Take care of sprite priorty. No more than 10 sprites per scanline
+                if 0 <= y < 144:
+                    if sprites_on_ly[y] >= 10:
+                        continue
+                    else:
+                        sprites_on_ly[y] += 1
+
                 if 0 <= y < ROWS:
                     for dx in range(8):
                         xx = 7 - dx if xflip else dx
                         pixel = spritecache[8*tileindex + yy][xx]
                         if 0 <= x < COLS:
-                            # import pdb; pdb.set_trace()
                             # TODO: Checking `buffer[y][x] == bgpkey` is a bit of a hack
                             if (spritepriority and not buffer[y][x] == bgpkey):
                                 # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this

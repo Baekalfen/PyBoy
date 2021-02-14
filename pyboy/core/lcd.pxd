@@ -7,7 +7,7 @@ include "debug.pxi"
 
 import cython
 from cpython.array cimport array
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int16_t
 cimport pyboy.utils
 from pyboy.utils cimport color_code
 from pyboy.utils cimport IntIOInterface
@@ -116,20 +116,30 @@ cdef class Renderer:
     @cython.locals(bx=int, by=int, wx=int, wy=int)
     cdef void scanline(self, int, LCD)
 
+    cdef list sprites_to_render_n
+    cdef list sprites_to_render_x
+    cdef int ly_window
+
     @cython.locals(
         y=int,
         x=int,
-        wmap=int,
-        background_offset=int,
-        bx=int,
-        by=int,
-        wx=int,
-        wy=int,
-        wt=int,
-        bt=int,
-        offset=int,
+        bgpkey=uint32_t,
+        spriteheight=int,
+        n=int,
+        tileindex=int,
+        attributes=int,
+        xflip=bint,
+        yflip=bint,
+        spritepriority=bint,
+        spritecache=uint32_t[:,:],
+        sprites_priority=list,
+        dy=int,
+        dx=int,
+        yy=int,
+        xx=int,
+        pixel=uint32_t,
     )
-    cdef void render_screen(self, LCD)
+    cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], bint)
 
     @cython.locals(
         y=int,

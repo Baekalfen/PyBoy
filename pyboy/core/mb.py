@@ -100,7 +100,7 @@ class Motherboard:
             self.bootrom_enabled = state_version
         self.cpu.load_state(f, state_version)
         self.lcd.load_state(f, state_version)
-        if state_version >= 6:
+        if state_version >= 6 and self.sound_enabled:
             self.sound.load_state(f, state_version)
         if state_version >= 2:
             self.lcd.renderer.load_state(f, state_version)
