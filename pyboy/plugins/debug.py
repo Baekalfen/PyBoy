@@ -71,7 +71,13 @@ class MarkedTile:
 
 
 class Debug(PyBoyWindowPlugin):
-    argv = [("-d", "--debug", {"action": "store_true", "help": "Enable emulator debugging mode"})]
+    argv = [("-d", "--debug", {
+        "action": "store_true",
+        "help": "Enable emulator debugging mode"
+    }), ("--breakpoints", {
+        "type": str,
+        "help": "Add breakpoints on start-up (internal use)"
+    })]
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
@@ -85,16 +91,28 @@ class Debug(PyBoyWindowPlugin):
             sym_path = gamerom_file_no_ext + sym_ext
             if os.path.isfile(sym_path):
                 with open(sym_path) as f:
-                    for line in f.readlines():
-                        if line.startswith(";"):
+                    for _line in f.readlines():
+                        line = _line.strip()
+                        if line == "":
                             continue
-                        bank, addr, sym_label = re.split(":| ", line.strip())
-                        bank = int(bank, 16)
-                        addr = int(addr, 16)
-                        if not bank in self.rom_symbols:
-                            self.rom_symbols[bank] = {}
+                        elif line.startswith(";"):
+                            continue
+                        elif line.startswith("["):
+                            # Start of key group
+                            # [labels]
+                            # [definitions]
+                            continue
 
-                        self.rom_symbols[bank][addr] = sym_label
+                        try:
+                            bank, addr, sym_label = re.split(":| ", line.strip())
+                            bank = int(bank, 16)
+                            addr = int(addr, 16)
+                            if not bank in self.rom_symbols:
+                                self.rom_symbols[bank] = {}
+
+                            self.rom_symbols[bank][addr] = sym_label
+                        except ValueError as ex:
+                            logger.warning(f"Skipping .sym line: {line.strip()}")
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -178,6 +196,18 @@ class Debug(PyBoyWindowPlugin):
             pos_x=window_pos,
             pos_y=0
         )
+
+        for _b in (self.pyboy_argv.get("breakpoints") or "").split(","):
+            b = _b.strip()
+            if b == "":
+                continue
+
+            bank_addr = self.parse_bank_addr_sym_label(b)
+            if bank_addr is None:
+                logger.error(f"Couldn't parse address or label: {b}")
+            else:
+                self.mb.add_breakpoint(*bank_addr)
+                logger.info(f"Added breakpoint for address or label: {b}")
 
     def post_tick(self):
         self.tile1.post_tick()

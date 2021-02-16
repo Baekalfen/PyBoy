@@ -24,7 +24,7 @@ class Motherboard:
         disable_renderer,
         sound_enabled,
         randomize=False,
-        profiling=False
+        profiling=False,
     ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
@@ -46,14 +46,17 @@ class Motherboard:
         self.serialbuffer = ""
 
         self.breakpoints_enabled = False # breakpoints_enabled
-        self.breakpoints_list = [(0, 0x150)] #[(0, 0x0048), (0, 0x0050), (0, 0x0040), (-1, 0xc36f)]
+        self.breakpoints_list = [] #[(0, 0x150), (0, 0x0040), (0, 0x0048), (0, 0x0050)]
         self.breakpoint_latch = 0
 
     def add_breakpoint(self, bank, addr):
+        self.breakpoints_enabled = True
         self.breakpoints_list.append((bank, addr))
 
     def remove_breakpoint(self, index):
         self.breakpoints_list.pop(index)
+        if self.breakpoints == []:
+            self.breakpoints_enabled = False
 
     def getserial(self):
         b = self.serialbuffer
@@ -316,13 +319,13 @@ class Motherboard:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
                 # TODO: Move out of MB
-                self.lcd.renderer.clearcache |= self.lcd.BGP.set(value)
+                self.lcd.renderer.clearcache = self.lcd.renderer.clearcache | self.lcd.BGP.set(value)
             elif i == 0xFF48:
                 # TODO: Move out of MB
-                self.lcd.renderer.clearcache |= self.lcd.OBP0.set(value)
+                self.lcd.renderer.clearcache = self.lcd.renderer.clearcache | self.lcd.OBP0.set(value)
             elif i == 0xFF49:
                 # TODO: Move out of MB
-                self.lcd.renderer.clearcache |= self.lcd.OBP1.set(value)
+                self.lcd.renderer.clearcache = self.lcd.renderer.clearcache | self.lcd.OBP1.set(value)
             elif i == 0xFF4A:
                 # print(f"WY: {value}")
                 self.lcd.WY = value

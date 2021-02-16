@@ -177,7 +177,7 @@ def test_mooneye(clean, rom):
     else:
         pyboy.load_state(saved_state)
 
-    for _ in range(40):
+    for _ in range(180 if "div_write" in rom else 40):
         pyboy.tick()
 
     png_path = Path(f"test_results/{rom}.png")
