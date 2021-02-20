@@ -96,6 +96,8 @@ class TestOpenAIGym:
         pyboy.set_emulation_speed(0)
 
         env = pyboy.openai_gym(observation_type="minimal")
+        if env is None:
+            raise Exception("'env' is None. Did you remember to install 'gym'?")
         observation = env.reset()
 
         expected_observation = np.zeros_like(observation)
@@ -114,6 +116,8 @@ class TestOpenAIGym:
 
         starting_level = (2, 1)
         env = pyboy.openai_gym(observation_type="minimal", action_type="toggle", world_level=starting_level)
+        if env is None:
+            raise Exception("'env' is None. Did you remember to install 'gym'?")
         observation = env.reset()
 
         print(env.game_wrapper.world, starting_level)

@@ -66,10 +66,11 @@ install: build
 uninstall:
 	${PY} -m pip uninstall pyboy
 
+test: export DEBUG=1
 test: clean build test_cython test_pypy
 
 test_cython:
-	DEBUG=1 ${PY} setup.py test
+	${PY} setup.py test
 
 test_pypy:
 	${PYPY} setup.py test
@@ -82,6 +83,6 @@ docs: clean
 	rm -rf html
 
 repackage_secrets:
-	tar cvf ci_secrets.tar $(shell ${PY} -c "import codecs, sys; print(codecs.encode('EBZf', 'rot13'), end='')")
+	tar cvf ci_secrets.tar $(shell ${PY} -c "import codecs; print(codecs.encode('EBZf', 'rot13'), end='')")
 	travis encrypt-file ci_secrets.tar --pro
 	rm ci_secrets.tar

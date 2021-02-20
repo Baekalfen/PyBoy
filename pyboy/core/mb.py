@@ -105,8 +105,8 @@ class Motherboard:
         self.lcd.load_state(f, state_version)
         if state_version >= 6 and self.sound_enabled:
             self.sound.load_state(f, state_version)
-        if state_version >= 2:
-            self.lcd.renderer.load_state(f, state_version)
+        self.lcd.renderer.load_state(f, state_version)
+        self.lcd.renderer.update_cache(self.lcd)
         self.ram.load_state(f, state_version)
         if state_version < 5:
             # Interrupt register moved from RAM to CPU

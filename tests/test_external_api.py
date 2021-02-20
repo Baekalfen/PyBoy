@@ -220,10 +220,10 @@ def test_tetris():
                                                   [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
 
-            if frame == 1011:
+            if frame == 1012:
                 assert not first_brick
 
-            if frame == 1012:
+            if frame == 1013:
                 assert first_brick
 
                 s1 = pyboy.botsupport_manager().sprite(0)
@@ -292,7 +292,8 @@ def test_tetris():
                 pyboy.save_state(state_data)
                 break
 
-    for frame in range(1015, 1866):
+    pre_load_game_board_matrix = None
+    for frame in range(1015, 1865):
         pyboy.tick()
 
         if frame == 1864:
@@ -311,42 +312,25 @@ def test_tetris():
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
-                                          [303, 303, 303, 303, 303, 303, 303, 303, 133, 303],
-                                          [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
-                                          [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
+                                          [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
+                                          [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
+                                          [303, 303, 303, 133, 133, 133, 303, 133, 133, 133],
+                                          [303, 303, 303, 303, 133, 303, 303, 303, 133, 303]])
+            pre_load_game_board_matrix = game_board_matrix
 
     state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
     with open("tmp.state", "rb") as f:
         for _f in [f, state_data]: # Tests both file-written state and in-memory state
             pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
             pyboy.tick()
-            for frame in range(1015, 5282):
+            for frame in range(1015, 1865):
                 pyboy.tick()
 
                 if frame == 1864:
                     game_board_matrix = list(tile_map[2:12, :18])
-                    assert game_board_matrix == ([[303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
+                    assert game_board_matrix == pre_load_game_board_matrix
                     break
     os.remove("tmp.state")
-
     pyboy.stop(save=False)
 
 
@@ -371,10 +355,9 @@ def test_tilemap_position_list():
     positions = pyboy.botsupport_manager().screen().tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
-    for y in range(16, 143):
+    for y in range(16, 144):
         assert positions[y][0] >= 50 # Actual screen position
         last_y = positions[y][0]
-    assert positions[143][0] == 0 # Glitch at last scanline
 
     # Progress another 10 frames to see and increase in SCX
     for _ in range(10):
@@ -384,9 +367,8 @@ def test_tilemap_position_list():
     positions = pyboy.botsupport_manager().screen().tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
-    for y in range(16, 143):
+    for y in range(16, 144):
         assert positions[y][0] >= last_y + 10 # Actual screen position
-    assert positions[143][0] == 0 # Glitch at last scanline
 
     pyboy.stop(save=False)
 

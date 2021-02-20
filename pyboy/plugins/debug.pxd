@@ -39,6 +39,7 @@ cdef class Debug(PyBoyWindowPlugin):
     cdef TileDataWindow tiledata
     cdef MemoryWindow memory
     cdef bint sdl2_event_pump
+    cdef void handle_breakpoint(self)
 
 
 cdef class BaseDebugWindow(PyBoyWindowPlugin):

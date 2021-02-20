@@ -535,14 +535,15 @@ class Renderer:
                 f.write_32bit(z)
 
     def load_state(self, f, state_version):
-        for y in range(ROWS):
-            self._scanlineparameters[y][0] = f.read()
-            self._scanlineparameters[y][1] = f.read()
-            # Restore (WX - 7) as described above
-            self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
-            self._scanlineparameters[y][3] = f.read()
-            if state_version > 3:
-                self._scanlineparameters[y][4] = f.read()
+        if state_version >= 2:
+            for y in range(ROWS):
+                self._scanlineparameters[y][0] = f.read()
+                self._scanlineparameters[y][1] = f.read()
+                # Restore (WX - 7) as described above
+                self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
+                self._scanlineparameters[y][3] = f.read()
+                if state_version > 3:
+                    self._scanlineparameters[y][4] = f.read()
 
         if state_version >= 6:
             for y in range(ROWS):

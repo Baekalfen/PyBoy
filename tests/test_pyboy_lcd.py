@@ -7,9 +7,11 @@ from pyboy.core.lcd import LCD
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
+color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
+
 
 def test_set_stat_mode():
-    lcd = LCD()
+    lcd = LCD(False, color_palette)
     lcd._STAT._mode = 2 # Set mode 2 manually
     assert lcd._STAT._mode == 2 # Init value
     assert lcd._STAT.set_mode(2) == 0 # Already set
@@ -27,7 +29,7 @@ def test_stat_register():
     # "Bit 7 is unused and always returns '1'. Bits 0-2 return '0' when the LCD is off."
     # 3 LSB are read-only
 
-    lcd = LCD()
+    lcd = LCD(False, color_palette)
     lcd.set_lcdc(0b1000_0000) # Turn on LCD. Don't care about rest of the flags
     lcd._STAT.value &= 0b11111000 # Force LY=LYC and mode bits to 0
     lcd.set_stat(0b0111_1111) # Try to clear top bit, to check that it still returns 1. Try setting 3 LSB (read-only).
@@ -42,7 +44,7 @@ def test_stat_register():
 
 
 def test_check_lyc():
-    lcd = LCD()
+    lcd = LCD(False, color_palette)
 
     lcd.LYC = 0
     lcd.LY = 0
@@ -60,7 +62,7 @@ def test_check_lyc():
     lcd.set_stat(0b0100_0000) # Enable LYC==LY interrupt
     assert not (lcd.get_stat() & 0b100) # LYC flag not set
     assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC # Trigger on seting LYC flag
-    assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == 0 # Don't trigger on second call
+    assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC # Also trigger on second call
     assert lcd.get_stat() & 0b100 # LYC flag set
 
 
