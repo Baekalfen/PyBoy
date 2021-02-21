@@ -22,7 +22,7 @@ REQUIREMENTS = """\
 cython>=0.29.16; platform_python_implementation == 'CPython'
 numpy; python_version > '3.7'
 pillow>=8.0.0; python_version > '3.7'
-numpy<=1.19.5; python_version <= '3.7'
+numpy<=1.19.5; python_version <= '3.6'
 pillow; python_version <= '3.7'
 pysdl2
 """
@@ -330,6 +330,7 @@ setup(
         "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
+        "scipy<=1.5.4" if py_version == "3.6" else "",
         "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
     ],
     extras_require={
@@ -337,6 +338,7 @@ setup(
             "pyopengl",
             "markdown",
             "pdoc3",
+            "scipy<=1.5.4" if py_version == "3.6" else "",
             "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
         ],
     },
