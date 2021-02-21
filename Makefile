@@ -66,9 +66,9 @@ install: build
 uninstall:
 	${PY} -m pip uninstall pyboy
 
-test: export DEBUG=1
 test: clean build test_cython test_pypy
 
+test_cython: export DEBUG=1
 test_cython:
 	${PY} setup.py test
 

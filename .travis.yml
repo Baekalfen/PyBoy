@@ -8,8 +8,8 @@ env:
 
 jobs:
   include:
-    - os: linux
-      dist: bionic
+    # - os: linux
+    #   dist: bionic
 
     - os: linux
       dist: bionic
