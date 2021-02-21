@@ -15,11 +15,11 @@ jobs:
       dist: bionic
       env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.2-linux64
 
-    - services: docker
-      env: MANYLINUX=manylinux2010_x86_64
-           PYTHON_VERSION=cp36-cp36m
-           PYPI=1
-      if: type != pull_request
+#     - services: docker
+#       env: MANYLINUX=manylinux2010_x86_64
+#            PYTHON_VERSION=cp36-cp36m
+#            PYPI=1
+#       if: type != pull_request
 
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
@@ -33,11 +33,17 @@ jobs:
            PYPI=1
       if: type != pull_request
 
-    - os: osx
-      osx_image: xcode11.3
-      env: PYTHON_VERSION=3.6.10
+    - services: docker
+      env: MANYLINUX=manylinux2010_x86_64
+           PYTHON_VERSION=cp39-cp39
            PYPI=1
-           PYPI_SOURCE=1
+      if: type != pull_request
+
+#     - os: osx
+#       osx_image: xcode11.3
+#       env: PYTHON_VERSION=3.6.10
+#            PYPI=1
+#            PYPI_SOURCE=1
 
     - os: osx
       osx_image: xcode11.3
@@ -53,18 +59,24 @@ jobs:
 
     - os: osx
       osx_image: xcode11.3
+      env: PYTHON_VERSION=3.9.1
+           PYPI=1
+      if: type != pull_request
+
+    - os: osx
+      osx_image: xcode11.3
       env: PYPY_TESTING=1
 
     - os: windows
       env: MSYS=1
       if: type != pull_request
 
-    - os: windows
-      env: PYPI=1
-           PYTHON_VERSION=3.6.8
-           PYTHON_ARCH=-amd64
-           PYTHON_PATH=36
-           SDL2_ARCH=x64
+#     - os: windows
+#       env: PYPI=1
+#            PYTHON_VERSION=3.6.8
+#            PYTHON_ARCH=-amd64
+#            PYTHON_PATH=36
+#            SDL2_ARCH=x64
 
     - os: windows
       env: PYPI=1
@@ -81,13 +93,13 @@ jobs:
     #        PYTHON_PATH=38
     #        SDL2_ARCH=x64
     #   if: type != pull_request
-    - os: windows
-      env: PYPI=1
-           PYTHON_VERSION=3.6.8
-           PYTHON_ARCH=
-           PYTHON_PATH=36
-           SDL2_ARCH=x86
-      if: type != pull_request
+    # - os: windows
+    #   env: PYPI=1
+    #        PYTHON_VERSION=3.6.8
+    #        PYTHON_ARCH=
+    #        PYTHON_PATH=36
+    #        SDL2_ARCH=x86
+    #   if: type != pull_request
 
     - os: windows
       env: PYPI=1
