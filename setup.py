@@ -72,15 +72,15 @@ else:
 
 
 DEBUG = os.getenv("DEBUG")
-if os.path.isfile("pyboy/core/debug.pxi"):
-    with open("pyboy/core/debug.pxi", "w") as f:
-        f.writelines([
-            "#\n",
-            "# License: See LICENSE.md file\n",
-            "# GitHub: https://github.com/Baekalfen/PyBoy\n",
-            "#\n",
-            f"DEF DEBUG={int(bool(DEBUG))}\n",
-        ])
+# if os.path.isfile("pyboy/core/debug.pxi"):
+with open("pyboy/core/debug.pxi", "w") as f:
+    f.writelines([
+        "#\n",
+        "# License: See LICENSE.md file\n",
+        "# GitHub: https://github.com/Baekalfen/PyBoy\n",
+        "#\n",
+        f"DEF DEBUG={int(bool(DEBUG))}\n",
+    ])
 
 ROOT_DIR = "pyboy"
 
