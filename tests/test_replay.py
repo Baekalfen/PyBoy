@@ -171,7 +171,7 @@ def test_pokemon_gif1():
         record_gif=(1, 2714),
         gif_destination="README/1.gif",
         # gif_hash="IlT5ixD6Fw2A4gzd+PaA1l9wXs2JkpkzA0JBj9DSU08=",
-        gif_hash="rgZ15ppIKO6X7xWYl/zHDpqaRiCpRPiarLIyS+A0EXc=",
+        gif_hash="mJHP5AQ8WY/3LPPpu+KUxjBPwRZmpch6ZjElQkuhhTI=",
         verify=False, # Renderer has changed too much since recording
     )
 

@@ -277,7 +277,7 @@ script:
       windows)
         case $MSYS in
           1)
-            TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
+            DEBUG=1 TEST_CI=1 TEST_NO_UI=1 $mingw64 make test_cython
           ;;
           *)
             case $SDL2_ARCH in
@@ -294,11 +294,11 @@ script:
       *)
         if [ "$MANYLINUX" ]; then
           echo "ManyLinux"
-          docker exec -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
+          docker exec -e DEBUG=1 -e TEST_CI=1 -e TEST_NO_UI=1 manylinux make test_cython
         elif [ "$PYPY_TESTING" = "1" ]; then
           TEST_CI=1 TEST_NO_UI=1 make test_pypy
         else
-          TEST_CI=1 TEST_NO_UI=1 make test_cython
+          DEBUG=1 TEST_CI=1 TEST_NO_UI=1 make test_cython
         fi
       ;;
     esac
