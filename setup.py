@@ -20,8 +20,10 @@ from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
 REQUIREMENTS = """\
 # Change in setup.py
 cython>=0.29.16; platform_python_implementation == 'CPython'
-numpy
-pillow>=8.0.0
+numpy; python_version > '3.7'
+pillow>=8.0.0; python_version > '3.7'
+numpy<=1.19.5; python_version <= '3.7'
+pillow; python_version <= '3.7'
 pysdl2
 """
 
