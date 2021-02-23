@@ -70,13 +70,6 @@ else:
 
 
 DEBUG = os.getenv("DEBUG")
-print(f"DEBUG: {DEBUG}")
-# if os.path.isfile("pyboy/core/debug.pxi"):
-for root, dirs, files in os.walk(ROOT_DIR):
-    for f in files:
-        if os.path.splitext(f)[1] == ".py":
-            print(root, dirs, f)
-
 with open("pyboy/core/debug.pxi", "w") as f:
     f.writelines([
         "#\n",
