@@ -84,7 +84,6 @@ jobs:
            PYTHON_ARCH=-amd64
            PYTHON_PATH=37
            SDL2_ARCH=x64
-      if: type != pull_request
     # TODO: SciPy: No lapack/blas resources found.
     # - os: windows
     #   env: PYPI=1

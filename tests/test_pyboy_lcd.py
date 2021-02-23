@@ -6,6 +6,7 @@
 import os
 import platform
 
+import pytest
 from pyboy.core.lcd import LCD
 
 is_pypy = platform.python_implementation() == "PyPy"
