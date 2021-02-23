@@ -70,6 +70,7 @@ else:
 
 
 DEBUG = os.getenv("DEBUG")
+print(f"DEBUG: {DEBUG}")
 # if os.path.isfile("pyboy/core/debug.pxi"):
 with open("pyboy/core/debug.pxi", "w") as f:
     f.writelines([
