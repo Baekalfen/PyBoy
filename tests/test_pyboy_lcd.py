@@ -21,7 +21,7 @@ color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
     reason="This test requires env DEBUG=1 on Cython, which is not suitable for deployment builds"
 )
 class TestLCD:
-    def test_set_stat_mode():
+    def test_set_stat_mode(self):
         lcd = LCD(False, color_palette)
         lcd._STAT._mode = 2 # Set mode 2 manually
         assert lcd._STAT._mode == 2 # Init value
@@ -34,7 +34,7 @@ class TestLCD:
         lcd.set_stat(1 << (1 + 3)) # Set mode 1 as interrupting
         assert lcd._STAT.set_mode(1) == INTR_LCDC # Newly set, now interrupting
 
-    def test_stat_register():
+    def test_stat_register(self):
         # The Cycle Accurate Game Boy Docs
         # "Bit 7 is unused and always returns '1'. Bits 0-2 return '0' when the LCD is off."
         # 3 LSB are read-only
@@ -54,7 +54,7 @@ class TestLCD:
 
         # lcd.set_stat(0b0111_1111) # Clear top bit, to check that it still returns 1
 
-    def test_check_lyc():
+    def test_check_lyc(self):
         lcd = LCD(False, color_palette)
 
         lcd.LYC = 0
@@ -76,7 +76,7 @@ class TestLCD:
         assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC # Also trigger on second call
         assert lcd.get_stat() & 0b100 # LYC flag set
 
-    # def test_tick():
+    # def test_tick(self):
     #     lcd = LCD()
     #     assert lcd.clock == 0
     #     assert lcd.clock_target == 0
