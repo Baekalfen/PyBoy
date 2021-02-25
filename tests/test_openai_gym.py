@@ -13,6 +13,7 @@ from pyboy.botsupport.constants import COLS, ROWS
 from tests.utils import tetris_rom
 
 py_version = platform.python_version()[:3]
+print(py_version)
 is_pypy = platform.python_implementation() == "PyPy"
 
 
@@ -39,7 +40,7 @@ def tiles_id():
 
 
 @pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or py_version == "3.9",
+    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or (py_version == "3.9"),
     reason="This requires gym, which doesn't install on PyPy"
 )
 class TestOpenAIGym:
