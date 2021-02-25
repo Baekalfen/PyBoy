@@ -11,6 +11,7 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from tests.utils import supermarioland_rom
 
+py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"
 
 
@@ -68,7 +69,8 @@ def test_mario_game_over():
 
 
 @pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom),
+    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom) or
+    (py_version == "3.9"), # Gym isn't supported on 3.9
     reason="This requires gym, which doesn't install on PyPy"
 )
 class TestOpenAIGym:
