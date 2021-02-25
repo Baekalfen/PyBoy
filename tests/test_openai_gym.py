@@ -39,7 +39,7 @@ def tiles_id():
 
 
 @pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or (py_version == "3.9"),
+    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or (py_version == "3.9"), # Gym isn't supported on 3.9
     reason="This requires gym, which doesn't install on PyPy"
 )
 class TestOpenAIGym:
