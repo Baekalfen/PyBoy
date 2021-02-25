@@ -25,19 +25,16 @@ jobs:
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp37-cp37m
            PYPI=1
-      if: type != pull_request
 
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp38-cp38
            PYPI=1
-      if: type != pull_request
 
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp39-cp39
            PYPI=1
-      if: type != pull_request
 
 #     - os: osx
 #       osx_image: xcode11.3
@@ -66,6 +63,7 @@ jobs:
     - os: osx
       osx_image: xcode11.3
       env: PYPY_TESTING=1
+      if: type != pull_request
 
     - os: windows
       env: MSYS=1
@@ -84,6 +82,7 @@ jobs:
            PYTHON_ARCH=-amd64
            PYTHON_PATH=37
            SDL2_ARCH=x64
+      if: type != pull_request
     # TODO: SciPy: No lapack/blas resources found.
     # - os: windows
     #   env: PYPI=1
