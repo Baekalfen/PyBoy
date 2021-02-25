@@ -13,7 +13,7 @@ from pyboy.botsupport.constants import COLS, ROWS
 from tests.utils import tetris_rom
 
 py_version = platform.python_version()[:3]
-print(py_version)
+raise Exception(py_version)
 is_pypy = platform.python_implementation() == "PyPy"
 
 
