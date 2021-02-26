@@ -20,8 +20,8 @@ from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
 REQUIREMENTS = """\
 # Change in setup.py
 cython>=0.29.16; platform_python_implementation == 'CPython'
-numpy; python_version >= '3.7'
-numpy<=1.19; python_version < '3.7'
+numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
+numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
 pillow
 pysdl2
 """
@@ -328,7 +328,7 @@ setup(
         "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
-        "scipy<=1.5.3; python_version < '3.7'",
+        "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
         "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
     ],
     extras_require={
@@ -336,7 +336,7 @@ setup(
             "pyopengl",
             "markdown",
             "pdoc3",
-            "scipy<=1.5.3; python_version < '3.7'",
+            "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
             "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
         ],
     },
