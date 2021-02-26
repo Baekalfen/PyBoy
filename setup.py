@@ -328,6 +328,7 @@ setup(
         "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
+        "scipy<=1.5.3; python_version < '3.7'",
         "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
     ],
     extras_require={
@@ -335,6 +336,7 @@ setup(
             "pyopengl",
             "markdown",
             "pdoc3",
+            "scipy<=1.5.3; python_version < '3.7'",
             "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
         ],
     },
