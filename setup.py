@@ -31,7 +31,8 @@ def load_requirements(filename):
     if os.path.isfile(filename):
         with open(filename, "w") as f:
             f.write(REQUIREMENTS)
-    return [line.split(";")[0].strip() for line in REQUIREMENTS.splitlines()]
+    # return [line.split(";")[0].strip() for line in REQUIREMENTS.splitlines()]
+    return [line.strip() for line in REQUIREMENTS.splitlines()]
 
 
 requirements = load_requirements("requirements.txt")
