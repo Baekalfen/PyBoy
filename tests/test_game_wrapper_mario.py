@@ -5,6 +5,7 @@
 
 import os
 import platform
+import sys
 
 import numpy as np
 import pytest
@@ -69,8 +70,8 @@ def test_mario_game_over():
 
 
 @pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom) or
-    (py_version == "3.9"), # Gym isn't supported on 3.9
+    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or (py_version == "3.9") or
+    (sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
     reason="This requires gym, which doesn't install on PyPy"
 )
 class TestOpenAIGym:
