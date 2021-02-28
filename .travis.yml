@@ -9,7 +9,7 @@ env:
 jobs:
   include:
       #######################################
-      # Linux
+      # Ubuntu 18.04 Bionic
     - os: linux
       dist: bionic
       if: type != pull_request
@@ -18,6 +18,8 @@ jobs:
       dist: bionic
       env: PYPY_TESTING=1 pypy_version=pypy3.6-v7.3.2-linux64
 
+      #######################################
+      # Manylinux build images 2010
     - services: docker
       env: MANYLINUX=manylinux2010_x86_64
            PYTHON_VERSION=cp36-cp36m
@@ -39,6 +41,8 @@ jobs:
            PYTHON_VERSION=cp39-cp39
            PYPI=1
 
+      #######################################
+      # Manylinux build images 2014
     # - services: docker
     #   env: MANYLINUX=manylinux2014_x86_64
     #        PYTHON_VERSION=cp36-cp36m

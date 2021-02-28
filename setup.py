@@ -31,7 +31,6 @@ def load_requirements(filename):
     if os.path.isfile(filename):
         with open(filename, "w") as f:
             f.write(REQUIREMENTS)
-    # return [line.split(";")[0].strip() for line in REQUIREMENTS.splitlines()]
     return [line.strip() for line in REQUIREMENTS.splitlines()]
 
 
@@ -52,7 +51,7 @@ if CYTHON:
 else:
     try:
         for r in requirements:
-            if "cython" in r:
+            if r.startswith("cython"):
                 break
         else:
             r = None
@@ -326,6 +325,7 @@ setup(
     },
     install_requires=requirements,
     tests_require=[
+        *requirements,
         "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
