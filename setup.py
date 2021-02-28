@@ -330,7 +330,8 @@ setup(
         "pytest-xdist",
         "pyopengl",
         "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
-        "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
+        "gym" if CYTHON and not MSYS and py_version != "3.9" and not (sys.platform == "win32" and py_version == "3.8")
+        else "",
     ],
     extras_require={
         "all": [
@@ -338,7 +339,8 @@ setup(
             "markdown",
             "pdoc3",
             "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
-            "gym" if CYTHON and not MSYS and py_version != "3.9" else "",
+            "gym" if CYTHON and not MSYS and py_version != "3.9" and
+            not (sys.platform == "win32" and py_version == "3.8") else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it

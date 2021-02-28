@@ -115,6 +115,13 @@ jobs:
            PYTHON_PATH=38
            SDL2_ARCH=x64
       if: type != pull_request
+    - os: windows
+      env: PYPI=1
+           PYTHON_VERSION=3.9.1
+           PYTHON_ARCH=-amd64
+           PYTHON_PATH=38
+           SDL2_ARCH=x64
+      if: type != pull_request
 
 
       #######################################
@@ -138,6 +145,13 @@ jobs:
     - os: windows
       env: PYPI=1
            PYTHON_VERSION=3.8.2
+           PYTHON_ARCH=
+           PYTHON_PATH=38
+           SDL2_ARCH=x86
+      if: type != pull_request
+    - os: windows
+      env: PYPI=1
+           PYTHON_VERSION=3.9.1
            PYTHON_ARCH=
            PYTHON_PATH=38
            SDL2_ARCH=x86
