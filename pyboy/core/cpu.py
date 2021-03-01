@@ -92,18 +92,31 @@ class CPU:
         if state_version >= 5:
             # Interrupt register moved from RAM to CPU
             self.interrupts_enabled_register = f.read()
-        logger.debug("State loaded: " + self.dump_state())
+        logger.debug("State loaded: " + self.dump_state(""))
 
-    def dump_state(self):
+    def dump_state(self, sym_label):
+        opcode = self.mb.getitem(self.mb.cpu.PC)
+        opcode_1 = self.mb.getitem(self.mb.cpu.PC + 1)
+        opcode_2 = self.mb.getitem(self.mb.cpu.PC + 2)
+        if opcode == 0xCB:
+            opcode_str = f"Opcode: {opcode:02X}, {opcodes.CPU_COMMANDS[opcode_1+0x100]}\n"
+        else:
+            opcode_str = f"Opcode: {opcode:02X} {opcode_1:02X}, {opcodes.CPU_COMMANDS[opcode]}\n"
+
         return (
-            f"A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, "
-            f"HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, "
-            f"Opcode:{self.mb.getitem(self.PC):02x}, "
-            f"Opcode+1:{self.mb.getitem((self.PC+1) & 0xFFFF):02x}, "
-            f"Opcode+2:{self.mb.getitem((self.PC+2) & 0xFFFF):02x}, "
-            f"IME:{self.interrupt_master_enable}, halted:{self.halted}, "
-            f"interrupt_queued:{self.interrupt_queued} "
-            f"stopped:{self.stopped}"
+            "\n"
+            f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
+            f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
+            f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})\n"
+            f"{opcode_str}"
+            f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
+            f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
+            f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
+            f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
+            f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}\n"
+            f"halted:{self.halted}, "
+            f"interrupt_queued:{self.interrupt_queued}, "
+            f"stopped:{self.stopped}\n"
         )
 
     def set_interruptflag(self, flag):
@@ -126,9 +139,9 @@ class CPU:
             return 4 # TODO: Number of cycles for a HALT in effect?
 
         old_pc = self.PC
-        cycles = self.fetch_and_execute(self.PC)
+        cycles = self.fetch_and_execute()
         if not self.halted and old_pc == self.PC and not self.is_stuck:
-            logger.error("CPU is stuck: " + self.dump_state())
+            logger.error("CPU is stuck: " + self.dump_state(""))
             self.is_stuck = True
         self.interrupt_queued = False
         return cycles
@@ -183,11 +196,10 @@ class CPU:
         if self.profiling:
             self.hitrate[opcode] += 1
 
-    def fetch_and_execute(self, pc):
-        opcode = self.mb.getitem(pc)
+    def fetch_and_execute(self):
+        opcode = self.mb.getitem(self.PC)
         if opcode == 0xCB: # Extension code
-            pc += 1
-            opcode = self.mb.getitem(pc)
+            opcode = self.mb.getitem(self.PC + 1)
             opcode += 0x100 # Internally shifting look-up table
 
         self.add_opcode_hit(opcode, 1)

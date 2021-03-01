@@ -13,7 +13,6 @@ from array import array
 import sdl2
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
-from pyboy.core.opcodes import CPU_COMMANDS
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -259,21 +258,7 @@ class Debug(PyBoyWindowPlugin):
                 bank = self.mb.cartridge.rombank_selected
             sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
 
-            print(
-                "\n"
-                f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
-                f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
-                f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})"
-            )
-            opcode = self.mb.getitem(self.mb.cpu.PC)
-            print(f"Opcode: {opcode:02X}, {CPU_COMMANDS[opcode]}")
-            print(
-                f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
-                f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
-                f"IF: {self.mb.cpu.interrupts_flag_register:08b}"
-            )
-            print(f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}")
-            print(f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}")
+            print(self.mb.cpu.dump_state(sym_label))
             cmd = input()
 
             if cmd == "c" or cmd.startswith("c "):

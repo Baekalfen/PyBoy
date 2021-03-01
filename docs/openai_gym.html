@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.openai_gym API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -210,12 +210,29 @@ class PyBoyGymEnv(Env):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="pyboy.openai_gym.Env"><code class="flex name class">
+<span>class <span class="ident">Env</span></span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Env:
+    pass</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="pyboy.openai_gym.PyBoyGymEnv" href="#pyboy.openai_gym.PyBoyGymEnv">PyBoyGymEnv</a></li>
+</ul>
+</dd>
 <dt id="pyboy.openai_gym.PyBoyGymEnv"><code class="flex name class">
 <span>class <span class="ident">PyBoyGymEnv</span></span>
 <span>(</span><span>pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False, **kwargs)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>A gym environement built from a <a title="pyboy.PyBoy" href="index.html#pyboy.PyBoy"><code>PyBoy</code></a></p>
+<section class="desc"><p>A gym environement built from a <code><a title="pyboy.PyBoy" href="index.html#pyboy.PyBoy">PyBoy</a></code></p>
 <p>This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
 Additional kwargs are passed to the start_game method of the game_wrapper.</p>
 <h2 id="args">Args</h2>
@@ -245,10 +262,10 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 </dl>
 <h2 id="attributes">Attributes</h2>
 <dl>
-<dt>game_wrapper (<a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="plugins/base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper"><code>PyBoyGameWrapper</code></a>): The game_wrapper of the PyBoy game instance over which the environment is built.</dt>
-<dt><strong><code>action_space</code></strong> :&ensp;<code>Gym</code> <code>space</code></dt>
+<dt>game_wrapper (<code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="plugins/base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></code>): The game_wrapper of the PyBoy game instance over which the environment is built.</dt>
+<dt><strong><code>action_space</code></strong> :&ensp;<code>Gym space</code></dt>
 <dd>The action space of the environment.</dd>
-<dt><strong><code>observation_space</code></strong> :&ensp;<code>Gym</code> <code>space</code></dt>
+<dt><strong><code>observation_space</code></strong> :&ensp;<code>Gym space</code></dt>
 <dd>The observation space of the environment (depends of observation_type).</dd>
 <dt><strong><code>actions</code></strong> :&ensp;<code>list</code></dt>
 <dd>The list of input IDs of allowed input for the agent (depends of action_type).</dd>
@@ -412,7 +429,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>gym.core.Env</li>
+<li><a title="pyboy.openai_gym.Env" href="#pyboy.openai_gym.Env">Env</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -420,26 +437,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 <span>def <span class="ident">step</span></span>(<span>self, action_id)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Run one timestep of the environment's dynamics. When end of
-episode is reached, you are responsible for calling <code>reset()</code>
-to reset this environment's state.</p>
-<p>Accepts an action and returns a tuple (observation, reward, done, info).</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>action</code></strong> :&ensp;<code>object</code></dt>
-<dd>an action provided by the agent</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>observation</code></strong> :&ensp;<code>object</code></dt>
-<dd>agent's observation of the current environment</dd>
-<dt><code>reward</code> (<code>float</code>) : <code>amount</code> of <code>reward</code> <code>returned</code> <code>after</code> <code>previous</code> <code>action</code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>done</code></strong> :&ensp;<code>bool</code></dt>
-<dd>whether the episode has ended, in which case further step() calls will return undefined results</dd>
-<dt><strong><code>info</code></strong> :&ensp;<code>dict</code></dt>
-<dd>contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)</dd>
-</dl></section>
+<section class="desc"></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -499,40 +497,7 @@ to reset this environment's state.</p>
 <span>def <span class="ident">render</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Renders the environment.</p>
-<p>The set of supported modes varies per environment. (And some
-environments do not support rendering at all.) By convention,
-if mode is:</p>
-<ul>
-<li>human: render to the current display or terminal and
-return nothing. Usually for human consumption.</li>
-<li>rgb_array: Return an numpy.ndarray with shape (x, y, 3),
-representing RGB values for an x-by-y pixel image, suitable
-for turning into a video.</li>
-<li>ansi: Return a string (str) or StringIO.StringIO containing a
-terminal-style text representation. The text can include newlines
-and ANSI escape sequences (e.g. for colors).</li>
-</ul>
-<h2 id="note">Note</h2>
-<p>Make sure that your class's metadata 'render.modes' key includes
-the list of supported modes. It's recommended to call super()
-in implementations to use the functionality of this method.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mode</code></strong> :&ensp;<code>str</code></dt>
-<dd>the mode to render with</dd>
-</dl>
-<p>Example:</p>
-<p>class MyEnv(Env):
-metadata = {'render.modes': ['human', 'rgb_array']}</p>
-<pre><code>def render(self, mode='human'):
-    if mode == 'rgb_array':
-        return np.array(...) # return RGB frame suitable for video
-    elif mode == 'human':
-        ... # pop up a window and render
-    else:
-        super(MyEnv, self).render(mode=mode) # just raise an exception
-</code></pre></section>
+<section class="desc"></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -545,9 +510,7 @@ metadata = {'render.modes': ['human', 'rgb_array']}</p>
 <span>def <span class="ident">close</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Override close in your subclass to perform any necessary cleanup.</p>
-<p>Environments will automatically close() themselves when
-garbage collected or when the program exits.</p></section>
+<section class="desc"></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -575,6 +538,9 @@ garbage collected or when the program exits.</p></section>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
+<h4><code><a title="pyboy.openai_gym.Env" href="#pyboy.openai_gym.Env">Env</a></code></h4>
+</li>
+<li>
 <h4><code><a title="pyboy.openai_gym.PyBoyGymEnv" href="#pyboy.openai_gym.PyBoyGymEnv">PyBoyGymEnv</a></code></h4>
 <ul class="">
 <li><code><a title="pyboy.openai_gym.PyBoyGymEnv.step" href="#pyboy.openai_gym.PyBoyGymEnv.step">step</a></code></li>
@@ -589,7 +555,7 @@ garbage collected or when the program exits.</p></section>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

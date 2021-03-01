@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.plugins.game_wrapper_super_mario_land API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -284,6 +284,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
+        self._set_timer_div(timer_div)
+
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
@@ -295,6 +297,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -543,6 +547,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
+        self._set_timer_div(timer_div)
+
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
@@ -554,6 +560,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -621,7 +629,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
                     for i, line in enumerate(self.game_area())
                 ]
             )
-        )</code></pre>
+        )
+        # yapf: enable</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -764,14 +773,9 @@ the optional keyword-argument <code>world_level</code>.</p>
 <p>If you're not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
 Enabling the selector, will make this function return before entering the game.</p>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
-<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
-<dt><strong><code>world_level</code></strong> :&ensp;<code>tuple</code></dt>
-<dd>(world, level) to start the game from</dd>
-<dt><strong><code>unlock_level_select</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Unlock level selector menu</dd>
-</dl></section>
+<p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.
+world_level (tuple): (world, level) to start the game from
+unlock_level_select (bool): Unlock level selector menu</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -827,7 +831,9 @@ Enabling the selector, will make this function return before entering the game.<
             break
 
     self.saved_state.seek(0)
-    self.pyboy.save_state(self.saved_state)</code></pre>
+    self.pyboy.save_state(self.saved_state)
+
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.reset_game"><code class="name flex">
@@ -836,12 +842,9 @@ Enabling the selector, will make this function return before entering the game.<
 <dd>
 <section class="desc"><p>After calling <code>start_game</code>, use this method to reset Mario to the beginning of world 1-1.</p>
 <p>If you want to reset to later parts of the game &ndash; for example world 1-2 or 3-1 &ndash; use the methods
-<a title="pyboy.PyBoy.save_state" href="../index.html#pyboy.PyBoy.save_state"><code>PyBoy.save_state()</code></a> and <a title="pyboy.PyBoy.load_state" href="../index.html#pyboy.PyBoy.load_state"><code>PyBoy.load_state()</code></a>.</p>
+<code><a title="pyboy.PyBoy.save_state" href="../index.html#pyboy.PyBoy.save_state">PyBoy.save_state()</a></code> and <code><a title="pyboy.PyBoy.load_state" href="../index.html#pyboy.PyBoy.load_state">PyBoy.load_state()</a></code>.</p>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
-<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
-</dl></section>
+<p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -856,7 +859,9 @@ Enabling the selector, will make this function return before entering the game.<
     Kwargs:
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
-    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)</code></pre>
+    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.game_area"><code class="name flex">
@@ -868,7 +873,7 @@ machine learning applications.</p>
 <p>In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
 and so on. These values can be found in the variables of this class.</p>
 <p>In this example, Mario is <code>0</code>, <code>1</code>, <code>16</code> and <code>17</code>. He is standing on the ground which is <code>352</code> and <code>353</code>:</p>
-<pre><code class="text">     0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19
+<pre><code class="language-text">     0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19
 ____________________________________________________________________________________
 0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
 1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
@@ -889,7 +894,7 @@ ________________________________________________________________________________
 </code></pre>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>memoryview</code>:</dt>
+<dt><code>memoryview:</code></dt>
 <dd>Simplified 2-dimensional memoryview of the screen</dd>
 </dl></section>
 <details class="source">
@@ -939,6 +944,8 @@ ________________________________________________________________________________
 <ul class="hlist">
 <li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
 <ul class="hlist">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.argv">argv</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled">enabled</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
 </ul>
 </li>
@@ -986,7 +993,7 @@ ________________________________________________________________________________
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

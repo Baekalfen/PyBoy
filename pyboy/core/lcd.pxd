@@ -63,7 +63,7 @@ cdef class PaletteRegister:
     cdef uint32_t[4] lookup
     cdef uint32_t[4] color_palette
 
-    @cython.locals(x=cython.ushort)
+    @cython.locals(x=uint16_t)
     cdef bint set(self, uint64_t)
     cdef uint32_t getcolor(self, uint8_t)
 

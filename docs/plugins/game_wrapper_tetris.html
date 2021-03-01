@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.plugins.game_wrapper_tetris API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -166,6 +166,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 PyBoyGameWrapper._set_timer_div(self, timer_div)
                 self.saved_state.seek(0)
                 self.pyboy.save_state(self.saved_state)
+                self._set_timer_div(timer_div)
+
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.tick()
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -183,6 +185,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         self.pyboy.tick()
@@ -437,6 +441,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 PyBoyGameWrapper._set_timer_div(self, timer_div)
                 self.saved_state.seek(0)
                 self.pyboy.save_state(self.saved_state)
+                self._set_timer_div(timer_div)
+
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.tick()
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -454,6 +460,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         self.pyboy.tick()
@@ -599,7 +607,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
                     for i, line in enumerate(self._game_area_np())
                 ]
             )
-        )</code></pre>
+        )
+        # yapf: enable</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -652,10 +661,7 @@ first playable state.</p>
 <p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
 instantly.</p>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
-<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
-</dl></section>
+<p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -687,6 +693,8 @@ instantly.</p>
             PyBoyGameWrapper._set_timer_div(self, timer_div)
             self.saved_state.seek(0)
             self.pyboy.save_state(self.saved_state)
+            self._set_timer_div(timer_div)
+
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         self.pyboy.tick()
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -703,10 +711,7 @@ instantly.</p>
 <dd>
 <section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
-<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
-</dl></section>
+<p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -719,6 +724,8 @@ instantly.</p>
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
     PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+    self._set_timer_div(timer_div)
 
     self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
     self.pyboy.tick()
@@ -736,7 +743,7 @@ instantly.</p>
 machine learning applications.</p>
 <p>In Tetris, this is only the part of the screen where the "tetrominoes" are placed.
 The score, lines cleared, and level can be found in the variables of this class.</p>
-<pre><code class="text">     0   1   2   3   4   5   6   7   8   9
+<pre><code class="language-text">     0   1   2   3   4   5   6   7   8   9
 ____________________________________________
 0  | 47  47  47  47  47  47  47  47  47  47
 1  | 47  47  47  47  47  47  47  47  47  47
@@ -759,7 +766,7 @@ ____________________________________________
 </code></pre>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>memoryview</code>:</dt>
+<dt><code>memoryview:</code></dt>
 <dd>Simplified 2-dimensional memoryview of the screen</dd>
 </dl></section>
 <details class="source">
@@ -811,10 +818,10 @@ ____________________________________________
 <dd>
 <section class="desc"><p>Returns the next Tetromino to drop.</p>
 <p><strong>NOTE:</strong> Don't use this function together with
-<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino"><code>GameWrapperTetris.set_tetromino()</code></a>.</p>
+<code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino">GameWrapperTetris.set_tetromino()</a></code>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>shape</code>:</dt>
+<dt><code>shape:</code></dt>
 <dd><code>str</code> of which Tetromino will drop:
 * <code>"L"</code>: L-shape
 * <code>"J"</code>: reverse L-shape
@@ -858,8 +865,8 @@ ____________________________________________
 <section class="desc"><p>This function patches the random Tetromino routine in the ROM to output any given Tetromino instead.</p>
 <p><strong>NOTE</strong>: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
 any overrides when reloading the ROM. This also applies to
-<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game"><code>GameWrapperTetris.start_game()</code></a> and
-<a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game"><code>GameWrapperTetris.reset_game()</code></a>.</p>
+<code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.start_game">GameWrapperTetris.start_game()</a></code> and
+<code><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game" href="#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.reset_game">GameWrapperTetris.reset_game()</a></code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>shape</code></strong> :&ensp;<code>str</code></dt>
@@ -946,6 +953,15 @@ any overrides when reloading the ROM. This also applies to
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.argv">argv</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled">enabled</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -987,7 +1003,7 @@ any overrides when reloading the ROM. This also applies to
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

@@ -15,7 +15,7 @@ import cython
 
 
 cdef uint16_t IF_ADDRESS, IE_ADDRESS
-cdef short FLAGC, FLAGH, FLAGN, FLAGZ
+cdef int16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 
@@ -32,8 +32,8 @@ cdef class CPU:
     cdef void set_interruptflag(self, int)
     cdef bint handle_interrupt(self, uint8_t, uint16_t)
 
-    @cython.locals(opcode=cython.ushort)
-    cdef char fetch_and_execute(self, uint64_t)
+    @cython.locals(opcode=uint16_t)
+    cdef uint8_t fetch_and_execute(self)
     cdef int tick(self)
     cdef void add_opcode_hit(self, int, int)
     cdef void save_state(self, IntIOInterface)
@@ -41,7 +41,7 @@ cdef class CPU:
 
     # Only char (8-bit) needed, but I'm not sure all intermittent
     # results do not overflow
-    cdef short A, F, B, C, D, E
+    cdef int16_t A, F, B, C, D, E
 
     # Only short (16-bit) needed, but I'm not sure all intermittent
     # results do not overflow
