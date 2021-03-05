@@ -294,7 +294,7 @@ class Motherboard:
             elif i == 0xFF06:
                 self.timer.TMA = value
             elif i == 0xFF07:
-                self.timer.TAC = value & 0b111 # TODO: Move ogic to Timer class
+                self.timer.TAC = value & 0b111 # TODO: Move logic to Timer class
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:

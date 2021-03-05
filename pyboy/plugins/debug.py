@@ -301,9 +301,9 @@ class Debug(PyBoyWindowPlugin):
                 # TODO: Share this code with breakpoint_reached
                 for i, (bank, pc) in enumerate(self.mb.breakpoints_list):
                     if self.mb.cpu.PC == pc and (
-                        (pc < 0x4000 and bank == 0 and not self.mb.bootrom_enabled) or \
-                        (0x4000 <= pc < 0x8000 and self.mb.cartridge.rombank_selected == bank) or \
-                        (0xA000 <= pc < 0xC000 and self.mb.cartridge.rambank_selected == bank) or \
+                        (pc < 0x4000 and bank == 0 and not self.mb.bootrom_enabled) or
+                        (0x4000 <= pc < 0x8000 and self.mb.cartridge.rombank_selected == bank) or
+                        (0xA000 <= pc < 0xC000 and self.mb.cartridge.rambank_selected == bank) or
                         (pc < 0x100 and bank == -1 and self.mb.bootrom_enabled)
                     ):
                         break
@@ -742,14 +742,14 @@ class MemoryWindow(BaseDebugWindow):
         self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
 
     def write_addresses(self):
-        header = (f"Memory from 0x{self.start_address:04x} " f"to 0x{self.start_address+0x3FF:04x}").encode("cp437")
+        header = (f"Memory from 0x{self.start_address:04X} " f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
         if cythonmode:
             for x in range(28):
                 self.text_buffer[1][x + 2] = header[x]
         else:
             self.text_buffer[1][2:30] = header
         for y in range(32):
-            addr = f"0x{self.start_address + (0x20*y):04x}".encode("cp437")
+            addr = f"0x{self.start_address + (0x20*y):04X}".encode("cp437")
             if cythonmode:
                 for x in range(6):
                     self.text_buffer[y + 3][x + 2] = addr[x]
