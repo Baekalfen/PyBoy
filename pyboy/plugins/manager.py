@@ -134,6 +134,8 @@ class PluginManager:
             self.rewind.post_tick()
         if self.screen_recorder_enabled:
             self.screen_recorder.post_tick()
+        if self.screenshot_recorder_enabled:
+            self.screenshot_recorder.post_tick()
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.post_tick()
         if self.game_wrapper_tetris_enabled:
@@ -203,35 +205,37 @@ class PluginManager:
 
     def window_title(self):
         title = ""
-        # foreach windows title = [].window_title()
+        # foreach windows title += [].window_title()
         if self.window_sdl2_enabled:
-            title = self.window_sdl2.window_title()
+            title += self.window_sdl2.window_title()
         if self.window_open_gl_enabled:
-            title = self.window_open_gl.window_title()
+            title += self.window_open_gl.window_title()
         if self.window_headless_enabled:
-            title = self.window_headless.window_title()
+            title += self.window_headless.window_title()
         if self.window_dummy_enabled:
-            title = self.window_dummy.window_title()
+            title += self.window_dummy.window_title()
         if self.debug_enabled:
-            title = self.debug.window_title()
+            title += self.debug.window_title()
         # foreach end
-        # foreach plugins title = [].window_title()
+        # foreach plugins title += [].window_title()
         if self.disable_input_enabled:
-            title = self.disable_input.window_title()
+            title += self.disable_input.window_title()
         if self.auto_pause_enabled:
-            title = self.auto_pause.window_title()
+            title += self.auto_pause.window_title()
         if self.record_replay_enabled:
-            title = self.record_replay.window_title()
+            title += self.record_replay.window_title()
         if self.rewind_enabled:
-            title = self.rewind.window_title()
+            title += self.rewind.window_title()
         if self.screen_recorder_enabled:
-            title = self.screen_recorder.window_title()
+            title += self.screen_recorder.window_title()
+        if self.screenshot_recorder_enabled:
+            title += self.screenshot_recorder.window_title()
         if self.game_wrapper_super_mario_land_enabled:
-            title = self.game_wrapper_super_mario_land.window_title()
+            title += self.game_wrapper_super_mario_land.window_title()
         if self.game_wrapper_tetris_enabled:
-            title = self.game_wrapper_tetris.window_title()
+            title += self.game_wrapper_tetris.window_title()
         if self.game_wrapper_kirby_dream_land_enabled:
-            title = self.game_wrapper_kirby_dream_land.window_title()
+            title += self.game_wrapper_kirby_dream_land.window_title()
         # foreach end
         return title
 
@@ -269,3 +273,7 @@ class PluginManager:
             self.game_wrapper_kirby_dream_land.stop()
         # foreach end
         pass
+
+    def handle_breakpoint(self):
+        if self.debug_enabled:
+            self.debug.handle_breakpoint()

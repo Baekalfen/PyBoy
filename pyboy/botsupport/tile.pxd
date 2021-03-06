@@ -8,7 +8,6 @@ from libc.stdint cimport uint32_t
 from pyboy.core.mb cimport Motherboard
 
 
-
 cdef class Tile:
     cdef Motherboard mb
 

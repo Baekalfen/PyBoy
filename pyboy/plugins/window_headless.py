@@ -3,8 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.logger import logger
+import logging
+
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+
+logger = logging.getLogger(__name__)
 
 
 class WindowHeadless(PyBoyWindowPlugin):

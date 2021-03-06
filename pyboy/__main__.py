@@ -150,8 +150,8 @@ def profiling_printer(hitrate):
     print("Profiling report:")
     from operator import itemgetter
     names = [core.opcodes.CPU_COMMANDS[n] for n in range(0x200)]
-    for hits, n, name in sorted(filter(itemgetter(0), zip(hitrate, range(0x200), names)), reverse=True):
-        yield ("%3x %16s %s" % (n, name, hits))
+    for hits, opcode, name in sorted(filter(itemgetter(0), zip(hitrate, range(0x200), names)), reverse=True):
+        yield ("%3x %16s %s" % (opcode, name, hits))
 
 
 if __name__ == "__main__":

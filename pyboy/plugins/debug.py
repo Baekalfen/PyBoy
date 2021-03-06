@@ -5,16 +5,19 @@
 
 import ctypes
 import gzip
+import logging
 import os
+import re
 from array import array
 
 import sdl2
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import address, compiled
@@ -67,13 +70,49 @@ class MarkedTile:
 
 
 class Debug(PyBoyWindowPlugin):
-    argv = [("-d", "--debug", {"action": "store_true", "help": "Enable emulator debugging mode"})]
+    argv = [("-d", "--debug", {
+        "action": "store_true",
+        "help": "Enable emulator debugging mode"
+    }), ("--breakpoints", {
+        "type": str,
+        "help": "Add breakpoints on start-up (internal use)"
+    })]
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
         if not self.enabled():
             return
+
+        self.rom_symbols = {}
+        if pyboy_argv.get("ROM"):
+            gamerom_file_no_ext, rom_ext = os.path.splitext(pyboy_argv.get("ROM"))
+            for sym_ext in [".sym", rom_ext + ".sym"]:
+                sym_path = gamerom_file_no_ext + sym_ext
+                if os.path.isfile(sym_path):
+                    with open(sym_path) as f:
+                        for _line in f.readlines():
+                            line = _line.strip()
+                            if line == "":
+                                continue
+                            elif line.startswith(";"):
+                                continue
+                            elif line.startswith("["):
+                                # Start of key group
+                                # [labels]
+                                # [definitions]
+                                continue
+
+                            try:
+                                bank, addr, sym_label = re.split(":| ", line.strip())
+                                bank = int(bank, 16)
+                                addr = int(addr, 16)
+                                if not bank in self.rom_symbols:
+                                    self.rom_symbols[bank] = {}
+
+                                self.rom_symbols[bank][addr] = sym_label
+                            except ValueError as ex:
+                                logger.warning(f"Skipping .sym line: {line.strip()}")
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -158,6 +197,18 @@ class Debug(PyBoyWindowPlugin):
             pos_y=0
         )
 
+        for _b in (self.pyboy_argv.get("breakpoints") or "").split(","):
+            b = _b.strip()
+            if b == "":
+                continue
+
+            bank_addr = self.parse_bank_addr_sym_label(b)
+            if bank_addr is None:
+                logger.error(f"Couldn't parse address or label: {b}")
+            else:
+                self.mb.add_breakpoint(*bank_addr)
+                logger.info(f"Added breakpoint for address or label: {b}")
+
     def post_tick(self):
         self.tile1.post_tick()
         self.tile2.post_tick()
@@ -183,6 +234,93 @@ class Debug(PyBoyWindowPlugin):
 
     def enabled(self):
         return self.pyboy_argv.get("debug")
+
+    def parse_bank_addr_sym_label(self, command):
+        if ":" in command:
+            bank, addr = command.split(":")
+            bank = int(bank, 16)
+            addr = int(addr, 16)
+            return bank, addr
+        else:
+            for bank, addresses in self.rom_symbols.items():
+                for addr, label in addresses.items():
+                    if label == command:
+                        return bank, addr
+        return None
+
+    def handle_breakpoint(self):
+        while True:
+            self.post_tick()
+
+            if self.mb.cpu.PC < 0x4000:
+                bank = 0
+            else:
+                bank = self.mb.cartridge.rombank_selected
+            sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
+
+            print(self.mb.cpu.dump_state(sym_label))
+            cmd = input()
+
+            if cmd == "c" or cmd.startswith("c "):
+                # continue
+                if cmd.startswith("c "):
+                    _, command = cmd.split(" ", 1)
+                    bank_addr = self.parse_bank_addr_sym_label(command)
+                    if bank_addr is None:
+                        print("Couldn't parse address or label!")
+                    else:
+                        # TODO: Possibly add a counter of 1, and remove the breakpoint after hitting it the first time
+                        self.mb.add_breakpoint(*bank_addr)
+                        break
+                else:
+                    break
+            elif cmd == "sl":
+                for bank, addresses in self.rom_symbols.items():
+                    for addr, label in addresses.items():
+                        print(f"{bank:02X}:{addr:04X} {label}")
+            elif cmd == "bl":
+                for bank, addr in self.mb.breakpoints_list:
+                    print(f"{bank:02X}:{addr:04X} {self.rom_symbols.get(bank, {}).get(addr, '')}")
+            elif cmd == "b" or cmd.startswith("b "):
+                if cmd.startswith("b "):
+                    _, command = cmd.split(" ", 1)
+                else:
+                    command = input(
+                        'Write address in the format of "00:0150" or search for a symbol label like "Main"\n'
+                    )
+
+                bank_addr = self.parse_bank_addr_sym_label(command)
+                if bank_addr is None:
+                    print("Couldn't parse address or label!")
+                else:
+                    self.mb.add_breakpoint(*bank_addr)
+
+            elif cmd == "d":
+                # Remove current breakpoint
+
+                # TODO: Share this code with breakpoint_reached
+                for i, (bank, pc) in enumerate(self.mb.breakpoints_list):
+                    if self.mb.cpu.PC == pc and (
+                        (pc < 0x4000 and bank == 0 and not self.mb.bootrom_enabled) or \
+                        (0x4000 <= pc < 0x8000 and self.mb.cartridge.rombank_selected == bank) or \
+                        (0xA000 <= pc < 0xC000 and self.mb.cartridge.rambank_selected == bank) or \
+                        (pc < 0x100 and bank == -1 and self.mb.bootrom_enabled)
+                    ):
+                        break
+                else:
+                    print("Breakpoint couldn't be deleted for current PC. Not Found.")
+                    continue
+                print(f"Removing breakpoint: {bank}:{pc}")
+                self.mb.remove_breakpoint(i)
+            elif cmd == "pdb":
+                # Start pdb
+                import pdb
+                pdb.set_trace()
+                break
+            else:
+                # Step once
+                self.mb.breakpoint_latch = 1
+                self.mb.tick()
 
 
 def make_buffer(w, h):
@@ -294,7 +432,7 @@ class TileViewWindow(BaseDebugWindow):
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if self.mb.lcd.LCDC.tiledata_select == 0:
+            if self.mb.lcd._LCDC.tiledata_select == 0:
                 # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset (reduces to + 128)
                 tile_index = (tile_index ^ 0x80) + 128
 
@@ -347,13 +485,15 @@ class TileViewWindow(BaseDebugWindow):
         global marked_tiles
         scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
+        background_view = self.scanline_x == 0
+
         # TODO: Refactor this
         # Mark screen area
         for y in range(constants.ROWS):
             xx = int(scanlineparameters[y][self.scanline_x])
             yy = int(scanlineparameters[y][self.scanline_y])
 
-            if self.scanline_x == 0: # Background
+            if background_view: # Background
                 # Wraps around edges of the screen
                 if y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
                     for x in range(constants.COLS):
@@ -387,6 +527,14 @@ class TileViewWindow(BaseDebugWindow):
                 self.mark_tile(column * 8, row * 8, t.mark_color, 8, 8, True)
         if self.hover_x != -1:
             self.mark_tile(self.hover_x, self.hover_y, HOVER, 8, 8, True)
+
+        # Mark current scanline directly from LY,SCX,SCY,WX,WY
+        if background_view:
+            for x in range(constants.COLS):
+                self.buf0[(self.mb.lcd.SCY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.SCX + x) % 0xFF] = 0xFF00CE12
+        else:
+            for x in range(constants.COLS):
+                self.buf0[(self.mb.lcd.WY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.WX + x) % 0xFF] = 0xFF00CE12
 
 
 class TileDataWindow(BaseDebugWindow):
@@ -435,7 +583,7 @@ class SpriteWindow(BaseDebugWindow):
     def post_tick(self):
         tile_cache0 = self.renderer._tilecache
 
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for n in range(0, 0xA0, 4):
             # x = lcd.OAM[n]
             # y = lcd.OAM[n+1]
@@ -456,7 +604,7 @@ class SpriteWindow(BaseDebugWindow):
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
 
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
@@ -484,7 +632,7 @@ class SpriteWindow(BaseDebugWindow):
         return events
 
     def draw_overlay(self):
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
             marked_tiles,
@@ -500,7 +648,7 @@ class SpriteWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " [8x16]" if self.mb.lcd.LCDC.sprite_height else " [8x8]"
+        title += " [8x16]" if self.mb.lcd._LCDC.sprite_height else " [8x8]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 
@@ -510,12 +658,12 @@ class SpriteViewWindow(BaseDebugWindow):
             for x in range(constants.COLS):
                 self.buf0[y][x] = SPRITE_BACKGROUND
 
-        self.mb.renderer.render_sprites(self.mb.lcd, self.buf0, True)
+        self.mb.lcd.renderer.render_sprites(self.mb.lcd, self.buf0, True)
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
 
     def draw_overlay(self):
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
             marked_tiles,
@@ -527,7 +675,7 @@ class SpriteViewWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " " if self.mb.lcd.LCDC.sprite_enable else " [Disabled]"
+        title += " " if self.mb.lcd._LCDC.sprite_enable else " [Disabled]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 
@@ -594,14 +742,14 @@ class MemoryWindow(BaseDebugWindow):
         self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
 
     def write_addresses(self):
-        header = (f"Memory from 0x{self.start_address:04x} " f"to 0x{self.start_address+0x3FF:04x}").encode("cp437")
+        header = (f"Memory from 0x{self.start_address:04X} " f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
         if cythonmode:
             for x in range(28):
                 self.text_buffer[1][x + 2] = header[x]
         else:
             self.text_buffer[1][2:30] = header
         for y in range(32):
-            addr = f"0x{self.start_address + (0x20*y):04x}".encode("cp437")
+            addr = f"0x{self.start_address + (0x20*y):04X}".encode("cp437")
             if cythonmode:
                 for x in range(6):
                     self.text_buffer[y + 3][x + 2] = addr[x]
@@ -648,6 +796,15 @@ class MemoryWindow(BaseDebugWindow):
         self.render_text()
         sdl2.SDL_RenderPresent(self._sdlrenderer)
 
+    def _scroll_view(self, movement):
+        self.start_address += movement
+        self.start_address = max(0, min(self.start_address, 0x10000 - 0x400))
+        # if self.start_address + 0x400 > 0x10000:
+        #     self.start_address = 0x10000 - 0x400
+        # if self.start_address < 0:
+        #     self.start_address = 0
+        self.write_addresses()
+
     def handle_events(self, events):
         events = BaseDebugWindow.handle_events(self, events)
 
@@ -655,26 +812,24 @@ class MemoryWindow(BaseDebugWindow):
             # j - Next 256 bytes
             if event == WindowEvent.DEBUG_MEMORY_SCROLL_DOWN:
                 if self.shift_down:
-                    self.start_address += 0x1000
+                    self._scroll_view(0x1000)
                 else:
-                    self.start_address += 0x100
-                if self.start_address + 0x400 > 0x10000:
-                    self.start_address = 0x10000 - 0x400
-                self.write_addresses()
+                    self._scroll_view(0x100)
             # k - Last 256 bytes
             elif event == WindowEvent.DEBUG_MEMORY_SCROLL_UP:
                 if self.shift_down:
-                    self.start_address -= 0x1000
+                    self._scroll_view(-0x1000)
                 else:
-                    self.start_address -= 0x100
-                if self.start_address < 0:
-                    self.start_address = 0
-                self.write_addresses()
+                    self._scroll_view(-0x100)
             # shift tracking
             elif event == WindowEvent.MOD_SHIFT_ON:
                 self.shift_down = True
             elif event == WindowEvent.MOD_SHIFT_OFF:
                 self.shift_down = False
+            elif event == WindowEvent._INTERNAL_MOUSE:
+                # Scrolling
+                if event.window_id == self.window_id:
+                    self._scroll_view(event.mouse_scroll_y * -0x100)
 
         return events
 

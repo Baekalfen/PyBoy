@@ -440,14 +440,9 @@ class OpcodeData:
     def HALT(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles, branch_op=True)
 
-        # TODO: Implement HALT bug. If master interrupt is disabled,
-        # the intruction following HALT is skipped
+        # TODO: Implement HALT bug.
         code.addlines([
-            "if cpu.interrupt_master_enable:",
-            "\tcpu.halted = True",
-            "else:",
-            "\tcpu.PC += 1",
-            "\tcpu.PC &= 0xFFFF",
+            "cpu.halted = True",
             "return " + self.cycles[0],
         ])
         return code.getcode()
@@ -753,20 +748,20 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
             code.addlines([
-                "cpu.mb.setitem(cpu.SP-1, cpu.HL >> 8) # High",
-                "cpu.mb.setitem(cpu.SP-2, cpu.HL & 0xFF) # Low",
+                "cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.HL >> 8) # High",
+                "cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.HL & 0xFF) # Low",
                 "cpu.SP -= 2",
                 "cpu.SP &= 0xFFFF",
             ])
         else:
             # A bit of a hack, but you can only push double registers
-            code.addline("cpu.mb.setitem(cpu.SP-1, cpu.%s) # High" % left.operand[-2])
+            code.addline("cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.%s) # High" % left.operand[-2])
             if left.operand == "AF":
                 # by taking fx 'A' and 'F' directly, we save calculations
-                code.addline("cpu.mb.setitem(cpu.SP-2, cpu.%s & 0xF0) # Low" % left.operand[-1])
+                code.addline("cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.%s & 0xF0) # Low" % left.operand[-1])
             else:
                 # by taking fx 'A' and 'F' directly, we save calculations
-                code.addline("cpu.mb.setitem(cpu.SP-2, cpu.%s) # Low" % left.operand[-1])
+                code.addline("cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.%s) # Low" % left.operand[-1])
             code.addline("cpu.SP -= 2")
             code.addline("cpu.SP &= 0xFFFF")
 
@@ -779,7 +774,7 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         if "HL" in left.get:
             code.addlines([
-                (left.set % "(cpu.mb.getitem(cpu.SP+1) << 8) + "
+                (left.set % "(cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8) + "
                  "cpu.mb.getitem(cpu.SP)") + " # High",
                 "cpu.SP += 2",
                 "cpu.SP &= 0xFFFF",
@@ -790,7 +785,7 @@ class OpcodeData:
             else:
                 fmask = ""
             # See comment from PUSH
-            code.addline("cpu.%s = cpu.mb.getitem(cpu.SP+1) # High" % left.operand[-2])
+            code.addline("cpu.%s = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High" % left.operand[-2])
             if left.operand == "AF":
                 code.addline("cpu.%s = cpu.mb.getitem(cpu.SP)%s & 0xF0 # Low" % (left.operand[-1], fmask))
             else:
@@ -917,8 +912,8 @@ class OpcodeData:
 
         if left is None:
             code.addlines([
-                "cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
-                "cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
+                "cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
+                "cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
                 "cpu.SP -= 2",
                 "cpu.SP &= 0xFFFF",
                 "cpu.PC = %s" % ("v" if right.immediate else right.get),
@@ -927,8 +922,8 @@ class OpcodeData:
         else:
             code.addlines([
                 "if %s:" % l_code,
-                "\tcpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
-                "\tcpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
+                "\tcpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
+                "\tcpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
                 "\tcpu.SP -= 2",
                 "\tcpu.SP &= 0xFFFF",
                 "\tcpu.PC = %s" % ("v" if right.immediate else right.get),
@@ -956,7 +951,7 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles, branch_op=True)
         if left is None:
             code.addlines([
-                "cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High",
+                "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
                 "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
                 "cpu.SP += 2",
                 "cpu.SP &= 0xFFFF",
@@ -965,7 +960,7 @@ class OpcodeData:
         else:
             code.addlines([
                 "if %s:" % l_code,
-                "\tcpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High",
+                "\tcpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
                 "\tcpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
                 "\tcpu.SP += 2",
                 "\tcpu.SP &= 0xFFFF",
@@ -982,7 +977,7 @@ class OpcodeData:
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles, branch_op=True)
         code.addline("cpu.interrupt_master_enable = True")
         code.addlines([
-            "cpu.PC = cpu.mb.getitem(cpu.SP+1) << 8 # High",
+            "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
             "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
             "cpu.SP += 2",
             "cpu.SP &= 0xFFFF",
@@ -1001,8 +996,8 @@ class OpcodeData:
         code.addlines([
             "cpu.PC += %s" % self.length,
             "cpu.PC &= 0xFFFF",
-            "cpu.mb.setitem(cpu.SP-1, cpu.PC >> 8) # High",
-            "cpu.mb.setitem(cpu.SP-2, cpu.PC & 0xFF) # Low",
+            "cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
+            "cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
             "cpu.SP -= 2",
             "cpu.SP &= 0xFFFF",
         ])

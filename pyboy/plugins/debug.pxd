@@ -31,6 +31,7 @@ cdef class MarkedTile:
 
 
 cdef class Debug(PyBoyWindowPlugin):
+    cdef dict rom_symbols
     cdef TileViewWindow tile1
     cdef TileViewWindow tile2
     cdef SpriteViewWindow spriteview
@@ -38,6 +39,7 @@ cdef class Debug(PyBoyWindowPlugin):
     cdef TileDataWindow tiledata
     cdef MemoryWindow memory
     cdef bint sdl2_event_pump
+    cdef void handle_breakpoint(self)
 
 
 cdef class BaseDebugWindow(PyBoyWindowPlugin):

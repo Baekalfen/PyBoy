@@ -4,10 +4,12 @@
 #
 
 import array
+import logging
 
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.utils import IntIOInterface, WindowEvent
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
@@ -15,8 +17,8 @@ try:
 except ImportError:
     cythonmode = False
 
-FIXED_BUFFER_SIZE = 64 * 1024 * 128
-FIXED_BUFFER_MIN_ALLOC = 64 * 1024
+FIXED_BUFFER_SIZE = 8 * 1024 * 1024
+FIXED_BUFFER_MIN_ALLOC = 256 * 1024
 FILL_VALUE = 123
 
 

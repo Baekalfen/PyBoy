@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.plugins.game_wrapper_kirby_dream_land API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -135,6 +135,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
+        self._set_timer_div(timer_div)
+
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
@@ -143,6 +145,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -311,6 +315,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
+        self._set_timer_div(timer_div)
+
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
         After calling `start_game`, you can call this method at any time to reset the game.
@@ -319,6 +325,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -377,7 +385,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
                     for i, line in enumerate(self.game_area())
                 ]
             )
-        )</code></pre>
+        )
+        # yapf: enable</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -419,10 +428,7 @@ first playable state.</p>
 <p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
 instantly.</p>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
-<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
-</dl></section>
+<p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -471,7 +477,9 @@ instantly.</p>
     self.game_has_started = True
 
     self.saved_state.seek(0)
-    self.pyboy.save_state(self.saved_state)</code></pre>
+    self.pyboy.save_state(self.saved_state)
+
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.reset_game"><code class="name flex">
@@ -480,10 +488,7 @@ instantly.</p>
 <dd>
 <section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
-<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
-</dl></section>
+<p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -495,7 +500,9 @@ instantly.</p>
     Kwargs:
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
-    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)</code></pre>
+    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand.game_area"><code class="name flex">
@@ -503,7 +510,7 @@ instantly.</p>
 </code></dt>
 <dd>
 <section class="desc"><p>Use this method to get a matrix of the "game area" of the screen.</p>
-<pre><code class="text">      0   1   2   3   4   5   6   7   8   9
+<pre><code class="language-text">      0   1   2   3   4   5   6   7   8   9
   ____________________________________________________________________________________
   0  | 383 383 383 301 383 383 383 297 383 383 383 301 383 383 383 297 383 383 383 293
   1  | 383 383 383 383 300 294 295 296 383 383 383 383 300 294 295 296 383 383 299 383
@@ -524,7 +531,7 @@ instantly.</p>
 </code></pre>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>memoryview</code>:</dt>
+<dt><code>memoryview:</code></dt>
 <dd>Simplified 2-dimensional memoryview of the screen</dd>
 </dl></section>
 <details class="source">
@@ -569,6 +576,8 @@ instantly.</p>
 <ul class="hlist">
 <li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
 <ul class="hlist">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.argv" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.argv">argv</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.enabled">enabled</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
 </ul>
 </li>
@@ -609,7 +618,7 @@ instantly.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

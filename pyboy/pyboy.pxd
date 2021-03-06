@@ -40,6 +40,12 @@ cdef class PyBoy:
     cdef list recorded_input
     cdef list external_input
 
-    @cython.locals(done=cython.bint, event=int, t_start=float, t_cpu=float, t_emu=float, secs=float)
+    @cython.locals(t_start=float, t_pre=float, t_tick=float, t_post=float, secs=float)
     cpdef bint tick(self)
     cpdef void stop(self, save=*)
+
+    cdef void _handle_events(self, list)
+    cpdef void _pause(self)
+    cpdef void _unpause(self)
+    cdef void _update_window_title(self)
+    cdef void _post_tick(self)

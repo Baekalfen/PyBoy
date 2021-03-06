@@ -9,99 +9,19 @@ import logging
 from . import opcodes
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
-VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW = range(5)
-IF_ADDRESS = 0xFF0F
-IE_ADDRESS = 0xFFFF
+INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
 logger = logging.getLogger(__name__)
 
 
 class CPU:
     def set_bc(self, x):
-        assert x <= 0xFFFF, "%0.4x" % x
         self.B = x >> 8
         self.C = x & 0x00FF
 
     def set_de(self, x):
-        assert x <= 0xFFFF, "%0.4x" % x
         self.D = x >> 8
         self.E = x & 0x00FF
-
-    # CPU Flags
-    def test_flag(self, flag):
-        return (self.F & (1 << flag)) != 0
-
-    def set_flag(self, flag, value=True):
-        self.F = (self.F & (0xFF - (1 << flag)))
-        if value:
-            self.F = (self.F + (1 << flag))
-
-    def clear_flag(self, flag):
-        self.F = (self.F & (0xFF - (1 << flag)))
-
-    # Interrupt flags
-    def set_interruptflag(self, flag):
-        self.mb.setitem(IF_ADDRESS, self.mb.getitem(IF_ADDRESS) | (1 << flag))
-
-    def test_ramregisterflag(self, address, flag):
-        v = self.mb.getitem(address)
-        return (v & (1 << flag))
-
-    def clear_ramregisterflag(self, address, flag):
-        self.mb.setitem(address, (self.mb.getitem(address) & (0xFF - (1 << flag))))
-
-    def test_interrupt(self, if_v, ie_v, flag):
-        intr_flag_enabled = (ie_v & (1 << flag))
-        intr_flag = (if_v & (1 << flag))
-
-        if intr_flag_enabled and intr_flag:
-
-            # Clear interrupt flag
-            self.mb.setitem(0xFF0F, self.mb.getitem(0xFF0F) & (0xFF - (1 << flag)))
-
-            self.interrupt_master_enable = False
-            if self.halted:
-                self.PC += 1 # Escape HALT on return
-                self.PC &= 0xFFFF
-
-            self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
-            self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
-            self.SP -= 2
-            self.SP &= 0xFFFF
-
-            return True
-        return False
-
-    def check_interrupts(self):
-        # GBCPUman.pdf p. 40 about priorities
-        # If an interrupt occours, the PC is pushed to the stack.
-        # It is up to the interrupt routine to return it.
-        if not self.interrupt_master_enable:
-            return False
-
-        # 0xFF0F (IF_address) - Bit 0-4 Requested interrupts
-        if_v = self.mb.getitem(IF_ADDRESS)
-        # 0xFFFF (IE_address) - Bit 0-4 Enabling interrupt vectors
-        ie_v = self.mb.getitem(IE_ADDRESS)
-
-        # Better to make a long check, than run through 5 if statements
-        if ((if_v & 0b11111) & (ie_v & 0b11111)) != 0:
-            if self.test_interrupt(if_v, ie_v, VBLANK):
-                self.PC = 0x0040
-                return True
-            elif self.test_interrupt(if_v, ie_v, LCDC):
-                self.PC = 0x0048
-                return True
-            elif self.test_interrupt(if_v, ie_v, TIMER):
-                self.PC = 0x0050
-                return True
-            elif self.test_interrupt(if_v, ie_v, SERIAL):
-                self.PC = 0x0058
-                return True
-            elif self.test_interrupt(if_v, ie_v, HIGHTOLOW):
-                self.PC = 0x0060
-                return True
-        return False
 
     def f_c(self):
         return (self.F & (1 << FLAGC)) != 0
@@ -132,16 +52,16 @@ class CPU:
         self.SP = 0
         self.PC = 0
 
-        self.mb = mb
-
+        self.interrupts_flag_register = 0
+        self.interrupts_enabled_register = 0
         self.interrupt_master_enable = False
+        self.interrupt_queued = False
 
-        self.break_allow = True
-        self.break_on = False
-        self.break_next = 0
+        self.mb = mb
 
         self.halted = False
         self.stopped = False
+        self.is_stuck = False
 
         # Profiling
         self.profiling = profiling
@@ -158,6 +78,7 @@ class CPU:
         f.write(self.interrupt_master_enable)
         f.write(self.halted)
         f.write(self.stopped)
+        f.write(self.interrupts_enabled_register)
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
@@ -168,35 +89,119 @@ class CPU:
         self.interrupt_master_enable = f.read()
         self.halted = f.read()
         self.stopped = f.read()
-        logger.debug(
-            f"State loaded: A:{self.A:02x}, F:{self.F:02x}, B:{self.B:02x}, C:{self.C:02x}, D:{self.D:02x}, E:{self.E:02x}, HL:{self.HL:02x}, SP:{self.SP:02x}, PC:{self.PC:02x}, IME:{self.interrupt_master_enable}, halted:{self.halted}, stopped:{self.stopped}"
+        if state_version >= 5:
+            # Interrupt register moved from RAM to CPU
+            self.interrupts_enabled_register = f.read()
+        logger.debug("State loaded: " + self.dump_state(""))
+
+    def dump_state(self, sym_label):
+        opcode = self.mb.getitem(self.mb.cpu.PC)
+        opcode_1 = self.mb.getitem(self.mb.cpu.PC + 1)
+        opcode_2 = self.mb.getitem(self.mb.cpu.PC + 2)
+        if opcode == 0xCB:
+            opcode_str = f"Opcode: {opcode:02X}, {opcodes.CPU_COMMANDS[opcode_1+0x100]}\n"
+        else:
+            opcode_str = f"Opcode: {opcode:02X} {opcode_1:02X}, {opcodes.CPU_COMMANDS[opcode]}\n"
+
+        return (
+            "\n"
+            f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
+            f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
+            f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})\n"
+            f"{opcode_str}"
+            f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
+            f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
+            f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
+            f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
+            f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}\n"
+            f"halted:{self.halted}, "
+            f"interrupt_queued:{self.interrupt_queued}, "
+            f"stopped:{self.stopped}\n"
         )
 
-    def fetch_and_execute(self, pc):
-        opcode = self.mb.getitem(pc)
-        if opcode == 0xCB: # Extension code
-            pc += 1
-            opcode = self.mb.getitem(pc)
-            opcode += 0x100 # Internally shifting look-up table
+    def set_interruptflag(self, flag):
+        self.interrupts_flag_register |= flag
 
+    def tick(self):
+        if self.check_interrupts():
+            self.halted = False
+            # TODO: We return with the cycles it took to handle the interrupt
+            return 0
+
+        if self.halted and self.interrupt_queued:
+            # GBCPUman.pdf page 20
+            # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
+            # disabled (DI) on the GB,GBP, and SGB.
+            self.halted = False
+            self.PC += 1
+            self.PC &= 0xFFFF
+        elif self.halted:
+            return 4 # TODO: Number of cycles for a HALT in effect?
+
+        old_pc = self.PC
+        cycles = self.fetch_and_execute()
+        if not self.halted and old_pc == self.PC and not self.is_stuck:
+            logger.error("CPU is stuck: " + self.dump_state(""))
+            self.is_stuck = True
+        self.interrupt_queued = False
+        return cycles
+
+    def check_interrupts(self):
+        if self.interrupt_queued:
+            # Interrupt already queued. This happens only when using a debugger.
+            return False
+
+        if (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111):
+            if self.handle_interrupt(INTR_VBLANK, 0x0040):
+                self.interrupt_queued = True
+            elif self.handle_interrupt(INTR_LCDC, 0x0048):
+                self.interrupt_queued = True
+            elif self.handle_interrupt(INTR_TIMER, 0x0050):
+                self.interrupt_queued = True
+            elif self.handle_interrupt(INTR_SERIAL, 0x0058):
+                self.interrupt_queued = True
+            elif self.handle_interrupt(INTR_HIGHTOLOW, 0x0060):
+                self.interrupt_queued = True
+            else:
+                logger.error("No interrupt triggered, but it should!")
+                self.interrupt_queued = False
+            return True
+        else:
+            self.interrupt_queued = False
+        return False
+
+    def handle_interrupt(self, flag, addr):
+        if (self.interrupts_enabled_register & flag) and (self.interrupts_flag_register & flag):
+            # Clear interrupt flag
+            if self.halted:
+                self.PC += 1 # Escape HALT on return
+                self.PC &= 0xFFFF
+
+            # Handle interrupt vectors
+            if self.interrupt_master_enable:
+                self.interrupts_flag_register ^= flag # Remove flag
+                self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
+                self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
+                self.SP -= 2
+                self.SP &= 0xFFFF
+
+                self.PC = addr
+                self.interrupt_master_enable = False
+
+            return True
+        return False
+
+    def add_opcode_hit(self, opcode, count):
         # Profiling
         if self.profiling:
             self.hitrate[opcode] += 1
 
+    def fetch_and_execute(self):
+        opcode = self.mb.getitem(self.PC)
+        if opcode == 0xCB: # Extension code
+            opcode = self.mb.getitem(self.PC + 1)
+            opcode += 0x100 # Internally shifting look-up table
+
+        self.add_opcode_hit(opcode, 1)
+
         return opcodes.execute_opcode(self, opcode)
-
-    def tick(self):
-        # "The interrupt will be acknowledged during opcode fetch
-        # period of each instruction."
-        did_interrupt = self.check_interrupts()
-
-        if self.halted and did_interrupt:
-            # GBCPUman.pdf page 20
-            # WARNING: The instruction immediately following the HALT
-            # instruction is "skipped" when interrupts are disabled
-            # (DI) on the GB,GBP, and SGB.
-            self.halted = False
-        elif self.halted:
-            return -1
-
-        return self.fetch_and_execute(self.PC)

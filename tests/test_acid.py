@@ -27,7 +27,7 @@ def test_dmg_acid():
     for _ in range(59):
         pyboy.tick()
 
-    for _ in range(20):
+    for _ in range(25):
         pyboy.tick()
 
     png_path = Path(f"test_results/{dmg_acid_file}.png")

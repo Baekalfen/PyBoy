@@ -76,10 +76,10 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
         self.enable_title = True
         if not cythonmode:
-            self.renderer = mb.renderer
+            self.renderer = mb.lcd.renderer
 
     def __cinit__(self, *args, **kwargs):
-        self.renderer = self.mb.renderer
+        self.renderer = self.mb.lcd.renderer
 
     def frame_limiter(self, speed):
         return False
@@ -160,6 +160,12 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self.post_tick()
         else:
             logger.error("Tried to reset game, but it hasn't been started yet!")
+
+    def game_over(self):
+        """
+        After calling `start_game`, you can call this method at any time to know if the game is over.
+        """
+        raise NotImplementedError("game_over not implemented in game wrapper")
 
     def game_over(self):
         """

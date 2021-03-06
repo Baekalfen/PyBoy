@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.botsupport.sprite API documentation</title>
 <meta name="description" content="This class presents an interface to the sprites held in the OAM data on the Game Boy." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -234,9 +234,9 @@ move at pixel-precision on the screen. The other method of graphics &ndash; tile
 grid-size of 8x8 pixels precision, and can have no transparency.</p>
 <p>Sprites on the Game Boy are tightly associated with tiles. The sprites can be seen as "upgraded" tiles, as the
 image data still refers back to one (or two) tiles. The tile that a sprite will show, can change between each
-call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>, so make sure to verify the <a title="pyboy.botsupport.sprite.Sprite.tile_identifier" href="#pyboy.botsupport.sprite.Sprite.tile_identifier"><code>Sprite.tile_identifier</code></a> hasn't changed.</p>
+call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>, so make sure to verify the <code><a title="pyboy.botsupport.sprite.Sprite.tile_identifier" href="#pyboy.botsupport.sprite.Sprite.tile_identifier">Sprite.tile_identifier</a></code> hasn't changed.</p>
 <p>By knowing the tile identifiers of players, enemies, power-ups and so on, you'll be able to search for them
-using <a title="pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier" href="index.html#pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier"><code>BotSupportManager.sprite_by_tile_identifier()</code></a> and feed it to your bot or AI.</p></section>
+using <code><a title="pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier" href="index.html#pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier">BotSupportManager.sprite_by_tile_identifier()</a></code> and feed it to your bot or AI.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -415,7 +415,7 @@ using <a title="pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier" hr
 <section class="desc"><p>The Y-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code>:</dt>
+<dt><code>int:</code></dt>
 <dd>Y-coordinate</dd>
 </dl></section>
 </dd>
@@ -424,19 +424,19 @@ using <a title="pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier" hr
 <section class="desc"><p>The X-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code>:</dt>
+<dt><code>int:</code></dt>
 <dd>X-coordinate</dd>
 </dl></section>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.tile_identifier"><code class="name">var <span class="ident">tile_identifier</span></code></dt>
 <dd>
 <section class="desc"><p>The identifier of the tile the sprite uses. To get a better representation, see the method
-<a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a>.</p>
+<code><a title="pyboy.botsupport.sprite.Sprite.tiles" href="#pyboy.botsupport.sprite.Sprite.tiles">Sprite.tiles</a></code>.</p>
 <p>For double-height sprites, this will only give the identifier of the first tile. The second tile will
 always be the one immediately following the first (<code>tile_identifier + 1</code>).</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code>:</dt>
+<dt><code>int:</code></dt>
 <dd>unsigned tile index</dd>
 </dl></section>
 </dd>
@@ -446,7 +446,7 @@ always be the one immediately following the first (<code>tile_identifier + 1</co
 (OAM)</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>bool</code>:</dt>
+<dt><code>bool:</code></dt>
 <dd>The state of the bit in the attributes lookup.</dd>
 </dl></section>
 </dd>
@@ -456,7 +456,7 @@ always be the one immediately following the first (<code>tile_identifier + 1</co
 (OAM)</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>bool</code>:</dt>
+<dt><code>bool:</code></dt>
 <dd>The state of the bit in the attributes lookup.</dd>
 </dl></section>
 </dd>
@@ -466,7 +466,7 @@ always be the one immediately following the first (<code>tile_identifier + 1</co
 (OAM)</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>bool</code>:</dt>
+<dt><code>bool:</code></dt>
 <dd>The state of the bit in the attributes lookup.</dd>
 </dl></section>
 </dd>
@@ -476,7 +476,7 @@ always be the one immediately following the first (<code>tile_identifier + 1</co
 (OAM)</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>bool</code>:</dt>
+<dt><code>bool:</code></dt>
 <dd>The state of the bit in the attributes lookup.</dd>
 </dl></section>
 </dd>
@@ -497,8 +497,8 @@ immediately following the identifier given, and render it below the first.</p>
 (OAM)</a></p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>list</code>:</dt>
-<dd>A list of <a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object(s) representing the graphics data for the sprite</dd>
+<dt><code>list:</code></dt>
+<dd>A list of <code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code> object(s) representing the graphics data for the sprite</dd>
 </dl></section>
 </dd>
 <dt id="pyboy.botsupport.sprite.Sprite.on_screen"><code class="name">var <span class="ident">on_screen</span></code></dt>
@@ -509,7 +509,7 @@ screen. This is often a good way to determine if the sprite is inactive.</p>
 pixels.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>bool</code>:</dt>
+<dt><code>bool:</code></dt>
 <dd>True if the sprite has at least one pixel on screen.</dd>
 </dl></section>
 </dd>
@@ -552,7 +552,7 @@ pixels.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

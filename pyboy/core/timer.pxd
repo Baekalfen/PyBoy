@@ -13,6 +13,7 @@ cdef class Timer:
     cdef uint16_t DIV_counter, TIMA_counter
     cdef uint64_t[4] dividers
 
+    cdef void reset(self)
     @cython.locals(divider=cython.int)
     cdef bint tick(self, uint64_t)
     @cython.locals(divider=cython.int, cyclesleft=cython.uint)

@@ -7,13 +7,15 @@ __pdoc__ = {
     "GameWrapperTetris.post_tick": False,
 }
 
+import logging
 from array import array
 
 import numpy as np
-from pyboy.logger import logger
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
+
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled

@@ -5,12 +5,15 @@
 import base64
 import hashlib
 import os
+import platform
 
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
 from tests.utils import boot_rom, default_rom, kirby_rom
+
+is_pypy = platform.python_implementation() == "PyPy"
 
 
 @pytest.mark.skipif(not boot_rom, reason="ROM not present")
@@ -49,6 +52,7 @@ def test_record_replay():
 
 
 @pytest.mark.skipif(not boot_rom, reason="ROM not present")
+@pytest.mark.skipif(not is_pypy, reason="pyboy.mb.cpu is not accessible with Cython")
 def test_profiling():
     pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
     pyboy.set_emulation_speed(0)

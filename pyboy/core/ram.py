@@ -12,7 +12,6 @@ NON_IO_INTERNAL_RAM0 = 0x60
 IO_PORTS = 0x4C
 NON_IO_INTERNAL_RAM1 = 0x34
 INTERNAL_RAM1 = 0x7F
-INTERRUPT_ENABLE_REGISTER = 1
 
 
 class RAM:
@@ -22,7 +21,6 @@ class RAM:
         self.io_ports = array("B", [0] * (IO_PORTS))
         self.internal_ram1 = array("B", [0] * (INTERNAL_RAM1))
         self.non_io_internal_ram1 = array("B", [0] * (NON_IO_INTERNAL_RAM1))
-        self.interrupt_register = array("B", [0] * (INTERRUPT_ENABLE_REGISTER))
 
         if randomize:
             for i in range(INTERNAL_RAM0):
@@ -46,8 +44,6 @@ class RAM:
             f.write(self.internal_ram1[n])
         for n in range(NON_IO_INTERNAL_RAM1):
             f.write(self.non_io_internal_ram1[n])
-        for n in range(INTERRUPT_ENABLE_REGISTER):
-            f.write(self.interrupt_register[n])
 
     def load_state(self, f, state_version):
         for n in range(INTERNAL_RAM0):
@@ -61,5 +57,3 @@ class RAM:
             self.internal_ram1[n] = f.read()
         for n in range(NON_IO_INTERNAL_RAM1):
             self.non_io_internal_ram1[n] = f.read()
-        for n in range(INTERRUPT_ENABLE_REGISTER):
-            self.interrupt_register[n] = f.read()

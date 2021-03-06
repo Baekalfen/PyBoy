@@ -6,10 +6,10 @@
 The core module of the emulator
 """
 
+import logging
 import os
 import time
 
-from pyboy.logger import logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
@@ -17,6 +17,8 @@ from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport
 from .core.mb import Motherboard
+
+logger = logging.getLogger(__name__)
 
 SPF = 1 / 60. # inverse FPS (frame-per-second)
 
@@ -73,7 +75,7 @@ class PyBoy:
 
         self.mb = Motherboard(
             gamerom_file,
-            bootrom_file,
+            bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
             kwargs["color_palette"],
             disable_renderer,
             sound,
@@ -118,9 +120,12 @@ class PyBoy:
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self._handle_events(self.events)
         t_pre = time.perf_counter()
-        self.frame_count += 1
         if not self.paused:
-            self.mb.tickframe()
+            if self.mb.tick():
+                # breakpoint reached
+                self.plugin_manager.handle_breakpoint()
+            else:
+                self.frame_count += 1
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()
@@ -467,4 +472,7 @@ class PyBoy:
         """
         Disable or enable rendering
         """
-        self.mb.disable_renderer = not value
+        self.mb.renderer.disable_renderer = not value
+
+    def _is_cpu_stuck(self):
+        return self.mb.cpu.is_stuck

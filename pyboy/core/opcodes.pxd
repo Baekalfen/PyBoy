@@ -8,7 +8,6 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
-
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
 cdef uint16_t opcode_length(uint16_t)

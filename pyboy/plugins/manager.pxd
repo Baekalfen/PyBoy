@@ -58,20 +58,11 @@ cdef class PluginManager:
     cdef bint game_wrapper_kirby_dream_land_enabled
     # plugin_cdef end
 
-    @cython.locals(p=PyBoyPlugin, w=PyBoyWindowPlugin, events=list)
     cdef list handle_events(self, list)
-
-    @cython.locals(p=PyBoyPlugin, w=PyBoyWindowPlugin)
     cdef void post_tick(self)
-
-    @cython.locals(p=PyBoyPlugin, w=PyBoyWindowPlugin)
     cdef void _post_tick_windows(self)
-
-    @cython.locals(p=PyBoyPlugin, w=PyBoyWindowPlugin)
     cdef void frame_limiter(self, int)
-
-    @cython.locals(p=PyBoyPlugin, w=PyBoyWindowPlugin)
     cdef str window_title(self)
-
-    @cython.locals(p=PyBoyPlugin, w=PyBoyWindowPlugin)
     cdef void stop(self)
+    cdef void _set_title(self)
+    cdef void handle_breakpoint(self)

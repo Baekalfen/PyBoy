@@ -20,12 +20,12 @@ cdef class Rewind(PyBoyPlugin):
 # Homogeneous cyclic buffer
 ##############################################################
 
-cdef int64_t FIXED_BUFFER_SIZE = 64*1024*128
-cdef int64_t FIXED_BUFFER_MIN_ALLOC = 64*1024
+cdef int64_t FIXED_BUFFER_SIZE = 8 * 1024 * 1024
+cdef int64_t FIXED_BUFFER_MIN_ALLOC = 256*1024
 cdef int64_t FILL_VALUE
 
-DEF FIXED_BUFFER_SIZE = 64*1024*128
-DEF FIXED_BUFFER_MIN_ALLOC = 64*1024
+DEF FIXED_BUFFER_SIZE = 8 * 1024 * 1024
+DEF FIXED_BUFFER_MIN_ALLOC = 256*1024
 
 cdef inline uint8_t* _malloc(size_t n):
     return <uint8_t*> malloc(FIXED_BUFFER_SIZE)
