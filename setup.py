@@ -274,7 +274,7 @@ if CYTHON and "clean" not in sys.argv:
     ext_modules = cythonize(
         [*cythonize_files], # This runs even if build_ext isn't invoked...
         nthreads=thread_count,
-        annotate=True,
+        annotate=False,
         gdb_debug=False,
         language_level=3,
         compiler_directives={
