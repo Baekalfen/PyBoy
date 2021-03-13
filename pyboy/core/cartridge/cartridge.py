@@ -57,7 +57,15 @@ def load_romfile(filename):
         romdata = array("B", romfile.read())
 
     logger.debug(f"Loading ROM file: {len(romdata)} bytes")
+    if len(romdata) == 0:
+        logger.error("ROM file is empty!")
+        raise Exception("Empty ROM file")
+
     banksize = 16 * 1024
+    if len(romdata) % banksize != 0:
+        logger.error("Unexpected ROM file length")
+        raise Exception("Bad ROM file size")
+
     if cythonmode:
         return memoryview(romdata).cast("B", shape=(len(romdata) // banksize, banksize))
     else:

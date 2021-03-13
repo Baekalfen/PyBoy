@@ -224,7 +224,9 @@ class PyBoy:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         """
-        if not self.stopped:
+        # If __init__ errors, __del__ will call try to call stop() but
+        # self.stopped doesn't exist yet
+        if hasattr(self, 'stopped') and not self.stopped:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
