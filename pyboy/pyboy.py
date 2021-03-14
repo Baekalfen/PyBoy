@@ -63,6 +63,9 @@ class PyBoy:
             profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         """
 
         for k, v in defaults.items():
