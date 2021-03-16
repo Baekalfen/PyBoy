@@ -118,7 +118,6 @@ class Debug(PyBoyWindowPlugin):
         if self.sdl2_event_pump:
             sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
 
-        # self.scale = 2
         window_pos = 0
 
         self.tile1 = TileViewWindow(
@@ -135,7 +134,7 @@ class Debug(PyBoyWindowPlugin):
             scanline_x=0,
             scanline_y=1
         )
-        window_pos += (256 * self.tile1.scale)
+        window_pos += 256 * self.tile1.scale_w
 
         self.tile2 = TileViewWindow(
             pyboy,
@@ -151,7 +150,7 @@ class Debug(PyBoyWindowPlugin):
             scanline_x=2,
             scanline_y=3
         )
-        window_pos += (256 * self.tile2.scale)
+        window_pos += 256 * self.tile2.scale_w
 
         self.spriteview = SpriteViewWindow(
             pyboy,
@@ -176,7 +175,7 @@ class Debug(PyBoyWindowPlugin):
             pos_x=window_pos,
             pos_y=self.spriteview.height * 2 + 68
         )
-        window_pos += (constants.COLS * self.spriteview.scale)
+        window_pos += constants.COLS * self.spriteview.scale_w
 
         self.memory = MemoryWindow(
             pyboy, mb, pyboy_argv, scale=1, title="Memory", width=8 * 60, height=16 * 36, pos_x=window_pos, pos_y=0
@@ -338,14 +337,20 @@ def make_buffer(w, h):
 class BaseDebugWindow(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv, *, scale, title, width, height, pos_x, pos_y):
         super().__init__(pyboy, mb, pyboy_argv)
-        self.scale = scale
+        self.scale_w = scale
+        self.scale_h = scale
         self.width, self.height = width, height
         self.base_title = title
         self.hover_x = -1
         self.hover_y = -1
 
         self._window = sdl2.SDL_CreateWindow(
-            self.base_title.encode("utf8"), pos_x, pos_y, width * scale, height * scale, sdl2.SDL_WINDOW_RESIZABLE
+            self.base_title.encode("utf8"),
+            pos_x,
+            pos_y,
+            width * self.scale_w,
+            height * self.scale_h,
+            sdl2.SDL_WINDOW_RESIZABLE
         )
         self.window_id = sdl2.SDL_GetWindowID(self._window)
 
@@ -361,11 +366,16 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE:
                 if event.window_id == self.window_id:
-                    self.hover_x = event.mouse_x // self.scale
-                    self.hover_y = event.mouse_y // self.scale
+                    self.hover_x = event.mouse_x // self.scale_w
+                    self.hover_y = event.mouse_y // self.scale_h
                 else:
                     self.hover_x = -1
                     self.hover_y = -1
+            elif event == WindowEvent.WINDOW_RESIZED:
+                if event.window_id == self.window_id:
+                    self.scale_w = event.width / self.width
+                    self.scale_h = event.height / self.height
+                    print(f"Window {self.window_id} was resized. New scale: x({self.scale_w},{self.scale_h})")
 
         return events
 
@@ -454,7 +464,7 @@ class TileViewWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // self.scale_w // 8, event.mouse_y // self.scale_h // 8
                     tile_identifier = self.tilemap.tile_identifier(tile_x, tile_y)
                     logger.info(f"Tile clicked on {tile_x}, {tile_y}")
                     marked_tiles.add(
@@ -556,7 +566,7 @@ class TileDataWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // self.scale_w // 8, event.mouse_y // self.scale_h // 8
                     tile_identifier = tile_y * (self.width // 8) + tile_x
                     marked_tiles.add(
                         MarkedTile(tile_identifier=tile_identifier, mark_id="TILE", mark_color=MARK[mark_counter])
@@ -608,7 +618,7 @@ class SpriteWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // sprite_height
+                    tile_x, tile_y = event.mouse_x // self.scale_w // 8, event.mouse_y // self.scale_h // sprite_height
                     sprite_identifier = tile_y * (self.width // 8) + tile_x
                     if sprite_identifier > constants.SPRITES:
                         # Out of bounds

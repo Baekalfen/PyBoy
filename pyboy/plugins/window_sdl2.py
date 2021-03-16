@@ -9,7 +9,7 @@ from time import perf_counter
 import sdl2
 import sdl2.ext
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.utils import WindowEvent, WindowEventMouse
+from pyboy.utils import WindowEvent, WindowEventMouse, WindowEventResized
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +107,15 @@ def sdl2_event_pump(events):
                     events.append(WindowEvent(WindowEvent.WINDOW_UNFOCUS))
                 elif event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_GAINED:
                     events.append(WindowEvent(WindowEvent.WINDOW_FOCUS))
+            else:
+                if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
+                    events.append(
+                        WindowEventResized(
+                            WindowEvent.WINDOW_RESIZED,
+                            window_id=event.window.windowID,
+                            width=event.window.data1,
+                            height=event.window.data2)
+                    )
         elif event.type == sdl2.SDL_MOUSEWHEEL:
             events.append(
                 WindowEventMouse(

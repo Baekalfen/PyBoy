@@ -173,7 +173,8 @@ class WindowEvent:
         DEBUG_MEMORY_SCROLL_UP,
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
-    ) = range(41)
+        WINDOW_RESIZED,
+    ) = range(42)
 
     def __init__(self, event):
         self.event = event
@@ -230,6 +231,7 @@ class WindowEvent:
             "DEBUG_MEMORY_SCROLL_UP",
             "MOD_SHIFT_ON",
             "MOD_SHIFT_OFF",
+            "WINDOW_RESIZED",
         )[self.event]
 
 
@@ -244,3 +246,14 @@ class WindowEventMouse(WindowEvent):
         self.mouse_scroll_x = mouse_scroll_x
         self.mouse_scroll_y = mouse_scroll_y
         self.mouse_button = mouse_button
+
+
+class WindowEventResized(WindowEvent):
+    def __init__(self, *args, window_id=-1, width=-1, height=-1):
+        super().__init__(*args)
+        self.window_id = window_id
+        self.width = width
+        self.height = height
+
+    def __str__(self):
+        return f"{super().__str__()}(window_id={self.window_id}, width={self.width}, height={self.height})"

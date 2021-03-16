@@ -48,7 +48,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glutSpecialUpFunc(self._specUp)
         self.events = []
 
-        glPixelZoom(self.scale, self.scale)
+        glPixelZoom(self.scale_w, self.scale_h)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
 

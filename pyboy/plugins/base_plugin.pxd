@@ -28,7 +28,8 @@ cdef class PyBoyPlugin:
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):
 
-    cdef int scale
+    cdef float scale_w
+    cdef float scale_h
     cdef tuple _scaledresolution
     cdef bint enable_title
     cdef Renderer renderer

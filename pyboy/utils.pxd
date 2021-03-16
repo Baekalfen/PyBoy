@@ -43,3 +43,8 @@ cdef class WindowEventMouse(WindowEvent):
     cdef public int mouse_scroll_x
     cdef public int mouse_scroll_y
     cdef public int mouse_button
+
+cdef class WindowEventResized(WindowEvent):
+    cdef public int window_id
+    cdef public int width
+    cdef public int height
