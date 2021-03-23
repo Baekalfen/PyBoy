@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
 
+from base64 import b64encode
 from sys import argv
-from PIL import Image
+import zlib
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 
 # THIS IS ONLY MADE FOR 8x16 FONTS AND 256 CHARACTER CODE PAGES
-
-
-def main(bdffile, unifile):
+def main(bdffile, unifile, *args):
 
     class Char:
         def __init__(self, name):
@@ -42,18 +45,41 @@ def main(bdffile, unifile):
                                              else line[1])
 
     chars437 = [chars[n] for n in uni]
-    with open('fontstring.txt', 'w') as fs:
-        for c in chars437:
-            print(b''.join(c.bits).hex(), file=fs)
+    with open('font.txt', 'w') as f:
+        print("""
+This project uses a portion of the bold 16 pixel height Terminus font.
 
-    buf = bytearray()
-    for row in range(16):
-        for pixrow in range(16):
-            for col in range(16):
-                buf += chars437[16*row+col].bits[pixrow]
+The Terminus font is released under the Open Font License, which is
+copied in full below.
 
-    image = Image.frombytes('1', (128, 256), bytes(buf))
-    image.save('fontsheet.bmp')
+The full source code for the Terminus font is available at
+<terminus-font.sourceforge.net>.
+
+-----------------------------------------------------------
+""", file=f)
+
+        with open("OFL.txt", "r") as licensefile:
+            for line in licensefile.readlines():
+                print(line, end="", file=f)
+        print("", file=f)
+
+        print("BASE64DATA:", file=f)
+        blob = b64encode(zlib.compress(b''.join((b for c in chars437 for b in c.bits))))
+        for n in range(0, len(blob), 72):
+            print(blob[n:n+72].decode(), file=f)
+
+    if '--bitmap' in args:
+        if not Image:
+            print("Cannot create bitmap: Could not import Pillow")
+        else:
+            buf = bytearray()
+            for row in range(16):
+                for pixrow in range(16):
+                    for col in range(16):
+                        buf += chars437[16*row+col].bits[pixrow]
+
+            image = Image.frombytes('1', (128, 256), bytes(buf))
+            image.save('fontsheet.bmp')
 
 
 if __name__ == '__main__':
