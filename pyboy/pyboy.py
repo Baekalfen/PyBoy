@@ -233,8 +233,10 @@ class PyBoy:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
-            self.plugin_manager.stop()
-            self.mb.stop(save)
+            if hasattr(self, 'plugin_manager'):
+                self.plugin_manager.stop()
+            if hasattr(self, 'mb'):
+                self.mb.stop(save)
             self.stopped = True
 
     def _cpu_hitrate(self):

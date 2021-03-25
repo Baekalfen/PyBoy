@@ -1,8 +1,8 @@
 FONTVER=terminus-font-4.49.1
 
-.PHONY: clean download install
+.PHONY: all clean download install
 
-all: $(FONTVER) all-437.uni fontstring.txt
+all: $(FONTVER) all-437.uni font.txt
 
 $(FONTVER):
 	curl -L https://sourceforge.net/projects/terminus-font/files/terminus-font-4.49/$(FONTVER).tar.gz | tar xz
