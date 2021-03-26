@@ -95,7 +95,7 @@ class Interaction:
         f.write(self.standard)
 
     def load_state(self, f, state_version):
-        if state_version>=7:
+        if state_version >= 7:
             self.directional = f.read()
             self.standard = f.read()
         else:

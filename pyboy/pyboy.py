@@ -229,13 +229,13 @@ class PyBoy:
         """
         # If __init__ errors, __del__ will call try to call stop() but
         # self.stopped doesn't exist yet
-        if hasattr(self, 'stopped') and not self.stopped:
+        if hasattr(self, "stopped") and not self.stopped:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
-            if hasattr(self, 'plugin_manager'):
+            if hasattr(self, "plugin_manager"):
                 self.plugin_manager.stop()
-            if hasattr(self, 'mb'):
+            if hasattr(self, "mb"):
                 self.mb.stop(save)
             self.stopped = True
 

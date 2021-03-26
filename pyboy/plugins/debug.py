@@ -703,7 +703,7 @@ class MemoryWindow(BaseDebugWindow):
         font_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "font.txt")
         with open(font_path) as font_file:
             font_lines = font_file.readlines()
-        font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n")+1:])
+        font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n") + 1:])
         font_bytes = zlib.decompress(b64decode(font_blob.encode()))
 
         self.fbuf, self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
