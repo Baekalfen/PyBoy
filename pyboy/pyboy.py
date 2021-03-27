@@ -63,6 +63,9 @@ class PyBoy:
             profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         """
 
         for k, v in defaults.items():
@@ -224,12 +227,16 @@ class PyBoy:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         """
-        if not self.stopped:
+        # If __init__ errors, __del__ will call try to call stop() but
+        # self.stopped doesn't exist yet
+        if hasattr(self, "stopped") and not self.stopped:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
-            self.plugin_manager.stop()
-            self.mb.stop(save)
+            if hasattr(self, "plugin_manager"):
+                self.plugin_manager.stop()
+            if hasattr(self, "mb"):
+                self.mb.stop(save)
             self.stopped = True
 
     def _cpu_hitrate(self):

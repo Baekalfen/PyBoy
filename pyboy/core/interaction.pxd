@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from pyboy.utils cimport IntIOInterface
 from pyboy.utils cimport WindowEvent
 from libc.stdint cimport uint8_t
 
@@ -15,3 +16,5 @@ cdef class Interaction:
     cdef uint8_t directional, standard
     cdef bint key_event(self, WindowEvent)
     cdef uint8_t pull(self, uint8_t)
+    cdef void save_state(self, IntIOInterface)
+    cdef void load_state(self, IntIOInterface, int)

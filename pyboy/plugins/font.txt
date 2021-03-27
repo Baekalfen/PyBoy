@@ -1,0 +1,132 @@
+
+This project uses a portion of the bold 16 pixel height Terminus font.
+
+The Terminus font is released under the Open Font License, which is
+copied in full below.
+
+The full source code for the Terminus font is available at
+<terminus-font.sourceforge.net>.
+
+-----------------------------------------------------------
+
+Copyright (c) 2019 Dimitar Toshkov Zhekov,
+with Reserved Font Name "Terminus Font".
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+
+BASE64DATA:
+eJxtV71qJEcQbjgYLhhWikRjCd1h7gEGB2KCYQX3Dk4uGhxM4sYSGIQ4mhFs5NjZ+RHuARzY
+HAwsDA6WtaJlQWJRdEqEtJFYzNDj6p/qru7Tt6u7+aaqq6uqq6t7GVO9g2IGcvZ5Nvvr99lM
+Oq5WSvWPSjnOmFAAWe4j51U7thX3rOIfxvEDrxzX4rHlyFHHPo0G9/P5vX0yL6vm/fumCvL5
+py9fPs2dfDr57ofLBeCSOWVAxWECy9umrTXuOs+1RvPLg3vBb9rqvmpv0GHWbYdxHLYd8ld7
+p+N4uvfKR8cBPsDGAv539leAiwOAc6cuRdOcHGUNCZjplFF7YK6N7HP035GQUMZe50rlr4Ox
+t7VS9VtPOw1FJnvXjGPzLmQb0t22Lrcmp20LC8DZi0BnnLzBOBFCCGW+wtD9fbm6vpYHByu5
+byqiWYmc8+LkZzeuFKK8uF0sbi/QfGwv54UBzy2HBwNehClLVYrIxfZb7zkZwFQqZRgPy7Jc
++1fUteWy75eb56997+qbl5duBbw8A2dqzLDmVZZ5/WxyfNL0KssyNzUsxgAM5VUNXO8vxxU6
+UHh7vSRy89yC0mXsOonYcWfAeAdZy2j0JAFGpnWC/TysL/ClruBlF+KFXqD/sVz7bvwfvFzX
+m/d3t7DtY7EL8e9IRXrekfGbEK+fzs1XuQLEfnFsy8Hvd5hpvd2uF6jfIdx8M+hVK2IPHr4+
+b5aeS+x3MsTXD5F/BhuZEbmeEOVdJ8n6j+gvD/FQ++YZdktZEr5Sj/0MuZYJgf7N57qdBXu6
+XnT5YXxV4eDyU9ewd2DPYP1VuYOV8yrZvwRK77YX3sus1TXo82tSgOvvUtD5+s+Mtte3KYRV
+d/Ljohisw17u9LNMUvsufoi7pOsPcU0yg8Z0VD01VIBfjzKpF8CwMgic2me4xDKRD74EvH8u
+pZvtXagPLTcV4PJRYHzHXt4n+ejtGhOu3ZOEi1IQ/3qaH4Ci/ecIpqr1fEeYr7j+zuEp1/Tc
+0F9vlizBvp4snPc97ufCtAjo65H/0Gai9YROHNWHSDhUVMRLUUac+fqx82l71L5IuLaXyKP6
+KBNeRPVjrYV+pr2hHKLDBhVapjg4aK+v3YnTrtdrBX/rTYif1o9IuPU38DLJJ8gjHvKt19tb
+c+O9NNSrPXGv8bwtRV3v4L7TOP+hf+jbkD8hd3BV+q//t+/nlk8OzfGpsT5360vXJ0/2n13/
+MD/wyP+LW7q/gMX9tsqmzZSFtdfXtYpw2D/wraP9qOhmY6YF+sOtvvupEbAdbv/M+TTwZvnH
+1CqZo43sB8DhiViLk0PPNYFX+vG37+PP5x/jz+Pf8Ye/jN0uYfhCWDw8uAfnwTBQnuo/POR+
+QAI3OpaD/jBgNRkgZcEfmlAW+8v5mzdUn/NwWbQYx1Q/zrHX9+MTbRzg/Ds7o0GdndVXV2S2
+q6s6Unh6YpFDQJ6e4vGoj3LUx/Goj9FFciHieI08iS9eBu9uiI+MJ/H6iOLx3h5mK0lwslzM
+53tMEFy22CbYS5COM/i4hB6x/GgJ/Lb6x9+JmN2MXRedf4qep6qDCyY5nwCn5hdSOI+N9vLZ
+m7CxTiyBbmYg3e9J3WxWqz6+D+sD9NHytuDp+S3paZrlUt/nZe39nYJvXT0N6n18H1Dpjdn+
+vsAe5a7PnrvrNvLJ4WHaDTTW6/NgDnTpDxZokvC10D+PWIqyTN6F0RN7GV6Iyp3/l6StGHvg
+n4xHS4NvZtH4Hyfwd5s=

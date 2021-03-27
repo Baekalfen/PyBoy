@@ -87,6 +87,7 @@ class Motherboard:
         self.ram.save_state(f)
         self.timer.save_state(f)
         self.cartridge.save_state(f)
+        self.interaction.save_state(f)
         f.flush()
         logger.debug("State saved.")
 
@@ -114,6 +115,7 @@ class Motherboard:
         if state_version >= 5:
             self.timer.load_state(f, state_version)
         self.cartridge.load_state(f, state_version)
+        self.interaction.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 
