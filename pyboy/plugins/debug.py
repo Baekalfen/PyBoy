@@ -366,7 +366,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
                 else:
                     self.hover_x = -1
                     self.hover_y = -1
-            elif event == WindowEvent.WINDOW_RESIZED:
+            elif event == WindowEvent._INTERNAL_WINDOW_RESIZED:
                 if event.window_id == self.window_id:
 
                     aspect_ratio = self.height / float(self.width)

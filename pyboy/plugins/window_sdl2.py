@@ -111,7 +111,7 @@ def sdl2_event_pump(events):
                 if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                     events.append(
                         WindowEventResized(
-                            WindowEvent.WINDOW_RESIZED,
+                            WindowEvent._INTERNAL_WINDOW_RESIZED,
                             window_id=event.window.windowID,
                             width=event.window.data1,
                             height=event.window.data2)

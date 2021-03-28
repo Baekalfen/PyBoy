@@ -173,7 +173,7 @@ class WindowEvent:
         DEBUG_MEMORY_SCROLL_UP,
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
-        WINDOW_RESIZED,
+        _INTERNAL_WINDOW_RESIZED,
     ) = range(42)
 
     def __init__(self, event):
@@ -231,7 +231,7 @@ class WindowEvent:
             "DEBUG_MEMORY_SCROLL_UP",
             "MOD_SHIFT_ON",
             "MOD_SHIFT_OFF",
-            "WINDOW_RESIZED",
+            "_INTERNAL_WINDOW_RESIZED",
         )[self.event]
 
 
