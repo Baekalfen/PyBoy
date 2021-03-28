@@ -68,6 +68,8 @@ class PyBoy:
         `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         """
 
+        self.initialized = False
+
         for k, v in defaults.items():
             if k not in kwargs:
                 kwargs[k] = kwargs.get(k, defaults[k])
@@ -106,6 +108,7 @@ class PyBoy:
         # Plugins
 
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
+        self.initialized = True
 
     def tick(self):
         """
@@ -227,16 +230,12 @@ class PyBoy:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         """
-        # If __init__ errors, __del__ will call try to call stop() but
-        # self.stopped doesn't exist yet
-        if hasattr(self, "stopped") and not self.stopped:
+        if self.initialized and not self.stopped:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
-            if hasattr(self, "plugin_manager"):
-                self.plugin_manager.stop()
-            if hasattr(self, "mb"):
-                self.mb.stop(save)
+            self.plugin_manager.stop()
+            self.mb.stop(save)
             self.stopped = True
 
     def _cpu_hitrate(self):
