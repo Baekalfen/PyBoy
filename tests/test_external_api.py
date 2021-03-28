@@ -223,7 +223,7 @@ def test_tetris():
             if frame == 1012:
                 assert not first_brick
 
-            if frame == 1013:
+            if frame == 1014:
                 assert first_brick
 
                 s1 = pyboy.botsupport_manager().sprite(0)
@@ -292,8 +292,11 @@ def test_tetris():
                 pyboy.save_state(state_data)
                 break
 
+    pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
+    pyboy.tick()
+
     pre_load_game_board_matrix = None
-    for frame in range(1015, 1865):
+    for frame in range(1016, 1865):
         pyboy.tick()
 
         if frame == 1864:
@@ -323,7 +326,7 @@ def test_tetris():
         for _f in [f, state_data]: # Tests both file-written state and in-memory state
             pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
             pyboy.tick()
-            for frame in range(1015, 1865):
+            for frame in range(1016, 1865):
                 pyboy.tick()
 
                 if frame == 1864:

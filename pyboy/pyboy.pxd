@@ -29,6 +29,7 @@ cdef class PyBoy:
     cdef list events
     cdef bint quitting
     cdef bint stopped
+    cdef bint initialized
     cdef public str window_title
 
     cdef bint limit_emulationspeed
