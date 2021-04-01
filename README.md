@@ -64,6 +64,7 @@ Student Projects
 
  * __Rewind Time:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
  * __Link Cable:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
+ * __Game Boy Color:__ Christian Marslev and Jonas Grønborg - [CKuke](https://github.com/CKuke) and [kaff3](https://github.com/kaff3)
 
 Contribute
 ==========
