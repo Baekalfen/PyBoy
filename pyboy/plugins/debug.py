@@ -353,6 +353,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         self.buf, self.buf0, self.buf_p = make_buffer(width, height)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
+        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, width, height)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
         )
@@ -362,8 +363,8 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE:
                 if event.window_id == self.window_id:
-                    self.hover_x = event.mouse_x // self.scale
-                    self.hover_y = event.mouse_y // self.scale
+                    self.hover_x = event.mouse_x
+                    self.hover_y = event.mouse_y
                 else:
                     self.hover_x = -1
                     self.hover_y = -1
@@ -455,7 +456,7 @@ class TileViewWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // 8, event.mouse_y // 8
                     tile_identifier = self.tilemap.tile_identifier(tile_x, tile_y)
                     logger.info(f"Tile clicked on {tile_x}, {tile_y}")
                     marked_tiles.add(
@@ -557,7 +558,7 @@ class TileDataWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // 8, event.mouse_y // 8
                     tile_identifier = tile_y * (self.width // 8) + tile_x
                     marked_tiles.add(
                         MarkedTile(tile_identifier=tile_identifier, mark_id="TILE", mark_color=MARK[mark_counter])
@@ -609,7 +610,7 @@ class SpriteWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // sprite_height
+                    tile_x, tile_y = event.mouse_x // 8, event.mouse_y // sprite_height
                     sprite_identifier = tile_y * (self.width // 8) + tile_x
                     if sprite_identifier > constants.SPRITES:
                         # Out of bounds
