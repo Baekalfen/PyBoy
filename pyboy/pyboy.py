@@ -435,6 +435,23 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
+    def screen_image(self):
+        """
+        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+
+        Generates a PIL Image from the screen buffer.
+
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        and join our Discord channel for more help.
+
+        Returns
+        -------
+        PIL.Image:
+            RGB image of (160, 144) pixels
+        """
+        return self.botsupport_manager().screen().screen_image()
+
     def _serial(self):
         """
         Provides all data that has been sent over the serial port since last call to this function.

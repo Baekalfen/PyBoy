@@ -10,6 +10,7 @@ import os
 import numpy as np
 import PIL
 import pytest
+from PIL import ImageChops
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
 from tests.utils import BOOTROM_FRAMES_UNTIL_LOGO, any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
@@ -94,6 +95,12 @@ def test_screen_buffer_and_image():
     image.save(image_data, format="BMP")
     boot_logo_png_hash.update(image_data.getvalue())
     assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
+
+    # Screenshot shortcut
+    image1 = pyboy.botsupport_manager().screen().screen_image()
+    image2 = pyboy.screen_image()
+    diff = ImageChops.difference(image1, image2)
+    assert not diff.getbbox()
 
     # screen_ndarray
     numpy_hash = hashlib.sha256()
