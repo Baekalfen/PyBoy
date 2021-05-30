@@ -37,6 +37,18 @@ while not pyboy.tick():
     pass
 ```
 
+When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
+```python
+from pyboy import WindowEvent
+
+pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+pyboy.tick() # Process one frame to let the game register the input
+pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+
+pil_image = pyboy.screen_image()
+pil_image.save('screenshot.png')
+```
+
 If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
 
 At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
