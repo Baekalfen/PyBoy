@@ -89,3 +89,15 @@ class Interaction:
             joystickByte &= self.standard
 
         return joystickByte
+
+    def save_state(self, f):
+        f.write(self.directional)
+        f.write(self.standard)
+
+    def load_state(self, f, state_version):
+        if state_version >= 7:
+            self.directional = f.read()
+            self.standard = f.read()
+        else:
+            self.directional = 0xF
+            self.standard = 0xF

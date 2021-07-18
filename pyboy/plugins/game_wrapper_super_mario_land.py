@@ -7,12 +7,14 @@ __pdoc__ = {
     "GameWrapperSuperMarioLand.post_tick": False,
 }
 
+import logging
 
 import numpy as np
 from pyboy.utils import WindowEvent
-from pyboy.logger import logger
+
 from .base_plugin import PyBoyGameWrapper
 
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
@@ -255,6 +257,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
+        self._set_timer_div(timer_div)
+
     def reset_game(self, timer_div=None):
         """
         After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
@@ -266,6 +270,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
     def game_area(self):
         """

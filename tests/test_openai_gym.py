@@ -5,6 +5,7 @@
 
 import os
 import platform
+import sys
 
 import numpy as np
 import pytest
@@ -12,6 +13,7 @@ from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
 from tests.utils import tetris_rom
 
+py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"
 
 
@@ -38,7 +40,9 @@ def tiles_id():
 
 
 @pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom), reason="This requires gym, which doesn't install on PyPy"
+    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or (py_version == "3.9") or
+    (sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
+    reason="This requires gym, which doesn't work on this platform"
 )
 class TestOpenAIGym:
     def test_raw(self, pyboy):

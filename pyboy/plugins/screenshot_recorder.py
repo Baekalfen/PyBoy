@@ -3,13 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
 import os
 import time
 
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.utils import WindowEvent
-from pyboy.logger import logger
 
+logger = logging.getLogger(__name__)
 
 try:
     from PIL import Image

@@ -3,10 +3,9 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'opcodes_gen.py'.
 
-cimport cpu
+from . cimport cpu
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
-
 
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ

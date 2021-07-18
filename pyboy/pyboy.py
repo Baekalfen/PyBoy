@@ -6,6 +6,7 @@
 The core module of the emulator
 """
 
+import logging
 import os
 import time
 
@@ -16,8 +17,8 @@ from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport
 from .core.mb import Motherboard
-from pyboy.logger import logger
 
+logger = logging.getLogger(__name__)
 
 SPF = 1 / 60. # inverse FPS (frame-per-second)
 
@@ -30,7 +31,15 @@ defaults = {
 
 class PyBoy:
     def __init__(
-        self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, **kwargs
+        self,
+        gamerom_file,
+        *,
+        bootrom_file=None,
+        profiling=False,
+        disable_renderer=False,
+        sound=False,
+        randomize=False,
+        **kwargs
     ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -54,7 +63,12 @@ class PyBoy:
             profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         """
+
+        self.initialized = False
 
         for k, v in defaults.items():
             if k not in kwargs:
@@ -66,10 +80,11 @@ class PyBoy:
 
         self.mb = Motherboard(
             gamerom_file,
-            bootrom_file,
+            bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
             kwargs["color_palette"],
             disable_renderer,
             sound,
+            randomize=randomize,
             profiling=profiling,
         )
 
@@ -85,13 +100,15 @@ class PyBoy:
         self.paused = False
         self.events = []
         self.old_events = []
-        self.done = False
+        self.quitting = False
+        self.stopped = False
         self.window_title = "PyBoy"
 
         ###################
         # Plugins
 
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
+        self.initialized = True
 
     def tick(self):
         """
@@ -103,13 +120,18 @@ class PyBoy:
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         """
+        if self.stopped:
+            return True
 
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self._handle_events(self.events)
         t_pre = time.perf_counter()
-        self.frame_count += 1
         if not self.paused:
-            self.mb.tickframe()
+            if self.mb.tick():
+                # breakpoint reached
+                self.plugin_manager.handle_breakpoint()
+            else:
+                self.frame_count += 1
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()
@@ -123,14 +145,14 @@ class PyBoy:
         secs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + 0.1*secs
 
-        return self.done
+        return self.quitting
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
-                self.done = True
+                self.quitting = True
             elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
@@ -208,11 +230,13 @@ class PyBoy:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         """
-        logger.info("###########################")
-        logger.info("# Emulator is turning off #")
-        logger.info("###########################")
-        self.plugin_manager.stop()
-        self.mb.stop(save)
+        if self.initialized and not self.stopped:
+            logger.info("###########################")
+            logger.info("# Emulator is turning off #")
+            logger.info("###########################")
+            self.plugin_manager.stop()
+            self.mb.stop(save)
+            self.stopped = True
 
     def _cpu_hitrate(self):
         return self.mb.cpu.hitrate
@@ -411,6 +435,23 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
+    def screen_image(self):
+        """
+        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+
+        Generates a PIL Image from the screen buffer.
+
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        and join our Discord channel for more help.
+
+        Returns
+        -------
+        PIL.Image:
+            RGB image of (160, 144) pixels
+        """
+        return self.botsupport_manager().screen().screen_image()
+
     def _serial(self):
         """
         Provides all data that has been sent over the serial port since last call to this function.
@@ -454,4 +495,7 @@ class PyBoy:
         """
         Disable or enable rendering
         """
-        self.mb.disable_renderer = not value
+        self.mb.renderer.disable_renderer = not value
+
+    def _is_cpu_stuck(self):
+        return self.mb.cpu.is_stuck

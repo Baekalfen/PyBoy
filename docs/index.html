@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -68,13 +68,13 @@ from .utils import WindowEvent</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, **kwargs)</span>
+<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, randomize=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
 controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
 multiple times.</p>
-<p>This object, <a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a>, and the <a title="pyboy.botsupport" href="botsupport/index.html"><code>pyboy.botsupport</code></a> module, are the only official user-facing
+<p>This object, <code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code>, and the <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code> module, are the only official user-facing
 interfaces. All other parts of the emulator, are subject to change.</p>
 <p>A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
 GitHub, if other methods are needed for your projects. Take a look at <code>interface_example.py</code> or <code>tetris_bot.py</code>
@@ -86,23 +86,25 @@ for a crude "bot", which interacts with the game.</p>
 <dd>Filepath to a game-ROM for the original Game Boy.</dd>
 </dl>
 <h2 id="kwargs">Kwargs</h2>
-<dl>
-<dt><strong><code>bootrom_file</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</dd>
-<dt><strong><code>profiling</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Profile the emulator and report opcode usage (internal use).</dd>
-<dt><strong><code>disable_renderer</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Can be used to optimize performance, by internally disable rendering of the screen.</dd>
-<dt><strong><code>color_palette</code></strong> :&ensp;<code>tuple</code></dt>
-<dd>Specify the color palette to use for rendering.</dd>
-</dl></section>
+<p>bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.
+profiling (bool): Profile the emulator and report opcode usage (internal use).
+disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
+color_palette (tuple): Specify the color palette to use for rendering.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PyBoy:
     def __init__(
-        self, gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, **kwargs
+        self,
+        gamerom_file,
+        *,
+        bootrom_file=None,
+        profiling=False,
+        disable_renderer=False,
+        sound=False,
+        randomize=False,
+        **kwargs
     ):
         &#34;&#34;&#34;
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -138,10 +140,11 @@ for a crude "bot", which interacts with the game.</p>
 
         self.mb = Motherboard(
             gamerom_file,
-            bootrom_file,
+            bootrom_file or kwargs.get(&#34;bootrom&#34;), # Our current way to provide cli arguments is broken
             kwargs[&#34;color_palette&#34;],
             disable_renderer,
             sound,
+            randomize=randomize,
             profiling=profiling,
         )
 
@@ -157,7 +160,8 @@ for a crude "bot", which interacts with the game.</p>
         self.paused = False
         self.events = []
         self.old_events = []
-        self.done = False
+        self.quitting = False
+        self.stopped = False
         self.window_title = &#34;PyBoy&#34;
 
         ###################
@@ -175,13 +179,18 @@ for a crude "bot", which interacts with the game.</p>
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         &#34;&#34;&#34;
+        if self.stopped:
+            return True
 
         t_start = time.perf_counter() # Change to _ns when PyPy supports it
         self._handle_events(self.events)
         t_pre = time.perf_counter()
-        self.frame_count += 1
         if not self.paused:
-            self.mb.tickframe()
+            if self.mb.tick():
+                # breakpoint reached
+                self.plugin_manager.handle_breakpoint()
+            else:
+                self.frame_count += 1
         t_tick = time.perf_counter()
         self._post_tick()
         t_post = time.perf_counter()
@@ -195,14 +204,14 @@ for a crude "bot", which interacts with the game.</p>
         secs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + 0.1*secs
 
-        return self.done
+        return self.quitting
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
         events = self.plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
-                self.done = True
+                self.quitting = True
             elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
@@ -280,11 +289,13 @@ for a crude "bot", which interacts with the game.</p>
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         &#34;&#34;&#34;
-        logger.info(&#34;###########################&#34;)
-        logger.info(&#34;# Emulator is turning off #&#34;)
-        logger.info(&#34;###########################&#34;)
-        self.plugin_manager.stop()
-        self.mb.stop(save)
+        if not self.stopped:
+            logger.info(&#34;###########################&#34;)
+            logger.info(&#34;# Emulator is turning off #&#34;)
+            logger.info(&#34;###########################&#34;)
+            self.plugin_manager.stop()
+            self.mb.stop(save)
+            self.stopped = True
 
     def _cpu_hitrate(self):
         return self.mb.cpu.hitrate
@@ -526,7 +537,10 @@ for a crude "bot", which interacts with the game.</p>
         &#34;&#34;&#34;
         Disable or enable rendering
         &#34;&#34;&#34;
-        self.mb.disable_renderer = not value</code></pre>
+        self.mb.renderer.disable_renderer = not value
+
+    def _is_cpu_stuck(self):
+        return self.mb.cpu.is_stuck</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -537,7 +551,7 @@ for a crude "bot", which interacts with the game.</p>
 <section class="desc"><p>Progresses the emulator ahead by one frame.</p>
 <p>To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
 This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed"><code>PyBoy.set_emulation_speed()</code></a> method.</p>
+otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">PyBoy.set_emulation_speed()</a></code> method.</p>
 <p><em>Open an issue on GitHub if you need finer control, and we will take a look at it.</em></p></section>
 <details class="source">
 <summary>
@@ -553,13 +567,18 @@ otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy
 
     _Open an issue on GitHub if you need finer control, and we will take a look at it._
     &#34;&#34;&#34;
+    if self.stopped:
+        return True
 
     t_start = time.perf_counter() # Change to _ns when PyPy supports it
     self._handle_events(self.events)
     t_pre = time.perf_counter()
-    self.frame_count += 1
     if not self.paused:
-        self.mb.tickframe()
+        if self.mb.tick():
+            # breakpoint reached
+            self.plugin_manager.handle_breakpoint()
+        else:
+            self.frame_count += 1
     t_tick = time.perf_counter()
     self._post_tick()
     t_post = time.perf_counter()
@@ -573,7 +592,7 @@ otherwise with the <a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy
     secs = t_post - t_tick
     self.avg_post = 0.9 * self.avg_post + 0.1*secs
 
-    return self.done</code></pre>
+    return self.quitting</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.stop"><code class="name flex">
@@ -599,11 +618,13 @@ provided game-ROM.</dd>
         save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
             provided game-ROM.
     &#34;&#34;&#34;
-    logger.info(&#34;###########################&#34;)
-    logger.info(&#34;# Emulator is turning off #&#34;)
-    logger.info(&#34;###########################&#34;)
-    self.plugin_manager.stop()
-    self.mb.stop(save)</code></pre>
+    if not self.stopped:
+        logger.info(&#34;###########################&#34;)
+        logger.info(&#34;# Emulator is turning off #&#34;)
+        logger.info(&#34;###########################&#34;)
+        self.plugin_manager.stop()
+        self.mb.stop(save)
+        self.stopped = True</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.botsupport_manager"><code class="name flex">
@@ -611,8 +632,8 @@ provided game-ROM.</dd>
 </code></dt>
 <dd>
 <section class="desc"><h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.BotSupportManager" href="botsupport/index.html#pyboy.botsupport.BotSupportManager"><code>BotSupportManager</code></a>:
-The manager, which gives easier access to the emulated game through the classes in <a title="pyboy.botsupport" href="botsupport/index.html"><code>pyboy.botsupport</code></a>.</p></section>
+<p><code><a title="pyboy.botsupport.BotSupportManager" href="botsupport/index.html#pyboy.botsupport.BotSupportManager">BotSupportManager</a></code>:
+The manager, which gives easier access to the emulated game through the classes in <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code>.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -661,7 +682,7 @@ Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the g
 <dd>Allow to inject multiple input at once. This dramatically increases the action_space: <span><span class="MathJax_Preview">n \rightarrow 2^n</span><script type="math/tex">n \rightarrow 2^n</script></span></dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.openai_gym.PyBoyGymEnv" href="openai_gym.html#pyboy.openai_gym.PyBoyGymEnv"><code>PyBoyGymEnv</code></a>:
+<p><code><a title="pyboy.openai_gym.PyBoyGymEnv" href="openai_gym.html#pyboy.openai_gym.PyBoyGymEnv">PyBoyGymEnv</a></code>:
 A Gym environment based on the <code>Pyboy</code> object.</p></section>
 <details class="source">
 <summary>
@@ -704,11 +725,11 @@ A Gym environment based on the <code>Pyboy</code> object.</p></section>
 </code></dt>
 <dd>
 <section class="desc"><p>Provides an instance of a game-specific wrapper. The game is detected by the cartridge's hard-coded game title
-(see <a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title"><code>PyBoy.cartridge_title()</code></a>).</p>
+(see <code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title">PyBoy.cartridge_title()</a></code>).</p>
 <p>If the game isn't supported, None will be returned.</p>
-<p>To get more information, find the wrapper for your game in <a title="pyboy.plugins" href="plugins/index.html"><code>pyboy.plugins</code></a>.</p>
+<p>To get more information, find the wrapper for your game in <code><a title="pyboy.plugins" href="plugins/index.html">pyboy.plugins</a></code>.</p>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="plugins/base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper"><code>PyBoyGameWrapper</code></a>:
+<p><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="plugins/base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></code>:
 A game-specific wrapper object.</p></section>
 <details class="source">
 <summary>
@@ -736,11 +757,11 @@ A game-specific wrapper object.</p></section>
 </code></dt>
 <dd>
 <section class="desc"><p>Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-all switchable memory banks. Open an issue on GitHub if that is needed, or use <a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value"><code>PyBoy.set_memory_value()</code></a> to send
+all switchable memory banks. Open an issue on GitHub if that is needed, or use <code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">PyBoy.set_memory_value()</a></code> to send
 MBC commands to the virtual cartridge.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code>:</dt>
+<dt><code>int:</code></dt>
 <dd>An integer with the value of the memory address</dd>
 </dl></section>
 <details class="source">
@@ -770,7 +791,7 @@ MBC commands to the virtual cartridge.</p>
 <p><strong>NOTE:</strong> This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
 addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
 about the MBC at <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
-<p>If you need to change ROM values, see <a title="pyboy.PyBoy.override_memory_value" href="#pyboy.PyBoy.override_memory_value"><code>PyBoy.override_memory_value()</code></a>.</p>
+<p>If you need to change ROM values, see <code><a title="pyboy.PyBoy.override_memory_value" href="#pyboy.PyBoy.override_memory_value">PyBoy.override_memory_value()</a></code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>addr</code></strong> :&ensp;<code>int</code></dt>
@@ -809,7 +830,7 @@ about the MBC at <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
 <p>This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.</p>
 <p><strong>NOTE</strong>: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
 any overrides when reloading the ROM.</p>
-<p>If you need to change a RAM address, see <a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value"><code>PyBoy.set_memory_value()</code></a>.</p>
+<p>If you need to change a RAM address, see <code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">PyBoy.set_memory_value()</a></code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>rom_bank</code></strong> :&ensp;<code>int</code></dt>
@@ -849,10 +870,10 @@ any overrides when reloading the ROM.</p>
 </code></dt>
 <dd>
 <section class="desc"><p>Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.</p>
-<p>See <a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a> for which events to send.</p>
+<p>See <code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code> for which events to send.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>event</code></strong> :&ensp;<a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a></dt>
+<dt><strong><code>event</code></strong> :&ensp;<code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code></dt>
 <dd>The event to send</dd>
 </dl></section>
 <details class="source">
@@ -877,7 +898,7 @@ any overrides when reloading the ROM.</p>
 <dd>
 <section class="desc"><p>Get current inputs except the events specified in "ignore" tuple.
 This is both Game Boy buttons and emulator controls.</p>
-<p>See <a title="pyboy.WindowEvent" href="#pyboy.WindowEvent"><code>WindowEvent</code></a> for which events to get.</p>
+<p>See <code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code> for which events to get.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>ignore</code></strong> :&ensp;<code>tuple</code></dt>
@@ -885,8 +906,8 @@ This is both Game Boy buttons and emulator controls.</p>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>list</code>:</dt>
-<dd>List of the <code>pyboy.utils.WindowEvent</code>s processed for the last call to <a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a></dd>
+<dt><code>list:</code></dt>
+<dd>List of the <code>pyboy.utils.WindowEvent</code>s processed for the last call to <code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">PyBoy.tick()</a></code></dd>
 </dl></section>
 <details class="source">
 <summary>
@@ -923,7 +944,7 @@ This is both Game Boy buttons and emulator controls.</p>
 <section class="desc"><p>Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
 a game.</p>
 <p>You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
-case. Remember to <code>seek</code> the in-memory buffer to the beginning before calling <a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state"><code>PyBoy.load_state()</code></a>:</p>
+case. Remember to <code>seek</code> the in-memory buffer to the beginning before calling <code><a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state">PyBoy.load_state()</a></code>:</p>
 <pre><code># Save to file
 file_like_object = open("state_file.state", "wb")
 
@@ -973,7 +994,7 @@ file_like_object.seek(0)
 <dd>
 <section class="desc"><p>Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress
 in a game.</p>
-<p>You can either load it from a file, or from memory. See <a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state"><code>PyBoy.save_state()</code></a> for how to save the state, before you
+<p>You can either load it from a file, or from memory. See <code><a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state">PyBoy.save_state()</a></code> for how to save the state, before you
 can load it here.</p>
 <p>To load a file, remember to load it as bytes:</p>
 <pre><code># Load file
@@ -1054,7 +1075,7 @@ file_like_object = open("state_file.state", "rb")
 have been truncated to 11 characters.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>str</code> :</dt>
+<dt><code>str :</code></dt>
 <dd>Game title</dd>
 </dl></section>
 <details class="source">
@@ -1083,7 +1104,7 @@ have been truncated to 11 characters.</p>
 <dd>
 <section class="desc"><p>All supported events can be found in the class description below.</p>
 <p>It can be used as follows:</p>
-<pre><code>&gt;&gt;&gt; from pyboy import PyBoy, WindowEvent
+<pre><code class="language-python-repl">&gt;&gt;&gt; from pyboy import PyBoy, WindowEvent
 &gt;&gt;&gt; pyboy = PyBoy('file.rom')
 &gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 </code></pre></section>
@@ -1142,7 +1163,11 @@ have been truncated to 11 characters.</p>
         _INTERNAL_MOUSE,
         _INTERNAL_MARK_TILE,
         SCREENSHOT_RECORD,
-    ) = range(37)
+        DEBUG_MEMORY_SCROLL_DOWN,
+        DEBUG_MEMORY_SCROLL_UP,
+        MOD_SHIFT_ON,
+        MOD_SHIFT_OFF,
+    ) = range(41)
 
     def __init__(self, event):
         self.event = event
@@ -1195,6 +1220,10 @@ have been truncated to 11 characters.</p>
             &#34;_INTERNAL_MOUSE&#34;,
             &#34;_INTERNAL_MARK_TILE&#34;,
             &#34;SCREENSHOT_RECORD&#34;,
+            &#34;DEBUG_MEMORY_SCROLL_DOWN&#34;,
+            &#34;DEBUG_MEMORY_SCROLL_UP&#34;,
+            &#34;MOD_SHIFT_ON&#34;,
+            &#34;MOD_SHIFT_OFF&#34;,
         )[self.event]</code></pre>
 </details>
 <h3>Subclasses</h3>
@@ -1335,6 +1364,22 @@ have been truncated to 11 characters.</p>
 <dd>
 <section class="desc"></section>
 </dd>
+<dt id="pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN"><code class="name">var <span class="ident">DEBUG_MEMORY_SCROLL_DOWN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP"><code class="name">var <span class="ident">DEBUG_MEMORY_SCROLL_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.MOD_SHIFT_ON"><code class="name">var <span class="ident">MOD_SHIFT_ON</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.WindowEvent.MOD_SHIFT_OFF"><code class="name">var <span class="ident">MOD_SHIFT_OFF</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1410,6 +1455,10 @@ have been truncated to 11 characters.</p>
 <li><code><a title="pyboy.WindowEvent.WINDOW_FOCUS" href="#pyboy.WindowEvent.WINDOW_FOCUS">WINDOW_FOCUS</a></code></li>
 <li><code><a title="pyboy.WindowEvent.WINDOW_UNFOCUS" href="#pyboy.WindowEvent.WINDOW_UNFOCUS">WINDOW_UNFOCUS</a></code></li>
 <li><code><a title="pyboy.WindowEvent.SCREENSHOT_RECORD" href="#pyboy.WindowEvent.SCREENSHOT_RECORD">SCREENSHOT_RECORD</a></code></li>
+<li><code><a title="pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN" href="#pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN">DEBUG_MEMORY_SCROLL_DOWN</a></code></li>
+<li><code><a title="pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP" href="#pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP">DEBUG_MEMORY_SCROLL_UP</a></code></li>
+<li><code><a title="pyboy.WindowEvent.MOD_SHIFT_ON" href="#pyboy.WindowEvent.MOD_SHIFT_ON">MOD_SHIFT_ON</a></code></li>
+<li><code><a title="pyboy.WindowEvent.MOD_SHIFT_OFF" href="#pyboy.WindowEvent.MOD_SHIFT_OFF">MOD_SHIFT_OFF</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1418,7 +1467,7 @@ have been truncated to 11 characters.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

@@ -11,7 +11,7 @@ from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC
 
-from pyboy.logger import logger
+logger = logging.getLogger(__name__)
 
 
 class BaseMBC:

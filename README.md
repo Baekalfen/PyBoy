@@ -14,7 +14,7 @@ __If you are looking to make a bot or AI__, you can find all the external compon
 <p align="center">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="320">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="320"><br>
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/3.gif" width="320">
+<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/5.gif" width="320">
 <img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.gif" width="320">
 </p>
 
@@ -35,6 +35,18 @@ from pyboy import PyBoy
 pyboy = PyBoy('ROMs/gamerom.gb')
 while not pyboy.tick():
     pass
+```
+
+When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
+```python
+from pyboy import WindowEvent
+
+pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+pyboy.tick() # Process one frame to let the game register the input
+pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+
+pil_image = pyboy.screen_image()
+pil_image.save('screenshot.png')
 ```
 
 If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
@@ -64,6 +76,7 @@ Student Projects
 
  * __Rewind Time:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
  * __Link Cable:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
+ * __Game Boy Color:__ Christian Marslev and Jonas Grønborg - [CKuke](https://github.com/CKuke) and [kaff3](https://github.com/kaff3)
 
 Contribute
 ==========
@@ -76,4 +89,3 @@ For the more major features, there are the following that you can give a try. Th
 * _(Experimental)_ Game Wrappers - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
-

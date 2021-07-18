@@ -4,7 +4,12 @@
 #
 
 import ctypes
+import logging
+import os
+import re
+import zlib
 from array import array
+from base64 import b64decode
 
 import sdl2
 from pyboy.botsupport import constants, tilemap
@@ -12,14 +17,16 @@ from pyboy.botsupport.sprite import Sprite
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
-from pyboy.logger import logger
 
+logger = logging.getLogger(__name__)
 
 try:
-    from cython import compiled
+    from cython import address, compiled
     cythonmode = compiled
 except ImportError:
     cythonmode = False
+if not cythonmode:
+    exec("NULL = None", globals(), locals())
 
 # Mask colors:
 COLOR = 0x00000000
@@ -64,13 +71,49 @@ class MarkedTile:
 
 
 class Debug(PyBoyWindowPlugin):
-    argv = [("-d", "--debug", {"action": "store_true", "help": "Enable emulator debugging mode"})]
+    argv = [("-d", "--debug", {
+        "action": "store_true",
+        "help": "Enable emulator debugging mode"
+    }), ("--breakpoints", {
+        "type": str,
+        "help": "Add breakpoints on start-up (internal use)"
+    })]
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
         if not self.enabled():
             return
+
+        self.rom_symbols = {}
+        if pyboy_argv.get("ROM"):
+            gamerom_file_no_ext, rom_ext = os.path.splitext(pyboy_argv.get("ROM"))
+            for sym_ext in [".sym", rom_ext + ".sym"]:
+                sym_path = gamerom_file_no_ext + sym_ext
+                if os.path.isfile(sym_path):
+                    with open(sym_path) as f:
+                        for _line in f.readlines():
+                            line = _line.strip()
+                            if line == "":
+                                continue
+                            elif line.startswith(";"):
+                                continue
+                            elif line.startswith("["):
+                                # Start of key group
+                                # [labels]
+                                # [definitions]
+                                continue
+
+                            try:
+                                bank, addr, sym_label = re.split(":| ", line.strip())
+                                bank = int(bank, 16)
+                                addr = int(addr, 16)
+                                if not bank in self.rom_symbols:
+                                    self.rom_symbols[bank] = {}
+
+                                self.rom_symbols[bank][addr] = sym_label
+                            except ValueError as ex:
+                                logger.warning(f"Skipping .sym line: {line.strip()}")
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -136,6 +179,11 @@ class Debug(PyBoyWindowPlugin):
         )
         window_pos += (constants.COLS * self.spriteview.scale)
 
+        self.memory = MemoryWindow(
+            pyboy, mb, pyboy_argv, scale=1, title="Memory", width=8 * 60, height=16 * 36, pos_x=window_pos, pos_y=0
+        )
+        window_pos += 8 * 60
+
         tile_data_width = 16 * 8 # Change the 16 to however wide you want the tile window
         tile_data_height = ((constants.TILES * 8) // tile_data_width) * 8
         self.tiledata = TileDataWindow(
@@ -150,12 +198,25 @@ class Debug(PyBoyWindowPlugin):
             pos_y=0
         )
 
+        for _b in (self.pyboy_argv.get("breakpoints") or "").split(","):
+            b = _b.strip()
+            if b == "":
+                continue
+
+            bank_addr = self.parse_bank_addr_sym_label(b)
+            if bank_addr is None:
+                logger.error(f"Couldn't parse address or label: {b}")
+            else:
+                self.mb.add_breakpoint(*bank_addr)
+                logger.info(f"Added breakpoint for address or label: {b}")
+
     def post_tick(self):
         self.tile1.post_tick()
         self.tile2.post_tick()
         self.tiledata.post_tick()
         self.sprite.post_tick()
         self.spriteview.post_tick()
+        self.memory.post_tick()
 
     def handle_events(self, events):
         if self.sdl2_event_pump:
@@ -165,6 +226,7 @@ class Debug(PyBoyWindowPlugin):
         events = self.tiledata.handle_events(events)
         events = self.sprite.handle_events(events)
         events = self.spriteview.handle_events(events)
+        events = self.memory.handle_events(events)
         return events
 
     def stop(self):
@@ -173,6 +235,93 @@ class Debug(PyBoyWindowPlugin):
 
     def enabled(self):
         return self.pyboy_argv.get("debug")
+
+    def parse_bank_addr_sym_label(self, command):
+        if ":" in command:
+            bank, addr = command.split(":")
+            bank = int(bank, 16)
+            addr = int(addr, 16)
+            return bank, addr
+        else:
+            for bank, addresses in self.rom_symbols.items():
+                for addr, label in addresses.items():
+                    if label == command:
+                        return bank, addr
+        return None
+
+    def handle_breakpoint(self):
+        while True:
+            self.post_tick()
+
+            if self.mb.cpu.PC < 0x4000:
+                bank = 0
+            else:
+                bank = self.mb.cartridge.rombank_selected
+            sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
+
+            print(self.mb.cpu.dump_state(sym_label))
+            cmd = input()
+
+            if cmd == "c" or cmd.startswith("c "):
+                # continue
+                if cmd.startswith("c "):
+                    _, command = cmd.split(" ", 1)
+                    bank_addr = self.parse_bank_addr_sym_label(command)
+                    if bank_addr is None:
+                        print("Couldn't parse address or label!")
+                    else:
+                        # TODO: Possibly add a counter of 1, and remove the breakpoint after hitting it the first time
+                        self.mb.add_breakpoint(*bank_addr)
+                        break
+                else:
+                    break
+            elif cmd == "sl":
+                for bank, addresses in self.rom_symbols.items():
+                    for addr, label in addresses.items():
+                        print(f"{bank:02X}:{addr:04X} {label}")
+            elif cmd == "bl":
+                for bank, addr in self.mb.breakpoints_list:
+                    print(f"{bank:02X}:{addr:04X} {self.rom_symbols.get(bank, {}).get(addr, '')}")
+            elif cmd == "b" or cmd.startswith("b "):
+                if cmd.startswith("b "):
+                    _, command = cmd.split(" ", 1)
+                else:
+                    command = input(
+                        'Write address in the format of "00:0150" or search for a symbol label like "Main"\n'
+                    )
+
+                bank_addr = self.parse_bank_addr_sym_label(command)
+                if bank_addr is None:
+                    print("Couldn't parse address or label!")
+                else:
+                    self.mb.add_breakpoint(*bank_addr)
+
+            elif cmd == "d":
+                # Remove current breakpoint
+
+                # TODO: Share this code with breakpoint_reached
+                for i, (bank, pc) in enumerate(self.mb.breakpoints_list):
+                    if self.mb.cpu.PC == pc and (
+                        (pc < 0x4000 and bank == 0 and not self.mb.bootrom_enabled) or \
+                        (0x4000 <= pc < 0x8000 and self.mb.cartridge.rombank_selected == bank) or \
+                        (0xA000 <= pc < 0xC000 and self.mb.cartridge.rambank_selected == bank) or \
+                        (pc < 0x100 and bank == -1 and self.mb.bootrom_enabled)
+                    ):
+                        break
+                else:
+                    print("Breakpoint couldn't be deleted for current PC. Not Found.")
+                    continue
+                print(f"Removing breakpoint: {bank}:{pc}")
+                self.mb.remove_breakpoint(i)
+            elif cmd == "pdb":
+                # Start pdb
+                import pdb
+                pdb.set_trace()
+                break
+            else:
+                # Step once
+                self.mb.breakpoint_latch = 1
+                self.mb.tick()
 
 
 def make_buffer(w, h):
@@ -204,6 +353,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         self.buf, self.buf0, self.buf_p = make_buffer(width, height)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
+        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, width, height)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
         )
@@ -213,8 +363,8 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE:
                 if event.window_id == self.window_id:
-                    self.hover_x = event.mouse_x // self.scale
-                    self.hover_y = event.mouse_y // self.scale
+                    self.hover_x = event.mouse_x
+                    self.hover_y = event.mouse_y
                 else:
                     self.hover_x = -1
                     self.hover_y = -1
@@ -284,7 +434,7 @@ class TileViewWindow(BaseDebugWindow):
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
             # BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-            if self.mb.lcd.LCDC.tiledata_select == 0:
+            if self.mb.lcd._LCDC.tiledata_select == 0:
                 # (x ^ 0x80 - 128) to convert to signed, then add 256 for offset (reduces to + 128)
                 tile_index = (tile_index ^ 0x80) + 128
 
@@ -306,7 +456,7 @@ class TileViewWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // 8, event.mouse_y // 8
                     tile_identifier = self.tilemap.tile_identifier(tile_x, tile_y)
                     logger.info(f"Tile clicked on {tile_x}, {tile_y}")
                     marked_tiles.add(
@@ -337,13 +487,15 @@ class TileViewWindow(BaseDebugWindow):
         global marked_tiles
         scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
 
+        background_view = self.scanline_x == 0
+
         # TODO: Refactor this
         # Mark screen area
         for y in range(constants.ROWS):
             xx = int(scanlineparameters[y][self.scanline_x])
             yy = int(scanlineparameters[y][self.scanline_y])
 
-            if self.scanline_x == 0: # Background
+            if background_view: # Background
                 # Wraps around edges of the screen
                 if y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
                     for x in range(constants.COLS):
@@ -378,6 +530,14 @@ class TileViewWindow(BaseDebugWindow):
         if self.hover_x != -1:
             self.mark_tile(self.hover_x, self.hover_y, HOVER, 8, 8, True)
 
+        # Mark current scanline directly from LY,SCX,SCY,WX,WY
+        if background_view:
+            for x in range(constants.COLS):
+                self.buf0[(self.mb.lcd.SCY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.SCX + x) % 0xFF] = 0xFF00CE12
+        else:
+            for x in range(constants.COLS):
+                self.buf0[(self.mb.lcd.WY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.WX + x) % 0xFF] = 0xFF00CE12
+
 
 class TileDataWindow(BaseDebugWindow):
     def post_tick(self):
@@ -398,7 +558,7 @@ class TileDataWindow(BaseDebugWindow):
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // 8
+                    tile_x, tile_y = event.mouse_x // 8, event.mouse_y // 8
                     tile_identifier = tile_y * (self.width // 8) + tile_x
                     marked_tiles.add(
                         MarkedTile(tile_identifier=tile_identifier, mark_id="TILE", mark_color=MARK[mark_counter])
@@ -425,7 +585,7 @@ class SpriteWindow(BaseDebugWindow):
     def post_tick(self):
         tile_cache0 = self.renderer._tilecache
 
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for n in range(0, 0xA0, 4):
             # x = lcd.OAM[n]
             # y = lcd.OAM[n+1]
@@ -446,11 +606,11 @@ class SpriteWindow(BaseDebugWindow):
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
 
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for event in events:
             if event == WindowEvent._INTERNAL_MOUSE and event.window_id == self.window_id:
                 if event.mouse_button == 0:
-                    tile_x, tile_y = event.mouse_x // self.scale // 8, event.mouse_y // self.scale // sprite_height
+                    tile_x, tile_y = event.mouse_x // 8, event.mouse_y // sprite_height
                     sprite_identifier = tile_y * (self.width // 8) + tile_x
                     if sprite_identifier > constants.SPRITES:
                         # Out of bounds
@@ -474,7 +634,7 @@ class SpriteWindow(BaseDebugWindow):
         return events
 
     def draw_overlay(self):
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
             marked_tiles,
@@ -490,7 +650,7 @@ class SpriteWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " [8x16]" if self.mb.lcd.LCDC.sprite_height else " [8x8]"
+        title += " [8x16]" if self.mb.lcd._LCDC.sprite_height else " [8x8]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 
@@ -500,12 +660,12 @@ class SpriteViewWindow(BaseDebugWindow):
             for x in range(constants.COLS):
                 self.buf0[y][x] = SPRITE_BACKGROUND
 
-        self.mb.renderer.render_sprites(self.mb.lcd, self.buf0, True)
+        self.mb.lcd.renderer.render_sprites(self.mb.lcd, self.buf0, True)
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
 
     def draw_overlay(self):
-        sprite_height = 16 if self.mb.lcd.LCDC.sprite_height else 8
+        sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
             marked_tiles,
@@ -517,8 +677,165 @@ class SpriteViewWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += " " if self.mb.lcd.LCDC.sprite_enable else " [Disabled]"
+        title += " " if self.mb.lcd._LCDC.sprite_enable else " [Disabled]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
+
+
+class MemoryWindow(BaseDebugWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.NCOLS = 60
+        self.NROWS = 36
+        self.shift_down = False
+        self.start_address = 0x0000
+        self.bg_color = [0xFF, 0xFF, 0xFF]
+        self.fg_color = [0x00, 0x00, 0x00]
+
+        self._text_buffer_raw = array("B", [0x20] * (self.NROWS * self.NCOLS))
+        if cythonmode:
+            self.text_buffer = memoryview(self._text_buffer_raw).cast("B", shape=(self.NROWS, self.NCOLS))
+        else:
+            view = memoryview(self._text_buffer_raw)
+            self.text_buffer = [view[i:i + self.NCOLS] for i in range(0, self.NROWS * self.NCOLS, self.NCOLS)]
+        # self.text_buffer = [bytearray([0x20]*self.NCOLS) for _ in range(self.NROWS)]
+        self.write_border()
+        self.write_addresses()
+
+        font_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "font.txt")
+        with open(font_path) as font_file:
+            font_lines = font_file.readlines()
+        font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n") + 1:])
+        font_bytes = zlib.decompress(b64decode(font_blob.encode()))
+
+        self.fbuf, self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
+        for y, b in enumerate(font_bytes):
+            for x in range(8):
+                self.fbuf0[y][x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
+
+        self.font_texture = sdl2.SDL_CreateTexture(
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
+        )
+        self._prepare_font_texture()
+
+        # Persistent to make Cython happy...
+        self.src = sdl2.SDL_Rect(0, 0, 8, 16)
+        self.dst = sdl2.SDL_Rect(0, 0, 8, 16)
+
+    def write_border(self):
+        for x in range(self.NCOLS):
+            self.text_buffer[0][x] = 0xCD
+            self.text_buffer[2][x] = 0xCD
+            self.text_buffer[self.NROWS - 1][x] = 0xCD
+
+        for y in range(3, self.NROWS):
+            self.text_buffer[y][0] = 0xBA
+            self.text_buffer[y][9] = 0xB3
+            self.text_buffer[y][self.NCOLS - 1] = 0xBA
+
+        self.text_buffer[0][0] = 0xC9
+        self.text_buffer[1][0] = 0xBA
+        self.text_buffer[0][self.NCOLS - 1] = 0xBB
+        self.text_buffer[1][self.NCOLS - 1] = 0xBA
+
+        self.text_buffer[2][0] = 0xCC
+        self.text_buffer[2][9] = 0xD1
+        self.text_buffer[2][self.NCOLS - 1] = 0xB9
+
+        self.text_buffer[self.NROWS - 1][0] = 0xC8
+        self.text_buffer[self.NROWS - 1][9] = 0xCF
+        self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
+
+    def write_addresses(self):
+        header = (f"Memory from 0x{self.start_address:04X} " f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
+        if cythonmode:
+            for x in range(28):
+                self.text_buffer[1][x + 2] = header[x]
+        else:
+            self.text_buffer[1][2:30] = header
+        for y in range(32):
+            addr = f"0x{self.start_address + (0x20*y):04X}".encode("cp437")
+            if cythonmode:
+                for x in range(6):
+                    self.text_buffer[y + 3][x + 2] = addr[x]
+            else:
+                self.text_buffer[y + 3][2:8] = addr
+
+    def write_memory(self):
+        for y in range(32):
+            for x in range(16):
+                mem = self.mb.getitem(self.start_address + 16*y + x)
+                if cythonmode:
+                    a = hex(mem)[2:].zfill(2).encode("cp437")
+                    self.text_buffer[y + 3][3*x + 11] = a[0]
+                    self.text_buffer[y + 3][3*x + 12] = a[1]
+                else:
+                    self.text_buffer[y + 3][3*x + 11:3*x + 13] = bytes([mem]).hex().encode("cp437")
+
+    def render_text(self):
+        for y in range(self.NROWS):
+            self.draw_text(0, 16 * y, self.text_buffer[y])
+
+    def draw_text(self, x, y, text):
+        self.dst.x = x
+        self.dst.y = y
+        for i, c in enumerate(text):
+            if not 0 <= c < 256:
+                logger.warn(f"Invalid character {c} in {bytes(text).decode('cp437')}") # This may error too...
+                c = 0
+            self.src.y = 16 * c
+            if self.dst.x > self.width - 8:
+                logger.warn(f"Text overrun while printing {bytes(text).decode('cp437')}")
+                break
+            if cythonmode:
+                sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, address(self.src), address(self.dst))
+            else:
+                exec(
+                    "sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)", globals(), locals()
+                )
+            self.dst.x += 8
+
+    def post_tick(self):
+        sdl2.SDL_RenderClear(self._sdlrenderer)
+        self.write_memory()
+        self.render_text()
+        sdl2.SDL_RenderPresent(self._sdlrenderer)
+
+    def _scroll_view(self, movement):
+        self.start_address += movement
+        self.start_address = max(0, min(self.start_address, 0x10000 - 0x400))
+        # if self.start_address + 0x400 > 0x10000:
+        #     self.start_address = 0x10000 - 0x400
+        # if self.start_address < 0:
+        #     self.start_address = 0
+        self.write_addresses()
+
+    def handle_events(self, events):
+        events = BaseDebugWindow.handle_events(self, events)
+
+        for event in events:
+            # j - Next 256 bytes
+            if event == WindowEvent.DEBUG_MEMORY_SCROLL_DOWN:
+                if self.shift_down:
+                    self._scroll_view(0x1000)
+                else:
+                    self._scroll_view(0x100)
+            # k - Last 256 bytes
+            elif event == WindowEvent.DEBUG_MEMORY_SCROLL_UP:
+                if self.shift_down:
+                    self._scroll_view(-0x1000)
+                else:
+                    self._scroll_view(-0x100)
+            # shift tracking
+            elif event == WindowEvent.MOD_SHIFT_ON:
+                self.shift_down = True
+            elif event == WindowEvent.MOD_SHIFT_OFF:
+                self.shift_down = False
+            elif event == WindowEvent._INTERNAL_MOUSE:
+                # Scrolling
+                if event.window_id == self.window_id:
+                    self._scroll_view(event.mouse_scroll_y * -0x100)
+
+        return events
 
 
 # Unfortunately CPython/PyPy code has to be hidden in an exec call to
@@ -534,5 +851,14 @@ def _update_display(self):
     sdl2.SDL_RenderClear(self._sdlrenderer)
 
 BaseDebugWindow._update_display = _update_display
+
+
+def _prepare_font_texture(self):
+    sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf_p, 4 * 8)
+    sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+    sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
+    sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
+
+MemoryWindow._prepare_font_texture = _prepare_font_texture
 """, globals(), locals()
     )

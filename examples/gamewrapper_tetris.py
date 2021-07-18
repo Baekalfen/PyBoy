@@ -16,7 +16,7 @@ from pyboy import PyBoy, WindowEvent # isort:skip
 if len(sys.argv) > 1:
     filename = sys.argv[1]
 else:
-    print("Usage: python mario_boiler_plate.py [ROM file]")
+    print("Usage: python gamewrapper_tetris.py [ROM file]")
     exit(1)
 
 quiet = "--quiet" in sys.argv
@@ -27,7 +27,7 @@ assert pyboy.cartridge_title() == "TETRIS"
 tetris = pyboy.game_wrapper()
 tetris.start_game(timer_div=0x00) # The timer_div works like a random seed in Tetris
 
-assert tetris.next_tetromino() == "O"
+assert tetris.next_tetromino() == "J"
 assert tetris.score == 0
 assert tetris.level == 0
 assert tetris.lines == 0
@@ -65,12 +65,12 @@ assert tetris.fitness == 0 # A built-in fitness score for AI development
 # Assert there is something on the bottom of the game area
 assert any(filter(lambda x: x != blank_tile, game_area[-1, :]))
 tetris.reset_game(timer_div=0x00)
-assert tetris.next_tetromino() == "O"
+assert tetris.next_tetromino() == "J"
 # After reseting, we should have a clean game area
 assert all(filter(lambda x: x != blank_tile, game_area[-1, :]))
 
 tetris.reset_game(timer_div=0x55) # The timer_div works like a random seed in Tetris
-assert tetris.next_tetromino() == "I"
+assert tetris.next_tetromino() == "L"
 
 # Testing that it defaults to random Tetrominos
 selection = set()

@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-STATE_VERSION = 5
+STATE_VERSION = 7
 
 ##############################################################
 # Buffer classes
@@ -15,6 +15,19 @@ class IntIOInterface:
 
     def write(self, byte):
         raise Exception("Not implemented!")
+
+    def write_32bit(self, value):
+        self.write(value & 0xFF)
+        self.write((value & 0xFF00) >> 8)
+        self.write((value & 0xFF0000) >> 16)
+        self.write((value & 0xFF000000) >> 24)
+
+    def read_32bit(self):
+        a = self.read()
+        b = self.read()
+        c = self.read()
+        d = self.read()
+        return int(a | (b << 8) | (c << 16) | (d << 24))
 
     def write_16bit(self, value):
         self.write(value & 0xFF)
@@ -156,7 +169,11 @@ class WindowEvent:
         _INTERNAL_MOUSE,
         _INTERNAL_MARK_TILE,
         SCREENSHOT_RECORD,
-    ) = range(37)
+        DEBUG_MEMORY_SCROLL_DOWN,
+        DEBUG_MEMORY_SCROLL_UP,
+        MOD_SHIFT_ON,
+        MOD_SHIFT_OFF,
+    ) = range(41)
 
     def __init__(self, event):
         self.event = event
@@ -209,13 +226,21 @@ class WindowEvent:
             "_INTERNAL_MOUSE",
             "_INTERNAL_MARK_TILE",
             "SCREENSHOT_RECORD",
+            "DEBUG_MEMORY_SCROLL_DOWN",
+            "DEBUG_MEMORY_SCROLL_UP",
+            "MOD_SHIFT_ON",
+            "MOD_SHIFT_OFF",
         )[self.event]
 
 
 class WindowEventMouse(WindowEvent):
-    def __init__(self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_button=-1):
+    def __init__(
+        self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_scroll_x=-1, mouse_scroll_y=-1, mouse_button=-1
+    ):
         super().__init__(*args)
         self.window_id = window_id
         self.mouse_x = mouse_x
         self.mouse_y = mouse_y
+        self.mouse_scroll_x = mouse_scroll_x
+        self.mouse_scroll_y = mouse_scroll_y
         self.mouse_button = mouse_button

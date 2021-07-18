@@ -1,4 +1,5 @@
 import distutils.cmd
+import multiprocessing
 import os
 import platform
 import shutil
@@ -19,7 +20,8 @@ from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
 REQUIREMENTS = """\
 # Change in setup.py
 cython>=0.29.16; platform_python_implementation == 'CPython'
-numpy
+numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
+numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
 pillow
 pysdl2
 """
@@ -29,13 +31,14 @@ def load_requirements(filename):
     if os.path.isfile(filename):
         with open(filename, "w") as f:
             f.write(REQUIREMENTS)
-    return [line.split(";")[0].strip() for line in REQUIREMENTS.splitlines()]
+    return [line.strip() for line in REQUIREMENTS.splitlines()]
 
 
 requirements = load_requirements("requirements.txt")
 
 MSYS = os.getenv("MSYS")
 CYTHON = platform.python_implementation() != "PyPy"
+py_version = platform.python_version()[:3]
 
 if CYTHON:
     # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
@@ -48,7 +51,7 @@ if CYTHON:
 else:
     try:
         for r in requirements:
-            if "cython" in r:
+            if r.startswith("cython"):
                 break
         else:
             r = None
@@ -66,6 +69,16 @@ else:
         def run(self):
             pass
 
+
+DEBUG = os.getenv("DEBUG")
+with open("pyboy/core/debug.pxi", "w") as f:
+    f.writelines([
+        "#\n",
+        "# License: See LICENSE.md file\n",
+        "# GitHub: https://github.com/Baekalfen/PyBoy\n",
+        "#\n",
+        f"DEF DEBUG={int(bool(DEBUG))}\n",
+    ])
 
 ROOT_DIR = "pyboy"
 
@@ -178,7 +191,9 @@ def define_lib_includes_cflags():
     libs = []
     libdirs = []
     includes = []
-    cflags = []
+    cflags = [
+        "-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include"
+    ]
     if sdl2_config != []:
         for arg in sdl2_config:
             if arg.startswith("-l"):
@@ -236,11 +251,12 @@ if CYTHON and "clean" not in sys.argv:
         # Override function in Cython to fix symbol collision
         build_ext.get_export_symbols = get_export_symbols
         thread_count = 0 # Disables multiprocessing (windows)
-    elif platform.python_version().startswith("3.8"):
-        # Causes infinite recursion
-        thread_count = 0
     else:
         thread_count = cpu_count()
+
+    # Fixing issue with nthreads in Cython
+    if py_version in ["3.8", "3.9"] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
+        multiprocessing.set_start_method("fork", force=True)
 
     # Set up some values for use in setup()
     libs, libdirs, includes, cflags = define_lib_includes_cflags()
@@ -260,7 +276,7 @@ if CYTHON and "clean" not in sys.argv:
         nthreads=thread_count,
         annotate=False,
         gdb_debug=False,
-        language_level=2,
+        language_level=3,
         compiler_directives={
             "boundscheck": False,
             "cdivision": True,
@@ -284,7 +300,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="1.2.1",
+    version="1.4.2",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
@@ -309,21 +325,26 @@ setup(
     },
     install_requires=requirements,
     tests_require=[
+        *requirements,
         "pytest>=6.0.0",
         "pytest-xdist",
         "pyopengl",
-        "gym" if CYTHON and not MSYS else "",
+        "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
+        "gym" if CYTHON and not MSYS and py_version != "3.9" and not (sys.platform == "win32" and py_version == "3.8")
+        else "",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
-            "gym" if CYTHON and not MSYS else "",
+            "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
+            "gym" if CYTHON and not MSYS and py_version != "3.9" and
+            not (sys.platform == "win32" and py_version == "3.8") else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it
     ext_modules=ext_modules,
     python_requires=">=3.6",
-    package_data={"": ["*.pyx", "*.pxd", "*.c", "*.h", "bootrom.bin"]},
+    package_data={"": ["*.pxi", "*.pyx", "*.pxd", "*.c", "*.h", "bootrom.bin", "font.txt"]},
 )

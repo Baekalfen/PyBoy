@@ -3,8 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import logging
+
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 class WindowDummy(PyBoyWindowPlugin):
@@ -14,10 +17,10 @@ class WindowDummy(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.mb.disable_renderer = True
+        self.mb.lcd.renderer.disable_renderer = True
 
     def enabled(self):
         return self.pyboy_argv.get("window_type") == "dummy"
 
     def set_title(self, title):
-        logger.info(title.encode())
+        logger.info(title)

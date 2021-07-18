@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.botsupport API documentation</title>
 <meta name="description" content="Tools to help interfacing with the Game Boy hardware" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -57,7 +57,7 @@ from .manager import BotSupportManager</code></pre>
 <dt><code class="name"><a title="pyboy.botsupport.tile" href="tile.html">pyboy.botsupport.tile</a></code></dt>
 <dd>
 <section class="desc"><p>The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used both for
-<a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and …</p></section>
+<code><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite">Sprite</a></code> and …</p></section>
 </dd>
 <dt><code class="name"><a title="pyboy.botsupport.tilemap" href="tilemap.html">pyboy.botsupport.tilemap</a></code></dt>
 <dd>
@@ -209,12 +209,12 @@ from .manager import BotSupportManager</code></pre>
 <span>def <span class="ident">screen</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Use this method to get a <a title="pyboy.botsupport.screen.Screen" href="screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a> object. This can be used to get the screen buffer in
+<section class="desc"><p>Use this method to get a <code><a title="pyboy.botsupport.screen.Screen" href="screen.html#pyboy.botsupport.screen.Screen">Screen</a></code> object. This can be used to get the screen buffer in
 a variety of formats.</p>
 <p>It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-<a title="pyboy.botsupport.screen.Screen.tilemap_position" href="screen.html#pyboy.botsupport.screen.Screen.tilemap_position"><code>Screen.tilemap_position()</code></a> for more information.</p>
+<code><a title="pyboy.botsupport.screen.Screen.tilemap_position" href="screen.html#pyboy.botsupport.screen.Screen.tilemap_position">Screen.tilemap_position()</a></code> for more information.</p>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.screen.Screen" href="screen.html#pyboy.botsupport.screen.Screen"><code>Screen</code></a>:
+<p><code><a title="pyboy.botsupport.screen.Screen" href="screen.html#pyboy.botsupport.screen.Screen">Screen</a></code>:
 A Screen object with helper functions for reading the screen buffer.</p></section>
 <details class="source">
 <summary>
@@ -240,7 +240,7 @@ A Screen object with helper functions for reading the screen buffer.</p></sectio
 <span>def <span class="ident">sprite</span></span>(<span>self, sprite_index)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Provides a <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object, which makes the OAM data more presentable. The given index
+<section class="desc"><p>Provides a <code><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite">Sprite</a></code> object, which makes the OAM data more presentable. The given index
 corresponds to index of the sprite in the "Object Attribute Memory" (OAM).</p>
 <p>The Game Boy supports 40 sprites in total. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan
 Docs</a>.</p>
@@ -250,7 +250,7 @@ Docs</a>.</p>
 <dd>Sprite index from 0 to 39.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a>:
+<p><code><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite">Sprite</a></code>:
 Sprite corresponding to the given index.</p></section>
 <details class="source">
 <summary>
@@ -280,7 +280,7 @@ Sprite corresponding to the given index.</p></section>
 <dd>
 <section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
 identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-<a title="pyboy.botsupport.BotSupportManager.sprite" href="#pyboy.botsupport.BotSupportManager.sprite"><code>BotSupportManager.sprite()</code></a> function to get a <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> object.</p>
+<code><a title="pyboy.botsupport.BotSupportManager.sprite" href="#pyboy.botsupport.BotSupportManager.sprite">BotSupportManager.sprite()</a></code> function to get a <code><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite">Sprite</a></code> object.</p>
 <p>Example:</p>
 <pre><code>&gt;&gt;&gt; print(pyboy.botsupport_manager().sprite_by_tile_identifier([43, 123]))
 [[0, 2, 4], []]
@@ -296,7 +296,7 @@ identifiers and return the sprite indexes where each identifier is found. Use th
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>list</code>:</dt>
+<dt><code>list:</code></dt>
 <dd>list of sprite matches for every tile identifier in the input</dd>
 </dl></section>
 <details class="source">
@@ -345,11 +345,11 @@ identifiers and return the sprite indexes where each identifier is found. Use th
 </code></dt>
 <dd>
 <section class="desc"><p>The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
-<a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>-object for given identifier.</p>
+<code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code>-object for given identifier.</p>
 <p>The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
-the <a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a> object for more information.</p>
+the <code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code> object for more information.</p>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile"><code>Tile</code></a>:
+<p><code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code>:
 A Tile object for the given identifier.</p></section>
 <details class="source">
 <summary>
@@ -379,7 +379,7 @@ A Tile object for the given identifier.</p></section>
 for the <em>background</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
 <p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>:
+<p><code><a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap">TileMap</a></code>:
 A TileMap object for the tile map.</p></section>
 <details class="source">
 <summary>
@@ -408,7 +408,7 @@ A TileMap object for the tile map.</p></section>
 for the <em>window</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
 <p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
 <h2 id="returns">Returns</h2>
-<p><a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>:
+<p><code><a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap">TileMap</a></code>:
 A TileMap object for the tile map.</p></section>
 <details class="source">
 <summary>
@@ -472,7 +472,7 @@ A TileMap object for the tile map.</p></section>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

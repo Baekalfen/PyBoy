@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.7.5" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pyboy.botsupport.tile API documentation</title>
 <meta name="description" content="The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used both for
 `pyboy.botsupport.sprite.Sprite` and …" />
@@ -23,7 +23,7 @@
 </header>
 <section id="section-intro">
 <p>The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used both for
-<a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and <a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>, when refering to graphics.</p>
+<code><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite">Sprite</a></code> and <code><a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap">TileMap</a></code>, when refering to graphics.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -151,7 +151,7 @@ class Tile:
         &#34;&#34;&#34;
         data = np.zeros((8, 8), dtype=np.uint32)
         # Converting from RGBA to ABGR
-        color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
+        color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.lcd.renderer.color_palette]
 
         for k in range(0, 16, 2): # 2 bytes for each line
             byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
@@ -185,13 +185,13 @@ class Tile:
 </code></dt>
 <dd>
 <section class="desc"><p>The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-<a title="pyboy.botsupport.BotSupportManager.tile" href="index.html#pyboy.botsupport.BotSupportManager.tile"><code>BotSupportManager.tile()</code></a>, <a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite"><code>Sprite</code></a> and <a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap"><code>TileMap</code></a>, when
+<code><a title="pyboy.botsupport.BotSupportManager.tile" href="index.html#pyboy.botsupport.BotSupportManager.tile">BotSupportManager.tile()</a></code>, <code><a title="pyboy.botsupport.sprite.Sprite" href="sprite.html#pyboy.botsupport.sprite.Sprite">Sprite</a></code> and <code><a title="pyboy.botsupport.tilemap.TileMap" href="tilemap.html#pyboy.botsupport.tilemap.TileMap">TileMap</a></code>, when
 refering to graphics.</p>
 <p>This class is not meant to be instantiated by developers reading this documentation, but it will be created
-internally and returned by <a title="pyboy.botsupport.sprite.Sprite.tiles" href="sprite.html#pyboy.botsupport.sprite.Sprite.tiles"><code>Sprite.tiles</code></a> and
-<a title="pyboy.botsupport.tilemap.TileMap.tile" href="tilemap.html#pyboy.botsupport.tilemap.TileMap.tile"><code>TileMap.tile()</code></a>.</p>
+internally and returned by <code><a title="pyboy.botsupport.sprite.Sprite.tiles" href="sprite.html#pyboy.botsupport.sprite.Sprite.tiles">Sprite.tiles</a></code> and
+<code><a title="pyboy.botsupport.tilemap.TileMap.tile" href="tilemap.html#pyboy.botsupport.tilemap.TileMap.tile">TileMap.tile()</a></code>.</p>
 <p>The data of this class is static, apart from the image data, which is loaded from the Game Boy's memory when
-needed. Beware that the graphics for the tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p></section>
+needed. Beware that the graphics for the tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -295,7 +295,7 @@ needed. Beware that the graphics for the tile can change between each call to <a
         &#34;&#34;&#34;
         data = np.zeros((8, 8), dtype=np.uint32)
         # Converting from RGBA to ABGR
-        color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
+        color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.lcd.renderer.color_palette]
 
         for k in range(0, 16, 2): # 2 bytes for each line
             byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
@@ -318,13 +318,13 @@ needed. Beware that the graphics for the tile can change between each call to <a
 <dt id="pyboy.botsupport.tile.Tile.data_address"><code class="name">var <span class="ident">data_address</span></code></dt>
 <dd>
 <section class="desc"><p>The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
-corresponding to the tile identifier. It is advised to use <a title="pyboy.botsupport.tile.Tile.image" href="#pyboy.botsupport.tile.Tile.image"><code>Tile.image()</code></a> or one of the
+corresponding to the tile identifier. It is advised to use <code><a title="pyboy.botsupport.tile.Tile.image" href="#pyboy.botsupport.tile.Tile.image">Tile.image()</a></code> or one of the
 other <code>image</code>-functions if you want to view the tile.</p>
 <p>You can read how the data is read in the
 <a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code>:</dt>
+<dt><code>int:</code></dt>
 <dd>address in VRAM where tile data starts</dd>
 </dl></section>
 </dd>
@@ -334,7 +334,7 @@ other <code>image</code>-functions if you want to view the tile.</p>
 complicated indexing system on the Game Boy into a single range of 0-383 (both included).</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code>:</dt>
+<dt><code>int:</code></dt>
 <dd>Unique identifier for the tile</dd>
 </dl></section>
 </dd>
@@ -353,10 +353,10 @@ The width and height of the tile.</p></section>
 </code></dt>
 <dd>
 <section class="desc"><p>Use this function to get an easy-to-use <code>PIL.Image</code> object of the tile. The image is 8x8 pixels in RGBA colors.</p>
-<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>PIL.Image</code> :</dt>
+<dt><code>PIL.Image :</code></dt>
 <dd>Image of tile in 8x8 pixels and RGBA colors.</dd>
 </dl></section>
 <details class="source">
@@ -387,10 +387,10 @@ The width and height of the tile.</p></section>
 <section class="desc"><p>Use this function to get an easy-to-use <code>numpy.ndarray</code> object of the tile. The array has a shape of (8, 8, 4)
 and each value is of <code>numpy.uint8</code>. The values corresponds to and RGBA image of 8x8 pixels with each sub-color
 in a separate cell.</p>
-<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>numpy.ndarray</code> :</dt>
+<dt><code>numpy.ndarray :</code></dt>
 <dd>Array of shape (8, 8, 4) with data type of <code>numpy.uint8</code>.</dd>
 </dl></section>
 <details class="source">
@@ -419,10 +419,10 @@ in a separate cell.</p>
 <dd>
 <section class="desc"><p>Use this function to get the raw tile data. The data is a <code>memoryview</code> corresponding to 8x8 pixels in RGBA
 colors.</p>
-<p>Be aware, that the graphics for this tile can change between each call to <a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick"><code>PyBoy.tick()</code></a>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>memoryview</code> :</dt>
+<dt><code>memoryview :</code></dt>
 <dd>Image data of tile in 8x8 pixels and RGBA colors.</dd>
 </dl></section>
 <details class="source">
@@ -443,7 +443,7 @@ colors.</p>
     &#34;&#34;&#34;
     data = np.zeros((8, 8), dtype=np.uint32)
     # Converting from RGBA to ABGR
-    color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.renderer.color_palette]
+    color_palette = [(x &gt;&gt; 8) | 0xFF000000 for x in self.mb.lcd.renderer.color_palette]
 
     for k in range(0, 16, 2): # 2 bytes for each line
         byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
@@ -491,7 +491,7 @@ colors.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

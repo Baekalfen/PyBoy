@@ -10,13 +10,15 @@ import os
 import numpy as np
 import PIL
 import pytest
+from PIL import ImageChops
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
-from tests.utils import any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
+from tests.utils import BOOTROM_FRAMES_UNTIL_LOGO, any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
 
 
 def test_misc():
     pyboy = PyBoy(default_rom, window_type="dummy")
+    pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.stop(save=False)
 
@@ -24,8 +26,8 @@ def test_misc():
 def test_tiles():
     pyboy = PyBoy(default_rom, window_type="headless")
     pyboy.set_emulation_speed(0)
-    pyboy.tick()
-    pyboy.tick()
+    for _ in range(BOOTROM_FRAMES_UNTIL_LOGO):
+        pyboy.tick()
 
     tile = pyboy.botsupport_manager().tilemap_window().tile(0, 0)
     assert isinstance(tile, Tile)
@@ -94,6 +96,12 @@ def test_screen_buffer_and_image():
     boot_logo_png_hash.update(image_data.getvalue())
     assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
 
+    # Screenshot shortcut
+    image1 = pyboy.botsupport_manager().screen().screen_image()
+    image2 = pyboy.screen_image()
+    diff = ImageChops.difference(image1, image2)
+    assert not diff.getbbox()
+
     # screen_ndarray
     numpy_hash = hashlib.sha256()
     numpy_array = np.ascontiguousarray(pyboy.botsupport_manager().screen().screen_ndarray())
@@ -113,6 +121,8 @@ def test_tetris():
 
     pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", game_wrapper=True)
     pyboy.set_emulation_speed(0)
+    tetris = pyboy.game_wrapper()
+    tetris.set_tetromino("T")
 
     first_brick = False
     tile_map = pyboy.botsupport_manager().tilemap_window()
@@ -185,8 +195,8 @@ def test_tetris():
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 130, 130, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 130, 130]])
+                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
+                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
 
                     tile_map.use_tile_objects(True)
 
@@ -214,13 +224,13 @@ def test_tetris():
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                                   [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 130, 130, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 130, 130]])
+                                                  [303, 303, 303, 303, 303, 303, 303, 133, 133, 133],
+                                                  [303, 303, 303, 303, 303, 303, 303, 303, 133, 303]])
 
-            if frame == 1014:
+            if frame == 1012:
                 assert not first_brick
 
-            if frame == 1015:
+            if frame == 1014:
                 assert first_brick
 
                 s1 = pyboy.botsupport_manager().sprite(0)
@@ -237,15 +247,16 @@ def test_tetris():
                 assert all_sprites == all_sprites2
 
                 # Verify data with known reference
+                # pyboy.botsupport_manager().screen().screen_image().show()
                 assert all_sprites == ([
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
-                    (72, 128, 130, True),
-                    (80, 128, 130, True),
-                    (80, 136, 130, True),
-                    (88, 136, 130, True),
+                    (72, 128, 133, True),
+                    (80, 128, 133, True),
+                    (88, 128, 133, True),
+                    (80, 136, 133, True),
                     (120, 112, 133, True),
                     (128, 112, 133, True),
                     (136, 112, 133, True),
@@ -281,23 +292,21 @@ def test_tetris():
                 ])
 
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
-                tetris = pyboy.game_wrapper()
                 assert tetris.next_tetromino() == "T"
 
                 with open("tmp.state", "wb") as f:
                     pyboy.save_state(f)
                 pyboy.save_state(state_data)
-                pyboy.set_memory_value(NEXT_TETROMINO, 11)
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 11
-                assert tetris.next_tetromino() == "I"
                 break
 
-    for frame in range(1016, 1866):
-        pyboy.tick()
-        if frame == 1017:
-            assert pyboy.get_memory_value(NEXT_TETROMINO) == 11 # Would have been 4 otherwise
+    pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
+    pyboy.tick()
 
-        if frame == 1865:
+    pre_load_game_board_matrix = None
+    for frame in range(1016, 1865):
+        pyboy.tick()
+
+        if frame == 1864:
             game_board_matrix = list(tile_map[2:12, :18])
             assert game_board_matrix == ([[303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
@@ -313,49 +322,32 @@ def test_tetris():
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
                                           [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 128, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 136, 303, 303, 303, 303, 303],
-                                          [303, 303, 303, 303, 136, 303, 303, 130, 130, 303],
-                                          [303, 303, 303, 303, 137, 303, 303, 303, 130, 130]])
+                                          [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
+                                          [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
+                                          [303, 303, 303, 133, 133, 133, 303, 133, 133, 133],
+                                          [303, 303, 303, 303, 133, 303, 303, 303, 133, 303]])
+            pre_load_game_board_matrix = game_board_matrix
 
     state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
     with open("tmp.state", "rb") as f:
         for _f in [f, state_data]: # Tests both file-written state and in-memory state
             pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
             pyboy.tick()
-            for frame in range(1016, 5282):
+            for frame in range(1016, 1865):
                 pyboy.tick()
-                if frame == 1017:
-                    assert pyboy.get_memory_value(NEXT_TETROMINO) == 8
 
-                if frame == 1865:
+                if frame == 1864:
                     game_board_matrix = list(tile_map[2:12, :18])
-                    assert game_board_matrix == ([[303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 303, 303, 303, 303, 303, 303, 303],
-                                                  [303, 303, 303, 133, 133, 133, 303, 130, 130, 303],
-                                                  [303, 303, 303, 303, 133, 303, 303, 303, 130, 130]])
+                    assert game_board_matrix == pre_load_game_board_matrix
+                    break
     os.remove("tmp.state")
-
     pyboy.stop(save=False)
 
 
 @pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
 def test_tilemap_position_list():
     pyboy = PyBoy(supermarioland_rom, window_type="headless")
+    pyboy.set_emulation_speed(0)
     for _ in range(100):
         pyboy.tick()
 
@@ -374,7 +366,8 @@ def test_tilemap_position_list():
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
-        assert positions[y][0] == 49 # Actual screen position
+        assert positions[y][0] >= 50 # Actual screen position
+        last_y = positions[y][0]
 
     # Progress another 10 frames to see and increase in SCX
     for _ in range(10):
@@ -385,13 +378,14 @@ def test_tilemap_position_list():
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
-        assert positions[y][0] == 59 # Actual screen position
+        assert positions[y][0] >= last_y + 10 # Actual screen position
 
     pyboy.stop(save=False)
 
 
 def get_set_override():
     pyboy = PyBoy(default_rom, window_type="dummy")
+    pyboy.set_emulation_speed(0)
     pyboy.tick()
 
     assert pyboy.get_memory_value(0xFF40) == 0x91

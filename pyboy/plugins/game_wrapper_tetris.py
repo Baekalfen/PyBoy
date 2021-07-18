@@ -7,13 +7,15 @@ __pdoc__ = {
     "GameWrapperTetris.post_tick": False,
 }
 
+import logging
 from array import array
 
 import numpy as np
 from pyboy.utils import WindowEvent
-from pyboy.logger import logger
+
 from .base_plugin import PyBoyGameWrapper
 
+logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
@@ -137,6 +139,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
                 PyBoyGameWrapper._set_timer_div(self, timer_div)
                 self.saved_state.seek(0)
                 self.pyboy.save_state(self.saved_state)
+                self._set_timer_div(timer_div)
+
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
             self.pyboy.tick()
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
@@ -154,6 +158,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
             timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+        self._set_timer_div(timer_div)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
         self.pyboy.tick()

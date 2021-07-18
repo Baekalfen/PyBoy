@@ -5,12 +5,15 @@
 import base64
 import hashlib
 import os
+import platform
 
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
 from tests.utils import boot_rom, default_rom, kirby_rom
+
+is_pypy = platform.python_implementation() == "PyPy"
 
 
 @pytest.mark.skipif(not boot_rom, reason="ROM not present")
@@ -49,6 +52,7 @@ def test_record_replay():
 
 
 @pytest.mark.skipif(not boot_rom, reason="ROM not present")
+@pytest.mark.skipif(not is_pypy, reason="pyboy.mb.cpu is not accessible with Cython")
 def test_profiling():
     pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
     pyboy.set_emulation_speed(0)
@@ -169,4 +173,26 @@ def test_tilemaps():
     assert wdw_tilemap.tile_identifier(0, 0) == 256
     assert isinstance(wdw_tilemap[0, 0], Tile)
 
+    pyboy.stop(save=False)
+
+
+def test_randomize_ram():
+    pyboy = PyBoy(default_rom) # randomize=False, by default
+    # RAM banks should all be 0 by default
+    assert not any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not zeroed"
+    pyboy.stop(save=False)
+
+    pyboy = PyBoy(default_rom, randomize=True)
+    # RAM banks should have nonzero values now
+    assert any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not randomized"
     pyboy.stop(save=False)

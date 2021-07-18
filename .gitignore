@@ -10,6 +10,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.python-version
 env/
 venv/
 build/
@@ -96,3 +97,5 @@ ci_secrets.tar
 
 mooneye/
 blargg/
+
+pyboy/core/debug.pxi

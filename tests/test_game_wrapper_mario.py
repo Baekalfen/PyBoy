@@ -5,12 +5,14 @@
 
 import os
 import platform
+import sys
 
 import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
 from tests.utils import supermarioland_rom
 
+py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"
 
 
@@ -68,8 +70,9 @@ def test_mario_game_over():
 
 
 @pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom),
-    reason="This requires gym, which doesn't install on PyPy"
+    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom) or (py_version == "3.9") or
+    (sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
+    reason="This requires gym, which doesn't work on this platform"
 )
 class TestOpenAIGym:
     def test_observation_type_compressed(self):
@@ -77,6 +80,8 @@ class TestOpenAIGym:
         pyboy.set_emulation_speed(0)
 
         env = pyboy.openai_gym(observation_type="compressed")
+        if env is None:
+            raise Exception("'env' is None. Did you remember to install 'gym'?")
         observation = env.reset()
 
         expected_observation = np.zeros_like(observation)
@@ -94,6 +99,8 @@ class TestOpenAIGym:
         pyboy.set_emulation_speed(0)
 
         env = pyboy.openai_gym(observation_type="minimal")
+        if env is None:
+            raise Exception("'env' is None. Did you remember to install 'gym'?")
         observation = env.reset()
 
         expected_observation = np.zeros_like(observation)
@@ -112,6 +119,8 @@ class TestOpenAIGym:
 
         starting_level = (2, 1)
         env = pyboy.openai_gym(observation_type="minimal", action_type="toggle", world_level=starting_level)
+        if env is None:
+            raise Exception("'env' is None. Did you remember to install 'gym'?")
         observation = env.reset()
 
         print(env.game_wrapper.world, starting_level)
