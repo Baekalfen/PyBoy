@@ -29,7 +29,7 @@ def test_shonumi(rom):
         with ZipFile(shonumi_data) as _zip:
             _zip.extractall(shonumi_dir)
 
-    pyboy = PyBoy(rom, window_type="SDL2", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
+    pyboy = PyBoy(rom, window_type="headless", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
     pyboy.set_emulation_speed(0)
 
     # sprite_suite.gb
