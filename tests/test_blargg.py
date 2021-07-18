@@ -115,7 +115,7 @@ def run_rom(rom):
     ]
 )
 def test_blarggs(rom):
-    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
+    # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     blargg_dir = Path("blargg")
     if not os.path.isdir(blargg_dir):
         print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.blargg.txt").read())

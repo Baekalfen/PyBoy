@@ -14,7 +14,7 @@ OVERWRITE_PNGS = False
 
 
 def test_dmg_acid():
-    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
+    # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     dmg_acid_file = "dmg_acid2.gb"
     if not os.path.isfile(dmg_acid_file):
         print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.dmg-acid2.txt").read())
