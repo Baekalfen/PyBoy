@@ -2,9 +2,7 @@ name: PyTest PyBoy
 
 on:
   push:
-    branches: [ $default-branch ]
   pull_request:
-    branches: [ $default-branch ]
   release:
     types: [published]
 
