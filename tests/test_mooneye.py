@@ -149,7 +149,7 @@ saved_state = None
 )
 def test_mooneye(clean, rom):
     global saved_state
-    # Has to be in here. Otherwise all test workers will import the file, and cause an error.
+    # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     mooneye_dir = "mooneye"
     if not os.path.isdir(mooneye_dir):
         print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.mooneye.txt").read())
