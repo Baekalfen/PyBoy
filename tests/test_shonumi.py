@@ -29,10 +29,14 @@ def test_shonumi(rom):
         with ZipFile(shonumi_data) as _zip:
             _zip.extractall(shonumi_dir)
 
-    pyboy = PyBoy(rom, window_type="headless")
+    pyboy = PyBoy(rom, window_type="SDL2", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
     pyboy.set_emulation_speed(0)
 
-    for _ in range(60 + 120):
+    # sprite_suite.gb
+    # 60 PyBoy Boot
+    # 23 Loading
+    # 50 Progress to screenshot
+    for _ in range(60 + 23 + 50):
         pyboy.tick()
 
     png_path = Path(f"test_results/{rom}.png")
@@ -40,6 +44,7 @@ def test_shonumi(rom):
     image = pyboy.botsupport_manager().screen().screen_image()
 
     old_image = PIL.Image.open(png_path)
+    old_image = old_image.resize(image.size, resample=PIL.Image.NEAREST)
     diff = PIL.ImageChops.difference(image, old_image)
 
     if diff.getbbox() and not os.environ.get("TEST_CI"):
