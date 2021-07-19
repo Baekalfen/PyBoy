@@ -10,7 +10,7 @@ on:
 
 jobs:
   test_cython:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, X64]
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +29,7 @@ jobs:
     - name: Build PyBoy
       run: |
         make build
-    - name: Install additional dependencies
+    - name: Install Python dependencies
       run: |
         pip install wheel
     - name: Run PyTest
@@ -53,7 +53,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev
-    - name: Install additional dependencies
+    - name: Install Python dependencies
       run: |
         pip install wheel
     - name: Run PyTest

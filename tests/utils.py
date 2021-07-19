@@ -13,7 +13,7 @@ BOOTROM_FRAMES_UNTIL_END = 60 + BOOTROM_FRAMES_UNTIL_LOGO
 
 def locate_bootrom(path="ROMs/"):
     if not os.path.isdir(path):
-        print(f"No directory found: {path}")
+        print(f"locate_bootrom: No directory found: {path}")
         return None
 
     files = map(lambda x: path + x, filter(lambda x: x.endswith(".bin"), os.listdir("ROMs")))
@@ -30,7 +30,7 @@ def locate_bootrom(path="ROMs/"):
 
 def locate_roms(path="ROMs/"):
     if not os.path.isdir(path):
-        print(f"No directory found: {path}")
+        print(f"locate_roms: No directory found: {path}")
         return {}
 
     gb_files = map(
