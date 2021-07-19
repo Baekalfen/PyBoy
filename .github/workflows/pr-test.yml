@@ -59,7 +59,7 @@ jobs:
         make build
     - name: Install Python dependencies
       run: |
-        pytohn -m pip install wheel
+        python -m pip install wheel
     - name: Run PyTest
       run: |
         TEST_CI=1 TEST_NO_UI=1 make test_cython
@@ -84,7 +84,7 @@ jobs:
     #     sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev
     - name: Install Python dependencies
       run: |
-        pytohn -m pip install wheel
+        python -m pip install wheel
     - name: Run PyTest
       run: |
         TEST_CI=1 TEST_NO_UI=1 make test_pypy
