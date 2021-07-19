@@ -9,29 +9,28 @@ on:
     types: [published]
 
 jobs:
-  test_cython_hosted:
-    runs-on: ubuntu-latest
+  # test_cython_hosted:
+  #   runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y libsdl2-dev build-essential
-    - name: Build PyBoy
-      run: |
-        make build
-    - name: Install Python dependencies
-      run: |
-        pip install wheel
-    - name: Run PyTest
-      run: |
-        TEST_CI=1 TEST_NO_UI=1 make test_cython
-
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - name: Set up Python 3.7
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.7
+  #   - name: Install system dependencies
+  #     run: |
+  #       sudo apt update
+  #       sudo apt install -y libsdl2-dev build-essential
+  #   - name: Build PyBoy
+  #     run: |
+  #       make build
+  #   - name: Install Python dependencies
+  #     run: |
+  #       pip install wheel
+  #   - name: Run PyTest
+  #     run: |
+  #       TEST_CI=1 TEST_NO_UI=1 make test_cython
   test_cython:
     runs-on: [self-hosted, ${{ matrix.os }}, X64]
     strategy:
