@@ -26,6 +26,7 @@ cdef class LCD:
     cdef uint8_t WX
     cdef uint8_t next_stat_mode
     cdef bint frame_done
+    cdef uint8_t max_ly
     IF DEBUG:
         cdef public uint8_t LY
         cdef public uint8_t LYC
