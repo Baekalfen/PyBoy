@@ -32,11 +32,11 @@ jobs:
   #     run: |
   #       TEST_CI=1 TEST_NO_UI=1 make test_cython
   test_cython:
-    runs-on: [self-hosted, ${{ matrix.os }}, X64]
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [linux, windows]
+        os: [[self-hosted, linux], [self-hosted, windows]]
         python-version: [3.7, 3.8, 3.9]
 
     steps:
@@ -60,11 +60,11 @@ jobs:
         TEST_CI=1 TEST_NO_UI=1 make test_cython
 
   test_pypy:
-    runs-on: [self-hosted, ${{ matrix.os }}, X64]
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [linux, windows]
+        os: [[self-hosted, linux], [self-hosted, windows]]
         python-version: ['pypy-3.6', 'pypy-3.7']
 
     steps:
