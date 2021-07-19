@@ -31,6 +31,7 @@ jobs:
   #   - name: Run PyTest
   #     run: |
   #       TEST_CI=1 TEST_NO_UI=1 make test_cython
+
   test_cython:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -38,6 +39,10 @@ jobs:
       matrix:
         os: [[self-hosted, linux], [self-hosted, windows]]
         python-version: [3.7, 3.8, 3.9]
+        exclude:
+        # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
+        - os: [self-hosted, linux]
+          python-version: 3.7
 
     steps:
     - uses: actions/checkout@v2
