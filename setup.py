@@ -193,7 +193,7 @@ def define_lib_includes_cflags():
     includes = []
     cflags = [
         "-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include"
-    ]
+    ] if sys.platform == "darwin" else []
     if sdl2_config != []:
         for arg in sdl2_config:
             if arg.startswith("-l"):

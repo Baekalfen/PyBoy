@@ -29,7 +29,7 @@ except ImportError:
 
 
 class LCD:
-    def __init__(self, disable_renderer, color_palette, randomize=False):
+    def __init__(self, disable_renderer, color_palette, randomize=False, patch_supermarioland=False):
         self.VRAM = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
 
@@ -56,6 +56,10 @@ class LCD:
         self.clock_target = 0
         self.frame_done = False
         self.renderer = Renderer(disable_renderer, color_palette)
+        patch_supermarioland
+        self.max_ly = 153
+        if patch_supermarioland:
+            self.max_ly = 155 # Avoid jittering of top scanline. Possibly a fault in the game ROM.
 
     def get_lcdc(self):
         return self._LCDC.value
@@ -96,7 +100,7 @@ class LCD:
 
         if self._LCDC.lcd_enable:
             if self.clock >= self.clock_target:
-                if self.LY == 153:
+                if self.LY == self.max_ly:
                     # Reset to new frame and start from mode 2
                     self.next_stat_mode = 2
                     self.LY = -1
