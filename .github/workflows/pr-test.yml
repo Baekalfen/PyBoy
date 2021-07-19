@@ -53,9 +53,6 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev
-    - name: Build PyBoy
-      run: |
-        make build
     - name: Install additional dependencies
       run: |
         pip install wheel
