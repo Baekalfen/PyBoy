@@ -49,12 +49,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Brew update/upgrade + Install gettext to fix actions/setup-python
-      if: ${{ contains(matrix.os, 'macOS') }}
-      run: |
-        brew update
-        brew upgrade
-        brew install gettext
+    # - name: Brew update/upgrade + Install gettext to fix actions/setup-python
+    #   if: ${{ contains(matrix.os, 'macOS') }}
+    #   run: |
+    #     brew update
+    #     brew upgrade
+    #     brew install gettext
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -63,10 +63,10 @@ jobs:
     #   run: |
     #     sudo apt update
     #     sudo apt install -y libsdl2-dev build-essential
-    - name: Install SDL2
-      if: ${{ contains(matrix.os, 'macOS') }}
-      run: |
-        brew install sdl2
+    # - name: Install SDL2
+    #   if: ${{ contains(matrix.os, 'macOS') }}
+    #   run: |
+    #     brew install sdl2
     - name: Build PyBoy
       run: |
         make build
@@ -90,11 +90,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Brew update/upgrade
-      if: ${{ contains(matrix.os, 'macOS') }}
-      run: |
-        brew update
-        brew upgrade
+    # - name: Brew update/upgrade
+    #   if: ${{ contains(matrix.os, 'macOS') }}
+    #   run: |
+    #     brew update
+    #     brew upgrade
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -106,16 +106,16 @@ jobs:
     - name: Install Python dependencies
       run: |
         pip install wheel
-    - name: Install SDL2
-      if: ${{ contains(matrix.os, 'macOS') }}
-      run: |
-        brew install sdl2
+    # - name: Install SDL2
+    #   if: ${{ contains(matrix.os, 'macOS') }}
+    #   run: |
+    #     brew install sdl2
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
         rm -vf ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
-        brew install openblas
+        # brew install openblas
         OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
       run: |
