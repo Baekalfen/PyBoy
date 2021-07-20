@@ -57,6 +57,11 @@ jobs:
     #   run: |
     #     sudo apt update
     #     sudo apt install -y libsdl2-dev build-essential
+    - name: Install SDL2
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        brew update
+        brew install sdl2
     - name: Build PyBoy
       run: |
         make build
@@ -91,14 +96,18 @@ jobs:
     - name: Install Python dependencies
       run: |
         pip install wheel
+    - name: Install SDL2
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        brew update
+        brew install sdl2
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
-        pip install wheel
-          # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
-          rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
-          brew install openblas
-          OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
+        # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
+        rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
+        brew install openblas
+        OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
       run: |
         TEST_CI=1 TEST_NO_UI=1 make test_pypy
