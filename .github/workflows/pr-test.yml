@@ -92,7 +92,7 @@ jobs:
       run: |
         pip install wheel
     - name: Fix Numpy Polyfit error
-      if: ${{ matrix.os == 'macOS' }}
+      if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         pip install wheel
           # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
