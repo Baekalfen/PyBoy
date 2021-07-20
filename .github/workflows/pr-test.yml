@@ -49,6 +49,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install gettext to fix actions/setup-python
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        brew update
+        brew install gettext
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
