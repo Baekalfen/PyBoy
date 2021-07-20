@@ -105,7 +105,7 @@ jobs:
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
-        rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
+        rm -vf ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
         brew install openblas
         OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
