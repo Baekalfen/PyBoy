@@ -43,6 +43,9 @@ jobs:
         # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
         - os: [self-hosted, linux]
           python-version: 3.7
+    env:
+      # For Mac
+      AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
 
     steps:
     - uses: actions/checkout@v2
@@ -71,6 +74,9 @@ jobs:
       matrix:
         os: [[self-hosted, linux], [self-hosted, macOS], [self-hosted, windows]]
         python-version: ['pypy-3.6', 'pypy-3.7']
+    env:
+      # For Mac
+      AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
 
     steps:
     - uses: actions/checkout@v2
