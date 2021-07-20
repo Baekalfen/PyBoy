@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [[self-hosted, linux], [self-hosted, macOS], [self-hosted, windows]]
+        os: [self-hosted, macOS] #, [[self-hosted, linux], [self-hosted, windows]]
         python-version: [3.7, 3.8, 3.9]
         exclude:
         # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
@@ -72,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [[self-hosted, linux], [self-hosted, macOS], [self-hosted, windows]]
+        os: [self-hosted, macOS] #, [[self-hosted, linux], [self-hosted, windows]]
         python-version: ['pypy-3.6', 'pypy-3.7']
     env:
       # For Mac
