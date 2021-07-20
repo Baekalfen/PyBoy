@@ -49,10 +49,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install gettext to fix actions/setup-python
+    - name: Brew update/upgrade + Install gettext to fix actions/setup-python
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         brew update
+        brew upgrade
         brew install gettext
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -65,7 +66,6 @@ jobs:
     - name: Install SDL2
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
-        brew update
         brew install sdl2
     - name: Build PyBoy
       run: |
@@ -90,6 +90,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Brew update/upgrade
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        brew update
+        brew upgrade
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -104,7 +109,6 @@ jobs:
     - name: Install SDL2
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
-        brew update
         brew install sdl2
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
