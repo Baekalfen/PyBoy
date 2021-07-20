@@ -91,6 +91,14 @@ jobs:
     - name: Install Python dependencies
       run: |
         pip install wheel
+    - name: Fix Numpy Polyfit error
+      if: ${{ matrix.os == macOS }}
+      run: |
+        pip install wheel
+          # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
+          rm -v ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
+          brew install openblas
+          OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
       run: |
         TEST_CI=1 TEST_NO_UI=1 make test_pypy
