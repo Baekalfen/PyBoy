@@ -46,11 +46,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set environment variables
+    - name: Set AGENT_TOOLSDIRECTORY
+      if: ${{ contains(matrix.os, 'macOS') }}
       run: |
-        if [[ ${{ contains(matrix.os, 'macOS') }} ]]; then
-          echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
-        fi
+        echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -75,11 +74,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set environment variables
+    - name: Set AGENT_TOOLSDIRECTORY
+      if: ${{ contains(matrix.os, 'macOS') }}
       run: |
-        if [[ ${{ contains(matrix.os, 'macOS') }} ]]; then
-          echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
-        fi
+        echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
