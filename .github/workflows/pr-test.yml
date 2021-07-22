@@ -139,10 +139,10 @@ jobs:
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
-          # echo "Installing SDL2"
-          # yum -y install mercurial
-          # bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
-          # ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
+          echo "Installing SDL2"
+          yum -y install mercurial
+          bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
+          ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
 
           cd /work
           echo "Starting build"
