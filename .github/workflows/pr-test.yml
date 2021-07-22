@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [[self-hosted, windows]] # [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows]]
+        os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, cpython]]
         python-version: [3.7, 3.8, 3.9]
         exclude:
         # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
@@ -74,13 +74,18 @@ jobs:
     - name: Run PyTest
       run: |
         python setup.py test
+    # - name: Publish package
+    #   uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+    #   with:
+    #     user: __token__
+    #     password: ${{ secrets.PYPI_API_TOKEN }}
 
   test_pypy:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [[self-hosted, windows]] # [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows]]
+        os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, pypy]]
         python-version: ['pypy-3.6', 'pypy-3.7']
 
     steps:
@@ -117,8 +122,3 @@ jobs:
     - name: Run PyTest
       run: |
         python setup.py test
-    # - name: Publish package
-    #   uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-    #   with:
-    #     user: __token__
-    #     password: ${{ secrets.PYPI_API_TOKEN }}
