@@ -46,7 +46,6 @@ jobs:
     env:
       # For Mac
       AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
-      RUNNER_TOOL_CACHE: /Users/runner/hostedtoolcache
 
     steps:
     - uses: actions/checkout@v2
@@ -88,7 +87,6 @@ jobs:
     env:
       # For Mac
       AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
-      RUNNER_TOOL_CACHE: /Users/runner/hostedtoolcache
 
     steps:
     - uses: actions/checkout@v2
