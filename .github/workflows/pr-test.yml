@@ -136,8 +136,8 @@ jobs:
         image: quay.io/pypa/manylinux2010_x86_64:latest
         options: -v ${{ github.workspace }}:/work
         run: |
-          # echo "Linking Python version ${{ matrix.python-version }}"
-          # ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
+          echo "Linking Python version ${{ matrix.python-version }}"
+          ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
           # echo "Installing SDL2"
           # yum -y install mercurial
