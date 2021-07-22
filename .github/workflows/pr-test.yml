@@ -135,7 +135,7 @@ jobs:
       with:
         registry: quay.io
         image: pypa/manylinux2010_x86_64:latest
-        options: -v ${{ github.workspace }}:/pyboy -w '/pyboy'
+        # options: -v ${{ github.workspace }}:/pyboy -w '/pyboy'
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
