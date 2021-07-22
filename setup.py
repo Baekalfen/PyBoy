@@ -188,6 +188,7 @@ def locate_sdl2_config():
 def define_lib_includes_cflags():
     sdl2_config = locate_sdl2_config()
     sdl2_path = os.getenv("PYSDL2_DLL_PATH")
+    print("PYSDL2_DLL_PATH:", sdl2_path)
     libs = []
     libdirs = []
     includes = []
