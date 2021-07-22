@@ -55,6 +55,7 @@ jobs:
       if: |
         github.event_name == 'release' &&
         github.event.action == 'published' &&
+        github.head_ref == 'master' &&
         ${{ !contains(matrix.os, 'linux') }}
       run: |
         echo "Building wheel and uploading"
@@ -66,6 +67,7 @@ jobs:
       if: |
         github.event_name == 'release' &&
         github.event.action == 'published' &&
+        github.head_ref == 'master' &&
         ${{ contains(matrix.os, 'linux') }} &&
         ${{ matrix.python-version == '3.8' }}
       run: |
@@ -179,7 +181,8 @@ jobs:
     - name: Upload wheel
       if: |
         github.event_name == 'release' &&
-        github.event.action == 'published'
+        github.event.action == 'published' &&
+        github.head_ref == 'master'
       run: |
         echo "Uploading wheel"
         # pip install twine
