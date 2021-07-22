@@ -49,8 +49,8 @@ jobs:
     - name: Set Unix env
       if: ${{ !contains(matrix.os, 'windows') }}
       run: |
-        export TEST_CI=1
-        export TEST_NO_UI=1
+        echo "TEST_CI=1" >> $GITHUB_ENV
+        echo "TEST_NO_UI=1" >> $GITHUB_ENV
     - name: Set AGENT_TOOLSDIRECTORY
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
@@ -95,10 +95,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set Unix env
-      if: ${{ contains(matrix.os, 'macOS') || contains(matrix.os, 'linux') }}
+      if: ${{ !contains(matrix.os, 'windows') }}
       run: |
-        export TEST_CI=1
-        export TEST_NO_UI=1
+        echo "TEST_CI=1" >> $GITHUB_ENV
+        echo "TEST_NO_UI=1" >> $GITHUB_ENV
     - name: Set AGENT_TOOLSDIRECTORY
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
