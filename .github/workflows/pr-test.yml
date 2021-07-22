@@ -38,11 +38,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [[self-hosted, macOS]] #, [self-hosted, linux], [self-hosted, windows]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7.11, 3.8, 3.9]
         exclude:
         # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
         - os: [self-hosted, linux]
-          python-version: 3.7
+          python-version: 3.7.11
     env:
       # For Mac
       AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
