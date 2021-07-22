@@ -133,8 +133,7 @@ jobs:
     - name: Docker Run Action
       uses: addnab/docker-run-action@v3
       with:
-        registry: quay.io
-        image: pypa/manylinux2010_x86_64:latest
+        image: quay.io/pypa/manylinux2010_x86_64:latest
         # options: -v ${{ github.workspace }}:/pyboy -w '/pyboy'
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
