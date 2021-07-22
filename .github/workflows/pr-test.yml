@@ -50,6 +50,10 @@ jobs:
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
+    - name: Set PYSDL2_DLL_PATH
+      if: ${{ contains(matrix.os, 'windows') }}
+      run: |
+        echo "PYSDL2_DLL_PATH=C:\SDL2\SDL2-2.0.10\lib\x64" >> $GITHUB_ENV
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -80,6 +84,10 @@ jobs:
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
+    - name: Set PYSDL2_DLL_PATH
+      if: ${{ contains(matrix.os, 'windows') }}
+      run: |
+        echo "PYSDL2_DLL_PATH=C:\SDL2\SDL2-2.0.10\lib\x64" >> $GITHUB_ENV
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
