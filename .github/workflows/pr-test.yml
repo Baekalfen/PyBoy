@@ -87,11 +87,15 @@ jobs:
       matrix:
         os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, pypy]]
         python-version: ['pypy-3.6', 'pypy-3.7']
-
+        exclude:
+        # Not worth the time to fix:
+        # The headers or library files could not be found for zlib, a required dependency when compiling Pillow from source.
+        - os: [self-hosted, windows]
+          python-version: pypy-3.6
     steps:
     - uses: actions/checkout@v2
     - name: Set Unix env
-      if: ${{ !contains(matrix.os, 'windows') }}
+      if: ${{ contains(matrix.os, 'macOS') || contains(matrix.os, 'linux') }}
       run: |
         export TEST_CI=1
         export TEST_NO_UI=1
