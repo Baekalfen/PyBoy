@@ -39,34 +39,22 @@ jobs:
       matrix:
         os: [[self-hosted, macOS], [self-hosted, linux]] #, [self-hosted, windows]
         python-version: [3.7, 3.8, 3.9]
-        exclude:
-        # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
-        - os: [self-hosted, linux]
-          python-version: 3.7
-    env:
-      # For Mac
-      AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
+        # exclude:
+        # # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
+        # - os: [self-hosted, linux]
+        #   python-version: 3.7
 
     steps:
     - uses: actions/checkout@v2
-    # - name: Brew update/upgrade + Install gettext to fix actions/setup-python
-    #   if: ${{ contains(matrix.os, 'macOS') }}
-    #   run: |
-    #     brew update
-    #     brew upgrade
-    #     brew install gettext
+    - name: Set environment variables
+      run: |
+        if [[ ${{ contains(matrix.os, 'macOS') }} ]]; then
+          echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
+        fi
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    # - name: Install system dependencies
-    #   run: |
-    #     sudo apt update
-    #     sudo apt install -y libsdl2-dev build-essential
-    # - name: Install SDL2
-    #   if: ${{ contains(matrix.os, 'macOS') }}
-    #   run: |
-    #     brew install sdl2
     - name: Build PyBoy
       run: |
         make build
@@ -84,32 +72,21 @@ jobs:
       matrix:
         os: [[self-hosted, macOS], [self-hosted, linux]] #, [self-hosted, windows]
         python-version: ['pypy-3.6', 'pypy-3.7']
-    env:
-      # For Mac
-      AGENT_TOOLSDIRECTORY: /Users/runner/hostedtoolcache
 
     steps:
     - uses: actions/checkout@v2
-    # - name: Brew update/upgrade
-    #   if: ${{ contains(matrix.os, 'macOS') }}
-    #   run: |
-    #     brew update
-    #     brew upgrade
+    - name: Set environment variables
+      run: |
+        if [[ ${{ contains(matrix.os, 'macOS') }} ]]; then
+          echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
+        fi
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    # - name: Install system dependencies
-    #   run: |
-    #     sudo apt update
-    #     sudo apt install -y libsdl2-dev libtiff5-dev libjpeg8-dev zlib1g-dev
     - name: Install Python dependencies
       run: |
         pip install wheel
-    # - name: Install SDL2
-    #   if: ${{ contains(matrix.os, 'macOS') }}
-    #   run: |
-    #     brew install sdl2
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
