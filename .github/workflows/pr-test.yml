@@ -59,7 +59,7 @@ jobs:
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
     - name: Upload source code
       # Any specific OS/python-version will work, as long as it's just one match
-      if: github.event_name == 'release' && github.event.action == 'published' && ${{ contains(matrix.os, 'linux') }} && ${{ matrix.python-version == '3.8') }}
+      if: github.event_name == 'release' && github.event.action == 'published' && ${{ contains(matrix.os, 'linux') }} && ${{ matrix.python-version == '3.8' }}
       run: |
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
 
@@ -163,9 +163,12 @@ jobs:
 
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
-    - name: Build and upload wheel
+    - name: Set up Python 3.8 (Just for PyPi upload)
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Upload wheel
       if: github.event_name == 'release' && github.event.action == 'published'
       run: |
-        pip install wheel twine
-        python setup.py sdist bdist_wheel
+        pip install twine
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
