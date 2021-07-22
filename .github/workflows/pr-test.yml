@@ -153,7 +153,7 @@ jobs:
 
 
           echo "Building wheel"
-          pip install wheel twine
+          python -m pip install wheel twine
           python setup.py sdist bdist_wheel
 
           python -m pip install auditwheel
