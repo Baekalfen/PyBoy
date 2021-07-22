@@ -53,9 +53,9 @@ jobs:
         python setup.py test
     - name: Build and upload wheel
       if: |
-        github.event_name == 'release' &&
-        github.event.action == 'published' &&
-        github.head_ref == 'master' &&
+        ${{ github.event_name == 'release' }} &&
+        ${{ github.event.action == 'published' }} &&
+        ${{ github.head_ref == 'master' }}
         ${{ !contains(matrix.os, 'linux') }}
       run: |
         echo "Building wheel and uploading"
@@ -65,9 +65,9 @@ jobs:
     - name: Upload source code
       # Any specific OS/python-version will work, as long as it's just one match
       if: |
-        github.event_name == 'release' &&
-        github.event.action == 'published' &&
-        github.head_ref == 'master' &&
+        ${{ github.event_name == 'release' }} &&
+        ${{ github.event.action == 'published' }} &&
+        ${{ github.head_ref == 'master' }}
         ${{ contains(matrix.os, 'linux') }} &&
         ${{ matrix.python-version == '3.8' }}
       run: |
@@ -134,7 +134,7 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: quay.io/pypa/manylinux2010_x86_64:latest
-        # options: -v ${{ github.workspace }}:/pyboy -w '/pyboy'
+        options: -v ${{ github.workspace }}:/work
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
@@ -179,9 +179,9 @@ jobs:
         python-version: 3.8
     - name: Upload wheel
       if: |
-        github.event_name == 'release' &&
-        github.event.action == 'published' &&
-        github.head_ref == 'master'
+        ${{ github.event_name == 'release' }} &&
+        ${{ github.event.action == 'published' }} &&
+        ${{ github.head_ref == 'master' }}
       run: |
         echo "Uploading wheel"
         # pip install twine
