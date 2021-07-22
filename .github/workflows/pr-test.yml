@@ -56,13 +56,15 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Build PyBoy
       run: |
-        make build
+        # make build
+        python setup.py build_ext --inplace
     - name: Install Python dependencies
       run: |
-        python -m pip install wheel
+        pip install wheel
     - name: Run PyTest
       run: |
-        TEST_CI=1 TEST_NO_UI=1 make test_cython
+        # TEST_CI=1 TEST_NO_UI=1 make test_cython
+        TEST_CI=1 TEST_NO_UI=1 python setup.py test
 
   test_pypy:
     runs-on: ${{ matrix.os }}
@@ -84,7 +86,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Python dependencies
       run: |
-        python -m pip install wheel
+        pip install wheel
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
@@ -94,7 +96,8 @@ jobs:
         OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
       run: |
-        TEST_CI=1 TEST_NO_UI=1 make test_pypy
+        # TEST_CI=1 TEST_NO_UI=1 make test_pypy
+        TEST_CI=1 TEST_NO_UI=1 python setup.py test
     # - name: Publish package
     #   uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
     #   with:
