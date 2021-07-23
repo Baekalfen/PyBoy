@@ -53,10 +53,10 @@ jobs:
         python setup.py test
     - name: Build and upload wheel
       if: |
-        ${{ github.event_name == 'release' }} &&
-        ${{ github.event.action == 'published' }} &&
-        ${{ github.head_ref == 'master' }}
-        ${{ !contains(matrix.os, 'linux') }}
+        ${{ github.event_name == 'release' &&
+        github.event.action == 'published' &&
+        github.head_ref == 'master' &&
+        !contains(matrix.os, 'linux') }}
       run: |
         echo "Building wheel and uploading"
         # pip install wheel twine
@@ -65,11 +65,11 @@ jobs:
     - name: Upload source code
       # Any specific OS/python-version will work, as long as it's just one match
       if: |
-        ${{ github.event_name == 'release' }} &&
-        ${{ github.event.action == 'published' }} &&
-        ${{ github.head_ref == 'master' }}
-        ${{ contains(matrix.os, 'linux') }} &&
-        ${{ matrix.python-version == '3.8' }}
+        ${{ github.event_name == 'release' &&
+        github.event.action == 'published' &&
+        github.head_ref == 'master' &&
+        contains(matrix.os, 'linux') &&
+        matrix.python-version == '3.8' }}
       run: |
         echo "Uploading source code"
         # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
@@ -183,9 +183,9 @@ jobs:
         python-version: 3.8
     - name: Upload wheel
       if: |
-        ${{ github.event_name == 'release' }} &&
-        ${{ github.event.action == 'published' }} &&
-        ${{ github.head_ref == 'master' }}
+        ${{ github.event_name == 'release' &&
+        github.event.action == 'published' &&
+        github.head_ref == 'master' }}
       run: |
         echo "Uploading wheel"
         # pip install twine
