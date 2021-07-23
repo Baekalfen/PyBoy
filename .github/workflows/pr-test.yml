@@ -10,6 +10,7 @@ on:
 
 jobs:
   test_cython:
+    name: Cython - Build, Test and Deploy
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -62,6 +63,7 @@ jobs:
         python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
 
   test_pypy:
+    name: PyPy - Test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -109,6 +111,7 @@ jobs:
         python setup.py test
 
   test_manylinux:
+    name: ManyLinux - Build, Test and Deploy
     runs-on: [self-hosted, linux]
     strategy:
       fail-fast: false
