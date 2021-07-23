@@ -58,12 +58,8 @@ jobs:
         # pip install wheel twine
         # python setup.py sdist bdist_wheel
         # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
-    - name: Upload source code
-      # Any specific OS/python-version will work, as long as it's just one match
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && contains(matrix.os, 'linux') && matrix.python-version == '3.8' }}
-      run: |
         echo "Uploading source code"
-        # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
+        # python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
 
   test_pypy:
     runs-on: ${{ matrix.os }}
