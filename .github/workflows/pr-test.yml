@@ -134,7 +134,8 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: quay.io/pypa/manylinux2010_x86_64:latest
-        options: -v ${{ github.workspace }}:/work
+        options: --mount "type=bind,src=${{ github.workspace }}/shared,dst=/work"
+        # -v ${{ github.workspace }}:/work
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
@@ -174,7 +175,7 @@ jobs:
 
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
-    - name: Set up Python 3.8 (Just for PyPi upload)
+    - name: Set up Python 3.8 (just for PyPi upload)
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
