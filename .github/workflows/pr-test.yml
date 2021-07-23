@@ -134,7 +134,7 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: quay.io/pypa/manylinux2010_x86_64:latest
-        options: --mount "type=bind,src=${{ github.workspace }}/shared,dst=/work"
+        options: --mount type=bind,src=${{ github.workspace }}/shared,dst=/work
         # -v ${{ github.workspace }}:/work
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
