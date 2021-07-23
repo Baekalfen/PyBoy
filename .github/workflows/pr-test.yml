@@ -55,11 +55,11 @@ jobs:
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && !contains(matrix.os, 'linux') }}
       run: |
         echo "Building wheel and uploading"
-        # pip install wheel twine
-        # python setup.py sdist bdist_wheel
-        # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
+        pip install wheel twine
+        python setup.py sdist bdist_wheel
+        python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
         echo "Uploading source code"
-        # python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
+        python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
 
   test_pypy:
     runs-on: ${{ matrix.os }}
@@ -122,8 +122,6 @@ jobs:
       with:
         image: quay.io/pypa/manylinux2010_x86_64:latest
         options: -v ${{ github.workspace }}:/work
-        # -u 1000:1000
-        # options: --mount type=bind,src=${{ github.workspace }},dst=/work
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
@@ -163,7 +161,7 @@ jobs:
 
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
-          chmod 777 -R . # Fix permissions when cleaning up outside of Docker
+          chmod 777 -R . # Fix permissions to help cleaning up outside of Docker
     - name: Set up Python 3.8 (just for PyPi upload)
       uses: actions/setup-python@v2
       with:
@@ -172,5 +170,5 @@ jobs:
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' }}
       run: |
         echo "Uploading wheel"
-        # pip install twine
-        # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
+        pip install twine
+        python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
