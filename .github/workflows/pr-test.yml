@@ -175,6 +175,7 @@ jobs:
 
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
+          chmod 777 -R . # Fix permissions when cleaning up outside of Docker
     - name: Set up Python 3.8 (just for PyPi upload)
       uses: actions/setup-python@v2
       with:
