@@ -53,7 +53,7 @@ jobs:
       run: |
         python setup.py test
     - name: Build and upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && !contains(matrix.os, 'linux') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !contains(matrix.os, 'linux') }}
       run: |
         echo "Building wheel and uploading"
         pip install wheel twine
@@ -169,7 +169,7 @@ jobs:
       with:
         python-version: 3.8
     - name: Upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
       run: |
         echo "Uploading wheel"
         pip install twine
