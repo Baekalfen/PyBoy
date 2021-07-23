@@ -9,169 +9,169 @@ on:
     types: [published]
 
 jobs:
-  # test_cython:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, cpython]]
-  #       python-version: [3.7, 3.8, 3.9]
-  #       exclude:
-  #       # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
-  #       - os: [self-hosted, linux]
-  #         python-version: 3.7
+  test_cython:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, cpython]]
+        python-version: [3.7, 3.8, 3.9]
+        exclude:
+        # Gives the following error: /usr/bin/ld: cannot find -lpython3.7m
+        - os: [self-hosted, linux]
+          python-version: 3.7
 
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - name: Set Unix env
-  #     if: ${{ !contains(matrix.os, 'windows') }}
-  #     run: |
-  #       echo "TEST_CI=1" >> $GITHUB_ENV
-  #       echo "TEST_NO_UI=1" >> $GITHUB_ENV
-  #   - name: Set AGENT_TOOLSDIRECTORY
-  #     if: ${{ contains(matrix.os, 'macOS') }}
-  #     run: |
-  #       echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
-  #   - name: Set PYSDL2_DLL_PATH
-  #     if: ${{ contains(matrix.os, 'windows') }}
-  #     run: |
-  #       echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-  #       echo "TEST_CI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-  #       echo "TEST_NO_UI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: ${{ matrix.python-version }}
-  #   - name: Install Python dependencies
-  #     run: |
-  #       pip install wheel
-  #   - name: Build PyBoy
-  #     run: |
-  #       python setup.py build_ext --inplace
-  #   - name: Run PyTest
-  #     run: |
-  #       python setup.py test
-  #   - name: Build and upload wheel
-  #     if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && !contains(matrix.os, 'linux') }}
-  #     run: |
-  #       echo "Building wheel and uploading"
-  #       # pip install wheel twine
-  #       # python setup.py sdist bdist_wheel
-  #       # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
-  #   - name: Upload source code
-  #     # Any specific OS/python-version will work, as long as it's just one match
-  #     if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && contains(matrix.os, 'linux') && matrix.python-version == '3.8' }}
-  #     run: |
-  #       echo "Uploading source code"
-  #       # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set Unix env
+      if: ${{ !contains(matrix.os, 'windows') }}
+      run: |
+        echo "TEST_CI=1" >> $GITHUB_ENV
+        echo "TEST_NO_UI=1" >> $GITHUB_ENV
+    - name: Set AGENT_TOOLSDIRECTORY
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
+    - name: Set PYSDL2_DLL_PATH
+      if: ${{ contains(matrix.os, 'windows') }}
+      run: |
+        echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "TEST_CI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "TEST_NO_UI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Python dependencies
+      run: |
+        pip install wheel
+    - name: Build PyBoy
+      run: |
+        python setup.py build_ext --inplace
+    - name: Run PyTest
+      run: |
+        python setup.py test
+    - name: Build and upload wheel
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && !contains(matrix.os, 'linux') }}
+      run: |
+        echo "Building wheel and uploading"
+        # pip install wheel twine
+        # python setup.py sdist bdist_wheel
+        # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
+    - name: Upload source code
+      # Any specific OS/python-version will work, as long as it's just one match
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' && contains(matrix.os, 'linux') && matrix.python-version == '3.8' }}
+      run: |
+        echo "Uploading source code"
+        # python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
 
-  # test_pypy:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, pypy]]
-  #       python-version: ['pypy-3.6', 'pypy-3.7']
-  #       exclude:
-  #       # Not worth the time to fix:
-  #       # The headers or library files could not be found for zlib, a required dependency when compiling Pillow from source.
-  #       - os: [self-hosted, windows]
-  #         python-version: pypy-3.6
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - name: Set Unix env
-  #     if: ${{ !contains(matrix.os, 'windows') }}
-  #     run: |
-  #       echo "TEST_CI=1" >> $GITHUB_ENV
-  #       echo "TEST_NO_UI=1" >> $GITHUB_ENV
-  #   - name: Set AGENT_TOOLSDIRECTORY
-  #     if: ${{ contains(matrix.os, 'macOS') }}
-  #     run: |
-  #       echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
-  #   - name: Set Windows env
-  #     if: ${{ contains(matrix.os, 'windows') }}
-  #     run: |
-  #       echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-  #       echo "TEST_CI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-  #       echo "TEST_NO_UI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: ${{ matrix.python-version }}
-  #   - name: Install Python dependencies
-  #     run: |
-  #       pip install wheel
-  #   - name: Fix Numpy Polyfit error
-  #     if: ${{ contains(matrix.os, 'macOS') }}
-  #     run: |
-  #       # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
-  #       rm -vf ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
-  #       # brew install openblas
-  #       OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
-  #   - name: Run PyTest
-  #     run: |
-  #       python setup.py test
+  test_pypy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [[self-hosted, macOS], [self-hosted, linux], [self-hosted, windows, pypy]]
+        python-version: ['pypy-3.6', 'pypy-3.7']
+        exclude:
+        # Not worth the time to fix:
+        # The headers or library files could not be found for zlib, a required dependency when compiling Pillow from source.
+        - os: [self-hosted, windows]
+          python-version: pypy-3.6
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set Unix env
+      if: ${{ !contains(matrix.os, 'windows') }}
+      run: |
+        echo "TEST_CI=1" >> $GITHUB_ENV
+        echo "TEST_NO_UI=1" >> $GITHUB_ENV
+    - name: Set AGENT_TOOLSDIRECTORY
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
+    - name: Set Windows env
+      if: ${{ contains(matrix.os, 'windows') }}
+      run: |
+        echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "TEST_CI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "TEST_NO_UI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Python dependencies
+      run: |
+        pip install wheel
+    - name: Fix Numpy Polyfit error
+      if: ${{ contains(matrix.os, 'macOS') }}
+      run: |
+        # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
+        rm -vf ~/Library/Caches/pip/wheels/*/*/*/*/*numpy*
+        # brew install openblas
+        OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
+    - name: Run PyTest
+      run: |
+        python setup.py test
 
   test_manylinux:
     runs-on: [self-hosted, linux]
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     python-version: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39']
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39']
 
     steps:
-    # - uses: actions/checkout@v2
-    # - name: Docker Run Action
-    #   uses: addnab/docker-run-action@v3
-    #   with:
-    #     image: quay.io/pypa/manylinux2010_x86_64:latest
-    #     options: -v ${{ github.workspace }}:/work
-    #     # -u 1000:1000
-    #     # options: --mount type=bind,src=${{ github.workspace }},dst=/work
-    #     run: |
-    #       echo "Linking Python version ${{ matrix.python-version }}"
-    #       ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
+    - uses: actions/checkout@v2
+    - name: Docker Run Action
+      uses: addnab/docker-run-action@v3
+      with:
+        image: quay.io/pypa/manylinux2010_x86_64:latest
+        options: -v ${{ github.workspace }}:/work
+        # -u 1000:1000
+        # options: --mount type=bind,src=${{ github.workspace }},dst=/work
+        run: |
+          echo "Linking Python version ${{ matrix.python-version }}"
+          ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
-    #       echo "Installing SDL2"
-    #       yum -y install mercurial
-    #       bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
-    #       ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
+          echo "Installing SDL2"
+          yum -y install mercurial
+          bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
+          ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
 
-    #       cd /work
-    #       echo "Starting build"
-    #       python setup.py build_ext --inplace
+          cd /work
+          echo "Starting build"
+          python setup.py build_ext --inplace
 
-    #       echo "Starting tests"
-    #       TEST_CI=1 TEST_NO_UI=1 python setup.py test
+          echo "Starting tests"
+          TEST_CI=1 TEST_NO_UI=1 python setup.py test
 
 
-    #       echo "Building wheel"
-    #       python -m pip install wheel twine
-    #       python setup.py sdist bdist_wheel
+          echo "Building wheel"
+          python -m pip install wheel twine
+          python setup.py sdist bdist_wheel
 
-    #       python -m pip install auditwheel
-    #       auditwheel repair dist/*.whl
+          python -m pip install auditwheel
+          auditwheel repair dist/*.whl
 
-    #       # Patching in the correct SDL2
-    #       cd wheelhouse
-    #       yum -y install zip
-    #       for f in *.whl; do
-    #           echo "Patching $f file..."
-    #           SDLNAME=$(unzip -l $f | egrep -wo "(pyboy.libs/libSDL2.*$)")
-    #           mkdir -p pyboy.libs
-    #           cp /usr/local/lib/libSDL2-2.0.so.0 $SDLNAME
-    #           # Updating single SDL2 file in the .zip (.whl)
-    #           zip $f $SDLNAME
-    #       done
-    #       cd ..
+          # Patching in the correct SDL2
+          cd wheelhouse
+          yum -y install zip
+          for f in *.whl; do
+              echo "Patching $f file..."
+              SDLNAME=$(unzip -l $f | egrep -wo "(pyboy.libs/libSDL2.*$)")
+              mkdir -p pyboy.libs
+              cp /usr/local/lib/libSDL2-2.0.so.0 $SDLNAME
+              # Updating single SDL2 file in the .zip (.whl)
+              zip $f $SDLNAME
+          done
+          cd ..
 
-    #       rm -rf dist/*.whl
-    #       mv wheelhouse/*.whl dist/
-    #       chmod 777 -R . # Fix permissions when cleaning up outside of Docker
-    # - name: Set up Python 3.8 (just for PyPi upload)
-    #   uses: actions/setup-python@v2
-    #   with:
-    #     python-version: 3.8
+          rm -rf dist/*.whl
+          mv wheelhouse/*.whl dist/
+          chmod 777 -R . # Fix permissions when cleaning up outside of Docker
+    - name: Set up Python 3.8 (just for PyPi upload)
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
     - name: Upload wheel
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.head_ref == 'master' }}
       run: |
