@@ -56,7 +56,6 @@ class LCD:
         self.clock_target = 0
         self.frame_done = False
         self.renderer = Renderer(disable_renderer, color_palette)
-        patch_supermarioland
         self.max_ly = 153
         if patch_supermarioland:
             self.max_ly = 155 # Avoid jittering of top scanline. Possibly a fault in the game ROM.
