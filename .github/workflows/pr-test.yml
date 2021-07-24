@@ -142,7 +142,7 @@ jobs:
           TEST_CI=1 TEST_NO_UI=1 python setup.py test
 
           echo "Building wheel"
-          python -m pip install wheel twine
+          python -m pip install wheel
           python setup.py sdist bdist_wheel
 
           python -m pip install auditwheel

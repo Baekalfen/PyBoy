@@ -89,7 +89,9 @@ for a crude "bot", which interacts with the game.</p>
 <p>bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.
 profiling (bool): Profile the emulator and report opcode usage (internal use).
 disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
-color_palette (tuple): Specify the color palette to use for rendering.</p></section>
+color_palette (tuple): Specify the color palette to use for rendering.</p>
+<p>Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+<code>parser_arguments()</code> method in the pyboy.plugins.manager module, or by running pyboy &ndash;help in the terminal.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -128,7 +130,12 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
             profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         &#34;&#34;&#34;
+
+        self.initialized = False
 
         for k, v in defaults.items():
             if k not in kwargs:
@@ -168,6 +175,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         # Plugins
 
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
+        self.initialized = True
 
     def tick(self):
         &#34;&#34;&#34;
@@ -289,7 +297,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         &#34;&#34;&#34;
-        if not self.stopped:
+        if self.initialized and not self.stopped:
             logger.info(&#34;###########################&#34;)
             logger.info(&#34;# Emulator is turning off #&#34;)
             logger.info(&#34;###########################&#34;)
@@ -494,6 +502,23 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
+    def screen_image(self):
+        &#34;&#34;&#34;
+        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+
+        Generates a PIL Image from the screen buffer.
+
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        and join our Discord channel for more help.
+
+        Returns
+        -------
+        PIL.Image:
+            RGB image of (160, 144) pixels
+        &#34;&#34;&#34;
+        return self.botsupport_manager().screen().screen_image()
+
     def _serial(self):
         &#34;&#34;&#34;
         Provides all data that has been sent over the serial port since last call to this function.
@@ -618,7 +643,7 @@ provided game-ROM.</dd>
         save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
             provided game-ROM.
     &#34;&#34;&#34;
-    if not self.stopped:
+    if self.initialized and not self.stopped:
         logger.info(&#34;###########################&#34;)
         logger.info(&#34;# Emulator is turning off #&#34;)
         logger.info(&#34;###########################&#34;)
@@ -1033,6 +1058,42 @@ file_like_object = open("state_file.state", "rb")
     self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
 </dd>
+<dt id="pyboy.PyBoy.screen_image"><code class="name flex">
+<span>def <span class="ident">screen_image</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Shortcut for <code>pyboy.botsupport_manager.screen.screen_image</code>.</p>
+<p>Generates a PIL Image from the screen buffer.</p>
+<p>Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+case, read up on the <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code> features, <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> on tiles/sprites,
+and join our Discord channel for more help.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>PIL.Image:</code></dt>
+<dd>RGB image of (160, 144) pixels</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def screen_image(self):
+    &#34;&#34;&#34;
+    Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+
+    Generates a PIL Image from the screen buffer.
+
+    Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+    case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+    and join our Discord channel for more help.
+
+    Returns
+    -------
+    PIL.Image:
+        RGB image of (160, 144) pixels
+    &#34;&#34;&#34;
+    return self.botsupport_manager().screen().screen_image()</code></pre>
+</details>
+</dd>
 <dt id="pyboy.PyBoy.set_emulation_speed"><code class="name flex">
 <span>def <span class="ident">set_emulation_speed</span></span>(<span>self, target_speed)</span>
 </code></dt>
@@ -1415,6 +1476,7 @@ have been truncated to 11 characters.</p>
 <li><code><a title="pyboy.PyBoy.get_input" href="#pyboy.PyBoy.get_input">get_input</a></code></li>
 <li><code><a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state">save_state</a></code></li>
 <li><code><a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state">load_state</a></code></li>
+<li><code><a title="pyboy.PyBoy.screen_image" href="#pyboy.PyBoy.screen_image">screen_image</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
 <li><code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title">cartridge_title</a></code></li>
 </ul>
