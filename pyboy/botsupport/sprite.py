@@ -176,7 +176,7 @@ class Sprite:
         return self._offset == other._offset
 
     def __repr__(self):
-        tiles = ", ".join([str(t) for t in self.tiles])
+        tiles = ", ".join(str(t) for t in self.tiles)
         return f"Sprite [{self._sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}"
 
 

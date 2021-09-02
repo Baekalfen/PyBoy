@@ -160,23 +160,40 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         adjust = 4
         # yapf: disable
         return (
-            f"Kirby Dream Land:\n" +
-            f"Score: {self.score}\n" +
-            f"Health: {self.health}\n" +
-            f"Lives left: {self.lives_left}\n" +
-            f"Fitness: {self.fitness}\n" +
-            "Sprites on screen:\n" +
-            "\n".join([str(s) for s in self._sprites_on_screen()]) +
-            "\n" +
-            "Tiles on screen:\n" +
-            " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
-            "_"*(adjust*20+4) +
-            "\n" +
-            "\n".join(
-                [
-                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                'Kirby Dream Land:\n'
+                                                + f"Score: {self.score}\n"
+                                            )
+                                            + f"Health: {self.health}\n"
+                                        )
+                                        + f"Lives left: {self.lives_left}\n"
+                                    )
+                                    + f"Fitness: {self.fitness}\n"
+                                )
+                                + "Sprites on screen:\n"
+                            )
+                            + "\n".join(str(s) for s in self._sprites_on_screen())
+                            + "\n"
+                        )
+                        + "Tiles on screen:\n"
+                    )
+                    + " " * 5
+                )
+                + "".join(f"{i: <4}" for i in range(10))
+                + "\n"
             )
+            + "_" * (adjust * 20 + 4)
+            + "\n"
+        ) + "\n".join(
+            f"{i: <3}| " + "".join(str(tile).ljust(adjust) for tile in line)
+            for i, line in enumerate(self.game_area())
         )
         # yapf: enable

@@ -145,14 +145,12 @@ class LCD:
                     self.LY += 1
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
-        else:
-            # See also `self.set_lcdc`
-            if self.clock >= FRAME_CYCLES:
-                self.frame_done = True
-                self.clock %= FRAME_CYCLES
+        elif self.clock >= FRAME_CYCLES:
+            self.frame_done = True
+            self.clock %= FRAME_CYCLES
 
-                # Renderer
-                self.renderer.blank_screen()
+            # Renderer
+            self.renderer.blank_screen()
 
         return interrupt_flag
 
@@ -429,10 +427,10 @@ class Renderer:
 
             for dx in range(8):
                 xx = 7 - dx if xflip else dx
-                pixel = spritecache[8*tileindex + yy][xx]
                 if 0 <= x < COLS:
+                    pixel = spritecache[8*tileindex + yy][xx]
                     # TODO: Checking `buffer[y][x] == bgpkey` is a bit of a hack
-                    if (spritepriority and not buffer[ly][x] == bgpkey):
+                    if spritepriority and buffer[ly][x] != bgpkey:
                         # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
                         # with the next 'if', as sprites can have an alpha channel in other ways
                         pixel &= ~self.alphamask
@@ -479,7 +477,7 @@ class Renderer:
                         pixel = spritecache[8*tileindex + yy][xx]
                         if 0 <= x < COLS:
                             # TODO: Checking `buffer[y][x] == bgpkey` is a bit of a hack
-                            if (spritepriority and not buffer[y][x] == bgpkey):
+                            if spritepriority and buffer[y][x] != bgpkey:
                                 # Add a fake alphachannel to the sprite for BG pixels. We can't just merge this
                                 # with the next 'if', as sprites can have an alpha channel in other ways
                                 pixel &= ~self.alphamask

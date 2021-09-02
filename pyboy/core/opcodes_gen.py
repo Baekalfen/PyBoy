@@ -355,9 +355,13 @@ class OpcodeData:
         if flagmask == 0b11110000:
             return ["# No flag operations"]
 
-        lines = []
-        # Sets the flags that always get set by operation
-        lines.append("flag = " + format(sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)), "#010b"))
+        lines = [
+            "flag = "
+            + format(
+                sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)),
+                "#010b",
+            )
+        ]
 
         # flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
         if self.flag_h == "H":
@@ -381,9 +385,13 @@ class OpcodeData:
         if flagmask == 0b11110000:
             return ["# No flag operations"]
 
-        lines = []
-        # Sets the ones that always get set by operation
-        lines.append("flag = " + format(sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)), "#010b"))
+        lines = [
+            "flag = "
+            + format(
+                sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)),
+                "#010b",
+            )
+        ]
 
         if self.flag_h == "H":
             c = " %s cpu.f_c()" % op if carry else ""
@@ -405,24 +413,29 @@ class OpcodeData:
         if flagmask == 0b11110000:
             return ["# No flag operations"]
 
-        lines = []
-        # Sets the ones that always get set by operation
-        lines.append("flag = " + format(sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)), "#010b"))
+        lines = [
+            "flag = "
+            + format(
+                sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)),
+                "#010b",
+            )
+        ]
 
         if self.flag_z == "Z":
             lines.append("flag += ((t & 0xFF) == 0) << FLAGZ")
 
-        if self.flag_h == "H" and op == "-":
+        if self.flag_h == "H":
             c = " %s cpu.f_c()" % op if carry else ""
-            lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) < 0) << FLAGH" % (r0, op, r1, c))
-        elif self.flag_h == "H":
-            c = " %s cpu.f_c()" % op if carry else ""
-            lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
+            if op == "-":
+                lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) < 0) << FLAGH" % (r0, op, r1, c))
+            else:
+                lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
 
-        if self.flag_c == "C" and op == "-":
-            lines.append("flag += (t < 0) << FLAGC")
-        elif self.flag_c == "C":
-            lines.append("flag += (t > 0xFF) << FLAGC")
+        if self.flag_c == "C":
+            if op == "-":
+                lines.append("flag += (t < 0) << FLAGC")
+            else:
+                lines.append("flag += (t > 0xFF) << FLAGC")
 
         # Clears all flags affected by the operation
         lines.append("cpu.F &= " + format(flagmask, "#010b"))
@@ -526,7 +539,7 @@ class OpcodeData:
         right = Operand(r1)
 
         # FIX: There seems to be a wrong opcode length on E2 and F2
-        if self.opcode == 0xE2 or self.opcode == 0xF2:
+        if self.opcode in [0xE2, 0xF2]:
             self.length = 1
 
         code = Code(
@@ -594,12 +607,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -610,12 +621,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -648,12 +657,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -664,12 +671,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -680,12 +685,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -696,12 +699,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -712,12 +713,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = Operand("A")
-            right = Operand(r1)
-
+        right = Operand(r1)
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
@@ -780,10 +779,7 @@ class OpcodeData:
                 "cpu.SP &= 0xFFFF",
             ])
         else:
-            if left.operand.endswith("F"): # Catching AF
-                fmask = " & 0xF0"
-            else:
-                fmask = ""
+            fmask = " & 0xF0" if left.operand.endswith("F") else ""
             # See comment from PUSH
             code.addline("cpu.%s = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High" % left.operand[-2])
             if left.operand == "AF":
@@ -803,12 +799,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = None
-            right = Operand(r1)
-
+        right = Operand(r1)
         r_code = right.get
         if left is not None:
             l_code = left.get
@@ -845,12 +839,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = None
-            right = Operand(r1)
-
+        right = Operand(r1)
         if left is not None:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
@@ -886,12 +878,10 @@ class OpcodeData:
         if self.name.find(",") > 0:
             r0, r1 = self.name.split()[1].split(",")
             left = Operand(r0)
-            right = Operand(r1)
         else:
             r1 = self.name.split()[1]
             left = None
-            right = Operand(r1)
-
+        right = Operand(r1)
         if left is not None:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:

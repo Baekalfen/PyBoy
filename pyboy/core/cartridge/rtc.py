@@ -46,7 +46,7 @@ class RTC:
         logger.info("RTC saved.")
 
     def load_state(self, f, state_version):
-        self.timezero = struct.unpack("f", bytes([f.read() for _ in range(4)]))[0]
+        self.timezero = struct.unpack("f", bytes(f.read() for _ in range(4)))[0]
         self.halt = f.read()
         self.day_carry = f.read()
         logger.info("RTC loaded.")
@@ -116,9 +116,7 @@ class RTC:
             day_carry = (value & 0b10000000) >> 7
 
             self.halt = halt
-            if self.halt == 0:
-                pass # TODO: Start the timer
-            else:
+            if self.halt != 0:
                 logger.warning("Stopping RTC is not implemented!")
 
             self.timezero -= int(t / 3600 / 24) - (day_high << 8)

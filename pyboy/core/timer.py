@@ -63,9 +63,7 @@ class Timer:
 
         divider = self.dividers[self.TAC & 0b11]
 
-        cyclesleft = ((0x100 - self.TIMA) * divider) - self.TIMA_counter
-
-        return cyclesleft
+        return ((0x100 - self.TIMA) * divider) - self.TIMA_counter
 
     def save_state(self, f):
         f.write(self.DIV)

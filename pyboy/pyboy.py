@@ -282,9 +282,8 @@ class PyBoy:
         """
         if gym_enabled:
             return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions, **kwargs)
-        else:
-            logger.error(f"{__name__}: Missing dependency \"gym\". ")
-            return None
+        logger.error(f"{__name__}: Missing dependency \"gym\". ")
+        return None
 
     def game_wrapper(self):
         """

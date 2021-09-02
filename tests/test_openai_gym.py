@@ -188,7 +188,7 @@ class TestOpenAIGym:
         assert tetris.score == 0
         assert tetris.lines == 0
 
-        for n in range(3):
+        for _ in range(3):
             pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
             pyboy.tick()
             pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
@@ -201,7 +201,7 @@ class TestOpenAIGym:
         pyboy.tick()
         pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 
-        for n in range(3):
+        for _ in range(3):
             pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
             pyboy.tick()
             pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
@@ -246,7 +246,7 @@ class TestOpenAIGym:
         env = pyboy.openai_gym(action_type="all")
         env.reset()
 
-        for n in range(3):
+        for _ in range(3):
             _, reward, _, _ = env.step(WindowEvent.PRESS_ARROW_RIGHT)
             assert reward == 0
             _, reward, _, _ = env.step(WindowEvent.RELEASE_ARROW_RIGHT)
@@ -263,7 +263,7 @@ class TestOpenAIGym:
         _, reward, _, _ = env.step(WindowEvent.RELEASE_ARROW_DOWN)
         assert reward == 0
 
-        for n in range(3):
+        for _ in range(3):
             _, reward, _, _ = env.step(WindowEvent.PRESS_ARROW_LEFT)
             assert reward == 0
             _, reward, _, _ = env.step(WindowEvent.RELEASE_ARROW_LEFT)

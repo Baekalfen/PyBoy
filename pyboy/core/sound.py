@@ -320,16 +320,15 @@ class SweepChannel(ToneChannel):
         # Clock sweep timer on 2 and 6
         if self.sweepenable and self.swpper and self.frame & 3 == 2:
             self.sweeptimer -= 1
-            if self.sweeptimer == 0:
-                if self.sweep(True):
-                    self.sweeptimer = self.swpper
-                    self.sweep(False)
+            if self.sweeptimer == 0 and self.sweep(True):
+                self.sweeptimer = self.swpper
+                self.sweep(False)
 
     def trigger(self):
         ToneChannel.trigger(self)
         self.shadow = self.sndper
         self.sweeptimer = self.swpper
-        self.sweepenable = True if (self.swpper or self.swpmag) else False
+        self.sweepenable = bool((self.swpper or self.swpmag))
         if self.swpmag:
             self.sweep(False)
 

@@ -101,7 +101,7 @@ class BaseMBC:
         self.rambanks = [array.array("B", [0] * (8*1024)) for _ in range(16)]
 
     def getgamename(self, rombanks):
-        return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).rstrip("\0")
+        return "".join(chr(x) for x in rombanks[0][0x0134:0x0142]).rstrip("\0")
 
     def setitem(self, address, value):
         raise Exception("Cannot set item in MBC")

@@ -132,7 +132,7 @@ class FixedAllocBuffers(IntIOInterface):
         return data
 
     def commit(self):
-        if not self.section_head == self.section_pointer:
+        if self.section_head != self.section_pointer:
             raise Exception("Section wasn't read to finish. This would likely be unintentional")
         self.sections = self.sections[:self.current_section + 1]
 
@@ -174,7 +174,7 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
             chunks = self.zeros // 0xFF
             rest = self.zeros % 0xFF
 
-            for i in range(chunks):
+            for _ in range(chunks):
                 FixedAllocBuffers.write(self, 0)
                 FixedAllocBuffers.write(self, 0xFF)
 
@@ -273,11 +273,7 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     def seek_frame(self, frames):
         # for _ in range(abs(frames)):
         # TODO: Can only seek one frame
-        if frames < 0:
-            frames = -1
-        else:
-            frames = 1
-
+        frames = -1 if frames < 0 else 1
         # Flush internal buffer to underlying memory. Otherwise, the newest frame, won't be seekable.
         if self.internal_buffer_dirty:
             self.flush_internal_buffer()

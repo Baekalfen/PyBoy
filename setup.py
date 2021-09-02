@@ -235,9 +235,10 @@ def prep_pxd_py_files():
                 yield os.path.join(root, f)
             if os.path.splitext(f)[1] == ".pxd":
                 py_file = os.path.join(root, os.path.splitext(f)[0]) + ".py"
-                if os.path.isfile(py_file):
-                    if os.path.getmtime(os.path.join(root, f)) > os.path.getmtime(py_file):
-                        os.utime(py_file)
+                if os.path.isfile(py_file) and os.path.getmtime(
+                    os.path.join(root, f)
+                ) > os.path.getmtime(py_file):
+                    os.utime(py_file)
 
 
 # Cython seems to cythonize these before cleaning, so we only add them, if we aren't cleaning.
@@ -317,13 +318,11 @@ setup(
         "Topic :: System :: Emulators",
     ],
     entry_points={
-        "console_scripts": ["pyboy = pyboy.__main__:main", ],
+        "console_scripts": [
+            "pyboy = pyboy.__main__:main",
+        ],
     },
-    cmdclass={
-        "build_ext": build_ext,
-        "clean": clean,
-        "test": PyTest
-    },
+    cmdclass={"build_ext": build_ext, "clean": clean, "test": PyTest},
     install_requires=requirements,
     tests_require=[
         *requirements,
@@ -331,7 +330,11 @@ setup(
         "pytest-xdist",
         "pyopengl",
         "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
-        "gym" if CYTHON and not MSYS and py_version != "3.9" and not (sys.platform == "win32" and py_version == "3.8")
+        "gym"
+        if CYTHON
+        and not MSYS
+        and py_version != "3.9"
+        and not (sys.platform == "win32" and py_version == "3.8")
         else "",
     ],
     extras_require={
@@ -340,12 +343,26 @@ setup(
             "markdown",
             "pdoc3",
             "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
-            "gym" if CYTHON and not MSYS and py_version != "3.9" and
-            not (sys.platform == "win32" and py_version == "3.8") else "",
-        ],
+            "gym"
+            if CYTHON
+            and not MSYS
+            and py_version != "3.9"
+            and (sys.platform != "win32" or py_version != "3.8")
+            else "",
+        ]
     },
-    zip_safe=(not CYTHON), # Cython doesn't support it
+    zip_safe=(not CYTHON),
     ext_modules=ext_modules,
     python_requires=">=3.6",
-    package_data={"": ["*.pxi", "*.pyx", "*.pxd", "*.c", "*.h", "bootrom.bin", "font.txt"]},
+    package_data={
+        "": [
+            "*.pxi",
+            "*.pyx",
+            "*.pxd",
+            "*.c",
+            "*.h",
+            "bootrom.bin",
+            "font.txt",
+        ]
+    },
 )

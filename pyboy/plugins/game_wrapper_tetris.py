@@ -287,23 +287,40 @@ class GameWrapperTetris(PyBoyGameWrapper):
         adjust = 4
         # yapf: disable
         return (
-            f"Tetris:\n" +
-            f"Score: {self.score}\n" +
-            f"Level: {self.level}\n" +
-            f"Lines: {self.lines}\n" +
-            f"Fitness: {self.fitness}\n" +
-            "Sprites on screen:\n" +
-            "\n".join([str(s) for s in self._sprites_on_screen()]) +
-            "\n" +
-            "Tiles on screen:\n" +
-            " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
-            "_"*(adjust*10+4) +
-            "\n" +
-            "\n".join(
-                [
-                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self._game_area_np())
-                ]
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                'Tetris:\n'
+                                                + f"Score: {self.score}\n"
+                                            )
+                                            + f"Level: {self.level}\n"
+                                        )
+                                        + f"Lines: {self.lines}\n"
+                                    )
+                                    + f"Fitness: {self.fitness}\n"
+                                )
+                                + "Sprites on screen:\n"
+                            )
+                            + "\n".join(str(s) for s in self._sprites_on_screen())
+                            + "\n"
+                        )
+                        + "Tiles on screen:\n"
+                    )
+                    + " " * 5
+                )
+                + "".join(f"{i: <4}" for i in range(10))
+                + "\n"
             )
+            + "_" * (adjust * 10 + 4)
+            + "\n"
+        ) + "\n".join(
+            f"{i: <3}| " + "".join(str(tile).ljust(adjust) for tile in line)
+            for i, line in enumerate(self._game_area_np())
         )
         # yapf: enable

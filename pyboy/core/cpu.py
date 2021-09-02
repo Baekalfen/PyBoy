@@ -128,16 +128,16 @@ class CPU:
             # TODO: We return with the cycles it took to handle the interrupt
             return 0
 
-        if self.halted and self.interrupt_queued:
+        if self.halted:
+            if not self.interrupt_queued:
+                return 4 # TODO: Number of cycles for a HALT in effect?
+
             # GBCPUman.pdf page 20
             # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
             # disabled (DI) on the GB,GBP, and SGB.
             self.halted = False
             self.PC += 1
             self.PC &= 0xFFFF
-        elif self.halted:
-            return 4 # TODO: Number of cycles for a HALT in effect?
-
         old_pc = self.PC
         cycles = self.fetch_and_execute()
         if not self.halted and old_pc == self.PC and not self.is_stuck:

@@ -22,7 +22,7 @@ def color_tuple(string):
 
 
 def valid_file_path(path):
-    if not path == INTERNAL_LOADSTATE and not os.path.isfile(path):
+    if path != INTERNAL_LOADSTATE and not os.path.isfile(path):
         logger.error(f"Filepath '{path}' couldn't be found, or isn't a file!")
         exit(1)
     return path

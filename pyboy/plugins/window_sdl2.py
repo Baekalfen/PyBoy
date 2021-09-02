@@ -116,7 +116,7 @@ def sdl2_event_pump(events):
                     mouse_scroll_y=event.wheel.y
                 )
             )
-        elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
+        elif event.type in [sdl2.SDL_MOUSEMOTION, sdl2.SDL_MOUSEBUTTONUP]:
             mouse_button = -1
             if event.type == sdl2.SDL_MOUSEBUTTONUP:
                 if event.button.button == sdl2.SDL_BUTTON_LEFT:

@@ -174,7 +174,6 @@ def RRCA_0F(cpu): # 0F RRCA
 
 
 def STOP_10(cpu, v): # 10 STOP 0
-    pass
     cpu.PC += 2
     cpu.PC &= 0xFFFF
     return 4
@@ -2161,9 +2160,6 @@ def JP_CA(cpu, v): # CA JP Z,a16
 
 def PREFIX_CB(cpu): # CB PREFIX CB
     raise Exception('CB cannot be called!')
-    cpu.PC += 1
-    cpu.PC &= 0xFFFF
-    return 4
 
 
 def CALL_CC(cpu, v): # CC CALL Z,a16

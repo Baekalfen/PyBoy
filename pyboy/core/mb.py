@@ -86,8 +86,6 @@ class Motherboard:
         self.lcd.save_state(f)
         if self.sound_enabled:
             self.sound.save_state(f)
-        else:
-            pass
         self.lcd.renderer.save_state(f)
         self.ram.save_state(f)
         self.timer.save_state(f)
@@ -104,7 +102,7 @@ class Motherboard:
             # From version 2 and above, this is the version number
             self.bootrom_enabled = f.read()
         else:
-            logger.debug(f"State version: 0-1")
+            logger.debug('State version: 0-1')
             # HACK: The byte wasn't a state version, but the bootrom flag
             self.bootrom_enabled = state_version
         self.cpu.load_state(f, state_version)
@@ -133,17 +131,24 @@ class Motherboard:
             self.breakpoint_latch -= 1
             return True
 
-        for bank, pc in self.breakpoints_list:
-            if self.cpu.PC == pc and (
-                (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
-                (0x4000 <= pc < 0x8000 and self.cartridge.rombank_selected == bank) or \
-                (0xA000 <= pc < 0xC000 and self.cartridge.rambank_selected == bank) or \
-                (0xC000 <= pc <= 0xFFFF and bank == -1) or \
-                (pc < 0x100 and bank == -1 and self.bootrom_enabled)
-            ):
                 # Breakpoint hit
-                return True
-        return False
+        return any(
+            self.cpu.PC == pc
+            and (
+                (pc < 0x4000 and bank == 0 and not self.bootrom_enabled)
+                or (
+                    0x4000 <= pc < 0x8000
+                    and self.cartridge.rombank_selected == bank
+                )
+                or (
+                    0xA000 <= pc < 0xC000
+                    and self.cartridge.rambank_selected == bank
+                )
+                or (0xC000 <= pc <= 0xFFFF and bank == -1)
+                or (pc < 0x100 and bank == -1 and self.bootrom_enabled)
+            )
+            for bank, pc in self.breakpoints_list
+        )
 
     def tick(self):
         # print("MB TICK")

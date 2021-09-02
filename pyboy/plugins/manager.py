@@ -37,8 +37,6 @@ def parser_arguments():
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
     yield GameWrapperKirbyDreamLand.argv
-    # yield_plugins end
-    pass
 
 
 class PluginManager:
@@ -159,8 +157,6 @@ class PluginManager:
             self.window_dummy.set_title(self.pyboy.window_title)
         if self.debug_enabled:
             self.debug.set_title(self.pyboy.window_title)
-        # foreach end
-        pass
 
     def _post_tick_windows(self):
         # foreach windows [].post_tick()
@@ -174,8 +170,6 @@ class PluginManager:
             self.window_dummy.post_tick()
         if self.debug_enabled:
             self.debug.post_tick()
-        # foreach end
-        pass
 
     def frame_limiter(self, speed):
         if speed <= 0:
@@ -271,8 +265,6 @@ class PluginManager:
             self.game_wrapper_tetris.stop()
         if self.game_wrapper_kirby_dream_land_enabled:
             self.game_wrapper_kirby_dream_land.stop()
-        # foreach end
-        pass
 
     def handle_breakpoint(self):
         if self.debug_enabled:

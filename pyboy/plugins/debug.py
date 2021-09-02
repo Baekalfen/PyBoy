@@ -94,21 +94,20 @@ class Debug(PyBoyWindowPlugin):
                     with open(sym_path) as f:
                         for _line in f.readlines():
                             line = _line.strip()
-                            if line == "":
+                            if (
+                                line == ""
+                                or line != ""
+                                and line.startswith(";")
+                                or line != ""
+                                and not line.startswith(";")
+                                and line.startswith("[")
+                            ):
                                 continue
-                            elif line.startswith(";"):
-                                continue
-                            elif line.startswith("["):
-                                # Start of key group
-                                # [labels]
-                                # [definitions]
-                                continue
-
                             try:
                                 bank, addr, sym_label = re.split(":| ", line.strip())
                                 bank = int(bank, 16)
                                 addr = int(addr, 16)
-                                if not bank in self.rom_symbols:
+                                if bank not in self.rom_symbols:
                                     self.rom_symbols[bank] = {}
 
                                 self.rom_symbols[bank][addr] = sym_label
@@ -253,10 +252,7 @@ class Debug(PyBoyWindowPlugin):
         while True:
             self.post_tick()
 
-            if self.mb.cpu.PC < 0x4000:
-                bank = 0
-            else:
-                bank = self.mb.cartridge.rombank_selected
+            bank = 0 if self.mb.cpu.PC < 0x4000 else self.mb.cartridge.rombank_selected
             sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
 
             print(self.mb.cpu.dump_state(sym_label))
@@ -264,16 +260,15 @@ class Debug(PyBoyWindowPlugin):
 
             if cmd == "c" or cmd.startswith("c "):
                 # continue
-                if cmd.startswith("c "):
-                    _, command = cmd.split(" ", 1)
-                    bank_addr = self.parse_bank_addr_sym_label(command)
-                    if bank_addr is None:
-                        print("Couldn't parse address or label!")
-                    else:
-                        # TODO: Possibly add a counter of 1, and remove the breakpoint after hitting it the first time
-                        self.mb.add_breakpoint(*bank_addr)
-                        break
+                if not cmd.startswith("c "):
+                    break
+                _, command = cmd.split(" ", 1)
+                bank_addr = self.parse_bank_addr_sym_label(command)
+                if bank_addr is None:
+                    print("Couldn't parse address or label!")
                 else:
+                    # TODO: Possibly add a counter of 1, and remove the breakpoint after hitting it the first time
+                    self.mb.add_breakpoint(*bank_addr)
                     break
             elif cmd == "sl":
                 for bank, addresses in self.rom_symbols.items():
@@ -477,10 +472,10 @@ class TileViewWindow(BaseDebugWindow):
             " [LOW MAP 0x9800-0x9BFF]"
         title += " [HIGH DATA (SIGNED) 0x8800-0x97FF]" if self.tilemap.signed_tile_data else \
             " [LOW DATA (UNSIGNED) 0x8000-0x8FFF]"
-        if self.tilemap._select == "WINDOW":
-            title += " [Window]"
         if self.tilemap._select == "BACKGROUND":
             title += " [Background]"
+        elif self.tilemap._select == "WINDOW":
+            title += " [Window]"
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
     def draw_overlay(self):
@@ -497,7 +492,7 @@ class TileViewWindow(BaseDebugWindow):
 
             if background_view: # Background
                 # Wraps around edges of the screen
-                if y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
+                if y in [0, constants.ROWS - 1]: # Draw top/bottom bar
                     for x in range(constants.COLS):
                         self.buf0[(yy+y) % 0xFF][(xx+x) % 0xFF] = COLOR
                 else: # Draw body
@@ -513,13 +508,12 @@ class TileViewWindow(BaseDebugWindow):
                     for x in range(constants.COLS):
                         if 0 <= xx + x < constants.COLS:
                             self.buf0[yy + y][xx + x] = COLOR
-                else: # Draw body
-                    if 0 <= yy + y:
-                        self.buf0[yy + y][max(xx, 0)] = COLOR
-                        for x in range(constants.COLS):
-                            if 0 <= xx + x < constants.COLS:
-                                self.buf0[yy + y][xx + x] &= self.color
-                        self.buf0[yy + y][xx + constants.COLS] = COLOR
+                elif yy + y >= 0:
+                    self.buf0[yy + y][max(xx, 0)] = COLOR
+                    for x in range(constants.COLS):
+                        if 0 <= xx + x < constants.COLS:
+                            self.buf0[yy + y][xx + x] &= self.color
+                    self.buf0[yy + y][xx + constants.COLS] = COLOR
 
         # Mark selected tiles
         for t, match in zip(
@@ -531,11 +525,11 @@ class TileViewWindow(BaseDebugWindow):
             self.mark_tile(self.hover_x, self.hover_y, HOVER, 8, 8, True)
 
         # Mark current scanline directly from LY,SCX,SCY,WX,WY
-        if background_view:
-            for x in range(constants.COLS):
+        for x in range(constants.COLS):
+                # Mark current scanline directly from LY,SCX,SCY,WX,WY
+            if background_view:
                 self.buf0[(self.mb.lcd.SCY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.SCX + x) % 0xFF] = 0xFF00CE12
-        else:
-            for x in range(constants.COLS):
+            else:
                 self.buf0[(self.mb.lcd.WY + self.mb.lcd.LY) % 0xFF][(self.mb.lcd.WX + x) % 0xFF] = 0xFF00CE12
 
 
