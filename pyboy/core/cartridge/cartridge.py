@@ -68,9 +68,8 @@ def load_romfile(filename):
 
     if cythonmode:
         return memoryview(romdata).cast("B", shape=(len(romdata) // banksize, banksize))
-    else:
-        v = memoryview(romdata)
-        return [v[i:i + banksize] for i in range(0, len(romdata), banksize)]
+    v = memoryview(romdata)
+    return [v[i:i + banksize] for i in range(0, len(romdata), banksize)]
 
 
 # yapf: disable
