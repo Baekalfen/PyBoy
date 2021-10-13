@@ -33,7 +33,7 @@ jobs:
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
         echo "AGENT_TOOLSDIRECTORY=/Users/runner/hostedtoolcache" >> $GITHUB_ENV
-    - name: Set PYSDL2_DLL_PATH
+    - name: Set Windows env
       if: ${{ contains(matrix.os, 'windows') }}
       run: |
         echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -98,7 +98,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Python dependencies
       run: |
-        pip install wheel
+        pypy3 -m pip install wheel
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
       run: |
@@ -108,7 +108,7 @@ jobs:
         OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
       run: |
-        python setup.py test
+        pypy3 setup.py test
 
   test_manylinux:
     name: ManyLinux - Build, Test and Deploy
