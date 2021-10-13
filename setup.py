@@ -301,7 +301,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="1.4.3",
+    version="1.4.4",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
