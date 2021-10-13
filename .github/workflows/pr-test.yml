@@ -96,8 +96,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Python dependencies
+    - name: Install PyPy dependencies
       run: |
+        pypy3 -m ensurepip
         pypy3 -m pip install wheel
     - name: Fix Numpy Polyfit error
       if: ${{ contains(matrix.os, 'macOS') }}
