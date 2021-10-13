@@ -98,11 +98,12 @@ CARTRIDGE_TABLE = {
 }
 # yapf: enable
 
-# Number of external 8KB banks in the cartridge
+# Number of external 8KB banks in the cartridge. Taken from Pan Docs
 EXTERNAL_RAM_TABLE = {
     0x00: 1, # We wrongfully allocate some RAM, to help Cython
-    # 0x00: None,
+    0x01: 1, # Only supposed to be 2KB, but we allocate 8KB.
     0x02: 1,
     0x03: 4,
     0x04: 16,
+    0x05: 8,
 }
