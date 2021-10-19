@@ -38,7 +38,7 @@ requirements = load_requirements("requirements.txt")
 
 MSYS = os.getenv("MSYS")
 CYTHON = platform.python_implementation() != "PyPy"
-py_version = platform.python_version()[:3]
+py_version = ".".join(platform.python_version_tuple()[:2])
 
 if CYTHON:
     # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
