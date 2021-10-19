@@ -256,7 +256,8 @@ if CYTHON and "clean" not in sys.argv:
         thread_count = cpu_count()
 
     # Fixing issue with nthreads in Cython
-    if py_version in ["3.8", "3.9"] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
+    if py_version in ["3.8", "3.9", "3.10"
+                     ] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
         multiprocessing.set_start_method("fork", force=True)
 
     # Set up some values for use in setup()
