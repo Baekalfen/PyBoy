@@ -300,7 +300,7 @@ except FileNotFoundError:
     print("README.md not found")
     long_description = ""
 
-pyboy_version = os.getenv("GITHUB_REF", "v0.0.0")
+pyboy_version = os.getenv("GITHUB_REF", "refs/tags/v0.0.0").split("/")[-1]
 print(f"Building PyBoy version: {pyboy_version}")
 
 setup(
