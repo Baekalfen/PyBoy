@@ -137,6 +137,7 @@ jobs:
 
           cd /work
           echo "Starting build"
+          export GITHUB_REF=${{env.GITHUB_REF}}
           python setup.py build_ext --inplace
 
           echo "Starting tests"
