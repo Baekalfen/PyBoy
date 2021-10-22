@@ -125,7 +125,7 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: quay.io/pypa/manylinux2010_x86_64:latest
-        options: -v ${{ github.workspace }}:/work --rm
+        options: -v ${{ github.workspace }}:/work -e GITHUB_REF=${{ github.ref }} --rm
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
@@ -137,7 +137,6 @@ jobs:
 
           cd /work
           echo "Starting build"
-          export GITHUB_REF=${{env.GITHUB_REF}}
           python setup.py build_ext --inplace
 
           echo "Starting tests"
