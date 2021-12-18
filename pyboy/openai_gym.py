@@ -36,7 +36,7 @@ class PyBoyGymEnv(Env):
         action_type (str): Define how the agent will interact with button inputs
         * `"press"`: The agent will only press inputs for 1 frame an then release it.
         * `"toggle"`: The agent will toggle inputs, first time it press and second time it release.
-        * `"all"`: The agent have acces to all inputs, press and release are separated.
+        * `"all"`: The agent have access to all inputs, press and release are separated.
 
         simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
