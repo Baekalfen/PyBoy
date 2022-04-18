@@ -16,6 +16,7 @@ from setuptools.command.test import test
 
 from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
 
+
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
@@ -152,75 +153,14 @@ class clean(_clean):
                         os.remove(os.path.join(root, f))
 
 
-# Locate the directory with SDL2 headers and library
-def locate_sdl2_config():
-    print("Searching for SDL2 installation")
-    if sys.platform == "win32" and "GCC" in platform.python_compiler():
-        print("Detected msys, looking for sdl2-config")
-        msys_sh = None
-        msys_sdl2_config = None
-        for path in os.getenv("PATH").split(";"):
-            if not msys_sh and os.path.isfile(os.path.join(path, "sh.exe")):
-                msys_sh = f"{path}\\sh.exe"
-            if not msys_sdl2_config and os.path.isfile(os.path.join(path, "sdl2-config")):
-                msys_sdl2_config = f"{path}\\sdl2-config"
-        if msys_sh and msys_sdl2_config:
-            print(f"Found sdl2-config at {msys_sdl2_config} and shell at {msys_sh}")
-            msys_sdl2_config = msys_sdl2_config.replace("\\", "/")
-            msys_mingw_prefix = msys_sdl2_config[:msys_sdl2_config.index("/bin")]
-            msys_sdl2_config = f"/{msys_sdl2_config[0].lower()}/{msys_sdl2_config[2:]}"
-            return os.popen(f"{msys_sh} -c '{msys_sdl2_config} --prefix={msys_mingw_prefix}"
-                            f" --cflags --libs'").read().split()
-        else:
-            print(f"Could not find shell ({msys_sh}) and sdl2-config ({msys_sdl2_config})")
-            return None
-    elif sys.platform == "win32" and "MSC" in platform.python_compiler():
-        return [] # Defaults to env var PYSDL2_DLL_PATH
-    elif sys.platform in ["darwin", "linux"]:
-        print("Didn't detect msys2 environment, trying sdl2-config assuming Unix environment")
-        return os.popen("sdl2-config --cflags --libs").read().split()
-    else:
-        print(f"Unsupported OS type: {sys.platform}")
-        sys.exit(121)
-
-
 # Define libs, libdirs, includes and cflags for SDL2
 def define_lib_includes_cflags():
-    sdl2_config = locate_sdl2_config()
-    sdl2_path = os.getenv("PYSDL2_DLL_PATH")
-    print("PYSDL2_DLL_PATH:", sdl2_path)
     libs = []
     libdirs = []
     includes = []
     cflags = [
         "-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include"
     ] if sys.platform == "darwin" else []
-    if sdl2_config != []:
-        for arg in sdl2_config:
-            if arg.startswith("-l"):
-                libs += [arg[2:]]
-            elif arg.startswith("-L"):
-                libdirs += [arg[2:]]
-            elif arg.startswith("-I"):
-                includes += [arg[2:]]
-            else:
-                cflags += [arg]
-        print("SDL2 found using sdl2-config")
-    elif sdl2_path:
-        print("No sdl2-config found, using PYSDL2_DLL_PATH variable")
-        sdl2_lib_arch = "x86" if "x86" in sdl2_path else "x64" if "x64" in sdl2_path else ""
-        sdl2_path = os.path.abspath(sdl2_path[:sdl2_path.index("lib")])
-        if not os.path.isdir(sdl2_path):
-            print(f"Error locating SDL2: {sdl2_path} is not a directory")
-            sys.exit(122)
-        else:
-            print(f"Found SDL2 at {sdl2_path}")
-            libs += ["SDL2"]
-            libdirs += [os.path.join(sdl2_path, "lib", sdl2_lib_arch)]
-            includes += [os.path.join(sdl2_path, "include", p) for p in ("", "SDL2")]
-    else:
-        print("SDL2 cannot be found through neither sdl2-config nor PYSDL2_DLL_PATH")
-        sys.exit(123)
 
     return libs, libdirs, includes, cflags
 
