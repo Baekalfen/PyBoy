@@ -311,6 +311,7 @@ class Renderer:
             self._tilecache = memoryview(self._tilecache_raw).cast("I", shape=(TILES * 8, 8))
             self._spritecache0 = memoryview(self._spritecache0_raw).cast("I", shape=(TILES * 8, 8))
             self._spritecache1 = memoryview(self._spritecache1_raw).cast("I", shape=(TILES * 8, 8))
+            self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
         else:
             v = memoryview(self._screenbuffer_raw).cast("I")
             self._screenbuffer = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]

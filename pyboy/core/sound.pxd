@@ -4,7 +4,6 @@
 #
 
 cimport cython
-# cimport sdl2
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 from pyboy.utils cimport IntIOInterface
 

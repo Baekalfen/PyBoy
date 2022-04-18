@@ -3,13 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import ctypes
 import logging
 import os
 import re
 import zlib
 from array import array
 from base64 import b64decode
+from ctypes import c_void_p
 
 import sdl2
 from pyboy.botsupport import constants, tilemap
@@ -21,12 +21,11 @@ from pyboy.utils import WindowEvent
 logger = logging.getLogger(__name__)
 
 try:
-    from cython import address, compiled
+    from cython import compiled
     cythonmode = compiled
 except ImportError:
     cythonmode = False
-if not cythonmode:
-    exec("NULL = None", globals(), locals())
+
 
 # Mask colors:
 COLOR = 0x00000000
@@ -328,11 +327,10 @@ def make_buffer(w, h):
     buf = array("B", [0x55] * (w*h*4))
     if cythonmode:
         buf0 = memoryview(buf).cast("I", shape=(h, w))
-        buf_p = None
     else:
         view = memoryview(buf).cast("I")
         buf0 = [view[i:i + w] for i in range(0, w * h, w)]
-        buf_p = ctypes.c_void_p(buf.buffer_info()[0])
+    buf_p = c_void_p(buf.buffer_info()[0])
     return buf, buf0, buf_p
 
 
@@ -379,7 +377,10 @@ class BaseDebugWindow(PyBoyWindowPlugin):
 
     def post_tick(self):
         self.update_title()
-        self._update_display()
+        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width*4)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
+        sdl2.SDL_RenderPresent(self._sdlrenderer)
+        sdl2.SDL_RenderClear(self._sdlrenderer)
 
     ##########################
     # Internal functions
@@ -715,7 +716,11 @@ class MemoryWindow(BaseDebugWindow):
         self.font_texture = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
         )
-        self._prepare_font_texture()
+
+        sdl2.SDL_UpdateTexture(self.font_texture, None, self.fbuf_p, 4 * 8)
+        sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+        sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
+        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
 
         # Persistent to make Cython happy...
         self.src = sdl2.SDL_Rect(0, 0, 8, 16)
@@ -786,12 +791,7 @@ class MemoryWindow(BaseDebugWindow):
             if self.dst.x > self.width - 8:
                 logger.warn(f"Text overrun while printing {bytes(text).decode('cp437')}")
                 break
-            if cythonmode:
-                sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, address(self.src), address(self.dst))
-            else:
-                exec(
-                    "sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)", globals(), locals()
-                )
+            sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)
             self.dst.x += 8
 
     def post_tick(self):
@@ -836,29 +836,3 @@ class MemoryWindow(BaseDebugWindow):
                     self._scroll_view(event.mouse_scroll_y * -0x100)
 
         return events
-
-
-# Unfortunately CPython/PyPy code has to be hidden in an exec call to
-# prevent Cython from trying to parse it. This block provides the
-# functions that are otherwise implemented as inlined cdefs in the pxd
-if not cythonmode:
-    exec(
-        """
-def _update_display(self):
-    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width*4)
-    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
-    sdl2.SDL_RenderPresent(self._sdlrenderer)
-    sdl2.SDL_RenderClear(self._sdlrenderer)
-
-BaseDebugWindow._update_display = _update_display
-
-
-def _prepare_font_texture(self):
-    sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf_p, 4 * 8)
-    sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
-    sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
-    sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
-
-MemoryWindow._prepare_font_texture = _prepare_font_texture
-""", globals(), locals()
-    )

@@ -11,6 +11,7 @@ import sdl2.ext
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
 
+
 logger = logging.getLogger(__name__)
 
 ROWS, COLS = 144, 160
@@ -174,7 +175,10 @@ class WindowSDL2(PyBoyWindowPlugin):
         return sdl2_event_pump(events)
 
     def post_tick(self):
-        self._update_display()
+        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS*4)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
+        sdl2.SDL_RenderPresent(self._sdlrenderer)
+        sdl2.SDL_RenderClear(self._sdlrenderer)
 
     def enabled(self):
         return self.pyboy_argv.get("window_type") == "SDL2" or self.pyboy_argv.get("window_type") is None
@@ -194,20 +198,3 @@ class WindowSDL2(PyBoyWindowPlugin):
         for _ in range(10): # At least 2 to close
             sdl2.ext.get_events()
         sdl2.SDL_Quit()
-
-
-# Unfortunately CPython/PyPy code has to be hidden in an exec call to
-# prevent Cython from trying to parse it. This block provides the
-# functions that are otherwise implemented as inlined cdefs in the pxd
-if not cythonmode:
-    exec(
-        """
-def _update_display(self):
-    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS*4)
-    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
-    sdl2.SDL_RenderPresent(self._sdlrenderer)
-    sdl2.SDL_RenderClear(self._sdlrenderer)
-
-WindowSDL2._update_display = _update_display
-""", globals(), locals()
-    )

@@ -108,6 +108,7 @@ cdef class Renderer:
     cdef int old_stat_mode
 
     cdef array _screenbuffer_raw
+    cdef object _screenbuffer_ptr
     cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer
     cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
