@@ -11,21 +11,25 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
-import sdl2
-from pyboy.botsupport import constants, tilemap
-from pyboy.botsupport.sprite import Sprite
-from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.plugins.window_sdl2 import sdl2_event_pump
-from pyboy.utils import WindowEvent
-
-logger = logging.getLogger(__name__)
-
 try:
     from cython import compiled
     cythonmode = compiled
 except ImportError:
     cythonmode = False
 
+try:
+    import sdl2
+except ImportError:
+    sdl2 = None
+
+from pyboy.botsupport import constants, tilemap
+from pyboy.botsupport.sprite import Sprite
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.plugins.window_sdl2 import sdl2_event_pump
+from pyboy.utils import WindowEvent
+
+
+logger = logging.getLogger(__name__)
 
 # Mask colors:
 COLOR = 0x00000000
@@ -233,7 +237,14 @@ class Debug(PyBoyWindowPlugin):
             sdl2.SDL_Quit()
 
     def enabled(self):
-        return self.pyboy_argv.get("debug")
+        if self.pyboy_argv.get("debug"):
+            if not sdl2:
+                logger.error("Failed to import sdl2, needed for debug window")
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def parse_bank_addr_sym_label(self, command):
         if ":" in command:
