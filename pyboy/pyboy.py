@@ -10,6 +10,7 @@ import logging
 import os
 import time
 
+from pyboy.logger import logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
@@ -38,6 +39,7 @@ class PyBoy:
         profiling=False,
         disable_renderer=False,
         sound=False,
+        cgb=None,
         randomize=False,
         **kwargs
     ):
@@ -84,6 +86,7 @@ class PyBoy:
             kwargs["color_palette"],
             disable_renderer,
             sound,
+            cgb,
             randomize=randomize,
             profiling=profiling,
         )

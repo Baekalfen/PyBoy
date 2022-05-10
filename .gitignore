@@ -48,6 +48,7 @@ Report/*.log
 *.gbc
 *.rom
 DMG_ROM.bin
+CGB_ROM.bin
 BlarggROMs/
 TestROMs/
 ROMs/
@@ -80,9 +81,10 @@ Projects/Projects.blg
 Projects/Projects.out
 Projects/Projects.log
 
-bootrom/bootrom.map
-bootrom/bootrom.obj
-bootrom/bootrom.sym
+bootrom/bootrom*.map
+bootrom/bootrom*.obj
+bootrom/bootrom*.sym
+bootrom/bootrom*.gb
 bootrom/logo.asm
 bootrom/pyboy.png
 bootrom/PYBOY_ROM.bin

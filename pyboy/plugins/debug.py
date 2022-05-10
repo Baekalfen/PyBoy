@@ -14,6 +14,7 @@ from base64 import b64decode
 import sdl2
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -424,12 +425,12 @@ class TileViewWindow(BaseDebugWindow):
         self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
 
     def post_tick(self):
-        tile_cache0 = self.renderer._tilecache
+        tile_cache0 = self.renderer._tilecache0[0]
 
         # Updating screen buffer by copying tiles from cache
         mem_offset = self.tilemap.map_offset - constants.VRAM_OFFSET
         for n in range(mem_offset, mem_offset + 0x400):
-            tile_index = self.mb.lcd.VRAM[n]
+            tile_index = self.mb.lcd.VRAM0[n]
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
@@ -541,7 +542,7 @@ class TileViewWindow(BaseDebugWindow):
 
 class TileDataWindow(BaseDebugWindow):
     def post_tick(self):
-        tile_cache0 = self.renderer._tilecache
+        tile_cache0 = self.renderer._tilecache0[0]
 
         for t in range(constants.TILES):
             xx = (t*8) % self.width
@@ -583,7 +584,7 @@ class TileDataWindow(BaseDebugWindow):
 
 class SpriteWindow(BaseDebugWindow):
     def post_tick(self):
-        tile_cache0 = self.renderer._tilecache
+        tile_cache0 = self.renderer._tilecache0[0]
 
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for n in range(0, 0xA0, 4):

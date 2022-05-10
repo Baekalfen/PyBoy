@@ -9,7 +9,7 @@ import struct
 
 
 class BootROM:
-    def __init__(self, bootrom_file):
+    def __init__(self, bootrom_file, cgb):
         # TODO: Remove this, when no unittests depend on it.
         if bootrom_file == "pyboy_fast":
             self.bootrom = array.array("B", [0] * 256)
@@ -32,7 +32,8 @@ class BootROM:
 
         if bootrom_file is None:
             # Default to PyBoy boot ROM
-            bootrom_file = os.path.dirname(os.path.realpath(__file__)) + "/bootrom.bin"
+            rom = "/bootrom_cgb.bin" if cgb else "/bootrom_dmg.bin"
+            bootrom_file = os.path.dirname(os.path.realpath(__file__)) + rom
 
         with open(bootrom_file, "rb") as f:
             rom = f.read()

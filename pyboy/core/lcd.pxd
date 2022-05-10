@@ -17,7 +17,7 @@ cdef int ROWS, COLS, TILES, FRAME_CYCLES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 
 
 cdef class LCD:
-    cdef uint8_t[8 * 1024] VRAM
+    cdef uint8_t[8 * 1024] VRAM0
     cdef uint8_t[0xA0] OAM
 
     cdef uint8_t SCY
@@ -45,6 +45,8 @@ cdef class LCD:
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
     cdef Renderer renderer
+    cdef bint cgb
+    cdef bint double_speed
 
     @cython.locals(interrupt_flag=uint8_t)
     cdef uint8_t tick(self, int)
@@ -100,17 +102,21 @@ cdef class LCDCRegister:
 cdef class Renderer:
     cdef uint8_t alphamask
     cdef uint32_t[4] color_palette
+    cdef uint32_t[4] obj0_palette
+    cdef uint32_t[4] obj1_palette
     cdef str color_format
     cdef tuple buffer_dims
     cdef bint clearcache
-    cdef set tiles_changed
+    cdef set tiles_changed0
     cdef bint disable_renderer
     cdef int old_stat_mode
+    cdef bint double_speed
+    cdef bint cgb
 
     cdef array _screenbuffer_raw
-    cdef array _tilecache_raw, _spritecache0_raw, _spritecache1_raw
+    cdef array _tilecache0_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer
-    cdef uint32_t[:,:] _tilecache, _spritecache0, _spritecache1
+    cdef uint32_t[:,:] _tilecache0, _spritecache0, _spritecache1
 
     cdef int[144][5] _scanlineparameters
 

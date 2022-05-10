@@ -36,6 +36,12 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef str serialbuffer
 
+    # CGB
+    cdef HDMA hdma
+    cdef uint8_t key1
+    cdef bint double_speed
+    cdef bint cgb
+
     cdef bint breakpoints_enabled
     cdef list breakpoints_list
     cdef int breakpoint_latch
@@ -52,3 +58,15 @@ cdef class Motherboard:
     cdef void transfer_DMA(self, uint8_t)
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface)
+
+cdef class HDMA:
+    cdef uint8_t hdma1
+    cdef uint8_t hdma2
+    cdef uint8_t hdma3
+    cdef uint8_t hdma4
+    cdef uint8_t hdma5
+
+    cdef bint transfer_active
+    cdef uint16_t curr_src
+    cdef uint16_t curr_dst
+

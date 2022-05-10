@@ -25,7 +25,7 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 """
 
 cimports = """
-cimport cpu
+from . cimport cpu
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
@@ -464,7 +464,11 @@ class OpcodeData:
 
     def STOP(self):
         code = Code(self.name.split()[0], self.opcode, self.name, True, self.length, self.cycles)
-        code.addline("pass")
+        code.addlines([
+            "if cpu.mb.cgb:",
+            "    cpu.mb.switch_speed()",
+            "    cpu.mb.setitem(0xFF04, 0)",
+        ])
         # code.addLine("raise Exception('STOP not implemented!')")
         return code.getcode()
 
