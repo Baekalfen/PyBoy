@@ -14,3 +14,5 @@ cdef class RAM:
     cdef uint8_t[0x4C] io_ports
     cdef uint8_t[0x7F] internal_ram1
     cdef uint8_t[0x34] non_io_internal_ram1
+    cdef bint cgb
+

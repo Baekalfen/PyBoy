@@ -174,7 +174,9 @@ def RRCA_0F(cpu): # 0F RRCA
 
 
 def STOP_10(cpu, v): # 10 STOP 0
-    pass
+    if cpu.mb.cgb:
+        cpu.mb.switch_speed()
+        cpu.mb.setitem(0xFF04, 0)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
     return 4

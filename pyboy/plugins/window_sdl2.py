@@ -8,6 +8,7 @@ from time import perf_counter
 
 import sdl2
 import sdl2.ext
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
 

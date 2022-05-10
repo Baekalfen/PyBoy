@@ -7,6 +7,7 @@ import logging
 import os
 import time
 
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.utils import WindowEvent
 

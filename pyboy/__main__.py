@@ -74,6 +74,14 @@ parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="
 parser.add_argument("--disable-renderer", action="store_true", help="Disables screen rendering for higher performance")
 parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
 
+gameboy_type_parser = parser.add_mutually_exclusive_group()
+gameboy_type_parser.add_argument(
+    "--dmg", default=None, action="store_true", help="Force emulator to run as original Game Boy (DMG)"
+)
+gameboy_type_parser.add_argument(
+    "--cgb", default=None, action="store_true", help="Force emulator to run as Game Boy Color"
+)
+
 for arguments in parser_arguments():
     for a in arguments:
         *args, kwargs = a
@@ -123,8 +131,18 @@ See "pyboy --help" for how to enable rewind and other awesome features!
 """
     )
 
+    # Tri-stating the cgb flag: CGB (True), DMG (False) or auto-detect from cartridge (None)
+    # TODO: Should be done in argparse
+    cgb = None
+    if argv.cgb is True:
+        cgb = True
+    elif argv.dmg is True:
+        cgb = False
+    del (argv.dmg)
+    del (argv.cgb)
+
     # Start PyBoy and run loop
-    pyboy = PyBoy(argv.ROM, **vars(argv))
+    pyboy = PyBoy(argv.ROM, cgb=cgb, **vars(argv))
 
     if argv.loadstate is not None:
         if argv.loadstate == INTERNAL_LOADSTATE:
