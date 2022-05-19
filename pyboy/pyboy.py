@@ -224,6 +224,12 @@ class PyBoy:
     def __del__(self):
         self.stop(save=False)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
+
     def stop(self, save=True):
         """
         Gently stops the emulator and all sub-modules.
