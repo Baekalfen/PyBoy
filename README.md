@@ -29,12 +29,23 @@ The instructions are simple, if you already have a functioning Python environmen
 
  2. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
 
+If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
+
 Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.rom`__ or use it in your Python scripts:
 ```python
 from pyboy import PyBoy
 pyboy = PyBoy('ROMs/gamerom.gb')
 while not pyboy.tick():
     pass
+pyboy.stop()
+```
+
+Or using the context manager:
+```python
+from pyboy import PyBoy
+with PyBoy('ROMs/gamerom.gb') as pyboy:
+    while not pyboy.tick():
+        pass
 ```
 
 When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
@@ -48,8 +59,6 @@ pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 pil_image = pyboy.screen_image()
 pil_image.save('screenshot.png')
 ```
-
-If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
 
 At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
 
