@@ -131,8 +131,6 @@ class Sound:
                 self.tonechannel.run(self.sampleclocks)
                 self.wavechannel.run(self.sampleclocks)
                 self.noisechannel.run(self.sampleclocks)
-                # print(self.leftsweep, self.lefttone, self.leftwave, self.leftnoise)
-                # print(self.rightsweep, self.righttone, self.rightwave, self.rightnoise)
                 sample = ((self.sweepchannel.sample() if self.leftsweep else 0) +
                           (self.tonechannel.sample() if self.lefttone else 0) +
                           (self.wavechannel.sample() if self.leftwave else 0) +
@@ -215,7 +213,6 @@ class ToneChannel:
             raise IndexError("Attempt to read register {} in ToneChannel".format(reg))
 
     def setreg(self, reg, val):
-        # print(reg, hex(val))
         if reg == 0:
             return
         elif reg == 1:
@@ -226,6 +223,8 @@ class ToneChannel:
             self.envini = val >> 4 & 0x0F
             self.envdir = val >> 3 & 0x01
             self.envper = val & 0x07
+            if self.envini == 0 and self.envdir == 0:
+                self.enable = False
         elif reg == 3:
             self.sndper = (self.sndper & 0x700) + val # Is this ever written solo?
             self.period = 4 * (0x800 - self.sndper)
@@ -284,6 +283,12 @@ class ToneChannel:
         self.periodtimer = self.period
         self.envelopetimer = self.envper
         self.volume = self.envini
+        # TODO: If channel DAC is off (NRx2 & 0xF8 == 0) then this
+        #   will be undone and the channel immediately disabled.
+        #   Probably need a new DAC power state/variable.
+        # For now:
+        if self.envper == 0 and self.envini == 0:
+            self.enable = False
 
 
 class SweepChannel(ToneChannel):
@@ -390,6 +395,8 @@ class WaveChannel:
     def setreg(self, reg, val):
         if reg == 0:
             self.dacpow = val >> 7 & 0x01
+            if self.dacpow == 0:
+                self.enable = False
         elif reg == 1:
             self.sndlen = val
             self.lengthtimer = 256 - self.sndlen
@@ -451,7 +458,7 @@ class WaveChannel:
             return 0
 
     def trigger(self):
-        self.enable = True
+        self.enable = True if self.dacpow else False
         self.lengthtimer = self.lengthtimer or 256
         self.periodtimer = self.period
 
@@ -509,6 +516,8 @@ class NoiseChannel:
             self.envini = val >> 4 & 0x0F
             self.envdir = val >> 3 & 0x01
             self.envper = val & 0x07
+            if self.envini == 0 and self.envdir == 0:
+                self.enable = False
         elif reg == 3:
             self.clkpow = val >> 4 & 0x0F
             self.regwid = val >> 3 & 0x01
@@ -574,3 +583,6 @@ class NoiseChannel:
         self.envelopetimer = self.envper
         self.volume = self.envini
         self.shiftregister = 0x7FFF
+        # TODO: tidy instead of double change variable
+        if self.envper == 0 and self.envini == 0:
+            self.enable = False
