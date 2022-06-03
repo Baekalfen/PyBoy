@@ -27,11 +27,16 @@ assert pyboy.cartridge_title() == "TETRIS"
 tetris = pyboy.game_wrapper()
 tetris.start_game(timer_div=0x00) # The timer_div works like a random seed in Tetris
 
-assert tetris.next_tetromino() == "J"
+tetromino_at_0x00 = tetris.next_tetromino()
+assert tetromino_at_0x00 == "Z", tetris.next_tetromino()
 assert tetris.score == 0
 assert tetris.level == 0
 assert tetris.lines == 0
 assert tetris.fitness == 0 # A built-in fitness score for AI development
+
+# Checking that a reset on the same `timer_div` results in the same Tetromino
+tetris.reset_game(timer_div=0x00)
+assert tetris.next_tetromino() == tetromino_at_0x00, tetris.next_tetromino()
 
 blank_tile = 47
 first_brick = False
@@ -65,12 +70,15 @@ assert tetris.fitness == 0 # A built-in fitness score for AI development
 # Assert there is something on the bottom of the game area
 assert any(filter(lambda x: x != blank_tile, game_area[-1, :]))
 tetris.reset_game(timer_div=0x00)
-assert tetris.next_tetromino() == "J"
+assert tetris.next_tetromino() == tetromino_at_0x00, tetris.next_tetromino()
+
+tetris.reset_game(timer_div=0x00)
+assert tetris.next_tetromino() == tetromino_at_0x00, tetris.next_tetromino()
 # After reseting, we should have a clean game area
 assert all(filter(lambda x: x != blank_tile, game_area[-1, :]))
 
 tetris.reset_game(timer_div=0x55) # The timer_div works like a random seed in Tetris
-assert tetris.next_tetromino() == "L"
+assert tetris.next_tetromino() != tetromino_at_0x00, tetris.next_tetromino()
 
 # Testing that it defaults to random Tetrominos
 selection = set()
