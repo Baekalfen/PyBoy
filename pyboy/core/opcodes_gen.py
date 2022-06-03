@@ -17,7 +17,10 @@ warning = """
 """
 
 imports = """
+import logging
 import array
+
+logger = logging.getLogger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
@@ -36,7 +39,7 @@ cdef uint16_t opcode_length(uint16_t)
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t)
 
-cdef uint8_t no_opcode(cpu.CPU) except -1
+cdef uint8_t no_opcode(cpu.CPU)
 """
 
 
@@ -253,11 +256,10 @@ class Code:
         code += "\n\t".join(self.lines)
 
         pxd = [
-            "cdef uint8_t %s_%0.2X(cpu.CPU) except -1 # %0.2X %s" %
-            (self.function_name, self.opcode, self.opcode, self.name),
+            "cdef uint8_t %s_%0.2X(cpu.CPU) # %0.2X %s" % (self.function_name, self.opcode, self.opcode, self.name),
             # TODO: Differentiate between 16-bit values
             # (01,11,21,31 ops) and 8-bit values for 'v'
-            "cdef uint8_t %s_%0.2X(cpu.CPU, int v) except -1 # %0.2X %s" %
+            "cdef uint8_t %s_%0.2X(cpu.CPU, int v) # %0.2X %s" %
             (self.function_name, self.opcode, self.opcode, self.name),
         ][self.takes_immediate]
 
@@ -449,7 +451,7 @@ class OpcodeData:
 
     def CB(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles)
-        code.addline("raise Exception('CB cannot be called!')")
+        code.addline("logger.critical('CB cannot be called!')")
         return code.getcode()
 
     def EI(self):

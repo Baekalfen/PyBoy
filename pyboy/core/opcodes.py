@@ -3,7 +3,10 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'opcodes_gen.py'.
 
+import logging
 import array
+
+logger = logging.getLogger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
@@ -2162,7 +2165,7 @@ def JP_CA(cpu, v): # CA JP Z,a16
 
 
 def PREFIX_CB(cpu): # CB PREFIX CB
-    raise Exception('CB cannot be called!')
+    logger.critical('CB cannot be called!')
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 4
