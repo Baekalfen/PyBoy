@@ -36,7 +36,8 @@ cdef class Debug(PyBoyWindowPlugin):
     cdef TileViewWindow tile2
     cdef SpriteViewWindow spriteview
     cdef SpriteWindow sprite
-    cdef TileDataWindow tiledata
+    cdef TileDataWindow tiledata0
+    cdef TileDataWindow tiledata1
     cdef MemoryWindow memory
     cdef bint sdl2_event_pump
     cdef void handle_breakpoint(self)
@@ -57,8 +58,8 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef uint32_t[:,:] buf0
     cdef object buf_p
 
-    @cython.locals(y=int, x=int)
-    cdef void copy_tile(self, uint32_t[:,:], int, int, int, uint32_t[:,:])
+    @cython.locals(y=int, x=int, _y=int, _x=int)
+    cdef void copy_tile(self, uint32_t[:,:], int, int, int, uint32_t[:,:], bint, bint)
 
     @cython.locals(i=int, tw=int, th=int, xx=int, yy=int)
     cdef void mark_tile(self, int, int, uint32_t, int, int, bint)
@@ -86,6 +87,8 @@ cdef class TileViewWindow(BaseDebugWindow):
 
 
 cdef class TileDataWindow(BaseDebugWindow):
+    cdef bint tilecache_select
+
     @cython.locals(t=int, xx=int, yy=int)
     cdef void post_tick(self)
 

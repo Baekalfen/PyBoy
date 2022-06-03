@@ -17,7 +17,7 @@ cdef class Timer:
     @cython.locals(divider=cython.int)
     cdef bint tick(self, uint64_t)
     @cython.locals(divider=cython.int, cyclesleft=cython.uint)
-    cdef uint64_t cyclestointerrupt(self)
+    cdef uint64_t cycles_to_interrupt(self)
 
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface, int)

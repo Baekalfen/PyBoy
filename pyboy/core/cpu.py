@@ -79,6 +79,8 @@ class CPU:
         f.write(self.halted)
         f.write(self.stopped)
         f.write(self.interrupts_enabled_register)
+        f.write(self.interrupt_queued)
+        f.write(self.interrupts_flag_register)
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
@@ -92,6 +94,9 @@ class CPU:
         if state_version >= 5:
             # Interrupt register moved from RAM to CPU
             self.interrupts_enabled_register = f.read()
+        if state_version >= 8:
+            self.interrupt_queued = f.read()
+            self.interrupts_flag_register = f.read()
         logger.debug("State loaded: " + self.dump_state(""))
 
     def dump_state(self, sym_label):
@@ -112,8 +117,8 @@ class CPU:
             f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
             f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
             f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
-            f"LCD Intr.: {self.mb.lcd.cyclestointerrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
-            f"Timer Intr.: {self.mb.timer.cyclestointerrupt()}\n"
+            f"LCD Intr.: {self.mb.lcd.cycles_to_interrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
+            f"Timer Intr.: {self.mb.timer.cycles_to_interrupt()}\n"
             f"halted:{self.halted}, "
             f"interrupt_queued:{self.interrupt_queued}, "
             f"stopped:{self.stopped}\n"

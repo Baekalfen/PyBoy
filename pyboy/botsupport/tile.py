@@ -124,8 +124,8 @@ class Tile:
         color_palette = [(x >> 8) | 0xFF000000 for x in self.mb.lcd.renderer.color_palette]
 
         for k in range(0, 16, 2): # 2 bytes for each line
-            byte1 = self.mb.lcd.VRAM[self.data_address + k - VRAM_OFFSET]
-            byte2 = self.mb.lcd.VRAM[self.data_address + k + 1 - VRAM_OFFSET]
+            byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
+            byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
                 colorcode = color_code(byte1, byte2, 7 - x)
