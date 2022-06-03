@@ -6,7 +6,6 @@
 import io
 import os.path
 import platform
-import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -14,6 +13,8 @@ import PIL
 import pytest
 from pyboy import PyBoy
 from tests.utils import default_rom
+
+from .utils import url_open
 
 if platform.python_implementation() == "PyPy":
     timeout = 15
@@ -152,15 +153,15 @@ def test_mooneye(clean, rom):
     # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     mooneye_dir = "mooneye"
     if not os.path.isdir(mooneye_dir):
-        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.mooneye.txt").read())
-        mooneye_data = io.BytesIO(urllib.request.urlopen("https://pyboy.dk/mirror/mooneye.zip").read())
+        print(url_open("https://pyboy.dk/mirror/LICENSE.mooneye.txt"))
+        mooneye_data = io.BytesIO(url_open("https://pyboy.dk/mirror/mooneye.zip"))
         with ZipFile(mooneye_data) as _zip:
             _zip.extractall(mooneye_dir)
 
     if saved_state is None:
         # HACK: We load any rom and load it until the last frame in the boot rom.
         # Then we save it, so we won't need to redo it.
-        pyboy = PyBoy(default_rom, window_type="dummy")
+        pyboy = PyBoy(default_rom, window_type="headless", cgb=False)
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
         for _ in range(59):
@@ -168,7 +169,7 @@ def test_mooneye(clean, rom):
         pyboy.save_state(saved_state)
         pyboy.stop(save=False)
 
-    pyboy = PyBoy(rom, window_type="headless")
+    pyboy = PyBoy(rom, window_type="headless", cgb=False)
     pyboy.set_emulation_speed(0)
     saved_state.seek(0)
     if clean:
