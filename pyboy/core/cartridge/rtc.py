@@ -43,13 +43,11 @@ class RTC:
             f.write(b)
         f.write(self.halt)
         f.write(self.day_carry)
-        logger.info("RTC saved.")
 
     def load_state(self, f, state_version):
         self.timezero = struct.unpack("f", bytes([f.read() for _ in range(4)]))[0]
         self.halt = f.read()
         self.day_carry = f.read()
-        logger.info("RTC loaded.")
 
     def latch_rtc(self):
         t = time.time() - self.timezero

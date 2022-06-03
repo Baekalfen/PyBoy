@@ -10,7 +10,6 @@ import logging
 import os
 import time
 
-from pyboy.logger import logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager

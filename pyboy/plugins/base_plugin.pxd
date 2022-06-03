@@ -17,6 +17,7 @@ cdef int ROWS, COLS
 cdef class PyBoyPlugin:
     cdef object pyboy
     cdef Motherboard mb
+    cdef bint cgb
     cdef dict pyboy_argv
     @cython.locals(event=WindowEvent)
     cdef list handle_events(self, list)

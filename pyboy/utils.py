@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-STATE_VERSION = 7
+STATE_VERSION = 8
 
 ##############################################################
 # Buffer classes
@@ -16,11 +16,32 @@ class IntIOInterface:
     def write(self, byte):
         raise Exception("Not implemented!")
 
+    def write_64bit(self, value):
+        self.write(value & 0xFF)
+        self.write((value >> 8) & 0xFF)
+        self.write((value >> 16) & 0xFF)
+        self.write((value >> 24) & 0xFF)
+        self.write((value >> 32) & 0xFF)
+        self.write((value >> 40) & 0xFF)
+        self.write((value >> 48) & 0xFF)
+        self.write((value >> 56) & 0xFF)
+
+    def read_64bit(self):
+        a = self.read()
+        b = self.read()
+        c = self.read()
+        d = self.read()
+        e = self.read()
+        f = self.read()
+        g = self.read()
+        h = self.read()
+        return a | (b << 8) | (c << 16) | (d << 24) | (e << 32) | (f << 40) | (g << 48) | (h << 56)
+
     def write_32bit(self, value):
         self.write(value & 0xFF)
-        self.write((value & 0xFF00) >> 8)
-        self.write((value & 0xFF0000) >> 16)
-        self.write((value & 0xFF000000) >> 24)
+        self.write((value >> 8) & 0xFF)
+        self.write((value >> 16) & 0xFF)
+        self.write((value >> 24) & 0xFF)
 
     def read_32bit(self):
         a = self.read()
@@ -31,7 +52,7 @@ class IntIOInterface:
 
     def write_16bit(self, value):
         self.write(value & 0xFF)
-        self.write((value & 0xFF00) >> 8)
+        self.write((value >> 8) & 0xFF)
 
     def read_16bit(self):
         a = self.read()
@@ -54,6 +75,9 @@ class IntIOInterface:
         raise Exception("Not implemented!")
 
     def seek_frame(self, _):
+        raise Exception("Not implemented!")
+
+    def tell(self):
         raise Exception("Not implemented!")
 
 
@@ -81,6 +105,9 @@ class IntIOWrapper(IntIOInterface):
 
     def flush(self):
         self.buffer.flush()
+
+    def tell(self):
+        return self.buffer.tell()
 
 
 ##############################################################
