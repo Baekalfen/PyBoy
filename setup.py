@@ -14,8 +14,6 @@ from pathlib import Path
 from setuptools import Extension, find_packages, setup
 from setuptools.command.test import test
 
-from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
-
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
@@ -98,24 +96,6 @@ class PyTest(test):
         self.test_args = []
 
     def run_tests(self):
-        if not os.environ.get("TEST_NO_EXAMPLES"):
-            script_path = os.path.dirname(os.path.realpath(__file__))
-            base = Path(f"{script_path}/examples/")
-
-            for gamewrapper, rom in [
-                ("gamewrapper_tetris.py", tetris_rom),
-                ("gamewrapper_mario.py", supermarioland_rom),
-                ("gamewrapper_kirby.py", kirby_rom),
-            ]:
-                if rom is None:
-                    continue
-
-                return_code = subprocess.Popen([sys.executable,
-                                                str(base / gamewrapper),
-                                                str(Path(rom)), "--quiet"]).wait()
-                if return_code != 0:
-                    sys.exit(return_code)
-
         import pytest
         args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
         # args = ["tests/", "-v", "-x"] # No multithreading, fail fast
