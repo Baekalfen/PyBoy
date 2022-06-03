@@ -11,7 +11,7 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
-from tests.utils import boot_rom, default_rom, kirby_rom
+from tests.utils import boot_rom, default_rom, kirby_rom, pokemon_crystal_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
 
@@ -195,4 +195,18 @@ def test_randomize_ram():
     assert any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not randomized"
+    pyboy.stop(save=False)
+
+
+@pytest.mark.skipif(not pokemon_crystal_rom, reason="ROM not present")
+def test_not_cgb():
+    pyboy = PyBoy(pokemon_crystal_rom, window_type="headless", cgb=False)
+    pyboy.set_emulation_speed(0)
+    for _ in range(60 * 7):
+        pyboy.tick()
+
+    assert pyboy.botsupport_manager().tilemap_background()[1:16, 16] == [
+        134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
+    ] # Assert that the screen says "Game Boy Color." at the bottom.
+
     pyboy.stop(save=False)

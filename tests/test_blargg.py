@@ -9,12 +9,13 @@ import os.path
 import platform
 import sys
 import time
-import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
 from pyboy import PyBoy
+
+from .utils import url_open
 
 OVERWRITE_JSON = False
 
@@ -118,7 +119,7 @@ def test_blarggs(rom):
     # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     blargg_dir = Path("blargg")
     if not os.path.isdir(blargg_dir):
-        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.blargg.txt").read())
+        print(url_open("https://pyboy.dk/mirror/LICENSE.blargg.txt"))
 
         for name in [
             "cgb_sound",
@@ -131,7 +132,7 @@ def test_blarggs(rom):
             "mem_timing",
             "oam_bug",
         ]:
-            blargg_data = io.BytesIO(urllib.request.urlopen(f"https://pyboy.dk/mirror/blargg/{name}.zip").read())
+            blargg_data = io.BytesIO(url_open(f"https://pyboy.dk/mirror/blargg/{name}.zip"))
             with ZipFile(blargg_data) as _zip:
                 _zip.extractall(blargg_dir)
 

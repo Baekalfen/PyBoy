@@ -6,7 +6,6 @@
 import io
 import os.path
 import platform
-import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -14,6 +13,8 @@ import PIL
 import pytest
 from pyboy import PyBoy
 from tests.utils import default_rom
+
+from .utils import url_open
 
 
 @pytest.mark.parametrize("rom", [
@@ -24,8 +25,8 @@ def test_shonumi(rom):
     # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     shonumi_dir = "GB Tests"
     if not os.path.isdir(shonumi_dir):
-        print(urllib.request.urlopen("https://pyboy.dk/mirror/SOURCE.GBTests.txt").read())
-        shonumi_data = io.BytesIO(urllib.request.urlopen("https://pyboy.dk/mirror/GB%20Tests.zip").read())
+        print(url_open("https://pyboy.dk/mirror/SOURCE.GBTests.txt"))
+        shonumi_data = io.BytesIO(url_open("https://pyboy.dk/mirror/GB%20Tests.zip"))
         with ZipFile(shonumi_data) as _zip:
             _zip.extractall(shonumi_dir)
 
@@ -35,8 +36,8 @@ def test_shonumi(rom):
     # sprite_suite.gb
     # 60 PyBoy Boot
     # 23 Loading
-    # 50 Progress to screenshot
-    for _ in range(60 + 23 + 50):
+    # 48 Progress to screenshot
+    for _ in range(60 + 23 + 48):
         pyboy.tick()
 
     png_path = Path(f"test_results/{rom}.png")

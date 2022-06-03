@@ -4,11 +4,12 @@
 #
 
 import os.path
-import urllib.request
 from pathlib import Path
 
 import PIL
 from pyboy import PyBoy
+
+from .utils import url_open
 
 OVERWRITE_PNGS = False
 
@@ -18,8 +19,8 @@ def test_cgb_acid():
     # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     cgb_acid_file = "cgb_acid2.gbc"
     if not os.path.isfile(cgb_acid_file):
-        print(urllib.request.urlopen("https://pyboy.dk/mirror/LICENSE.cgb-acid2.txt").read())
-        cgb_acid_data = urllib.request.urlopen("https://pyboy.dk/mirror/cgb-acid2.gbc").read()
+        print(url_open("https://pyboy.dk/mirror/LICENSE.cgb-acid2.txt"))
+        cgb_acid_data = url_open("https://pyboy.dk/mirror/cgb-acid2.gbc")
         with open(cgb_acid_file, "wb") as rom_file:
             rom_file.write(cgb_acid_data)
 
