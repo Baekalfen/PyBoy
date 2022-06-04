@@ -32,7 +32,7 @@ cdef class IntIOWrapper(IntIOInterface):
 ##############################################################
 # Misc
 
-cpdef uint8_t color_code(uint8_t, uint8_t, uint8_t)
+cdef uint8_t color_code(uint8_t, uint8_t, uint8_t)
 
 ##############################################################
 # Window Events

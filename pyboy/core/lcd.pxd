@@ -9,12 +9,13 @@ import cython
 from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int16_t
 cimport pyboy.utils
-from pyboy.utils cimport color_code
+from pyboy cimport utils
 from pyboy.utils cimport IntIOInterface
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS, TILES, FRAME_CYCLES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef uint32_t COL0_FLAG
+cdef uint8_t BG_PRIORITY_FLAG, CGB_NUM_PALETTES
 
 cdef class LCD:
     cdef uint8_t[8 * 1024] VRAM0
@@ -50,6 +51,14 @@ cdef class LCD:
     cdef uint8_t tick(self, int)
     cdef uint64_t cycles_to_interrupt(self)
 
+    cdef void set_lcdc(self, uint8_t)
+    cdef uint8_t get_lcdc(self)
+    cdef void set_stat(self, uint8_t)
+    cdef uint8_t get_stat(self)
+
+    cdef int cycles_to_mode0(self)
+    cdef bint processing_frame(self)
+
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface, int)
 
@@ -68,14 +77,13 @@ cdef class LCD:
 
 
 cdef class PaletteRegister:
-    cdef LCD lcd
-
     cdef uint8_t value
     cdef uint32_t[4] lookup
-    cdef uint32_t[4] color_palette
+    cdef uint32_t[4] palette_mem_rgb
 
     @cython.locals(x=uint16_t)
     cdef bint set(self, uint64_t)
+    cdef uint8_t get(self)
     cdef uint32_t getcolor(self, uint8_t)
 
 cdef class STATRegister:
@@ -108,15 +116,12 @@ cdef class LCDCRegister:
 
 
 cdef class Renderer:
-    cdef int num_palettes
     cdef uint8_t alphamask
-    cdef uint32_t[4] color_palette
-    cdef uint32_t[4] obj0_palette
-    cdef uint32_t[4] obj1_palette
+    cdef array _tilecache0_state_raw, _tilecache1_state_raw, _spritecache0_state_raw, _spritecache1_state_raw
+    cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
     cdef str color_format
     cdef tuple buffer_dims
     cdef bint clearcache
-    cdef set tiles_changed0
     cdef bint disable_renderer
     cdef int old_stat_mode
     cdef bint double_speed
@@ -125,18 +130,21 @@ cdef class Renderer:
     cdef array _screenbuffer_raw
     cdef array _tilecache0_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer
-    cdef uint32_t[:,:,:] _tilecache0, _spritecache0, _spritecache1
+    cdef uint32_t[:,:] _tilecache0, _spritecache0, _spritecache1
 
-    cdef list sprites_to_render_n
-    cdef list sprites_to_render_x
+    cdef int[:] sprites_to_render_n
+    cdef int[:] sprites_to_render_x
+    cpdef (int, int) key_priority(self, int)
     cdef int ly_window
+    cdef void invalidate_tile(self, int, int)
 
     cdef int[144][5] _scanlineparameters
 
+    cdef void blank_screen(self, LCD)
+
     # CGB
-    cdef set tiles_changed1
     cdef array _tilecache1_raw
-    cdef uint32_t[:,:,:] _tilecache1
+    cdef uint32_t[:,:] _tilecache1
 
     @cython.locals(
         bx=int,
@@ -151,6 +159,7 @@ cdef class Renderer:
         xx=int,
         yy=int,
         tilecache=uint32_t[:,:],
+        bg_priority_apply=uint8_t,
     )
     cdef void scanline(self, LCD, int)
 
@@ -177,6 +186,11 @@ cdef class Renderer:
     )
     cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], bint)
 
+    cdef void clear_cache(self)
+    cdef void clear_tilecache0(self)
+    cdef void clear_tilecache1(self) # CGB Only
+    cdef void clear_spritecache0(self)
+    cdef void clear_spritecache1(self)
     @cython.locals(
         x=int,
         t=int,
@@ -185,9 +199,39 @@ cdef class Renderer:
         byte1=uint8_t,
         byte2=uint8_t,
         colorcode=uint32_t,
-        alpha=uint32_t,
     )
-    cdef void update_cache(self, LCD)
+    cdef void update_tilecache0(self, LCD, int, int)
+    @cython.locals(
+        x=int,
+        t=int,
+        k=int,
+        y=int,
+        byte1=uint8_t,
+        byte2=uint8_t,
+        colorcode=uint32_t,
+    )
+    cdef void update_tilecache1(self, LCD, int, int) # CGB Only
+    @cython.locals(
+        x=int,
+        t=int,
+        k=int,
+        y=int,
+        byte1=uint8_t,
+        byte2=uint8_t,
+        colorcode=uint32_t,
+    )
+    cdef void update_spritecache0(self, LCD, int, int)
+    @cython.locals(
+        x=int,
+        t=int,
+        k=int,
+        y=int,
+        byte1=uint8_t,
+        byte2=uint8_t,
+        colorcode=uint32_t,
+    )
+    cdef void update_spritecache1(self, LCD, int, int)
+
 
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface, int)
@@ -212,18 +256,7 @@ cdef class CGBLCD(LCD):
     # cdef PaletteColorRegister ocpd
 
 cdef class CGBRenderer(Renderer):
-    cdef void update_cache(self, LCD)
-    @cython.locals(
-        x=int,
-        t=int,
-        k=int,
-        y=int,
-        byte1=uint8_t,
-        byte2=uint8_t,
-        colorcode=uint32_t,
-        alpha=uint32_t,
-    )
-    cdef void update_tiles(self, LCD, set, int)
+    pass
 
 cdef class VBKregister:
     cdef uint8_t active_bank
@@ -247,6 +280,7 @@ cdef class PaletteIndexRegister:
 
 cdef class PaletteColorRegister:
     cdef uint16_t[8 * 4] palette_mem
+    cdef uint32_t[8 * 4] palette_mem_rgb
     cdef PaletteIndexRegister index_reg
 
     cdef uint32_t cgb_to_rgb(self, uint16_t, uint8_t)

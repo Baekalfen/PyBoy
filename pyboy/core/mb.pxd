@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
 
 import cython
 cimport pyboy.core.cpu
@@ -20,6 +20,8 @@ from pyboy.utils cimport WindowEvent
 
 cdef uint16_t STAT, LY, LYC
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
+cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
+cdef int STATE_VERSION
 
 
 cdef class Motherboard:
@@ -47,8 +49,13 @@ cdef class Motherboard:
 
     cdef void buttonevent(self, WindowEvent)
     cdef void stop(self, bint)
-    @cython.locals(cycles=cython.int)
+    @cython.locals(cycles=int64_t, escape_halt=cython.int, mode0_cycles=int64_t)
     cdef bint tick(self)
+
+    cdef void switch_speed(self)
+
+    @cython.locals(pc=cython.int, bank=cython.int)
+    cdef bint breakpoint_reached(self)
 
     cdef uint8_t getitem(self, uint16_t)
     cdef void setitem(self, uint16_t, uint8_t)

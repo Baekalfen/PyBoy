@@ -59,7 +59,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef object buf_p
 
     @cython.locals(y=int, x=int, _y=int, _x=int)
-    cdef void copy_tile(self, uint32_t[:,:], int, int, int, uint32_t[:,:], bint, bint)
+    cdef void copy_tile(self, uint32_t[:,:], int, int, int, uint32_t[:,:], bint, bint, uint32_t[:])
 
     @cython.locals(i=int, tw=int, th=int, xx=int, yy=int)
     cdef void mark_tile(self, int, int, uint32_t, int, int, bint)
@@ -78,6 +78,8 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef TileMap tilemap
     cdef uint32_t color
 
+    cdef uint32_t[:,:] tilecache # Fixing Cython locals
+    cdef uint32_t[:] palette_rgb # Fixing Cython locals
     @cython.locals(mem_offset=uint16_t, tile_index=int, tile_column=int, tile_row=int)
     cdef void post_tick(self)
 
@@ -89,6 +91,8 @@ cdef class TileViewWindow(BaseDebugWindow):
 cdef class TileDataWindow(BaseDebugWindow):
     cdef bint tilecache_select
 
+    cdef uint32_t[:,:] tilecache # Fixing Cython locals
+    cdef uint32_t[:] palette_rgb # Fixing Cython locals
     @cython.locals(t=int, xx=int, yy=int)
     cdef void post_tick(self)
 
@@ -108,6 +112,9 @@ cdef class SpriteWindow(BaseDebugWindow):
 
     @cython.locals(title=str)
     cdef void update_title(self)
+
+    cdef uint32_t[:,:] spritecache # Fixing Cython locals
+    cdef uint32_t[:] palette_rgb # Fixing Cython locals
 
 cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
