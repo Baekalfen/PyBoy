@@ -160,7 +160,7 @@ class Motherboard:
         if state_version >= 6 and self.sound_enabled:
             self.sound.load_state(f, state_version)
         self.lcd.renderer.load_state(f, state_version)
-        self.lcd.renderer.update_cache(self.lcd)
+        self.lcd.renderer.clear_cache()
         self.ram.load_state(f, state_version)
         if state_version < 5:
             # Interrupt register moved from RAM to CPU
@@ -207,11 +207,17 @@ class Motherboard:
                 # For HiToLo interrupt it is indistinguishable whether
                 # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
+
+                # Help Cython with types
+                mode0_cycles = 1 << 32
+                if self.cgb and self.hdma.transfer_active:
+                    mode0_cycles = self.lcd.cycles_to_mode0()
+
                 cycles = min(
                     self.lcd.cycles_to_interrupt(),
                     self.timer.cycles_to_interrupt(),
                     # self.serial.cycles_to_interrupt(),
-                    self.lcd.cycles_to_mode0() if self.cgb and self.hdma.transfer_active else 1 << 32
+                    mode0_cycles
                 )
 
                 # Profiling
@@ -222,7 +228,10 @@ class Motherboard:
 
             # TODO: Unify interface
             if self.sound_enabled:
-                self.sound.clock += cycles // 2 if self.cgb and self.double_speed else cycles
+                if self.cgb and self.double_speed:
+                    self.sound.clock += cycles // 2
+                else:
+                    self.sound.clock += cycles
 
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
@@ -309,11 +318,11 @@ class Motherboard:
             elif i == 0xFF46:
                 return 0x00 # DMA
             elif i == 0xFF47:
-                return self.lcd.BGP.value
+                return self.lcd.BGP.get()
             elif i == 0xFF48:
-                return self.lcd.OBP0.value
+                return self.lcd.OBP0.get()
             elif i == 0xFF49:
-                return self.lcd.OBP1.value
+                return self.lcd.OBP1.get()
             elif i == 0xFF4A:
                 return self.lcd.WY
             elif i == 0xFF4B:
@@ -370,12 +379,14 @@ class Motherboard:
                 self.lcd.VRAM0[i - 0x8000] = value
                 if i < 0x9800: # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
-                    self.lcd.renderer.tiles_changed0.add(i & 0xFFF0)
+                    self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 0)
+                    # self.lcd.renderer.tiles_changed0.add(i & 0xFFF0)
             else:
                 self.lcd.VRAM1[i - 0x8000] = value
                 if i < 0x9800: # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
-                    self.lcd.renderer.tiles_changed1.add(i & 0xFFF0)
+                    self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
+                    # self.lcd.renderer.tiles_changed1.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -428,14 +439,17 @@ class Motherboard:
             elif i == 0xFF46:
                 self.transfer_DMA(value)
             elif i == 0xFF47:
-                # TODO: Move out of MB
-                self.lcd.renderer.clearcache = self.lcd.renderer.clearcache | self.lcd.BGP.set(value)
+                if self.lcd.BGP.set(value):
+                    # TODO: Move out of MB
+                    self.lcd.renderer.clear_tilecache0()
             elif i == 0xFF48:
-                # TODO: Move out of MB
-                self.lcd.renderer.clearcache = self.lcd.renderer.clearcache | self.lcd.OBP0.set(value)
+                if self.lcd.OBP0.set(value):
+                    # TODO: Move out of MB
+                    self.lcd.renderer.clear_spritecache0()
             elif i == 0xFF49:
-                # TODO: Move out of MB
-                self.lcd.renderer.clearcache = self.lcd.renderer.clearcache | self.lcd.OBP1.set(value)
+                if self.lcd.OBP1.set(value):
+                    # TODO: Move out of MB
+                    self.lcd.renderer.clear_spritecache1()
             elif i == 0xFF4A:
                 self.lcd.WY = value
             elif i == 0xFF4B:
@@ -467,12 +481,14 @@ class Motherboard:
                 self.lcd.bcps.set(value)
             elif self.cgb and i == 0xFF69:
                 self.lcd.bcpd.set(value)
-                self.lcd.renderer.clearcache = True
+                self.lcd.renderer.clear_tilecache0()
+                self.lcd.renderer.clear_tilecache1()
             elif self.cgb and i == 0xFF6A:
                 self.lcd.ocps.set(value)
             elif self.cgb and i == 0xFF6B:
                 self.lcd.ocpd.set(value)
-                self.lcd.renderer.clearcache = True
+                self.lcd.renderer.clear_spritecache0()
+                self.lcd.renderer.clear_spritecache1()
             else:
                 self.ram.non_io_internal_ram1[i - 0xFF4C] = value
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM

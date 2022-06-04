@@ -214,6 +214,7 @@ if not cythonmode:
     exec(
         """
 def _update_display(self):
+    # self.renderer._screenbuffer[0]._pypy_raw_address()
     sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS*4)
     sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
     sdl2.SDL_RenderPresent(self._sdlrenderer)
