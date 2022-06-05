@@ -17,7 +17,7 @@ class WindowDummy(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.mb.lcd.renderer.disable_renderer = True
+        pyboy._rendering(False)
 
     def enabled(self):
         return self.pyboy_argv.get("window_type") == "dummy"

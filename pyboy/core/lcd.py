@@ -32,6 +32,7 @@ class LCD:
     def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
+        self.disable_renderer = disable_renderer
 
         if randomize:
             for i in range(VIDEO_RAM):
@@ -173,6 +174,7 @@ class LCD:
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206 * multiplier
+
                     self.renderer.scanline(self, self.LY)
                     self.renderer.scanline_sprites(self, self.LY, self.renderer._screenbuffer, False)
                     if self.LY < 143:
@@ -435,11 +437,15 @@ class Renderer:
     def scanline(self, lcd, y):
         bx, by = lcd.getviewport()
         wx, wy = lcd.getwindowpos()
+        # TODO: Move to lcd class
         self._scanlineparameters[y][0] = bx
         self._scanlineparameters[y][1] = by
         self._scanlineparameters[y][2] = wx
         self._scanlineparameters[y][3] = wy
         self._scanlineparameters[y][4] = lcd._LCDC.tiledata_select
+
+        if lcd.disable_renderer:
+            return
 
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00
@@ -539,7 +545,7 @@ class Renderer:
         return (self.sprites_to_render_x[x], self.sprites_to_render_n[x])
 
     def scanline_sprites(self, lcd, ly, buffer, ignore_priority):
-        if not lcd._LCDC.sprite_enable:
+        if not lcd._LCDC.sprite_enable or lcd.disable_renderer:
             return
 
         spriteheight = 16 if lcd._LCDC.sprite_height else 8

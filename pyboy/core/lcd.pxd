@@ -18,6 +18,7 @@ cdef uint32_t COL0_FLAG
 cdef uint8_t BG_PRIORITY_FLAG, CGB_NUM_PALETTES
 
 cdef class LCD:
+    cdef bint disable_renderer
     cdef uint8_t[8 * 1024] VRAM0
     cdef uint8_t[0xA0] OAM
 
@@ -122,7 +123,6 @@ cdef class Renderer:
     cdef str color_format
     cdef tuple buffer_dims
     cdef bint clearcache
-    cdef bint disable_renderer
     cdef int old_stat_mode
     cdef bint double_speed
     cdef bint cgb
