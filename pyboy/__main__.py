@@ -104,6 +104,7 @@ The other controls for the emulator:
 
 | Keyboard key | Emulator function       |
 | ---          | ---                     |
+| F11          | Toggle fullscreen       |
 | Escape       | Quit                    |
 | D            | Debug                   |
 | Space        | Unlimited FPS           |

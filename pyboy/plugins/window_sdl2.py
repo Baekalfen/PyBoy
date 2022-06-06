@@ -61,6 +61,7 @@ KEY_UP = {
     sdl2.SDLK_PERIOD    : WindowEvent.RELEASE_REWIND_FORWARD,
     sdl2.SDLK_LSHIFT    : WindowEvent.MOD_SHIFT_OFF,
     sdl2.SDLK_RSHIFT    : WindowEvent.MOD_SHIFT_OFF,
+    sdl2.SDLK_F11       : WindowEvent.FULL_SCREEN_TOGGLE,
 }
 
 CONTROLLER_DOWN = {
@@ -166,12 +167,21 @@ class WindowSDL2(PyBoyWindowPlugin):
         )
 
         sdl2.SDL_ShowWindow(self._window)
+        self.fullscreen = False
 
     def set_title(self, title):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
     def handle_events(self, events):
-        return sdl2_event_pump(events)
+        events = sdl2_event_pump(events)
+        for e in events:
+            if e.event == WindowEvent.FULL_SCREEN_TOGGLE:
+                if self.fullscreen:
+                    sdl2.SDL_SetWindowFullscreen(self._window, 0)
+                else:
+                    sdl2.SDL_SetWindowFullscreen(self._window, sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP)
+                self.fullscreen ^= True
+        return events
 
     def post_tick(self):
         self._update_display()
