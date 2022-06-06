@@ -24,6 +24,7 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
     cdef float _ftime
     cdef dict _key_down
     cdef dict _key_up
+    cdef bint fullscreen
 
     cdef sdl2.SDL_Window *_window
     cdef sdl2.SDL_Renderer *_sdlrenderer

@@ -173,7 +173,8 @@ class WindowEvent:
         DEBUG_MEMORY_SCROLL_UP,
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
-    ) = range(41)
+        FULL_SCREEN_TOGGLE,
+    ) = range(42)
 
     def __init__(self, event):
         self.event = event
@@ -230,6 +231,7 @@ class WindowEvent:
             "DEBUG_MEMORY_SCROLL_UP",
             "MOD_SHIFT_ON",
             "MOD_SHIFT_OFF",
+            "FULL_SCREEN_TOGGLE",
         )[self.event]
 
 
