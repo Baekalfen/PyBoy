@@ -210,23 +210,6 @@ class PyBoyGymEnv(Env):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="pyboy.openai_gym.Env"><code class="flex name class">
-<span>class <span class="ident">Env</span></span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Env:
-    pass</code></pre>
-</details>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="pyboy.openai_gym.PyBoyGymEnv" href="#pyboy.openai_gym.PyBoyGymEnv">PyBoyGymEnv</a></li>
-</ul>
-</dd>
 <dt id="pyboy.openai_gym.PyBoyGymEnv"><code class="flex name class">
 <span>class <span class="ident">PyBoyGymEnv</span></span>
 <span>(</span><span>pyboy, observation_type='tiles', action_type='toggle', simultaneous_actions=False, **kwargs)</span>
@@ -429,7 +412,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="pyboy.openai_gym.Env" href="#pyboy.openai_gym.Env">Env</a></li>
+<li>gym.core.Env</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -437,7 +420,20 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 <span>def <span class="ident">step</span></span>(<span>self, action_id)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Run one timestep of the environment's dynamics. When end of
+episode is reached, you are responsible for calling <code>reset()</code>
+to reset this environment's state.</p>
+<p>Accepts an action and returns a tuple (observation, reward, done, info).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>action</code></strong> :&ensp;<code>object</code></dt>
+<dd>an action provided by the agent</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>observation (object): agent's observation of the current environment
+reward (float) : amount of reward returned after previous action
+done (bool): whether the episode has ended, in which case further step() calls will return undefined results
+info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -497,7 +493,40 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 <span>def <span class="ident">render</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Renders the environment.</p>
+<p>The set of supported modes varies per environment. (And some
+environments do not support rendering at all.) By convention,
+if mode is:</p>
+<ul>
+<li>human: render to the current display or terminal and
+return nothing. Usually for human consumption.</li>
+<li>rgb_array: Return an numpy.ndarray with shape (x, y, 3),
+representing RGB values for an x-by-y pixel image, suitable
+for turning into a video.</li>
+<li>ansi: Return a string (str) or StringIO.StringIO containing a
+terminal-style text representation. The text can include newlines
+and ANSI escape sequences (e.g. for colors).</li>
+</ul>
+<h2 id="note">Note</h2>
+<p>Make sure that your class's metadata 'render.modes' key includes
+the list of supported modes. It's recommended to call super()
+in implementations to use the functionality of this method.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mode</code></strong> :&ensp;<code>str</code></dt>
+<dd>the mode to render with</dd>
+</dl>
+<p>Example:</p>
+<p>class MyEnv(Env):
+metadata = {'render.modes': ['human', 'rgb_array']}</p>
+<pre><code>def render(self, mode='human'):
+    if mode == 'rgb_array':
+        return np.array(...) # return RGB frame suitable for video
+    elif mode == 'human':
+        ... # pop up a window and render
+    else:
+        super(MyEnv, self).render(mode=mode) # just raise an exception
+</code></pre></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -510,7 +539,9 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 <span>def <span class="ident">close</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Override close in your subclass to perform any necessary cleanup.</p>
+<p>Environments will automatically close() themselves when
+garbage collected or when the program exits.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -537,9 +568,6 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
-<li>
-<h4><code><a title="pyboy.openai_gym.Env" href="#pyboy.openai_gym.Env">Env</a></code></h4>
-</li>
 <li>
 <h4><code><a title="pyboy.openai_gym.PyBoyGymEnv" href="#pyboy.openai_gym.PyBoyGymEnv">PyBoyGymEnv</a></code></h4>
 <ul class="">
