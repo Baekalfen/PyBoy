@@ -3,10 +3,13 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint32_t
+import cython
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 from pyboy.core.mb cimport Motherboard
+from pyboy cimport utils
 
+cdef uint16_t VRAM_OFFSET, LOW_TILEDATA
 
 cdef class Tile:
     cdef Motherboard mb
@@ -16,4 +19,7 @@ cdef class Tile:
     cdef public tuple shape
     cpdef object image(self)
     cpdef object image_ndarray(self)
+
+    cdef uint32_t[:,:] data # TODO: Add to locals instead
+    @cython.locals(byte1=uint8_t, byte2=uint8_t, old_A_format=uint32_t, colorcode=uint32_t)
     cpdef uint32_t[:,:] image_data(self)
