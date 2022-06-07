@@ -68,7 +68,7 @@ from .utils import WindowEvent</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, randomize=False, **kwargs)</span>
+<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, cgb=None, randomize=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -105,6 +105,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
         profiling=False,
         disable_renderer=False,
         sound=False,
+        cgb=None,
         randomize=False,
         **kwargs
     ):
@@ -151,6 +152,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
             kwargs[&#34;color_palette&#34;],
             disable_renderer,
             sound,
+            cgb,
             randomize=randomize,
             profiling=profiling,
         )
@@ -288,6 +290,12 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
 
     def __del__(self):
         self.stop(save=False)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
 
     def stop(self, save=True):
         &#34;&#34;&#34;
@@ -539,6 +547,8 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
 
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
+        Some window types do not implement a frame-limiter, and will always run at full speed.
+
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         &#34;&#34;&#34;
@@ -562,7 +572,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
         &#34;&#34;&#34;
         Disable or enable rendering
         &#34;&#34;&#34;
-        self.mb.renderer.disable_renderer = not value
+        self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck</code></pre>
@@ -729,7 +739,7 @@ A Gym environment based on the <code>Pyboy</code> object.</p></section>
         action_type (str): Define how the agent will interact with button inputs
         * `&#34;press&#34;`: The agent will only press inputs for 1 frame an then release it.
         * `&#34;toggle&#34;`: The agent will toggle inputs, first time it press and second time it release.
-        * `&#34;all&#34;`: The agent have acces to all inputs, press and release are separated.
+        * `&#34;all&#34;`: The agent have access to all inputs, press and release are separated.
 
         simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
@@ -1102,6 +1112,7 @@ and join our Discord channel for more help.</p>
 <code>target_speed</code>.</p>
 <p>The speed is defined as a multiple of real-time. I.e <code>target_speed=2</code> is double speed.</p>
 <p>A <code>target_speed</code> of <code>0</code> means unlimited. I.e. fastest possible execution.</p>
+<p>Some window types do not implement a frame-limiter, and will always run at full speed.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>target_speed</code></strong> :&ensp;<code>int</code></dt>
@@ -1119,6 +1130,8 @@ and join our Discord channel for more help.</p>
     The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
 
     A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
+
+    Some window types do not implement a frame-limiter, and will always run at full speed.
 
     Args:
         target_speed (int): Target emulation speed as multiplier of real-time.
@@ -1228,7 +1241,8 @@ have been truncated to 11 characters.</p>
         DEBUG_MEMORY_SCROLL_UP,
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
-    ) = range(41)
+        FULL_SCREEN_TOGGLE,
+    ) = range(42)
 
     def __init__(self, event):
         self.event = event
@@ -1285,6 +1299,7 @@ have been truncated to 11 characters.</p>
             &#34;DEBUG_MEMORY_SCROLL_UP&#34;,
             &#34;MOD_SHIFT_ON&#34;,
             &#34;MOD_SHIFT_OFF&#34;,
+            &#34;FULL_SCREEN_TOGGLE&#34;,
         )[self.event]</code></pre>
 </details>
 <h3>Subclasses</h3>
@@ -1441,6 +1456,10 @@ have been truncated to 11 characters.</p>
 <dd>
 <section class="desc"></section>
 </dd>
+<dt id="pyboy.WindowEvent.FULL_SCREEN_TOGGLE"><code class="name">var <span class="ident">FULL_SCREEN_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1521,6 +1540,7 @@ have been truncated to 11 characters.</p>
 <li><code><a title="pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP" href="#pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP">DEBUG_MEMORY_SCROLL_UP</a></code></li>
 <li><code><a title="pyboy.WindowEvent.MOD_SHIFT_ON" href="#pyboy.WindowEvent.MOD_SHIFT_ON">MOD_SHIFT_ON</a></code></li>
 <li><code><a title="pyboy.WindowEvent.MOD_SHIFT_OFF" href="#pyboy.WindowEvent.MOD_SHIFT_OFF">MOD_SHIFT_OFF</a></code></li>
+<li><code><a title="pyboy.WindowEvent.FULL_SCREEN_TOGGLE" href="#pyboy.WindowEvent.FULL_SCREEN_TOGGLE">FULL_SCREEN_TOGGLE</a></code></li>
 </ul>
 </li>
 </ul>

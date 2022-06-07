@@ -54,6 +54,8 @@ test_pypy:
 test_all: test
 
 docs: clean
+	bash -O extglob -c 'rm -rf -- ${ROOT_DIR}/docs/!(templates|CNAME)'
+	mkdir -p ${ROOT_DIR}/docs/templates
 	pdoc --html --force -c latex_math=True -c sort_identifiers=False -c show_type_annotations=True --template-dir docs/templates pyboy
 	cp -r html/pyboy/ ${ROOT_DIR}/docs/
 	rm -rf html

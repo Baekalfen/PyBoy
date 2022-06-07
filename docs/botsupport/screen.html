@@ -164,7 +164,8 @@ class Screen:
         # NOTE: Might have room for performance improvement
         # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
         # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
+        # FIXME: FORMAT IS BGR NOT RGB!!!
+        return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], &#34;RGB&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -306,7 +307,8 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         # NOTE: Might have room for performance improvement
         # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
         # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
+        # FIXME: FORMAT IS BGR NOT RGB!!!
+        return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], &#34;RGB&#34;)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -532,7 +534,8 @@ and join our Discord channel for more help.</p>
     # NOTE: Might have room for performance improvement
     # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
     # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-    return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
+    # FIXME: FORMAT IS BGR NOT RGB!!!
+    return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], &#34;RGB&#34;)</code></pre>
 </details>
 </dd>
 </dl>
