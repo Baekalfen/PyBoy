@@ -6,12 +6,16 @@ import base64
 import hashlib
 import os
 import platform
+import sys
+from io import BytesIO
+from pathlib import Path
 
+import PIL
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
-from tests.utils import any_rom, boot_rom, boot_rom_cgb, default_rom, kirby_rom, pokemon_crystal_rom
+from tests.utils import any_rom, any_rom_cgb, boot_rom, boot_rom_cgb, default_rom, kirby_rom, pokemon_crystal_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
 
@@ -212,11 +216,47 @@ def test_not_cgb():
     pyboy.stop(save=False)
 
 
+OVERWRITE_PNGS = False
+
+
 @pytest.mark.parametrize("cgb", [False, True, None])
-@pytest.mark.parametrize("_bootrom", [boot_rom_cgb, boot_rom, None])
-def test_all_modes(cgb, _bootrom):
-    pyboy = PyBoy(any_rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
+@pytest.mark.parametrize("_bootrom, frames", [(boot_rom_cgb, 120), (boot_rom, 120), (None, 30)])
+@pytest.mark.parametrize("rom", [any_rom, any_rom_cgb])
+def test_all_modes(cgb, _bootrom, frames, rom):
+    print(cgb, _bootrom, rom)
+    if cgb == False and _bootrom == boot_rom_cgb:
+        pytest.skip("Invalid combination")
+
+    if cgb == None and _bootrom == boot_rom_cgb and rom != any_rom_cgb:
+        pytest.skip("Invalid combination")
+
+    pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
-    for _ in range(60 * 10):
+    for _ in range(frames):
         pyboy.tick()
+
+    rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
+    png_path = Path(f"test_results/all_modes/{rom_name}_{cgb}_{str(_bootrom).replace('/', '')}.png")
+    image = pyboy.botsupport_manager().screen().screen_image()
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        png_buf = BytesIO()
+        image.save(png_buf, "png")
+        with open(png_path, "wb") as f:
+            f.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in png_buf.getvalue()]))
+    else:
+        png_buf = BytesIO()
+        with open(png_path, "rb") as f:
+            data = f.read()
+            png_buf.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in data]))
+        png_buf.seek(0)
+
+        old_image = PIL.Image.open(png_buf)
+        diff = PIL.ImageChops.difference(image, old_image)
+        if diff.getbbox() and not os.environ.get("TEST_CI"):
+            image.show()
+            old_image.show()
+            diff.show()
+        assert not diff.getbbox(), f"Images are different! {cgb_acid_file}"
+
     pyboy.stop(save=False)
