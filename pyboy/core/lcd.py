@@ -657,7 +657,7 @@ class Renderer:
         self.clear_spritecache1()
 
     def invalidate_tile(self, tile, vbank):
-        if vbank:
+        if vbank and self.cgb:
             self._tilecache0_state[tile] = 0
             self._tilecache1_state[tile] = 0
             self._spritecache0_state[tile] = 0

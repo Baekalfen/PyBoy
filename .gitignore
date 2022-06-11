@@ -65,6 +65,7 @@ tmp.state
 /pyboy/**/*.so
 
 /recordings
+/screenshots
 
 /bin
 /include
@@ -99,5 +100,7 @@ ci_secrets.tar
 
 mooneye/
 blargg/
+GB Tests/
+SameSuite/
 
 pyboy/core/debug.pxi

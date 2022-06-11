@@ -17,17 +17,25 @@ CPU_FREQ = 4213440 # hz
 
 
 class Sound:
-    def __init__(self):
-        # Initialization is handled in the windows, otherwise we'd need this
-        sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
+    def __init__(self, enabled):
+        self.enabled = enabled
+        if self.enabled:
+            # Initialization is handled in the windows, otherwise we'd need this
+            sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
 
-        # Open audio device
-        spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
-        spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
-        self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
+            # Open audio device
+            spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
+            spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
+            self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
 
-        self.sample_rate = spec_have.freq
-        self.sampleclocks = CPU_FREQ / self.sample_rate
+            # Start playback (move out of __init__ if needed, maybe for headless)
+            sdl2.SDL_PauseAudioDevice(self.device, 0)
+
+            self.sample_rate = spec_have.freq
+            self.sampleclocks = CPU_FREQ // self.sample_rate
+        else:
+            self.sample_rate = 32768
+            self.sampleclocks = CPU_FREQ // self.sample_rate
         self.audiobuffer = array("b", [0] * 4096) # Over 2 frames
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
@@ -48,9 +56,6 @@ class Sound:
         self.rightwave = False
         self.righttone = False
         self.rightsweep = False
-
-        # Start playback (move out of __init__ if needed, maybe for headless)
-        sdl2.SDL_PauseAudioDevice(self.device, 0)
 
     def get(self, offset):
         self.sync()
@@ -97,14 +102,14 @@ class Sound:
         elif offset == 20 and self.poweron: # Control register NR50: Vin enable and volume -- not implemented
             return
         elif offset == 21 and self.poweron: # Control register NR51: Channel stereo enable/panning
-            self.leftnoise = bool(value & 0x80)
-            self.leftwave = bool(value & 0x40)
-            self.lefttone = bool(value & 0x20)
-            self.leftsweep = bool(value & 0x10)
-            self.rightnoise = bool(value & 0x08)
-            self.rightwave = bool(value & 0x04)
-            self.righttone = bool(value & 0x02)
-            self.rightsweep = bool(value & 0x01)
+            self.leftnoise = value & 0x80
+            self.leftwave = value & 0x40
+            self.lefttone = value & 0x20
+            self.leftsweep = value & 0x10
+            self.rightnoise = value & 0x08
+            self.rightwave = value & 0x04
+            self.righttone = value & 0x02
+            self.rightsweep = value & 0x01
             return
         elif offset == 22: # Control register NR52: Sound on/off
             if value & 0x80 == 0: # Sound power off
@@ -123,7 +128,7 @@ class Sound:
 
     def sync(self):
         """Run the audio for the number of clock cycles stored in self.clock"""
-        nsamples = int(self.clock / self.sampleclocks)
+        nsamples = self.clock // self.sampleclocks
 
         for i in range(min(2048, nsamples)):
             if self.poweron:
@@ -145,17 +150,20 @@ class Sound:
             else:
                 self.audiobuffer[2 * i] = 0
                 self.audiobuffer[2*i + 1] = 0
-        # Clear queue, if we are behind
-        queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
-        samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
-        if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
-            sdl2.SDL_ClearQueuedAudio(self.device)
 
-        sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
+        if self.enabled:
+            # Clear queue, if we are behind
+            queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
+            samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
+            if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
+                sdl2.SDL_ClearQueuedAudio(self.device)
+
+            sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
         self.clock %= self.sampleclocks
 
     def stop(self):
-        sdl2.SDL_CloseAudioDevice(self.device)
+        if self.enabled:
+            sdl2.SDL_CloseAudioDevice(self.device)
 
     def save_state(self, file):
         pass
@@ -216,12 +224,12 @@ class ToneChannel:
         if reg == 0:
             return
         elif reg == 1:
-            self.wavsel = val >> 6 & 0x03
+            self.wavsel = (val >> 6) & 0x03
             self.sndlen = val & 0x1F
             self.lengthtimer = 64 - self.sndlen
         elif reg == 2:
-            self.envini = val >> 4 & 0x0F
-            self.envdir = val >> 3 & 0x01
+            self.envini = (val >> 4) & 0x0F
+            self.envdir = (val >> 3) & 0x01
             self.envper = val & 0x07
             if self.envini == 0 and self.envdir == 0:
                 self.enable = False
@@ -229,8 +237,8 @@ class ToneChannel:
             self.sndper = (self.sndper & 0x700) + val # Is this ever written solo?
             self.period = 4 * (0x800 - self.sndper)
         elif reg == 4:
-            self.uselen = val >> 6 & 0x01
-            self.sndper = (val << 8 & 0x0700) + (self.sndper & 0xFF)
+            self.uselen = (val >> 6) & 0x01
+            self.sndper = ((val << 8) & 0x0700) + (self.sndper & 0xFF)
             self.period = 4 * (0x800 - self.sndper)
             if val & 0x80:
                 self.trigger() # Sync is called first in Sound.set so it's okay to trigger immediately
@@ -417,7 +425,7 @@ class WaveChannel:
 
     def getwavebyte(self, offset):
         if self.dacpow:
-            return self.wavetable[self.waveframe]
+            return self.wavetable[self.waveframe % 16]
         else:
             return self.wavetable[offset]
 
@@ -425,7 +433,7 @@ class WaveChannel:
         # In GBA, a write is ignored while the channel is running.
         # Otherwise, it usually goes at the current frame byte.
         if self.dacpow:
-            self.wavetable[self.waveframe] = value
+            self.wavetable[self.waveframe % 16] = value
         else:
             self.wavetable[offset] = value
 

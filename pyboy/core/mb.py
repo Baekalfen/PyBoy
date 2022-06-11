@@ -60,9 +60,7 @@ class Motherboard:
                 color_palette,
                 randomize=randomize,
             )
-        self.sound_enabled = sound_enabled
-        if sound_enabled:
-            self.sound = sound.Sound()
+        self.sound = sound.Sound(sound_enabled)
 
         self.key1 = 0
         self.double_speed = False
@@ -106,8 +104,7 @@ class Motherboard:
             self.cpu.set_interruptflag(INTR_HIGHTOLOW)
 
     def stop(self, save):
-        if self.sound_enabled:
-            self.sound.stop()
+        self.sound.stop()
         if save:
             self.cartridge.stop()
 
@@ -122,10 +119,7 @@ class Motherboard:
             self.hdma.save_state(f)
         self.cpu.save_state(f)
         self.lcd.save_state(f)
-        if self.sound_enabled:
-            self.sound.save_state(f)
-        else:
-            pass
+        self.sound.save_state(f)
         self.lcd.renderer.save_state(f)
         self.ram.save_state(f)
         self.timer.save_state(f)
@@ -157,7 +151,7 @@ class Motherboard:
                 self.hdma.load_state(f, state_version)
         self.cpu.load_state(f, state_version)
         self.lcd.load_state(f, state_version)
-        if state_version >= 6 and self.sound_enabled:
+        if state_version >= 8:
             self.sound.load_state(f, state_version)
         self.lcd.renderer.load_state(f, state_version)
         self.lcd.renderer.clear_cache()
@@ -227,11 +221,10 @@ class Motherboard:
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
             # TODO: Unify interface
-            if self.sound_enabled:
-                if self.cgb and self.double_speed:
-                    self.sound.clock += cycles // 2
-                else:
-                    self.sound.clock += cycles
+            if self.cgb and self.double_speed:
+                self.sound.clock += cycles // 2
+            else:
+                self.sound.clock += cycles
 
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
@@ -247,8 +240,7 @@ class Motherboard:
                 return True
 
         # TODO: Move SDL2 sync to plugin
-        if self.sound_enabled:
-            self.sound.sync()
+        self.sound.sync()
 
         return False
 
@@ -299,10 +291,7 @@ class Motherboard:
             elif i == 0xFF0F:
                 return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
-                if self.sound_enabled:
-                    return self.sound.get(i - 0xFF10)
-                else:
-                    return 0
+                return self.sound.get(i - 0xFF10)
             elif i == 0xFF40:
                 return self.lcd.get_lcdc()
             elif i == 0xFF41:
@@ -422,8 +411,7 @@ class Motherboard:
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
-                if self.sound_enabled:
-                    self.sound.set(i - 0xFF10, value)
+                self.sound.set(i - 0xFF10, value)
             elif i == 0xFF40:
                 self.lcd.set_lcdc(value)
             elif i == 0xFF41:
