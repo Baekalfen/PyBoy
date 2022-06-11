@@ -101,6 +101,6 @@ ci_secrets.tar
 mooneye/
 blargg/
 GB Tests/
-SameSuite/
+/SameSuite/
 
 pyboy/core/debug.pxi
