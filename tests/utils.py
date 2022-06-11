@@ -74,3 +74,4 @@ kirby_rom = locate_sha256(rom_entries, b"0f6dba94fae248d419083001c42c02a78be6bd3
 
 # default_rom last, as it doesn't have the Nintendo logo
 any_rom = pokemon_blue_rom or tetris_rom or supermarioland_rom or kirby_rom or default_rom
+any_rom_cgb = pokemon_crystal_rom
