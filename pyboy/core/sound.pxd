@@ -15,6 +15,7 @@ cdef class Sound:
     cdef void save_state(self, IntIOInterface)
     cdef void load_state(self, IntIOInterface, int)
 
+    cdef bint enabled
     cdef int device
 
     cdef int sample_rate
@@ -39,6 +40,7 @@ cdef class Sound:
 
     @cython.locals(nsamples=int, sample=int, i=int, queued_time=int, )
     cdef void sync(self)
+    cdef void stop(self)
 
 
 cdef class ToneChannel:

@@ -11,7 +11,7 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
-from tests.utils import boot_rom, default_rom, kirby_rom, pokemon_crystal_rom
+from tests.utils import any_rom, boot_rom, boot_rom_cgb, default_rom, kirby_rom, pokemon_crystal_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
 
@@ -209,4 +209,14 @@ def test_not_cgb():
         134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
     ] # Assert that the screen says "Game Boy Color." at the bottom.
 
+    pyboy.stop(save=False)
+
+
+@pytest.mark.parametrize("cgb", [False, True, None])
+@pytest.mark.parametrize("_bootrom", [boot_rom_cgb, boot_rom, None])
+def test_all_modes(cgb, _bootrom):
+    pyboy = PyBoy(any_rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
+    pyboy.set_emulation_speed(0)
+    for _ in range(60 * 10):
+        pyboy.tick()
     pyboy.stop(save=False)
