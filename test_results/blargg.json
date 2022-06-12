@@ -42,5 +42,18 @@
     "blargg/oam_bug/rom_singles/5-timing_bug.gb": "5-timing_bug\n\n\nShould corrupt at beginning of first scanline\n\nFailed #2\n",
     "blargg/oam_bug/rom_singles/6-timing_no_bug.gb": "6-timing_no_bug\n\n00 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- \n10 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- \n20 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- \n30 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- \n40 -- -- -- -- -- -- -- --",
     "blargg/oam_bug/rom_singles/7-timing_effect.gb": "7-timing_effect\n\n00000000 \nFailed\n",
-    "blargg/oam_bug/rom_singles/8-instr_effect.gb": "8-instr_effect\n\n00000000 \nINC/DEC rp pattern is wrong\n\nFailed #2\n"
+    "blargg/oam_bug/rom_singles/8-instr_effect.gb": "8-instr_effect\n\n00000000 \nINC/DEC rp pattern is wrong\n\nFailed #2\n",
+    "blargg/cgb_sound/cgb_sound.gb": "cgb_sound\n\n01:02  02:02  03:02  04:03  05:02  06:01  07:02  08:01  09:01  10:ok  11:03  12:02  \n\nRun failed tests\nindividually for\nmore details.\n\nFailed\n",
+    "blargg/cgb_sound/rom_singles/01-registers.gb": "01-registers\n\n\nNR10-NR51 and wave RAM write/read\n\nFailed #2\n",
+    "blargg/cgb_sound/rom_singles/02-len ctr.gb": "02-len ctr\n\n0 \nLength becoming 0 should clear status\n\nFailed #2\n",
+    "blargg/cgb_sound/rom_singles/03-trigger.gb": "03-trigger\n\n0 \nEnabling in second half of length period shouldn't clock length\n\nFailed #2\n",
+    "blargg/cgb_sound/rom_singles/04-sweep.gb": "04-sweep\n\n\nIf shift=0, doesn't calculate on trigger\n\nFailed #3\n",
+    "blargg/cgb_sound/rom_singles/05-sweep details.gb": "05-sweep details\n\n\nTimer treats period 0 as 8\n\nFailed #2\n",
+    "blargg/cgb_sound/rom_singles/06-overflow on trigger.gb": "06-overflow on trigger\n\n7FFF 7FFF 7FFF 7FFF 7FFF 7FFF 7FFF \n8D7112A4 \nFailed\n",
+    "blargg/cgb_sound/rom_singles/07-len sweep period sync.gb": "07-len sweep period sync\n\n\nLength period is wrong\n\nFailed #2\n",
+    "blargg/cgb_sound/rom_singles/08-len ctr during power.gb": "08-len ctr during power\n\n00 00 00 00 2144DF1C \nFailed\n",
+    "blargg/cgb_sound/rom_singles/09-wave read while on.gb": "09-wave read while on\n\n55 33 11 22 22 11 22 33 44 66 66 BB EE 22 22 77 11 77 88 55 CC CC CC 55 55 88 88 22 88 44 55 EE FF DD CC 99 99 88 88 AA BB DD 22 55 AA EE 22 77 CC 22 88 66 DD DD 55 EE 77 BB 00 66 11 DD 66 33 00 00 DD CC DD CCD5FE43 \nFailed\n",
+    "blargg/cgb_sound/rom_singles/10-wave trigger while on.gb": "10-wave trigger while on\n\n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99",
+    "blargg/cgb_sound/rom_singles/11-regs after power.gb": "11-regs after power\n\n\nPowering off should clear NR13\n\nFailed #3\n",
+    "blargg/cgb_sound/rom_singles/12-wave.gb": "12-wave\n\n\nTimer period or phase resetting is wrong\n\nFailed #2\n"
 }
