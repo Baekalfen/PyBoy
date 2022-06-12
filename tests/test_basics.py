@@ -5,6 +5,7 @@
 import base64
 import hashlib
 import os
+import os.path
 import platform
 import sys
 from io import BytesIO
@@ -15,13 +16,11 @@ import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
-from tests.utils import any_rom, any_rom_cgb, boot_rom, boot_rom_cgb, default_rom, kirby_rom, pokemon_crystal_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
 
 
-@pytest.mark.skipif(not boot_rom, reason="ROM not present")
-def test_record_replay():
+def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
@@ -55,9 +54,7 @@ def test_record_replay():
         "The replay did not result in the expected output"
 
 
-@pytest.mark.skipif(not boot_rom, reason="ROM not present")
-@pytest.mark.skipif(not is_pypy, reason="pyboy.mb.cpu is not accessible with Cython")
-def test_profiling():
+def test_profiling(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
@@ -125,8 +122,7 @@ def test_argv_parser(*args):
         assert flags[k] == v
 
 
-@pytest.mark.skipif(not kirby_rom, reason="ROM not present")
-def test_tilemaps():
+def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     for _ in range(120):
@@ -180,7 +176,7 @@ def test_tilemaps():
     pyboy.stop(save=False)
 
 
-def test_randomize_ram():
+def test_randomize_ram(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy", randomize=False)
     # RAM banks should all be 0 by default
     assert not any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not zeroed"
@@ -202,9 +198,8 @@ def test_randomize_ram():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not pokemon_crystal_rom, reason="ROM not present")
-def test_not_cgb():
-    pyboy = PyBoy(pokemon_crystal_rom, window_type="headless", cgb=False)
+def test_not_cgb(pokemon_crystal_rom):
+    pyboy = PyBoy(pokemon_crystal_rom, window_type="dummy", cgb=False)
     pyboy.set_emulation_speed(0)
     for _ in range(60 * 7):
         pyboy.tick()
@@ -220,23 +215,24 @@ OVERWRITE_PNGS = False
 
 
 @pytest.mark.parametrize("cgb", [False, True, None])
-@pytest.mark.parametrize("_bootrom, frames", [(boot_rom_cgb, 120), (boot_rom, 120), (None, 30)])
-@pytest.mark.parametrize("rom", [any_rom, any_rom_cgb])
-def test_all_modes(cgb, _bootrom, frames, rom):
-    print(cgb, _bootrom, rom)
+@pytest.mark.parametrize(
+    "_bootrom, frames", [(pytest.lazy_fixture("boot_rom_cgb"), 120), (pytest.lazy_fixture("boot_rom"), 120), (None, 30)]
+)
+@pytest.mark.parametrize("rom", [pytest.lazy_fixture("any_rom"), pytest.lazy_fixture("any_rom_cgb")])
+def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_rom_cgb):
     if cgb == False and _bootrom == boot_rom_cgb:
         pytest.skip("Invalid combination")
 
     if cgb == None and _bootrom == boot_rom_cgb and rom != any_rom_cgb:
         pytest.skip("Invalid combination")
 
-    pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
+    pyboy = PyBoy(rom, window_type="SDL2", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
     for _ in range(frames):
         pyboy.tick()
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
-    png_path = Path(f"test_results/all_modes/{rom_name}_{cgb}_{str(_bootrom).replace('/', '')}.png")
+    png_path = Path(f"test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
@@ -257,6 +253,6 @@ def test_all_modes(cgb, _bootrom, frames, rom):
             image.show()
             old_image.show()
             diff.show()
-        assert not diff.getbbox(), f"Images are different! {cgb_acid_file}"
+        assert not diff.getbbox(), f"Images are different! {(cgb, _bootrom, frames, rom)}"
 
     pyboy.stop(save=False)

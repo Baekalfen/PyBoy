@@ -58,6 +58,7 @@ tmp.state
 *.gb*.state
 *.gb*.ram
 *.gb*.rtc
+/test_roms/
 
 /pyboy/**/*.c
 /pyboy/**/*.h

@@ -15,7 +15,6 @@ import zlib
 import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
-from tests import utils
 
 event_filter = [
     WindowEvent.PRESS_SPEED_UP,
@@ -73,7 +72,7 @@ def replay(
     record_gif=None,
     gif_destination=None,
     rewind=False,
-    bootrom_file=utils.boot_rom,
+    bootrom_file=None,
     overwrite=RESET_REPLAYS,
     gif_hash=None,
     randomize=False,
@@ -158,55 +157,54 @@ def replay(
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not utils.pokemon_blue_rom, reason="ROM not present")
-def test_pokemon():
+def test_pokemon(pokemon_blue_rom, boot_rom):
     replay(
-        utils.pokemon_blue_rom,
+        pokemon_blue_rom,
         "tests/replays/pokemon_blue.replay",
         stop_frame=1074,
+        bootrom_file=boot_rom,
         verify=False, # Renderer has changed too much since recording
     )
 
 
-@pytest.mark.skipif(not utils.pokemon_blue_rom, reason="ROM not present")
-def test_pokemon_gif1():
+def test_pokemon_gif1(pokemon_blue_rom, boot_rom):
     replay(
-        utils.pokemon_blue_rom,
+        pokemon_blue_rom,
         "tests/replays/pokemon_blue_gif1.replay",
         record_gif=(1, 2714),
         gif_destination="README/1.gif",
         # gif_hash="IlT5ixD6Fw2A4gzd+PaA1l9wXs2JkpkzA0JBj9DSU08=",
         # gif_hash="mJHP5AQ8WY/3LPPpu+KUxjBPwRZmpch6ZjElQkuhhTI=",
+        bootrom_file=boot_rom,
         verify=False, # Renderer has changed too much since recording
     )
 
 
-@pytest.mark.skipif(not utils.pokemon_blue_rom, reason="ROM not present")
-def test_pokemon_gif2():
+def test_pokemon_gif2(pokemon_blue_rom, boot_rom):
     replay(
-        utils.pokemon_blue_rom,
+        pokemon_blue_rom,
         "tests/replays/pokemon_blue_gif2.replay",
         record_gif=(0, 180),
         gif_destination="README/2.gif",
         # gif_hash="6oaQi35VPr5PHyZM+JPbimRAl/2qBOL7a4CiVLxAW4w=",
         # gif_hash="wMaLgnVQO/S+VJH96FeHyv9evQEo08qi5i6zZhNm/qo=",
+        bootrom_file=boot_rom,
         verify=False, # Renderer has changed too much since recording
     )
 
 
-@pytest.mark.skipif(not utils.tetris_rom, reason="ROM not present")
-def test_tetris():
+def test_tetris(tetris_rom, boot_rom):
     replay(
-        utils.tetris_rom,
+        tetris_rom,
         "tests/replays/tetris.replay",
+        bootrom_file=boot_rom,
         verify=False, # Renderer has changed too much since recording
     )
 
 
-# @pytest.mark.skipif(not utils.supermarioland_rom, reason="ROM not present")
-# def test_supermarioland_gif():
+# def test_supermarioland_gif(supermarioland_rom):
 #     replay(
-#         utils.supermarioland_rom,
+#         supermarioland_rom,
 #         "tests/replays/supermarioland_gif.replay",
 #         record_gif=(122, 644),
 #         gif_destination="README/3.gif",
@@ -215,37 +213,36 @@ def test_tetris():
 #     )
 
 
-@pytest.mark.skipif(not utils.supermarioland_rom, reason="ROM not present")
-def test_supermarioland():
+def test_supermarioland(supermarioland_rom, boot_rom):
     replay(
-        utils.supermarioland_rom,
+        supermarioland_rom,
         "tests/replays/supermarioland.replay",
+        bootrom_file=boot_rom,
         verify=False, # Renderer has changed too much since recording
     )
 
 
-@pytest.mark.skipif(not utils.kirby_rom, reason="ROM not present")
-def test_kirby():
+def test_kirby(kirby_rom, boot_rom):
     replay(
-        utils.kirby_rom,
+        kirby_rom,
         "tests/replays/kirby_gif.replay",
         record_gif=(0, 360),
         gif_destination="README/4.gif",
         # gif_hash="3Qy32PRav6njeCDs7pHz7IrQ5agCgL/wHBkxuZLqO1Y=",
         # gif_hash="8f2Ambx4mzaaT5Obyb5/3NszEdGkUObHo9J0rR1AJUc=",
+        bootrom_file=boot_rom,
         verify=False, # Renderer has changed too much since recording
     )
 
 
-@pytest.mark.skipif(not utils.supermarioland_rom, reason="ROM not present")
-def test_rewind():
+def test_rewind(supermarioland_rom, boot_rom):
     replay(
-        utils.supermarioland_rom,
+        supermarioland_rom,
         "tests/replays/supermarioland_rewind.replay",
         record_gif=(130, 544),
         gif_destination="README/5.gif",
         rewind=True,
-        bootrom_file=None,
+        bootrom_file=boot_rom,
         verify=False,
         # gif_hash="fiCzb8LFTh4yU62TWGPEqP87HaBAc8yO4WebuHIogk0=", # Graphics is twitching at the first scanlines
         # gif_hash="EoISd0SrD8clVa/KtNKX+NDOM3uG4yq0bTtbIMssOX0=",
