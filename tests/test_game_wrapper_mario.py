@@ -65,11 +65,7 @@ def test_mario_game_over(supermarioland_rom):
     pyboy.stop()
 
 
-@pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")), #or (not supermarioland_rom) or (py_version == "3.9") or
-    #(sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
-    reason="This requires gym, which doesn't work on this platform"
-)
+@pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
 class TestOpenAIGym:
     def test_observation_type_compressed(self, supermarioland_rom):
         pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)

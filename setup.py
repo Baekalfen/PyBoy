@@ -12,7 +12,6 @@ from multiprocessing import cpu_count
 from pathlib import Path
 
 from setuptools import Extension, find_packages, setup
-from setuptools.command.test import test
 
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
@@ -34,7 +33,6 @@ def load_requirements(filename):
 
 requirements = load_requirements("requirements.txt")
 
-MSYS = os.getenv("MSYS")
 CYTHON = platform.python_implementation() != "PyPy"
 py_version = ".".join(platform.python_version_tuple()[:2])
 
@@ -87,21 +85,6 @@ if codecov:
     directive_defaults = Cython.Compiler.Options.get_directive_defaults()
     directive_defaults["linetrace"] = True
     directive_defaults["binding"] = True
-
-
-class PyTest(test):
-    def finalize_options(self):
-        super().finalize_options()
-        self.test_suite = True
-        self.test_args = []
-
-    def run_tests(self):
-        import pytest
-        args = ["tests/", f"-n{cpu_count()}", "-v", "--dist=loadfile"]
-        # args = ["tests/", "-v", "-x"] # No multithreading, fail fast
-        if codecov: # TODO: There's probably a more correct way to read the argv flags
-            args += ["--cov=./"]
-        sys.exit(pytest.main(args))
 
 
 # Add inplace functionality to the clean command
@@ -306,24 +289,14 @@ setup(
     cmdclass={
         "build_ext": build_ext,
         "clean": clean,
-        "test": PyTest
     },
     install_requires=requirements,
-    tests_require=[
-        *requirements,
-        "pytest>=6.0.0",
-        "pytest-xdist",
-        "pytest-lazy-fixture",
-        "pyopengl",
-        "gym" if CYTHON and not MSYS else "",
-        "filelock",
-    ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
-            "gym" if CYTHON and not MSYS else "",
+            "gym" if CYTHON else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it

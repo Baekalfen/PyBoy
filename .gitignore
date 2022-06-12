@@ -54,11 +54,11 @@ TestROMs/
 ROMs/
 diffDump.txt
 Core_Dump_*
-tmp.state
 *.gb*.state
 *.gb*.ram
 *.gb*.rtc
 /test_roms/
+test_data.encrypted
 
 /pyboy/**/*.c
 /pyboy/**/*.h

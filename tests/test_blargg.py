@@ -122,6 +122,7 @@ def test_blarggs(test_rom, blargg_dir):
     else:
         old_blargg = None
 
+    rom = rom.replace("\\", "/") # Fix Windows lookup
     rom = rom.replace("test_roms/", "")
     if OVERWRITE_JSON:
         with open(blargg_json, "w") as f:

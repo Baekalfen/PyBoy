@@ -291,8 +291,8 @@ def test_tetris(tetris_rom):
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
                 assert tetris.next_tetromino() == "T"
 
-                with open("tmp.state", "wb") as f:
-                    pyboy.save_state(f)
+                tmp_state = io.BytesIO()
+                pyboy.save_state(tmp_state)
                 pyboy.save_state(state_data)
                 break
 
@@ -326,18 +326,17 @@ def test_tetris(tetris_rom):
             pre_load_game_board_matrix = game_board_matrix
 
     state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
-    with open("tmp.state", "rb") as f:
-        for _f in [f, state_data]: # Tests both file-written state and in-memory state
-            pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
+    tmp_state.seek(0)
+    for _f in [tmp_state, state_data]: # Tests both file-written state and in-memory state
+        pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
+        pyboy.tick()
+        for frame in range(1016, 1865):
             pyboy.tick()
-            for frame in range(1016, 1865):
-                pyboy.tick()
 
-                if frame == 1864:
-                    game_board_matrix = list(tile_map[2:12, :18])
-                    assert game_board_matrix == pre_load_game_board_matrix
-                    break
-    os.remove("tmp.state")
+            if frame == 1864:
+                game_board_matrix = list(tile_map[2:12, :18])
+                assert game_board_matrix == pre_load_game_board_matrix
+                break
     pyboy.stop(save=False)
 
 

@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest>=6.0.0
+pytest-xdist
+pytest-lazy-fixture
+pyopengl
+gym; platform_python_implementation == 'CPython'
+filelock
+cryptography
