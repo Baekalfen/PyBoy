@@ -20,7 +20,7 @@ REQUIREMENTS = """\
 cython>=0.29.16; platform_python_implementation == 'CPython'
 numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
 numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
-pillow
+pillow>=9.1.0
 pysdl2
 """
 
@@ -313,19 +313,17 @@ setup(
         *requirements,
         "pytest>=6.0.0",
         "pytest-xdist",
+        "pytest-lazy-fixture",
         "pyopengl",
-        "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
-        "gym" if CYTHON and not MSYS and py_version != "3.9" and not (sys.platform == "win32" and py_version == "3.8")
-        else "",
+        "gym" if CYTHON and not MSYS else "",
+        "filelock",
     ],
     extras_require={
         "all": [
             "pyopengl",
             "markdown",
             "pdoc3",
-            "scipy<=1.5.3; python_version < '3.7' and platform_python_implementation == 'CPython'",
-            "gym" if CYTHON and not MSYS and py_version != "3.9" and
-            not (sys.platform == "win32" and py_version == "3.8") else "",
+            "gym" if CYTHON and not MSYS else "",
         ],
     },
     zip_safe=(not CYTHON), # Cython doesn't support it

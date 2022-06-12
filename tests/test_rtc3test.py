@@ -10,23 +10,13 @@ import PIL
 import pytest
 from pyboy import PyBoy, WindowEvent
 
-from .utils import url_open
-
 OVERWRITE_PNGS = False
 
 
 # https://github.com/aaaaaa123456789/rtc3test
 @pytest.mark.skip("RTC is too unstable")
 @pytest.mark.parametrize("subtest", [0, 1, 2])
-def test_rtc3test(subtest):
-    # Has to be in here. Otherwise all test workers will import this file, and cause an error.
-    rtc3test_file = "rtc3test.gb"
-    if not os.path.isfile(rtc3test_file):
-        print(url_open("https://pyboy.dk/mirror/LICENSE.rtc3test.txt"))
-        rtc3test_data = url_open("https://pyboy.dk/mirror/rtc3test.gb")
-        with open(rtc3test_file, "wb") as rom_file:
-            rom_file.write(rtc3test_data)
-
+def test_rtc3test(subtest, rtc3test_file):
     pyboy = PyBoy(rtc3test_file, window_type="headless")
     pyboy.set_emulation_speed(0)
     for _ in range(59):

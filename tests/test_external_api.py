@@ -13,18 +13,19 @@ import pytest
 from PIL import ImageChops
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
-from tests.utils import BOOTROM_FRAMES_UNTIL_LOGO, any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
+
+from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
 
-def test_misc():
+def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.stop(save=False)
 
 
-def test_tiles():
-    pyboy = PyBoy(default_rom, window_type="headless")
+def test_tiles(default_rom):
+    pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     for _ in range(BOOTROM_FRAMES_UNTIL_LOGO):
         pyboy.tick()
@@ -63,8 +64,7 @@ def test_tiles():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not boot_rom or any_rom == default_rom, reason="ROM not present")
-def test_screen_buffer_and_image():
+def test_screen_buffer_and_image(any_rom, boot_rom):
     cformat = "RGBA"
     boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
 
@@ -113,11 +113,10 @@ def test_screen_buffer_and_image():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not tetris_rom, reason="ROM not present")
-def test_tetris():
+def test_tetris(tetris_rom):
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     tetris = pyboy.game_wrapper()
     tetris.set_tetromino("T")
@@ -342,9 +341,8 @@ def test_tetris():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
-def test_tilemap_position_list():
-    pyboy = PyBoy(supermarioland_rom, window_type="headless")
+def test_tilemap_position_list(supermarioland_rom):
+    pyboy = PyBoy(supermarioland_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     for _ in range(100):
         pyboy.tick()
@@ -381,7 +379,7 @@ def test_tilemap_position_list():
     pyboy.stop(save=False)
 
 
-def get_set_override():
+def get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     pyboy.tick()

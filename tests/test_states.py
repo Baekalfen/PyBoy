@@ -6,16 +6,19 @@ import io
 import platform
 
 from pyboy import PyBoy, WindowEvent
-from tests.utils import tetris_rom
 
 NEXT_TETROMINO_ADDR = 0xC213
 
 
-def test_all_modes():
+def test_load_save_consistency(tetris_rom):
     pyboy = PyBoy(tetris_rom, window_type="headless", game_wrapper=True)
     assert pyboy.cartridge_title() == "TETRIS"
     pyboy.set_emulation_speed(0)
     pyboy.get_memory_value(NEXT_TETROMINO_ADDR)
+
+    ##############################################################
+    # Set up some kind of state, where not all registers are reset
+    ##############################################################
 
     tetris = pyboy.game_wrapper()
 
@@ -38,17 +41,24 @@ def test_all_modes():
         for _ in range(6):
             pyboy.tick()
 
+    ##############################################################
+    # Verify
+    ##############################################################
+
+    # Save
     saved_state.seek(0)
     pyboy.save_state(saved_state)
     tetris._set_timer_div(timer_div)
 
-    game_has_started = True
-
+    # Load
     saved_state.seek(0)
     pyboy.load_state(saved_state)
 
+    # Save again
     saved_state2 = io.BytesIO()
     pyboy.save_state(saved_state2)
+
+    # Compare saves
     saved_state2.seek(0)
     saved_state.seek(0)
     first = saved_state.read()
