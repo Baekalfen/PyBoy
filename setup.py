@@ -16,7 +16,6 @@ from setuptools.command.test import test
 
 from tests.utils import kirby_rom, supermarioland_rom, tetris_rom
 
-
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
@@ -25,6 +24,7 @@ numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
 numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
 pillow
 pysdl2
+pysdl2-dll
 """
 
 

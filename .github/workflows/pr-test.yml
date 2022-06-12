@@ -36,7 +36,6 @@ jobs:
     - name: Set Windows env
       if: ${{ contains(matrix.os, 'windows') }}
       run: |
-        echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         echo "TEST_CI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         echo "TEST_NO_UI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Set up Python ${{ matrix.python-version }}
@@ -89,7 +88,6 @@ jobs:
     - name: Set Windows env
       if: ${{ contains(matrix.os, 'windows') }}
       run: |
-        echo "PYSDL2_DLL_PATH=C:\SDL2\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         echo "TEST_CI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         echo "TEST_NO_UI=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Set up Python ${{ matrix.python-version }}
@@ -130,11 +128,6 @@ jobs:
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
-          echo "Installing SDL2"
-          yum -y install mercurial
-          bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
-          ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
-
           cd /work
           echo "Starting build"
           python setup.py build_ext --inplace
@@ -148,19 +141,6 @@ jobs:
 
           python -m pip install auditwheel
           auditwheel repair dist/*.whl
-
-          # Patching in the correct SDL2
-          cd wheelhouse
-          yum -y install zip
-          for f in *.whl; do
-              echo "Patching $f file..."
-              SDLNAME=$(unzip -l $f | egrep -wo "(pyboy.libs/libSDL2.*$)")
-              mkdir -p pyboy.libs
-              cp /usr/local/lib/libSDL2-2.0.so.0 $SDLNAME
-              # Updating single SDL2 file in the .zip (.whl)
-              zip $f $SDLNAME
-          done
-          cd ..
 
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
