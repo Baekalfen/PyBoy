@@ -20,7 +20,7 @@ blargg_json = "test_results/blargg.json"
 
 
 def run_rom(rom):
-    pyboy = PyBoy(str(rom), window_type="dummy")
+    pyboy = PyBoy(str(rom), window_type="dummy", cgb="cgb" in rom)
     pyboy.set_emulation_speed(0)
     t = time.time()
     result = ""
@@ -51,21 +51,20 @@ def run_rom(rom):
 
 
 @pytest.mark.parametrize(
-    "test_rom",
-    [
-        # "cgb_sound/cgb_sound.gb",
-        # "cgb_sound/rom_singles/01-registers.gb",
-        # "cgb_sound/rom_singles/02-len ctr.gb",
-        # "cgb_sound/rom_singles/03-trigger.gb",
-        # "cgb_sound/rom_singles/04-sweep.gb",
-        # "cgb_sound/rom_singles/05-sweep details.gb",
-        # "cgb_sound/rom_singles/06-overflow on trigger.gb",
-        # "cgb_sound/rom_singles/07-len sweep period sync.gb",
-        # "cgb_sound/rom_singles/08-len ctr during power.gb",
-        # "cgb_sound/rom_singles/09-wave read while on.gb",
-        # "cgb_sound/rom_singles/10-wave trigger while on.gb",
-        # "cgb_sound/rom_singles/11-regs after power.gb",
-        # "cgb_sound/rom_singles/12-wave.gb",
+    "test_rom", [
+        "cgb_sound/cgb_sound.gb",
+        "cgb_sound/rom_singles/01-registers.gb",
+        "cgb_sound/rom_singles/02-len ctr.gb",
+        "cgb_sound/rom_singles/03-trigger.gb",
+        "cgb_sound/rom_singles/04-sweep.gb",
+        "cgb_sound/rom_singles/05-sweep details.gb",
+        "cgb_sound/rom_singles/06-overflow on trigger.gb",
+        "cgb_sound/rom_singles/07-len sweep period sync.gb",
+        "cgb_sound/rom_singles/08-len ctr during power.gb",
+        "cgb_sound/rom_singles/09-wave read while on.gb",
+        "cgb_sound/rom_singles/10-wave trigger while on.gb",
+        "cgb_sound/rom_singles/11-regs after power.gb",
+        "cgb_sound/rom_singles/12-wave.gb",
         "cpu_instrs/cpu_instrs.gb",
         "cpu_instrs/individual/01-special.gb",
         "cpu_instrs/individual/02-interrupts.gb",
