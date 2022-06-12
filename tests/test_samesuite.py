@@ -105,7 +105,7 @@ saved_state = None
         (True, "dmg", "ppu/blocking_bgpi_increase.gb"),
     ]
 )
-def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_rom_cgb, boot_rom, default_rom):
+def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, default_rom):
     global saved_state
 
     if saved_state is None:
@@ -115,7 +115,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_rom_cgb, boot_rom, d
             default_rom,
             window_type="headless",
             cgb=gb_type == "cgb",
-            bootrom=boot_rom_cgb if gb_type == "cgb" else boot_rom
+            bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom
         )
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
@@ -128,7 +128,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_rom_cgb, boot_rom, d
         samesuite_dir + rom,
         window_type="headless",
         cgb=gb_type == "cgb",
-        bootrom=boot_rom_cgb if gb_type == "cgb" else boot_rom
+        bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom
     )
     pyboy.set_emulation_speed(0)
     saved_state.seek(0)

@@ -38,12 +38,7 @@ def tiles_id():
     return {"BLANK": 47, "Z": 130, "DEADBLOCK": 135}
 
 
-@pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) #or
-    #(sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
-    ,
-    reason="This requires gym, which doesn't work on this platform"
-)
+@pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
 class TestOpenAIGym:
     def test_raw(self, pyboy):
         env = pyboy.openai_gym(observation_type="raw", action_type="press")

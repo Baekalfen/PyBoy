@@ -216,17 +216,17 @@ OVERWRITE_PNGS = False
 
 @pytest.mark.parametrize("cgb", [False, True, None])
 @pytest.mark.parametrize(
-    "_bootrom, frames", [(pytest.lazy_fixture("boot_rom_cgb"), 120), (pytest.lazy_fixture("boot_rom"), 120), (None, 30)]
+    "_bootrom, frames", [(pytest.lazy_fixture("boot_cgb_rom"), 120), (pytest.lazy_fixture("boot_rom"), 120), (None, 30)]
 )
 @pytest.mark.parametrize("rom", [pytest.lazy_fixture("any_rom"), pytest.lazy_fixture("any_rom_cgb")])
-def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_rom_cgb):
-    if cgb == False and _bootrom == boot_rom_cgb:
+def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
+    if cgb == False and _bootrom == boot_cgb_rom:
         pytest.skip("Invalid combination")
 
-    if cgb == None and _bootrom == boot_rom_cgb and rom != any_rom_cgb:
+    if cgb == None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
         pytest.skip("Invalid combination")
 
-    pyboy = PyBoy(rom, window_type="SDL2", bootrom_file=_bootrom, cgb=cgb)
+    pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
     for _ in range(frames):
         pyboy.tick()

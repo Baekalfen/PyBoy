@@ -59,6 +59,4 @@ docs: clean
 	rm -rf html
 
 repackage_secrets:
-	tar cvf ci_secrets.tar $(shell ${PY} -c "import codecs; print(codecs.encode('EBZf', 'rot13'), end='')")
-	travis encrypt-file ci_secrets.tar --pro
-	rm ci_secrets.tar
+	python3 -c 'from tests.conftest import pack_secrets; pack_secrets()'
