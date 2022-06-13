@@ -4,3 +4,4 @@ numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
 numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
 pillow>=9.1.0
 pysdl2
+pysdl2-dll

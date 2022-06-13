@@ -170,19 +170,6 @@ jobs:
           python -m pip install auditwheel
           auditwheel repair dist/*.whl
 
-          # Patching in the correct SDL2
-          cd wheelhouse
-          yum -y install zip
-          for f in *.whl; do
-              echo "Patching $f file..."
-              SDLNAME=$(unzip -l $f | egrep -wo "(pyboy.libs/libSDL2.*$)")
-              mkdir -p pyboy.libs
-              cp /usr/local/lib/libSDL2-2.0.so.0 $SDLNAME
-              # Updating single SDL2 file in the .zip (.whl)
-              zip $f $SDLNAME
-          done
-          cd ..
-
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
           chmod 777 -R . # Fix permissions to help cleaning up outside of Docker
