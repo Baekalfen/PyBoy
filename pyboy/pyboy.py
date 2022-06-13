@@ -480,6 +480,8 @@ class PyBoy:
 
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
+        Some window types do not implement a frame-limiter, and will always run at full speed.
+
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         """

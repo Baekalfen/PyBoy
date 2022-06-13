@@ -52,6 +52,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glPixelZoom(self.scale, self.scale)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
+        logger.warning("OpenGL implementation is incomplete. To limit the frame-rate, set your monitor to 60hz.")
 
     # Cython does not cooperate with lambdas
     def _key(self, c, x, y):
