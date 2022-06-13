@@ -20,22 +20,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup Ubuntu
-      if: ${{ contains(matrix.os, 'ubuntu-latest') }}
-      run: |
-        sudo apt update
-        sudo apt install libsdl2-dev
-    - name: Setup macOS
-      if: ${{ contains(matrix.os, 'macos-latest') }}
-      run: |
-        brew install sdl2
-    - name: Setup Windows
-      if: ${{ contains(matrix.os, 'windows-latest') }}
-      run: |
-        (New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')
-        Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\SDL2\
-
-        echo "PYSDL2_DLL_PATH=C:\SDL2\SDL2-2.0.10\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -83,27 +67,13 @@ jobs:
           python-version: pypy-3.9
     steps:
     - uses: actions/checkout@v2
-    - name: Setup Ubuntu
-      if: ${{ contains(matrix.os, 'ubuntu-latest') }}
-      run: |
-        sudo apt update
-        sudo apt install libsdl2-dev
     - name: Setup macOS
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
-        brew install sdl2
-
         # Fix cryptography build: https://github.com/pyca/cryptography/issues/3489
         brew install openssl
         echo "CPPFLAGS=-I/usr/local/opt/openssl/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L/usr/local/opt/openssl/lib" >> $GITHUB_ENV
-    - name: Setup Windows
-      if: ${{ contains(matrix.os, 'windows-latest') }}
-      run: |
-        (New-Object Net.WebClient).DownloadFile('https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip', 'SDL2-devel-2.0.10-VC.zip')
-        Expand-Archive -Force 'SDL2-devel-2.0.10-VC.zip' C:\SDL2\
-
-        echo "PYSDL2_DLL_PATH=C:\SDL2\SDL2-2.0.10\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -148,11 +118,6 @@ jobs:
         run: |
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
-
-          echo "Installing SDL2"
-          yum -y install mercurial
-          bash -c "hg clone https://hg.libsdl.org/SDL SDL; cd SDL; mkdir build; cd build; ../configure; make; make install"
-          ln -s /usr/local/lib/libSDL2-2.0.so.0 /usr/lib64/libSDL2-2.0.so.0
 
           cd /work
           echo "Starting build"
