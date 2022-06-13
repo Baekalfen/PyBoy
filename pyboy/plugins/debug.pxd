@@ -2,10 +2,10 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
 cimport cython
 from cpython.array cimport array
 
-from . cimport sdl2
 cimport pyboy.plugins.window_sdl2
 from pyboy.core.mb cimport Motherboard
 from pyboy.botsupport.sprite cimport Sprite
@@ -14,6 +14,7 @@ from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+
 
 cdef uint32_t COLOR
 cdef uint32_t MASK
@@ -51,9 +52,9 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef str base_title
     cdef int window_id
 
-    cdef sdl2.SDL_Window *_window
-    cdef sdl2.SDL_Renderer *_sdlrenderer
-    cdef sdl2.SDL_Texture *_sdltexturebuffer
+    cdef object _window
+    cdef object _sdlrenderer
+    cdef object _sdltexturebuffer
     cdef array buf
     cdef uint32_t[:,:] buf0
     cdef object buf_p
@@ -64,13 +65,9 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     @cython.locals(i=int, tw=int, th=int, xx=int, yy=int)
     cdef void mark_tile(self, int, int, uint32_t, int, int, bint)
 
-    cdef inline void _update_display(self):
-        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, NULL, self.buf.data.as_voidptr, self.width*4)
-        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, NULL, NULL)
-        sdl2.SDL_RenderPresent(self._sdlrenderer)
-
     @cython.locals(event=WindowEvent)
     cdef list handle_events(self, list)
+
 
 cdef class TileViewWindow(BaseDebugWindow):
     cdef int scanline_x
@@ -133,19 +130,13 @@ cdef class MemoryWindow(BaseDebugWindow):
     cdef int start_address
     cdef uint8_t[:] _text_buffer_raw
     cdef uint8_t[:,:] text_buffer
-    cdef sdl2.SDL_Texture* font_texture
+    cdef object font_texture
     cdef array fbuf
     cdef uint32_t[:,:] fbuf0
     cdef object fbuf_p
-    cdef sdl2.SDL_Rect src, dst
+    cdef object src, dst
     cdef int[3] fg_color
     cdef int[3] bg_color
-
-    cdef inline void _prepare_font_texture(self):
-        sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf.data.as_voidptr, 4*8)
-        sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
-        sdl2.SDL_SetTextureColorMod(self.font_texture, self.fg_color[0], self.fg_color[1], self.fg_color[2])
-        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, self.bg_color[0], self.bg_color[1], self.bg_color[2], 0xFF)
 
     cdef void write_border(self)
     @cython.locals(header=bytes, addr=bytes)

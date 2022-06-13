@@ -404,6 +404,7 @@ class Renderer:
             self._spritecache0 = memoryview(self._spritecache0_raw).cast("I", shape=(TILES * 8, 8))
             # OBP1 palette
             self._spritecache1 = memoryview(self._spritecache1_raw).cast("I", shape=(TILES * 8, 8))
+            self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
         else:
             stride = TILES * 8 * 8
 

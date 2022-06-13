@@ -10,7 +10,10 @@
 from array import array
 from ctypes import c_void_p
 
-import sdl2
+try:
+    import sdl2
+except ImportError:
+    sdl2 = None
 
 SOUND_DESYNC_THRESHOLD = 5
 CPU_FREQ = 4213440 # hz
@@ -18,7 +21,7 @@ CPU_FREQ = 4213440 # hz
 
 class Sound:
     def __init__(self, enabled):
-        self.enabled = enabled
+        self.enabled = enabled and (sdl2 is not None)
         if self.enabled:
             # Initialization is handled in the windows, otherwise we'd need this
             sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
