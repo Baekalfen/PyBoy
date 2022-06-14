@@ -107,24 +107,33 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
+        manylinux-version: ['manylinux2010_x86_64', 'manylinux_2_28_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
 
     steps:
     - uses: actions/checkout@v2
     - name: Docker Run Action
       uses: addnab/docker-run-action@v3
       with:
-        image: quay.io/pypa/manylinux2010_x86_64:latest
+        image: quay.io/pypa/${{ matrix.manylinux-version }}:latest
         options: -v ${{ github.workspace }}:/work -e GITHUB_REF=${{ github.ref }} --rm
         run: |
+          set -e
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
+          if [[ "${{ matrix.manylinux-version }}" == "manylinux_2_28_x86_64" ]]; then
+            dnf install libjpeg-devel -y
+          else
+            yum -y install libjpeg-devel
+          fi
+
           cd /work
           echo "Starting build"
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
           python setup.py build_ext --inplace
 
           echo "Starting tests"
-          python -m pip install --upgrade pip
           python -m pip install -r requirements_tests.txt
           PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_CI=1 TEST_NO_UI=1 python -m pytest tests/ -n2 -v
 
