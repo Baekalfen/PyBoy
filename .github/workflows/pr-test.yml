@@ -106,7 +106,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
+        python-version: ['cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
         manylinux-version: ['manylinux2010_x86_64', 'manylinux_2_28_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
 
     steps:
