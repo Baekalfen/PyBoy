@@ -6,3 +6,4 @@ pyopengl
 gym; platform_python_implementation == 'CPython'
 filelock
 cryptography
+GitPython

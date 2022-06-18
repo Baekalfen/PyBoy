@@ -6,11 +6,13 @@
 import hashlib
 import io
 import os
+import platform
 import time
 import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
 
+import git
 import pytest
 from cryptography.fernet import Fernet
 from filelock import FileLock
@@ -87,6 +89,11 @@ def pokemon_blue_rom(secrets):
 
 
 @pytest.fixture(scope="session")
+def pokemon_gold_rom(secrets):
+    return locate_sha256(b"fb0016d27b1e5374e1ec9fcad60e6628d8646103b5313ca683417f52b97e7e4e")
+
+
+@pytest.fixture(scope="session")
 def pokemon_crystal_rom(secrets):
     return locate_sha256(b"d6702e353dcbe2d2c69183046c878ef13a0dae4006e8cdff521cca83dd1582fe")
 
@@ -117,44 +124,44 @@ def any_rom_cgb(secrets, pokemon_crystal_rom):
     return pokemon_crystal_rom
 
 
-extra_test_rom_dir = "test_roms/"
+extra_test_rom_dir = Path("test_roms/")
 os.makedirs(extra_test_rom_dir, exist_ok=True)
 
 
 @pytest.fixture(scope="session")
 def samesuite_dir():
-    path = extra_test_rom_dir + "SameSuite"
-    with FileLock(path + ".lock") as lock:
+    path = extra_test_rom_dir / Path("SameSuite")
+    with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.SameSuite.txt"))
             samesuite_data = io.BytesIO(url_open("https://pyboy.dk/mirror/SameSuite.zip"))
             with ZipFile(samesuite_data) as _zip:
                 _zip.extractall(path)
-    return path + "/"
+    return str(path) + "/"
 
 
 @pytest.fixture(scope="session")
 def mooneye_dir():
-    path = extra_test_rom_dir + "mooneye"
-    with FileLock(path + ".lock") as lock:
+    path = extra_test_rom_dir / Path("mooneye")
+    with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.mooneye.txt"))
             mooneye_data = io.BytesIO(url_open("https://pyboy.dk/mirror/mooneye.zip"))
             with ZipFile(mooneye_data) as _zip:
                 _zip.extractall(path)
-    return path + "/"
+    return str(path) + "/"
 
 
 @pytest.fixture(scope="session")
 def magen_test_file():
-    path = extra_test_rom_dir + "magen_test2.gb"
-    with FileLock(path + ".lock") as lock:
+    path = extra_test_rom_dir / Path("magen_test2.gb")
+    with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.magen_test.txt"))
             magen_test_data = url_open("https://pyboy.dk/mirror/magen_test_bg_oam_priority.gbc")
             with open(path, "wb") as rom_file:
                 rom_file.write(magen_test_data)
-    return path
+    return str(path)
 
 
 @pytest.fixture(scope="session")
@@ -178,60 +185,106 @@ def blargg_dir():
                 blargg_data = io.BytesIO(url_open(f"https://pyboy.dk/mirror/blargg/{name}.zip"))
                 with ZipFile(blargg_data) as _zip:
                     _zip.extractall(path)
-    return path
+    return str(path)
 
 
 @pytest.fixture(scope="session")
 def dmg_acid_file():
-    path = extra_test_rom_dir + "dmg_acid2.gb"
-    with FileLock(path + ".lock") as lock:
+    path = extra_test_rom_dir / Path("dmg_acid2.gb")
+    with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.dmg-acid2.txt"))
             dmg_acid_data = url_open("https://pyboy.dk/mirror/dmg-acid2.gb")
             with open(path, "wb") as rom_file:
                 rom_file.write(dmg_acid_data)
-    return path
+    return str(path)
 
 
 @pytest.fixture(scope="session")
 def cgb_acid_file():
-    path = extra_test_rom_dir + "cgb_acid2.gbc"
-    with FileLock(path + ".lock") as lock:
+    path = extra_test_rom_dir / Path("cgb_acid2.gbc")
+    with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.cgb-acid2.txt"))
             cgb_acid_data = url_open("https://pyboy.dk/mirror/cgb-acid2.gbc")
             with open(path, "wb") as rom_file:
                 rom_file.write(cgb_acid_data)
-    return path
+    return str(path)
 
 
 @pytest.fixture(scope="session")
 def shonumi_dir():
     # Has to be in here. Otherwise all test workers will import this file, and cause an error.
-    path = extra_test_rom_dir + "GB Tests"
-    if not os.path.isdir(path):
-        print(url_open("https://pyboy.dk/mirror/SOURCE.GBTests.txt"))
-        shonumi_data = io.BytesIO(url_open("https://pyboy.dk/mirror/GB%20Tests.zip"))
-        with ZipFile(shonumi_data) as _zip:
-            _zip.extractall(path)
-    return path + "/"
+    path = extra_test_rom_dir / Path("GB Tests")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isdir(path):
+            print(url_open("https://pyboy.dk/mirror/SOURCE.GBTests.txt"))
+            shonumi_data = io.BytesIO(url_open("https://pyboy.dk/mirror/GB%20Tests.zip"))
+            with ZipFile(shonumi_data) as _zip:
+                _zip.extractall(path)
+    return str(path) + "/"
 
 
 @pytest.fixture(scope="session")
 def rtc3test_file():
-    path = extra_test_rom_dir + "rtc3test.gb"
-    if not os.path.isfile(path):
-        print(url_open("https://pyboy.dk/mirror/LICENSE.rtc3test.txt"))
-        rtc3test_data = url_open("https://pyboy.dk/mirror/rtc3test.gb")
-        with open(path, "wb") as rom_file:
-            rom_file.write(rtc3test_data)
-    return path
+    path = extra_test_rom_dir / Path("rtc3test.gb")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.rtc3test.txt"))
+            rtc3test_data = url_open("https://pyboy.dk/mirror/rtc3test.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(rtc3test_data)
+    return str(path)
+
+
+@pytest.fixture(scope="session")
+def git_tetris_ai():
+    if os.path.isfile("README/7.gif") or platform.system() == "Windows":
+        return None
+
+    import venv
+    path = Path("tetris")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isdir(path):
+            # NOTE: No affiliation
+            git.Git(path).clone("https://github.com/uiucanh/tetris.git")
+        _venv = venv.EnvBuilder(with_pip=True)
+        _venv_path = Path(".venv")
+        _venv.create(path / _venv_path)
+        # _venv_context = _venv.ensure_directories(path / Path('.venv'))
+        assert os.system(
+            f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install numpy torch matplotlib graphviz'
+        ) == 0
+        # Overwrite PyBoy with local version
+        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
+    return str(path)
+
+
+@pytest.fixture(scope="session")
+def git_pyboy_rl():
+    if os.path.isfile("README/6.gif") or platform.system() == "Windows":
+        return None
+
+    import venv
+    path = Path("PyBoy-RL")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isdir(path):
+            # NOTE: No affiliation
+            git.Git(path).clone("https://github.com/lixado/PyBoy-RL.git")
+        _venv = venv.EnvBuilder(with_pip=True)
+        _venv_path = Path(".venv")
+        _venv.create(path / _venv_path)
+        # _venv_context = _venv.ensure_directories(path / Path('.venv'))
+        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r requirements.txt') == 0
+        # Overwrite PyBoy with local version
+        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
+    return str(path)
 
 
 @pytest.fixture(scope="session")
 def secrets():
-    path = extra_test_rom_dir + "secrets"
-    with FileLock(path + ".lock") as lock:
+    path = extra_test_rom_dir / Path("secrets")
+    with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isfile(path):
             fernet = Fernet(os.environ["PYTEST_SECRETS_KEY"].encode())
 
@@ -241,14 +294,19 @@ def secrets():
 
             with ZipFile(data, "r") as _zip:
                 _zip.extractall(path)
-    return path
+    return str(path)
 
 
 def pack_secrets():
+    global rom_entries
+    rom_entries = locate_roms()
+    rom_entries.update(locate_roms("ROMs/"))
+
     data = io.BytesIO()
     with ZipFile(data, "w") as _zip:
         for rom in [globals()[x] for x in globals().keys() if x.endswith("_rom") and x != "any_rom"]:
-            _rom = rom.__pytest_wrapped__.obj()
+            _secrets_fixture = None
+            _rom = rom.__pytest_wrapped__.obj(_secrets_fixture)
             _zip.write(_rom, os.path.basename(_rom))
 
     key = Fernet.generate_key()
