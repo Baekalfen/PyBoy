@@ -11,23 +11,48 @@ If you've read the report and want more explicit details, have a look at the [Pa
 
 __If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or write on our [Discord channel](https://discord.gg/Zrf2nyH).
 
-<p align="center">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/1.gif" width="320">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/2.gif" width="320"><br>
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/5.gif" width="320">
-<img src="https://github.com/Baekalfen/PyBoy/raw/master/README/4.gif" width="320">
-</p>
+
+<!---
+Generate GIF with the layout and captions
+-->
+<table>
+  <tbody>
+    <tr>
+      <td colspan="3">
+<div align="center">
+<img src="README/1.gif" width="400"><br>
+</div>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">Rewind any game<br>
+      </td>
+      <td align="center"><a href=https://github.com/uiucanh/tetris>Beat world records</a><br>
+      </td>
+      <td align="center"><a href=https://github.com/lixado/PyBoy-RL>Train with Reinforcement Learning</a><br>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="README/5.gif" width="200">
+      </td>
+      <td align="center">
+        <img src="README/7.gif" width="200">
+      </td>
+      <td align="center">
+        <img src="README/6.gif" width="200">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 
 Installation
 ============
 The instructions are simple, if you already have a functioning Python environment on your machine.
 
- 1. Install SDL2 through your package manager:
-    - Ubuntu: __`sudo apt install libsdl2-dev`__
-    - Fedora: __`sudo dnf install SDL2-devel`__
-    - macOS: __`brew install sdl2`__
-
- 2. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
+ 1. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
+ 2. If your system isn't supported by [pysdl2-dll](https://pypi.org/project/pysdl2-dll/), you'll need to install SDL2 from your package manager.
 
 If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
 

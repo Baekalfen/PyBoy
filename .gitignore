@@ -59,6 +59,10 @@ Core_Dump_*
 *.gb*.rtc
 /test_roms/
 test_data.encrypted
+tetris.lock
+tetris/
+PyBoy-RL.lock
+PyBoy-RL/
 
 /pyboy/**/*.c
 /pyboy/**/*.h
