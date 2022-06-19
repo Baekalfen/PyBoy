@@ -41,7 +41,7 @@ jobs:
         pip install -r requirements_tests.txt
         python -m pytest tests/ -n2 -v
     - name: Build and upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !contains(matrix.os, 'linux') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !contains(matrix.os, 'ubuntu') }}
       run: |
         echo "Building wheel and uploading"
         pip install wheel twine
