@@ -261,65 +261,6 @@ The hardware details are described in the Pan Docs\footnote{\url{http://bgb.birc
 \end{description}
 
 
-\chapter*{Emulation -- Improve Screen Rendering}
-\section*{Introduction}
-The current implementation of PyBoy has support for rendering graphics, but it is quite limited in it's accuracy. The task will be to pass as much of the DMG Acid2\footnote{https://github.com/mattcurrie/dmg-acid2} test as possible.
-
-The hardware details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#videodisplay}}
-
-\section*{Tasks}
-\begin{description}
-    \item [Read and find documentation]
-        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
-
-    \item [Look at the current implementation]
-        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide the needed support for this task. Look through the current implementation and familiarize yourself with the code. Especially the contents of \texttt{pyboy/core/lcd.py}.
-
-    \item [Identify issues]
-        Try starting the test ROM with the current implementation and identify any issues.
-
-    \item [Fix the video renderer]
-        Modify the renderer to output the correct result. Go back and identify the remaining issues, and keep iterating.
-
-    \item [Final polishing and testing]
-        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy.
-
-    \item [Conclude results]
-        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
-
-\end{description}
-
-
-\chapter*{Emulation -- Game Boy Color}
-\section*{Introduction}
-The current implementation of PyBoy only supports the original black-and-white Game Boy from 1989. The Game Boy Color shares almost all of the same architecture of the original Game Boy, but adds a little more memory, a modified video controller and double the CPU frequency. The current implementation trivially supports doubling the CPU speed, so this won't be an issue.
-
-The details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#videodisplay}}
-
-\section*{Tasks}
-\begin{description}
-    \item [Read and find documentation]
-        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
-
-    \item [Look at the current implementation]
-        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide the needed support for color. Look through the current implementation and familiarize yourself with the code.
-
-    \item [Change PyBoy to make it start a GBC ROM]
-        The Game Boy ROMs do a few checks to determine it is on Game Boy Color (GBC) hardware. If these checks fail, it shows a warning and stops. Find these checks in the Pac Docs, and modify PyBoy to make it past the non-color warning message.
-
-    \item [Add the extra memory]
-        The Game Boy Color had more memory than the original Game Boy. Add these extra memory banks to the system, and the control register (see FF4F in Pan Docs). Memory banks are present multiple places already, so it won't be hard to implement.
-
-    \item [Modify the video renderer]
-        Add the needed functionality for the emulator to read the color data when rendering. Also add the functionality of the special registers, which controls the color palettes.
-
-    \item [Final polishing and testing]
-        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy Color.
-
-    \item [Conclude results]
-        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
-
-\end{description}
 
 
 \chapter*{Emulation -- Link Cable}
@@ -516,5 +457,64 @@ The sound controller supports 4 primitive types of tone and noise generators. Th
 
 \end{description}
 
+\chapter*{Emulation -- Improve Screen Rendering}
+\section*{Introduction}
+The current implementation of PyBoy has support for rendering graphics, but it is quite limited in it's accuracy. The task will be to pass as much of the DMG Acid2\footnote{https://github.com/mattcurrie/dmg-acid2} test as possible.
+
+The hardware details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#videodisplay}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide the needed support for this task. Look through the current implementation and familiarize yourself with the code. Especially the contents of \texttt{pyboy/core/lcd.py}.
+
+    \item [Identify issues]
+        Try starting the test ROM with the current implementation and identify any issues.
+
+    \item [Fix the video renderer]
+        Modify the renderer to output the correct result. Go back and identify the remaining issues, and keep iterating.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+
+\chapter*{Emulation -- Game Boy Color}
+\section*{Introduction}
+The current implementation of PyBoy only supports the original black-and-white Game Boy from 1989. The Game Boy Color shares almost all of the same architecture of the original Game Boy, but adds a little more memory, a modified video controller and double the CPU frequency. The current implementation trivially supports doubling the CPU speed, so this won't be an issue.
+
+The details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#videodisplay}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide the needed support for color. Look through the current implementation and familiarize yourself with the code.
+
+    \item [Change PyBoy to make it start a GBC ROM]
+        The Game Boy ROMs do a few checks to determine it is on Game Boy Color (GBC) hardware. If these checks fail, it shows a warning and stops. Find these checks in the Pac Docs, and modify PyBoy to make it past the non-color warning message.
+
+    \item [Add the extra memory]
+        The Game Boy Color had more memory than the original Game Boy. Add these extra memory banks to the system, and the control register (see FF4F in Pan Docs). Memory banks are present multiple places already, so it won't be hard to implement.
+
+    \item [Modify the video renderer]
+        Add the needed functionality for the emulator to read the color data when rendering. Also add the functionality of the special registers, which controls the color palettes.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy Color.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
 
 \end{document}
