@@ -17,9 +17,7 @@ from setuptools import Extension, find_packages, setup
 REQUIREMENTS = """\
 # Change in setup.py
 cython>=0.29.16; platform_python_implementation == 'CPython'
-numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
-numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
-pillow>=9.1.0
+numpy
 pysdl2
 pysdl2-dll
 """
@@ -203,12 +201,9 @@ except FileNotFoundError:
     print("README.md not found")
     long_description = ""
 
-pyboy_version = "v0.0.0"
-print(f"Building PyBoy version: {pyboy_version}")
-
 setup(
     name="pyboy",
-    version=pyboy_version[1:],
+    version="v1.5.0",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
