@@ -57,7 +57,7 @@ class PyBoy:
         Only the `gamerom_file` argument is required.
 
         Args:
-            gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+            gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
