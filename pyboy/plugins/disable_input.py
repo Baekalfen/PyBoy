@@ -11,5 +11,5 @@ class DisableInput(PyBoyPlugin):
     def handle_events(self, events):
         return []
 
-    def enabled(self):
+    def _enabled(self):
         return self.pyboy_argv.get("no_input")

@@ -153,7 +153,7 @@ class WindowSDL2(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
-        if not self.enabled():
+        if not self.enabled:
             return
 
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
@@ -193,7 +193,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         sdl2.SDL_RenderPresent(self._sdlrenderer)
         sdl2.SDL_RenderClear(self._sdlrenderer)
 
-    def enabled(self):
+    def _enabled(self):
         if self.pyboy_argv.get("window_type") in ("SDL2", None):
             if not sdl2:
                 logger.error("Failed to import sdl2, needed for sdl2 window")

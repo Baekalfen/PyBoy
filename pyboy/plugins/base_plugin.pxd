@@ -24,7 +24,7 @@ cdef class PyBoyPlugin:
     cdef void post_tick(self)
     cdef str window_title(self)
     cdef void stop(self)
-    cpdef bint enabled(self)
+    cpdef bint _enabled(self)
 
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):

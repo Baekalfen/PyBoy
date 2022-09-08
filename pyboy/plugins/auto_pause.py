@@ -17,5 +17,5 @@ class AutoPause(PyBoyPlugin):
                 events.append(WindowEvent.UNPAUSE)
         return events
 
-    def enabled(self):
+    def _enabled(self):
         return self.pyboy_argv.get("autopause")

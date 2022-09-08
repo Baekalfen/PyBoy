@@ -19,8 +19,8 @@ from pyboy.plugins.screenshot_recorder cimport ScreenshotRecorder
 from pyboy.plugins.game_wrapper_super_mario_land cimport GameWrapperSuperMarioLand
 from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
 from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
-# imports end
 from pyboy.plugins.base_plugin cimport PyBoyPlugin, PyBoyWindowPlugin
+# imports end
 
 
 
@@ -42,22 +42,9 @@ cdef class PluginManager:
     cdef public GameWrapperSuperMarioLand game_wrapper_super_mario_land
     cdef public GameWrapperTetris game_wrapper_tetris
     cdef public GameWrapperKirbyDreamLand game_wrapper_kirby_dream_land
-    cdef bint window_sdl2_enabled
-    cdef bint window_open_gl_enabled
-    cdef bint window_headless_enabled
-    cdef bint window_dummy_enabled
-    cdef bint debug_enabled
-    cdef bint disable_input_enabled
-    cdef bint auto_pause_enabled
-    cdef bint record_replay_enabled
-    cdef bint rewind_enabled
-    cdef bint screen_recorder_enabled
-    cdef bint screenshot_recorder_enabled
-    cdef bint game_wrapper_super_mario_land_enabled
-    cdef bint game_wrapper_tetris_enabled
-    cdef bint game_wrapper_kirby_dream_land_enabled
     # plugin_cdef end
 
+    cdef void add_plugin(self, PyBoyPlugin plugin)
     cdef list handle_events(self, list)
     cdef void post_tick(self)
     cdef void _post_tick_windows(self)

@@ -22,7 +22,7 @@ class RecordReplay(PyBoyPlugin):
     def __init__(self, *args):
         super().__init__(*args)
 
-        if not self.enabled():
+        if not self.enabled:
             return
 
         if not self.pyboy_argv.get("loadstate"):
@@ -52,7 +52,7 @@ class RecordReplay(PyBoyPlugin):
             self.recorded_input,
         )
 
-    def enabled(self):
+    def _enabled(self):
         return self.pyboy_argv.get("record_input")
 
 
