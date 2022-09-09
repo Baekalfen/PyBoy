@@ -124,7 +124,7 @@ jobs:
           if [[ "${{ matrix.manylinux-version }}" == "manylinux_2_28_x86_64" ]]; then
             dnf install libjpeg-devel -y
           else
-            yum -y install libjpeg-devel libffi-devel rustc
+            yum -y install libjpeg-devel libffi-devel
           fi
 
           cd /work
@@ -134,6 +134,9 @@ jobs:
           python setup.py build_ext --inplace
 
           echo "Starting tests"
+          if [[ "${{ matrix.manylinux-version }}" == "manylinux2010_x86_64" ]]; then
+            python -m pip install cryptography==37
+          fi
           python -m pip install -r requirements_tests.txt
           PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_CI=1 TEST_NO_UI=1 python -m pytest tests/ -n2 -v
 
