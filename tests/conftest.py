@@ -79,7 +79,7 @@ def boot_cgb_rom(secrets):
 
 
 @pytest.fixture(scope="session")
-def default_rom(secrets):
+def default_rom():
     return str(Path("pyboy/default_rom.gb"))
 
 
@@ -113,10 +113,9 @@ def kirby_rom(secrets):
     return locate_sha256(b"0f6dba94fae248d419083001c42c02a78be6bd3dff679c895517559e72c98d58")
 
 
-# default_rom last, as it doesn't have the Nintendo logo
 @pytest.fixture(scope="session")
-def any_rom(secrets, pokemon_blue_rom, tetris_rom, supermarioland_rom, kirby_rom, default_rom):
-    return pokemon_blue_rom or tetris_rom or supermarioland_rom or kirby_rom or default_rom
+def any_rom(default_rom):
+    return default_rom
 
 
 @pytest.fixture(scope="session")
@@ -283,6 +282,9 @@ def git_pyboy_rl():
 
 @pytest.fixture(scope="session")
 def secrets():
+    if not os.environ.get("PYTEST_SECRETS_KEY"):
+        pytest.skip("Cannot access secrets")
+
     path = extra_test_rom_dir / Path("secrets")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isfile(path):
