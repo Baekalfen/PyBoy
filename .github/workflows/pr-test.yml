@@ -124,7 +124,7 @@ jobs:
           if [[ "${{ matrix.manylinux-version }}" == "manylinux_2_28_x86_64" ]]; then
             dnf install libjpeg-devel -y
           else
-            yum -y install libjpeg-devel libffi-devel
+            yum -y install libjpeg-devel libffi-devel rustc
           fi
 
           cd /work
