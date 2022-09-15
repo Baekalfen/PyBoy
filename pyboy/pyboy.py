@@ -92,6 +92,9 @@ class PyBoy:
         color_palette=defaults["color_palette"],
         cgb_color_palette=defaults["cgb_color_palette"],
         title_status=False,
+        serial_address=None,
+        serial_bind=None,
+        serial_interrupt_based=False,
         **kwargs,
     ):
         """
@@ -209,8 +212,9 @@ class PyBoy:
             sound_sample_rate,
             cgb,
             randomize=randomize,
-            serial_address=kwargs["serial_address"],
-            serial_bind=kwargs["serial_bind"],
+            serial_address=serial_address,
+            serial_bind=serial_bind,
+            serial_interrupt_based=serial_interrupt_based,
         )
 
         # Validate all kwargs

@@ -9,7 +9,6 @@ from pyboy.utils import (
     PyBoyException,
     PyBoyOutOfBoundsException,
     INTR_TIMER,
-    INTR_SERIAL,
     INTR_HIGHTOLOW,
     INTR_SERIAL,
     OPCODE_BRK,
@@ -35,6 +34,7 @@ class Motherboard:
         randomize=False,
         serial_address=None,
         serial_bind=None,
+        serial_interrupt_based=False,
     ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
@@ -52,11 +52,10 @@ class Motherboard:
             logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
 
         self.timer = timer.Timer()
-        self.serial = serial.Serial()
+        self.serial = serial.Serial(serial_address, serial_bind, serial_interrupt_based)
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
-        self.serial = serial.Serial(serial_address, serial_bind)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
@@ -351,8 +350,6 @@ class Motherboard:
 
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
-            if self.serial.tick(cycles):
-                self.cpu.set_interruptflag(INTR_SERIAL)
 
             if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
