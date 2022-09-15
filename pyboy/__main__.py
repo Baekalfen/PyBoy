@@ -93,6 +93,11 @@ parser.add_argument(
     help="Add GameShark cheats on start-up. Add multiple by comma separation (i.e. '010138CD, 01033CD1')"
 )
 
+parser.add_argument("--serial-bind", action="store_true", help="Bind to this TCP addres for using Link Cable")
+parser.add_argument(
+    "--serial-address", default=None, type=str, help="Connect (or bind) to this TCP addres for using Link Cable"
+)
+
 gameboy_type_parser = parser.add_mutually_exclusive_group()
 gameboy_type_parser.add_argument(
     "--dmg", action="store_const", const=False, dest="cgb", help="Force emulator to run as original Game Boy (DMG)"
@@ -110,6 +115,9 @@ for arguments in parser_arguments():
 
 def main():
     argv = parser.parse_args()
+
+    if argv.serial_bind and not argv.serial_address:
+        parser.error("--serial-bind requires --serial-address")
 
     print(
         """

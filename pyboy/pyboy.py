@@ -145,6 +145,8 @@ class PyBoy:
             sound_emulated,
             cgb,
             randomize=randomize,
+            serial_address=kwargs["serial_address"],
+            serial_bind=kwargs["serial_bind"],
         )
 
         # Validate all kwargs
