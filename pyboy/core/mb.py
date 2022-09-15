@@ -11,6 +11,7 @@ from pyboy.utils import (
     INTR_TIMER,
     INTR_SERIAL,
     INTR_HIGHTOLOW,
+    INTR_SERIAL,
     OPCODE_BRK,
     MAX_CYCLES,
 )
@@ -32,6 +33,8 @@ class Motherboard:
         sound_sample_rate,
         cgb,
         randomize=False,
+        serial_address=None,
+        serial_bind=None,
     ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
@@ -53,6 +56,7 @@ class Motherboard:
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
+        self.serial = serial.Serial(serial_address, serial_bind)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
@@ -228,6 +232,7 @@ class Motherboard:
 
     def stop(self, save):
         self.sound.stop()
+        self.serial.stop()
         if save:
             self.cartridge.stop()
 
@@ -346,6 +351,8 @@ class Motherboard:
 
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
+            if self.serial.tick(cycles):
+                self.cpu.set_interruptflag(INTR_SERIAL)
 
             if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
