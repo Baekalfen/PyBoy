@@ -209,6 +209,8 @@ class PyBoy:
             sound_sample_rate,
             cgb,
             randomize=randomize,
+            serial_address=kwargs["serial_address"],
+            serial_bind=kwargs["serial_bind"],
         )
 
         # Validate all kwargs
