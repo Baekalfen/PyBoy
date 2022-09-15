@@ -51,6 +51,9 @@ class PyBoy:
         sound_emulated=False,
         cgb=None,
         log_level=defaults["log_level"],
+        serial_address=None,
+        serial_bind=None,
+        serial_interrupt_based=False,
         **kwargs
     ):
         """
@@ -143,8 +146,9 @@ class PyBoy:
             sound_emulated,
             cgb,
             randomize=randomize,
-            serial_address=kwargs["serial_address"],
-            serial_bind=kwargs["serial_bind"],
+            serial_address=serial_address,
+            serial_bind=serial_bind,
+            serial_interrupt_based=serial_interrupt_based,
         )
 
         # Validate all kwargs
