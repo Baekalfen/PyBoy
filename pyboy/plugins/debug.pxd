@@ -41,7 +41,7 @@ cdef class Debug(PyBoyWindowPlugin):
     cdef TileDataWindow tiledata1
     cdef MemoryWindow memory
     cdef bint sdl2_event_pump
-    cdef void handle_breakpoint(self)
+    cpdef void handle_breakpoint(self)
 
 
 cdef class BaseDebugWindow(PyBoyWindowPlugin):
@@ -66,7 +66,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef void mark_tile(self, int, int, uint32_t, int, int, bint)
 
     @cython.locals(event=WindowEvent)
-    cdef list handle_events(self, list)
+    cpdef list handle_events(self, list)
 
 
 cdef class TileViewWindow(BaseDebugWindow):
@@ -78,7 +78,7 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef uint32_t[:,:] tilecache # Fixing Cython locals
     cdef uint32_t[:] palette_rgb # Fixing Cython locals
     @cython.locals(mem_offset=uint16_t, tile_index=int, tile_column=int, tile_row=int)
-    cdef void post_tick(self)
+    cpdef void post_tick(self)
 
     # scanlineparameters=uint8_t[:,:],
     @cython.locals(x=int, y=int, xx=int, yy=int, row=int, column=int)
@@ -91,10 +91,10 @@ cdef class TileDataWindow(BaseDebugWindow):
     cdef uint32_t[:,:] tilecache # Fixing Cython locals
     cdef uint32_t[:] palette_rgb # Fixing Cython locals
     @cython.locals(t=int, xx=int, yy=int)
-    cdef void post_tick(self)
+    cpdef void post_tick(self)
 
     @cython.locals(tile_x=int, tile_y=int, tile_identifier=int)
-    cdef list handle_events(self, list)
+    cpdef list handle_events(self, list)
 
     @cython.locals(t=MarkedTile, column=int, row=int)
     cdef void draw_overlay(self)
@@ -102,7 +102,7 @@ cdef class TileDataWindow(BaseDebugWindow):
 
 cdef class SpriteWindow(BaseDebugWindow):
     @cython.locals(tile_x=int, tile_y=int, sprite_identifier=int, sprite=Sprite)
-    cdef list handle_events(self, list)
+    cpdef list handle_events(self, list)
 
     @cython.locals(t=MarkedTile, xx=int, yy=int, sprite=Sprite, i=int)
     cdef void draw_overlay(self)
@@ -115,7 +115,7 @@ cdef class SpriteWindow(BaseDebugWindow):
 
 cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
-    cdef void post_tick(self)
+    cpdef void post_tick(self)
 
     @cython.locals(t=MarkedTile, sprite=Sprite, i=int)
     cdef void draw_overlay(self)

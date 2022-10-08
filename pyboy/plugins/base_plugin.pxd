@@ -20,11 +20,12 @@ cdef class PyBoyPlugin:
     cdef bint cgb
     cdef dict pyboy_argv
     @cython.locals(event=WindowEvent)
-    cdef list handle_events(self, list)
-    cdef void post_tick(self)
-    cdef str window_title(self)
-    cdef void stop(self)
-    cpdef bint enabled(self)
+    cpdef list handle_events(self, list)
+    cpdef void post_tick(self)
+    cpdef str window_title(self)
+    cpdef void stop(self)
+
+    # cpdef bint enabled(cls, object, dict)
 
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):
@@ -34,8 +35,8 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
     cdef bint enable_title
     cdef Renderer renderer
 
-    cdef bint frame_limiter(self, int)
-    cdef void set_title(self, str)
+    cpdef bint frame_limiter(self, int)
+    cpdef void set_title(self, str)
 
 
 cdef class PyBoyGameWrapper(PyBoyPlugin):
@@ -47,7 +48,7 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef array _cached_game_area_tiles_raw
     cdef uint32_t[:, :] _cached_game_area_tiles
     @cython.locals(xx=int, yy=int, width=int, height=int, SCX=int, SCY=int, _x=int, _y=int)
-    cdef uint32_t[:, :] _game_area_tiles(self)
+    cpdef uint32_t[:, :] _game_area_tiles(self)
 
     cdef bint game_area_wrap_around
     cdef tuple game_area_section

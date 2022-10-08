@@ -12,7 +12,7 @@ import time
 
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
-from pyboy.plugins.manager import PluginManager
+from pyboy.plugin_manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
 from . import botsupport

@@ -9,7 +9,7 @@ cimport cython
 from libc.stdint cimport uint64_t
 from pyboy.core.mb cimport Motherboard
 from pyboy.utils cimport IntIOWrapper, IntIOInterface
-from pyboy.plugins.manager cimport PluginManager
+from pyboy.plugin_manager cimport PluginManager
 
 
 cdef float SPF

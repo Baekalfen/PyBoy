@@ -35,9 +35,6 @@ class WindowOpenGL(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
-        if not self.enabled():
-            return
-
         if not glutInit():
             raise Exception("OpenGL couldn't initialize!")
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -141,8 +138,9 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
 
-    def enabled(self):
-        if self.pyboy_argv.get("window_type") == "OpenGL":
+    @classmethod
+    def enabled(cls, pyboy, pyboy_argv):
+        if pyboy_argv.get("window_type") == "OpenGL":
             if opengl_enabled:
                 return True
             else:
