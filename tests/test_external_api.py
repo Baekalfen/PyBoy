@@ -64,11 +64,11 @@ def test_tiles(default_rom):
     pyboy.stop(save=False)
 
 
-def test_screen_buffer_and_image(any_rom, boot_rom):
+def test_screen_buffer_and_image(tetris_rom, boot_rom):
     cformat = "RGBA"
     boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
 
-    pyboy = PyBoy(any_rom, window_type="headless", bootrom_file=boot_rom)
+    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=boot_rom)
     pyboy.set_emulation_speed(0)
     for n in range(275): # Iterate to boot logo
         pyboy.tick()

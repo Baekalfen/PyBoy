@@ -57,7 +57,7 @@ class PyBoy:
         Only the `gamerom_file` argument is required.
 
         Args:
-            gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+            gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
@@ -215,7 +215,8 @@ class PyBoy:
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
         self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick) / SPF * 100)
-        self.window_title += " Emulation: x%d" % (round(SPF / avg_emu) if avg_emu != 0 else 0)
+        tolerance = 0.001 # 1ms. Avoid infinity and division by zero
+        self.window_title += " Emulation: x%s" % (round(SPF / avg_emu) if avg_emu > tolerance else "INF")
         if self.paused:
             self.window_title += "[PAUSED]"
         self.window_title += self.plugin_manager.window_title()
