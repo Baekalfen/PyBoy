@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class WindowHeadless(PyBoyWindowPlugin):
+    name = "headless"
+
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 

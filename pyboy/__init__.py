@@ -13,3 +13,8 @@ __all__ = ["PyBoy", "WindowEvent"]
 
 from .pyboy import PyBoy
 from .utils import WindowEvent
+
+
+def get_include():
+    import os
+    return os.path.dirname(os.path.abspath(__file__))

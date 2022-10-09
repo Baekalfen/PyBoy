@@ -32,6 +32,8 @@ ROWS, COLS = 144, 160
 
 
 class WindowOpenGL(PyBoyWindowPlugin):
+    name = "OpenGL"
+
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 

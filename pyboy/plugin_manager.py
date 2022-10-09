@@ -2,15 +2,25 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
 import importlib
 import inspect
+import logging
 import os
+import sys
 import sysconfig
 from pathlib import Path
 from pkgutil import iter_modules
 
 from pyboy import plugins
 from pyboy.plugins.base_plugin import PyBoyDebugPlugin, PyBoyGameWrapper, PyBoyPlugin, PyBoyWindowPlugin
+
+if sys.version_info >= (3, 8):
+    from importlib import metadata as importlib_metadata
+else:
+    import importlib_metadata
+
+logger = logging.getLogger(__name__)
 
 EXT_SUFFIX = sysconfig.get_config_var("EXT_SUFFIX")
 
@@ -22,9 +32,14 @@ enabled_plugins = []
 enabled_window_plugins = []
 enabled_gamewrappers = []
 
-for mod_name in [x.name for x in iter_modules(plugins.__path__)]:
-    mod = importlib.import_module("pyboy.plugins." + mod_name)
+builtin_plugins = [importlib.import_module("pyboy.plugins." + m.name) for m in iter_modules(plugins.__path__)]
+external_plugins = []
+for p in importlib_metadata.distributions():
+    for e in p.entry_points:
+        if e.group == "pyboy":
+            external_plugins.append(e.load())
 
+for mod in builtin_plugins + external_plugins:
     if hasattr(mod, "_export_plugins"):
         plugin_names = getattr(mod, "_export_plugins")
     else:
@@ -48,9 +63,24 @@ def parser_arguments():
         yield p.argv
 
 
+def window_names():
+    for p in registered_window_plugins:
+        if p.name:
+            yield p.name
+
+
+def external_plugin_names():
+    return ", ".join([p.__name__ for p in external_plugins])
+
+
 class PluginManager:
     def __init__(self, pyboy, mb, pyboy_argv):
         self.pyboy = pyboy
+
+        if external_plugins:
+            logger.info(f"External plugins loaded: {external_plugin_names()}")
+        else:
+            logger.info("No external plugins found")
 
         self.enabled_plugins = [p(pyboy, mb, pyboy_argv) for p in registered_plugins if p.enabled(pyboy, pyboy_argv)]
         self.enabled_window_plugins = [

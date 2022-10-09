@@ -62,6 +62,8 @@ class PyBoyPlugin:
 
 
 class PyBoyWindowPlugin(PyBoyPlugin):
+    name = "PyBoyWindowPlugin"
+
     def __init__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
 

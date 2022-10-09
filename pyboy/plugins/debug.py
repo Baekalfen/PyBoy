@@ -83,6 +83,7 @@ class Debug(PyBoyWindowPlugin):
         "type": str,
         "help": "Add breakpoints on start-up (internal use)"
     })]
+    name = None
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)

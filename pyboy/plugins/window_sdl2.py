@@ -150,6 +150,8 @@ def sdl2_event_pump(events):
 
 
 class WindowSDL2(PyBoyWindowPlugin):
+    name = "SDL2"
+
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
