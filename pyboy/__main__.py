@@ -9,7 +9,7 @@ import os
 
 from pyboy import PyBoy, core
 from pyboy.logger import log_level, logger
-from pyboy.plugins.manager import parser_arguments
+from pyboy.plugin_manager import external_plugin_names, parser_arguments, window_names
 from pyboy.pyboy import defaults
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
@@ -29,8 +29,10 @@ def valid_file_path(path):
 
 
 parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter, # Don't wrap epilog automatically
     description="PyBoy -- Game Boy emulator written in Python",
-    epilog="Warning: Features marked with (internal use) might be subject to change.",
+    epilog=(f"External plugins loaded: {external_plugin_names()}\n\n" if external_plugin_names() else "") +
+    "Warning: Features marked with (internal use) might be subject to change.",
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
 parser.add_argument("-b", "--bootrom", type=valid_file_path, help="Path to a boot-ROM file")
@@ -67,7 +69,7 @@ parser.add_argument(
     "--window",
     default=defaults["window_type"],
     type=str,
-    choices=["SDL2", "OpenGL", "headless", "dummy"],
+    choices=list(window_names()),
     help="Specify window-type to use"
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")

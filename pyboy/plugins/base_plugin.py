@@ -56,16 +56,16 @@ class PyBoyPlugin:
     def stop(self):
         pass
 
-    def enabled(self):
+    @classmethod
+    def enabled(cls, pyboy, pyboy_argv):
         return True
 
 
 class PyBoyWindowPlugin(PyBoyPlugin):
+    name = "PyBoyWindowPlugin"
+
     def __init__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
-
-        if not self.enabled():
-            return
 
         scale = pyboy_argv.get("scale")
         self.scale = scale
@@ -85,6 +85,11 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         return False
 
     def set_title(self, title):
+        pass
+
+
+class PyBoyDebugPlugin(PyBoyWindowPlugin):
+    def handle_breakpoint(self):
         pass
 
 
@@ -117,8 +122,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
             v = memoryview(self._cached_game_area_tiles_raw).cast("I")
             self._cached_game_area_tiles = [v[i:i + height] for i in range(0, height * width, height)]
 
-    def enabled(self):
-        return self.pyboy_argv.get("game_wrapper") and self.pyboy.cartridge_title() == self.cartridge_title
+    @classmethod
+    def enabled(cls, pyboy, pyboy_argv):
+        return pyboy_argv.get("game_wrapper") and pyboy.cartridge_title() == cls.cartridge_title
 
     def post_tick(self):
         raise NotImplementedError("post_tick not implemented in game wrapper")

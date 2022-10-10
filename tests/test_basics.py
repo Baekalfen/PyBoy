@@ -34,7 +34,7 @@ def test_record_replay(boot_rom, default_rom):
     pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
     pyboy.tick()
 
-    events = pyboy.plugin_manager.record_replay.recorded_input
+    events = pyboy.plugin_manager.get_plugin("RecordReplay").recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
     frame_no, keys, frame_data = events[0]
     assert frame_no == 1, "We inserted the key on the second frame"
@@ -86,7 +86,6 @@ def test_argv_parser(*args):
     empty = parser.parse_args(file_that_exists.split(" ")).__dict__
     for k, v in {
         "ROM": file_that_exists,
-        "autopause": False,
         "bootrom": None,
         "debug": False,
         "loadstate": None,
@@ -109,16 +108,9 @@ def test_argv_parser(*args):
 
     # Check flags become True
     flags = parser.parse_args(
-        f"{file_that_exists} --debug --autopause --profiling --rewind --no-input --log-level INFO".split(" ")
+        f"{file_that_exists} --debug --profiling --rewind --no-input --log-level INFO".split(" ")
     ).__dict__
-    for k, v in {
-        "autopause": True,
-        "debug": True,
-        "no_input": True,
-        "log_level": "INFO",
-        "profiling": True,
-        "rewind": True
-    }.items():
+    for k, v in {"debug": True, "no_input": True, "log_level": "INFO", "profiling": True, "rewind": True}.items():
         assert flags[k] == v
 
 

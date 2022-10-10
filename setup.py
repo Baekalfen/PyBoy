@@ -206,7 +206,7 @@ setup(
     version="v1.5.1",
     packages=find_packages(),
     author="Mads Ynddal",
-    author_email="mads-pyboy@ynddal.dk",
+    author_email="mads@ynddal.dk",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Baekalfen/PyBoy",
