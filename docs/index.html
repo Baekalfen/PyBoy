@@ -192,27 +192,27 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
         if self.stopped:
             return True
 
-        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        t_start = time.perf_counter_ns()
         self._handle_events(self.events)
-        t_pre = time.perf_counter()
+        t_pre = time.perf_counter_ns()
         if not self.paused:
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
             else:
                 self.frame_count += 1
-        t_tick = time.perf_counter()
+        t_tick = time.perf_counter_ns()
         self._post_tick()
-        t_post = time.perf_counter()
+        t_post = time.perf_counter_ns()
 
-        secs = t_pre - t_start
-        self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
+        nsecs = t_pre - t_start
+        self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
 
-        secs = t_tick - t_pre
-        self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
+        nsecs = t_tick - t_pre
+        self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
 
-        secs = t_post - t_tick
-        self.avg_post = 0.9 * self.avg_post + 0.1*secs
+        nsecs = t_post - t_tick
+        self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
         return self.quitting
 
@@ -283,7 +283,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
         self.window_title = &#34;CPU/frame: %0.2f%%&#34; % ((self.avg_pre + self.avg_tick) / SPF * 100)
         tolerance = 0.001 # 1ms. Avoid infinity and division by zero
-        self.window_title += &#34; Emulation: x%s&#34; % (round(SPF / avg_emu) if avg_emu &gt; tolerance else &#39;INF&#39;)
+        self.window_title += &#34; Emulation: x%s&#34; % (round(SPF / avg_emu) if avg_emu &gt; tolerance else &#34;INF&#34;)
         if self.paused:
             self.window_title += &#34;[PAUSED]&#34;
         self.window_title += self.plugin_manager.window_title()
@@ -606,27 +606,27 @@ otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy
     if self.stopped:
         return True
 
-    t_start = time.perf_counter() # Change to _ns when PyPy supports it
+    t_start = time.perf_counter_ns()
     self._handle_events(self.events)
-    t_pre = time.perf_counter()
+    t_pre = time.perf_counter_ns()
     if not self.paused:
         if self.mb.tick():
             # breakpoint reached
             self.plugin_manager.handle_breakpoint()
         else:
             self.frame_count += 1
-    t_tick = time.perf_counter()
+    t_tick = time.perf_counter_ns()
     self._post_tick()
-    t_post = time.perf_counter()
+    t_post = time.perf_counter_ns()
 
-    secs = t_pre - t_start
-    self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
+    nsecs = t_pre - t_start
+    self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
 
-    secs = t_tick - t_pre
-    self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
+    nsecs = t_tick - t_pre
+    self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
 
-    secs = t_post - t_tick
-    self.avg_post = 0.9 * self.avg_post + 0.1*secs
+    nsecs = t_post - t_tick
+    self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
     return self.quitting</code></pre>
 </details>
