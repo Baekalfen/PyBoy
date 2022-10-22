@@ -20,7 +20,7 @@ cpdef list sdl2_event_pump(list)
 
 cdef class WindowSDL2(PyBoyWindowPlugin):
 
-    cdef float _ftime
+    cdef double _ftime
     cdef dict _key_down
     cdef dict _key_up
     cdef bint fullscreen
@@ -29,5 +29,5 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
     cdef object _sdlrenderer
     cdef object _sdltexturebuffer
 
-    @cython.locals(now=float, delay=cython.int)
+    @cython.locals(now=double, delay=cython.int)
     cdef bint frame_limiter(self, int)
