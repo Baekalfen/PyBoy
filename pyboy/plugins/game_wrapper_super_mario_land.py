@@ -189,8 +189,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         Patches the handler for pressing start in the menu. It hardcodes a world and level to always "continue" from.
 
         Args:
-            world (int): The wanted number of lives
-            level (int): The wanted number of lives
+            world (int): The world to select a level from, 0-3
+            level (int): The level to start from, 0-2
         """
 
         for i in range(0x450, 0x461):

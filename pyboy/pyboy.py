@@ -125,27 +125,27 @@ class PyBoy:
         if self.stopped:
             return True
 
-        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        t_start = time.perf_counter_ns()
         self._handle_events(self.events)
-        t_pre = time.perf_counter()
+        t_pre = time.perf_counter_ns()
         if not self.paused:
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
             else:
                 self.frame_count += 1
-        t_tick = time.perf_counter()
+        t_tick = time.perf_counter_ns()
         self._post_tick()
-        t_post = time.perf_counter()
+        t_post = time.perf_counter_ns()
 
-        secs = t_pre - t_start
-        self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
+        nsecs = t_pre - t_start
+        self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
 
-        secs = t_tick - t_pre
-        self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
+        nsecs = t_tick - t_pre
+        self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
 
-        secs = t_post - t_tick
-        self.avg_post = 0.9 * self.avg_post + 0.1*secs
+        nsecs = t_post - t_tick
+        self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
         return self.quitting
 

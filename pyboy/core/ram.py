@@ -25,14 +25,14 @@ class RAM:
         self.non_io_internal_ram1 = array("B", [0] * (NON_IO_INTERNAL_RAM1))
 
         if randomize:
-            for i in range(INTERNAL_RAM0_CGB if cgb else INTERNAL_RAM0):
-                self.internal_ram0[i] = getrandbits(8)
-            for i in range(NON_IO_INTERNAL_RAM0):
-                self.non_io_internal_ram0[i] = getrandbits(8)
-            for i in range(INTERNAL_RAM1):
-                self.internal_ram1[i] = getrandbits(8)
-            for i in range(NON_IO_INTERNAL_RAM1):
-                self.non_io_internal_ram1[i] = getrandbits(8)
+            for n in range(INTERNAL_RAM0_CGB if cgb else INTERNAL_RAM0):
+                self.internal_ram0[n] = getrandbits(8)
+            for n in range(NON_IO_INTERNAL_RAM0):
+                self.non_io_internal_ram0[n] = getrandbits(8)
+            for n in range(INTERNAL_RAM1):
+                self.internal_ram1[n] = getrandbits(8)
+            for n in range(NON_IO_INTERNAL_RAM1):
+                self.non_io_internal_ram1[n] = getrandbits(8)
 
     def save_state(self, f):
         for n in range(INTERNAL_RAM0_CGB if self.cgb else INTERNAL_RAM0):

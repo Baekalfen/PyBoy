@@ -10,6 +10,7 @@ from libc.stdint cimport uint64_t
 from pyboy.core.mb cimport Motherboard
 from pyboy.utils cimport IntIOWrapper, IntIOInterface
 from pyboy.plugins.manager cimport PluginManager
+from libc.stdint cimport int64_t
 
 
 cdef double SPF
@@ -41,7 +42,7 @@ cdef class PyBoy:
     cdef list recorded_input
     cdef list external_input
 
-    @cython.locals(t_start=double, t_pre=double, t_tick=double, t_post=double, secs=double)
+    @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
     cpdef bint tick(self)
     cpdef void stop(self, save=*)
 

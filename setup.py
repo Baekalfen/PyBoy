@@ -32,7 +32,7 @@ def load_requirements(filename):
 
 requirements = load_requirements("requirements.txt")
 
-CYTHON = platform.python_implementation() != "PyPy"
+CYTHON = platform.python_implementation() == "CPython"
 py_version = ".".join(platform.python_version_tuple()[:2])
 
 if CYTHON:
@@ -203,7 +203,7 @@ except FileNotFoundError:
 
 setup(
     name="pyboy",
-    version="v1.5.1",
+    version="v1.5.2",
     packages=find_packages(),
     author="Mads Ynddal",
     author_email="mads-pyboy@ynddal.dk",
