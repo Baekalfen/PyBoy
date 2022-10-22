@@ -4,7 +4,7 @@
 #
 
 import logging
-from time import perf_counter
+import time
 
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
@@ -157,7 +157,7 @@ class WindowSDL2(PyBoyWindowPlugin):
             return
 
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
-        self._ftime = 0.0
+        self._ftime = time.perf_counter_ns()
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, self._scaledresolution[0],
@@ -204,10 +204,10 @@ class WindowSDL2(PyBoyWindowPlugin):
             return False
 
     def frame_limiter(self, speed):
-        self._ftime += 1.0 / (60.0*speed)
-        now = perf_counter()
+        self._ftime += int((1.0 / (60.0*speed)) * 1_000_000_000)
+        now = time.perf_counter_ns()
         if (self._ftime > now):
-            delay = int(1000 * (self._ftime - now))
+            delay = (self._ftime - now) // 1_000_000
             sdl2.SDL_Delay(delay)
         else:
             self._ftime = now
