@@ -20,5 +20,5 @@ cdef class WindowOpenGL(PyBoyWindowPlugin):
 
     # TODO: Callbacks don't really work, when Cythonized
     cpdef void _gldraw(self)
-    @cython.locals(scale=float)
+    @cython.locals(scale=double)
     cpdef void _glreshape(self, int, int)

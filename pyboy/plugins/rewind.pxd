@@ -12,7 +12,7 @@ from pyboy.utils cimport IntIOInterface
 
 
 cdef class Rewind(PyBoyPlugin):
-    cdef float rewind_speed
+    cdef double rewind_speed
     cdef FixedAllocBuffers rewind_buffer
 
 
@@ -42,9 +42,9 @@ cdef class FixedAllocBuffers(IntIOInterface):
     cdef int64_t section_head
     cdef int64_t section_tail
     cdef int64_t section_pointer
-    cdef float avg_section_size
+    cdef double avg_section_size
 
-    @cython.locals(section_size=float)
+    @cython.locals(section_size=double)
     cdef void new(self)
     cdef void commit(self)
     @cython.locals(_=int64_t, abs_frames=int64_t, head=int64_t, tail=int64_t)

@@ -12,7 +12,7 @@ from pyboy.utils cimport IntIOWrapper, IntIOInterface
 from pyboy.plugins.manager cimport PluginManager
 
 
-cdef float SPF
+cdef double SPF
 
 cdef class PyBoy:
     cdef Motherboard mb
@@ -41,7 +41,7 @@ cdef class PyBoy:
     cdef list recorded_input
     cdef list external_input
 
-    @cython.locals(t_start=float, t_pre=float, t_tick=float, t_post=float, secs=float)
+    @cython.locals(t_start=double, t_pre=double, t_tick=double, t_post=double, secs=double)
     cpdef bint tick(self)
     cpdef void stop(self, save=*)
 
