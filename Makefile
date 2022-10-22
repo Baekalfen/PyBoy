@@ -28,8 +28,6 @@ codecov: clean
 
 build:
 	@echo "Building..."
-	sed -i.bak -E 's/pyboy_version = .+$$/pyboy_version = "${PYBOY_VERSION}"/g' setup.py
-	rm setup.py.bak
 	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext --inplace
 
 clean:
