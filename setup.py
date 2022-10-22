@@ -32,7 +32,7 @@ def load_requirements(filename):
 
 requirements = load_requirements("requirements.txt")
 
-CYTHON = platform.python_implementation() != "PyPy"
+CYTHON = platform.python_implementation() == "CPython"
 py_version = ".".join(platform.python_version_tuple()[:2])
 
 if CYTHON:
