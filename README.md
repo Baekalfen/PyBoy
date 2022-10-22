@@ -9,7 +9,7 @@ It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-__If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or write on our [Discord channel](https://discord.gg/Zrf2nyH).
+__If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or post on our [Discord channel](https://discord.gg/Zrf2nyH).
 
 
 <!---
@@ -49,7 +49,7 @@ Generate GIF with the layout and captions
 
 Installation
 ============
-The instructions are simple, if you already have a functioning Python environment on your machine.
+The instructions are simple if you already have a functioning Python environment on your machine.
 
  1. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
  2. If your system isn't supported by [pysdl2-dll](https://pypi.org/project/pysdl2-dll/), you'll need to install SDL2 from your package manager.
@@ -85,13 +85,13 @@ pil_image = pyboy.screen_image()
 pil_image.save('screenshot.png')
 ```
 
-At the Wiki page, you will also find out how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
+The Wiki shows how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
 
 
 Contributors
 ============
 
-Thanks to all the people, who have contributed to the project!
+Thanks to all the people who have contributed to the project!
 
 Original Developers
 -------------------
@@ -114,7 +114,7 @@ Student Projects
 
 Contribute
 ==========
-Any contribution is appreciated. The currently known errors are registered in the Issues tab. Feel free to take a swing at any one of them.
+Any contribution is appreciated. The currently known problems are tracked in the Issues tab. Feel free to take a swing at any one of them.
 
 For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
 * Link Cable
