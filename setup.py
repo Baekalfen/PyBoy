@@ -33,7 +33,6 @@ def load_requirements(filename):
 requirements = load_requirements("requirements.txt")
 
 CYTHON = platform.python_implementation() == "CPython"
-py_version = ".".join(platform.python_version_tuple()[:2])
 
 if CYTHON:
     # "Recommended" method of installing Cython: https://github.com/pypa/pip/issues/5761
@@ -157,8 +156,7 @@ if CYTHON and "clean" not in sys.argv:
         thread_count = cpu_count()
 
     # Fixing issue with nthreads in Cython
-    if py_version in ["3.8", "3.9", "3.10"
-                     ] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
+    if (3, 8) <= sys.version_info[:2] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
         multiprocessing.set_start_method("fork", force=True)
 
     # Set up some values for use in setup()
