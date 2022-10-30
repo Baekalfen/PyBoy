@@ -112,12 +112,11 @@ class BaseMBC:
     def overrideitem(self, rom_bank, address, value):
         if 0x0000 <= address < 0x4000:
             logger.debug(
-                "Performing overwrite on address: %s:%s. New value: %s Old value: %s" %
-                (hex(rom_bank), hex(address), hex(value), self.rombanks[rom_bank][address])
+                f"Performing overwrite on address: {rom_bank:02x}:{address:04x}. New value: {value:02x} Old value: {self.rombanks[rom_bank][address]:02x}"
             )
             self.rombanks[rom_bank][address] = value
         else:
-            logger.error("Invalid override address: %s" % hex(address))
+            logger.error(f"Invalid override address: {address:04x}")
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
@@ -126,7 +125,7 @@ class BaseMBC:
             return self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
-                logger.error("RAM banks not initialized: %s" % hex(address))
+                logger.error(f"RAM banks not initialized: {address:04x}")
 
             if not self.rambank_enabled:
                 return 0xFF
@@ -136,22 +135,22 @@ class BaseMBC:
             else:
                 return self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000]
         else:
-            logger.error("Reading address invalid: %s" % address)
+            logger.error(f"Reading address invalid: {address:04x}")
 
     def __repr__(self):
         return "\n".join([
             "Cartridge:",
-            "Filename: %s" % self.filename,
-            "Game name: %s" % self.gamename,
-            "GB Color: %s" % str(self.ROMBanks[0][0x143] == 0x80),
-            "Cartridge type: %s" % hex(self.cartType),
-            "Number of ROM banks: %s" % self.external_rom_count,
-            "Active ROM bank: %s" % self.rombank_selected,
-            # "Memory bank type: %s" % self.ROMBankController,
-            "Number of RAM banks: %s" % len(self.rambanks),
-            "Active RAM bank: %s" % self.rambank_selected,
-            "Battery: %s" % self.battery,
-            "RTC: %s" % self.rtc
+            f"Filename: {self.filename}",
+            f"Game name: {self.gamename}",
+            f"GB Color: {self.ROMBanks[0][0x143] == 0x80}",
+            f"Cartridge type: {self.cartType:02x}",
+            f"Number of ROM banks: {self.external_rom_count}",
+            f"Active ROM bank: {self.rombank_selected}",
+            # f"Memory bank type: {self.ROMBankController}",
+            f"Number of RAM banks: {len(self.rambanks)}",
+            f"Active RAM bank: {self.rambank_selected}",
+            f"Battery: {self.battery}",
+            f"RTC: {self.rtc}"
         ])
 
 
@@ -161,16 +160,14 @@ class ROMOnly(BaseMBC):
             if value == 0:
                 value = 1
             self.rombank_selected = (value & 0b1)
-            logger.debug("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
+            logger.debug(f"Switching bank 0x{address:04x}, 0x{value:02x}")
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 from . import EXTERNAL_RAM_TABLE
                 logger.warning(
-                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but "
-                    "RAM banks are not initialized. Initializing %d RAM banks as "
-                    "precaution" % (value, address, EXTERNAL_RAM_TABLE[0x02])
+                    f"Game tries to set value 0x{value:02x} at RAM address 0x{address:04x}, but RAM banks are not initialized. Initializing {EXTERNAL_RAM_TABLE[0x02]} RAM banks as precaution"
                 )
                 self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
             self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:
-            logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.warning("Unexpected write to 0x{address:04x}, value: 0x{value:02x}")

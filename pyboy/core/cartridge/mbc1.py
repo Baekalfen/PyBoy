@@ -33,9 +33,9 @@ class MBC1(BaseMBC):
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 logger.warning(
-                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM "
-                    "banks are not initialized. Initializing %d RAM banks as "
-                    "precaution" % (value, address, self.external_ram_count)
+                    f"Game tries to set value 0x{value:02x} at RAM address 0x{address:04x}, but RAM "
+                    f"banks are not initialized. Initializing {self.external_ram_count} RAM banks as "
+                    "precaution"
                 )
                 self.init_rambanks(self.external_ram_count)
 
@@ -43,7 +43,7 @@ class MBC1(BaseMBC):
                 self.rambank_selected = self.bank_select_register2 if self.memorymodel == 1 else 0
                 self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000] = value
         else:
-            logger.error("Invalid writing address: %s" % hex(address))
+            logger.error(f"Invalid writing address: {address:04x}")
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
@@ -58,7 +58,7 @@ class MBC1(BaseMBC):
             return self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
-                logger.error("RAM banks not initialized: %s" % hex(address))
+                logger.error(f"RAM banks not initialized: {address:04x}")
 
             if not self.rambank_enabled:
                 return 0xFF
@@ -69,7 +69,7 @@ class MBC1(BaseMBC):
                 self.rambank_selected = 0
             return self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000]
         else:
-            logger.error("Reading address invalid: %s" % address)
+            logger.error(f"Reading address invalid: {address:04x}")
 
     def save_state(self, f):
         # Cython doesn't like super()

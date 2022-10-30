@@ -72,11 +72,11 @@ class RTC:
                 self.latch_rtc()
             self.latch_enabled = True
         else:
-            logger.warning("Invalid RTC command: %0.2x" % value)
+            logger.warning(f"Invalid RTC command: {value:02x}")
 
     def getregister(self, register):
         if not self.latch_enabled:
-            logger.info("RTC: Get register, but nothing is latched! 0x%0.2x" % register)
+            logger.info(f"RTC: Get register, but nothing is latched! 0x{register:02x}")
 
         if register == 0x08:
             return self.sec_latch
@@ -92,11 +92,11 @@ class RTC:
             day_carry = self.day_carry << 7
             return day_high + halt + day_carry
         else:
-            logger.warning("Invalid RTC register: %0.4x" % (register))
+            logger.warning(f"Invalid RTC register: {register:04x}")
 
     def setregister(self, register, value):
         if not self.latch_enabled:
-            logger.info("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x" % (register, value))
+            logger.info(f"RTC: Set register, but nothing is latched! 0x{register:04x}, 0x{value:02x}")
 
         t = time.time() - self.timezero
         if register == 0x08:
@@ -122,4 +122,4 @@ class RTC:
             self.timezero -= int(t / 3600 / 24) - (day_high << 8)
             self.day_carry = day_carry
         else:
-            logger.warning("Invalid RTC register: %0.4x %0.2x" % (register, value))
+            logger.warning(f"Invalid RTC register: 0x{register:04x}, 0x{value:02x}")

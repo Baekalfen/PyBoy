@@ -74,6 +74,14 @@ parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="
 parser.add_argument("--disable-renderer", action="store_true", help="Disables screen rendering for higher performance")
 parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
 
+parser.add_argument("--serial-bind", action="store_true", help="Bind to this TCP addres for using Link Cable")
+parser.add_argument(
+    "--serial-address", default=None, type=str, help="Connect (or bind) to this TCP address for using Link Cable"
+)
+parser.add_argument(
+    "--serial-interrupt-based", action="store_true", help="Use only interrupt-based transfers for using Link Cable"
+)
+
 gameboy_type_parser = parser.add_mutually_exclusive_group()
 gameboy_type_parser.add_argument(
     "--dmg", action="store_const", const=False, dest="cgb", help="Force emulator to run as original Game Boy (DMG)"
@@ -91,6 +99,9 @@ for arguments in parser_arguments():
 
 def main():
     argv = parser.parse_args()
+    if (argv.serial_bind or argv.serial_interrupt_based) and not argv.serial_address:
+        parser.error("--serial-bind and --serial-interrupt-based requires --serial-address")
+
     log_level(argv.log_level)
 
     logger.info(
