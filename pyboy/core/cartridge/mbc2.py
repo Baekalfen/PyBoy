@@ -32,7 +32,7 @@ class MBC2(BaseMBC):
                 # MBC2 includes built-in RAM of 512 x 4 bits (Only the 4 LSBs are used)
                 self.rambanks[0][address % 512] = value | 0b11110000
         else:
-            logger.error("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:

@@ -158,7 +158,7 @@ class PyBoy:
             elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-                logger.info("Speed limit: %s" % self.target_emulationspeed)
+                logger.debug("Speed limit: %s" % self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
                 with open(self.gamerom_file + ".state", "wb") as f:
                     self.mb.save_state(IntIOWrapper(f))

@@ -61,10 +61,10 @@ class LCD:
 
         if self.cgb:
             if cartridge_cgb:
-                logger.info("Starting CGB renderer")
+                logger.debug("Starting CGB renderer")
                 self.renderer = CGBRenderer()
             else:
-                logger.info("Starting CGB renderer in DMG-mode")
+                logger.debug("Starting CGB renderer in DMG-mode")
                 # Running DMG ROM on CGB hardware use the default palettes
                 bg_pal = (0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000)
                 obj0_pal = (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000)
@@ -74,7 +74,7 @@ class LCD:
                 self.OBP1.palette_mem_rgb = [(c << 8) for c in obj1_pal]
                 self.renderer = Renderer(False)
         else:
-            logger.info("Starting DMG renderer")
+            logger.debug("Starting DMG renderer")
             self.BGP.palette_mem_rgb = [(c << 8) for c in color_palette]
             self.OBP0.palette_mem_rgb = [(c << 8) for c in color_palette]
             self.OBP1.palette_mem_rgb = [(c << 8) for c in color_palette]

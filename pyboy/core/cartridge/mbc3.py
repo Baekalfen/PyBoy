@@ -22,7 +22,7 @@ class MBC3(BaseMBC):
                 # lower 4 bits enables RAM, and any other value
                 # disables RAM."
                 self.rambank_enabled = False
-                logger.warning("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
+                logger.debug("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
         elif 0x2000 <= address < 0x4000:
             value &= 0b01111111
             if value == 0:
@@ -36,7 +36,7 @@ class MBC3(BaseMBC):
             else:
                 # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
                 # https://github.com/pret/pokered/issues/155
-                logger.warning("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
+                logger.debug("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
             if self.rambank_enabled:
                 if self.rambank_selected <= 0x03:
