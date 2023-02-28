@@ -143,9 +143,10 @@ class CPU:
         elif self.halted:
             return 4 # TODO: Number of cycles for a HALT in effect?
 
-        old_pc = self.PC
+        old_pc = self.PC # If the PC doesn't change, we're likely stuck
+        old_sp = self.SP # Sometimes a RET can go to the same PC, so we check the SP too.
         cycles = self.fetch_and_execute()
-        if not self.halted and old_pc == self.PC and not self.is_stuck:
+        if not self.halted and old_pc == self.PC and old_sp == self.SP and not self.is_stuck:
             logger.error("CPU is stuck: " + self.dump_state(""))
             self.is_stuck = True
         self.interrupt_queued = False
