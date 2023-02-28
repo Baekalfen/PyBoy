@@ -76,7 +76,7 @@ class RTC:
 
     def getregister(self, register):
         if not self.latch_enabled:
-            logger.info("RTC: Get register, but nothing is latched! 0x%0.2x" % register)
+            logger.debug("RTC: Get register, but nothing is latched! 0x%0.2x" % register)
 
         if register == 0x08:
             return self.sec_latch
@@ -96,7 +96,7 @@ class RTC:
 
     def setregister(self, register, value):
         if not self.latch_enabled:
-            logger.info("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x" % (register, value))
+            logger.debug("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x" % (register, value))
 
         t = time.time() - self.timezero
         if register == 0x08:

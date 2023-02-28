@@ -36,7 +36,7 @@ class Motherboard:
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         if cgb is None:
             cgb = self.cartridge.cgb
-            logger.info(f'Cartridge type auto-detected to {"CGB" if cgb else "DMG"}')
+            logger.debug(f'Cartridge type auto-detected to {"CGB" if cgb else "DMG"}')
 
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
@@ -446,7 +446,7 @@ class Motherboard:
                 self.ram.io_ports[i - 0xFF00] = value
         elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
             if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
-                logger.info("Bootrom disabled!")
+                logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
             # CGB registers
             elif self.cgb and i == 0xFF4D:

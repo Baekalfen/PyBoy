@@ -41,7 +41,7 @@ class BaseMBC:
         self.cgb = bool(self.getitem(0x0143) >> 7)
 
         if not os.path.exists(self.filename):
-            logger.info("No RAM file found. Skipping.")
+            logger.debug("No RAM file found. Skipping.")
         else:
             with open(self.filename, "rb") as f:
                 self.load_ram(IntIOWrapper(f))
@@ -173,4 +173,4 @@ class ROMOnly(BaseMBC):
                 self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
             self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:
-            logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
