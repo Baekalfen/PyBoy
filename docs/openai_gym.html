@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>pyboy.openai_gym API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -413,6 +413,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>gym.core.Env</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -420,20 +421,38 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 <span>def <span class="ident">step</span></span>(<span>self, action_id)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Run one timestep of the environment's dynamics. When end of
-episode is reached, you are responsible for calling <code>reset()</code>
-to reset this environment's state.</p>
-<p>Accepts an action and returns a tuple (observation, reward, done, info).</p>
+<section class="desc"><p>Run one timestep of the environment's dynamics.</p>
+<p>When end of episode is reached, you are responsible for calling :meth:<code>reset</code> to reset this environment's state.
+Accepts an action and returns either a tuple <code>(observation, reward, terminated, truncated, info)</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>action</code></strong> :&ensp;<code>object</code></dt>
+<dt><strong><code>action</code></strong> :&ensp;<code>ActType</code></dt>
 <dd>an action provided by the agent</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p>observation (object): agent's observation of the current environment
-reward (float) : amount of reward returned after previous action
-done (bool): whether the episode has ended, in which case further step() calls will return undefined results
-info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)</p></section>
+<dl>
+<dt>observation (object): this will be an element of the environment's :attr:<code>observation_space</code>.</dt>
+<dt>This may, for instance, be a numpy array containing the positions and velocities of certain objects.</dt>
+<dt>reward (float): The amount of reward returned as a result of taking the action.</dt>
+<dt>terminated (bool): whether a <code>terminal state</code> (as defined under the MDP of the task) is reached.</dt>
+<dt>In this case further step() calls could return undefined results.</dt>
+<dt>truncated (bool): whether a truncation condition outside the scope of the MDP is satisfied.</dt>
+<dt>Typically a timelimit, but could also be used to indicate agent physically going out of bounds.</dt>
+<dt>Can be used to end the episode prematurely before a <code>terminal state</code> is reached.</dt>
+<dt>info (dictionary): <code>info</code> contains auxiliary diagnostic information (helpful for debugging, learning, and logging).</dt>
+<dt><code>
+This might, for instance, contain</code></dt>
+<dd>metrics that describe the agent's performance state, variables that are
+hidden from observations, or individual reward terms that are combined to produce the total reward.
+It also can contain information that distinguishes truncation and termination, however this is deprecated in favour
+of returning two booleans, and will be removed in a future version.</dd>
+<dt>(deprecated)</dt>
+<dt>done (bool): A boolean value for if the episode has ended, in which case further :meth:<code>step</code> calls will return undefined results.</dt>
+<dt><code>
+A done signal may be emitted for different reasons</code></dt>
+<dd>Maybe the task underlying the environment was solved successfully,
+a certain timelimit was exceeded, or the physics simulation has entered an invalid state.</dd>
+</dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -493,40 +512,26 @@ info (dict): contains auxiliary diagnostic information (helpful for debugging, a
 <span>def <span class="ident">render</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Renders the environment.</p>
+<section class="desc"><p>Compute the render frames as specified by render_mode attribute during initialization of the environment.</p>
 <p>The set of supported modes varies per environment. (And some
-environments do not support rendering at all.) By convention,
-if mode is:</p>
+third-party environments may not support rendering at all.)
+By convention, if render_mode is:</p>
 <ul>
-<li>human: render to the current display or terminal and
-return nothing. Usually for human consumption.</li>
-<li>rgb_array: Return an numpy.ndarray with shape (x, y, 3),
-representing RGB values for an x-by-y pixel image, suitable
-for turning into a video.</li>
-<li>ansi: Return a string (str) or StringIO.StringIO containing a
-terminal-style text representation. The text can include newlines
-and ANSI escape sequences (e.g. for colors).</li>
+<li>None (default): no render is computed.</li>
+<li>human: render return None.
+The environment is continuously rendered in the current display or terminal. Usually for human consumption.</li>
+<li>rgb_array: return a single frame representing the current state of the environment.
+A frame is a numpy.ndarray with shape (x, y, 3) representing RGB values for an x-by-y pixel image.</li>
+<li>rgb_array_list: return a list of frames representing the states of the environment since the last reset.
+Each frame is a numpy.ndarray with shape (x, y, 3), as with <code>rgb_array</code>.</li>
+<li>ansi: Return a strings (str) or StringIO.StringIO containing a
+terminal-style text representation for each time step.
+The text can include newlines and ANSI escape sequences (e.g. for colors).</li>
 </ul>
 <h2 id="note">Note</h2>
-<p>Make sure that your class's metadata 'render.modes' key includes
+<p>Make sure that your class's metadata 'render_modes' key includes
 the list of supported modes. It's recommended to call super()
-in implementations to use the functionality of this method.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mode</code></strong> :&ensp;<code>str</code></dt>
-<dd>the mode to render with</dd>
-</dl>
-<p>Example:</p>
-<p>class MyEnv(Env):
-metadata = {'render.modes': ['human', 'rgb_array']}</p>
-<pre><code>def render(self, mode='human'):
-    if mode == 'rgb_array':
-        return np.array(...) # return RGB frame suitable for video
-    elif mode == 'human':
-        ... # pop up a window and render
-    else:
-        super(MyEnv, self).render(mode=mode) # just raise an exception
-</code></pre></section>
+in implementations to use the functionality of this method.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -540,7 +545,7 @@ metadata = {'render.modes': ['human', 'rgb_array']}</p>
 </code></dt>
 <dd>
 <section class="desc"><p>Override close in your subclass to perform any necessary cleanup.</p>
-<p>Environments will automatically close() themselves when
+<p>Environments will automatically :meth:<code>close()</code> themselves when
 garbage collected or when the program exits.</p></section>
 <details class="source">
 <summary>
@@ -583,7 +588,7 @@ garbage collected or when the program exits.</p></section>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>
