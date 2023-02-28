@@ -51,8 +51,8 @@ class PyBoy:
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
-        GitHub, if other methods are needed for your projects. Take a look at `interface_example.py` or `tetris_bot.py`
-        for a crude "bot", which interacts with the game.
+        GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
+        "bots", which interact with the game.
 
         Only the `gamerom_file` argument is required.
 
