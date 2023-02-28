@@ -25,4 +25,4 @@ class WindowHeadless(PyBoyWindowPlugin):
         return self.pyboy_argv.get("window_type") == "headless"
 
     def set_title(self, title):
-        logger.info(title)
+        logger.debug(title)

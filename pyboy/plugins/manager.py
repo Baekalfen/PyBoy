@@ -145,7 +145,6 @@ class PluginManager:
         # foreach end
 
         self._post_tick_windows()
-        self._set_title()
 
     def _set_title(self):
         # foreach windows [].set_title(self.pyboy.window_title)

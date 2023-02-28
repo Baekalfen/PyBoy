@@ -26,4 +26,4 @@ class WindowDummy(PyBoyWindowPlugin):
         return self.pyboy_argv.get("window_type") == "dummy"
 
     def set_title(self, title):
-        logger.info(title)
+        logger.debug(title)
