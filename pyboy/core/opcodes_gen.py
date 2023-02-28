@@ -1197,11 +1197,10 @@ def update():
 
         f.write("def no_opcode(cpu):\n    return 0\n\n\n")
 
-        f.write("def opcode_length(opcode):\n    return OPCODE_LENGTHS[opcode]\n\n")
         f.write(
             """
 def execute_opcode(cpu, opcode):
-    oplen = opcode_length(opcode)
+    oplen = OPCODE_LENGTHS[opcode]
     v = 0
     pc = cpu.PC
     if oplen == 2:
