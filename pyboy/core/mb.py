@@ -513,7 +513,6 @@ class HDMA:
         f.write(self.hdma3)
         f.write(self.hdma4)
         f.write(self.hdma5)
-        f.write(self._hdma5)
         f.write(self.transfer_active)
         f.write_16bit(self.curr_src)
         f.write_16bit(self.curr_dst)
@@ -524,7 +523,9 @@ class HDMA:
         self.hdma3 = f.read()
         self.hdma4 = f.read()
         self.hdma5 = f.read()
-        self._hdma5 = f.read()
+        if STATE_VERSION <= 8:
+            # NOTE: Deprecated read to self._hdma5
+            f.read()
         self.transfer_active = f.read()
         self.curr_src = f.read_16bit()
         self.curr_dst = f.read_16bit()
@@ -566,7 +567,6 @@ class HDMA:
                 # Hblank DMA transfer
                 # set 7th bit to 0
                 self.hdma5 = self.hdma5 & 0x7F
-                # self._hdma5 = (value & 0x7F)
                 self.transfer_active = True
                 self.curr_dst = dst
                 self.curr_src = src
@@ -596,7 +596,6 @@ class HDMA:
 
         if self.hdma5 == 0:
             self.transfer_active = False
-            # self.hdma5 = self._hdma5 | 0x80
             self.hdma5 = 0xFF
         else:
             self.hdma5 -= 1
