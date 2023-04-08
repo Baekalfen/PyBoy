@@ -58,11 +58,6 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         python-version: ['pypy-3.8', 'pypy-3.9']
-        exclude:
-        # Not worth the time to fix:
-        # The headers or library files could not be found for zlib, a required dependency when compiling Pillow from source.
-        - os: windows-latest
-          python-version: pypy-3.9
     steps:
     - uses: actions/checkout@v3
     - name: Setup macOS
