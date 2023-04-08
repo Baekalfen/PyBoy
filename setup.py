@@ -234,6 +234,6 @@ setup(
     },
     zip_safe=(not CYTHON), # Cython doesn't support it
     ext_modules=ext_modules,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     package_data={"": ["*.pxi", "*.pyx", "*.pxd", "*.c", "*.h", "bootrom*.bin", "font.txt"]},
 )
