@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-STATE_VERSION = 8
+STATE_VERSION = 9
 
 ##############################################################
 # Buffer classes
