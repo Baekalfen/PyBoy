@@ -72,7 +72,7 @@ class ScreenRecorder(PyBoyPlugin):
             logger.error("Screen recording failed: no frames")
         self.frames = []
 
-    def enabled(self):
+    def _enabled(self):
         if Image is None:
             logger.warning(f"{__name__}: Missing dependency \"Pillow\". Recording disabled")
             return False

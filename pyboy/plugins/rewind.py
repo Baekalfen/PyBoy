@@ -73,7 +73,7 @@ class Rewind(PyBoyPlugin):
             self.pyboy.set_emulation_speed(int(self.rewind_speed))
         return events
 
-    def enabled(self):
+    def _enabled(self):
         return self.pyboy_argv.get("rewind")
 
 

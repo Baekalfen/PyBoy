@@ -85,7 +85,7 @@ class Debug(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
-        if not self.enabled():
+        if not self.enabled:
             return
 
         self.cgb = mb.cgb
@@ -256,7 +256,7 @@ class Debug(PyBoyWindowPlugin):
         if self.sdl2_event_pump:
             sdl2.SDL_Quit()
 
-    def enabled(self):
+    def _enabled(self):
         if self.pyboy_argv.get("debug"):
             if not sdl2:
                 logger.error("Failed to import sdl2, needed for debug window")

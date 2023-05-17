@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from cython import compiled
+
     cythonmode = compiled
 except ImportError:
     cythonmode = False
@@ -38,11 +39,13 @@ class PyBoyPlugin:
             self.pyboy = pyboy
             self.mb = mb
             self.pyboy_argv = pyboy_argv
+            self.enabled = self._enabled()
 
     def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.pyboy = pyboy
         self.mb = mb
         self.pyboy_argv = pyboy_argv
+        self.enabled = self._enabled()
 
     def handle_events(self, events):
         return events
@@ -56,7 +59,7 @@ class PyBoyPlugin:
     def stop(self):
         pass
 
-    def enabled(self):
+    def _enabled(self):
         return True
 
 
@@ -64,7 +67,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
     def __init__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
 
-        if not self.enabled():
+        if not self.enabled:
             return
 
         scale = pyboy_argv.get("scale")
@@ -107,7 +110,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.game_area_wrap_around = game_area_wrap_around
         width = self.game_area_section[2] - self.game_area_section[0]
         height = self.game_area_section[3] - self.game_area_section[1]
-        self._cached_game_area_tiles_raw = array("B", [0xFF] * (width*height*4))
+        self._cached_game_area_tiles_raw = array("B", [0xFF] * (width * height * 4))
 
         self.saved_state = io.BytesIO()
 
@@ -115,9 +118,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
         else:
             v = memoryview(self._cached_game_area_tiles_raw).cast("I")
-            self._cached_game_area_tiles = [v[i:i + height] for i in range(0, height * width, height)]
+            self._cached_game_area_tiles = [v[i : i + height] for i in range(0, height * width, height)]
 
-    def enabled(self):
+    def _enabled(self):
         return self.pyboy_argv.get("game_wrapper") and self.pyboy.cartridge_title() == self.cartridge_title
 
     def post_tick(self):
@@ -194,15 +197,15 @@ class PyBoyGameWrapper(PyBoyPlugin):
             if self.game_area_wrap_around:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
-                    SCX = scanline_parameters[(yy+y) * 8][0] // 8
-                    SCY = scanline_parameters[(yy+y) * 8][1] // 8
+                    SCX = scanline_parameters[(yy + y) * 8][0] // 8
+                    SCY = scanline_parameters[(yy + y) * 8][1] // 8
                     for x in range(width):
-                        _x = (xx+x+SCX) % 32
-                        _y = (yy+y+SCY) % 32
+                        _x = (xx + x + SCX) % 32
+                        _y = (yy + y + SCY) % 32
                         self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
             else:
                 self._cached_game_area_tiles = np.asarray(
-                    self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
+                    self.tilemap_background[xx : xx + width, yy : yy + height], dtype=np.uint32
                 )
             self._tile_cache_invalid = False
         return self._cached_game_area_tiles
@@ -251,7 +254,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0
-        for i, x in enumerate(self.tilemap_background[x:x + length, y]):
+        for i, x in enumerate(self.tilemap_background[x : x + length, y]):
             if x != blank_tile_identifier:
-                number += (x+tile_identifier_offset) * (10**(length - 1 - i))
+                number += (x + tile_identifier_offset) * (10 ** (length - 1 - i))
         return number
