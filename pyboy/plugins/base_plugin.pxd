@@ -4,7 +4,7 @@
 #
 
 from cpython.array cimport array
-from libc.stdint cimport uint8_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 cimport cython
 from pyboy.botsupport.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
@@ -42,6 +42,9 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef public shape
     cdef bint game_has_started
     cdef TileMap tilemap_background
+    cdef TileMap tilemap_window
+    cdef bint tilemap_use_background
+    cdef uint16_t sprite_offset
 
     cdef bint _tile_cache_invalid
     cdef array _cached_game_area_tiles_raw
