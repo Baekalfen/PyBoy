@@ -18,7 +18,9 @@ from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # isort:skip
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # isort:skip
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
+from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # isort:skip
 # imports end
+from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 
 def parser_arguments():
@@ -37,6 +39,7 @@ def parser_arguments():
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
     yield GameWrapperKirbyDreamLand.argv
+    yield GameWrapperPokemonGen1.argv
     # yield_plugins end
     pass
 
@@ -74,6 +77,8 @@ class PluginManager:
         self.game_wrapper_tetris_enabled = self.game_wrapper_tetris.enabled()
         self.game_wrapper_kirby_dream_land = GameWrapperKirbyDreamLand(pyboy, mb, pyboy_argv)
         self.game_wrapper_kirby_dream_land_enabled = self.game_wrapper_kirby_dream_land.enabled()
+        self.game_wrapper_pokemon_gen1 = GameWrapperPokemonGen1(pyboy, mb, pyboy_argv)
+        self.game_wrapper_pokemon_gen1_enabled = self.game_wrapper_pokemon_gen1.enabled()
         # plugins_enabled end
 
     def gamewrapper(self):
@@ -84,6 +89,8 @@ class PluginManager:
             return self.game_wrapper_tetris
         if self.game_wrapper_kirby_dream_land_enabled:
             return self.game_wrapper_kirby_dream_land
+        if self.game_wrapper_pokemon_gen1_enabled:
+            return self.game_wrapper_pokemon_gen1
         # gamewrapper end
         return None
 
@@ -119,6 +126,8 @@ class PluginManager:
             events = self.game_wrapper_tetris.handle_events(events)
         if self.game_wrapper_kirby_dream_land_enabled:
             events = self.game_wrapper_kirby_dream_land.handle_events(events)
+        if self.game_wrapper_pokemon_gen1_enabled:
+            events = self.game_wrapper_pokemon_gen1.handle_events(events)
         # foreach end
         return events
 
@@ -142,6 +151,8 @@ class PluginManager:
             self.game_wrapper_tetris.post_tick()
         if self.game_wrapper_kirby_dream_land_enabled:
             self.game_wrapper_kirby_dream_land.post_tick()
+        if self.game_wrapper_pokemon_gen1_enabled:
+            self.game_wrapper_pokemon_gen1.post_tick()
         # foreach end
 
         self._post_tick_windows()
@@ -235,6 +246,8 @@ class PluginManager:
             title += self.game_wrapper_tetris.window_title()
         if self.game_wrapper_kirby_dream_land_enabled:
             title += self.game_wrapper_kirby_dream_land.window_title()
+        if self.game_wrapper_pokemon_gen1_enabled:
+            title += self.game_wrapper_pokemon_gen1.window_title()
         # foreach end
         return title
 
@@ -270,6 +283,8 @@ class PluginManager:
             self.game_wrapper_tetris.stop()
         if self.game_wrapper_kirby_dream_land_enabled:
             self.game_wrapper_kirby_dream_land.stop()
+        if self.game_wrapper_pokemon_gen1_enabled:
+            self.game_wrapper_pokemon_gen1.stop()
         # foreach end
         pass
 
