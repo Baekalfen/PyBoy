@@ -34,7 +34,6 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
 parser.add_argument("-b", "--bootrom", type=valid_file_path, help="Path to a boot-ROM file")
-parser.add_argument("--profiling", action="store_true", help="Enable opcode profiling (internal use)")
 parser.add_argument("--randomize-ram", action="store_true", help="Randomize Game Boy RAM on startup")
 parser.add_argument(
     "--log-level",
@@ -150,17 +149,6 @@ See "pyboy --help" for how to enable rewind and other awesome features!
         pass
 
     pyboy.stop()
-
-    if argv.profiling:
-        print("\n".join(profiling_printer(pyboy._cpu_hitrate())))
-
-
-def profiling_printer(hitrate):
-    print("Profiling report:")
-    from operator import itemgetter
-    names = [core.opcodes.CPU_COMMANDS[n] for n in range(0x200)]
-    for hits, opcode, name in sorted(filter(itemgetter(0), zip(hitrate, range(0x200), names)), reverse=True):
-        yield ("%3x %16s %s" % (opcode, name, hits))
 
 
 if __name__ == "__main__":

@@ -35,7 +35,6 @@ class PyBoy:
         gamerom_file,
         *,
         bootrom_file=None,
-        profiling=False,
         disable_renderer=False,
         sound=False,
         cgb=None,
@@ -61,7 +60,6 @@ class PyBoy:
 
         Kwargs:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
 
@@ -87,7 +85,6 @@ class PyBoy:
             sound,
             cgb,
             randomize=randomize,
-            profiling=profiling,
         )
 
         # Performance measures
@@ -245,9 +242,6 @@ class PyBoy:
             self.plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
-
-    def _cpu_hitrate(self):
-        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods
