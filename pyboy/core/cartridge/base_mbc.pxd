@@ -26,17 +26,16 @@ cdef class BaseMBC:
     cdef uint16_t rombank_selected
     cdef bint cgb
 
-    cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface, int)
-    cdef void save_ram(self, IntIOInterface)
-    cdef void load_ram(self, IntIOInterface)
-    cdef void init_rambanks(self, uint8_t)
-    cdef str getgamename(self, uint8_t[:,:])
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef void save_ram(self, IntIOInterface) noexcept
+    cdef void load_ram(self, IntIOInterface) noexcept
+    cdef void init_rambanks(self, uint8_t) noexcept
+    cdef str getgamename(self, uint8_t[:,:]) noexcept
 
-    cdef uint8_t getitem(self, uint16_t)
-    cdef void setitem(self, uint16_t, uint8_t)
-    cdef void overrideitem(self, int, uint16_t, uint8_t)
-
+    cdef uint8_t getitem(self, uint16_t) noexcept
+    cdef void setitem(self, uint16_t, uint8_t) noexcept
+    cdef void overrideitem(self, int, uint16_t, uint8_t) noexcept
 
 cdef class ROMOnly(BaseMBC):
-    cdef void setitem(self, uint16_t, uint8_t)
+    cdef void setitem(self, uint16_t, uint8_t) noexcept

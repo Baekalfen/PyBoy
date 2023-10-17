@@ -8,4 +8,4 @@ from .base_mbc cimport BaseMBC
 
 
 cdef class MBC5(BaseMBC):
-    cdef void setitem(self, uint16_t, uint8_t)
+    cdef void setitem(self, uint16_t, uint8_t) noexcept

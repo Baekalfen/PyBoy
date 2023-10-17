@@ -46,23 +46,23 @@ cdef class Motherboard:
     cdef list breakpoints_list
     cdef int breakpoint_latch
 
-    cdef void buttonevent(self, WindowEvent)
-    cdef void stop(self, bint)
+    cdef void buttonevent(self, WindowEvent) noexcept
+    cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, escape_halt=cython.int, mode0_cycles=int64_t)
-    cdef bint tick(self)
+    cdef bint tick(self) noexcept
 
-    cdef void switch_speed(self)
+    cdef void switch_speed(self) noexcept
 
     @cython.locals(pc=cython.int, bank=cython.int)
-    cdef bint breakpoint_reached(self)
+    cdef bint breakpoint_reached(self) noexcept
 
-    cdef uint8_t getitem(self, uint16_t)
-    cdef void setitem(self, uint16_t, uint8_t)
+    cdef uint8_t getitem(self, uint16_t) noexcept
+    cdef void setitem(self, uint16_t, uint8_t) noexcept
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
-    cdef void transfer_DMA(self, uint8_t)
-    cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface)
+    cdef void transfer_DMA(self, uint8_t) noexcept
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef void load_state(self, IntIOInterface) noexcept
 
 cdef class HDMA:
     cdef uint8_t hdma1
@@ -76,8 +76,8 @@ cdef class HDMA:
     cdef uint16_t curr_src
     cdef uint16_t curr_dst
 
-    cdef void set_hdma5(self, uint8_t, Motherboard)
-    cdef int tick(self, Motherboard)
+    cdef void set_hdma5(self, uint8_t, Motherboard) noexcept
+    cdef int tick(self, Motherboard) noexcept
 
-    cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface, int)
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef void load_state(self, IntIOInterface, int) noexcept
