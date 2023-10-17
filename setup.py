@@ -162,14 +162,19 @@ if CYTHON and "clean" not in sys.argv:
     # Set up some values for use in setup()
     libs, libdirs, includes, cflags = define_lib_includes_cflags()
 
+    # NOTE: For performance. Check if other platforms need an equivalent change.
+    if sys.platform == "darwin":
+        cflags.append("-DCYTHON_INLINE=inline __attribute__((always_inline))")
+
     py_pxd_files = prep_pxd_py_files()
     cythonize_files = map(
         lambda src: Extension(
-            src.split(".")[0].replace(os.sep, "."), [src],
+            src.split(".")[0].replace(os.sep, "."),
+            [src],
             include_dirs=includes,
             library_dirs=libdirs,
             libraries=libs,
-            extra_compile_args=cflags
+            extra_compile_args=cflags,
         ), list(py_pxd_files)
     )
     ext_modules = cythonize(
