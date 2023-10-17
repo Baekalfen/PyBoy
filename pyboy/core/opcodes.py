@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
-
 def NOP_00(cpu): # 00 NOP
     cpu.PC += 1
     cpu.PC &= 0xFFFF

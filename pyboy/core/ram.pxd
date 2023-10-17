@@ -8,8 +8,8 @@ from pyboy.utils cimport IntIOInterface
 
 
 cdef class RAM:
-    cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface, int)
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef void load_state(self, IntIOInterface, int) noexcept
 
     cdef uint8_t[:] internal_ram0 # Dynamic size for DMG/CGB
     cdef uint8_t[0x60] non_io_internal_ram0

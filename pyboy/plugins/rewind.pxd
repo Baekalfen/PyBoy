@@ -45,16 +45,16 @@ cdef class FixedAllocBuffers(IntIOInterface):
     cdef double avg_section_size
 
     @cython.locals(section_size=double)
-    cdef void new(self)
-    cdef void commit(self)
+    cdef void new(self) noexcept
+    cdef void commit(self) noexcept
     @cython.locals(_=int64_t, abs_frames=int64_t, head=int64_t, tail=int64_t)
-    cdef bint seek_frame(self, int64_t)
+    cdef bint seek_frame(self, int64_t) noexcept
 
 cdef class CompressedFixedAllocBuffers(FixedAllocBuffers):
     cdef uint64_t zeros
 
     @cython.locals(chunks=int64_t, rest=int64_t)
-    cdef void flush(self)
+    cdef void flush(self) noexcept
 
 cdef class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     cdef int64_t internal_pointer
@@ -64,4 +64,4 @@ cdef class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     cdef int64_t base_frame
     cdef int64_t injected_zero_frame
 
-    cdef void flush_internal_buffer(self)
+    cdef void flush_internal_buffer(self) noexcept

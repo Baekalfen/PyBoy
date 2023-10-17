@@ -11,8 +11,8 @@ cdef int SOUND_DESYNC_THRESHOLD
 cdef int CPU_FREQ
 
 cdef class Sound:
-    cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface, int)
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef void load_state(self, IntIOInterface, int) noexcept
 
     cdef bint enabled
     cdef int device
@@ -34,12 +34,12 @@ cdef class Sound:
 
     cdef bint leftnoise, leftwave, lefttone, leftsweep, rightnoise, rightwave, righttone, rightsweep
 
-    cdef uint8_t get(self, uint8_t)
-    cdef void set(self, uint8_t, uint8_t)
+    cdef uint8_t get(self, uint8_t) noexcept
+    cdef void set(self, uint8_t, uint8_t) noexcept
 
     @cython.locals(nsamples=int, sample=int, i=int, queued_time=int, )
-    cdef void sync(self)
-    cdef void stop(self)
+    cdef void sync(self) noexcept
+    cdef void stop(self) noexcept
 
 
 cdef class ToneChannel:
@@ -65,12 +65,12 @@ cdef class ToneChannel:
     cdef int frame # Frame sequencer value, generates clocks for length/envelope/(sweep)
     cdef int volume # Current volume level, modulated by envelope
 
-    cdef uint8_t getreg(self, uint8_t)
-    cdef void setreg(self, uint8_t, uint8_t)
-    cdef void run(self, uint64_t)
-    cdef uint8_t sample(self)
-    cdef void trigger(self)
-    cdef void tickframe(self)
+    cdef uint8_t getreg(self, uint8_t) noexcept
+    cdef void setreg(self, uint8_t, uint8_t) noexcept
+    cdef void run(self, uint64_t) noexcept
+    cdef uint8_t sample(self) noexcept
+    cdef void trigger(self) noexcept
+    cdef void tickframe(self) noexcept
 
 
 cdef class SweepChannel(ToneChannel):
@@ -84,11 +84,11 @@ cdef class SweepChannel(ToneChannel):
     cdef bint sweepenable # Internal sweep enable flag
     cdef int shadow # Shadow copy of period register for ignoring writes to sndper
 
-    cdef uint8_t getreg(self, uint8_t)
-    cdef void setreg(self, uint8_t, uint8_t)
-    cdef bint sweep(self, bint)
-    cdef void trigger(self)
-    cdef void tickframe(self)
+    cdef uint8_t getreg(self, uint8_t) noexcept
+    cdef void setreg(self, uint8_t, uint8_t) noexcept
+    cdef bint sweep(self, bint) noexcept
+    cdef void trigger(self) noexcept
+    cdef void tickframe(self) noexcept
 
 
 cdef class WaveChannel:
@@ -114,14 +114,14 @@ cdef class WaveChannel:
     cdef int frame # Frame sequencer value, generates clocks for length/envelope/(sweep)
     cdef int volumeshift # Bitshift for volume, set by volreg
 
-    cdef uint8_t getreg(self, uint8_t)
-    cdef void setreg(self, uint8_t, uint8_t)
-    cdef void run(self, uint64_t)
-    cdef uint8_t sample(self)
-    cdef void trigger(self)
-    cdef void tickframe(self)
-    cdef uint8_t getwavebyte(self, uint8_t)
-    cdef void setwavebyte(self, uint8_t, uint8_t)
+    cdef uint8_t getreg(self, uint8_t) noexcept
+    cdef void setreg(self, uint8_t, uint8_t) noexcept
+    cdef void run(self, uint64_t) noexcept
+    cdef uint8_t sample(self) noexcept
+    cdef void trigger(self) noexcept
+    cdef void tickframe(self) noexcept
+    cdef uint8_t getwavebyte(self, uint8_t) noexcept
+    cdef void setwavebyte(self, uint8_t, uint8_t) noexcept
 
 
 cdef class NoiseChannel:
@@ -151,9 +151,9 @@ cdef class NoiseChannel:
     cdef int frame # Frame sequencer value, generates clocks for length/envelope/(sweep)
     cdef int volume # Current volume level, modulated by envelope
 
-    cdef uint8_t getreg(self, uint8_t)
-    cdef void setreg(self, uint8_t, uint8_t)
-    cdef void run(self, uint64_t)
-    cdef uint8_t sample(self)
-    cdef void trigger(self)
-    cdef void tickframe(self)
+    cdef uint8_t getreg(self, uint8_t) noexcept
+    cdef void setreg(self, uint8_t, uint8_t) noexcept
+    cdef void run(self, uint64_t) noexcept
+    cdef uint8_t sample(self) noexcept
+    cdef void trigger(self) noexcept
+    cdef void tickframe(self) noexcept
