@@ -189,7 +189,12 @@ class Operand:
         elif operand in ["Z", "C", "NZ", "NC"]: # flags
             assert not assign
             self.flag = True
-            return "cpu.f_" + operand.lower() + "()"
+
+            if "N" in operand:
+                return f"((cpu.F & (1 << FLAG{operand[1]})) == 0)"
+            else:
+                return f"((cpu.F & (1 << FLAG{operand})) != 0)"
+            # return "f_" + operand.lower() + "(cpu)"
 
         elif operand in ["d8", "d16", "a8", "a16", "r8"]:
             assert not assign
@@ -363,7 +368,7 @@ class OpcodeData:
 
         # flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
         if self.flag_h == "H":
-            c = " %s cpu.f_c()" % op if carry else ""
+            c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
 
         # flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
@@ -388,7 +393,7 @@ class OpcodeData:
         lines.append("flag = " + format(sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)), "#010b"))
 
         if self.flag_h == "H":
-            c = " %s cpu.f_c()" % op if carry else ""
+            c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
             lines.append("flag += (((%s & 0xFFF) %s (%s & 0xFFF)%s) > 0xFFF) << FLAGH" % (r0, op, r1, c))
 
         if self.flag_c == "C":
@@ -415,10 +420,10 @@ class OpcodeData:
             lines.append("flag += ((t & 0xFF) == 0) << FLAGZ")
 
         if self.flag_h == "H" and op == "-":
-            c = " %s cpu.f_c()" % op if carry else ""
+            c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) < 0) << FLAGH" % (r0, op, r1, c))
         elif self.flag_h == "H":
-            c = " %s cpu.f_c()" % op if carry else ""
+            c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
             lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
 
         if self.flag_c == "C" and op == "-":
@@ -483,9 +488,9 @@ class OpcodeData:
         code.addlines([
             "t = %s" % left.get,
             "corr = 0",
-            "corr |= 0x06 if cpu.f_h() else 0x00",
-            "corr |= 0x60 if cpu.f_c() else 0x00",
-            "if cpu.f_n():",
+            "corr |= 0x06 if ((cpu.F & (1 << FLAGH)) != 0) else 0x00",
+            "corr |= 0x60 if ((cpu.F & (1 << FLAGC)) != 0) else 0x00",
+            "if (cpu.F & (1 << FLAGN)) != 0:",
             "\tt -= corr",
             "else:",
             "\tcorr |= 0x06 if (t & 0x0F) > 0x09 else 0x00",
@@ -577,7 +582,7 @@ class OpcodeData:
         calc = " ".join(["t", "=", left.get, op, right.get])
 
         if carry:
-            calc += " " + op + " cpu.f_c()"
+            calc += " " + op + " ((cpu.F & (1 << FLAGC)) != 0)"
 
         lines.append(calc)
 
@@ -820,7 +825,7 @@ class OpcodeData:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
                 left.flag = True
-                l_code = "cpu.f_c()"
+                l_code = "((cpu.F & (1 << FLAGC)) != 0)"
             assert left.flag
         elif right.pointer:
             # FIX: Wrongful syntax of "JP (HL)" actually meaning "JP HL"
@@ -861,7 +866,7 @@ class OpcodeData:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
                 left.flag = True
-                l_code = "cpu.f_c()"
+                l_code = "((cpu.F & (1 << FLAGC)) != 0)"
             assert left.flag
         assert right.immediate
 
@@ -902,7 +907,7 @@ class OpcodeData:
             l_code = left.get
             if l_code.endswith("C") and "NC" not in l_code:
                 left.flag = True
-                l_code = "cpu.f_c()"
+                l_code = "((cpu.F & (1 << FLAGC)) != 0)"
             assert left.flag
         assert right.immediate
 
@@ -951,7 +956,7 @@ class OpcodeData:
             if left is not None:
                 if l_code.endswith("C") and "NC" not in l_code:
                     left.flag = True
-                    l_code = "cpu.f_c()"
+                    l_code = "((cpu.F & (1 << FLAGC)) != 0)"
                 assert left.flag
 
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles, branch_op=True)
@@ -1023,7 +1028,7 @@ class OpcodeData:
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         left.assign = False
         if throughcarry:
-            code.addline(("t = (%s << 1)" % left.get) + " + cpu.f_c()")
+            code.addline(("t = (%s << 1)" % left.get) + " + ((cpu.F & (1 << FLAGC)) != 0)")
         else:
             code.addline("t = (%s << 1) + (%s >> 7)" % (left.get, left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
@@ -1059,7 +1064,8 @@ class OpcodeData:
         left.assign = False
         if throughcarry:
             # Trigger "overflow" for carry flag
-            code.addline(("t = (%s >> 1)" % left.get) + " + (cpu.f_c() << 7)" + " + ((%s & 1) << 8)" % (left.get))
+            code.addline(("t = (%s >> 1)" % left.get) + " + (((cpu.F & (1 << FLAGC)) != 0) << 7)" +
+                         " + ((%s & 1) << 8)" % (left.get))
         else:
             # Trigger "overflow" for carry flag
             code.addline("t = (%s >> 1) + ((%s & 1) << 7)" % (left.get, left.get) + " + ((%s & 1) << 8)" % (left.get))

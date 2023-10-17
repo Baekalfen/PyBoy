@@ -49,12 +49,5 @@ cdef class CPU:
 
     cdef pyboy.core.mb.Motherboard mb
 
-    cdef void set_bc(CPU, int)
-    cdef void set_de(CPU, int)
-
-    cdef bint f_c(self)
-    cdef bint f_h(self)
-    cdef bint f_n(self)
-    cdef bint f_z(self)
-    cdef bint f_nc(self)
-    cdef bint f_nz(self)
+    cdef void set_bc(CPU, uint16_t)
+    cdef void set_de(CPU, uint16_t)
