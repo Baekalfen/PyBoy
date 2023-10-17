@@ -23,24 +23,6 @@ class CPU:
         self.D = x >> 8
         self.E = x & 0x00FF
 
-    def f_c(self):
-        return (self.F & (1 << FLAGC)) != 0
-
-    def f_h(self):
-        return (self.F & (1 << FLAGH)) != 0
-
-    def f_n(self):
-        return (self.F & (1 << FLAGN)) != 0
-
-    def f_z(self):
-        return (self.F & (1 << FLAGZ)) != 0
-
-    def f_nc(self):
-        return (self.F & (1 << FLAGC)) == 0
-
-    def f_nz(self):
-        return (self.F & (1 << FLAGZ)) == 0
-
     def __init__(self, mb, profiling=False):
         self.A = 0
         self.F = 0
