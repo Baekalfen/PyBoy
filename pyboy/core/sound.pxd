@@ -14,7 +14,7 @@ cdef class Sound:
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
 
-    cdef bint enabled
+    cdef bint enabled, emulate
     cdef int device
 
     cdef int sample_rate
