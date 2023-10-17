@@ -144,7 +144,10 @@ class WindowOpenGL(PyBoyWindowPlugin):
     def enabled(self):
         if self.pyboy_argv.get("window_type") == "OpenGL":
             if opengl_enabled:
-                return True
+                if bool(OpenGL.GLUT.freeglut.glutMainLoopEvent):
+                    return True
+                else:
+                    logger.error("Failed to load \"PyOpenGL\". OpenGL window disabled")
             else:
                 logger.error("Missing depencency \"PyOpenGL\". OpenGL window disabled")
         return False
