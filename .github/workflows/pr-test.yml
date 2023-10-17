@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: [3.8, 3.9, "3.10", 3.11]
+        python-version: [3.8, 3.9, "3.10", 3.11] # TODO: 3.12
 
     steps:
     - uses: actions/checkout@v3
@@ -31,6 +31,11 @@ jobs:
     - name: Build PyBoy
       run: |
         python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
+    - name: Setup Ubuntu - OpenGL dependencies
+      if: ${{ contains(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt update
+        sudo apt install libopengl0 freeglut3-dev
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -38,7 +43,7 @@ jobs:
         TEST_NO_UI: 1
       run: |
         pip install --upgrade pip
-        pip install -r requirements_tests.txt
+        pip install --prefer-binary -r requirements_tests.txt
         python -m pytest tests/ -n2 -v
     - name: Build and upload wheel
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && !contains(matrix.os, 'ubuntu') }}
@@ -57,7 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: ['pypy-3.8', 'pypy-3.9']
+        python-version: ['pypy-3.9'] # TODO: 'pypy-3.10'
     steps:
     - uses: actions/checkout@v3
     - name: Setup macOS
@@ -67,6 +72,11 @@ jobs:
         brew install openssl
         echo "CPPFLAGS=-I/usr/local/opt/openssl/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L/usr/local/opt/openssl/lib" >> $GITHUB_ENV
+    - name: Setup Ubuntu - OpenGL dependencies
+      if: ${{ contains(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt update
+        sudo apt install libopengl0 freeglut3-dev
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
@@ -75,14 +85,8 @@ jobs:
     - name: Install PyPy dependencies
       run: |
         pypy3 -m ensurepip
+        pypy3 -m pip install --upgrade pip
         pypy3 -m pip install wheel
-    - name: Fix Numpy Polyfit error
-      if: ${{ contains(matrix.os, 'macOS') }}
-      run: |
-        # Fix issue with NumPy and PolyFit: https://github.com/numpy/numpy/issues/15947
-        pip cache remove numpy
-        # brew install openblas
-        OPENBLAS="$(brew --prefix openblas)" pypy3 -m pip install numpy
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -90,7 +94,7 @@ jobs:
         TEST_NO_UI: 1
       run: |
         pip install --upgrade pip
-        pypy3 -m pip install -r requirements_tests.txt
+        pypy3 -m pip install --prefer-binary -r requirements_tests.txt
         pypy3 -m pytest tests/ -n2 -v
 
   test_manylinux:
@@ -99,8 +103,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
+        python-version: ['cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312']
         manylinux-version: ['manylinux2010_x86_64', 'manylinux_2_28_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
+        exclude:
+          - manylinux-version: manylinux2010_x86_64
+            python-version: cp311-cp311
+          - manylinux-version: manylinux2010_x86_64
+            python-version: cp312-cp312
 
     steps:
     - uses: actions/checkout@v3
@@ -123,14 +132,16 @@ jobs:
           cd /work
           echo "Starting build"
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
 
           echo "Starting tests"
           if [[ "${{ matrix.manylinux-version }}" == "manylinux2010_x86_64" ]]; then
-            python -m pip install cryptography==37
+            python -m pip install cryptography==37 numpy==1.21.6
           fi
-          python -m pip install -r requirements_tests.txt
+
+          python -m pip install --prefer-binary -r requirements.txt
+          python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
+
+          python -m pip install --prefer-binary -r requirements_tests.txt
           PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_CI=1 TEST_NO_UI=1 python -m pytest tests/ -n2 -v
 
           echo "Building wheel"
