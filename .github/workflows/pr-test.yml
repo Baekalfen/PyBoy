@@ -28,6 +28,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         pip install wheel
+        pip install --prefer-binary -r requirements.txt
     - name: Build PyBoy
       run: |
         python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
