@@ -20,8 +20,9 @@ CPU_FREQ = 4213440 # hz
 
 
 class Sound:
-    def __init__(self, enabled):
+    def __init__(self, enabled, emulate):
         self.enabled = enabled and (sdl2 is not None)
+        self.emulate = emulate or enabled # Just emulate registers etc.
         if self.enabled:
             # Initialization is handled in the windows, otherwise we'd need this
             sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
@@ -61,6 +62,8 @@ class Sound:
         self.rightsweep = False
 
     def get(self, offset):
+        if not self.emulate:
+            return 0
         self.sync()
         if offset < 20:
             i = offset // 5
@@ -91,6 +94,8 @@ class Sound:
             raise IndexError(f"Attempted to read register {offset} in sound memory")
 
     def set(self, offset, value):
+        if not self.emulate:
+            return
         self.sync()
         if offset < 20 and self.poweron:
             i = offset // 5
@@ -131,6 +136,9 @@ class Sound:
 
     def sync(self):
         """Run the audio for the number of clock cycles stored in self.clock"""
+        if not self.emulate:
+            return
+
         nsamples = self.clock // self.sampleclocks
 
         for i in range(min(2048, nsamples)):

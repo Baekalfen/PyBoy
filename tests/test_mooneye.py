@@ -151,7 +151,7 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
     if saved_state is None:
         # HACK: We load any rom and load it until the last frame in the boot rom.
         # Then we save it, so we won't need to redo it.
-        pyboy = PyBoy(default_rom, window_type="headless", cgb=False)
+        pyboy = PyBoy(default_rom, window_type="headless", cgb=False, sound_emulated=True)
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
         for _ in range(59):

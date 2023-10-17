@@ -37,6 +37,7 @@ class PyBoy:
         bootrom_file=None,
         disable_renderer=False,
         sound=False,
+        sound_emulated=False,
         cgb=None,
         randomize=False,
         **kwargs
@@ -83,6 +84,7 @@ class PyBoy:
             kwargs["color_palette"],
             disable_renderer,
             sound,
+            sound_emulated,
             cgb,
             randomize=randomize,
         )
