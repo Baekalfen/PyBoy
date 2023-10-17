@@ -25,13 +25,9 @@ class Motherboard:
         sound_enabled,
         cgb,
         randomize=False,
-        profiling=False,
     ):
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
-
-        if profiling:
-            logger.info("Profiling enabled")
 
         self.cartridge = cartridge.load_cartridge(gamerom_file)
         if cgb is None:
@@ -42,7 +38,7 @@ class Motherboard:
         self.interaction = interaction.Interaction()
         self.bootrom = bootrom.BootROM(bootrom_file, cgb)
         self.ram = ram.RAM(cgb, randomize=randomize)
-        self.cpu = cpu.CPU(self, profiling)
+        self.cpu = cpu.CPU(self)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
@@ -213,9 +209,6 @@ class Motherboard:
                     # self.serial.cycles_to_interrupt(),
                     mode0_cycles
                 )
-
-                # Profiling
-                self.cpu.add_opcode_hit(0x76, cycles // 4)
 
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma

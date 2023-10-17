@@ -22,11 +22,9 @@ cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 cdef class CPU:
     cdef bint is_stuck
-    cdef bint interrupt_master_enable, interrupt_queued, halted, stopped, profiling
+    cdef bint interrupt_master_enable, interrupt_queued, halted, stopped
 
     cdef uint8_t interrupts_flag, interrupts_enabled, interrupts_flag_register, interrupts_enabled_register
-
-    cdef int[512] hitrate
 
     cdef inline int check_interrupts(self) noexcept
     cdef void set_interruptflag(self, int) noexcept
@@ -35,7 +33,6 @@ cdef class CPU:
     @cython.locals(opcode=uint16_t)
     cdef inline uint8_t fetch_and_execute(self) noexcept
     cdef int tick(self) noexcept
-    cdef inline void add_opcode_hit(self, int, int) noexcept
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
 

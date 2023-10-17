@@ -23,7 +23,7 @@ class CPU:
         self.D = x >> 8
         self.E = x & 0x00FF
 
-    def __init__(self, mb, profiling=False):
+    def __init__(self, mb):
         self.A = 0
         self.F = 0
         self.B = 0
@@ -44,11 +44,6 @@ class CPU:
         self.halted = False
         self.stopped = False
         self.is_stuck = False
-
-        # Profiling
-        self.profiling = profiling
-        if profiling:
-            self.hitrate = array.array("L", [0] * 512)
 
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
@@ -183,17 +178,10 @@ class CPU:
             return True
         return False
 
-    def add_opcode_hit(self, opcode, count):
-        # Profiling
-        if self.profiling:
-            self.hitrate[opcode] += 1
-
     def fetch_and_execute(self):
         opcode = self.mb.getitem(self.PC)
         if opcode == 0xCB: # Extension code
             opcode = self.mb.getitem(self.PC + 1)
             opcode += 0x100 # Internally shifting look-up table
-
-        self.add_opcode_hit(opcode, 1)
 
         return opcodes.execute_opcode(self, opcode)

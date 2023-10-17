@@ -54,26 +54,6 @@ def test_record_replay(boot_rom, default_rom):
         "The replay did not result in the expected output"
 
 
-def test_profiling(boot_rom, default_rom):
-    pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
-    pyboy.set_emulation_speed(0)
-    pyboy.tick()
-
-    hitrate = pyboy._cpu_hitrate()
-    CHECK_SUM = 7524
-    assert sum(hitrate) == CHECK_SUM, "The amount of instructions called in the first frame of the boot-ROM has changed"
-
-    assert list(main.profiling_printer(hitrate)) == [
-        "17c          BIT 7,H 2507",
-        " 32       LD (HL-),A 2507",
-        " 20         JR NZ,r8 2507",
-        " af            XOR A 1",
-        " 31        LD SP,d16 1",
-        " 21        LD HL,d16 1",
-    ], "The output of the profiling formatter has changed. Either the output is wrong, or the formatter has changed."
-    pyboy.stop(save=False)
-
-
 def test_argv_parser(*args):
     parser = main.parser
 
@@ -92,7 +72,6 @@ def test_argv_parser(*args):
         "loadstate": None,
         "no_input": False,
         "log_level": "INFO",
-        "profiling": False,
         "record_input": False,
         "rewind": False,
         "scale": 3,
@@ -109,16 +88,9 @@ def test_argv_parser(*args):
 
     # Check flags become True
     flags = parser.parse_args(
-        f"{file_that_exists} --debug --autopause --profiling --rewind --no-input --log-level INFO".split(" ")
+        f"{file_that_exists} --debug --autopause --rewind --no-input --log-level INFO".split(" ")
     ).__dict__
-    for k, v in {
-        "autopause": True,
-        "debug": True,
-        "no_input": True,
-        "log_level": "INFO",
-        "profiling": True,
-        "rewind": True
-    }.items():
+    for k, v in {"autopause": True, "debug": True, "no_input": True, "log_level": "INFO", "rewind": True}.items():
         assert flags[k] == v
 
 
