@@ -16,7 +16,7 @@ from setuptools import Extension, find_packages, setup
 # The requirements.txt file will not be included in the PyPi package
 REQUIREMENTS = """\
 # Change in setup.py
-cython>=0.29.16,!=3.0.4; platform_python_implementation == 'CPython'
+cython>=3.0.0,!=3.0.4; platform_python_implementation == 'CPython'
 numpy
 pysdl2
 pysdl2-dll
