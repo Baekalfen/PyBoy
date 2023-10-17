@@ -44,10 +44,10 @@ test: export DEBUG=1
 test: clean build test_cython test_pypy
 
 test_cython:
-	${PY} setup.py test
+	${PY} -m pytest tests/ -n4 -v
 
 test_pypy:
-	${PYPY} setup.py test
+	${PYPY} -m pytest tests/ -n4 -v
 
 test_all: test
 
