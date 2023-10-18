@@ -11,6 +11,7 @@ repos:
   rev: 'v0.32.0'  # Use the sha / tag you want to point at
   hooks:
   - id: yapf
+    additional_dependencies: [toml]
 - repo: https://github.com/pre-commit/mirrors-isort
   rev: v5.10.1
   hooks:

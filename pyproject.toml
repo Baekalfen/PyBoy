@@ -1,0 +1,69 @@
+[project]
+name = "pyboy"
+version = "1.6.1"
+authors = [
+    {name = "Mads Ynddal", email = "mads@ynddal.dk"}
+]
+keywords = ["gameboy", "game boy", "emulator", "cython", "pypy"]
+description = "Game Boy emulator written in Python"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "License :: Free for non-commercial use",
+    "Operating System :: OS Independent",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: System :: Emulators",
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "numpy",
+    "pysdl2",
+    "pysdl2-dll",
+]
+
+[project.optional-dependencies]
+all = [
+    "pyopengl",
+    "markdown",
+    "pdoc3",
+    "gym",
+]
+
+[project.urls]
+Homepage = "https://github.com/Baekalfen/PyBoy"
+Documentation = "https://docs.pyboy.dk/index.html"
+Repository = "https://github.com/Baekalfen/PyBoy.git"
+
+[project.scripts]
+pyboy = "pyboy.__main__:main"
+
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "cython>=3.0.0,!=3.0.4; platform_python_implementation == 'CPython'"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyboy*"]
+
+[tool.setuptools.package-data]
+pyboy = ["pyboy/core/bootrom_dmg.bin"]
+"*" = [
+    "**/*.pxi",
+    "**/*.pyx",
+    "**/*.pxd",
+    "**/*.c",
+    "**/*.h",
+    "**/bootrom*.bin",
+    "**/font.txt"
+]
