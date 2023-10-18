@@ -15,6 +15,7 @@ PYPY := pypy3
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 GITHUB_REF ?= "refs/tags/v0.0.0"
 PYBOY_VERSION ?= $(shell echo ${GITHUB_REF} | cut -d'/' -f3)
+SHELL:=zsh -o extended_glob +o nomatch -c
 
 dist: clean build
 	${PY} setup.py sdist bdist_wheel
@@ -32,7 +33,20 @@ build:
 
 clean:
 	@echo "Cleaning..."
-	CFLAGS=$(CFLAGS) ${PY} setup.py clean --inplace
+	${SHELL} 'rm -rf PyBoy.egg-info'
+	${SHELL} 'rm -rf build'
+	${SHELL} 'rm -rf dist'
+	${SHELL} 'rm -rf pyboy/**/__pycache__'
+	${SHELL} 'rm -rf pyboy/**/*.pyo'
+	${SHELL} 'rm -rf pyboy/**/*.pyc'
+	${SHELL} 'rm -rf pyboy/**/*.pyd'
+	${SHELL} 'rm -rf pyboy/**/*.so'
+	${SHELL} 'rm -rf pyboy/**/*.c'
+	${SHELL} 'rm -rf pyboy/**/*.h'
+	${SHELL} 'rm -rf pyboy/**/*.dll'
+	${SHELL} 'rm -rf pyboy/**/*.lib'
+	${SHELL} 'rm -rf pyboy/**/*.exp'
+	${SHELL} 'rm -rf pyboy/**/*.html'
 
 install: build
 	${PY} -m pip install .
