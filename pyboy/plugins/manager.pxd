@@ -61,11 +61,11 @@ cdef class PluginManager:
     cdef bint game_wrapper_pokemon_gen1_enabled
     # plugin_cdef end
 
-    cdef list handle_events(self, list)
-    cdef void post_tick(self)
-    cdef void _post_tick_windows(self)
-    cdef void frame_limiter(self, int)
-    cdef str window_title(self)
-    cdef void stop(self)
-    cdef void _set_title(self)
-    cdef void handle_breakpoint(self)
+    cdef list handle_events(self, list) noexcept
+    cdef void post_tick(self) noexcept
+    cdef void _post_tick_windows(self) noexcept
+    cdef void frame_limiter(self, int) noexcept
+    cdef str window_title(self) noexcept
+    cdef void stop(self) noexcept
+    cdef void _set_title(self) noexcept
+    cdef void handle_breakpoint(self) noexcept

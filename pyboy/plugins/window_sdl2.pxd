@@ -15,7 +15,7 @@ cdef int ROWS, COLS
 
 cdef object _sdlcontroller
 
-cpdef list sdl2_event_pump(list)
+cpdef list sdl2_event_pump(list) noexcept
 
 
 cdef class WindowSDL2(PyBoyWindowPlugin):
