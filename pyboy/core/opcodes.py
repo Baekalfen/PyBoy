@@ -5243,6 +5243,8 @@ def execute_opcode(cpu, opcode):
         b = cpu.mb.getitem(pc+1)
         v = (a << 8) + b
 
+    opcode &= 0x1FF
+
     if opcode == 0x00:
         return NOP_00(cpu)
     elif opcode == 0x01:
