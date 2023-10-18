@@ -7,6 +7,7 @@ import os
 import platform
 
 import pytest
+
 from pyboy.core.lcd import LCD
 
 is_pypy = platform.python_implementation() == "PyPy"
@@ -17,8 +18,7 @@ color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
 
 
 @pytest.mark.skipif(
-    os.environ.get("TEST_CI") and (not is_pypy),
-    reason="This test requires env DEBUG=1 on Cython, which is not suitable for deployment builds"
+    not hasattr(LCD, "get_stat"), reason="This test requires access to internal registers not available in Cython"
 )
 class TestLCD:
     def test_set_stat_mode(self):
