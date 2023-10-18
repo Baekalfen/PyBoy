@@ -3,8 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-include "debug.pxi"
-
 import cython
 from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int16_t
@@ -29,20 +27,12 @@ cdef class LCD:
     cdef uint8_t next_stat_mode
     cdef bint frame_done
     cdef uint8_t max_ly
-    IF DEBUG:
-        cdef public uint8_t LY
-        cdef public uint8_t LYC
-        cdef public uint64_t clock
-        cdef public uint64_t clock_target
-        cdef public LCDCRegister _LCDC
-        cdef public STATRegister _STAT
-    ELSE:
-        cdef uint8_t LY
-        cdef uint8_t LYC
-        cdef uint64_t clock
-        cdef uint64_t clock_target
-        cdef LCDCRegister _LCDC
-        cdef STATRegister _STAT
+    cdef uint8_t LY
+    cdef uint8_t LYC
+    cdef uint64_t clock
+    cdef uint64_t clock_target
+    cdef LCDCRegister _LCDC
+    cdef STATRegister _STAT
     cdef PaletteRegister BGP
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
@@ -88,16 +78,10 @@ cdef class PaletteRegister:
     cdef uint32_t getcolor(self, uint8_t) noexcept
 
 cdef class STATRegister:
-    IF DEBUG:
-        cdef public uint8_t value
-        cdef public uint8_t _mode
-        cpdef uint8_t set_mode(self, uint8_t) noexcept
-        cpdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept
-    ELSE:
-        cdef uint8_t value
-        cdef uint8_t _mode
-        cdef uint8_t set_mode(self, uint8_t) noexcept
-        cdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept
+    cdef uint8_t value
+    cdef uint8_t _mode
+    cdef uint8_t set_mode(self, uint8_t) noexcept
+    cdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept
     cdef void set(self, uint64_t) noexcept
 
 cdef class LCDCRegister:
