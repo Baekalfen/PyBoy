@@ -93,6 +93,9 @@ def prep_pxd_py_files():
                         os.utime(py_file)
 
 
-setup(cmdclass={
-    "build_ext": build_ext,
-}, )
+setup(
+    cmdclass={
+        "build_ext": build_ext,
+    },
+    ext_modules=[Extension("", [""])], # Added to trigger a binary wheel
+)
