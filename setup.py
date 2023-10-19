@@ -27,9 +27,7 @@ class build_ext(_build_ext):
             8) <= sys.version_info[:2] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
             multiprocessing.set_start_method("fork", force=True)
 
-        # Set up some values for use in setup()
-        libs, libdirs, includes, cflags = define_lib_includes_cflags()
-
+        cflags = []
         # NOTE: For performance. Check if other platforms need an equivalent change.
         if sys.platform == "darwin":
             cflags.append("-DCYTHON_INLINE=inline __attribute__ ((__unused__)) __attribute__((always_inline))")
@@ -39,9 +37,6 @@ class build_ext(_build_ext):
             lambda src: Extension(
                 src.split(".")[0].replace(os.sep, "."),
                 [src],
-                include_dirs=includes,
-                library_dirs=libdirs,
-                libraries=libs,
                 extra_compile_args=cflags,
             ), list(py_pxd_files)
         )
@@ -64,18 +59,6 @@ class build_ext(_build_ext):
                 "legacy_implicit_noexcept": True,
             },
         )
-
-
-# Define libs, libdirs, includes and cflags for SDL2
-def define_lib_includes_cflags():
-    libs = []
-    libdirs = []
-    includes = []
-    cflags = [
-        "-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/include"
-    ] if sys.platform == "darwin" else []
-
-    return libs, libdirs, includes, cflags
 
 
 def prep_pxd_py_files():
