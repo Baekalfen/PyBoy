@@ -48,7 +48,7 @@ jobs:
         pip install --prefer-binary -r requirements_tests.txt
         python -m pytest tests/ -n2 -v
     - name: Build and upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !contains(matrix.os, 'ubuntu') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'released' && !contains(matrix.os, 'ubuntu') }}
       run: |
         echo "Building wheel and uploading"
         pip install wheel twine
@@ -171,7 +171,7 @@ jobs:
       with:
         python-version: 3.8
     - name: Upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'released' }}
       run: |
         echo "Uploading wheel"
         pip install twine
