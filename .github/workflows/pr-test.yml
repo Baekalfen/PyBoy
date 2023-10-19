@@ -48,7 +48,7 @@ jobs:
         pip install --prefer-binary -r requirements_tests.txt
         python -m pytest tests/ -n2 -v
     - name: Build and upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !contains(matrix.os, 'ubuntu') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
       run: |
         echo "Building wheel and uploading"
         pip install wheel twine
@@ -56,15 +56,15 @@ jobs:
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
         echo "Uploading source code"
         python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
-    # - name: Build and upload wheel [TEST]
-    #   if: ${{ github.event_name == 'release' && github.event.action == 'prereleased' && !contains(matrix.os, 'ubuntu') }}
-    #   run: |
-    #     echo "Building wheel and uploading"
-    #     pip install wheel twine
-    #     python setup.py sdist bdist_wheel
-    #     python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
-    #     echo "Uploading source code"
-    #     python -m twine upload --repository testpypi --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.tar.gz
+    - name: Build and upload wheel [TEST]
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
+      run: |
+        echo "Building wheel and uploading"
+        pip install wheel twine
+        python setup.py sdist bdist_wheel
+        python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
+        echo "Uploading source code"
+        python -m twine upload --repository testpypi --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.tar.gz
 
   test_pypy:
     name: PyPy - Test
@@ -171,14 +171,14 @@ jobs:
       with:
         python-version: 3.8
     - name: Upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }}
       run: |
         echo "Uploading wheel"
         pip install twine
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
-    # - name: Upload wheel [TEST]
-    #   if: ${{ github.event_name == 'release' && github.event.action == 'prereleased' }}
-    #   run: |
-    #     echo "Uploading wheel"
-    #     pip install twine
-    #     python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
+    - name: Upload wheel [TEST]
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease }}
+      run: |
+        echo "Uploading wheel"
+        pip install twine
+        python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
