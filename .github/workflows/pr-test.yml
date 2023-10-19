@@ -6,7 +6,7 @@ on:
       - master
   pull_request:
   release:
-    types: [published, prereleased]
+    types: [published]
 
 jobs:
   test_cython:
