@@ -27,7 +27,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Python dependencies
       run: |
-        pip install wheel
+        pip install --upgrade pip
+        pip install --upgrade wheel setuptools
         pip install --prefer-binary -r requirements.txt
     - name: Build PyBoy
       run: |
@@ -142,6 +143,7 @@ jobs:
           cd /work
           echo "Starting build"
           python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools
 
           echo "Starting tests"
           if [[ "${{ matrix.manylinux-version }}" == "manylinux2010_x86_64" ]]; then
