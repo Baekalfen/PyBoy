@@ -68,7 +68,7 @@ from .utils import WindowEvent</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, cgb=None, randomize=False, **kwargs)</span>
+<span>(</span><span>gamerom_file, *, bootrom_file=None, disable_renderer=False, sound=False, sound_emulated=False, cgb=None, randomize=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -87,7 +87,6 @@ GitHub, if other methods are needed for your projects. Take a look at the files 
 </dl>
 <h2 id="kwargs">Kwargs</h2>
 <p>bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.
-profiling (bool): Profile the emulator and report opcode usage (internal use).
 disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
 color_palette (tuple): Specify the color palette to use for rendering.</p>
 <p>Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
@@ -102,9 +101,9 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
         gamerom_file,
         *,
         bootrom_file=None,
-        profiling=False,
         disable_renderer=False,
         sound=False,
+        sound_emulated=False,
         cgb=None,
         randomize=False,
         **kwargs
@@ -128,7 +127,6 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
 
         Kwargs:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
 
@@ -152,9 +150,9 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
             kwargs[&#34;color_palette&#34;],
             disable_renderer,
             sound,
+            sound_emulated,
             cgb,
             randomize=randomize,
-            profiling=profiling,
         )
 
         # Performance measures
@@ -312,9 +310,6 @@ color_palette (tuple): Specify the color palette to use for rendering.</p>
             self.plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
-
-    def _cpu_hitrate(self):
-        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods
