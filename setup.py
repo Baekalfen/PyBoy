@@ -32,7 +32,7 @@ class build_ext(_build_ext):
 
         # NOTE: For performance. Check if other platforms need an equivalent change.
         if sys.platform == "darwin":
-            cflags.append("-DCYTHON_INLINE=inline __attribute__((always_inline))")
+            cflags.append("-DCYTHON_INLINE=inline __attribute__ ((__unused__)) __attribute__((always_inline))")
 
         py_pxd_files = prep_pxd_py_files()
         cythonize_files = map(
