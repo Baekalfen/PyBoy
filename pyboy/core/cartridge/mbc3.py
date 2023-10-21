@@ -27,9 +27,9 @@ class MBC3(BaseMBC):
             value &= 0b01111111
             if value == 0:
                 value = 1
-            self.rombank_selected = value
+            self.rombank_selected = value % self.external_rom_count
         elif 0x4000 <= address < 0x6000:
-            self.rambank_selected = value
+            self.rambank_selected = value % self.external_ram_count
         elif 0x6000 <= address < 0x8000:
             if self.rtc_enabled:
                 self.rtc.writecommand(value)
