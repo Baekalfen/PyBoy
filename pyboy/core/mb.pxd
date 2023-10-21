@@ -46,6 +46,8 @@ cdef class Motherboard:
     cdef list breakpoints_list
     cdef int breakpoint_latch
 
+    cdef inline bint processing_frame(self) noexcept
+
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, escape_halt=cython.int, mode0_cycles=int64_t)

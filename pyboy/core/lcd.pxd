@@ -48,7 +48,6 @@ cdef class LCD:
     cdef uint8_t get_stat(self) noexcept
 
     cdef int cycles_to_mode0(self) noexcept
-    cdef bint processing_frame(self) noexcept
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept

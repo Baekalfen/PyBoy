@@ -187,8 +187,13 @@ class Motherboard:
                 return True
         return False
 
+    def processing_frame(self):
+        b = (not self.lcd.frame_done)
+        self.lcd.frame_done = False # Clear vblank flag for next iteration
+        return b
+
     def tick(self):
-        while self.lcd.processing_frame():
+        while self.processing_frame():
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 cycles = self.hdma.tick(self)
             else:

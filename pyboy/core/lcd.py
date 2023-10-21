@@ -134,12 +134,6 @@ class LCD:
             # logger.error(f"Unsupported STAT mode: {mode}")
             return 0
 
-    def processing_frame(self):
-        b = (not self.frame_done)
-        if not b:
-            self.frame_done = False # Clear vblank flag for next iteration
-        return b
-
     def tick(self, cycles):
         interrupt_flag = 0
         self.clock += cycles
