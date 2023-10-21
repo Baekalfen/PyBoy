@@ -4,13 +4,15 @@
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
-
-It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
-
-If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-__If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or post on our [Discord channel](https://discord.gg/Zrf2nyH).
-
+Sources for making AI and bots
+==============================
+If you are looking to make a bot or AI, then these resources is a good place to start:
+ * [PyBoy API Documentation](https://baekalfen.github.io/PyBoy/index.html)
+ * [Wiki Pages](https://github.com/Baekalfen/PyBoy/wiki/)
+   * [Using the Gym](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots)
+   * [Generic scripts and bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots)
+ * [Examples](https://github.com/Baekalfen/PyBoy/tree/master/examples)
+ * [Discord](https://discord.gg/Zrf2nyH)
 
 <!---
 Generate GIF with the layout and captions
@@ -18,34 +20,81 @@ Generate GIF with the layout and captions
 <table>
   <tbody>
     <tr>
-      <td colspan="3">
-<div align="center">
-<img src="extras/README/1.gif" width="400"><br>
-</div>
+      <td colspan=2 align="center"><a href=https://github.com/PWhiddy/PokemonRedExperiments>Train RL agents to play Pokemon Red</a>
       </td>
     </tr>
     <tr>
-      <td align="center">Rewind any game<br>
+      <td colspan=2 align="center">
+        <div align="center">
+        <a href="http://www.youtube.com/watch?feature=player_embedded&v=DcYLT37ImBY" target="_blank">
+        <img src="http://img.youtube.com/vi/DcYLT37ImBY/mqdefault.jpg" alt="Watch the video" width="500" border="10" />
+        </a>
+        <!-- https://www.youtube.com/watch?v=DcYLT37ImBY -->
+        <!-- <img src="extras/README/8.gif" width="400"><br> -->
+        </div>
       </td>
-      <td align="center"><a href=https://github.com/uiucanh/tetris>Beat world records</a><br>
+    </tr>
+    <tr>
+      <td align="center"><a href=https://github.com/Baekalfen/PyBoy/wiki/Experimental-and-optional-features#rewind-time>Rewind any game</a><br>
       </td>
-      <td align="center"><a href=https://github.com/lixado/PyBoy-RL>Train with Reinforcement Learning</a><br>
+      <td align="center"><a href=https://github.com/uiucanh/tetris>Beat world records with AI</a><br>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="extras/README/5.gif" width="200">
+        <img src="extras/README/5.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/7.gif" width="200">
+        <img src="extras/README/7.gif" width="250">
+      </td>
+    </tr>
+    <tr>
+      <td align="center">Play the classics<br>
+      </td>
+      <td align="center"><a href=https://github.com/lixado/PyBoy-RL>Train your own AI</a><br>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="extras/README/1.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/6.gif" width="200">
+        <img src="extras/README/6.gif" width="250">
       </td>
     </tr>
   </tbody>
 </table>
 
+Performance
+===========
+<table>
+  <tbody>
+    <tr>
+      <td align="center">
+        `pyboy.screen()` in null mode
+      </td>
+      <td align="center">
+        `pyboy.game_area()` in null mode
+      </td>
+    </tr>
+    <tr>
+      <td>
+      x59 realtime
+      </td>
+      <td>
+      x282 realtime
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="README/screen.png" width="200">
+      </td>
+      <td align="center">
+        <img src="README/game_area.png" width="200">
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 Installation
 ============
@@ -54,7 +103,7 @@ The instructions are simple if you already have a functioning Python environment
  1. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
  2. If your system isn't supported by [pysdl2-dll](https://pypi.org/project/pysdl2-dll/), you'll need to install SDL2 from your package manager.
 
-If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
+For details, see [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation).
 
 Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.rom`__ or use it in your Python scripts:
 ```python
