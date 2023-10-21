@@ -27,7 +27,7 @@ class build_ext(_build_ext):
             8) <= sys.version_info[:2] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
             multiprocessing.set_start_method("fork", force=True)
 
-        cflags = []
+        cflags = ["-O3"]
         # NOTE: For performance. Check if other platforms need an equivalent change.
         if sys.platform == "darwin":
             cflags.append("-DCYTHON_INLINE=inline __attribute__ ((__unused__)) __attribute__((always_inline))")
