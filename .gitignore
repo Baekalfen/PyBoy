@@ -13,6 +13,7 @@ __pycache__/
 .python-version
 env/
 venv/
+.venv/
 build/
 cython_debug/
 develop-eggs/
@@ -59,9 +60,8 @@ Core_Dump_*
 *.gb*.rtc
 /test_roms/
 test_data.encrypted
-tetris.lock
+*.lock
 tetris/
-PyBoy-RL.lock
 PyBoy-RL/
 
 /pyboy/**/*.c
@@ -98,7 +98,7 @@ bootrom/PYBOY_ROM.bin
 default_rom/default_rom.map
 default_rom/default_rom.obj
 default_rom/default_rom.sym
-!/pyboy/default_rom.gb
+!default_rom.gb
 
 test.replay
 ci_secrets.tar
@@ -106,4 +106,4 @@ ci_secrets.tar
 mooneye/
 blargg/
 GB Tests/
-/SameSuite/
+SameSuite/

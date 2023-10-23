@@ -8,7 +8,7 @@ import sys
 
 # Makes us able to import PyBoy from the directory below
 file_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, file_path + "/..")
+sys.path.insert(0, file_path + "/../..")
 
 from pyboy import PyBoy, WindowEvent # isort:skip
 
