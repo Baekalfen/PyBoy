@@ -29,7 +29,7 @@ all = [
     "pyopengl",
     "markdown",
     "pdoc3",
-    "gym",
+    "gymnasium",
 ]
 
 [project.urls]
