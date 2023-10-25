@@ -182,7 +182,8 @@ if __name__ == '__main__':
 
 
 @pytest.mark.skipif(
-    os.path.isfile("README/7.gif") or platform.system() == "Windows", reason="This test takes too long for regular use"
+    os.path.isfile("extras/README/7.gif") or platform.system() == "Windows",
+    reason="This test takes too long for regular use"
 )
 def test_tetris_ai(git_tetris_ai, tetris_rom):
     script_py = "tetris_gif.py"
@@ -193,4 +194,4 @@ def test_tetris_ai(git_tetris_ai, tetris_rom):
     assert os.system(f'rm -rf {Path(git_tetris_ai) / "recordings"}') == 0
     assert os.system(f"cp {tetris_rom} {Path(git_tetris_ai) / 'tetris_1.1.gb'}") == 0
     assert os.system(f'cd {git_tetris_ai} && . {Path(".venv") / "bin" / "activate"} && python {script_py}') == 0
-    assert os.system(f'mv {Path(git_tetris_ai) / "recordings" / "TETRIS*"} {Path("README/7.gif")}') == 0
+    assert os.system(f'mv {Path(git_tetris_ai) / "recordings" / "TETRIS*"} {Path("extras/README/7.gif")}') == 0

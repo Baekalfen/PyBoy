@@ -13,6 +13,7 @@ from pathlib import Path
 
 import PIL
 import pytest
+
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
@@ -204,7 +205,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
         pyboy.tick()
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
-    png_path = Path(f"test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
+    png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)

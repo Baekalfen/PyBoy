@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import PIL
 import pytest
+
 from pyboy import PyBoy
 
 if platform.python_implementation() == "PyPy":
@@ -147,7 +148,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         else:
             break
 
-    png_path = Path(f"test_results/SameSuite/{rom}.png")
+    png_path = Path(f"tests/test_results/SameSuite/{rom}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
