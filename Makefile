@@ -15,7 +15,6 @@ PYPY := pypy3
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 GITHUB_REF ?= "refs/tags/v0.0.0"
 PYBOY_VERSION ?= $(shell echo ${GITHUB_REF} | cut -d'/' -f3)
-SHELL:=zsh -o extended_glob +o nomatch -c
 
 dist: clean build
 	${PY} setup.py sdist bdist_wheel
@@ -33,20 +32,20 @@ build:
 
 clean:
 	@echo "Cleaning..."
-	${SHELL} 'rm -rf PyBoy.egg-info'
-	${SHELL} 'rm -rf build'
-	${SHELL} 'rm -rf dist'
-	${SHELL} 'rm -rf pyboy/**/__pycache__'
-	${SHELL} 'rm -rf pyboy/**/*.pyo'
-	${SHELL} 'rm -rf pyboy/**/*.pyc'
-	${SHELL} 'rm -rf pyboy/**/*.pyd'
-	${SHELL} 'rm -rf pyboy/**/*.so'
-	${SHELL} 'rm -rf pyboy/**/*.c'
-	${SHELL} 'rm -rf pyboy/**/*.h'
-	${SHELL} 'rm -rf pyboy/**/*.dll'
-	${SHELL} 'rm -rf pyboy/**/*.lib'
-	${SHELL} 'rm -rf pyboy/**/*.exp'
-	${SHELL} 'rm -rf pyboy/**/*.html'
+	rm -rf PyBoy.egg-info
+	rm -rf build
+	rm -rf dist
+	find pyboy/ -type f -name "*.pyo" -delete
+	find pyboy/ -type f -name "*.pyc" -delete
+	find pyboy/ -type f -name "*.pyd" -delete
+	find pyboy/ -type f -name "*.so" -delete
+	find pyboy/ -type f -name "*.c" -delete
+	find pyboy/ -type f -name "*.h" -delete
+	find pyboy/ -type f -name "*.dll" -delete
+	find pyboy/ -type f -name "*.lib" -delete
+	find pyboy/ -type f -name "*.exp" -delete
+	find pyboy/ -type f -name "*.html" -delete
+	find pyboy/ -type d -name "__pycache__" -delete
 
 install: build
 	${PY} -m pip install .
