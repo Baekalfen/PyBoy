@@ -14,3 +14,4 @@ cdef class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     cdef public int health
     cdef public int lives_left
     cdef public int fitness
+    cdef public int _game_over
