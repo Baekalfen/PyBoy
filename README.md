@@ -1,5 +1,5 @@
 <p align="center">
-<img src="README/pyboy.svg" width="480">
+<img src="extras/README/pyboy.svg" width="480">
 </p>
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
@@ -20,7 +20,7 @@ Generate GIF with the layout and captions
     <tr>
       <td colspan="3">
 <div align="center">
-<img src="README/1.gif" width="400"><br>
+<img src="extras/README/1.gif" width="400"><br>
 </div>
       </td>
     </tr>
@@ -34,13 +34,13 @@ Generate GIF with the layout and captions
     </tr>
     <tr>
       <td align="center">
-        <img src="README/5.gif" width="200">
+        <img src="extras/README/5.gif" width="200">
       </td>
       <td align="center">
-        <img src="README/7.gif" width="200">
+        <img src="extras/README/7.gif" width="200">
       </td>
       <td align="center">
-        <img src="README/6.gif" width="200">
+        <img src="extras/README/6.gif" width="200">
       </td>
     </tr>
   </tbody>

@@ -15,6 +15,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+
 from pyboy import PyBoy, WindowEvent, utils
 
 event_filter = [
@@ -174,7 +175,7 @@ def test_pokemon_gif1(pokemon_gold_rom, boot_rom):
         pokemon_gold_rom,
         "tests/replays/pokemon_gold_gif.replay",
         record_gif=(1, 2714),
-        gif_destination="README/1.gif",
+        gif_destination="extras/README/1.gif",
         bootrom_file=boot_rom,
     )
 
@@ -184,7 +185,7 @@ def test_pokemon_gif2(pokemon_blue_rom, boot_rom):
         pokemon_blue_rom,
         "tests/replays/pokemon_blue_gif2.replay",
         record_gif=(0, 180),
-        gif_destination="README/2.gif",
+        gif_destination="extras/README/2.gif",
         bootrom_file=boot_rom,
     )
 
@@ -210,7 +211,7 @@ def test_kirby(kirby_rom, boot_rom):
         kirby_rom,
         "tests/replays/kirby_gif.replay",
         record_gif=(0, 360),
-        gif_destination="README/4.gif",
+        gif_destination="extras/README/4.gif",
         bootrom_file=boot_rom,
     )
 
@@ -220,7 +221,7 @@ def test_rewind(supermarioland_rom, boot_rom):
         supermarioland_rom,
         "tests/replays/supermarioland_rewind.replay",
         record_gif=(130, 544),
-        gif_destination="README/5.gif",
+        gif_destination="extras/README/5.gif",
         rewind=True,
         bootrom_file=None,
     )
