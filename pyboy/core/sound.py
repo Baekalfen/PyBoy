@@ -7,6 +7,7 @@
 # http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 # http://www.devrs.com/gb/files/hosted/GBSOUND.txt
 
+import logging
 from array import array
 from ctypes import c_void_p
 
@@ -14,6 +15,8 @@ try:
     import sdl2
 except ImportError:
     sdl2 = None
+
+logger = logging.getLogger(__name__)
 
 SOUND_DESYNC_THRESHOLD = 5
 CPU_FREQ = 4213440 # hz
@@ -25,21 +28,29 @@ class Sound:
         self.emulate = emulate or enabled # Just emulate registers etc.
         if self.enabled:
             # Initialization is handled in the windows, otherwise we'd need this
-            sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
+            if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
+                # Open audio device
+                spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
+                spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
+                self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
 
-            # Open audio device
-            spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
-            spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
-            self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
+                if self.device > 1:
+                    # Start playback (move out of __init__ if needed, maybe for headless)
+                    sdl2.SDL_PauseAudioDevice(self.device, 0)
 
-            # Start playback (move out of __init__ if needed, maybe for headless)
-            sdl2.SDL_PauseAudioDevice(self.device, 0)
+                    self.sample_rate = spec_have.freq
+                    self.sampleclocks = CPU_FREQ // self.sample_rate
+                else:
+                    logger.error("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
+                    self.enabled = False # We will continue with emulation
+            else:
+                logger.error("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
+                self.enabled = False # We will continue with emulation
 
-            self.sample_rate = spec_have.freq
-            self.sampleclocks = CPU_FREQ // self.sample_rate
-        else:
+        if not self.enabled:
             self.sample_rate = 32768
             self.sampleclocks = CPU_FREQ // self.sample_rate
+
         self.audiobuffer = array("b", [0] * 4096) # Over 2 frames
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
