@@ -39,6 +39,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         """The health provided by the game"""
         self.lives_left = 0
         """The lives remaining provided by the game"""
+        self._game_over = False
+        """The game over state"""
         self.fitness = 0
         """
         A built-in fitness scoring. Taking score, health, and lives left into account.
@@ -53,10 +55,17 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self._sprite_cache_invalid = True
 
         self.score = 0
-        for n in range(4):
-            self.score += self.pyboy.get_memory_value(0xD070 + n) * 10**n
+        score_digits = 5
+        for n in range(score_digits):
+            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**(score_digits-n)
 
+        # Check if game is over
+        prev_health = self.health
         self.health = self.pyboy.get_memory_value(0xD086)
+        if self.lives_left == 0:
+            if prev_health > 0 and self.health == 0:
+                self._game_over = True
+
         self.lives_left = self.pyboy.get_memory_value(0xD089) - 1
 
         if self.game_has_started:
@@ -154,7 +163,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         return PyBoyGameWrapper.game_area(self)
 
     def game_over(self):
-        return self.health == 0
+        return self._game_over
 
     def __repr__(self):
         adjust = 4
