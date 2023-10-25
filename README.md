@@ -5,7 +5,7 @@
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
 
-It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
+It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
@@ -116,7 +116,7 @@ Contribute
 ==========
 Any contribution is appreciated. The currently known problems are tracked in the Issues tab. Feel free to take a swing at any one of them.
 
-For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
+For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/extras/Projects/Projects.pdf):
 * Link Cable
 * _(Experimental)_ AI - use the `botsupport` or game wrappers to train a neural network
 * _(Experimental)_ Game Wrappers - make wrappers for popular games
