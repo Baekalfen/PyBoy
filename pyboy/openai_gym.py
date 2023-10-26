@@ -132,7 +132,7 @@ class PyBoyGymEnv(Env):
 
         action = self.actions[action_id]
         if action == self._DO_NOTHING:
-            pyboy_done = self.pyboy.tick()
+            pyboy_done = self.pyboy.tick(1, self.observation_type == "raw")
         else:
             if self.action_type == "toggle":
                 if self._button_is_pressed[action]:
@@ -142,7 +142,7 @@ class PyBoyGymEnv(Env):
                     self._button_is_pressed[action] = True
 
             self.pyboy.send_input(action)
-            pyboy_done = self.pyboy.tick()
+            pyboy_done = self.pyboy.tick(1, self.observation_type == "raw")
 
             if self.action_type == "press":
                 self.pyboy.send_input(self._release_button[action])

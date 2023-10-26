@@ -98,8 +98,7 @@ def test_argv_parser(*args):
 def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
-    for _ in range(120):
-        pyboy.tick()
+    pyboy.tick(120, False)
 
     bck_tilemap = pyboy.botsupport_manager().tilemap_background()
     wdw_tilemap = pyboy.botsupport_manager().tilemap_window()
@@ -174,8 +173,7 @@ def test_randomize_ram(default_rom):
 def test_not_cgb(pokemon_crystal_rom):
     pyboy = PyBoy(pokemon_crystal_rom, window_type="dummy", cgb=False)
     pyboy.set_emulation_speed(0)
-    for _ in range(60 * 7):
-        pyboy.tick()
+    pyboy.tick(60 * 7, False)
 
     assert pyboy.botsupport_manager().tilemap_background()[1:16, 16] == [
         134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
@@ -199,8 +197,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
 
     pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
-    for _ in range(frames):
-        pyboy.tick()
+    pyboy.tick(frames, True)
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
     png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")

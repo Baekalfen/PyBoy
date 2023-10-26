@@ -26,8 +26,7 @@ def test_shonumi(rom, shonumi_dir):
     # 60 PyBoy Boot
     # 23 Loading
     # 48 Progress to screenshot
-    for _ in range(60 + 23 + 48):
-        pyboy.tick()
+    pyboy.tick(60 + 23 + 48, True)
 
     png_path = Path(f"tests/test_results/GB Tests/{rom}.png")
     png_path.parents[0].mkdir(parents=True, exist_ok=True)
