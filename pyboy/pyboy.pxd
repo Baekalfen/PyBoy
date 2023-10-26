@@ -4,13 +4,13 @@
 #
 
 
-from libc cimport time
 cimport cython
-from libc.stdint cimport uint64_t
+from libc cimport time
+from libc.stdint cimport int64_t, uint64_t
+
 from pyboy.core.mb cimport Motherboard
-from pyboy.utils cimport IntIOWrapper, IntIOInterface
 from pyboy.plugins.manager cimport PluginManager
-from libc.stdint cimport int64_t
+from pyboy.utils cimport IntIOInterface, IntIOWrapper
 
 
 cdef double SPF
@@ -43,7 +43,7 @@ cdef class PyBoy:
     cdef list external_input
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
-    cpdef bint tick(self) noexcept
+    cpdef bint tick(self, bint) noexcept
     cpdef void stop(self, save=*) noexcept
 
     cdef void _handle_events(self, list) noexcept
