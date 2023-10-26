@@ -86,21 +86,17 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
                 break
 
         # Wait for transition to finish (start screen)
-        for _ in range(25):
-            self.pyboy.tick()
-
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.tick(25, False)
+        self.pyboy.button("start")
         self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         # Wait for transition to finish (exit start screen, enter level intro screen)
         for _ in range(60):
             self.pyboy.tick()
 
         # Skip level intro
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.pyboy.button("start")
         self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         # Wait for transition to finish (exit level intro screen, enter game)
         for _ in range(60):

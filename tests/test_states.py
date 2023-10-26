@@ -34,12 +34,8 @@ def test_load_save_consistency(tetris_rom):
 
     # Start game. Just press Start when the game allows us.
     for i in range(2):
-        pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        pyboy.tick()
-        pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-        for _ in range(6):
-            pyboy.tick()
+        pyboy.button("start")
+        pyboy.tick(7, True)
 
     ##############################################################
     # Verify

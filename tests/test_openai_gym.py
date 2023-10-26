@@ -184,39 +184,32 @@ class TestOpenAIGym:
         assert tetris.lines == 0
 
         for n in range(3):
-            pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            pyboy.tick()
-            pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
-            pyboy.tick()
+            pyboy.button("right")
+            pyboy.tick(2, True)
 
-        pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+        pyboy.button_press("down")
         while tetris.score == 0:
-            pyboy.tick()
-        pyboy.tick()
-        pyboy.tick()
-        pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+            pyboy.tick(1, True)
+        pyboy.tick(2, True)
+        pyboy.button_release("down")
 
         for n in range(3):
-            pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            pyboy.tick()
-            pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
-            pyboy.tick()
+            pyboy.button("left")
+            pyboy.tick(2, True)
 
         tetris.set_tetromino("O")
-        pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+        pyboy.button_press("down")
         while tetris.score == 16:
-            pyboy.tick()
-        pyboy.tick()
-        pyboy.tick()
-        pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+            pyboy.tick(1, True)
+        pyboy.tick(2, True)
+        pyboy.button_release("down")
 
-        pyboy.tick()
-        pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+        pyboy.tick(1, True)
+        pyboy.button_press("down")
         while tetris.score == 32:
-            pyboy.tick()
-        pyboy.tick()
-        pyboy.tick()
-        pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+            pyboy.tick(1, True)
+        pyboy.tick(2, True)
+        pyboy.button_release("down")
 
         while tetris.score == 47:
             pyboy.tick()
@@ -227,10 +220,8 @@ class TestOpenAIGym:
         assert tetris.lines == 1
 
         while not tetris.game_over():
-            pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            pyboy.tick()
-            pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-            pyboy.tick()
+            pyboy.button("down")
+            pyboy.tick(2, True)
 
         pyboy.stop(save=False)
 

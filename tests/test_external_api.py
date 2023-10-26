@@ -132,29 +132,19 @@ def test_tetris(tetris_rom):
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
         if frame == 144:
-            pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        elif frame == 145:
-            pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+            pyboy.button("start")
         elif frame == 152:
-            pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        elif frame == 153:
-            pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
+            pyboy.button("a")
         elif frame == 156:
-            pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        elif frame == 157:
-            pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
+            pyboy.button("a")
         elif frame == 162:
-            pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        elif frame == 163:
-            pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
+            pyboy.button("a")
 
         # Play game. When we are passed the 168th frame, the game has begone.
         # The "technique" is just to move the Tetromino to the right.
         elif frame > 168:
             if frame % 2 == 0:
-                pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            elif frame % 2 == 1:
-                pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
+                pyboy.button("right")
 
             # Show how we can read the tile data for the screen. We can use
             # this to see when one of the Tetrominos touch the bottom. This
@@ -296,8 +286,8 @@ def test_tetris(tetris_rom):
                 pyboy.save_state(state_data)
                 break
 
-    pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
-    pyboy.tick()
+    pyboy.button_release("right")
+    pyboy.tick(1, False)
 
     pre_load_game_board_matrix = None
     for frame in range(1016, 1865):
@@ -347,14 +337,12 @@ def test_tilemap_position_list(supermarioland_rom):
         pyboy.tick()
 
     # Start the game
-    pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-    pyboy.tick()
-    pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+    pyboy.button("start")
+    pyboy.tick(1, False)
 
     # Move right for 100 frame
-    pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-    for _ in range(100):
-        pyboy.tick()
+    pyboy.button_press("right")
+    pyboy.tick(100, False)
 
     # Get screen positions, and verify the values
     positions = pyboy.botsupport_manager().screen().tilemap_position_list()
