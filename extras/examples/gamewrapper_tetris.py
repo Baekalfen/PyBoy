@@ -44,10 +44,8 @@ for frame in range(1000): # Enough frames for the test. Otherwise do: `while not
     pyboy.tick()
 
     # The playing "technique" is just to move the Tetromino to the right.
-    if frame % 2 == 0: # Even frames
-        pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-    elif frame % 2 == 1: # Odd frames
-        pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
+    if frame % 2 == 0: # Even frames to let PyBoy release the button on odd frames
+        pyboy.button("right")
 
     # Illustrating how we can extract the game board quite simply. This can be used to read the tile identifiers.
     game_area = tetris.game_area()

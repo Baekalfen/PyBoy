@@ -57,7 +57,7 @@ def test_mario_game_over(supermarioland_rom):
     mario = pyboy.game_wrapper()
     mario.start_game()
     mario.set_lives_left(0)
-    pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+    pyboy.button_press("right")
     for _ in range(500): # Enough to game over correctly, and not long enough it'll work without setting the lives
         pyboy.tick()
         if mario.game_over():
