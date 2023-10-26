@@ -118,7 +118,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(1, False)
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # '1PLAYER' on the first screen
                 break
