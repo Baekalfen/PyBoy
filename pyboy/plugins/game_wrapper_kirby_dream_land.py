@@ -80,7 +80,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(1, False)
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[0:3, 16] == [231, 224, 235]: # 'HAL' on the first screen
                 break
@@ -91,16 +91,14 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.pyboy.tick()
 
         # Wait for transition to finish (exit start screen, enter level intro screen)
-        for _ in range(60):
-            self.pyboy.tick()
+        self.pyboy.tick(60, False)
 
         # Skip level intro
         self.pyboy.button("start")
         self.pyboy.tick()
 
         # Wait for transition to finish (exit level intro screen, enter game)
-        for _ in range(60):
-            self.pyboy.tick()
+        self.pyboy.tick(60, False)
 
         self.game_has_started = True
 

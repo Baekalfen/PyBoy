@@ -32,7 +32,9 @@ assert kirby.lives_left == 4
 assert kirby.health == 6
 
 pyboy.button_press("right")
-pyboy.tick(280, True) # Walk for 280 ticks
+for _ in range(280): # Walk for 280 ticks
+    # We tick one frame at a time to still render the screen for every step
+    pyboy.tick(1, True)
 
 assert kirby.score == 800
 assert kirby.health == 5

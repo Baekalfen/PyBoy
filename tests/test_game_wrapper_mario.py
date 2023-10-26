@@ -9,6 +9,7 @@ import sys
 
 import numpy as np
 import pytest
+
 from pyboy import PyBoy, WindowEvent
 
 py_version = platform.python_version()[:3]
@@ -40,7 +41,7 @@ def test_mario_advanced(supermarioland_rom):
     mario.start_game(world_level=(3, 2))
     lives = 99
     mario.set_lives_left(lives)
-    pyboy.tick()
+    pyboy.tick(1, False)
 
     assert mario.score == 0
     assert mario.lives_left == lives
@@ -59,7 +60,7 @@ def test_mario_game_over(supermarioland_rom):
     mario.set_lives_left(0)
     pyboy.button_press("right")
     for _ in range(500): # Enough to game over correctly, and not long enough it'll work without setting the lives
-        pyboy.tick()
+        pyboy.tick(1, False)
         if mario.game_over():
             break
     pyboy.stop()

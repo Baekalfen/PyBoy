@@ -155,8 +155,7 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
         pyboy = PyBoy(default_rom, window_type="headless", cgb=False, sound_emulated=True)
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
-        for _ in range(59):
-            pyboy.tick()
+        pyboy.tick(59, True)
         pyboy.save_state(saved_state)
         pyboy.stop(save=False)
 
@@ -164,13 +163,11 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
     pyboy.set_emulation_speed(0)
     saved_state.seek(0)
     if clean:
-        for _ in range(59):
-            pyboy.tick()
+        pyboy.tick(59, True)
     else:
         pyboy.load_state(saved_state)
 
-    for _ in range(180 if "div_write" in rom else 40):
-        pyboy.tick()
+    pyboy.tick(180 if "div_write" in rom else 40, True)
 
     png_path = Path(f"tests/test_results/mooneye/{rom}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
