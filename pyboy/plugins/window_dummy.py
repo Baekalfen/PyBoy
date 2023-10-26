@@ -17,8 +17,6 @@ class WindowDummy(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        pyboy._rendering(False)
-
     def enabled(self):
         return self.pyboy_argv.get("window_type") == "dummy"
 

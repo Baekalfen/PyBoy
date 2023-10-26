@@ -27,7 +27,7 @@ def test_load_save_consistency(tetris_rom):
 
     # Boot screen
     while True:
-        pyboy.tick()
+        pyboy.tick(1, True)
         tilemap_background = pyboy.botsupport_manager().tilemap_background()
         if tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # '1PLAYER' on the first screen
             break

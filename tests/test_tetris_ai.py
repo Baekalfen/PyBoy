@@ -124,8 +124,7 @@ def eval_network(epoch, child_index, child_model, record_to):
         for _ in range(best_action['Right']):
             do_sideway(pyboy, 'Right')
         drop_down(pyboy)
-        pyboy._rendering(True)
-        pyboy.tick()
+        pyboy.tick(1, True)
         frames.append(pyboy.screen_image())
         pyboy._rendering(False)
         if len(frames) >= record_to:

@@ -116,23 +116,15 @@ class PyBoy:
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self.initialized = True
 
-    def tick(self):
-        """
-        Progresses the emulator ahead by one frame.
-
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-        """
+    def _tick(self, render):
         if self.stopped:
-            return True
+            return False
 
         t_start = time.perf_counter_ns()
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
+            self.__rendering(render)
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
@@ -151,7 +143,39 @@ class PyBoy:
         nsecs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
-        return self.quitting
+        return not self.quitting
+
+    def tick(self, count=1, render=True):
+        """
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it's adviced to use
+        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+        access the `PyBoy.game_area` to get a simpler representation of the game.
+
+        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
+
+        Args:
+            count (int): Number of ticks to process. -1 is infinite.
+            render (bool): Whether to render an image for this tick
+        Returns
+        -------
+        (True or False):
+            False if emulation has ended otherwise True
+        """
+
+        running = False
+        while count != 0:
+            _render = render and count == 1 # Only render on last tick to improve performance
+            running = self._tick(_render)
+            count -= 1
+        return running
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -540,22 +564,8 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def screen_image(self):
-        """
-        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
-
-        Generates a PIL Image from the screen buffer.
-
-        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
-        and join our Discord channel for more help.
-
-        Returns
-        -------
-        PIL.Image:
-            RGB image of (160, 144) pixels
-        """
-        return self.botsupport_manager().screen().screen_image()
+    def game_area(self):
+        raise Exception("game_area not implemented")
 
     def _serial(self):
         """
@@ -608,12 +618,6 @@ class PyBoy:
             Game title
         """
         return self.mb.cartridge.gamename
-
-    def _rendering(self, value):
-        """
-        Disable or enable rendering
-        """
-        self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck

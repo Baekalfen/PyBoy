@@ -109,7 +109,7 @@ Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.ro
 ```python
 from pyboy import PyBoy
 pyboy = PyBoy('ROMs/gamerom.gb')
-while not pyboy.tick():
+while pyboy.tick(1, True):
     pass
 pyboy.stop()
 ```
@@ -118,7 +118,7 @@ Or using the context manager:
 ```python
 from pyboy import PyBoy
 with PyBoy('ROMs/gamerom.gb') as pyboy:
-    while not pyboy.tick():
+    while pyboy.tick(1, True):
         pass
 ```
 
@@ -131,6 +131,7 @@ pyboy.tick() # Process one frame to let the game register the input
 pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 
 pil_image = pyboy.screen_image()
+pyboy.tick(1, True)
 pil_image.save('screenshot.png')
 ```
 
