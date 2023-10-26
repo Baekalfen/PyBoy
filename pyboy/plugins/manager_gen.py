@@ -133,7 +133,10 @@ if __name__ == "__main__":
 
                 for p in all_plugins:
                     p_name = to_snake_case(p)
-                    lines.append(f"cdef public {p} {p_name}\n")
+                    if p_name.startswith("game_wrapper_"):
+                        lines.append(f"cdef public object {p_name}\n")
+                    else:
+                        lines.append(f"cdef public {p} {p_name}\n")
 
                 for p in all_plugins:
                     p_name = to_snake_case(p)
@@ -150,6 +153,8 @@ if __name__ == "__main__":
 
                 for p in all_plugins:
                     p_name = to_snake_case(p)
+                    if p_name.startswith("game_wrapper_"):
+                        continue
                     lines.append(f"from pyboy.plugins.{p_name} cimport {p}\n")
 
                 lines.append("# imports end\n")
