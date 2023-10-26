@@ -115,7 +115,7 @@ class PyBoy:
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self.initialized = True
 
-    def tick(self):
+    def tick(self, render):
         """
         Progresses the emulator ahead by one frame.
 
@@ -124,6 +124,19 @@ class PyBoy:
         otherwise with the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it's adviced to use
+        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+        access the `PyBoy.game_area` to get a simpler representation of the game.
+
+        If the screen was rendered, use `pyboy.botsupport.screen.Screen` to get NumPy buffer or a raw memory buffer.
+
+        Args:
+            render (bool): Whether to render an image for this tick
+        Returns
+        -------
+        (done, PIL.Image):
+            (whether emulation has ended, RGB image of (160, 144) pixels)
         """
         if self.stopped:
             return True
@@ -150,7 +163,10 @@ class PyBoy:
         nsecs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
-        return self.quitting
+        if render:
+            return (self.quitting, self.botsupport_manager().screen().screen_image())
+        else:
+            return (self.quitting, None)
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -443,22 +459,8 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def screen_image(self):
-        """
-        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
-
-        Generates a PIL Image from the screen buffer.
-
-        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
-        and join our Discord channel for more help.
-
-        Returns
-        -------
-        PIL.Image:
-            RGB image of (160, 144) pixels
-        """
-        return self.botsupport_manager().screen().screen_image()
+    def game_area(self):
+        raise Exception("game_area not implemented")
 
     def _serial(self):
         """
@@ -500,12 +502,6 @@ class PyBoy:
             Game title
         """
         return self.mb.cartridge.gamename
-
-    def _rendering(self, value):
-        """
-        Disable or enable rendering
-        """
-        self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
