@@ -184,7 +184,7 @@ env.close()
 
 
 @pytest.mark.skipif(
-    os.path.isfile("README/6.gif") or platform.system() == "Windows",
+    os.path.isfile("extras/README/6.gif") or platform.system() == "Windows",
     reason="This test takes too long for regular use",
 )
 def test_mario_rl(git_pyboy_rl, supermarioland_rom):
@@ -202,7 +202,7 @@ def test_mario_rl(git_pyboy_rl, supermarioland_rom):
     )
     assert (
         os.system(
-            f'mv {Path(git_pyboy_rl) / "recordings" / "SUPER*"} {Path("README/6.gif")}'
+            f'mv {Path(git_pyboy_rl) / "recordings" / "SUPER*"} {Path("extras/README/6.gif")}'
         )
         == 0
     )

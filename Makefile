@@ -47,6 +47,12 @@ clean:
 	find pyboy/ -type f -name "*.html" -delete
 	find pyboy/ -type d -name "__pycache__" -delete
 
+clean_tests:
+	${SHELL} 'rm -rf blargg'
+	${SHELL} 'rm -rf SameSuite'
+	${SHELL} 'rm -rf mooneye'
+	${SHELL} 'rm -rf "GB Tests"'
+
 install: build
 	${PY} -m pip install .
 

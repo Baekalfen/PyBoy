@@ -10,6 +10,7 @@ from pathlib import Path
 
 import PIL
 import pytest
+
 from pyboy import PyBoy
 
 
@@ -28,7 +29,7 @@ def test_shonumi(rom, shonumi_dir):
     for _ in range(60 + 23 + 48):
         pyboy.tick()
 
-    png_path = Path(f"test_results/GB Tests/{rom}.png")
+    png_path = Path(f"tests/test_results/GB Tests/{rom}.png")
     png_path.parents[0].mkdir(parents=True, exist_ok=True)
     image = pyboy.botsupport_manager().screen().screen_image()
 
