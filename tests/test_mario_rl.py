@@ -36,7 +36,7 @@ record_gif_py = """
 import datetime
 from pathlib import Path
 from pyboy.pyboy import *
-from gym.wrappers import FrameStack, NormalizeObservation
+from gymnasium.wrappers import FrameStack, NormalizeObservation
 from AISettings.AISettingsInterface import AISettingsInterface
 from AISettings.MarioAISettings import MarioAI
 from AISettings.KirbyAISettings import KirbyAI
@@ -52,7 +52,7 @@ from functions import alphanum_key
 #  Variables
 ###
 episodes = 40000
-# gym variables  documentation: https://docs.pyboy.dk/openai_gym.html#pyboy.openai_gym.PyBoyGymEnv
+# gymnasium variables  documentation: https://docs.pyboy.dk/openai_gym.html#pyboy.openai_gym.PyBoyGymEnv
 observation_types = ["raw", "tiles", "compressed", "minimal"]
 observation_type = observation_types[1]
 action_types = ["press", "toggle", "all"]

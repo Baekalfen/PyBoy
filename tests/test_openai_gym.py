@@ -9,6 +9,7 @@ import sys
 
 import numpy as np
 import pytest
+
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
 
@@ -38,7 +39,7 @@ def tiles_id():
     return {"BLANK": 47, "Z": 130, "DEADBLOCK": 135}
 
 
-@pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
+@pytest.mark.skipif(is_pypy, reason="This requires gymnasium, which doesn't work on this platform")
 class TestOpenAIGym:
     def test_raw(self, pyboy):
         env = pyboy.openai_gym(observation_type="raw", action_type="press")

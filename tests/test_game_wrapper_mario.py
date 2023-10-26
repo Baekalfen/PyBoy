@@ -9,6 +9,7 @@ import sys
 
 import numpy as np
 import pytest
+
 from pyboy import PyBoy, WindowEvent
 
 py_version = platform.python_version()[:3]
@@ -65,7 +66,7 @@ def test_mario_game_over(supermarioland_rom):
     pyboy.stop()
 
 
-@pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
+@pytest.mark.skipif(is_pypy, reason="This requires gymnasium, which doesn't work on this platform")
 class TestOpenAIGym:
     def test_observation_type_compressed(self, supermarioland_rom):
         pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
@@ -73,7 +74,7 @@ class TestOpenAIGym:
 
         env = pyboy.openai_gym(observation_type="compressed")
         if env is None:
-            raise Exception("'env' is None. Did you remember to install 'gym'?")
+            raise Exception("'env' is None. Did you remember to install 'gymnasium'?")
         observation = env.reset()
 
         expected_observation = np.zeros_like(observation)
@@ -92,7 +93,7 @@ class TestOpenAIGym:
 
         env = pyboy.openai_gym(observation_type="minimal")
         if env is None:
-            raise Exception("'env' is None. Did you remember to install 'gym'?")
+            raise Exception("'env' is None. Did you remember to install 'gymnasium'?")
         observation = env.reset()
 
         expected_observation = np.zeros_like(observation)
@@ -112,7 +113,7 @@ class TestOpenAIGym:
         starting_level = (2, 1)
         env = pyboy.openai_gym(observation_type="minimal", action_type="toggle", world_level=starting_level)
         if env is None:
-            raise Exception("'env' is None. Did you remember to install 'gym'?")
+            raise Exception("'env' is None. Did you remember to install 'gymnasium'?")
         observation = env.reset()
 
         print(env.game_wrapper.world, starting_level)

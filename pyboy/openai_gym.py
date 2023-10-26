@@ -9,8 +9,8 @@ from .botsupport.constants import TILES
 from .utils import WindowEvent
 
 try:
-    from gym import Env
-    from gym.spaces import Discrete, MultiDiscrete, Box
+    from gymnasium import Env
+    from gymnasium.spaces import Box, Discrete, MultiDiscrete
     enabled = True
 except ImportError:
 
