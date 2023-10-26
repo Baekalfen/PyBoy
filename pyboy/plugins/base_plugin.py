@@ -17,6 +17,7 @@ import random
 from array import array
 
 import numpy as np
+
 from pyboy.botsupport.sprite import Sprite
 
 logger = logging.getLogger(__name__)
@@ -97,7 +98,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
     argv = [("--game-wrapper", {"action": "store_true", "help": "Enable game wrapper for the current game"})]
 
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
+        self.pyboy, self.mb, self.pyboy_argv = args
+
         self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
         self.tilemap_window = self.pyboy.botsupport_manager().tilemap_window()
         self.tilemap_use_background = True
