@@ -52,14 +52,7 @@ class PyBoyGymEnv(Env):
 
     """
 
-    def __init__(
-        self,
-        pyboy,
-        observation_type="tiles",
-        action_type="toggle",
-        simultaneous_actions=False,
-        **kwargs,
-    ):
+    def __init__(self, pyboy, observation_type="tiles", action_type="toggle", simultaneous_actions=False, **kwargs):
         # Build pyboy game
         self.pyboy = pyboy
         if str(type(pyboy)) != "<class 'pyboy.pyboy.PyBoy'>":
@@ -142,10 +135,7 @@ class PyBoyGymEnv(Env):
 
     def _get_observation(self):
         if self.observation_type == "raw":
-            observation = np.asarray(
-                self.pyboy.botsupport_manager().screen().screen_ndarray(),
-                dtype=np.uint8,
-            )
+            observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
         elif self.observation_type in ["tiles", "compressed", "minimal"]:
             observation = self.game_wrapper._game_area_np(self.observation_type)
         else:
