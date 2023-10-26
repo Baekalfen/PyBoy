@@ -1,15 +1,15 @@
 <p align="center">
-<img src="README/pyboy.svg" width="480">
+<img src="extras/README/pyboy.svg" width="480">
 </p>
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
 
-It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
+It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
 
 If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
 
-__If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or post on our [Discord channel](https://discord.gg/Zrf2nyH).
+__If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or post on our [Discord channel](https://discord.gg/Zrf2nyH).
 
 
 <!---
@@ -20,7 +20,7 @@ Generate GIF with the layout and captions
     <tr>
       <td colspan="3">
 <div align="center">
-<img src="README/1.gif" width="400"><br>
+<img src="extras/README/1.gif" width="400"><br>
 </div>
       </td>
     </tr>
@@ -34,13 +34,13 @@ Generate GIF with the layout and captions
     </tr>
     <tr>
       <td align="center">
-        <img src="README/5.gif" width="200">
+        <img src="extras/README/5.gif" width="200">
       </td>
       <td align="center">
-        <img src="README/7.gif" width="200">
+        <img src="extras/README/7.gif" width="200">
       </td>
       <td align="center">
-        <img src="README/6.gif" width="200">
+        <img src="extras/README/6.gif" width="200">
       </td>
     </tr>
   </tbody>
@@ -116,7 +116,7 @@ Contribute
 ==========
 Any contribution is appreciated. The currently known problems are tracked in the Issues tab. Feel free to take a swing at any one of them.
 
-For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/Projects/Projects.pdf):
+For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/extras/Projects/Projects.pdf):
 * Link Cable
 * _(Experimental)_ AI - use the `botsupport` or game wrappers to train a neural network
 * _(Experimental)_ Game Wrappers - make wrappers for popular games

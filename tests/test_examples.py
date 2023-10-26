@@ -20,7 +20,7 @@ import pytest
 )
 def test_record_replay(gamewrapper, rom):
     script_path = os.path.dirname(os.path.realpath(__file__))
-    base = Path(f"{script_path}/../examples/")
+    base = Path(f"{script_path}/../extras/examples/")
 
     assert rom is not None
     return_code = subprocess.Popen([sys.executable, str(base / gamewrapper), str(Path(rom)), "--quiet"]).wait()

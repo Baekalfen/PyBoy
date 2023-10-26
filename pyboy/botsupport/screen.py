@@ -39,7 +39,7 @@ class Screen:
         to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
         of the tile map.
 
-        For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf),
+        For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
         or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
 
         Returns

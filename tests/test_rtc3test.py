@@ -8,6 +8,7 @@ from pathlib import Path
 
 import PIL
 import pytest
+
 from pyboy import PyBoy, WindowEvent
 
 OVERWRITE_PNGS = False
@@ -42,7 +43,7 @@ def test_rtc3test(subtest, rtc3test_file):
             break
         pyboy.tick()
 
-    png_path = Path(f"test_results/{rtc3test_file}_{subtest}.png")
+    png_path = Path(f"tests/test_results/{rtc3test_file}_{subtest}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)

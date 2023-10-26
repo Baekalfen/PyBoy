@@ -11,6 +11,7 @@ from zipfile import ZipFile
 
 import PIL
 import pytest
+
 from pyboy import PyBoy
 
 if platform.python_implementation() == "PyPy":
@@ -171,7 +172,7 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
     for _ in range(180 if "div_write" in rom else 40):
         pyboy.tick()
 
-    png_path = Path(f"test_results/mooneye/{rom}.png")
+    png_path = Path(f"tests/test_results/mooneye/{rom}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)

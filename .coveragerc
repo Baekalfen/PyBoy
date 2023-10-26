@@ -1,5 +1,0 @@
-[report]
-omit=
-    tests/*.py,
-    generator.py,
-    setup.py,

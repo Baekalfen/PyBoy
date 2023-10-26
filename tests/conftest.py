@@ -238,7 +238,7 @@ def rtc3test_file():
 
 @pytest.fixture(scope="session")
 def git_tetris_ai():
-    if os.path.isfile("README/7.gif") or platform.system() == "Windows":
+    if os.path.isfile("extras/README/7.gif") or platform.system() == "Windows":
         return None
 
     import venv
@@ -261,7 +261,7 @@ def git_tetris_ai():
 
 @pytest.fixture(scope="session")
 def git_pyboy_rl():
-    if os.path.isfile("README/6.gif") or platform.system() == "Windows":
+    if os.path.isfile("extras/README/6.gif") or platform.system() == "Windows":
         return None
 
     import venv

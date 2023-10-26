@@ -8,6 +8,7 @@ from pathlib import Path
 
 import PIL
 import pytest
+
 from pyboy import PyBoy
 
 OVERWRITE_PNGS = False
@@ -23,7 +24,7 @@ def test_dmg_acid(cgb, dmg_acid_file):
     for _ in range(25):
         pyboy.tick()
 
-    png_path = Path(f"test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(dmg_acid_file)}.png")
+    png_path = Path(f"tests/test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(dmg_acid_file)}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
