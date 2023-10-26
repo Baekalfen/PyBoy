@@ -153,7 +153,10 @@ class WindowEvent:
 
     >>> from pyboy import PyBoy, WindowEvent
     >>> pyboy = PyBoy('file.rom')
-    >>> pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+    >>> pyboy.send_input(WindowEvent.PAUSE)
+
+    Just for button presses, it might be easier to use: `pyboy.PyBoy.button`,
+    `pyboy.PyBoy.button_press` and `pyboy.PyBoy.button_release`.
     """
 
     # ONLY ADD NEW EVENTS AT THE END OF THE LIST!

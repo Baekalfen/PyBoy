@@ -362,6 +362,102 @@ class PyBoy:
         # what the game writes to the address. This can be used so freeze the value for health, cash etc.
         self.mb.cartridge.overrideitem(rom_bank, addr, value)
 
+    def button(self, input):
+        """
+        Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
+
+        The button will automatically be released at the following call to `PyBoy.tick`.
+
+        Args:
+            input (str): button to press
+        """
+        input = input.lower()
+        if input == "left":
+            self.send_input(WindowEvent.PRESS_ARROW_LEFT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
+        elif input == "right":
+            self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
+        elif input == "up":
+            self.send_input(WindowEvent.PRESS_ARROW_UP)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
+        elif input == "down":
+            self.send_input(WindowEvent.PRESS_ARROW_DOWN)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
+        elif input == "a":
+            self.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+        elif input == "b":
+            self.send_input(WindowEvent.PRESS_BUTTON_B)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+        elif input == "start":
+            self.send_input(WindowEvent.PRESS_BUTTON_START)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+        elif input == "select":
+            self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+        else:
+            raise Exception("Unrecognized input:", input)
+
+    def button_press(self, input):
+        """
+        Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
+
+        The button will remain press until explicitly released with `PyBoy.button_release` or `PyBoy.send_input`.
+
+        Args:
+            input (str): button to press
+        """
+        input = input.lower()
+
+        if input == "left":
+            self.send_input(WindowEvent.PRESS_ARROW_LEFT)
+        elif input == "right":
+            self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+        elif input == "up":
+            self.send_input(WindowEvent.PRESS_ARROW_UP)
+        elif input == "down":
+            self.send_input(WindowEvent.PRESS_ARROW_DOWN)
+        elif input == "a":
+            self.send_input(WindowEvent.PRESS_BUTTON_A)
+        elif input == "b":
+            self.send_input(WindowEvent.PRESS_BUTTON_B)
+        elif input == "start":
+            self.send_input(WindowEvent.PRESS_BUTTON_START)
+        elif input == "select":
+            self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
+        else:
+            raise Exception("Unrecognized input")
+
+    def button_release(self, input):
+        """
+        Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
+
+        This will release a button after a call to `PyBoy.button_press` or `PyBoy.send_input`.
+
+        Args:
+            input (str): button to release
+        """
+        input = input.lower()
+        if input == "left":
+            self.send_input(WindowEvent.RELEASE_ARROW_LEFT)
+        elif input == "right":
+            self.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
+        elif input == "up":
+            self.send_input(WindowEvent.RELEASE_ARROW_UP)
+        elif input == "down":
+            self.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+        elif input == "a":
+            self.send_input(WindowEvent.RELEASE_BUTTON_A)
+        elif input == "b":
+            self.send_input(WindowEvent.RELEASE_BUTTON_B)
+        elif input == "start":
+            self.send_input(WindowEvent.RELEASE_BUTTON_START)
+        elif input == "select":
+            self.send_input(WindowEvent.RELEASE_BUTTON_SELECT)
+        else:
+            raise Exception("Unrecognized input")
+
     def send_input(self, event):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
