@@ -227,13 +227,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             self.pyboy.tick()
             if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # "START" on the main menu
                 break
-        self.pyboy.tick()
-        self.pyboy.tick()
-        self.pyboy.tick()
-
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+        self.pyboy.tick(3, False)
+        self.pyboy.button("start")
+        self.pyboy.tick(1, False)
 
         while True:
             if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
