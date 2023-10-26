@@ -97,10 +97,7 @@ class PyBoyGymEnv(Env):
             WindowEvent.RELEASE_BUTTON_SELECT,
             WindowEvent.RELEASE_BUTTON_START,
         ]
-        self._release_button = {
-            button: r_button
-            for button, r_button in zip(self._buttons, self._buttons_release)
-        }
+        self._release_button = {button: r_button for button, r_button in zip(self._buttons, self._buttons_release)}
 
         self.actions = [self._DO_NOTHING] + self._buttons
         if action_type == "all":
@@ -110,20 +107,14 @@ class PyBoyGymEnv(Env):
         self.action_type = action_type
 
         if simultaneous_actions:
-            raise NotImplementedError(
-                "Not implemented yet, raise an issue on GitHub if needed"
-            )
+            raise NotImplementedError("Not implemented yet, raise an issue on GitHub if needed")
         else:
             self.action_space = Discrete(len(self.actions))
 
         # Building the observation_space
         if observation_type == "raw":
-            screen = np.asarray(
-                self.pyboy.botsupport_manager().screen().screen_ndarray()
-            )
-            self.observation_space = Box(
-                low=0, high=255, shape=screen.shape, dtype=np.uint8
-            )
+            screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
+            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
         elif observation_type in ["tiles", "compressed", "minimal"]:
             size_ids = TILES
             if observation_type == "compressed":
@@ -158,14 +149,10 @@ class PyBoyGymEnv(Env):
         elif self.observation_type in ["tiles", "compressed", "minimal"]:
             observation = self.game_wrapper._game_area_np(self.observation_type)
         else:
-            raise NotImplementedError(
-                f"observation_type {self.observation_type} is invalid"
-            )
+            raise NotImplementedError(f"observation_type {self.observation_type} is invalid")
         return observation
 
-    def step(
-        self, action_id
-    ) -> tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]:
+    def step(self, action_id) -> tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]:
         info = {}
 
         action = self.actions[action_id]
