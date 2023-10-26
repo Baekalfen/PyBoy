@@ -2,6 +2,9 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+from __future__ import annotations
+
+from typing import Any, SupportsFloat
 
 import numpy as np
 
@@ -11,6 +14,7 @@ from .utils import WindowEvent
 try:
     from gymnasium import Env
     from gymnasium.spaces import Box, Discrete, MultiDiscrete
+
     enabled = True
 except ImportError:
 
@@ -21,7 +25,7 @@ except ImportError:
 
 
 class PyBoyGymEnv(Env):
-    """ A gym environement built from a `pyboy.PyBoy`
+    """A gym environement built from a `pyboy.PyBoy`
 
     This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
     Additional kwargs are passed to the start_game method of the game_wrapper.
@@ -47,7 +51,15 @@ class PyBoyGymEnv(Env):
         actions (list): The list of input IDs of allowed input for the agent (depends of action_type).
 
     """
-    def __init__(self, pyboy, observation_type="tiles", action_type="toggle", simultaneous_actions=False, **kwargs):
+
+    def __init__(
+        self,
+        pyboy,
+        observation_type="tiles",
+        action_type="toggle",
+        simultaneous_actions=False,
+        **kwargs,
+    ):
         # Build pyboy game
         self.pyboy = pyboy
         if str(type(pyboy)) != "<class 'pyboy.pyboy.PyBoy'>":
@@ -64,18 +76,31 @@ class PyBoyGymEnv(Env):
         # Building the action_space
         self._DO_NOTHING = WindowEvent.PASS
         self._buttons = [
-            WindowEvent.PRESS_ARROW_UP, WindowEvent.PRESS_ARROW_DOWN, WindowEvent.PRESS_ARROW_RIGHT,
-            WindowEvent.PRESS_ARROW_LEFT, WindowEvent.PRESS_BUTTON_A, WindowEvent.PRESS_BUTTON_B,
-            WindowEvent.PRESS_BUTTON_SELECT, WindowEvent.PRESS_BUTTON_START
+            WindowEvent.PRESS_ARROW_UP,
+            WindowEvent.PRESS_ARROW_DOWN,
+            WindowEvent.PRESS_ARROW_RIGHT,
+            WindowEvent.PRESS_ARROW_LEFT,
+            WindowEvent.PRESS_BUTTON_A,
+            WindowEvent.PRESS_BUTTON_B,
+            WindowEvent.PRESS_BUTTON_SELECT,
+            WindowEvent.PRESS_BUTTON_START,
         ]
         self._button_is_pressed = {button: False for button in self._buttons}
 
         self._buttons_release = [
-            WindowEvent.RELEASE_ARROW_UP, WindowEvent.RELEASE_ARROW_DOWN, WindowEvent.RELEASE_ARROW_RIGHT,
-            WindowEvent.RELEASE_ARROW_LEFT, WindowEvent.RELEASE_BUTTON_A, WindowEvent.RELEASE_BUTTON_B,
-            WindowEvent.RELEASE_BUTTON_SELECT, WindowEvent.RELEASE_BUTTON_START
+            WindowEvent.RELEASE_ARROW_UP,
+            WindowEvent.RELEASE_ARROW_DOWN,
+            WindowEvent.RELEASE_ARROW_RIGHT,
+            WindowEvent.RELEASE_ARROW_LEFT,
+            WindowEvent.RELEASE_BUTTON_A,
+            WindowEvent.RELEASE_BUTTON_B,
+            WindowEvent.RELEASE_BUTTON_SELECT,
+            WindowEvent.RELEASE_BUTTON_START,
         ]
-        self._release_button = {button: r_button for button, r_button in zip(self._buttons, self._buttons_release)}
+        self._release_button = {
+            button: r_button
+            for button, r_button in zip(self._buttons, self._buttons_release)
+        }
 
         self.actions = [self._DO_NOTHING] + self._buttons
         if action_type == "all":
@@ -85,14 +110,20 @@ class PyBoyGymEnv(Env):
         self.action_type = action_type
 
         if simultaneous_actions:
-            raise NotImplementedError("Not implemented yet, raise an issue on GitHub if needed")
+            raise NotImplementedError(
+                "Not implemented yet, raise an issue on GitHub if needed"
+            )
         else:
             self.action_space = Discrete(len(self.actions))
 
         # Building the observation_space
         if observation_type == "raw":
-            screen = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
-            self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
+            screen = np.asarray(
+                self.pyboy.botsupport_manager().screen().screen_ndarray()
+            )
+            self.observation_space = Box(
+                low=0, high=255, shape=screen.shape, dtype=np.uint8
+            )
         elif observation_type in ["tiles", "compressed", "minimal"]:
             size_ids = TILES
             if observation_type == "compressed":
@@ -120,19 +151,26 @@ class PyBoyGymEnv(Env):
 
     def _get_observation(self):
         if self.observation_type == "raw":
-            observation = np.asarray(self.pyboy.botsupport_manager().screen().screen_ndarray(), dtype=np.uint8)
+            observation = np.asarray(
+                self.pyboy.botsupport_manager().screen().screen_ndarray(),
+                dtype=np.uint8,
+            )
         elif self.observation_type in ["tiles", "compressed", "minimal"]:
             observation = self.game_wrapper._game_area_np(self.observation_type)
         else:
-            raise NotImplementedError(f"observation_type {self.observation_type} is invalid")
+            raise NotImplementedError(
+                f"observation_type {self.observation_type} is invalid"
+            )
         return observation
 
-    def step(self, action_id):
+    def step(
+        self, action_id
+    ) -> tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]:
         info = {}
 
         action = self.actions[action_id]
         if action == self._DO_NOTHING:
-            pyboy_done = self.pyboy.tick()
+            pyboy_terminated = self.pyboy.tick()
         else:
             if self.action_type == "toggle":
                 if self._button_is_pressed[action]:
@@ -142,7 +180,7 @@ class PyBoyGymEnv(Env):
                     self._button_is_pressed[action] = True
 
             self.pyboy.send_input(action)
-            pyboy_done = self.pyboy.tick()
+            pyboy_terminated = self.pyboy.tick()
 
             if self.action_type == "press":
                 self.pyboy.send_input(self._release_button[action])
@@ -152,12 +190,13 @@ class PyBoyGymEnv(Env):
         self.last_fitness = new_fitness
 
         observation = self._get_observation()
-        done = pyboy_done or self.game_wrapper.game_over()
+        terminated = pyboy_terminated or self.game_wrapper.game_over()
 
-        return observation, reward, done, info
+        return observation, reward, terminated, False, info
 
-    def reset(self):
-        """ Reset (or start) the gym environment throught the game_wrapper """
+    def reset(self) -> tuple[np.ndarray, dict[str, Any]]:
+        """Reset (or start) the gym environment throught the game_wrapper"""
+        info = {}  # Auxiliary information, analogous to `info` returned by `step()`
         if not self._started:
             self.game_wrapper.start_game(**self._kwargs)
             self._started = True
@@ -165,7 +204,7 @@ class PyBoyGymEnv(Env):
             self.game_wrapper.reset_game()
         self.last_fitness = self.game_wrapper.fitness
         self.button_is_pressed = {button: False for button in self._buttons}
-        return self._get_observation()
+        return self._get_observation(), info
 
     def render(self):
         pass

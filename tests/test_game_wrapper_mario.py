@@ -28,7 +28,7 @@ def test_mario_basics(supermarioland_rom):
     assert mario.lives_left == 2
     assert mario.time_left == 400
     assert mario.world == (1, 1)
-    assert mario.fitness == 0 # A built-in fitness score for AI development
+    assert mario.fitness == 0  # A built-in fitness score for AI development
     pyboy.stop()
 
 
@@ -47,7 +47,9 @@ def test_mario_advanced(supermarioland_rom):
     assert mario.lives_left == lives
     assert mario.time_left == 400
     assert mario.world == (3, 2)
-    assert mario.fitness == 10000*lives + 6510 # A built-in fitness score for AI development
+    assert (
+        mario.fitness == 10000 * lives + 6510
+    )  # A built-in fitness score for AI development
     pyboy.stop()
 
 
@@ -59,14 +61,18 @@ def test_mario_game_over(supermarioland_rom):
     mario.start_game()
     mario.set_lives_left(0)
     pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-    for _ in range(500): # Enough to game over correctly, and not long enough it'll work without setting the lives
+    for _ in range(
+        500
+    ):  # Enough to game over correctly, and not long enough it'll work without setting the lives
         pyboy.tick()
         if mario.game_over():
             break
     pyboy.stop()
 
 
-@pytest.mark.skipif(is_pypy, reason="This requires gymnasium, which doesn't work on this platform")
+@pytest.mark.skipif(
+    is_pypy, reason="This requires gymnasium, which doesn't work on this platform"
+)
 class TestOpenAIGym:
     def test_observation_type_compressed(self, supermarioland_rom):
         pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
@@ -75,13 +81,13 @@ class TestOpenAIGym:
         env = pyboy.openai_gym(observation_type="compressed")
         if env is None:
             raise Exception("'env' is None. Did you remember to install 'gymnasium'?")
-        observation = env.reset()
+        observation, info = env.reset()
 
         expected_observation = np.zeros_like(observation)
-        expected_observation[-4:-2, 4:6] = 1 # Mario
-        expected_observation[-2:, :] = 10 # Ground
-        expected_observation[-4:-2, 1:3] = 14 # Pipe
-        expected_observation[9, 5] = 13 # ? Block
+        expected_observation[-4:-2, 4:6] = 1  # Mario
+        expected_observation[-2:, :] = 10  # Ground
+        expected_observation[-4:-2, 1:3] = 14  # Pipe
+        expected_observation[9, 5] = 13  # ? Block
 
         print(observation)
         print(expected_observation)
@@ -94,13 +100,13 @@ class TestOpenAIGym:
         env = pyboy.openai_gym(observation_type="minimal")
         if env is None:
             raise Exception("'env' is None. Did you remember to install 'gymnasium'?")
-        observation = env.reset()
+        observation, info = env.reset()
 
         expected_observation = np.zeros_like(observation)
-        expected_observation[-4:-2, 4:6] = 1 # Mario
-        expected_observation[-2:, :] = 3 # Ground
-        expected_observation[-4:-2, 1:3] = 3 # Pipe
-        expected_observation[9, 5] = 3 # ? Block
+        expected_observation[-4:-2, 4:6] = 1  # Mario
+        expected_observation[-2:, :] = 3  # Ground
+        expected_observation[-4:-2, 1:3] = 3  # Pipe
+        expected_observation[9, 5] = 3  # ? Block
 
         print(observation)
         print(expected_observation)
@@ -111,16 +117,18 @@ class TestOpenAIGym:
         pyboy.set_emulation_speed(0)
 
         starting_level = (2, 1)
-        env = pyboy.openai_gym(observation_type="minimal", action_type="toggle", world_level=starting_level)
+        env = pyboy.openai_gym(
+            observation_type="minimal", action_type="toggle", world_level=starting_level
+        )
         if env is None:
             raise Exception("'env' is None. Did you remember to install 'gymnasium'?")
-        observation = env.reset()
+        observation, info = env.reset()
 
         print(env.game_wrapper.world, starting_level)
         assert env.game_wrapper.world == starting_level
 
         env.game_wrapper.set_lives_left(0)
-        env.step(4) # PRESS LEFT
+        env.step(4)  # PRESS LEFT
 
         for _ in range(200):
             env.step(0)
