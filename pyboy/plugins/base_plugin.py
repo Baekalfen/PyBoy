@@ -123,6 +123,18 @@ class PyBoyGameWrapper(PyBoyPlugin):
             v = memoryview(self._cached_game_area_tiles_raw).cast("I")
             self._cached_game_area_tiles = [v[i:i + height] for i in range(0, height * width, height)]
 
+    def handle_events(self, events):
+        return events
+
+    def post_tick(self):
+        pass
+
+    def window_title(self):
+        return ""
+
+    def stop(self):
+        pass
+
     def enabled(self):
         return self.pyboy_argv.get("game_wrapper") and self.pyboy.cartridge_title() == self.cartridge_title
 
