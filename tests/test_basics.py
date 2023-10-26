@@ -24,16 +24,15 @@ is_pypy = platform.python_implementation() == "PyPy"
 def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
-    pyboy.tick()
-    pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-    pyboy.tick()
-    pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-    pyboy.tick()
-    pyboy.tick()
-    pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-    pyboy.tick()
-    pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-    pyboy.tick()
+    pyboy.tick(1, True)
+    pyboy.button_press("down")
+    pyboy.tick(1, True)
+    pyboy.button_press("up")
+    pyboy.tick(2, True)
+    pyboy.button_press("down")
+    pyboy.tick(1, True)
+    pyboy.button_press("up")
+    pyboy.tick(1, True)
 
     events = pyboy.plugin_manager.record_replay.recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
