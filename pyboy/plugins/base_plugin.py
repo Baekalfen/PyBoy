@@ -98,18 +98,20 @@ class PyBoyGameWrapper(PyBoyPlugin):
     cartridge_title = None
     argv = [("--game-wrapper", {"action": "store_true", "help": "Enable game wrapper for the current game"})]
 
-    def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
+    def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_follow_scxy=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.tilemap_background
-        self.tilemap_window = self.pyboy.tilemap_window
+        if not cythonmode:
+            self.tilemap_background = self.pyboy.tilemap_background
+            self.tilemap_window = self.pyboy.tilemap_window
         self.tilemap_use_background = True
+        self.mapping = np.asarray([x for x in range(768)], dtype=np.uint32)
         self.sprite_offset = 0
         self.game_has_started = False
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
         self.game_area_section = game_area_section
-        self.game_area_wrap_around = game_area_wrap_around
+        self.game_area_follow_scxy = game_area_follow_scxy
         width = self.game_area_section[2] - self.game_area_section[0]
         height = self.game_area_section[3] - self.game_area_section[1]
         self._cached_game_area_tiles_raw = array("B", [0xFF] * (width*height*4))
@@ -118,11 +120,16 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
 
+    def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
+        self.tilemap_background = self.pyboy.tilemap_background
+        self.tilemap_window = self.pyboy.tilemap_window
+
     def enabled(self):
         return self.cartridge_title is None or self.pyboy.cartridge_title == self.cartridge_title
 
     def post_tick(self):
-        raise NotImplementedError("post_tick not implemented in game wrapper")
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
 
     def _set_timer_div(self, timer_div):
         if timer_div is None:
@@ -186,7 +193,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             height = self.game_area_section[3]
             scanline_parameters = self.pyboy.screen.tilemap_position_list
 
-            if self.game_area_wrap_around:
+            if self.game_area_follow_scxy:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
                     SCX = scanline_parameters[(yy+y) * 8][0] // 8
@@ -222,7 +229,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         memoryview:
             Simplified 2-dimensional memoryview of the screen
         """
-        tiles_matrix = self._game_area_tiles()
+        tiles_matrix = self.mapping[self._game_area_tiles()]
         sprites = self._sprites_on_screen()
         xx = self.game_area_section[0]
         yy = self.game_area_section[1]
@@ -232,29 +239,13 @@ class PyBoyGameWrapper(PyBoyPlugin):
             _x = (s.x // 8) - xx
             _y = (s.y // 8) - yy
             if 0 <= _y < height and 0 <= _x < width:
-                tiles_matrix[_y][
-                    _x] = s.tile_identifier + self.sprite_offset # Adding offset to try to seperate sprites from tiles
+                tiles_matrix[_y][_x] = self.mapping[
+                    s.tile_identifier] + self.sprite_offset # Adding offset to try to seperate sprites from tiles
         return tiles_matrix
 
-    def _game_area_np(self, observation_type="tiles"):
-        if observation_type == "tiles":
-            return np.asarray(self.game_area(), dtype=np.uint16)
-        elif observation_type == "compressed":
-            try:
-                return self.tiles_compressed[np.asarray(self.game_area(), dtype=np.uint16)]
-            except AttributeError:
-                raise AttributeError(
-                    f"Game wrapper miss the attribute tiles_compressed for observation_type : {observation_type}"
-                )
-        elif observation_type == "minimal":
-            try:
-                return self.tiles_minimal[np.asarray(self.game_area(), dtype=np.uint16)]
-            except AttributeError:
-                raise AttributeError(
-                    f"Game wrapper miss the attribute tiles_minimal for observation_type : {observation_type}"
-                )
-        else:
-            raise ValueError(f"Invalid observation_type : {observation_type}")
+    def game_area_mapping(self, mapping, sprite_offest):
+        self.mapping = np.asarray(mapping, dtype=np.uint32)
+        self.sprite_offset = sprite_offest
 
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0

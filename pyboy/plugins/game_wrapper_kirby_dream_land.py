@@ -42,7 +42,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         .. math::
             fitness = score \\cdot health \\cdot lives\\_left
         """
-        super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_follow_scxy=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True

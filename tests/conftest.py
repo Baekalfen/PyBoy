@@ -12,6 +12,11 @@ import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
 
+import numpy as np
+
+np.set_printoptions(threshold=2**32)
+np.set_printoptions(linewidth=np.inf)
+
 import git
 import pytest
 from cryptography.fernet import Fernet
