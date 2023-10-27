@@ -672,6 +672,19 @@ class Renderer:
         for i in range(TILES):
             self._spritecache1_state[i] = 0
 
+    def color_code(self, byte1, byte2, offset):
+        """Convert 2 bytes into color code at a given offset.
+
+        The colors are 2 bit and are found like this:
+
+        Color of the first pixel is 0b10
+        | Color of the second pixel is 0b01
+        v v
+        1 0 0 1 0 0 0 1 <- byte1
+        0 1 1 1 1 1 0 0 <- byte2
+        """
+        return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
+
     def update_tilecache0(self, lcd, t, bank):
         if self._tilecache0_state[t]:
             return
@@ -682,7 +695,7 @@ class Renderer:
             y = (t*16 + k) // 2
 
             for x in range(8):
-                colorcode = utils.color_code(byte1, byte2, 7 - x)
+                colorcode = self.color_code(byte1, byte2, 7 - x)
                 self._tilecache0[y, x] = colorcode
 
         self._tilecache0_state[t] = 1
@@ -700,7 +713,7 @@ class Renderer:
             y = (t*16 + k) // 2
 
             for x in range(8):
-                colorcode = utils.color_code(byte1, byte2, 7 - x)
+                colorcode = self.color_code(byte1, byte2, 7 - x)
                 self._spritecache0[y, x] = colorcode
 
         self._spritecache0_state[t] = 1
@@ -715,7 +728,7 @@ class Renderer:
             y = (t*16 + k) // 2
 
             for x in range(8):
-                colorcode = utils.color_code(byte1, byte2, 7 - x)
+                colorcode = self.color_code(byte1, byte2, 7 - x)
                 self._spritecache1[y, x] = colorcode
 
         self._spritecache1_state[t] = 1
@@ -817,7 +830,7 @@ class CGBRenderer(Renderer):
             y = (t*16 + k) // 2
 
             for x in range(8):
-                self._tilecache0[y, x] = utils.color_code(byte1, byte2, 7 - x)
+                self._tilecache0[y, x] = self.color_code(byte1, byte2, 7 - x)
 
         self._tilecache0_state[t] = 1
 
@@ -835,7 +848,7 @@ class CGBRenderer(Renderer):
             y = (t*16 + k) // 2
 
             for x in range(8):
-                self._tilecache1[y, x] = utils.color_code(byte1, byte2, 7 - x)
+                self._tilecache1[y, x] = self.color_code(byte1, byte2, 7 - x)
 
         self._tilecache1_state[t] = 1
 
@@ -853,7 +866,7 @@ class CGBRenderer(Renderer):
             y = (t*16 + k) // 2
 
             for x in range(8):
-                self._spritecache0[y, x] = utils.color_code(byte1, byte2, 7 - x)
+                self._spritecache0[y, x] = self.color_code(byte1, byte2, 7 - x)
 
         self._spritecache0_state[t] = 1
 
@@ -871,7 +884,7 @@ class CGBRenderer(Renderer):
             y = (t*16 + k) // 2
 
             for x in range(8):
-                self._spritecache1[y, x] = utils.color_code(byte1, byte2, 7 - x)
+                self._spritecache1[y, x] = self.color_code(byte1, byte2, 7 - x)
 
         self._spritecache1_state[t] = 1
 
