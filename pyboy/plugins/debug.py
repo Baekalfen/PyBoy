@@ -11,8 +11,7 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
-from pyboy.botsupport import constants, tilemap
-from pyboy.botsupport.sprite import Sprite
+from pyboy.api import Sprite, TileMap, constants
 from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
@@ -451,12 +450,7 @@ class TileViewWindow(BaseDebugWindow):
         super().__init__(*args, **kwargs)
         self.scanline_x, self.scanline_y = scanline_x, scanline_y
         self.color = COLOR_WINDOW if window_map else COLOR_BACKGROUND
-
-        if not cythonmode:
-            self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
-
-    def __cinit__(self, pyboy, mb, *args, window_map, **kwargs):
-        self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
+        self.tilemap = TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
 
     def post_tick(self):
         # Updating screen buffer by copying tiles from cache
@@ -538,7 +532,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
+        scanlineparameters = self.pyboy.screen().tilemap_position_list()
 
         background_view = self.scanline_x == 0
 
@@ -737,8 +731,7 @@ class SpriteWindow(BaseDebugWindow):
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
-            marked_tiles,
-            self.pyboy.botsupport_manager().sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
+            marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
         ):
             for sprite_index in matched_sprites:
                 xx = (sprite_index*8) % self.width
@@ -770,8 +763,7 @@ class SpriteViewWindow(BaseDebugWindow):
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
-            marked_tiles,
-            self.pyboy.botsupport_manager().sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
+            marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
         ):
             for sprite_index in matched_sprites:
                 sprite = Sprite(self.mb, sprite_index)
@@ -852,7 +844,8 @@ class MemoryWindow(BaseDebugWindow):
         self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
 
     def write_addresses(self):
-        header = (f"Memory from 0x{self.start_address:04X} " f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
+        header = (f"Memory from 0x{self.start_address:04X} "
+                  f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
         if cythonmode:
             for x in range(28):
                 self.text_buffer[1][x + 2] = header[x]

@@ -3,13 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+cimport cython
 from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
-cimport cython
-from pyboy.botsupport.tilemap cimport TileMap
-from pyboy.core.mb cimport Motherboard
+
 from pyboy.core.lcd cimport Renderer
+from pyboy.core.mb cimport Motherboard
 from pyboy.utils cimport WindowEvent
+
 
 cdef int ROWS, COLS
 
@@ -41,8 +42,8 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
 cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef public shape
     cdef bint game_has_started
-    cdef TileMap tilemap_background
-    cdef TileMap tilemap_window
+    cdef object tilemap_background
+    cdef object tilemap_window
     cdef bint tilemap_use_background
     cdef uint16_t sprite_offset
 

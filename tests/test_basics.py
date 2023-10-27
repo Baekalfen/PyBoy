@@ -16,7 +16,7 @@ import pytest
 
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
-from pyboy.botsupport.tile import Tile
+from pyboy.api.tile import Tile
 
 is_pypy = platform.python_implementation() == "PyPy"
 
@@ -101,8 +101,8 @@ def test_tilemaps(kirby_rom):
     for _ in range(120):
         pyboy.tick()
 
-    bck_tilemap = pyboy.botsupport_manager().tilemap_background()
-    wdw_tilemap = pyboy.botsupport_manager().tilemap_window()
+    bck_tilemap = pyboy.tilemap_background()
+    wdw_tilemap = pyboy.tilemap_window()
 
     assert bck_tilemap[0, 0] == 256
     assert bck_tilemap[:5, 0] == [256, 256, 256, 256, 170]
@@ -177,7 +177,7 @@ def test_not_cgb(pokemon_crystal_rom):
     for _ in range(60 * 7):
         pyboy.tick()
 
-    assert pyboy.botsupport_manager().tilemap_background()[1:16, 16] == [
+    assert pyboy.tilemap_background()[1:16, 16] == [
         134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
     ] # Assert that the screen says "Game Boy Color." at the bottom.
 
@@ -206,7 +206,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
     png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
-    image = pyboy.botsupport_manager().screen().screen_image()
+    image = pyboy.screen().screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         png_buf = BytesIO()

@@ -299,7 +299,7 @@ The details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pan
 \section*{Introduction}
 This is not a Game Boy feature itself, but something that is easier to approach through emulation. What I imagine, is a neural network -- or maybe a simple, handwritten bot -- which can play the Game Boy autonomously.
 
-PyBoy already supports external controls to report objects on the screen and sending input to the Game Boy\footnote{\url{https://docs.pyboy.dk/botsupport/index.html}}\footnote{\url{https://docs.pyboy.dk/plugins/index.html}}. It supports running at unlimited speed and without rendering the display to speed up the learning process.
+PyBoy already supports external controls to report objects on the screen and sending input to the Game Boy\footnote{\url{https://docs.pyboy.dk/api/index.html}}\footnote{\url{https://docs.pyboy.dk/plugins/index.html}}. It supports running at unlimited speed and without rendering the display to speed up the learning process.
 
 The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
 
@@ -311,7 +311,7 @@ There are already examples of other people implementing AIs for console games\fo
         The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
 
     \item [Look at the current implementation]
-        Have a look at the `botsupport` module and the "game wrappers" in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. There is also a crude Tetris and Mario example in the repo to get inspiration from.
+        Have a look at the `api` module and the "game wrappers" in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. There is also a crude Tetris and Mario example in the repo to get inspiration from.
 
     \item [Figure out a method]
         If you decide to solve the task using machine learning, search online for a fitting software package to help with it -- maybe Tensorflow or PyTorch will work. Create a prototype to find out what is needed to connect the machine learning framework and PyBoy.
@@ -370,10 +370,10 @@ The details of the Game Boy are described in the Pan Docs\footnote{\url{http://b
         The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
 
     \item [Look at the current implementation]
-        Have a look at the `botsupport` module in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. There is also a crude Tetris bot to get inspiration from.
+        Have a look at the `api` module in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. There is also a crude Tetris bot to get inspiration from.
 
     \item [Figure out a method]
-        Figure out how to best represent the data on the screen for the AI/bot developer. Find the best performing way to extract the necessary information from PyBoy -- use the BotSupport module as much as possible. If PyBoy lacks the necessary features, figure out how to build an extension.
+        Figure out how to best represent the data on the screen for the AI/bot developer. Find the best performing way to extract the necessary information from PyBoy -- use the api module as much as possible. If PyBoy lacks the necessary features, figure out how to build an extension.
 
     \item [Implement the algorithm]
         When you've found an appropriate method, try to implement it, and see if it can work.
