@@ -174,6 +174,7 @@ cdef class Renderer:
     )
     cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], bint) noexcept nogil
     cdef void sort_sprites(self, int) noexcept nogil
+    cdef inline uint8_t color_code(self, uint8_t, uint8_t, uint8_t) noexcept nogil
 
     cdef void clear_cache(self) noexcept nogil
     cdef void clear_tilecache0(self) noexcept nogil
