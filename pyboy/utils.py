@@ -152,6 +152,7 @@ class WindowEvent:
 
     It can be used as follows:
 
+    ```python
     >>> from pyboy import PyBoy, WindowEvent
     >>> pyboy = PyBoy('file.rom')
     >>> pyboy.send_input(WindowEvent.PAUSE)

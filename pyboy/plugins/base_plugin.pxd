@@ -4,6 +4,7 @@
 #
 
 cimport cython
+cimport numpy as cnp
 from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
@@ -48,17 +49,18 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef object tilemap_window
     cdef bint tilemap_use_background
     cdef uint16_t sprite_offset
+    cdef object mapping
 
     cdef bint _tile_cache_invalid
     cdef array _cached_game_area_tiles_raw
-    cdef uint32_t[:, :] _cached_game_area_tiles
+    cdef object _cached_game_area_tiles
     @cython.locals(xx=int, yy=int, width=int, height=int, SCX=int, SCY=int, _x=int, _y=int)
-    cdef uint32_t[:, :] _game_area_tiles(self) noexcept
+    cdef cnp.ndarray[cnp.uint32_t, ndim=2] _game_area_tiles(self) noexcept
 
-    cdef bint game_area_wrap_around
+    cdef bint game_area_follow_scxy
     cdef tuple game_area_section
-    @cython.locals(tiles_matrix=uint32_t[:, :], sprites=list, xx=int, yy=int, width=int, height=int, _x=int, _y=int)
-    cpdef uint32_t[:, :] game_area(self) noexcept
+    @cython.locals(tiles_matrix=cnp.ndarray, sprites=list, xx=int, yy=int, width=int, height=int, _x=int, _y=int)
+    cpdef cnp.ndarray[cnp.uint32_t, ndim=2] game_area(self) noexcept
 
     cdef bint _sprite_cache_invalid
     cdef list _cached_sprites_on_screen
