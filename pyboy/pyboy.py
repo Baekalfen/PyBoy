@@ -629,9 +629,7 @@ class PyBoy:
         """
         if self.initialized:
             unsupported_window_types_enabled = [
-                self.plugin_manager.window_dummy_enabled,
-                self.plugin_manager.window_headless_enabled,
-                self.plugin_manager.window_open_gl_enabled
+                self.plugin_manager.window_null_enabled, self.plugin_manager.window_open_gl_enabled
             ]
             if any(unsupported_window_types_enabled):
                 logger.warning(

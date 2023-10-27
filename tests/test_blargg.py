@@ -21,7 +21,7 @@ blargg_json = "tests/test_results/blargg.json"
 
 
 def run_rom(rom):
-    pyboy = PyBoy(str(rom), window_type="dummy", cgb="cgb" in rom, sound_emulated=True)
+    pyboy = PyBoy(str(rom), window_type="null", cgb="cgb" in rom, sound_emulated=True)
     pyboy.set_emulation_speed(0)
     t = time.time()
     result = ""

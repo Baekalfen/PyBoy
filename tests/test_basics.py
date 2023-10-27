@@ -22,7 +22,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_record_replay(boot_rom, default_rom):
-    pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
+    pyboy = PyBoy(default_rom, window_type="null", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick(True)
     pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
@@ -96,7 +96,7 @@ def test_argv_parser(*args):
 
 
 def test_tilemaps(kirby_rom):
-    pyboy = PyBoy(kirby_rom, window_type="dummy")
+    pyboy = PyBoy(kirby_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     for _ in range(120):
         pyboy.tick(False)
@@ -150,7 +150,7 @@ def test_tilemaps(kirby_rom):
 
 
 def test_randomize_ram(default_rom):
-    pyboy = PyBoy(default_rom, window_type="dummy", randomize=False)
+    pyboy = PyBoy(default_rom, window_type="null", randomize=False)
     # RAM banks should all be 0 by default
     assert not any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not zeroed"
     assert not any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not zeroed"
@@ -160,7 +160,7 @@ def test_randomize_ram(default_rom):
     assert not any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not zeroed"
     pyboy.stop(save=False)
 
-    pyboy = PyBoy(default_rom, window_type="dummy", randomize=True)
+    pyboy = PyBoy(default_rom, window_type="null", randomize=True)
     # RAM banks should have at least one nonzero value now
     assert any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not randomized"
@@ -172,7 +172,7 @@ def test_randomize_ram(default_rom):
 
 
 def test_not_cgb(pokemon_crystal_rom):
-    pyboy = PyBoy(pokemon_crystal_rom, window_type="dummy", cgb=False)
+    pyboy = PyBoy(pokemon_crystal_rom, window_type="null", cgb=False)
     pyboy.set_emulation_speed(0)
     for _ in range(60 * 7):
         pyboy.tick(False)
@@ -199,7 +199,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
     if cgb == None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
         pytest.skip("Invalid combination")
 
-    pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
+    pyboy = PyBoy(rom, window_type="null", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
     for _ in range(frames):
         pyboy.tick(True)
