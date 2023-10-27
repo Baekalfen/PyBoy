@@ -212,10 +212,10 @@ class TestOpenAIGym:
         pyboy.button_release("down")
 
         while tetris.score == 47:
-            pyboy.tick()
+            pyboy.tick(True)
 
-        pyboy.tick()
-        pyboy.tick()
+        pyboy.tick(True)
+        pyboy.tick(True)
         assert tetris.score == 87
         assert tetris.lines == 1
 

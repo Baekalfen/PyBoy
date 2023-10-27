@@ -21,10 +21,10 @@ def test_rtc3test(subtest, rtc3test_file):
     pyboy = PyBoy(rtc3test_file, window_type="headless")
     pyboy.set_emulation_speed(0)
     for _ in range(59):
-        pyboy.tick()
+        pyboy.tick(True)
 
     for _ in range(25):
-        pyboy.tick()
+        pyboy.tick(True)
 
     for n in range(subtest):
         pyboy.button("down")
@@ -37,7 +37,7 @@ def test_rtc3test(subtest, rtc3test_file):
         # Continue until it says "(A) Return"
         if pyboy.botsupport_manager().tilemap_background()[6:14, 17] == [193, 63, 27, 40, 55, 56, 53, 49]:
             break
-        pyboy.tick()
+        pyboy.tick(True)
 
     png_path = Path(f"tests/test_results/{rtc3test_file}_{subtest}.png")
     image = pyboy.botsupport_manager().screen().screen_image()
