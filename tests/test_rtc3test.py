@@ -18,7 +18,7 @@ OVERWRITE_PNGS = False
 @pytest.mark.skip("RTC is too unstable")
 @pytest.mark.parametrize("subtest", [0, 1, 2])
 def test_rtc3test(subtest, rtc3test_file):
-    pyboy = PyBoy(rtc3test_file, window_type="headless")
+    pyboy = PyBoy(rtc3test_file, window_type="null")
     pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)

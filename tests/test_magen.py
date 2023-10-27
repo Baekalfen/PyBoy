@@ -15,7 +15,7 @@ OVERWRITE_PNGS = False
 
 # https://github.com/alloncm/MagenTests
 def test_magen_test(magen_test_file):
-    pyboy = PyBoy(magen_test_file, window_type="headless")
+    pyboy = PyBoy(magen_test_file, window_type="null")
     pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)

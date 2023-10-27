@@ -6,6 +6,7 @@
 import os
 
 import pytest
+
 from tests.test_replay import replay
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
@@ -13,12 +14,8 @@ from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 replay_file = "tests/replays/default_rom.replay"
 
 
-def test_headless(default_rom):
-    replay(default_rom, replay_file, "headless", bootrom_file=None, padding_frames=BOOTROM_FRAMES_UNTIL_LOGO)
-
-
-def test_dummy(default_rom):
-    replay(default_rom, replay_file, "dummy", bootrom_file=None, verify=False)
+def test_null(default_rom):
+    replay(default_rom, replay_file, "null", bootrom_file=None, padding_frames=BOOTROM_FRAMES_UNTIL_LOGO)
 
 
 @pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")

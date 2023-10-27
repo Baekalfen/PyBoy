@@ -17,7 +17,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_mario_basics(supermarioland_rom):
-    pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+    pyboy = PyBoy(supermarioland_rom, window_type="null", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title() == "SUPER MARIOLAN"
 
@@ -33,7 +33,7 @@ def test_mario_basics(supermarioland_rom):
 
 
 def test_mario_advanced(supermarioland_rom):
-    pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+    pyboy = PyBoy(supermarioland_rom, window_type="null", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title() == "SUPER MARIOLAN"
 
@@ -52,7 +52,7 @@ def test_mario_advanced(supermarioland_rom):
 
 
 def test_mario_game_over(supermarioland_rom):
-    pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+    pyboy = PyBoy(supermarioland_rom, window_type="null", game_wrapper=True)
     pyboy.set_emulation_speed(0)
 
     mario = pyboy.game_wrapper()
@@ -69,7 +69,7 @@ def test_mario_game_over(supermarioland_rom):
 @pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
 class TestOpenAIGym:
     def test_observation_type_compressed(self, supermarioland_rom):
-        pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+        pyboy = PyBoy(supermarioland_rom, window_type="null", game_wrapper=True)
         pyboy.set_emulation_speed(0)
 
         env = pyboy.openai_gym(observation_type="compressed")
@@ -88,7 +88,7 @@ class TestOpenAIGym:
         assert np.all(observation == expected_observation)
 
     def test_observation_type_minimal(self, supermarioland_rom):
-        pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+        pyboy = PyBoy(supermarioland_rom, window_type="null", game_wrapper=True)
         pyboy.set_emulation_speed(0)
 
         env = pyboy.openai_gym(observation_type="minimal")
@@ -107,7 +107,7 @@ class TestOpenAIGym:
         assert np.all(observation == expected_observation)
 
     def test_start_level(self, supermarioland_rom):
-        pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
+        pyboy = PyBoy(supermarioland_rom, window_type="null", game_wrapper=True)
         pyboy.set_emulation_speed(0)
 
         starting_level = (2, 1)
