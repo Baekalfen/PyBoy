@@ -25,7 +25,7 @@ def run_rom(rom):
     pyboy.set_emulation_speed(0)
     t = time.time()
     result = ""
-    while not pyboy.tick():
+    while not pyboy.tick(False):
         b = pyboy._serial()
         if b != "":
             result += b
@@ -35,7 +35,7 @@ def run_rom(rom):
             break
 
     for _ in range(10):
-        pyboy.tick()
+        pyboy.tick(False)
     pyboy.stop(save=False)
     result += pyboy._serial() # Getting the absolute last. Some times the tests says "Failed X tests".
     if result == "":

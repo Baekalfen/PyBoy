@@ -19,10 +19,10 @@ def test_which(cgb, which_file):
     pyboy = PyBoy(which_file, window_type="headless", cgb=cgb)
     pyboy.set_emulation_speed(0)
     for _ in range(59):
-        pyboy.tick()
+        pyboy.tick(True)
 
     for _ in range(25):
-        pyboy.tick()
+        pyboy.tick(True)
 
     png_path = Path(f"tests/test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(which_file)}.png")
     image = pyboy.screen().screen_image()

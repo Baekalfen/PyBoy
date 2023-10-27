@@ -186,52 +186,52 @@ class TestOpenAIGym:
 
         for n in range(3):
             pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            pyboy.tick()
+            pyboy.tick(True)
             pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
-            pyboy.tick()
+            pyboy.tick(True)
 
         pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
         while tetris.score == 0:
-            pyboy.tick()
-        pyboy.tick()
-        pyboy.tick()
+            pyboy.tick(True)
+        pyboy.tick(True)
+        pyboy.tick(True)
         pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 
         for n in range(3):
             pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            pyboy.tick()
+            pyboy.tick(True)
             pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
-            pyboy.tick()
+            pyboy.tick(True)
 
         tetris.set_tetromino("O")
         pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
         while tetris.score == 16:
-            pyboy.tick()
-        pyboy.tick()
-        pyboy.tick()
+            pyboy.tick(True)
+        pyboy.tick(True)
+        pyboy.tick(True)
         pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 
-        pyboy.tick()
+        pyboy.tick(True)
         pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
         while tetris.score == 32:
-            pyboy.tick()
-        pyboy.tick()
-        pyboy.tick()
+            pyboy.tick(True)
+        pyboy.tick(True)
+        pyboy.tick(True)
         pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 
         while tetris.score == 47:
-            pyboy.tick()
+            pyboy.tick(True)
 
-        pyboy.tick()
-        pyboy.tick()
+        pyboy.tick(True)
+        pyboy.tick(True)
         assert tetris.score == 87
         assert tetris.lines == 1
 
         while not tetris.game_over():
             pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            pyboy.tick()
+            pyboy.tick(True)
             pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-            pyboy.tick()
+            pyboy.tick(True)
 
         pyboy.stop(save=False)
 

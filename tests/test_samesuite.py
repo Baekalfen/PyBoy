@@ -122,7 +122,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
         for _ in range(180 if gb_type == "cgb" else 350):
-            pyboy.tick()
+            pyboy.tick(True)
         pyboy.save_state(saved_state)
         pyboy.stop(save=False)
 
@@ -137,14 +137,14 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
     saved_state.seek(0)
     if clean:
         for _ in range(180 if gb_type == "cgb" else 350):
-            pyboy.tick()
+            pyboy.tick(True)
     else:
         pyboy.load_state(saved_state)
 
     for _ in range(10):
         if np.all(pyboy.screen().screen_ndarray() > 240):
             for _ in range(20):
-                pyboy.tick()
+                pyboy.tick(True)
         else:
             break
 
