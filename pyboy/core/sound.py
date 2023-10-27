@@ -38,7 +38,7 @@ class Sound:
                 self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
 
                 if self.device > 1:
-                    # Start playback (move out of __init__ if needed, maybe for headless)
+                    # Start playback (move out of __init__ if needed, maybe for null)
                     sdl2.SDL_PauseAudioDevice(self.device, 0)
 
                     self.sample_rate = spec_have.freq
