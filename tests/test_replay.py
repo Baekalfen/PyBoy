@@ -100,7 +100,7 @@ def replay(
         pyboy.load_state(state_data)
     else:
         for _ in range(padding_frames):
-            pyboy.tick()
+            pyboy.tick(True)
 
     # Filters out the blacklisted events
     recorded_input = list(
@@ -131,14 +131,14 @@ def replay(
         # if frame_count % 30 == 0:
         #     print(frame_count)
         #     breakpoint()
-        pyboy.tick()
+        pyboy.tick(True)
 
     print(frame_count)
     # If end-frame in record_gif is high than frame counter
     if recording:
         pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
         # We need to run an extra cycle for the screen recording to save
-        pyboy.tick()
+        pyboy.tick(True)
         print(frame_count)
         recording ^= True
 

@@ -21,27 +21,27 @@ def test_rtc3test(subtest, rtc3test_file):
     pyboy = PyBoy(rtc3test_file, window_type="headless")
     pyboy.set_emulation_speed(0)
     for _ in range(59):
-        pyboy.tick()
+        pyboy.tick(True)
 
     for _ in range(25):
-        pyboy.tick()
+        pyboy.tick(True)
 
     for n in range(subtest):
         pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-        pyboy.tick()
+        pyboy.tick(True)
         pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-        pyboy.tick()
+        pyboy.tick(True)
 
     pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-    pyboy.tick()
+    pyboy.tick(True)
     pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-    pyboy.tick()
+    pyboy.tick(True)
 
     while True:
         # Continue until it says "(A) Return"
         if pyboy.tilemap_background()[6:14, 17] == [193, 63, 27, 40, 55, 56, 53, 49]:
             break
-        pyboy.tick()
+        pyboy.tick(True)
 
     png_path = Path(f"tests/test_results/{rtc3test_file}_{subtest}.png")
     image = pyboy.screen().screen_image()
