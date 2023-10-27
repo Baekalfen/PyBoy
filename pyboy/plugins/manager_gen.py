@@ -6,7 +6,7 @@ import re
 
 # Plugins and priority!
 # E.g. DisableInput first
-windows = ["WindowSDL2", "WindowOpenGL", "WindowHeadless", "WindowDummy", "Debug"]
+windows = ["WindowSDL2", "WindowOpenGL", "WindowNull", "Debug"]
 game_wrappers = [
     "GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand", "GameWrapperPokemonGen1"
 ]

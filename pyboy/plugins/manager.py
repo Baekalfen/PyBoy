@@ -6,8 +6,7 @@
 # imports
 from pyboy.plugins.window_sdl2 import WindowSDL2 # isort:skip
 from pyboy.plugins.window_open_gl import WindowOpenGL # isort:skip
-from pyboy.plugins.window_headless import WindowHeadless # isort:skip
-from pyboy.plugins.window_dummy import WindowDummy # isort:skip
+from pyboy.plugins.window_null import WindowNull # isort:skip
 from pyboy.plugins.debug import Debug # isort:skip
 from pyboy.plugins.disable_input import DisableInput # isort:skip
 from pyboy.plugins.auto_pause import AutoPause # isort:skip
@@ -28,8 +27,7 @@ def parser_arguments():
     # yield_plugins
     yield WindowSDL2.argv
     yield WindowOpenGL.argv
-    yield WindowHeadless.argv
-    yield WindowDummy.argv
+    yield WindowNull.argv
     yield Debug.argv
     yield DisableInput.argv
     yield AutoPause.argv
@@ -55,10 +53,8 @@ class PluginManager:
         self.window_sdl2_enabled = self.window_sdl2.enabled()
         self.window_open_gl = WindowOpenGL(pyboy, mb, pyboy_argv)
         self.window_open_gl_enabled = self.window_open_gl.enabled()
-        self.window_headless = WindowHeadless(pyboy, mb, pyboy_argv)
-        self.window_headless_enabled = self.window_headless.enabled()
-        self.window_dummy = WindowDummy(pyboy, mb, pyboy_argv)
-        self.window_dummy_enabled = self.window_dummy.enabled()
+        self.window_null = WindowNull(pyboy, mb, pyboy_argv)
+        self.window_null_enabled = self.window_null.enabled()
         self.debug = Debug(pyboy, mb, pyboy_argv)
         self.debug_enabled = self.debug.enabled()
         self.disable_input = DisableInput(pyboy, mb, pyboy_argv)
@@ -87,14 +83,10 @@ class PluginManager:
 
     def gamewrapper(self):
         # gamewrapper
-        if self.game_wrapper_super_mario_land_enabled:
-            return self.game_wrapper_super_mario_land
-        if self.game_wrapper_tetris_enabled:
-            return self.game_wrapper_tetris
-        if self.game_wrapper_kirby_dream_land_enabled:
-            return self.game_wrapper_kirby_dream_land
-        if self.game_wrapper_pokemon_gen1_enabled:
-            return self.game_wrapper_pokemon_gen1
+        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
+        if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
+        if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
+        if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
         # gamewrapper end
         return None
 
@@ -104,10 +96,8 @@ class PluginManager:
             events = self.window_sdl2.handle_events(events)
         if self.window_open_gl_enabled:
             events = self.window_open_gl.handle_events(events)
-        if self.window_headless_enabled:
-            events = self.window_headless.handle_events(events)
-        if self.window_dummy_enabled:
-            events = self.window_dummy.handle_events(events)
+        if self.window_null_enabled:
+            events = self.window_null.handle_events(events)
         if self.debug_enabled:
             events = self.debug.handle_events(events)
         # foreach end
@@ -171,10 +161,8 @@ class PluginManager:
             self.window_sdl2.set_title(self.pyboy.window_title)
         if self.window_open_gl_enabled:
             self.window_open_gl.set_title(self.pyboy.window_title)
-        if self.window_headless_enabled:
-            self.window_headless.set_title(self.pyboy.window_title)
-        if self.window_dummy_enabled:
-            self.window_dummy.set_title(self.pyboy.window_title)
+        if self.window_null_enabled:
+            self.window_null.set_title(self.pyboy.window_title)
         if self.debug_enabled:
             self.debug.set_title(self.pyboy.window_title)
         # foreach end
@@ -186,10 +174,8 @@ class PluginManager:
             self.window_sdl2.post_tick()
         if self.window_open_gl_enabled:
             self.window_open_gl.post_tick()
-        if self.window_headless_enabled:
-            self.window_headless.post_tick()
-        if self.window_dummy_enabled:
-            self.window_dummy.post_tick()
+        if self.window_null_enabled:
+            self.window_null.post_tick()
         if self.debug_enabled:
             self.debug.post_tick()
         # foreach end
@@ -201,24 +187,16 @@ class PluginManager:
         # foreach windows done = [].frame_limiter(speed), if done: return
         if self.window_sdl2_enabled:
             done = self.window_sdl2.frame_limiter(speed)
-            if done:
-                return
+            if done: return
         if self.window_open_gl_enabled:
             done = self.window_open_gl.frame_limiter(speed)
-            if done:
-                return
-        if self.window_headless_enabled:
-            done = self.window_headless.frame_limiter(speed)
-            if done:
-                return
-        if self.window_dummy_enabled:
-            done = self.window_dummy.frame_limiter(speed)
-            if done:
-                return
+            if done: return
+        if self.window_null_enabled:
+            done = self.window_null.frame_limiter(speed)
+            if done: return
         if self.debug_enabled:
             done = self.debug.frame_limiter(speed)
-            if done:
-                return
+            if done: return
         # foreach end
 
     def window_title(self):
@@ -228,10 +206,8 @@ class PluginManager:
             title += self.window_sdl2.window_title()
         if self.window_open_gl_enabled:
             title += self.window_open_gl.window_title()
-        if self.window_headless_enabled:
-            title += self.window_headless.window_title()
-        if self.window_dummy_enabled:
-            title += self.window_dummy.window_title()
+        if self.window_null_enabled:
+            title += self.window_null.window_title()
         if self.debug_enabled:
             title += self.debug.window_title()
         # foreach end
@@ -267,10 +243,8 @@ class PluginManager:
             self.window_sdl2.stop()
         if self.window_open_gl_enabled:
             self.window_open_gl.stop()
-        if self.window_headless_enabled:
-            self.window_headless.stop()
-        if self.window_dummy_enabled:
-            self.window_dummy.stop()
+        if self.window_null_enabled:
+            self.window_null.stop()
         if self.debug_enabled:
             self.debug.stop()
         # foreach end
