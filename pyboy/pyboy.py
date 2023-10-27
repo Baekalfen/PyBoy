@@ -9,6 +9,8 @@ The core module of the emulator
 import os
 import time
 
+import numpy as np
+
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
@@ -129,7 +131,7 @@ class PyBoy:
         Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
         Example:
-        ```
+        ```python
         >>> values = pyboy.memory[0x0000:0x10000]
         >>> pyboy.memory[0xC000:0xC0010] = 0
         ```
@@ -143,7 +145,7 @@ class PyBoy:
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
 
         Example:
-        ```
+        ```python
         >>> current_score = 4 # You write current score in game
         >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
         >>> for _ in range(175):
@@ -581,8 +583,114 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
+    def game_area_dimensions(self, x, y, width, height, follow_scrolling=True):
+        """
+        If using the generic game wrapper (see `pyboy.PyBoy.game_wrapper`), you can use this to set the section of the
+        tilemaps to extract. This will default to the entire tilemap.
+
+        Example:
+        ```python
+        >>> pyboy.game_area_dimensions(0, 0, 10, 18, False)
+        ```
+
+        Args:
+            x (int): Offset from top-left corner of the screen
+            y (int): Offset from top-left corner of the screen
+            width (int): Width of game area
+            height (int): Height of game area
+            follow_scrolling (bool): Whether to follow the scrolling of [SCX and SCY](https://gbdev.io/pandocs/Scrolling.html)
+        """
+        self.game_wrapper.game_area_section = (x, y, width, height)
+        self.game_wrapper.game_area_follow_scxy = follow_scrolling
+
+    def game_area_collision(self):
+        """
+        Some game wrappers define a collision map. Check if your game wrapper has this feature implemented: `pyboy.plugins`.
+
+        The output will be unique for each game wrapper.
+
+        Returns
+        -------
+        memoryview:
+            Simplified 2-dimensional memoryview of the collision map
+        """
+        return self.game_wrapper.game_area_collision()
+
+    def game_area_mapping(self, mapping, sprite_offset=0):
+        """
+        Define custom mappings for tile identifiers in the game area.
+
+        Example of custom mapping:
+        ```python
+        >>> mapping = [x for x in range(384)] # 1:1 mapping
+        >>> mapping[0] = 0 # Map tile identifier 0 -> 0
+        >>> mapping[1] = 0 # Map tile identifier 1 -> 0
+        >>> mapping[2] = 0 # Map tile identifier 2 -> 0
+        >>> mapping[3] = 0 # Map tile identifier 3 -> 0
+        >>> pyboy.game_area_mapping(mapping, 1000)
+        ```
+
+        Some game wrappers will supply mappings as well. See the specific documentation for your game wrapper:
+        `pyboy.plugins`.
+        ```python
+        >>> pyboy.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+        ```
+
+        Args:
+            mapping (list or ndarray): list of 384 (DMG) or 768 (CGB) tile mappings. Use `None` to reset to a 1:1 mapping.
+            sprite_offest (int): Optional offset add to tile id for sprites
+        """
+
+        if mapping is None:
+            mapping = [x for x in range(768)]
+
+        assert isinstance(sprite_offset, int)
+        assert isinstance(mapping, (np.ndarray, list))
+        assert len(mapping) == 384 or len(mapping) == 768
+
+        self.game_wrapper.game_area_mapping(mapping, sprite_offset)
+
     def game_area(self):
-        raise Exception("game_area not implemented")
+        """
+        Use this method to get a matrix of the "game area" of the screen. This view is simplified to be perfect for
+        machine learning applications.
+
+        The layout will vary from game to game. Below is an example from Tetris:
+
+        ```text
+             0   1   2   3   4   5   6   7   8   9
+        ____________________________________________
+        0  | 47  47  47  47  47  47  47  47  47  47
+        1  | 47  47  47  47  47  47  47  47  47  47
+        2  | 47  47  47  47  47  47  47  132 132 132
+        3  | 47  47  47  47  47  47  47  132 47  47
+        4  | 47  47  47  47  47  47  47  47  47  47
+        5  | 47  47  47  47  47  47  47  47  47  47
+        6  | 47  47  47  47  47  47  47  47  47  47
+        7  | 47  47  47  47  47  47  47  47  47  47
+        8  | 47  47  47  47  47  47  47  47  47  47
+        9  | 47  47  47  47  47  47  47  47  47  47
+        10 | 47  47  47  47  47  47  47  47  47  47
+        11 | 47  47  47  47  47  47  47  47  47  47
+        12 | 47  47  47  47  47  47  47  47  47  47
+        13 | 47  47  47  47  47  47  47  47  47  47
+        14 | 47  47  47  47  47  47  47  47  47  47
+        15 | 47  47  47  47  47  47  47  47  47  47
+        16 | 47  47  47  47  47  47  47  47  47  47
+        17 | 47  47  47  47  47  47  138 139 139 143
+        ```
+
+        If you want a "compressed", "minimal" or raw mapping of tiles, you can change the mapping using
+        `pyboy.PyBoy.game_area_mapping`. Either you'll have to supply your own mapping, or you can find one
+        that is built-in with the game wrapper plugin for your game. See `pyboy.PyBoy.game_area_mapping`.
+
+        Returns
+        -------
+        memoryview:
+            Simplified 2-dimensional memoryview of the screen
+        """
+
+        return self.game_wrapper.game_area()
 
     def _serial(self):
         """
@@ -714,7 +822,7 @@ class PyBoy:
         `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
 
         Example:
-        ```
+        ```python
         >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
         [[0, 2, 4], []]
         ```

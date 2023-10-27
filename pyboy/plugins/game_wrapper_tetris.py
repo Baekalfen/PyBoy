@@ -36,17 +36,17 @@ NEXT_TETROMINO_ADDR = 0xC213
 TILES = 384
 
 # Compressed assigns an ID to each Tetromino type
-tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+mapping_compressed = np.zeros(TILES, dtype=np.uint8)
 # BLANK, J, Z, O, L, T, S, I, BLACK
 tiles_types = [[47], [129], [130], [131], [132], [133], [134], [128, 136, 137, 138, 139, 143], [135]]
 for tiles_type_ID, tiles_type in enumerate(tiles_types):
     for tile_ID in tiles_type:
-        tiles_compressed[tile_ID] = tiles_type_ID
+        mapping_compressed[tile_ID] = tiles_type_ID
 
 # Minimal has 3 id's: Background, Tetromino and "losing tile" (which fills the board when losing)
-tiles_minimal = np.ones(TILES, dtype=np.uint8) # For minimal everything is 1
-tiles_minimal[47] = 0 # Except BLANK which is 0
-tiles_minimal[135] = 2 # And background losing tiles BLACK which is 2
+mapping_minimal = np.ones(TILES, dtype=np.uint8) # For minimal everything is 1
+mapping_minimal[47] = 0 # Except BLANK which is 0
+mapping_minimal[135] = 2 # And background losing tiles BLACK which is 2
 
 
 class GameWrapperTetris(PyBoyGameWrapper):
@@ -56,9 +56,14 @@ class GameWrapperTetris(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = "TETRIS"
-    tiles_compressed = tiles_compressed
-    tiles_minimal = tiles_minimal
-
+    mapping_compressed = mapping_compressed
+    """
+    Compressed mapping for `pyboy.PyBoy.game_area_mapping`
+    """
+    mapping_minimal = mapping_minimal
+    """
+    Minimal mapping for `pyboy.PyBoy.game_area_mapping`
+    """
     def __init__(self, *args, **kwargs):
         self.shape = (10, 18)
         """The shape of the game area"""
@@ -81,7 +86,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self._cached_game_area_tiles_raw = array("B", [0xFF] * (ROWS*COLS*4))
         self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(ROWS, COLS))
 
-        super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_follow_scxy=False, **kwargs)
 
     def _game_area_tiles(self):
         if self._tile_cache_invalid:
@@ -280,7 +285,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             "\n".join(
                 [
                     f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self._game_area_np())
+                    for i, line in enumerate(self.game_area())
                 ]
             )
         )

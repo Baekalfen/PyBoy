@@ -60,7 +60,7 @@ explosion = [157, 158]
 spike = [237]
 
 TILES = 384
-tiles_minimal = np.zeros(TILES, dtype=np.uint8)
+mapping_minimal = np.zeros(TILES, dtype=np.uint8)
 minimal_list = [
     base_scripts + plane + submarine,
     coin + mushroom + heart + star + lever,
@@ -70,9 +70,9 @@ minimal_list = [
 ]
 for i, tile_list in enumerate(minimal_list):
     for tile in tile_list:
-        tiles_minimal[tile] = i + 1
+        mapping_minimal[tile] = i + 1
 
-tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+mapping_compressed = np.zeros(TILES, dtype=np.uint8)
 compressed_list = [
     base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever, neutral_blocks, moving_blocks,
     pushable_blokcs, question_block, pipes, goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill,
@@ -80,7 +80,7 @@ compressed_list = [
 ]
 for i, tile_list in enumerate(compressed_list):
     for tile in tile_list:
-        tiles_compressed[tile] = i + 1
+        mapping_compressed[tile] = i + 1
 
 np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
 
@@ -106,9 +106,14 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = "SUPER MARIOLAN"
-    tiles_compressed = tiles_compressed
-    tiles_minimal = tiles_minimal
-
+    mapping_compressed = mapping_compressed
+    """
+    Compressed mapping for `pyboy.PyBoy.game_area_mapping`
+    """
+    mapping_minimal = mapping_minimal
+    """
+    Minimal mapping for `pyboy.PyBoy.game_area_mapping`
+    """
     def __init__(self, *args, **kwargs):
         self.shape = (20, 16)
         """The shape of the game area"""
@@ -133,7 +138,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
         """
 
-        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_follow_scxy=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
