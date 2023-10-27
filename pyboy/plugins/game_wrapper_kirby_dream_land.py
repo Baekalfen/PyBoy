@@ -57,7 +57,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 5
         for n in range(score_digits):
-            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**(score_digits-n)
+            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**(score_digits - n)
 
         # Check if game is over
         prev_health = self.health
@@ -86,31 +86,31 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(False)
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[0:3, 16] == [231, 224, 235]: # 'HAL' on the first screen
                 break
 
         # Wait for transition to finish (start screen)
         for _ in range(25):
-            self.pyboy.tick()
+            self.pyboy.tick(False)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
+        self.pyboy.tick(False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         # Wait for transition to finish (exit start screen, enter level intro screen)
         for _ in range(60):
-            self.pyboy.tick()
+            self.pyboy.tick(False)
 
         # Skip level intro
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
+        self.pyboy.tick(False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         # Wait for transition to finish (exit level intro screen, enter game)
         for _ in range(60):
-            self.pyboy.tick()
+            self.pyboy.tick(False)
 
         self.game_has_started = True
 

@@ -231,22 +231,22 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(False)
             if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # "START" on the main menu
                 break
-        self.pyboy.tick()
-        self.pyboy.tick()
-        self.pyboy.tick()
+        self.pyboy.tick(False)
+        self.pyboy.tick(False)
+        self.pyboy.tick(False)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
+        self.pyboy.tick(False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         while True:
             if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
                 self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
                 break
-            self.pyboy.tick()
+            self.pyboy.tick(False)
             self.tilemap_background.refresh_lcdc()
 
             # "MARIO" in the title bar and 0 is placed at score

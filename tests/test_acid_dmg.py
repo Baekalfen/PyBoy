@@ -19,10 +19,10 @@ def test_dmg_acid(cgb, dmg_acid_file):
     pyboy = PyBoy(dmg_acid_file, window_type="headless", cgb=cgb)
     pyboy.set_emulation_speed(0)
     for _ in range(59):
-        pyboy.tick()
+        pyboy.tick(True)
 
     for _ in range(25):
-        pyboy.tick()
+        pyboy.tick(True)
 
     png_path = Path(f"tests/test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(dmg_acid_file)}.png")
     image = pyboy.screen().screen_image()

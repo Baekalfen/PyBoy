@@ -11,6 +11,7 @@ import logging
 from array import array
 
 import numpy as np
+
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
@@ -128,7 +129,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(False)
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # '1PLAYER' on the first screen
                 break
@@ -136,11 +137,11 @@ class GameWrapperTetris(PyBoyGameWrapper):
         # Start game. Just press Start when the game allows us.
         for i in range(2):
             self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.pyboy.tick()
+            self.pyboy.tick(False)
             self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
             for _ in range(6):
-                self.pyboy.tick()
+                self.pyboy.tick(False)
 
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
@@ -161,11 +162,11 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self._set_timer_div(timer_div)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
+        self.pyboy.tick(False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
         for _ in range(6):
-            self.pyboy.tick()
+            self.pyboy.tick(False)
 
     def game_area(self):
         """

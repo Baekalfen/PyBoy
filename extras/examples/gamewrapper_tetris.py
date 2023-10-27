@@ -40,8 +40,8 @@ assert tetris.next_tetromino() == tetromino_at_0x00, tetris.next_tetromino()
 
 blank_tile = 47
 first_brick = False
-for frame in range(1000): # Enough frames for the test. Otherwise do: `while not pyboy.tick():`
-    pyboy.tick()
+for frame in range(1000): # Enough frames for the test. Otherwise do: `while pyboy.tick(True):`
+    pyboy.tick(True)
 
     # The playing "technique" is just to move the Tetromino to the right.
     if frame % 2 == 0: # Even frames
