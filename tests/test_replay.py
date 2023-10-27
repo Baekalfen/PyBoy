@@ -66,7 +66,7 @@ def move_gif(game, dest):
 def replay(
     ROM,
     replay,
-    window="headless",
+    window="null",
     verify=False,
     record_gif=None,
     gif_destination=None,
@@ -93,7 +93,7 @@ def replay(
         rewind=rewind,
         randomize=randomize,
         cgb=cgb,
-        record_input=(RESET_REPLAYS and window in ["SDL2", "headless", "OpenGL"]),
+        record_input=(RESET_REPLAYS and window in ["SDL2", "null", "OpenGL"]),
     )
     pyboy.set_emulation_speed(0)
     if state_data is not None:

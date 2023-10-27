@@ -6,5 +6,5 @@
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 
 
-cdef class WindowHeadless(PyBoyWindowPlugin):
+cdef class WindowNull(PyBoyWindowPlugin):
     pass
