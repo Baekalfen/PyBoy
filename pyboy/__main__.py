@@ -83,12 +83,13 @@ parser.add_argument(
     "--window",
     default=defaults["window_type"],
     type=str,
-    choices=["SDL2", "OpenGL", "headless", "dummy"],
+    choices=["SDL2", "OpenGL", "null"],
     help="Specify window-type to use"
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
 parser.add_argument("--disable-renderer", action="store_true", help="Disables screen rendering for higher performance")
 parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
+parser.add_argument("--no-renderer", action="store_true", help="Disable rendering (internal use)")
 
 gameboy_type_parser = parser.add_mutually_exclusive_group()
 gameboy_type_parser.add_argument(
@@ -162,7 +163,8 @@ See "pyboy --help" for how to enable rewind and other awesome features!
         with open(state_path, "rb") as f:
             pyboy.load_state(f)
 
-    while pyboy._tick(True):
+    render = not argv.no_renderer
+    while pyboy._tick(render):
         pass
 
     pyboy.stop()
