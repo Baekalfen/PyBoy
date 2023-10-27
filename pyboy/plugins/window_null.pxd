@@ -6,8 +6,5 @@
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 
-
-cdef Logger logger
-
-cdef class WindowDummy(PyBoyWindowPlugin):
+cdef class WindowNull(PyBoyWindowPlugin):
     pass

@@ -11,7 +11,7 @@ NEXT_TETROMINO_ADDR = 0xC213
 
 
 def test_load_save_consistency(tetris_rom):
-    pyboy = PyBoy(tetris_rom, window_type="headless", game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, window_type="null", game_wrapper=True)
     assert pyboy.cartridge_title() == "TETRIS"
     pyboy.set_emulation_speed(0)
     pyboy.memory[NEXT_TETROMINO_ADDR]
