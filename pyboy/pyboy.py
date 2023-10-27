@@ -557,7 +557,49 @@ class PyBoy:
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def game_area(self):
+    def game_area(self, type):
+        """
+        Use this method to get a matrix of the "game area" of the screen. This view is simplified to be perfect for
+        machine learning applications.
+
+        The layout will vary from game to game. Below is an example from Tetris:
+
+        ```text
+             0   1   2   3   4   5   6   7   8   9
+        ____________________________________________
+        0  | 47  47  47  47  47  47  47  47  47  47
+        1  | 47  47  47  47  47  47  47  47  47  47
+        2  | 47  47  47  47  47  47  47  132 132 132
+        3  | 47  47  47  47  47  47  47  132 47  47
+        4  | 47  47  47  47  47  47  47  47  47  47
+        5  | 47  47  47  47  47  47  47  47  47  47
+        6  | 47  47  47  47  47  47  47  47  47  47
+        7  | 47  47  47  47  47  47  47  47  47  47
+        8  | 47  47  47  47  47  47  47  47  47  47
+        9  | 47  47  47  47  47  47  47  47  47  47
+        10 | 47  47  47  47  47  47  47  47  47  47
+        11 | 47  47  47  47  47  47  47  47  47  47
+        12 | 47  47  47  47  47  47  47  47  47  47
+        13 | 47  47  47  47  47  47  47  47  47  47
+        14 | 47  47  47  47  47  47  47  47  47  47
+        15 | 47  47  47  47  47  47  47  47  47  47
+        16 | 47  47  47  47  47  47  47  47  47  47
+        17 | 47  47  47  47  47  47  138 139 139 143
+        ```
+
+        The `type` argument provides three options:
+        * `"tiles"`:  Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+        * `"compressed"`: Like `"tiles"` but with slightly simplified id's (i.e. each type of enemy has a unique id).
+        * `"minimal"`: Like `"compressed"` but gives a minimal representation (recommended; i.e. all enemies have the same id).
+
+        Args:
+            type (string): "minimal", "compressed", "tiles"
+
+        Returns
+        -------
+        memoryview:
+            Simplified 2-dimensional memoryview of the screen
+        """
         raise Exception("game_area not implemented")
 
     def _serial(self):
