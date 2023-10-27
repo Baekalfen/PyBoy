@@ -16,7 +16,7 @@ OVERWRITE_PNGS = False
 
 @pytest.mark.parametrize("cgb", [False, True])
 def test_which(cgb, whichboot_file):
-    pyboy = PyBoy(whichboot_file, window_type="headless", cgb=cgb)
+    pyboy = PyBoy(whichboot_file, window_type="null", cgb=cgb)
     pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)
