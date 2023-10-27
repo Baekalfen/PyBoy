@@ -24,6 +24,8 @@ def test_record_replay(gamewrapper, rom):
     base = Path(f"{script_path}/../extras/examples/")
 
     assert rom is not None
-    return_code = subprocess.Popen([sys.executable, str(base / gamewrapper), str(Path(rom)), "--quiet"]).wait()
+    p = subprocess.Popen([sys.executable, str(base / gamewrapper), str(Path(rom)), "--quiet"])
+    return_code = p.wait()
     if return_code != 0:
+        print(p.communicate())
         sys.exit(return_code)

@@ -6,11 +6,6 @@
 cimport cython
 from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 
-
-from pyboy.logging.logging cimport Logger
-from pyboy.plugins.auto_pause cimport AutoPause
-
-# isort:skip
 # imports
 from pyboy.plugins.window_sdl2 cimport WindowSDL2
 from pyboy.plugins.window_open_gl cimport WindowOpenGL
@@ -33,6 +28,8 @@ from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 cdef class PluginManager:
     cdef object pyboy
 
+    cdef public PyBoyGameWrapper generic_game_wrapper
+    cdef bint generic_game_wrapper_enabled
     # plugin_cdef
     cdef public WindowSDL2 window_sdl2
     cdef public WindowOpenGL window_open_gl
