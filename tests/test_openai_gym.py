@@ -19,7 +19,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 @pytest.fixture
 def pyboy(tetris_rom):
-    pyboy = PyBoy(tetris_rom, window_type="dummy", disable_input=True, game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, window_type="null", disable_input=True, game_wrapper=True)
     pyboy.set_emulation_speed(0)
     return pyboy
 
