@@ -113,8 +113,7 @@ class Screen:
         numpy.ndarray:
             Screendata in `ndarray` of bytes with shape (160, 144, 3)
         """
-        return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-        # return self.mb.lcd.renderer.screen_buffer_as_ndarray()
+        return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
 
     def screen_image(self):
         """
