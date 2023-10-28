@@ -4,6 +4,7 @@ import platform
 import sys
 from multiprocessing import cpu_count
 
+import numpy as np
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext as _build_ext
 from setuptools import Extension, setup
@@ -38,6 +39,7 @@ class build_ext(_build_ext):
                 src.split(".")[0].replace(os.sep, "."),
                 [src],
                 extra_compile_args=cflags,
+                include_dirs=[np.get_include()],
             ), list(py_pxd_files)
         )
         self.distribution.ext_modules = cythonize(

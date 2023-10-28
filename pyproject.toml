@@ -44,7 +44,8 @@ pyboy = "pyboy.__main__:main"
 requires = [
     "setuptools>=61.0.0",
     "wheel",
-    "cython>=3.0.0,!=3.0.4; platform_python_implementation == 'CPython'"
+    "cython>=3.0.0,!=3.0.4; platform_python_implementation == 'CPython'",
+    "numpy",
 ]
 build-backend = "setuptools.build_meta"
 
