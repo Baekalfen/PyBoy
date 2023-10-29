@@ -3,22 +3,21 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'opcodes_gen.py'.
 
-from . cimport cpu
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
+
+from . cimport cpu
 
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
-@cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept
-
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t NOP_00(cpu.CPU) noexcept # 00 NOP
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_01(cpu.CPU, int v) noexcept # 01 LD BC,d16
+cdef uint8_t LD_01(cpu.CPU) noexcept # 01 LD BC,d16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t LD_02(cpu.CPU) noexcept # 02 LD (BC),A
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -28,11 +27,11 @@ cdef uint8_t INC_04(cpu.CPU) noexcept # 04 INC B
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_05(cpu.CPU) noexcept # 05 DEC B
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_06(cpu.CPU, int v) noexcept # 06 LD B,d8
+cdef uint8_t LD_06(cpu.CPU) noexcept # 06 LD B,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RLCA_07(cpu.CPU) noexcept # 07 RLCA
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_08(cpu.CPU, int v) noexcept # 08 LD (a16),SP
+cdef uint8_t LD_08(cpu.CPU) noexcept # 08 LD (a16),SP
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t ADD_09(cpu.CPU) noexcept # 09 ADD HL,BC
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -44,13 +43,13 @@ cdef uint8_t INC_0C(cpu.CPU) noexcept # 0C INC C
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_0D(cpu.CPU) noexcept # 0D DEC C
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_0E(cpu.CPU, int v) noexcept # 0E LD C,d8
+cdef uint8_t LD_0E(cpu.CPU) noexcept # 0E LD C,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RRCA_0F(cpu.CPU) noexcept # 0F RRCA
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t STOP_10(cpu.CPU, int v) noexcept # 10 STOP 0
+cdef uint8_t STOP_10(cpu.CPU) noexcept # 10 STOP 0
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_11(cpu.CPU, int v) noexcept # 11 LD DE,d16
+cdef uint8_t LD_11(cpu.CPU) noexcept # 11 LD DE,d16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t LD_12(cpu.CPU) noexcept # 12 LD (DE),A
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -60,11 +59,11 @@ cdef uint8_t INC_14(cpu.CPU) noexcept # 14 INC D
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_15(cpu.CPU) noexcept # 15 DEC D
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_16(cpu.CPU, int v) noexcept # 16 LD D,d8
+cdef uint8_t LD_16(cpu.CPU) noexcept # 16 LD D,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RLA_17(cpu.CPU) noexcept # 17 RLA
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JR_18(cpu.CPU, int v) noexcept # 18 JR r8
+cdef uint8_t JR_18(cpu.CPU) noexcept # 18 JR r8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t ADD_19(cpu.CPU) noexcept # 19 ADD HL,DE
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -76,13 +75,13 @@ cdef uint8_t INC_1C(cpu.CPU) noexcept # 1C INC E
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_1D(cpu.CPU) noexcept # 1D DEC E
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_1E(cpu.CPU, int v) noexcept # 1E LD E,d8
+cdef uint8_t LD_1E(cpu.CPU) noexcept # 1E LD E,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RRA_1F(cpu.CPU) noexcept # 1F RRA
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JR_20(cpu.CPU, int v) noexcept # 20 JR NZ,r8
+cdef uint8_t JR_20(cpu.CPU) noexcept # 20 JR NZ,r8
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_21(cpu.CPU, int v) noexcept # 21 LD HL,d16
+cdef uint8_t LD_21(cpu.CPU) noexcept # 21 LD HL,d16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t LD_22(cpu.CPU) noexcept # 22 LD (HL+),A
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -92,11 +91,11 @@ cdef uint8_t INC_24(cpu.CPU) noexcept # 24 INC H
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_25(cpu.CPU) noexcept # 25 DEC H
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_26(cpu.CPU, int v) noexcept # 26 LD H,d8
+cdef uint8_t LD_26(cpu.CPU) noexcept # 26 LD H,d8
 @cython.locals(v=int, flag=uint8_t, t=int, corr=ushort)
 cdef uint8_t DAA_27(cpu.CPU) noexcept # 27 DAA
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JR_28(cpu.CPU, int v) noexcept # 28 JR Z,r8
+cdef uint8_t JR_28(cpu.CPU) noexcept # 28 JR Z,r8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t ADD_29(cpu.CPU) noexcept # 29 ADD HL,HL
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -108,13 +107,13 @@ cdef uint8_t INC_2C(cpu.CPU) noexcept # 2C INC L
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_2D(cpu.CPU) noexcept # 2D DEC L
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_2E(cpu.CPU, int v) noexcept # 2E LD L,d8
+cdef uint8_t LD_2E(cpu.CPU) noexcept # 2E LD L,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t CPL_2F(cpu.CPU) noexcept # 2F CPL
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JR_30(cpu.CPU, int v) noexcept # 30 JR NC,r8
+cdef uint8_t JR_30(cpu.CPU) noexcept # 30 JR NC,r8
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_31(cpu.CPU, int v) noexcept # 31 LD SP,d16
+cdef uint8_t LD_31(cpu.CPU) noexcept # 31 LD SP,d16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t LD_32(cpu.CPU) noexcept # 32 LD (HL-),A
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -124,11 +123,11 @@ cdef uint8_t INC_34(cpu.CPU) noexcept # 34 INC (HL)
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_35(cpu.CPU) noexcept # 35 DEC (HL)
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_36(cpu.CPU, int v) noexcept # 36 LD (HL),d8
+cdef uint8_t LD_36(cpu.CPU) noexcept # 36 LD (HL),d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t SCF_37(cpu.CPU) noexcept # 37 SCF
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JR_38(cpu.CPU, int v) noexcept # 38 JR C,r8
+cdef uint8_t JR_38(cpu.CPU) noexcept # 38 JR C,r8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t ADD_39(cpu.CPU) noexcept # 39 ADD HL,SP
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -140,7 +139,7 @@ cdef uint8_t INC_3C(cpu.CPU) noexcept # 3C INC A
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t DEC_3D(cpu.CPU) noexcept # 3D DEC A
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_3E(cpu.CPU, int v) noexcept # 3E LD A,d8
+cdef uint8_t LD_3E(cpu.CPU) noexcept # 3E LD A,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t CCF_3F(cpu.CPU) noexcept # 3F CCF
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -404,15 +403,15 @@ cdef uint8_t RET_C0(cpu.CPU) noexcept # C0 RET NZ
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t POP_C1(cpu.CPU) noexcept # C1 POP BC
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JP_C2(cpu.CPU, int v) noexcept # C2 JP NZ,a16
+cdef uint8_t JP_C2(cpu.CPU) noexcept # C2 JP NZ,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JP_C3(cpu.CPU, int v) noexcept # C3 JP a16
+cdef uint8_t JP_C3(cpu.CPU) noexcept # C3 JP a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t CALL_C4(cpu.CPU, int v) noexcept # C4 CALL NZ,a16
+cdef uint8_t CALL_C4(cpu.CPU) noexcept # C4 CALL NZ,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t PUSH_C5(cpu.CPU) noexcept # C5 PUSH BC
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t ADD_C6(cpu.CPU, int v) noexcept # C6 ADD A,d8
+cdef uint8_t ADD_C6(cpu.CPU) noexcept # C6 ADD A,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_C7(cpu.CPU) noexcept # C7 RST 00H
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -420,15 +419,15 @@ cdef uint8_t RET_C8(cpu.CPU) noexcept # C8 RET Z
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RET_C9(cpu.CPU) noexcept # C9 RET
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JP_CA(cpu.CPU, int v) noexcept # CA JP Z,a16
+cdef uint8_t JP_CA(cpu.CPU) noexcept # CA JP Z,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t PREFIX_CB(cpu.CPU) noexcept # CB PREFIX CB
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t CALL_CC(cpu.CPU, int v) noexcept # CC CALL Z,a16
+cdef uint8_t CALL_CC(cpu.CPU) noexcept # CC CALL Z,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t CALL_CD(cpu.CPU, int v) noexcept # CD CALL a16
+cdef uint8_t CALL_CD(cpu.CPU) noexcept # CD CALL a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t ADC_CE(cpu.CPU, int v) noexcept # CE ADC A,d8
+cdef uint8_t ADC_CE(cpu.CPU) noexcept # CE ADC A,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_CF(cpu.CPU) noexcept # CF RST 08H
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -436,13 +435,13 @@ cdef uint8_t RET_D0(cpu.CPU) noexcept # D0 RET NC
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t POP_D1(cpu.CPU) noexcept # D1 POP DE
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JP_D2(cpu.CPU, int v) noexcept # D2 JP NC,a16
+cdef uint8_t JP_D2(cpu.CPU) noexcept # D2 JP NC,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t CALL_D4(cpu.CPU, int v) noexcept # D4 CALL NC,a16
+cdef uint8_t CALL_D4(cpu.CPU) noexcept # D4 CALL NC,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t PUSH_D5(cpu.CPU) noexcept # D5 PUSH DE
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t SUB_D6(cpu.CPU, int v) noexcept # D6 SUB d8
+cdef uint8_t SUB_D6(cpu.CPU) noexcept # D6 SUB d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_D7(cpu.CPU) noexcept # D7 RST 10H
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -450,15 +449,15 @@ cdef uint8_t RET_D8(cpu.CPU) noexcept # D8 RET C
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RETI_D9(cpu.CPU) noexcept # D9 RETI
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t JP_DA(cpu.CPU, int v) noexcept # DA JP C,a16
+cdef uint8_t JP_DA(cpu.CPU) noexcept # DA JP C,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t CALL_DC(cpu.CPU, int v) noexcept # DC CALL C,a16
+cdef uint8_t CALL_DC(cpu.CPU) noexcept # DC CALL C,a16
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t SBC_DE(cpu.CPU, int v) noexcept # DE SBC A,d8
+cdef uint8_t SBC_DE(cpu.CPU) noexcept # DE SBC A,d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_DF(cpu.CPU) noexcept # DF RST 18H
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LDH_E0(cpu.CPU, int v) noexcept # E0 LDH (a8),A
+cdef uint8_t LDH_E0(cpu.CPU) noexcept # E0 LDH (a8),A
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t POP_E1(cpu.CPU) noexcept # E1 POP HL
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -466,21 +465,21 @@ cdef uint8_t LD_E2(cpu.CPU) noexcept # E2 LD (C),A
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t PUSH_E5(cpu.CPU) noexcept # E5 PUSH HL
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t AND_E6(cpu.CPU, int v) noexcept # E6 AND d8
+cdef uint8_t AND_E6(cpu.CPU) noexcept # E6 AND d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_E7(cpu.CPU) noexcept # E7 RST 20H
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t ADD_E8(cpu.CPU, int v) noexcept # E8 ADD SP,r8
+cdef uint8_t ADD_E8(cpu.CPU) noexcept # E8 ADD SP,r8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t JP_E9(cpu.CPU) noexcept # E9 JP (HL)
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_EA(cpu.CPU, int v) noexcept # EA LD (a16),A
+cdef uint8_t LD_EA(cpu.CPU) noexcept # EA LD (a16),A
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t XOR_EE(cpu.CPU, int v) noexcept # EE XOR d8
+cdef uint8_t XOR_EE(cpu.CPU) noexcept # EE XOR d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_EF(cpu.CPU) noexcept # EF RST 28H
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LDH_F0(cpu.CPU, int v) noexcept # F0 LDH A,(a8)
+cdef uint8_t LDH_F0(cpu.CPU) noexcept # F0 LDH A,(a8)
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t POP_F1(cpu.CPU) noexcept # F1 POP AF
 @cython.locals(v=int, flag=uint8_t, t=int)
@@ -490,19 +489,19 @@ cdef uint8_t DI_F3(cpu.CPU) noexcept # F3 DI
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t PUSH_F5(cpu.CPU) noexcept # F5 PUSH AF
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t OR_F6(cpu.CPU, int v) noexcept # F6 OR d8
+cdef uint8_t OR_F6(cpu.CPU) noexcept # F6 OR d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_F7(cpu.CPU) noexcept # F7 RST 30H
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_F8(cpu.CPU, int v) noexcept # F8 LD HL,SP+r8
+cdef uint8_t LD_F8(cpu.CPU) noexcept # F8 LD HL,SP+r8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t LD_F9(cpu.CPU) noexcept # F9 LD SP,HL
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t LD_FA(cpu.CPU, int v) noexcept # FA LD A,(a16)
+cdef uint8_t LD_FA(cpu.CPU) noexcept # FA LD A,(a16)
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t EI_FB(cpu.CPU) noexcept # FB EI
 @cython.locals(v=int, flag=uint8_t, t=int)
-cdef uint8_t CP_FE(cpu.CPU, int v) noexcept # FE CP d8
+cdef uint8_t CP_FE(cpu.CPU) noexcept # FE CP d8
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t RST_FF(cpu.CPU) noexcept # FF RST 38H
 @cython.locals(v=int, flag=uint8_t, t=int)
