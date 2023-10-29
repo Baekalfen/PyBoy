@@ -29,7 +29,7 @@ except ImportError:
 
 
 class LCD:
-    def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, randomize=False):
+    def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
         self.disable_renderer = disable_renderer
@@ -66,9 +66,7 @@ class LCD:
             else:
                 logger.debug("Starting CGB renderer in DMG-mode")
                 # Running DMG ROM on CGB hardware use the default palettes
-                bg_pal = (0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000)
-                obj0_pal = (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000)
-                obj1_pal = (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000)
+                bg_pal, obj0_pal, obj1_pal = cgb_color_palette
                 self.BGP.palette_mem_rgb = [(c << 8) for c in bg_pal]
                 self.OBP0.palette_mem_rgb = [(c << 8) for c in obj0_pal]
                 self.OBP1.palette_mem_rgb = [(c << 8) for c in obj1_pal]
@@ -773,8 +771,8 @@ class Renderer:
 
 
 class CGBLCD(LCD):
-    def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, randomize=False):
-        LCD.__init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, randomize=False)
+    def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False):
+        LCD.__init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False)
         self.VRAM1 = array("B", [0] * VIDEO_RAM)
 
         self.vbk = VBKregister()

@@ -21,6 +21,7 @@ class Motherboard:
         gamerom_file,
         bootrom_file,
         color_palette,
+        cgb_color_palette,
         disable_renderer,
         sound_enabled,
         sound_emulated,
@@ -47,6 +48,7 @@ class Motherboard:
                 self.cartridge.cgb,
                 disable_renderer,
                 color_palette,
+                cgb_color_palette,
                 randomize=randomize,
             )
         else:
@@ -55,6 +57,7 @@ class Motherboard:
                 self.cartridge.cgb,
                 disable_renderer,
                 color_palette,
+                cgb_color_palette,
                 randomize=randomize,
             )
 

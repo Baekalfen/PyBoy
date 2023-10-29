@@ -24,6 +24,8 @@ SPF = 1 / 60. # inverse FPS (frame-per-second)
 
 defaults = {
     "color_palette": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
+    "cgb_color_palette": ((0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000), (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
+                          (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000)),
     "scale": 3,
     "window_type": "SDL2",
 }
@@ -63,6 +65,7 @@ class PyBoy:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+            cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
         `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
@@ -82,6 +85,7 @@ class PyBoy:
             gamerom_file,
             bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
             kwargs["color_palette"],
+            kwargs["cgb_color_palette"],
             disable_renderer,
             sound,
             sound_emulated,

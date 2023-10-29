@@ -15,6 +15,11 @@ is_pypy = platform.python_implementation() == "PyPy"
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
 color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
+cgb_color_palette = (
+    (0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000),
+    (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
+    (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
+)
 
 
 @pytest.mark.skipif(
@@ -22,7 +27,7 @@ color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
 )
 class TestLCD:
     def test_set_stat_mode(self):
-        lcd = LCD(False, False, False, color_palette)
+        lcd = LCD(False, False, False, color_palette, cgb_color_palette)
         lcd._STAT._mode = 2 # Set mode 2 manually
         assert lcd._STAT._mode == 2 # Init value
         assert lcd._STAT.set_mode(2) == 0 # Already set
@@ -39,7 +44,7 @@ class TestLCD:
         # "Bit 7 is unused and always returns '1'. Bits 0-2 return '0' when the LCD is off."
         # 3 LSB are read-only
 
-        lcd = LCD(False, False, False, color_palette)
+        lcd = LCD(False, False, False, color_palette, cgb_color_palette)
         lcd.set_lcdc(0b1000_0000) # Turn on LCD. Don't care about rest of the flags
         lcd._STAT.value &= 0b11111000 # Force LY=LYC and mode bits to 0
         lcd.set_stat(
@@ -55,7 +60,7 @@ class TestLCD:
         # lcd.set_stat(0b0111_1111) # Clear top bit, to check that it still returns 1
 
     def test_check_lyc(self):
-        lcd = LCD(False, False, False, color_palette)
+        lcd = LCD(False, False, False, color_palette, cgb_color_palette)
 
         lcd.LYC = 0
         lcd.LY = 0
