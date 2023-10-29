@@ -69,10 +69,10 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
         scale = pyboy_argv.get("scale")
         self.scale = scale
-        logger.debug("%s initialization" % self.__class__.__name__)
+        logger.debug("%s initialization", self.__class__.__name__)
 
         self._scaledresolution = (scale * COLS, scale * ROWS)
-        logger.debug("Scale: x%s %s" % (self.scale, self._scaledresolution))
+        logger.debug("Scale: x%s %s", self.scale, self._scaledresolution)
 
         self.enable_title = True
         if not cythonmode:

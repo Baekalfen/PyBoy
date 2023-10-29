@@ -112,12 +112,12 @@ class BaseMBC:
     def overrideitem(self, rom_bank, address, value):
         if 0x0000 <= address < 0x4000:
             logger.debug(
-                "Performing overwrite on address: %s:%s. New value: %s Old value: %s" %
-                (hex(rom_bank), hex(address), hex(value), self.rombanks[rom_bank][address])
+                "Performing overwrite on address: 0x%x:0x%x. New value: 0x%x Old value: 0x%x",
+                rom_bank, address, value, self.rombanks[rom_bank][address]
             )
             self.rombanks[rom_bank][address] = value
         else:
-            logger.error("Invalid override address: %s" % hex(address))
+            logger.error("Invalid override address: 0x%x", address)
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
@@ -126,7 +126,7 @@ class BaseMBC:
             return self.rombanks[self.rombank_selected][address - 0x4000]
         elif address < 0xC000:
             if not self.rambank_initialized:
-                logger.error("RAM banks not initialized: %s" % hex(address))
+                logger.error("RAM banks not initialized: 0x%x", address)
 
             if not self.rambank_enabled:
                 return 0xFF
@@ -136,7 +136,7 @@ class BaseMBC:
             else:
                 return self.rambanks[self.rambank_selected][address - 0xA000]
         else:
-            logger.error("Reading address invalid: %s" % address)
+            logger.error("Reading address invalid: 0x%x", address)
 
     def __repr__(self):
         return "\n".join([
@@ -161,16 +161,16 @@ class ROMOnly(BaseMBC):
             if value == 0:
                 value = 1
             self.rombank_selected = (value & 0b1)
-            logger.debug("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
+            logger.debug("Switching bank 0x%0.4x, 0x%0.2x", address, value)
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 from . import EXTERNAL_RAM_TABLE
                 logger.warning(
                     "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but "
                     "RAM banks are not initialized. Initializing %d RAM banks as "
-                    "precaution" % (value, address, EXTERNAL_RAM_TABLE[0x02])
+                    "precaution", value, address, EXTERNAL_RAM_TABLE[0x02]
                 )
                 self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
             self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:
-            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x", address, value)
