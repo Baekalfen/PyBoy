@@ -21,6 +21,12 @@ def color_tuple(string):
     return color_palette
 
 
+def cgb_color_tuple(string):
+    color_palette = [int(c.strip(), 16) for c in string.split(",")]
+    assert len(color_palette) == 12, f"Not the correct amount of colors! Expected twelve, got {len(color_palette)}"
+    return [color_palette[0:4], color_palette[4:8], color_palette[8:12]]
+
+
 def valid_file_path(path):
     if not path == INTERNAL_LOADSTATE and not os.path.isfile(path):
         logger.error(f"Filepath '{path}' couldn't be found, or isn't a file!")
@@ -47,6 +53,14 @@ parser.add_argument(
     type=color_tuple,
     default=defaults["color_palette"],
     help=('Four comma seperated, hexadecimal, RGB values for colors (i.e. "FFFFFF,999999,555555,000000")')
+)
+parser.add_argument(
+    "--cgb-color-palette",
+    type=cgb_color_tuple,
+    default=defaults["cgb_color_palette"],
+    help=(
+        'Three sets of four comma seperated, hexadecimal, RGB values for colors in the order of: background, obj0, obj1 (i.e. "FFFFFF,7BFF31,0063C5,000000,FFFFFF,FF8484,FF8484,000000,FFFFFF,FF8484,FF8484,000000")'
+    )
 )
 parser.add_argument(
     "-l",
