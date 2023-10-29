@@ -10,13 +10,15 @@ logger = logging.getLogger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
+
 def NOP_00(cpu): # 00 NOP
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 4
 
 
-def LD_01(cpu, v): # 01 LD BC,d16
+def LD_01(cpu): # 01 LD BC,d16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.set_bc(v)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
@@ -68,7 +70,8 @@ def DEC_05(cpu): # 05 DEC B
     return 4
 
 
-def LD_06(cpu, v): # 06 LD B,d8
+def LD_06(cpu): # 06 LD B,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.B = v
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -88,7 +91,8 @@ def RLCA_07(cpu): # 07 RLCA
     return 4
 
 
-def LD_08(cpu, v): # 08 LD (a16),SP
+def LD_08(cpu): # 08 LD (a16),SP
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.mb.setitem(v, cpu.SP & 0xFF)
     cpu.mb.setitem(v+1, cpu.SP >> 8)
     cpu.PC += 3
@@ -155,7 +159,8 @@ def DEC_0D(cpu): # 0D DEC C
     return 4
 
 
-def LD_0E(cpu, v): # 0E LD C,d8
+def LD_0E(cpu): # 0E LD C,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.C = v
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -175,7 +180,7 @@ def RRCA_0F(cpu): # 0F RRCA
     return 4
 
 
-def STOP_10(cpu, v): # 10 STOP 0
+def STOP_10(cpu): # 10 STOP 0
     if cpu.mb.cgb:
         cpu.mb.switch_speed()
         cpu.mb.setitem(0xFF04, 0)
@@ -184,7 +189,8 @@ def STOP_10(cpu, v): # 10 STOP 0
     return 4
 
 
-def LD_11(cpu, v): # 11 LD DE,d16
+def LD_11(cpu): # 11 LD DE,d16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.set_de(v)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
@@ -236,7 +242,8 @@ def DEC_15(cpu): # 15 DEC D
     return 4
 
 
-def LD_16(cpu, v): # 16 LD D,d8
+def LD_16(cpu): # 16 LD D,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.D = v
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -256,7 +263,8 @@ def RLA_17(cpu): # 17 RLA
     return 4
 
 
-def JR_18(cpu, v): # 18 JR r8
+def JR_18(cpu): # 18 JR r8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 2 + ((v ^ 0x80) - 0x80)
     cpu.PC &= 0xFFFF
     return 12
@@ -321,7 +329,8 @@ def DEC_1D(cpu): # 1D DEC E
     return 4
 
 
-def LD_1E(cpu, v): # 1E LD E,d8
+def LD_1E(cpu): # 1E LD E,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.E = v
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -341,7 +350,8 @@ def RRA_1F(cpu): # 1F RRA
     return 4
 
 
-def JR_20(cpu, v): # 20 JR NZ,r8
+def JR_20(cpu): # 20 JR NZ,r8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 2
     if ((cpu.F & (1 << FLAGZ)) == 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
@@ -352,7 +362,8 @@ def JR_20(cpu, v): # 20 JR NZ,r8
         return 8
 
 
-def LD_21(cpu, v): # 21 LD HL,d16
+def LD_21(cpu): # 21 LD HL,d16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.HL = v
     cpu.PC += 3
     cpu.PC &= 0xFFFF
@@ -406,7 +417,8 @@ def DEC_25(cpu): # 25 DEC H
     return 4
 
 
-def LD_26(cpu, v): # 26 LD H,d8
+def LD_26(cpu): # 26 LD H,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.HL = (cpu.HL & 0x00FF) | (v << 8)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -436,7 +448,8 @@ def DAA_27(cpu): # 27 DAA
     return 4
 
 
-def JR_28(cpu, v): # 28 JR Z,r8
+def JR_28(cpu): # 28 JR Z,r8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 2
     if ((cpu.F & (1 << FLAGZ)) != 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
@@ -508,7 +521,8 @@ def DEC_2D(cpu): # 2D DEC L
     return 4
 
 
-def LD_2E(cpu, v): # 2E LD L,d8
+def LD_2E(cpu): # 2E LD L,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.HL = (cpu.HL & 0xFF00) | (v & 0xFF)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -525,7 +539,8 @@ def CPL_2F(cpu): # 2F CPL
     return 4
 
 
-def JR_30(cpu, v): # 30 JR NC,r8
+def JR_30(cpu): # 30 JR NC,r8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 2
     if ((cpu.F & (1 << FLAGC)) == 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
@@ -536,7 +551,8 @@ def JR_30(cpu, v): # 30 JR NC,r8
         return 8
 
 
-def LD_31(cpu, v): # 31 LD SP,d16
+def LD_31(cpu): # 31 LD SP,d16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.SP = v
     cpu.PC += 3
     cpu.PC &= 0xFFFF
@@ -590,7 +606,8 @@ def DEC_35(cpu): # 35 DEC (HL)
     return 12
 
 
-def LD_36(cpu, v): # 36 LD (HL),d8
+def LD_36(cpu): # 36 LD (HL),d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.mb.setitem(cpu.HL, v)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -606,7 +623,8 @@ def SCF_37(cpu): # 37 SCF
     return 4
 
 
-def JR_38(cpu, v): # 38 JR C,r8
+def JR_38(cpu): # 38 JR C,r8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 2
     if ((cpu.F & (1 << FLAGC)) != 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
@@ -678,7 +696,8 @@ def DEC_3D(cpu): # 3D DEC A
     return 4
 
 
-def LD_3E(cpu, v): # 3E LD A,d8
+def LD_3E(cpu): # 3E LD A,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.A = v
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -2067,7 +2086,8 @@ def POP_C1(cpu): # C1 POP BC
     return 12
 
 
-def JP_C2(cpu, v): # C2 JP NZ,a16
+def JP_C2(cpu): # C2 JP NZ,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     if ((cpu.F & (1 << FLAGZ)) == 0):
         cpu.PC = v
         return 16
@@ -2077,12 +2097,14 @@ def JP_C2(cpu, v): # C2 JP NZ,a16
         return 12
 
 
-def JP_C3(cpu, v): # C3 JP a16
+def JP_C3(cpu): # C3 JP a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.PC = v
     return 16
 
 
-def CALL_C4(cpu, v): # C4 CALL NZ,a16
+def CALL_C4(cpu): # C4 CALL NZ,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGZ)) == 0):
@@ -2106,7 +2128,8 @@ def PUSH_C5(cpu): # C5 PUSH BC
     return 16
 
 
-def ADD_C6(cpu, v): # C6 ADD A,d8
+def ADD_C6(cpu): # C6 ADD A,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A + v
     flag = 0b00000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2153,7 +2176,8 @@ def RET_C9(cpu): # C9 RET
     return 16
 
 
-def JP_CA(cpu, v): # CA JP Z,a16
+def JP_CA(cpu): # CA JP Z,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     if ((cpu.F & (1 << FLAGZ)) != 0):
         cpu.PC = v
         return 16
@@ -2170,7 +2194,8 @@ def PREFIX_CB(cpu): # CB PREFIX CB
     return 4
 
 
-def CALL_CC(cpu, v): # CC CALL Z,a16
+def CALL_CC(cpu): # CC CALL Z,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGZ)) != 0):
@@ -2184,7 +2209,8 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
         return 12
 
 
-def CALL_CD(cpu, v): # CD CALL a16
+def CALL_CD(cpu): # CD CALL a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
@@ -2195,7 +2221,8 @@ def CALL_CD(cpu, v): # CD CALL a16
     return 24
 
 
-def ADC_CE(cpu, v): # CE ADC A,d8
+def ADC_CE(cpu): # CE ADC A,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A + v + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2244,7 +2271,8 @@ def POP_D1(cpu): # D1 POP DE
     return 12
 
 
-def JP_D2(cpu, v): # D2 JP NC,a16
+def JP_D2(cpu): # D2 JP NC,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     if ((cpu.F & (1 << FLAGC)) == 0):
         cpu.PC = v
         return 16
@@ -2254,7 +2282,8 @@ def JP_D2(cpu, v): # D2 JP NC,a16
         return 12
 
 
-def CALL_D4(cpu, v): # D4 CALL NC,a16
+def CALL_D4(cpu): # D4 CALL NC,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGC)) == 0):
@@ -2278,7 +2307,8 @@ def PUSH_D5(cpu): # D5 PUSH DE
     return 16
 
 
-def SUB_D6(cpu, v): # D6 SUB d8
+def SUB_D6(cpu): # D6 SUB d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A - v
     flag = 0b01000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2326,7 +2356,8 @@ def RETI_D9(cpu): # D9 RETI
     return 16
 
 
-def JP_DA(cpu, v): # DA JP C,a16
+def JP_DA(cpu): # DA JP C,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     if ((cpu.F & (1 << FLAGC)) != 0):
         cpu.PC = v
         return 16
@@ -2336,7 +2367,8 @@ def JP_DA(cpu, v): # DA JP C,a16
         return 12
 
 
-def CALL_DC(cpu, v): # DC CALL C,a16
+def CALL_DC(cpu): # DC CALL C,a16
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGC)) != 0):
@@ -2350,7 +2382,8 @@ def CALL_DC(cpu, v): # DC CALL C,a16
         return 12
 
 
-def SBC_DE(cpu, v): # DE SBC A,d8
+def SBC_DE(cpu): # DE SBC A,d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A - v - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2376,7 +2409,8 @@ def RST_DF(cpu): # DF RST 18H
     return 16
 
 
-def LDH_E0(cpu, v): # E0 LDH (a8),A
+def LDH_E0(cpu): # E0 LDH (a8),A
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.mb.setitem(v + 0xFF00, cpu.A)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -2409,7 +2443,8 @@ def PUSH_E5(cpu): # E5 PUSH HL
     return 16
 
 
-def AND_E6(cpu, v): # E6 AND d8
+def AND_E6(cpu): # E6 AND d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A & v
     flag = 0b00100000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2433,7 +2468,8 @@ def RST_E7(cpu): # E7 RST 20H
     return 16
 
 
-def ADD_E8(cpu, v): # E8 ADD SP,r8
+def ADD_E8(cpu): # E8 ADD SP,r8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.SP + ((v ^ 0x80) - 0x80)
     flag = 0b00000000
     flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
@@ -2452,14 +2488,16 @@ def JP_E9(cpu): # E9 JP (HL)
     return 4
 
 
-def LD_EA(cpu, v): # EA LD (a16),A
+def LD_EA(cpu): # EA LD (a16),A
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.mb.setitem(v, cpu.A)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     return 16
 
 
-def XOR_EE(cpu, v): # EE XOR d8
+def XOR_EE(cpu): # EE XOR d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A ^ v
     flag = 0b00000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2483,7 +2521,8 @@ def RST_EF(cpu): # EF RST 28H
     return 16
 
 
-def LDH_F0(cpu, v): # F0 LDH A,(a8)
+def LDH_F0(cpu): # F0 LDH A,(a8)
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.A = cpu.mb.getitem(v + 0xFF00)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
@@ -2524,7 +2563,8 @@ def PUSH_F5(cpu): # F5 PUSH AF
     return 16
 
 
-def OR_F6(cpu, v): # F6 OR d8
+def OR_F6(cpu): # F6 OR d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A | v
     flag = 0b00000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -2548,7 +2588,8 @@ def RST_F7(cpu): # F7 RST 30H
     return 16
 
 
-def LD_F8(cpu, v): # F8 LD HL,SP+r8
+def LD_F8(cpu): # F8 LD HL,SP+r8
+    v = cpu.mb.getitem(cpu.PC+1)
     cpu.HL = cpu.SP + ((v ^ 0x80) - 0x80)
     t = cpu.HL
     flag = 0b00000000
@@ -2569,7 +2610,8 @@ def LD_F9(cpu): # F9 LD SP,HL
     return 8
 
 
-def LD_FA(cpu, v): # FA LD A,(a16)
+def LD_FA(cpu): # FA LD A,(a16)
+    v = (cpu.mb.getitem(cpu.PC+2) << 8) + cpu.mb.getitem(cpu.PC+1)
     cpu.A = cpu.mb.getitem(v)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
@@ -2583,7 +2625,8 @@ def EI_FB(cpu): # FB EI
     return 4
 
 
-def CP_FE(cpu, v): # FE CP d8
+def CP_FE(cpu): # FE CP d8
+    v = cpu.mb.getitem(cpu.PC+1)
     t = cpu.A - v
     flag = 0b01000000
     flag += ((t & 0xFF) == 0) << FLAGZ
@@ -5230,25 +5273,11 @@ def no_opcode(cpu):
 
 
 def execute_opcode(cpu, opcode):
-    oplen = OPCODE_LENGTHS[opcode]
-    v = 0
-    pc = cpu.PC
-    if oplen == 2:
-        # 8-bit immediate
-        v = cpu.mb.getitem(pc+1)
-    elif oplen == 3:
-        # 16-bit immediate
-        # Flips order of values due to big-endian
-        a = cpu.mb.getitem(pc+2)
-        b = cpu.mb.getitem(pc+1)
-        v = (a << 8) + b
-
     opcode &= 0x1FF
-
     if opcode == 0x00:
         return NOP_00(cpu)
     elif opcode == 0x01:
-        return LD_01(cpu, v)
+        return LD_01(cpu)
     elif opcode == 0x02:
         return LD_02(cpu)
     elif opcode == 0x03:
@@ -5258,11 +5287,11 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x05:
         return DEC_05(cpu)
     elif opcode == 0x06:
-        return LD_06(cpu, v)
+        return LD_06(cpu)
     elif opcode == 0x07:
         return RLCA_07(cpu)
     elif opcode == 0x08:
-        return LD_08(cpu, v)
+        return LD_08(cpu)
     elif opcode == 0x09:
         return ADD_09(cpu)
     elif opcode == 0x0A:
@@ -5274,13 +5303,13 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x0D:
         return DEC_0D(cpu)
     elif opcode == 0x0E:
-        return LD_0E(cpu, v)
+        return LD_0E(cpu)
     elif opcode == 0x0F:
         return RRCA_0F(cpu)
     elif opcode == 0x10:
-        return STOP_10(cpu, v)
+        return STOP_10(cpu)
     elif opcode == 0x11:
-        return LD_11(cpu, v)
+        return LD_11(cpu)
     elif opcode == 0x12:
         return LD_12(cpu)
     elif opcode == 0x13:
@@ -5290,11 +5319,11 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x15:
         return DEC_15(cpu)
     elif opcode == 0x16:
-        return LD_16(cpu, v)
+        return LD_16(cpu)
     elif opcode == 0x17:
         return RLA_17(cpu)
     elif opcode == 0x18:
-        return JR_18(cpu, v)
+        return JR_18(cpu)
     elif opcode == 0x19:
         return ADD_19(cpu)
     elif opcode == 0x1A:
@@ -5306,13 +5335,13 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x1D:
         return DEC_1D(cpu)
     elif opcode == 0x1E:
-        return LD_1E(cpu, v)
+        return LD_1E(cpu)
     elif opcode == 0x1F:
         return RRA_1F(cpu)
     elif opcode == 0x20:
-        return JR_20(cpu, v)
+        return JR_20(cpu)
     elif opcode == 0x21:
-        return LD_21(cpu, v)
+        return LD_21(cpu)
     elif opcode == 0x22:
         return LD_22(cpu)
     elif opcode == 0x23:
@@ -5322,11 +5351,11 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x25:
         return DEC_25(cpu)
     elif opcode == 0x26:
-        return LD_26(cpu, v)
+        return LD_26(cpu)
     elif opcode == 0x27:
         return DAA_27(cpu)
     elif opcode == 0x28:
-        return JR_28(cpu, v)
+        return JR_28(cpu)
     elif opcode == 0x29:
         return ADD_29(cpu)
     elif opcode == 0x2A:
@@ -5338,13 +5367,13 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x2D:
         return DEC_2D(cpu)
     elif opcode == 0x2E:
-        return LD_2E(cpu, v)
+        return LD_2E(cpu)
     elif opcode == 0x2F:
         return CPL_2F(cpu)
     elif opcode == 0x30:
-        return JR_30(cpu, v)
+        return JR_30(cpu)
     elif opcode == 0x31:
-        return LD_31(cpu, v)
+        return LD_31(cpu)
     elif opcode == 0x32:
         return LD_32(cpu)
     elif opcode == 0x33:
@@ -5354,11 +5383,11 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x35:
         return DEC_35(cpu)
     elif opcode == 0x36:
-        return LD_36(cpu, v)
+        return LD_36(cpu)
     elif opcode == 0x37:
         return SCF_37(cpu)
     elif opcode == 0x38:
-        return JR_38(cpu, v)
+        return JR_38(cpu)
     elif opcode == 0x39:
         return ADD_39(cpu)
     elif opcode == 0x3A:
@@ -5370,7 +5399,7 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0x3D:
         return DEC_3D(cpu)
     elif opcode == 0x3E:
-        return LD_3E(cpu, v)
+        return LD_3E(cpu)
     elif opcode == 0x3F:
         return CCF_3F(cpu)
     elif opcode == 0x40:
@@ -5634,15 +5663,15 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xC1:
         return POP_C1(cpu)
     elif opcode == 0xC2:
-        return JP_C2(cpu, v)
+        return JP_C2(cpu)
     elif opcode == 0xC3:
-        return JP_C3(cpu, v)
+        return JP_C3(cpu)
     elif opcode == 0xC4:
-        return CALL_C4(cpu, v)
+        return CALL_C4(cpu)
     elif opcode == 0xC5:
         return PUSH_C5(cpu)
     elif opcode == 0xC6:
-        return ADD_C6(cpu, v)
+        return ADD_C6(cpu)
     elif opcode == 0xC7:
         return RST_C7(cpu)
     elif opcode == 0xC8:
@@ -5650,15 +5679,15 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xC9:
         return RET_C9(cpu)
     elif opcode == 0xCA:
-        return JP_CA(cpu, v)
+        return JP_CA(cpu)
     elif opcode == 0xCB:
         return PREFIX_CB(cpu)
     elif opcode == 0xCC:
-        return CALL_CC(cpu, v)
+        return CALL_CC(cpu)
     elif opcode == 0xCD:
-        return CALL_CD(cpu, v)
+        return CALL_CD(cpu)
     elif opcode == 0xCE:
-        return ADC_CE(cpu, v)
+        return ADC_CE(cpu)
     elif opcode == 0xCF:
         return RST_CF(cpu)
     elif opcode == 0xD0:
@@ -5666,15 +5695,15 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xD1:
         return POP_D1(cpu)
     elif opcode == 0xD2:
-        return JP_D2(cpu, v)
+        return JP_D2(cpu)
     elif opcode == 0xD3:
         return no_opcode(cpu)
     elif opcode == 0xD4:
-        return CALL_D4(cpu, v)
+        return CALL_D4(cpu)
     elif opcode == 0xD5:
         return PUSH_D5(cpu)
     elif opcode == 0xD6:
-        return SUB_D6(cpu, v)
+        return SUB_D6(cpu)
     elif opcode == 0xD7:
         return RST_D7(cpu)
     elif opcode == 0xD8:
@@ -5682,19 +5711,19 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xD9:
         return RETI_D9(cpu)
     elif opcode == 0xDA:
-        return JP_DA(cpu, v)
+        return JP_DA(cpu)
     elif opcode == 0xDB:
         return no_opcode(cpu)
     elif opcode == 0xDC:
-        return CALL_DC(cpu, v)
+        return CALL_DC(cpu)
     elif opcode == 0xDD:
         return no_opcode(cpu)
     elif opcode == 0xDE:
-        return SBC_DE(cpu, v)
+        return SBC_DE(cpu)
     elif opcode == 0xDF:
         return RST_DF(cpu)
     elif opcode == 0xE0:
-        return LDH_E0(cpu, v)
+        return LDH_E0(cpu)
     elif opcode == 0xE1:
         return POP_E1(cpu)
     elif opcode == 0xE2:
@@ -5706,15 +5735,15 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xE5:
         return PUSH_E5(cpu)
     elif opcode == 0xE6:
-        return AND_E6(cpu, v)
+        return AND_E6(cpu)
     elif opcode == 0xE7:
         return RST_E7(cpu)
     elif opcode == 0xE8:
-        return ADD_E8(cpu, v)
+        return ADD_E8(cpu)
     elif opcode == 0xE9:
         return JP_E9(cpu)
     elif opcode == 0xEA:
-        return LD_EA(cpu, v)
+        return LD_EA(cpu)
     elif opcode == 0xEB:
         return no_opcode(cpu)
     elif opcode == 0xEC:
@@ -5722,11 +5751,11 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xED:
         return no_opcode(cpu)
     elif opcode == 0xEE:
-        return XOR_EE(cpu, v)
+        return XOR_EE(cpu)
     elif opcode == 0xEF:
         return RST_EF(cpu)
     elif opcode == 0xF0:
-        return LDH_F0(cpu, v)
+        return LDH_F0(cpu)
     elif opcode == 0xF1:
         return POP_F1(cpu)
     elif opcode == 0xF2:
@@ -5738,15 +5767,15 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xF5:
         return PUSH_F5(cpu)
     elif opcode == 0xF6:
-        return OR_F6(cpu, v)
+        return OR_F6(cpu)
     elif opcode == 0xF7:
         return RST_F7(cpu)
     elif opcode == 0xF8:
-        return LD_F8(cpu, v)
+        return LD_F8(cpu)
     elif opcode == 0xF9:
         return LD_F9(cpu)
     elif opcode == 0xFA:
-        return LD_FA(cpu, v)
+        return LD_FA(cpu)
     elif opcode == 0xFB:
         return EI_FB(cpu)
     elif opcode == 0xFC:
@@ -5754,7 +5783,7 @@ def execute_opcode(cpu, opcode):
     elif opcode == 0xFD:
         return no_opcode(cpu)
     elif opcode == 0xFE:
-        return CP_FE(cpu, v)
+        return CP_FE(cpu)
     elif opcode == 0xFF:
         return RST_FF(cpu)
     elif opcode == 0x100:
