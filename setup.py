@@ -29,6 +29,7 @@ class build_ext(_build_ext):
             multiprocessing.set_start_method("fork", force=True)
 
         cflags = ["-O3"]
+        ldflags = ["-O3"]
         # NOTE: For performance. Check if other platforms need an equivalent change.
         if sys.platform == "darwin":
             cflags.append("-DCYTHON_INLINE=inline __attribute__ ((__unused__)) __attribute__((always_inline))")
@@ -39,6 +40,7 @@ class build_ext(_build_ext):
                 src.split(".")[0].replace(os.sep, "."),
                 [src],
                 extra_compile_args=cflags,
+                extra_link_args=ldflags,
                 include_dirs=[np.get_include()],
             ), list(py_pxd_files)
         )
