@@ -141,8 +141,7 @@ class Screen:
         numpy.ndarray:
             Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
-        return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-        # return self.mb.lcd.renderer.screen_buffer_as_ndarray()
+        return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
 
     def screen_image(self):
         &#34;&#34;&#34;
@@ -284,8 +283,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         numpy.ndarray:
             Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
-        return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-        # return self.mb.lcd.renderer.screen_buffer_as_ndarray()
+        return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
 
     def screen_image(self):
         &#34;&#34;&#34;
@@ -493,8 +491,7 @@ subject to change.</p>
     numpy.ndarray:
         Screendata in `ndarray` of bytes with shape (160, 144, 3)
     &#34;&#34;&#34;
-    return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-    # return self.mb.lcd.renderer.screen_buffer_as_ndarray()</code></pre>
+    return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.screen.Screen.screen_image"><code class="name flex">
