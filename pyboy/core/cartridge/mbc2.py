@@ -37,8 +37,9 @@ class MBC2(BaseMBC):
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
-        elif 0x4000 <= address < 0x8000:
+        elif address < 0x8000:
             return self.rombanks[self.rombank_selected][address - 0x4000]
+        # There is no handling for 0x8000 <= address < 0xA000
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: 0x%x", address)

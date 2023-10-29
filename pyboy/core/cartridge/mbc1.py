@@ -19,17 +19,18 @@ class MBC1(BaseMBC):
     def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
             self.rambank_enabled = (value & 0b00001111) == 0b1010
-        elif 0x2000 <= address < 0x4000:
+        elif address < 0x4000:
             value &= 0b00011111
             # The register cannot contain zero (0b00000) and will be initialized as 0b00001
             # Attempting to write 0b00000 will write 0b00001 instead.
             if value == 0:
                 value = 1
             self.bank_select_register1 = value
-        elif 0x4000 <= address < 0x6000:
+        elif address < 0x6000:
             self.bank_select_register2 = value & 0b11
-        elif 0x6000 <= address < 0x8000:
+        elif address < 0x8000:
             self.memorymodel = value & 0b1
+        # There is no handling for 0x8000 <= i < 0xA000
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 logger.warning(
@@ -52,10 +53,11 @@ class MBC1(BaseMBC):
             else:
                 self.rombank_selected = 0
             return self.rombanks[self.rombank_selected][address]
-        elif 0x4000 <= address < 0x8000:
+        elif address < 0x8000:
             self.rombank_selected = \
                     ((self.bank_select_register2 << 5) | self.bank_select_register1) % self.external_rom_count
             return self.rombanks[self.rombank_selected][address - 0x4000]
+        # There is no handling for 0x8000 <= i < 0xA000
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: 0x%x", address)

@@ -15,14 +15,15 @@ class MBC5(BaseMBC):
         if 0x0000 <= address < 0x2000:
             # 8-bit register. All bits matter, so only 0b00001010 enables RAM.
             self.rambank_enabled = (value == 0b00001010)
-        elif 0x2000 <= address < 0x3000:
+        elif address < 0x3000:
             # 8-bit register used for the lower 8 bits of the ROM bank number.
             self.rombank_selected = ((self.rombank_selected & 0b100000000) | value) % self.external_rom_count
-        elif 0x3000 <= address < 0x4000:
+        elif address < 0x4000:
             # 1-bit register used for the most significant bit of the ROM bank number.
             self.rombank_selected = (((value & 0x1) << 8) | (self.rombank_selected & 0xFF)) % self.external_rom_count
-        elif 0x4000 <= address < 0x6000:
+        elif address < 0x6000:
             self.rambank_selected = (value & 0xF) % self.external_ram_count
+        # There is no handling for 0x6000 <= address < 0xA000
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 logger.warning(
