@@ -255,16 +255,16 @@ class Motherboard:
                 return self.bootrom.getitem(i)
             else:
                 return self.cartridge.getitem(i)
-        elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
+        elif i < 0x8000: # 16kB switchable ROM bank
             return self.cartridge.getitem(i)
-        elif 0x8000 <= i < 0xA000: # 8kB Video RAM
+        elif i < 0xA000: # 8kB Video RAM
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 return self.lcd.VRAM0[i - 0x8000]
             else:
                 return self.lcd.VRAM1[i - 0x8000]
-        elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
+        elif i < 0xC000: # 8kB switchable RAM bank
             return self.cartridge.getitem(i)
-        elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
+        elif i < 0xE000: # 8kB Internal RAM
             bank_offset = 0
             if self.cgb and 0xD000 <= i:
                 # Find which bank to read from at FF70
@@ -274,82 +274,82 @@ class Motherboard:
                     bank = 0x01
                 bank_offset = (bank-1) * 0x1000
             return self.ram.internal_ram0[i - 0xC000 + bank_offset]
-        elif 0xE000 <= i < 0xFE00: # Echo of 8kB Internal RAM
+        elif i < 0xFE00: # Echo of 8kB Internal RAM
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
-        elif 0xFE00 <= i < 0xFEA0: # Sprite Attribute Memory (OAM)
+        elif i < 0xFEA0: # Sprite Attribute Memory (OAM)
             return self.lcd.OAM[i - 0xFE00]
-        elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
+        elif i < 0xFF00: # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
-        elif 0xFF00 <= i < 0xFF4C: # I/O ports
-            if i == 0xFF04:
-                return self.timer.DIV
-            elif i == 0xFF05:
-                return self.timer.TIMA
-            elif i == 0xFF06:
-                return self.timer.TMA
-            elif i == 0xFF07:
-                return self.timer.TAC
-            elif i == 0xFF0F:
-                return self.cpu.interrupts_flag_register
-            elif 0xFF10 <= i < 0xFF40:
-                return self.sound.get(i - 0xFF10)
-            elif i == 0xFF40:
-                return self.lcd.get_lcdc()
-            elif i == 0xFF41:
-                return self.lcd.get_stat()
-            elif i == 0xFF42:
-                return self.lcd.SCY
-            elif i == 0xFF43:
-                return self.lcd.SCX
-            elif i == 0xFF44:
-                return self.lcd.LY
-            elif i == 0xFF45:
-                return self.lcd.LYC
-            elif i == 0xFF46:
-                return 0x00 # DMA
-            elif i == 0xFF47:
-                return self.lcd.BGP.get()
-            elif i == 0xFF48:
-                return self.lcd.OBP0.get()
-            elif i == 0xFF49:
-                return self.lcd.OBP1.get()
-            elif i == 0xFF4A:
-                return self.lcd.WY
-            elif i == 0xFF4B:
-                return self.lcd.WX
-            else:
-                return self.ram.io_ports[i - 0xFF00]
-        elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
-            # CGB registers
-            if self.cgb and i == 0xFF4D:
-                return self.key1
-            elif self.cgb and i == 0xFF4F:
-                return self.lcd.vbk.get()
-            elif self.cgb and i == 0xFF68:
-                return self.lcd.bcps.get() | 0x40
-            elif self.cgb and i == 0xFF69:
-                return self.lcd.bcpd.get()
-            elif self.cgb and i == 0xFF6A:
-                return self.lcd.ocps.get() | 0x40
-            elif self.cgb and i == 0xFF6B:
-                return self.lcd.ocpd.get()
-            elif self.cgb and i == 0xFF51:
-                # logger.error("HDMA1 is not readable")
-                return 0x00 # Not readable
-            elif self.cgb and i == 0xFF52:
-                # logger.error("HDMA2 is not readable")
-                return 0x00 # Not readable
-            elif self.cgb and i == 0xFF53:
-                # logger.error("HDMA3 is not readable")
-                return 0x00 # Not readable
-            elif self.cgb and i == 0xFF54:
-                # logger.error("HDMA4 is not readable")
-                return 0x00 # Not readable
-            elif self.cgb and i == 0xFF55:
-                return self.hdma.hdma5 & 0xFF
+        elif i == 0xFF04:
+            return self.timer.DIV
+        elif i == 0xFF05:
+            return self.timer.TIMA
+        elif i == 0xFF06:
+            return self.timer.TMA
+        elif i == 0xFF07:
+            return self.timer.TAC
+        elif i == 0xFF0F:
+            return self.cpu.interrupts_flag_register
+        elif 0xFF10 <= i < 0xFF40:
+            return self.sound.get(i - 0xFF10)
+        elif i == 0xFF40:
+            return self.lcd.get_lcdc()
+        elif i == 0xFF41:
+            return self.lcd.get_stat()
+        elif i == 0xFF42:
+            return self.lcd.SCY
+        elif i == 0xFF43:
+            return self.lcd.SCX
+        elif i == 0xFF44:
+            return self.lcd.LY
+        elif i == 0xFF45:
+            return self.lcd.LYC
+        elif i == 0xFF46:
+            return 0x00 # DMA
+        elif i == 0xFF47:
+            return self.lcd.BGP.get()
+        elif i == 0xFF48:
+            return self.lcd.OBP0.get()
+        elif i == 0xFF49:
+            return self.lcd.OBP1.get()
+        elif i == 0xFF4A:
+            return self.lcd.WY
+        elif i == 0xFF4B:
+            return self.lcd.WX
+        elif i < 0xFF4C: # I/O ports
+            return self.ram.io_ports[i - 0xFF00]
+        elif i < 0xFF80: # Empty but unusable for I/O
+            if self.cgb:
+                # CGB registers
+                if i == 0xFF4D:
+                    return self.key1
+                elif i == 0xFF4F:
+                    return self.lcd.vbk.get()
+                elif i == 0xFF68:
+                    return self.lcd.bcps.get() | 0x40
+                elif i == 0xFF69:
+                    return self.lcd.bcpd.get()
+                elif i == 0xFF6A:
+                    return self.lcd.ocps.get() | 0x40
+                elif i == 0xFF6B:
+                    return self.lcd.ocpd.get()
+                elif i == 0xFF51:
+                    # logger.error("HDMA1 is not readable")
+                    return 0x00 # Not readable
+                elif i == 0xFF52:
+                    # logger.error("HDMA2 is not readable")
+                    return 0x00 # Not readable
+                elif i == 0xFF53:
+                    # logger.error("HDMA3 is not readable")
+                    return 0x00 # Not readable
+                elif i == 0xFF54:
+                    # logger.error("HDMA4 is not readable")
+                    return 0x00 # Not readable
+                elif i == 0xFF55:
+                    return self.hdma.hdma5 & 0xFF
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
-        elif 0xFF80 <= i < 0xFFFF: # Internal RAM
+        elif i < 0xFFFF: # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF: # Interrupt Enable Register
             return self.cpu.interrupts_enabled_register
@@ -362,10 +362,10 @@ class Motherboard:
         if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
-        elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
+        elif i < 0x8000: # 16kB switchable ROM bank
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
-        elif 0x8000 <= i < 0xA000: # 8kB Video RAM
+        elif i < 0xA000: # 8kB Video RAM
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 self.lcd.VRAM0[i - 0x8000] = value
                 if i < 0x9800: # Is within tile data -- not tile maps
@@ -378,9 +378,9 @@ class Motherboard:
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
                     # self.lcd.renderer.tiles_changed1.add(i & 0xFFF0)
-        elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
+        elif i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
-        elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
+        elif i < 0xE000: # 8kB Internal RAM
             bank_offset = 0
             if self.cgb and 0xD000 <= i:
                 # Find which bank to read from at FF70
@@ -390,98 +390,99 @@ class Motherboard:
                     bank = 0x01
                 bank_offset = (bank-1) * 0x1000
             self.ram.internal_ram0[i - 0xC000 + bank_offset] = value
-        elif 0xE000 <= i < 0xFE00: # Echo of 8kB Internal RAM
+        elif i < 0xFE00: # Echo of 8kB Internal RAM
             self.setitem(i - 0x2000, value) # Redirect to internal RAM
-        elif 0xFE00 <= i < 0xFEA0: # Sprite Attribute Memory (OAM)
+        elif i < 0xFEA0: # Sprite Attribute Memory (OAM)
             self.lcd.OAM[i - 0xFE00] = value
-        elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
+        elif i < 0xFF00: # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
-        elif 0xFF00 <= i < 0xFF4C: # I/O ports
-            if i == 0xFF00:
-                self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
-            elif i == 0xFF01:
-                self.serialbuffer += chr(value)
-                self.ram.io_ports[i - 0xFF00] = value
-            elif i == 0xFF04:
-                self.timer.reset()
-            elif i == 0xFF05:
-                self.timer.TIMA = value
-            elif i == 0xFF06:
-                self.timer.TMA = value
-            elif i == 0xFF07:
-                self.timer.TAC = value & 0b111 # TODO: Move logic to Timer class
-            elif i == 0xFF0F:
-                self.cpu.interrupts_flag_register = value
-            elif 0xFF10 <= i < 0xFF40:
-                self.sound.set(i - 0xFF10, value)
-            elif i == 0xFF40:
-                self.lcd.set_lcdc(value)
-            elif i == 0xFF41:
-                self.lcd.set_stat(value)
-            elif i == 0xFF42:
-                self.lcd.SCY = value
-            elif i == 0xFF43:
-                self.lcd.SCX = value
-            elif i == 0xFF44:
-                self.lcd.LY = value
-            elif i == 0xFF45:
-                self.lcd.LYC = value
-            elif i == 0xFF46:
-                self.transfer_DMA(value)
-            elif i == 0xFF47:
-                if self.lcd.BGP.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_tilecache0()
-            elif i == 0xFF48:
-                if self.lcd.OBP0.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_spritecache0()
-            elif i == 0xFF49:
-                if self.lcd.OBP1.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_spritecache1()
-            elif i == 0xFF4A:
-                self.lcd.WY = value
-            elif i == 0xFF4B:
-                self.lcd.WX = value
-            else:
-                self.ram.io_ports[i - 0xFF00] = value
-        elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
+        # I/O Ports
+        elif i == 0xFF00:
+            self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
+        elif i == 0xFF01:
+            self.serialbuffer += chr(value)
+            self.ram.io_ports[i - 0xFF00] = value
+        elif i == 0xFF04:
+            self.timer.reset()
+        elif i == 0xFF05:
+            self.timer.TIMA = value
+        elif i == 0xFF06:
+            self.timer.TMA = value
+        elif i == 0xFF07:
+            self.timer.TAC = value & 0b111 # TODO: Move logic to Timer class
+        elif i == 0xFF0F:
+            self.cpu.interrupts_flag_register = value
+        elif 0xFF10 <= i < 0xFF40:
+            self.sound.set(i - 0xFF10, value)
+        elif i == 0xFF40:
+            self.lcd.set_lcdc(value)
+        elif i == 0xFF41:
+            self.lcd.set_stat(value)
+        elif i == 0xFF42:
+            self.lcd.SCY = value
+        elif i == 0xFF43:
+            self.lcd.SCX = value
+        elif i == 0xFF44:
+            self.lcd.LY = value
+        elif i == 0xFF45:
+            self.lcd.LYC = value
+        elif i == 0xFF46:
+            self.transfer_DMA(value)
+        elif i == 0xFF47:
+            if self.lcd.BGP.set(value):
+                # TODO: Move out of MB
+                self.lcd.renderer.clear_tilecache0()
+        elif i == 0xFF48:
+            if self.lcd.OBP0.set(value):
+                # TODO: Move out of MB
+                self.lcd.renderer.clear_spritecache0()
+        elif i == 0xFF49:
+            if self.lcd.OBP1.set(value):
+                # TODO: Move out of MB
+                self.lcd.renderer.clear_spritecache1()
+        elif i == 0xFF4A:
+            self.lcd.WY = value
+        elif i == 0xFF4B:
+            self.lcd.WX = value
+        elif i < 0xFF4C: # I/O ports
+            self.ram.io_ports[i - 0xFF00] = value
+        elif i < 0xFF80: # Empty but unusable for I/O
             if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
                 # logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
             # CGB registers
-            elif self.cgb and i == 0xFF4D:
-                self.key1 = value
-            elif self.cgb and i == 0xFF4F:
-                self.lcd.vbk.set(value)
-            elif self.cgb and i == 0xFF51:
-                # if 0x7F < value < 0xA0:
-                #     value = 0
-                self.hdma.hdma1 = value
-            elif self.cgb and i == 0xFF52:
-                self.hdma.hdma2 = value # & 0xF0
-            elif self.cgb and i == 0xFF53:
-                self.hdma.hdma3 = value # & 0x1F
-            elif self.cgb and i == 0xFF54:
-                self.hdma.hdma4 = value # & 0xF0
-            elif self.cgb and i == 0xFF55:
-                self.hdma.set_hdma5(value, self)
-            elif self.cgb and i == 0xFF68:
-                self.lcd.bcps.set(value)
-            elif self.cgb and i == 0xFF69:
-                self.lcd.bcpd.set(value)
-                self.lcd.renderer.clear_tilecache0()
-                self.lcd.renderer.clear_tilecache1()
-            elif self.cgb and i == 0xFF6A:
-                self.lcd.ocps.set(value)
-            elif self.cgb and i == 0xFF6B:
-                self.lcd.ocpd.set(value)
-                self.lcd.renderer.clear_spritecache0()
-                self.lcd.renderer.clear_spritecache1()
+            elif self.cgb:
+                if i == 0xFF4D:
+                    self.key1 = value
+                elif i == 0xFF4F:
+                    self.lcd.vbk.set(value)
+                elif i == 0xFF51:
+                    # if 0x7F < value < 0xA0:
+                    #     value = 0
+                    self.hdma.hdma1 = value
+                elif i == 0xFF52:
+                    self.hdma.hdma2 = value # & 0xF0
+                elif i == 0xFF53:
+                    self.hdma.hdma3 = value # & 0x1F
+                elif i == 0xFF54:
+                    self.hdma.hdma4 = value # & 0xF0
+                elif i == 0xFF55:
+                    self.hdma.set_hdma5(value, self)
+                elif i == 0xFF68:
+                    self.lcd.bcps.set(value)
+                elif i == 0xFF69:
+                    self.lcd.bcpd.set(value)
+                    self.lcd.renderer.clear_tilecache0()
+                    self.lcd.renderer.clear_tilecache1()
+                elif i == 0xFF6A:
+                    self.lcd.ocps.set(value)
+                elif i == 0xFF6B:
+                    self.lcd.ocpd.set(value)
+                    self.lcd.renderer.clear_spritecache0()
+                    self.lcd.renderer.clear_spritecache1()
             else:
                 self.ram.non_io_internal_ram1[i - 0xFF4C] = value
-        elif 0xFF80 <= i < 0xFFFF: # Internal RAM
+        elif i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
             self.cpu.interrupts_enabled_register = value
