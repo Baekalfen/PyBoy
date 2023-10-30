@@ -226,10 +226,11 @@ class Motherboard:
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
             # TODO: Unify interface
+            sclock = self.sound.clock
             if self.cgb and self.double_speed:
-                self.sound.clock += cycles // 2
+                self.sound.clock = sclock + cycles//2
             else:
-                self.sound.clock += cycles
+                self.sound.clock = sclock + cycles
 
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
