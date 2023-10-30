@@ -13,7 +13,6 @@ from .cpu cimport CPU
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
 cdef uint8_t (*OPCODES[512])(CPU) noexcept
-cdef int execute_opcode(cpu.CPU, uint16_t) noexcept
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept
 @cython.locals(v=int, flag=uint8_t, t=int)

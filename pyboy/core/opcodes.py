@@ -5271,11 +5271,6 @@ def no_opcode(cpu):
     return 0
 
 
-def execute_opcode(cpu, opcode):
-    opcode &= 0x1FF
-    return OPCODES[opcode](cpu)
-
-
 OPCODES = [
     NOP_00,
     LD_01,

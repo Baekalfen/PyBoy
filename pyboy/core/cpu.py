@@ -184,4 +184,5 @@ class CPU:
             opcode = self.mb.getitem(self.PC + 1)
             opcode += 0x100 # Internally shifting look-up table
 
-        return opcodes.execute_opcode(self, opcode)
+        opcode &= 0x1FF
+        return opcodes.OPCODES[opcode](self)

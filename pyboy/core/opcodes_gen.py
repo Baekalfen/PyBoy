@@ -37,7 +37,6 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
 cdef uint8_t (*OPCODES[512])(CPU) noexcept
-cdef int execute_opcode(cpu.CPU, uint16_t) noexcept
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept
 """
@@ -1212,13 +1211,6 @@ def update():
             f.write(functiontext.replace("\t", " " * 4) + "\n\n\n")
 
         f.write("def no_opcode(cpu):\n    return 0\n\n\n")
-
-        f.write("""
-def execute_opcode(cpu, opcode):
-    opcode &= 0x1FF
-    return OPCODES[opcode](cpu)
-
-""")
 
         f.write("""
 OPCODES = [
