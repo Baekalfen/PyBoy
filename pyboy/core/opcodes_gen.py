@@ -465,7 +465,9 @@ class OpcodeData:
 
     def CB(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles)
-        code.addline("logger.critical('CB cannot be called!')")
+        code.addline("opcode = cpu.mb.getitem(cpu.PC + 1)")
+        code.addline("opcode += 0x100 # Internally shifting look-up table")
+        code.addline("return OPCODES[opcode](cpu)")
         return code.getcode()
 
     def EI(self):

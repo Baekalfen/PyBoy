@@ -180,9 +180,5 @@ class CPU:
 
     def fetch_and_execute(self):
         opcode = self.mb.getitem(self.PC)
-        if opcode == 0xCB: # Extension code
-            opcode = self.mb.getitem(self.PC + 1)
-            opcode += 0x100 # Internally shifting look-up table
-
-        opcode &= 0x1FF
+        opcode &= 0xFF
         return opcodes.OPCODES[opcode](self)

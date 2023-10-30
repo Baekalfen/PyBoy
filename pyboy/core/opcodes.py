@@ -2188,7 +2188,9 @@ def JP_CA(cpu): # CA JP Z,a16
 
 
 def PREFIX_CB(cpu): # CB PREFIX CB
-    logger.critical('CB cannot be called!')
+    opcode = cpu.mb.getitem(cpu.PC + 1)
+    opcode += 0x100 # Internally shifting look-up table
+    return OPCODES[opcode](cpu)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 4
