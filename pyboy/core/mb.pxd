@@ -3,19 +3,19 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 import cython
-cimport pyboy.core.cpu
-cimport pyboy.core.timer
-cimport pyboy.core.cartridge.base_mbc
-from pyboy.utils cimport IntIOInterface
+
 cimport pyboy.core.bootrom
-cimport pyboy.core.ram
-cimport pyboy.core.lcd
+cimport pyboy.core.cartridge.base_mbc
+cimport pyboy.core.cpu
 cimport pyboy.core.interaction
+cimport pyboy.core.lcd
+cimport pyboy.core.ram
 cimport pyboy.core.sound
-from pyboy.utils cimport WindowEvent
+cimport pyboy.core.timer
+from pyboy.utils cimport IntIOInterface, WindowEvent
 
 
 cdef uint16_t STAT, LY, LYC
@@ -34,7 +34,8 @@ cdef class Motherboard:
     cdef pyboy.core.sound.Sound sound
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
-    cdef str serialbuffer
+    cdef char[1024] serialbuffer
+    cdef uint16_t serialbuffer_count
 
     # CGB
     cdef HDMA hdma
