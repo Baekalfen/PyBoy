@@ -125,8 +125,8 @@ class BaseMBC:
         elif 0x4000 <= address < 0x8000:
             return self.rombanks[self.rombank_selected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
-            if not self.rambank_initialized:
-                logger.error("RAM banks not initialized: %s" % hex(address))
+            # if not self.rambank_initialized:
+            #     logger.error("RAM banks not initialized: %s" % hex(address))
 
             if not self.rambank_enabled:
                 return 0xFF
@@ -135,8 +135,8 @@ class BaseMBC:
                 return self.rtc.getregister(self.rambank_selected)
             else:
                 return self.rambanks[self.rambank_selected][address - 0xA000]
-        else:
-            logger.error("Reading address invalid: %s" % address)
+        # else:
+        #     logger.error("Reading address invalid: %s" % address)
 
     def __repr__(self):
         return "\n".join([
