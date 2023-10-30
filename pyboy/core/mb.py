@@ -75,7 +75,8 @@ class Motherboard:
         # self.disable_renderer = disable_renderer
 
         self.bootrom_enabled = True
-        self.serialbuffer = ""
+        self.serialbuffer = [0] * 1024
+        self.serialbuffer_count = 0
 
         self.breakpoints_enabled = False # breakpoints_enabled
         self.breakpoints_list = [] #[(0, 0x150), (0, 0x0040), (0, 0x0048), (0, 0x0050)]
@@ -98,8 +99,8 @@ class Motherboard:
             self.breakpoints_enabled = False
 
     def getserial(self):
-        b = self.serialbuffer
-        self.serialbuffer = ""
+        b = "".join([chr(x) for x in self.serialbuffer[:self.serialbuffer_count]])
+        self.serialbuffer_count = 0
         return b
 
     def buttonevent(self, key):
@@ -404,7 +405,9 @@ class Motherboard:
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
-                self.serialbuffer += chr(value)
+                self.serialbuffer[self.serialbuffer_count] = value
+                self.serialbuffer_count += 1
+                self.serialbuffer_count &= 0x3FF
                 self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.reset()
