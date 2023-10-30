@@ -29,12 +29,14 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
 cimports = """
 from . cimport cpu
+from .cpu cimport CPU
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
+cdef uint8_t (*OPCODES[512])(CPU) noexcept
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept
@@ -1214,15 +1216,24 @@ def update():
         f.write("""
 def execute_opcode(cpu, opcode):
     opcode &= 0x1FF
+    return OPCODES[opcode](cpu)
+
 """)
 
+        f.write("""
+OPCODES = [
+""")
         indent = 4
         for i, t in enumerate(lookuplist):
             t = t if t is not None else (0, "no_opcode", "")
             f.write(
-                " "*indent + ("if" if i == 0 else "elif") + " opcode == 0x%0.2X:\n"%i + " " * (indent+4) + "return " +
-                str(t[1]).replace("'", "") + "(cpu)" + "\n"
+                # " "*indent + ("if" if i == 0 else "elif") + " opcode == 0x%0.2X:\n"%i + " " * (indent+4) + "return " +
+                # str(t[1]).replace("'", "") + "(cpu)" + "\n"
+                " "*indent + str(t[1]).replace("'", "") + ",\n"
             )
+        f.write("""
+]
+""")
         f.write("\n\n")
 
         f.write('OPCODE_LENGTHS = array.array("B", [\n    ')
