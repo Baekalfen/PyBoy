@@ -4,11 +4,15 @@
 #
 
 import cython
+
 from cpython.array cimport array
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int16_t
+from libc.stdint cimport int16_t, uint8_t, uint16_t, uint32_t, uint64_t
+
 cimport pyboy.utils
 from pyboy cimport utils
 from pyboy.utils cimport IntIOInterface
+
+
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS, TILES, FRAME_CYCLES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
@@ -116,9 +120,7 @@ cdef class Renderer:
     cdef uint32_t[:,:] _screenbuffer
     cdef uint32_t[:,:] _tilecache0, _spritecache0, _spritecache1
 
-    cdef int[:] sprites_to_render_n
-    cdef int[:] sprites_to_render_x
-    cpdef (int, int) key_priority(self, int) noexcept
+    cdef int[10] sprites_to_render
     cdef int ly_window
     cdef void invalidate_tile(self, int, int) noexcept
 
@@ -169,6 +171,7 @@ cdef class Renderer:
         _n=int,
     )
     cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], bint) noexcept
+    cdef void sort_sprites(self, int) noexcept
 
     cdef void clear_cache(self) noexcept
     cdef void clear_tilecache0(self) noexcept
