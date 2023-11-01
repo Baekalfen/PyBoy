@@ -31,14 +31,6 @@ class MBC1(BaseMBC):
         elif 0x6000 <= address < 0x8000:
             self.memorymodel = value & 0b1
         elif 0xA000 <= address < 0xC000:
-            if self.rambanks is None:
-                logger.warning(
-                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM "
-                    "banks are not initialized. Initializing %d RAM banks as "
-                    "precaution" % (value, address, self.external_ram_count)
-                )
-                self.init_rambanks(self.external_ram_count)
-
             if self.rambank_enabled:
                 self.rambank_selected = self.bank_select_register2 if self.memorymodel == 1 else 0
                 self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000] = value
