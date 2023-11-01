@@ -24,13 +24,6 @@ class MBC5(BaseMBC):
         elif 0x4000 <= address < 0x6000:
             self.rambank_selected = (value & 0xF) % self.external_ram_count
         elif 0xA000 <= address < 0xC000:
-            if self.rambanks is None:
-                logger.warning(
-                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but RAM "
-                    "banks are not initialized. Initializing %d RAM banks as "
-                    "precaution" % (value, address, self.external_ram_count)
-                )
-                self.init_rambanks(self.external_ram_count)
             if self.rambank_enabled:
                 self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:

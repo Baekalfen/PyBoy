@@ -94,11 +94,7 @@ class BaseMBC:
         logger.debug("RAM loaded.")
 
     def init_rambanks(self, n):
-        if n is None:
-            return
-
         self.rambank_initialized = True
-
         # In real life the values in RAM are scrambled on initialization.
         # Allocating the maximum, as it is easier in Cython. And it's just 128KB...
         self.rambanks = [array.array("B", [0] * (8*1024)) for _ in range(16)]
@@ -163,14 +159,6 @@ class ROMOnly(BaseMBC):
             self.rombank_selected = (value & 0b1)
             logger.debug("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
-            if self.rambanks is None:
-                from . import EXTERNAL_RAM_TABLE
-                logger.warning(
-                    "Game tries to set value 0x%0.2x at RAM address 0x%0.4x, but "
-                    "RAM banks are not initialized. Initializing %d RAM banks as "
-                    "precaution" % (value, address, EXTERNAL_RAM_TABLE[0x02])
-                )
-                self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
             self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:
             logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
