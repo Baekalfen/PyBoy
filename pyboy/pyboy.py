@@ -151,6 +151,26 @@ class PyBoy:
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
         return self.quitting
+    
+    def multitick(self, n_ticks):
+        """
+        Progresses the emulator ahead by n_ticks frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        """
+        if self.stopped:
+            return True
+
+        self._rendering(False)
+        for _ in range(n_ticks-1):
+            self.tick()
+        self._rendering(True)
+
+        return self.tick()
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
