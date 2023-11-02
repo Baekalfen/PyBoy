@@ -104,13 +104,10 @@ cdef class LCDCRegister:
 
 
 cdef class Renderer:
-    cdef uint8_t alphamask
-    cdef array _tilecache0_state_raw, _tilecache1_state_raw, _spritecache0_state_raw, _spritecache1_state_raw
     cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
     cdef str color_format
     cdef tuple buffer_dims
     cdef bint clearcache
-    cdef int old_stat_mode
     cdef bint double_speed
     cdef bint cgb
 
