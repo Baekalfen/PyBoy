@@ -114,17 +114,8 @@ class PyBoy:
 
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self.initialized = True
-
-    def tick(self):
-        """
-        Progresses the emulator ahead by one frame.
-
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-        """
+    
+    def _tick(self):
         if self.stopped:
             return True
 
@@ -151,6 +142,18 @@ class PyBoy:
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
         return self.quitting
+
+    def tick(self):
+        """
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        """
+        return self._tick()
     
     def multitick(self, n_ticks):
         """
@@ -164,13 +167,13 @@ class PyBoy:
         """
         if self.stopped:
             return True
-
-        self._rendering(False)
+            
+        self.mb.lcd.disable_renderer = True
         for _ in range(n_ticks-1):
-            self.tick()
-        self._rendering(True)
+            self._tick()
+        self.mb.lcd.disable_renderer = False
 
-        return self.tick()
+        return self._tick()
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
