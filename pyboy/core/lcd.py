@@ -129,7 +129,7 @@ class LCD:
             remaining_ly = 153 - self.LY
             return remainder + mode1*remaining_ly + mode2 + mode3
         else:
-            # logger.error(f"Unsupported STAT mode: {mode}")
+            logger.critical("Unsupported STAT mode: %d", mode)
             return 0
 
     def tick(self, cycles):
@@ -993,10 +993,9 @@ class PaletteColorRegister:
         return self.palette_mem[self.index_reg.getindex()]
 
     def getcolor(self, paletteindex, colorindex):
-        #each palette = 8 bytes or 4 colors of 2 bytes
-        assert paletteindex <= 7 or colorindex <= 3, logger.error(
-            f"Palette Mem Index Error, tried: Palette {paletteindex} color {colorindex}"
-        )
+        # Each palette = 8 bytes or 4 colors of 2 bytes
+        if not (paletteindex <= 7 and colorindex <= 3):
+            logger.error("Palette Mem Index Error, tried: Palette %d color %d", paletteindex, colorindex)
 
         return self.palette_mem_rgb[paletteindex*4 + colorindex]
 
