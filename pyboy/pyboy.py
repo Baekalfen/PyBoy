@@ -120,7 +120,6 @@ class PyBoy:
             return True
 
         t_start = time.perf_counter_ns()
-        self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
             if self.mb.tick():
@@ -153,6 +152,7 @@ class PyBoy:
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
         """
+        self._handle_events(self.events)
         return self._tick()
     
     def multitick(self, n_ticks):
@@ -168,6 +168,7 @@ class PyBoy:
         if self.stopped:
             return True
             
+        self._handle_events(self.events)
         self.mb.lcd.disable_renderer = True
         for _ in range(n_ticks-1):
             self._tick()
