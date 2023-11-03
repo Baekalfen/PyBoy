@@ -18,7 +18,7 @@ from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # isort:skip
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # isort:skip
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
-from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # isort:skip
+from pyboy.plugins.game_wrapper_pokemon_gen1.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # isort:skip
 # imports end
 from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
