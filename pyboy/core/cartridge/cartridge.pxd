@@ -12,11 +12,11 @@ import cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
-cpdef BaseMBC load_cartridge(str)
-cdef bint validate_checksum(uint8_t[:,:])
+cpdef BaseMBC load_cartridge(str) noexcept
+cdef bint validate_checksum(uint8_t[:,:]) noexcept
 
 @cython.locals(romdata=array, banksize=int)
-cdef uint8_t[:, :] load_romfile(str)
+cdef uint8_t[:, :] load_romfile(str) noexcept
 
 cdef dict CARTRIDGE_TABLE
 cdef dict EXTERNAL_RAM_TABLE

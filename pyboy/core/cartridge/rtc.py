@@ -43,13 +43,11 @@ class RTC:
             f.write(b)
         f.write(self.halt)
         f.write(self.day_carry)
-        logger.info("RTC saved.")
 
     def load_state(self, f, state_version):
         self.timezero = struct.unpack("f", bytes([f.read() for _ in range(4)]))[0]
         self.halt = f.read()
         self.day_carry = f.read()
-        logger.info("RTC loaded.")
 
     def latch_rtc(self):
         t = time.time() - self.timezero
@@ -78,7 +76,7 @@ class RTC:
 
     def getregister(self, register):
         if not self.latch_enabled:
-            logger.info("RTC: Get register, but nothing is latched! 0x%0.2x" % register)
+            logger.debug("RTC: Get register, but nothing is latched! 0x%0.2x" % register)
 
         if register == 0x08:
             return self.sec_latch
@@ -98,7 +96,7 @@ class RTC:
 
     def setregister(self, register, value):
         if not self.latch_enabled:
-            logger.info("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x" % (register, value))
+            logger.debug("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x" % (register, value))
 
         t = time.time() - self.timezero
         if register == 0x08:

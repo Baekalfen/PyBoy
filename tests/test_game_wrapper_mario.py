@@ -10,14 +10,12 @@ import sys
 import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
-from tests.utils import supermarioland_rom
 
 py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"
 
 
-@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
-def test_mario_basics():
+def test_mario_basics(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title() == "SUPER MARIOLAN"
@@ -33,8 +31,7 @@ def test_mario_basics():
     pyboy.stop()
 
 
-@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
-def test_mario_advanced():
+def test_mario_advanced(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title() == "SUPER MARIOLAN"
@@ -53,8 +50,7 @@ def test_mario_advanced():
     pyboy.stop()
 
 
-@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
-def test_mario_game_over():
+def test_mario_game_over(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
 
@@ -69,13 +65,9 @@ def test_mario_game_over():
     pyboy.stop()
 
 
-@pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not supermarioland_rom) or (py_version == "3.9") or
-    (sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
-    reason="This requires gym, which doesn't work on this platform"
-)
+@pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
 class TestOpenAIGym:
-    def test_observation_type_compressed(self):
+    def test_observation_type_compressed(self, supermarioland_rom):
         pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
         pyboy.set_emulation_speed(0)
 
@@ -94,7 +86,7 @@ class TestOpenAIGym:
         print(expected_observation)
         assert np.all(observation == expected_observation)
 
-    def test_observation_type_minimal(self):
+    def test_observation_type_minimal(self, supermarioland_rom):
         pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
         pyboy.set_emulation_speed(0)
 
@@ -113,7 +105,7 @@ class TestOpenAIGym:
         print(expected_observation)
         assert np.all(observation == expected_observation)
 
-    def test_start_level(self):
+    def test_start_level(self, supermarioland_rom):
         pyboy = PyBoy(supermarioland_rom, window_type="dummy", game_wrapper=True)
         pyboy.set_emulation_speed(0)
 

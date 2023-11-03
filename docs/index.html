@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>pyboy API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -68,7 +68,7 @@ from .utils import WindowEvent</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom_file, *, bootrom_file=None, profiling=False, disable_renderer=False, sound=False, randomize=False, **kwargs)</span>
+<span>(</span><span>gamerom_file, *, bootrom_file=None, disable_renderer=False, sound=False, sound_emulated=False, cgb=None, randomize=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -77,19 +77,21 @@ multiple times.</p>
 <p>This object, <code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code>, and the <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code> module, are the only official user-facing
 interfaces. All other parts of the emulator, are subject to change.</p>
 <p>A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
-GitHub, if other methods are needed for your projects. Take a look at <code>interface_example.py</code> or <code>tetris_bot.py</code>
-for a crude "bot", which interacts with the game.</p>
+GitHub, if other methods are needed for your projects. Take a look at the files in <code>examples/</code> for a crude
+"bots", which interact with the game.</p>
 <p>Only the <code>gamerom_file</code> argument is required.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>gamerom_file</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filepath to a game-ROM for the original Game Boy.</dd>
+<dd>Filepath to a game-ROM for Game Boy or Game Boy Color.</dd>
 </dl>
 <h2 id="kwargs">Kwargs</h2>
 <p>bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.
-profiling (bool): Profile the emulator and report opcode usage (internal use).
 disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
-color_palette (tuple): Specify the color palette to use for rendering.</p></section>
+color_palette (tuple): Specify the color palette to use for rendering.
+cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.</p>
+<p>Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+<code>parser_arguments()</code> method in the pyboy.plugins.manager module, or by running pyboy &ndash;help in the terminal.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -100,9 +102,10 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         gamerom_file,
         *,
         bootrom_file=None,
-        profiling=False,
         disable_renderer=False,
         sound=False,
+        sound_emulated=False,
+        cgb=None,
         randomize=False,
         **kwargs
     ):
@@ -115,20 +118,25 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
-        GitHub, if other methods are needed for your projects. Take a look at `interface_example.py` or `tetris_bot.py`
-        for a crude &#34;bot&#34;, which interacts with the game.
+        GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
+        &#34;bots&#34;, which interact with the game.
 
         Only the `gamerom_file` argument is required.
 
         Args:
-            gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+            gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+            cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
+
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         &#34;&#34;&#34;
+
+        self.initialized = False
 
         for k, v in defaults.items():
             if k not in kwargs:
@@ -142,10 +150,12 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
             gamerom_file,
             bootrom_file or kwargs.get(&#34;bootrom&#34;), # Our current way to provide cli arguments is broken
             kwargs[&#34;color_palette&#34;],
+            kwargs[&#34;cgb_color_palette&#34;],
             disable_renderer,
             sound,
+            sound_emulated,
+            cgb,
             randomize=randomize,
-            profiling=profiling,
         )
 
         # Performance measures
@@ -168,6 +178,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         # Plugins
 
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
+        self.initialized = True
 
     def tick(self):
         &#34;&#34;&#34;
@@ -182,27 +193,27 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         if self.stopped:
             return True
 
-        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        t_start = time.perf_counter_ns()
         self._handle_events(self.events)
-        t_pre = time.perf_counter()
+        t_pre = time.perf_counter_ns()
         if not self.paused:
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
             else:
                 self.frame_count += 1
-        t_tick = time.perf_counter()
+        t_tick = time.perf_counter_ns()
         self._post_tick()
-        t_post = time.perf_counter()
+        t_post = time.perf_counter_ns()
 
-        secs = t_pre - t_start
-        self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
+        nsecs = t_pre - t_start
+        self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
 
-        secs = t_tick - t_pre
-        self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
+        nsecs = t_tick - t_pre
+        self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
 
-        secs = t_post - t_tick
-        self.avg_post = 0.9 * self.avg_post + 0.1*secs
+        nsecs = t_post - t_tick
+        self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
         return self.quitting
 
@@ -215,7 +226,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
             elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-                logger.info(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
+                logger.debug(&#34;Speed limit: %s&#34; % self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
                 with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
                     self.mb.save_state(IntIOWrapper(f))
@@ -272,7 +283,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
         self.window_title = &#34;CPU/frame: %0.2f%%&#34; % ((self.avg_pre + self.avg_tick) / SPF * 100)
-        self.window_title += &#34; Emulation: x%d&#34; % (round(SPF / avg_emu) if avg_emu != 0 else 0)
+        self.window_title += &#34; Emulation: x%s&#34; % (round(SPF / avg_emu) if avg_emu &gt; 0 else &#34;INF&#34;)
         if self.paused:
             self.window_title += &#34;[PAUSED]&#34;
         self.window_title += self.plugin_manager.window_title()
@@ -280,6 +291,12 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
 
     def __del__(self):
         self.stop(save=False)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
 
     def stop(self, save=True):
         &#34;&#34;&#34;
@@ -289,16 +306,13 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         &#34;&#34;&#34;
-        if not self.stopped:
+        if self.initialized and not self.stopped:
             logger.info(&#34;###########################&#34;)
             logger.info(&#34;# Emulator is turning off #&#34;)
             logger.info(&#34;###########################&#34;)
             self.plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
-
-    def _cpu_hitrate(self):
-        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods
@@ -330,7 +344,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
             action_type (str): Define how the agent will interact with button inputs
             * `&#34;press&#34;`: The agent will only press inputs for 1 frame an then release it.
             * `&#34;toggle&#34;`: The agent will toggle inputs, first time it press and second time it release.
-            * `&#34;all&#34;`: The agent have acces to all inputs, press and release are separated.
+            * `&#34;all&#34;`: The agent have access to all inputs, press and release are separated.
 
             simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
@@ -494,6 +508,23 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
+    def screen_image(self):
+        &#34;&#34;&#34;
+        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+
+        Generates a PIL Image from the screen buffer.
+
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        and join our Discord channel for more help.
+
+        Returns
+        -------
+        PIL.Image:
+            RGB image of (160, 144) pixels
+        &#34;&#34;&#34;
+        return self.botsupport_manager().screen().screen_image()
+
     def _serial(self):
         &#34;&#34;&#34;
         Provides all data that has been sent over the serial port since last call to this function.
@@ -513,6 +544,8 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
 
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
+
+        Some window types do not implement a frame-limiter, and will always run at full speed.
 
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
@@ -537,7 +570,7 @@ color_palette (tuple): Specify the color palette to use for rendering.</p></sect
         &#34;&#34;&#34;
         Disable or enable rendering
         &#34;&#34;&#34;
-        self.mb.renderer.disable_renderer = not value
+        self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck</code></pre>
@@ -570,27 +603,27 @@ otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy
     if self.stopped:
         return True
 
-    t_start = time.perf_counter() # Change to _ns when PyPy supports it
+    t_start = time.perf_counter_ns()
     self._handle_events(self.events)
-    t_pre = time.perf_counter()
+    t_pre = time.perf_counter_ns()
     if not self.paused:
         if self.mb.tick():
             # breakpoint reached
             self.plugin_manager.handle_breakpoint()
         else:
             self.frame_count += 1
-    t_tick = time.perf_counter()
+    t_tick = time.perf_counter_ns()
     self._post_tick()
-    t_post = time.perf_counter()
+    t_post = time.perf_counter_ns()
 
-    secs = t_pre - t_start
-    self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
+    nsecs = t_pre - t_start
+    self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
 
-    secs = t_tick - t_pre
-    self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
+    nsecs = t_tick - t_pre
+    self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
 
-    secs = t_post - t_tick
-    self.avg_post = 0.9 * self.avg_post + 0.1*secs
+    nsecs = t_post - t_tick
+    self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
     return self.quitting</code></pre>
 </details>
@@ -618,7 +651,7 @@ provided game-ROM.</dd>
         save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
             provided game-ROM.
     &#34;&#34;&#34;
-    if not self.stopped:
+    if self.initialized and not self.stopped:
         logger.info(&#34;###########################&#34;)
         logger.info(&#34;# Emulator is turning off #&#34;)
         logger.info(&#34;###########################&#34;)
@@ -675,7 +708,7 @@ Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the g
 <ul>
 <li><code>"press"</code>: The agent will only press inputs for 1 frame an then release it.</li>
 <li><code>"toggle"</code>: The agent will toggle inputs, first time it press and second time it release.</li>
-<li><code>"all"</code>: The agent have acces to all inputs, press and release are separated.</li>
+<li><code>"all"</code>: The agent have access to all inputs, press and release are separated.</li>
 </ul>
 <dl>
 <dt><strong><code>simultaneous_actions</code></strong> :&ensp;<code>bool</code></dt>
@@ -704,7 +737,7 @@ A Gym environment based on the <code>Pyboy</code> object.</p></section>
         action_type (str): Define how the agent will interact with button inputs
         * `&#34;press&#34;`: The agent will only press inputs for 1 frame an then release it.
         * `&#34;toggle&#34;`: The agent will toggle inputs, first time it press and second time it release.
-        * `&#34;all&#34;`: The agent have acces to all inputs, press and release are separated.
+        * `&#34;all&#34;`: The agent have access to all inputs, press and release are separated.
 
         simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
@@ -1033,6 +1066,42 @@ file_like_object = open("state_file.state", "rb")
     self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
 </dd>
+<dt id="pyboy.PyBoy.screen_image"><code class="name flex">
+<span>def <span class="ident">screen_image</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Shortcut for <code>pyboy.botsupport_manager.screen.screen_image</code>.</p>
+<p>Generates a PIL Image from the screen buffer.</p>
+<p>Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+case, read up on the <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code> features, <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> on tiles/sprites,
+and join our Discord channel for more help.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>PIL.Image:</code></dt>
+<dd>RGB image of (160, 144) pixels</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def screen_image(self):
+    &#34;&#34;&#34;
+    Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+
+    Generates a PIL Image from the screen buffer.
+
+    Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+    case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+    and join our Discord channel for more help.
+
+    Returns
+    -------
+    PIL.Image:
+        RGB image of (160, 144) pixels
+    &#34;&#34;&#34;
+    return self.botsupport_manager().screen().screen_image()</code></pre>
+</details>
+</dd>
 <dt id="pyboy.PyBoy.set_emulation_speed"><code class="name flex">
 <span>def <span class="ident">set_emulation_speed</span></span>(<span>self, target_speed)</span>
 </code></dt>
@@ -1041,6 +1110,7 @@ file_like_object = open("state_file.state", "rb")
 <code>target_speed</code>.</p>
 <p>The speed is defined as a multiple of real-time. I.e <code>target_speed=2</code> is double speed.</p>
 <p>A <code>target_speed</code> of <code>0</code> means unlimited. I.e. fastest possible execution.</p>
+<p>Some window types do not implement a frame-limiter, and will always run at full speed.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>target_speed</code></strong> :&ensp;<code>int</code></dt>
@@ -1058,6 +1128,8 @@ file_like_object = open("state_file.state", "rb")
     The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
 
     A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
+
+    Some window types do not implement a frame-limiter, and will always run at full speed.
 
     Args:
         target_speed (int): Target emulation speed as multiplier of real-time.
@@ -1167,7 +1239,8 @@ have been truncated to 11 characters.</p>
         DEBUG_MEMORY_SCROLL_UP,
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
-    ) = range(41)
+        FULL_SCREEN_TOGGLE,
+    ) = range(42)
 
     def __init__(self, event):
         self.event = event
@@ -1224,6 +1297,7 @@ have been truncated to 11 characters.</p>
             &#34;DEBUG_MEMORY_SCROLL_UP&#34;,
             &#34;MOD_SHIFT_ON&#34;,
             &#34;MOD_SHIFT_OFF&#34;,
+            &#34;FULL_SCREEN_TOGGLE&#34;,
         )[self.event]</code></pre>
 </details>
 <h3>Subclasses</h3>
@@ -1380,6 +1454,10 @@ have been truncated to 11 characters.</p>
 <dd>
 <section class="desc"></section>
 </dd>
+<dt id="pyboy.WindowEvent.FULL_SCREEN_TOGGLE"><code class="name">var <span class="ident">FULL_SCREEN_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1415,6 +1493,7 @@ have been truncated to 11 characters.</p>
 <li><code><a title="pyboy.PyBoy.get_input" href="#pyboy.PyBoy.get_input">get_input</a></code></li>
 <li><code><a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state">save_state</a></code></li>
 <li><code><a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state">load_state</a></code></li>
+<li><code><a title="pyboy.PyBoy.screen_image" href="#pyboy.PyBoy.screen_image">screen_image</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
 <li><code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title">cartridge_title</a></code></li>
 </ul>
@@ -1459,6 +1538,7 @@ have been truncated to 11 characters.</p>
 <li><code><a title="pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP" href="#pyboy.WindowEvent.DEBUG_MEMORY_SCROLL_UP">DEBUG_MEMORY_SCROLL_UP</a></code></li>
 <li><code><a title="pyboy.WindowEvent.MOD_SHIFT_ON" href="#pyboy.WindowEvent.MOD_SHIFT_ON">MOD_SHIFT_ON</a></code></li>
 <li><code><a title="pyboy.WindowEvent.MOD_SHIFT_OFF" href="#pyboy.WindowEvent.MOD_SHIFT_OFF">MOD_SHIFT_OFF</a></code></li>
+<li><code><a title="pyboy.WindowEvent.FULL_SCREEN_TOGGLE" href="#pyboy.WindowEvent.FULL_SCREEN_TOGGLE">FULL_SCREEN_TOGGLE</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1467,7 +1547,7 @@ have been truncated to 11 characters.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

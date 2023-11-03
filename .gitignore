@@ -13,6 +13,7 @@ __pycache__/
 .python-version
 env/
 venv/
+.venv/
 build/
 cython_debug/
 develop-eggs/
@@ -48,15 +49,20 @@ Report/*.log
 *.gbc
 *.rom
 DMG_ROM.bin
+CGB_ROM.bin
 BlarggROMs/
 TestROMs/
 ROMs/
 diffDump.txt
 Core_Dump_*
-tmp.state
 *.gb*.state
 *.gb*.ram
 *.gb*.rtc
+/test_roms/
+test_data.encrypted
+*.lock
+tetris/
+PyBoy-RL/
 
 /pyboy/**/*.c
 /pyboy/**/*.h
@@ -64,6 +70,7 @@ tmp.state
 /pyboy/**/*.so
 
 /recordings
+/screenshots
 
 /bin
 /include
@@ -80,9 +87,10 @@ Projects/Projects.blg
 Projects/Projects.out
 Projects/Projects.log
 
-bootrom/bootrom.map
-bootrom/bootrom.obj
-bootrom/bootrom.sym
+bootrom/bootrom*.map
+bootrom/bootrom*.obj
+bootrom/bootrom*.sym
+bootrom/bootrom*.gb
 bootrom/logo.asm
 bootrom/pyboy.png
 bootrom/PYBOY_ROM.bin
@@ -90,12 +98,12 @@ bootrom/PYBOY_ROM.bin
 default_rom/default_rom.map
 default_rom/default_rom.obj
 default_rom/default_rom.sym
-!/pyboy/default_rom.gb
+!default_rom.gb
 
 test.replay
 ci_secrets.tar
 
-mooneye/
-blargg/
-
-pyboy/core/debug.pxi
+/mooneye/
+/blargg/
+/GB Tests/
+/SameSuite/

@@ -19,7 +19,7 @@ class MBC2(BaseMBC):
             else:
                 if value == 0:
                     value = 1
-                self.rombank_selected = value
+                self.rombank_selected = value % self.external_rom_count
         elif 0xA000 <= address < 0xC000:
             if self.rambanks is None:
                 logger.warning(
@@ -32,13 +32,13 @@ class MBC2(BaseMBC):
                 # MBC2 includes built-in RAM of 512 x 4 bits (Only the 4 LSBs are used)
                 self.rambanks[0][address % 512] = value | 0b11110000
         else:
-            logger.error("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000]
+            return self.rombanks[self.rombank_selected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: %s" % hex(address))

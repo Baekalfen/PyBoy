@@ -11,15 +11,14 @@ import numpy as np
 import pytest
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.constants import COLS, ROWS
-from tests.utils import tetris_rom
 
 py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"
 
 
 @pytest.fixture
-def pyboy():
-    pyboy = PyBoy(tetris_rom, window_type="headless", disable_input=True, game_wrapper=True)
+def pyboy(tetris_rom):
+    pyboy = PyBoy(tetris_rom, window_type="dummy", disable_input=True, game_wrapper=True)
     pyboy.set_emulation_speed(0)
     return pyboy
 
@@ -39,11 +38,7 @@ def tiles_id():
     return {"BLANK": 47, "Z": 130, "DEADBLOCK": 135}
 
 
-@pytest.mark.skipif(
-    is_pypy or bool(os.getenv("MSYS")) or (not tetris_rom) or (py_version == "3.9") or
-    (sys.platform == "win32" and py_version == "3.8"), # Gym isn't supported on 3.9 and Windows has install issues
-    reason="This requires gym, which doesn't work on this platform"
-)
+@pytest.mark.skipif(is_pypy, reason="This requires gym, which doesn't work on this platform")
 class TestOpenAIGym:
     def test_raw(self, pyboy):
         env = pyboy.openai_gym(observation_type="raw", action_type="press")

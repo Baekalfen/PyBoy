@@ -54,8 +54,8 @@ class MBC1(BaseMBC):
             return self.rombanks[self.rombank_selected][address]
         elif 0x4000 <= address < 0x8000:
             self.rombank_selected = \
-                    (self.bank_select_register2 << 5) % self.external_rom_count | self.bank_select_register1
-            return self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000]
+                    ((self.bank_select_register2 << 5) | self.bank_select_register1) % self.external_rom_count
+            return self.rombanks[self.rombank_selected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: %s" % hex(address))
@@ -64,10 +64,10 @@ class MBC1(BaseMBC):
                 return 0xFF
 
             if self.memorymodel == 1:
-                self.rambank_selected = self.bank_select_register2
+                self.rambank_selected = self.bank_select_register2 % self.external_ram_count
             else:
                 self.rambank_selected = 0
-            return self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000]
+            return self.rambanks[self.rambank_selected][address - 0xA000]
         else:
             logger.error("Reading address invalid: %s" % address)
 

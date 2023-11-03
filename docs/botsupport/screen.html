@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>pyboy.botsupport.screen API documentation</title>
 <meta name="description" content="This class gives access to the frame buffer and other screen parameters of PyBoy." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -67,7 +67,7 @@ class Screen:
         to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
         of the tile map.
 
-        For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf),
+        For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
         or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
 
         Returns
@@ -141,8 +141,7 @@ class Screen:
         numpy.ndarray:
             Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
-        return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-        # return self.mb.lcd.renderer.screen_buffer_as_ndarray()
+        return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
 
     def screen_image(self):
         &#34;&#34;&#34;
@@ -164,7 +163,8 @@ class Screen:
         # NOTE: Might have room for performance improvement
         # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
         # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
+        # FIXME: FORMAT IS BGR NOT RGB!!!
+        return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], &#34;RGB&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -209,7 +209,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
         of the tile map.
 
-        For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf),
+        For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
         or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
 
         Returns
@@ -283,8 +283,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         numpy.ndarray:
             Screendata in `ndarray` of bytes with shape (160, 144, 3)
         &#34;&#34;&#34;
-        return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-        # return self.mb.lcd.renderer.screen_buffer_as_ndarray()
+        return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
 
     def screen_image(self):
         &#34;&#34;&#34;
@@ -306,7 +305,8 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         # NOTE: Might have room for performance improvement
         # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
         # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-        return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
+        # FIXME: FORMAT IS BGR NOT RGB!!!
+        return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], &#34;RGB&#34;)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -318,7 +318,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
 that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
 to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
 of the tile map.</p>
-<p>For more details, see "7.4 Viewport" in the <a href="https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf">report</a>,
+<p>For more details, see "7.4 Viewport" in the <a href="https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf">report</a>,
 or the Pan Docs under <a href="http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling">LCD Position and Scrolling</a>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -336,7 +336,7 @@ or the Pan Docs under <a href="http://bgb.bircd.org/pandocs.htm#lcdpositionandsc
     to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
     of the tile map.
 
-    For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/PyBoy.pdf),
+    For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
     or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
 
     Returns
@@ -491,8 +491,7 @@ subject to change.</p>
     numpy.ndarray:
         Screendata in `ndarray` of bytes with shape (160, 144, 3)
     &#34;&#34;&#34;
-    return np.frombuffer(self.raw_screen_buffer(), dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]
-    # return self.mb.lcd.renderer.screen_buffer_as_ndarray()</code></pre>
+    return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]</code></pre>
 </details>
 </dd>
 <dt id="pyboy.botsupport.screen.Screen.screen_image"><code class="name flex">
@@ -532,7 +531,8 @@ and join our Discord channel for more help.</p>
     # NOTE: Might have room for performance improvement
     # It&#39;s not possible to use the following, as the byte-order (endianess) isn&#39;t supported in Pillow
     # Image.frombytes(&#39;RGBA&#39;, self.buffer_dims, self.screen_buffer()).show()
-    return Image.fromarray(self.screen_ndarray(), &#34;RGB&#34;)</code></pre>
+    # FIXME: FORMAT IS BGR NOT RGB!!!
+    return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], &#34;RGB&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -571,7 +571,7 @@ and join our Discord channel for more help.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

@@ -24,6 +24,8 @@ SPF = 1 / 60. # inverse FPS (frame-per-second)
 
 defaults = {
     "color_palette": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
+    "cgb_color_palette": ((0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000), (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000),
+                          (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000)),
     "scale": 3,
     "window_type": "SDL2",
 }
@@ -35,9 +37,10 @@ class PyBoy:
         gamerom_file,
         *,
         bootrom_file=None,
-        profiling=False,
         disable_renderer=False,
         sound=False,
+        sound_emulated=False,
+        cgb=None,
         randomize=False,
         **kwargs
     ):
@@ -50,19 +53,19 @@ class PyBoy:
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
-        GitHub, if other methods are needed for your projects. Take a look at `interface_example.py` or `tetris_bot.py`
-        for a crude "bot", which interacts with the game.
+        GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
+        "bots", which interact with the game.
 
         Only the `gamerom_file` argument is required.
 
         Args:
-            gamerom_file (str): Filepath to a game-ROM for the original Game Boy.
+            gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
             bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            profiling (bool): Profile the emulator and report opcode usage (internal use).
             disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
             color_palette (tuple): Specify the color palette to use for rendering.
+            cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
         `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
@@ -82,10 +85,12 @@ class PyBoy:
             gamerom_file,
             bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
             kwargs["color_palette"],
+            kwargs["cgb_color_palette"],
             disable_renderer,
             sound,
+            sound_emulated,
+            cgb,
             randomize=randomize,
-            profiling=profiling,
         )
 
         # Performance measures
@@ -123,27 +128,27 @@ class PyBoy:
         if self.stopped:
             return True
 
-        t_start = time.perf_counter() # Change to _ns when PyPy supports it
+        t_start = time.perf_counter_ns()
         self._handle_events(self.events)
-        t_pre = time.perf_counter()
+        t_pre = time.perf_counter_ns()
         if not self.paused:
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
             else:
                 self.frame_count += 1
-        t_tick = time.perf_counter()
+        t_tick = time.perf_counter_ns()
         self._post_tick()
-        t_post = time.perf_counter()
+        t_post = time.perf_counter_ns()
 
-        secs = t_pre - t_start
-        self.avg_pre = 0.9 * self.avg_pre + 0.1*secs
+        nsecs = t_pre - t_start
+        self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
 
-        secs = t_tick - t_pre
-        self.avg_tick = 0.9 * self.avg_tick + 0.1*secs
+        nsecs = t_tick - t_pre
+        self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
 
-        secs = t_post - t_tick
-        self.avg_post = 0.9 * self.avg_post + 0.1*secs
+        nsecs = t_post - t_tick
+        self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
         return self.quitting
 
@@ -156,7 +161,7 @@ class PyBoy:
             elif event == WindowEvent.RELEASE_SPEED_UP:
                 # Switch between unlimited and 1x real-time emulation speed
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
-                logger.info("Speed limit: %s" % self.target_emulationspeed)
+                logger.debug("Speed limit: %s" % self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
                 with open(self.gamerom_file + ".state", "wb") as f:
                     self.mb.save_state(IntIOWrapper(f))
@@ -213,7 +218,7 @@ class PyBoy:
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
         self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick) / SPF * 100)
-        self.window_title += " Emulation: x%d" % (round(SPF / avg_emu) if avg_emu != 0 else 0)
+        self.window_title += " Emulation: x%s" % (round(SPF / avg_emu) if avg_emu > 0 else "INF")
         if self.paused:
             self.window_title += "[PAUSED]"
         self.window_title += self.plugin_manager.window_title()
@@ -221,6 +226,12 @@ class PyBoy:
 
     def __del__(self):
         self.stop(save=False)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
 
     def stop(self, save=True):
         """
@@ -237,9 +248,6 @@ class PyBoy:
             self.plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
-
-    def _cpu_hitrate(self):
-        return self.mb.cpu.hitrate
 
     ###################################################################
     # Scripts and bot methods
@@ -271,7 +279,7 @@ class PyBoy:
             action_type (str): Define how the agent will interact with button inputs
             * `"press"`: The agent will only press inputs for 1 frame an then release it.
             * `"toggle"`: The agent will toggle inputs, first time it press and second time it release.
-            * `"all"`: The agent have acces to all inputs, press and release are separated.
+            * `"all"`: The agent have access to all inputs, press and release are separated.
 
             simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
 
@@ -472,6 +480,8 @@ class PyBoy:
 
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
+        Some window types do not implement a frame-limiter, and will always run at full speed.
+
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         """
@@ -495,7 +505,7 @@ class PyBoy:
         """
         Disable or enable rendering
         """
-        self.mb.renderer.disable_renderer = not value
+        self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck

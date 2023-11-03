@@ -3,30 +3,33 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import ctypes
 import logging
 import os
 import re
 import zlib
 from array import array
 from base64 import b64decode
+from ctypes import c_void_p
 
-import sdl2
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
+from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
 
-logger = logging.getLogger(__name__)
-
 try:
-    from cython import address, compiled
+    from cython import compiled
     cythonmode = compiled
 except ImportError:
     cythonmode = False
-if not cythonmode:
-    exec("NULL = None", globals(), locals())
+
+try:
+    import sdl2
+except ImportError:
+    sdl2 = None
+
+logger = logging.getLogger(__name__)
 
 # Mask colors:
 COLOR = 0x00000000
@@ -84,6 +87,8 @@ class Debug(PyBoyWindowPlugin):
 
         if not self.enabled():
             return
+
+        self.cgb = mb.cgb
 
         self.rom_symbols = {}
         if pyboy_argv.get("ROM"):
@@ -184,19 +189,33 @@ class Debug(PyBoyWindowPlugin):
         )
         window_pos += 8 * 60
 
+        window_pos = 0
         tile_data_width = 16 * 8 # Change the 16 to however wide you want the tile window
         tile_data_height = ((constants.TILES * 8) // tile_data_width) * 8
-        self.tiledata = TileDataWindow(
+        self.tiledata0 = TileDataWindow(
             pyboy,
             mb,
             pyboy_argv,
             scale=3,
-            title="Tile Data",
+            title="Tile Data0",
             width=tile_data_width,
             height=tile_data_height,
             pos_x=window_pos,
-            pos_y=0
+            pos_y=(256 * self.tile1.scale) + 128
         )
+        if self.cgb:
+            window_pos += 512
+            self.tiledata1 = TileDataWindow(
+                pyboy,
+                mb,
+                pyboy_argv,
+                scale=3,
+                title="Tile Data1",
+                width=tile_data_width,
+                height=tile_data_height,
+                pos_x=window_pos,
+                pos_y=(256 * self.tile1.scale) + 128
+            )
 
         for _b in (self.pyboy_argv.get("breakpoints") or "").split(","):
             b = _b.strip()
@@ -213,7 +232,9 @@ class Debug(PyBoyWindowPlugin):
     def post_tick(self):
         self.tile1.post_tick()
         self.tile2.post_tick()
-        self.tiledata.post_tick()
+        self.tiledata0.post_tick()
+        if self.cgb:
+            self.tiledata1.post_tick()
         self.sprite.post_tick()
         self.spriteview.post_tick()
         self.memory.post_tick()
@@ -223,7 +244,9 @@ class Debug(PyBoyWindowPlugin):
             events = sdl2_event_pump(events)
         events = self.tile1.handle_events(events)
         events = self.tile2.handle_events(events)
-        events = self.tiledata.handle_events(events)
+        events = self.tiledata0.handle_events(events)
+        if self.cgb:
+            events = self.tiledata1.handle_events(events)
         events = self.sprite.handle_events(events)
         events = self.spriteview.handle_events(events)
         events = self.memory.handle_events(events)
@@ -234,7 +257,14 @@ class Debug(PyBoyWindowPlugin):
             sdl2.SDL_Quit()
 
     def enabled(self):
-        return self.pyboy_argv.get("debug")
+        if self.pyboy_argv.get("debug"):
+            if not sdl2:
+                logger.error("Failed to import sdl2, needed for debug window")
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def parse_bank_addr_sym_label(self, command):
         if ":" in command:
@@ -328,17 +358,17 @@ def make_buffer(w, h):
     buf = array("B", [0x55] * (w*h*4))
     if cythonmode:
         buf0 = memoryview(buf).cast("I", shape=(h, w))
-        buf_p = None
     else:
         view = memoryview(buf).cast("I")
         buf0 = [view[i:i + w] for i in range(0, w * h, w)]
-        buf_p = ctypes.c_void_p(buf.buffer_info()[0])
+    buf_p = c_void_p(buf.buffer_info()[0])
     return buf, buf0, buf_p
 
 
 class BaseDebugWindow(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv, *, scale, title, width, height, pos_x, pos_y):
         super().__init__(pyboy, mb, pyboy_argv)
+        self.cgb = mb.cgb
         self.scale = scale
         self.width, self.height = width, height
         self.base_title = title
@@ -379,14 +409,19 @@ class BaseDebugWindow(PyBoyWindowPlugin):
 
     def post_tick(self):
         self.update_title()
-        self._update_display()
+        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width * 4)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
+        sdl2.SDL_RenderPresent(self._sdlrenderer)
+        sdl2.SDL_RenderClear(self._sdlrenderer)
 
     ##########################
     # Internal functions
-    def copy_tile(self, tile_cache0, t, xx, yy, to_buffer):
+    def copy_tile(self, from_buffer, t, xx, yy, to_buffer, hflip, vflip, palette):
         for y in range(8):
+            _y = 7 - y if vflip else y
             for x in range(8):
-                to_buffer[yy + y][xx + x] = tile_cache0[y + t*8][x]
+                _x = 7 - x if hflip else x
+                to_buffer[yy + y][xx + x] = palette[from_buffer[_y + t*8][_x]]
 
     def mark_tile(self, x, y, color, height, width, grid):
         tw = width # Tile width
@@ -424,12 +459,10 @@ class TileViewWindow(BaseDebugWindow):
         self.tilemap = tilemap.TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
 
     def post_tick(self):
-        tile_cache0 = self.renderer._tilecache
-
         # Updating screen buffer by copying tiles from cache
         mem_offset = self.tilemap.map_offset - constants.VRAM_OFFSET
         for n in range(mem_offset, mem_offset + 0x400):
-            tile_index = self.mb.lcd.VRAM[n]
+            tile_index = self.mb.lcd.VRAM0[n]
 
             # Check the tile source and add offset
             # http://problemkaputt.de/pandocs.htm#lcdcontrolregister
@@ -441,7 +474,27 @@ class TileViewWindow(BaseDebugWindow):
             tile_column = (n-mem_offset) % 32
             tile_row = (n-mem_offset) // 32
 
-            self.copy_tile(tile_cache0, tile_index, tile_column * 8, tile_row * 8, self.buf0)
+            # tilecache = None
+            # palette_rgb = None
+            if self.cgb:
+                palette, vbank, horiflip, vertflip, bg_priority = self.renderer._cgb_get_background_map_attributes(
+                    self.mb.lcd, n
+                )
+                self.renderer.update_tilecache1(self.mb.lcd, tile_index, 1)
+                self.tilecache = (self.renderer._tilecache1 if vbank else self.renderer._tilecache0)
+                self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb # TODO: Select palette by adding offset
+            else:
+                # Fake palette index
+                palette = 0
+                self.renderer.update_tilecache0(self.mb.lcd, tile_index, 0)
+                self.tilecache = self.renderer._tilecache0
+                horiflip, vertflip = False, False
+                self.palette_rgb = self.mb.lcd.BGP.palette_mem_rgb
+
+            self.copy_tile(
+                self.tilecache, tile_index, tile_column * 8, tile_row * 8, self.buf0, horiflip, vertflip,
+                self.palette_rgb
+            )
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
@@ -540,13 +593,30 @@ class TileViewWindow(BaseDebugWindow):
 
 
 class TileDataWindow(BaseDebugWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tilecache_select = 0 if "0" in kwargs.get("title") else 1
+
     def post_tick(self):
-        tile_cache0 = self.renderer._tilecache
+        # TODO: We could select different palettes on CGB
+        if self.tilecache_select:
+            tilecache = self.renderer._tilecache1
+        else:
+            tilecache = self.renderer._tilecache0
+
+        if self.cgb:
+            self.palette_rgb = self.mb.lcd.bcpd.palette_mem_rgb # TODO: Select palette by adding offset
+        else:
+            self.palette_rgb = self.mb.lcd.BGP.palette_mem_rgb
 
         for t in range(constants.TILES):
+            if self.tilecache_select:
+                self.renderer.update_tilecache1(self.mb.lcd, t, 1)
+            else:
+                self.renderer.update_tilecache0(self.mb.lcd, t, 0)
             xx = (t*8) % self.width
             yy = ((t*8) // self.width) * 8
-            self.copy_tile(tile_cache0, t, xx, yy, self.buf0)
+            self.copy_tile(tilecache, t, xx, yy, self.buf0, False, False, self.palette_rgb)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
@@ -583,19 +653,49 @@ class TileDataWindow(BaseDebugWindow):
 
 class SpriteWindow(BaseDebugWindow):
     def post_tick(self):
-        tile_cache0 = self.renderer._tilecache
 
+        # TODO: Could we use scanline_sprites with modified arguments to render all of this?
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         for n in range(0, 0xA0, 4):
             # x = lcd.OAM[n]
             # y = lcd.OAM[n+1]
             t = self.mb.lcd.OAM[n + 2]
-            # attributes = lcd.OAM[n+3]
+            attributes = self.mb.lcd.OAM[n + 3]
             xx = ((n//4) * 8) % self.width
             yy = (((n//4) * 8) // self.width) * sprite_height
-            self.copy_tile(tile_cache0, t, xx, yy, self.buf0)
+
+            if self.cgb:
+                palette = attributes & 0b111
+                if attributes & 0b1000:
+                    self.renderer.update_spritecache1(self.mb.lcd, t, 1)
+                    if self.mb.lcd._LCDC.sprite_height:
+                        self.renderer.update_spritecache1(self.mb.lcd, t + 1, 1)
+                    self.spritecache = self.renderer._spritecache1
+                else:
+                    self.renderer.update_spritecache0(self.mb.lcd, t, 0)
+                    if self.mb.lcd._LCDC.sprite_height:
+                        self.renderer.update_spritecache0(self.mb.lcd, t + 1, 0)
+                    self.spritecache = self.renderer._spritecache0
+                self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb # TODO: Select palette by adding offset
+            else:
+                # Fake palette index
+                palette = 0
+                if attributes & 0b10000:
+                    self.renderer.update_spritecache1(self.mb.lcd, t, 0)
+                    if self.mb.lcd._LCDC.sprite_height:
+                        self.renderer.update_spritecache1(self.mb.lcd, t + 1, 0)
+                    self.spritecache = self.renderer._spritecache1
+                    self.palette_rgb = self.mb.lcd.OBP1.palette_mem_rgb
+                else:
+                    self.renderer.update_spritecache0(self.mb.lcd, t, 0)
+                    if self.mb.lcd._LCDC.sprite_height:
+                        self.renderer.update_spritecache0(self.mb.lcd, t + 1, 0)
+                    self.spritecache = self.renderer._spritecache0
+                    self.palette_rgb = self.mb.lcd.OBP0.palette_mem_rgb
+
+            self.copy_tile(self.spritecache, t, xx, yy, self.buf0, False, False, self.palette_rgb)
             if sprite_height:
-                self.copy_tile(tile_cache0, t + 1, xx, yy + 8, self.buf0)
+                self.copy_tile(self.spritecache, t + 1, xx, yy + 8, self.buf0, False, False, self.palette_rgb)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
@@ -660,7 +760,9 @@ class SpriteViewWindow(BaseDebugWindow):
             for x in range(constants.COLS):
                 self.buf0[y][x] = SPRITE_BACKGROUND
 
-        self.mb.lcd.renderer.render_sprites(self.mb.lcd, self.buf0, True)
+        for ly in range(144):
+            self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, True)
+
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
 
@@ -715,7 +817,11 @@ class MemoryWindow(BaseDebugWindow):
         self.font_texture = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
         )
-        self._prepare_font_texture()
+
+        sdl2.SDL_UpdateTexture(self.font_texture, None, self.fbuf_p, 4 * 8)
+        sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+        sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
+        sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
 
         # Persistent to make Cython happy...
         self.src = sdl2.SDL_Rect(0, 0, 8, 16)
@@ -786,12 +892,7 @@ class MemoryWindow(BaseDebugWindow):
             if self.dst.x > self.width - 8:
                 logger.warn(f"Text overrun while printing {bytes(text).decode('cp437')}")
                 break
-            if cythonmode:
-                sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, address(self.src), address(self.dst))
-            else:
-                exec(
-                    "sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)", globals(), locals()
-                )
+            sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)
             self.dst.x += 8
 
     def post_tick(self):
@@ -832,33 +933,7 @@ class MemoryWindow(BaseDebugWindow):
                 self.shift_down = False
             elif event == WindowEvent._INTERNAL_MOUSE:
                 # Scrolling
-                if event.window_id == self.window_id:
+                if event.window_id == self.window_id and event.mouse_x == -1 and event.mouse_y == -1:
                     self._scroll_view(event.mouse_scroll_y * -0x100)
 
         return events
-
-
-# Unfortunately CPython/PyPy code has to be hidden in an exec call to
-# prevent Cython from trying to parse it. This block provides the
-# functions that are otherwise implemented as inlined cdefs in the pxd
-if not cythonmode:
-    exec(
-        """
-def _update_display(self):
-    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width*4)
-    sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
-    sdl2.SDL_RenderPresent(self._sdlrenderer)
-    sdl2.SDL_RenderClear(self._sdlrenderer)
-
-BaseDebugWindow._update_display = _update_display
-
-
-def _prepare_font_texture(self):
-    sdl2.SDL_UpdateTexture(self.font_texture, NULL, self.fbuf_p, 4 * 8)
-    sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
-    sdl2.SDL_SetTextureColorMod(self.font_texture, *self.fg_color)
-    sdl2.SDL_SetRenderDrawColor(self._sdlrenderer, *self.bg_color, 0xFF)
-
-MemoryWindow._prepare_font_texture = _prepare_font_texture
-""", globals(), locals()
-    )

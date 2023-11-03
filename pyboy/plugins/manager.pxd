@@ -19,6 +19,7 @@ from pyboy.plugins.screenshot_recorder cimport ScreenshotRecorder
 from pyboy.plugins.game_wrapper_super_mario_land cimport GameWrapperSuperMarioLand
 from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
 from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
+from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 # imports end
 from pyboy.plugins.base_plugin cimport PyBoyPlugin, PyBoyWindowPlugin
 
@@ -42,6 +43,7 @@ cdef class PluginManager:
     cdef public GameWrapperSuperMarioLand game_wrapper_super_mario_land
     cdef public GameWrapperTetris game_wrapper_tetris
     cdef public GameWrapperKirbyDreamLand game_wrapper_kirby_dream_land
+    cdef public GameWrapperPokemonGen1 game_wrapper_pokemon_gen1
     cdef bint window_sdl2_enabled
     cdef bint window_open_gl_enabled
     cdef bint window_headless_enabled
@@ -56,13 +58,14 @@ cdef class PluginManager:
     cdef bint game_wrapper_super_mario_land_enabled
     cdef bint game_wrapper_tetris_enabled
     cdef bint game_wrapper_kirby_dream_land_enabled
+    cdef bint game_wrapper_pokemon_gen1_enabled
     # plugin_cdef end
 
-    cdef list handle_events(self, list)
-    cdef void post_tick(self)
-    cdef void _post_tick_windows(self)
-    cdef void frame_limiter(self, int)
-    cdef str window_title(self)
-    cdef void stop(self)
-    cdef void _set_title(self)
-    cdef void handle_breakpoint(self)
+    cdef list handle_events(self, list) noexcept
+    cdef void post_tick(self) noexcept
+    cdef void _post_tick_windows(self) noexcept
+    cdef void frame_limiter(self, int) noexcept
+    cdef str window_title(self) noexcept
+    cdef void stop(self) noexcept
+    cdef void _set_title(self) noexcept
+    cdef void handle_breakpoint(self) noexcept

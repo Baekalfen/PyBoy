@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>pyboy.plugins.base_plugin API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -96,10 +96,10 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
         scale = pyboy_argv.get(&#34;scale&#34;)
         self.scale = scale
-        logger.info(&#34;%s initialization&#34; % self.__class__.__name__)
+        logger.debug(&#34;%s initialization&#34; % self.__class__.__name__)
 
         self._scaledresolution = (scale * COLS, scale * ROWS)
-        logger.info(&#34;Scale: x%s %s&#34; % (self.scale, self._scaledresolution))
+        logger.debug(&#34;Scale: x%s %s&#34; % (self.scale, self._scaledresolution))
 
         self.enable_title = True
         if not cythonmode:
@@ -126,6 +126,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
+        self.tilemap_window = self.pyboy.botsupport_manager().tilemap_window()
+        self.tilemap_use_background = True
+        self.sprite_offset = 0
         self.game_has_started = False
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
@@ -194,12 +197,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
         &#34;&#34;&#34;
         raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)
 
-    def game_over(self):
-        &#34;&#34;&#34;
-        After calling `start_game`, you can call this method at any time to know if the game is over.
-        &#34;&#34;&#34;
-        raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)
-
     def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
             self._cached_sprites_on_screen = []
@@ -226,13 +223,24 @@ class PyBoyGameWrapper(PyBoyPlugin):
                     for x in range(width):
                         _x = (xx+x+SCX) % 32
                         _y = (yy+y+SCY) % 32
-                        self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                        if self.tilemap_use_background:
+                            self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                        else:
+                            self._cached_game_area_tiles[y][x] = self.tilemap_window.tile_identifier(_x, _y)
             else:
-                self._cached_game_area_tiles = np.asarray(
-                    self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
-                )
+                if self.tilemap_use_background:
+                    self._cached_game_area_tiles = np.asarray(
+                        self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
+                    )
+                else:
+                    self._cached_game_area_tiles = np.asarray(
+                        self.tilemap_window[xx:xx + width, yy:yy + height], dtype=np.uint32
+                    )
             self._tile_cache_invalid = False
         return self._cached_game_area_tiles
+
+    def use_background(self, value):
+        self.tilemap_use_background = value
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -253,7 +261,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
             _x = (s.x // 8) - xx
             _y = (s.y // 8) - yy
             if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
-                tiles_matrix[_y][_x] = s.tile_identifier
+                tiles_matrix[_y][
+                    _x] = s.tile_identifier + self.sprite_offset # Adding offset to try to seperate sprites from tiles
         return tiles_matrix
 
     def _game_area_np(self, observation_type=&#34;tiles&#34;):
@@ -315,6 +324,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
+        self.tilemap_window = self.pyboy.botsupport_manager().tilemap_window()
+        self.tilemap_use_background = True
+        self.sprite_offset = 0
         self.game_has_started = False
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
@@ -383,12 +395,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
         &#34;&#34;&#34;
         raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)
 
-    def game_over(self):
-        &#34;&#34;&#34;
-        After calling `start_game`, you can call this method at any time to know if the game is over.
-        &#34;&#34;&#34;
-        raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)
-
     def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
             self._cached_sprites_on_screen = []
@@ -415,13 +421,24 @@ class PyBoyGameWrapper(PyBoyPlugin):
                     for x in range(width):
                         _x = (xx+x+SCX) % 32
                         _y = (yy+y+SCY) % 32
-                        self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                        if self.tilemap_use_background:
+                            self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                        else:
+                            self._cached_game_area_tiles[y][x] = self.tilemap_window.tile_identifier(_x, _y)
             else:
-                self._cached_game_area_tiles = np.asarray(
-                    self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
-                )
+                if self.tilemap_use_background:
+                    self._cached_game_area_tiles = np.asarray(
+                        self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
+                    )
+                else:
+                    self._cached_game_area_tiles = np.asarray(
+                        self.tilemap_window[xx:xx + width, yy:yy + height], dtype=np.uint32
+                    )
             self._tile_cache_invalid = False
         return self._cached_game_area_tiles
+
+    def use_background(self, value):
+        self.tilemap_use_background = value
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -442,7 +459,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
             _x = (s.x // 8) - xx
             _y = (s.y // 8) - yy
             if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
-                tiles_matrix[_y][_x] = s.tile_identifier
+                tiles_matrix[_y][
+                    _x] = s.tile_identifier + self.sprite_offset # Adding offset to try to seperate sprites from tiles
         return tiles_matrix
 
     def _game_area_np(self, observation_type=&#34;tiles&#34;):
@@ -479,6 +497,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand" href="game_wrapper_kirby_dream_land.html#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand">GameWrapperKirbyDreamLand</a></li>
+<li><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1" href="game_wrapper_pokemon_gen1.html#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1">GameWrapperPokemonGen1</a></li>
 <li><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand" href="game_wrapper_super_mario_land.html#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand">GameWrapperSuperMarioLand</a></li>
 <li><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="game_wrapper_tetris.html#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></li>
 </ul>
@@ -566,6 +585,19 @@ instantly.</p>
     raise NotImplementedError(&#34;game_over not implemented in game wrapper&#34;)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.use_background"><code class="name flex">
+<span>def <span class="ident">use_background</span></span>(<span>self, value)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def use_background(self, value):
+    self.tilemap_use_background = value</code></pre>
+</details>
+</dd>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area"><code class="name flex">
 <span>def <span class="ident">game_area</span></span>(<span>self)</span>
 </code></dt>
@@ -599,7 +631,8 @@ instantly.</p>
         _x = (s.x // 8) - xx
         _y = (s.y // 8) - yy
         if 0 &lt;= _y &lt; height and 0 &lt;= _x &lt; width:
-            tiles_matrix[_y][_x] = s.tile_identifier
+            tiles_matrix[_y][
+                _x] = s.tile_identifier + self.sprite_offset # Adding offset to try to seperate sprites from tiles
     return tiles_matrix</code></pre>
 </details>
 </dd>
@@ -627,6 +660,7 @@ instantly.</p>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.use_background" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.use_background">use_background</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area" href="#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area">game_area</a></code></li>
 </ul>
 </li>
@@ -636,7 +670,7 @@ instantly.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

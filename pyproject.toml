@@ -1,0 +1,90 @@
+[project]
+name = "pyboy"
+version = "1.6.7"
+authors = [
+    {name = "Mads Ynddal", email = "mads@ynddal.dk"}
+]
+keywords = ["gameboy", "game boy", "emulator", "cython", "pypy"]
+description = "Game Boy emulator written in Python"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "License :: Free for non-commercial use",
+    "Operating System :: OS Independent",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: System :: Emulators",
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "numpy",
+    "pysdl2",
+    "pysdl2-dll",
+]
+
+[project.optional-dependencies]
+all = [
+    "pyopengl",
+    "markdown",
+    "pdoc3",
+    "gym",
+]
+
+[project.urls]
+Homepage = "https://github.com/Baekalfen/PyBoy"
+Documentation = "https://docs.pyboy.dk/index.html"
+Repository = "https://github.com/Baekalfen/PyBoy.git"
+
+[project.scripts]
+pyboy = "pyboy.__main__:main"
+
+[build-system]
+requires = [
+    "setuptools>=61.0.0",
+    "wheel",
+    "cython>=3.0.0,!=3.0.4; platform_python_implementation == 'CPython'",
+    "numpy",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyboy*"]
+
+[tool.setuptools.package-data]
+pyboy = ["pyboy/core/bootrom_dmg.bin"]
+"*" = [
+    "**/*.pxi",
+    "**/*.pyx",
+    "**/*.pxd",
+    "**/*.c",
+    "**/*.h",
+    "**/bootrom*.bin",
+    "**/font.txt"
+]
+
+[tool.isort]
+line_length = 120
+
+[tool.yapf]
+based_on_style = "facebook"
+spaces_before_comment = 1
+column_limit = 120
+align_closing_bracket_with_visual_indent = false
+dedent_closing_brackets = true
+coalesce_brackets = true
+indent_closing_brackets = false
+indent_dictionary_value = true
+join_multiple_lines = false
+split_penalty_after_opening_bracket = 0
+split_penalty_before_if_expr = 30
+split_penalty_for_added_line_split = 30
+split_before_logical_operator = false
+split_before_bitwise_operator = false
+arithmetic_precedence_indication = true

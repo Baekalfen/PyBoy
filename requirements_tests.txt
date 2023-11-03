@@ -1,0 +1,11 @@
+-r requirements.txt
+pillow>=9.1.0
+pytest>=6.0.0
+pytest-xdist
+pytest-lazy-fixture
+pyopengl
+PyOpenGL_accelerate
+gym; platform_python_implementation == 'CPython'
+filelock
+cryptography
+GitPython

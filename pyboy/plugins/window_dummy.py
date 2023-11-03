@@ -17,10 +17,13 @@ class WindowDummy(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.mb.lcd.renderer.disable_renderer = True
+        pyboy._rendering(False)
+        logger.warning(
+            'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
+        )
 
     def enabled(self):
         return self.pyboy_argv.get("window_type") == "dummy"
 
     def set_title(self, title):
-        logger.info(title)
+        logger.debug(title)

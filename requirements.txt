@@ -1,6 +1,6 @@
 # Change in setup.py
-cython>=0.29.16; platform_python_implementation == 'CPython'
-numpy; python_version >= '3.7' or platform_python_implementation == 'PyPy'
-numpy<=1.19; python_version < '3.7' and platform_python_implementation == 'CPython'
-pillow
+setuptools>=61.0.0
+cython>=3.0.0,!=3.0.4; platform_python_implementation == 'CPython'
+numpy
 pysdl2
+pysdl2-dll

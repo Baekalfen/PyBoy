@@ -13,18 +13,19 @@ import pytest
 from PIL import ImageChops
 from pyboy import PyBoy, WindowEvent
 from pyboy.botsupport.tile import Tile
-from tests.utils import BOOTROM_FRAMES_UNTIL_LOGO, any_rom, boot_rom, default_rom, supermarioland_rom, tetris_rom
+
+from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
 
-def test_misc():
+def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     pyboy.tick()
     pyboy.stop(save=False)
 
 
-def test_tiles():
-    pyboy = PyBoy(default_rom, window_type="headless")
+def test_tiles(default_rom):
+    pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     for _ in range(BOOTROM_FRAMES_UNTIL_LOGO):
         pyboy.tick()
@@ -63,19 +64,16 @@ def test_tiles():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not boot_rom or any_rom == default_rom, reason="ROM not present")
-def test_screen_buffer_and_image():
+def test_screen_buffer_and_image(tetris_rom, boot_rom):
     cformat = "RGBA"
-    boot_logo_hash_predigested = b"=\xff\xf9z 6\xf0\xe9\xcb\x05J`PM5\xd4rX+\x1b~z\xef1\xe0\x82\xc4t\x06\x82\x12C"
-    boot_logo_hash_predigested = \
-        b"s\xd1R\x88\xe0a\x14\xd0\xd2\xecOk\xe8b\xae.\x0e\x1e\xb6R\xc2\xe9:\xa2\x0f\xae\xa2\x89M\xbf\xd8|"
+    boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
 
-    pyboy = PyBoy(any_rom, window_type="headless", bootrom_file=boot_rom)
+    pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=boot_rom)
     pyboy.set_emulation_speed(0)
     for n in range(275): # Iterate to boot logo
         pyboy.tick()
 
-    assert pyboy.botsupport_manager().screen().raw_screen_buffer_dims() == (160, 144)
+    assert pyboy.botsupport_manager().screen().raw_screen_buffer_dims() == (144, 160)
     assert pyboy.botsupport_manager().screen().raw_screen_buffer_format() == cformat
 
     boot_logo_hash = hashlib.sha256()
@@ -115,11 +113,10 @@ def test_screen_buffer_and_image():
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not tetris_rom, reason="ROM not present")
-def test_tetris():
+def test_tetris(tetris_rom):
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="headless", game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, bootrom_file="pyboy_fast", window_type="dummy", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     tetris = pyboy.game_wrapper()
     tetris.set_tetromino("T")
@@ -294,8 +291,8 @@ def test_tetris():
                 assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
                 assert tetris.next_tetromino() == "T"
 
-                with open("tmp.state", "wb") as f:
-                    pyboy.save_state(f)
+                tmp_state = io.BytesIO()
+                pyboy.save_state(tmp_state)
                 pyboy.save_state(state_data)
                 break
 
@@ -329,24 +326,22 @@ def test_tetris():
             pre_load_game_board_matrix = game_board_matrix
 
     state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
-    with open("tmp.state", "rb") as f:
-        for _f in [f, state_data]: # Tests both file-written state and in-memory state
-            pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
+    tmp_state.seek(0)
+    for _f in [tmp_state, state_data]: # Tests both file-written state and in-memory state
+        pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
+        pyboy.tick()
+        for frame in range(1016, 1865):
             pyboy.tick()
-            for frame in range(1016, 1865):
-                pyboy.tick()
 
-                if frame == 1864:
-                    game_board_matrix = list(tile_map[2:12, :18])
-                    assert game_board_matrix == pre_load_game_board_matrix
-                    break
-    os.remove("tmp.state")
+            if frame == 1864:
+                game_board_matrix = list(tile_map[2:12, :18])
+                assert game_board_matrix == pre_load_game_board_matrix
+                break
     pyboy.stop(save=False)
 
 
-@pytest.mark.skipif(not supermarioland_rom, reason="ROM not present")
-def test_tilemap_position_list():
-    pyboy = PyBoy(supermarioland_rom, window_type="headless")
+def test_tilemap_position_list(supermarioland_rom):
+    pyboy = PyBoy(supermarioland_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     for _ in range(100):
         pyboy.tick()
@@ -383,7 +378,7 @@ def test_tilemap_position_list():
     pyboy.stop(save=False)
 
 
-def get_set_override():
+def get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     pyboy.tick()

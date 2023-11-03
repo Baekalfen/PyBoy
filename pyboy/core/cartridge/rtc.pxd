@@ -18,10 +18,10 @@ cdef class RTC:
     cdef uint64_t day_carry
     cdef uint64_t halt
 
-    cdef void stop(self)
-    cdef void save_state(self, IntIOInterface)
-    cdef void load_state(self, IntIOInterface, int)
-    cdef void latch_rtc(self)
-    cdef void writecommand(self, uint8_t)
-    cdef uint8_t getregister(self, uint8_t)
-    cdef void setregister(self, uint8_t, uint8_t)
+    cdef void stop(self) noexcept
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef void latch_rtc(self) noexcept
+    cdef void writecommand(self, uint8_t) noexcept
+    cdef uint8_t getregister(self, uint8_t) noexcept
+    cdef void setregister(self, uint8_t, uint8_t) noexcept

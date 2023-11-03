@@ -15,10 +15,10 @@ cdef int ROWS, COLS
 cdef class WindowOpenGL(PyBoyWindowPlugin):
     cdef list events
 
-    cdef void _glkeyboard(self, str, int, int, bint)
-    cdef void _glkeyboardspecial(self, char, int, int, bint)
+    cdef void _glkeyboard(self, str, int, int, bint) noexcept
+    cdef void _glkeyboardspecial(self, char, int, int, bint) noexcept
 
     # TODO: Callbacks don't really work, when Cythonized
-    cpdef void _gldraw(self)
-    @cython.locals(scale=float)
-    cpdef void _glreshape(self, int, int)
+    cpdef void _gldraw(self) noexcept
+    @cython.locals(scale=double)
+    cpdef void _glreshape(self, int, int) noexcept

@@ -5,19 +5,23 @@
 import base64
 import hashlib
 import os
+import os.path
 import platform
+import sys
+from io import BytesIO
+from pathlib import Path
 
+import PIL
 import pytest
+
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.botsupport.tile import Tile
-from tests.utils import boot_rom, default_rom, kirby_rom
 
 is_pypy = platform.python_implementation() == "PyPy"
 
 
-@pytest.mark.skipif(not boot_rom, reason="ROM not present")
-def test_record_replay():
+def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick()
@@ -51,28 +55,6 @@ def test_record_replay():
         "The replay did not result in the expected output"
 
 
-@pytest.mark.skipif(not boot_rom, reason="ROM not present")
-@pytest.mark.skipif(not is_pypy, reason="pyboy.mb.cpu is not accessible with Cython")
-def test_profiling():
-    pyboy = PyBoy(default_rom, window_type="dummy", bootrom_file=boot_rom, profiling=True)
-    pyboy.set_emulation_speed(0)
-    pyboy.tick()
-
-    hitrate = pyboy._cpu_hitrate()
-    CHECK_SUM = 7524
-    assert sum(hitrate) == CHECK_SUM, "The amount of instructions called in the first frame of the boot-ROM has changed"
-
-    assert list(main.profiling_printer(hitrate)) == [
-        "17c          BIT 7,H 2507",
-        " 32       LD (HL-),A 2507",
-        " 20         JR NZ,r8 2507",
-        " af            XOR A 1",
-        " 31        LD SP,d16 1",
-        " 21        LD HL,d16 1",
-    ], "The output of the profiling formatter has changed. Either the output is wrong, or the formatter has changed."
-    pyboy.stop(save=False)
-
-
 def test_argv_parser(*args):
     parser = main.parser
 
@@ -91,7 +73,6 @@ def test_argv_parser(*args):
         "loadstate": None,
         "no_input": False,
         "log_level": "INFO",
-        "profiling": False,
         "record_input": False,
         "rewind": False,
         "scale": 3,
@@ -108,21 +89,13 @@ def test_argv_parser(*args):
 
     # Check flags become True
     flags = parser.parse_args(
-        f"{file_that_exists} --debug --autopause --profiling --rewind --no-input --log-level INFO".split(" ")
+        f"{file_that_exists} --debug --autopause --rewind --no-input --log-level INFO".split(" ")
     ).__dict__
-    for k, v in {
-        "autopause": True,
-        "debug": True,
-        "no_input": True,
-        "log_level": "INFO",
-        "profiling": True,
-        "rewind": True
-    }.items():
+    for k, v in {"autopause": True, "debug": True, "no_input": True, "log_level": "INFO", "rewind": True}.items():
         assert flags[k] == v
 
 
-@pytest.mark.skipif(not kirby_rom, reason="ROM not present")
-def test_tilemaps():
+def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     for _ in range(120):
@@ -176,8 +149,8 @@ def test_tilemaps():
     pyboy.stop(save=False)
 
 
-def test_randomize_ram():
-    pyboy = PyBoy(default_rom) # randomize=False, by default
+def test_randomize_ram(default_rom):
+    pyboy = PyBoy(default_rom, window_type="dummy", randomize=False)
     # RAM banks should all be 0 by default
     assert not any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not zeroed"
     assert not any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not zeroed"
@@ -187,12 +160,72 @@ def test_randomize_ram():
     assert not any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not zeroed"
     pyboy.stop(save=False)
 
-    pyboy = PyBoy(default_rom, randomize=True)
-    # RAM banks should have nonzero values now
+    pyboy = PyBoy(default_rom, window_type="dummy", randomize=True)
+    # RAM banks should have at least one nonzero value now
     assert any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not randomized"
     assert any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not randomized"
+    pyboy.stop(save=False)
+
+
+def test_not_cgb(pokemon_crystal_rom):
+    pyboy = PyBoy(pokemon_crystal_rom, window_type="dummy", cgb=False)
+    pyboy.set_emulation_speed(0)
+    for _ in range(60 * 7):
+        pyboy.tick()
+
+    assert pyboy.botsupport_manager().tilemap_background()[1:16, 16] == [
+        134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
+    ] # Assert that the screen says "Game Boy Color." at the bottom.
+
+    pyboy.stop(save=False)
+
+
+OVERWRITE_PNGS = False
+
+
+@pytest.mark.parametrize("cgb", [False, True, None])
+@pytest.mark.parametrize(
+    "_bootrom, frames", [(pytest.lazy_fixture("boot_cgb_rom"), 120), (pytest.lazy_fixture("boot_rom"), 120), (None, 30)]
+)
+@pytest.mark.parametrize("rom", [pytest.lazy_fixture("tetris_rom"), pytest.lazy_fixture("any_rom_cgb")])
+def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
+    if cgb == False and _bootrom == boot_cgb_rom:
+        pytest.skip("Invalid combination")
+
+    if cgb == None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
+        pytest.skip("Invalid combination")
+
+    pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
+    pyboy.set_emulation_speed(0)
+    for _ in range(frames):
+        pyboy.tick()
+
+    rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
+    png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
+    image = pyboy.botsupport_manager().screen().screen_image()
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        png_buf = BytesIO()
+        image.save(png_buf, "png")
+        with open(png_path, "wb") as f:
+            f.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in png_buf.getvalue()]))
+    else:
+        png_buf = BytesIO()
+        with open(png_path, "rb") as f:
+            data = f.read()
+            png_buf.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in data]))
+        png_buf.seek(0)
+
+        old_image = PIL.Image.open(png_buf)
+        diff = PIL.ImageChops.difference(image, old_image)
+        if diff.getbbox() and not os.environ.get("TEST_CI"):
+            image.show()
+            old_image.show()
+            diff.show()
+        assert not diff.getbbox(), f"Images are different! {(cgb, _bootrom, frames, rom)}"
+
     pyboy.stop(save=False)

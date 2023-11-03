@@ -56,7 +56,7 @@ class Timer:
 
         return False
 
-    def cyclestointerrupt(self):
+    def cycles_to_interrupt(self):
         if self.TAC & 0b100 == 0: # Check if timer is not enabled
             # Large enough, that 'calculate_cycles' will choose 'x'
             return 1 << 16

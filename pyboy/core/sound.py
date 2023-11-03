@@ -7,27 +7,50 @@
 # http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 # http://www.devrs.com/gb/files/hosted/GBSOUND.txt
 
+import logging
 from array import array
 from ctypes import c_void_p
 
-import sdl2
+try:
+    import sdl2
+except ImportError:
+    sdl2 = None
+
+logger = logging.getLogger(__name__)
 
 SOUND_DESYNC_THRESHOLD = 5
 CPU_FREQ = 4213440 # hz
 
 
 class Sound:
-    def __init__(self):
-        # Initialization is handled in the windows, otherwise we'd need this
-        sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO)
+    def __init__(self, enabled, emulate):
+        self.enabled = enabled and (sdl2 is not None)
+        self.emulate = emulate or enabled # Just emulate registers etc.
+        if self.enabled:
+            # Initialization is handled in the windows, otherwise we'd need this
+            if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
+                # Open audio device
+                spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
+                spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
+                self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
 
-        # Open audio device
-        spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
-        spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
-        self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
+                if self.device > 1:
+                    # Start playback (move out of __init__ if needed, maybe for headless)
+                    sdl2.SDL_PauseAudioDevice(self.device, 0)
 
-        self.sample_rate = spec_have.freq
-        self.sampleclocks = CPU_FREQ / self.sample_rate
+                    self.sample_rate = spec_have.freq
+                    self.sampleclocks = CPU_FREQ // self.sample_rate
+                else:
+                    logger.error("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
+                    self.enabled = False # We will continue with emulation
+            else:
+                logger.error("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
+                self.enabled = False # We will continue with emulation
+
+        if not self.enabled:
+            self.sample_rate = 32768
+            self.sampleclocks = CPU_FREQ // self.sample_rate
+
         self.audiobuffer = array("b", [0] * 4096) # Over 2 frames
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
@@ -49,10 +72,9 @@ class Sound:
         self.righttone = False
         self.rightsweep = False
 
-        # Start playback (move out of __init__ if needed, maybe for headless)
-        sdl2.SDL_PauseAudioDevice(self.device, 0)
-
     def get(self, offset):
+        if not self.emulate:
+            return 0
         self.sync()
         if offset < 20:
             i = offset // 5
@@ -83,6 +105,8 @@ class Sound:
             raise IndexError(f"Attempted to read register {offset} in sound memory")
 
     def set(self, offset, value):
+        if not self.emulate:
+            return
         self.sync()
         if offset < 20 and self.poweron:
             i = offset // 5
@@ -97,14 +121,14 @@ class Sound:
         elif offset == 20 and self.poweron: # Control register NR50: Vin enable and volume -- not implemented
             return
         elif offset == 21 and self.poweron: # Control register NR51: Channel stereo enable/panning
-            self.leftnoise = bool(value & 0x80)
-            self.leftwave = bool(value & 0x40)
-            self.lefttone = bool(value & 0x20)
-            self.leftsweep = bool(value & 0x10)
-            self.rightnoise = bool(value & 0x08)
-            self.rightwave = bool(value & 0x04)
-            self.righttone = bool(value & 0x02)
-            self.rightsweep = bool(value & 0x01)
+            self.leftnoise = value & 0x80
+            self.leftwave = value & 0x40
+            self.lefttone = value & 0x20
+            self.leftsweep = value & 0x10
+            self.rightnoise = value & 0x08
+            self.rightwave = value & 0x04
+            self.righttone = value & 0x02
+            self.rightsweep = value & 0x01
             return
         elif offset == 22: # Control register NR52: Sound on/off
             if value & 0x80 == 0: # Sound power off
@@ -123,7 +147,10 @@ class Sound:
 
     def sync(self):
         """Run the audio for the number of clock cycles stored in self.clock"""
-        nsamples = int(self.clock / self.sampleclocks)
+        if not self.emulate:
+            return
+
+        nsamples = self.clock // self.sampleclocks
 
         for i in range(min(2048, nsamples)):
             if self.poweron:
@@ -131,8 +158,6 @@ class Sound:
                 self.tonechannel.run(self.sampleclocks)
                 self.wavechannel.run(self.sampleclocks)
                 self.noisechannel.run(self.sampleclocks)
-                # print(self.leftsweep, self.lefttone, self.leftwave, self.leftnoise)
-                # print(self.rightsweep, self.righttone, self.rightwave, self.rightnoise)
                 sample = ((self.sweepchannel.sample() if self.leftsweep else 0) +
                           (self.tonechannel.sample() if self.lefttone else 0) +
                           (self.wavechannel.sample() if self.leftwave else 0) +
@@ -147,17 +172,20 @@ class Sound:
             else:
                 self.audiobuffer[2 * i] = 0
                 self.audiobuffer[2*i + 1] = 0
-        # Clear queue, if we are behind
-        queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
-        samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
-        if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
-            sdl2.SDL_ClearQueuedAudio(self.device)
 
-        sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
+        if self.enabled:
+            # Clear queue, if we are behind
+            queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
+            samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
+            if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
+                sdl2.SDL_ClearQueuedAudio(self.device)
+
+            sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
         self.clock %= self.sampleclocks
 
     def stop(self):
-        sdl2.SDL_CloseAudioDevice(self.device)
+        if self.enabled:
+            sdl2.SDL_CloseAudioDevice(self.device)
 
     def save_state(self, file):
         pass
@@ -215,23 +243,24 @@ class ToneChannel:
             raise IndexError("Attempt to read register {} in ToneChannel".format(reg))
 
     def setreg(self, reg, val):
-        # print(reg, hex(val))
         if reg == 0:
             return
         elif reg == 1:
-            self.wavsel = val >> 6 & 0x03
+            self.wavsel = (val >> 6) & 0x03
             self.sndlen = val & 0x1F
             self.lengthtimer = 64 - self.sndlen
         elif reg == 2:
-            self.envini = val >> 4 & 0x0F
-            self.envdir = val >> 3 & 0x01
+            self.envini = (val >> 4) & 0x0F
+            self.envdir = (val >> 3) & 0x01
             self.envper = val & 0x07
+            if self.envini == 0 and self.envdir == 0:
+                self.enable = False
         elif reg == 3:
             self.sndper = (self.sndper & 0x700) + val # Is this ever written solo?
             self.period = 4 * (0x800 - self.sndper)
         elif reg == 4:
-            self.uselen = val >> 6 & 0x01
-            self.sndper = (val << 8 & 0x0700) + (self.sndper & 0xFF)
+            self.uselen = (val >> 6) & 0x01
+            self.sndper = ((val << 8) & 0x0700) + (self.sndper & 0xFF)
             self.period = 4 * (0x800 - self.sndper)
             if val & 0x80:
                 self.trigger() # Sync is called first in Sound.set so it's okay to trigger immediately
@@ -284,6 +313,12 @@ class ToneChannel:
         self.periodtimer = self.period
         self.envelopetimer = self.envper
         self.volume = self.envini
+        # TODO: If channel DAC is off (NRx2 & 0xF8 == 0) then this
+        #   will be undone and the channel immediately disabled.
+        #   Probably need a new DAC power state/variable.
+        # For now:
+        if self.envper == 0 and self.envini == 0:
+            self.enable = False
 
 
 class SweepChannel(ToneChannel):
@@ -390,6 +425,8 @@ class WaveChannel:
     def setreg(self, reg, val):
         if reg == 0:
             self.dacpow = val >> 7 & 0x01
+            if self.dacpow == 0:
+                self.enable = False
         elif reg == 1:
             self.sndlen = val
             self.lengthtimer = 256 - self.sndlen
@@ -410,7 +447,7 @@ class WaveChannel:
 
     def getwavebyte(self, offset):
         if self.dacpow:
-            return self.wavetable[self.waveframe]
+            return self.wavetable[self.waveframe % 16]
         else:
             return self.wavetable[offset]
 
@@ -418,7 +455,7 @@ class WaveChannel:
         # In GBA, a write is ignored while the channel is running.
         # Otherwise, it usually goes at the current frame byte.
         if self.dacpow:
-            self.wavetable[self.waveframe] = value
+            self.wavetable[self.waveframe % 16] = value
         else:
             self.wavetable[offset] = value
 
@@ -451,7 +488,7 @@ class WaveChannel:
             return 0
 
     def trigger(self):
-        self.enable = True
+        self.enable = True if self.dacpow else False
         self.lengthtimer = self.lengthtimer or 256
         self.periodtimer = self.period
 
@@ -509,6 +546,8 @@ class NoiseChannel:
             self.envini = val >> 4 & 0x0F
             self.envdir = val >> 3 & 0x01
             self.envper = val & 0x07
+            if self.envini == 0 and self.envdir == 0:
+                self.enable = False
         elif reg == 3:
             self.clkpow = val >> 4 & 0x0F
             self.regwid = val >> 3 & 0x01
@@ -574,3 +613,6 @@ class NoiseChannel:
         self.envelopetimer = self.envper
         self.volume = self.envini
         self.shiftregister = 0x7FFF
+        # TODO: tidy instead of double change variable
+        if self.envper == 0 and self.envini == 0:
+            self.enable = False

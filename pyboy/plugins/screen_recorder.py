@@ -45,7 +45,7 @@ class ScreenRecorder(PyBoyPlugin):
 
     def add_frame(self, frame):
         # Pillow makes artifacts in the output, if we use 'RGB', which is PyBoy's default format
-        self.frames.append(frame.convert("RGBA"))
+        self.frames.append(frame)
 
     def save(self, path=None, fps=60):
         logger.info("ScreenRecorder saving...")

@@ -7,6 +7,7 @@ import array
 import logging
 import os
 
+from pyboy.logger import logger
 from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC
@@ -37,8 +38,10 @@ class BaseMBC:
         self.rambank_selected = 0
         self.rombank_selected = 1
 
+        self.cgb = bool(self.getitem(0x0143) >> 7)
+
         if not os.path.exists(self.filename):
-            logger.info("No RAM file found. Skipping.")
+            logger.debug("No RAM file found. Skipping.")
         else:
             with open(self.filename, "rb") as f:
                 self.load_ram(IntIOWrapper(f))
@@ -101,7 +104,7 @@ class BaseMBC:
         self.rambanks = [array.array("B", [0] * (8*1024)) for _ in range(16)]
 
     def getgamename(self, rombanks):
-        return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).rstrip("\0")
+        return "".join([chr(x) for x in rombanks[0][0x0134:0x0142]]).split("\0")[0]
 
     def setitem(self, address, value):
         raise Exception("Cannot set item in MBC")
@@ -120,7 +123,7 @@ class BaseMBC:
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0][address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected % len(self.rombanks)][address - 0x4000]
+            return self.rombanks[self.rombank_selected][address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: %s" % hex(address))
@@ -131,7 +134,7 @@ class BaseMBC:
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000]
+                return self.rambanks[self.rambank_selected][address - 0xA000]
         else:
             logger.error("Reading address invalid: %s" % address)
 
@@ -170,4 +173,4 @@ class ROMOnly(BaseMBC):
                 self.init_rambanks(EXTERNAL_RAM_TABLE[0x02])
             self.rambanks[self.rambank_selected][address - 0xA000] = value
         else:
-            logger.warning("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
