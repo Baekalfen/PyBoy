@@ -12,6 +12,7 @@ import numpy as np
 from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
+from .gen_1_memory_manager import Gen1MemoryManager
 from . import constants
 from .utils import get_character_index
 
@@ -28,7 +29,7 @@ except ImportError:
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
     """
-    This class wraps Pokemon Red, and provides easy access to score and a "fitness" score for AIs.
+    This class wraps Pokemon Red/Blue.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
@@ -37,6 +38,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def __init__(self, *args, **kwargs):
         self.shape = (20, 18)
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+        self.memory_manager = Gen1MemoryManager(self.pyboy)
 
     def enabled(self):
         return self.pyboy_argv.get("game_wrapper") and ((self.pyboy.cartridge_title() == "POKEMON RED") or
@@ -108,21 +110,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
             )
         )
         # yapf: enable
-
-    def get_int_at_address(self, address, size=2):
-        """Returns an integer from a given address of a specified size."""
-        bytes = []
-        for i in range(size):
-            bytes.append(self.pyboy.get_memory_value(address + i))
-        return int.from_bytes(bytes, byteorder=BYTE_ORDER)
-
-    def set_int_at_address(self, address, value, size=2):
-        """Sets an integer at a given address of a specified size."""
-        bytes = value.to_bytes(2, byteorder=BYTE_ORDER)
-        i = 0
-        for byte in bytes:
-            self.pyboy.set_memory_value(address + i, byte)
-            i += 1
 
     def set_text(self, text, address):
         """Sets text at address.
@@ -219,7 +206,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         Args:
             index (int): Which monster to change (0-5).
         """
-        return self.pyboy.get_memory_value(0xD16B + index)
+        return self.memory_manager.get_pokemon_1_info()
 
     def set_player_monster_nickname(self, index, text):
         """
