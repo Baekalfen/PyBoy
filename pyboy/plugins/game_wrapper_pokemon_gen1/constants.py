@@ -1090,7 +1090,7 @@ MAP_NAMES = [
 'AGATHA\'S ROOM',
 ]
 
-class Status(Enum):
+class Statuses(Enum):
     ASLEEP = 4
     POISONED = 8
     BURNED = 16
