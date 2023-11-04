@@ -323,9 +323,9 @@ class PyBoy:
         """
         return self.mb.getitem(addr)
     
-    def get_consecutive_memory_values(self, addr, num_bytes, byte_order='big'):
+    def get_memory_value(self, addr, num_bytes=1, byte_order='big'):
         """
-        Reads anum_bytes consecutive memory addresses of the Game Boy's current memory state. This will not directly give you access to
+        Reads num_bytes consecutive memory addresses of the Game Boy's current memory state. This will not directly give you access to
         all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
         MBC commands to the virtual cartridge.
 
@@ -336,28 +336,10 @@ class PyBoy:
         """
         bytes = []
         for i in range(num_bytes):
-            bytes.append(self.get_memory_value(addr + i))
+            bytes.append(self.mb.getitem(addr + i))
         return int.from_bytes(bytes, byteorder=byte_order)
 
-    def set_memory_value(self, addr, value):
-        """
-        Write one byte to a given memory address of the Game Boy's current memory state.
-
-        This will not directly give you access to all switchable memory banks.
-
-        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
-        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
-
-        Args:
-            addr (int): Address to write the byte
-            value (int): A byte of data
-        """
-        self.mb.setitem(addr, value)
-
-    def set_consecutive_memory_values(self, addr, value, num_bytes, byte_order='big'):
+    def set_memory_value(self, addr, value, num_bytes=1, byte_order='big'):
         """
         Write consecutive bytes starting at a given memory address of the Game Boy's current memory state.
 
@@ -373,9 +355,9 @@ class PyBoy:
             addr (int): Address to write the byte
             value (int): A byte of data
         """
-        bytes = value.to_bytes(num_bytes, byteorder=self.byte_order)
+        bytes = value.to_bytes(num_bytes, byteorder=byte_order)
         for i, byte in enumerate(bytes):
-            self.pyboy.set_memory_value(addr + i, byte)
+            self.mb.setitem(addr + i, byte)
 
     def override_memory_value(self, rom_bank, addr, value):
         """
