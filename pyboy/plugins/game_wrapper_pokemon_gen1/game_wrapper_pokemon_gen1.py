@@ -13,8 +13,8 @@ from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
 from .core.gen_1_memory_manager import Gen1MemoryManager
-from . import constants
-from .utils import get_character_index
+from .utils import get_character_index, STRING_TERMINATOR, ASCII_DELTA
+from data.constants.status import Statuses
 
 PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
@@ -123,7 +123,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
                 i += 1
             except:
                 pass
-        self.pyboy.set_memory_value(address + i, constants.STRING_TERMINATOR)
+        self.pyboy.set_memory_value(address + i, STRING_TERMINATOR)
 
     def set_rom_text(self, text, bank, address):
         i = 0
@@ -177,10 +177,10 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         while i < cap:
             value = self.pyboy.get_memory_value(address + i)
             try:
-                text += chr(value - constants.ASCII_DELTA)
+                text += chr(value - ASCII_DELTA)
             except:
                 pass
-            if value == constants.STRING_TERMINATOR:
+            if value == STRING_TERMINATOR:
                 break
             i += 1
         return text
@@ -192,19 +192,19 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return self.memory_manager.load_pokemon_from_party(party_index)
 
     def set_player_monster_asleep(self, index):
-        self.set_player_monster_status(index, constants.STATUS_ASLEEP)
+        self.set_player_monster_status(index, Statuses.ASLEEP)
 
     def set_player_monster_poisoned(self, index):
-        self.set_player_monster_status(index, constants.STATUS_POISONED)
+        self.set_player_monster_status(index, Statuses.POISONED)
 
     def set_player_monster_burned(self, index):
-        self.set_player_monster_status(index, constants.STATUS_BURNED)
+        self.set_player_monster_status(index, Statuses.BURNED)
 
     def set_player_monster_frozen(self, index):
-        self.set_player_monster_status(index, constants.STATUS_FROZEN)
+        self.set_player_monster_status(index, Statuses.FROZEN)
 
     def set_player_monster_paralyzed(self, index):
-        self.set_player_monster_status(index, constants.STATUS_PARALYZED)
+        self.set_player_monster_status(index, Statuses.PARALYZED)
 
     def set_player_monster_no_ailment(self, index):
         self.set_player_monster_status(index, 0)
@@ -216,19 +216,19 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.set_memory_value(0xD018, status)
 
     def set_active_player_monster_asleep(self):
-        self.set_active_player_monster_status(constants.STATUS_ASLEEP)
+        self.set_active_player_monster_status(Statuses.ASLEEP)
 
     def set_active_player_monster_poisoned(self):
-        self.set_active_player_monster_status(constants.STATUS_POISONED)
+        self.set_active_player_monster_status(Statuses.POISONED)
 
     def set_active_player_monster_burned(self):
-        self.set_active_player_monster_status(constants.STATUS_BURNED)
+        self.set_active_player_monster_status(Statuses.BURNED)
 
     def set_active_player_monster_frozen(self):
-        self.set_active_player_monster_status(constants.STATUS_FROZEN)
+        self.set_active_player_monster_status(Statuses.FROZEN)
 
     def set_active_player_monster_paralyzed(self):
-        self.set_active_player_monster_status(constants.STATUS_PARALYZED)
+        self.set_active_player_monster_status(Statuses.PARALYZED)
 
     def set_active_player_monster_no_ailment(self):
         self.set_active_player_monster_status(0)
@@ -249,19 +249,19 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.set_memory_value(0xCFE9, status)
 
     def set_active_opponent_monster_asleep(self):
-        self.set_active_opponent_monster_status(constants.STATUS_ASLEEP)
+        self.set_active_opponent_monster_status(Statuses.ASLEEP)
 
     def set_active_opponent_monster_poisoned(self):
-        self.set_active_opponent_monster_status(constants.STATUS_POISONED)
+        self.set_active_opponent_monster_status(Statuses.POISONED)
 
     def set_active_opponent_monster_burned(self):
-        self.set_active_opponent_monster_status(constants.STATUS_BURNED)
+        self.set_active_opponent_monster_status(Statuses.BURNED)
 
     def set_active_opponent_monster_frozen(self):
-        self.set_active_opponent_monster_status(constants.STATUS_FROZEN)
+        self.set_active_opponent_monster_status(Statuses.FROZEN)
 
     def set_active_opponent_monster_paralyzed(self):
-        self.set_active_opponent_monster_status(constants.STATUS_PARALYZED)
+        self.set_active_opponent_monster_status(Statuses.PARALYZED)
 
     def set_active_opponent_monster_no_ailment(self):
         self.set_active_opponent_monster_status(0)
@@ -287,11 +287,5 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def get_current_map(self):
         return self.pyboy.get_memory_value(0xD35E)
-
-    def get_current_map_name(self):
-        return constants.MAP_NAMES[self.get_current_map()]
-
-    def set_wild_encounter_rate(self, value):
-        self.pyboy.set_memory_value(0xD887, value)
 
     # TODO: Add player position functions

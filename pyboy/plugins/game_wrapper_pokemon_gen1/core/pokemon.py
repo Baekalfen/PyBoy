@@ -163,7 +163,7 @@ class Pokemon:
         
         return s
     
-    def _generate_stat_str(self):
+    def _generate_stats_str(self):
 
         s = f"Stats:\n" + \
             f"\tHP: {self.max_hp}\n" + \
@@ -171,6 +171,7 @@ class Pokemon:
             f"\tDefense: {self.defense}\n" + \
             f"\tSpeed: {self.speed}\n" + \
             f"\tSpecial: {self.special}\n" 
+        return s
 
     def pretty_stringify(self):
         s = f"{self.name}\n" + self._generate_stats_str() + self._generate_move_str() 

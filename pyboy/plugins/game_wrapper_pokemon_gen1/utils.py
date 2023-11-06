@@ -1,4 +1,5 @@
-from .constants import ASCII_DELTA
+STRING_TERMINATOR = 80
+ASCII_DELTA = 63
 
 def get_character_index(character):
     if character == ' ':
