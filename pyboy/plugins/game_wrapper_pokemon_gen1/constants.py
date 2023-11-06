@@ -1251,6 +1251,44 @@ NAMES = (
     "Mew",
 )
 
+class PokemonPokedexIndex(Enum):
+    BULBASAUR = 1
+    IVYSAUR = 2
+    VENUSAUR = 3
+    CHARMANDER = 4
+    CHARMELEON = 5
+    CHARIZARD = 6
+    SQUIRTLE = 7
+    WARTORTLE = 8
+    BLASTOISE = 9
+    CATERPIE = 10
+    METAPOD = 11
+    BUTTERFREE = 12
+    WEEDLE = 13
+    KAKUNA = 14
+    BEEDRILL = 15
+    PIDGEY = 16
+    PIDGEOTTO = 17
+    PIDGEOT = 18
+    RATTATA = 19
+    RATICATE = 20
+    SPEAROW = 21
+    FEAROW = 22
+    EKANS = 23
+    ARBOK = 24
+    PIKACHU = 25
+    RAICHU = 26
+    SANDSHREW = 27
+    SANDSLASH = 28
+    NIDORAN_F = 29
+    NIDORINA = 30
+    NIDOQUEEN = 31
+    NIDORAN_M = 32
+    NIDORINO = 33
+    NIDOKING = 34
+    CLEFAIRY = 35
+
+
 POKEDEX_TO_INDEX_MAP = (
     (112, 0x01),
     (115, 0x02),
