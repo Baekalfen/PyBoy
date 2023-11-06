@@ -43,23 +43,14 @@ class Pokemon:
         self.moves = [move_1, move_2, move_3, move_4]
         self.trainer_id = trainer_id
         self.experience = experience
-        self.hp_ev = hp_ev
-        self.attack_ev = attack_ev
-        self.defense_ev = defense_ev
-        self.speed_ev = speed_ev
-        self.special_ev = special_ev
+        # EV order: HP, Attack, Defense, Speed, Special
+        self.evs = [hp_ev, attack_ev, defense_ev, speed_ev, special_ev]
         self.attack_defense_iv = attack_defense_iv
         self.speed_special_iv = speed_special_iv
-        self.pp_move_1 = pp_move_1
-        self.pp_move_2 = pp_move_2
-        self.pp_move_3 = pp_move_3
-        self.pp_move_4 = pp_move_4
+        self.pp_moves = [pp_move_1, pp_move_2, pp_move_3, pp_move_4]
         self.level = level
-        self.max_hp = max_hp
-        self.attack = attack
-        self.defense = defense
-        self.speed = speed
-        self.special = special
+        # Stat order same as EV order
+        self.stats = [max_hp, attack, defense, speed, special]
 
     @property
     def name(self):
@@ -80,6 +71,62 @@ class Pokemon:
     @property
     def move_4(self):
         return self.moves[3]
+    
+    @property
+    def pp_move_1(self):
+        return self.pp_moves[0]
+    
+    @property
+    def pp_move_2(self):
+        return self.pp_moves[1]
+    
+    @property
+    def pp_move_3(self):
+        return self.pp_moves[2]
+    
+    @property
+    def pp_move_4(self):
+        return self.pp_moves[3]
+    
+    @property
+    def hp_ev(self):
+        return self.evs[0]
+    
+    @property
+    def attack_ev(self):
+        return self.evs[1]
+    
+    @property
+    def defense_ev(self):
+        return self.evs[2]
+    
+    @property
+    def speed_ev(self):
+        return self.evs[3]
+    
+    @property
+    def special_ev(self):
+        return self.evs[4]
+    
+    @property
+    def max_hp(self):
+        return self.stats[0]
+    
+    @property
+    def attack(self):
+        return self.stats[1]
+    
+    @property
+    def defense(self):
+        return self.stats[2]
+    
+    @property
+    def speed(self):
+        return self.stats[3]
+    
+    @property
+    def special(self):
+        return self.stats[4]
     
     @staticmethod
     def get_pokemon_name_from_id(pokemon_id):
@@ -109,11 +156,10 @@ class Pokemon:
         return cls._load_pokemon_from_address(pyboy, pokemon_base_address)
     
     def _generate_move_str(self):
-        s = f"Moves:\n" + \
-            f"\t{Move.get_name_from_id(self.move_1)} ({self.pp_move_1}/)\n" + \
-            f"\t{Move.get_name_from_id(self.move_2)} ({self.pp_move_2}/)\n" + \
-            f"\t{Move.get_name_from_id(self.move_3)} ({self.pp_move_3}/)\n" + \
-            f"\t{Move.get_name_from_id(self.move_4)} ({self.pp_move_4}/)\n"
+        s = f"Moves:\n" 
+        
+        for i, move_id in enumerate(self.moves):
+            s += f"\t{Move.get_name_from_id(move_id)} ({self.pp_moves[i]}/)\n"
         
         return s
     
