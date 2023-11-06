@@ -109,6 +109,11 @@ class Pokemon:
         self.defense = defense
         self.speed = speed
         self.special = special
+
+    def pretty_stringify(self):
+        s = '''
+                
+            '''
         
 class Gen1MemoryManager:
 
