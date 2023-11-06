@@ -1,4 +1,5 @@
 from ..data.pokemon.memory import PokemonBaseAddrs, PokemonOffsets
+from ..data.pokemon.constants import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 
 class Pokemon:
 
@@ -62,8 +63,21 @@ class Pokemon:
         self.speed = speed
         self.special = special
 
-    @classmethod
-    def _load_pokemon_from_address(self, pyboy, pokemon_base_address):
+    @property
+    def name(self):
+        return Pokemon.get_pokemon_name_from_id(self.pokemon_id)
+    
+    @staticmethod
+    def get_pokemon_name_from_id(pokemon_id):
+        return _POKEMON_NAMES.get(PokemonIds(pokemon_id))
+
+    @staticmethod
+    def get_pokedex_id_from_pokemon_id(pokemon_id):
+        return _POKEMON_POKEDEX_INDEX.get(PokemonIds(pokemon_id))
+
+    
+    @staticmethod
+    def _load_pokemon_from_address(pyboy, pokemon_base_address):
 
         pokemon_values = []
 
@@ -75,12 +89,20 @@ class Pokemon:
         return Pokemon(*pokemon_values)
     
     @classmethod
-    def load_pokemon_from_party(self, pyboy, party_location):
+    def load_pokemon_from_party(cls, pyboy, party_location):
         # party_location goes from 1 to 6
         pokemon_base_address = list(PokemonBaseAddrs)[party_location-1].value
-        return self._load_pokemon_from_address(pyboy, pokemon_base_address)
+        return cls._load_pokemon_from_address(pyboy, pokemon_base_address)
+    
+    def _generate_move_str(self):
+        s = f"Moves:\n" + \
+            f"\tMove 1: {self.move_1}\n" + \
+            f"\tMove 2: {self.move_2}\n" + \
+            f"\tMove 3: {self.move_3}\n" + \
+            f"\tMove 4: {self.move_4}\n"
+        
+        return s
 
     def pretty_stringify(self):
-        s = '''
-            
-            '''
+        s = f"{self.name}\n" + self._generate_move_str()
+        return s
