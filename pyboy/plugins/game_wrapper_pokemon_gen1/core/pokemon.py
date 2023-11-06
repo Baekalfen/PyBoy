@@ -40,10 +40,7 @@ class Pokemon:
         self.type_1 = type_1
         self.type_2 = type_2
         self.catch_rate = catch_rate
-        self.move_1 = move_1
-        self.move_2 = move_2
-        self.move_3 = move_3
-        self.move_4 = move_4
+        self.moves = [move_1, move_2, move_3, move_4]
         self.trainer_id = trainer_id
         self.experience = experience
         self.hp_ev = hp_ev
@@ -67,6 +64,22 @@ class Pokemon:
     @property
     def name(self):
         return Pokemon.get_pokemon_name_from_id(self.pokemon_id)
+    
+    @property
+    def move_1(self):
+        return self.moves[0]
+    
+    @property
+    def move_2(self):
+        return self.moves[1]
+    
+    @property
+    def move_3(self):
+        return self.moves[2]
+    
+    @property
+    def move_4(self):
+        return self.moves[3]
     
     @staticmethod
     def get_pokemon_name_from_id(pokemon_id):
