@@ -1,5 +1,6 @@
-from ..data.pokemon.memory import PokemonBaseAddrs, PokemonOffsets
-from ..data.pokemon.constants import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
+from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonOffsets
+from ..data.constants.pokemon import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
+from .move import Move
 
 class Pokemon:
 
@@ -96,13 +97,22 @@ class Pokemon:
     
     def _generate_move_str(self):
         s = f"Moves:\n" + \
-            f"\tMove 1: {self.move_1}\n" + \
-            f"\tMove 2: {self.move_2}\n" + \
-            f"\tMove 3: {self.move_3}\n" + \
-            f"\tMove 4: {self.move_4}\n"
+            f"\t{Move.get_name_from_id(self.move_1)} ({self.pp_move_1}/)\n" + \
+            f"\t{Move.get_name_from_id(self.move_2)} ({self.pp_move_2}/)\n" + \
+            f"\t{Move.get_name_from_id(self.move_3)} ({self.pp_move_3}/)\n" + \
+            f"\t{Move.get_name_from_id(self.move_4)} ({self.pp_move_4}/)\n"
         
         return s
+    
+    def _generate_stat_str(self):
+
+        s = f"Stats:\n" + \
+            f"\tHP: {self.max_hp}\n" + \
+            f"\tAttack: {self.attack}\n" + \
+            f"\tDefense: {self.defense}\n" + \
+            f"\tSpeed: {self.speed}\n" + \
+            f"\tSpecial: {self.special}\n" 
 
     def pretty_stringify(self):
-        s = f"{self.name}\n" + self._generate_move_str()
+        s = f"{self.name}\n" + self._generate_stats_str() + self._generate_move_str() 
         return s

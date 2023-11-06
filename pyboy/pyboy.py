@@ -309,19 +309,6 @@ class PyBoy:
             A game-specific wrapper object.
         """
         return self.plugin_manager.gamewrapper()
-
-    def get_memory_value(self, addr):
-        """
-        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-        MBC commands to the virtual cartridge.
-
-        Returns
-        -------
-        int:
-            An integer with the value of the memory address
-        """
-        return self.mb.getitem(addr)
     
     def get_memory_value(self, addr, num_bytes=1, byte_order='big'):
         """
