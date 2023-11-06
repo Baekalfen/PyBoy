@@ -192,7 +192,7 @@ class Pokemon(Enum):
     WEEPINBELL = 0xBD
     VICTREEBEL = 0xBE
 
-POKEMON_POKEDEX_INDEX = {
+_POKEMON_POKEDEX_INDEX = {
     Pokemon.BULBASAUR: 1,
     Pokemon.IVYSAUR:  2,
     Pokemon.VENUSAUR: 3,
@@ -346,7 +346,7 @@ POKEMON_POKEDEX_INDEX = {
     Pokemon.MEW: 151
 }
 
-POKEMON_NAMES = {
+_POKEMON_NAMES = {
     Pokemon.BULBASAUR: "Bulbasaur",
     Pokemon.IVYSAUR: "Ivysaur",
     Pokemon.VENUSAUR: "Venusaur",

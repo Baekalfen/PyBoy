@@ -12,7 +12,7 @@ import numpy as np
 from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
-from .gen_1_memory_manager import Gen1MemoryManager
+from .core.gen_1_memory_manager import Gen1MemoryManager
 from . import constants
 from .utils import get_character_index
 
