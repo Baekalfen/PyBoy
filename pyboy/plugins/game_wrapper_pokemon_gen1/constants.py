@@ -1251,42 +1251,159 @@ NAMES = (
     "Mew",
 )
 
-class PokemonPokedexIndex(Enum):
-    BULBASAUR = 1
-    IVYSAUR = 2
-    VENUSAUR = 3
-    CHARMANDER = 4
-    CHARMELEON = 5
-    CHARIZARD = 6
-    SQUIRTLE = 7
-    WARTORTLE = 8
-    BLASTOISE = 9
-    CATERPIE = 10
-    METAPOD = 11
-    BUTTERFREE = 12
-    WEEDLE = 13
-    KAKUNA = 14
-    BEEDRILL = 15
-    PIDGEY = 16
-    PIDGEOTTO = 17
-    PIDGEOT = 18
-    RATTATA = 19
-    RATICATE = 20
-    SPEAROW = 21
-    FEAROW = 22
-    EKANS = 23
-    ARBOK = 24
-    PIKACHU = 25
-    RAICHU = 26
-    SANDSHREW = 27
-    SANDSLASH = 28
-    NIDORAN_F = 29
-    NIDORINA = 30
-    NIDOQUEEN = 31
-    NIDORAN_M = 32
-    NIDORINO = 33
-    NIDOKING = 34
-    CLEFAIRY = 35
+POKEMON_POKEDEX_INDEX = {
+    Pokemon.BULBASAUR: 1,
+    Pokemon.IVYSAUR:  2,
+    Pokemon.VENUSAUR: 3,
+    Pokemon.CHARMANDER: 4,
+    Pokemon.CHARMELEON: 5,
+    Pokemon.CHARIZARD: 6,
+    Pokemon.SQUIRTLE: 7,
+    Pokemon.WARTORTLE: 8,
+    Pokemon.BLASTOISE: 9,
+    Pokemon.CATERPIE: 10,
+    Pokemon.METAPOD: 11,
+    Pokemon.BUTTERFREE: 12,
+    Pokemon.WEEDLE: 13,
+    Pokemon.KAKUNA: 14,
+    Pokemon.BEEDRILL: 15,
+    Pokemon.PIDGEY: 16,
+    Pokemon.PIDGEOTTO: 17,
+    Pokemon.PIDGEOT: 18,
+    Pokemon.RATTATA: 19,
+    Pokemon.RATICATE: 20,
+    Pokemon.SPEAROW: 21,
+    Pokemon.FEAROW: 22,
+    Pokemon.EKANS: 23,
+    Pokemon.ARBOK: 24,
+    Pokemon.PIKACHU: 25,
+    Pokemon.RAICHU: 26,
+    Pokemon.SANDSHREW: 27,
+    Pokemon.SANDSLASH: 28,
+    Pokemon.NIDORAN_F: 29,
+    Pokemon.NIDORINA: 30,
+    Pokemon.NIDOQUEEN: 31,
+    Pokemon.NIDORAN_M: 32,
+    Pokemon.NIDORINO: 33,
+    Pokemon.NIDOKING: 34,
+    Pokemon.CLEFAIRY: 35,
+    Pokemon.CLEFABLE: 36,
+    Pokemon.VULPIX: 37,
+    Pokemon.NINETALES: 38,
+    Pokemon.JIGGLYPUFF: 39,
+    Pokemon.WIGGLYTUFF: 40,
+    Pokemon.ZUBAT: 41,
+    Pokemon.GOLBAT: 42,
+    Pokemon.ODDISH: 43,
+    Pokemon.GLOOM: 44,
+    Pokemon.VILEPLUME: 45,
+    Pokemon.PARAS: 46,
+    Pokemon.PARASECT: 47,
+    Pokemon.VENONAT: 48,
+    Pokemon.VENOMOTH: 49,
+    Pokemon.DIGLETT: 50,
+    Pokemon.DUGTRIO: 51,
+    Pokemon.MEOWTH: 52,
+    Pokemon.PERSIAN: 53,
+    Pokemon.PSYDUCK: 54,
+    Pokemon.GOLDUCK: 55,
+    Pokemon.MANKEY: 56,
+    Pokemon.PRIMEAPE: 57,
+    Pokemon.GROWLITHE: 58,
+    Pokemon.ARCANINE: 59,
+    Pokemon.POLIWAG: 60,
+    Pokemon.POLIWHIRL: 61,
+    Pokemon.POLIWRATH: 62,
+    Pokemon.ABRA: 63,
+    Pokemon.KADABRA: 64,
+    Pokemon.ALAKAZAM: 65,
+    Pokemon.MACHOP: 66,
+    Pokemon.MACHOKE: 67,
+    Pokemon.MACHAMP: 68,
+    Pokemon.BELLSPROUT: 69,
+    Pokemon.WEEPINBELL: 70,
+    Pokemon.VICTREEBEL: 71,
+    Pokemon.TENTACOOL: 72,
+    Pokemon.TENTACRUEL: 73,
+    Pokemon.GEODUDE: 74,
+    Pokemon.GRAVELER: 75,
+    Pokemon.GOLEM: 76,
+    Pokemon.PONYTA: 77,
+    Pokemon.RAPIDASH: 78,
+    Pokemon.SLOWPOKE: 79,
+    Pokemon.SLOWBRO: 80,
+    Pokemon.MAGNEMITE: 81,
+    Pokemon.MAGNETON: 82,
+    Pokemon.FARFETCHD: 83,
+    Pokemon.DODUO: 84,
+    Pokemon.DODRIO: 85,
+    Pokemon.SEEL: 86,
+    Pokemon.DEWGONG: 87,
+    Pokemon.GRIMER: 88,
+    Pokemon.MUK: 89,
+    Pokemon.SHELLDER: 90,
+    Pokemon.CLOYSTER: 91,
+    Pokemon.GASTLY: 92,
+    Pokemon.HAUNTER: 93,
+    Pokemon.GENGAR: 94,
+    Pokemon.ONIX: 95,
+    Pokemon.DROWZEE: 96,
+    Pokemon.HYPNO: 97,
+    Pokemon.KRABBY: 98,
+    Pokemon.KINGLER: 99,
+    Pokemon.VOLTORB: 100,
+    Pokemon.ELECTRODE: 101,
+    Pokemon.EXEGGCUTE: 102,
+    Pokemon.EXEGGUTOR: 103,
+    Pokemon.CUBONE: 104,
+    Pokemon.MAROWAK: 105,
+    Pokemon.HITMONLEE: 106,
+    Pokemon.HITMONCHAN: 107,
+    Pokemon.LICKITUNG: 108,
+    Pokemon.KOFFING: 109,
+    Pokemon.WEEZING: 110,
+    Pokemon.RHYHORN: 111,
+    Pokemon.RHYDON: 112,
+    Pokemon.CHANSEY: 113,
+    Pokemon.TANGELA: 114,
+    Pokemon.KANGASKHAN: 115,
+    Pokemon.HORSEA: 116,
+    Pokemon.SEADRA: 117,
+    Pokemon.GOLDEEN: 118,
+    Pokemon.SEAKING: 119,
+    Pokemon.STARYU: 120,
+    Pokemon.STARMIE: 121,
+    Pokemon.MR_MIME: 122,
+    Pokemon.SCYTHER: 123,
+    Pokemon.JYNX: 124,
+    Pokemon.ELECTABUZZ: 125,
+    Pokemon.MAGMAR: 126,
+    Pokemon.PINSIR: 127,
+    Pokemon.TAUROS: 128,
+    Pokemon.MAGIKARP: 129,
+    Pokemon.GYARADOS: 130,
+    Pokemon.LAPRAS: 131,
+    Pokemon.DITTO: 132,
+    Pokemon.EEVEE: 133,
+    Pokemon.VAPOREON: 134,
+    Pokemon.JOLTEON: 135,
+    Pokemon.FLAREON: 136,
+    Pokemon.PORYGON: 137,
+    Pokemon.OMANYTE: 138,
+    Pokemon.OMASTAR: 139,
+    Pokemon.KABUTO: 140,
+    Pokemon.KABUTOPS: 141,
+    Pokemon.AERODACTYL: 142,
+    Pokemon.SNORLAX: 143,
+    Pokemon.ARTICUNO: 144,
+    Pokemon.ZAPDOS: 145,
+    Pokemon.MOLTRES: 146,
+    Pokemon.DRATINI: 147,
+    Pokemon.DRAGONAIR: 148,
+    Pokemon.DRAGONITE: 149,
+    Pokemon.MEWTWO: 150,
+    Pokemon.MEW: 151
+}
 
 
 POKEDEX_TO_INDEX_MAP = (
