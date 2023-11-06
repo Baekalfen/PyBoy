@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Pokemon(Enum):
+class PokemonIds(Enum):
     RHYDON = 0x01
     KANGASKHAN = 0x02
     NIDORAN_M = 0x03
