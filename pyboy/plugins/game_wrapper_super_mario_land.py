@@ -177,7 +177,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
             self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
         else:
-            logger.error(f"{amount} is out of bounds. Only values between 0 and 99 allowed.")
+            logger.error("%d is out of bounds. Only values between 0 and 99 allowed.", amount)
 
     def set_world_level(self, world, level):
         """

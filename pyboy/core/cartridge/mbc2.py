@@ -34,7 +34,7 @@ class MBC2(BaseMBC):
             return self.rombanks[self.rombank_selected, address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
-                logger.error("RAM banks not initialized: %s" % hex(address))
+                logger.error("RAM banks not initialized: %0.4x", address)
 
             if not self.rambank_enabled:
                 return 0xFF
