@@ -1,12 +1,14 @@
 from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonMemoryOffsets
 from ..data.constants.pokemon import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 from .move import Move
+from ..utils import get_int_at_address
 
 class Pokemon:
 
     def __init__(self,
                  pokemon_id,
                  current_hp,
+                 box_level,
                  status,
                  type_1,
                  type_2,
@@ -29,12 +31,13 @@ class Pokemon:
                  pp_move_3,
                  pp_move_4,
                  level,
-                 max_hp,
-                 attack,
-                 defense,
-                 speed,
-                 special):
-        self.pokemon_id = pokemon_id
+                 max_hp=0,
+                 attack=0,
+                 defense=0,
+                 speed=0,
+                 special=0,
+                 in_party=False):
+        self.pokemon_id = PokemonIds(pokemon_id)
         self.current_hp = current_hp
         self.status = status
         self.type_1 = type_1
@@ -48,13 +51,18 @@ class Pokemon:
         self.attack_defense_iv = attack_defense_iv
         self.speed_special_iv = speed_special_iv
         self.pp_moves = [pp_move_1, pp_move_2, pp_move_3, pp_move_4]
-        self.level = level
+        self.level = level if in_party else box_level
         # Stat order same as EV order
         self.stats = [max_hp, attack, defense, speed, special]
+        self.in_party = in_party
 
     @property
     def name(self):
         return Pokemon.get_pokemon_name_from_id(self.pokemon_id)
+    
+    @property
+    def pokedex_num(self):
+        return Pokemon.get_pokedex_id_from_pokemon_id(self.pokemon_id)
     
     @property
     def move_1(self):
@@ -138,22 +146,29 @@ class Pokemon:
 
     
     @staticmethod
-    def _load_pokemon_from_address(pyboy, pokemon_base_address):
+    def _load_pokemon_from_address(pyboy, pokemon_base_address, in_party):
 
         pokemon_values = []
 
+        if in_party:
+            it = list(PokemonMemoryOffsets)
+        else:
+            # When checking a Pokemon in the box, it does not have the second 
+            # level field or any of its stats saved in memory
+            it = list(PokemonMemoryOffsets)[:-6]
+
         for offset_enum in PokemonMemoryOffsets:
             offset, num_bytes = offset_enum.value[0], offset_enum.value[1]
-            memory_value = pyboy.get_memory_value(pokemon_base_address+offset)
+            memory_value = get_int_at_address(pyboy, pokemon_base_address+offset, size=num_bytes)
             pokemon_values.append(memory_value)
 
-        return Pokemon(*pokemon_values)
+        return Pokemon(*pokemon_values, in_party)
     
     @classmethod
     def load_pokemon_from_party(cls, pyboy, party_location):
-        # party_location goes from 1 to 6
+        # party_location goes from 1-6
         pokemon_base_address = list(PokemonBaseAddrs)[party_location-1].value
-        return cls._load_pokemon_from_address(pyboy, pokemon_base_address)
+        return cls._load_pokemon_from_address(pyboy, pokemon_base_address, in_party=True)
     
     def _generate_move_str(self):
         s = f"Moves:\n" 
