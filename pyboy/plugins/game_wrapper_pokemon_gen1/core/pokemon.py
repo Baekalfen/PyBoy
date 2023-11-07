@@ -1,4 +1,4 @@
-from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonOffsets
+from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonMemoryOffsets
 from ..data.constants.pokemon import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 from .move import Move
 
@@ -142,9 +142,9 @@ class Pokemon:
 
         pokemon_values = []
 
-        for offset_enum in PokemonOffsets:
+        for offset_enum in PokemonMemoryOffsets:
             offset, num_bytes = offset_enum.value[0], offset_enum.value[1]
-            memory_value = pyboy.get_memory_value(pokemon_base_address+offset, num_bytes)
+            memory_value = pyboy.get_memory_value(pokemon_base_address+offset)
             pokemon_values.append(memory_value)
 
         return Pokemon(*pokemon_values)
