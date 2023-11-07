@@ -309,26 +309,23 @@ class PyBoy:
             A game-specific wrapper object.
         """
         return self.plugin_manager.gamewrapper()
-    
-    def get_memory_value(self, addr, num_bytes=1, byte_order='big'):
+
+    def get_memory_value(self, addr):
         """
-        Reads num_bytes consecutive memory addresses of the Game Boy's current memory state. This will not directly give you access to
+        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
         all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
         MBC commands to the virtual cartridge.
 
         Returns
         -------
         int:
-            An integer with the value of the memory addresses in byte_order endian format
+            An integer with the value of the memory address
         """
-        bytes = []
-        for i in range(num_bytes):
-            bytes.append(self.mb.getitem(addr + i))
-        return int.from_bytes(bytes, byteorder=byte_order)
+        return self.mb.getitem(addr)
 
-    def set_memory_value(self, addr, value, num_bytes=1, byte_order='big'):
+    def set_memory_value(self, addr, value):
         """
-        Write consecutive bytes starting at a given memory address of the Game Boy's current memory state.
+        Write one byte to a given memory address of the Game Boy's current memory state.
 
         This will not directly give you access to all switchable memory banks.
 
@@ -342,9 +339,7 @@ class PyBoy:
             addr (int): Address to write the byte
             value (int): A byte of data
         """
-        bytes = value.to_bytes(num_bytes, byteorder=byte_order)
-        for i, byte in enumerate(bytes):
-            self.mb.setitem(addr + i, byte)
+        self.mb.setitem(addr, value)
 
     def override_memory_value(self, rom_bank, addr, value):
         """
