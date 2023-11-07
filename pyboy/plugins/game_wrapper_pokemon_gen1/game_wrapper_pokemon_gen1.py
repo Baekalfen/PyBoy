@@ -12,9 +12,10 @@ import numpy as np
 from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
-from .core.gen_1_memory_manager import Gen1MemoryManager
 from .utils import get_character_index, STRING_TERMINATOR, ASCII_DELTA
 from .data.constants.status import Statuses
+from .core.pokedex import Pokedex
+from .core.pokemon import Pokemon
 
 PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
@@ -34,17 +35,10 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = None
-
-    def _read_multibyte_value(self, addr, num_bytes):
-        val = 0
-        for i in range(num_bytes):
-            val += self.pyboy.get_memory_value(addr+i) << i*8
-        return val
-
+    
     def __init__(self, *args, **kwargs):
         self.shape = (20, 18)
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
-        self.memory_manager = Gen1MemoryManager(self.pyboy)
 
     def enabled(self):
         return self.pyboy_argv.get("game_wrapper") and ((self.pyboy.cartridge_title() == "POKEMON RED") or
@@ -131,45 +125,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
                 pass
         self.pyboy.set_memory_value(address + i, STRING_TERMINATOR)
 
-    def set_rom_text(self, text, bank, address):
-        i = 0
-        for character in text:
-            try:
-                self.pyboy.override_memory_value(bank, address + i, get_character_index(character))
-                i += 1
-            except:
-                pass
-
-    def set_player_name(self, name):
-        """
-        Sets the player name.
-
-        Args:
-            name (string): Name to be set (will be trimmed at 8 characters).
-        """
-        self.set_text(name[:8], 0xD158)
-
-    def get_player_name(self):
-        """
-        Returns player name.
-        """
-        return self.get_text(0xD158)
-
-    def set_rival_name(self, name):
-        """
-        Sets the rival name.
-
-        Args:
-            name (string): Name to be set (will be trimmed at 8 characters).
-        """
-        self.set_text(name[:8], 0xD34A)
-
-    def get_rival_name(self):
-        """
-        Returns rival name.
-        """
-        return self.get_text(0xD34A)
-
     def get_text(self, address, cap = 16):
         """
         Retrieves a string from a given address.
@@ -191,107 +146,17 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
             i += 1
         return text
 
-    def set_palette_to_darkness(self):
-        self.pyboy.set_memory_value(0xD35D, 6)
+    def set_rom_text(self, text, bank, address):
+        i = 0
+        for character in text:
+            try:
+                self.pyboy.override_memory_value(bank, address + i, get_character_index(character))
+                i += 1
+            except:
+                pass
 
-    def get_pokemon(self, party_index):
-        return self.memory_manager.load_pokemon_from_party(party_index)
+    def get_pokemon_from_party(self, party_index):
+        return Pokemon.load_pokemon_from_party(self.pyboy, party_index)
 
-    def set_player_monster_asleep(self, index):
-        self.set_player_monster_status(index, Statuses.ASLEEP)
-
-    def set_player_monster_poisoned(self, index):
-        self.set_player_monster_status(index, Statuses.POISONED)
-
-    def set_player_monster_burned(self, index):
-        self.set_player_monster_status(index, Statuses.BURNED)
-
-    def set_player_monster_frozen(self, index):
-        self.set_player_monster_status(index, Statuses.FROZEN)
-
-    def set_player_monster_paralyzed(self, index):
-        self.set_player_monster_status(index, Statuses.PARALYZED)
-
-    def set_player_monster_no_ailment(self, index):
-        self.set_player_monster_status(index, 0)
-
-    def get_player_money(self):
-        return self.get_int_at_address(0xD347, size=3)
-
-    def set_active_player_monster_status(self, status):
-        self.pyboy.set_memory_value(0xD018, status)
-
-    def set_active_player_monster_asleep(self):
-        self.set_active_player_monster_status(Statuses.ASLEEP)
-
-    def set_active_player_monster_poisoned(self):
-        self.set_active_player_monster_status(Statuses.POISONED)
-
-    def set_active_player_monster_burned(self):
-        self.set_active_player_monster_status(Statuses.BURNED)
-
-    def set_active_player_monster_frozen(self):
-        self.set_active_player_monster_status(Statuses.FROZEN)
-
-    def set_active_player_monster_paralyzed(self):
-        self.set_active_player_monster_status(Statuses.PARALYZED)
-
-    def set_active_player_monster_no_ailment(self):
-        self.set_active_player_monster_status(0)
-
-    def set_active_player_monster_move(self, index, move):
-        self.pyboy.set_memory_value(0xD01C + index, move)
-
-    def set_active_opponent_monster_move(self, index, move):
-        self.pyboy.set_memory_value(0xCFED + index, move)
-
-    def set_active_player_monster_nickname(self, nickname):
-        self.set_text(nickname[:10], 0xD009)
-
-    def set_active_opponent_monster_nickname(self, nickname):
-        self.set_text(nickname[:10], 0xCFDA)
-
-    def set_active_opponent_monster_status(self, status):
-        self.pyboy.set_memory_value(0xCFE9, status)
-
-    def set_active_opponent_monster_asleep(self):
-        self.set_active_opponent_monster_status(Statuses.ASLEEP)
-
-    def set_active_opponent_monster_poisoned(self):
-        self.set_active_opponent_monster_status(Statuses.POISONED)
-
-    def set_active_opponent_monster_burned(self):
-        self.set_active_opponent_monster_status(Statuses.BURNED)
-
-    def set_active_opponent_monster_frozen(self):
-        self.set_active_opponent_monster_status(Statuses.FROZEN)
-
-    def set_active_opponent_monster_paralyzed(self):
-        self.set_active_opponent_monster_status(Statuses.PARALYZED)
-
-    def set_active_opponent_monster_no_ailment(self):
-        self.set_active_opponent_monster_status(0)
-
-    def heal_player_monster(self, index):
-        """
-        Fully heals a player monster.
-
-        Args:
-            index (int): Which monster to change (0-5).
-        """
-        self.set_player_monster_no_ailment(index)
-        max_hp = self.get_player_monster_max_hp(index)
-        self.set_player_monster_current_hp(index, max_hp)
-
-    def heal_active_player_monster(self):
-        self.set_active_player_monster_no_ailment()
-        max_hp = self.get_active_player_monster_max_hp()
-        self.set_active_player_monster_current_hp(max_hp)
-
-    def is_battle_happening(self):
-        return self.pyboy.get_memory_value(0xD057) != 0
-
-    def get_current_map(self):
-        return self.pyboy.get_memory_value(0xD35E)
-
-    # TODO: Add player position functions
+    def get_pokedex(self):
+        return Pokedex.load_pokedex(self.pyboy)
