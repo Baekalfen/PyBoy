@@ -84,6 +84,9 @@ cdef class TileViewWindow(BaseDebugWindow):
     @cython.locals(x=int, y=int, xx=int, yy=int, row=int, column=int)
     cdef void draw_overlay(self) noexcept
 
+    @cython.locals(tile_x=int, tile_y=int, tile_identifier=int)
+    cdef list handle_events(self, list) noexcept
+
 
 cdef class TileDataWindow(BaseDebugWindow):
     cdef bint tilecache_select
