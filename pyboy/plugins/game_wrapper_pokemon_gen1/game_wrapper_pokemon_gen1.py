@@ -12,8 +12,9 @@ import numpy as np
 from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
-from .utils import get_character_index, STRING_TERMINATOR, ASCII_DELTA
+from .utils import get_character_index, get_int_at_address, STRING_TERMINATOR, ASCII_DELTA
 from .data.constants.status import Statuses
+from .data.memory_addrs.misc import MONEY_ADDR
 from .core.pokedex import Pokedex
 from .core.pokemon import Pokemon
 
@@ -160,3 +161,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def get_pokedex(self):
         return Pokedex.load_pokedex(self.pyboy)
+    
+    def get_player_money(self):
+        return get_int_at_address(self.pyboy, MONEY_ADDR[0], MONEY_ADDR[1])
