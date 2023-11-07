@@ -12,6 +12,7 @@ import cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 
+@cython.locals(carttype=uint8_t, cart_name=basestring, cart_line=basestring)
 cpdef BaseMBC load_cartridge(str) noexcept
 cdef bint validate_checksum(uint8_t[:,:]) noexcept
 

@@ -74,6 +74,6 @@ class ScreenRecorder(PyBoyPlugin):
 
     def enabled(self):
         if Image is None:
-            logger.warning(f"{__name__}: Missing dependency \"Pillow\". Recording disabled")
+            logger.warning("%s: Missing dependency \"Pillow\". Recording disabled", __name__)
             return False
         return True

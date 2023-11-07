@@ -262,7 +262,7 @@ class LCD:
         if state_version >= 8:
             _cgb = f.read()
             if self.cgb != _cgb:
-                logger.critical(f"Loading state which is not CGB, but PyBoy is loaded in CGB mode!")
+                logger.critical("Loading state which is not CGB, but PyBoy is loaded in CGB mode!")
                 return
             self.cgb = _cgb
             self.double_speed = f.read()

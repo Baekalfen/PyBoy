@@ -27,4 +27,4 @@ class MBC5(BaseMBC):
             if self.rambank_enabled:
                 self.rambanks[self.rambank_selected, address - 0xA000] = value
         else:
-            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x", address, value)
