@@ -14,7 +14,7 @@ from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
 from .core.gen_1_memory_manager import Gen1MemoryManager
 from .utils import get_character_index, STRING_TERMINATOR, ASCII_DELTA
-from data.constants.status import Statuses
+from .data.constants.status import Statuses
 
 PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
@@ -34,6 +34,12 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = None
+
+    def _read_multibyte_value(self, addr, num_bytes):
+        val = 0
+        for i in range(num_bytes):
+            val += self.pyboy.get_memory_value(addr+i) << i*8
+        return val
 
     def __init__(self, *args, **kwargs):
         self.shape = (20, 18)
@@ -62,7 +68,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def _get_screen_walkable_matrix(self):
         walkable_tiles_indexes = []
-        collision_ptr = self.pyboy.get_memory_value(0xD530) + (self.pyboy.get_memory_value(0xD531) << 8)
+        collision_ptr = self._read_multibyte_value(0xD530, num_bytes=2)
         tileset_type = self.pyboy.get_memory_value(0xFFD7)
         if tileset_type > 0:
             grass_tile_index = self.pyboy.get_memory_value(0xD535)
