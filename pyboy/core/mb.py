@@ -72,8 +72,6 @@ class Motherboard:
         if self.cgb:
             self.hdma = HDMA()
 
-        # self.disable_renderer = disable_renderer
-
         self.bootrom_enabled = True
         self.serialbuffer = [0] * 1024
         self.serialbuffer_count = 0
@@ -376,13 +374,11 @@ class Motherboard:
                 if i < 0x9800: # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 0)
-                    # self.lcd.renderer.tiles_changed0.add(i & 0xFFF0)
             else:
                 self.lcd.VRAM1[i - 0x8000] = value
                 if i < 0x9800: # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
-                    # self.lcd.renderer.tiles_changed1.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -463,8 +459,6 @@ class Motherboard:
             elif self.cgb and i == 0xFF4F:
                 self.lcd.vbk.set(value)
             elif self.cgb and i == 0xFF51:
-                # if 0x7F < value < 0xA0:
-                #     value = 0
                 self.hdma.hdma1 = value
             elif self.cgb and i == 0xFF52:
                 self.hdma.hdma2 = value # & 0xF0
@@ -560,8 +554,6 @@ class HDMA:
                 # General purpose DMA transfer
                 for i in range(bytes_to_transfer):
                     mb.setitem((dst + i) & 0xFFFF, mb.getitem((src + i) & 0xFFFF))
-                # self.curr_dst += bytes_to_transfer
-                # self.curr_src += bytes_to_transfer
 
                 # Number of blocks of 16-bytes transfered. Set 7th bit for "completed".
                 self.hdma5 = 0xFF #(value & 0x7F) | 0x80 #0xFF
