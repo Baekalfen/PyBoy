@@ -11,7 +11,7 @@ class PokemonBaseAddrs(Enum):
 
 # Offsets for Pokemon data access
 # Structure is (offset, num bytes)
-class PokemonOffsets(Enum):
+class PokemonMemoryOffsets(Enum):
     ID = (0x0, 1) 
     CURRENT_HP = (0x1, 2)
     STATUS = (0x3, 1)
