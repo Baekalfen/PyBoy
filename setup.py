@@ -12,6 +12,26 @@ from setuptools import Extension, setup
 CYTHON = platform.python_implementation() == "CPython"
 ROOT_DIR = "pyboy"
 
+from Cython.Compiler import DebugFlags, Errors
+
+
+def patched_error(position, message):
+    if message == "Python object cannot be passed as a varargs parameter":
+        # We ignore this error to pass PyObject* to logging
+        return
+    else:
+        #print("Errors.error:", repr(position), repr(message)) ###
+        if position is None:
+            raise Errors.InternalError(message)
+        err = Errors.CompileError(position, message)
+        if DebugFlags.debug_exception_on_error:
+            raise Exception(err) # debug
+        Errors.report_error(err)
+        return err
+
+
+Errors.error = patched_error
+
 
 class build_ext(_build_ext):
     def initialize_options(self):
