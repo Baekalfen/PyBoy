@@ -1,5 +1,6 @@
 from ..data.memory_addrs.player import PlayerAddresses
 from ..data.constants.pokemon import PokemonIds
+from ..data.constants.misc import Badges
 
 class Player:
 
@@ -24,7 +25,7 @@ class Player:
         pokemon_in_party = [PokemonIds(mem_manager.read_hex_from_memory(PlayerAddresses.NUM_POKEMON_IN_PARTY[0]+i+1))
                              for i in range(num_pokemon_in_party)]
         
-        badges = mem_manager.read_bitfield_from_memory(PlayerAddresses.BADGES[0])
+        badges = mem_manager.read_bitfield_from_memory(PlayerAddresses.BADGES[0], reverse=True)
 
         money = mem_manager.read_bcd_from_memory(PlayerAddresses.MONEY[0], PlayerAddresses.MONEY[1])
 
@@ -37,3 +38,6 @@ class Player:
     @property
     def num_badges(self):
         return sum(self._badges)
+    
+    def has_badge(self, badge):
+        return self._badges[badge] == 1
