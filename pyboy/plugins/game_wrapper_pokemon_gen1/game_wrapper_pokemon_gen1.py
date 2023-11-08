@@ -17,6 +17,7 @@ from .data.constants.status import Statuses
 from .data.memory_addrs.misc import MONEY_ADDR
 from .core.pokedex import Pokedex
 from .core.pokemon import Pokemon
+from .core.mem_manager import MemoryManager
 
 PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
@@ -40,6 +41,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def __init__(self, *args, **kwargs):
         self.shape = (20, 18)
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
+        self.mem_manager = MemoryManager(self.pyboy)
 
     def enabled(self):
         return self.pyboy_argv.get("game_wrapper") and ((self.pyboy.cartridge_title() == "POKEMON RED") or
