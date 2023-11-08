@@ -65,17 +65,26 @@ class MemoryManager():
         # need to read this in little endian for Pokemon gen 1
         return int.from_bytes(bytes, byteorder='big')
     
+    def read_hex_from_mem_addr(self, mem_addr):
+        return self.read_hex_from_memory(self, mem_addr[0], mem_addr[1])
+    
     def write_hex_to_memory(self, value, addr, num_bytes=1):
         bytes = value.to_bytes(2, byteorder='big')
         assert len(bytes) == num_bytes
         for i, byte in enumerate(bytes):
             self._write_byte(addr + i, byte)
 
+    def write_hex_to_mem_addr(self, value, mem_addr):
+        self.write_hex_to_memory(value, mem_addr[0], mem_addr[1])
+
     def read_bcd_from_memory(self, addr, num_bytes=1):
         byte_str = ""
         for i in range(num_bytes):
             byte_str += "%x"%self._read_byte(addr+i)
         return int(byte_str)
+    
+    def read_bcd_from_mem_addr(self, mem_addr):
+        return self.read_bcd_from_memory(mem_addr[0], mem_addr[1])
     
     def write_bcd_to_memory(self, value, addr, num_bytes=1):
         val_str = str(value)
@@ -85,12 +94,18 @@ class MemoryManager():
         for i in range(num_bytes):
             sub_val = int(padded_val[i*2:(i*2)+2], 16)
             self._write_byte(sub_val, addr+i)
+
+    def write_bcd_to_mem_addr(self, value, mem_addr):
+        self.write_bcd_to_memory(value, mem_addr[0], mem_addr[1])
     
     def read_bitfield_from_memory(self, addr, num_bytes=1, reverse=False):
         bits = []
         for i in range(num_bytes):
             bits.extend(MemoryManager._byte_to_bitfield(self._read_byte(addr+i), reverse))
         return bits
+    
+    def read_bitfield_from_mem_addr(self, mem_addr):
+        return self.read_bitfield_from_memory(mem_addr[0], mem_addr[1])
     
     def write_bitlist_to_memory(self, value, addr, num_bytes=1, reverse=False):
 
@@ -104,6 +119,9 @@ class MemoryManager():
             sub_bit_list = value[bit_list_start:bit_list_start+8]
             byte_val = MemoryManager._bitfield_to_byte(sub_bit_list, reverse)
             self._write_byte(byte_val, addr+i)
+
+    def write_bitlist_to_mem_addr(self, value, mem_addr):
+        self.write_bitlist_to_memory(value, mem_addr[0], mem_addr[1])
 
     def read_text_from_memory(self, address, num_bytes):
         """
@@ -123,6 +141,9 @@ class MemoryManager():
             text += chr(value - ASCII_DELTA)
         return text
     
+    def read_text_from_mem_addr(self, mem_addr):
+        return self.read_text_from_memory(mem_addr[0], mem_addr[1])
+    
     def write_text_to_memory_text(self, text, address, num_bytes=1):
         """Sets text at address.
 
@@ -136,3 +157,6 @@ class MemoryManager():
         i = 0
         for i, chr in enumerate(text):
             self.pyboy.set_memory_value(address + i, MemoryManager.get_character_index(chr))
+
+    def write_text_to_mem_addr(self, text, mem_addr):
+        self.write_text_to_memory(text, mem_addr[0], mem_addr[1])
