@@ -1,6 +1,6 @@
 from enum import Enum
 
-class MoveIds(Enum):
+class MoveId(Enum):
     POUND = 0x01
     KARATE_CHOP = 0x02
     DOUBLESLAP = 0x03

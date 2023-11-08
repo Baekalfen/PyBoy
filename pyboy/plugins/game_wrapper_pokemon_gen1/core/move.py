@@ -1,4 +1,4 @@
-from ..data.constants.moves import MoveIds
+from ..data.constants.moves import MoveId
 
 class Move():
 
@@ -13,7 +13,7 @@ class Move():
     def get_name_from_id(cls, move_id, camel_case=False):
         if move_id == 0:
             return cls.NONEXISTENT_MOVE_STR
-        move_name = MoveIds(move_id).name.replace('_', ' ')
+        move_name = MoveId(move_id).name.replace('_', ' ')
         if camel_case:
             return move_name.title()
         return move_name

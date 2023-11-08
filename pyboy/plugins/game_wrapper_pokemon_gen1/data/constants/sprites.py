@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Sprites(Enum):
+class Sprite(Enum):
     RED = 0x01
     BLUE = 0x02
     OAK = 0x03

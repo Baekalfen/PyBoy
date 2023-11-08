@@ -1,5 +1,5 @@
 from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonMemoryOffsets
-from ..data.constants.pokemon import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
+from ..data.constants.pokemon import PokemonId, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 from .move import Move
 
 class Pokemon:
@@ -36,7 +36,7 @@ class Pokemon:
                  speed=0,
                  special=0,
                  in_party=False):
-        self.pokemon_id = PokemonIds(pokemon_id)
+        self.pokemon_id = PokemonId(pokemon_id)
         self.current_hp = current_hp
         self.status = status
         self.type_1 = type_1
@@ -137,11 +137,11 @@ class Pokemon:
     
     @staticmethod
     def get_pokemon_name_from_id(pokemon_id):
-        return _POKEMON_NAMES.get(PokemonIds(pokemon_id))
+        return _POKEMON_NAMES.get(PokemonId(pokemon_id))
 
     @staticmethod
     def get_pokedex_id_from_pokemon_id(pokemon_id):
-        return _POKEMON_POKEDEX_INDEX.get(PokemonIds(pokemon_id))
+        return _POKEMON_POKEDEX_INDEX.get(PokemonId(pokemon_id))
 
     
     @staticmethod

@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Items(Enum):
+class Item(Enum):
     MASTER_BALL = 0x01
     ULTRA_BALL = 0x02
     GREAT_BALL = 0x03

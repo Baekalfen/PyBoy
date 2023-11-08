@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Statuses(Enum):
+class Status(Enum):
     ASLEEP = 4
     POISONED = 8
     BURNED = 16

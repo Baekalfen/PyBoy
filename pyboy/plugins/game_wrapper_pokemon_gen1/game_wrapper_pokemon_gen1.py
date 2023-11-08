@@ -12,7 +12,6 @@ import numpy as np
 from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
-from .data.constants.status import Statuses
 from .data.memory_addrs.misc import MONEY_ADDR
 from .core.pokedex import Pokedex
 from .core.pokemon import Pokemon

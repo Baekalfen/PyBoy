@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Badges(Enum):
+class Badge(Enum):
     BOULDER_BADGE = 0
     CASCADE_BADGE = 1
     THUNDER_BADGE = 2
