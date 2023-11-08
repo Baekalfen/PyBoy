@@ -77,6 +77,8 @@ class MemoryManager():
         text = ''
         for i in range(num_bytes):
             value = self._read_byte(address + i)
+            if value == STRING_TERMINATOR:
+                break
             text += chr(value - ASCII_DELTA)
         return text
     
