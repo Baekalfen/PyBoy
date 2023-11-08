@@ -357,11 +357,9 @@ class Motherboard:
         elif i == 0xFFFF: # Interrupt Enable Register
             return self.cpu.interrupts_enabled_register
         # else:
-        #     raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
+        #     logger.critical("Memory access violation. Tried to read: %0.4x", i)
 
     def setitem(self, i, value):
-        # assert 0 <= value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value), hex(i))
-
         if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
@@ -487,7 +485,7 @@ class Motherboard:
         elif i == 0xFFFF: # Interrupt Enable Register
             self.cpu.interrupts_enabled_register = value
         # else:
-        #     raise Exception("Memory access violation. Tried to write: %s" % hex(i))
+        #     logger.critical("Memory access violation. Tried to write: 0x%0.2x to 0x%0.4x", value, i)
 
     def transfer_DMA(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
