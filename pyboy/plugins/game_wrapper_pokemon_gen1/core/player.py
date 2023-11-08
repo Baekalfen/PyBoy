@@ -1,4 +1,4 @@
-from ..data.memory_addrs.player import PlayerAddresses
+from ..data.memory_addrs.player import PlayerAddress
 from ..data.constants.pokemon import PokemonId
 from ..data.constants.misc import Badge
 
@@ -14,23 +14,10 @@ class Player:
         self._pokemon_in_party = pokemon_in_party
         self._badges = badges
         self._money = money
-
-    @staticmethod
-    def load_player(mem_manager):
-
-        name = mem_manager.read_text_from_memory(PlayerAddresses.NAME[0], PlayerAddresses.NAME[1])
-        
-        num_pokemon_in_party = mem_manager.read_hex_from_memory(PlayerAddresses.NUM_POKEMON_IN_PARTY[0])
-        
-        pokemon_in_party = [PokemonId(mem_manager.read_hex_from_memory(PlayerAddresses.NUM_POKEMON_IN_PARTY[0]+i+1))
-                             for i in range(num_pokemon_in_party)]
-        
-        badges = mem_manager.read_bitfield_from_memory(PlayerAddresses.BADGES[0], reverse=True)
-
-        money = mem_manager.read_bcd_from_memory(PlayerAddresses.MONEY[0], PlayerAddresses.MONEY[1])
-
-        return Player(name, pokemon_in_party, badges, money)
     
+    '''
+    Getters and setters
+    '''
     @property
     def name(self):
         return self._name
@@ -57,5 +44,36 @@ class Player:
     def num_badges(self):
         return sum(self._badges)
     
+    '''
+    Badge functionality
+    '''
     def has_badge(self, badge : Badge):
         return self._badges[badge.value] == 1
+    
+    def give_badge(self, badge : Badge):
+        self._badges[badge.value] == 1
+
+    def remove_badge(self, badge : Badge):
+        self._badges[badge.value] == 0
+
+    @staticmethod
+    def load_player(mem_manager):
+
+        name = mem_manager.read_text_from_memory(PlayerAddress.NAME[0], PlayerAddress.NAME[1])
+        
+        num_pokemon_in_party = mem_manager.read_hex_from_memory(PlayerAddress.NUM_POKEMON_IN_PARTY[0])
+        
+        pokemon_in_party = [PokemonId(mem_manager.read_hex_from_memory(PlayerAddress.NUM_POKEMON_IN_PARTY[0]+i+1))
+                             for i in range(num_pokemon_in_party)]
+        
+        badges = mem_manager.read_bitfield_from_memory(PlayerAddress.BADGES[0])
+
+        money = mem_manager.read_bcd_from_memory(PlayerAddress.MONEY[0], PlayerAddress.MONEY[1])
+
+        return Player(name, pokemon_in_party, badges, money)
+    
+    def save_player(self, mem_manager):
+
+        mem_manager.write_text_to_memory(self._name, PlayerAddress.NAME[0])
+
+    

@@ -5,7 +5,7 @@ https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
 
 from enum import Enum
 
-class SpriteBaseAddrs(Enum):
+class SpriteBaseAddress(Enum):
     PLAYER_SPRITE = 0xC100 # Player is ALWAYS sprite 0
     SPRITE_1 = 0xC110
     SPIRITE_2 = 0xC120
@@ -23,7 +23,7 @@ class SpriteBaseAddrs(Enum):
     SPRITE_14 = 0xC1E0
     SPRITE_15 = 0xC1F0
 
-class SpriteMemoryOffsets(Enum):
+class SpriteMemoryOffset(Enum):
     PICTURE_ID = 0x0
     MOVEMENT_STATUS = 0x1 # (0: uninitialized, 1: ready, 2: delayed, 3: moving)
     # TODO: Figure out exactly what this data looks like

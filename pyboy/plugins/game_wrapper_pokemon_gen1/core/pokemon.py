@@ -1,4 +1,4 @@
-from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonMemoryOffsets
+from ..data.memory_addrs.pokemon import PokemonBaseAddress, PokemonMemoryOffset
 from ..data.constants.pokemon import PokemonId, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 from .move import Move
 
@@ -150,13 +150,13 @@ class Pokemon:
         pokemon_values = []
 
         if in_party:
-            it = list(PokemonMemoryOffsets)
+            it = list(PokemonMemoryOffset)
         else:
             # When checking a Pokemon in the box, it does not have the second 
             # level field or any of its stats saved in memory
-            it = list(PokemonMemoryOffsets)[:-6]
+            it = list(PokemonMemoryOffset)[:-6]
 
-        for offset_enum in PokemonMemoryOffsets:
+        for offset_enum in PokemonMemoryOffset:
             offset, num_bytes = offset_enum.value[0], offset_enum.value[1]
             memory_value = mem_manager.read_hex_from_memory(pokemon_base_address+offset, num_bytes)
             pokemon_values.append(memory_value)
@@ -166,7 +166,7 @@ class Pokemon:
     @classmethod
     def load_pokemon_from_party(cls, mem_manager, party_location):
         # party_location goes from 1-6
-        pokemon_base_address = list(PokemonBaseAddrs)[party_location-1].value
+        pokemon_base_address = list(PokemonBaseAddress)[party_location-1].value
         return cls._load_pokemon_from_address(mem_manager, pokemon_base_address, in_party=True)
     
     def _generate_move_str(self):

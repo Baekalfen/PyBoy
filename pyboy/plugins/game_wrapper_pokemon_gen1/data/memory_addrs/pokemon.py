@@ -1,7 +1,7 @@
 # Pokemon locations in memory
 from enum import Enum
 
-class PokemonBaseAddrs(Enum):
+class PokemonBaseAddress(Enum):
     POKEMON_1 = 0xD16B
     POKEMON_2 = 0xD197
     POKEMON_3 = 0xD1C3
@@ -11,7 +11,7 @@ class PokemonBaseAddrs(Enum):
 
 # Offsets for Pokemon data access
 # Structure is (offset, num bytes)
-class PokemonMemoryOffsets(Enum):
+class PokemonMemoryOffset(Enum):
     ID = (0x0, 1) 
     CURRENT_HP = (0x1, 2)
     BOX_LEVEL = (0x3, 1)

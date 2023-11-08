@@ -82,25 +82,16 @@ class MemoryManager():
             text += chr(value - ASCII_DELTA)
         return text
     
-    # def set_text(self, text, address):
-    #     """Sets text at address.
+    def write_text_to_memory_text(self, text, address, num_bytes=1):
+        """Sets text at address.
 
-    #     Will always add a string terminator (80) at the end.
-    #     """
-    #     i = 0
-    #     for character in text:
-    #         try:
-    #             self.pyboy.set_memory_value(address + i, MemoryManager.get_character_index(character))
-    #             i += 1
-    #         except:
-    #             pass
-    #     self.pyboy.set_memory_value(address + i, STRING_TERMINATOR)
+        Will always add a string terminator (80) at the end.
+        """
 
-    # def set_rom_text(self, text, bank, address):
-    #     i = 0
-    #     for character in text:
-    #         try:
-    #             self.pyboy.override_memory_value(bank, address + i, get_character_index(character))
-    #             i += 1
-    #         except:
-    #             pass
+        terminated_text = text + STRING_TERMINATOR
+        # TODO: Check that this isn't an odd-by-one issue
+        assert terminated_text <= num_bytes
+
+        i = 0
+        for i, chr in enumerate(text):
+            self.pyboy.set_memory_value(address + i, MemoryManager.get_character_index(chr))

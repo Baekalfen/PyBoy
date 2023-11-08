@@ -1,6 +1,6 @@
 from enum import Enum
 
-class PlayerAddresses:
+class PlayerAddress(Enum):
     NAME = (0xD158, 10)
     NUM_POKEMON_IN_PARTY = (0xD163, 1)
     BADGES = (0xD356, 1)
