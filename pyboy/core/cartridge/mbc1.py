@@ -34,8 +34,8 @@ class MBC1(BaseMBC):
             if self.rambank_enabled:
                 self.rambank_selected = self.bank_select_register2 if self.memorymodel == 1 else 0
                 self.rambanks[self.rambank_selected % self.external_ram_count][address - 0xA000] = value
-        else:
-            logger.error("Invalid writing address: %s" % hex(address))
+        # else:
+        #     logger.error("Invalid writing address: %0.4x", address)
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
@@ -60,8 +60,8 @@ class MBC1(BaseMBC):
             else:
                 self.rambank_selected = 0
             return self.rambanks[self.rambank_selected][address - 0xA000]
-        else:
-            logger.error("Reading address invalid: %s" % address)
+        # else:
+        #     logger.error("Reading address invalid: %0.4x", address)
 
     def save_state(self, f):
         # Cython doesn't like super()

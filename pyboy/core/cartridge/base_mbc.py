@@ -160,5 +160,5 @@ class ROMOnly(BaseMBC):
             logger.debug("Switching bank 0x%0.4x, 0x%0.2x" % (address, value))
         elif 0xA000 <= address < 0xC000:
             self.rambanks[self.rambank_selected][address - 0xA000] = value
-        else:
-            logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
+        # else:
+        #     logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))
