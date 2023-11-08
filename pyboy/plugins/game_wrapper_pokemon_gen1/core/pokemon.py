@@ -157,8 +157,8 @@ class Pokemon:
             it = list(PokemonMemoryOffset)[:-6]
 
         for offset_enum in PokemonMemoryOffset:
-            offset, num_bytes = offset_enum.value[0], offset_enum.value[1]
-            memory_value = mem_manager.read_hex_from_memory(pokemon_base_address+offset, num_bytes)
+            offset_addr = offset_enum.add_addr(pokemon_base_address)
+            memory_value = mem_manager.read_hex_from_mem_addr(offset_addr)
             pokemon_values.append(memory_value)
 
         return Pokemon(*pokemon_values, in_party)

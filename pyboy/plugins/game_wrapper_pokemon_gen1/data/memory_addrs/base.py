@@ -8,4 +8,5 @@ class MemoryAddressEnum(Enum):
     def add_addr(self, offset):
         # Super hacky way to 'add' an offset to an enum, which just
         # returns a new tuple with the right values
+        print(self.value)
         return (self.value[0]+offset, self.value[1])

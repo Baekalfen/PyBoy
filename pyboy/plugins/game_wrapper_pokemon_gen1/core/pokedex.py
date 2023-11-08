@@ -18,14 +18,14 @@ class Pokedex:
          self._seen_pokemon = seen_pokemon
 
     @staticmethod
-    def get_pokedex_range_bits(mem_manager, addr, num_bytes):
-        return mem_manager.read_bitfield_from_memory(addr, num_bytes, reverse=True)
+    def get_pokedex_range_bits(mem_manager, mem_addr):
+        return mem_manager.read_bitfield_from_mem_addr(mem_addr, reverse=True)
 
 
     @staticmethod
     def load_pokedex(mem_manager):
-        caught_pokemon = Pokedex.get_pokedex_range_bits(mem_manager, POKEDEX_CAUGHT_ADDR_INT[0], num_bytes=POKEDEX_CAUGHT_ADDR_INT[1])
-        seen_pokemon = Pokedex.get_pokedex_range_bits(mem_manager, POKEDEX_SEEN_ADDR_INT[0], num_bytes=POKEDEX_SEEN_ADDR_INT[1])
+        caught_pokemon = Pokedex.get_pokedex_range_bits(mem_manager, POKEDEX_CAUGHT_ADDR_INT)
+        seen_pokemon = Pokedex.get_pokedex_range_bits(mem_manager, POKEDEX_SEEN_ADDR_INT)
 
         return Pokedex(caught_pokemon, seen_pokemon)
     

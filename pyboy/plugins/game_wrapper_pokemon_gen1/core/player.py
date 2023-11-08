@@ -59,27 +59,27 @@ class Player:
     @staticmethod
     def load_player(mem_manager):
 
-        name = mem_manager.read_text_from_memory(PlayerAddress.NAME[0], PlayerAddress.NAME[1])
+        name = mem_manager.read_text_from_mem_addr(PlayerAddress.NAME.value)
         
-        num_pokemon_in_party = mem_manager.read_hex_from_memory(PlayerAddress.NUM_POKEMON_IN_PARTY[0])
+        num_pokemon_in_party = mem_manager.read_hex_from_mem_addr(PlayerAddress.NUM_POKEMON_IN_PARTY.value)
         
-        pokemon_in_party = [PokemonId(mem_manager.read_hex_from_memory(PlayerAddress.NUM_POKEMON_IN_PARTY[0]+i+1))
+        pokemon_in_party = [PokemonId(mem_manager.read_hex_from_mem_addr(PlayerAddress.NUM_POKEMON_IN_PARTY.add_addr(i+1)))
                              for i in range(num_pokemon_in_party)]
         
-        badges = mem_manager.read_bitfield_from_memory(PlayerAddress.BADGES[0])
+        badges = mem_manager.read_bitfield_from_mem_addr(PlayerAddress.BADGES.value)
 
-        money = mem_manager.read_bcd_from_memory(PlayerAddress.MONEY[0], PlayerAddress.MONEY[1])
+        money = mem_manager.read_bcd_from_mem_addr(PlayerAddress.MONEY.value)
 
         return Player(name, pokemon_in_party, badges, money)
     
     def save_player(self, mem_manager):
 
-        mem_manager.write_text_to_memory(self._name, PlayerAddress.NAME[0])
-        mem_manager.write_hex_to_memory(self.num_pokemon_in_party, PlayerAddress.NUM_POKEMON_IN_PARTY[0])
+        mem_manager.write_text_to_mem_addr(self._name, PlayerAddress.NAME.value)
+        mem_manager.write_hex_to_mem_addr(self.num_pokemon_in_party, PlayerAddress.NUM_POKEMON_IN_PARTY.value)
         # TODO: Figure out the loading and unloading of Pokemon in party, as that should be in tandem with
         # Pokemon class so that data does not get out of sync
-        mem_manager.write_bitlist_to_memory(PlayerAddress.BADGES[0])
-        mem_manager.write_bcd_to_memory(self._money, PlayerAddress.MONEY[0], PlayerAddress.MONEY[1])
+        mem_manager.write_bitlist_to_mem_addr(self._badges, PlayerAddress.BADGES.value)
+        mem_manager.write_bcd_to_mem_addr(self._money, PlayerAddress.MONEY.value)
 
 
     

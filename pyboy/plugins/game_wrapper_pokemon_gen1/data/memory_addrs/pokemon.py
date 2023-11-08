@@ -1,6 +1,6 @@
 # Pokemon locations in memory
 from enum import Enum
-from base import MemoryAddressEnum
+from .base import MemoryAddressEnum
 
 class PokemonBaseAddress(Enum):
     POKEMON_1 = 0xD16B

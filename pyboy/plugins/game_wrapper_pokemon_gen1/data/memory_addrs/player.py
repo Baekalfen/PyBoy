@@ -1,4 +1,4 @@
-from base import MemoryAddressEnum
+from .base import MemoryAddressEnum
 
 class PlayerAddress(MemoryAddressEnum):
     NAME = (0xD158, 10)

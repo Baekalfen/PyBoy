@@ -66,7 +66,7 @@ class MemoryManager():
         return int.from_bytes(bytes, byteorder='big')
     
     def read_hex_from_mem_addr(self, mem_addr):
-        return self.read_hex_from_memory(self, mem_addr[0], mem_addr[1])
+        return self.read_hex_from_memory(mem_addr[0], mem_addr[1])
     
     def write_hex_to_memory(self, value, addr, num_bytes=1):
         bytes = value.to_bytes(2, byteorder='big')
@@ -104,8 +104,8 @@ class MemoryManager():
             bits.extend(MemoryManager._byte_to_bitfield(self._read_byte(addr+i), reverse))
         return bits
     
-    def read_bitfield_from_mem_addr(self, mem_addr):
-        return self.read_bitfield_from_memory(mem_addr[0], mem_addr[1])
+    def read_bitfield_from_mem_addr(self, mem_addr, reverse=False):
+        return self.read_bitfield_from_memory(mem_addr[0], mem_addr[1], reverse)
     
     def write_bitlist_to_memory(self, value, addr, num_bytes=1, reverse=False):
 
@@ -120,8 +120,8 @@ class MemoryManager():
             byte_val = MemoryManager._bitfield_to_byte(sub_bit_list, reverse)
             self._write_byte(byte_val, addr+i)
 
-    def write_bitlist_to_mem_addr(self, value, mem_addr):
-        self.write_bitlist_to_memory(value, mem_addr[0], mem_addr[1])
+    def write_bitlist_to_mem_addr(self, value, mem_addr, reverse=False):
+        self.write_bitlist_to_memory(value, mem_addr[0], mem_addr[1], reverse)
 
     def read_text_from_memory(self, address, num_bytes):
         """
