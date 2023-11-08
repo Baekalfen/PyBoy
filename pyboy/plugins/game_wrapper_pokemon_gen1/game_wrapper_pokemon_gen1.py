@@ -12,7 +12,6 @@ import numpy as np
 from pyboy.utils import WindowEvent
 from pyboy.logger import logger
 from ..base_plugin import PyBoyGameWrapper
-from .utils import get_character_index, get_int_at_address, STRING_TERMINATOR, ASCII_DELTA
 from .data.constants.status import Statuses
 from .data.memory_addrs.misc import MONEY_ADDR
 from .core.pokedex import Pokedex
@@ -114,55 +113,11 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         )
         # yapf: enable
 
-    def set_text(self, text, address):
-        """Sets text at address.
-
-        Will always add a string terminator (80) at the end.
-        """
-        i = 0
-        for character in text:
-            try:
-                self.pyboy.set_memory_value(address + i, get_character_index(character))
-                i += 1
-            except:
-                pass
-        self.pyboy.set_memory_value(address + i, STRING_TERMINATOR)
-
-    def get_text(self, address, cap = 16):
-        """
-        Retrieves a string from a given address.
-
-        Args:
-            address (int): Address from where to retrieve text from.
-            cap (int): Maximum expected length of string (default: 16).
-        """
-        i = 0
-        text = ''
-        while i < cap:
-            value = self.pyboy.get_memory_value(address + i)
-            try:
-                text += chr(value - ASCII_DELTA)
-            except:
-                pass
-            if value == STRING_TERMINATOR:
-                break
-            i += 1
-        return text
-
-    def set_rom_text(self, text, bank, address):
-        i = 0
-        for character in text:
-            try:
-                self.pyboy.override_memory_value(bank, address + i, get_character_index(character))
-                i += 1
-            except:
-                pass
-
     def get_pokemon_from_party(self, party_index):
-        return Pokemon.load_pokemon_from_party(self.pyboy, party_index)
+        return Pokemon.load_pokemon_from_party(self.mem_manager, party_index)
 
     def get_pokedex(self):
-        return Pokedex.load_pokedex(self.pyboy)
+        return Pokedex.load_pokedex(self.mem_manager)
     
     def get_player_money(self):
-        return get_int_at_address(self.pyboy, MONEY_ADDR[0], MONEY_ADDR[1])
+        return self.mem_manager.read_bcd_from_memory(MONEY_ADDR[0], MONEY_ADDR[1])

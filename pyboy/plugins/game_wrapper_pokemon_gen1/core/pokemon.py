@@ -1,7 +1,6 @@
 from ..data.memory_addrs.pokemon import PokemonBaseAddrs, PokemonMemoryOffsets
 from ..data.constants.pokemon import PokemonIds, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 from .move import Move
-from ..utils import get_int_at_address
 
 class Pokemon:
 
@@ -146,7 +145,7 @@ class Pokemon:
 
     
     @staticmethod
-    def _load_pokemon_from_address(pyboy, pokemon_base_address, in_party):
+    def _load_pokemon_from_address(mem_manager, pokemon_base_address, in_party):
 
         pokemon_values = []
 
@@ -159,16 +158,16 @@ class Pokemon:
 
         for offset_enum in PokemonMemoryOffsets:
             offset, num_bytes = offset_enum.value[0], offset_enum.value[1]
-            memory_value = get_int_at_address(pyboy, pokemon_base_address+offset, size=num_bytes)
+            memory_value = mem_manager.read_hex_from_memory(pokemon_base_address+offset, num_bytes)
             pokemon_values.append(memory_value)
 
         return Pokemon(*pokemon_values, in_party)
     
     @classmethod
-    def load_pokemon_from_party(cls, pyboy, party_location):
+    def load_pokemon_from_party(cls, mem_manager, party_location):
         # party_location goes from 1-6
         pokemon_base_address = list(PokemonBaseAddrs)[party_location-1].value
-        return cls._load_pokemon_from_address(pyboy, pokemon_base_address, in_party=True)
+        return cls._load_pokemon_from_address(mem_manager, pokemon_base_address, in_party=True)
     
     def _generate_move_str(self):
         s = f"Moves:\n" 
