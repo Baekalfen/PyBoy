@@ -16,6 +16,7 @@ from .data.constants.status import Statuses
 from .data.memory_addrs.misc import MONEY_ADDR
 from .core.pokedex import Pokedex
 from .core.pokemon import Pokemon
+from .core.player import Player
 from .core.mem_manager import MemoryManager
 
 PKMN_SIZE = 0x2C
@@ -119,5 +120,5 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def get_pokedex(self):
         return Pokedex.load_pokedex(self.mem_manager)
     
-    def get_player_money(self):
-        return self.mem_manager.read_bcd_from_memory(MONEY_ADDR[0], MONEY_ADDR[1])
+    def get_player(self):
+        return Player.load_player(self.mem_manager)
