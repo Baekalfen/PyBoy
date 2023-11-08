@@ -19,6 +19,16 @@ class MemoryManager():
         return bitlist
     
     @staticmethod
+    def _bitfield_to_byte(bitlist, reverse : bool):
+
+        if reverse: 
+            bitlist.reverse()
+
+        bit_str = ''.join(bitlist)
+
+        return int(bit_str)
+    
+    @staticmethod
     def get_character_index(character):
         if character == ' ':
             return 0x7F
@@ -38,31 +48,62 @@ class MemoryManager():
     def _read_byte(self, addr):
         return self.pyboy.get_memory_value(addr)
     
+    def _write_byte(self, value, addr):
+        return self.pyboy.set_memory_value(addr, value)
+
     def read_address_from_memory(self, addr, num_bytes=1):
         p_addr = 0
         for i in range(num_bytes):
-            p_addr += self.pyboy.get_memory_value(addr+i) << i*8
+            p_addr += self._read_byte(addr+i) << i*8
         return p_addr
     
     def read_hex_from_memory(self, addr, num_bytes=1):
         bytes = []
         for i in range(num_bytes):
-            bytes.append(self.pyboy.get_memory_value(addr + i))
+            bytes.append(self._read_byte(addr + i))
         # Do not believe there is ever a case where we would 
         # need to read this in little endian for Pokemon gen 1
         return int.from_bytes(bytes, byteorder='big')
+    
+    def write_hex_to_memory(self, value, addr, num_bytes=1):
+        bytes = value.to_bytes(2, byteorder='big')
+        assert len(bytes) == num_bytes
+        for i, byte in enumerate(bytes):
+            self._write_byte(addr + i, byte)
 
     def read_bcd_from_memory(self, addr, num_bytes=1):
         byte_str = ""
         for i in range(num_bytes):
-            byte_str += "%x"%self.pyboy.get_memory_value(addr+i)
+            byte_str += "%x"%self._read_byte(addr+i)
         return int(byte_str)
+    
+    def write_bcd_to_memory(self, value, addr, num_bytes=1):
+        val_str = str(value)
+        assert len(val_str) <= num_bytes*2
+
+        padded_val = val_str.zfill(num_bytes*2)
+        for i in range(num_bytes):
+            sub_val = int(padded_val[i*2:(i*2)+2], 16)
+            self._write_byte(sub_val, addr+i)
     
     def read_bitfield_from_memory(self, addr, num_bytes=1, reverse=False):
         bits = []
         for i in range(num_bytes):
             bits.extend(MemoryManager._byte_to_bitfield(self._read_byte(addr+i), reverse))
         return bits
+    
+    def write_bitlist_to_memory(self, value, addr, num_bytes=1, reverse=False):
+
+        # TODO: This check might be too restrictive
+        assert len(value) % 8 == 0
+        # TODO: Maybe don't need this check if we trust users to make value fit
+        assert len(value)/8 == num_bytes
+        
+        for i in range(num_bytes):
+            bit_list_start = i*8
+            sub_bit_list = value[bit_list_start:bit_list_start+8]
+            byte_val = MemoryManager._bitfield_to_byte(sub_bit_list, reverse)
+            self._write_byte(byte_val, addr+i)
 
     def read_text_from_memory(self, address, num_bytes):
         """

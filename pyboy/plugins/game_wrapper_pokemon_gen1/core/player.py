@@ -75,5 +75,11 @@ class Player:
     def save_player(self, mem_manager):
 
         mem_manager.write_text_to_memory(self._name, PlayerAddress.NAME[0])
+        mem_manager.write_hex_to_memory(self.num_pokemon_in_party, PlayerAddress.NUM_POKEMON_IN_PARTY[0])
+        # TODO: Figure out the loading and unloading of Pokemon in party, as that should be in tandem with
+        # Pokemon class so that data does not get out of sync
+        mem_manager.write_bitlist_to_memory(PlayerAddress.BADGES[0])
+        mem_manager.write_bcd_to_memory(self._money, PlayerAddress.MONEY[0], PlayerAddress.MONEY[1])
+
 
     
