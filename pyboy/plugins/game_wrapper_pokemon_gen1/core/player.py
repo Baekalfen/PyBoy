@@ -58,4 +58,4 @@ class Player:
         return sum(self._badges)
     
     def has_badge(self, badge : Badge):
-        return self._badges[badge] == 1
+        return self._badges[badge.value] == 1
