@@ -24,9 +24,9 @@ class MemoryManager():
         if reverse: 
             bitlist.reverse()
 
-        bit_str = ''.join(bitlist)
+        bit_str = ''.join([str(i) for i in bitlist])
 
-        return int(bit_str)
+        return int(bit_str, 2)
     
     @staticmethod
     def get_character_index(character):
@@ -70,7 +70,7 @@ class MemoryManager():
     
     def write_hex_to_memory(self, value, addr, num_bytes=1):
         bytes = value.to_bytes(2, byteorder='big')
-        assert len(bytes) == num_bytes
+        assert len(bytes) == num_bytes*2
         for i, byte in enumerate(bytes):
             self._write_byte(addr + i, byte)
 
@@ -144,15 +144,15 @@ class MemoryManager():
     def read_text_from_mem_addr(self, mem_addr):
         return self.read_text_from_memory(mem_addr[0], mem_addr[1])
     
-    def write_text_to_memory_text(self, text, address, num_bytes=1):
+    def write_text_to_memory(self, text, address, num_bytes=1):
         """Sets text at address.
 
         Will always add a string terminator (80) at the end.
         """
 
-        terminated_text = text + STRING_TERMINATOR
-        # TODO: Check that this isn't an odd-by-one issue
-        assert terminated_text <= num_bytes
+        terminated_text = text + '\0'
+        # TODO: Check that this isn't an off-by-one issue
+        assert len(terminated_text) <= num_bytes
 
         i = 0
         for i, chr in enumerate(text):

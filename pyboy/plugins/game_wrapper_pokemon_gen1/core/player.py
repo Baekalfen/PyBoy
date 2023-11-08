@@ -34,7 +34,7 @@ class Player:
     @money.setter
     def money(self, m):
         # Max money game can store is 999999
-        return max(m, 999999)
+        self._money = min(m, 999999)
     
     @property
     def num_pokemon_in_party(self):
@@ -51,10 +51,10 @@ class Player:
         return self._badges[badge.value] == 1
     
     def give_badge(self, badge : Badge):
-        self._badges[badge.value] == 1
+        self._badges[badge.value] = 1
 
     def remove_badge(self, badge : Badge):
-        self._badges[badge.value] == 0
+        self._badges[badge.value] = 0
 
     @staticmethod
     def load_player(mem_manager):
