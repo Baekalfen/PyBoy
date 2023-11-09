@@ -119,6 +119,7 @@ class LCD:
         # Remaining cycles for this already active mode
         remainder = self.clock_target - self.clock
 
+        mode &= 0b11
         if mode == 2:
             return remainder + mode3
         elif mode == 3:
@@ -128,9 +129,9 @@ class LCD:
         elif mode == 1:
             remaining_ly = 153 - self.LY
             return remainder + mode1*remaining_ly + mode2 + mode3
-        else:
-            logger.critical("Unsupported STAT mode: %d", mode)
-            return 0
+        # else:
+        #     logger.critical("Unsupported STAT mode: %d", mode)
+        #     return 0
 
     def tick(self, cycles):
         interrupt_flag = 0
