@@ -11,6 +11,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
+
 def NOP_00(cpu): # 00 NOP
     cpu.PC += 1
     cpu.PC &= 0xFFFF
@@ -2165,7 +2166,7 @@ def JP_CA(cpu, v): # CA JP Z,a16
 
 
 def PREFIX_CB(cpu): # CB PREFIX CB
-    logger.critical('CB cannot be called!')
+    logger.critical("CB cannot be called!")
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 4
@@ -5243,8 +5244,6 @@ def execute_opcode(cpu, opcode):
         a = cpu.mb.getitem(pc+2)
         b = cpu.mb.getitem(pc+1)
         v = (a << 8) + b
-
-    opcode &= 0x1FF
 
     if opcode == 0x00:
         return NOP_00(cpu)
