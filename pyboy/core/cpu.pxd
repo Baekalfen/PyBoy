@@ -4,15 +4,19 @@
 #
 
 
-cimport pyboy.core.mb
-from . cimport opcodes
+from libc.stdint cimport int16_t, uint8_t, uint16_t, uint32_t, uint64_t
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
-from libc.stdint cimport int16_t
+cimport pyboy.core.mb
 from pyboy.utils cimport IntIOInterface
+
+from . cimport opcodes
 
 import cython
 
+from pyboy.logging.logging cimport Logger
+
+
+cdef Logger logger
 
 cdef uint16_t IF_ADDRESS, IE_ADDRESS
 cdef int16_t FLAGC, FLAGH, FLAGN, FLAGZ

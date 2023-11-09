@@ -6,8 +6,11 @@
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 from pyboy.core.cartridge.rtc cimport RTC
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
+
+cdef Logger logger
 
 cdef class BaseMBC:
     cdef str filename

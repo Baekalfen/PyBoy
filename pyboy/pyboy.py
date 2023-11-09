@@ -6,10 +6,11 @@
 The core module of the emulator
 """
 
-import logging
 import os
 import time
 
+from pyboy import utils
+from pyboy.logging import get_logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
@@ -18,7 +19,7 @@ from pyboy.utils import IntIOWrapper, WindowEvent
 from . import botsupport
 from .core.mb import Motherboard
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SPF = 1 / 60. # inverse FPS (frame-per-second)
 

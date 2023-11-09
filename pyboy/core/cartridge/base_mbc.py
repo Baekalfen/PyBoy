@@ -4,15 +4,15 @@
 #
 
 import array
-import logging
 import os
 
-from pyboy.logger import logger
+import pyboy
+from pyboy import utils
 from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 
 class BaseMBC:

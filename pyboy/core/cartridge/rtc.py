@@ -2,14 +2,15 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 
-import logging
 import os
 import struct
 import time
 
+import pyboy
+from pyboy import utils
 from pyboy.utils import STATE_VERSION, IntIOWrapper
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 
 class RTC:

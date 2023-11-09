@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
 import os
 import re
 import zlib
@@ -11,9 +10,9 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
+from pyboy import utils
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -29,7 +28,9 @@ try:
 except ImportError:
     sdl2 = None
 
-logger = logging.getLogger(__name__)
+import pyboy
+
+logger = pyboy.logging.get_logger(__name__)
 
 # Mask colors:
 COLOR = 0x00000000

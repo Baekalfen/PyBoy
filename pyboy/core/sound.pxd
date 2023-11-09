@@ -5,7 +5,12 @@
 
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
+
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
+
+
+cdef Logger logger
 
 cdef int SOUND_DESYNC_THRESHOLD
 cdef int CPU_FREQ
