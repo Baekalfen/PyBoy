@@ -5,16 +5,18 @@
 
 cimport cython
 from cpython.array cimport array
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.plugins.window_sdl2
-from pyboy.core.mb cimport Motherboard
 from pyboy.botsupport.sprite cimport Sprite
 from pyboy.botsupport.tilemap cimport TileMap
+from pyboy.core.mb cimport Motherboard
+from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
+cdef Logger logger
 
 cdef uint32_t COLOR
 cdef uint32_t MASK

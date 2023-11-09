@@ -4,9 +4,16 @@
 #
 
 import cython
+
 from cpython cimport time
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
+
+from pyboy cimport utils
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
+
+
+cdef Logger logger
 
 cdef class RTC:
     cdef str filename

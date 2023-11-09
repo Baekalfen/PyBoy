@@ -3,15 +3,15 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
 from array import array
 from copy import deepcopy
 from ctypes import c_void_p
 from random import getrandbits
 
+import pyboy
 from pyboy import utils
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 VIDEO_RAM = 8 * 1024 # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0

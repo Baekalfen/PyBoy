@@ -7,16 +7,16 @@ __pdoc__ = {
     "GameWrapperTetris.post_tick": False,
 }
 
-import logging
 from array import array
 
 import numpy as np
 
+import pyboy
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 # Table for translating game-representation of Tetromino types (8-bit int) to string
 tetromino_table = {

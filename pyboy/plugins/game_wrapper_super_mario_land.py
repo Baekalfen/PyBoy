@@ -7,15 +7,14 @@ __pdoc__ = {
     "GameWrapperSuperMarioLand.post_tick": False,
 }
 
-import logging
-
 import numpy as np
 
+import pyboy
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 # Mario and Daisy
 base_scripts = list(range(81))

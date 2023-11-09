@@ -7,10 +7,13 @@
 import argparse
 import os
 
-from pyboy import PyBoy, core
-from pyboy.logger import log_level, logger
+import pyboy
+from pyboy import PyBoy, core, utils
+from pyboy.logging import log_level
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
+
+logger = pyboy.logging.get_logger(__name__)
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
 

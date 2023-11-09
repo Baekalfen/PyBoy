@@ -4,12 +4,15 @@
 #
 
 cimport cython
-from pyboy.plugins.base_plugin cimport PyBoyPlugin
+from libc.stdint cimport int64_t, uint8_t, uint64_t
+from libc.stdlib cimport free, malloc
 
-from libc.stdlib cimport malloc, free
-from libc.stdint cimport uint8_t, uint64_t, int64_t
+from pyboy.logging.logging cimport Logger
+from pyboy.plugins.base_plugin cimport PyBoyPlugin
 from pyboy.utils cimport IntIOInterface
 
+
+cdef Logger logger
 
 cdef class Rewind(PyBoyPlugin):
     cdef double rewind_speed

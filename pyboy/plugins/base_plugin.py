@@ -12,15 +12,15 @@ __pdoc__ = {
 }
 
 import io
-import logging
 import random
 from array import array
 
 import numpy as np
 
+import pyboy
 from pyboy.botsupport.sprite import Sprite
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 try:
     from cython import compiled

@@ -4,9 +4,15 @@
 #
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+
 from pyboy.utils cimport IntIOInterface
+
 import cython
 
+from pyboy.logging.logging cimport Logger
+
+
+cdef Logger logger
 
 cdef class Timer:
     cdef uint64_t DIV, TIMA, TMA, TAC

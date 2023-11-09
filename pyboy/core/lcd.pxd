@@ -18,6 +18,10 @@ cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS, TILES, FRAME_CYCLES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef uint32_t COL0_FLAG
 cdef uint8_t BG_PRIORITY_FLAG, CGB_NUM_PALETTES
+from pyboy.logging.logging cimport Logger
+
+
+cdef Logger logger
 
 cdef class LCD:
     cdef bint disable_renderer
