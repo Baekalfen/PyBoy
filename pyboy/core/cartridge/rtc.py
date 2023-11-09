@@ -45,16 +45,16 @@ class RTC:
         f.write(self.day_carry)
 
     def load_state(self, f, state_version):
-        self.timezero = struct.unpack("f", bytes([f.read() for _ in range(4)]))[0]
+        self.timezero = int(struct.unpack("f", bytes([f.read() for _ in range(4)]))[0])
         self.halt = f.read()
         self.day_carry = f.read()
 
     def latch_rtc(self):
         t = time.time() - self.timezero
         self.sec_latch = int(t % 60)
-        self.min_latch = int(t / 60 % 60)
-        self.hour_latch = int(t / 3600 % 24)
-        days = int(t / 3600 / 24)
+        self.min_latch = int((t//60) % 60)
+        self.hour_latch = int((t//3600) % 24)
+        days = int(t // 3600 // 24)
         self.day_latch_low = days & 0xFF
         self.day_latch_high = days >> 8
 
@@ -101,13 +101,13 @@ class RTC:
         t = time.time() - self.timezero
         if register == 0x08:
             # TODO: What happens, when these value are larger than allowed?
-            self.timezero -= int(t % 60) - value
+            self.timezero = self.timezero - (t%60) - value
         elif register == 0x09:
-            self.timezero -= int(t / 60 % 60) - value
+            self.timezero = self.timezero - (t//60%60) - value
         elif register == 0x0A:
-            self.timezero -= int(t / 3600 % 24) - value
+            self.timezero = self.timezero - (t//3600%24) - value
         elif register == 0x0B:
-            self.timezero -= int(t / 3600 / 24) - value
+            self.timezero = self.timezero - (t//3600//24) - value
         elif register == 0x0C:
             day_high = value & 0b1
             halt = (value & 0b1000000) >> 6
@@ -119,7 +119,7 @@ class RTC:
             else:
                 logger.warning("Stopping RTC is not implemented!")
 
-            self.timezero -= int(t / 3600 / 24) - (day_high << 8)
+            self.timezero = self.timezero - (t//3600//24) - (day_high << 8)
             self.day_carry = day_carry
         else:
             logger.warning("Invalid RTC register: %0.4x %0.2x" % (register, value))
