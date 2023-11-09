@@ -78,7 +78,7 @@ cdef class PaletteRegister:
     @cython.locals(x=uint16_t)
     cdef bint set(self, uint64_t) noexcept
     cdef uint8_t get(self) noexcept
-    cdef uint32_t getcolor(self, uint8_t) noexcept
+    cdef inline uint32_t getcolor(self, uint8_t) noexcept
 
 cdef class STATRegister:
     cdef uint8_t value
@@ -270,7 +270,7 @@ cdef class PaletteColorRegister:
     cdef uint32_t cgb_to_rgb(self, uint16_t, uint8_t) noexcept
     cdef void set(self, uint16_t) noexcept
     cdef uint16_t get(self) noexcept
-    cdef uint32_t getcolor(self, uint8_t, uint8_t) noexcept
+    cdef inline uint32_t getcolor(self, uint8_t, uint8_t) noexcept
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
