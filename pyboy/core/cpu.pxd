@@ -30,13 +30,13 @@ cdef class CPU:
 
     cdef uint8_t interrupts_flag, interrupts_enabled, interrupts_flag_register, interrupts_enabled_register
 
-    cdef inline int check_interrupts(self) noexcept
-    cdef void set_interruptflag(self, int) noexcept
-    cdef bint handle_interrupt(self, uint8_t, uint16_t) noexcept
+    cdef inline int check_interrupts(self) noexcept nogil
+    cdef void set_interruptflag(self, int) noexcept nogil
+    cdef bint handle_interrupt(self, uint8_t, uint16_t) noexcept nogil
 
     @cython.locals(opcode=uint16_t)
-    cdef inline uint8_t fetch_and_execute(self) noexcept
-    cdef int tick(self) noexcept
+    cdef inline uint8_t fetch_and_execute(self) noexcept nogil
+    cdef int tick(self) noexcept nogil
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
 
@@ -50,5 +50,7 @@ cdef class CPU:
 
     cdef pyboy.core.mb.Motherboard mb
 
-    cdef void set_bc(CPU, uint16_t) noexcept
-    cdef void set_de(CPU, uint16_t) noexcept
+    cdef void set_bc(CPU, uint16_t) noexcept nogil
+    cdef void set_de(CPU, uint16_t) noexcept nogil
+
+    cdef dump_state(self, str) noexcept with gil

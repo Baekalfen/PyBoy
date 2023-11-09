@@ -31,8 +31,8 @@ cdef class RTC:
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
     @cython.locals(days=uint64_t)
-    cdef void latch_rtc(self) noexcept
-    cdef void writecommand(self, uint8_t) noexcept
-    cdef uint8_t getregister(self, uint8_t) noexcept
+    cdef void latch_rtc(self) noexcept nogil
+    cdef void writecommand(self, uint8_t) noexcept nogil
+    cdef uint8_t getregister(self, uint8_t) noexcept nogil
     @cython.locals(t=cython.double, days=uint64_t)
-    cdef void setregister(self, uint8_t, uint8_t) noexcept
+    cdef void setregister(self, uint8_t, uint8_t) noexcept nogil

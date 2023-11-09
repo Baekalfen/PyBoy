@@ -4,7 +4,6 @@
 #
 
 cimport cython
-
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 ##############################################################
@@ -32,7 +31,7 @@ cdef class IntIOWrapper(IntIOInterface):
 ##############################################################
 # Misc
 
-cdef uint8_t color_code(uint8_t, uint8_t, uint8_t) noexcept
+cdef uint8_t color_code(uint8_t, uint8_t, uint8_t) noexcept nogil
 
 ##############################################################
 # Window Events

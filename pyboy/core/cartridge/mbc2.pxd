@@ -13,4 +13,4 @@ from .base_mbc cimport BaseMBC
 cdef Logger logger
 
 cdef class MBC2(BaseMBC):
-    cdef void setitem(self, uint16_t, uint8_t) noexcept
+    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil

@@ -19,6 +19,6 @@ cdef uint8_t set_bit(uint8_t, uint8_t) noexcept
 cdef class Interaction:
     cdef uint8_t directional, standard
     cdef bint key_event(self, WindowEvent) noexcept
-    cdef uint8_t pull(self, uint8_t) noexcept
+    cdef uint8_t pull(self, uint8_t) noexcept nogil
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept

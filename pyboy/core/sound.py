@@ -179,14 +179,17 @@ class Sound:
                 self.audiobuffer[2*i + 1] = 0
 
         if self.enabled:
-            # Clear queue, if we are behind
-            queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
-            samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
-            if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
-                sdl2.SDL_ClearQueuedAudio(self.device)
-
-            sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
+            self.enqueue_sound(nsamples)
         self.clock %= self.sampleclocks
+
+    def enqueue_sound(self, nsamples):
+        # Clear queue, if we are behind
+        queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
+        samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
+        if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
+            sdl2.SDL_ClearQueuedAudio(self.device)
+
+        sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
 
     def stop(self):
         if self.enabled:

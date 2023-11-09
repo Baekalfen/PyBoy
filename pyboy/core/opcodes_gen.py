@@ -39,9 +39,9 @@ cdef Logger logger
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
-cdef int execute_opcode(cpu.CPU, uint16_t) noexcept
+cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
 
-cdef uint8_t no_opcode(cpu.CPU) noexcept
+cdef uint8_t no_opcode(cpu.CPU) noexcept nogil
 """
 
 
@@ -263,11 +263,11 @@ class Code:
         code += "\n\t".join(self.lines)
 
         pxd = [
-            "cdef uint8_t %s_%0.2X(cpu.CPU) noexcept # %0.2X %s" %
+            "cdef uint8_t %s_%0.2X(cpu.CPU) noexcept nogil # %0.2X %s" %
             (self.function_name, self.opcode, self.opcode, self.name),
             # TODO: Differentiate between 16-bit values
             # (01,11,21,31 ops) and 8-bit values for 'v'
-            "cdef uint8_t %s_%0.2X(cpu.CPU, int v) noexcept # %0.2X %s" %
+            "cdef uint8_t %s_%0.2X(cpu.CPU, int v) noexcept nogil # %0.2X %s" %
             (self.function_name, self.opcode, self.opcode, self.name),
         ][self.takes_immediate]
 
