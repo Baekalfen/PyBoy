@@ -24,16 +24,15 @@ is_pypy = platform.python_implementation() == "PyPy"
 def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window_type="null", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
-    pyboy.tick(True)
+    pyboy.tick(1, True)
     pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-    pyboy.tick(True)
+    pyboy.tick(1, True)
     pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-    pyboy.tick(True)
-    pyboy.tick(True)
+    pyboy.tick(2, True)
     pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-    pyboy.tick(True)
+    pyboy.tick(1, True)
     pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-    pyboy.tick(True)
+    pyboy.tick(1, True)
 
     events = pyboy.plugin_manager.record_replay.recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
@@ -98,8 +97,7 @@ def test_argv_parser(*args):
 def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    for _ in range(120):
-        pyboy.tick(False)
+    pyboy.tick(120, False)
 
     bck_tilemap = pyboy.tilemap_background()
     wdw_tilemap = pyboy.tilemap_window()
@@ -174,8 +172,7 @@ def test_randomize_ram(default_rom):
 def test_not_cgb(pokemon_crystal_rom):
     pyboy = PyBoy(pokemon_crystal_rom, window_type="null", cgb=False)
     pyboy.set_emulation_speed(0)
-    for _ in range(60 * 7):
-        pyboy.tick(False)
+    pyboy.tick(60 * 7, False)
 
     assert pyboy.tilemap_background()[1:16, 16] == [
         134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
@@ -201,8 +198,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
 
     pyboy = PyBoy(rom, window_type="null", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
-    for _ in range(frames):
-        pyboy.tick(True)
+    pyboy.tick(frames, True)
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
     png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")

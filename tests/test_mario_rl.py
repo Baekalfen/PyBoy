@@ -178,7 +178,7 @@ while True:
         break
 
 pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
-pyboy.tick(True)
+pyboy.tick(1, True)
 env.close()
 """
 

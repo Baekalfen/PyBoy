@@ -33,8 +33,7 @@ assert kirby.health == 6
 
 pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
-for _ in range(280): # Walk for 280 ticks
-    pyboy.tick(True)
+pyboy.tick(280, True) # Walk for 280 ticks
 
 assert kirby.score == 800
 assert kirby.health == 5
