@@ -570,7 +570,7 @@ class Renderer:
             if y <= ly < y + spriteheight:
                 # x is used for sorting for priority
                 if self.cgb:
-                    self.sprites_to_render[sprite_count] = n << 16 | x
+                    self.sprites_to_render[sprite_count] = n
                 else:
                     self.sprites_to_render[sprite_count] = x << 16 | n
                 sprite_count += 1
@@ -587,7 +587,7 @@ class Renderer:
 
         for _n in self.sprites_to_render[:sprite_count]:
             if self.cgb:
-                n = _n >> 16
+                n = _n
             else:
                 n = _n & 0xFF
             # n = self.sprites_to_render_n[_n]
