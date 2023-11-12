@@ -169,10 +169,13 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         self.set_emulation_speed(1)
         self.paused = False
         self.events = []
+        self.queued_input = []
         self.old_events = []
         self.quitting = False
         self.stopped = False
         self.window_title = &#34;PyBoy&#34;
+
+        self.memory_view = PyBoyMemoryView(self.mb)
 
         ###################
         # Plugins
@@ -180,31 +183,9 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self.initialized = True
 
-    def tick(self, render):
-        &#34;&#34;&#34;
-        Progresses the emulator ahead by one frame.
-
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-
-        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it&#39;s adviced to use
-        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
-        access the `PyBoy.game_area` to get a simpler representation of the game.
-
-        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
-
-        Args:
-            render (bool): Whether to render an image for this tick
-        Returns
-        -------
-        (True or False or PIL.Image):
-            False if emulation has ended otherwise True or RGB image of (160, 144) pixels
-        &#34;&#34;&#34;
+    def _tick(self, render):
         if self.stopped:
-            return True
+            return False
 
         t_start = time.perf_counter_ns()
         self._handle_events(self.events)
@@ -229,12 +210,42 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         nsecs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
-        if self.quitting:
-            return False
-        if render:
+        return not self.quitting
+
+    def tick(self, count, render):
+        &#34;&#34;&#34;
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it&#39;s adviced to use
+        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+        access the `PyBoy.game_area` to get a simpler representation of the game.
+
+        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
+
+        Args:
+            count (int): Number of ticks to process. -1 is infinite.
+            render (bool): Whether to render an image for this tick
+        Returns
+        -------
+        (True or False or PIL.Image):
+            False if emulation has ended otherwise True or RGB image of (160, 144) pixels
+        &#34;&#34;&#34;
+
+        while count != 0:
+            _render = render and count == 1 # Only render on last tick to improve performance
+            running = self._tick(render)
+            count -= 1
+
+        if render and running:
             return self.screen().screen_image()
         else:
-            return True
+            return running
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -297,12 +308,13 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
 
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.old_events = self.events
-        self.events = []
+        self.events = self.queued_input
+        self.queued_input = []
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
-        self.window_title = &#34;CPU/frame: %0.2f%%&#34; % ((self.avg_pre + self.avg_tick) / SPF * 100)
-        self.window_title += &#34; Emulation: x%s&#34; % (round(SPF / avg_emu) if avg_emu &gt; 0 else &#34;INF&#34;)
+        self.window_title = f&#34;CPU/frame: {(self.avg_pre + self.avg_tick) / SPF * 100:0.2f}%&#34;
+        self.window_title += f&#39; Emulation: x{(round(SPF / avg_emu) if avg_emu &gt; 0 else &#34;INF&#34;)}&#39;
         if self.paused:
             self.window_title += &#34;[PAUSED]&#34;
         self.window_title += self.plugin_manager.window_title()
@@ -384,36 +396,18 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         &#34;&#34;&#34;
         return self.plugin_manager.gamewrapper()
 
-    def get_memory_value(self, addr):
+    @property
+    def memory(self):
         &#34;&#34;&#34;
-        Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
-        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-        MBC commands to the virtual cartridge.
+        Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
-        Returns
-        -------
-        int:
-            An integer with the value of the memory address
+        Example:
+        ```
+        &gt;&gt;&gt; values = pyboy.memory[0x0000:0x10000]
+        &gt;&gt;&gt; pyboy.memory[0xC000:0xC0010] = 0
+        ```
         &#34;&#34;&#34;
-        return self.mb.getitem(addr)
-
-    def set_memory_value(self, addr, value):
-        &#34;&#34;&#34;
-        Write one byte to a given memory address of the Game Boy&#39;s current memory state.
-
-        This will not directly give you access to all switchable memory banks.
-
-        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-        addresses, it will send commands to the &#34;Memory Bank Controller&#34; (MBC) of the virtual cartridge. You can read
-        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
-
-        Args:
-            addr (int): Address to write the byte
-            value (int): A byte of data
-        &#34;&#34;&#34;
-        self.mb.setitem(addr, value)
+        return self.memory_view
 
     def override_memory_value(self, rom_bank, addr, value):
         &#34;&#34;&#34;
@@ -424,7 +418,7 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
         any overrides when reloading the ROM.
 
-        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+        If you need to change a RAM address, see `pyboy.PyBoy.memory`.
 
         Args:
             rom_bank (int): ROM bank to do the overwrite in
@@ -447,28 +441,28 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         input = input.lower()
         if input == &#34;left&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_LEFT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_LEFT))
         elif input == &#34;right&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_RIGHT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_RIGHT))
         elif input == &#34;up&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_UP)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_UP)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_UP))
         elif input == &#34;down&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_DOWN)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_DOWN))
         elif input == &#34;a&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
         elif input == &#34;b&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
         elif input == &#34;start&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
         elif input == &#34;select&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
         else:
             raise Exception(&#34;Unrecognized input:&#34;, input)
 
@@ -845,10 +839,38 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
     def _screenbuffer_raw(self):
         return self.mb.lcd.renderer._screenbuffer_raw</code></pre>
 </details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.PyBoy.memory"><code class="name">var <span class="ident">memory</span></code></dt>
+<dd>
+<section class="desc"><p>Provides a <code>pyboy.PyBoyMemoryView</code> object for reading and writing the memory space of the Game Boy.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; values = pyboy.memory[0x0000:0x10000]
+&gt;&gt;&gt; pyboy.memory[0xC000:0xC0010] = 0
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def memory(self):
+    &#34;&#34;&#34;
+    Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
+
+    Example:
+    ```
+    &gt;&gt;&gt; values = pyboy.memory[0x0000:0x10000]
+    &gt;&gt;&gt; pyboy.memory[0xC000:0xC0010] = 0
+    ```
+    &#34;&#34;&#34;
+    return self.memory_view</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="pyboy.PyBoy.tick"><code class="name flex">
-<span>def <span class="ident">tick</span></span>(<span>self, render)</span>
+<span>def <span class="ident">tick</span></span>(<span>self, count, render)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Progresses the emulator ahead by one frame.</p>
@@ -862,6 +884,8 @@ access the <code><a title="pyboy.PyBoy.game_area" href="#pyboy.PyBoy.game_area">
 <p>If the screen was rendered, use <code><a title="pyboy.api.screen.Screen" href="api/screen.html#pyboy.api.screen.Screen">Screen</a></code> to get NumPy buffer or a raw memory buffer.</p>
 <h2 id="args">Args</h2>
 <dl>
+<dt><strong><code>count</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of ticks to process. -1 is infinite.</dd>
 <dt><strong><code>render</code></strong> :&ensp;<code>bool</code></dt>
 <dd>Whether to render an image for this tick</dd>
 </dl>
@@ -872,7 +896,7 @@ False if emulation has ended otherwise True or RGB image of (160, 144) pixels</p
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tick(self, render):
+<pre><code class="python">def tick(self, count, render):
     &#34;&#34;&#34;
     Progresses the emulator ahead by one frame.
 
@@ -889,44 +913,23 @@ False if emulation has ended otherwise True or RGB image of (160, 144) pixels</p
     If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
 
     Args:
+        count (int): Number of ticks to process. -1 is infinite.
         render (bool): Whether to render an image for this tick
     Returns
     -------
     (True or False or PIL.Image):
         False if emulation has ended otherwise True or RGB image of (160, 144) pixels
     &#34;&#34;&#34;
-    if self.stopped:
-        return True
 
-    t_start = time.perf_counter_ns()
-    self._handle_events(self.events)
-    t_pre = time.perf_counter_ns()
-    if not self.paused:
-        self.__rendering(render)
-        if self.mb.tick():
-            # breakpoint reached
-            self.plugin_manager.handle_breakpoint()
-        else:
-            self.frame_count += 1
-    t_tick = time.perf_counter_ns()
-    self._post_tick()
-    t_post = time.perf_counter_ns()
+    while count != 0:
+        _render = render and count == 1 # Only render on last tick to improve performance
+        running = self._tick(render)
+        count -= 1
 
-    nsecs = t_pre - t_start
-    self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
-
-    nsecs = t_tick - t_pre
-    self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
-
-    nsecs = t_post - t_tick
-    self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
-
-    if self.quitting:
-        return False
-    if render:
+    if render and running:
         return self.screen().screen_image()
     else:
-        return True</code></pre>
+        return running</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.stop"><code class="name flex">
@@ -1064,76 +1067,6 @@ A game-specific wrapper object.</p></section>
     return self.plugin_manager.gamewrapper()</code></pre>
 </details>
 </dd>
-<dt id="pyboy.PyBoy.get_memory_value"><code class="name flex">
-<span>def <span class="ident">get_memory_value</span></span>(<span>self, addr)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-all switchable memory banks. Open an issue on GitHub if that is needed, or use <code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">PyBoy.set_memory_value()</a></code> to send
-MBC commands to the virtual cartridge.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>int:</code></dt>
-<dd>An integer with the value of the memory address</dd>
-</dl></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_memory_value(self, addr):
-    &#34;&#34;&#34;
-    Reads a given memory address of the Game Boy&#39;s current memory state. This will not directly give you access to
-    all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-    MBC commands to the virtual cartridge.
-
-    Returns
-    -------
-    int:
-        An integer with the value of the memory address
-    &#34;&#34;&#34;
-    return self.mb.getitem(addr)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.set_memory_value"><code class="name flex">
-<span>def <span class="ident">set_memory_value</span></span>(<span>self, addr, value)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Write one byte to a given memory address of the Game Boy's current memory state.</p>
-<p>This will not directly give you access to all switchable memory banks.</p>
-<p><strong>NOTE:</strong> This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
-about the MBC at <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
-<p>If you need to change ROM values, see <code><a title="pyboy.PyBoy.override_memory_value" href="#pyboy.PyBoy.override_memory_value">PyBoy.override_memory_value()</a></code>.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>addr</code></strong> :&ensp;<code>int</code></dt>
-<dd>Address to write the byte</dd>
-<dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
-<dd>A byte of data</dd>
-</dl></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def set_memory_value(self, addr, value):
-    &#34;&#34;&#34;
-    Write one byte to a given memory address of the Game Boy&#39;s current memory state.
-
-    This will not directly give you access to all switchable memory banks.
-
-    __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-    addresses, it will send commands to the &#34;Memory Bank Controller&#34; (MBC) of the virtual cartridge. You can read
-    about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-    If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
-
-    Args:
-        addr (int): Address to write the byte
-        value (int): A byte of data
-    &#34;&#34;&#34;
-    self.mb.setitem(addr, value)</code></pre>
-</details>
-</dd>
 <dt id="pyboy.PyBoy.override_memory_value"><code class="name flex">
 <span>def <span class="ident">override_memory_value</span></span>(<span>self, rom_bank, addr, value)</span>
 </code></dt>
@@ -1142,7 +1075,7 @@ about the MBC at <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a>.</p>
 <p>This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.</p>
 <p><strong>NOTE</strong>: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
 any overrides when reloading the ROM.</p>
-<p>If you need to change a RAM address, see <code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">PyBoy.set_memory_value()</a></code>.</p>
+<p>If you need to change a RAM address, see <code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">PyBoy.memory</a></code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>rom_bank</code></strong> :&ensp;<code>int</code></dt>
@@ -1165,7 +1098,7 @@ any overrides when reloading the ROM.</p>
     __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
     any overrides when reloading the ROM.
 
-    If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+    If you need to change a RAM address, see `pyboy.PyBoy.memory`.
 
     Args:
         rom_bank (int): ROM bank to do the overwrite in
@@ -1204,28 +1137,28 @@ any overrides when reloading the ROM.</p>
     input = input.lower()
     if input == &#34;left&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_LEFT)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_LEFT))
     elif input == &#34;right&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_RIGHT)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_RIGHT))
     elif input == &#34;up&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_UP)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_UP)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_UP))
     elif input == &#34;down&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_DOWN)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_DOWN))
     elif input == &#34;a&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
     elif input == &#34;b&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_B)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
     elif input == &#34;start&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
     elif input == &#34;select&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-        self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+        self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
     else:
         raise Exception(&#34;Unrecognized input:&#34;, input)</code></pre>
 </details>
@@ -1882,8 +1815,10 @@ A TileMap object for the tile map.</p></section>
 <p>It can be used as follows:</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; from pyboy import PyBoy, WindowEvent
 &gt;&gt;&gt; pyboy = PyBoy('file.rom')
-&gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-</code></pre></section>
+&gt;&gt;&gt; pyboy.send_input(WindowEvent.PAUSE)
+</code></pre>
+<p>Just for button presses, it might be easier to use: <code><a title="pyboy.PyBoy.button" href="#pyboy.PyBoy.button">PyBoy.button()</a></code>,
+<code><a title="pyboy.PyBoy.button_press" href="#pyboy.PyBoy.button_press">PyBoy.button_press()</a></code> and <code><a title="pyboy.PyBoy.button_release" href="#pyboy.PyBoy.button_release">PyBoy.button_release()</a></code>.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1896,7 +1831,10 @@ A TileMap object for the tile map.</p></section>
 
     &gt;&gt;&gt; from pyboy import PyBoy, WindowEvent
     &gt;&gt;&gt; pyboy = PyBoy(&#39;file.rom&#39;)
-    &gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+    &gt;&gt;&gt; pyboy.send_input(WindowEvent.PAUSE)
+
+    Just for button presses, it might be easier to use: `pyboy.PyBoy.button`,
+    `pyboy.PyBoy.button_press` and `pyboy.PyBoy.button_release`.
     &#34;&#34;&#34;
 
     # ONLY ADD NEW EVENTS AT THE END OF THE LIST!
@@ -2189,8 +2127,6 @@ A TileMap object for the tile map.</p></section>
 <li><code><a title="pyboy.PyBoy.stop" href="#pyboy.PyBoy.stop">stop</a></code></li>
 <li><code><a title="pyboy.PyBoy.openai_gym" href="#pyboy.PyBoy.openai_gym">openai_gym</a></code></li>
 <li><code><a title="pyboy.PyBoy.game_wrapper" href="#pyboy.PyBoy.game_wrapper">game_wrapper</a></code></li>
-<li><code><a title="pyboy.PyBoy.get_memory_value" href="#pyboy.PyBoy.get_memory_value">get_memory_value</a></code></li>
-<li><code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">set_memory_value</a></code></li>
 <li><code><a title="pyboy.PyBoy.override_memory_value" href="#pyboy.PyBoy.override_memory_value">override_memory_value</a></code></li>
 <li><code><a title="pyboy.PyBoy.button" href="#pyboy.PyBoy.button">button</a></code></li>
 <li><code><a title="pyboy.PyBoy.button_press" href="#pyboy.PyBoy.button_press">button_press</a></code></li>
@@ -2208,6 +2144,7 @@ A TileMap object for the tile map.</p></section>
 <li><code><a title="pyboy.PyBoy.tile" href="#pyboy.PyBoy.tile">tile</a></code></li>
 <li><code><a title="pyboy.PyBoy.tilemap_background" href="#pyboy.PyBoy.tilemap_background">tilemap_background</a></code></li>
 <li><code><a title="pyboy.PyBoy.tilemap_window" href="#pyboy.PyBoy.tilemap_window">tilemap_window</a></code></li>
+<li><code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">memory</a></code></li>
 </ul>
 </li>
 <li>
