@@ -17,11 +17,8 @@ OVERWRITE_PNGS = False
 def test_magen_test(magen_test_file):
     pyboy = PyBoy(magen_test_file, window_type="null")
     pyboy.set_emulation_speed(0)
-    for _ in range(59):
-        pyboy.tick(True)
-
-    for _ in range(25):
-        pyboy.tick(True)
+    pyboy.tick(59, True)
+    pyboy.tick(25, True)
 
     png_path = Path(f"tests/test_results/{os.path.basename(magen_test_file)}.png")
     image = pyboy.screen().screen_image()

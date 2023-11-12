@@ -21,15 +21,14 @@ from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    pyboy.tick(False)
+    pyboy.tick(1, False)
     pyboy.stop(save=False)
 
 
 def test_tiles(default_rom):
     pyboy = PyBoy(default_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    for _ in range(BOOTROM_FRAMES_UNTIL_LOGO):
-        pyboy.tick(False)
+    pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
     tile = pyboy.tilemap_window().tile(0, 0)
     assert isinstance(tile, Tile)
@@ -71,8 +70,7 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
 
     pyboy = PyBoy(tetris_rom, window_type="null", bootrom_file=boot_rom)
     pyboy.set_emulation_speed(0)
-    for n in range(275): # Iterate to boot logo
-        pyboy.tick(True)
+    pyboy.tick(275, True) # Iterate to boot logo
 
     assert pyboy.screen().raw_screen_buffer_dims() == (144, 160)
     assert pyboy.screen().raw_screen_buffer_format() == cformat
@@ -126,7 +124,7 @@ def test_tetris(tetris_rom):
     tile_map = pyboy.tilemap_window()
     state_data = io.BytesIO()
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
-        pyboy.tick(False)
+        pyboy.tick(1, False)
 
         assert pyboy.screen().tilemap_position() == ((0, 0), (-7, 0))
 
@@ -298,11 +296,11 @@ def test_tetris(tetris_rom):
                 break
 
     pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
-    pyboy.tick(False)
+    pyboy.tick(1, False)
 
     pre_load_game_board_matrix = None
     for frame in range(1016, 1865):
-        pyboy.tick(False)
+        pyboy.tick(1, False)
 
         if frame == 1864:
             game_board_matrix = list(tile_map[2:12, :18])
@@ -330,9 +328,9 @@ def test_tetris(tetris_rom):
     tmp_state.seek(0)
     for _f in [tmp_state, state_data]: # Tests both file-written state and in-memory state
         pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
-        pyboy.tick(False)
+        pyboy.tick(1, False)
         for frame in range(1016, 1865):
-            pyboy.tick(False)
+            pyboy.tick(1, False)
 
             if frame == 1864:
                 game_board_matrix = list(tile_map[2:12, :18])
@@ -344,18 +342,16 @@ def test_tetris(tetris_rom):
 def test_tilemap_position_list(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    for _ in range(100):
-        pyboy.tick(False)
+    pyboy.tick(100, False)
 
     # Start the game
     pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-    pyboy.tick(False)
+    pyboy.tick(1, False)
     pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
 
     # Move right for 100 frame
     pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-    for _ in range(100):
-        pyboy.tick(False)
+    pyboy.tick(100, False)
 
     # Get screen positions, and verify the values
     positions = pyboy.screen().tilemap_position_list()
@@ -366,8 +362,7 @@ def test_tilemap_position_list(supermarioland_rom):
         last_y = positions[y][0]
 
     # Progress another 10 frames to see and increase in SCX
-    for _ in range(10):
-        pyboy.tick(False)
+    pyboy.tick(10, False)
 
     # Get screen positions, and verify the values
     positions = pyboy.screen().tilemap_position_list()
@@ -382,7 +377,7 @@ def test_tilemap_position_list(supermarioland_rom):
 def get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    pyboy.tick(False)
+    pyboy.tick(1, False)
 
     assert pyboy.get_memory_value(0xFF40) == 0x91
     assert pyboy.set_memory_value(0xFF40) == 0x12

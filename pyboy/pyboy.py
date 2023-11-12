@@ -148,7 +148,7 @@ class PyBoy:
 
         return not self.quitting
 
-    def tick(self, render):
+    def tick(self, count, render):
         """
         Progresses the emulator ahead by one frame.
 
@@ -165,6 +165,7 @@ class PyBoy:
         If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
 
         Args:
+            count (int): Number of ticks to process. -1 is infinite.
             render (bool): Whether to render an image for this tick
         Returns
         -------
@@ -172,8 +173,11 @@ class PyBoy:
             False if emulation has ended otherwise True or RGB image of (160, 144) pixels
         """
 
-        running = self._tick(render)
-        print(running, render, render and running)
+        while count != 0:
+            _render = render and count == 1 # Only render on last tick to improve performance
+            running = self._tick(render)
+            count -= 1
+
         if render and running:
             return self.screen().screen_image()
         else:
