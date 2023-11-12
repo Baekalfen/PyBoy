@@ -45,7 +45,7 @@ from .utils import WindowEvent</code></pre>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code></dt>
+<dt><code class="name"><a title="pyboy.api" href="api/index.html">pyboy.api</a></code></dt>
 <dd>
 <section class="desc"><p>Tools to help interfacing with the Game Boy hardware</p></section>
 </dd>
@@ -74,7 +74,7 @@ from .utils import WindowEvent</code></pre>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
 controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
 multiple times.</p>
-<p>This object, <code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code>, and the <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code> module, are the only official user-facing
+<p>This object, <code><a title="pyboy.WindowEvent" href="#pyboy.WindowEvent">WindowEvent</a></code>, and the <code><a title="pyboy.api" href="api/index.html">pyboy.api</a></code> module, are the only official user-facing
 interfaces. All other parts of the emulator, are subject to change.</p>
 <p>A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
 GitHub, if other methods are needed for your projects. Take a look at the files in <code>examples/</code> for a crude
@@ -114,7 +114,7 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
         multiple times.
 
-        This object, `pyboy.WindowEvent`, and the `pyboy.botsupport` module, are the only official user-facing
+        This object, `pyboy.WindowEvent`, and the `pyboy.api` module, are the only official user-facing
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
@@ -180,7 +180,7 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self.initialized = True
 
-    def tick(self):
+    def tick(self, render):
         &#34;&#34;&#34;
         Progresses the emulator ahead by one frame.
 
@@ -189,6 +189,19 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         otherwise with the `PyBoy.set_emulation_speed` method.
 
         _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it&#39;s adviced to use
+        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+        access the `PyBoy.game_area` to get a simpler representation of the game.
+
+        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
+
+        Args:
+            render (bool): Whether to render an image for this tick
+        Returns
+        -------
+        (True or False or PIL.Image):
+            False if emulation has ended otherwise True or RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if self.stopped:
             return True
@@ -197,6 +210,7 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
+            self.__rendering(render)
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
@@ -215,7 +229,12 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         nsecs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
-        return self.quitting
+        if self.quitting:
+            return False
+        if render:
+            return self.screen().screen_image()
+        else:
+            return True
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -318,16 +337,6 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
     # Scripts and bot methods
     #
 
-    def botsupport_manager(self):
-        &#34;&#34;&#34;
-
-        Returns
-        -------
-        `pyboy.botsupport.BotSupportManager`:
-            The manager, which gives easier access to the emulated game through the classes in `pyboy.botsupport`.
-        &#34;&#34;&#34;
-        return botsupport.BotSupportManager(self, self.mb)
-
     def openai_gym(self, observation_type=&#34;tiles&#34;, action_type=&#34;press&#34;, simultaneous_actions=False, **kwargs):
         &#34;&#34;&#34;
         For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
@@ -426,6 +435,102 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         # what the game writes to the address. This can be used so freeze the value for health, cash etc.
         self.mb.cartridge.overrideitem(rom_bank, addr, value)
 
+    def button(self, input):
+        &#34;&#34;&#34;
+        Send input to PyBoy in the form of &#34;a&#34;, &#34;b&#34;, &#34;start&#34;, &#34;select&#34;, &#34;left&#34;, &#34;right&#34;, &#34;up&#34; and &#34;down&#34;.
+
+        The button will automatically be released at the following call to `PyBoy.tick`.
+
+        Args:
+            input (str): button to press
+        &#34;&#34;&#34;
+        input = input.lower()
+        if input == &#34;left&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_LEFT)
+        elif input == &#34;right&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_RIGHT)
+        elif input == &#34;up&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_UP)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_UP)
+        elif input == &#34;down&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_DOWN)
+        elif input == &#34;a&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_A)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+        elif input == &#34;b&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_B)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+        elif input == &#34;start&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_START)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+        elif input == &#34;select&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
+            self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+        else:
+            raise Exception(&#34;Unrecognized input:&#34;, input)
+
+    def button_press(self, input):
+        &#34;&#34;&#34;
+        Send input to PyBoy in the form of &#34;a&#34;, &#34;b&#34;, &#34;start&#34;, &#34;select&#34;, &#34;left&#34;, &#34;right&#34;, &#34;up&#34; and &#34;down&#34;.
+
+        The button will remain press until explicitly released with `PyBoy.button_release` or `PyBoy.send_input`.
+
+        Args:
+            input (str): button to press
+        &#34;&#34;&#34;
+        input = input.lower()
+
+        if input == &#34;left&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
+        elif input == &#34;right&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
+        elif input == &#34;up&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_UP)
+        elif input == &#34;down&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
+        elif input == &#34;a&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_A)
+        elif input == &#34;b&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_B)
+        elif input == &#34;start&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_START)
+        elif input == &#34;select&#34;:
+            self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
+        else:
+            raise Exception(&#34;Unrecognized input&#34;)
+
+    def button_release(self, input):
+        &#34;&#34;&#34;
+        Send input to PyBoy in the form of &#34;a&#34;, &#34;b&#34;, &#34;start&#34;, &#34;select&#34;, &#34;left&#34;, &#34;right&#34;, &#34;up&#34; and &#34;down&#34;.
+
+        This will release a button after a call to `PyBoy.button_press` or `PyBoy.send_input`.
+
+        Args:
+            input (str): button to release
+        &#34;&#34;&#34;
+        input = input.lower()
+        if input == &#34;left&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_LEFT)
+        elif input == &#34;right&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_RIGHT)
+        elif input == &#34;up&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_UP)
+        elif input == &#34;down&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_DOWN)
+        elif input == &#34;a&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_A)
+        elif input == &#34;b&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_B)
+        elif input == &#34;start&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_START)
+        elif input == &#34;select&#34;:
+            self.send_input(WindowEvent.RELEASE_BUTTON_SELECT)
+        else:
+            raise Exception(&#34;Unrecognized input&#34;)
+
     def send_input(self, event):
         &#34;&#34;&#34;
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
@@ -508,22 +613,50 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def screen_image(self):
+    def game_area(self, type):
         &#34;&#34;&#34;
-        Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+        Use this method to get a matrix of the &#34;game area&#34; of the screen. This view is simplified to be perfect for
+        machine learning applications.
 
-        Generates a PIL Image from the screen buffer.
+        The layout will vary from game to game. Below is an example from Tetris:
 
-        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
-        and join our Discord channel for more help.
+        ```text
+             0   1   2   3   4   5   6   7   8   9
+        ____________________________________________
+        0  | 47  47  47  47  47  47  47  47  47  47
+        1  | 47  47  47  47  47  47  47  47  47  47
+        2  | 47  47  47  47  47  47  47  132 132 132
+        3  | 47  47  47  47  47  47  47  132 47  47
+        4  | 47  47  47  47  47  47  47  47  47  47
+        5  | 47  47  47  47  47  47  47  47  47  47
+        6  | 47  47  47  47  47  47  47  47  47  47
+        7  | 47  47  47  47  47  47  47  47  47  47
+        8  | 47  47  47  47  47  47  47  47  47  47
+        9  | 47  47  47  47  47  47  47  47  47  47
+        10 | 47  47  47  47  47  47  47  47  47  47
+        11 | 47  47  47  47  47  47  47  47  47  47
+        12 | 47  47  47  47  47  47  47  47  47  47
+        13 | 47  47  47  47  47  47  47  47  47  47
+        14 | 47  47  47  47  47  47  47  47  47  47
+        15 | 47  47  47  47  47  47  47  47  47  47
+        16 | 47  47  47  47  47  47  47  47  47  47
+        17 | 47  47  47  47  47  47  138 139 139 143
+        ```
+
+        The `type` argument provides three options:
+        * `&#34;tiles&#34;`:  Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+        * `&#34;compressed&#34;`: Like `&#34;tiles&#34;` but with slightly simplified id&#39;s (i.e. each type of enemy has a unique id).
+        * `&#34;minimal&#34;`: Like `&#34;compressed&#34;` but gives a minimal representation (recommended; i.e. all enemies have the same id).
+
+        Args:
+            type (string): &#34;minimal&#34;, &#34;compressed&#34;, &#34;tiles&#34;
 
         Returns
         -------
-        PIL.Image:
-            RGB image of (160, 144) pixels
+        memoryview:
+            Simplified 2-dimensional memoryview of the screen
         &#34;&#34;&#34;
-        return self.botsupport_manager().screen().screen_image()
+        raise Exception(&#34;game_area not implemented&#34;)
 
     def _serial(self):
         &#34;&#34;&#34;
@@ -566,31 +699,180 @@ cgb_color_palette (list of tuple): Specify the color palette to use for renderin
         &#34;&#34;&#34;
         return self.mb.cartridge.gamename
 
-    def _rendering(self, value):
+    def __rendering(self, value):
         &#34;&#34;&#34;
         Disable or enable rendering
         &#34;&#34;&#34;
         self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
-        return self.mb.cpu.is_stuck</code></pre>
+        return self.mb.cpu.is_stuck
+
+    def screen(self):
+        &#34;&#34;&#34;
+        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
+
+        It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.api.screen.Screen.tilemap_position` for more information.
+
+        Returns
+        -------
+        `pyboy.api.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
+        &#34;&#34;&#34;
+        return Screen(self)
+
+    def sprite(self, sprite_index):
+        &#34;&#34;&#34;
+        Provides a `pyboy.api.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+        corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
+
+        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+        Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            index (int): Sprite index from 0 to 39.
+        Returns
+        -------
+        `pyboy.api.sprite.Sprite`:
+            Sprite corresponding to the given index.
+        &#34;&#34;&#34;
+        return Sprite(self, sprite_index)
+
+    def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+        &#34;&#34;&#34;
+        Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+        identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+        `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
+
+        Example:
+        ```
+        &gt;&gt;&gt; print(pyboy.api_manager().sprite_by_tile_identifier([43, 123]))
+        [[0, 2, 4], []]
+        ```
+
+        Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+        `123` was not found anywhere.
+
+        Args:
+            identifiers (list): List of tile identifiers (int)
+            on_screen (bool): Require that the matched sprite is on screen
+
+        Returns
+        -------
+        list:
+            list of sprite matches for every tile identifier in the input
+        &#34;&#34;&#34;
+
+        matches = []
+        for i in tile_identifiers:
+            match = []
+            for s in range(constants.SPRITES):
+                sprite = Sprite(self, s)
+                for t in sprite.tiles:
+                    if t.tile_identifier == i and (not on_screen or (on_screen and sprite.on_screen)):
+                        match.append(s)
+            matches.append(match)
+        return matches
+
+    def tile(self, identifier):
+        &#34;&#34;&#34;
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+        `pyboy.api.tile.Tile`-object for given identifier.
+
+        The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+        the `pyboy.api.tile.Tile` object for more information.
+
+        Returns
+        -------
+        `pyboy.api.tile.Tile`:
+            A Tile object for the given identifier.
+        &#34;&#34;&#34;
+        return Tile(self, identifier=identifier)
+
+    def tilemap_background(self):
+        &#34;&#34;&#34;
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        &#34;&#34;&#34;
+        return TileMap(self, &#34;BACKGROUND&#34;)
+
+    def tilemap_window(self):
+        &#34;&#34;&#34;
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        &#34;&#34;&#34;
+        return TileMap(self, &#34;WINDOW&#34;)
+
+    def _image_data(self):
+        &#34;&#34;&#34;
+        Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
+        colors.
+
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+        Returns
+        -------
+        memoryview :
+            Image data of tile in 8x8 pixels and RGBA colors.
+        &#34;&#34;&#34;
+        self.data = np.zeros((8, 8), dtype=np.uint32)
+        for k in range(0, 16, 2): # 2 bytes for each line
+            byte1 = self.mb.lcd.VRAM0[self.data_address + k - constants.VRAM_OFFSET]
+            byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - constants.VRAM_OFFSET]
+
+            for x in range(8):
+                colorcode = utils.color_code(byte1, byte2, 7 - x)
+                # NOTE: &#34;&gt;&gt; 8 | 0xFF000000&#34; to keep compatibility with earlier code
+                old_A_format = 0xFF000000
+                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) &gt;&gt; 8 | old_A_format
+
+    def _screenbuffer_raw(self):
+        return self.mb.lcd.renderer._screenbuffer_raw</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="pyboy.PyBoy.tick"><code class="name flex">
-<span>def <span class="ident">tick</span></span>(<span>self)</span>
+<span>def <span class="ident">tick</span></span>(<span>self, render)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Progresses the emulator ahead by one frame.</p>
 <p>To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
 This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
 otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">PyBoy.set_emulation_speed()</a></code> method.</p>
-<p><em>Open an issue on GitHub if you need finer control, and we will take a look at it.</em></p></section>
+<p><em>Open an issue on GitHub if you need finer control, and we will take a look at it.</em></p>
+<p>Setting <code>render</code> to <code>True</code> will make PyBoy render the screen for this tick. For AI training, it's adviced to use
+this sparingly, as it will reduce performance substantially. While setting <code>render</code> to <code>False</code>, you can still
+access the <code><a title="pyboy.PyBoy.game_area" href="#pyboy.PyBoy.game_area">PyBoy.game_area()</a></code> to get a simpler representation of the game.</p>
+<p>If the screen was rendered, use <code><a title="pyboy.api.screen.Screen" href="api/screen.html#pyboy.api.screen.Screen">Screen</a></code> to get NumPy buffer or a raw memory buffer.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>render</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to render an image for this tick</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>(True or False or PIL.Image):
+False if emulation has ended otherwise True or RGB image of (160, 144) pixels</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tick(self):
+<pre><code class="python">def tick(self, render):
     &#34;&#34;&#34;
     Progresses the emulator ahead by one frame.
 
@@ -599,6 +881,19 @@ otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy
     otherwise with the `PyBoy.set_emulation_speed` method.
 
     _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+    Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it&#39;s adviced to use
+    this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+    access the `PyBoy.game_area` to get a simpler representation of the game.
+
+    If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
+
+    Args:
+        render (bool): Whether to render an image for this tick
+    Returns
+    -------
+    (True or False or PIL.Image):
+        False if emulation has ended otherwise True or RGB image of (160, 144) pixels
     &#34;&#34;&#34;
     if self.stopped:
         return True
@@ -607,6 +902,7 @@ otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy
     self._handle_events(self.events)
     t_pre = time.perf_counter_ns()
     if not self.paused:
+        self.__rendering(render)
         if self.mb.tick():
             # breakpoint reached
             self.plugin_manager.handle_breakpoint()
@@ -625,7 +921,12 @@ otherwise with the <code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy
     nsecs = t_post - t_tick
     self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
-    return self.quitting</code></pre>
+    if self.quitting:
+        return False
+    if render:
+        return self.screen().screen_image()
+    else:
+        return True</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.stop"><code class="name flex">
@@ -658,28 +959,6 @@ provided game-ROM.</dd>
         self.plugin_manager.stop()
         self.mb.stop(save)
         self.stopped = True</code></pre>
-</details>
-</dd>
-<dt id="pyboy.PyBoy.botsupport_manager"><code class="name flex">
-<span>def <span class="ident">botsupport_manager</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><h2 id="returns">Returns</h2>
-<p><code><a title="pyboy.botsupport.BotSupportManager" href="botsupport/index.html#pyboy.botsupport.BotSupportManager">BotSupportManager</a></code>:
-The manager, which gives easier access to the emulated game through the classes in <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code>.</p></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def botsupport_manager(self):
-    &#34;&#34;&#34;
-
-    Returns
-    -------
-    `pyboy.botsupport.BotSupportManager`:
-        The manager, which gives easier access to the emulated game through the classes in `pyboy.botsupport`.
-    &#34;&#34;&#34;
-    return botsupport.BotSupportManager(self, self.mb)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.openai_gym"><code class="name flex">
@@ -898,6 +1177,150 @@ any overrides when reloading the ROM.</p>
     self.mb.cartridge.overrideitem(rom_bank, addr, value)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.PyBoy.button"><code class="name flex">
+<span>def <span class="ident">button</span></span>(<span>self, input)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".</p>
+<p>The button will automatically be released at the following call to <code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input</code></strong> :&ensp;<code>str</code></dt>
+<dd>button to press</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def button(self, input):
+    &#34;&#34;&#34;
+    Send input to PyBoy in the form of &#34;a&#34;, &#34;b&#34;, &#34;start&#34;, &#34;select&#34;, &#34;left&#34;, &#34;right&#34;, &#34;up&#34; and &#34;down&#34;.
+
+    The button will automatically be released at the following call to `PyBoy.tick`.
+
+    Args:
+        input (str): button to press
+    &#34;&#34;&#34;
+    input = input.lower()
+    if input == &#34;left&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_LEFT)
+    elif input == &#34;right&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_RIGHT)
+    elif input == &#34;up&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_UP)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_UP)
+    elif input == &#34;down&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_DOWN)
+    elif input == &#34;a&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_A)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+    elif input == &#34;b&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_B)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+    elif input == &#34;start&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_START)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+    elif input == &#34;select&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
+        self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+    else:
+        raise Exception(&#34;Unrecognized input:&#34;, input)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.button_press"><code class="name flex">
+<span>def <span class="ident">button_press</span></span>(<span>self, input)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".</p>
+<p>The button will remain press until explicitly released with <code><a title="pyboy.PyBoy.button_release" href="#pyboy.PyBoy.button_release">PyBoy.button_release()</a></code> or <code><a title="pyboy.PyBoy.send_input" href="#pyboy.PyBoy.send_input">PyBoy.send_input()</a></code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input</code></strong> :&ensp;<code>str</code></dt>
+<dd>button to press</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def button_press(self, input):
+    &#34;&#34;&#34;
+    Send input to PyBoy in the form of &#34;a&#34;, &#34;b&#34;, &#34;start&#34;, &#34;select&#34;, &#34;left&#34;, &#34;right&#34;, &#34;up&#34; and &#34;down&#34;.
+
+    The button will remain press until explicitly released with `PyBoy.button_release` or `PyBoy.send_input`.
+
+    Args:
+        input (str): button to press
+    &#34;&#34;&#34;
+    input = input.lower()
+
+    if input == &#34;left&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
+    elif input == &#34;right&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
+    elif input == &#34;up&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_UP)
+    elif input == &#34;down&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
+    elif input == &#34;a&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_A)
+    elif input == &#34;b&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_B)
+    elif input == &#34;start&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_START)
+    elif input == &#34;select&#34;:
+        self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
+    else:
+        raise Exception(&#34;Unrecognized input&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.button_release"><code class="name flex">
+<span>def <span class="ident">button_release</span></span>(<span>self, input)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".</p>
+<p>This will release a button after a call to <code><a title="pyboy.PyBoy.button_press" href="#pyboy.PyBoy.button_press">PyBoy.button_press()</a></code> or <code><a title="pyboy.PyBoy.send_input" href="#pyboy.PyBoy.send_input">PyBoy.send_input()</a></code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input</code></strong> :&ensp;<code>str</code></dt>
+<dd>button to release</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def button_release(self, input):
+    &#34;&#34;&#34;
+    Send input to PyBoy in the form of &#34;a&#34;, &#34;b&#34;, &#34;start&#34;, &#34;select&#34;, &#34;left&#34;, &#34;right&#34;, &#34;up&#34; and &#34;down&#34;.
+
+    This will release a button after a call to `PyBoy.button_press` or `PyBoy.send_input`.
+
+    Args:
+        input (str): button to release
+    &#34;&#34;&#34;
+    input = input.lower()
+    if input == &#34;left&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_LEFT)
+    elif input == &#34;right&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_RIGHT)
+    elif input == &#34;up&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_UP)
+    elif input == &#34;down&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_DOWN)
+    elif input == &#34;a&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_A)
+    elif input == &#34;b&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_B)
+    elif input == &#34;start&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_START)
+    elif input == &#34;select&#34;:
+        self.send_input(WindowEvent.RELEASE_BUTTON_SELECT)
+    else:
+        raise Exception(&#34;Unrecognized input&#34;)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.PyBoy.send_input"><code class="name flex">
 <span>def <span class="ident">send_input</span></span>(<span>self, event)</span>
 </code></dt>
@@ -1066,40 +1489,97 @@ file_like_object = open("state_file.state", "rb")
     self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
 </dd>
-<dt id="pyboy.PyBoy.screen_image"><code class="name flex">
-<span>def <span class="ident">screen_image</span></span>(<span>self)</span>
+<dt id="pyboy.PyBoy.game_area"><code class="name flex">
+<span>def <span class="ident">game_area</span></span>(<span>self, type)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Shortcut for <code>pyboy.botsupport_manager.screen.screen_image</code>.</p>
-<p>Generates a PIL Image from the screen buffer.</p>
-<p>Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-case, read up on the <code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code> features, <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> on tiles/sprites,
-and join our Discord channel for more help.</p>
+<section class="desc"><p>Use this method to get a matrix of the "game area" of the screen. This view is simplified to be perfect for
+machine learning applications.</p>
+<p>The layout will vary from game to game. Below is an example from Tetris:</p>
+<pre><code class="language-text">     0   1   2   3   4   5   6   7   8   9
+____________________________________________
+0  | 47  47  47  47  47  47  47  47  47  47
+1  | 47  47  47  47  47  47  47  47  47  47
+2  | 47  47  47  47  47  47  47  132 132 132
+3  | 47  47  47  47  47  47  47  132 47  47
+4  | 47  47  47  47  47  47  47  47  47  47
+5  | 47  47  47  47  47  47  47  47  47  47
+6  | 47  47  47  47  47  47  47  47  47  47
+7  | 47  47  47  47  47  47  47  47  47  47
+8  | 47  47  47  47  47  47  47  47  47  47
+9  | 47  47  47  47  47  47  47  47  47  47
+10 | 47  47  47  47  47  47  47  47  47  47
+11 | 47  47  47  47  47  47  47  47  47  47
+12 | 47  47  47  47  47  47  47  47  47  47
+13 | 47  47  47  47  47  47  47  47  47  47
+14 | 47  47  47  47  47  47  47  47  47  47
+15 | 47  47  47  47  47  47  47  47  47  47
+16 | 47  47  47  47  47  47  47  47  47  47
+17 | 47  47  47  47  47  47  138 139 139 143
+</code></pre>
+<p>The <code>type</code> argument provides three options:
+* <code>"tiles"</code>:
+Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+* <code>"compressed"</code>: Like <code>"tiles"</code> but with slightly simplified id's (i.e. each type of enemy has a unique id).
+* <code>"minimal"</code>: Like <code>"compressed"</code> but gives a minimal representation (recommended; i.e. all enemies have the same id).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>type</code></strong> :&ensp;<code>string</code></dt>
+<dd>"minimal", "compressed", "tiles"</dd>
+</dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>PIL.Image:</code></dt>
-<dd>RGB image of (160, 144) pixels</dd>
+<dt><code>memoryview:</code></dt>
+<dd>Simplified 2-dimensional memoryview of the screen</dd>
 </dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def screen_image(self):
+<pre><code class="python">def game_area(self, type):
     &#34;&#34;&#34;
-    Shortcut for `pyboy.botsupport_manager.screen.screen_image`.
+    Use this method to get a matrix of the &#34;game area&#34; of the screen. This view is simplified to be perfect for
+    machine learning applications.
 
-    Generates a PIL Image from the screen buffer.
+    The layout will vary from game to game. Below is an example from Tetris:
 
-    Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-    case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
-    and join our Discord channel for more help.
+    ```text
+         0   1   2   3   4   5   6   7   8   9
+    ____________________________________________
+    0  | 47  47  47  47  47  47  47  47  47  47
+    1  | 47  47  47  47  47  47  47  47  47  47
+    2  | 47  47  47  47  47  47  47  132 132 132
+    3  | 47  47  47  47  47  47  47  132 47  47
+    4  | 47  47  47  47  47  47  47  47  47  47
+    5  | 47  47  47  47  47  47  47  47  47  47
+    6  | 47  47  47  47  47  47  47  47  47  47
+    7  | 47  47  47  47  47  47  47  47  47  47
+    8  | 47  47  47  47  47  47  47  47  47  47
+    9  | 47  47  47  47  47  47  47  47  47  47
+    10 | 47  47  47  47  47  47  47  47  47  47
+    11 | 47  47  47  47  47  47  47  47  47  47
+    12 | 47  47  47  47  47  47  47  47  47  47
+    13 | 47  47  47  47  47  47  47  47  47  47
+    14 | 47  47  47  47  47  47  47  47  47  47
+    15 | 47  47  47  47  47  47  47  47  47  47
+    16 | 47  47  47  47  47  47  47  47  47  47
+    17 | 47  47  47  47  47  47  138 139 139 143
+    ```
+
+    The `type` argument provides three options:
+    * `&#34;tiles&#34;`:  Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.
+    * `&#34;compressed&#34;`: Like `&#34;tiles&#34;` but with slightly simplified id&#39;s (i.e. each type of enemy has a unique id).
+    * `&#34;minimal&#34;`: Like `&#34;compressed&#34;` but gives a minimal representation (recommended; i.e. all enemies have the same id).
+
+    Args:
+        type (string): &#34;minimal&#34;, &#34;compressed&#34;, &#34;tiles&#34;
 
     Returns
     -------
-    PIL.Image:
-        RGB image of (160, 144) pixels
+    memoryview:
+        Simplified 2-dimensional memoryview of the screen
     &#34;&#34;&#34;
-    return self.botsupport_manager().screen().screen_image()</code></pre>
+    raise Exception(&#34;game_area not implemented&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.set_emulation_speed"><code class="name flex">
@@ -1165,6 +1645,230 @@ have been truncated to 11 characters.</p>
         Game title
     &#34;&#34;&#34;
     return self.mb.cartridge.gamename</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.screen"><code class="name flex">
+<span>def <span class="ident">screen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Use this method to get a <code><a title="pyboy.api.screen.Screen" href="api/screen.html#pyboy.api.screen.Screen">Screen</a></code> object. This can be used to get the screen buffer in
+a variety of formats.</p>
+<p>It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+<code><a title="pyboy.api.screen.Screen.tilemap_position" href="api/screen.html#pyboy.api.screen.Screen.tilemap_position">Screen.tilemap_position()</a></code> for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.screen.Screen" href="api/screen.html#pyboy.api.screen.Screen">Screen</a></code>:
+A Screen object with helper functions for reading the screen buffer.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def screen(self):
+    &#34;&#34;&#34;
+    Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+    a variety of formats.
+
+    It&#39;s also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+    `pyboy.api.screen.Screen.tilemap_position` for more information.
+
+    Returns
+    -------
+    `pyboy.api.screen.Screen`:
+        A Screen object with helper functions for reading the screen buffer.
+    &#34;&#34;&#34;
+    return Screen(self)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.sprite"><code class="name flex">
+<span>def <span class="ident">sprite</span></span>(<span>self, sprite_index)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provides a <code><a title="pyboy.api.sprite.Sprite" href="api/sprite.html#pyboy.api.sprite.Sprite">Sprite</a></code> object, which makes the OAM data more presentable. The given index
+corresponds to index of the sprite in the "Object Attribute Memory" (OAM).</p>
+<p>The Game Boy supports 40 sprites in total. Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm">Pan
+Docs</a>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>index</code></strong> :&ensp;<code>int</code></dt>
+<dd>Sprite index from 0 to 39.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.sprite.Sprite" href="api/sprite.html#pyboy.api.sprite.Sprite">Sprite</a></code>:
+Sprite corresponding to the given index.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sprite(self, sprite_index):
+    &#34;&#34;&#34;
+    Provides a `pyboy.api.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+    corresponds to index of the sprite in the &#34;Object Attribute Memory&#34; (OAM).
+
+    The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+    Docs](http://bgb.bircd.org/pandocs.htm).
+
+    Args:
+        index (int): Sprite index from 0 to 39.
+    Returns
+    -------
+    `pyboy.api.sprite.Sprite`:
+        Sprite corresponding to the given index.
+    &#34;&#34;&#34;
+    return Sprite(self, sprite_index)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.sprite_by_tile_identifier"><code class="name flex">
+<span>def <span class="ident">sprite_by_tile_identifier</span></span>(<span>self, tile_identifiers, on_screen=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+<code>pyboy.sprite</code> function to get a <code><a title="pyboy.api.sprite.Sprite" href="api/sprite.html#pyboy.api.sprite.Sprite">Sprite</a></code> object.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; print(pyboy.api_manager().sprite_by_tile_identifier([43, 123]))
+[[0, 2, 4], []]
+</code></pre>
+<p>Meaning, that tile identifier <code>43</code> is found at the sprite indexes: 0, 2, and 4, while tile identifier
+<code>123</code> was not found anywhere.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>identifiers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of tile identifiers (int)</dd>
+<dt><strong><code>on_screen</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Require that the matched sprite is on screen</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list:</code></dt>
+<dd>list of sprite matches for every tile identifier in the input</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+    &#34;&#34;&#34;
+    Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+    identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+    `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
+
+    Example:
+    ```
+    &gt;&gt;&gt; print(pyboy.api_manager().sprite_by_tile_identifier([43, 123]))
+    [[0, 2, 4], []]
+    ```
+
+    Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+    `123` was not found anywhere.
+
+    Args:
+        identifiers (list): List of tile identifiers (int)
+        on_screen (bool): Require that the matched sprite is on screen
+
+    Returns
+    -------
+    list:
+        list of sprite matches for every tile identifier in the input
+    &#34;&#34;&#34;
+
+    matches = []
+    for i in tile_identifiers:
+        match = []
+        for s in range(constants.SPRITES):
+            sprite = Sprite(self, s)
+            for t in sprite.tiles:
+                if t.tile_identifier == i and (not on_screen or (on_screen and sprite.on_screen)):
+                    match.append(s)
+        matches.append(match)
+    return matches</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tile"><code class="name flex">
+<span>def <span class="ident">tile</span></span>(<span>self, identifier)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+<code><a title="pyboy.api.tile.Tile" href="api/tile.html#pyboy.api.tile.Tile">Tile</a></code>-object for given identifier.</p>
+<p>The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+the <code><a title="pyboy.api.tile.Tile" href="api/tile.html#pyboy.api.tile.Tile">Tile</a></code> object for more information.</p>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.tile.Tile" href="api/tile.html#pyboy.api.tile.Tile">Tile</a></code>:
+A Tile object for the given identifier.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tile(self, identifier):
+    &#34;&#34;&#34;
+    The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+    `pyboy.api.tile.Tile`-object for given identifier.
+
+    The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+    the `pyboy.api.tile.Tile` object for more information.
+
+    Returns
+    -------
+    `pyboy.api.tile.Tile`:
+        A Tile object for the given identifier.
+    &#34;&#34;&#34;
+    return Tile(self, identifier=identifier)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tilemap_background"><code class="name flex">
+<span>def <span class="ident">tilemap_background</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+for the <em>background</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.tilemap.TileMap" href="api/tilemap.html#pyboy.api.tilemap.TileMap">TileMap</a></code>:
+A TileMap object for the tile map.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tilemap_background(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+    for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns
+    -------
+    `pyboy.api.tilemap.TileMap`:
+        A TileMap object for the tile map.
+    &#34;&#34;&#34;
+    return TileMap(self, &#34;BACKGROUND&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.tilemap_window"><code class="name flex">
+<span>def <span class="ident">tilemap_window</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+for the <em>window</em> tiles. The game chooses whether it wants to use the low or the high tilemap.</p>
+<p>Read more details about it, in the <a href="http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps">Pan Docs</a>.</p>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.tilemap.TileMap" href="api/tilemap.html#pyboy.api.tilemap.TileMap">TileMap</a></code>:
+A TileMap object for the tile map.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tilemap_window(self):
+    &#34;&#34;&#34;
+    The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+    for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+    Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+    Returns
+    -------
+    `pyboy.api.tilemap.TileMap`:
+        A TileMap object for the tile map.
+    &#34;&#34;&#34;
+    return TileMap(self, &#34;WINDOW&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1471,7 +2175,7 @@ have been truncated to 11 characters.</p>
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="pyboy.botsupport" href="botsupport/index.html">pyboy.botsupport</a></code></li>
+<li><code><a title="pyboy.api" href="api/index.html">pyboy.api</a></code></li>
 <li><code><a title="pyboy.openai_gym" href="openai_gym.html">pyboy.openai_gym</a></code></li>
 <li><code><a title="pyboy.plugins" href="plugins/index.html">pyboy.plugins</a></code></li>
 </ul>
@@ -1483,19 +2187,27 @@ have been truncated to 11 characters.</p>
 <ul class="">
 <li><code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">tick</a></code></li>
 <li><code><a title="pyboy.PyBoy.stop" href="#pyboy.PyBoy.stop">stop</a></code></li>
-<li><code><a title="pyboy.PyBoy.botsupport_manager" href="#pyboy.PyBoy.botsupport_manager">botsupport_manager</a></code></li>
 <li><code><a title="pyboy.PyBoy.openai_gym" href="#pyboy.PyBoy.openai_gym">openai_gym</a></code></li>
 <li><code><a title="pyboy.PyBoy.game_wrapper" href="#pyboy.PyBoy.game_wrapper">game_wrapper</a></code></li>
 <li><code><a title="pyboy.PyBoy.get_memory_value" href="#pyboy.PyBoy.get_memory_value">get_memory_value</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_memory_value" href="#pyboy.PyBoy.set_memory_value">set_memory_value</a></code></li>
 <li><code><a title="pyboy.PyBoy.override_memory_value" href="#pyboy.PyBoy.override_memory_value">override_memory_value</a></code></li>
+<li><code><a title="pyboy.PyBoy.button" href="#pyboy.PyBoy.button">button</a></code></li>
+<li><code><a title="pyboy.PyBoy.button_press" href="#pyboy.PyBoy.button_press">button_press</a></code></li>
+<li><code><a title="pyboy.PyBoy.button_release" href="#pyboy.PyBoy.button_release">button_release</a></code></li>
 <li><code><a title="pyboy.PyBoy.send_input" href="#pyboy.PyBoy.send_input">send_input</a></code></li>
 <li><code><a title="pyboy.PyBoy.get_input" href="#pyboy.PyBoy.get_input">get_input</a></code></li>
 <li><code><a title="pyboy.PyBoy.save_state" href="#pyboy.PyBoy.save_state">save_state</a></code></li>
 <li><code><a title="pyboy.PyBoy.load_state" href="#pyboy.PyBoy.load_state">load_state</a></code></li>
-<li><code><a title="pyboy.PyBoy.screen_image" href="#pyboy.PyBoy.screen_image">screen_image</a></code></li>
+<li><code><a title="pyboy.PyBoy.game_area" href="#pyboy.PyBoy.game_area">game_area</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
 <li><code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title">cartridge_title</a></code></li>
+<li><code><a title="pyboy.PyBoy.screen" href="#pyboy.PyBoy.screen">screen</a></code></li>
+<li><code><a title="pyboy.PyBoy.sprite" href="#pyboy.PyBoy.sprite">sprite</a></code></li>
+<li><code><a title="pyboy.PyBoy.sprite_by_tile_identifier" href="#pyboy.PyBoy.sprite_by_tile_identifier">sprite_by_tile_identifier</a></code></li>
+<li><code><a title="pyboy.PyBoy.tile" href="#pyboy.PyBoy.tile">tile</a></code></li>
+<li><code><a title="pyboy.PyBoy.tilemap_background" href="#pyboy.PyBoy.tilemap_background">tilemap_background</a></code></li>
+<li><code><a title="pyboy.PyBoy.tilemap_window" href="#pyboy.PyBoy.tilemap_window">tilemap_window</a></code></li>
 </ul>
 </li>
 <li>

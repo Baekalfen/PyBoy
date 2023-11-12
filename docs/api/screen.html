@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>pyboy.botsupport.screen API documentation</title>
+<title>pyboy.api.screen API documentation</title>
 <meta name="description" content="This class gives access to the frame buffer and other screen parameters of PyBoy." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -18,7 +18,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>pyboy.botsupport.screen</code></h1>
+<h1 class="title">Module <code>pyboy.api.screen</code></h1>
 </header>
 <section id="section-intro">
 <p>This class gives access to the frame buffer and other screen parameters of PyBoy.</p>
@@ -54,11 +54,10 @@ class Screen:
     to make it possible to read this buffer out.
 
     If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
-    It&#39;s much more efficient to use `pyboy.botsupport.BotSupportManager.tilemap_background`, `pyboy.botsupport.BotSupportManager.tilemap_window`, and
-    `pyboy.botsupport.BotSupportManager.sprite` instead.
+    It&#39;s much more efficient to use `pyboy.tilemap_background`, `pyboy.tilemap_window`, and `pyboy.sprite` instead.
     &#34;&#34;&#34;
-    def __init__(self, mb):
-        self.mb = mb
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
 
     def tilemap_position(self):
         &#34;&#34;&#34;
@@ -108,7 +107,7 @@ class Screen:
         bytes:
             92160 bytes of screen data in a `bytes` object.
         &#34;&#34;&#34;
-        return self.mb.lcd.renderer._screenbuffer_raw.tobytes()
+        return self.pyboy._screenbuffer_raw().tobytes()
 
     def raw_screen_buffer_dims(self):
         &#34;&#34;&#34;
@@ -148,7 +147,7 @@ class Screen:
         Generates a PIL Image from the screen buffer.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        case, read up on the `pyboy.api` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
         and join our Discord channel for more help.
 
         Returns
@@ -176,16 +175,15 @@ class Screen:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="pyboy.botsupport.screen.Screen"><code class="flex name class">
+<dt id="pyboy.api.screen.Screen"><code class="flex name class">
 <span>class <span class="ident">Screen</span></span>
-<span>(</span><span>mb)</span>
+<span>(</span><span>pyboy)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>As part of the emulation, we generate a screen buffer in 32-bit RGBA format. This class has several helper methods
 to make it possible to read this buffer out.</p>
 <p>If you're making an AI or bot, it's highly recommended to <em>not</em> use this class for detecting objects on the screen.
-It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManager.tilemap_background" href="index.html#pyboy.botsupport.BotSupportManager.tilemap_background">BotSupportManager.tilemap_background()</a></code>, <code><a title="pyboy.botsupport.BotSupportManager.tilemap_window" href="index.html#pyboy.botsupport.BotSupportManager.tilemap_window">BotSupportManager.tilemap_window()</a></code>, and
-<code><a title="pyboy.botsupport.BotSupportManager.sprite" href="index.html#pyboy.botsupport.BotSupportManager.sprite">BotSupportManager.sprite()</a></code> instead.</p></section>
+It's much more efficient to use <code>pyboy.tilemap_background</code>, <code>pyboy.tilemap_window</code>, and <code>pyboy.sprite</code> instead.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -196,11 +194,10 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
     to make it possible to read this buffer out.
 
     If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
-    It&#39;s much more efficient to use `pyboy.botsupport.BotSupportManager.tilemap_background`, `pyboy.botsupport.BotSupportManager.tilemap_window`, and
-    `pyboy.botsupport.BotSupportManager.sprite` instead.
+    It&#39;s much more efficient to use `pyboy.tilemap_background`, `pyboy.tilemap_window`, and `pyboy.sprite` instead.
     &#34;&#34;&#34;
-    def __init__(self, mb):
-        self.mb = mb
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
 
     def tilemap_position(self):
         &#34;&#34;&#34;
@@ -250,7 +247,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         bytes:
             92160 bytes of screen data in a `bytes` object.
         &#34;&#34;&#34;
-        return self.mb.lcd.renderer._screenbuffer_raw.tobytes()
+        return self.pyboy._screenbuffer_raw().tobytes()
 
     def raw_screen_buffer_dims(self):
         &#34;&#34;&#34;
@@ -290,7 +287,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
         Generates a PIL Image from the screen buffer.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        case, read up on the `pyboy.api` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
         and join our Discord channel for more help.
 
         Returns
@@ -310,7 +307,7 @@ It's much more efficient to use <code><a title="pyboy.botsupport.BotSupportManag
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="pyboy.botsupport.screen.Screen.tilemap_position"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.tilemap_position"><code class="name flex">
 <span>def <span class="ident">tilemap_position</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -347,14 +344,14 @@ or the Pan Docs under <a href="http://bgb.bircd.org/pandocs.htm#lcdpositionandsc
     return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.screen.Screen.tilemap_position_list"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.tilemap_position_list"><code class="name flex">
 <span>def <span class="ident">tilemap_position_list</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
 screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
-the end of each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>. For such games, <code><a title="pyboy.botsupport.screen.Screen.tilemap_position" href="#pyboy.botsupport.screen.Screen.tilemap_position">Screen.tilemap_position()</a></code> becomes useless.</p>
-<p>See <code><a title="pyboy.botsupport.screen.Screen.tilemap_position" href="#pyboy.botsupport.screen.Screen.tilemap_position">Screen.tilemap_position()</a></code> for more information.</p>
+the end of each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>. For such games, <code><a title="pyboy.api.screen.Screen.tilemap_position" href="#pyboy.api.screen.Screen.tilemap_position">Screen.tilemap_position()</a></code> becomes useless.</p>
+<p>See <code><a title="pyboy.api.screen.Screen.tilemap_position" href="#pyboy.api.screen.Screen.tilemap_position">Screen.tilemap_position()</a></code> for more information.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>list:</code></dt>
@@ -383,14 +380,14 @@ the end of each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#py
         return [[0, 0, 0, 0] for line in range(144)]</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.screen.Screen.raw_screen_buffer"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.raw_screen_buffer"><code class="name flex">
 <span>def <span class="ident">raw_screen_buffer</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Provides a raw, unfiltered <code>bytes</code> object with the data from the screen. Check
-<code><a title="pyboy.botsupport.screen.Screen.raw_screen_buffer_format" href="#pyboy.botsupport.screen.Screen.raw_screen_buffer_format">Screen.raw_screen_buffer_format()</a></code> to see which dataformat is used. The returned type and dataformat are
+<code><a title="pyboy.api.screen.Screen.raw_screen_buffer_format" href="#pyboy.api.screen.Screen.raw_screen_buffer_format">Screen.raw_screen_buffer_format()</a></code> to see which dataformat is used. The returned type and dataformat are
 subject to change.</p>
-<p>Use this, only if you need to bypass the overhead of <code><a title="pyboy.botsupport.screen.Screen.screen_image" href="#pyboy.botsupport.screen.Screen.screen_image">Screen.screen_image()</a></code> or <code><a title="pyboy.botsupport.screen.Screen.screen_ndarray" href="#pyboy.botsupport.screen.Screen.screen_ndarray">Screen.screen_ndarray()</a></code>.</p>
+<p>Use this, only if you need to bypass the overhead of <code><a title="pyboy.api.screen.Screen.screen_image" href="#pyboy.api.screen.Screen.screen_image">Screen.screen_image()</a></code> or <code><a title="pyboy.api.screen.Screen.screen_ndarray" href="#pyboy.api.screen.Screen.screen_ndarray">Screen.screen_ndarray()</a></code>.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>bytes:</code></dt>
@@ -413,10 +410,10 @@ subject to change.</p>
     bytes:
         92160 bytes of screen data in a `bytes` object.
     &#34;&#34;&#34;
-    return self.mb.lcd.renderer._screenbuffer_raw.tobytes()</code></pre>
+    return self.pyboy._screenbuffer_raw().tobytes()</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.screen.Screen.raw_screen_buffer_dims"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.raw_screen_buffer_dims"><code class="name flex">
 <span>def <span class="ident">raw_screen_buffer_dims</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -442,7 +439,7 @@ subject to change.</p>
     return self.mb.lcd.renderer.buffer_dims</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.screen.Screen.raw_screen_buffer_format"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.raw_screen_buffer_format"><code class="name flex">
 <span>def <span class="ident">raw_screen_buffer_format</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -468,7 +465,7 @@ subject to change.</p>
     return self.mb.lcd.renderer.color_format</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.screen.Screen.screen_ndarray"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.screen_ndarray"><code class="name flex">
 <span>def <span class="ident">screen_ndarray</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -494,13 +491,13 @@ subject to change.</p>
     return np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS, 4)[:, :, 1:]</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.screen.Screen.screen_image"><code class="name flex">
+<dt id="pyboy.api.screen.Screen.screen_image"><code class="name flex">
 <span>def <span class="ident">screen_image</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Generates a PIL Image from the screen buffer.</p>
 <p>Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-case, read up on the <code><a title="pyboy.botsupport" href="index.html">pyboy.botsupport</a></code> features, <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> on tiles/sprites,
+case, read up on the <code><a title="pyboy.api" href="index.html">pyboy.api</a></code> features, <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> on tiles/sprites,
 and join our Discord channel for more help.</p>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -516,7 +513,7 @@ and join our Discord channel for more help.</p>
     Generates a PIL Image from the screen buffer.
 
     Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-    case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+    case, read up on the `pyboy.api` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
     and join our Discord channel for more help.
 
     Returns
@@ -548,21 +545,21 @@ and join our Discord channel for more help.</p>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="pyboy.botsupport" href="index.html">pyboy.botsupport</a></code></li>
+<li><code><a title="pyboy.api" href="index.html">pyboy.api</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="pyboy.botsupport.screen.Screen" href="#pyboy.botsupport.screen.Screen">Screen</a></code></h4>
+<h4><code><a title="pyboy.api.screen.Screen" href="#pyboy.api.screen.Screen">Screen</a></code></h4>
 <ul class="">
-<li><code><a title="pyboy.botsupport.screen.Screen.tilemap_position" href="#pyboy.botsupport.screen.Screen.tilemap_position">tilemap_position</a></code></li>
-<li><code><a title="pyboy.botsupport.screen.Screen.tilemap_position_list" href="#pyboy.botsupport.screen.Screen.tilemap_position_list">tilemap_position_list</a></code></li>
-<li><code><a title="pyboy.botsupport.screen.Screen.raw_screen_buffer" href="#pyboy.botsupport.screen.Screen.raw_screen_buffer">raw_screen_buffer</a></code></li>
-<li><code><a title="pyboy.botsupport.screen.Screen.raw_screen_buffer_dims" href="#pyboy.botsupport.screen.Screen.raw_screen_buffer_dims">raw_screen_buffer_dims</a></code></li>
-<li><code><a title="pyboy.botsupport.screen.Screen.raw_screen_buffer_format" href="#pyboy.botsupport.screen.Screen.raw_screen_buffer_format">raw_screen_buffer_format</a></code></li>
-<li><code><a title="pyboy.botsupport.screen.Screen.screen_ndarray" href="#pyboy.botsupport.screen.Screen.screen_ndarray">screen_ndarray</a></code></li>
-<li><code><a title="pyboy.botsupport.screen.Screen.screen_image" href="#pyboy.botsupport.screen.Screen.screen_image">screen_image</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.tilemap_position" href="#pyboy.api.screen.Screen.tilemap_position">tilemap_position</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.tilemap_position_list" href="#pyboy.api.screen.Screen.tilemap_position_list">tilemap_position_list</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.raw_screen_buffer" href="#pyboy.api.screen.Screen.raw_screen_buffer">raw_screen_buffer</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.raw_screen_buffer_dims" href="#pyboy.api.screen.Screen.raw_screen_buffer_dims">raw_screen_buffer_dims</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.raw_screen_buffer_format" href="#pyboy.api.screen.Screen.raw_screen_buffer_format">raw_screen_buffer_format</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.screen_ndarray" href="#pyboy.api.screen.Screen.screen_ndarray">screen_ndarray</a></code></li>
+<li><code><a title="pyboy.api.screen.Screen.screen_image" href="#pyboy.api.screen.Screen.screen_image">screen_image</a></code></li>
 </ul>
 </li>
 </ul>

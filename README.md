@@ -109,28 +109,25 @@ Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.ro
 ```python
 from pyboy import PyBoy
 pyboy = PyBoy('ROMs/gamerom.gb')
-while not pyboy.tick():
+while pyboy.tick(True):
     pass
 pyboy.stop()
 ```
 
-Or using the context manager:
+<!-- Or using the context manager:
 ```python
 from pyboy import PyBoy
 with PyBoy('ROMs/gamerom.gb') as pyboy:
-    while not pyboy.tick():
+    while pyboy.tick(True):
         pass
-```
+``` -->
 
 When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
 ```python
-from pyboy import WindowEvent
+pyboy.button('down')
+pyboy.button('a')
 
-pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-pyboy.tick() # Process one frame to let the game register the input
-pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-
-pil_image = pyboy.screen_image()
+pil_image = pyboy.tick(True)
 pil_image.save('screenshot.png')
 ```
 
@@ -167,7 +164,7 @@ Any contribution is appreciated. The currently known problems are tracked in the
 
 For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list in the Wiki](https://github.com/Baekalfen/PyBoy/wiki/Student-Projects):
 * Link Cable
-* _(Experimental)_ AI - use the `botsupport` or game wrappers to train a neural network
+* _(Experimental)_ AI - use the `api` or game wrappers to train a neural network
 * _(Experimental)_ Game Wrappers - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.

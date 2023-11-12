@@ -10,12 +10,15 @@ import logging
 import os
 import time
 
+import numpy as np
+
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from . import botsupport
+from . import utils
+from .api import Screen, Sprite, Tile, TileMap, constants
 from .core.mb import Motherboard
 
 logger = logging.getLogger(__name__)
@@ -49,7 +52,7 @@ class PyBoy:
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
         multiple times.
 
-        This object, `pyboy.WindowEvent`, and the `pyboy.botsupport` module, are the only official user-facing
+        This object, `pyboy.WindowEvent`, and the `pyboy.api` module, are the only official user-facing
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
@@ -104,6 +107,7 @@ class PyBoy:
         self.set_emulation_speed(1)
         self.paused = False
         self.events = []
+        self.queued_input = []
         self.old_events = []
         self.quitting = False
         self.stopped = False
@@ -115,36 +119,15 @@ class PyBoy:
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self.initialized = True
 
-    def tick(self, render):
-        """
-        Progresses the emulator ahead by one frame.
-
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-
-        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it's adviced to use
-        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
-        access the `PyBoy.game_area` to get a simpler representation of the game.
-
-        If the screen was rendered, use `pyboy.botsupport.screen.Screen` to get NumPy buffer or a raw memory buffer.
-
-        Args:
-            render (bool): Whether to render an image for this tick
-        Returns
-        -------
-        (done, PIL.Image):
-            (whether emulation has ended, RGB image of (160, 144) pixels)
-        """
+    def _tick(self, render):
         if self.stopped:
-            return True
+            return False
 
         t_start = time.perf_counter_ns()
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
+            self.__rendering(render)
             if self.mb.tick():
                 # breakpoint reached
                 self.plugin_manager.handle_breakpoint()
@@ -163,10 +146,38 @@ class PyBoy:
         nsecs = t_post - t_tick
         self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
 
-        if render:
-            return (self.quitting, self.botsupport_manager().screen().screen_image())
+        return not self.quitting
+
+    def tick(self, render):
+        """
+        Progresses the emulator ahead by one frame.
+
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        otherwise with the `PyBoy.set_emulation_speed` method.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it's adviced to use
+        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+        access the `PyBoy.game_area` to get a simpler representation of the game.
+
+        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
+
+        Args:
+            render (bool): Whether to render an image for this tick
+        Returns
+        -------
+        (True or False or PIL.Image):
+            False if emulation has ended otherwise True or RGB image of (160, 144) pixels
+        """
+
+        running = self._tick(render)
+        print(running, render, render and running)
+        if render and running:
+            return self.screen().screen_image()
         else:
-            return (self.quitting, None)
+            return running
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -229,7 +240,8 @@ class PyBoy:
 
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.old_events = self.events
-        self.events = []
+        self.events = self.queued_input
+        self.queued_input = []
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
@@ -268,16 +280,6 @@ class PyBoy:
     ###################################################################
     # Scripts and bot methods
     #
-
-    def botsupport_manager(self):
-        """
-
-        Returns
-        -------
-        `pyboy.botsupport.BotSupportManager`:
-            The manager, which gives easier access to the emulated game through the classes in `pyboy.botsupport`.
-        """
-        return botsupport.BotSupportManager(self, self.mb)
 
     def openai_gym(self, observation_type="tiles", action_type="press", simultaneous_actions=False, **kwargs):
         """
@@ -389,28 +391,28 @@ class PyBoy:
         input = input.lower()
         if input == "left":
             self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_LEFT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_LEFT))
         elif input == "right":
             self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_RIGHT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_RIGHT))
         elif input == "up":
             self.send_input(WindowEvent.PRESS_BUTTON_UP)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_UP)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_UP))
         elif input == "down":
             self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_DOWN)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_DOWN))
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
         elif input == "b":
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
         elif input == "start":
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
         else:
             raise Exception("Unrecognized input:", input)
 
@@ -599,5 +601,148 @@ class PyBoy:
         """
         return self.mb.cartridge.gamename
 
+    def __rendering(self, value):
+        """
+        Disable or enable rendering
+        """
+        self.mb.lcd.disable_renderer = not value
+
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
+
+    def screen(self):
+        """
+        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
+
+        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.api.screen.Screen.tilemap_position` for more information.
+
+        Returns
+        -------
+        `pyboy.api.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
+        """
+        return Screen(self)
+
+    def sprite(self, sprite_index):
+        """
+        Provides a `pyboy.api.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+        corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
+
+        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+        Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            index (int): Sprite index from 0 to 39.
+        Returns
+        -------
+        `pyboy.api.sprite.Sprite`:
+            Sprite corresponding to the given index.
+        """
+        return Sprite(self, sprite_index)
+
+    def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+        """
+        Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+        identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+        `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
+
+        Example:
+        ```
+        >>> print(pyboy.api_manager().sprite_by_tile_identifier([43, 123]))
+        [[0, 2, 4], []]
+        ```
+
+        Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+        `123` was not found anywhere.
+
+        Args:
+            identifiers (list): List of tile identifiers (int)
+            on_screen (bool): Require that the matched sprite is on screen
+
+        Returns
+        -------
+        list:
+            list of sprite matches for every tile identifier in the input
+        """
+
+        matches = []
+        for i in tile_identifiers:
+            match = []
+            for s in range(constants.SPRITES):
+                sprite = Sprite(self, s)
+                for t in sprite.tiles:
+                    if t.tile_identifier == i and (not on_screen or (on_screen and sprite.on_screen)):
+                        match.append(s)
+            matches.append(match)
+        return matches
+
+    def tile(self, identifier):
+        """
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+        `pyboy.api.tile.Tile`-object for given identifier.
+
+        The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+        the `pyboy.api.tile.Tile` object for more information.
+
+        Returns
+        -------
+        `pyboy.api.tile.Tile`:
+            A Tile object for the given identifier.
+        """
+        return Tile(self, identifier=identifier)
+
+    def tilemap_background(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+        return TileMap(self, "BACKGROUND")
+
+    def tilemap_window(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+        return TileMap(self, "WINDOW")
+
+    def _image_data(self):
+        """
+        Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
+        colors.
+
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+        Returns
+        -------
+        memoryview :
+            Image data of tile in 8x8 pixels and RGBA colors.
+        """
+        self.data = np.zeros((8, 8), dtype=np.uint32)
+        for k in range(0, 16, 2): # 2 bytes for each line
+            byte1 = self.mb.lcd.VRAM0[self.data_address + k - constants.VRAM_OFFSET]
+            byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - constants.VRAM_OFFSET]
+
+            for x in range(8):
+                colorcode = utils.color_code(byte1, byte2, 7 - x)
+                # NOTE: ">> 8 | 0xFF000000" to keep compatibility with earlier code
+                old_A_format = 0xFF000000
+                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) >> 8 | old_A_format
+
+    def _screenbuffer_raw(self):
+        return self.mb.lcd.renderer._screenbuffer_raw

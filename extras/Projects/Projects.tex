@@ -1,0 +1,520 @@
+\documentclass[11pt]{report} % article
+\usepackage[a4paper, hmargin={2.8cm, 2.8cm}, vmargin={2.5cm, 2.5cm}]{geometry}
+%\usepackage[T1]{fontenc}
+% \setcounter{tocdepth}{2}
+% \setcounter{secnumdepth}{2}
+\usepackage[utf8]{inputenc}
+\usepackage{eso-pic} % \AddToShipoutPicture
+\usepackage{graphicx} % \includegraphics
+\usepackage[english]{babel}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{fancyvrb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multicol}
+\usepackage[toc,page]{appendix}
+\usepackage{cleveref}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\usepackage{xcolor,colortbl}
+\usepackage{pdfpages}
+\usepackage{multirow}
+\usepackage[font={small,it}]{caption}
+\usepackage{lipsum}
+\usepackage{enumitem}
+\usepackage{rotating}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage{placeins}
+
+% \pagecolor[rgb]{0.2,0.2,0.2}
+% \color[rgb]{1,1,1}
+
+
+% Theorem framing
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[breakable, theorems, skins]{tcolorbox}
+\DeclareRobustCommand{\quotebox}[2][gray!20]{%
+    \begin{center}
+\begin{tcolorbox}[   %% Adjust the following parameters at will.
+        breakable,
+        left=0pt,
+        right=0pt,
+        top=0pt,
+        bottom=0pt,
+        colback=#1,
+        colframe=#1,
+        % width=\dimexpr\textwidth\relax,
+        width=0.95\columnwidth,
+        enlarge left by=0mm,
+        boxsep=5pt,
+        arc=0pt,outer arc=0pt,
+        ]
+        #2
+\end{tcolorbox}
+    \end{center}
+}
+
+
+\raggedbottom
+
+\usepackage{titletoc}
+% \titlecontents*{chapter}% <section-type>
+%   [0pt]% <left>
+%   {}% <above-code>
+%   {\bfseries\chaptername\ \thecontentslabel\quad}% <numbered-entry-format>
+%   {}% <numberless-entry-format>
+%   {\bfseries\hfill\contentspage}% <filler-page-format>
+
+
+\newcommand\floor[1]{\lfloor#1\rfloor}
+
+\definecolor{tablegreen}{rgb}{0.609375, 0.8828125, 0.3515625}
+\definecolor{tableyellow}{rgb}{0.9921875, 0.859375, 0.2734375}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\setlength{\columnsep}{1cm}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, breakable, skins}
+% \definecolor{bg}{rgb}{0.85,0.85,0.85}
+% \renewcommand*\thelstnumber{\makebox[3em][r]{\ifnum\value{lstnumber}<10 0\fi\the\value{lstnumber}}}
+\newtcblisting{ccode}[2]
+{
+    enhanced,
+    colback=\color{lightgray},
+    colframe=\color{lightgray},
+    title=#1,
+    %backgroundcolor = \color{lightgray},
+    listing only,
+    % overlay={\begin{tcbclipinterior} (frame.south west)
+    %         rectangle (frame.north west);\end{tcbclipinterior}},
+    listing options={
+        numbers=left,
+        numberstyle=\tiny,
+        basicstyle=\small\ttfamily,
+        xleftmargin=0.6em,
+        language = #2,
+        aboveskip=0pt,
+        belowskip=0pt
+    }
+}
+
+\lstset{%language=Python,
+  % aboveskip=3mm,
+  % belowskip=3mm,
+  showstringspaces=false,
+  columns=fixed,
+  basicstyle={\small\ttfamily},
+  % numbers=none,
+  % numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},http://bgb.bircd.org/pandocs.htm#serialdatatransferlinkcable
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4
+}
+
+\newcommand{\picwide}[2] {
+    \begin{figure*}[!ht]
+        \noindent
+        \centering
+        \includegraphics[width=0.9\columnwidth]{Illustrations/#1}
+        \caption{#2}
+        \label{#1}
+    \end{figure*}
+}
+
+\newcommand{\picsize}[3] {
+    \begin{figure}[ht]
+        \noindent
+        \centering
+        \includegraphics[width=#3\columnwidth]{Illustrations/#1}
+        \caption{#2}
+        \label{#1}
+    \end{figure}
+}
+
+\newcommand{\picsmall}[2] {
+    \picsize{#1}{#2}{0.4}
+}
+
+\newcommand{\pic}[2] {
+    \picsize{#1}{#2}{0.9}
+}
+
+\newcommand{\picappendix}[3] {
+    \begin{figure}[H]
+        \noindent
+        \centering
+        \includegraphics[width=#3\columnwidth]{Illustrations/#1}
+        \caption{#2}
+        \label{fig:#1}
+    \end{figure}
+}
+
+\newcommand{\asmcode}[3] {
+    % \begin{figure}[H]
+        % \centering
+        \begin{Verbatim}[fontsize=\scriptsize]
+        #3
+        \end{Verbatim}
+        \caption{#2}
+        \label{fig:#1}
+    % \end{figure}
+}
+
+\newcommand{\dpic}[5] {
+    \begin{figure}[ht]
+\centering
+\begin{subfigure}{#5\textwidth}
+  \centering
+  \includegraphics[width=.9\linewidth]{#1}
+  \caption{#2}
+  \label{fig:#1}
+\end{subfigure}%
+\begin{subfigure}{#5\textwidth}
+  \centering
+  \includegraphics[width=.9\linewidth]{#3}
+  \caption{#4}
+  \label{fig:#3}
+\end{subfigure}
+\end{figure}
+}
+
+\author{Mads Ynddal}
+\pagenumbering{gobble}
+
+\begin{document}
+\onecolumn
+
+
+\chapter*{Experimental -- Hacking games}
+\section*{Introduction}
+This is not a Game Boy feature itself, but something that could make AI/bots work easier. In some of the game wrappers, we have implemented overrides of ROM data to alter the code it executes. In Mario, we can manipulate the world/level selection, while in Tetris, we can force the shape of the next Tetromino.
+
+You can find disassemblies online, as well as tools to assist the work\footnote{\url{https://github.com/mattcurrie/mgbdis}}\footnote{\url{https://github.com/pret/pokered}}\footnote{\url{https://github.com/kaspermeerts/supermarioland}}.
+
+To make it easier to identify important RAM addresses, it might also be interesting to make a memory scanner, which can help identify changed values or exact searches\footnote{\url{https://github.com/Baekalfen/PyBoy/issues/72}}.
+
+The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Have a look at the game wrappers in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it.
+
+    \item [Locate functionality to exploit]
+        Find a game to exploit, find a feature to implement or change and locate the sections in the ROM.
+
+    \item [Create prototypes]
+        When you've found an appropriate method, try to implement it, and see if it can work.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, but also practical game tests.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+\end{description}
+
+
+\chapter*{Emulation -- Improve Sub-frame Input Timing}
+\section*{Introduction}
+The current implementation puts all user input at the beginning of each frame. This is not always enough. Some games depend on more precise input timing\footnote{\url{https://github.com/Baekalfen/PyBoy/issues/116}}.
+
+The hardware details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Current input is performed in SDL2 on all platforms, and SDL2 should provide the needed support for this task. Look through the current implementation and familiarize yourself with the code. Especially the contents of \texttt{pyboy/core/interaction.py} and \texttt{pyboy/plugins/window\_sdl2.py}.
+
+    \item [Record input with timing data]
+        Record when inputs were provided in the WindowEvent objects. SDL2 might have functionality for this.
+
+    \item [Delay and inject user input at the correct timing]
+        Modify the input handler to inject the user input at the correct timing offset.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+
+
+
+\chapter*{Emulation -- Link Cable}
+\section*{Introduction}
+The current implementation of PyBoy lacks support for the Link Cable. The Link Cable was a primitive serial connection between two Game Boys. It was used to play against others etc.
+
+The details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#serialdatatransferlinkcable}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        The current code simply prints out the data being pushed to the serial port. But look at the code for the motherboard, and look how special registers are implemented.
+
+    \item [Determine what is possible]
+        The way data is transferred, presents some problems for TCP/UDP Link Cable emulation. Investigate if it is possible to do this over a network, under which circumstances it might be, or if both emulators need to be on the same computer.
+
+    \item [Implement registers and internal clock]
+        Two registers are used for the Link Cable. One for control and one for data. Implement both, and the accompanied ``Internal Clock'', which defines the connection speed.
+
+    \item [Implement emulation layer]
+        Emulate the Link Cable in the way you found appropriate earlier. This might include one or more implementations, for games which uses the Link Cable differently.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This might include test ROMs, which verify the interaction with the new registers, but also practical game tests.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+
+\chapter*{Experimental -- AI}
+\section*{Introduction}
+This is not a Game Boy feature itself, but something that is easier to approach through emulation. What I imagine, is a neural network -- or maybe a simple, handwritten bot -- which can play the Game Boy autonomously.
+
+PyBoy already supports external controls to report objects on the screen and sending input to the Game Boy\footnote{\url{https://docs.pyboy.dk/api/index.html}}\footnote{\url{https://docs.pyboy.dk/plugins/index.html}}. It supports running at unlimited speed and without rendering the display to speed up the learning process.
+
+The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
+
+There are already examples of other people implementing AIs for console games\footnote{\url{https://www.youtube.com/watch?v=qv6UVOQ0F44}} \footnote{\url{https://www.youtube.com/watch?v=iakFfOmanJU}}.
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Have a look at the `api` module and the "game wrappers" in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. There is also a crude Tetris and Mario example in the repo to get inspiration from.
+
+    \item [Figure out a method]
+        If you decide to solve the task using machine learning, search online for a fitting software package to help with it -- maybe Tensorflow or PyTorch will work. Create a prototype to find out what is needed to connect the machine learning framework and PyBoy.
+
+    \item [Implement the algorithm]
+        When you've found an appropriate method, try to implement it, and see if it can work.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This might include test ROMs, which verify the interaction with the new registers, but also practical game tests.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+
+\chapter*{Experimental -- Debugger}
+\section*{Introduction}
+To improve functionality on the emulator, we will need good debugging tools. The current code does not have a debugger. Some of the functionality could be a plain memory view, a view with disassembled machine code or improved tools to see call stacks, interrupts, graphics settings, memory scanner\footnote{\url{https://github.com/Baekalfen/PyBoy/issues/72}} and so on.
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Have a look at the \texttt{debug} module in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. Familiarize yourself with the CPU architecture and instruction set -- it's quite simplistic.
+
+    \item [Locate the needed data in the emulator]
+        Make prototypes to see if you can find the needed information you want to present to the user. This could be memory values, opcode-to-name translations, CPU registers, special purpose registers and so on.
+
+    \item [Find the data]
+        Make prototypes to see if you can find the needed information you want to present to the user.
+
+    \item [Present the data]
+        Either make a simple presentation of the data in the terminal, or a more advanced graphical interface.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+\chapter*{Experimental -- New Game Wrappers}
+\section*{Introduction}
+This is not a Game Boy feature itself, but something that will make AI/bots work easier. We have already implemented a set of wrappers\footnote{\url{https://docs.pyboy.dk/plugins/index.html}} which present an easy interface to some popular games -- Tetris, Super Mario Land and Kirby. But we could always use more. You can choose exactly which game you want to support -- or improve one of the existing wrappers.
+
+In the Super Mario Land wrapper, it can quickly identify enemies, Mario, boundaries, score, time left and so on. This is an immense help for developers of the AIs or bots.
+
+To make it easier to identify important RAM addresses, it might also be interesting to make a memory scanner, which can help identify changed values or exact searches\footnote{\url{https://github.com/Baekalfen/PyBoy/issues/72}}.
+
+The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Have a look at the `api` module in PyBoy and see if it has the needed functionality. If it doesn't, it is easy to extend it. There is also a crude Tetris bot to get inspiration from.
+
+    \item [Figure out a method]
+        Figure out how to best represent the data on the screen for the AI/bot developer. Find the best performing way to extract the necessary information from PyBoy -- use the api module as much as possible. If PyBoy lacks the necessary features, figure out how to build an extension.
+
+    \item [Implement the algorithm]
+        When you've found an appropriate method, try to implement it, and see if it can work.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Completed projects
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter*{Completed Projects}
+\newpage
+
+\chapter*{Experimental -- Rewind Time}
+\section*{Introduction}
+This is not a Game Boy feature itself, but something we can do when emulating. I imagine a feature, where it is possible to go back in time and redo something that went wrong in the game. It could be fine-grained at CPU-cycle level, less fine at each produced frame (60 FPS), or coarse at larger intervals. It depending on what is possible to implement.
+
+The details of the Game Boy are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm}}
+
+There are already examples of other people implementing a rewind feature\footnote{\url{https://binji.github.io/2017/12/31/binjgb-rewind.html}}.
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Familiarize yourself with the PyBoy code base and look for a good place to implement the feature, and at which granularity it is possible.
+
+    \item [Figure out an algorithm]
+        How is the data of each level of granularity going to be stored, and how is it going to be loaded? Will you track changes on a byte-level, or simply save large chunks of memory at an interval? How much space will it use, and how will it be managed? Is compression needed?
+
+    \item [Implement the algorithm]
+        When you've found an appropriate algorithm, try to implement it in PyBoy. See if there are any unexpected issues.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This might include test ROMs, which tests the system integrity in general, while the time is rewinded, but also practical game tests.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+
+\chapter*{Emulation -- Sound}
+\section*{Introduction}
+The current implementation of PyBoy does not emulate the built-in sound controller.
+
+The sound controller supports 4 primitive types of tone and noise generators. These are described in detail in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#soundcontroller}}.
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs do provide a lot of information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Find library, which supports the requirements]
+        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide support for sound as well. See if SDL2 has the required functionality to implement the tone generators. Alternatively, find a way for Python to generate the sound as needed.
+
+    \item [Implement prototype in standalone Python script]
+        It might be hard to implement the emulated sound controller directly into PyBoy. I recommend to implement it separately, if it is too big of a task to do both at once.
+
+    \item [Find test ROMs or games for reference]
+        To consistently debug the sound controller, you should find some dedicated test ROMs or a game which has simple sound usage. This will make it easier to debug possible issues. We will later test on games with complex sounds.
+
+    \item [Modify PyBoy to support the sound control registers]
+        The Game Boy interfaces with the sound controller through some dedicated registers in memory (see Pan Docs). These will need to be implemented and hooked up to a placeholder for the sound controller code.
+
+    \item [Move the prototype into PyBoy]
+        When the registers are in place, move the prototype into the Game Boy and see if we can produce sound. Test if there are any oversights in the implementation, and keep improving the code until it works.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the sound control registers, but also listening tests. If possible, compare the sounds produced to a physical Game Boy.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+\chapter*{Emulation -- Improve Screen Rendering}
+\section*{Introduction}
+The current implementation of PyBoy has support for rendering graphics, but it is quite limited in it's accuracy. The task will be to pass as much of the DMG Acid2\footnote{https://github.com/mattcurrie/dmg-acid2} test as possible.
+
+The hardware details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#videodisplay}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide the needed support for this task. Look through the current implementation and familiarize yourself with the code. Especially the contents of \texttt{pyboy/core/lcd.py}.
+
+    \item [Identify issues]
+        Try starting the test ROM with the current implementation and identify any issues.
+
+    \item [Fix the video renderer]
+        Modify the renderer to output the correct result. Go back and identify the remaining issues, and keep iterating.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+
+\chapter*{Emulation -- Game Boy Color}
+\section*{Introduction}
+The current implementation of PyBoy only supports the original black-and-white Game Boy from 1989. The Game Boy Color shares almost all of the same architecture of the original Game Boy, but adds a little more memory, a modified video controller and double the CPU frequency. The current implementation trivially supports doubling the CPU speed, so this won't be an issue.
+
+The details are described in the Pan Docs\footnote{\url{http://bgb.bircd.org/pandocs.htm#videodisplay}}
+
+\section*{Tasks}
+\begin{description}
+    \item [Read and find documentation]
+        The Pan Docs should provide all the needed information about the internals of the Game Boy, but sometimes, more information is needed. Read the Pan Docs, and look for other possible sources online. Maybe even look at other emulators for inspiration.
+
+    \item [Look at the current implementation]
+        Current video rendering is performed in SDL2 on all platforms, and SDL2 should provide the needed support for color. Look through the current implementation and familiarize yourself with the code.
+
+    \item [Change PyBoy to make it start a GBC ROM]
+        The Game Boy ROMs do a few checks to determine it is on Game Boy Color (GBC) hardware. If these checks fail, it shows a warning and stops. Find these checks in the Pac Docs, and modify PyBoy to make it past the non-color warning message.
+
+    \item [Add the extra memory]
+        The Game Boy Color had more memory than the original Game Boy. Add these extra memory banks to the system, and the control register (see FF4F in Pan Docs). Memory banks are present multiple places already, so it won't be hard to implement.
+
+    \item [Modify the video renderer]
+        Add the needed functionality for the emulator to read the color data when rendering. Also add the functionality of the special registers, which controls the color palettes.
+
+    \item [Final polishing and testing]
+        Perform some tests to verify the solution. This includes test ROMs, which verify the interaction with the new registers, but also practical game tests. If possible, compare the video output produced to a physical Game Boy Color.
+
+    \item [Conclude results]
+        Sum up what works, and what didn't work, and what should be done by the developer, who takes over.
+
+\end{description}
+
+\end{document}
