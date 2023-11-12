@@ -38,6 +38,7 @@ import logging
 from array import array
 
 import numpy as np
+
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
@@ -155,19 +156,15 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(1, False)
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
                 break
 
         # Start game. Just press Start when the game allows us.
         for i in range(2):
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.pyboy.tick()
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-            for _ in range(6):
-                self.pyboy.tick()
+            self.pyboy.button(&#34;start&#34;)
+            self.pyboy.tick(7, False)
 
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
@@ -186,13 +183,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
         self._set_timer_div(timer_div)
-
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-        for _ in range(6):
-            self.pyboy.tick()
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(7, False)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -252,7 +244,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `&#34;T&#34;`: T-shape
         &#34;&#34;&#34;
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) &amp; 0b11111100]
+        return inverse_tetromino_table[self.pyboy.memory[NEXT_TETROMINO_ADDR] &amp; 0b11111100]
 
     def set_tetromino(self, shape):
         &#34;&#34;&#34;
@@ -429,19 +421,15 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(1, False)
             self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
                 break
 
         # Start game. Just press Start when the game allows us.
         for i in range(2):
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.pyboy.tick()
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-            for _ in range(6):
-                self.pyboy.tick()
+            self.pyboy.button(&#34;start&#34;)
+            self.pyboy.tick(7, False)
 
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
@@ -460,13 +448,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
         self._set_timer_div(timer_div)
-
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-        for _ in range(6):
-            self.pyboy.tick()
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(7, False)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -526,7 +509,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `&#34;T&#34;`: T-shape
         &#34;&#34;&#34;
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) &amp; 0b11111100]
+        return inverse_tetromino_table[self.pyboy.memory[NEXT_TETROMINO_ADDR] &amp; 0b11111100]
 
     def set_tetromino(self, shape):
         &#34;&#34;&#34;
@@ -680,19 +663,15 @@ instantly.</p>
 
     # Boot screen
     while True:
-        self.pyboy.tick()
+        self.pyboy.tick(1, False)
         self.tilemap_background.refresh_lcdc()
         if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
             break
 
     # Start game. Just press Start when the game allows us.
     for i in range(2):
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-        for _ in range(6):
-            self.pyboy.tick()
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(7, False)
 
     self.saved_state.seek(0)
     self.pyboy.save_state(self.saved_state)
@@ -723,13 +702,8 @@ instantly.</p>
     PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
     self._set_timer_div(timer_div)
-
-    self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-    self.pyboy.tick()
-    self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-
-    for _ in range(6):
-        self.pyboy.tick()</code></pre>
+    self.pyboy.button(&#34;start&#34;)
+    self.pyboy.tick(7, False)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.game_area"><code class="name flex">
@@ -852,7 +826,7 @@ ____________________________________________
         * `&#34;T&#34;`: T-shape
     &#34;&#34;&#34;
     # Bitmask, as the last two bits determine the direction
-    return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) &amp; 0b11111100]</code></pre>
+    return inverse_tetromino_table[self.pyboy.memory[NEXT_TETROMINO_ADDR] &amp; 0b11111100]</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris.set_tetromino"><code class="name flex">
