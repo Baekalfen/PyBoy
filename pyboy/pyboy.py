@@ -378,17 +378,17 @@ class PyBoy:
         """
         input = input.lower()
         if input == "left":
-            self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_LEFT))
+            self.send_input(WindowEvent.PRESS_ARROW_LEFT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
         elif input == "right":
-            self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_RIGHT))
+            self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
         elif input == "up":
-            self.send_input(WindowEvent.PRESS_BUTTON_UP)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_UP))
+            self.send_input(WindowEvent.PRESS_ARROW_UP)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
         elif input == "down":
-            self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_DOWN))
+            self.send_input(WindowEvent.PRESS_ARROW_DOWN)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
             self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
@@ -416,13 +416,13 @@ class PyBoy:
         input = input.lower()
 
         if input == "left":
-            self.send_input(WindowEvent.PRESS_BUTTON_LEFT)
+            self.send_input(WindowEvent.PRESS_ARROW_LEFT)
         elif input == "right":
-            self.send_input(WindowEvent.PRESS_BUTTON_RIGHT)
+            self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
         elif input == "up":
-            self.send_input(WindowEvent.PRESS_BUTTON_UP)
+            self.send_input(WindowEvent.PRESS_ARROW_UP)
         elif input == "down":
-            self.send_input(WindowEvent.PRESS_BUTTON_DOWN)
+            self.send_input(WindowEvent.PRESS_ARROW_DOWN)
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
         elif input == "b":
@@ -445,13 +445,13 @@ class PyBoy:
         """
         input = input.lower()
         if input == "left":
-            self.send_input(WindowEvent.RELEASE_BUTTON_LEFT)
+            self.send_input(WindowEvent.RELEASE_ARROW_LEFT)
         elif input == "right":
-            self.send_input(WindowEvent.RELEASE_BUTTON_RIGHT)
+            self.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
         elif input == "up":
-            self.send_input(WindowEvent.RELEASE_BUTTON_UP)
+            self.send_input(WindowEvent.RELEASE_ARROW_UP)
         elif input == "down":
-            self.send_input(WindowEvent.RELEASE_BUTTON_DOWN)
+            self.send_input(WindowEvent.RELEASE_ARROW_DOWN)
         elif input == "a":
             self.send_input(WindowEvent.RELEASE_BUTTON_A)
         elif input == "b":
