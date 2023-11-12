@@ -64,7 +64,7 @@ class TileMap:
         The tile data and view that is showed on the background and window respectively can change dynamically. If you
         believe it has changed, you can use this method to update the tilemap from the LCDC register.
         """
-        LCDC = LCDCRegister(self.pyboy.get_memory_value(LCDC_OFFSET))
+        LCDC = LCDCRegister(self.pyboy.memory[LCDC_OFFSET])
         if self._select == "WINDOW":
             self.map_offset = HIGH_TILEMAP if LCDC.windowmap_select else LOW_TILEMAP
             self.signed_tile_data = not bool(LCDC.tiledata_select)
@@ -176,7 +176,7 @@ class TileMap:
             Tile identifier.
         """
 
-        tile = self.pyboy.get_memory_value(self._tile_address(column, row))
+        tile = self.pyboy.memory[self._tile_address(column, row)]
         if self.signed_tile_data:
             return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
         else:

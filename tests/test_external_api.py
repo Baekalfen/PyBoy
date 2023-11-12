@@ -277,7 +277,7 @@ def test_tetris(tetris_rom):
                     (-8, -16, 0, False),
                 ])
 
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
+                assert pyboy.memory[NEXT_TETROMINO] == 24
                 assert tetris.next_tetromino() == "T"
 
                 tmp_state = io.BytesIO()
@@ -368,12 +368,12 @@ def get_set_override(default_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, False)
 
-    assert pyboy.get_memory_value(0xFF40) == 0x91
-    assert pyboy.set_memory_value(0xFF40) == 0x12
-    assert pyboy.get_memory_value(0xFF40) == 0x12
+    assert pyboy.memory[0xFF40] == 0x91
+    pyboy.memory[0xFF40] = 0x12
+    assert pyboy.memory[0xFF40] == 0x12
 
-    assert pyboy.get_memory_value(0x0002) == 0xFE
+    assert pyboy.memory[0x0002] == 0xFE
     assert pyboy.override_memory_value(0x0002) == 0x12
-    assert pyboy.get_memory_value(0x0002) == 0x12
+    assert pyboy.memory[0x0002] == 0x12
 
     pyboy.stop(save=False)

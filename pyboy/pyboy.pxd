@@ -15,6 +15,9 @@ from pyboy.utils cimport IntIOInterface, IntIOWrapper
 
 cdef double SPF
 
+cdef class PyBoyMemoryView:
+    cdef Motherboard mb
+
 cdef class PyBoy:
     cdef Motherboard mb
     cdef public PluginManager plugin_manager
@@ -33,6 +36,7 @@ cdef class PyBoy:
     cdef bint stopped
     cdef bint initialized
     cdef public str window_title
+    cdef PyBoyMemoryView memory_view
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed

@@ -140,16 +140,16 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        world_level = self.pyboy.get_memory_value(ADDR_WORLD_LEVEL)
+        world_level = self.pyboy.memory[ADDR_WORLD_LEVEL]
         self.world = world_level >> 4, world_level & 0x0F
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
-        self.lives_left = _bcm_to_dec(self.pyboy.get_memory_value(ADDR_LIVES_LEFT))
+        self.lives_left = _bcm_to_dec(self.pyboy.memory[ADDR_LIVES_LEFT])
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
         self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
 
-        level_block = self.pyboy.get_memory_value(0xC0AB)
-        mario_x = self.pyboy.get_memory_value(0xC202)
+        level_block = self.pyboy.memory[0xC0AB]
+        mario_x = self.pyboy.memory[0xC202]
         scx = self.pyboy.screen().tilemap_position_list()[16][0]
         self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
 
@@ -173,9 +173,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         if 0 <= amount <= 99:
             tens = amount // 10
             ones = amount % 10
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens << 4) | ones)
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+            self.pyboy.memory[ADDR_LIVES_LEFT] = (tens << 4) | ones
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = tens
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = ones
         else:
             logger.error(f"{amount} is out of bounds. Only values between 0 and 99 allowed.")
 
@@ -233,7 +233,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.pyboy.button("start")
         while True:
             if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
-                self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+                self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
                 break
             self.pyboy.tick(1, False)
             self.tilemap_background.refresh_lcdc()
@@ -303,7 +303,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     def game_over(self):
         # Apparantly that address is for game over
         # https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
-        return self.pyboy.get_memory_value(0xC0A4) == 0x39
+        return self.pyboy.memory[0xC0A4] == 0x39
 
     def __repr__(self):
         adjust = 4

@@ -113,6 +113,8 @@ class PyBoy:
         self.stopped = False
         self.window_title = "PyBoy"
 
+        self.memory_view = PyBoyMemoryView(self.mb)
+
         ###################
         # Plugins
 
@@ -332,36 +334,18 @@ class PyBoy:
         """
         return self.plugin_manager.gamewrapper()
 
-    def get_memory_value(self, addr):
+    @property
+    def memory(self):
         """
-        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-        MBC commands to the virtual cartridge.
+        Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
-        Returns
-        -------
-        int:
-            An integer with the value of the memory address
+        Example:
+        ```
+        >>> values = pyboy.memory[0x0000:0x10000]
+        >>> pyboy.memory[0xC000:0xC0010] = 0
+        ```
         """
-        return self.mb.getitem(addr)
-
-    def set_memory_value(self, addr, value):
-        """
-        Write one byte to a given memory address of the Game Boy's current memory state.
-
-        This will not directly give you access to all switchable memory banks.
-
-        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
-        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
-
-        Args:
-            addr (int): Address to write the byte
-            value (int): A byte of data
-        """
-        self.mb.setitem(addr, value)
+        return self.memory_view
 
     def override_memory_value(self, rom_bank, addr, value):
         """
@@ -372,7 +356,7 @@ class PyBoy:
         __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
         any overrides when reloading the ROM.
 
-        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+        If you need to change a RAM address, see `pyboy.PyBoy.memory`.
 
         Args:
             rom_bank (int): ROM bank to do the overwrite in
@@ -792,3 +776,176 @@ class PyBoy:
 
     def _screenbuffer_raw(self):
         return self.mb.lcd.renderer._screenbuffer_raw
+
+
+class PyBoyMemoryView:
+    def __init__(self, mb):
+        self.mb = mb
+
+    def _fix_slice(self, addr):
+        if isinstance(addr, int):
+            return addr
+        start = addr.start
+        stop = addr.stop
+        step = addr.step
+        assert start is not None, "Start address required"
+        assert stop is not None, "End address required"
+        if not step:
+            step = 1
+        return slice(start, stop, step)
+
+    def __getitem__(self, addr):
+        if isinstance(addr, slice):
+            # Reading slice of memory space
+            addr = self._fix_slice(addr)
+            return [self.mb.getitem(x) for x in range(addr.start, addr.stop, addr.step)]
+        elif isinstance(addr, tuple):
+            # Reading a specific bank
+            bank, addr = addr
+            assert isinstance(bank, int), "Bank has to be integer. Slicing is not supported."
+            addr = self._fix_slice(addr)
+            if isinstance(addr, slice):
+                start, stop, step = addr.start, addr.stop, addr.step
+            else:
+                start = addr
+                stop = addr + 1
+
+            if start < 0x8000:
+                if start >= 0x4000:
+                    start -= 0x4000
+                    stop -= 0x4000
+                # Cartridge ROM Banks
+                assert stop < 0x4000, "Out of bounds for reading ROM bank"
+                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+                if isinstance(addr, slice):
+                    return [self.mb.cartridge.rombanks[bank][x] for x in range(start, stop, step)]
+                else:
+                    return self.mb.cartridge.rombanks[bank][addr]
+            elif start < 0xA000:
+                start -= 0x8000
+                stop -= 0x8000
+                # CGB VRAM Banks
+                assert self.mb.cgb, "Selecting bank of VRAM is only supported for CGB mode"
+                assert stop < 0x2000, "Out of bounds for reading VRAM bank"
+                assert bank <= 1, "VRAM Bank out of range"
+
+                if bank == 0:
+                    if isinstance(addr, slice):
+                        return [self.mb.lcd.VRAM0[x] for x in range(start, stop, step)]
+                    else:
+                        return self.mb.lcd.VRAM0[addr]
+                else:
+                    if isinstance(addr, slice):
+                        return [self.mb.lcd.VRAM1[x] for x in range(start, stop, step)]
+                    else:
+                        return self.mb.lcd.VRAM1[addr]
+            elif start < 0xC000:
+                start -= 0xA000
+                stop -= 0xA000
+                # Cartridge RAM banks
+                assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
+                assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
+                if isinstance(addr, slice):
+                    return [self.mb.cartridge.rambanks[bank][x] for x in range(start, stop, step)]
+                else:
+                    return self.mb.cartridge.rambanks[bank][addr]
+            elif start < 0xE000:
+                start -= 0xC000
+                stop -= 0xC000
+                if start >= 0x1000:
+                    start -= 0x1000
+                    stop -= 0x1000
+                # CGB VRAM banks
+                assert self.mb.cgb, "Selecting bank of WRAM is only supported for CGB mode"
+                assert stop < 0x1000, "Out of bounds for reading VRAM bank"
+                assert bank <= 7, "WRAM Bank out of range"
+                if isinstance(addr, slice):
+                    return [self.mb.ram.internal_ram0[x + bank*0x1000] for x in range(start, stop, step)]
+                else:
+                    return self.mb.ram.internal_ram0[addr + bank*0x1000]
+            else:
+                assert None, "Invalid memory address for bank"
+        else:
+            # Reading specific address of memory space
+            return self.mb.getitem(addr)
+
+    def __setitem__(self, addr, v):
+        if isinstance(addr, slice):
+            # Writing slice of memory space
+            addr = self._fix_slice(addr)
+            if hasattr(v, "__iter__"):
+                assert (addr.stop - addr.start) // addr.step == len(v), "slice does not match length of data"
+                _v = iter(v)
+                for x in range(addr.start, addr.stop, addr.step):
+                    self.mb.setitem(x, next(_v))
+            else:
+                for x in range(addr.start, addr.stop, addr.step):
+                    self.mb.setitem(x, v)
+        elif isinstance(addr, tuple):
+            # Writing a specific bank
+            bank, addr = addr
+            assert isinstance(bank, int), "Bank has to be integer. Slicing is not supported."
+            addr = self._fix_slice(addr)
+            if isinstance(addr, slice):
+                start, stop, step = addr.start, addr.stop, addr.step
+            else:
+                start = addr
+                stop = addr + 1
+
+            if start < 0x8000:
+                assert None, "Cannot write to ROM banks"
+            elif start < 0xA000:
+                start -= 0x8000
+                stop -= 0x8000
+                # CGB VRAM Banks
+                assert self.mb.cgb, "Selecting bank of VRAM is only supported for CGB mode"
+                assert stop < 0x2000, "Out of bounds for reading VRAM bank"
+                assert bank <= 1, "VRAM Bank out of range"
+
+                if bank == 0:
+                    if isinstance(addr, slice):
+                        _v = iter(v)
+                        for x in range(start, stop, step):
+                            self.mb.lcd.VRAM0[x] = next(_v)
+                    else:
+                        self.mb.lcd.VRAM0[addr] = v
+                else:
+                    if isinstance(addr, slice):
+                        _v = iter(v)
+                        for x in range(start, stop, step):
+                            self.mb.lcd.VRAM1[x] = next(_v)
+                    else:
+                        self.mb.lcd.VRAM1[addr] = v
+            elif start < 0xC000:
+                start -= 0xA000
+                stop -= 0xA000
+                # Cartridge RAM banks
+                assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
+                assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
+                if isinstance(addr, slice):
+                    _v = iter(v)
+                    for x in range(start, stop, step):
+                        self.mb.cartridge.rambanks[bank][x] = next(_v)
+                else:
+                    self.mb.cartridge.rambanks[bank][addr] = v
+            elif start < 0xE000:
+                start -= 0xC000
+                stop -= 0xC000
+                if start >= 0x1000:
+                    start -= 0x1000
+                    stop -= 0x1000
+                # CGB VRAM banks
+                assert self.mb.cgb, "Selecting bank of WRAM is only supported for CGB mode"
+                assert stop < 0x1000, "Out of bounds for reading VRAM bank"
+                assert bank <= 7, "WRAM Bank out of range"
+                if isinstance(addr, slice):
+                    _v = iter(v)
+                    for x in range(start, stop, step):
+                        self.mb.ram.internal_ram0[x + bank*0x1000] = next(_v)
+                else:
+                    self.mb.ram.internal_ram0[addr + bank*0x1000] = v
+            else:
+                assert None, "Invalid memory address for bank"
+        else:
+            # Writing specific address of memory space
+            self.mb.setitem(addr, v)

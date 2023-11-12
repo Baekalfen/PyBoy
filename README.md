@@ -126,6 +126,7 @@ When the emulator is running, you can easily access [PyBoy's API](https://baekal
 ```python
 pyboy.button('down')
 pyboy.button('a')
+some_value = pyboy.memory[0xC345]
 
 pil_image = pyboy.tick(1, True)
 pil_image.save('screenshot.png')
