@@ -58,7 +58,7 @@ def eval_network(epoch, child_index, child_model, record_to):
     pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
 
     # Set block animation to fall instantly
-    pyboy.set_memory_value(0xff9a, 2)
+    pyboy.memory[0xff9a] = 2
 
     run = 0
     scores = []
@@ -76,7 +76,7 @@ def eval_network(epoch, child_index, child_model, record_to):
         s_lines = tetris.lines
 
         # Determine how many possible rotations we need to check for the block
-        block_tile = pyboy.get_memory_value(0xc203)
+        block_tile = pyboy.memory[0xc203]
         turns_needed = check_needed_turn(block_tile)
         lefts_needed, rights_needed = check_needed_dirs(block_tile)
 

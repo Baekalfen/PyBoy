@@ -206,7 +206,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `"T"`: T-shape
         """
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) & 0b11111100]
+        return inverse_tetromino_table[self.pyboy.memory[NEXT_TETROMINO_ADDR] & 0b11111100]
 
     def set_tetromino(self, shape):
         """
@@ -245,7 +245,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch1):
-            self.pyboy.override_memory_value(0, 0x206E + i, byte)
+            self.pyboy.memory[0, 0x206E + i] = byte
 
         patch2 = [
             0x3E, # LD A, Tetromino
@@ -253,7 +253,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch2):
-            self.pyboy.override_memory_value(0, 0x20B0 + i, byte)
+            self.pyboy.memory[0, 0x20B0 + i] = byte
 
     def game_over(self):
         """
