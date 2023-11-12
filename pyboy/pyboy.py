@@ -114,6 +114,8 @@ class PyBoy:
         self.stopped = False
         self.window_title = "PyBoy"
 
+        self.memory_view = PyBoyMemoryView(self.mb)
+
         ###################
         # Plugins
 
@@ -334,36 +336,18 @@ class PyBoy:
         """
         return self.plugin_manager.gamewrapper()
 
-    def get_memory_value(self, addr):
+    @property
+    def memory(self):
         """
-        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-        MBC commands to the virtual cartridge.
+        Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
-        Returns
-        -------
-        int:
-            An integer with the value of the memory address
+        Example:
+        ```
+        >>> values = pyboy.memory[0x0000:0x10000]
+        >>> pyboy.memory[0xC000:0xC0010] = 0
+        ```
         """
-        return self.mb.getitem(addr)
-
-    def set_memory_value(self, addr, value):
-        """
-        Write one byte to a given memory address of the Game Boy's current memory state.
-
-        This will not directly give you access to all switchable memory banks.
-
-        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
-        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
-
-        Args:
-            addr (int): Address to write the byte
-            value (int): A byte of data
-        """
-        self.mb.setitem(addr, value)
+        return self.memory_view
 
     def override_memory_value(self, rom_bank, addr, value):
         """
@@ -374,7 +358,7 @@ class PyBoy:
         __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
         any overrides when reloading the ROM.
 
-        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+        If you need to change a RAM address, see `pyboy.PyBoy.memory`.
 
         Args:
             rom_bank (int): ROM bank to do the overwrite in

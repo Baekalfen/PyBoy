@@ -53,14 +53,14 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def _get_screen_walkable_matrix(self):
         walkable_tiles_indexes = []
-        collision_ptr = self.pyboy.get_memory_value(0xD530) + (self.pyboy.get_memory_value(0xD531) << 8)
-        tileset_type = self.pyboy.get_memory_value(0xFFD7)
+        collision_ptr = self.pyboy.memory[0xD530] + (self.pyboy.memory[0xD531] << 8)
+        tileset_type = self.pyboy.memory[0xFFD7]
         if tileset_type > 0:
-            grass_tile_index = self.pyboy.get_memory_value(0xD535)
+            grass_tile_index = self.pyboy.memory[0xD535]
             if grass_tile_index != 0xFF:
                 walkable_tiles_indexes.append(grass_tile_index + 0x100)
         for i in range(0x180):
-            tile_index = self.pyboy.get_memory_value(collision_ptr + i)
+            tile_index = self.pyboy.memory[collision_ptr + i]
             if tile_index == 0xFF:
                 break
             else:

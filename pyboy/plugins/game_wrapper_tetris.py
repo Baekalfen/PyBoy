@@ -206,7 +206,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             * `"T"`: T-shape
         """
         # Bitmask, as the last two bits determine the direction
-        return inverse_tetromino_table[self.pyboy.get_memory_value(NEXT_TETROMINO_ADDR) & 0b11111100]
+        return inverse_tetromino_table[self.pyboy.memory[NEXT_TETROMINO_ADDR] & 0b11111100]
 
     def set_tetromino(self, shape):
         """

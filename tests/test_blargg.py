@@ -40,7 +40,7 @@ def run_rom(rom):
     if result == "":
         n = 0
         while True:
-            char = pyboy.get_memory_value(0xA004 + n)
+            char = pyboy.memory[0xA004 + n]
             if char != 0:
                 result += chr(char)
             n += 1
