@@ -37,7 +37,7 @@ from .utils import WindowEvent
 
 try:
     from gym import Env
-    from gym.spaces import Discrete, MultiDiscrete, Box
+    from gym.spaces import Box, Discrete, MultiDiscrete
     enabled = True
 except ImportError:
 
@@ -159,7 +159,7 @@ class PyBoyGymEnv(Env):
 
         action = self.actions[action_id]
         if action == self._DO_NOTHING:
-            pyboy_done = self.pyboy.tick()
+            pyboy_done = self.pyboy.tick(self.observation_type == &#34;raw&#34;)
         else:
             if self.action_type == &#34;toggle&#34;:
                 if self._button_is_pressed[action]:
@@ -169,7 +169,7 @@ class PyBoyGymEnv(Env):
                     self._button_is_pressed[action] = True
 
             self.pyboy.send_input(action)
-            pyboy_done = self.pyboy.tick()
+            pyboy_done = self.pyboy.tick(self.observation_type == &#34;raw&#34;)
 
             if self.action_type == &#34;press&#34;:
                 self.pyboy.send_input(self._release_button[action])
@@ -369,7 +369,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
 
         action = self.actions[action_id]
         if action == self._DO_NOTHING:
-            pyboy_done = self.pyboy.tick()
+            pyboy_done = self.pyboy.tick(self.observation_type == &#34;raw&#34;)
         else:
             if self.action_type == &#34;toggle&#34;:
                 if self._button_is_pressed[action]:
@@ -379,7 +379,7 @@ Gives the id of the sprites and tiles in 8x8 pixel zones of the game_area.</li>
                     self._button_is_pressed[action] = True
 
             self.pyboy.send_input(action)
-            pyboy_done = self.pyboy.tick()
+            pyboy_done = self.pyboy.tick(self.observation_type == &#34;raw&#34;)
 
             if self.action_type == &#34;press&#34;:
                 self.pyboy.send_input(self._release_button[action])
@@ -462,7 +462,7 @@ a certain timelimit was exceeded, or the physics simulation has entered an inval
 
     action = self.actions[action_id]
     if action == self._DO_NOTHING:
-        pyboy_done = self.pyboy.tick()
+        pyboy_done = self.pyboy.tick(self.observation_type == &#34;raw&#34;)
     else:
         if self.action_type == &#34;toggle&#34;:
             if self._button_is_pressed[action]:
@@ -472,7 +472,7 @@ a certain timelimit was exceeded, or the physics simulation has entered an inval
                 self._button_is_pressed[action] = True
 
         self.pyboy.send_input(action)
-        pyboy_done = self.pyboy.tick()
+        pyboy_done = self.pyboy.tick(self.observation_type == &#34;raw&#34;)
 
         if self.action_type == &#34;press&#34;:
             self.pyboy.send_input(self._release_button[action])
