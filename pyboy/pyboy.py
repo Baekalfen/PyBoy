@@ -662,7 +662,7 @@ class PyBoy:
         `pyboy.api.screen.Screen`:
             A Screen object with helper functions for reading the screen buffer.
         """
-        return Screen(self)
+        return Screen(self.mb)
 
     def sprite(self, sprite_index):
         """
@@ -679,7 +679,7 @@ class PyBoy:
         `pyboy.api.sprite.Sprite`:
             Sprite corresponding to the given index.
         """
-        return Sprite(self, sprite_index)
+        return Sprite(self.mb, sprite_index)
 
     def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
         """
@@ -744,7 +744,7 @@ class PyBoy:
         `pyboy.api.tilemap.TileMap`:
             A TileMap object for the tile map.
         """
-        return TileMap(self, "BACKGROUND")
+        return TileMap(self.mb, "BACKGROUND")
 
     def tilemap_window(self):
         """
@@ -758,7 +758,7 @@ class PyBoy:
         `pyboy.api.tilemap.TileMap`:
             A TileMap object for the tile map.
         """
-        return TileMap(self, "WINDOW")
+        return TileMap(self.mb, "WINDOW")
 
     def _image_data(self):
         """
@@ -782,9 +782,6 @@ class PyBoy:
                 # NOTE: ">> 8 | 0xFF000000" to keep compatibility with earlier code
                 old_A_format = 0xFF000000
                 self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) >> 8 | old_A_format
-
-    def _screenbuffer_raw(self):
-        return self.mb.lcd.renderer._screenbuffer_raw
 
 
 class PyBoyMemoryView:

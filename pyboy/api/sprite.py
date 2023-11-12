@@ -13,7 +13,7 @@ from .tile import Tile
 
 
 class Sprite:
-    def __init__(self, pyboy, sprite_index):
+    def __init__(self, mb, sprite_index):
         """
         This class presents an interface to the sprites held in the OAM data on the Game Boy.
 

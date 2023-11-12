@@ -28,8 +28,8 @@ class Screen:
     If you're making an AI or bot, it's highly recommended to _not_ use this class for detecting objects on the screen.
     It's much more efficient to use `pyboy.tilemap_background`, `pyboy.tilemap_window`, and `pyboy.sprite` instead.
     """
-    def __init__(self, pyboy):
-        self.pyboy = pyboy
+    def __init__(self, mb):
+        self.mb = mb
 
     def tilemap_position(self):
         """
