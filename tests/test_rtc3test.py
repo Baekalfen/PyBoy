@@ -24,15 +24,11 @@ def test_rtc3test(subtest, rtc3test_file):
     pyboy.tick(25, True)
 
     for n in range(subtest):
-        pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-        pyboy.tick(1, True)
-        pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-        pyboy.tick(1, True)
+        pyboy.button("down")
+        pyboy.tick(2, True)
 
-    pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-    pyboy.tick(1, True)
-    pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-    pyboy.tick(1, True)
+    pyboy.button("a")
+    pyboy.tick(2, True)
 
     while True:
         # Continue until it says "(A) Return"

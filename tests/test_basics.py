@@ -25,13 +25,13 @@ def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window_type="null", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, True)
-    pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+    pyboy.button("down")
     pyboy.tick(1, True)
-    pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
+    pyboy.button("up")
     pyboy.tick(2, True)
-    pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
+    pyboy.button("down")
     pyboy.tick(1, True)
-    pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
+    pyboy.button("up")
     pyboy.tick(1, True)
 
     events = pyboy.plugin_manager.record_replay.recorded_input
