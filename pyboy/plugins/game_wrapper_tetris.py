@@ -125,10 +125,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         # Start game. Just press Start when the game allows us.
         for i in range(2):
-            self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.pyboy.tick(1, False)
-            self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-            self.pyboy.tick(6, False)
+            self.pyboy.button("start")
+            self.pyboy.tick(7, False)
 
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
@@ -147,11 +145,8 @@ class GameWrapperTetris(PyBoyGameWrapper):
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
         self._set_timer_div(timer_div)
-
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick(1, False)
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
-        self.pyboy.tick(6, False)
+        self.pyboy.button("start")
+        self.pyboy.tick(7, False)
 
     def game_area(self):
         """
