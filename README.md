@@ -126,6 +126,7 @@ When the emulator is running, you can easily access [PyBoy's API](https://baekal
 ```python
 pyboy.button('down')
 pyboy.button('a')
+some_value = pyboy.memory[0xC345]
 
 pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
 pyboy.tick() # Process one frame to let the game register the input

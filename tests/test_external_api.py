@@ -281,7 +281,7 @@ def test_tetris(tetris_rom):
                     (-8, -16, 0, False),
                 ])
 
-                assert pyboy.get_memory_value(NEXT_TETROMINO) == 24
+                assert pyboy.memory[NEXT_TETROMINO] == 24
                 assert tetris.next_tetromino() == "T"
 
                 tmp_state = io.BytesIO()
@@ -367,17 +367,27 @@ def test_tilemap_position_list(supermarioland_rom):
     pyboy.stop(save=False)
 
 
-def get_set_override(default_rom):
+def test_get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, False)
 
-    assert pyboy.get_memory_value(0xFF40) == 0x91
-    assert pyboy.set_memory_value(0xFF40) == 0x12
-    assert pyboy.get_memory_value(0xFF40) == 0x12
+    assert pyboy.memory[0xFF40] == 0x00
+    pyboy.memory[0xFF40] = 0x12
+    assert pyboy.memory[0xFF40] == 0x12
 
-    assert pyboy.get_memory_value(0x0002) == 0xFE
-    assert pyboy.override_memory_value(0x0002) == 0x12
-    assert pyboy.get_memory_value(0x0002) == 0x12
+    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
+    assert pyboy.memory[0x0002] == 0xFF # Taken from bootrom
+    assert pyboy.memory[-1, 0x0002] == 0xFF # Taken from bootrom
+    pyboy.memory[-1, 0x0002] = 0x01 # Change bootrom
+    assert pyboy.memory[-1, 0x0002] == 0x01 # New value in bootrom
+    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
+
+    pyboy.memory[0xFF50] = 1 # Disable bootrom
+    assert pyboy.memory[0x0002] == 0x42 # Taken from ROM bank 0
+
+    pyboy.memory[0, 0x0002] = 0x12
+    assert pyboy.memory[0x0002] == 0x12
+    assert pyboy.memory[0, 0x0002] == 0x12
 
     pyboy.stop(save=False)

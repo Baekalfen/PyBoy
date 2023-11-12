@@ -18,6 +18,16 @@ cdef Logger logger
 
 cdef double SPF
 
+cdef class PyBoyMemoryView:
+    cdef Motherboard mb
+
+    @cython.locals(start=int,stop=int,step=int)
+    cpdef (int,int,int) _fix_slice(self, slice)
+    @cython.locals(start=int,stop=int,step=int)
+    cdef object __getitem(self, int, int, int, int, bint, bint)
+    @cython.locals(start=int,stop=int,step=int,x=int, bank=int)
+    cdef int __setitem(self, int, int, int, object, int, bint, bint) except -1
+
 cdef class PyBoy:
     cdef Motherboard mb
     cdef public PluginManager plugin_manager
@@ -36,6 +46,7 @@ cdef class PyBoy:
     cdef bint stopped
     cdef bint initialized
     cdef public str window_title
+    cdef readonly PyBoyMemoryView memory
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed

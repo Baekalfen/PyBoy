@@ -13,13 +13,15 @@ import numpy as np
 
 from pyboy import utils
 from pyboy.logging import get_logger
+from pyboy.api.screen import Screen
+from pyboy.api.tilemap import TileMap
+from pyboy.logging import get_logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from . import utils
-from .api import Screen, Sprite, Tile, TileMap, constants
+from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
 
 logger = get_logger(__name__)
@@ -113,6 +115,46 @@ class PyBoy:
         self.quitting = False
         self.stopped = False
         self.window_title = "PyBoy"
+
+        ###################
+        # API attributes
+
+        self.memory = PyBoyMemoryView(self.mb)
+        """
+        Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
+
+        Example:
+        ```
+        >>> values = pyboy.memory[0x0000:0x10000]
+        >>> pyboy.memory[0xC000:0xC0010] = 0
+        ```
+        """
+
+        self.tilemap_background = TileMap(self, self.mb, "BACKGROUND")
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+
+        self.tilemap_window = TileMap(self, self.mb, "WINDOW")
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
 
         ###################
         # Plugins
@@ -330,37 +372,6 @@ class PyBoy:
         """
         return self.plugin_manager.gamewrapper()
 
-    def get_memory_value(self, addr):
-        """
-        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
-        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
-        MBC commands to the virtual cartridge.
-
-        Returns
-        -------
-        int:
-            An integer with the value of the memory address
-        """
-        return self.mb.getitem(addr)
-
-    def set_memory_value(self, addr, value):
-        """
-        Write one byte to a given memory address of the Game Boy's current memory state.
-
-        This will not directly give you access to all switchable memory banks.
-
-        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
-        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
-        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
-
-        Args:
-            addr (int): Address to write the byte
-            value (int): A byte of data
-        """
-        self.mb.setitem(addr, value)
-
     def override_memory_value(self, rom_bank, addr, value):
         """
         Override one byte at a given memory address of the Game Boy's ROM.
@@ -370,7 +381,7 @@ class PyBoy:
         __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
         any overrides when reloading the ROM.
 
-        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+        If you need to change a RAM address, see `pyboy.PyBoy.memory`.
 
         Args:
             rom_bank (int): ROM bank to do the overwrite in
@@ -748,6 +759,8 @@ class PyBoyMemoryView:
             return (0, -1, 0)
         start = addr.start
         stop = addr.stop
+        if start > stop:
+            return (-1, -1, 0)
         if addr.step is None:
             step = 1
         else:
@@ -763,13 +776,15 @@ class PyBoyMemoryView:
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
+            assert start >= 0 or stop >= 0, "Start address has to come before end address"
             assert start >= 0, "Start address required"
             assert stop >= 0, "End address required"
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
         else:
-            return self.__getitem(addr, 0, 0, bank, is_single, is_bank)
+            return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
 
     def __getitem(self, start, stop, step, bank, is_single, is_bank):
+        slice_length = (stop-start) // step
         if is_bank:
             # Reading a specific bank
             if start < 0x8000:
@@ -778,11 +793,25 @@ class PyBoyMemoryView:
                     stop -= 0x4000
                 # Cartridge ROM Banks
                 assert stop < 0x4000, "Out of bounds for reading ROM bank"
-                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
-                if not is_single:
-                    return [self.mb.cartridge.rombanks[bank][x] for x in range(start, stop, step)]
+                if bank == -1:
+                    assert start <= 0xFF, "Start address out of range for bootrom"
+                    assert stop <= 0xFF, "Start address out of range for bootrom"
+                    if not is_single:
+                        mem_slice = [0] * slice_length
+                        for x in range(start, stop, step):
+                            mem_slice[(x-start) // step] = self.mb.bootrom.bootrom[x]
+                        return mem_slice
+                    else:
+                        return self.mb.bootrom.bootrom[start]
                 else:
-                    return self.mb.cartridge.rombanks[bank][start]
+                    assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+                    if not is_single:
+                        mem_slice = [0] * slice_length
+                        for x in range(start, stop, step):
+                            mem_slice[(x-start) // step] = self.mb.cartridge.rombanks[bank, x]
+                        return mem_slice
+                    else:
+                        return self.mb.cartridge.rombanks[bank, start]
             elif start < 0xA000:
                 start -= 0x8000
                 stop -= 0x8000
@@ -793,12 +822,18 @@ class PyBoyMemoryView:
 
                 if bank == 0:
                     if not is_single:
-                        return [self.mb.lcd.VRAM0[x] for x in range(start, stop, step)]
+                        mem_slice = [0] * slice_length
+                        for x in range(start, stop, step):
+                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM0[x]
+                        return mem_slice
                     else:
                         return self.mb.lcd.VRAM0[start]
                 else:
                     if not is_single:
-                        return [self.mb.lcd.VRAM1[x] for x in range(start, stop, step)]
+                        mem_slice = [0] * slice_length
+                        for x in range(start, stop, step):
+                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM1[x]
+                        return mem_slice
                     else:
                         return self.mb.lcd.VRAM1[start]
             elif start < 0xC000:
@@ -808,9 +843,12 @@ class PyBoyMemoryView:
                 assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
                 assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
                 if not is_single:
-                    return [self.mb.cartridge.rambanks[bank][x] for x in range(start, stop, step)]
+                    mem_slice = [0] * slice_length
+                    for x in range(start, stop, step):
+                        mem_slice[(x-start) // step] = self.mb.cartridge.rambanks[bank, x]
+                    return mem_slice
                 else:
-                    return self.mb.cartridge.rambanks[bank][start]
+                    return self.mb.cartridge.rambanks[bank, start]
             elif start < 0xE000:
                 start -= 0xC000
                 stop -= 0xC000
@@ -822,14 +860,20 @@ class PyBoyMemoryView:
                 assert stop < 0x1000, "Out of bounds for reading VRAM bank"
                 assert bank <= 7, "WRAM Bank out of range"
                 if not is_single:
-                    return [self.mb.ram.internal_ram0[x + bank*0x1000] for x in range(start, stop, step)]
+                    mem_slice = [0] * slice_length
+                    for x in range(start, stop, step):
+                        mem_slice[(x-start) // step] = self.mb.ram.internal_ram0[x + bank*0x1000]
+                    return mem_slice
                 else:
                     return self.mb.ram.internal_ram0[start + bank*0x1000]
             else:
                 assert None, "Invalid memory address for bank"
         elif not is_single:
             # Reading slice of memory space
-            return [self.mb.getitem(x) for x in range(start, stop, step)]
+            mem_slice = [0] * slice_length
+            for x in range(start, stop, step):
+                mem_slice[(x-start) // step] = self.mb.getitem(x)
+            return mem_slice
         else:
             # Reading specific address of memory space
             return self.mb.getitem(start)
@@ -853,7 +897,59 @@ class PyBoyMemoryView:
         if is_bank:
             # Writing a specific bank
             if start < 0x8000:
-                assert None, "Cannot write to ROM banks"
+                """
+                Override one byte at a given memory address of the Game Boy's ROM.
+
+                This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
+
+                __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+                any overrides when reloading the ROM.
+
+                If you need to change a RAM address, see `pyboy.PyBoy.memory`.
+
+                Args:
+                    rom_bank (int): ROM bank to do the overwrite in
+                    addr (int): Address to write the byte inside the ROM bank
+                    value (int): A byte of data
+                """
+                if start >= 0x4000:
+                    start -= 0x4000
+                    stop -= 0x4000
+                # Cartridge ROM Banks
+                assert stop < 0x4000, "Out of bounds for reading ROM bank"
+                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+
+                # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
+                # what the game writes to the address. This can be used so freeze the value for health, cash etc.
+                if bank == -1:
+                    assert start <= 0xFF, "Start address out of range for bootrom"
+                    assert stop <= 0xFF, "Start address out of range for bootrom"
+                    if not is_single:
+                        # Writing slice of memory space
+                        if hasattr(v, "__iter__"):
+                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            _v = iter(v)
+                            for x in range(start, stop, step):
+                                self.mb.bootrom.bootrom[x] = next(_v)
+                        else:
+                            for x in range(start, stop, step):
+                                self.mb.bootrom.bootrom[x] = v
+                    else:
+                        self.mb.bootrom.bootrom[start] = v
+                else:
+                    if not is_single:
+                        # Writing slice of memory space
+                        if hasattr(v, "__iter__"):
+                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            _v = iter(v)
+                            for x in range(start, stop, step):
+                                self.mb.cartridge.overrideitem(bank, x, next(_v))
+                        else:
+                            for x in range(start, stop, step):
+                                self.mb.cartridge.overrideitem(bank, x, v)
+                    else:
+                        self.mb.cartridge.overrideitem(bank, start, v)
+
             elif start < 0xA000:
                 start -= 0x8000
                 stop -= 0x8000
@@ -900,12 +996,12 @@ class PyBoyMemoryView:
                         assert (stop-start) // step == len(v), "slice does not match length of data"
                         _v = iter(v)
                         for x in range(start, stop, step):
-                            self.mb.cartridge.rambanks[bank][x] = next(_v)
+                            self.mb.cartridge.rambanks[bank, x] = next(_v)
                     else:
                         for x in range(start, stop, step):
-                            self.mb.cartridge.rambanks[bank][x] = v
+                            self.mb.cartridge.rambanks[bank, x] = v
                 else:
-                    self.mb.cartridge.rambanks[bank][start] = v
+                    self.mb.cartridge.rambanks[bank, start] = v
             elif start < 0xE000:
                 start -= 0xC000
                 stop -= 0xC000

@@ -14,7 +14,7 @@ def test_load_save_consistency(tetris_rom):
     pyboy = PyBoy(tetris_rom, window_type="headless", game_wrapper=True)
     assert pyboy.cartridge_title() == "TETRIS"
     pyboy.set_emulation_speed(0)
-    pyboy.get_memory_value(NEXT_TETROMINO_ADDR)
+    pyboy.memory[NEXT_TETROMINO_ADDR]
 
     ##############################################################
     # Set up some kind of state, where not all registers are reset
