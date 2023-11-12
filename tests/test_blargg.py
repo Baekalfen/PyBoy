@@ -25,7 +25,7 @@ def run_rom(rom):
     pyboy.set_emulation_speed(0)
     t = time.time()
     result = ""
-    while not pyboy.tick(1, False):
+    while pyboy.tick(1, False):
         b = pyboy._serial()
         if b != "":
             result += b
