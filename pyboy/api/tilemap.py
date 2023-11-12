@@ -15,7 +15,7 @@ from .tile import Tile
 
 
 class TileMap:
-    def __init__(self, pyboy, select):
+    def __init__(self, mb, select):
         """
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         "background" and "window".
@@ -44,7 +44,7 @@ class TileMap:
         Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
         need the entire 32x32 tile map, you can use the shortcut: `tilemap[:,:]`.
         """
-        self.pyboy = pyboy
+        self.mb = mb
         self._select = select
         self._use_tile_objects = False
         self.refresh_lcdc()
@@ -64,7 +64,7 @@ class TileMap:
         The tile data and view that is showed on the background and window respectively can change dynamically. If you
         believe it has changed, you can use this method to update the tilemap from the LCDC register.
         """
-        LCDC = LCDCRegister(self.pyboy.memory[LCDC_OFFSET])
+        LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
         if self._select == "WINDOW":
             self.map_offset = HIGH_TILEMAP if LCDC.windowmap_select else LOW_TILEMAP
             self.signed_tile_data = not bool(LCDC.tiledata_select)
@@ -153,7 +153,7 @@ class TileMap:
             Tile object corresponding to the tile index at the given coordinate in the
             tile map.
         """
-        return Tile(self.pyboy, self.tile_identifier(column, row))
+        return Tile(self.mb, self.tile_identifier(column, row))
 
     def tile_identifier(self, column, row):
         """
@@ -176,7 +176,7 @@ class TileMap:
             Tile identifier.
         """
 
-        tile = self.pyboy.memory[self._tile_address(column, row)]
+        tile = self.mb.getitem(self._tile_address(column, row))
         if self.signed_tile_data:
             return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
         else:

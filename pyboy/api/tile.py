@@ -24,7 +24,7 @@ except ImportError:
 
 
 class Tile:
-    def __init__(self, pyboy, identifier):
+    def __init__(self, mb, identifier):
         """
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
         `pyboy.tile`, `pyboy.api.sprite.Sprite` and `pyboy.api.tilemap.TileMap`, when refering to graphics.
@@ -36,7 +36,7 @@ class Tile:
         The data of this class is static, apart from the image data, which is loaded from the Game Boy's memory when
         needed. Beware that the graphics for the tile can change between each call to `pyboy.PyBoy.tick`.
         """
-        self.pyboy = pyboy
+        self.mb = mb
 
         assert 0 <= identifier < 384, "Identifier out of range"
 
