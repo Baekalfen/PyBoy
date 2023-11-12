@@ -151,22 +151,22 @@ def test_tilemaps(kirby_rom):
 def test_randomize_ram(default_rom):
     pyboy = PyBoy(default_rom, window_type="dummy", randomize=False)
     # RAM banks should all be 0 by default
-    assert not any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not zeroed"
-    assert not any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not zeroed"
-    assert not any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not zeroed"
-    assert not any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not zeroed"
-    assert not any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not zeroed"
-    assert not any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not zeroed"
+    assert not any(pyboy.memory[0x8000:0xA000]), "VRAM not zeroed"
+    assert not any(pyboy.memory[0xC000:0xE000]), "Internal RAM 0 not zeroed"
+    assert not any(pyboy.memory[0xFE00:0xFEA0]), "OAM not zeroed"
+    assert not any(pyboy.memory[0xFEA0:0xFF00]), "Non-IO internal RAM 0 not zeroed"
+    assert not any(pyboy.memory[0xFF4C:0xFF80]), "Non-IO internal RAM 1 not zeroed"
+    assert not any(pyboy.memory[0xFF80:0xFFFF]), "Internal RAM 1 not zeroed"
     pyboy.stop(save=False)
 
     pyboy = PyBoy(default_rom, window_type="dummy", randomize=True)
     # RAM banks should have at least one nonzero value now
-    assert any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not randomized"
-    assert any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not randomized"
-    assert any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not randomized"
-    assert any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not randomized"
-    assert any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not randomized"
-    assert any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not randomized"
+    assert any(pyboy.memory[0x8000:0xA000]), "VRAM not randomized"
+    assert any(pyboy.memory[0xC000:0xE000]), "Internal RAM 0 not randomized"
+    assert any(pyboy.memory[0xFE00:0xFEA0]), "OAM not randomized"
+    assert any(pyboy.memory[0xFEA0:0xFF00]), "Non-IO internal RAM 0 not randomized"
+    assert any(pyboy.memory[0xFF4C:0xFF80]), "Non-IO internal RAM 1 not randomized"
+    assert any(pyboy.memory[0xFF80:0xFFFF]), "Internal RAM 1 not randomized"
     pyboy.stop(save=False)
 
 

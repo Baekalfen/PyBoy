@@ -51,16 +51,16 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 5
         for n in range(score_digits):
-            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**(score_digits - n)
+            self.score += self.pyboy.memory[0xD06F + n] * 10**(score_digits - n)
 
         # Check if game is over
         prev_health = self.health
-        self.health = self.pyboy.get_memory_value(0xD086)
+        self.health = self.pyboy.memory[0xD086]
         if self.lives_left == 0:
             if prev_health > 0 and self.health == 0:
                 self._game_over = True
 
-        self.lives_left = self.pyboy.get_memory_value(0xD089) - 1
+        self.lives_left = self.pyboy.memory[0xD089] - 1
 
         if self.game_has_started:
             self.fitness = self.score * self.health * self.lives_left
