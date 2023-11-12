@@ -175,6 +175,7 @@ class PyBoy:
             False if emulation has ended otherwise True or RGB image of (160, 144) pixels
         """
 
+        running = False
         while count != 0:
             _render = render and count == 1 # Only render on last tick to improve performance
             running = self._tick(render)
@@ -750,29 +751,6 @@ class PyBoy:
             A TileMap object for the tile map.
         """
         return TileMap(self.mb, "WINDOW")
-
-    def _image_data(self):
-        """
-        Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
-        colors.
-
-        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
-
-        Returns
-        -------
-        memoryview :
-            Image data of tile in 8x8 pixels and RGBA colors.
-        """
-        self.data = np.zeros((8, 8), dtype=np.uint32)
-        for k in range(0, 16, 2): # 2 bytes for each line
-            byte1 = self.mb.lcd.VRAM0[self.data_address + k - constants.VRAM_OFFSET]
-            byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - constants.VRAM_OFFSET]
-
-            for x in range(8):
-                colorcode = utils.color_code(byte1, byte2, 7 - x)
-                # NOTE: ">> 8 | 0xFF000000" to keep compatibility with earlier code
-                old_A_format = 0xFF000000
-                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) >> 8 | old_A_format
 
 
 class PyBoyMemoryView:
