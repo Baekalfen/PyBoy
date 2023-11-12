@@ -9,8 +9,9 @@ import sys
 
 import numpy as np
 import pytest
+
 from pyboy import PyBoy, WindowEvent
-from pyboy.botsupport.constants import COLS, ROWS
+from pyboy.api.constants import COLS, ROWS
 
 py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"

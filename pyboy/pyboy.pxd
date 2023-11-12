@@ -31,6 +31,7 @@ cdef class PyBoy:
 
     cdef list old_events
     cdef list events
+    cdef list queued_input
     cdef bint quitting
     cdef bint stopped
     cdef bint initialized
@@ -38,7 +39,6 @@ cdef class PyBoy:
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
-    cdef object screen_recorder
     cdef bint record_input
     cdef bint disable_input
     cdef str record_input_file
@@ -46,7 +46,9 @@ cdef class PyBoy:
     cdef list external_input
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
-    cpdef bint tick(self, bint) noexcept
+    cpdef bint _tick(self, bint) noexcept
+    @cython.locals(running=bint)
+    cpdef object tick(self, bint) noexcept
     cpdef void stop(self, save=*) noexcept
 
     @cython.locals(state_path=str)
@@ -55,3 +57,9 @@ cdef class PyBoy:
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
+
+    cpdef object sprite(self, int) noexcept
+    cpdef list sprite_by_tile_identifier(self, list, on_screen=*) noexcept
+    cpdef object tile(self, int) noexcept
+    cpdef object tilemap_background(self) noexcept
+    cpdef object tilemap_window(self) noexcept
