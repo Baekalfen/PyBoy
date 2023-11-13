@@ -18,6 +18,13 @@ cdef double SPF
 cdef class PyBoyMemoryView:
     cdef Motherboard mb
 
+    @cython.locals(start=int,stop=int,step=int)
+    cpdef slice _fix_slice(self, slice)
+    @cython.locals(start=int,stop=int,step=int)
+    cdef object __getitem(self, int, int, int, int, bint, bint)
+    @cython.locals(start=int,stop=int,step=int,x=int, bank=int)
+    cdef void __setitem(self, int, int, int, object, int, bint, bint)
+
 cdef class PyBoy:
     cdef Motherboard mb
     cdef public PluginManager plugin_manager
