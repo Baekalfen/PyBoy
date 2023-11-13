@@ -71,8 +71,8 @@ cdef class PyBoy:
     cpdef bint _is_cpu_stuck(self)
     cdef void __rendering(self, int) noexcept
 
-    cpdef object sprite(self, int) noexcept
-    cpdef list sprite_by_tile_identifier(self, list, on_screen=*) noexcept
-    cpdef object tile(self, int) noexcept
+    cpdef object get_sprite(self, int) noexcept
+    cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
+    cpdef object get_tile(self, int) noexcept
     cpdef object tilemap_background(self) noexcept
     cpdef object tilemap_window(self) noexcept

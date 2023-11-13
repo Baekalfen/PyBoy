@@ -651,6 +651,7 @@ class PyBoy:
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
 
+    @property
     def screen(self):
         """
         Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
@@ -666,7 +667,7 @@ class PyBoy:
         """
         return Screen(self.mb)
 
-    def sprite(self, sprite_index):
+    def get_sprite(self, sprite_index):
         """
         Provides a `pyboy.api.sprite.Sprite` object, which makes the OAM data more presentable. The given index
         corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
@@ -683,7 +684,7 @@ class PyBoy:
         """
         return Sprite(self.mb, sprite_index)
 
-    def sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+    def get_sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
         """
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
@@ -719,7 +720,7 @@ class PyBoy:
             matches.append(match)
         return matches
 
-    def tile(self, identifier):
+    def get_tile(self, identifier):
         """
         The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
         `pyboy.api.tile.Tile`-object for given identifier.
@@ -734,6 +735,7 @@ class PyBoy:
         """
         return Tile(self.mb, identifier=identifier)
 
+    @property
     def tilemap_background(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
@@ -748,6 +750,7 @@ class PyBoy:
         """
         return TileMap(self.mb, "BACKGROUND")
 
+    @property
     def tilemap_window(self):
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
