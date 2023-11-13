@@ -126,7 +126,7 @@ def test_tetris(tetris_rom):
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
         pyboy.tick(1, False)
 
-        assert pyboy.screen().tilemap_position() == ((0, 0), (-7, 0))
+        assert pyboy.screen.tilemap_position() == ((0, 0), (-7, 0))
 
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
@@ -233,7 +233,7 @@ def test_tetris(tetris_rom):
                 assert all_sprites == all_sprites2
 
                 # Verify data with known reference
-                # pyboy.screen().screen_image().show()
+                # pyboy.screen.screen_image().show()
                 assert all_sprites == ([
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
@@ -343,7 +343,7 @@ def test_tilemap_position_list(supermarioland_rom):
     pyboy.tick(100, False)
 
     # Get screen positions, and verify the values
-    positions = pyboy.screen().tilemap_position_list()
+    positions = pyboy.screen.tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
@@ -354,7 +354,7 @@ def test_tilemap_position_list(supermarioland_rom):
     pyboy.tick(10, False)
 
     # Get screen positions, and verify the values
-    positions = pyboy.screen().tilemap_position_list()
+    positions = pyboy.screen.tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
