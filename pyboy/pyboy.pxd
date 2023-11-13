@@ -64,6 +64,8 @@ cdef class PyBoy:
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
+    cpdef bint _is_cpu_stuck(self)
+    cdef void __rendering(self, int) noexcept
 
     cpdef object get_sprite(self, int) noexcept
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
