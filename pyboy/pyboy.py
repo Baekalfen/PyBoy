@@ -180,7 +180,7 @@ class PyBoy:
             count -= 1
 
         if render and running:
-            return self.screen().screen_image()
+            return Screen(self.mb).screen_image() # TODO: Reuse reference
         else:
             return running
 
@@ -707,7 +707,7 @@ class PyBoy:
         `pyboy.api.tile.Tile`:
             A Tile object for the given identifier.
         """
-        return Tile(self, identifier=identifier)
+        return Tile(self.mb, identifier=identifier)
 
     def tilemap_background(self):
         """
