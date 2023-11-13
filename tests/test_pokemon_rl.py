@@ -116,7 +116,8 @@ if __name__ == '__main__':
 
 
 @pytest.mark.skipif(
-    os.path.isfile("README/8.gif") or platform.system() == "Windows", reason="This test takes too long for regular use"
+    os.path.isfile("extras/README/8.gif") or platform.system() == "Windows",
+    reason="This test takes too long for regular use"
 )
 def test_pokemon_rl(git_pokemon_red_experiments, pokemon_red_rom):
     script_py = "record_gif.py"
