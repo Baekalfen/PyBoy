@@ -8,12 +8,18 @@ import pytest
 from pyboy import PyBoy
 
 
-def test_memoryview(default_rom):
-    p = PyBoy(default_rom)
+def test_memoryview(default_rom, boot_rom):
+    p = PyBoy(default_rom, bootrom_file=boot_rom)
+
+    with open(default_rom, "rb") as f:
+        rom_bytes = [ord(f.read(1)) for x in range(16)]
+
+    with open(boot_rom, "rb") as f:
+        bootrom_bytes = [ord(f.read(1)) for x in range(16)]
 
     assert p.memory[0] == 49
-    assert p.memory[0:10] == [49, 254, 255, 33, 0, 128, 175, 34, 124, 254]
-    assert p.memory[0:10:2] == [49, 255, 0, 175, 124]
+    assert p.memory[0:10] == bootrom_bytes[:10]
+    assert p.memory[0:10:2] == bootrom_bytes[:10:2]
 
     assert p.memory[0xFFF0:0x10000] == [0] * 16
     p.memory[0xFFFF] = 1
@@ -40,7 +46,7 @@ def test_memoryview(default_rom):
 
     # Attempt write to ROM area
     p.memory[0:10] = 1
-    assert p.memory[0:10] == [49, 254, 255, 33, 0, 128, 175, 34, 124, 254]
+    assert p.memory[0:10] == bootrom_bytes[:10]
 
     # Actually do write to RAM area
     assert p.memory[0xC000:0xC00a] == [0] * 10
@@ -49,7 +55,7 @@ def test_memoryview(default_rom):
 
     # Attempt to write slice to ROM area
     p.memory[0:5] = [0, 1, 2, 3, 4]
-    assert p.memory[0:10] == [49, 254, 255, 33, 0, 128, 175, 34, 124, 254]
+    assert p.memory[0:10] == bootrom_bytes[:10]
 
     # Actually do write slice to RAM area
     p.memory[0xC000:0xC00a] = [0] * 10
@@ -66,11 +72,25 @@ def test_memoryview(default_rom):
         p.memory[0xC000:0xC00a] = [1] * 2
 
     # Read specific ROM bank
-    assert p.memory[0, 0x00:0x10] == [64, 65, 66, 67, 68, 69, 70, 65, 65, 65, 71, 65, 65, 65, 72, 73]
+    assert p.memory[0, 0x00:0x10] == rom_bytes[:16]
     assert p.memory[1, 0x00] == 0
     with pytest.raises(AssertionError):
         # Slicing currently unsupported
         assert p.memory[0:2, 0x00:0x10] == []
+
+    # Write to RAM bank
+    p.memory[1, 0xA000] = 0
+    assert p.memory[1, 0xA000] == 0
+    assert p.memory[1, 0xA001] == 0
+    p.memory[1, 0xA000] = 1
+    assert p.memory[1, 0xA000] == 1
+    p.memory[1, 0xA000:0xA010] = 2
+    assert p.memory[1, 0xA000] == 2
+    assert p.memory[1, 0xA001] == 2
+
+    with pytest.raises(AssertionError):
+        # Out of bounds
+        p.memory[0, 0x00:0x9000]
 
 
 def test_cgb_banks(cgb_acid_file): # Any CGB file
