@@ -58,8 +58,8 @@ cdef class PyBoy:
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
 
-    cpdef object sprite(self, int) noexcept
-    cpdef list sprite_by_tile_identifier(self, list, on_screen=*) noexcept
-    cpdef object tile(self, int) noexcept
+    cpdef object get_sprite(self, int) noexcept
+    cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
+    cpdef object get_tile(self, int) noexcept
     cpdef object tilemap_background(self) noexcept
     cpdef object tilemap_window(self) noexcept
