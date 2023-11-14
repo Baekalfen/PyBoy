@@ -99,8 +99,11 @@ def test_tilemaps(kirby_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(120, False)
 
-    bck_tilemap = pyboy.tilemap_background()
-    wdw_tilemap = pyboy.tilemap_window()
+    bck_tilemap = pyboy.tilemap_background
+    wdw_tilemap = pyboy.tilemap_window
+    bck_tilemap._refresh_lcdc()
+    wdw_tilemap._refresh_lcdc()
+    assert bck_tilemap.map_offset != wdw_tilemap.map_offset
 
     assert bck_tilemap[0, 0] == 256
     assert bck_tilemap[:5, 0] == [256, 256, 256, 256, 170]
@@ -174,7 +177,7 @@ def test_not_cgb(pokemon_crystal_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(60 * 7, False)
 
-    assert pyboy.tilemap_background()[1:16, 16] == [
+    assert pyboy.tilemap_background[1:16, 16] == [
         134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
     ] # Assert that the screen says "Game Boy Color." at the bottom.
 

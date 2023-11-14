@@ -11,6 +11,7 @@ from libc.stdint cimport int64_t, uint64_t
 from pyboy.core.mb cimport Motherboard
 from pyboy.plugins.manager cimport PluginManager
 from pyboy.utils cimport IntIOInterface, IntIOWrapper
+from pyboy.api.tilemap cimport TileMap
 
 
 cdef double SPF
@@ -45,6 +46,9 @@ cdef class PyBoy:
     cdef public str window_title
     cdef PyBoyMemoryView memory_view
 
+    cdef readonly TileMap tilemap_background
+    cdef readonly TileMap tilemap_window
+
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
     cdef bint record_input
@@ -70,5 +74,3 @@ cdef class PyBoy:
     cpdef object get_sprite(self, int) noexcept
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
     cpdef object get_tile(self, int) noexcept
-    cpdef object tilemap_background(self) noexcept
-    cpdef object tilemap_window(self) noexcept
