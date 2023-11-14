@@ -13,12 +13,13 @@ from pyboy import utils
 from pyboy.logging import get_logger
 import numpy as np
 
+from pyboy.api.screen import Screen
+from pyboy.api.tilemap import TileMap
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from . import utils
 from pyboy.api.tilemap import TileMap
 from .api import Sprite, Tile, constants, Screen
 from .core.mb import Motherboard
@@ -117,7 +118,19 @@ class PyBoy:
 
         ###################
         # API attributes
+        """
+        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
 
+        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.api.screen.Screen.tilemap_position` for more information.
+
+        Returns
+        -------
+        `pyboy.api.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
+        """
+        self.screen = Screen(self.mb)
         """
         Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
@@ -128,7 +141,6 @@ class PyBoy:
         ```
         """
         self.memory = PyBoyMemoryView(self.mb)
-
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
@@ -141,7 +153,6 @@ class PyBoy:
             A TileMap object for the tile map.
         """
         self.tilemap_background = TileMap(self, self.mb, "BACKGROUND")
-
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
@@ -154,7 +165,6 @@ class PyBoy:
             A TileMap object for the tile map.
         """
         self.tilemap_window = TileMap(self, self.mb, "WINDOW")
-
 
         ###################
         # Plugins
@@ -223,7 +233,7 @@ class PyBoy:
             count -= 1
 
         if render and running:
-            return Screen(self.mb).screen_image() # TODO: Reuse reference
+            return self.screen.screen_image() # TODO: Reuse reference
         else:
             return running
 
@@ -677,22 +687,6 @@ class PyBoy:
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
-
-    @property
-    def screen(self):
-        """
-        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
-        a variety of formats.
-
-        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-        `pyboy.api.screen.Screen.tilemap_position` for more information.
-
-        Returns
-        -------
-        `pyboy.api.screen.Screen`:
-            A Screen object with helper functions for reading the screen buffer.
-        """
-        return Screen(self.mb)
 
     def get_sprite(self, sprite_index):
         """
