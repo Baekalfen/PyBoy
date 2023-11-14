@@ -4,6 +4,7 @@
 #
 cimport cython
 cimport numpy as np
+from libc.stdint cimport uint8_t, uint32_t
 
 from pyboy.core.mb cimport Motherboard
 
