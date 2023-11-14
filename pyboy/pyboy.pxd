@@ -8,10 +8,11 @@ cimport cython
 from libc cimport time
 from libc.stdint cimport int64_t, uint64_t
 
+from pyboy.api.screen cimport Screen
+from pyboy.api.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
 from pyboy.plugins.manager cimport PluginManager
 from pyboy.utils cimport IntIOInterface, IntIOWrapper
-from pyboy.api.tilemap cimport TileMap
 
 
 cdef double SPF
@@ -43,9 +44,10 @@ cdef class PyBoy:
     cdef bint quitting
     cdef bint stopped
     cdef bint initialized
-    cdef public str window_title
-    cdef PyBoyMemoryView memory_view
+    cdef readonly str window_title
 
+    cdef readonly PyBoyMemoryView memory
+    cdef readonly Screen screen
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
 
