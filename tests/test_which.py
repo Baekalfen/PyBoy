@@ -28,7 +28,7 @@ def test_which(cgb, which_file):
         image.save(png_path)
     else:
         old_image = PIL.Image.open(png_path)
-        diff = PIL.ImageChops.difference(image, old_image)
+        diff = PIL.ImageChops.difference(image.convert(mode="RGB"), old_image)
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
             old_image.show()
