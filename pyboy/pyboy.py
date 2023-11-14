@@ -228,7 +228,7 @@ class PyBoy:
         running = False
         while count != 0:
             _render = render and count == 1 # Only render on last tick to improve performance
-            running = self._tick(render)
+            running = self._tick(_render)
             count -= 1
 
         if render and running:
@@ -733,7 +733,7 @@ class PyBoy:
         for i in tile_identifiers:
             match = []
             for s in range(constants.SPRITES):
-                sprite = Sprite(self, s)
+                sprite = Sprite(self.mb, s)
                 for t in sprite.tiles:
                     if t.tile_identifier == i and (not on_screen or (on_screen and sprite.on_screen)):
                         match.append(s)
