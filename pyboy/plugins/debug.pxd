@@ -12,6 +12,7 @@ from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
+from pyboy.api.tilemap cimport TileMap
 
 
 cdef Logger logger
@@ -72,7 +73,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
 cdef class TileViewWindow(BaseDebugWindow):
     cdef int scanline_x
     cdef int scanline_y
-    cdef object tilemap
+    cdef TileMap tilemap
     cdef uint32_t color
 
     cdef uint32_t[:,:] tilecache # Fixing Cython locals

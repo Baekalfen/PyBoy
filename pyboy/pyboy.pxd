@@ -12,6 +12,7 @@ from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.manager cimport PluginManager
 from pyboy.utils cimport IntIOInterface, IntIOWrapper
+from pyboy.api.tilemap cimport TileMap
 
 
 cdef Logger logger
@@ -46,7 +47,10 @@ cdef class PyBoy:
     cdef bint stopped
     cdef bint initialized
     cdef public str window_title
-    cdef PyBoyMemoryView memory_view
+    cdef PyBoyMemoryView memory
+
+    cdef readonly TileMap tilemap_background
+    cdef readonly TileMap tilemap_window
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
@@ -74,5 +78,3 @@ cdef class PyBoy:
     cpdef object get_sprite(self, int) noexcept
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
     cpdef object get_tile(self, int) noexcept
-    cpdef object tilemap_background(self) noexcept
-    cpdef object tilemap_window(self) noexcept

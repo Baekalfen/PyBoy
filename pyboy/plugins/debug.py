@@ -10,7 +10,8 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
-from pyboy.api import Sprite, TileMap, constants
+from pyboy.api import Sprite, constants
+from pyboy.api.tilemap import TileMap
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -447,7 +448,7 @@ class TileViewWindow(BaseDebugWindow):
         super().__init__(*args, **kwargs)
         self.scanline_x, self.scanline_y = scanline_x, scanline_y
         self.color = COLOR_WINDOW if window_map else COLOR_BACKGROUND
-        self.tilemap = TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
+        self.tilemap = TileMap(self.pyboy, self.mb, "WINDOW" if window_map else "BACKGROUND")
 
     def post_tick(self):
         # Updating screen buffer by copying tiles from cache
@@ -492,8 +493,6 @@ class TileViewWindow(BaseDebugWindow):
 
     def handle_events(self, events):
         global mark_counter, marked_tiles
-
-        self.tilemap.refresh_lcdc()
 
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
