@@ -169,7 +169,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
         sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, COLS, ROWS)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
-            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888, sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS
         )
 
         sdl2.SDL_ShowWindow(self._window)
