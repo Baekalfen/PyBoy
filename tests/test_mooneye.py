@@ -178,9 +178,11 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
         old_image = PIL.Image.open(png_path)
         if "acceptance" in rom:
             # The registers are too volatile to depend on. We crop the top out, and only match the assertions.
-            diff = PIL.ImageChops.difference(image.crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144)))
+            diff = PIL.ImageChops.difference(
+                image.crop((0, 72, 160, 144)).convert(mode="RGB"), old_image.crop((0, 72, 160, 144))
+            )
         else:
-            diff = PIL.ImageChops.difference(image, old_image)
+            diff = PIL.ImageChops.difference(image.convert(mode="RGB"), old_image)
 
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
