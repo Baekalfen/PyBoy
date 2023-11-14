@@ -131,8 +131,7 @@ class Screen:
             logger.error("Cannot generate screen image. Missing dependency \"Pillow\".")
             return None
 
-        # NOTE: Might have room for performance improvement
-        # It's not possible to use the following, as the byte-order (endianess) isn't supported in Pillow
-        # Image.frombytes('RGBA', self.buffer_dims, self.screen_buffer()).show()
-        # FIXME: FORMAT IS BGR NOT RGB!!!
-        return Image.fromarray(self.screen_ndarray()[:, :, [2, 1, 0]], "RGB")
+        return Image.frombuffer(
+            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw
+        )
