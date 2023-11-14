@@ -703,7 +703,7 @@ class PyBoy:
 
         Example:
         ```
-        >>> print(pyboy.api_manager().sprite_by_tile_identifier([43, 123]))
+        >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
         [[0, 2, 4], []]
         ```
 
