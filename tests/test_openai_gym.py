@@ -44,11 +44,11 @@ class TestOpenAIGym:
     def test_raw(self, pyboy):
         env = pyboy.openai_gym(observation_type="raw", action_type="press")
         observation = env.reset()
-        assert observation.shape == (ROWS, COLS, 3)
+        assert observation.shape == (ROWS, COLS, 4)
         assert observation.dtype == np.uint8
 
         observation, _, _, _ = env.step(0)
-        assert observation.shape == (ROWS, COLS, 3)
+        assert observation.shape == (ROWS, COLS, 4)
         assert observation.dtype == np.uint8
 
     def test_tiles(self, pyboy, tiles_id, id0_block, id1_block):

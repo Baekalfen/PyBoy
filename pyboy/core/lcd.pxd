@@ -10,18 +10,20 @@ from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.utils
 from pyboy cimport utils
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
 
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS, TILES, FRAME_CYCLES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
-cdef uint32_t COL0_FLAG
-cdef uint8_t BG_PRIORITY_FLAG, CGB_NUM_PALETTES
-from pyboy.logging.logging cimport Logger
-
+cdef uint32_t COL0_FLAG, BG_PRIORITY_FLAG
+cdef uint8_t CGB_NUM_PALETTES
 
 cdef Logger logger
+
+@cython.locals(a=uint32_t, r=uint32_t, g=uint32_t, b=uint32_t)
+cpdef uint32_t rgb_to_bgr(uint32_t) noexcept
 
 cdef class LCD:
     cdef bint disable_renderer
@@ -106,6 +108,7 @@ cdef class LCDCRegister:
     cdef public bint background_enable
     cdef public bint cgb_master_priority
 
+    cpdef int _get_sprite_height(self)
 
 cdef class Renderer:
     cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
@@ -146,7 +149,7 @@ cdef class Renderer:
         xx=int,
         yy=int,
         tilecache=uint32_t[:,:],
-        bg_priority_apply=uint8_t,
+        bg_priority_apply=uint32_t,
     )
     cdef void scanline(self, LCD, int) noexcept nogil
 

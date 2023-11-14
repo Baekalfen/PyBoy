@@ -22,6 +22,13 @@ TILES = 384
 FRAME_CYCLES = 70224
 
 
+def rgb_to_bgr(color):
+    r = (color >> 16) & 0xFF
+    g = (color >> 8) & 0xFF
+    b = color & 0xFF
+    return (b << 16) | (g << 8) | r
+
+
 class LCD:
     def __init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
@@ -61,15 +68,15 @@ class LCD:
                 logger.debug("Starting CGB renderer in DMG-mode")
                 # Running DMG ROM on CGB hardware use the default palettes
                 bg_pal, obj0_pal, obj1_pal = cgb_color_palette
-                self.BGP.palette_mem_rgb = [(c << 8) for c in bg_pal]
-                self.OBP0.palette_mem_rgb = [(c << 8) for c in obj0_pal]
-                self.OBP1.palette_mem_rgb = [(c << 8) for c in obj1_pal]
+                self.BGP.palette_mem_rgb = [(rgb_to_bgr(c)) for c in bg_pal]
+                self.OBP0.palette_mem_rgb = [(rgb_to_bgr(c)) for c in obj0_pal]
+                self.OBP1.palette_mem_rgb = [(rgb_to_bgr(c)) for c in obj1_pal]
                 self.renderer = Renderer(False)
         else:
             logger.debug("Starting DMG renderer")
-            self.BGP.palette_mem_rgb = [(c << 8) for c in color_palette]
-            self.OBP0.palette_mem_rgb = [(c << 8) for c in color_palette]
-            self.OBP1.palette_mem_rgb = [(c << 8) for c in color_palette]
+            self.BGP.palette_mem_rgb = [(rgb_to_bgr(c)) for c in color_palette]
+            self.OBP0.palette_mem_rgb = [(rgb_to_bgr(c)) for c in color_palette]
+            self.OBP1.palette_mem_rgb = [(rgb_to_bgr(c)) for c in color_palette]
             self.renderer = Renderer(False)
 
     def get_lcdc(self):
@@ -360,15 +367,18 @@ class LCDCRegister:
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
         # yapf: enable
 
+    def _get_sprite_height(self):
+        return self.sprite_height
 
-COL0_FLAG = 0b01
-BG_PRIORITY_FLAG = 0b10
+
+COL0_FLAG = 0b01 << 24
+BG_PRIORITY_FLAG = 0b10 << 24
 
 
 class Renderer:
     def __init__(self, cgb):
         self.cgb = cgb
-        self.color_format = "RGBA"
+        self.color_format = "RGBX"
 
         self.buffer_dims = (ROWS, COLS)
 
@@ -444,7 +454,7 @@ class Renderer:
                     # add 256 for offset (reduces to + 128)
                     wt = (wt ^ 0x80) + 128
 
-                bg_priority_apply = 0x00
+                bg_priority_apply = 0
                 if self.cgb:
                     palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(
                         lcd, tile_addr
@@ -480,7 +490,7 @@ class Renderer:
                     # add 256 for offset (reduces to + 128)
                     bt = (bt ^ 0x80) + 128
 
-                bg_priority_apply = 0x00
+                bg_priority_apply = 0
                 if self.cgb:
                     palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(
                         lcd, tile_addr
@@ -964,7 +974,8 @@ class PaletteColorRegister:
         red = (cgb_color & 0x1F) << 3
         green = ((cgb_color >> 5) & 0x1F) << 3
         blue = ((cgb_color >> 10) & 0x1F) << 3
-        rgb_color = ((red << 16) | (green << 8) | blue) << 8
+        # NOTE: Actually BGR, not RGB
+        rgb_color = ((blue << 16) | (green << 8) | red)
         if index % 4 == 0:
             rgb_color |= COL0_FLAG
         return rgb_color
