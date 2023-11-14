@@ -40,7 +40,7 @@ def test_record_replay(boot_rom, default_rom):
     frame_no, keys, frame_data = events[0]
     assert frame_no == 1, "We inserted the key on the second frame"
     assert keys[0] == WindowEvent.PRESS_ARROW_DOWN, "Check we have the right keypress"
-    assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
+    assert len(base64.b64decode(frame_data)) == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
 
     pyboy.stop(save=False)
 
@@ -219,7 +219,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
         png_buf.seek(0)
 
         old_image = PIL.Image.open(png_buf)
-        diff = PIL.ImageChops.difference(image, old_image)
+        diff = PIL.ImageChops.difference(image.convert(mode="RGB"), old_image)
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
             old_image.show()

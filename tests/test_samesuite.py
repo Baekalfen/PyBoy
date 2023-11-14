@@ -140,7 +140,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         pyboy.load_state(saved_state)
 
     for _ in range(10):
-        if np.all(pyboy.screen.ndarray > 240):
+        if np.all(pyboy.screen.ndarray[:, :, :-1] > 240):
             pyboy.tick(20, True)
         else:
             break
@@ -152,7 +152,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         image.save(png_path)
     else:
         old_image = PIL.Image.open(png_path)
-        diff = PIL.ImageChops.difference(image, old_image)
+        diff = PIL.ImageChops.difference(image.convert(mode="RGB"), old_image)
 
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
