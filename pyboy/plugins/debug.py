@@ -727,7 +727,7 @@ class SpriteWindow(BaseDebugWindow):
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
-            marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
+            marked_tiles, self.pyboy.get_sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
         ):
             for sprite_index in matched_sprites:
                 xx = (sprite_index*8) % self.width
@@ -759,7 +759,7 @@ class SpriteViewWindow(BaseDebugWindow):
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
         # Mark selected tiles
         for m, matched_sprites in zip(
-            marked_tiles, self.pyboy.sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
+            marked_tiles, self.pyboy.get_sprite_by_tile_identifier([m.tile_identifier for m in marked_tiles])
         ):
             for sprite_index in matched_sprites:
                 sprite = Sprite(self.mb, sprite_index)
