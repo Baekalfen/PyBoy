@@ -687,7 +687,7 @@ class PyBoy:
         for i in tile_identifiers:
             match = []
             for s in range(constants.SPRITES):
-                sprite = Sprite(self, s)
+                sprite = Sprite(self.mb, s)
                 for t in sprite.tiles:
                     if t.tile_identifier == i and (not on_screen or (on_screen and sprite.on_screen)):
                         match.append(s)

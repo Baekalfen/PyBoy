@@ -21,8 +21,8 @@ cdef double SPF
 cdef class PyBoy:
     cdef Motherboard mb
     cdef public PluginManager plugin_manager
-    cdef public uint64_t frame_count
-    cdef public str gamerom_file
+    cdef readonly uint64_t frame_count
+    cdef readonly str gamerom_file
     cdef readonly bint paused
 
     cdef double avg_pre
