@@ -17,6 +17,9 @@ from pyboy.api.tile import Tile
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
+NDARRAY_COLOR_DEPTH = 4
+NDARRAY_COLOR_FORMAT = "RGBX"
+
 
 def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window_type="null")
@@ -38,20 +41,59 @@ def test_tiles(default_rom):
     assert isinstance(image, PIL.Image.Image)
     ndarray = tile.image_ndarray()
     assert isinstance(ndarray, np.ndarray)
-    assert ndarray.shape == (8, 8, 4)
+    assert ndarray.shape == (8, 8, NDARRAY_COLOR_DEPTH)
     assert ndarray.dtype == np.uint8
-    data = tile.image_data()
-    assert data.shape == (8, 8)
+    # data = tile.image_data()
+    # assert data.shape == (8, 8)
 
-    assert [[x for x in y] for y in data
-           ] == [[0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
-                 [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
-                 [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
-                 [0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff],
-                 [0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xffffffff],
-                 [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff],
-                 [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff],
-                 [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff]]
+    assert [[x for x in y] for y in ndarray.view(dtype=np.uint32).reshape(8, 8)
+           ] == [[0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+                 [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+                 [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+                 [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF],
+                 [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF],
+                 [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+                 [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+                 [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF]]
+
+    for identifier in range(384):
+        t = pyboy.get_tile(identifier)
+        assert t.tile_identifier == identifier
+    with pytest.raises(Exception):
+        pyboy.get_tile(-1)
+    with pytest.raises(Exception):
+        pyboy.get_tile(385)
+
+    pyboy.stop(save=False)
+
+
+def test_tiles_cgb(any_rom_cgb):
+    pyboy = PyBoy(any_rom_cgb, window_type="null")
+    pyboy.set_emulation_speed(0)
+    pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
+
+    tile = pyboy.tilemap_window.tile(0, 0)
+    assert isinstance(tile, Tile)
+
+    tile = pyboy.get_tile(1)
+    image = tile.image()
+    assert isinstance(image, PIL.Image.Image)
+    ndarray = tile.image_ndarray()
+    assert isinstance(ndarray, np.ndarray)
+    assert ndarray.shape == (8, 8, NDARRAY_COLOR_DEPTH)
+    assert ndarray.dtype == np.uint8
+    # data = tile.image_data()
+    # assert data.shape == (8, 8)
+
+    assert [[x for x in y]
+            for y in ndarray] == [[0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+                                  [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+                                  [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+                                  [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF],
+                                  [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF],
+                                  [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+                                  [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+                                  [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF]]
 
     for identifier in range(384):
         t = pyboy.get_tile(identifier)
@@ -65,7 +107,7 @@ def test_tiles(default_rom):
 
 
 def test_screen_buffer_and_image(tetris_rom, boot_rom):
-    cformat = "RGBA"
+    cformat = "RGBX"
     boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
 
     pyboy = PyBoy(tetris_rom, window_type="null", bootrom_file=boot_rom)
@@ -101,7 +143,7 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
     numpy_hash = hashlib.sha256()
     numpy_array = np.ascontiguousarray(pyboy.screen.ndarray)
     assert isinstance(pyboy.screen.ndarray, np.ndarray)
-    assert numpy_array.shape == (144, 160, 3)
+    assert numpy_array.shape == (144, 160, NDARRAY_COLOR_DEPTH)
     numpy_hash.update(numpy_array.tobytes())
     # assert numpy_hash.digest(
     # ) == (b"\r\t\x87\x131\xe8\x06\x82\xcaO=\n\x1e\xa2K$"

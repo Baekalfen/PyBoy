@@ -35,7 +35,7 @@ logger = pyboy.logging.get_logger(__name__)
 COLOR = 0x00000000
 # MASK = 0x00C0C000
 COLOR_BACKGROUND = 0x00C0C000
-COLOR_WINDOW = 0xC179D400
+COLOR_WINDOW = 0x00D479C1
 
 # Additive colors
 HOVER = 0xFF0000
@@ -382,7 +382,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
         sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, width, height)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
-            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
         )
 
     def handle_events(self, events):

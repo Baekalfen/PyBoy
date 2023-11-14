@@ -61,16 +61,9 @@ class Screen:
         Returns
         -------
         str:
-            Color format of the raw screen buffer. E.g. 'RGB'.
+            Color format of the raw screen buffer. E.g. 'RGBX'.
         """
-        if not Image:
-            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
-            self.image = None
-        else:
-            self.image = Image.frombuffer(
-                self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-                self.mb.lcd.renderer._screenbuffer_raw
-            )
+        self.image = None
         """
         Generates a PIL Image from the screen buffer.
 
@@ -83,10 +76,21 @@ class Screen:
         PIL.Image:
             RGB image of (160, 144) pixels
         """
-        self.ndarray = np.frombuffer(self.mb.lcd.renderer._screenbuffer_raw, dtype=np.uint8).reshape(ROWS, COLS,
-                                                                                                     4)[:, :, 1:]
+        if not Image:
+            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+
+        else:
+            self.image = Image.frombuffer(
+                self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
+                self.mb.lcd.renderer._screenbuffer_raw
+            )
+
+        self.ndarray = np.frombuffer(
+            self.mb.lcd.renderer._screenbuffer_raw,
+            dtype=np.uint8,
+        ).reshape(ROWS, COLS, 4)
         """
-        Provides the screen data in NumPy format. The dataformat is always RGB.
+        Provides the screen data in NumPy format. The format is given by `pyboy.api.screen.Screen.raw_buffer_format`.
 
         Returns
         -------

@@ -15,7 +15,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 try:
     import OpenGL.GLUT.freeglut
-    from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, glClear,
+    from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, glClear,
                            glDrawPixels, glFlush, glPixelZoom)
     from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
                              glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
@@ -135,7 +135,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
     def _gldraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
-        glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
+        glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, buf)
         glFlush()
 
     def frame_limiter(self, speed):
