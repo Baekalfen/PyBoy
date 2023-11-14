@@ -81,7 +81,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[0:3, 16] == [231, 224, 235]: # 'HAL' on the first screen
                 break
 
