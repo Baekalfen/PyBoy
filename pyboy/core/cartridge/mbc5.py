@@ -25,6 +25,6 @@ class MBC5(BaseMBC):
             self.rambank_selected = (value & 0xF) % self.external_ram_count
         elif 0xA000 <= address < 0xC000:
             if self.rambank_enabled:
-                self.rambanks[self.rambank_selected][address - 0xA000] = value
+                self.rambanks[self.rambank_selected, address - 0xA000] = value
         else:
             logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x" % (address, value))

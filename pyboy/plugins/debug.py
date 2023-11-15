@@ -356,11 +356,7 @@ class Debug(PyBoyWindowPlugin):
 
 def make_buffer(w, h):
     buf = array("B", [0x55] * (w*h*4))
-    if cythonmode:
-        buf0 = memoryview(buf).cast("I", shape=(h, w))
-    else:
-        view = memoryview(buf).cast("I")
-        buf0 = [view[i:i + w] for i in range(0, w * h, w)]
+    buf0 = memoryview(buf).cast("I", shape=(h, w))
     buf_p = c_void_p(buf.buffer_info()[0])
     return buf, buf0, buf_p
 
@@ -421,7 +417,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
             _y = 7 - y if vflip else y
             for x in range(8):
                 _x = 7 - x if hflip else x
-                to_buffer[yy + y][xx + x] = palette[from_buffer[_y + t*8][_x]]
+                to_buffer[yy + y, xx + x] = palette[from_buffer[_y + t*8][_x]]
 
     def mark_tile(self, x, y, color, height, width, grid):
         tw = width # Tile width
@@ -437,7 +433,7 @@ class BaseDebugWindow(PyBoyWindowPlugin):
                 self.buf0[yy + i][xx] = color
         for i in range(tw):
             if 0 <= (yy) < self.height and 0 <= xx + i < self.width:
-                self.buf0[yy][xx + i] = color
+                self.buf0[yy, xx + i] = color
         for i in range(tw):
             if 0 <= (yy + th - 1) < self.height and 0 <= xx + i < self.width:
                 self.buf0[yy + th - 1][xx + i] = color
@@ -565,14 +561,14 @@ class TileViewWindow(BaseDebugWindow):
                 if yy + y == 0 or y == constants.ROWS - 1: # Draw top/bottom bar
                     for x in range(constants.COLS):
                         if 0 <= xx + x < constants.COLS:
-                            self.buf0[yy + y][xx + x] = COLOR
+                            self.buf0[yy + y, xx + x] = COLOR
                 else: # Draw body
                     if 0 <= yy + y:
                         self.buf0[yy + y][max(xx, 0)] = COLOR
                         for x in range(constants.COLS):
                             if 0 <= xx + x < constants.COLS:
-                                self.buf0[yy + y][xx + x] &= self.color
-                        self.buf0[yy + y][xx + constants.COLS] = COLOR
+                                self.buf0[yy + y, xx + x] &= self.color
+                        self.buf0[yy + y, xx + constants.COLS] = COLOR
 
         # Mark selected tiles
         for t, match in zip(
@@ -758,7 +754,7 @@ class SpriteViewWindow(BaseDebugWindow):
     def post_tick(self):
         for y in range(constants.ROWS):
             for x in range(constants.COLS):
-                self.buf0[y][x] = SPRITE_BACKGROUND
+                self.buf0[y, x] = SPRITE_BACKGROUND
 
         for ly in range(144):
             self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, True)
@@ -794,12 +790,7 @@ class MemoryWindow(BaseDebugWindow):
         self.fg_color = [0x00, 0x00, 0x00]
 
         self._text_buffer_raw = array("B", [0x20] * (self.NROWS * self.NCOLS))
-        if cythonmode:
-            self.text_buffer = memoryview(self._text_buffer_raw).cast("B", shape=(self.NROWS, self.NCOLS))
-        else:
-            view = memoryview(self._text_buffer_raw)
-            self.text_buffer = [view[i:i + self.NCOLS] for i in range(0, self.NROWS * self.NCOLS, self.NCOLS)]
-        # self.text_buffer = [bytearray([0x20]*self.NCOLS) for _ in range(self.NROWS)]
+        self.text_buffer = memoryview(self._text_buffer_raw).cast("B", shape=(self.NROWS, self.NCOLS))
         self.write_border()
         self.write_addresses()
 
@@ -812,7 +803,7 @@ class MemoryWindow(BaseDebugWindow):
         self.fbuf, self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
         for y, b in enumerate(font_bytes):
             for x in range(8):
-                self.fbuf0[y][x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
+                self.fbuf0[y, x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
 
         self.font_texture = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
@@ -852,30 +843,22 @@ class MemoryWindow(BaseDebugWindow):
         self.text_buffer[self.NROWS - 1][self.NCOLS - 1] = 0xBC
 
     def write_addresses(self):
-        header = (f"Memory from 0x{self.start_address:04X} " f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
-        if cythonmode:
-            for x in range(28):
-                self.text_buffer[1][x + 2] = header[x]
-        else:
-            self.text_buffer[1][2:30] = header
+        header = (f"Memory from 0x{self.start_address:04X} "
+                  f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
+        for x in range(28):
+            self.text_buffer[1][x + 2] = header[x]
         for y in range(32):
             addr = f"0x{self.start_address + (0x20*y):04X}".encode("cp437")
-            if cythonmode:
-                for x in range(6):
-                    self.text_buffer[y + 3][x + 2] = addr[x]
-            else:
-                self.text_buffer[y + 3][2:8] = addr
+            for x in range(6):
+                self.text_buffer[y + 3][x + 2] = addr[x]
 
     def write_memory(self):
         for y in range(32):
             for x in range(16):
                 mem = self.mb.getitem(self.start_address + 16*y + x)
-                if cythonmode:
-                    a = hex(mem)[2:].zfill(2).encode("cp437")
-                    self.text_buffer[y + 3][3*x + 11] = a[0]
-                    self.text_buffer[y + 3][3*x + 12] = a[1]
-                else:
-                    self.text_buffer[y + 3][3*x + 11:3*x + 13] = bytes([mem]).hex().encode("cp437")
+                a = hex(mem)[2:].zfill(2).encode("cp437")
+                self.text_buffer[y + 3][3*x + 11] = a[0]
+                self.text_buffer[y + 3][3*x + 12] = a[1]
 
     def render_text(self):
         for y in range(self.NROWS):

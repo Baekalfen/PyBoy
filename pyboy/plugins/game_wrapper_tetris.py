@@ -11,17 +11,12 @@ import logging
 from array import array
 
 import numpy as np
+
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
 logger = logging.getLogger(__name__)
-
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
 
 # Table for translating game-representation of Tetromino types (8-bit int) to string
 tetromino_table = {
@@ -84,12 +79,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         ROWS, COLS = self.shape
         self._cached_game_area_tiles_raw = array("B", [0xFF] * (ROWS*COLS*4))
-
-        if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(ROWS, COLS))
-        else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast("I")
-            self._cached_game_area_tiles = [v[i:i + COLS] for i in range(0, COLS * ROWS, COLS)]
+        self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(ROWS, COLS))
 
         super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_wrap_around=True, **kwargs)
 

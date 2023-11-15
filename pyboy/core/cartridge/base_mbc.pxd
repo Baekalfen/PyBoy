@@ -3,16 +3,17 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.utils cimport IntIOInterface
-from pyboy.core.cartridge.rtc cimport RTC
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
+
+from pyboy.core.cartridge.rtc cimport RTC
+from pyboy.utils cimport IntIOInterface
+
 
 cdef class BaseMBC:
     cdef str filename
     cdef str gamename
     cdef uint8_t[:, :] rombanks
-    # 16 is absoulte max. 8KB in each bank
-    cdef uint8_t[16][8 * 1024] rambanks
+    cdef uint8_t[:,:] rambanks
     cdef uint8_t carttype
     cdef bint battery
     cdef bint rtc_enabled
