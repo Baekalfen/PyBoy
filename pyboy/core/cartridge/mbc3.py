@@ -40,7 +40,7 @@ class MBC3(BaseMBC):
         elif 0xA000 <= address < 0xC000:
             if self.rambank_enabled:
                 if self.rambank_selected <= 0x03:
-                    self.rambanks[self.rambank_selected][address - 0xA000] = value
+                    self.rambanks[self.rambank_selected, address - 0xA000] = value
                 elif 0x08 <= self.rambank_selected <= 0x0C:
                     self.rtc.setregister(self.rambank_selected, value)
                 # else:

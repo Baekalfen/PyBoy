@@ -17,12 +17,6 @@ from .base_plugin import PyBoyGameWrapper
 
 logger = logging.getLogger(__name__)
 
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
     """
