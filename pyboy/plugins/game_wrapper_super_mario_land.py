@@ -149,7 +149,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
         level_block = self.pyboy.memory[0xC0AB]
         mario_x = self.pyboy.memory[0xC202]
-        scx = self.pyboy.screen.tilemap_position_list()[16][0]
+        scx = self.pyboy.screen.tilemap_position_list[16][0]
         self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
 
         if self.game_has_started:
