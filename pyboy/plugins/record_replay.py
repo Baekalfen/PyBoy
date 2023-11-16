@@ -40,7 +40,7 @@ class RecordReplay(PyBoyPlugin):
         if len(events) != 0:
             self.recorded_input.append((
                 self.pyboy.frame_count, [e.event for e in events],
-                base64.b64encode(np.ascontiguousarray(self.pyboy.screen.screen_ndarray())).decode("utf8")
+                base64.b64encode(np.ascontiguousarray(self.pyboy.screen.ndarray)).decode("utf8")
             ))
         return events
 
