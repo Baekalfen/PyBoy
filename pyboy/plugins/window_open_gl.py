@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import time
 import numpy as np
 
 import pyboy
@@ -48,7 +49,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glPixelZoom(self.scale, self.scale)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
-        logger.warning("OpenGL implementation is incomplete. To limit the frame-rate, set your monitor to 60hz.")
+        self._ftime = time.perf_counter_ns()
 
     # Cython does not cooperate with lambdas
     def _key(self, c, x, y):
@@ -136,6 +137,16 @@ class WindowOpenGL(PyBoyWindowPlugin):
         buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
         glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, buf)
         glFlush()
+
+    def frame_limiter(self, speed):
+        self._ftime += int((1.0 / (60.0*speed)) * 1_000_000_000)
+        now = time.perf_counter_ns()
+        if (self._ftime > now):
+            delay = (self._ftime - now) // 1_000_000
+            time.sleep(delay / 1000)
+        else:
+            self._ftime = now
+        return True
 
     def enabled(self):
         if self.pyboy_argv.get("window_type") == "OpenGL":
