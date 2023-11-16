@@ -39,7 +39,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        scanline_parameters = self.pyboy.screen.tilemap_position_list()
+        scanline_parameters = self.pyboy.screen.tilemap_position_list
         WX = scanline_parameters[0][2]
         WY = scanline_parameters[0][3]
         self.use_background(WY != 0)

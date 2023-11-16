@@ -91,7 +91,7 @@ class PyBoyGymEnv(Env):
 
         # Building the observation_space
         if observation_type == "raw":
-            screen = np.asarray(self.pyboy.screen.screen_ndarray())
+            screen = np.asarray(self.pyboy.screen.ndarray)
             self.observation_space = Box(low=0, high=255, shape=screen.shape, dtype=np.uint8)
         elif observation_type in ["tiles", "compressed", "minimal"]:
             size_ids = TILES
@@ -120,7 +120,7 @@ class PyBoyGymEnv(Env):
 
     def _get_observation(self):
         if self.observation_type == "raw":
-            observation = np.asarray(self.pyboy.screen.screen_ndarray(), dtype=np.uint8)
+            observation = np.asarray(self.pyboy.screen.ndarray, dtype=np.uint8)
         elif self.observation_type in ["tiles", "compressed", "minimal"]:
             observation = self.game_wrapper._game_area_np(self.observation_type)
         else:
