@@ -30,7 +30,7 @@ def test_shonumi(rom, shonumi_dir):
 
     png_path = Path(f"tests/test_results/GB Tests/{rom}.png")
     png_path.parents[0].mkdir(parents=True, exist_ok=True)
-    image = pyboy.screen.screen_image()
+    image = pyboy.screen.image
 
     old_image = PIL.Image.open(png_path)
     old_image = old_image.resize(image.size, resample=PIL.Image.Dither.NONE)
