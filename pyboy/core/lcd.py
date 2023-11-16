@@ -21,12 +21,6 @@ TILES = 384
 
 FRAME_CYCLES = 70224
 
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
 
 class LCD:
     def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False):
