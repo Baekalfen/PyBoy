@@ -125,7 +125,7 @@ cdef class Renderer:
     cdef int ly_window
     cdef void invalidate_tile(self, int, int) noexcept nogil
 
-    cdef int[144][5] _scanlineparameters
+    cdef uint8_t[144][5] _scanlineparameters
 
     cdef void blank_screen(self, LCD) noexcept nogil
 
