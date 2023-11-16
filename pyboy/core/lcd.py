@@ -21,12 +21,6 @@ TILES = 384
 
 FRAME_CYCLES = 70224
 
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
 
 def rgb_to_bgr(color):
     r = (color >> 16) & 0xFF
