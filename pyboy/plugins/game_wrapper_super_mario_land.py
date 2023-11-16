@@ -188,7 +188,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         """
 
         for i in range(0x450, 0x461):
-            self.pyboy.override_memory_value(0, i, 0x00)
+            self.pyboy.memory[0, i] = 0x00
 
         patch1 = [
             0x3E, # LD A, d8
@@ -196,7 +196,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch1):
-            self.pyboy.override_memory_value(0, 0x451 + i, byte)
+            self.pyboy.memory[0, 0x451 + i] = byte
 
     def start_game(self, timer_div=None, world_level=None, unlock_level_select=False):
         """

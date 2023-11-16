@@ -243,7 +243,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch1):
-            self.pyboy.override_memory_value(0, 0x206E + i, byte)
+            self.pyboy.memory[0, 0x206E + i] = byte
 
         patch2 = [
             0x3E, # LD A, Tetromino
@@ -251,7 +251,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch2):
-            self.pyboy.override_memory_value(0, 0x20B0 + i, byte)
+            self.pyboy.memory[0, 0x20B0 + i] = byte
 
     def game_over(self):
         """
