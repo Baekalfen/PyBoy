@@ -528,7 +528,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.screen.tilemap_position_list()
+        scanlineparameters = self.pyboy.screen.tilemap_position_list
 
         background_view = self.scanline_x == 0
 
