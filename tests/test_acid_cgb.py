@@ -21,7 +21,7 @@ def test_cgb_acid(cgb_acid_file):
     pyboy.tick(25, True)
 
     png_path = Path(f"tests/test_results/{os.path.basename(cgb_acid_file)}.png")
-    image = pyboy.screen.screen_image()
+    image = pyboy.screen.image
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)

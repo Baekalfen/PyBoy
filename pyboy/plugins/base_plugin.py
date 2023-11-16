@@ -183,7 +183,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             yy = self.game_area_section[1]
             width = self.game_area_section[2]
             height = self.game_area_section[3]
-            scanline_parameters = self.pyboy.screen.tilemap_position_list()
+            scanline_parameters = self.pyboy.screen.tilemap_position_list
 
             if self.game_area_wrap_around:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
