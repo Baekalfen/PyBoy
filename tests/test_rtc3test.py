@@ -37,7 +37,7 @@ def test_rtc3test(subtest, rtc3test_file):
         pyboy.tick(1, True)
 
     png_path = Path(f"tests/test_results/{rtc3test_file}_{subtest}.png")
-    image = pyboy.screen.screen_image()
+    image = pyboy.screen.image
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)

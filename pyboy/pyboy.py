@@ -232,7 +232,7 @@ class PyBoy:
             count -= 1
 
         if render and running:
-            return self.screen.screen_image() # TODO: Reuse reference
+            return self.screen.image
         else:
             return running
 
