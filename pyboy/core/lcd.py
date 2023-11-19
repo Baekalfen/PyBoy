@@ -154,8 +154,8 @@ class LCD:
                 if self._STAT._mode == 2: # Searching OAM
                     if self.LY == 153:
                         self.LY = 0
-                        self.clock %= FRAME_CYCLES
-                        self.clock_target %= FRAME_CYCLES
+                        self.clock -= FRAME_CYCLES
+                        self.clock_target -= FRAME_CYCLES
                     else:
                         self.LY += 1
 
@@ -192,7 +192,7 @@ class LCD:
             # See also `self.set_lcdc`
             if self.clock >= FRAME_CYCLES:
                 self.frame_done = True
-                self.clock %= FRAME_CYCLES
+                self.clock -= FRAME_CYCLES
 
                 # Renderer
                 self.renderer.blank_screen(self)
