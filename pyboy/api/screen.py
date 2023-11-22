@@ -68,7 +68,7 @@ class Screen:
         Generates a PIL Image from the screen buffer.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.api` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        case, read up on the `pyboy.api` features, [Pan Docs](https://gbdev.io/pandocs/) on tiles/sprites,
         and join our Discord channel for more help.
 
         Returns
@@ -129,7 +129,7 @@ class Screen:
         of the tile map.
 
         For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
-        or the Pan Docs under [LCD Position and Scrolling](http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling).
+        or the Pan Docs under [LCD Position and Scrolling](https://gbdev.io/pandocs/Scrolling.html).
 
         Returns
         -------
