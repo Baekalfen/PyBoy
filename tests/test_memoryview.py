@@ -30,6 +30,8 @@ def test_memoryview(default_rom, boot_rom):
     with pytest.raises(AssertionError):
         p.memory[:10] == []
     with pytest.raises(AssertionError):
+        p.memory[20:10] == []
+    with pytest.raises(AssertionError):
         p.memory[:10:] == []
     with pytest.raises(AssertionError):
         p.memory[0xFF00:] == []
