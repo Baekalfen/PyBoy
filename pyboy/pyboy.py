@@ -767,6 +767,8 @@ class PyBoyMemoryView:
             return (0, -1, 0)
         start = addr.start
         stop = addr.stop
+        if start > stop:
+            return (-1, -1, 0)
         if addr.step is None:
             step = 1
         else:
@@ -782,6 +784,7 @@ class PyBoyMemoryView:
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
+            assert start >= 0 or stop >= 0, "Start address has to come before end address"
             assert start >= 0, "Start address required"
             assert stop >= 0, "End address required"
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
