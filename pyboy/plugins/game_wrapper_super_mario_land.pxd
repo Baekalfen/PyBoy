@@ -15,14 +15,14 @@ cdef int ROWS, COLS
 
 
 cdef class GameWrapperSuperMarioLand(PyBoyGameWrapper):
-    cdef public tuple world
-    cdef public int coins
-    cdef public int lives_left
-    cdef public int score
-    cdef public int time_left
-    cdef public int level_progress
-    cdef public int _level_progress_max
-    cdef public int fitness
+    cdef readonly tuple world
+    cdef readonly int coins
+    cdef readonly int lives_left
+    cdef readonly int score
+    cdef readonly int time_left
+    cdef readonly int level_progress
+    cdef readonly int _level_progress_max
+    cdef readonly int fitness
 
     cpdef void start_game(self, timer_div=*, world_level=*, unlock_level_select=*) noexcept
     cpdef void reset_game(self, timer_div=*) noexcept

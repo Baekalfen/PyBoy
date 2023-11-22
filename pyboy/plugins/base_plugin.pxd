@@ -42,7 +42,7 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
 
 
 cdef class PyBoyGameWrapper(PyBoyPlugin):
-    cdef public shape
+    cdef readonly shape
     cdef bint game_has_started
     cdef object tilemap_background
     cdef object tilemap_window
