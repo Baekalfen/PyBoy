@@ -126,7 +126,7 @@ class TileMap:
         The index might also be a signed number. Depending on if it is signed or not, will change where the tile data
         is read from. Use `pyboy.api.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
         this tile view. You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Args:
             column (int): Column in this tile map.
@@ -170,7 +170,7 @@ class TileMap:
         0-383 (both included).
 
         You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Args:
             column (int): Column in this tile map.
