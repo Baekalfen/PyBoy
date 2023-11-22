@@ -98,15 +98,15 @@ cdef class LCDCRegister:
 
     cdef void set(self, uint64_t) noexcept nogil
 
-    cdef public bint lcd_enable
-    cdef public bint windowmap_select
-    cdef public bint window_enable
-    cdef public bint tiledata_select
-    cdef public bint backgroundmap_select
-    cdef public bint sprite_height
-    cdef public bint sprite_enable
-    cdef public bint background_enable
-    cdef public bint cgb_master_priority
+    cdef bint lcd_enable
+    cdef bint windowmap_select
+    cdef bint window_enable
+    cdef bint tiledata_select
+    cdef bint backgroundmap_select
+    cdef bint sprite_height
+    cdef bint sprite_enable
+    cdef bint background_enable
+    cdef bint cgb_master_priority
 
     cpdef int _get_sprite_height(self)
 
