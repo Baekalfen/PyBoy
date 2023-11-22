@@ -33,6 +33,7 @@ class Motherboard:
             logger.info("Boot-ROM file provided")
 
         self.cartridge = cartridge.load_cartridge(gamerom_file)
+        logger.debug("Cartridge started:\n%s", str(self.cartridge))
         if cgb is None:
             cgb = self.cartridge.cgb
             logger.debug("Cartridge type auto-detected to %s", ("CGB" if cgb else "DMG"))
