@@ -16,6 +16,7 @@ cdef uint16_t VRAM_OFFSET, LOW_TILEDATA
 cdef class Tile:
     cdef Motherboard mb
 
+    cdef int vram_bank
     cdef public int tile_identifier
     cdef public int data_address
     cdef public tuple shape
