@@ -86,7 +86,7 @@ class Sprite:
         self.attr_obj_bg_priority = _bit(attr, 7)
         """
         To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
 
         Returns
         -------
@@ -97,7 +97,7 @@ class Sprite:
         self.attr_y_flip = _bit(attr, 6)
         """
         To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
 
         Returns
         -------
@@ -108,7 +108,7 @@ class Sprite:
         self.attr_x_flip = _bit(attr, 5)
         """
         To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
 
         Returns
         -------
@@ -119,7 +119,7 @@ class Sprite:
         self.attr_palette_number = _bit(attr, 4)
         """
         To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam).
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
 
         Returns
         -------
@@ -148,7 +148,7 @@ class Sprite:
         immediately following the identifier given, and render it below the first.
 
         More information can be found in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](http://bgb.bircd.org/pandocs.htm#vramspriteattributetableoam)
+        (OAM)](https://gbdev.io/pandocs/OAM.html)
 
         Returns
         -------
