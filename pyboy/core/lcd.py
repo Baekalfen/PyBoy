@@ -368,6 +368,9 @@ class LCDCRegister:
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
         # yapf: enable
 
+    def _get_sprite_height(self):
+        return self.sprite_height
+
 
 COL0_FLAG = 0b01 << 24
 BG_PRIORITY_FLAG = 0b10 << 24
