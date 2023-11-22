@@ -143,7 +143,7 @@ class PyBoy:
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
-        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+        Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
 
         Returns
         -------
@@ -156,7 +156,7 @@ class PyBoy:
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
-        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+        Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
 
         Returns
         -------
