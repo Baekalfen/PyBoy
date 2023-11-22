@@ -15,8 +15,8 @@ cdef int ROWS, COLS
 
 
 cdef class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
-    cdef public int score
-    cdef public int health
-    cdef public int lives_left
-    cdef public int fitness
-    cdef public int _game_over
+    cdef readonly int score
+    cdef readonly int health
+    cdef readonly int lives_left
+    cdef readonly int fitness
+    cdef readonly int _game_over
