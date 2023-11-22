@@ -31,7 +31,7 @@ assert kirby.score == 0
 assert kirby.lives_left == 4
 assert kirby.health == 6
 
-pyboy.button("right")
+pyboy.button_press("right")
 pyboy.tick(280, True) # Walk for 280 ticks
 
 assert kirby.score == 800
