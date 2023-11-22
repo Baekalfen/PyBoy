@@ -16,11 +16,11 @@ cdef uint16_t VRAM_OFFSET, LOW_TILEDATA
 cdef class Tile:
     cdef Motherboard mb
 
-    cdef public int vram_bank
-    cdef public str raw_buffer_format
-    cdef public int tile_identifier
-    cdef public int data_address
-    cdef public tuple shape
+    cdef readonly int vram_bank
+    cdef readonly str raw_buffer_format
+    cdef readonly int tile_identifier
+    cdef readonly int data_address
+    cdef readonly tuple shape
     cpdef object image(self) noexcept
     cpdef object image_ndarray(self) noexcept
 
