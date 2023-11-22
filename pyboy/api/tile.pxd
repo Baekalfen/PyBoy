@@ -16,7 +16,7 @@ cdef uint16_t VRAM_OFFSET, LOW_TILEDATA
 cdef class Tile:
     cdef Motherboard mb
 
-    cdef int vram_bank
+    cdef readonly int vram_bank
     cdef readonly str raw_buffer_format
     cdef readonly int tile_identifier
     cdef readonly int data_address
@@ -25,5 +25,5 @@ cdef class Tile:
     cpdef object image_ndarray(self) noexcept
 
     cdef uint32_t[:,:] data # TODO: Add to locals instead
-    @cython.locals(byte1=uint8_t, byte2=uint8_t, old_A_format=uint32_t, colorcode=uint32_t)
-    cpdef uint32_t[:,:] image_data(self) noexcept
+    @cython.locals(byte1=uint8_t, byte2=uint8_t, colorcode=uint32_t)
+    cdef uint32_t[:,:] _image_data(self) noexcept

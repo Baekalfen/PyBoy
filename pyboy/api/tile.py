@@ -85,9 +85,19 @@ class Tile:
             The width and height of the tile.
         """
 
+        self.raw_buffer_format = self.mb.lcd.renderer.color_format
+        """
+        Returns the color format of the raw screen buffer.
+
+        Returns
+        -------
+        str:
+            Color format of the raw screen buffer. E.g. 'RGBX'.
+        """
+
     def image(self):
         """
-        Use this function to get an easy-to-use `PIL.Image` object of the tile. The image is 8x8 pixels in RGBA colors.
+        Use this function to get an `PIL.Image` object of the tile. The image is 8x8 pixels. The format or "mode" might change at any time.
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
@@ -99,13 +109,13 @@ class Tile:
         if Image is None:
             logger.error(f"{__name__}: Missing dependency \"Pillow\".")
             return None
-        return Image.frombytes("RGBA", (8, 8), bytes(self.image_data()))
+        return Image.fromarray(self._image_data().base, mode="RGBX")
 
     def image_ndarray(self):
         """
-        Use this function to get an easy-to-use `numpy.ndarray` object of the tile. The array has a shape of (8, 8, 4)
-        and each value is of `numpy.uint8`. The values corresponds to and RGBA image of 8x8 pixels with each sub-color
-        in a separate cell.
+        Use this function to get an `numpy.ndarray` object of the tile. The array has a shape of (8, 8, 4)
+        and each value is of `numpy.uint8`. The values corresponds to an image of 8x8 pixels with each sub-color
+        in a separate cell. The format is given by `pyboy.api.tile.Tile.raw_buffer_format`.
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
@@ -114,21 +124,9 @@ class Tile:
         numpy.ndarray :
             Array of shape (8, 8, 4) with data type of `numpy.uint8`.
         """
-        return np.asarray(self.image_data()).view(dtype=np.uint8).reshape(8, 8, 4)
-
-    def image_data(self):
-        """
-        Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
-        colors.
-
-        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
-
-        Returns
-        -------
-        memoryview :
-            Image data of tile in 8x8 pixels and RGBA colors.
-        """
-        return self._image_data()
+        # The data is laid out as (X, red, green, blue), where X is currently always zero, but this is not guarenteed
+        # across versions of PyBoy.
+        return np.asarray(self._image_data()).view(dtype=np.uint8).reshape(8, 8, 4)
 
     def _image_data(self):
         """
@@ -140,7 +138,7 @@ class Tile:
         Returns
         -------
         memoryview :
-            Image data of tile in 8x8 pixels and RGBA colors.
+            Image data of tile in 8x8 pixels and RGB colors.
         """
         self.data = np.zeros((8, 8), dtype=np.uint32)
         for k in range(0, 16, 2): # 2 bytes for each line
@@ -153,9 +151,8 @@ class Tile:
 
             for x in range(8):
                 colorcode = utils.color_code(byte1, byte2, 7 - x)
-                # NOTE: ">> 8 | 0xFF000000" to keep compatibility with earlier code
-                old_A_format = 0xFF000000
-                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) >> 8 | old_A_format
+                alpha_mask = 0x00FFFFFF
+                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) & alpha_mask
         return self.data
 
     def __eq__(self, other):
