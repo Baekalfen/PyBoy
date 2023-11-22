@@ -733,7 +733,7 @@ class PyBoy:
 
     def get_tile(self, identifier):
         """
-        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+        The Game Boy can have 384 tiles loaded in memory at once (768 for Game Boy Color). Use this method to get a
         `pyboy.api.tile.Tile`-object for given identifier.
 
         The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
