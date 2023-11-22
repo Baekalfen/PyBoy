@@ -4,7 +4,6 @@
 #
 
 cimport cython
-
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 ##############################################################
@@ -39,12 +38,12 @@ cdef uint8_t color_code(uint8_t, uint8_t, uint8_t) noexcept
 # Temporarily placed here to not be exposed on public API
 
 cdef class WindowEvent:
-    cdef public int event
+    cdef readonly int event
 
 cdef class WindowEventMouse(WindowEvent):
-    cdef public int window_id
-    cdef public int mouse_x
-    cdef public int mouse_y
-    cdef public int mouse_scroll_x
-    cdef public int mouse_scroll_y
-    cdef public int mouse_button
+    cdef readonly int window_id
+    cdef readonly int mouse_x
+    cdef readonly int mouse_y
+    cdef readonly int mouse_scroll_x
+    cdef readonly int mouse_scroll_y
+    cdef readonly int mouse_button
