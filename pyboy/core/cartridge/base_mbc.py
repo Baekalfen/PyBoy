@@ -26,6 +26,8 @@ class BaseMBC:
 
         if self.rtc_enabled:
             self.rtc = RTC(filename)
+        else:
+            self.rtc = None
 
         self.rambank_initialized = False
         self.external_rom_count = len(rombanks)
@@ -136,11 +138,11 @@ class BaseMBC:
 
     def __repr__(self):
         return "\n".join([
-            "Cartridge:",
+            "MBC class: %s" % self.__class__.__name__,
             "Filename: %s" % self.filename,
             "Game name: %s" % self.gamename,
-            "GB Color: %s" % str(self.ROMBanks[0, 0x143] == 0x80),
-            "Cartridge type: %s" % hex(self.cartType),
+            "GB Color: %s" % str(self.rombanks[0, 0x143] == 0x80),
+            "Cartridge type: %s" % hex(self.carttype),
             "Number of ROM banks: %s" % self.external_rom_count,
             "Active ROM bank: %s" % self.rombank_selected,
             # "Memory bank type: %s" % self.ROMBankController,
