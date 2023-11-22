@@ -55,7 +55,7 @@ class Tile:
         other `image`-functions if you want to view the tile.
 
         You can read how the data is read in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Returns
         -------
