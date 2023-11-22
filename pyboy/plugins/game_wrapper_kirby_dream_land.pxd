@@ -2,16 +2,18 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from libc.stdint cimport uint8_t
-from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 cimport cython
+from libc.stdint cimport uint8_t
+
+from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
+
 
 cdef int ROWS, COLS
 
 
 cdef class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
-    cdef public int score
-    cdef public int health
-    cdef public int lives_left
-    cdef public int fitness
-    cdef public int _game_over
+    cdef readonly int score
+    cdef readonly int health
+    cdef readonly int lives_left
+    cdef readonly int fitness
+    cdef readonly int _game_over
