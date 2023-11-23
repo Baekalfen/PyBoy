@@ -14,6 +14,7 @@ from PIL import ImageChops
 
 from pyboy import PyBoy, WindowEvent
 from pyboy.api.tile import Tile
+from pyboy.utils import IntIOWrapper
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
@@ -25,6 +26,29 @@ def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, False)
+    pyboy.stop(save=False)
+
+
+def test_faulty_state(default_rom):
+    pyboy = PyBoy(default_rom, window_type="null")
+
+    a = IntIOWrapper(io.BytesIO(b"abcd"))
+    a.seek(0)
+    a.write(0xFF)
+    # Cython causes OverflowError, PyPy causes AssertionError
+    with pytest.raises((OverflowError, AssertionError)):
+        a.write(0x100)
+    a.seek(0)
+    assert a.read() == 0xFF
+    assert a.read() == ord("b")
+    assert a.read() == ord("c")
+    assert a.read() == ord("d")
+    with pytest.raises(AssertionError):
+        a.read()
+
+    b = io.BytesIO(b"1234")
+    with pytest.raises(AssertionError):
+        pyboy.load_state(b)
     pyboy.stop(save=False)
 
 
