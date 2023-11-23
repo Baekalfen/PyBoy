@@ -64,6 +64,8 @@ cdef class PyBoy:
     @cython.locals(running=bint)
     cpdef object tick(self, int, bint) noexcept
     cpdef void stop(self, save=*) noexcept
+    cpdef int save_state(self, object) except -1
+    cpdef int load_state(self, object) except -1
 
     cdef void _handle_events(self, list) noexcept
     cpdef void _pause(self) noexcept

@@ -147,8 +147,7 @@ class Motherboard:
             self.double_speed = f.read()
             _cgb = f.read()
             if self.cgb != _cgb:
-                logger.critical(f"Loading state which is not CGB, but PyBoy is loaded in CGB mode!")
-                return
+                raise Exception(f"Loading state which is not CGB, but PyBoy is loaded in CGB mode!")
             self.cgb = _cgb
             if self.cgb:
                 self.hdma.load_state(f, state_version)
