@@ -67,8 +67,8 @@ cdef class Motherboard:
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil
-    cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
+    cdef int load_state(self, IntIOInterface) except -1
 
 cdef class HDMA:
     cdef uint8_t hdma1
