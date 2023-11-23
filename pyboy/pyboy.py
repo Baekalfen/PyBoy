@@ -201,7 +201,7 @@ class PyBoy:
 
         return not self.quitting
 
-    def tick(self, count, render):
+    def tick(self, count=1, render=True):
         """
         Progresses the emulator ahead by one frame.
 
@@ -231,11 +231,7 @@ class PyBoy:
             _render = render and count == 1 # Only render on last tick to improve performance
             running = self._tick(_render)
             count -= 1
-
-        if render and running:
-            return self.screen.image
-        else:
-            return running
+        return running
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
