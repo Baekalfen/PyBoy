@@ -4,10 +4,10 @@
 #
 
 cimport cython
-from pyboy.plugins.base_plugin cimport PyBoyPlugin
+from libc.stdint cimport int64_t, uint8_t, uint64_t
+from libc.stdlib cimport free, malloc
 
-from libc.stdlib cimport malloc, free
-from libc.stdint cimport uint8_t, uint64_t, int64_t
+from pyboy.plugins.base_plugin cimport PyBoyPlugin
 from pyboy.utils cimport IntIOInterface
 
 
@@ -54,7 +54,7 @@ cdef class CompressedFixedAllocBuffers(FixedAllocBuffers):
     cdef uint64_t zeros
 
     @cython.locals(chunks=int64_t, rest=int64_t)
-    cdef void flush(self) noexcept
+    cpdef int flush(self) except -1
 
 cdef class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     cdef int64_t internal_pointer
