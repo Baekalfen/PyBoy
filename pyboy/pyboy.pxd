@@ -48,7 +48,6 @@ cdef class PyBoy:
     cdef bint stopped
     cdef bint initialized
     cdef readonly str window_title
-    cdef PyBoyMemoryView memory
 
     cdef readonly PyBoyMemoryView memory
     cdef readonly Screen screen
@@ -68,6 +67,8 @@ cdef class PyBoy:
     @cython.locals(running=bint)
     cpdef bint tick(self, count=*, render=*) noexcept
     cpdef void stop(self, save=*) noexcept
+    cpdef int save_state(self, object) except -1
+    cpdef int load_state(self, object) except -1
 
     @cython.locals(state_path=str)
     cdef void _handle_events(self, list) noexcept

@@ -57,7 +57,7 @@ cdef class CompressedFixedAllocBuffers(FixedAllocBuffers):
     cdef uint64_t zeros
 
     @cython.locals(chunks=int64_t, rest=int64_t)
-    cdef void flush(self) noexcept
+    cpdef int flush(self) except -1
 
 cdef class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     cdef int64_t internal_pointer
