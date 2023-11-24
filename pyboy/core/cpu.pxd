@@ -46,7 +46,8 @@ cdef class CPU:
 
     # Only short (16-bit) needed, but I'm not sure all intermittent
     # results do not overflow
-    cdef int HL, SP, PC
+    cdef int HL, SP
+    cdef uint16_t PC
 
     cdef pyboy.core.mb.Motherboard mb
 

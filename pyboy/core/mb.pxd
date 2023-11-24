@@ -54,7 +54,7 @@ cdef class Motherboard:
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
-    @cython.locals(cycles=int64_t, escape_halt=cython.int, mode0_cycles=int64_t)
+    @cython.locals(cycles=uint16_t, escape_halt=cython.int, mode0_cycles=int64_t, sclock=int)
     cdef bint tick(self) noexcept nogil
 
     cdef void switch_speed(self) noexcept nogil
@@ -83,7 +83,7 @@ cdef class HDMA:
     cdef uint16_t curr_dst
 
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
-    cdef int tick(self, Motherboard) noexcept nogil
+    cdef uint16_t tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
