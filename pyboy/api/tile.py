@@ -22,6 +22,12 @@ try:
 except ImportError:
     Image = None
 
+try:
+    from cython import compiled
+    cythonmode = compiled
+except ImportError:
+    cythonmode = False
+
 
 class Tile:
     def __init__(self, mb, identifier):
@@ -109,7 +115,11 @@ class Tile:
         if Image is None:
             logger.error(f"{__name__}: Missing dependency \"Pillow\".")
             return None
-        return Image.fromarray(self._image_data().base, mode="RGBX")
+
+        if cythonmode:
+            return Image.fromarray(self._image_data().base, mode="RGBX")
+        else:
+            return Image.frombytes("RGBX", (8, 8), self._image_data())
 
     def image_ndarray(self):
         """
