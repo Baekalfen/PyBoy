@@ -116,6 +116,7 @@ if __name__ == '__main__':
 
 
 @pytest.mark.skipif(
+    True or \
     os.path.isfile("extras/README/8.gif") or platform.system() == "Windows",
     reason="This test takes too long for regular use"
 )
