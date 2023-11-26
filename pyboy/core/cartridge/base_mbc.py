@@ -39,6 +39,7 @@ class BaseMBC:
         self.rambank_view = self.rambanks[self.rambank_selected]
         self.rombank_selected = 1
         self.rombank_view = self.rombanks[self.rombank_selected]
+        self.rombank_0 = self.rombanks[0]
 
         self.cgb = bool(self.getitem(0x0143) >> 7)
 
@@ -121,7 +122,7 @@ class BaseMBC:
 
     def getitem(self, address):
         if 0x0000 <= address < 0x4000:
-            return self.rombanks[0, address]
+            return self.rombank_0[address]
         elif 0x4000 <= address < 0x8000:
             # return self.rombanks[self.rombank_selected, address - 0x4000]
             return self.rombank_view[address - 0x4000]
