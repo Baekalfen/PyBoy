@@ -5,13 +5,13 @@
 
 from . cimport cpu
 cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
 @cython.locals(v=uint16_t, a=uint16_t, b=uint16_t, pc=uint16_t, oplen=uint8_t)
-cdef int execute_opcode(cpu.CPU, uint16_t) noexcept
+cdef uint8_t execute_opcode(cpu.CPU, uint64_t) noexcept
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept
 
