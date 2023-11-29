@@ -196,13 +196,20 @@ class Motherboard:
         return b
 
     def tick(self):
+        # This looks pointless, but when translated to C,
+        # I think this saves us a pointer dereference at every usage
+        lcd = self.lcd
+        timer = self.timer
+        sound = self.sound
+        cpu = self.cpu
+        hdma = self.hdma
         while self.processing_frame():
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
-                cycles = self.hdma.tick(self)
+                cycles = hdma.tick(self)
             else:
-                cycles = self.cpu.tick()
+                cycles = cpu.tick()
 
-            if self.cpu.halted:
+            if cpu.halted:
                 # Fast-forward to next interrupt:
                 # As we are halted, we are guaranteed, that our state
                 # cannot be altered by other factors than time.
@@ -212,12 +219,12 @@ class Motherboard:
 
                 # Help Cython with types
                 mode0_cycles = 1 << 32
-                if self.cgb and self.hdma.transfer_active:
-                    mode0_cycles = self.lcd.cycles_to_mode0()
+                if self.cgb and hdma.transfer_active:
+                    mode0_cycles = lcd.cycles_to_mode0()
 
                 cycles = min(
-                    self.lcd.cycles_to_interrupt(),
-                    self.timer.cycles_to_interrupt(),
+                    lcd.cycles_to_interrupt(),
+                    timer.cycles_to_interrupt(),
                     # self.serial.cycles_to_interrupt(),
                     mode0_cycles
                 )
@@ -226,28 +233,27 @@ class Motherboard:
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
             # TODO: Unify interface
-            sclock = self.sound.clock
             if self.cgb and self.double_speed:
-                self.sound.clock = sclock + cycles//2
+                sound.clock += cycles//2
             else:
-                self.sound.clock = sclock + cycles
+                sound.clock += cycles
 
-            if self.timer.tick(cycles):
-                self.cpu.set_interruptflag(INTR_TIMER)
+            if timer.tick(cycles):
+                cpu.set_interruptflag(INTR_TIMER)
 
-            lcd_interrupt = self.lcd.tick(cycles)
+            lcd_interrupt = lcd.tick(cycles)
             if lcd_interrupt:
-                self.cpu.set_interruptflag(lcd_interrupt)
+                cpu.set_interruptflag(lcd_interrupt)
 
             # Escape halt. This happens when pressing 'return' in the debugger. It will make us skip breaking on halt
             # for every cycle, but do break on the next instruction -- even in an interrupt.
-            escape_halt = self.cpu.halted and self.breakpoint_latch == 1
             # TODO: Replace with GDB Stub
+            escape_halt = cpu.halted and self.breakpoint_latch == 1
             if self.breakpoints_enabled and (not escape_halt) and self.breakpoint_reached():
                 return True
 
         # TODO: Move SDL2 sync to plugin
-        self.sound.sync()
+        sound.sync()
 
         return False
 
