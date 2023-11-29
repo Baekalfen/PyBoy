@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 from pyboy.core.cartridge.rtc cimport RTC
 from pyboy.logging.logging cimport Logger
@@ -29,7 +29,7 @@ cdef class BaseMBC:
     cdef uint16_t rambank_selected
     cdef uint16_t rombank_selected
     cdef uint8_t[:] rombank_view
-    cdef uint8_t[:] rambank_view 
+    cdef uint8_t[:] rambank_view
     cdef bint cgb
 
     cdef void save_state(self, IntIOInterface) noexcept
@@ -39,9 +39,9 @@ cdef class BaseMBC:
     cdef void init_rambanks(self, uint8_t) noexcept
     cdef str getgamename(self, uint8_t[:,:]) noexcept
 
-    cdef uint8_t getitem(self, uint16_t) noexcept nogil
-    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+    cdef uint8_t getitem(self, uint64_t) noexcept nogil
+    cdef void setitem(self, uint64_t, uint8_t) noexcept nogil
     cdef void overrideitem(self, int, uint16_t, uint8_t) noexcept nogil
 
 cdef class ROMOnly(BaseMBC):
-    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+    cdef void setitem(self, uint64_t, uint8_t) noexcept nogil

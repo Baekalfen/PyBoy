@@ -71,8 +71,8 @@ cdef class Motherboard:
     @cython.locals(pc=cython.int, bank=cython.int)
     cdef bint breakpoint_reached(self) noexcept with gil
 
-    cdef uint8_t getitem(self, uint16_t) noexcept nogil
-    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+    cdef uint8_t getitem(self, uint64_t) noexcept nogil
+    cdef void setitem(self, uint64_t, uint8_t) noexcept nogil
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil

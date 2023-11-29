@@ -3,22 +3,19 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'opcodes_gen.py'.
 
+from . cimport cpu
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 from pyboy.logging.logging cimport Logger
-
-from . cimport cpu
-
-
 cdef Logger logger
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
-@cython.locals(v=uint16_t, a=uint16_t, b=uint16_t, pc=uint16_t, oplen=uint8_t)
-cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
-cdef uint8_t no_opcode(cpu.CPU) noexcept nogil
+@cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
+cdef int execute_opcode(cpu.CPU, uint64_t) noexcept nogil
 
+cdef uint8_t no_opcode(cpu.CPU) noexcept nogil
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t NOP_00(cpu.CPU) noexcept nogil # 00 NOP
 @cython.locals(v=int, flag=uint8_t, t=int)
