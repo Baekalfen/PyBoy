@@ -36,7 +36,9 @@ class BaseMBC:
         self.memorymodel = 0
         self.rambank_enabled = False
         self.rambank_selected = 0
+        self.rambank_view = self.rambanks[self.rambank_selected]
         self.rombank_selected = 1
+        self.rombank_view = self.rombanks[self.rombank_selected]
 
         self.cgb = bool(self.getitem(0x0143) >> 7)
 
@@ -64,7 +66,9 @@ class BaseMBC:
 
     def load_state(self, f, state_version):
         self.rombank_selected = f.read()
+        self.rombank_view = self.rombanks[self.rombank_selected]
         self.rambank_selected = f.read()
+        self.rambank_view = self.rambanks[self.rambank_selected]
         self.rambank_enabled = f.read()
         self.memorymodel = f.read()
         self.load_ram(f)
@@ -119,7 +123,8 @@ class BaseMBC:
         if 0x0000 <= address < 0x4000:
             return self.rombanks[0, address]
         elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected, address - 0x4000]
+            # return self.rombanks[self.rombank_selected, address - 0x4000]
+            return self.rombank_view[address - 0x4000]
         elif 0xA000 <= address < 0xC000:
             # if not self.rambank_initialized:
             #     logger.error("RAM banks not initialized: 0.4x", address)
@@ -130,7 +135,7 @@ class BaseMBC:
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
             else:
-                return self.rambanks[self.rambank_selected, address - 0xA000]
+                return self.rambank_view[address - 0xA000]
         # else:
         #     logger.error("Reading address invalid: %0.4x", address)
 
@@ -157,8 +162,9 @@ class ROMOnly(BaseMBC):
             if value == 0:
                 value = 1
             self.rombank_selected = (value & 0b1)
+            self.rombank_view = self.rombanks[self.rombank_selected]
             logger.debug("Switching bank 0x%0.4x, 0x%0.2x", address, value)
         elif 0xA000 <= address < 0xC000:
-            self.rambanks[self.rambank_selected, address - 0xA000] = value
+            self.rambank_view[address - 0xA000] = value
         # else:
         #     logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x", address, value)

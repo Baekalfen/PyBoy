@@ -28,6 +28,8 @@ cdef class BaseMBC:
     cdef bint rambank_initialized
     cdef uint16_t rambank_selected
     cdef uint16_t rombank_selected
+    cdef uint8_t[:] rombank_view
+    cdef uint8_t[:] rambank_view 
     cdef bint cgb
 
     cdef void save_state(self, IntIOInterface) noexcept
