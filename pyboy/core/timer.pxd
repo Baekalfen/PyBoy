@@ -22,7 +22,7 @@ cdef class Timer:
 
     cdef void reset(self) noexcept nogil
     @cython.locals(divider=uint16_t)
-    cdef bint tick(self, uint64_t) noexcept nogil
+    cdef bint tick(self, int) noexcept nogil
     @cython.locals(divider=cython.int, cyclesleft=cython.uint)
     cdef uint64_t cycles_to_interrupt(self) noexcept nogil
 
