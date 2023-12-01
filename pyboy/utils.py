@@ -339,9 +339,6 @@ class MemoryScanner():
         :param value_type: The type of value (INT or BCD) to consider.
         :return: A list of addresses where the target value is found.
         """
-        if value_type == ScanMode.BCD:
-            print("bcd")
-        
         found_addresses = []
         for addr in range(start_addr, end_addr + 1):
             value = self.pyboy.get_memory_value(addr)
