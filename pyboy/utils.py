@@ -282,7 +282,6 @@ class WindowEventMouse(WindowEvent):
 ##############################################################
 # Memory Scanning
 #
-from enum import Enum
 
 class CompareType(Enum):
     """Enumeration for defining types of comparisons."""
