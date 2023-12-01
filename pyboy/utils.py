@@ -2,6 +2,7 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+from enum import Enum
 
 STATE_VERSION = 9
 
@@ -276,3 +277,59 @@ class WindowEventMouse(WindowEvent):
         self.mouse_scroll_x = mouse_scroll_x
         self.mouse_scroll_y = mouse_scroll_y
         self.mouse_button = mouse_button
+
+
+##############################################################
+# Memory Scanning
+#
+class CompareType(Enum):
+    EXACT = 1
+    LESS_THAN = 2
+    GREATER_THAN = 3
+    LESS_THAN_OR_EQUAL = 4
+    GREATER_THAN_OR_EQUAL = 5
+class ScanMode(Enum):
+    INT = 1
+    BCD = 2
+
+class MemoryScanner():
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
+
+    def _dec_to_bcd(self,value):
+        tens = (value // 10) << 4
+        units = value % 10
+        return tens | units
+
+    def _bcd_to_dec(self,value):
+        return (value >> 4) * 10 + (value & 0x0F)
+
+    def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT ):
+        if value_type == ScanMode.BCD:
+            print("bcd")
+        
+        found_addresses = []
+        for addr in range(start_addr, end_addr+1):
+            value = self.pyboy.get_memory_value(addr)
+            x= self._check_value(value, target_value, compare_type.value)
+            if value_type == ScanMode.BCD:
+                value = self._bcd_to_dec(value)
+            if self._check_value(value, target_value, compare_type.value):
+                found_addresses.append(addr)
+
+        return found_addresses
+
+    def _check_value(self, value, target_value, compare_type, value_type=ScanMode.INT):
+        if value_type == ScanMode.BCD:
+            target_value = self._dec_to_bcd(target_value)
+        if compare_type == CompareType.EXACT.value:
+            return value == target_value
+        elif compare_type == CompareType.LESS_THAN.value:
+            return value < target_value
+        elif compare_type == CompareType.GREATER_THAN.value:
+            return value > target_value
+        elif compare_type == CompareType.LESS_THAN_OR_EQUAL.value:
+            return value <= target_value
+        elif compare_type == CompareType.GREATER_THAN_OR_EQUAL.value:
+            return value >= target_value
+        return False
