@@ -282,36 +282,69 @@ class WindowEventMouse(WindowEvent):
 ##############################################################
 # Memory Scanning
 #
+from enum import Enum
+
 class CompareType(Enum):
+    """Enumeration for defining types of comparisons."""
     EXACT = 1
     LESS_THAN = 2
     GREATER_THAN = 3
     LESS_THAN_OR_EQUAL = 4
     GREATER_THAN_OR_EQUAL = 5
+
 class ScanMode(Enum):
+    """Enumeration for defining scanning modes."""
     INT = 1
     BCD = 2
 
 class MemoryScanner():
+    """A class for scanning memory within a given range."""
+
     def __init__(self, pyboy):
+        """
+        Initializes the MemoryScanner with a pyboy instance.
+
+        :param pyboy: The pyboy emulator instance.
+        """
         self.pyboy = pyboy
 
-    def _dec_to_bcd(self,value):
+    def _dec_to_bcd(self, value):
+        """
+        Converts a decimal value to Binary Coded Decimal (BCD).
+
+        :param value: Decimal value to convert.
+        :return: BCD equivalent of the decimal value.
+        """
         tens = (value // 10) << 4
         units = value % 10
         return tens | units
 
-    def _bcd_to_dec(self,value):
+    def _bcd_to_dec(self, value):
+        """
+        Converts a Binary Coded Decimal (BCD) value to decimal.
+
+        :param value: BCD value to convert.
+        :return: Decimal equivalent of the BCD value.
+        """
         return (value >> 4) * 10 + (value & 0x0F)
 
     def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT ):
+        """
+        Scans memory in the specified range, looking for a target value.
+
+        :param start_addr: The starting address for the scan.
+        :param end_addr: The ending address for the scan.
+        :param target_value: The value to search for.
+        :param compare_type: The type of comparison to use.
+        :param value_type: The type of value (INT or BCD) to consider.
+        :return: A list of addresses where the target value is found.
+        """
         if value_type == ScanMode.BCD:
             print("bcd")
         
         found_addresses = []
-        for addr in range(start_addr, end_addr+1):
+        for addr in range(start_addr, end_addr + 1):
             value = self.pyboy.get_memory_value(addr)
-            x= self._check_value(value, target_value, compare_type.value)
             if value_type == ScanMode.BCD:
                 value = self._bcd_to_dec(value)
             if self._check_value(value, target_value, compare_type.value):
@@ -319,9 +352,15 @@ class MemoryScanner():
 
         return found_addresses
 
-    def _check_value(self, value, target_value, compare_type, value_type=ScanMode.INT):
-        if value_type == ScanMode.BCD:
-            target_value = self._dec_to_bcd(target_value)
+    def _check_value(self, value, target_value, compare_type):
+        """
+        Compares a value with the target value based on the specified compare type.
+
+        :param value: The value to compare.
+        :param target_value: The target value to compare against.
+        :param compare_type: The type of comparison to use.
+        :return: True if the comparison condition is met, False otherwise.
+        """
         if compare_type == CompareType.EXACT.value:
             return value == target_value
         elif compare_type == CompareType.LESS_THAN.value:
