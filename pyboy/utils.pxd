@@ -59,4 +59,4 @@ cdef class MemoryScanner:
     cpdef int _dec_to_bcd(self, int) noexcept
     cpdef int _bcd_to_dec(self, int) noexcept
     cpdef list scan_memory(self, int, int, int, compare_type=*, value_type=*) noexcept
-    cpdef bool _check_value(self, uint8_t, uint8_t, int, value_type=*) noexcept
+    cpdef bool _check_value(self, int, int, int)noexcept
