@@ -5,6 +5,7 @@
 
 cimport cython
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
+from cpython cimport bool
 
 ##############################################################
 # Buffer classes
@@ -41,9 +42,21 @@ cdef class WindowEvent:
     cdef readonly int event
 
 cdef class WindowEventMouse(WindowEvent):
-    cdef readonly int window_id
-    cdef readonly int mouse_x
-    cdef readonly int mouse_y
-    cdef readonly int mouse_scroll_x
-    cdef readonly int mouse_scroll_y
-    cdef readonly int mouse_button
+    cdef public int window_id
+    cdef public int mouse_x
+    cdef public int mouse_y
+    cdef public int mouse_scroll_x
+    cdef public int mouse_scroll_y
+    cdef public int mouse_button
+
+
+##############################################################
+# Memory Scanning
+#
+cdef class MemoryScanner:
+    cdef object pyboy
+
+    cpdef int _dec_to_bcd(self, int) noexcept
+    cpdef int _bcd_to_dec(self, int) noexcept
+    cpdef list scan_memory(self, int, int, int, compare_type=*, value_type=*) noexcept
+    cpdef bool _check_value(self, uint8_t, uint8_t, int, value_type=*) noexcept
