@@ -354,6 +354,24 @@ class MemoryScanner():
         self.pyboy = pyboy
         self.bcd_converter = BCDConverter()
 
+    def read_memory(self, address, byte_width=1, value_type=ScanMode.INT, endian_type=EndianType.LITTLE):
+        """
+        Reads memory at the specified address.
+
+        :param address: The address to read.
+        :param byte_width: The number of bytes to consider for each value.
+        :param value_type: The type of value (INT or BCD) to consider.
+        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+        :return: The value at the specified address.
+        """
+        value_bytes = [self.pyboy.get_memory_value(address + i) for i in range(byte_width)]
+        value = int.from_bytes(value_bytes, 'little' if endian_type == EndianType.LITTLE else 'big')
+
+        if value_type == ScanMode.BCD:
+            value = self.bcd_converter.bcd_to_dec(value, byte_width, endian_type)
+
+        return value
+
     def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT, byte_width=1, endian_type=EndianType.LITTLE):
         """
         Scans memory in the specified range, looking for a target value.
