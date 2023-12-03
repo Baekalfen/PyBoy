@@ -53,6 +53,12 @@ cdef class WindowEventMouse(WindowEvent):
 ##############################################################
 # Memory Scanning
 #
+
+cdef class BCDConverter:
+    cpdef uint64_t dec_to_bcd(self, uint_64t,int byte_width=*,endian_type=*) noexcept
+    cpdef uint64_t bcd_to_dec(self, uint64_t,int byte_width=*,endian_type=*) noexcept
+
+
 cdef class MemoryScanner:
     cdef object pyboy
 
