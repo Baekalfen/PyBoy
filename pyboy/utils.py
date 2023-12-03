@@ -300,6 +300,49 @@ class ScanMode(Enum):
     INT = 1
     BCD = 2
 
+class BCDConverter:
+    def dec_to_bcd(self, value, byte_width=1, endian_type=EndianType.LITTLE):
+        """
+        Converts a decimal value to Binary Coded Decimal (BCD).
+
+        :param value: Integer value to convert.
+        :param byte_width: The number of bytes to consider for each value.
+        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+        :return: BCD equivalent of the decimal value.
+        """
+        bcd_result = []
+        for _ in range(byte_width):
+            tens = ((value%100) // 10) << 4
+            units = value % 10
+            bcd_byte = (tens | units) & 0xFF
+            bcd_result.append(bcd_byte)
+            value //= 100
+        if endian_type == EndianType.BIG:
+            return int.from_bytes(bcd_result, byteorder='big')
+        else:
+            return int.from_bytes(bcd_result, byteorder='little')
+        #return int.from_bytes([0b00110000,0b00110000],byteorder='little')
+
+    def bcd_to_dec(self, value, byte_width=1, endian_type=EndianType.LITTLE):
+        """
+        Converts a Binary Coded Decimal (BCD) value to decimal.
+
+        :param value: BCD value to convert.
+        :param byte_width: The number of bytes to consider for each value.
+        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+        :return: Decimal equivalent of the BCD value.
+        """
+        decimal_value = 0
+        multiplier = 1
+
+        bcd_bytes = value.to_bytes(byte_width, 'big' if endian_type == EndianType.BIG else 'little')
+        
+        for bcd_byte in bcd_bytes:
+            decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * multiplier
+            multiplier *= 100
+
+        return decimal_value
+
 class MemoryScanner():
     """A class for scanning memory within a given range."""
 
@@ -310,32 +353,8 @@ class MemoryScanner():
         :param pyboy: The pyboy emulator instance.
         """
         self.pyboy = pyboy
+        self.bcd_converter = BCDConverter()
 
-    def dec_to_bcd(self, value,byte_width=1,endian_type=EndianType.LITTLE):
-        """
-        Converts a decimal value to Binary Coded Decimal (BCD).
-
-        :param value: Integer value to convert.
-        :param byte_width: The number of bytes to consider for each value.
-        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
-        :return: BCD equivalent of the decimal value.
-        """
-        #TODO - Add support for 16-bit values and higher
-        tens = (value // 10) << 4
-        units = value % 10
-        return tens | units
-
-    def bcd_to_dec(self, value,byte_width=1,endian_type=EndianType.LITTLE):
-        """
-        Converts a Binary Coded Decimal (BCD) value to decimal.
-
-        :param value: BCD value to convert.
-        :param byte_width: The number of bytes to consider for each value.
-        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher. Groups bits into byte sized chunks
-        :return: Decimal equivalent of the BCD value.
-        """
-        #TODO - Add support for 16-bit values and higher
-        return (value >> 4) * 10 + (value & 0x0F)
 
     def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT,byte_width=1,endian_type=EndianType.LITTLE):
         """
@@ -355,7 +374,7 @@ class MemoryScanner():
         for addr in range(start_addr, end_addr + 1):
             value = self.pyboy.get_memory_value(addr)
             if value_type == ScanMode.BCD:
-                value = self.bcd_to_dec(value)
+                value = self.bcd_converter.bcd_to_dec(value)
             if self._check_value(value, target_value, compare_type.value):
                 found_addresses.append(addr)
 
