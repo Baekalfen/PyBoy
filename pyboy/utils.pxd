@@ -56,7 +56,7 @@ cdef class WindowEventMouse(WindowEvent):
 cdef class MemoryScanner:
     cdef object pyboy
 
-    cpdef int _dec_to_bcd(self, int) noexcept
-    cpdef int _bcd_to_dec(self, int) noexcept
-    cpdef list scan_memory(self, int, int, int, compare_type=*, value_type=*) noexcept
+    cpdef int dec_to_bcd(self, int) noexcept
+    cpdef int bcd_to_dec(self, int) noexcept
+    cpdef list scan_memory(self, int, int, int, compare_type=*, value_type=*,int byte_width=*,endian_type=*) noexcept
     cpdef bool _check_value(self, int, int, int)noexcept
