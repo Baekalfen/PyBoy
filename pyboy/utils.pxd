@@ -5,7 +5,6 @@
 
 cimport cython
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
-from cpython cimport bool
 
 ##############################################################
 # Buffer classes
@@ -62,7 +61,5 @@ cdef class BCDConverter:
 cdef class MemoryScanner:
     cdef object pyboy
 
-    cpdef int dec_to_bcd(self, int) noexcept
-    cpdef int bcd_to_dec(self, int) noexcept
     cpdef list scan_memory(self, int, int, int, compare_type=*, value_type=*,int byte_width=*,endian_type=*) noexcept
-    cpdef bool _check_value(self, int, int, int)noexcept
+    cpdef bint _check_value(self, int, int, int)noexcept
