@@ -354,8 +354,7 @@ class MemoryScanner():
         self.pyboy = pyboy
         self.bcd_converter = BCDConverter()
 
-
-    def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT,byte_width=1,endian_type=EndianType.LITTLE):
+    def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT, byte_width=1, endian_type=EndianType.LITTLE):
         """
         Scans memory in the specified range, looking for a target value.
 
@@ -368,16 +367,20 @@ class MemoryScanner():
         :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
         :return: A list of addresses where the target value is found.
         """
-        #TODO - Add support for 16-bit values and higher
         found_addresses = []
-        for addr in range(start_addr, end_addr + 1):
-            value = self.pyboy.get_memory_value(addr)
+        for addr in range(start_addr, end_addr - byte_width + 2): # Adjust the loop to prevent reading past end_addr
+            # Read multiple bytes based on byte_width and endian_type
+            value_bytes = [self.pyboy.get_memory_value(addr + i) for i in range(byte_width)]
+            value = int.from_bytes(value_bytes, 'little' if endian_type == EndianType.LITTLE else 'big')
+
             if value_type == ScanMode.BCD:
-                value = self.bcd_converter.bcd_to_dec(value)
+                value = self.bcd_converter.bcd_to_dec(value, byte_width, endian_type)
+
             if self._check_value(value, target_value, compare_type.value):
                 found_addresses.append(addr)
 
         return found_addresses
+
 
     def _check_value(self, value, target_value, compare_type):
         """
