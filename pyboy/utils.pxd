@@ -64,4 +64,4 @@ cdef class MemoryScanner:
 
     cpdef uint64_t read_memory(self, int, int byte_width=*, value_type=*, endian_type=*) noexcept
     cpdef list scan_memory(self, int, int, int, compare_type=*, value_type=*,int byte_width=*,endian_type=*) noexcept
-    cpdef bint _check_value(self, int, int, int)noexcept
+    cpdef bint _check_value(self, uint64_t, uint64_t, int)noexcept
