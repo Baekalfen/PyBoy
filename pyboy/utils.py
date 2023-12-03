@@ -321,7 +321,6 @@ class BCDConverter:
             return int.from_bytes(bcd_result, byteorder='big')
         else:
             return int.from_bytes(bcd_result, byteorder='little')
-        #return int.from_bytes([0b00110000,0b00110000],byteorder='little')
 
     def bcd_to_dec(self, value, byte_width=1, endian_type=EndianType.LITTLE):
         """
