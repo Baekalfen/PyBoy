@@ -282,6 +282,10 @@ class WindowEventMouse(WindowEvent):
 ##############################################################
 # Memory Scanning
 #
+class EndianType(Enum):
+    """Enumeration for defining endian types."""
+    LITTLE = 1
+    BIG = 2
 
 class CompareType(Enum):
     """Enumeration for defining types of comparisons."""
@@ -307,27 +311,29 @@ class MemoryScanner():
         """
         self.pyboy = pyboy
 
-    def _dec_to_bcd(self, value):
+    def dec_to_bcd(self, value,byte_width=1,endian_type=EndianType.LITTLE):
         """
         Converts a decimal value to Binary Coded Decimal (BCD).
 
-        :param value: Decimal value to convert.
+        :param value: Integer value to convert.
         :return: BCD equivalent of the decimal value.
         """
+        #TODO - Add support for 16-bit values and higher
         tens = (value // 10) << 4
         units = value % 10
         return tens | units
 
-    def _bcd_to_dec(self, value):
+    def bcd_to_dec(self, value,byte_width=1,endian_type=EndianType.LITTLE):
         """
         Converts a Binary Coded Decimal (BCD) value to decimal.
 
         :param value: BCD value to convert.
         :return: Decimal equivalent of the BCD value.
         """
+        #TODO - Add support for 16-bit values and higher
         return (value >> 4) * 10 + (value & 0x0F)
 
-    def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT ):
+    def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT,byte_width=1,endian_type=EndianType.LITTLE):
         """
         Scans memory in the specified range, looking for a target value.
 
@@ -338,11 +344,12 @@ class MemoryScanner():
         :param value_type: The type of value (INT or BCD) to consider.
         :return: A list of addresses where the target value is found.
         """
+        #TODO - Add support for 16-bit values and higher
         found_addresses = []
         for addr in range(start_addr, end_addr + 1):
             value = self.pyboy.get_memory_value(addr)
             if value_type == ScanMode.BCD:
-                value = self._bcd_to_dec(value)
+                value = self.bcd_to_dec(value)
             if self._check_value(value, target_value, compare_type.value):
                 found_addresses.append(addr)
 
