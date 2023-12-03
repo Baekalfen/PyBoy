@@ -316,6 +316,8 @@ class MemoryScanner():
         Converts a decimal value to Binary Coded Decimal (BCD).
 
         :param value: Integer value to convert.
+        :param byte_width: The number of bytes to consider for each value.
+        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
         :return: BCD equivalent of the decimal value.
         """
         #TODO - Add support for 16-bit values and higher
@@ -328,6 +330,8 @@ class MemoryScanner():
         Converts a Binary Coded Decimal (BCD) value to decimal.
 
         :param value: BCD value to convert.
+        :param byte_width: The number of bytes to consider for each value.
+        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher. Groups bits into byte sized chunks
         :return: Decimal equivalent of the BCD value.
         """
         #TODO - Add support for 16-bit values and higher
@@ -342,6 +346,8 @@ class MemoryScanner():
         :param target_value: The value to search for.
         :param compare_type: The type of comparison to use.
         :param value_type: The type of value (INT or BCD) to consider.
+        :param byte_width: The number of bytes to consider for each value.
+        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
         :return: A list of addresses where the target value is found.
         """
         #TODO - Add support for 16-bit values and higher
