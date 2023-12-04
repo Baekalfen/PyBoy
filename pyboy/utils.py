@@ -139,6 +139,11 @@ def flatten_list(l):
             flat_list.append(item)
     return flat_list
 
+def byte_to_bitfield(n):
+        # Force bit extension to 10 chars; 2 for '0x' and 8 for the bits
+        bitlist = [1 if digit=='1' else 0 for digit in format(n, '#010b')[2:]]
+
+        return bitlist
 
 ##############################################################
 # Window Events
