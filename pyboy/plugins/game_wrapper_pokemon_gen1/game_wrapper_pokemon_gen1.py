@@ -115,3 +115,9 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     
     def get_player(self):
         return Player.load_player(self.mem_manager)
+    
+    def get_player_location(self):
+        player_location_x = self.mem_manager.read_hex_from_memory(0xD362, 1)
+        player_location_y = self.mem_manager.read_hex_from_memory(0xD361, 1)
+
+        return (player_location_x, player_location_y)  
