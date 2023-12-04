@@ -332,13 +332,13 @@ class BCDConverter:
         :return: Decimal equivalent of the BCD value.
         """
         decimal_value = 0
-        multiplier = 1
+        self._multiplier = 1
 
         bcd_bytes = value.to_bytes(byte_width, 'big' if endian_type == EndianType.BIG else 'little')
         
         for bcd_byte in bcd_bytes:
-            decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * multiplier
-            multiplier *= 100
+            decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * self._multiplier
+            self._multiplier *= 100
 
         return decimal_value
 
