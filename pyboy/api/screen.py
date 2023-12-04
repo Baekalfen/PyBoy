@@ -35,8 +35,8 @@ class Screen:
         self.raw_buffer = self.mb.lcd.renderer._screenbuffer
         """
         Provides a raw, unfiltered `bytes` object with the data from the screen. Check
-        `Screen.raw_buffer_format` to see which dataformat is used. The returned type and dataformat are
-        subject to change.
+        `Screen.raw_buffer_format` to see which dataformat is used. **The returned type and dataformat are
+        subject to change.** The screen buffer is row-major.
 
         Use this, only if you need to bypass the overhead of `Screen.image` or `Screen.ndarray`.
 
@@ -47,16 +47,16 @@ class Screen:
         """
         self.raw_buffer_dims = self.mb.lcd.renderer.buffer_dims
         """
-        Returns the dimensions of the raw screen buffer.
+        Returns the dimensions of the raw screen buffer. The screen buffer is row-major.
 
         Returns
         -------
         tuple:
-            A two-tuple of the buffer dimensions. E.g. (160, 144).
+            A two-tuple of the buffer dimensions. E.g. (144, 160).
         """
         self.raw_buffer_format = self.mb.lcd.renderer.color_format
         """
-        Returns the color format of the raw screen buffer.
+        Returns the color format of the raw screen buffer. **This format is subject to change.**
 
         Returns
         -------
@@ -65,7 +65,7 @@ class Screen:
         """
         self.image = None
         """
-        Generates a PIL Image from the screen buffer.
+        Generates a PIL Image from the screen buffer. The screen buffer is internally row-major, but PIL hides this.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
         case, read up on the `pyboy.api` features, [Pan Docs](https://gbdev.io/pandocs/) on tiles/sprites,
@@ -91,11 +91,12 @@ class Screen:
         ).reshape(ROWS, COLS, 4)
         """
         Provides the screen data in NumPy format. The format is given by `pyboy.api.screen.Screen.raw_buffer_format`.
+        The screen buffer is row-major.
 
         Returns
         -------
         numpy.ndarray:
-            Screendata in `ndarray` of bytes with shape (160, 144, 3)
+            Screendata in `ndarray` of bytes with shape (144, 160, 3)
         """
 
     @property
