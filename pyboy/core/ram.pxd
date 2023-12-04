@@ -3,12 +3,15 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+cimport cython
 from libc.stdint cimport uint8_t
 from pyboy.utils cimport IntIOInterface
 
 
 cdef class RAM:
+    @cython.locals(n=int)
     cdef void save_state(self, IntIOInterface) noexcept
+    @cython.locals(n=int)
     cdef void load_state(self, IntIOInterface, int) noexcept
 
     cdef uint8_t[:] internal_ram0 # Dynamic size for DMG/CGB

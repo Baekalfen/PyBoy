@@ -15,12 +15,6 @@ from .base_plugin import PyBoyGameWrapper
 
 logger = logging.getLogger(__name__)
 
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
 
 class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     """
@@ -57,7 +51,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 5
         for n in range(score_digits):
-            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**(score_digits-n)
+            self.score += self.pyboy.get_memory_value(0xD06F + n) * 10**(score_digits - n)
 
         # Check if game is over
         prev_health = self.health

@@ -41,9 +41,11 @@ class Sound:
                     self.sample_rate = spec_have.freq
                     self.sampleclocks = CPU_FREQ // self.sample_rate
                 else:
+                    # TODO: Refactor SDL2 out of sound.py
                     logger.error("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
                     self.enabled = False # We will continue with emulation
             else:
+                # TODO: Refactor SDL2 out of sound.py
                 logger.error("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
                 self.enabled = False # We will continue with emulation
 

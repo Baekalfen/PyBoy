@@ -17,6 +17,7 @@ import random
 from array import array
 
 import numpy as np
+
 from pyboy.botsupport.sprite import Sprite
 
 logger = logging.getLogger(__name__)
@@ -114,11 +115,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         self.saved_state = io.BytesIO()
 
-        if cythonmode:
-            self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
-        else:
-            v = memoryview(self._cached_game_area_tiles_raw).cast("I")
-            self._cached_game_area_tiles = [v[i:i + height] for i in range(0, height * width, height)]
+        self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
 
     def enabled(self):
         return self.pyboy_argv.get("game_wrapper") and self.pyboy.cartridge_title() == self.cartridge_title
@@ -197,9 +194,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
                         _x = (xx+x+SCX) % 32
                         _y = (yy+y+SCY) % 32
                         if self.tilemap_use_background:
-                            self._cached_game_area_tiles[y][x] = self.tilemap_background.tile_identifier(_x, _y)
+                            self._cached_game_area_tiles[y, x] = self.tilemap_background.tile_identifier(_x, _y)
                         else:
-                            self._cached_game_area_tiles[y][x] = self.tilemap_window.tile_identifier(_x, _y)
+                            self._cached_game_area_tiles[y, x] = self.tilemap_window.tile_identifier(_x, _y)
             else:
                 if self.tilemap_use_background:
                     self._cached_game_area_tiles = np.asarray(

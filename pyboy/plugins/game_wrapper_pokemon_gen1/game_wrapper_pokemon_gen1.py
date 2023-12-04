@@ -22,12 +22,6 @@ PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
 
 
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
     """

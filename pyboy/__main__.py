@@ -106,7 +106,7 @@ def main():
     argv = parser.parse_args()
     log_level(argv.log_level)
 
-    logger.info(
+    print(
         """
 The Game Boy controls are as follows:
 

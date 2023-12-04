@@ -72,10 +72,9 @@ class Motherboard:
         if self.cgb:
             self.hdma = HDMA()
 
-        # self.disable_renderer = disable_renderer
-
         self.bootrom_enabled = True
-        self.serialbuffer = ""
+        self.serialbuffer = [0] * 1024
+        self.serialbuffer_count = 0
 
         self.breakpoints_enabled = False # breakpoints_enabled
         self.breakpoints_list = [] #[(0, 0x150), (0, 0x0040), (0, 0x0048), (0, 0x0050)]
@@ -98,8 +97,8 @@ class Motherboard:
             self.breakpoints_enabled = False
 
     def getserial(self):
-        b = self.serialbuffer
-        self.serialbuffer = ""
+        b = "".join([chr(x) for x in self.serialbuffer[:self.serialbuffer_count]])
+        self.serialbuffer_count = 0
         return b
 
     def buttonevent(self, key):
@@ -226,10 +225,11 @@ class Motherboard:
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
             # TODO: Unify interface
+            sclock = self.sound.clock
             if self.cgb and self.double_speed:
-                self.sound.clock += cycles // 2
+                self.sound.clock = sclock + cycles//2
             else:
-                self.sound.clock += cycles
+                self.sound.clock = sclock + cycles
 
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
@@ -357,11 +357,9 @@ class Motherboard:
         elif i == 0xFFFF: # Interrupt Enable Register
             return self.cpu.interrupts_enabled_register
         # else:
-        #     raise IndexError("Memory access violation. Tried to read: %s" % hex(i))
+        #     logger.critical("Memory access violation. Tried to read: %0.4x", i)
 
     def setitem(self, i, value):
-        # assert 0 <= value < 0x100, "Memory write error! Can't write %s to %s" % (hex(value), hex(i))
-
         if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
@@ -374,13 +372,11 @@ class Motherboard:
                 if i < 0x9800: # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 0)
-                    # self.lcd.renderer.tiles_changed0.add(i & 0xFFF0)
             else:
                 self.lcd.VRAM1[i - 0x8000] = value
                 if i < 0x9800: # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
-                    # self.lcd.renderer.tiles_changed1.add(i & 0xFFF0)
         elif 0xA000 <= i < 0xC000: # 8kB switchable RAM bank
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000: # 8kB Internal RAM
@@ -403,7 +399,9 @@ class Motherboard:
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
-                self.serialbuffer += chr(value)
+                self.serialbuffer[self.serialbuffer_count] = value
+                self.serialbuffer_count += 1
+                self.serialbuffer_count &= 0x3FF
                 self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.reset()
@@ -459,8 +457,6 @@ class Motherboard:
             elif self.cgb and i == 0xFF4F:
                 self.lcd.vbk.set(value)
             elif self.cgb and i == 0xFF51:
-                # if 0x7F < value < 0xA0:
-                #     value = 0
                 self.hdma.hdma1 = value
             elif self.cgb and i == 0xFF52:
                 self.hdma.hdma2 = value # & 0xF0
@@ -489,7 +485,7 @@ class Motherboard:
         elif i == 0xFFFF: # Interrupt Enable Register
             self.cpu.interrupts_enabled_register = value
         # else:
-        #     raise Exception("Memory access violation. Tried to write: %s" % hex(i))
+        #     logger.critical("Memory access violation. Tried to write: 0x%0.2x to 0x%0.4x", value, i)
 
     def transfer_DMA(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
@@ -556,8 +552,6 @@ class HDMA:
                 # General purpose DMA transfer
                 for i in range(bytes_to_transfer):
                     mb.setitem((dst + i) & 0xFFFF, mb.getitem((src + i) & 0xFFFF))
-                # self.curr_dst += bytes_to_transfer
-                # self.curr_src += bytes_to_transfer
 
                 # Number of blocks of 16-bytes transfered. Set 7th bit for "completed".
                 self.hdma5 = 0xFF #(value & 0x7F) | 0x80 #0xFF

@@ -13,7 +13,7 @@ import time
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
-from pyboy.utils import IntIOWrapper, WindowEvent
+from pyboy.utils import IntIOWrapper, WindowEvent, byte_to_bitfield
 
 from . import botsupport
 from .core.mb import Motherboard
@@ -217,8 +217,8 @@ class PyBoy:
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
-        self.window_title = "CPU/frame: %0.2f%%" % ((self.avg_pre + self.avg_tick) / SPF * 100)
-        self.window_title += " Emulation: x%s" % (round(SPF / avg_emu) if avg_emu > 0 else "INF")
+        self.window_title = f"CPU/frame: {(self.avg_pre + self.avg_tick) / SPF * 100:0.2f}%"
+        self.window_title += f' Emulation: x{(round(SPF / avg_emu) if avg_emu > 0 else "INF")}'
         if self.paused:
             self.window_title += "[PAUSED]"
         self.window_title += self.plugin_manager.window_title()
@@ -322,6 +322,104 @@ class PyBoy:
             An integer with the value of the memory address
         """
         return self.mb.getitem(addr)
+    
+    def read_address_from_memory(self, addr):
+        """
+        Reads two consecutive bytes of the Game Boy's current memory state and returns the values as an address. Meant
+        to be used on locations that are known to store pointers to other necessary addresses.
+
+        Returns
+        -------
+        int:
+            An integer with the value of two consecutive bytes in memory
+        """
+        return self.get_memory_value(addr) + self.get_memory_value(addr+1) << 8
+    
+    def read_hex_from_memory(self, addr, num_bytes, byteorder):
+        """
+        Reads consecutive bytes and combines them into a single value.
+
+        Parameters
+        ----------
+        addr : int
+            Memory address to begin reading from
+        num_bytes : int
+            Number of consecutive bytes to read
+        byte_order: str
+            Order in which to combine bytes. Options are 'big' and 'little'
+
+        Returns
+        -------
+        int:
+            An integer value representing the value stored in combined consecutive bytes
+        """
+        bytes = []
+        for i in range(num_bytes):
+            bytes.append(self.get_memory_value(addr + i))
+        return int.from_bytes(bytes, byteorder=byteorder)
+    
+    def read_bcd_from_memory(self, addr, num_bytes):
+        """
+        Reads consecutive bytes, each as a binary-coded decimal, and returns their combined value.
+
+        Parameters
+        ----------
+        addr : int
+            Memory address to begin reading from
+        num_bytes : int
+            Number of consecutive bytes to read
+        byte_order: str
+            Order in which to combine bytes. Options are 'big' and 'little'
+
+        Returns
+        -------
+        int:
+            An integer value representing the stored binary-coded decimal
+        """
+        byte_str = ""
+        for i in range(num_bytes):
+            byte_str += "%x"%self.get_memory_value(addr+i)
+        return int(byte_str)
+    
+    def read_bitfield_from_memory(self, addr, num_bytes):
+        """
+        Reads consecutive bytes, converting each into an array of 0s and 1s representing
+        bit values and appending them.
+
+        Parameters
+        ----------
+        addr : int
+            Memory address to begin reading from
+        num_bytes : int
+            Number of consecutive bytes to read
+
+        Returns
+        -------
+        [int]:
+            An array of integers (0 and 1 exclusively), representing whether or not
+            individual bits are toggled.
+        """
+        bits = []
+        for i in range(num_bytes):
+            bits.extend(byte_to_bitfield(self.get_memory_value(addr+i)))
+        return bits
+    
+    def read_text_from_memory(self, address, num_bytes):
+        """
+        Retrieves a string from a given address.
+
+        Args:
+            address (int): Address from where to retrieve text from.
+            cap (int): Maximum expected length of string (default: 16).
+        """
+        text = ''
+        for i in range(num_bytes):
+            value = self.get_memory_value(address + i)
+            if value == 80:
+                break
+            text += chr(value - 64)
+        return text
+    
 
     def set_memory_value(self, addr, value):
         """
