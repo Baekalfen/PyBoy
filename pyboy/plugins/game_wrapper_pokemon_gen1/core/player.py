@@ -1,19 +1,15 @@
-from ..data.memory_addrs.player import PlayerAddress
+from ..data.memory_addrs.player import PlayerAddress, PLAYER_ADDRESS_LOOKUP
 from ..data.constants.pokemon import PokemonId
 from ..data.constants.misc import Badge
+from .memory_object import MemoryObject
 
-class Player:
+class Player(MemoryObject):
 
-    def __init__(self,
-                 name, 
-                 pokemon_in_party,
-                 badges,
-                 money):
-        
-        self._name = name
-        self._pokemon_in_party = pokemon_in_party
-        self._badges = badges
-        self._money = money
+    _enum = PlayerAddress
+    _lookup = PLAYER_ADDRESS_LOOKUP
+
+    def __init__(self, fields_to_track):
+        super().__init__(fields_to_track)
     
     '''
     Getters and setters
@@ -57,29 +53,19 @@ class Player:
         self._badges[badge.value] = 0
 
     @staticmethod
-    def load_player(mem_manager):
-
-        name = mem_manager.read_memory_address(PlayerAddress.NAME)
-        
-        num_pokemon_in_party = mem_manager.read_memory_address(PlayerAddress.NUM_POKEMON_IN_PARTY)
-        
-        pokemon_in_party = [PokemonId(mem_manager.read_memory_address(PlayerAddress.NUM_POKEMON_IN_PARTY.add_addr(i+1)))
-                             for i in range(num_pokemon_in_party)]
-        
-        badges = mem_manager.read_memory_address(PlayerAddress.BADGES)
-
-        money = mem_manager.read_memory_address(PlayerAddress.MONEY)
-
-        return Player(name, pokemon_in_party, badges, money)
+    def load_player(mem_manager, fields_to_track=None):
+        player = Player(mem_manager, fields_to_track)
+        player.load_from_memory(mem_manager)
+        return player
     
-    def save_player(self, mem_manager):
+    # def save_player(self, mem_manager):
 
-        mem_manager.write_memory_address(self._name, PlayerAddress.NAME)
-        mem_manager.write_memory_address(self.num_pokemon_in_party, PlayerAddress.NUM_POKEMON_IN_PARTY)
-        # TODO: Figure out the loading and unloading of Pokemon in party, as that should be in tandem with
-        # Pokemon class so that data does not get out of sync
-        mem_manager.write_memory_address(self._badges, PlayerAddress.BADGES)
-        mem_manager.write_memory_address(self._money, PlayerAddress.MONEY)
+    #     mem_manager.write_memory_address(self._name, PlayerAddress.NAME)
+    #     mem_manager.write_memory_address(self.num_pokemon_in_party, PlayerAddress.NUM_POKEMON_IN_PARTY)
+    #     # TODO: Figure out the loading and unloading of Pokemon in party, as that should be in tandem with
+    #     # Pokemon class so that data does not get out of sync
+    #     mem_manager.write_memory_address(self._badges, PlayerAddress.BADGES)
+    #     mem_manager.write_memory_address(self._money, PlayerAddress.MONEY)
 
 
     
