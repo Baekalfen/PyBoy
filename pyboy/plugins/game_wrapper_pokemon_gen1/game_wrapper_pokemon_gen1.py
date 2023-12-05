@@ -17,6 +17,7 @@ from .core.pokedex import Pokedex
 from .core.pokemon import Pokemon
 from .core.player import Player
 from .core.mem_manager import MemoryManager
+from .core.game_state import GameState
 
 PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
@@ -122,6 +123,9 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
         return (player_sprite_x, player_sprite_y)
     
+    def get_game_state(self):
+        return GameState.load_game_state(self.mem_manager)
+    
     '''
     WARNING
 
@@ -135,14 +139,14 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     can be created. If you need those memory values, other people might too.
     '''
 
-    def memory_read(self, address, num_bytes, read_type):
+    def read_memory(self, address, num_bytes, read_type):
         if read_type == 'hex':
-            self.mem_manager.read_hex_from_memory(address, num_bytes)
+            return self.mem_manager.read_hex_from_memory(address, num_bytes)
         elif read_type == 'address':
-            self.mem_manager.read_address_from_memory(address, num_bytes)
+            return self.mem_manager.read_address_from_memory(address, num_bytes)
         elif read_type == 'bcd':
-            self.mem_manager.read_bcd_from_memory(address, num_bytes)
+            return self.mem_manager.read_bcd_from_memory(address, num_bytes)
         elif read_type == 'text':
-            self.mem_manager.read_text_from_memory(address, num_bytes)
+            return self.mem_manager.read_text_from_memory(address, num_bytes)
         else:
             raise ValueError(f"{read_type} is not a valid read type")
