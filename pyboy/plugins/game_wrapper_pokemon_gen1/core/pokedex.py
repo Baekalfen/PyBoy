@@ -19,8 +19,7 @@ class Pokedex:
 
     @staticmethod
     def get_pokedex_range_bits(mem_manager, mem_addr):
-        return mem_manager.read_bitfield_from_mem_addr(mem_addr, reverse=True)
-
+        return mem_manager.read_memory_address(mem_addr, reverse=True)
 
     @staticmethod
     def load_pokedex(mem_manager):

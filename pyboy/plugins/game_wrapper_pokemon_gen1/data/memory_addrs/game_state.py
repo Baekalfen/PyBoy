@@ -1,4 +1,5 @@
-from .base import MemoryAddressEnum
+from enum import Enum
+from .base import MemoryAddress, MemoryAddressType
 
-class GameStateAddress(MemoryAddressEnum):
-    BATTLE_TYPE = (0xD057, 1)
+class GameStateAddress(Enum):
+    BATTLE_TYPE = (0xD057, 1, MemoryAddressType.HEX)

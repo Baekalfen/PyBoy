@@ -18,6 +18,6 @@ class GameState():
     @staticmethod
     def load_game_state(mem_manager):
 
-        battle_type = mem_manager.read_hex_from_mem_addr(GameStateAddress.BATTLE_TYPE.value)
+        battle_type = mem_manager.read_memory_address(GameStateAddress.BATTLE_TYPE)
 
         return GameState(battle_type)
