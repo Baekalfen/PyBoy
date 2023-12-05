@@ -1,4 +1,5 @@
-from data.memory_addrs.base import MemoryAddress, MemoryAddressType
+from enum import Enum
+from ..data.memory_addrs.base import MemoryAddress, MemoryAddressType
 
 STRING_TERMINATOR = 80
 ASCII_DELTA = 63
@@ -139,8 +140,9 @@ class MemoryManager():
         for i, chr in enumerate(text):
             self.pyboy.set_memory_value(address + i, MemoryManager.get_character_index(chr))
 
-    def read_memory_address(self, mem_addr_enum):
-        mem_addr = mem_addr_enum.value
+    def read_memory_address(self, mem_addr):
+        if isinstance(mem_addr, Enum):
+            mem_addr = mem_addr.value
         if mem_addr.memory_type == MemoryAddressType.HEX:
             mem_func = self.read_hex_from_memory
         elif mem_addr.memory_type == MemoryAddressType.ADDRESS:
@@ -156,8 +158,9 @@ class MemoryManager():
         
         return mem_func(mem_addr.address, mem_addr.num_bytes)
     
-    def write_memory_address(self, mem_addr_enum):
-        mem_addr = mem_addr_enum.value
+    def write_memory_address(self, mem_addr):
+        if isinstance(mem_addr, Enum):
+            mem_addr = mem_addr.value
         if mem_addr.memory_type == MemoryAddressType.HEX:
             mem_func = self.write_hex_to_memory
         elif mem_addr.memory_type == MemoryAddressType.ADDRESS:

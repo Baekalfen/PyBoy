@@ -160,7 +160,7 @@ class Pokemon:
             # level field or any of its stats saved in memory
             it = list(PokemonMemoryOffset)[:-6]
 
-        for offset_enum in PokemonMemoryOffset.values():
+        for offset_enum in [e.value for e in PokemonMemoryOffset]:
             offset_addr = offset_enum.add_addr(pokemon_base_address)
             memory_value = mem_manager.read_memory_address(offset_addr)
             pokemon_values.append(memory_value)
