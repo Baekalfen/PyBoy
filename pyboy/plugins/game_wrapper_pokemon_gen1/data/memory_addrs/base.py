@@ -29,9 +29,7 @@ class MemoryAddress():
     def __str__(self):
         return f"Memory address: {self._address}: Length: {self._num_bytes}, memory_addr_type: {self._memory_type}"
     
-    def add_addr(self, offset):
-        # Super hacky way to 'add' an offset to an enum, which just
-        # returns a new tuple with the right values
+    def add_offset(self, offset):
         return MemoryAddress(self.address+offset, self.num_bytes, self.memory_type)
     
 class HexMemoryAddress(MemoryAddress):
