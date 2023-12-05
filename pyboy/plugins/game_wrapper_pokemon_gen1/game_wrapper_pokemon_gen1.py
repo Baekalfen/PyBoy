@@ -115,3 +115,34 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     
     def get_player(self):
         return Player.load_player(self.mem_manager)
+    
+    def get_player_location(self):
+        player_sprite_y = self.mem_manager.read_hex_from_memory(0xD361, 1)
+        player_sprite_x = self.mem_manager.read_hex_from_memory(0xD362, 1)
+
+        return (player_sprite_x, player_sprite_y)
+    
+    '''
+    WARNING
+
+    The following functions are NOT meant to be used consistently. They exist only as
+    a way to call the heper memory access functions for testing memory fields. They 
+    WILL BE REMOVED. Ideally, some form of the memory access functions will appear in 
+    PyBoy proper, but alternatively and data accesses made with these functions should
+    be turned into a named function in the game wrapper. If you find yourself using these 
+    functions consistenly, please open up an issue at https://github.com/SnarkAttack/PyBoy
+    and indicate the memory addresses you are accessing and their use so that a named function
+    can be created. If you need those memory values, other people might too.
+    '''
+
+    def memory_read(self, address, num_bytes, read_type):
+        if read_type == 'hex':
+            self.mem_manager.read_hex_from_memory(address, num_bytes)
+        elif read_type == 'address':
+            self.mem_manager.read_address_from_memory(address, num_bytes)
+        elif read_type == 'bcd':
+            self.mem_manager.read_bcd_from_memory(address, num_bytes)
+        elif read_type == 'text':
+            self.mem_manager.read_text_from_memory(address, num_bytes)
+        else:
+            raise ValueError(f"{read_type} is not a valid read type")
