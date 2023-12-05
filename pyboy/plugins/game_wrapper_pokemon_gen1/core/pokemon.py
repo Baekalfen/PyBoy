@@ -1,139 +1,103 @@
-from ..data.memory_addrs.pokemon import PokemonBaseAddress, PokemonMemoryOffset
+from ..data.memory_addrs.pokemon import PokemonBaseAddress, PokemonAddress, POKEMON_ADDRESS_LOOKUP
 from ..data.constants.pokemon import PokemonId, _POKEMON_NAMES, _POKEMON_POKEDEX_INDEX
 from .move import Move
+from .memory_object import MemoryObject
 
-class Pokemon:
+class Pokemon(MemoryObject):
 
-    def __init__(self,
-                 pokemon_id,
-                 current_hp,
-                 box_level,
-                 status,
-                 type_1,
-                 type_2,
-                 catch_rate,
-                 move_1,
-                 move_2,
-                 move_3,
-                 move_4,
-                 trainer_id,
-                 experience,
-                 hp_ev,
-                 attack_ev,
-                 defense_ev,
-                 speed_ev,
-                 special_ev,
-                 attack_defense_iv,
-                 speed_special_iv,
-                 pp_move_1,
-                 pp_move_2,
-                 pp_move_3,
-                 pp_move_4,
-                 level,
-                 max_hp=0,
-                 attack=0,
-                 defense=0,
-                 speed=0,
-                 special=0,
-                 in_party=False):
-        self.pokemon_id = PokemonId(pokemon_id)
-        self.current_hp = current_hp
-        self.status = status
-        self.type_1 = type_1
-        self.type_2 = type_2
-        self.catch_rate = catch_rate
-        self.moves = [move_1, move_2, move_3, move_4]
-        self.trainer_id = trainer_id
-        self.experience = experience
-        # EV order: HP, Attack, Defense, Speed, Special
-        self.evs = [hp_ev, attack_ev, defense_ev, speed_ev, special_ev]
-        self.attack_defense_iv = attack_defense_iv
-        self.speed_special_iv = speed_special_iv
-        self.pp_moves = [pp_move_1, pp_move_2, pp_move_3, pp_move_4]
-        self.level = level if in_party else box_level
-        # Stat order same as EV order
-        self.stats = [max_hp, attack, defense, speed, special]
-        self.in_party = in_party
+    _enum = PokemonAddress
+    _lookup = POKEMON_ADDRESS_LOOKUP
+
+    def __init__(self, fields_to_track):
+        super().__init__(fields_to_track)
 
     @property
     def name(self):
-        return Pokemon.get_pokemon_name_from_id(self.pokemon_id)
+        return Pokemon.get_pokemon_name_from_id(self.get_value(PokemonAddress.ID))
     
     @property
     def pokedex_num(self):
-        return Pokemon.get_pokedex_id_from_pokemon_id(self.pokemon_id)
+        return Pokemon.get_pokedex_id_from_pokemon_id(self.get_value(PokemonAddress.ID))
+
+    @property
+    def current_hp(self):
+        return self.get_value(PokemonAddress.CURRENT_HP)
     
     @property
     def move_1(self):
-        return self.moves[0]
+        return self.get_value(PokemonAddress.MOVE_1)
     
     @property
     def move_2(self):
-        return self.moves[1]
+        return self.get_value(PokemonAddress.MOVE_2)
     
     @property
     def move_3(self):
-        return self.moves[2]
+        return self.get_value(PokemonAddress.MOVE_3)
     
     @property
     def move_4(self):
-        return self.moves[3]
+        return self.get_value(PokemonAddress.MOVE_4)
     
     @property
     def pp_move_1(self):
-        return self.pp_moves[0]
+        return self.get_value(PokemonAddress.PP_MOVE_1)
     
     @property
     def pp_move_2(self):
-        return self.pp_moves[1]
+        return self.get_value(PokemonAddress.PP_MOVE_2)
     
     @property
     def pp_move_3(self):
-        return self.pp_moves[2]
+        return self.get_value(PokemonAddress.PP_MOVE_3)
     
     @property
     def pp_move_4(self):
-        return self.pp_moves[3]
+        return self.get_value(PokemonAddress.PP_MOVE_4)
     
     @property
     def hp_ev(self):
-        return self.evs[0]
+        return self.get_value(PokemonAddress.HP_EV)
     
     @property
     def attack_ev(self):
-        return self.evs[1]
+        return self.get_value(PokemonAddress.ATTACK_EV)
     
     @property
     def defense_ev(self):
-        return self.evs[2]
+        return self.get_value(PokemonAddress.DEFENSE_EV)
     
     @property
     def speed_ev(self):
-        return self.evs[3]
+        return self.get_value(PokemonAddress.SPEED_EV)
     
     @property
     def special_ev(self):
-        return self.evs[4]
+        return self.get_value(PokemonAddress.SPECIAL_EV)
     
     @property
     def max_hp(self):
-        return self.stats[0]
+        return self.get_value(PokemonAddress.MAX_HP)
     
     @property
     def attack(self):
-        return self.stats[1]
+        return self.get_value(PokemonAddress.ATTACK)
     
     @property
     def defense(self):
-        return self.stats[2]
+        return self.get_value(PokemonAddress.DEFENSE)
     
     @property
     def speed(self):
-        return self.stats[3]
+        return self.get_value(PokemonAddress.SPEED)
     
     @property
     def special(self):
-        return self.stats[4]
+        return self.get_value(PokemonAddress.SPECIAL)
+    
+    @property
+    def curr_hp_percent(self):
+        return self.current_hp / self.max_hp
     
     @staticmethod
     def get_pokemon_name_from_id(pokemon_id):
@@ -142,38 +106,19 @@ class Pokemon:
     @staticmethod
     def get_pokedex_id_from_pokemon_id(pokemon_id):
         return _POKEMON_POKEDEX_INDEX.get(PokemonId(pokemon_id))
-
     
     @staticmethod
-    def _load_pokemon_from_address(mem_manager, pokemon_base_address, in_party):
-
-        pokemon_values = []
-
-        if in_party:
-            it = list(PokemonMemoryOffset)
-        else:
-            # When checking a Pokemon in the box, it does not have the second 
-            # level field or any of its stats saved in memory
-            it = list(PokemonMemoryOffset)[:-6]
-
-        for offset_enum in PokemonMemoryOffset:
-            offset_addr = offset_enum.add_addr(pokemon_base_address)
-            memory_value = mem_manager.read_hex_from_mem_addr(offset_addr)
-            pokemon_values.append(memory_value)
-
-        return Pokemon(*pokemon_values, in_party)
-    
-    @classmethod
-    def load_pokemon_from_party(cls, mem_manager, party_location):
-        # party_location goes from 1-6
-        pokemon_base_address = list(PokemonBaseAddress)[party_location-1].value
-        return cls._load_pokemon_from_address(mem_manager, pokemon_base_address, in_party=True)
+    def load_pokemon_from_party(mem_manager, party_id):
+        pokemon = PartyPokemon(party_id=party_id)
+        pokemon.load_from_memory(mem_manager)
+        return pokemon 
     
     def _generate_move_str(self):
         s = f"Moves:\n" 
-        
-        for i, move_id in enumerate(self.moves):
-            s += f"\t{Move.get_name_from_id(move_id)} ({self.pp_moves[i]}/)\n"
+        s += f"\t{Move.get_name_from_id(self.move_1)} ({self.pp_move_1}/)\n"
+        s += f"\t{Move.get_name_from_id(self.move_2)} ({self.pp_move_2}/)\n"
+        s += f"\t{Move.get_name_from_id(self.move_3)} ({self.pp_move_3}/)\n"
+        s += f"\t{Move.get_name_from_id(self.move_4)} ({self.pp_move_4}/)\n"
         
         return s
     
@@ -190,3 +135,14 @@ class Pokemon:
     def pretty_stringify(self):
         s = f"{self.name}\n" + self._generate_stats_str() + self._generate_move_str() 
         return s
+    
+class PartyPokemon(Pokemon):
+
+    def __init__(self, party_id, fields_to_track=None):
+        super().__init__(fields_to_track)
+        self._party_id = party_id
+
+    def _load_field_from_memory(self, mem_manager, field_enum):
+        memory_addr = self._lookup[field_enum]
+        memory_addr = memory_addr.add_offset([e.value for e in PokemonBaseAddress][self._party_id-1])
+        self._data[field_enum] = mem_manager.read_memory_address(memory_addr)

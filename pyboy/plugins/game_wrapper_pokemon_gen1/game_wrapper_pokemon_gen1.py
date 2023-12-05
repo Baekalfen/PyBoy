@@ -17,6 +17,7 @@ from .core.pokedex import Pokedex
 from .core.pokemon import Pokemon
 from .core.player import Player
 from .core.mem_manager import MemoryManager
+from .core.game_state import GameState
 
 PKMN_SIZE = 0x2C
 BYTE_ORDER = 'big'
@@ -117,7 +118,35 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return Player.load_player(self.mem_manager)
     
     def get_player_location(self):
-        player_location_x = self.mem_manager.read_hex_from_memory(0xD362, 1)
-        player_location_y = self.mem_manager.read_hex_from_memory(0xD361, 1)
+        player_sprite_y = self.mem_manager.read_hex_from_memory(0xD361, 1)
+        player_sprite_x = self.mem_manager.read_hex_from_memory(0xD362, 1)
 
-        return (player_location_x, player_location_y)  
+        return (player_sprite_x, player_sprite_y)
+    
+    def get_game_state(self):
+        return GameState.load_game_state(self.mem_manager)
+    
+    '''
+    WARNING
+
+    The following functions are NOT meant to be used consistently. They exist only as
+    a way to call the heper memory access functions for testing memory fields. They 
+    WILL BE REMOVED. Ideally, some form of the memory access functions will appear in 
+    PyBoy proper, but alternatively and data accesses made with these functions should
+    be turned into a named function in the game wrapper. If you find yourself using these 
+    functions consistenly, please open up an issue at https://github.com/SnarkAttack/PyBoy
+    and indicate the memory addresses you are accessing and their use so that a named function
+    can be created. If you need those memory values, other people might too.
+    '''
+
+    def read_memory(self, address, num_bytes, read_type):
+        if read_type == 'hex':
+            return self.mem_manager.read_hex_from_memory(address, num_bytes)
+        elif read_type == 'address':
+            return self.mem_manager.read_address_from_memory(address, num_bytes)
+        elif read_type == 'bcd':
+            return self.mem_manager.read_bcd_from_memory(address, num_bytes)
+        elif read_type == 'text':
+            return self.mem_manager.read_text_from_memory(address, num_bytes)
+        else:
+            raise ValueError(f"{read_type} is not a valid read type")

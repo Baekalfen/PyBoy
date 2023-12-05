@@ -1,3 +1,6 @@
+from enum import Enum
+from ..data.memory_addrs.base import MemoryAddress, MemoryAddressType
+
 STRING_TERMINATOR = 80
 ASCII_DELTA = 63
 
@@ -64,28 +67,19 @@ class MemoryManager():
         # Do not believe there is ever a case where we would 
         # need to read this in little endian for Pokemon gen 1
         return int.from_bytes(bytes, byteorder='big')
-    
-    def read_hex_from_mem_addr(self, mem_addr):
-        return self.read_hex_from_memory(mem_addr[0], mem_addr[1])
-    
+
     def write_hex_to_memory(self, value, addr, num_bytes=1):
         bytes = value.to_bytes(2, byteorder='big')
         assert len(bytes) == num_bytes*2
         for i, byte in enumerate(bytes):
             self._write_byte(addr + i, byte)
 
-    def write_hex_to_mem_addr(self, value, mem_addr):
-        self.write_hex_to_memory(value, mem_addr[0], mem_addr[1])
-
     def read_bcd_from_memory(self, addr, num_bytes=1):
         byte_str = ""
         for i in range(num_bytes):
             byte_str += "%x"%self._read_byte(addr+i)
         return int(byte_str)
-    
-    def read_bcd_from_mem_addr(self, mem_addr):
-        return self.read_bcd_from_memory(mem_addr[0], mem_addr[1])
-    
+
     def write_bcd_to_memory(self, value, addr, num_bytes=1):
         val_str = str(value)
         assert len(val_str) <= num_bytes*2
@@ -95,17 +89,11 @@ class MemoryManager():
             sub_val = int(padded_val[i*2:(i*2)+2], 16)
             self._write_byte(sub_val, addr+i)
 
-    def write_bcd_to_mem_addr(self, value, mem_addr):
-        self.write_bcd_to_memory(value, mem_addr[0], mem_addr[1])
-    
     def read_bitfield_from_memory(self, addr, num_bytes=1, reverse=False):
         bits = []
         for i in range(num_bytes):
             bits.extend(MemoryManager._byte_to_bitfield(self._read_byte(addr+i), reverse))
         return bits
-    
-    def read_bitfield_from_mem_addr(self, mem_addr, reverse=False):
-        return self.read_bitfield_from_memory(mem_addr[0], mem_addr[1], reverse)
     
     def write_bitlist_to_memory(self, value, addr, num_bytes=1, reverse=False):
 
@@ -119,9 +107,6 @@ class MemoryManager():
             sub_bit_list = value[bit_list_start:bit_list_start+8]
             byte_val = MemoryManager._bitfield_to_byte(sub_bit_list, reverse)
             self._write_byte(byte_val, addr+i)
-
-    def write_bitlist_to_mem_addr(self, value, mem_addr, reverse=False):
-        self.write_bitlist_to_memory(value, mem_addr[0], mem_addr[1], reverse)
 
     def read_text_from_memory(self, address, num_bytes):
         """
@@ -141,9 +126,6 @@ class MemoryManager():
             text += chr(value - ASCII_DELTA)
         return text
     
-    def read_text_from_mem_addr(self, mem_addr):
-        return self.read_text_from_memory(mem_addr[0], mem_addr[1])
-    
     def write_text_to_memory(self, text, address, num_bytes=1):
         """Sets text at address.
 
@@ -158,5 +140,40 @@ class MemoryManager():
         for i, chr in enumerate(text):
             self.pyboy.set_memory_value(address + i, MemoryManager.get_character_index(chr))
 
-    def write_text_to_mem_addr(self, text, mem_addr):
-        self.write_text_to_memory(text, mem_addr[0], mem_addr[1])
+    def read_memory_address(self, mem_addr):
+        if isinstance(mem_addr, Enum):
+            mem_addr = mem_addr.value
+        if mem_addr.memory_type == MemoryAddressType.HEX:
+            mem_func = self.read_hex_from_memory
+        elif mem_addr.memory_type == MemoryAddressType.ADDRESS:
+            mem_func = self.read_address_from_memory
+        elif mem_addr.memory_type == MemoryAddressType.BCD:
+            mem_func = self.read_bcd_from_memory
+        elif mem_addr.memory_type == MemoryAddressType.BITFIELD:
+            mem_func = self.read_bitfield_from_memory
+        elif mem_addr.memory_type == MemoryAddressType.TEXT:
+            mem_func = self.read_text_from_memory
+        else:
+            raise ValueError(f"{mem_addr.memory_type} is not a valid memory type")
+        
+        return mem_func(mem_addr.address, mem_addr.num_bytes)
+    
+    def write_memory_address(self, mem_addr):
+        if isinstance(mem_addr, Enum):
+            mem_addr = mem_addr.value
+        if mem_addr.memory_type == MemoryAddressType.HEX:
+            mem_func = self.write_hex_to_memory
+        elif mem_addr.memory_type == MemoryAddressType.ADDRESS:
+            #mem_func = self.write_add
+            pass
+        elif mem_addr.memory_type == MemoryAddressType.BCD:
+            mem_func = self.write_bcd_to_memory
+        elif mem_addr.memory_type == MemoryAddressType.BITFIELD:
+            mem_func = self.write_bitlist_to_memory
+        elif mem_addr.memory_type == MemoryAddressType.TEXT:
+            mem_func = self.write_text_to_memory
+        else:
+            raise ValueError(f"{mem_addr.memory_type} is not a valid memory type")
+        
+        return mem_func(mem_addr.address, mem_addr.num_bytes)
+    

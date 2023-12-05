@@ -1,7 +1,16 @@
-from .base import MemoryAddressEnum
+from enum import Enum, auto
+from .base import HexMemoryAddress, BCDMemoryAddress, TextMemoryAddress
 
-class PlayerAddress(MemoryAddressEnum):
-    NAME = (0xD158, 10)
-    NUM_POKEMON_IN_PARTY = (0xD163, 1)
-    BADGES = (0xD356, 1)
-    MONEY = (0xD347, 3)
+class PlayerAddress(Enum):
+    NAME = auto()
+    NUM_POKEMON_IN_PARTY = auto()
+    BADGES = auto()
+    MONEY = auto()
+
+PLAYER_ADDRESS_LOOKUP = {
+    PlayerAddress.NAME: TextMemoryAddress(0xD158, 10),
+    PlayerAddress.NUM_POKEMON_IN_PARTY: HexMemoryAddress(0xD163, 1),
+    PlayerAddress.BADGES: HexMemoryAddress(0xD356, 1),
+    PlayerAddress.MONEY: BCDMemoryAddress(0xD347, 3)
+
+}
