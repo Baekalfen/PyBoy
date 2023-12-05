@@ -140,4 +140,4 @@ class PartyPokemon(Pokemon):
     def _load_field_from_memory(self, mem_manager, field_enum):
         memory_addr = self._lookup[field_enum]
         memory_addr = memory_addr.add_offset([e.value for e in PokemonBaseAddress][self._party_id-1])
-        self.data[field_enum] = mem_manager.read_memory_address(self._lookup[field_enum])
+        self._data[field_enum] = mem_manager.read_memory_address(self._lookup[field_enum])

@@ -7,7 +7,6 @@ class MemoryObject():
         if fields_to_track is None:
             fields_to_track = [e for e in self._enum]
         self._fields_to_track = fields_to_track
-        print(self._fields_to_track)
         self._data = {}
 
     def _load_field_from_memory(self, mem_manager, field_enum):
