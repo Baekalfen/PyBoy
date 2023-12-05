@@ -1,5 +1,12 @@
 from enum import Enum
 
+class MemoryAddressType(Enum):
+    HEX = 0
+    ADDRESS = 1
+    BCD = 2
+    BITFIELD = 3
+    TEXT = 4
+
 class MemoryAddress():
 
     def __init__(self, address, num_bytes, memory_type):
@@ -27,10 +34,27 @@ class MemoryAddress():
         # returns a new tuple with the right values
         return MemoryAddress(self.address+offset, self.num_bytes, self.memory_type)
     
+class HexMemoryAddress(MemoryAddress):
 
-class MemoryAddressType(Enum):
-    HEX = 0
-    ADDRESS = 1
-    BCD = 2
-    BITFIELD = 3
-    TEXT = 4
+    def __init__(self, address, num_bytes):
+        super().__init__(address, num_bytes, MemoryAddressType.HEX)
+
+class AddressMemoryAddress(MemoryAddress):
+
+    def __init__(self, address, num_bytes):
+        super().__init__(address, num_bytes, MemoryAddressType.ADDRESS)
+
+class BCDMemoryAddress(MemoryAddress):
+
+    def __init__(self, address, num_bytes):
+        super().__init__(address, num_bytes, MemoryAddressType.BCD)
+
+class BitfieldMemoryAddress(MemoryAddress):
+
+    def __init__(self, address, num_bytes):
+        super().__init__(address, num_bytes, MemoryAddressType.BITFIELD)
+
+class TextMemoryAddress(MemoryAddress):
+
+    def __init__(self, address, num_bytes):
+        super().__init__(address, num_bytes, MemoryAddressType.TEXT)
