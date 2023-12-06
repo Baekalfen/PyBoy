@@ -117,7 +117,7 @@ class Sprite:
         """
 
         if self.mb.cgb:
-            self.attr_palette_number = attr & 0x3
+            self.attr_palette_number = attr & 0b111
         else:
             self.attr_palette_number = _bit(attr, 4)
         """
