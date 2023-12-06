@@ -82,10 +82,11 @@ class MemoryScanner():
 
         return found_addresses
 
-    def rescan_memory(self, dynamic_comparison_type, value=None):
+    def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=0xFFFFFFFFFFFFFFFF):
         for addr, value in self._memory_cache.items():
             #TODO, its bed time.
             pass
+        return []
 
 
     def _check_value(self, value, target_value, standard_comparison_type):
