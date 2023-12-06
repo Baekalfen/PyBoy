@@ -15,6 +15,7 @@ class DynamicComparisonType(Enum):
     CHANGED = 2
     INCREASED = 3
     DECREASED = 4
+    MATCH = 5
 
 class ScanMode(Enum):
     """Enumeration for defining scanning modes."""
@@ -84,9 +85,24 @@ class MemoryScanner():
 
     def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=0xFFFFFFFFFFFFFFFF):
         for addr, value in self._memory_cache.items():
-            #TODO, its bed time.
-            pass
-        return []
+            if(dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
+                if value != self.read_memory(addr, self._memory_cache_byte_width):
+                    self._memory_cache.pop(addr)
+            elif(dynamic_comparison_type == DynamicComparisonType.CHANGED):
+                if value == self.read_memory(addr, self._memory_cache_byte_width):
+                    self._memory_cache.pop(addr)
+            elif(dynamic_comparison_type == DynamicComparisonType.INCREASED):
+                if value >= self.read_memory(addr, self._memory_cache_byte_width):
+                    self._memory_cache.pop(addr)
+            elif(dynamic_comparison_type == DynamicComparisonType.DECREASED):
+                if value <= self.read_memory(addr, self._memory_cache_byte_width):
+                    self._memory_cache.pop(addr)
+            elif(dynamic_comparison_type == DynamicComparisonType.MATCH):
+                if new_value == 0xFFFFFFFFFFFFFFFF:
+                    raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
+                if value != new_value:
+                    self._memory_cache.pop(addr)
+        return self._memory_cache.keys()
 
 
     def _check_value(self, value, target_value, standard_comparison_type):
