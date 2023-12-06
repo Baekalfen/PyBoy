@@ -60,7 +60,6 @@ cpdef uint64_t bcd_to_dec(uint64_t,int byte_width=*,endian_type=*) noexcept
 
 cdef class MemoryScanner:
     cdef object pyboy
-    cdef BCDConverter bcd_converter
 
     cpdef uint64_t read_memory(self, int, int byte_width=*, value_type=*, endian_type=*) noexcept
     cpdef list scan_memory(self, int, int, uint64_t, compare_type=*, value_type=*,int byte_width=*,endian_type=*) noexcept
