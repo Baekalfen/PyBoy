@@ -53,10 +53,9 @@ cdef class WindowEventMouse(WindowEvent):
 # Memory Scanning
 #
 
-cdef class BCDConverter:
-    cdef uint64_t _multiplier
-    cpdef uint64_t dec_to_bcd(self, uint64_t,int byte_width=*,endian_type=*) noexcept
-    cpdef uint64_t bcd_to_dec(self, uint64_t,int byte_width=*,endian_type=*) noexcept
+cdef uint64_t _multiplier
+cpdef uint64_t dec_to_bcd(uint64_t,int byte_width=*,endian_type=*) noexcept
+cpdef uint64_t bcd_to_dec(uint64_t,int byte_width=*,endian_type=*) noexcept
 
 
 cdef class MemoryScanner:
