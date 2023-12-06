@@ -1,13 +1,20 @@
 from enum import Enum
 from pyboy.utils import EndianType, bcd_to_dec
 
-class CompareType(Enum):
-    """Enumeration for defining types of comparisons."""
+class StandardComparisonType(Enum):
+    """Enumeration for defining types of comparisons that do not require a previous value."""
     EXACT = 1
     LESS_THAN = 2
     GREATER_THAN = 3
     LESS_THAN_OR_EQUAL = 4
     GREATER_THAN_OR_EQUAL = 5
+
+class DynamicComparisonType(Enum):
+    """Enumeration for defining types of comparisons that require a previous value."""
+    UNCHANGED = 1
+    CHANGED = 2
+    INCREASED = 3
+    DECREASED = 4
 
 class ScanMode(Enum):
     """Enumeration for defining scanning modes."""
@@ -24,6 +31,8 @@ class MemoryScanner():
         :param pyboy: The pyboy emulator instance.
         """
         self.pyboy = pyboy
+        self._memory_cache = {}
+        self._memory_cache_byte_width = 1
 
     def read_memory(self, address, byte_width=1, value_type=ScanMode.INT, endian_type=EndianType.LITTLE):
         """
@@ -43,20 +52,22 @@ class MemoryScanner():
 
         return value
 
-    def scan_memory(self, start_addr, end_addr, target_value, compare_type=CompareType.EXACT, value_type=ScanMode.INT, byte_width=1, endian_type=EndianType.LITTLE):
+    def scan_memory(self, start_addr, end_addr, target_value, standard_comparison_type=StandardComparisonType.EXACT, value_type=ScanMode.INT, byte_width=1, endian_type=EndianType.LITTLE):
         """
         Scans memory in the specified range, looking for a target value.
 
         :param start_addr: The starting address for the scan.
         :param end_addr: The ending address for the scan.
         :param target_value: The value to search for.
-        :param compare_type: The type of comparison to use.
+        :param standard_comparison_type: The type of comparison to use.
         :param value_type: The type of value (INT or BCD) to consider.
         :param byte_width: The number of bytes to consider for each value.
         :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
         :return: A list of addresses where the target value is found.
         """
         found_addresses = []
+        _memory_cache = {}
+        _memory_cache_byte_width = byte_width
         for addr in range(start_addr, end_addr - byte_width + 2): # Adjust the loop to prevent reading past end_addr
             # Read multiple bytes based on byte_width and endian_type
             value_bytes = [self.pyboy.get_memory_value(addr + i) for i in range(byte_width)]
@@ -65,29 +76,35 @@ class MemoryScanner():
             if value_type == ScanMode.BCD:
                 value = bcd_to_dec(value, byte_width, endian_type)
 
-            if self._check_value(value, target_value, compare_type.value):
+            if self._check_value(value, target_value, standard_comparison_type.value):
                 found_addresses.append(addr)
+                _memory_cache[addr] = value
 
         return found_addresses
 
+    def rescan_memory(self, dynamic_comparison_type, value=None):
+        for addr, value in self._memory_cache.items():
+            #TODO, its bed time.
+            pass
 
-    def _check_value(self, value, target_value, compare_type):
+
+    def _check_value(self, value, target_value, standard_comparison_type):
         """
         Compares a value with the target value based on the specified compare type.
 
         :param value: The value to compare.
         :param target_value: The target value to compare against.
-        :param compare_type: The type of comparison to use.
+        :param standard_comparison_type: The type of comparison to use.
         :return: True if the comparison condition is met, False otherwise.
         """
-        if compare_type == CompareType.EXACT.value:
+        if standard_comparison_type == StandardComparisonType.EXACT.value:
             return value == target_value
-        elif compare_type == CompareType.LESS_THAN.value:
+        elif standard_comparison_type == StandardComparisonType.LESS_THAN.value:
             return value < target_value
-        elif compare_type == CompareType.GREATER_THAN.value:
+        elif standard_comparison_type == StandardComparisonType.GREATER_THAN.value:
             return value > target_value
-        elif compare_type == CompareType.LESS_THAN_OR_EQUAL.value:
+        elif standard_comparison_type == StandardComparisonType.LESS_THAN_OR_EQUAL.value:
             return value <= target_value
-        elif compare_type == CompareType.GREATER_THAN_OR_EQUAL.value:
+        elif standard_comparison_type == StandardComparisonType.GREATER_THAN_OR_EQUAL.value:
             return value >= target_value
         return False
