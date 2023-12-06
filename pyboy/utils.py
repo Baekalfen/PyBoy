@@ -351,7 +351,6 @@ class MemoryScanner():
         :param pyboy: The pyboy emulator instance.
         """
         self.pyboy = pyboy
-        self.bcd_converter = BCDConverter()
 
     def read_memory(self, address, byte_width=1, value_type=ScanMode.INT, endian_type=EndianType.LITTLE):
         """
@@ -367,7 +366,7 @@ class MemoryScanner():
         value = int.from_bytes(value_bytes, 'little' if endian_type == EndianType.LITTLE else 'big')
 
         if value_type == ScanMode.BCD:
-            value = self.bcd_converter.bcd_to_dec(value, byte_width, endian_type)
+            value = bcd_to_dec(value, byte_width, endian_type)
 
         return value
 
@@ -391,7 +390,7 @@ class MemoryScanner():
             value = int.from_bytes(value_bytes, 'little' if endian_type == EndianType.LITTLE else 'big')
 
             if value_type == ScanMode.BCD:
-                value = self.bcd_converter.bcd_to_dec(value, byte_width, endian_type)
+                value = bcd_to_dec(value, byte_width, endian_type)
 
             if self._check_value(value, target_value, compare_type.value):
                 found_addresses.append(addr)
