@@ -120,11 +120,18 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def get_player_location(self):
         player_sprite_y = self.mem_manager.read_hex_from_memory(0xD361, 1)
         player_sprite_x = self.mem_manager.read_hex_from_memory(0xD362, 1)
+        player_sprite_map_id = self.mem_manager.read_hex_from_memory(0xD35E, 1)
 
         return (player_sprite_x, player_sprite_y)
     
     def get_game_state(self):
         return GameState.load_game_state(self.mem_manager)
+    
+    def get_screen(self):
+        return self.pyboy.botsupport_manager().screen()
+    
+    def get_screen_array(self):
+        return self.get_screen().screen_ndarray()
     
     '''
     WARNING
