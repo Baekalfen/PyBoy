@@ -118,8 +118,10 @@ class Sprite:
 
         if self.mb.cgb:
             self.attr_palette_number = attr & 0b111
+            self.attr_cgb_bank_number = _bit(attr, 3)
         else:
             self.attr_palette_number = _bit(attr, 4)
+            self.attr_cgb_bank_number = 0
         """
         To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
         (OAM)](https://gbdev.io/pandocs/OAM.html).
