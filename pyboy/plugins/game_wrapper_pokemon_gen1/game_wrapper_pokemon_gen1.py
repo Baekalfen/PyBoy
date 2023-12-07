@@ -110,6 +110,11 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def get_pokemon_from_party(self, party_index):
         return Pokemon.load_pokemon_from_party(self.mem_manager, party_index)
+    
+    def get_all_pokemon_from_party(self):
+        num_pokemon = self.mem_manager.read_hex_from_memory(0xD163, 1)
+        pokemon_team = [self.get_pokemon_from_party(i+1) for i in range(num_pokemon)]
+        return pokemon_team
 
     def get_pokedex(self):
         return Pokedex.load_pokedex(self.mem_manager)
