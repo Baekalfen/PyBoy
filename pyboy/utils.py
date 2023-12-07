@@ -320,12 +320,12 @@ def bcd_to_dec(value, byte_width=1, endian_type=EndianType.LITTLE):
     :return: Decimal equivalent of the BCD value.
     """
     decimal_value = 0
-    _multiplier = 1
+    multiplier = 1
 
     bcd_bytes = value.to_bytes(byte_width, "big" if endian_type == EndianType.BIG else "little")
 
     for bcd_byte in bcd_bytes:
-        decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * _multiplier
-        _multiplier *= 100
+        decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * multiplier
+        multiplier *= 100
 
     return decimal_value
