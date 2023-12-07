@@ -282,19 +282,15 @@ class WindowEventMouse(WindowEvent):
 ##############################################################
 # Memory Scanning
 #
-class EndianType(Enum):
-    """Enumeration for defining endian types."""
-    LITTLE = 1
-    BIG = 2
 
 
-def dec_to_bcd(value, byte_width=1, endian_type=EndianType.LITTLE):
+def dec_to_bcd(value, byte_width=1, byteorder="little"):
     """
     Converts a decimal value to Binary Coded Decimal (BCD).
 
     :param value: Integer value to convert.
     :param byte_width: The number of bytes to consider for each value.
-    :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+    :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
     :return: BCD equivalent of the decimal value.
     """
     bcd_result = []
@@ -304,25 +300,22 @@ def dec_to_bcd(value, byte_width=1, endian_type=EndianType.LITTLE):
         bcd_byte = (tens | units) & 0xFF
         bcd_result.append(bcd_byte)
         value //= 100
-    if endian_type == EndianType.BIG:
-        return int.from_bytes(bcd_result, byteorder="big")
-    else:
-        return int.from_bytes(bcd_result, byteorder="little")
+    return int.from_bytes(bcd_result, byteorder)
 
 
-def bcd_to_dec(value, byte_width=1, endian_type=EndianType.LITTLE):
+def bcd_to_dec(value, byte_width=1, byteorder="little"):
     """
     Converts a Binary Coded Decimal (BCD) value to decimal.
 
     :param value: BCD value to convert.
     :param byte_width: The number of bytes to consider for each value.
-    :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+    :param byteorder: The endian type to use (see [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes)). Note, this is only used for 16-bit values and higher.
     :return: Decimal equivalent of the BCD value.
     """
     decimal_value = 0
     multiplier = 1
 
-    bcd_bytes = value.to_bytes(byte_width, "big" if endian_type == EndianType.BIG else "little")
+    bcd_bytes = value.to_bytes(byte_width, byteorder)
 
     for bcd_byte in bcd_bytes:
         decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * multiplier
