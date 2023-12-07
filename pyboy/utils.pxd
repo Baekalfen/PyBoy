@@ -18,7 +18,7 @@ cdef class IntIOInterface:
     cpdef uint16_t read_16bit(self) except? -1
     cpdef uint32_t read_32bit(self) except? -1
 
-    @cython.locals(a=uint64_t, b, c=uint64_t,d=uint64_t,e=uint64_t,f=uint64_t,g=uint64_t,h=uint64_t,ret=uint64_t, ret2=uint64_t, ret1=uint64_t)
+    @cython.locals(a=uint64_t, b=uint64_t, c=uint64_t,d=uint64_t,e=uint64_t,f=uint64_t,g=uint64_t,h=uint64_t,ret=uint64_t, ret2=uint64_t, ret1=uint64_t)
     cpdef uint64_t read_64bit(self) except? -1
     cpdef int seek(self, int64_t) except -1
     cpdef int flush(self) except -1
