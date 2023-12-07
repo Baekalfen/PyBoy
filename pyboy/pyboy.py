@@ -12,6 +12,7 @@ import time
 
 import numpy as np
 
+from pyboy.api.memoryscanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
 from pyboy.openai_gym import PyBoyGymEnv
@@ -140,6 +141,16 @@ class PyBoy:
         ```
         """
         self.memory = PyBoyMemoryView(self.mb)
+        """
+        Provides a `pyboy.api.memoryscanner.MemoryScanner` object for locating addresses of interest in the memory space
+        of the Game Boy.
+
+        Example:
+        ```
+        >>> pyboy.memory_scanner
+        ```
+        """
+        self.memory_scanner = MemoryScanner(self)
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
