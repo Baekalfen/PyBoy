@@ -79,9 +79,8 @@ class MemoryScanner():
         :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
         :return: A list of addresses where the target value is found.
         """
-        found_addresses = []
-        _memory_cache = {}
-        _memory_cache_byte_width = byte_width
+        self._memory_cache = {}
+        self._memory_cache_byte_width = byte_width
         for addr in range(start_addr, end_addr - byte_width + 2): # Adjust the loop to prevent reading past end_addr
             # Read multiple bytes based on byte_width and byteorder
             value_bytes = [self.pyboy.get_memory_value(addr + i) for i in range(byte_width)]
@@ -91,10 +90,9 @@ class MemoryScanner():
                 value = bcd_to_dec(value, byte_width, byteorder)
 
             if self._check_value(value, target_value, standard_comparison_type.value):
-                found_addresses.append(addr)
-                _memory_cache[addr] = value
+                self._memory_cache[addr] = value
 
-        return found_addresses
+        return self._memory_cache.keys()
 
     def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=0xFFFFFFFFFFFFFFFF):
         for addr, value in self._memory_cache.items():
