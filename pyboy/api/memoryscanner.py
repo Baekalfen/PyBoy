@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pyboy.utils import EndianType, bcd_to_dec
+from pyboy.utils import bcd_to_dec
 
 
 class StandardComparisonType(Enum):
@@ -39,21 +39,21 @@ class MemoryScanner():
         self._memory_cache = {}
         self._memory_cache_byte_width = 1
 
-    def read_memory(self, address, byte_width=1, value_type=ScanMode.INT, endian_type=EndianType.LITTLE):
+    def read_memory(self, address, byte_width=1, value_type=ScanMode.INT, byteorder="little"):
         """
         Reads memory at the specified address.
 
         :param address: The address to read.
         :param byte_width: The number of bytes to consider for each value.
         :param value_type: The type of value (INT or BCD) to consider.
-        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+        :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
         :return: The value at the specified address.
         """
         value_bytes = [self.pyboy.get_memory_value(address + i) for i in range(byte_width)]
-        value = int.from_bytes(value_bytes, "little" if endian_type == EndianType.LITTLE else "big")
+        value = int.from_bytes(value_bytes, byteorder)
 
         if value_type == ScanMode.BCD:
-            value = bcd_to_dec(value, byte_width, endian_type)
+            value = bcd_to_dec(value, byte_width, byteorder)
 
         return value
 
@@ -65,7 +65,7 @@ class MemoryScanner():
         standard_comparison_type=StandardComparisonType.EXACT,
         value_type=ScanMode.INT,
         byte_width=1,
-        endian_type=EndianType.LITTLE
+        byteorder="little"
     ):
         """
         Scans memory in the specified range, looking for a target value.
@@ -76,19 +76,19 @@ class MemoryScanner():
         :param standard_comparison_type: The type of comparison to use.
         :param value_type: The type of value (INT or BCD) to consider.
         :param byte_width: The number of bytes to consider for each value.
-        :param endian_type: The endian type to use. Note, this is only used for 16-bit values and higher.
+        :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
         :return: A list of addresses where the target value is found.
         """
         found_addresses = []
         _memory_cache = {}
         _memory_cache_byte_width = byte_width
         for addr in range(start_addr, end_addr - byte_width + 2): # Adjust the loop to prevent reading past end_addr
-            # Read multiple bytes based on byte_width and endian_type
+            # Read multiple bytes based on byte_width and byteorder
             value_bytes = [self.pyboy.get_memory_value(addr + i) for i in range(byte_width)]
-            value = int.from_bytes(value_bytes, "little" if endian_type == EndianType.LITTLE else "big")
+            value = int.from_bytes(value_bytes, byteorder)
 
             if value_type == ScanMode.BCD:
-                value = bcd_to_dec(value, byte_width, endian_type)
+                value = bcd_to_dec(value, byte_width, byteorder)
 
             if self._check_value(value, target_value, standard_comparison_type.value):
                 found_addresses.append(addr)
