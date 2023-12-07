@@ -40,6 +40,10 @@ class Pokemon(MemoryObject):
         return self.get_value(PokemonAddress.MOVE_4)
     
     @property
+    def experience(self):
+        return self.get_value(PokemonAddress.EXPERIENCE)
+    
+    @property
     def pp_move_1(self):
         return self.get_value(PokemonAddress.PP_MOVE_1)
     
