@@ -49,7 +49,7 @@ class MemoryScanner():
         :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
         :return: The value at the specified address.
         """
-        value_bytes = [self.pyboy.get_memory_value(address + i) for i in range(byte_width)]
+        value_bytes = self.pyboy.memory[address:address + byte_width]
         value = int.from_bytes(value_bytes, byteorder)
 
         if value_type == ScanMode.BCD:
@@ -83,7 +83,7 @@ class MemoryScanner():
         self._memory_cache_byte_width = byte_width
         for addr in range(start_addr, end_addr - byte_width + 2): # Adjust the loop to prevent reading past end_addr
             # Read multiple bytes based on byte_width and byteorder
-            value_bytes = [self.pyboy.get_memory_value(addr + i) for i in range(byte_width)]
+            value_bytes = self.pyboy.memory[addr:addr + byte_width]
             value = int.from_bytes(value_bytes, byteorder)
 
             if value_type == ScanMode.BCD:
