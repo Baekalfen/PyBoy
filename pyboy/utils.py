@@ -305,9 +305,10 @@ def dec_to_bcd(value, byte_width=1, endian_type=EndianType.LITTLE):
         bcd_result.append(bcd_byte)
         value //= 100
     if endian_type == EndianType.BIG:
-        return int.from_bytes(bcd_result, byteorder='big')
+        return int.from_bytes(bcd_result, byteorder="big")
     else:
-        return int.from_bytes(bcd_result, byteorder='little')
+        return int.from_bytes(bcd_result, byteorder="little")
+
 
 def bcd_to_dec(value, byte_width=1, endian_type=EndianType.LITTLE):
     """
@@ -321,8 +322,8 @@ def bcd_to_dec(value, byte_width=1, endian_type=EndianType.LITTLE):
     decimal_value = 0
     _multiplier = 1
 
-    bcd_bytes = value.to_bytes(byte_width, 'big' if endian_type == EndianType.BIG else 'little')
-    
+    bcd_bytes = value.to_bytes(byte_width, "big" if endian_type == EndianType.BIG else "little")
+
     for bcd_byte in bcd_bytes:
         decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * _multiplier
         _multiplier *= 100

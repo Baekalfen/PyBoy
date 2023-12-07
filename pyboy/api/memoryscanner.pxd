@@ -1,5 +1,6 @@
 from libc.stdint cimport uint64_t
 
+
 cdef class MemoryScanner:
     cdef object pyboy
     cdef dict _memory_cache

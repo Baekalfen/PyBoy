@@ -1,5 +1,7 @@
 from enum import Enum
+
 from pyboy.utils import EndianType, bcd_to_dec
+
 
 class StandardComparisonType(Enum):
     """Enumeration for defining types of comparisons that do not require a previous value."""
@@ -9,6 +11,7 @@ class StandardComparisonType(Enum):
     LESS_THAN_OR_EQUAL = 4
     GREATER_THAN_OR_EQUAL = 5
 
+
 class DynamicComparisonType(Enum):
     """Enumeration for defining types of comparisons that require a previous value."""
     UNCHANGED = 1
@@ -17,14 +20,15 @@ class DynamicComparisonType(Enum):
     DECREASED = 4
     MATCH = 5
 
+
 class ScanMode(Enum):
     """Enumeration for defining scanning modes."""
     INT = 1
     BCD = 2
 
+
 class MemoryScanner():
     """A class for scanning memory within a given range."""
-
     def __init__(self, pyboy):
         """
         Initializes the MemoryScanner with a pyboy instance.
@@ -46,14 +50,23 @@ class MemoryScanner():
         :return: The value at the specified address.
         """
         value_bytes = [self.pyboy.get_memory_value(address + i) for i in range(byte_width)]
-        value = int.from_bytes(value_bytes, 'little' if endian_type == EndianType.LITTLE else 'big')
+        value = int.from_bytes(value_bytes, "little" if endian_type == EndianType.LITTLE else "big")
 
         if value_type == ScanMode.BCD:
             value = bcd_to_dec(value, byte_width, endian_type)
 
         return value
 
-    def scan_memory(self, start_addr, end_addr, target_value, standard_comparison_type=StandardComparisonType.EXACT, value_type=ScanMode.INT, byte_width=1, endian_type=EndianType.LITTLE):
+    def scan_memory(
+        self,
+        start_addr,
+        end_addr,
+        target_value,
+        standard_comparison_type=StandardComparisonType.EXACT,
+        value_type=ScanMode.INT,
+        byte_width=1,
+        endian_type=EndianType.LITTLE
+    ):
         """
         Scans memory in the specified range, looking for a target value.
 
@@ -72,7 +85,7 @@ class MemoryScanner():
         for addr in range(start_addr, end_addr - byte_width + 2): # Adjust the loop to prevent reading past end_addr
             # Read multiple bytes based on byte_width and endian_type
             value_bytes = [self.pyboy.get_memory_value(addr + i) for i in range(byte_width)]
-            value = int.from_bytes(value_bytes, 'little' if endian_type == EndianType.LITTLE else 'big')
+            value = int.from_bytes(value_bytes, "little" if endian_type == EndianType.LITTLE else "big")
 
             if value_type == ScanMode.BCD:
                 value = bcd_to_dec(value, byte_width, endian_type)
@@ -85,25 +98,24 @@ class MemoryScanner():
 
     def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=0xFFFFFFFFFFFFFFFF):
         for addr, value in self._memory_cache.items():
-            if(dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
+            if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
                 if value != self.read_memory(addr, self._memory_cache_byte_width):
                     self._memory_cache.pop(addr)
-            elif(dynamic_comparison_type == DynamicComparisonType.CHANGED):
+            elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
                 if value == self.read_memory(addr, self._memory_cache_byte_width):
                     self._memory_cache.pop(addr)
-            elif(dynamic_comparison_type == DynamicComparisonType.INCREASED):
+            elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
                 if value >= self.read_memory(addr, self._memory_cache_byte_width):
                     self._memory_cache.pop(addr)
-            elif(dynamic_comparison_type == DynamicComparisonType.DECREASED):
+            elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
                 if value <= self.read_memory(addr, self._memory_cache_byte_width):
                     self._memory_cache.pop(addr)
-            elif(dynamic_comparison_type == DynamicComparisonType.MATCH):
+            elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
                 if new_value == 0xFFFFFFFFFFFFFFFF:
                     raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
                 if value != new_value:
                     self._memory_cache.pop(addr)
         return self._memory_cache.keys()
-
 
     def _check_value(self, value, target_value, standard_comparison_type):
         """
