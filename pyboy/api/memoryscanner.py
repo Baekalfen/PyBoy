@@ -59,9 +59,9 @@ class MemoryScanner():
 
     def scan_memory(
         self,
-        start_addr,
-        end_addr,
-        target_value,
+        target_value=None,
+        start_addr=0x0000,
+        end_addr=0xFFFF,
         standard_comparison_type=StandardComparisonType.EXACT,
         value_type=ScanMode.INT,
         byte_width=1,
@@ -72,7 +72,7 @@ class MemoryScanner():
 
         :param start_addr: The starting address for the scan.
         :param end_addr: The ending address for the scan.
-        :param target_value: The value to search for.
+        :param target_value: The value to search for or None for any value (used in relation to `MemoryScanner.rescan_memory`).
         :param standard_comparison_type: The type of comparison to use.
         :param value_type: The type of value (INT or BCD) to consider.
         :param byte_width: The number of bytes to consider for each value.
@@ -89,13 +89,13 @@ class MemoryScanner():
             if value_type == ScanMode.BCD:
                 value = bcd_to_dec(value, byte_width, byteorder)
 
-            if self._check_value(value, target_value, standard_comparison_type.value):
+            if target_value is None or self._check_value(value, target_value, standard_comparison_type.value):
                 self._memory_cache[addr] = value
 
         return self._memory_cache.keys()
 
-    def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=0xFFFFFFFFFFFFFFFF):
-        for addr, value in self._memory_cache.items():
+    def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=None):
+        for addr, value in self._memory_cache.copy().items():
             if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
                 if value != self.read_memory(addr, self._memory_cache_byte_width):
                     self._memory_cache.pop(addr)
@@ -109,7 +109,7 @@ class MemoryScanner():
                 if value <= self.read_memory(addr, self._memory_cache_byte_width):
                     self._memory_cache.pop(addr)
             elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
-                if new_value == 0xFFFFFFFFFFFFFFFF:
+                if new_value == None:
                     raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
                 if value != new_value:
                     self._memory_cache.pop(addr)
