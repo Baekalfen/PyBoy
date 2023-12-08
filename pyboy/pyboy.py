@@ -117,6 +117,7 @@ class PyBoy:
 
         ###################
         # API attributes
+        self.screen = Screen(self.mb)
         """
         Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
         a variety of formats.
@@ -129,7 +130,7 @@ class PyBoy:
         `pyboy.api.screen.Screen`:
             A Screen object with helper functions for reading the screen buffer.
         """
-        self.screen = Screen(self.mb)
+        self.memory = PyBoyMemoryView(self.mb)
         """
         Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
@@ -139,7 +140,7 @@ class PyBoy:
         >>> pyboy.memory[0xC000:0xC0010] = 0
         ```
         """
-        self.memory = PyBoyMemoryView(self.mb)
+        self.tilemap_background = TileMap(self, self.mb, "BACKGROUND")
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
@@ -151,7 +152,7 @@ class PyBoy:
         `pyboy.api.tilemap.TileMap`:
             A TileMap object for the tile map.
         """
-        self.tilemap_background = TileMap(self, self.mb, "BACKGROUND")
+        self.tilemap_window = TileMap(self, self.mb, "WINDOW")
         """
         The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
         for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
@@ -163,7 +164,6 @@ class PyBoy:
         `pyboy.api.tilemap.TileMap`:
             A TileMap object for the tile map.
         """
-        self.tilemap_window = TileMap(self, self.mb, "WINDOW")
 
         ###################
         # Plugins
