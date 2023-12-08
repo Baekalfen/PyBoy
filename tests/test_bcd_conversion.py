@@ -42,6 +42,7 @@ def test_memoryscanner(kirby_rom):
     addresses = pyboy.memory_scanner.rescan_memory(DynamicComparisonType.INCREASED)
     assert len(addresses) == 0
 
+    print("test")
     # Find score address
     pyboy.tick(1, True)
     pyboy.screen.image.show()
@@ -59,5 +60,5 @@ def test_memoryscanner(kirby_rom):
     addresses2 = pyboy.memory_scanner.rescan_memory(DynamicComparisonType.INCREASED)
     values2 = [pyboy.memory[x] for x in addresses]
     pyboy.screen.image.show()
-    breakpoint()
-    pass
+    #breakpoint()
+    #pass
