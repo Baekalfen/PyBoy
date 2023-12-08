@@ -53,6 +53,6 @@ cdef class WindowEventMouse(WindowEvent):
 # Memory Scanning
 #
 
-cpdef uint64_t dec_to_bcd(uint64_t,int byte_width=*,endian_type=*) noexcept
+cpdef uint64_t dec_to_bcd(uint64_t,int byte_width=*,byteorder=*) noexcept
 @cython.locals(decimal_value=uint64_t, multiplier=uint64_t)
-cpdef uint64_t bcd_to_dec(uint64_t,int byte_width=*,endian_type=*) noexcept
+cpdef uint64_t bcd_to_dec(uint64_t,int byte_width=*,byteorder=*) noexcept
