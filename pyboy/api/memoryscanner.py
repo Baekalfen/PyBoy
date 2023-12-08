@@ -79,16 +79,18 @@ class MemoryScanner():
     def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=None):
         for addr, value in self._memory_cache.copy().items():
             if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
-                if value != self.read_memory(addr, self._memory_cache_byte_width):
+                if value != int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
+                    self._memory_cache.pop(addr)
+                if value != int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
                     self._memory_cache.pop(addr)
             elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
-                if value == self.read_memory(addr, self._memory_cache_byte_width):
+                if value == int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
                     self._memory_cache.pop(addr)
             elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
-                if value >= self.read_memory(addr, self._memory_cache_byte_width):
+                if value >= int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
                     self._memory_cache.pop(addr)
             elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
-                if value <= self.read_memory(addr, self._memory_cache_byte_width):
+                if value <= int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
                     self._memory_cache.pop(addr)
             elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
                 if new_value == None:
