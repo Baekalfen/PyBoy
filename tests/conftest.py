@@ -282,12 +282,11 @@ def git_pyboy_rl():
 
 @pytest.fixture(scope="session")
 def secrets():
-    if not os.environ.get("PYTEST_SECRETS_KEY"):
-        pytest.skip("Cannot access secrets")
-
     path = extra_test_rom_dir / Path("secrets")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
+            if not os.environ.get("PYTEST_SECRETS_KEY"):
+                pytest.skip("Cannot access secrets")
             fernet = Fernet(os.environ["PYTEST_SECRETS_KEY"].encode())
 
             test_data = url_open("https://pyboy.dk/mirror/test_data.encrypted")
