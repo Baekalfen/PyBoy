@@ -629,14 +629,10 @@ class PyBoy:
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         """
-        if self.initialized:
-            unsupported_window_types_enabled = [
-                self.plugin_manager.window_null_enabled, self.plugin_manager.window_open_gl_enabled
-            ]
-            if any(unsupported_window_types_enabled):
-                logger.warning(
-                    'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
-                )
+        if self.initialized and self.plugin_manager.window_null_enabled:
+            logger.warning(
+                'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
+            )
 
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
