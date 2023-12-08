@@ -39,24 +39,6 @@ class MemoryScanner():
         self._memory_cache = {}
         self._memory_cache_byte_width = 1
 
-    def read_memory(self, address, byte_width=1, value_type=ScanMode.INT, byteorder="little"):
-        """
-        Reads memory at the specified address.
-
-        :param address: The address to read.
-        :param byte_width: The number of bytes to consider for each value.
-        :param value_type: The type of value (INT or BCD) to consider.
-        :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
-        :return: The value at the specified address.
-        """
-        value_bytes = self.pyboy.memory[address:address + byte_width]
-        value = int.from_bytes(value_bytes, byteorder)
-
-        if value_type == ScanMode.BCD:
-            value = bcd_to_dec(value, byte_width, byteorder)
-
-        return value
-
     def scan_memory(
         self,
         target_value=None,
