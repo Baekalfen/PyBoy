@@ -74,7 +74,7 @@ class MemoryScanner():
             if target_value is None or self._check_value(value, target_value, standard_comparison_type.value):
                 self._memory_cache[addr] = value
 
-        return self._memory_cache.keys()
+        return list(self._memory_cache.keys())
 
     def rescan_memory(self, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, new_value=None):
         for addr, value in self._memory_cache.copy().items():
@@ -95,7 +95,7 @@ class MemoryScanner():
                     raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
                 if value != new_value:
                     self._memory_cache.pop(addr)
-        return self._memory_cache.keys()
+        return list(self._memory_cache.keys())
 
     def _check_value(self, value, target_value, standard_comparison_type):
         """
