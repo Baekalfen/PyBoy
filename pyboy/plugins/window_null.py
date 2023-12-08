@@ -17,8 +17,6 @@ class WindowNull(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        pyboy._rendering(False)
-
     def enabled(self):
         if self.pyboy_argv.get("window_type") in ["headless", "dummy"]:
             logger.error('Deprecated use of "headless" or "dummy" window. Change to "null" window instead.')
