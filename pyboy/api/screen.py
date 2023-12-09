@@ -27,8 +27,7 @@ class Screen:
     to make it possible to read this buffer out.
 
     If you're making an AI or bot, it's highly recommended to _not_ use this class for detecting objects on the screen.
-    It's much more efficient to use `pyboy.botsupport.BotSupportManager.tilemap_background`, `pyboy.botsupport.BotSupportManager.tilemap_window`, and
-    `pyboy.botsupport.BotSupportManager.sprite` instead.
+    It's much more efficient to use `pyboy.tilemap_background`, `pyboy.tilemap_window`, and `pyboy.sprite` instead.
     """
     def __init__(self, mb):
         self.mb = mb
@@ -121,7 +120,7 @@ class Screen:
         Generates a PIL Image from the screen buffer.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
-        case, read up on the `pyboy.botsupport` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
+        case, read up on the `pyboy.api` features, [Pan Docs](http://bgb.bircd.org/pandocs.htm) on tiles/sprites,
         and join our Discord channel for more help.
 
         Returns

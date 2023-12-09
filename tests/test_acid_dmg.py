@@ -22,7 +22,7 @@ def test_dmg_acid(cgb, dmg_acid_file):
     pyboy.tick(25, True)
 
     png_path = Path(f"tests/test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(dmg_acid_file)}.png")
-    image = pyboy.botsupport_manager().screen().screen_image()
+    image = pyboy.screen.screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)

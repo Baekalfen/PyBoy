@@ -39,7 +39,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
+        scanline_parameters = self.pyboy.screen.tilemap_position_list()
         WX = scanline_parameters[0][2]
         WY = scanline_parameters[0][3]
         self.use_background(WY != 0)
@@ -48,7 +48,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         ### SIMILAR TO CURRENT pyboy.game_wrapper()._game_area_np(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
         bsm = self.pyboy.botsupport_manager()
         ((scx, scy), (wx, wy)) = bsm.screen().tilemap_position()
-        tilemap = np.array(bsm.tilemap_background()[:, :])
+        tilemap = np.array(bsm.tilemap_background[:, :])
         return np.roll(np.roll(tilemap, -scy // 8, axis=0), -scx // 8, axis=1)[:18, :20]
 
     def _get_screen_walkable_matrix(self):

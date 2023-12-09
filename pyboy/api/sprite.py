@@ -28,7 +28,7 @@ class Sprite:
         call to `pyboy.PyBoy.tick`, so make sure to verify the `Sprite.tile_identifier` hasn't changed.
 
         By knowing the tile identifiers of players, enemies, power-ups and so on, you'll be able to search for them
-        using `pyboy.botsupport.BotSupportManager.sprite_by_tile_identifier` and feed it to your bot or AI.
+        using `pyboy.sprite_by_tile_identifier` and feed it to your bot or AI.
         """
         assert 0 <= sprite_index < SPRITES, f"Sprite index of {sprite_index} is out of range (0-{SPRITES})"
         self.mb = mb
@@ -71,7 +71,7 @@ class Sprite:
         self.tile_identifier = self.mb.getitem(OAM_OFFSET + self._offset + 2)
         """
         The identifier of the tile the sprite uses. To get a better representation, see the method
-        `pyboy.botsupport.sprite.Sprite.tiles`.
+        `pyboy.api.sprite.Sprite.tiles`.
 
         For double-height sprites, this will only give the identifier of the first tile. The second tile will
         always be the one immediately following the first (`tile_identifier + 1`).
@@ -153,7 +153,7 @@ class Sprite:
         Returns
         -------
         list:
-            A list of `pyboy.botsupport.tile.Tile` object(s) representing the graphics data for the sprite
+            A list of `pyboy.api.tile.Tile` object(s) representing the graphics data for the sprite
         """
         if sprite_height == 16:
             self.tiles += [Tile(self.mb, self.tile_identifier + 1)]
