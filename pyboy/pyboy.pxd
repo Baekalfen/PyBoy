@@ -47,7 +47,7 @@ cdef class PyBoy:
     cdef bint quitting
     cdef bint stopped
     cdef bint initialized
-    cdef public str window_title
+    cdef readonly str window_title
     cdef readonly PyBoyMemoryView memory
 
     cdef readonly Screen screen
