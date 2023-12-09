@@ -4,13 +4,7 @@
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
 
-
-It is highly recommended to read the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf) to get a light introduction to Game Boy emulation. _But do be aware, that the Python implementation has changed a lot_. The report is relevant, eventhough you want to contribute to another emulator, or create your own.
-
-If you've read the report and want more explicit details, have a look at the [Pan Docs](http://bgb.bircd.org/pandocs.htm).
-
-__If you are looking to make a bot or AI__, you can find all the external components in the [PyBoy Documentation](https://baekalfen.github.io/PyBoy/index.html). There is also a short example on our Wiki page [Scripts, AI and Bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots) as well as in the [examples directory](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples). If more features are needed, or if you find a bug, don't hesitate to make an issue here on GitHub, or post on our [Discord channel](https://discord.gg/Zrf2nyH).
-
+[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/Zrf2nyH)
 
 <!---
 Generate GIF with the layout and captions
@@ -18,49 +12,68 @@ Generate GIF with the layout and captions
 <table>
   <tbody>
     <tr>
-      <td colspan="3">
-<div align="center">
-<img src="extras/README/1.gif" width="400"><br>
-</div>
+      <td colspan=2 align="center"><a href=https://github.com/PWhiddy/PokemonRedExperiments>Train RL agents to play Pokemon Red</a>
+      </td>
+      <td align="center"><a href=https://github.com/Baekalfen/PyBoy/wiki/Experimental-and-optional-features#rewind-time>Rewind any game</a><br>
       </td>
     </tr>
     <tr>
-      <td align="center">Rewind any game<br>
+      <td colspan=2 align="center">
+        <div align="center">
+        <a href="http://www.youtube.com/watch?feature=player_embedded&v=DcYLT37ImBY" target="_blank">
+        <img src="http://img.youtube.com/vi/DcYLT37ImBY/maxresdefault.jpg" alt="Watch the video" width="500" border="10" />
+        <!-- <img src="http://img.youtube.com/vi/DcYLT37ImBY/hqdefault.jpg" alt="Watch the video" width="500" border="10" /> -->
+        </a>
+        <!-- https://www.youtube.com/watch?v=DcYLT37ImBY -->
+        <!-- <img src="extras/README/8.gif" width="400"><br> -->
+        </div>
       </td>
-      <td align="center"><a href=https://github.com/uiucanh/tetris>Beat world records</a><br>
+      <td align="center">
+        <img src="extras/README/5.gif" width="250">
       </td>
-      <td align="center"><a href=https://github.com/lixado/PyBoy-RL>Train with Reinforcement Learning</a><br>
+    </tr>
+    <tr>
+      <td align="center">Play the classics<br>
+      </td>
+      <td align="center"><a href=https://github.com/lixado/PyBoy-RL>Create your own AI</a><br>
+      </td>
+      <td align="center"><a href=https://github.com/uiucanh/tetris>Beat world records with AI</a><br>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="extras/README/5.gif" width="200">
+        <img src="extras/README/1.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/7.gif" width="200">
+        <img src="extras/README/6.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/6.gif" width="200">
+        <img src="extras/README/7.gif" width="250">
       </td>
     </tr>
   </tbody>
 </table>
 
+Getting Started
+===============
+The instructions are simple:
 
-Installation
-============
-The instructions are simple if you already have a functioning Python environment on your machine.
+```sh
+$ pip install pyboy
+```
 
- 1. Install PyBoy using __`pip install pyboy`__ (add __` --user`__ if your system asks)
- 2. If your system isn't supported by [pysdl2-dll](https://pypi.org/project/pysdl2-dll/), you'll need to install SDL2 from your package manager.
+For details, see [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation).
 
-If you need more details, or if you need to compile from source, check out the detailed [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation). We support: macOS, Raspberry Pi (Raspbian), Linux (Ubuntu), and Windows 10.
+Now you're ready! Either use PyBoy directly from the terminal
+```sh
+$ pyboy game_rom.gb
+```
 
-Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.rom`__ or use it in your Python scripts:
+Or use it in your Python scripts:
 ```python
 from pyboy import PyBoy
-pyboy = PyBoy('ROMs/gamerom.gb')
-while pyboy.tick(1, True):
+pyboy = PyBoy('game_rom.gb')
+while pyboy.tick():
     pass
 pyboy.stop()
 ```
@@ -68,60 +81,120 @@ pyboy.stop()
 <!-- Or using the context manager:
 ```python
 from pyboy import PyBoy
-with PyBoy('ROMs/gamerom.gb') as pyboy:
-    while pyboy.tick(1, True):
+with PyBoy('game_rom.gb') as pyboy:
+    while pyboy.tick():
         pass
 ``` -->
 
+
+The API
+=======
+
+If you are looking to make a bot or AI, then these resources are a good place to start:
+ * [PyBoy API Documentation](https://baekalfen.github.io/PyBoy/index.html)
+ * [Wiki Pages](https://github.com/Baekalfen/PyBoy/wiki/)
+   * [Using PyBoy with Gym](https://github.com/Baekalfen/PyBoy/wiki/Using-PyBoy-with-Gym)
+   * [Example: Kirby](https://github.com/Baekalfen/PyBoy/wiki/Example-Kirby)
+   * [Example: Tetris](https://github.com/Baekalfen/PyBoy/wiki/Example-Tetris)
+   * [Example: Super Mario Land](https://github.com/Baekalfen/PyBoy/wiki/Example-Super-Mario-Land)
+   * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/examples)
+ * [Discord](https://discord.gg/Zrf2nyH)
+
+
 When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
 ```python
+pyboy.set_emulation_speed(0) # No speed limit
 pyboy.button('down')
 pyboy.button('a')
-some_value = pyboy.memory[0xC345]
+pyboy.tick() # Process at least one frame to let the game register the input
+value_of_interest = pyboy.memory[0xC345]
 
-pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-pyboy.tick() # Process one frame to let the game register the input
-pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-
-pil_image = pyboy.screen_image()
-pyboy.tick(1, True)
+pil_image = pyboy.screen.image
 pil_image.save('screenshot.png')
 ```
 
-The Wiki shows how to interface with PyBoy from your own project: [Wiki](https://github.com/Baekalfen/PyBoy/wiki).
+The [Wiki](https://github.com/Baekalfen/PyBoy/wiki) shows how to interface with PyBoy from your own project.
 
+Performance
+===========
 
-Contributors
+Performance is a priority for PyBoy, to make your AI training and scripts as fast as possible.
+
+The easiest way to improve your performance, is to skip rendering of unnecessary frames. If you know your
+character takes X frames to move, or the game doesn't take input every frame, you can skip those to potentially triple
+your performance. All game logic etc. will still process.
+
+Here is a simple comparison of rendering every frame, rendering every 15th frame, and not rendering any frames (higher is better). See [`pyboy.tick`](https://docs.pyboy.dk/#pyboy.PyBoy.tick) for how it works. Your performance will depend on the game.
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center">
+        Full rendering
+      </td>
+      <td align="center">
+        Frame-skip 15
+      </td>
+      <td align="center">
+        No rendering
+      </td>
+    </tr>
+    <tr>
+      <td>
+      x124 realtime
+      </td>
+      <td>
+      x344 realtime
+      </td>
+      <td>
+      x395 realtime
+      </td>
+    </tr>
+<tr> <!-- Markdown/HTML broken after this -->
+<td>
+
+```python
+for _ in range(target):
+    pyboy.tick()
+
+```
+</td>
+<td >
+
+```python
+for _ in range(target//15):
+    pyboy.tick(15, True)
+
+```
+</td>
+<td >
+
+```python
+pyboy.tick(target)
+
+```
+</td>
+</tr>
+  </tbody>
+</table>
+
+The Game Boy was originally running at 60 frames per second, so a speed-up of 100x realtime is 6,000 frames per
+second. And trivially from the table above, simulating 395 hours of gameplay can be done in 1 hour with no rendering.
+
+It's also recommended to be running multiple instances of PyBoy in parallel. On an 8-core machine, you could potentially
+do 3160 hours of gameplay in 1 hour.
+
+Contributing
 ============
+Any contribution is appreciated. The currently known problems are tracked in [the Issues tab](https://github.com/Baekalfen/PyBoy/issues). Feel free to take a swing at any one of them. If you have something original in mind, come and [discuss it on on Discord](https://discord.gg/Zrf2nyH).
 
-Thanks to all the people who have contributed to the project!
-
-Original Developers
--------------------
-
- * Asger Anders Lund Hansen - [AsgerLundHansen](https://github.com/AsgerLundHansen)
- * Mads Ynddal - [baekalfen](https://github.com/Baekalfen)
- * Troels Ynddal - [troelsy](https://github.com/troelsy)
-
-GitHub Collaborators
---------------------
-
- * Kristian Sims - [krs013](https://github.com/krs013)
-
-Student Projects
-----------------
-
- * __Rewind Time:__ Jacob Olsen - [JacobO1](https://github.com/JacobO1)
- * __Link Cable:__ Jonas Flach-Jensen - [thejomas](https://github.com/thejomas)
- * __Game Boy Color:__ Christian Marslev and Jonas Grønborg - [CKuke](https://github.com/CKuke) and [kaff3](https://github.com/kaff3)
-
-Contribute
-==========
-Any contribution is appreciated. The currently known problems are tracked in the Issues tab. Feel free to take a swing at any one of them.
+[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/Zrf2nyH)
 
 For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list in the Wiki](https://github.com/Baekalfen/PyBoy/wiki/Student-Projects):
+* Hacking games
 * Link Cable
-* _(Experimental)_ AI - use the `botsupport` or game wrappers to train a neural network
-* _(Experimental)_ Game Wrappers - make wrappers for popular games
+* Debugger (VSCode, GDB, terminal or otherwise)
+* AI - [use the `api`](https://baekalfen.github.io/PyBoy/index.html) or game wrappers to train a neural network
+* Game Wrappers - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
