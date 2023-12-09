@@ -755,36 +755,6 @@ class PyBoy:
         """
         return Tile(self.mb, identifier=identifier)
 
-    @property
-    def tilemap_background(self):
-        """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
-
-        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
-
-        Returns
-        -------
-        `pyboy.api.tilemap.TileMap`:
-            A TileMap object for the tile map.
-        """
-        return TileMap(self.mb, "BACKGROUND")
-
-    @property
-    def tilemap_window(self):
-        """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
-
-        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
-
-        Returns
-        -------
-        `pyboy.api.tilemap.TileMap`:
-            A TileMap object for the tile map.
-        """
-        return TileMap(self.mb, "WINDOW")
-
 
 class PyBoyMemoryView:
     def __init__(self, mb):
