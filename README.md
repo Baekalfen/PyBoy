@@ -109,7 +109,7 @@ Now you're ready! Either use PyBoy directly from the terminal __`$ pyboy file.ro
 ```python
 from pyboy import PyBoy
 pyboy = PyBoy('ROMs/gamerom.gb')
-while pyboy.tick(1, True):
+while pyboy.tick():
     pass
 pyboy.stop()
 ```
@@ -118,7 +118,7 @@ pyboy.stop()
 ```python
 from pyboy import PyBoy
 with PyBoy('ROMs/gamerom.gb') as pyboy:
-    while pyboy.tick(1, True):
+    while pyboy.tick():
         pass
 ``` -->
 
@@ -126,14 +126,10 @@ When the emulator is running, you can easily access [PyBoy's API](https://baekal
 ```python
 pyboy.button('down')
 pyboy.button('a')
-some_value = pyboy.memory[0xC345]
-
-pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
 pyboy.tick() # Process one frame to let the game register the input
-pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+value_of_interest = pyboy.memory[0xC345]
 
-pil_image = pyboy.screen_image()
-pyboy.tick(1, True)
+pil_image = pyboy.screen.image
 pil_image.save('screenshot.png')
 ```
 
