@@ -101,6 +101,9 @@ def test_tilemaps(kirby_rom):
 
     bck_tilemap = pyboy.tilemap_background
     wdw_tilemap = pyboy.tilemap_window
+    bck_tilemap._refresh_lcdc()
+    wdw_tilemap._refresh_lcdc()
+    assert bck_tilemap.map_offset != wdw_tilemap.map_offset
 
     assert bck_tilemap[0, 0] == 256
     assert bck_tilemap[:5, 0] == [256, 256, 256, 256, 170]
