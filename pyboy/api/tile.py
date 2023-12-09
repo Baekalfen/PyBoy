@@ -12,7 +12,7 @@ import numpy as np
 import pyboy
 from pyboy import utils
 
-from .constants import LOW_TILEDATA, VRAM_OFFSET
+from .constants import LOW_TILEDATA, TILES, TILES_CGB, VRAM_OFFSET
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -43,9 +43,12 @@ class Tile:
         """
         self.mb = mb
 
-        assert 0 <= identifier < 384, "Identifier out of range"
+        if self.mb.cgb:
+            assert 0 <= identifier < TILES_CGB, "Identifier out of range"
+        else:
+            assert 0 <= identifier < TILES, "Identifier out of range"
 
-        self.data_address = LOW_TILEDATA + (16*identifier)
+        self.data_address = LOW_TILEDATA + (16 * (identifier%TILES))
         """
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.api.tile.Tile.image` or one of the
@@ -60,10 +63,16 @@ class Tile:
             address in VRAM where tile data starts
         """
 
-        self.tile_identifier = (self.data_address - LOW_TILEDATA) // 16
+        if identifier < TILES:
+            self.vram_bank = 0
+        else:
+            self.vram_bank = 1
+
+        self.tile_identifier = identifier
         """
         The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
-        complicated indexing system on the Game Boy into a single range of 0-383 (both included).
+        complicated indexing system on the Game Boy into a single range of 0-383 (both included) or 0-767 for Game Boy
+        Color.
 
         Returns
         -------
@@ -142,8 +151,12 @@ class Tile:
         """
         self.data = np.zeros((8, 8), dtype=np.uint32)
         for k in range(0, 16, 2): # 2 bytes for each line
-            byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
-            byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]
+            if self.vram_bank == 0:
+                byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
+                byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]
+            else:
+                byte1 = self.mb.lcd.VRAM1[self.data_address + k - VRAM_OFFSET]
+                byte2 = self.mb.lcd.VRAM1[self.data_address + k + 1 - VRAM_OFFSET]
 
             for x in range(8):
                 colorcode = utils.color_code(byte1, byte2, 7 - x)
@@ -152,7 +165,7 @@ class Tile:
         return self.data
 
     def __eq__(self, other):
-        return self.data_address == other.data_address
+        return self.data_address == other.data_address and self.vram_bank == other.vram_bank
 
     def __repr__(self):
         return f"Tile: {self.tile_identifier}"
