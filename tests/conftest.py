@@ -89,6 +89,11 @@ def pokemon_blue_rom(secrets):
 
 
 @pytest.fixture(scope="session")
+def pokemon_red_rom(secrets):
+    return locate_sha256(b"5ca7ba01642a3b27b0cc0b5349b52792795b62d3ed977e98a09390659af96b7b")
+
+
+@pytest.fixture(scope="session")
 def pokemon_gold_rom(secrets):
     return locate_sha256(b"fb0016d27b1e5374e1ec9fcad60e6628d8646103b5313ca683417f52b97e7e4e")
 
@@ -213,7 +218,6 @@ def cgb_acid_file():
 
 @pytest.fixture(scope="session")
 def shonumi_dir():
-    # Has to be in here. Otherwise all test workers will import this file, and cause an error.
     path = extra_test_rom_dir / Path("GB Tests")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -236,6 +240,32 @@ def rtc3test_file():
     return str(path)
 
 
+# https://github.com/mattcurrie/which.gb
+@pytest.fixture(scope="session")
+def which_file():
+    path = extra_test_rom_dir / Path("which.gb")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.which.txt"))
+            which_data = url_open("https://pyboy.dk/mirror/which.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(which_data)
+    return str(path)
+
+
+# https://github.com/nitro2k01/whichboot.gb
+@pytest.fixture(scope="session")
+def whichboot_file():
+    path = extra_test_rom_dir / Path("whichboot.gb")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.whichboot.txt"))
+            whichboot_data = url_open("https://pyboy.dk/mirror/whichboot.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(whichboot_data)
+    return str(path)
+
+
 @pytest.fixture(scope="session")
 def git_tetris_ai():
     if os.path.isfile("extras/README/7.gif") or platform.system() == "Windows":
@@ -246,7 +276,8 @@ def git_tetris_ai():
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
             # NOTE: No affiliation
-            git.Git(path).clone("https://github.com/uiucanh/tetris.git")
+            repo = git.Repo.clone_from("https://github.com/uiucanh/tetris.git", path)
+            repo.head.reset("a098ba8c328d8e7c406787edf61fcb0130cb4c26")
         _venv = venv.EnvBuilder(with_pip=True)
         _venv_path = Path(".venv")
         _venv.create(path / _venv_path)
@@ -269,12 +300,37 @@ def git_pyboy_rl():
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
             # NOTE: No affiliation
-            git.Git(path).clone("https://github.com/lixado/PyBoy-RL.git")
+            repo = git.Repo.clone_from("https://github.com/lixado/PyBoy-RL.git", path)
+            repo.head.reset("03034a2d72c19c8cdc96d95b50e446a0ab83b421")
         _venv = venv.EnvBuilder(with_pip=True)
         _venv_path = Path(".venv")
         _venv.create(path / _venv_path)
         # _venv_context = _venv.ensure_directories(path / Path('.venv'))
         assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r requirements.txt') == 0
+        # Overwrite PyBoy with local version
+        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
+    return str(path)
+
+
+@pytest.fixture(scope="session")
+def git_pokemon_red_experiments():
+    if os.path.isfile("README/8.gif") or platform.system() == "Windows":
+        return None
+
+    import venv
+    path = Path("PokemonRedExperiments")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isdir(path):
+            # NOTE: No affiliation
+            repo = git.Repo.clone_from("https://github.com/PWhiddy/PokemonRedExperiments.git", path)
+            repo.head.reset("fa01143e4b8d165136199be7155757495d16e56a")
+        _venv = venv.EnvBuilder(with_pip=True)
+        _venv_path = Path(".venv")
+        _venv.create(path / _venv_path)
+        # _venv_context = _venv.ensure_directories(path / Path('.venv'))
+        assert os.system(
+            f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r baselines/requirements.txt'
+        ) == 0
         # Overwrite PyBoy with local version
         assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
     return str(path)
@@ -307,6 +363,8 @@ def pack_secrets():
     with ZipFile(data, "w") as _zip:
         for rom in [globals()[x] for x in globals().keys() if x.endswith("_rom") and x != "any_rom"]:
             _secrets_fixture = None
+            if rom == default_rom:
+                continue
             _rom = rom.__pytest_wrapped__.obj(_secrets_fixture)
             _zip.write(_rom, os.path.basename(_rom))
 
