@@ -36,6 +36,8 @@ def test_tiles(default_rom):
     tile = pyboy.tilemap_window.tile(0, 0)
     assert isinstance(tile, Tile)
 
+    with pytest.raises(AssertionError):
+        pyboy.get_tile(384) # Not CGB
     tile = pyboy.get_tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
@@ -104,6 +106,14 @@ def test_tiles_cgb(any_rom_cgb):
         pyboy.get_tile(385)
 
     pyboy.stop(save=False)
+
+
+def test_tiles_cgb(any_rom_cgb):
+    pyboy = PyBoy(any_rom_cgb, window_type="null")
+    pyboy.set_emulation_speed(0)
+    pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
+
+    pyboy.get_tile(384) # Allowed on CGB
 
 
 def test_screen_buffer_and_image(tetris_rom, boot_rom):
