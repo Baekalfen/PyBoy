@@ -7,6 +7,7 @@ The Game Boy has two tile maps, which defines what is rendered on the screen.
 """
 
 import numpy as np
+
 from pyboy.core.lcd import LCDCRegister
 
 from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_NTILES, LOW_TILEMAP
@@ -19,8 +20,8 @@ class TileMap:
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         "background" and "window".
 
-        Use `pyboy.botsupport.BotSupportManager.tilemap_background` and
-        `pyboy.botsupport.BotSupportManager.tilemap_window` to instantiate this object.
+        Use `pyboy.tilemap_background` and
+        `pyboy.tilemap_window` to instantiate this object.
 
         This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
         identifier at a given coordinate.
@@ -107,7 +108,7 @@ class TileMap:
         """
         Returns the memory address in the tilemap for the tile at the given coordinate. The address contains the index
         of tile which will be shown at this position. This should not be confused with the actual tile data of
-        `pyboy.botsupport.tile.Tile.data_address`.
+        `pyboy.api.tile.Tile.data_address`.
 
         This can be used as an global identifier for the specific location in a tile map.
 
@@ -116,7 +117,7 @@ class TileMap:
         on the screen.
 
         The index might also be a signed number. Depending on if it is signed or not, will change where the tile data
-        is read from. Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
+        is read from. Use `pyboy.api.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
         this tile view. You can read how the indexes work in the
         [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
 
@@ -138,8 +139,8 @@ class TileMap:
 
     def tile(self, column, row):
         """
-        Provides a `pyboy.botsupport.tile.Tile`-object which allows for easy interpretation of the tile data. The
-        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.botsupport.tile.Tile`-objects might
+        Provides a `pyboy.api.tile.Tile`-object which allows for easy interpretation of the tile data. The
+        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.api.tile.Tile`-objects might
         be returned from two different coordinates in the tile map if they are shown different places on the screen.
 
         Args:
@@ -148,7 +149,7 @@ class TileMap:
 
         Returns
         -------
-        `pyboy.botsupport.tile.Tile`:
+        `pyboy.api.tile.Tile`:
             Tile object corresponding to the tile index at the given coordinate in the
             tile map.
         """
@@ -207,7 +208,7 @@ class TileMap:
         Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
 
         Args:
-            switch (bool): If True, accesses will return `pyboy.botsupport.tile.Tile`-object. If False, accesses will
+            switch (bool): If True, accesses will return `pyboy.api.tile.Tile`-object. If False, accesses will
                 return an `int`.
         """
         self._use_tile_objects = switch

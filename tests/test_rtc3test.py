@@ -32,12 +32,12 @@ def test_rtc3test(subtest, rtc3test_file):
 
     while True:
         # Continue until it says "(A) Return"
-        if pyboy.botsupport_manager().tilemap_background()[6:14, 17] == [193, 63, 27, 40, 55, 56, 53, 49]:
+        if pyboy[6:14, 17] == [193, 63, 27, 40, 55, 56, 53, 49]:
             break
         pyboy.tick(1, True)
 
     png_path = Path(f"tests/test_results/{rtc3test_file}_{subtest}.png")
-    image = pyboy.botsupport_manager().screen().screen_image()
+    image = pyboy.screen.screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)

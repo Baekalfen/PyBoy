@@ -140,13 +140,13 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         pyboy.load_state(saved_state)
 
     for _ in range(10):
-        if np.all(pyboy.botsupport_manager().screen().screen_ndarray() > 240):
+        if np.all(pyboy.screen.screen_ndarray() > 240):
             pyboy.tick(20, True)
         else:
             break
 
     png_path = Path(f"tests/test_results/SameSuite/{rom}.png")
-    image = pyboy.botsupport_manager().screen().screen_image()
+    image = pyboy.screen.screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)

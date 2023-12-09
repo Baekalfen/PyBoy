@@ -3,7 +3,7 @@ Any contribution is appreciated. The currently known errors are registered in th
 For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list](https://github.com/Baekalfen/PyBoy/raw/master/extras/Projects/Projects.pdf):
 * Color
 * Link Cable
-* _(Experimental)_ AI - use the `botsupport` or game wrappers to train a neural network
+* _(Experimental)_ AI - use the API or game wrappers to train a neural network
 * _(Experimental)_ Game Wrappers - make wrappers for popular games
 
 If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
