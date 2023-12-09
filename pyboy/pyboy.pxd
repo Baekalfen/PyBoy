@@ -8,6 +8,7 @@ cimport cython
 from libc cimport time
 from libc.stdint cimport int64_t, uint64_t
 
+from pyboy.api.screen cimport Screen
 from pyboy.api.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
@@ -49,6 +50,7 @@ cdef class PyBoy:
     cdef public str window_title
     cdef readonly PyBoyMemoryView memory
 
+    cdef readonly Screen screen
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
 

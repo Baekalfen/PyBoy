@@ -9,18 +9,14 @@ The core module of the emulator
 import os
 import time
 
-import numpy as np
-
-from pyboy import utils
 from pyboy.logging import get_logger
 from pyboy.api.screen import Screen
-from pyboy.api.tilemap import TileMap
-from pyboy.logging import get_logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
+from pyboy.api.tilemap import TileMap
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
 
@@ -116,7 +112,19 @@ class PyBoy:
 
         ###################
         # API attributes
+        self.screen = Screen(self.mb)
+        """
+        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
 
+        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.api.screen.Screen.tilemap_position` for more information.
+
+        Returns
+        -------
+        `pyboy.api.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
+        """
         self.memory = PyBoyMemoryView(self.mb)
         """
         Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
