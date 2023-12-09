@@ -94,7 +94,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self._sprite_cache_invalid = True
 
         blank = 47
-        self.tilemap_background.refresh_lcdc()
         self.score = self._sum_number_on_screen(13, 3, 6, blank, 0)
         self.level = self._sum_number_on_screen(14, 7, 4, blank, 0)
         self.lines = self._sum_number_on_screen(14, 10, 4, blank, 0)
@@ -119,7 +118,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            self.tilemap_background.refresh_lcdc()
             if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # '1PLAYER' on the first screen
                 break
 
