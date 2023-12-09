@@ -93,11 +93,9 @@ The API
 If you are looking to make a bot or AI, then these resources are a good place to start:
  * [PyBoy API Documentation](https://baekalfen.github.io/PyBoy/index.html)
  * [Wiki Pages](https://github.com/Baekalfen/PyBoy/wiki/)
-   * [Using PyBoy with Gym](https://github.com/Baekalfen/PyBoy/wiki/Using-PyBoy-with-Gym)
-   * [Example: Kirby](https://github.com/Baekalfen/PyBoy/wiki/Example-Kirby)
-   * [Example: Tetris](https://github.com/Baekalfen/PyBoy/wiki/Example-Tetris)
-   * [Example: Super Mario Land](https://github.com/Baekalfen/PyBoy/wiki/Example-Super-Mario-Land)
-   * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples)
+   * [Using the Gym](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots)
+   * [Generic scripts and bots](https://github.com/Baekalfen/PyBoy/wiki/Scripts,-AI-and-Bots)
+   * [Examples](https://github.com/Baekalfen/PyBoy/tree/master/examples)
  * [Discord](https://discord.gg/Zrf2nyH)
 
 
