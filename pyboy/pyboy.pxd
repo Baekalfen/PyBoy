@@ -49,7 +49,6 @@ cdef class PyBoy:
     cdef bint initialized
     cdef readonly str window_title
     cdef readonly PyBoyMemoryView memory
-
     cdef readonly Screen screen
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
