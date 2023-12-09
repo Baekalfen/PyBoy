@@ -7,7 +7,6 @@ cimport cython
 from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
-from pyboy.botsupport.tilemap cimport TileMap
 from pyboy.core.lcd cimport Renderer
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
@@ -15,7 +14,6 @@ from pyboy.utils cimport WindowEvent
 
 
 cdef Logger logger
-
 cdef int ROWS, COLS
 
 
@@ -46,8 +44,8 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
 cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef public shape
     cdef bint game_has_started
-    cdef TileMap tilemap_background
-    cdef TileMap tilemap_window
+    cdef object tilemap_background
+    cdef object tilemap_window
     cdef bint tilemap_use_background
     cdef uint16_t sprite_offset
 

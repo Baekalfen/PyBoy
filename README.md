@@ -65,17 +65,18 @@ while pyboy.tick(1, True):
 pyboy.stop()
 ```
 
-Or using the context manager:
+<!-- Or using the context manager:
 ```python
 from pyboy import PyBoy
 with PyBoy('ROMs/gamerom.gb') as pyboy:
     while pyboy.tick(1, True):
         pass
-```
+``` -->
 
 When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
 ```python
-from pyboy import WindowEvent
+pyboy.button('down')
+pyboy.button('a')
 
 pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
 pyboy.tick() # Process one frame to let the game register the input

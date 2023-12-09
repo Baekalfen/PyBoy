@@ -42,7 +42,7 @@ class ScreenRecorder(PyBoyPlugin):
     def post_tick(self):
         # Plugin: Screen Recorder
         if self.recording:
-            self.add_frame(self.pyboy.botsupport_manager().screen().screen_image())
+            self.add_frame(self.pyboy.screen.screen_image())
 
     def add_frame(self, frame):
         # Pillow makes artifacts in the output, if we use 'RGB', which is PyBoy's default format

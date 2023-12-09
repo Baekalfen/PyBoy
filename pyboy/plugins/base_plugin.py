@@ -18,7 +18,7 @@ from array import array
 import numpy as np
 
 import pyboy
-from pyboy.botsupport.sprite import Sprite
+from pyboy.api.sprite import Sprite
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -99,8 +99,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.botsupport_manager().tilemap_background()
-        self.tilemap_window = self.pyboy.botsupport_manager().tilemap_window()
+        self.tilemap_background = self.pyboy.tilemap_background
+        self.tilemap_window = self.pyboy.tilemap_window
         self.tilemap_use_background = True
         self.sprite_offset = 0
         self.game_has_started = False
@@ -183,7 +183,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             yy = self.game_area_section[1]
             width = self.game_area_section[2]
             height = self.game_area_section[3]
-            scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
+            scanline_parameters = self.pyboy.screen.tilemap_position_list()
 
             if self.game_area_wrap_around:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)

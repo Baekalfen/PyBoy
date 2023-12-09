@@ -12,7 +12,6 @@ import zlib
 import numpy as np
 
 import pyboy
-from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyPlugin
 
 logger = pyboy.logging.get_logger(__name__)
@@ -41,8 +40,7 @@ class RecordReplay(PyBoyPlugin):
         if len(events) != 0:
             self.recorded_input.append((
                 self.pyboy.frame_count, [e.event for e in events],
-                base64.b64encode(np.ascontiguousarray(self.pyboy.botsupport_manager().screen().screen_ndarray())
-                                ).decode("utf8")
+                base64.b64encode(np.ascontiguousarray(self.pyboy.screen.screen_ndarray())).decode("utf8")
             ))
         return events
 

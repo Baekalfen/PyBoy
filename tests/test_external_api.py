@@ -11,8 +11,9 @@ import numpy as np
 import PIL
 import pytest
 from PIL import ImageChops
+
 from pyboy import PyBoy, WindowEvent
-from pyboy.botsupport.tile import Tile
+from pyboy.api.tile import Tile
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
@@ -29,10 +30,10 @@ def test_tiles(default_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
-    tile = pyboy.botsupport_manager().tilemap_window().tile(0, 0)
+    tile = pyboy.tilemap_window.tile(0, 0)
     assert isinstance(tile, Tile)
 
-    tile = pyboy.botsupport_manager().tile(1)
+    tile = pyboy.get_tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
     ndarray = tile.image_ndarray()
@@ -53,12 +54,12 @@ def test_tiles(default_rom):
                  [0xffffffff, 0xff000000, 0xff000000, 0xffffffff, 0xffffffff, 0xff000000, 0xff000000, 0xffffffff]]
 
     for identifier in range(384):
-        t = pyboy.botsupport_manager().tile(identifier)
+        t = pyboy.get_tile(identifier)
         assert t.tile_identifier == identifier
     with pytest.raises(Exception):
-        pyboy.botsupport_manager().tile(-1)
+        pyboy.get_tile(-1)
     with pytest.raises(Exception):
-        pyboy.botsupport_manager().tile(385)
+        pyboy.get_tile(385)
 
     pyboy.stop(save=False)
 
@@ -71,13 +72,13 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(275, True) # Iterate to boot logo
 
-    assert pyboy.botsupport_manager().screen().raw_screen_buffer_dims() == (144, 160)
-    assert pyboy.botsupport_manager().screen().raw_screen_buffer_format() == cformat
+    assert pyboy.screen.raw_screen_buffer_dims() == (144, 160)
+    assert pyboy.screen.raw_screen_buffer_format() == cformat
 
     boot_logo_hash = hashlib.sha256()
-    boot_logo_hash.update(pyboy.botsupport_manager().screen().raw_screen_buffer())
+    boot_logo_hash.update(pyboy.screen.raw_screen_buffer())
     assert boot_logo_hash.digest() == boot_logo_hash_predigested
-    assert isinstance(pyboy.botsupport_manager().screen().raw_screen_buffer(), bytes)
+    assert isinstance(pyboy.screen.raw_screen_buffer(), bytes)
 
     # The output of `screen_image` is supposed to be homogeneous, which means a shared hash between versions.
     boot_logo_png_hash_predigested = (
@@ -85,28 +86,32 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
         b"\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$"
     )
     boot_logo_png_hash = hashlib.sha256()
-    image = pyboy.botsupport_manager().screen().screen_image()
+    image = pyboy.screen.screen_image()
     assert isinstance(image, PIL.Image.Image)
     image_data = io.BytesIO()
     image.save(image_data, format="BMP")
     boot_logo_png_hash.update(image_data.getvalue())
     assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
 
-    # Screenshot shortcut
-    image1 = pyboy.botsupport_manager().screen().screen_image()
-    image2 = pyboy.screen_image()
-    diff = ImageChops.difference(image1, image2)
-    assert not diff.getbbox()
-
     # screen_ndarray
     numpy_hash = hashlib.sha256()
-    numpy_array = np.ascontiguousarray(pyboy.botsupport_manager().screen().screen_ndarray())
-    assert isinstance(pyboy.botsupport_manager().screen().screen_ndarray(), np.ndarray)
+    numpy_array = np.ascontiguousarray(pyboy.screen.screen_ndarray())
+    assert isinstance(pyboy.screen.screen_ndarray(), np.ndarray)
     assert numpy_array.shape == (144, 160, 3)
     numpy_hash.update(numpy_array.tobytes())
     assert numpy_hash.digest(
     ) == (b"\r\t\x87\x131\xe8\x06\x82\xcaO=\n\x1e\xa2K$"
           b"\xd6\x8e\x91R( H7\xd8a*B+\xc7\x1f\x19")
+
+    # Check PIL image is reference for performance
+    pyboy.tick(1, True)
+    new_image1 = pyboy.screen.screen_image()
+    nd_image = pyboy.screen.screen_ndarray()
+    nd_image[:, :] = 0
+    pyboy.tick(1, True)
+    new_image2 = pyboy.screen.screen_image()
+    diff = ImageChops.difference(new_image1, new_image2)
+    assert not diff.getbbox()
 
     pyboy.stop(save=False)
 
@@ -120,12 +125,12 @@ def test_tetris(tetris_rom):
     tetris.set_tetromino("T")
 
     first_brick = False
-    tile_map = pyboy.botsupport_manager().tilemap_window()
+    tile_map = pyboy.tilemap_window
     state_data = io.BytesIO()
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
         pyboy.tick(1, False)
 
-        assert pyboy.botsupport_manager().screen().tilemap_position() == ((0, 0), (-7, 0))
+        assert pyboy.screen.tilemap_position() == ((0, 0), (-7, 0))
 
         # Start game. Just press Start and A when the game allows us.
         # The frames are not 100% accurate.
@@ -218,21 +223,21 @@ def test_tetris(tetris_rom):
             if frame == 1014:
                 assert first_brick
 
-                s1 = pyboy.botsupport_manager().sprite(0)
-                s2 = pyboy.botsupport_manager().sprite(1)
+                s1 = pyboy.get_sprite(0)
+                s2 = pyboy.get_sprite(1)
                 assert s1 == s1
                 assert s1 != s2
                 assert s1.tiles[0] == s2.tiles[0], "Testing equal tiles of two different sprites"
 
                 # Test that both ways of getting identifiers work and provides the same result.
                 all_sprites = [(s.x, s.y, s.tiles[0].tile_identifier, s.on_screen)
-                               for s in [pyboy.botsupport_manager().sprite(n) for n in range(40)]]
+                               for s in [pyboy.get_sprite(n) for n in range(40)]]
                 all_sprites2 = [(s.x, s.y, s.tile_identifier, s.on_screen)
-                                for s in [pyboy.botsupport_manager().sprite(n) for n in range(40)]]
+                                for s in [pyboy.get_sprite(n) for n in range(40)]]
                 assert all_sprites == all_sprites2
 
                 # Verify data with known reference
-                # pyboy.botsupport_manager().screen().screen_image().show()
+                # pyboy.screen.screen_image().show()
                 assert all_sprites == ([
                     (-8, -16, 0, False),
                     (-8, -16, 0, False),
@@ -342,7 +347,7 @@ def test_tilemap_position_list(supermarioland_rom):
     pyboy.tick(100, False)
 
     # Get screen positions, and verify the values
-    positions = pyboy.botsupport_manager().screen().tilemap_position_list()
+    positions = pyboy.screen.tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
@@ -353,7 +358,7 @@ def test_tilemap_position_list(supermarioland_rom):
     pyboy.tick(10, False)
 
     # Get screen positions, and verify the values
-    positions = pyboy.botsupport_manager().screen().tilemap_position_list()
+    positions = pyboy.screen.tilemap_position_list()
     for y in range(1, 16):
         assert positions[y][0] == 0 # HUD
     for y in range(16, 144):
