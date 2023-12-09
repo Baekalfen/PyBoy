@@ -15,7 +15,7 @@ from .tile import Tile
 
 
 class TileMap:
-    def __init__(self, mb, select):
+    def __init__(self, pyboy, mb, select):
         """
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         "background" and "window".
@@ -44,10 +44,12 @@ class TileMap:
         Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
         need the entire 32x32 tile map, you can use the shortcut: `tilemap[:,:]`.
         """
+        self.pyboy = pyboy
         self.mb = mb
         self._select = select
         self._use_tile_objects = False
-        self.refresh_lcdc()
+        self.frame_count_update = 0
+        self.__refresh_lcdc()
 
         self.shape = (32, 32)
         """
@@ -59,7 +61,12 @@ class TileMap:
             The width and height of the tile map.
         """
 
-    def refresh_lcdc(self):
+    def _refresh_lcdc(self):
+        if self.frame_count_update == self.pyboy.frame_count:
+            return 0
+        self.__refresh_lcdc()
+
+    def __refresh_lcdc(self):
         """
         The tile data and view that is showed on the background and window respectively can change dynamically. If you
         believe it has changed, you can use this method to update the tilemap from the LCDC register.
@@ -130,7 +137,6 @@ class TileMap:
         int:
             Address in the tile map to read a tile index.
         """
-
         if not 0 <= column < 32:
             raise IndexError("column is out of bounds. Value of 0 to 31 is allowed")
         if not 0 <= row < 32:
@@ -175,7 +181,7 @@ class TileMap:
         int:
             Tile identifier.
         """
-
+        self._refresh_lcdc()
         tile = self.mb.getitem(self._tile_address(column, row))
         if self.signed_tile_data:
             return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
@@ -183,6 +189,7 @@ class TileMap:
             return tile
 
     def __repr__(self):
+        self._refresh_lcdc()
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
