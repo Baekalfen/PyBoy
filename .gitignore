@@ -101,7 +101,6 @@ default_rom/default_rom.sym
 !default_rom.gb
 
 test.replay
-ci_secrets.tar
 
 /mooneye/
 /blargg/
