@@ -29,15 +29,12 @@ RESET_REPLAYS = False
 
 
 def verify_screen_image_np(pyboy, saved_array):
-    match = np.all(
-        np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) ==
-        pyboy.botsupport_manager().screen().screen_ndarray()
-    )
+    match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.screen.screen_ndarray())
     if not match and not os.environ.get("TEST_CI"):
         from PIL import Image
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()
-        new = pyboy.botsupport_manager().screen().screen_image()
+        new = pyboy.screen.screen_image()
         new.show()
         import PIL.ImageChops
         PIL.ImageChops.difference(original, new).show()

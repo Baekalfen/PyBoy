@@ -3,9 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 cimport cython
+
 cimport pyboy.utils
 from pyboy.core.mb cimport Motherboard
-
 
 
 cdef class Sprite:
