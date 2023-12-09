@@ -6,21 +6,20 @@
 The core module of the emulator
 """
 
-import heapq
 import os
-import re
 import time
 
 import numpy as np
 
-from pyboy.api.memory_scanner import MemoryScanner
-from pyboy.api.screen import Screen
-from pyboy.api.tilemap import TileMap
+from pyboy import utils
 from pyboy.logging import get_logger
+from pyboy.openai_gym import PyBoyGymEnv
+from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from .api import Sprite, Tile, constants
+from . import utils
+from .api import Screen, Sprite, Tile, TileMap, constants
 from .core.mb import Motherboard
 
 logger = get_logger(__name__)
@@ -41,7 +40,6 @@ class PyBoy:
         self,
         gamerom_file,
         *,
-        symbols_file=None,
         bootrom_file=None,
         sound=False,
         sound_emulated=False,
@@ -54,39 +52,26 @@ class PyBoy:
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
         multiple times.
 
+        This object, `pyboy.WindowEvent`, and the `pyboy.api` module, are the only official user-facing
+        interfaces. All other parts of the emulator, are subject to change.
+
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
         GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
         "bots", which interact with the game.
 
         Only the `gamerom_file` argument is required.
 
-        Example:
-        ```python
-        >>> pyboy = PyBoy('game_rom.gb')
-        >>> for _ in range(60): # Use 'while True:' for infinite
-        ...     pyboy.tick()
-        True...
-        >>> pyboy.stop()
-
-        ```
-
         Args:
             gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
-            * symbols_file (str): Filepath to a .sym file to use. If unsure, specify `None`.
+            bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
+            disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
+            color_palette (tuple): Specify the color palette to use for rendering.
+            cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
-            * bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-
-            * sound (bool): Enable sound emulation and output
-
-            * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
-
-            * color_palette (tuple): Specify the color palette to use for rendering.
-
-            * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
-
-        Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
+        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
         """
 
         self.initialized = False
@@ -98,13 +83,6 @@ class PyBoy:
         if not os.path.isfile(gamerom_file):
             raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
         self.gamerom_file = gamerom_file
-
-        self.rom_symbols = {}
-        if symbols_file is not None:
-            if not os.path.isfile(symbols_file):
-                raise FileNotFoundError(f"Symbols file {symbols_file} was not found!")
-        self.symbols_file = symbols_file
-        self._load_symbols()
 
         self.mb = Motherboard(
             gamerom_file,
@@ -129,173 +107,16 @@ class PyBoy:
         self.paused = False
         self.events = []
         self.queued_input = []
+        self.old_events = []
         self.quitting = False
         self.stopped = False
         self.window_title = "PyBoy"
 
         ###################
-        # API attributes
-        self.screen = Screen(self.mb)
-        """
-        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
-        a variety of formats.
+        # Plugins
 
-        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-        `pyboy.api.screen.Screen.tilemap_position_list` for more information.
-
-        Example:
-        ```python
-        >>> pyboy.screen.image.show()
-        >>> pyboy.screen.ndarray.shape
-        (144, 160, 4)
-        >>> pyboy.screen.raw_buffer_format
-        'RGBA'
-
-        ```
-
-        Returns
-        -------
-        `pyboy.api.screen.Screen`:
-            A Screen object with helper functions for reading the screen buffer.
-        """
-        self.memory = PyBoyMemoryView(self.mb)
-        """
-        Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
-
-        For a more comprehensive description, see the `pyboy.PyBoyMemoryView` class.
-
-        Example:
-        ```python
-        >>> pyboy.memory[0x0000:0x0010] # Read 16 bytes from ROM bank 0
-        [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
-        >>> pyboy.memory[1, 0x2000] = 12 # Override address 0x2000 from ROM bank 1 with the value 12
-        >>> pyboy.memory[0xC000] = 1 # Write to address 0xC000 with value 1
-        ```
-
-        """
-
-        self.memory_scanner = MemoryScanner(self)
-        """
-        Provides a `pyboy.api.memory_scanner.MemoryScanner` object for locating addresses of interest in the memory space
-        of the Game Boy. This might require some trial and error. Values can be represented in memory in surprising ways.
-
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
-
-        Example:
-        ```python
-        >>> current_score = 4 # You write current score in game
-        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
-        []
-        >>> for _ in range(175):
-        ...     pyboy.tick(1, True) # Progress the game to change score
-        True...
-        >>> current_score = 8 # You write the new score in game
-        >>> from pyboy.api.memory_scanner import DynamicComparisonType
-        >>> addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
-        >>> print(addresses) # If repeated enough, only one address will remain
-        []
-
-        ```
-        """
-
-        self.tilemap_background = TileMap(self, self.mb, "BACKGROUND")
-        """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
-
-        Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
-
-        Example:
-        ```
-        >>> pyboy.tilemap_background[8,8]
-        1
-        >>> pyboy.tilemap_background[7:12,8]
-        [0, 1, 0, 1, 0]
-        >>> pyboy.tilemap_background[7:12,8:11]
-        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
-
-        ```
-
-        Returns
-        -------
-        `pyboy.api.tilemap.TileMap`:
-            A TileMap object for the tile map.
-        """
-
-        self.tilemap_window = TileMap(self, self.mb, "WINDOW")
-        """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
-
-        Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
-
-        Example:
-        ```
-        >>> pyboy.tilemap_window[8,8]
-        1
-        >>> pyboy.tilemap_window[7:12,8]
-        [0, 1, 0, 1, 0]
-        >>> pyboy.tilemap_window[7:12,8:11]
-        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
-
-        ```
-
-        Returns
-        -------
-        `pyboy.api.tilemap.TileMap`:
-            A TileMap object for the tile map.
-        """
-
-        self.cartridge_title = self.mb.cartridge.gamename
-        """
-        The title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
-        have been truncated to 11 characters.
-
-        Example:
-        ```python
-        >>> pyboy.cartridge_title # Title of PyBoy's default ROM
-        'DEFAULT-ROM'
-
-        ```
-
-        Returns
-        -------
-        str :
-            Game title
-        """
-
+        self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self._hooks = {}
-
-        self._plugin_manager = PluginManager(self, self.mb, kwargs)
-        """
-        Returns
-        -------
-        `pyboy.plugins.manager.PluginManager`:
-            Object for handling plugins in PyBoy
-        """
-
-        self.game_wrapper = self._plugin_manager.gamewrapper()
-        """
-        Provides an instance of a game-specific or generic wrapper. The game is detected by the cartridge's hard-coded
-        game title (see `pyboy.PyBoy.cartridge_title`).
-
-        If a game-specific wrapper is not found, a generic wrapper will be returned.
-
-        To get more information, find the wrapper for your game in `pyboy.plugins`.
-
-        Example:
-        ```python
-        >>> pyboy.game_wrapper.start_game()
-        >>> pyboy.game_wrapper.reset_game()
-
-        ```
-
-        Returns
-        -------
-        `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
-            A game-specific wrapper object.
-        """
-
         self.initialized = True
 
     def _tick(self, render):
@@ -320,11 +141,11 @@ class PyBoy:
                     self.mb.breakpoint_singlestep_latch = 0
 
                     if not self._handle_hooks():
-                        self._plugin_manager.handle_breakpoint()
+                        self.plugin_manager.handle_breakpoint()
                 else:
                     if self.mb.breakpoint_singlestep_latch:
                         if not self._handle_hooks():
-                            self._plugin_manager.handle_breakpoint()
+                            self.plugin_manager.handle_breakpoint()
                     # Keep singlestepping on, if that's what we're doing
                     self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
@@ -346,39 +167,19 @@ class PyBoy:
 
     def tick(self, count=1, render=True):
         """
-        Progresses the emulator ahead by `count` frame(s).
+        Progresses the emulator ahead by one frame.
 
-        To run the emulator in real-time, it will need to process 60 frames a second (for example in a while-loop).
-        This function will block for roughly 16,67ms per frame, to not run faster than real-time, unless you specify
+        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
+        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
         otherwise with the `PyBoy.set_emulation_speed` method.
 
-        If you need finer control than 1 frame, have a look at `PyBoy.hook_register` to inject code at a specific point
-        in the game.
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
 
-        Setting `render` to `True` will make PyBoy render the screen for *the last frame* of this tick. This can be seen
-        as a type of "frameskipping" optimization.
+        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it's adviced to use
+        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
+        access the `PyBoy.game_area` to get a simpler representation of the game.
 
-        For AI training, it's adviced to use as high a count as practical, as it will otherwise reduce performance
-        substantially. While setting `render` to `False`, you can still access the `PyBoy.game_area` to get a simpler
-        representation of the game.
-
-        If `render` was enabled, use `pyboy.api.screen.Screen` to get a NumPy buffer or raw memory buffer.
-
-        Example:
-        ```python
-        >>> pyboy.tick() # Progress 1 frame with rendering
-        True
-        >>> pyboy.tick(1) # Progress 1 frame with rendering
-        True
-        >>> pyboy.tick(60, False) # Progress 60 frames *without* rendering
-        True
-        >>> pyboy.tick(60, True) # Progress 60 frames and render *only the last frame*
-        True
-        >>> for _ in range(60): # Progress 60 frames and render every frame
-        ...     if not pyboy.tick(1, True):
-        ...         break
-        >>>
-        ```
+        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
 
         Args:
             count (int): Number of ticks to process
@@ -398,7 +199,7 @@ class PyBoy:
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
-        events = self._plugin_manager.handle_events(events)
+        events = self.plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
                 self.quitting = True
@@ -428,7 +229,7 @@ class PyBoy:
             elif event == WindowEvent.UNPAUSE:
                 self._unpause()
             elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
-                self._plugin_manager._post_tick_windows()
+                self.plugin_manager._post_tick_windows()
             else:
                 self.mb.buttonevent(event)
 
@@ -450,21 +251,15 @@ class PyBoy:
         self._update_window_title()
 
     def _post_tick(self):
-        # Fix buggy PIL. They will copy our image buffer and destroy the
-        # reference on some user operations like .save().
-        if not self.screen.image.readonly:
-            self.screen._set_image()
-
         if self.frame_count % 60 == 0:
             self._update_window_title()
-        self._plugin_manager.post_tick()
-        self._plugin_manager.frame_limiter(self.target_emulationspeed)
+        self.plugin_manager.post_tick()
+        self.plugin_manager.frame_limiter(self.target_emulationspeed)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
-        self.events = []
-        while self.queued_input and self.frame_count == self.queued_input[0][0]:
-            _, _event = heapq.heappop(self.queued_input)
-            self.events.append(WindowEvent(_event))
+        self.old_events = self.events
+        self.events = self.queued_input
+        self.queued_input = []
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
@@ -472,8 +267,8 @@ class PyBoy:
         self.window_title += f' Emulation: x{(round(SPF / avg_emu) if avg_emu > 0 else "INF")}'
         if self.paused:
             self.window_title += "[PAUSED]"
-        self.window_title += self._plugin_manager.window_title()
-        self._plugin_manager._set_title()
+        self.window_title += self.plugin_manager.window_title()
+        self.plugin_manager._set_title()
 
     def __del__(self):
         self.stop(save=False)
@@ -488,13 +283,6 @@ class PyBoy:
         """
         Gently stops the emulator and all sub-modules.
 
-        Example:
-        ```python
-        >>> pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
-        >>> pyboy.stop(False) # Stop emulator and discard game progress (cartridge RAM)
-
-        ```
-
         Args:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
@@ -503,7 +291,7 @@ class PyBoy:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
-            self._plugin_manager.stop()
+            self.plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
 
@@ -511,59 +299,138 @@ class PyBoy:
     # Scripts and bot methods
     #
 
-    def button(self, input, delay=1):
+    def openai_gym(self, observation_type="tiles", action_type="press", simultaneous_actions=False, **kwargs):
+        """
+        For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
+        This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
+        Additional kwargs are passed to the start_game method of the game_wrapper.
+
+        Args:
+            observation_type (str): Define what the agent will be able to see:
+            * `"raw"`: Gives the raw pixels color
+            * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
+            * `"compressed"`: Gives a more detailled but heavier representation than `"minimal"`.
+            * `"minimal"`: Gives a minimal representation defined by the game_wrapper (recommended).
+
+            action_type (str): Define how the agent will interact with button inputs
+            * `"press"`: The agent will only press inputs for 1 frame an then release it.
+            * `"toggle"`: The agent will toggle inputs, first time it press and second time it release.
+            * `"all"`: The agent have access to all inputs, press and release are separated.
+
+            simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
+
+        Returns
+        -------
+        `pyboy.openai_gym.PyBoyGymEnv`:
+            A Gym environment based on the `Pyboy` object.
+        """
+        if gym_enabled:
+            return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions, **kwargs)
+        else:
+            logger.error("%s: Missing dependency \"gym\". ", __name__)
+            return None
+
+    def game_wrapper(self):
+        """
+        Provides an instance of a game-specific wrapper. The game is detected by the cartridge's hard-coded game title
+        (see `pyboy.PyBoy.cartridge_title`).
+
+        If the game isn't supported, None will be returned.
+
+        To get more information, find the wrapper for your game in `pyboy.plugins`.
+
+        Returns
+        -------
+        `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
+            A game-specific wrapper object.
+        """
+        return self.plugin_manager.gamewrapper()
+
+    def get_memory_value(self, addr):
+        """
+        Reads a given memory address of the Game Boy's current memory state. This will not directly give you access to
+        all switchable memory banks. Open an issue on GitHub if that is needed, or use `PyBoy.set_memory_value` to send
+        MBC commands to the virtual cartridge.
+
+        Returns
+        -------
+        int:
+            An integer with the value of the memory address
+        """
+        return self.mb.getitem(addr)
+
+    def set_memory_value(self, addr, value):
+        """
+        Write one byte to a given memory address of the Game Boy's current memory state.
+
+        This will not directly give you access to all switchable memory banks.
+
+        __NOTE:__ This function will not let you change ROM addresses (0x0000 to 0x8000). If you write to these
+        addresses, it will send commands to the "Memory Bank Controller" (MBC) of the virtual cartridge. You can read
+        about the MBC at [Pan Docs](http://bgb.bircd.org/pandocs.htm).
+
+        If you need to change ROM values, see `pyboy.PyBoy.override_memory_value`.
+
+        Args:
+            addr (int): Address to write the byte
+            value (int): A byte of data
+        """
+        self.mb.setitem(addr, value)
+
+    def override_memory_value(self, rom_bank, addr, value):
+        """
+        Override one byte at a given memory address of the Game Boy's ROM.
+
+        This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
+
+        __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+        any overrides when reloading the ROM.
+
+        If you need to change a RAM address, see `pyboy.PyBoy.set_memory_value`.
+
+        Args:
+            rom_bank (int): ROM bank to do the overwrite in
+            addr (int): Address to write the byte inside the ROM bank
+            value (int): A byte of data
+        """
+        # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
+        # what the game writes to the address. This can be used so freeze the value for health, cash etc.
+        self.mb.cartridge.overrideitem(rom_bank, addr, value)
+
+    def button(self, input):
         """
         Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
 
         The button will automatically be released at the following call to `PyBoy.tick`.
 
-        Example:
-        ```python
-        >>> pyboy.button('a') # Press button 'a' and release after `pyboy.tick()`
-        >>> pyboy.tick() # Button 'a' pressed
-        True
-        >>> pyboy.tick() # Button 'a' released
-        True
-        >>> pyboy.button('a', 3) # Press button 'a' and release after 3 `pyboy.tick()`
-        >>> pyboy.tick() # Button 'a' pressed
-        True
-        >>> pyboy.tick() # Button 'a' still pressed
-        True
-        >>> pyboy.tick() # Button 'a' still pressed
-        True
-        >>> pyboy.tick() # Button 'a' released
-        True
-        ```
-
         Args:
             input (str): button to press
-            delay (int, optional): Number of frames to delay the release. Defaults to 1
         """
         input = input.lower()
         if input == "left":
             self.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_LEFT))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
         elif input == "right":
             self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_RIGHT))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
         elif input == "up":
             self.send_input(WindowEvent.PRESS_ARROW_UP)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_UP))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
         elif input == "down":
             self.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_DOWN))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_A))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
         elif input == "b":
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_B))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
         elif input == "start":
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_START))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_SELECT))
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
         else:
             raise Exception("Unrecognized input:", input)
 
@@ -572,19 +439,6 @@ class PyBoy:
         Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
 
         The button will remain press until explicitly released with `PyBoy.button_release` or `PyBoy.send_input`.
-
-        Example:
-        ```python
-        >>> pyboy.button_press('a') # Press button 'a' and keep pressed after `PyBoy.tick()`
-        >>> pyboy.tick() # Button 'a' pressed
-        True
-        >>> pyboy.tick() # Button 'a' still pressed
-        True
-        >>> pyboy.button_release('a') # Release button 'a' on next call to `PyBoy.tick()`
-        >>> pyboy.tick() # Button 'a' released
-        True
-
-        ```
 
         Args:
             input (str): button to press
@@ -616,19 +470,6 @@ class PyBoy:
 
         This will release a button after a call to `PyBoy.button_press` or `PyBoy.send_input`.
 
-        Example:
-        ```python
-        >>> pyboy.button_press('a') # Press button 'a' and keep pressed after `PyBoy.tick()`
-        >>> pyboy.tick() # Button 'a' pressed
-        True
-        >>> pyboy.tick() # Button 'a' still pressed
-        True
-        >>> pyboy.button_release('a') # Release button 'a' on next call to `PyBoy.tick()`
-        >>> pyboy.tick() # Button 'a' released
-        True
-
-        ```
-
         Args:
             input (str): button to release
         """
@@ -654,29 +495,37 @@ class PyBoy:
 
     def send_input(self, event):
         """
-        Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
-        `pyboy.utils.WindowEvent` for which events to send.
+        Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
 
-        Consider using `PyBoy.button` instead for easier access.
-
-        Example:
-        ```python
-        >>> from pyboy.utils import WindowEvent
-        >>> pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button 'a' and keep pressed after `PyBoy.tick()`
-        >>> pyboy.tick() # Button 'a' pressed
-        True
-        >>> pyboy.tick() # Button 'a' still pressed
-        True
-        >>> pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button 'a' on next call to `PyBoy.tick()`
-        >>> pyboy.tick() # Button 'a' released
-        True
-
-        ```
+        See `pyboy.WindowEvent` for which events to send.
 
         Args:
             event (pyboy.WindowEvent): The event to send
         """
         self.events.append(WindowEvent(event))
+
+    def get_input(
+        self,
+        ignore=(
+            WindowEvent.PASS, WindowEvent._INTERNAL_TOGGLE_DEBUG, WindowEvent._INTERNAL_RENDERER_FLUSH,
+            WindowEvent._INTERNAL_MOUSE, WindowEvent._INTERNAL_MARK_TILE
+        )
+    ):
+        """
+        Get current inputs except the events specified in "ignore" tuple.
+        This is both Game Boy buttons and emulator controls.
+
+        See `pyboy.WindowEvent` for which events to get.
+
+        Args:
+            ignore (tuple): Events this function should ignore
+
+        Returns
+        -------
+        list:
+            List of the `pyboy.utils.WindowEvent`s processed for the last call to `pyboy.PyBoy.tick`
+        """
+        return [x for x in self.old_events if x not in ignore]
 
     def save_state(self, file_like_object):
         """
@@ -686,19 +535,13 @@ class PyBoy:
         You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
         case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
 
-        ```python
-        >>> # Save to file
-        >>> with open("state_file.state", "wb") as f:
-        ...     pyboy.save_state(f)
-        >>>
-        >>> # Save to memory
-        >>> import io
-        >>> with io.BytesIO() as f:
-        ...     f.seek(0)
-        ...     pyboy.save_state(f)
-        0
+            # Save to file
+            file_like_object = open("state_file.state", "wb")
 
-        ```
+            # Save to memory
+            import io
+            file_like_object = io.BytesIO()
+            file_like_object.seek(0)
 
         Args:
             file_like_object (io.BufferedIOBase): A file-like object for which to write the emulator state.
@@ -706,9 +549,6 @@ class PyBoy:
 
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
-
-        if file_like_object.__class__.__name__ == "TextIOWrapper":
-            raise Exception("Text file not allowed. Did you specify open(..., 'wb')?")
 
         self.mb.save_state(IntIOWrapper(file_like_object))
 
@@ -721,12 +561,10 @@ class PyBoy:
         can load it here.
 
         To load a file, remember to load it as bytes:
-        ```python
-        >>> # Load file
-        >>> with open("state_file.state", "rb") as f:
-        ...     pyboy.load_state(f)
-        >>>
-        ```
+
+            # Load file
+            file_like_object = open("state_file.state", "rb")
+
 
         Args:
             file_like_object (io.BufferedIOBase): A file-like object for which to read the emulator state.
@@ -735,142 +573,10 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
 
-        if file_like_object.__class__.__name__ == "TextIOWrapper":
-            raise Exception("Text file not allowed. Did you specify open(..., 'rb')?")
-
         self.mb.load_state(IntIOWrapper(file_like_object))
 
-    def game_area_dimensions(self, x, y, width, height, follow_scrolling=True):
-        """
-        If using the generic game wrapper (see `pyboy.PyBoy.game_wrapper`), you can use this to set the section of the
-        tilemaps to extract. This will default to the entire tilemap.
-
-        Example:
-        ```python
-        >>> pyboy.game_wrapper.shape
-        (32, 32)
-        >>> pyboy.game_area_dimensions(2, 2, 10, 18, False)
-        >>> pyboy.game_wrapper.shape
-        (10, 18)
-        ```
-
-        Args:
-            x (int): Offset from top-left corner of the screen
-            y (int): Offset from top-left corner of the screen
-            width (int): Width of game area
-            height (int): Height of game area
-            follow_scrolling (bool): Whether to follow the scrolling of [SCX and SCY](https://gbdev.io/pandocs/Scrolling.html)
-        """
-        self.game_wrapper._set_dimensions(x, y, width, height, follow_scrolling=True)
-
-    def game_area_collision(self):
-        """
-        Some game wrappers define a collision map. Check if your game wrapper has this feature implemented: `pyboy.plugins`.
-
-        The output will be unique for each game wrapper.
-
-        Example:
-        ```python
-        >>> # This example show nothing, but a supported game will
-        >>> pyboy.game_area_collision()
-        array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=uint32)
-
-        ```
-
-        Returns
-        -------
-        memoryview:
-            Simplified 2-dimensional memoryview of the collision map
-        """
-        return self.game_wrapper.game_area_collision()
-
-    def game_area_mapping(self, mapping, sprite_offset=0):
-        """
-        Define custom mappings for tile identifiers in the game area.
-
-        Example of custom mapping:
-        ```python
-        >>> mapping = [x for x in range(384)] # 1:1 mapping
-        >>> mapping[0] = 0 # Map tile identifier 0 -> 0
-        >>> mapping[1] = 0 # Map tile identifier 1 -> 0
-        >>> mapping[2] = 0 # Map tile identifier 2 -> 0
-        >>> mapping[3] = 0 # Map tile identifier 3 -> 0
-        >>> pyboy.game_area_mapping(mapping, 1000)
-
-        ```
-
-        Some game wrappers will supply mappings as well. See the specific documentation for your game wrapper:
-        `pyboy.plugins`.
-        ```python
-        >>> pyboy.game_area_mapping(pyboy.game_wrapper.mapping_one_to_one, 0)
-
-        ```
-
-        Args:
-            mapping (list or ndarray): list of 384 (DMG) or 768 (CGB) tile mappings. Use `None` to reset to a 1:1 mapping.
-            sprite_offest (int): Optional offset add to tile id for sprites
-        """
-
-        if mapping is None:
-            mapping = [x for x in range(768)]
-
-        assert isinstance(sprite_offset, int)
-        assert isinstance(mapping, (np.ndarray, list))
-        assert len(mapping) == 384 or len(mapping) == 768
-
-        self.game_wrapper.game_area_mapping(mapping, sprite_offset)
-
     def game_area(self):
-        """
-        Use this method to get a matrix of the "game area" of the screen. This view is simplified to be perfect for
-        machine learning applications.
-
-        The layout will vary from game to game. Below is an example from Tetris:
-
-        Example:
-        ```python
-        >>> pyboy.game_area()
-        array([[ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47, 130, 130,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47, 130, 130,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
-               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47]], dtype=uint32)
-
-        ```
-
-        If you want a "compressed", "minimal" or raw mapping of tiles, you can change the mapping using
-        `pyboy.PyBoy.game_area_mapping`. Either you'll have to supply your own mapping, or you can find one
-        that is built-in with the game wrapper plugin for your game. See `pyboy.PyBoy.game_area_mapping`.
-
-        Returns
-        -------
-        memoryview:
-            Simplified 2-dimensional memoryview of the screen
-        """
-
-        return self.game_wrapper.game_area()
+        raise Exception("game_area not implemented")
 
     def _serial(self):
         """
@@ -894,26 +600,34 @@ class PyBoy:
 
         Some window types do not implement a frame-limiter, and will always run at full speed.
 
-        Example:
-        ```python
-        >>> pyboy.tick() # Delays 16.67ms
-        True
-        >>> pyboy.set_emulation_speed(0) # Disable limit
-        >>> pyboy.tick() # As fast as possible
-        True
-        ```
-
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         """
-        if self.initialized and self._plugin_manager.window_null_enabled:
-            logger.warning(
-                'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
-            )
+        if self.initialized:
+            unsupported_window_types_enabled = [
+                self.plugin_manager.window_dummy_enabled, self.plugin_manager.window_headless_enabled,
+                self.plugin_manager.window_open_gl_enabled
+            ]
+            if any(unsupported_window_types_enabled):
+                logger.warning(
+                    'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
+                )
 
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
+
+    def cartridge_title(self):
+        """
+        Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
+        have been truncated to 11 characters.
+
+        Returns
+        -------
+        str :
+            Game title
+        """
+        return self.mb.cartridge.gamename
 
     def __rendering(self, value):
         """
@@ -923,43 +637,6 @@ class PyBoy:
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
-
-    def _load_symbols(self):
-        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom_file)
-        for sym_path in [self.symbols_file, gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]:
-            if sym_path and os.path.isfile(sym_path):
-                logger.info("Loading symbol file: %s", sym_path)
-                with open(sym_path) as f:
-                    for _line in f.readlines():
-                        line = _line.strip()
-                        if line == "":
-                            continue
-                        elif line.startswith(";"):
-                            continue
-                        elif line.startswith("["):
-                            # Start of key group
-                            # [labels]
-                            # [definitions]
-                            continue
-
-                        try:
-                            bank, addr, sym_label = re.split(":| ", line.strip())
-                            bank = int(bank, 16)
-                            addr = int(addr, 16)
-                            if not bank in self.rom_symbols:
-                                self.rom_symbols[bank] = {}
-
-                            self.rom_symbols[bank][addr] = sym_label
-                        except ValueError as ex:
-                            logger.warning("Skipping .sym line: %s", line.strip())
-        return self.rom_symbols
-
-    def _lookup_symbol(self, symbol):
-        for bank, addresses in self.rom_symbols.items():
-            for addr, label in addresses.items():
-                if label == symbol:
-                    return bank, addr
-        raise ValueError("Symbol not found: %s" % symbol)
 
     def hook_register(self, bank, addr, callback, context):
         """
@@ -972,39 +649,18 @@ class PyBoy:
         ```python
         >>> context = "Hello from hook"
         >>> def my_callback(context):
-        ...     print(context)
-        >>> pyboy.hook_register(0, 0x100, my_callback, context)
-        >>> pyboy.tick(70)
+                print(context)
+        >>> pyboy.hook_register(0, 0x2000, my_callback, context)
+        >>> pyboy.tick(60)
         Hello from hook
-        True
-
-        ```
-
-        If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
-        enable this, you'll need to place a `.sym` file next to your ROM, or provide it using:
-        `PyBoy(..., symbol_file="game_rom.gb.sym")`.
-
-        Then provide `None` for `bank` and the symbol for `addr` to trigger the automatic lookup.
-
-        Example:
-        ```python
-        >>> # Continued example above
-        >>> pyboy.hook_register(None, "Main.move", lambda x: print(x), "Hello from hook2")
-        >>> pyboy.tick(80)
-        Hello from hook2
-        True
-
         ```
 
         Args:
-            bank (int or None): ROM or RAM bank (None for symbol lookup)
-            addr (int or str): Address in the Game Boy's address space (str for symbol lookup)
+            bank (int): ROM or RAM bank
+            addr (int): Address in the Game Boy's address space
             callback (func): A function which takes `context` as argument
             context (object): Argument to pass to callback when hook is called
         """
-        if bank is None and isinstance(addr, str):
-            bank, addr = self._lookup_symbol(addr)
-
         opcode = self.memory[bank, addr]
         if opcode == 0xDB:
             raise ValueError("Hook already registered for this bank and address.")
@@ -1020,28 +676,15 @@ class PyBoy:
         ```python
         >>> context = "Hello from hook"
         >>> def my_callback(context):
-        ...     print(context)
-        >>> pyboy.hook_register(0, 0x2000, my_callback, context)
-        >>> pyboy.hook_deregister(0, 0x2000)
-
-        ```
-
-        This function can also deregister a hook based on a symbol. See `PyBoy.hook_register` for details.
-
-        Example:
-        ```python
-        >>> pyboy.hook_register(None, "Main", lambda x: print(x), "Hello from hook")
-        >>> pyboy.hook_deregister(None, "Main")
-
+                print(context)
+        >>> hook_index = pyboy.hook_register(0, 0x2000, my_callback, context)
+        >>> pyboy.hook_deregister(hook_index)
         ```
 
         Args:
-            bank (int or None): ROM or RAM bank (None for symbol lookup)
-            addr (int or str): Address in the Game Boy's address space (str for symbol lookup)
+            bank (int): ROM or RAM bank
+            addr (int): Address in the Game Boy's address space
         """
-        if bank is None and isinstance(addr, str):
-            bank, addr = self._lookup_symbol(addr)
-
         index = self.mb.breakpoint_find(bank, addr)
         if index == -1:
             raise ValueError("Breakpoint not found for bank and addr")
@@ -1066,17 +709,6 @@ class PyBoy:
         The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
         Docs](http://bgb.bircd.org/pandocs.htm).
 
-        ```python
-        >>> s = pyboy.get_sprite(12)
-        >>> s
-        Sprite [12]: Position: (-8, -16), Shape: (8, 8), Tiles: (Tile: 0), On screen: False
-        >>> s.on_screen
-        False
-        >>> s.tiles
-        [Tile: 0]
-
-        ```
-
         Args:
             index (int): Sprite index from 0 to 39.
         Returns
@@ -1090,13 +722,12 @@ class PyBoy:
         """
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-        `pyboy.PyBoy.get_sprite` function to get a `pyboy.api.sprite.Sprite` object.
+        `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
 
         Example:
-        ```python
+        ```
         >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
         [[0, 2, 4], []]
-
         ```
 
         Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
@@ -1125,21 +756,11 @@ class PyBoy:
 
     def get_tile(self, identifier):
         """
-        The Game Boy can have 384 tiles loaded in memory at once (768 for Game Boy Color). Use this method to get a
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
         `pyboy.api.tile.Tile`-object for given identifier.
 
         The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
         the `pyboy.api.tile.Tile` object for more information.
-
-        Example:
-        ```python
-        >>> t = pyboy.get_tile(2)
-        >>> t
-        Tile: 2
-        >>> t.shape
-        (8, 8)
-
-        ```
 
         Returns
         -------
@@ -1148,108 +769,38 @@ class PyBoy:
         """
         return Tile(self.mb, identifier=identifier)
 
+    @property
+    def tilemap_background(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+        return TileMap(self.mb, "BACKGROUND")
+
+    @property
+    def tilemap_window(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+        return TileMap(self.mb, "WINDOW")
+
 
 class PyBoyMemoryView:
-    """
-    This class cannot be used directly, but is accessed through `PyBoy.memory`.
-
-    This class serves four purposes: Reading memory (ROM/RAM), writing memory (ROM/RAM), overriding memory (ROM/RAM) and special registers.
-
-    See the [Pan Docs: Memory Map](https://gbdev.io/pandocs/Memory_Map.html) for a great overview of the memory space.
-
-    Memory can be accessed as individual bytes (`pyboy.memory[0x00]`) or as slices (`pyboy.memory[0x00:0x10]`). And if
-    applicable, a specific ROM/RAM bank can be defined before the address (`pyboy.memory[0, 0x00]` or `pyboy.memory[0, 0x00:0x10]`).
-
-    The boot ROM is accessed using the special "-1" ROM bank.
-
-    The find addresses of interest, either search online for something like: "[game title] RAM map", or find them yourself
-    using `PyBoy.memory_scanner`.
-
-    **Read:**
-
-    If you're developing a bot or AI with this API, you're most likely going to be using read the most. This is how you
-    would efficiently read the score, time, coins, positions etc. in a game's memory.
-
-    ```python
-    >>> pyboy.memory[0x0000] # Read one byte at address 0x0000
-    49
-    >>> pyboy.memory[0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010)
-    [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
-    >>> pyboy.memory[-1, 0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010) from the boot ROM
-    [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
-    >>> pyboy.memory[0, 0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010) from ROM bank 0
-    [64, 65, 66, 67, 68, 69, 70, 65, 65, 65, 71, 65, 65, 65, 72, 73]
-    >>> pyboy.memory[2, 0xA000] # Read from external RAM on cartridge (if any) from bank 2 at address 0xA000
-    0
-    ```
-
-    **Write:**
-
-    Writing to Game Boy memory can be complicated because of the limited address space. There's a lot of memory that
-    isn't directly accessible, and can be hidden through "memory banking". This means that the same address range
-    (for example 0x4000 to 0x8000) can change depending on what state the game is in.
-
-    If you want to change an address in the ROM, then look at override below. Issuing writes to the ROM area actually
-    sends commands to the [Memory Bank Controller (MBC)](https://gbdev.io/pandocs/MBCs.html#mbcs) on the cartridge.
-
-    A write is done by assigning to the `PyBoy.memory` object. It's recommended to define the bank to avoid mistakes
-    (`pyboy.memory[2, 0xA000]=1`). Without defining the bank, PyBoy will pick the current bank for the given address if
-    needed (`pyboy.memory[0xA000]=1`).
-
-    At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.
-
-    ```python
-    >>> pyboy.memory[0xC000] = 123 # Write to WRAM at address 0xC000
-    >>> pyboy.memory[0xC000:0xC00A] = [0,1,2,3,4,5,6,7,8,9] # Write to WRAM from address 0xC000 to 0xC00A
-    >>> pyboy.memory[0xC010:0xC01A] = 0 # Write to WRAM from address 0xC010 to 0xC01A
-    >>> pyboy.memory[0x1000] = 123 # Not writing 123 at address 0x1000! This sends a command to the cartridge's MBC.
-    >>> pyboy.memory[2, 0xA000] = 123 # Write to external RAM on cartridge (if any) for bank 2 at address 0xA000
-    >>> # Game Boy Color (CGB) only:
-    >>> pyboy_cgb.memory[1, 0x8000] = 25 # Write to VRAM bank 1 at address 0xD000 when in CGB mode
-    >>> pyboy_cgb.memory[6, 0xD000] = 25 # Write to WRAM bank 6 at address 0xD000 when in CGB mode
-    ```
-
-    **Override:**
-
-    Override data at a given memory address of the Game Boy's ROM.
-
-    This can be used to reprogram a game ROM to change its behavior.
-
-    This will not let your override RAM or a special register. This will let you override data in the ROM at any given bank.
-    This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
-
-    _NOTE_: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
-    any overrides when reloading the ROM.
-
-    To override, it's required to provide the ROM-bank you're changing. Otherwise, it'll be considered a regular 'write' as described above.
-
-    ```python
-    >>> pyboy.memory[0, 0x0010] = 10 # Override ROM-bank 0 at address 0x0010
-    >>> pyboy.memory[0, 0x0010:0x001A] = [0,1,2,3,4,5,6,7,8,9] # Override ROM-bank 0 at address 0x0010 to 0x001A
-    >>> pyboy.memory[-1, 0x0010] = 10 # Override boot ROM at address 0x0010
-    >>> pyboy.memory[1, 0x6000] = 12 # Override ROM-bank 1 at address 0x6000
-    >>> pyboy.memory[0x1000] = 12 # This will not override, as there is no ROM bank assigned!
-    ```
-
-    **Special Registers:**
-
-    The Game Boy has a range of memory addresses known as [hardware registers](https://gbdev.io/pandocs/Hardware_Reg_List.html). These control parts of the hardware like LCD,
-    Timer, DMA, serial and so on. Even though they might appear as regular RAM addresses, reading/writing these addresses
-    often results in special side-effects.
-
-    The [DIV (0xFF04) register](https://gbdev.io/pandocs/Timer_and_Divider_Registers.html#ff04--div-divider-register) for example provides a number that increments 16 thousand times each second. This can be
-    used as a source of randomness in games. If you read the value, you'll get a pseudo-random number. But if you write
-    *any* value to the register, it'll reset to zero.
-
-    ```python
-    >>> pyboy.memory[0xFF04] # DIV register
-    163
-    >>> pyboy.memory[0xFF04] = 123 # Trying to write to it will always reset it to zero
-    >>> pyboy.memory[0xFF04]
-    0
-    ```
-
-    """
     def __init__(self, mb):
         self.mb = mb
 
@@ -1260,8 +811,6 @@ class PyBoyMemoryView:
             return (0, -1, 0)
         start = addr.start
         stop = addr.stop
-        if start > stop:
-            return (-1, -1, 0)
         if addr.step is None:
             step = 1
         else:
@@ -1277,15 +826,13 @@ class PyBoyMemoryView:
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            assert start >= 0 or stop >= 0, "Start address has to come before end address"
             assert start >= 0, "Start address required"
             assert stop >= 0, "End address required"
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
         else:
-            return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
+            return self.__getitem(addr, 0, 0, bank, is_single, is_bank)
 
     def __getitem(self, start, stop, step, bank, is_single, is_bank):
-        slice_length = (stop-start) // step
         if is_bank:
             # Reading a specific bank
             if start < 0x8000:
@@ -1294,25 +841,11 @@ class PyBoyMemoryView:
                     stop -= 0x4000
                 # Cartridge ROM Banks
                 assert stop < 0x4000, "Out of bounds for reading ROM bank"
-                if bank == -1:
-                    assert start <= 0xFF, "Start address out of range for bootrom"
-                    assert stop <= 0xFF, "Start address out of range for bootrom"
-                    if not is_single:
-                        mem_slice = [0] * slice_length
-                        for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.bootrom.bootrom[x]
-                        return mem_slice
-                    else:
-                        return self.mb.bootrom.bootrom[start]
+                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+                if not is_single:
+                    return [self.mb.cartridge.rombanks[bank][x] for x in range(start, stop, step)]
                 else:
-                    assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
-                    if not is_single:
-                        mem_slice = [0] * slice_length
-                        for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.cartridge.rombanks[bank, x]
-                        return mem_slice
-                    else:
-                        return self.mb.cartridge.rombanks[bank, start]
+                    return self.mb.cartridge.rombanks[bank][start]
             elif start < 0xA000:
                 start -= 0x8000
                 stop -= 0x8000
@@ -1323,18 +856,12 @@ class PyBoyMemoryView:
 
                 if bank == 0:
                     if not is_single:
-                        mem_slice = [0] * slice_length
-                        for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM0[x]
-                        return mem_slice
+                        return [self.mb.lcd.VRAM0[x] for x in range(start, stop, step)]
                     else:
                         return self.mb.lcd.VRAM0[start]
                 else:
                     if not is_single:
-                        mem_slice = [0] * slice_length
-                        for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM1[x]
-                        return mem_slice
+                        return [self.mb.lcd.VRAM1[x] for x in range(start, stop, step)]
                     else:
                         return self.mb.lcd.VRAM1[start]
             elif start < 0xC000:
@@ -1344,12 +871,9 @@ class PyBoyMemoryView:
                 assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
                 assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
                 if not is_single:
-                    mem_slice = [0] * slice_length
-                    for x in range(start, stop, step):
-                        mem_slice[(x-start) // step] = self.mb.cartridge.rambanks[bank, x]
-                    return mem_slice
+                    return [self.mb.cartridge.rambanks[bank][x] for x in range(start, stop, step)]
                 else:
-                    return self.mb.cartridge.rambanks[bank, start]
+                    return self.mb.cartridge.rambanks[bank][start]
             elif start < 0xE000:
                 start -= 0xC000
                 stop -= 0xC000
@@ -1361,20 +885,14 @@ class PyBoyMemoryView:
                 assert stop < 0x1000, "Out of bounds for reading VRAM bank"
                 assert bank <= 7, "WRAM Bank out of range"
                 if not is_single:
-                    mem_slice = [0] * slice_length
-                    for x in range(start, stop, step):
-                        mem_slice[(x-start) // step] = self.mb.ram.internal_ram0[x + bank*0x1000]
-                    return mem_slice
+                    return [self.mb.ram.internal_ram0[x + bank*0x1000] for x in range(start, stop, step)]
                 else:
                     return self.mb.ram.internal_ram0[start + bank*0x1000]
             else:
                 assert None, "Invalid memory address for bank"
         elif not is_single:
             # Reading slice of memory space
-            mem_slice = [0] * slice_length
-            for x in range(start, stop, step):
-                mem_slice[(x-start) // step] = self.mb.getitem(x)
-            return mem_slice
+            return [self.mb.getitem(x) for x in range(start, stop, step)]
         else:
             # Reading specific address of memory space
             return self.mb.getitem(start)
@@ -1398,59 +916,7 @@ class PyBoyMemoryView:
         if is_bank:
             # Writing a specific bank
             if start < 0x8000:
-                """
-                Override one byte at a given memory address of the Game Boy's ROM.
-
-                This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
-
-                __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
-                any overrides when reloading the ROM.
-
-                If you need to change a RAM address, see `pyboy.PyBoy.memory`.
-
-                Args:
-                    rom_bank (int): ROM bank to do the overwrite in
-                    addr (int): Address to write the byte inside the ROM bank
-                    value (int): A byte of data
-                """
-                if start >= 0x4000:
-                    start -= 0x4000
-                    stop -= 0x4000
-                # Cartridge ROM Banks
-                assert stop < 0x4000, "Out of bounds for reading ROM bank"
-                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
-
-                # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
-                # what the game writes to the address. This can be used so freeze the value for health, cash etc.
-                if bank == -1:
-                    assert start <= 0xFF, "Start address out of range for bootrom"
-                    assert stop <= 0xFF, "Start address out of range for bootrom"
-                    if not is_single:
-                        # Writing slice of memory space
-                        if hasattr(v, "__iter__"):
-                            assert (stop-start) // step == len(v), "slice does not match length of data"
-                            _v = iter(v)
-                            for x in range(start, stop, step):
-                                self.mb.bootrom.bootrom[x] = next(_v)
-                        else:
-                            for x in range(start, stop, step):
-                                self.mb.bootrom.bootrom[x] = v
-                    else:
-                        self.mb.bootrom.bootrom[start] = v
-                else:
-                    if not is_single:
-                        # Writing slice of memory space
-                        if hasattr(v, "__iter__"):
-                            assert (stop-start) // step == len(v), "slice does not match length of data"
-                            _v = iter(v)
-                            for x in range(start, stop, step):
-                                self.mb.cartridge.overrideitem(bank, x, next(_v))
-                        else:
-                            for x in range(start, stop, step):
-                                self.mb.cartridge.overrideitem(bank, x, v)
-                    else:
-                        self.mb.cartridge.overrideitem(bank, start, v)
-
+                assert None, "Cannot write to ROM banks"
             elif start < 0xA000:
                 start -= 0x8000
                 stop -= 0x8000
@@ -1497,12 +963,12 @@ class PyBoyMemoryView:
                         assert (stop-start) // step == len(v), "slice does not match length of data"
                         _v = iter(v)
                         for x in range(start, stop, step):
-                            self.mb.cartridge.rambanks[bank, x] = next(_v)
+                            self.mb.cartridge.rambanks[bank][x] = next(_v)
                     else:
                         for x in range(start, stop, step):
-                            self.mb.cartridge.rambanks[bank, x] = v
+                            self.mb.cartridge.rambanks[bank][x] = v
                 else:
-                    self.mb.cartridge.rambanks[bank, start] = v
+                    self.mb.cartridge.rambanks[bank][start] = v
             elif start < 0xE000:
                 start -= 0xC000
                 stop -= 0xC000

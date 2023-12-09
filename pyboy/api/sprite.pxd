@@ -10,18 +10,17 @@ from pyboy.core.mb cimport Motherboard
 
 cdef class Sprite:
     cdef Motherboard mb
-    cdef readonly int _offset
+    cdef public int _offset
 
-    cdef readonly int sprite_index
-    cdef readonly int y
-    cdef readonly int x
-    cdef readonly int tile_identifier
-    cdef readonly bint attr_obj_bg_priority
-    cdef readonly bint attr_y_flip
-    cdef readonly bint attr_x_flip
-    cdef readonly int attr_palette_number
-    cdef readonly bint attr_cgb_bank_number
-    cdef readonly tuple shape
-    cdef readonly list tiles
-    cdef readonly bint on_screen
+    cdef public int sprite_index
+    cdef public int y
+    cdef public int x
+    cdef public int tile_identifier
+    cdef public bint attr_obj_bg_priority
+    cdef public bint attr_y_flip
+    cdef public bint attr_x_flip
+    cdef public bint attr_palette_number
+    cdef public tuple shape
+    cdef public list tiles
+    cdef public bint on_screen
     cdef int _sprite_index

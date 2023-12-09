@@ -42,7 +42,7 @@ class ScreenRecorder(PyBoyPlugin):
     def post_tick(self):
         # Plugin: Screen Recorder
         if self.recording:
-            self.add_frame(self.pyboy.screen.image.copy())
+            self.add_frame(self.pyboy.screen.screen_image())
 
     def add_frame(self, frame):
         # Pillow makes artifacts in the output, if we use 'RGB', which is PyBoy's default format
@@ -55,7 +55,7 @@ class ScreenRecorder(PyBoyPlugin):
             directory = os.path.join(os.path.curdir, "recordings")
             if not os.path.exists(directory):
                 os.makedirs(directory, mode=0o755)
-            path = os.path.join(directory, time.strftime(f"{self.pyboy.cartridge_title}-%Y.%m.%d-%H.%M.%S.gif"))
+            path = os.path.join(directory, time.strftime(f"{self.pyboy.cartridge_title()}-%Y.%m.%d-%H.%M.%S.gif"))
 
         if len(self.frames) > 0:
             self.frames[0].save(

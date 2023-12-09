@@ -8,7 +8,6 @@ from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.plugins.window_sdl2
-from pyboy.api.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
@@ -55,8 +54,8 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef object _window
     cdef object _sdlrenderer
     cdef object _sdltexturebuffer
+    cdef array buf
     cdef uint32_t[:,:] buf0
-    cdef uint8_t[:,:] buf0_attributes
     cdef object buf_p
 
     @cython.locals(y=int, x=int, _y=int, _x=int)
@@ -72,7 +71,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
 cdef class TileViewWindow(BaseDebugWindow):
     cdef int scanline_x
     cdef int scanline_y
-    cdef TileMap tilemap
+    cdef object tilemap
     cdef uint32_t color
 
     cdef uint32_t[:,:] tilecache # Fixing Cython locals

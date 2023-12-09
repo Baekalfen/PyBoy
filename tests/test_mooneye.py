@@ -152,14 +152,14 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
     if saved_state is None:
         # HACK: We load any rom and load it until the last frame in the boot rom.
         # Then we save it, so we won't need to redo it.
-        pyboy = PyBoy(default_rom, window_type="null", cgb=False, sound_emulated=True)
+        pyboy = PyBoy(default_rom, window_type="headless", cgb=False, sound_emulated=True)
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
         pyboy.tick(59, True)
         pyboy.save_state(saved_state)
         pyboy.stop(save=False)
 
-    pyboy = PyBoy(mooneye_dir + rom, window_type="null", cgb=False)
+    pyboy = PyBoy(mooneye_dir + rom, window_type="headless", cgb=False)
     pyboy.set_emulation_speed(0)
     saved_state.seek(0)
     if clean:
@@ -170,20 +170,17 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
     pyboy.tick(180 if "div_write" in rom else 40, True)
 
     png_path = Path(f"tests/test_results/mooneye/{rom}.png")
-    image = pyboy.screen.image
+    image = pyboy.screen.screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)
     else:
-        # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-        old_image = PIL.Image.open(png_path).convert("RGB")
+        old_image = PIL.Image.open(png_path)
         if "acceptance" in rom:
             # The registers are too volatile to depend on. We crop the top out, and only match the assertions.
-            diff = PIL.ImageChops.difference(
-                image.convert("RGB").crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144))
-            )
+            diff = PIL.ImageChops.difference(image.crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144)))
         else:
-            diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
+            diff = PIL.ImageChops.difference(image, old_image)
 
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()

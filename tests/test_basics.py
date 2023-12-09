@@ -15,16 +15,15 @@ import PIL
 import pytest
 from pytest_lazy_fixtures import lf
 
-from pyboy import PyBoy
+from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
-from pyboy.utils import WindowEvent
 
 is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_record_replay(boot_rom, default_rom):
-    pyboy = PyBoy(default_rom, window_type="null", bootrom_file=boot_rom, record_input=True)
+    pyboy = PyBoy(default_rom, window_type="headless", bootrom_file=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, True)
     pyboy.button_press("down")
@@ -36,12 +35,12 @@ def test_record_replay(boot_rom, default_rom):
     pyboy.button_press("up")
     pyboy.tick(1, True)
 
-    events = pyboy._plugin_manager.record_replay.recorded_input
+    events = pyboy.plugin_manager.record_replay.recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
     frame_no, keys, frame_data = events[0]
     assert frame_no == 1, "We inserted the key on the second frame"
     assert keys[0] == WindowEvent.PRESS_ARROW_DOWN, "Check we have the right keypress"
-    assert len(base64.b64decode(frame_data)) == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
+    assert sum(base64.b64decode(frame_data)) / 0xFF == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
 
     pyboy.stop(save=False)
 
@@ -52,7 +51,7 @@ def test_record_replay(boot_rom, default_rom):
 
     os.remove(default_rom + ".replay")
 
-    assert digest == (b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'), \
+    assert digest == b"\xc0\xfe\x0f\xaa\x1b0YY\x1a\x174\x8c\xad\xeaDZ\x1dQ\xa8\xa2\x9fA\xaap\x15(\xc9\xd9#\xd4]{", \
         "The replay did not result in the expected output"
 
 
@@ -97,20 +96,14 @@ def test_argv_parser(*args):
 
 
 def test_tilemaps(kirby_rom):
-    pyboy = PyBoy(kirby_rom, window_type="null")
+    pyboy = PyBoy(kirby_rom, window_type="dummy")
     pyboy.set_emulation_speed(0)
     pyboy.tick(120, False)
 
     bck_tilemap = pyboy.tilemap_background
     wdw_tilemap = pyboy.tilemap_window
-    bck_tilemap._refresh_lcdc()
-    wdw_tilemap._refresh_lcdc()
-    assert bck_tilemap.map_offset != wdw_tilemap.map_offset
 
     assert bck_tilemap[0, 0] == 256
-    assert bck_tilemap[30:, 29:] == [[254, 254], [256, 256], [256, 256]]
-    # assert bck_tilemap[30::-1, 29::-1] == [[256, 256], [256, 256], [254, 254]] # TODO: Not supported
-    assert bck_tilemap[30:32, 30:32] == [[256, 256], [256, 256]]
     assert bck_tilemap[:5, 0] == [256, 256, 256, 256, 170]
     assert bck_tilemap[:20, :10] == [
         [256, 256, 256, 256, 170, 176, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
@@ -156,29 +149,29 @@ def test_tilemaps(kirby_rom):
 
 
 def test_randomize_ram(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null", randomize=False)
+    pyboy = PyBoy(default_rom, window_type="dummy", randomize=False)
     # RAM banks should all be 0 by default
-    assert not any(pyboy.memory[0x8000:0xA000]), "VRAM not zeroed"
-    assert not any(pyboy.memory[0xC000:0xE000]), "Internal RAM 0 not zeroed"
-    assert not any(pyboy.memory[0xFE00:0xFEA0]), "OAM not zeroed"
-    assert not any(pyboy.memory[0xFEA0:0xFF00]), "Non-IO internal RAM 0 not zeroed"
-    assert not any(pyboy.memory[0xFF4C:0xFF80]), "Non-IO internal RAM 1 not zeroed"
-    assert not any(pyboy.memory[0xFF80:0xFFFF]), "Internal RAM 1 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not zeroed"
+    assert not any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not zeroed"
     pyboy.stop(save=False)
 
-    pyboy = PyBoy(default_rom, window_type="null", randomize=True)
+    pyboy = PyBoy(default_rom, window_type="dummy", randomize=True)
     # RAM banks should have at least one nonzero value now
-    assert any(pyboy.memory[0x8000:0xA000]), "VRAM not randomized"
-    assert any(pyboy.memory[0xC000:0xE000]), "Internal RAM 0 not randomized"
-    assert any(pyboy.memory[0xFE00:0xFEA0]), "OAM not randomized"
-    assert any(pyboy.memory[0xFEA0:0xFF00]), "Non-IO internal RAM 0 not randomized"
-    assert any(pyboy.memory[0xFF4C:0xFF80]), "Non-IO internal RAM 1 not randomized"
-    assert any(pyboy.memory[0xFF80:0xFFFF]), "Internal RAM 1 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0x8000, 0xA000)]), "VRAM not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xC000, 0xE000)]), "Internal RAM 0 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFE00, 0xFEA0)]), "OAM not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFEA0, 0xFF00)]), "Non-IO internal RAM 0 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFF4C, 0xFF80)]), "Non-IO internal RAM 1 not randomized"
+    assert any([pyboy.get_memory_value(x) for x in range(0xFF80, 0xFFFF)]), "Internal RAM 1 not randomized"
     pyboy.stop(save=False)
 
 
 def test_not_cgb(pokemon_crystal_rom):
-    pyboy = PyBoy(pokemon_crystal_rom, window_type="null", cgb=False)
+    pyboy = PyBoy(pokemon_crystal_rom, window_type="dummy", cgb=False)
     pyboy.set_emulation_speed(0)
     pyboy.tick(60 * 7, False)
 
@@ -202,13 +195,13 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
     if cgb == None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
         pytest.skip("Invalid combination")
 
-    pyboy = PyBoy(rom, window_type="null", bootrom_file=_bootrom, cgb=cgb)
+    pyboy = PyBoy(rom, window_type="headless", bootrom_file=_bootrom, cgb=cgb)
     pyboy.set_emulation_speed(0)
     pyboy.tick(frames, True)
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
     png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
-    image = pyboy.screen.image
+    image = pyboy.screen.screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         png_buf = BytesIO()
@@ -222,8 +215,8 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
             png_buf.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in data]))
         png_buf.seek(0)
 
-        old_image = PIL.Image.open(png_buf).convert("RGB")
-        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
+        old_image = PIL.Image.open(png_buf)
+        diff = PIL.ImageChops.difference(image, old_image)
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
             old_image.show()

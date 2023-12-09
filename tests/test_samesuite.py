@@ -114,7 +114,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         # Then we save it, so we won't need to redo it.
         pyboy = PyBoy(
             default_rom,
-            window_type="null",
+            window_type="headless",
             cgb=gb_type == "cgb",
             bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom,
             sound_emulated=True,
@@ -127,7 +127,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
 
     pyboy = PyBoy(
         samesuite_dir + rom,
-        window_type="null",
+        window_type="headless",
         cgb=gb_type == "cgb",
         bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom,
         sound_emulated=True,
@@ -140,20 +140,19 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         pyboy.load_state(saved_state)
 
     for _ in range(10):
-        if np.all(pyboy.screen.ndarray[:, :, :-1] > 240):
+        if np.all(pyboy.screen.screen_ndarray() > 240):
             pyboy.tick(20, True)
         else:
             break
 
     png_path = Path(f"tests/test_results/SameSuite/{rom}.png")
-    image = pyboy.screen.image
+    image = pyboy.screen.screen_image()
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)
     else:
-        # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-        old_image = PIL.Image.open(png_path).convert("RGB")
-        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
+        old_image = PIL.Image.open(png_path)
+        diff = PIL.ImageChops.difference(image, old_image)
 
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()

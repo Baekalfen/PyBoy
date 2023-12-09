@@ -10,8 +10,7 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
-from pyboy.api import Sprite, constants
-from pyboy.api.tilemap import TileMap
+from pyboy.api import Sprite, TileMap, constants
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -35,7 +34,7 @@ logger = pyboy.logging.get_logger(__name__)
 COLOR = 0x00000000
 # MASK = 0x00C0C000
 COLOR_BACKGROUND = 0x00C0C000
-COLOR_WINDOW = 0x00D479C1
+COLOR_WINDOW = 0xC179D400
 
 # Additive colors
 HOVER = 0xFF0000
@@ -82,7 +81,7 @@ class Debug(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.cgb = mb.cartridge_cgb
+        self.cgb = mb.cgb
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -219,14 +218,11 @@ class Debug(PyBoyWindowPlugin):
             return False
 
 
-def make_buffer(w, h, depth=4):
-    buf = array("B", [0x55] * (w*h*depth))
-    if depth == 4:
-        buf0 = memoryview(buf).cast("I", shape=(h, w))
-    else:
-        buf0 = memoryview(buf).cast("B", shape=(h, w))
+def make_buffer(w, h):
+    buf = array("B", [0x55] * (w*h*4))
+    buf0 = memoryview(buf).cast("I", shape=(h, w))
     buf_p = c_void_p(buf.buffer_info()[0])
-    return buf0, buf_p
+    return buf, buf0, buf_p
 
 
 class BaseDebugWindow(PyBoyWindowPlugin):
@@ -244,13 +240,12 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         )
         self.window_id = sdl2.SDL_GetWindowID(self._window)
 
-        self.buf0, self.buf_p = make_buffer(width, height)
-        self.buf0_attributes, _ = make_buffer(width, height, 1)
+        self.buf, self.buf0, self.buf_p = make_buffer(width, height)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
         sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, width, height)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
-            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
         )
 
     def handle_events(self, events):
@@ -316,7 +311,7 @@ class TileViewWindow(BaseDebugWindow):
         super().__init__(*args, **kwargs)
         self.scanline_x, self.scanline_y = scanline_x, scanline_y
         self.color = COLOR_WINDOW if window_map else COLOR_BACKGROUND
-        self.tilemap = TileMap(self.pyboy, self.mb, "WINDOW" if window_map else "BACKGROUND")
+        self.tilemap = TileMap(self.mb, "WINDOW" if window_map else "BACKGROUND")
 
     def post_tick(self):
         # Updating screen buffer by copying tiles from cache
@@ -362,6 +357,8 @@ class TileViewWindow(BaseDebugWindow):
     def handle_events(self, events):
         global mark_counter, marked_tiles
 
+        self.tilemap.refresh_lcdc()
+
         # Feed events into the loop
         events = BaseDebugWindow.handle_events(self, events)
         for event in events:
@@ -396,7 +393,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.screen.tilemap_position_list
+        scanlineparameters = self.pyboy.screen.tilemap_position_list()
 
         background_view = self.scanline_x == 0
 
@@ -618,7 +615,7 @@ class SpriteViewWindow(BaseDebugWindow):
                 self.buf0[y, x] = SPRITE_BACKGROUND
 
         for ly in range(144):
-            self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, self.buf0_attributes, True)
+            self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, True)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
@@ -660,7 +657,7 @@ class MemoryWindow(BaseDebugWindow):
         font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n") + 1:])
         font_bytes = zlib.decompress(b64decode(font_blob.encode()))
 
-        self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
+        self.fbuf, self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
         for y, b in enumerate(font_bytes):
             for x in range(8):
                 self.fbuf0[y, x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
@@ -732,11 +729,11 @@ class MemoryWindow(BaseDebugWindow):
         self.dst.y = y
         for i, c in enumerate(text):
             if not 0 <= c < 256:
-                logger.warning(f"Invalid character {c} in {bytes(text).decode('cp437')}") # This may error too...
+                logger.warn(f"Invalid character {c} in {bytes(text).decode('cp437')}") # This may error too...
                 c = 0
             self.src.y = 16 * c
             if self.dst.x > self.width - 8:
-                logger.warning(f"Text overrun while printing {bytes(text).decode('cp437')}")
+                logger.warn(f"Text overrun while printing {bytes(text).decode('cp437')}")
                 break
             sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)
             self.dst.x += 8

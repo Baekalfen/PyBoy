@@ -8,9 +8,6 @@ cimport cython
 from libc cimport time
 from libc.stdint cimport int64_t, uint64_t
 
-from pyboy.api.memory_scanner cimport MemoryScanner
-from pyboy.api.screen cimport Screen
-from pyboy.api.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.manager cimport PluginManager
@@ -21,19 +18,9 @@ cdef Logger logger
 
 cdef double SPF
 
-cdef class PyBoyMemoryView:
-    cdef Motherboard mb
-
-    @cython.locals(start=int,stop=int,step=int)
-    cpdef (int,int,int) _fix_slice(self, slice)
-    @cython.locals(start=int,stop=int,step=int)
-    cdef object __getitem(self, int, int, int, int, bint, bint)
-    @cython.locals(start=int,stop=int,step=int,x=int, bank=int)
-    cdef int __setitem(self, int, int, int, object, int, bint, bint) except -1
-
 cdef class PyBoy:
     cdef Motherboard mb
-    cdef readonly PluginManager _plugin_manager
+    cdef public PluginManager plugin_manager
     cdef readonly uint64_t frame_count
     cdef readonly str gamerom_file
     cdef readonly bint paused
@@ -42,19 +29,13 @@ cdef class PyBoy:
     cdef double avg_tick
     cdef double avg_post
 
-    cdef readonly list events
+    cdef list old_events
+    cdef list events
     cdef list queued_input
     cdef bint quitting
     cdef bint stopped
     cdef bint initialized
-    cdef readonly str window_title
-    cdef readonly PyBoyMemoryView memory
-    cdef readonly Screen screen
-    cdef readonly TileMap tilemap_background
-    cdef readonly TileMap tilemap_window
-    cdef readonly object game_wrapper
-    cdef readonly MemoryScanner memory_scanner
-    cdef readonly str cartridge_title
+    cdef public str window_title
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
@@ -69,8 +50,6 @@ cdef class PyBoy:
     @cython.locals(running=bint)
     cpdef bint tick(self, count=*, render=*) noexcept
     cpdef void stop(self, save=*) noexcept
-    cpdef int save_state(self, object) except -1
-    cpdef int load_state(self, object) except -1
 
     @cython.locals(state_path=str)
     cdef void _handle_events(self, list) noexcept
@@ -80,8 +59,6 @@ cdef class PyBoy:
     cdef void _post_tick(self) noexcept
 
     cdef dict _hooks
-    cdef object symbols_file
-    cdef dict rom_symbols
     cpdef bint _handle_hooks(self)
     cpdef int hook_register(self, uint16_t, uint16_t, object, object) except -1
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
@@ -92,3 +69,5 @@ cdef class PyBoy:
     cpdef object get_sprite(self, int) noexcept
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
     cpdef object get_tile(self, int) noexcept
+    cpdef object tilemap_background(self) noexcept
+    cpdef object tilemap_window(self) noexcept
