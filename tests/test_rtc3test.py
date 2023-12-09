@@ -32,7 +32,7 @@ def test_rtc3test(subtest, rtc3test_file):
 
     while True:
         # Continue until it says "(A) Return"
-        if pyboy[6:14, 17] == [193, 63, 27, 40, 55, 56, 53, 49]:
+        if pyboy.tilemap_background[6:14, 17] == [193, 63, 27, 40, 55, 56, 53, 49]:
             break
         pyboy.tick(1, True)
 

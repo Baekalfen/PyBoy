@@ -237,7 +237,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
                 self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
                 break
             self.pyboy.tick(1, False)
-            self.tilemap_background.refresh_lcdc()
 
             # "MARIO" in the title bar and 0 is placed at score
             if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
