@@ -162,7 +162,7 @@ See "pyboy --help" for how to enable rewind and other awesome features!
         with open(state_path, "rb") as f:
             pyboy.load_state(f)
 
-    while pyboy.tick(True):
+    while pyboy._tick(True):
         pass
 
     pyboy.stop()

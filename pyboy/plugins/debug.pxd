@@ -8,8 +8,6 @@ from cpython.array cimport array
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.plugins.window_sdl2
-from pyboy.botsupport.sprite cimport Sprite
-from pyboy.botsupport.tilemap cimport TileMap
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
@@ -74,7 +72,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
 cdef class TileViewWindow(BaseDebugWindow):
     cdef int scanline_x
     cdef int scanline_y
-    cdef TileMap tilemap
+    cdef object tilemap
     cdef uint32_t color
 
     cdef uint32_t[:,:] tilecache # Fixing Cython locals
@@ -106,10 +104,10 @@ cdef class TileDataWindow(BaseDebugWindow):
 
 
 cdef class SpriteWindow(BaseDebugWindow):
-    @cython.locals(tile_x=int, tile_y=int, sprite_identifier=int, sprite=Sprite)
+    @cython.locals(tile_x=int, tile_y=int, sprite_identifier=int, sprite=object)
     cdef list handle_events(self, list) noexcept
 
-    @cython.locals(t=MarkedTile, xx=int, yy=int, sprite=Sprite, i=int)
+    @cython.locals(t=MarkedTile, xx=int, yy=int, sprite=object, i=int)
     cdef void draw_overlay(self) noexcept
 
     @cython.locals(title=str)
@@ -122,7 +120,7 @@ cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
     cdef void post_tick(self) noexcept
 
-    @cython.locals(t=MarkedTile, sprite=Sprite, i=int)
+    @cython.locals(t=MarkedTile, sprite=object, i=int)
     cdef void draw_overlay(self) noexcept
 
     @cython.locals(title=str)

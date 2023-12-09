@@ -9,6 +9,8 @@ The core module of the emulator
 import os
 import time
 
+import numpy as np
+
 from pyboy import utils
 from pyboy.logging import get_logger
 from pyboy.openai_gym import PyBoyGymEnv
@@ -16,7 +18,8 @@ from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from . import botsupport
+from . import utils
+from .api import Screen, Sprite, Tile, TileMap, constants
 from .core.mb import Motherboard
 
 logger = get_logger(__name__)
@@ -50,7 +53,7 @@ class PyBoy:
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
         multiple times.
 
-        This object, `pyboy.WindowEvent`, and the `pyboy.botsupport` module, are the only official user-facing
+        This object, `pyboy.WindowEvent`, and the `pyboy.api` module, are the only official user-facing
         interfaces. All other parts of the emulator, are subject to change.
 
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
@@ -105,6 +108,7 @@ class PyBoy:
         self.set_emulation_speed(1)
         self.paused = False
         self.events = []
+        self.queued_input = []
         self.old_events = []
         self.quitting = False
         self.stopped = False
@@ -238,7 +242,8 @@ class PyBoy:
 
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.old_events = self.events
-        self.events = []
+        self.events = self.queued_input
+        self.queued_input = []
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
@@ -277,16 +282,6 @@ class PyBoy:
     ###################################################################
     # Scripts and bot methods
     #
-
-    def botsupport_manager(self):
-        """
-
-        Returns
-        -------
-        `pyboy.botsupport.BotSupportManager`:
-            The manager, which gives easier access to the emulated game through the classes in `pyboy.botsupport`.
-        """
-        return botsupport.BotSupportManager(self, self.mb)
 
     def openai_gym(self, observation_type="tiles", action_type="press", simultaneous_actions=False, **kwargs):
         """
@@ -410,16 +405,16 @@ class PyBoy:
             self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_A)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
         elif input == "b":
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_B)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
         elif input == "start":
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_START)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            self.queued_input.append(WindowEvent.RELEASE_BUTTON_SELECT)
+            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
         else:
             raise Exception("Unrecognized input:", input)
 
@@ -594,8 +589,7 @@ class PyBoy:
         """
         if self.initialized:
             unsupported_window_types_enabled = [
-                self.plugin_manager.window_dummy_enabled,
-                self.plugin_manager.window_headless_enabled,
+                self.plugin_manager.window_dummy_enabled, self.plugin_manager.window_headless_enabled,
                 self.plugin_manager.window_open_gl_enabled
             ]
             if any(unsupported_window_types_enabled):
@@ -619,5 +613,333 @@ class PyBoy:
         """
         return self.mb.cartridge.gamename
 
+    def __rendering(self, value):
+        """
+        Disable or enable rendering
+        """
+        self.mb.lcd.disable_renderer = not value
+
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
+
+    @property
+    def screen(self):
+        """
+        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+        a variety of formats.
+
+        It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
+        `pyboy.api.screen.Screen.tilemap_position` for more information.
+
+        Returns
+        -------
+        `pyboy.api.screen.Screen`:
+            A Screen object with helper functions for reading the screen buffer.
+        """
+        return Screen(self.mb)
+
+    def get_sprite(self, sprite_index):
+        """
+        Provides a `pyboy.api.sprite.Sprite` object, which makes the OAM data more presentable. The given index
+        corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
+
+        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
+        Docs](http://bgb.bircd.org/pandocs.htm).
+
+        Args:
+            index (int): Sprite index from 0 to 39.
+        Returns
+        -------
+        `pyboy.api.sprite.Sprite`:
+            Sprite corresponding to the given index.
+        """
+        return Sprite(self.mb, sprite_index)
+
+    def get_sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
+        """
+        Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
+        identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
+        `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
+
+        Example:
+        ```
+        >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
+        [[0, 2, 4], []]
+        ```
+
+        Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
+        `123` was not found anywhere.
+
+        Args:
+            identifiers (list): List of tile identifiers (int)
+            on_screen (bool): Require that the matched sprite is on screen
+
+        Returns
+        -------
+        list:
+            list of sprite matches for every tile identifier in the input
+        """
+
+        matches = []
+        for i in tile_identifiers:
+            match = []
+            for s in range(constants.SPRITES):
+                sprite = Sprite(self.mb, s)
+                for t in sprite.tiles:
+                    if t.tile_identifier == i and (not on_screen or (on_screen and sprite.on_screen)):
+                        match.append(s)
+            matches.append(match)
+        return matches
+
+    def get_tile(self, identifier):
+        """
+        The Game Boy can have 384 tiles loaded in memory at once. Use this method to get a
+        `pyboy.api.tile.Tile`-object for given identifier.
+
+        The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
+        the `pyboy.api.tile.Tile` object for more information.
+
+        Returns
+        -------
+        `pyboy.api.tile.Tile`:
+            A Tile object for the given identifier.
+        """
+        return Tile(self.mb, identifier=identifier)
+
+    @property
+    def tilemap_background(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+        return TileMap(self.mb, "BACKGROUND")
+
+    @property
+    def tilemap_window(self):
+        """
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
+        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+
+        Read more details about it, in the [Pan Docs](http://bgb.bircd.org/pandocs.htm#vrambackgroundmaps).
+
+        Returns
+        -------
+        `pyboy.api.tilemap.TileMap`:
+            A TileMap object for the tile map.
+        """
+        return TileMap(self.mb, "WINDOW")
+
+
+class PyBoyMemoryView:
+    def __init__(self, mb):
+        self.mb = mb
+
+    def _fix_slice(self, addr):
+        if addr.start is None:
+            return (-1, 0, 0)
+        if addr.stop is None:
+            return (0, -1, 0)
+        start = addr.start
+        stop = addr.stop
+        if addr.step is None:
+            step = 1
+        else:
+            step = addr.step
+        return start, stop, step
+
+    def __getitem__(self, addr):
+        is_bank = isinstance(addr, tuple)
+        bank = 0
+        if is_bank:
+            bank, addr = addr
+            assert isinstance(bank, int), "Bank has to be integer. Slicing is not supported."
+        is_single = isinstance(addr, int)
+        if not is_single:
+            start, stop, step = self._fix_slice(addr)
+            assert start >= 0, "Start address required"
+            assert stop >= 0, "End address required"
+            return self.__getitem(start, stop, step, bank, is_single, is_bank)
+        else:
+            return self.__getitem(addr, 0, 0, bank, is_single, is_bank)
+
+    def __getitem(self, start, stop, step, bank, is_single, is_bank):
+        if is_bank:
+            # Reading a specific bank
+            if start < 0x8000:
+                if start >= 0x4000:
+                    start -= 0x4000
+                    stop -= 0x4000
+                # Cartridge ROM Banks
+                assert stop < 0x4000, "Out of bounds for reading ROM bank"
+                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+                if not is_single:
+                    return [self.mb.cartridge.rombanks[bank][x] for x in range(start, stop, step)]
+                else:
+                    return self.mb.cartridge.rombanks[bank][start]
+            elif start < 0xA000:
+                start -= 0x8000
+                stop -= 0x8000
+                # CGB VRAM Banks
+                assert self.mb.cgb, "Selecting bank of VRAM is only supported for CGB mode"
+                assert stop < 0x2000, "Out of bounds for reading VRAM bank"
+                assert bank <= 1, "VRAM Bank out of range"
+
+                if bank == 0:
+                    if not is_single:
+                        return [self.mb.lcd.VRAM0[x] for x in range(start, stop, step)]
+                    else:
+                        return self.mb.lcd.VRAM0[start]
+                else:
+                    if not is_single:
+                        return [self.mb.lcd.VRAM1[x] for x in range(start, stop, step)]
+                    else:
+                        return self.mb.lcd.VRAM1[start]
+            elif start < 0xC000:
+                start -= 0xA000
+                stop -= 0xA000
+                # Cartridge RAM banks
+                assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
+                assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
+                if not is_single:
+                    return [self.mb.cartridge.rambanks[bank][x] for x in range(start, stop, step)]
+                else:
+                    return self.mb.cartridge.rambanks[bank][start]
+            elif start < 0xE000:
+                start -= 0xC000
+                stop -= 0xC000
+                if start >= 0x1000:
+                    start -= 0x1000
+                    stop -= 0x1000
+                # CGB VRAM banks
+                assert self.mb.cgb, "Selecting bank of WRAM is only supported for CGB mode"
+                assert stop < 0x1000, "Out of bounds for reading VRAM bank"
+                assert bank <= 7, "WRAM Bank out of range"
+                if not is_single:
+                    return [self.mb.ram.internal_ram0[x + bank*0x1000] for x in range(start, stop, step)]
+                else:
+                    return self.mb.ram.internal_ram0[start + bank*0x1000]
+            else:
+                assert None, "Invalid memory address for bank"
+        elif not is_single:
+            # Reading slice of memory space
+            return [self.mb.getitem(x) for x in range(start, stop, step)]
+        else:
+            # Reading specific address of memory space
+            return self.mb.getitem(start)
+
+    def __setitem__(self, addr, v):
+        is_bank = isinstance(addr, tuple)
+        bank = 0
+        if is_bank:
+            bank, addr = addr
+            assert isinstance(bank, int), "Bank has to be integer. Slicing is not supported."
+        is_single = isinstance(addr, int)
+        if not is_single:
+            start, stop, step = self._fix_slice(addr)
+            assert start >= 0, "Start address required"
+            assert stop >= 0, "End address required"
+            self.__setitem(start, stop, step, v, bank, is_single, is_bank)
+        else:
+            self.__setitem(addr, 0, 0, v, bank, is_single, is_bank)
+
+    def __setitem(self, start, stop, step, v, bank, is_single, is_bank):
+        if is_bank:
+            # Writing a specific bank
+            if start < 0x8000:
+                assert None, "Cannot write to ROM banks"
+            elif start < 0xA000:
+                start -= 0x8000
+                stop -= 0x8000
+                # CGB VRAM Banks
+                assert self.mb.cgb, "Selecting bank of VRAM is only supported for CGB mode"
+                assert stop < 0x2000, "Out of bounds for reading VRAM bank"
+                assert bank <= 1, "VRAM Bank out of range"
+
+                if bank == 0:
+                    if not is_single:
+                        # Writing slice of memory space
+                        if hasattr(v, "__iter__"):
+                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            _v = iter(v)
+                            for x in range(start, stop, step):
+                                self.mb.lcd.VRAM0[x] = next(_v)
+                        else:
+                            for x in range(start, stop, step):
+                                self.mb.lcd.VRAM0[x] = v
+                    else:
+                        self.mb.lcd.VRAM0[start] = v
+                else:
+                    if not is_single:
+                        # Writing slice of memory space
+                        if hasattr(v, "__iter__"):
+                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            _v = iter(v)
+                            for x in range(start, stop, step):
+                                self.mb.lcd.VRAM1[x] = next(_v)
+                        else:
+                            for x in range(start, stop, step):
+                                self.mb.lcd.VRAM1[x] = v
+                    else:
+                        self.mb.lcd.VRAM1[start] = v
+            elif start < 0xC000:
+                start -= 0xA000
+                stop -= 0xA000
+                # Cartridge RAM banks
+                assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
+                assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
+                if not is_single:
+                    # Writing slice of memory space
+                    if hasattr(v, "__iter__"):
+                        assert (stop-start) // step == len(v), "slice does not match length of data"
+                        _v = iter(v)
+                        for x in range(start, stop, step):
+                            self.mb.cartridge.rambanks[bank][x] = next(_v)
+                    else:
+                        for x in range(start, stop, step):
+                            self.mb.cartridge.rambanks[bank][x] = v
+                else:
+                    self.mb.cartridge.rambanks[bank][start] = v
+            elif start < 0xE000:
+                start -= 0xC000
+                stop -= 0xC000
+                if start >= 0x1000:
+                    start -= 0x1000
+                    stop -= 0x1000
+                # CGB VRAM banks
+                assert self.mb.cgb, "Selecting bank of WRAM is only supported for CGB mode"
+                assert stop < 0x1000, "Out of bounds for reading VRAM bank"
+                assert bank <= 7, "WRAM Bank out of range"
+                if not is_single:
+                    # Writing slice of memory space
+                    if hasattr(v, "__iter__"):
+                        assert (stop-start) // step == len(v), "slice does not match length of data"
+                        _v = iter(v)
+                        for x in range(start, stop, step):
+                            self.mb.ram.internal_ram0[x + bank*0x1000] = next(_v)
+                    else:
+                        for x in range(start, stop, step):
+                            self.mb.ram.internal_ram0[x + bank*0x1000] = v
+                else:
+                    self.mb.ram.internal_ram0[start + bank*0x1000] = v
+            else:
+                assert None, "Invalid memory address for bank"
+        elif not is_single:
+            # Writing slice of memory space
+            if hasattr(v, "__iter__"):
+                assert (stop-start) // step == len(v), "slice does not match length of data"
+                _v = iter(v)
+                for x in range(start, stop, step):
+                    self.mb.setitem(x, next(_v))
+            else:
+                for x in range(start, stop, step):
+                    self.mb.setitem(x, v)
+        else:
+            # Writing specific address of memory space
+            self.mb.setitem(start, v)

@@ -21,8 +21,8 @@ cdef double SPF
 cdef class PyBoy:
     cdef Motherboard mb
     cdef public PluginManager plugin_manager
-    cdef public uint64_t frame_count
-    cdef public str gamerom_file
+    cdef readonly uint64_t frame_count
+    cdef readonly str gamerom_file
     cdef readonly bint paused
 
     cdef double avg_pre
@@ -31,6 +31,7 @@ cdef class PyBoy:
 
     cdef list old_events
     cdef list events
+    cdef list queued_input
     cdef bint quitting
     cdef bint stopped
     cdef bint initialized
@@ -38,7 +39,6 @@ cdef class PyBoy:
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
-    cdef object screen_recorder
     cdef bint record_input
     cdef bint disable_input
     cdef str record_input_file
@@ -57,3 +57,11 @@ cdef class PyBoy:
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
+    cpdef bint _is_cpu_stuck(self)
+    cdef void __rendering(self, int) noexcept
+
+    cpdef object get_sprite(self, int) noexcept
+    cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
+    cpdef object get_tile(self, int) noexcept
+    cpdef object tilemap_background(self) noexcept
+    cpdef object tilemap_window(self) noexcept

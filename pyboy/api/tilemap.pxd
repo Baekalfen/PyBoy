@@ -6,7 +6,6 @@
 from pyboy.core.mb cimport Motherboard
 
 
-
 cdef class TileMap:
     cdef Motherboard mb
     cdef bint signed_tile_data

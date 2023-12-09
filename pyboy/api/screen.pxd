@@ -4,8 +4,8 @@
 #
 cimport cython
 cimport numpy as np
-from pyboy.core.mb cimport Motherboard
 
+from pyboy.core.mb cimport Motherboard
 
 
 cdef class Screen:
