@@ -70,12 +70,7 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
 
     pyboy = PyBoy(tetris_rom, window_type="headless", bootrom_file=boot_rom)
     pyboy.set_emulation_speed(0)
-    image1 = pyboy.tick(275, True) # Iterate to boot logo
-
-    # Returned screen image
-    image2 = pyboy.screen.screen_image()
-    diff = ImageChops.difference(image1, image2)
-    assert not diff.getbbox()
+    pyboy.tick(275, True) # Iterate to boot logo
 
     assert pyboy.screen.raw_screen_buffer_dims() == (144, 160)
     assert pyboy.screen.raw_screen_buffer_format() == cformat
@@ -109,10 +104,12 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
           b"\xd6\x8e\x91R( H7\xd8a*B+\xc7\x1f\x19")
 
     # Check PIL image is reference for performance
-    new_image1 = pyboy.tick(1, True)
+    pyboy.tick(1, True)
+    new_image1 = pyboy.screen.screen_image()
     nd_image = pyboy.screen.screen_ndarray()
     nd_image[:, :] = 0
-    new_image2 = pyboy.tick(1, True)
+    pyboy.tick(1, True)
+    new_image2 = pyboy.screen.screen_image()
     diff = ImageChops.difference(new_image1, new_image2)
     assert not diff.getbbox()
 
