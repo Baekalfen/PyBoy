@@ -30,7 +30,7 @@ def test_tiles(default_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
-    tile = pyboy.tilemap_window().tile(0, 0)
+    tile = pyboy.tilemap_window.tile(0, 0)
     assert isinstance(tile, Tile)
 
     tile = pyboy.get_tile(1)
@@ -128,7 +128,7 @@ def test_tetris(tetris_rom):
     tetris.set_tetromino("T")
 
     first_brick = False
-    tile_map = pyboy.tilemap_window()
+    tile_map = pyboy.tilemap_window
     state_data = io.BytesIO()
     for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
         pyboy.tick(1, False)

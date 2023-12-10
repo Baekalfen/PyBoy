@@ -99,8 +99,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tilemap_background = self.pyboy.tilemap_background()
-        self.tilemap_window = self.pyboy.tilemap_window()
+        self.tilemap_background = self.pyboy.tilemap_background
+        self.tilemap_window = self.pyboy.tilemap_window
         self.tilemap_use_background = True
         self.sprite_offset = 0
         self.game_has_started = False
