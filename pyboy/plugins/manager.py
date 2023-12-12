@@ -3,6 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from pyboy.plugins.base_plugin import PyBoyGameWrapper
+
 # imports
 from pyboy.plugins.window_sdl2 import WindowSDL2 # isort:skip
 from pyboy.plugins.window_open_gl import WindowOpenGL # isort:skip
@@ -20,7 +22,6 @@ from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
 from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # isort:skip
 # imports end
-from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 
 def parser_arguments():

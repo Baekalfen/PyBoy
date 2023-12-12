@@ -24,7 +24,7 @@ pyboy = PyBoy(filename, window_type="null" if quiet else "SDL2", window_scale=3,
 pyboy.set_emulation_speed(0)
 assert pyboy.cartridge_title() == "KIRBY DREAM LA"
 
-kirby = pyboy.game_wrapper()
+kirby = pyboy.game_wrapper
 kirby.start_game()
 
 assert kirby.score == 0
