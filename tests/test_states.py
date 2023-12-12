@@ -11,7 +11,7 @@ NEXT_TETROMINO_ADDR = 0xC213
 
 
 def test_load_save_consistency(tetris_rom):
-    pyboy = PyBoy(tetris_rom, window_type="null", game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, window_type="null")
     assert pyboy.cartridge_title() == "TETRIS"
     pyboy.set_emulation_speed(0)
     pyboy.memory[NEXT_TETROMINO_ADDR]
@@ -20,7 +20,7 @@ def test_load_save_consistency(tetris_rom):
     # Set up some kind of state, where not all registers are reset
     ##############################################################
 
-    tetris = pyboy.game_wrapper()
+    tetris = pyboy.game_wrapper
 
     timer_div = 0x00
     saved_state = io.BytesIO()
