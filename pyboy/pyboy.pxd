@@ -52,6 +52,7 @@ cdef class PyBoy:
     cdef readonly Screen screen
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
+    cdef readonly object game_wrapper
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed

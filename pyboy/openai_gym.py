@@ -54,7 +54,7 @@ class PyBoyGymEnv(Env):
             raise TypeError("pyboy must be a Pyboy object")
 
         # Build game_wrapper
-        self.game_wrapper = pyboy.game_wrapper()
+        self.game_wrapper = pyboy.game_wrapper
         if self.game_wrapper is None:
             raise ValueError(
                 "You need to build a game_wrapper to use this function. Otherwise there is no way to build a reward function automaticaly."
