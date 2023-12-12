@@ -35,7 +35,7 @@ def test_record_replay(boot_rom, default_rom):
     pyboy.button_press("up")
     pyboy.tick(1, True)
 
-    events = pyboy.plugin_manager.record_replay.recorded_input
+    events = pyboy._plugin_manager.record_replay.recorded_input
     assert len(events) == 4, "We assumed only 4 frames were recorded, as frames without events are skipped."
     frame_no, keys, frame_data = events[0]
     assert frame_no == 1, "We inserted the key on the second frame"
