@@ -95,6 +95,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
     , which shows both sprites and tiles on the screen as a simple matrix.
     """
 
+    cartridge_title = None
     argv = [("--game-wrapper", {"action": "store_true", "help": "Enable game wrapper for the current game"})]
 
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_wrap_around=False, **kwargs):
