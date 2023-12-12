@@ -170,6 +170,21 @@ class PyBoy:
             Object for handling plugins in PyBoy
         """
 
+        self.game_wrapper = self._plugin_manager.gamewrapper()
+        """
+        Provides an instance of a game-specific or generic wrapper. The game is detected by the cartridge's hard-coded
+        game title (see `pyboy.PyBoy.cartridge_title`).
+
+        If the a game-specific wrapper is not found, a generic wrapper will be returned.
+
+        To get more information, find the wrapper for your game in `pyboy.plugins`.
+
+        Returns
+        -------
+        `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
+            A game-specific wrapper object.
+        """
+
         self._hooks = {}
         self.initialized = True
 
@@ -383,22 +398,6 @@ class PyBoy:
         else:
             logger.error("%s: Missing dependency \"gym\". ", __name__)
             return None
-
-    def game_wrapper(self):
-        """
-        Provides an instance of a game-specific wrapper. The game is detected by the cartridge's hard-coded game title
-        (see `pyboy.PyBoy.cartridge_title`).
-
-        If the game isn't supported, None will be returned.
-
-        To get more information, find the wrapper for your game in `pyboy.plugins`.
-
-        Returns
-        -------
-        `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
-            A game-specific wrapper object.
-        """
-        return self._plugin_manager.gamewrapper()
 
     def button(self, input):
         """

@@ -50,9 +50,9 @@ frames = []
 
 
 def eval_network(epoch, child_index, child_model, record_to):
-    pyboy = PyBoy('tetris_1.1.gb', game_wrapper=True, window_type="null")
+    pyboy = PyBoy('tetris_1.1.gb', window_type="null")
     pyboy.set_emulation_speed(0)
-    tetris = pyboy.game_wrapper()
+    tetris = pyboy.game_wrapper
     tetris.start_game()
     pyboy._rendering(False)
     pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)

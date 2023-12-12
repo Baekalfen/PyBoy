@@ -32,8 +32,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.sprite_offset = 0x1000
 
     def enabled(self):
-        return self.pyboy_argv.get("game_wrapper") and ((self.pyboy.cartridge_title() == "POKEMON RED") or
-                                                        (self.pyboy.cartridge_title() == "POKEMON BLUE"))
+        return (self.pyboy.cartridge_title() == "POKEMON RED") or (self.pyboy.cartridge_title() == "POKEMON BLUE")
 
     def post_tick(self):
         self._tile_cache_invalid = True
@@ -45,7 +44,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.use_background(WY != 0)
 
     def _get_screen_background_tilemap(self):
-        ### SIMILAR TO CURRENT pyboy.game_wrapper()._game_area_np(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
+        ### SIMILAR TO CURRENT pyboy.game_wrapper._game_area_np(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
         bsm = self.pyboy.botsupport_manager()
         ((scx, scy), (wx, wy)) = bsm.screen().tilemap_position()
         tilemap = np.array(bsm.tilemap_background[:, :])
