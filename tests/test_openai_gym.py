@@ -19,7 +19,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 @pytest.fixture
 def pyboy(tetris_rom):
-    pyboy = PyBoy(tetris_rom, window_type="null", disable_input=True, game_wrapper=True)
+    pyboy = PyBoy(tetris_rom, window_type="null", disable_input=True)
     pyboy.set_emulation_speed(0)
     return pyboy
 
@@ -53,12 +53,12 @@ class TestOpenAIGym:
 
     def test_tiles(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles")
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("Z")
         observation = env.reset()
 
         # Build the expected first observation
-        game_area_shape = pyboy.game_wrapper().shape[::-1]
+        game_area_shape = pyboy.game_wrapper.shape[::-1]
         expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block] = tiles_id["Z"]
         print(observation, expected_observation)
@@ -77,12 +77,12 @@ class TestOpenAIGym:
 
     def test_compressed(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="compressed")
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("Z")
         observation = env.reset()
 
         # Build the expected first observation
-        game_area_shape = pyboy.game_wrapper().shape[::-1]
+        game_area_shape = pyboy.game_wrapper.shape[::-1]
         expected_observation = np.zeros(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block] = 2
         print(observation, expected_observation)
@@ -101,12 +101,12 @@ class TestOpenAIGym:
 
     def test_minimal(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="minimal")
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("Z")
         observation = env.reset()
 
         # Build the expected first observation
-        game_area_shape = pyboy.game_wrapper().shape[::-1]
+        game_area_shape = pyboy.game_wrapper.shape[::-1]
         expected_observation = np.zeros(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block] = 1
         print(observation, expected_observation)
@@ -125,7 +125,7 @@ class TestOpenAIGym:
 
     def test_press(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="press")
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("Z")
         assert env.action_space.n == 9
 
@@ -134,7 +134,7 @@ class TestOpenAIGym:
         observation, _, _, _ = env.step(action) # Press RIGHT
         observation, _, _, _ = env.step(0) # Press NOTHING
 
-        game_area_shape = pyboy.game_wrapper().shape[::-1]
+        game_area_shape = pyboy.game_wrapper.shape[::-1]
         expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block + 1] = tiles_id["Z"]
         print(observation, expected_observation)
@@ -148,7 +148,7 @@ class TestOpenAIGym:
 
     def test_toggle(self, pyboy, tiles_id, id0_block, id1_block):
         env = pyboy.openai_gym(observation_type="tiles", action_type="toggle")
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("Z")
         assert env.action_space.n == 9
 
@@ -157,7 +157,7 @@ class TestOpenAIGym:
         observation, _, _, _ = env.step(action) # Press RIGHT
         observation, _, _, _ = env.step(0) # Press NOTHING
 
-        game_area_shape = pyboy.game_wrapper().shape[::-1]
+        game_area_shape = pyboy.game_wrapper.shape[::-1]
         expected_observation = tiles_id["BLANK"] * np.ones(game_area_shape, dtype=np.uint16)
         expected_observation[id0_block, id1_block + 1] = tiles_id["Z"]
         print(observation, expected_observation)
@@ -177,7 +177,7 @@ class TestOpenAIGym:
         assert env.action_space.n == 17
 
     def test_tetris(self, pyboy):
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("I")
         tetris.start_game()
 
@@ -226,7 +226,7 @@ class TestOpenAIGym:
         pyboy.stop(save=False)
 
     def test_reward(self, pyboy):
-        tetris = pyboy.game_wrapper()
+        tetris = pyboy.game_wrapper
         tetris.set_tetromino("I")
 
         env = pyboy.openai_gym(action_type="all")

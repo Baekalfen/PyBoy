@@ -4,6 +4,7 @@
 #
 
 cimport cython
+from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 
 
 from pyboy.logging.logging cimport Logger
@@ -27,9 +28,6 @@ from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
 from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
 from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 # imports end
-
-
-cdef Logger logger
 
 
 cdef class PluginManager:
