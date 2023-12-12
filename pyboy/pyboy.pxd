@@ -32,7 +32,7 @@ cdef class PyBoyMemoryView:
 
 cdef class PyBoy:
     cdef Motherboard mb
-    cdef public PluginManager plugin_manager
+    cdef readonly PluginManager _plugin_manager
     cdef readonly uint64_t frame_count
     cdef readonly str gamerom_file
     cdef readonly bint paused

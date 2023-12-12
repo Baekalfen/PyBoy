@@ -9,14 +9,14 @@ The core module of the emulator
 import os
 import time
 
-from pyboy.logging import get_logger
 from pyboy.api.screen import Screen
+from pyboy.api.tilemap import TileMap
+from pyboy.logging import get_logger
 from pyboy.openai_gym import PyBoyGymEnv
 from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
-from pyboy.api.tilemap import TileMap
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
 
@@ -162,10 +162,14 @@ class PyBoy:
             A TileMap object for the tile map.
         """
 
-        ###################
-        # Plugins
+        self._plugin_manager = PluginManager(self, self.mb, kwargs)
+        """
+        Returns
+        -------
+        `pyboy.plugins.manager.PluginManager`:
+            Object for handling plugins in PyBoy
+        """
 
-        self.plugin_manager = PluginManager(self, self.mb, kwargs)
         self._hooks = {}
         self.initialized = True
 
@@ -191,11 +195,11 @@ class PyBoy:
                     self.mb.breakpoint_singlestep_latch = 0
 
                     if not self._handle_hooks():
-                        self.plugin_manager.handle_breakpoint()
+                        self._plugin_manager.handle_breakpoint()
                 else:
                     if self.mb.breakpoint_singlestep_latch:
                         if not self._handle_hooks():
-                            self.plugin_manager.handle_breakpoint()
+                            self._plugin_manager.handle_breakpoint()
                     # Keep singlestepping on, if that's what we're doing
                     self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
@@ -249,7 +253,7 @@ class PyBoy:
 
     def _handle_events(self, events):
         # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
-        events = self.plugin_manager.handle_events(events)
+        events = self._plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
                 self.quitting = True
@@ -279,7 +283,7 @@ class PyBoy:
             elif event == WindowEvent.UNPAUSE:
                 self._unpause()
             elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
-                self.plugin_manager._post_tick_windows()
+                self._plugin_manager._post_tick_windows()
             else:
                 self.mb.buttonevent(event)
 
@@ -303,8 +307,8 @@ class PyBoy:
     def _post_tick(self):
         if self.frame_count % 60 == 0:
             self._update_window_title()
-        self.plugin_manager.post_tick()
-        self.plugin_manager.frame_limiter(self.target_emulationspeed)
+        self._plugin_manager.post_tick()
+        self._plugin_manager.frame_limiter(self.target_emulationspeed)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.old_events = self.events
@@ -317,8 +321,8 @@ class PyBoy:
         self.window_title += f' Emulation: x{(round(SPF / avg_emu) if avg_emu > 0 else "INF")}'
         if self.paused:
             self.window_title += "[PAUSED]"
-        self.window_title += self.plugin_manager.window_title()
-        self.plugin_manager._set_title()
+        self.window_title += self._plugin_manager.window_title()
+        self._plugin_manager._set_title()
 
     def __del__(self):
         self.stop(save=False)
@@ -341,7 +345,7 @@ class PyBoy:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
-            self.plugin_manager.stop()
+            self._plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
 
@@ -394,7 +398,7 @@ class PyBoy:
         `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
             A game-specific wrapper object.
         """
-        return self.plugin_manager.gamewrapper()
+        return self._plugin_manager.gamewrapper()
 
     def button(self, input):
         """
@@ -608,7 +612,7 @@ class PyBoy:
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         """
-        if self.initialized and self.plugin_manager.window_null_enabled:
+        if self.initialized and self._plugin_manager.window_null_enabled:
             logger.warning(
                 'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
             )

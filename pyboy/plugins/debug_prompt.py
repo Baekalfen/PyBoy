@@ -83,7 +83,7 @@ class DebugPrompt(PyBoyPlugin):
 
     def handle_breakpoint(self):
         while True:
-            self.pyboy.plugin_manager.post_tick()
+            self.pyboy._plugin_manager.post_tick()
 
             # Get symbol
             if self.mb.cpu.PC < 0x4000:
