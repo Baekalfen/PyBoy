@@ -5,8 +5,8 @@
 
 import numpy as np
 
-from .api.constants import TILES
-from .utils import WindowEvent
+from ..api.constants import TILES
+from ..utils import WindowEvent
 
 try:
     from gym import Env
@@ -172,3 +172,5 @@ class PyBoyGymEnv(Env):
 
     def close(self):
         self.pyboy.stop(save=False)
+
+

@@ -12,9 +12,9 @@ import time
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
-from pyboy.openai_gym import PyBoyGymEnv
-from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
+from pyboy.plugins.pyboy_gym import PyBoyGymEnv
+from pyboy.plugins.pyboy_gym import enabled as gym_enabled
 from pyboy.utils import IntIOWrapper, WindowEvent
 
 from .api import Sprite, Tile, constants
@@ -382,7 +382,6 @@ class PyBoy:
         else:
             logger.error("%s: Missing dependency \"gym\". ", __name__)
             return None
-
 
     def button(self, input):
         """
