@@ -383,25 +383,6 @@ class PyBoy:
             logger.error("%s: Missing dependency \"gym\". ", __name__)
             return None
 
-    def override_memory_value(self, rom_bank, addr, value):
-        """
-        Override one byte at a given memory address of the Game Boy's ROM.
-
-        This will let you override data in the ROM at any given bank. This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
-
-        __NOTE__: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
-        any overrides when reloading the ROM.
-
-        If you need to change a RAM address, see `pyboy.PyBoy.memory`.
-
-        Args:
-            rom_bank (int): ROM bank to do the overwrite in
-            addr (int): Address to write the byte inside the ROM bank
-            value (int): A byte of data
-        """
-        # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
-        # what the game writes to the address. This can be used so freeze the value for health, cash etc.
-        self.mb.cartridge.overrideitem(rom_bank, addr, value)
 
     def button(self, input):
         """
