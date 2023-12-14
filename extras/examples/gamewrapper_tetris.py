@@ -24,7 +24,7 @@ pyboy = PyBoy(filename, window_type="null" if quiet else "SDL2", window_scale=3,
 pyboy.set_emulation_speed(0)
 assert pyboy.cartridge_title() == "TETRIS"
 
-tetris = pyboy.game_wrapper()
+tetris = pyboy.game_wrapper
 tetris.start_game(timer_div=0x00) # The timer_div works like a random seed in Tetris
 
 tetromino_at_0x00 = tetris.next_tetromino()
