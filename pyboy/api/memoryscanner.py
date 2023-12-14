@@ -81,8 +81,6 @@ class MemoryScanner():
             if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
                 if value != int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
                     self._memory_cache.pop(addr)
-                if value != int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
-                    self._memory_cache.pop(addr)
             elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
                 if value == int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
                     self._memory_cache.pop(addr)
