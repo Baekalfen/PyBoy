@@ -12,8 +12,6 @@ import time
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
-from pyboy.openai_gym import PyBoyGymEnv
-from pyboy.openai_gym import enabled as gym_enabled
 from pyboy.plugins.manager import PluginManager
 from pyboy.utils import IntIOWrapper, WindowEvent
 
@@ -367,37 +365,6 @@ class PyBoy:
     ###################################################################
     # Scripts and bot methods
     #
-
-    def openai_gym(self, observation_type="tiles", action_type="press", simultaneous_actions=False, **kwargs):
-        """
-        For Reinforcement learning, it is often easier to use the standard gym environment. This method will provide one.
-        This function requires PyBoy to implement a Game Wrapper for the loaded ROM. You can find the supported games in pyboy.plugins.
-        Additional kwargs are passed to the start_game method of the game_wrapper.
-
-        Args:
-            observation_type (str): Define what the agent will be able to see:
-            * `"raw"`: Gives the raw pixels color
-            * `"tiles"`:  Gives the id of the sprites in 8x8 pixel zones of the game_area defined by the game_wrapper.
-            * `"compressed"`: Gives a more detailled but heavier representation than `"minimal"`.
-            * `"minimal"`: Gives a minimal representation defined by the game_wrapper (recommended).
-
-            action_type (str): Define how the agent will interact with button inputs
-            * `"press"`: The agent will only press inputs for 1 frame an then release it.
-            * `"toggle"`: The agent will toggle inputs, first time it press and second time it release.
-            * `"all"`: The agent have access to all inputs, press and release are separated.
-
-            simultaneous_actions (bool): Allow to inject multiple input at once. This dramatically increases the action_space: \\(n \\rightarrow 2^n\\)
-
-        Returns
-        -------
-        `pyboy.openai_gym.PyBoyGymEnv`:
-            A Gym environment based on the `Pyboy` object.
-        """
-        if gym_enabled:
-            return PyBoyGymEnv(self, observation_type, action_type, simultaneous_actions, **kwargs)
-        else:
-            logger.error("%s: Missing dependency \"gym\". ", __name__)
-            return None
 
     def button(self, input):
         """
