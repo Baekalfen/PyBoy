@@ -7,13 +7,15 @@ import base64
 import hashlib
 import io
 import json
-import logging
 import zlib
 
 import numpy as np
+
+import pyboy
+from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyPlugin
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 
 class RecordReplay(PyBoyPlugin):

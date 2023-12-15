@@ -4,14 +4,17 @@
 #
 
 import array
-import logging
+
+from pyboy import utils
 
 from . import opcodes
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
-logger = logging.getLogger(__name__)
+import pyboy
+
+logger = pyboy.logging.get_logger(__name__)
 
 
 class CPU:
@@ -74,7 +77,7 @@ class CPU:
         if state_version >= 8:
             self.interrupt_queued = f.read()
             self.interrupts_flag_register = f.read()
-        logger.debug("State loaded: " + self.dump_state(""))
+        logger.debug("State loaded: %s", self.dump_state(""))
 
     def dump_state(self, sym_label):
         opcode_data = [
@@ -128,7 +131,7 @@ class CPU:
         old_sp = self.SP # Sometimes a RET can go to the same PC, so we check the SP too.
         cycles = self.fetch_and_execute()
         if not self.halted and old_pc == self.PC and old_sp == self.SP and not self.is_stuck:
-            # logger.error("CPU is stuck: " + self.dump_state(""))
+            logger.debug("CPU is stuck: %s", self.dump_state(""))
             self.is_stuck = True
         self.interrupt_queued = False
         return cycles
@@ -150,7 +153,7 @@ class CPU:
             elif self.handle_interrupt(INTR_HIGHTOLOW, 0x0060):
                 self.interrupt_queued = True
             else:
-                # logger.error("No interrupt triggered, but it should!")
+                logger.error("No interrupt triggered, but it should!")
                 self.interrupt_queued = False
             return True
         else:

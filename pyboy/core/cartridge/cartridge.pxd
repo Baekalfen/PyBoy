@@ -3,15 +3,19 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from .base_mbc cimport BaseMBC
+import cython
 
 from cpython.array cimport array
-# from array import array
-
-import cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
+from pyboy.logging.logging cimport Logger
 
+from .base_mbc cimport BaseMBC
+
+
+cdef Logger logger
+
+@cython.locals(carttype=uint8_t, cart_name=basestring, cart_line=basestring)
 cpdef BaseMBC load_cartridge(str) noexcept
 cdef bint validate_checksum(uint8_t[:,:]) noexcept
 

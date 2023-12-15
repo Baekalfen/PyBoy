@@ -15,8 +15,11 @@ cimport pyboy.core.lcd
 cimport pyboy.core.ram
 cimport pyboy.core.sound
 cimport pyboy.core.timer
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, WindowEvent
 
+
+cdef Logger logger
 
 cdef uint16_t STAT, LY, LYC
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
@@ -47,23 +50,23 @@ cdef class Motherboard:
     cdef list breakpoints_list
     cdef int breakpoint_latch
 
-    cdef inline bint processing_frame(self) noexcept
+    cdef inline bint processing_frame(self) noexcept nogil
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, escape_halt=cython.int, mode0_cycles=int64_t)
-    cdef bint tick(self) noexcept
+    cdef bint tick(self) noexcept nogil
 
-    cdef void switch_speed(self) noexcept
+    cdef void switch_speed(self) noexcept nogil
 
     @cython.locals(pc=cython.int, bank=cython.int)
-    cdef bint breakpoint_reached(self) noexcept
+    cdef bint breakpoint_reached(self) noexcept with gil
 
-    cdef uint8_t getitem(self, uint16_t) noexcept
-    cdef void setitem(self, uint16_t, uint8_t) noexcept
+    cdef uint8_t getitem(self, uint16_t) noexcept nogil
+    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
-    cdef void transfer_DMA(self, uint8_t) noexcept
+    cdef void transfer_DMA(self, uint8_t) noexcept nogil
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface) noexcept
 
@@ -79,8 +82,8 @@ cdef class HDMA:
     cdef uint16_t curr_src
     cdef uint16_t curr_dst
 
-    cdef void set_hdma5(self, uint8_t, Motherboard) noexcept
-    cdef int tick(self, Motherboard) noexcept
+    cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
+    cdef int tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept

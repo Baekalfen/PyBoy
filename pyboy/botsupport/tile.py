@@ -7,14 +7,14 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 `pyboy.botsupport.sprite.Sprite` and `pyboy.botsupport.tilemap.TileMap`, when refering to graphics.
 """
 
-import logging
-
 import numpy as np
+
+import pyboy
 from pyboy import utils
 
 from .constants import LOW_TILEDATA, VRAM_OFFSET
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 try:
     from PIL import Image
