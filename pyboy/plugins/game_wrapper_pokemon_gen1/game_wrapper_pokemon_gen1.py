@@ -162,3 +162,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
             return self.mem_manager.read_text_from_memory(address, num_bytes)
         else:
             raise ValueError(f"{read_type} is not a valid read type")
+
+    def read_rom_memory(self, address, num_bytes):
+        return self.mem_manager.read_from_rom(address, num_bytes)
