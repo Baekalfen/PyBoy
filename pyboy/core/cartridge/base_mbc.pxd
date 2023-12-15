@@ -6,8 +6,11 @@
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 from pyboy.core.cartridge.rtc cimport RTC
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
+
+cdef Logger logger
 
 cdef class BaseMBC:
     cdef str filename
@@ -34,9 +37,9 @@ cdef class BaseMBC:
     cdef void init_rambanks(self, uint8_t) noexcept
     cdef str getgamename(self, uint8_t[:,:]) noexcept
 
-    cdef uint8_t getitem(self, uint16_t) noexcept
-    cdef void setitem(self, uint16_t, uint8_t) noexcept
-    cdef void overrideitem(self, int, uint16_t, uint8_t) noexcept
+    cdef uint8_t getitem(self, uint16_t) noexcept nogil
+    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+    cdef void overrideitem(self, int, uint16_t, uint8_t) noexcept nogil
 
 cdef class ROMOnly(BaseMBC):
-    cdef void setitem(self, uint16_t, uint8_t) noexcept
+    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil

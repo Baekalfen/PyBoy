@@ -5,8 +5,12 @@
 
 cimport cython
 from libc.stdint cimport uint8_t
+
+from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
+
+cdef Logger logger
 
 cdef class RAM:
     @cython.locals(n=int)

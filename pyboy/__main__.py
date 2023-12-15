@@ -7,10 +7,13 @@
 import argparse
 import os
 
-from pyboy import PyBoy, core
-from pyboy.logger import log_level, logger
+import pyboy
+from pyboy import PyBoy, core, utils
+from pyboy.logging import log_level
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
+
+logger = pyboy.logging.get_logger(__name__)
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
 
@@ -29,7 +32,7 @@ def cgb_color_tuple(string):
 
 def valid_file_path(path):
     if not path == INTERNAL_LOADSTATE and not os.path.isfile(path):
-        logger.error(f"Filepath '{path}' couldn't be found, or isn't a file!")
+        logger.error("Filepath '%s' couldn't be found, or isn't a file!", path)
         exit(1)
     return path
 

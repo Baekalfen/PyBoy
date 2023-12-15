@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
 import os
 import re
 import zlib
@@ -11,9 +10,9 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
+from pyboy import utils
 from pyboy.botsupport import constants, tilemap
 from pyboy.botsupport.sprite import Sprite
-from pyboy.logger import logger
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
@@ -29,7 +28,9 @@ try:
 except ImportError:
     sdl2 = None
 
-logger = logging.getLogger(__name__)
+import pyboy
+
+logger = pyboy.logging.get_logger(__name__)
 
 # Mask colors:
 COLOR = 0x00000000
@@ -118,7 +119,7 @@ class Debug(PyBoyWindowPlugin):
 
                                 self.rom_symbols[bank][addr] = sym_label
                             except ValueError as ex:
-                                logger.warning(f"Skipping .sym line: {line.strip()}")
+                                logger.warning("Skipping .sym line: %s", line.strip())
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -224,10 +225,11 @@ class Debug(PyBoyWindowPlugin):
 
             bank_addr = self.parse_bank_addr_sym_label(b)
             if bank_addr is None:
-                logger.error(f"Couldn't parse address or label: {b}")
+                logger.error("Couldn't parse address or label: %s", b)
+                pass
             else:
                 self.mb.add_breakpoint(*bank_addr)
-                logger.info(f"Added breakpoint for address or label: {b}")
+                logger.info("Added breakpoint for address or label: %s", b)
 
     def post_tick(self):
         self.tile1.post_tick()
@@ -507,7 +509,7 @@ class TileViewWindow(BaseDebugWindow):
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // 8, event.mouse_y // 8
                     tile_identifier = self.tilemap.tile_identifier(tile_x, tile_y)
-                    logger.info(f"Tile clicked on {tile_x}, {tile_y}")
+                    logger.info(f"Tile clicked on %d, %d", tile_x, tile_y)
                     marked_tiles.add(
                         MarkedTile(tile_identifier=tile_identifier, mark_id="TILE", mark_color=MARK[mark_counter])
                     )

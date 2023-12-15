@@ -16,7 +16,7 @@ import io
 import pickle
 import numpy as np
 import torch
-import logging
+from pyboy import utils
 import sys
 
 from datetime import datetime
@@ -26,7 +26,7 @@ from core.utils import check_needed_turn, do_action, drop_down, \
 from pyboy import PyBoy, WindowEvent
 from multiprocessing import Pool, cpu_count
 
-logger = logging.getLogger("tetris")
+logger = utils.getLogger("tetris")
 logger.setLevel(logging.INFO)
 
 fh = logging.FileHandler('logs.out')

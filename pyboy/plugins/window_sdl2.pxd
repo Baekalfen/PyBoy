@@ -3,13 +3,18 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 cimport pyboy.utils
+from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 
 import cython
-cimport cython
-from libc.stdint cimport int64_t, uint8_t, uint16_t, int16_t, uint32_t
 
+cimport cython
+from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, uint32_t
+
+from pyboy.logging.logging cimport Logger
+
+
+cdef Logger logger
 
 cdef int ROWS, COLS
 

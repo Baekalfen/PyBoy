@@ -4,14 +4,17 @@
 #
 
 
-from libc cimport time
 cimport cython
-from libc.stdint cimport uint64_t
-from pyboy.core.mb cimport Motherboard
-from pyboy.utils cimport IntIOWrapper, IntIOInterface
-from pyboy.plugins.manager cimport PluginManager
-from libc.stdint cimport int64_t
+from libc cimport time
+from libc.stdint cimport int64_t, uint64_t
 
+from pyboy.core.mb cimport Motherboard
+from pyboy.logging.logging cimport Logger
+from pyboy.plugins.manager cimport PluginManager
+from pyboy.utils cimport IntIOInterface, IntIOWrapper
+
+
+cdef Logger logger
 
 cdef double SPF
 
@@ -46,6 +49,7 @@ cdef class PyBoy:
     cpdef bint tick(self) noexcept
     cpdef void stop(self, save=*) noexcept
 
+    @cython.locals(state_path=str)
     cdef void _handle_events(self, list) noexcept
     cpdef void _pause(self) noexcept
     cpdef void _unpause(self) noexcept

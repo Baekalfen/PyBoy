@@ -3,11 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
+import pyboy
+from pyboy import utils
 
 from .base_mbc import BaseMBC
 
-logger = logging.getLogger(__name__)
+logger = pyboy.logging.get_logger(__name__)
 
 
 class MBC3(BaseMBC):
@@ -22,7 +23,7 @@ class MBC3(BaseMBC):
                 # lower 4 bits enables RAM, and any other value
                 # disables RAM."
                 self.rambank_enabled = False
-                # logger.debug("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x" % (address, value))
+                # logger.debug("Unexpected command for MBC3: Address: 0x%0.4x, Value: 0x%0.2x", address, value)
         elif 0x2000 <= address < 0x4000:
             value &= 0b01111111
             if value == 0:
@@ -34,9 +35,9 @@ class MBC3(BaseMBC):
             if self.rtc_enabled:
                 self.rtc.writecommand(value)
             # else:
-            # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
-            # https://github.com/pret/pokered/issues/155
-            # logger.debug("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x" % (address, value))
+            #     # NOTE: Pokemon Red/Blue will do this, but it can safely be ignored:
+            #     # https://github.com/pret/pokered/issues/155
+            #     logger.debug("RTC not present. Game tried to issue RTC command: 0x%0.4x, 0x%0.2x", address, value)
         elif 0xA000 <= address < 0xC000:
             if self.rambank_enabled:
                 if self.rambank_selected <= 0x03:
@@ -44,6 +45,6 @@ class MBC3(BaseMBC):
                 elif 0x08 <= self.rambank_selected <= 0x0C:
                     self.rtc.setregister(self.rambank_selected, value)
                 # else:
-                # logger.error("Invalid RAM bank selected: 0x%0.2x" % self.rambank_selected)
+                #     logger.error("Invalid RAM bank selected: 0x%0.2x", self.rambank_selected)
         # else:
-        #     logger.error("Invalid writing address: 0x%0.4x" % address)
+        #     logger.error("Invalid writing address: 0x%0.4x", address)

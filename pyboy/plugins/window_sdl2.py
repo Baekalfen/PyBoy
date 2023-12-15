@@ -3,9 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import logging
 import time
 
+from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
 
@@ -15,7 +15,9 @@ try:
 except ImportError:
     sdl2 = None
 
-logger = logging.getLogger(__name__)
+import pyboy
+
+logger = pyboy.logging.get_logger(__name__)
 
 ROWS, COLS = 144, 160
 

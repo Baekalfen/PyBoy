@@ -7,16 +7,19 @@
 # http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 # http://www.devrs.com/gb/files/hosted/GBSOUND.txt
 
-import logging
 from array import array
 from ctypes import c_void_p
+
+from pyboy import utils
 
 try:
     import sdl2
 except ImportError:
     sdl2 = None
 
-logger = logging.getLogger(__name__)
+import pyboy
+
+logger = pyboy.logging.get_logger(__name__)
 
 SOUND_DESYNC_THRESHOLD = 5
 CPU_FREQ = 4213440 # hz
@@ -176,14 +179,17 @@ class Sound:
                 self.audiobuffer[2*i + 1] = 0
 
         if self.enabled:
-            # Clear queue, if we are behind
-            queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
-            samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
-            if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
-                sdl2.SDL_ClearQueuedAudio(self.device)
-
-            sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
+            self.enqueue_sound(nsamples)
         self.clock %= self.sampleclocks
+
+    def enqueue_sound(self, nsamples):
+        # Clear queue, if we are behind
+        queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
+        samples_per_frame = (self.sample_rate / 60) * 2 # Data of 1 frame's worth (60) in stereo (2)
+        if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
+            sdl2.SDL_ClearQueuedAudio(self.device)
+
+        sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
 
     def stop(self):
         if self.enabled:

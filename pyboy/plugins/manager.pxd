@@ -4,25 +4,30 @@
 #
 
 cimport cython
-# imports
-from pyboy.plugins.window_sdl2 cimport WindowSDL2
-from pyboy.plugins.window_open_gl cimport WindowOpenGL
-from pyboy.plugins.window_headless cimport WindowHeadless
-from pyboy.plugins.window_dummy cimport WindowDummy
+
+from pyboy.logging.logging cimport Logger
+from pyboy.plugins.auto_pause cimport AutoPause
+# imports end
+from pyboy.plugins.base_plugin cimport PyBoyPlugin, PyBoyWindowPlugin
 from pyboy.plugins.debug cimport Debug
 from pyboy.plugins.disable_input cimport DisableInput
-from pyboy.plugins.auto_pause cimport AutoPause
+from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
+from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
+from pyboy.plugins.game_wrapper_super_mario_land cimport GameWrapperSuperMarioLand
+from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
 from pyboy.plugins.record_replay cimport RecordReplay
 from pyboy.plugins.rewind cimport Rewind
 from pyboy.plugins.screen_recorder cimport ScreenRecorder
 from pyboy.plugins.screenshot_recorder cimport ScreenshotRecorder
-from pyboy.plugins.game_wrapper_super_mario_land cimport GameWrapperSuperMarioLand
-from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
-from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
+from pyboy.plugins.window_dummy cimport WindowDummy
+from pyboy.plugins.window_headless cimport WindowHeadless
+from pyboy.plugins.window_open_gl cimport WindowOpenGL
 from pyboy.plugins.game_wrapper_pokemon_gen1.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
-# imports end
-from pyboy.plugins.base_plugin cimport PyBoyPlugin, PyBoyWindowPlugin
+# imports
+from pyboy.plugins.window_sdl2 cimport WindowSDL2
 
+
+cdef Logger logger
 
 
 cdef class PluginManager:
