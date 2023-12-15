@@ -47,6 +47,8 @@ class MemoryManager():
             # number
             return index + 197
         return index + ASCII_DELTA
+    
+    def get_
 
     def _read_byte(self, addr):
         return self.pyboy.get_memory_value(addr)
@@ -176,4 +178,28 @@ class MemoryManager():
             raise ValueError(f"{mem_addr.memory_type} is not a valid memory type")
         
         return mem_func(mem_addr.address, mem_addr.num_bytes)
+    
+    def _load_rombank(self, rombank_selected):
+        self.pyboy.set_memory_value(0x2000, rombank_selected)
+
+    def read_from_rom(self, address, num_bytes=1):
+        rombank = int(address / 0x4000)
+        address_in_rom = address % 0x4000
+
+        # PyBoy treats the switchable ROM bank as being at address
+        # 0x4000 to 0x8000 (0x0000 to 0x4000 is always ROM bank 0),
+        # append 04x4000
+
+        address_in_rom += 0x4000
+
+        # Switch in correct ROM bank
+        self._load_rombank(rombank)
+
+        rom_values = []
+
+        for i in range(num_bytes):
+            rom_values.append(self.pyboy.get_memory_value(address_in_rom+i))
+
+        return rom_values
+
     
