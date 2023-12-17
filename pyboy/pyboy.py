@@ -9,6 +9,7 @@ The core module of the emulator
 import os
 import time
 
+from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
@@ -135,6 +136,25 @@ class PyBoy:
         ```
         >>> values = pyboy.memory[0x0000:0x10000]
         >>> pyboy.memory[0xC000:0xC0010] = 0
+        ```
+        """
+
+        self.memory_scanner = MemoryScanner(self)
+        """
+        Provides a `pyboy.api.memory_scanner.MemoryScanner` object for locating addresses of interest in the memory space
+        of the Game Boy. This might require some trial and error. Values can be represented in memory in surprising ways.
+
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+
+        Example:
+        ```
+        >>> current_score = 4 # You write current score in game
+        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        >>> for _ in range(175):
+                pyboy.tick(1, True) # Progress the game to change score
+        >>> current_score = 8 # You write the new score in game
+        >>> addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
+        >>> print(addresses) # If repeated enough, only one address will remain
         ```
         """
 
