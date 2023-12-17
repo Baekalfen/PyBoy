@@ -82,23 +82,34 @@ class MemoryScanner():
 
     def rescan_memory(self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED):
         for addr, value in self._memory_cache.copy().items():
+            current_value = int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width])
             if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
-                if value != int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
+                if value != current_value:
                     self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
             elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
-                if value == int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
+                if value == current_value:
                     self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
             elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
-                if value >= int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
+                if value >= current_value:
                     self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
             elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
-                if value <= int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width]):
+                if value <= current_value:
                     self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
             elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
                 if new_value == None:
                     raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
-                if value != new_value:
+                if current_value != new_value:
                     self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
             else:
                 raise ValueError("Invalid comparison type")
         return list(self._memory_cache.keys())
