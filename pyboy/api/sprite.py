@@ -116,7 +116,18 @@ class Sprite:
             The state of the bit in the attributes lookup.
         """
 
-        self.attr_palette_number = _bit(attr, 4)
+        self.attr_palette_number = 0
+        """
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
+
+        Returns
+        -------
+        int:
+            The state of the bit(s) in the attributes lookup.
+        """
+
+        self.attr_cgb_bank_number = 0
         """
         To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
         (OAM)](https://gbdev.io/pandocs/OAM.html).
@@ -126,6 +137,12 @@ class Sprite:
         bool:
             The state of the bit in the attributes lookup.
         """
+
+        if self.mb.cgb:
+            self.attr_palette_number = attr & 0b111
+            self.attr_cgb_bank_number = _bit(attr, 3)
+        else:
+            self.attr_palette_number = _bit(attr, 4)
 
         LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
         sprite_height = 16 if LCDC._get_sprite_height() else 8
