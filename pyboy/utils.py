@@ -2,6 +2,7 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+from enum import Enum
 
 STATE_VERSION = 9
 
@@ -276,3 +277,48 @@ class WindowEventMouse(WindowEvent):
         self.mouse_scroll_x = mouse_scroll_x
         self.mouse_scroll_y = mouse_scroll_y
         self.mouse_button = mouse_button
+
+
+##############################################################
+# Memory Scanning
+#
+
+
+def dec_to_bcd(value, byte_width=1, byteorder="little"):
+    """
+    Converts a decimal value to Binary Coded Decimal (BCD).
+
+    :param value: Integer value to convert.
+    :param byte_width: The number of bytes to consider for each value.
+    :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
+    :return: BCD equivalent of the decimal value.
+    """
+    bcd_result = []
+    for _ in range(byte_width):
+        tens = ((value%100) // 10) << 4
+        units = value % 10
+        bcd_byte = (tens | units) & 0xFF
+        bcd_result.append(bcd_byte)
+        value //= 100
+    return int.from_bytes(bcd_result, byteorder)
+
+
+def bcd_to_dec(value, byte_width=1, byteorder="little"):
+    """
+    Converts a Binary Coded Decimal (BCD) value to decimal.
+
+    :param value: BCD value to convert.
+    :param byte_width: The number of bytes to consider for each value.
+    :param byteorder: The endian type to use (see [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes)). Note, this is only used for 16-bit values and higher.
+    :return: Decimal equivalent of the BCD value.
+    """
+    decimal_value = 0
+    multiplier = 1
+
+    bcd_bytes = value.to_bytes(byte_width, byteorder)
+
+    for bcd_byte in bcd_bytes:
+        decimal_value += ((bcd_byte >> 4) * 10 + (bcd_byte & 0x0F)) * multiplier
+        multiplier *= 100
+
+    return decimal_value

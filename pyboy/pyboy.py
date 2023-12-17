@@ -9,6 +9,7 @@ The core module of the emulator
 import os
 import time
 
+from pyboy.api.memoryscanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
@@ -135,6 +136,17 @@ class PyBoy:
         ```
         >>> values = pyboy.memory[0x0000:0x10000]
         >>> pyboy.memory[0xC000:0xC0010] = 0
+        ```
+        """
+
+        self.memory_scanner = MemoryScanner(self)
+        """
+        Provides a `pyboy.api.memoryscanner.MemoryScanner` object for locating addresses of interest in the memory space
+        of the Game Boy.
+        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        Example:
+        ```
+        >>> pyboy.memory_scanner
         ```
         """
 
