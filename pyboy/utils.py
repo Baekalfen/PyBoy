@@ -288,10 +288,13 @@ def dec_to_bcd(value, byte_width=1, byteorder="little"):
     """
     Converts a decimal value to Binary Coded Decimal (BCD).
 
-    :param value: Integer value to convert.
-    :param byte_width: The number of bytes to consider for each value.
-    :param byteorder: The endian type to use (see [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes)). Note, this is only used for 16-bit values and higher.
-    :return: BCD equivalent of the decimal value.
+    Args:
+        value (int): The integer value to convert.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+
+    Returns:
+        int: The BCD equivalent of the decimal value.
     """
     bcd_result = []
     for _ in range(byte_width):
@@ -307,10 +310,13 @@ def bcd_to_dec(value, byte_width=1, byteorder="little"):
     """
     Converts a Binary Coded Decimal (BCD) value to decimal.
 
-    :param value: BCD value to convert.
-    :param byte_width: The number of bytes to consider for each value.
-    :param byteorder: The endian type to use (see [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes)). Note, this is only used for 16-bit values and higher.
-    :return: Decimal equivalent of the BCD value.
+    Args:
+        value (int): The BCD value to convert.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes) for more details.
+
+    Returns:
+        int: The decimal equivalent of the BCD value.
     """
     decimal_value = 0
     multiplier = 1
