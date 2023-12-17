@@ -81,6 +81,16 @@ class MemoryScanner():
         return list(self._memory_cache.keys())
 
     def rescan_memory(self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED):
+        """
+        Rescans the memory and updates the memory cache based on a dynamic comparison type.
+
+        Args:
+            new_value (int, optional): The new value for comparison. If not provided, the current value in memory is used.
+            dynamic_comparison_type (DynamicComparisonType): The type of comparison to use. Defaults to UNCHANGED.
+
+        Returns:
+            list of int: A list of addresses remaining in the memory cache after the rescan.
+        """
         for addr, value in self._memory_cache.copy().items():
             current_value = int.from_bytes(self.pyboy.memory[addr:addr + self._memory_cache_byte_width])
             if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
