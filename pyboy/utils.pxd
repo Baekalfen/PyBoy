@@ -47,3 +47,12 @@ cdef class WindowEventMouse(WindowEvent):
     cdef readonly int mouse_scroll_x
     cdef readonly int mouse_scroll_y
     cdef readonly int mouse_button
+
+
+##############################################################
+# Memory Scanning
+#
+
+cpdef uint64_t dec_to_bcd(uint64_t,int byte_width=*,byteorder=*) noexcept
+@cython.locals(decimal_value=uint64_t, multiplier=uint64_t)
+cpdef uint64_t bcd_to_dec(uint64_t,int byte_width=*,byteorder=*) noexcept
