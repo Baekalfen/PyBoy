@@ -977,7 +977,10 @@ class PaletteColorRegister:
         self.index_reg.shouldincrement()
 
     def get(self):
-        return self.palette_mem[self.index_reg.getindex()]
+        if self.index_reg.hl:
+            return (self.palette_mem[self.index_reg.getindex()] & 0xFF00) >> 8
+        else:
+            return self.palette_mem[self.index_reg.getindex()] & 0x00FF
 
     def getcolor(self, paletteindex, colorindex):
         # Each palette = 8 bytes or 4 colors of 2 bytes
