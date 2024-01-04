@@ -49,9 +49,9 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self._sprite_cache_invalid = True
 
         self.score = 0
-        score_digits = 5
+        score_digits = 4
         for n in range(score_digits):
-            self.score += self.pyboy.memory[0xD06F + n] * 10**(score_digits - n)
+            self.score += self.pyboy.memory[0xD070 + n] * 10**(score_digits - n)
 
         # Check if game is over
         prev_health = self.health
