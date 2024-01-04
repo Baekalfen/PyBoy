@@ -119,7 +119,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
 
     def enabled(self):
-        return self.cartridge_title is None or self.pyboy.cartridge_title() == self.cartridge_title
+        return self.cartridge_title is None or self.pyboy.cartridge_title == self.cartridge_title
 
     def post_tick(self):
         raise NotImplementedError("post_tick not implemented in game wrapper")
