@@ -142,7 +142,7 @@ def replay(
         recording ^= True
 
     if gif_destination:
-        move_gif(pyboy.cartridge_title(), gif_destination)
+        move_gif(pyboy.cartridge_title, gif_destination)
         if gif_hash is not None and not overwrite and sys.platform == "darwin":
             verify_file_hash(gif_destination, gif_hash)
 

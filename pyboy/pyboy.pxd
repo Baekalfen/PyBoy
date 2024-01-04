@@ -55,6 +55,7 @@ cdef class PyBoy:
     cdef readonly TileMap tilemap_window
     cdef readonly object game_wrapper
     cdef readonly MemoryScanner memory_scanner
+    cdef readonly str cartridge_title
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed

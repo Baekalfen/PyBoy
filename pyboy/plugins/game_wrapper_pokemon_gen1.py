@@ -32,7 +32,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.sprite_offset = 0x1000
 
     def enabled(self):
-        return (self.pyboy.cartridge_title() == "POKEMON RED") or (self.pyboy.cartridge_title() == "POKEMON BLUE")
+        return (self.pyboy.cartridge_title == "POKEMON RED") or (self.pyboy.cartridge_title == "POKEMON BLUE")
 
     def post_tick(self):
         self._tile_cache_invalid = True
