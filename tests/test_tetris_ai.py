@@ -131,7 +131,7 @@ def eval_network(epoch, child_index, child_model, record_to):
             directory = os.path.join(os.path.curdir, "recordings")
             if not os.path.exists(directory):
                 os.makedirs(directory, mode=0o755)
-            path = os.path.join(directory, time.strftime(f"{pyboy.cartridge_title()}-%Y.%m.%d-%H.%M.%S.gif"))
+            path = os.path.join(directory, time.strftime(f"{pyboy.cartridge_title}-%Y.%m.%d-%H.%M.%S.gif"))
 
             frames[0].save(
                 path,
