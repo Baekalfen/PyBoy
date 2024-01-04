@@ -35,7 +35,7 @@ class ScreenshotRecorder(PyBoyPlugin):
             directory = os.path.join(os.path.curdir, "screenshots")
             if not os.path.exists(directory):
                 os.makedirs(directory, mode=0o755)
-            path = os.path.join(directory, time.strftime(f"{self.pyboy.cartridge_title()}-%Y.%m.%d-%H.%M.%S.png"))
+            path = os.path.join(directory, time.strftime(f"{self.pyboy.cartridge_title}-%Y.%m.%d-%H.%M.%S.png"))
 
         self.pyboy.screen.image.save(path)
 

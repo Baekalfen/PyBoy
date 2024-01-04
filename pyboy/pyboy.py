@@ -180,6 +180,17 @@ class PyBoy:
             A TileMap object for the tile map.
         """
 
+        self.cartridge_title = self.mb.cartridge.gamename
+        """
+        The title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
+        have been truncated to 11 characters.
+
+        Returns
+        -------
+        str :
+            Game title
+        """
+
         self._plugin_manager = PluginManager(self, self.mb, kwargs)
         """
         Returns
@@ -600,18 +611,6 @@ class PyBoy:
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
-
-    def cartridge_title(self):
-        """
-        Get the title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
-        have been truncated to 11 characters.
-
-        Returns
-        -------
-        str :
-            Game title
-        """
-        return self.mb.cartridge.gamename
 
     def __rendering(self, value):
         """

@@ -19,7 +19,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 def test_mario_basics(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    assert pyboy.cartridge_title() == "SUPER MARIOLAN"
+    assert pyboy.cartridge_title == "SUPER MARIOLAN"
 
     mario = pyboy.game_wrapper
     mario.start_game(world_level=(1, 1))
@@ -35,7 +35,7 @@ def test_mario_basics(supermarioland_rom):
 def test_mario_advanced(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window_type="null")
     pyboy.set_emulation_speed(0)
-    assert pyboy.cartridge_title() == "SUPER MARIOLAN"
+    assert pyboy.cartridge_title == "SUPER MARIOLAN"
 
     mario = pyboy.game_wrapper
     mario.start_game(world_level=(3, 2))
