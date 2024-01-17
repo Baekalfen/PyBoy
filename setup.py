@@ -4,15 +4,19 @@ import platform
 import sys
 from multiprocessing import cpu_count
 
-import numpy as np
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext as _build_ext
 from setuptools import Extension, setup
 
 CYTHON = platform.python_implementation() == "CPython"
 ROOT_DIR = "pyboy"
 
+if not CYTHON:
+    setup()
+    exit(0)
+
+import numpy as np
+from Cython.Build import cythonize
 from Cython.Compiler import DebugFlags, Errors
+from Cython.Distutils import build_ext as _build_ext
 
 
 def patched_error(position, message):
