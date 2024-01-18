@@ -98,8 +98,7 @@ def _bcm_to_dec(value):
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     """
-    This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left, world and a
-    "fitness" score for AIs.
+    This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left and world for AIs.
 
     __Only world 1-1 is officially supported at the moment. Support for more worlds coming soon.__
 
@@ -129,14 +128,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         """The number of seconds left to finish the level"""
         self.level_progress = 0
         """An integer of the current "global" X position in this level. Can be used for AI scoring."""
-        self._level_progress_max = 0
-        self.fitness = 0
-        """
-        A built-in fitness scoring. Taking points, level progression, time left, and lives left into account.
-
-        .. math::
-            fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
-        """
 
         super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_follow_scxy=True, **kwargs)
 
@@ -156,11 +147,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         mario_x = self.pyboy.memory[0xC202]
         scx = self.pyboy.screen.tilemap_position_list[16][0]
         self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
-
-        if self.game_has_started:
-            self._level_progress_max = max(self.level_progress, self._level_progress_max)
-            end_score = self.score + self.time_left * 10
-            self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
     def set_lives_left(self, amount):
         """
@@ -320,7 +306,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             f"Score: {self.score}\n" +
             f"Time left: {self.time_left}\n" +
             f"Level progress: {self.level_progress}\n" +
-            f"Fitness: {self.fitness}\n" +
             "Sprites on screen:\n" +
             "\n".join([str(s) for s in self._sprites_on_screen()]) +
             "\n" +

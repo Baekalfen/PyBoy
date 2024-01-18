@@ -18,7 +18,6 @@ cdef class GameWrapperTetris(PyBoyGameWrapper):
     cdef readonly int score
     cdef readonly int level
     cdef readonly int lines
-    cdef readonly int fitness
 
     cpdef void set_tetromino(self, str) noexcept
     cpdef str next_tetromino(self) noexcept

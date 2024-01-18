@@ -31,20 +31,17 @@ assert mario.score == 0
 assert mario.lives_left == 2
 assert mario.time_left == 400
 assert mario.world == (1, 1)
-assert mario.fitness == 0 # A built-in fitness score for AI development
-last_fitness = 0
+last_time = mario.time_left
 
 print(mario)
 
 pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 for _ in range(1000):
-    assert mario.fitness >= last_fitness
-    last_fitness = mario.fitness
+    assert mario.time_left <= mario.time_left
+    last_time = mario.time_left
 
     pyboy.tick(1, True)
     if mario.lives_left == 1:
-        assert last_fitness == 27700
-        assert mario.fitness == 17700 # Loosing a live, means 10.000 points in this fitness scoring
         print(mario)
         break
 else:
