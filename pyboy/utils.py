@@ -4,7 +4,7 @@
 #
 from enum import Enum
 
-STATE_VERSION = 9
+STATE_VERSION = 10
 
 ##############################################################
 # Buffer classes

@@ -119,9 +119,11 @@ cdef class Renderer:
     cdef bint cgb
 
     cdef array _screenbuffer_raw
+    cdef array _screenbuffer_attributes_raw
     cdef object _screenbuffer_ptr
     cdef array _tilecache0_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer
+    cdef uint8_t[:,:] _screenbuffer_attributes
     cdef uint32_t[:,:] _tilecache0, _spritecache0, _spritecache1
 
     cdef int[10] sprites_to_render
@@ -150,6 +152,7 @@ cdef class Renderer:
         yy=int,
         tilecache=uint32_t[:,:],
         bg_priority_apply=uint32_t,
+        col0=uint8_t,
     )
     cdef void scanline(self, LCD, int) noexcept nogil
 
@@ -175,7 +178,7 @@ cdef class Renderer:
         pixel=uint32_t,
         bgmappriority=bint,
     )
-    cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], bint) noexcept nogil
+    cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
     cdef void sort_sprites(self, int) noexcept nogil
     cdef inline uint8_t color_code(self, uint8_t, uint8_t, uint8_t) noexcept nogil
 

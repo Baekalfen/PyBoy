@@ -34,7 +34,7 @@ def verify_screen_image_np(pyboy, saved_array):
         from PIL import Image
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()
-        new = pyboy.screen.image
+        new = pyboy.screen.image.convert("RGB")
         new.show()
         import PIL.ImageChops
         PIL.ImageChops.difference(original, new).show()
