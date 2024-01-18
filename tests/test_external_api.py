@@ -19,7 +19,7 @@ from pyboy.utils import IntIOWrapper
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
 NDARRAY_COLOR_DEPTH = 4
-NDARRAY_COLOR_FORMAT = "RGBX"
+NDARRAY_COLOR_FORMAT = "RGBA"
 
 
 def test_misc(default_rom):
@@ -141,7 +141,7 @@ def test_tiles_cgb(any_rom_cgb):
 
 
 def test_screen_buffer_and_image(tetris_rom, boot_rom):
-    cformat = "RGBX"
+    cformat = "RGBA"
     boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
 
     pyboy = PyBoy(tetris_rom, window_type="null", bootrom_file=boot_rom)
@@ -166,10 +166,10 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
         b"\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$"
     )
     boot_logo_png_hash = hashlib.sha256()
-    image = pyboy.screen.image
+    image = pyboy.screen.image.convert("RGB")
     assert isinstance(image, PIL.Image.Image)
     image_data = io.BytesIO()
-    image.convert(mode="RGB").save(image_data, format="BMP")
+    image.save(image_data, format="BMP")
     boot_logo_png_hash.update(image_data.getvalue())
     assert boot_logo_png_hash.digest() == boot_logo_png_hash_predigested
 
@@ -183,26 +183,32 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
     # ) == (b"\r\t\x87\x131\xe8\x06\x82\xcaO=\n\x1e\xa2K$"
     #       b"\xd6\x8e\x91R( H7\xd8a*B+\xc7\x1f\x19")
 
-    # Check PIL image is reference for performance
+    ## Check PIL image is reference for performance
+    ## Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
+
+    # Initial, direct reference and copy are the same
     pyboy.tick(1, True)
     new_image1 = pyboy.screen.image
     _new_image1 = new_image1.copy()
-    diff = ImageChops.difference(new_image1, _new_image1)
+    diff = ImageChops.difference(new_image1.convert("RGB"), _new_image1.convert("RGB"))
     assert not diff.getbbox()
 
+    # Changing reference, and it now differs from copy
     nd_image = pyboy.screen.ndarray
-    nd_image[:, :] = 0
-    diff = ImageChops.difference(new_image1, _new_image1)
+    nd_image[:, :, :] = 0
+    diff = ImageChops.difference(new_image1.convert("RGB"), _new_image1.convert("RGB"))
     assert diff.getbbox()
 
+    # Old reference lives after tick, and equals new reference
     pyboy.tick(1, True)
     new_image2 = pyboy.screen.image
-    diff = ImageChops.difference(new_image1, new_image2)
+    diff = ImageChops.difference(new_image1.convert("RGB"), new_image2.convert("RGB"))
     assert not diff.getbbox()
 
+    # Changing reference, and it now differs from copy
     new_image3 = new_image1.copy()
-    nd_image[:, :] = 0xFF
-    diff = ImageChops.difference(new_image1, new_image3)
+    nd_image[:, :, :] = 0xFF
+    diff = ImageChops.difference(new_image1.convert("RGB"), new_image3.convert("RGB"))
     assert diff.getbbox()
 
     pyboy.stop(save=False)

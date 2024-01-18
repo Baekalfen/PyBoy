@@ -175,14 +175,15 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)
     else:
-        old_image = PIL.Image.open(png_path)
+        # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
+        old_image = PIL.Image.open(png_path).convert("RGB")
         if "acceptance" in rom:
             # The registers are too volatile to depend on. We crop the top out, and only match the assertions.
             diff = PIL.ImageChops.difference(
-                image.crop((0, 72, 160, 144)).convert(mode="RGB"), old_image.crop((0, 72, 160, 144))
+                image.convert("RGB").crop((0, 72, 160, 144)), old_image.crop((0, 72, 160, 144))
             )
         else:
-            diff = PIL.ImageChops.difference(image.convert(mode="RGB"), old_image)
+            diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
 
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
