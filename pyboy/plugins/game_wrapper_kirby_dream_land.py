@@ -18,7 +18,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     """
-    This class wraps Kirby Dream Land, and provides easy access to score and a "fitness" score for AIs.
+    This class wraps Kirby Dream Land, and provides easy access for AIs.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
@@ -35,13 +35,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         """The lives remaining provided by the game"""
         self._game_over = False
         """The game over state"""
-        self.fitness = 0
-        """
-        A built-in fitness scoring. Taking score, health, and lives left into account.
 
-        .. math::
-            fitness = score \\cdot health \\cdot lives\\_left
-        """
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_follow_scxy=True, **kwargs)
 
     def post_tick(self):
@@ -61,9 +55,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
                 self._game_over = True
 
         self.lives_left = self.pyboy.memory[0xD089] - 1
-
-        if self.game_has_started:
-            self.fitness = self.score * self.health * self.lives_left
 
     def start_game(self, timer_div=None):
         """
@@ -160,7 +151,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             f"Score: {self.score}\n" +
             f"Health: {self.health}\n" +
             f"Lives left: {self.lives_left}\n" +
-            f"Fitness: {self.fitness}\n" +
             "Sprites on screen:\n" +
             "\n".join([str(s) for s in self._sprites_on_screen()]) +
             "\n" +
