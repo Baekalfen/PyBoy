@@ -219,11 +219,14 @@ class Debug(PyBoyWindowPlugin):
             return False
 
 
-def make_buffer(w, h):
-    buf = array("B", [0x55] * (w*h*4))
-    buf0 = memoryview(buf).cast("I", shape=(h, w))
+def make_buffer(w, h, depth=4):
+    buf = array("B", [0x55] * (w*h*depth))
+    if depth == 4:
+        buf0 = memoryview(buf).cast("I", shape=(h, w))
+    else:
+        buf0 = memoryview(buf).cast("B", shape=(h, w))
     buf_p = c_void_p(buf.buffer_info()[0])
-    return buf, buf0, buf_p
+    return buf0, buf_p
 
 
 class BaseDebugWindow(PyBoyWindowPlugin):
@@ -241,7 +244,8 @@ class BaseDebugWindow(PyBoyWindowPlugin):
         )
         self.window_id = sdl2.SDL_GetWindowID(self._window)
 
-        self.buf, self.buf0, self.buf_p = make_buffer(width, height)
+        self.buf0, self.buf_p = make_buffer(width, height)
+        self.buf0_attributes, _ = make_buffer(width, height, 1)
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
         sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, width, height)
@@ -614,7 +618,7 @@ class SpriteViewWindow(BaseDebugWindow):
                 self.buf0[y, x] = SPRITE_BACKGROUND
 
         for ly in range(144):
-            self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, True)
+            self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, self.buf0_attributes, True)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
@@ -656,7 +660,7 @@ class MemoryWindow(BaseDebugWindow):
         font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n") + 1:])
         font_bytes = zlib.decompress(b64decode(font_blob.encode()))
 
-        self.fbuf, self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
+        self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
         for y, b in enumerate(font_bytes):
             for x in range(8):
                 self.fbuf0[y, x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
