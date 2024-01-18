@@ -218,8 +218,8 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
             png_buf.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in data]))
         png_buf.seek(0)
 
-        old_image = PIL.Image.open(png_buf)
-        diff = PIL.ImageChops.difference(image.convert(mode="RGB"), old_image)
+        old_image = PIL.Image.open(png_buf).convert("RGB")
+        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
         if diff.getbbox() and not os.environ.get("TEST_CI"):
             image.show()
             old_image.show()

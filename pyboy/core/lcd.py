@@ -23,10 +23,11 @@ FRAME_CYCLES = 70224
 
 
 def rgb_to_bgr(color):
+    a = 0xFF
     r = (color >> 16) & 0xFF
     g = (color >> 8) & 0xFF
     b = color & 0xFF
-    return (b << 16) | (g << 8) | r
+    return (a << 24) | (b << 16) | (g << 8) | r
 
 
 class LCD:
@@ -166,7 +167,9 @@ class LCD:
                     self.clock_target += 206 * multiplier
 
                     self.renderer.scanline(self, self.LY)
-                    self.renderer.scanline_sprites(self, self.LY, self.renderer._screenbuffer, False)
+                    self.renderer.scanline_sprites(
+                        self, self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
+                    )
                     if self.LY < 143:
                         self.next_stat_mode = 2
                     else:
@@ -305,10 +308,7 @@ class PaletteRegister:
         return self.value
 
     def getcolor(self, i):
-        if i==0:
-            return self.palette_mem_rgb[self.lookup[0]] | COL0_FLAG
-        else:
-            return self.palette_mem_rgb[self.lookup[i]]
+        return self.palette_mem_rgb[self.lookup[i]]
 
 
 class STATRegister:
@@ -371,14 +371,14 @@ class LCDCRegister:
         return self.sprite_height
 
 
-COL0_FLAG = 0b01 << 24
-BG_PRIORITY_FLAG = 0b10 << 24
+COL0_FLAG = 0b01
+BG_PRIORITY_FLAG = 0b10
 
 
 class Renderer:
     def __init__(self, cgb):
         self.cgb = cgb
-        self.color_format = "RGBX"
+        self.color_format = "RGBA"
 
         self.buffer_dims = (ROWS, COLS)
 
@@ -387,6 +387,7 @@ class Renderer:
 
         # Init buffers as white
         self._screenbuffer_raw = array("B", [0x00] * (ROWS*COLS*4))
+        self._screenbuffer_attributes_raw = array("B", [0x00] * (ROWS*COLS))
         self._tilecache0_raw = array("B", [0x00] * (TILES*8*8*4))
         self._spritecache0_raw = array("B", [0x00] * (TILES*8*8*4))
         self._spritecache1_raw = array("B", [0x00] * (TILES*8*8*4))
@@ -398,6 +399,7 @@ class Renderer:
         self.clear_cache()
 
         self._screenbuffer = memoryview(self._screenbuffer_raw).cast("I", shape=(ROWS, COLS))
+        self._screenbuffer_attributes = memoryview(self._screenbuffer_attributes_raw).cast("B", shape=(ROWS, COLS))
         self._tilecache0 = memoryview(self._tilecache0_raw).cast("I", shape=(TILES * 8, 8))
         # OBP0 palette
         self._spritecache0 = memoryview(self._spritecache0_raw).cast("I", shape=(TILES * 8, 8))
@@ -470,6 +472,7 @@ class Renderer:
                     yy = (8*wt + (7 - (self.ly_window) % 8)) if vertflip else (8*wt + (self.ly_window) % 8)
 
                     pixel = lcd.bcpd.getcolor(palette, tilecache[yy, xx])
+                    col0 = (tilecache[yy, xx] == 0) & 1
                     if bg_priority:
                         # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
                         bg_priority_apply = BG_PRIORITY_FLAG
@@ -478,8 +481,14 @@ class Renderer:
                     xx = (x-wx) % 8
                     yy = 8*wt + (self.ly_window) % 8
                     pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
+                    col0 = (self._tilecache0[yy, xx] == 0) & 1
 
-                self._screenbuffer[y, x] = pixel | bg_priority_apply
+                self._screenbuffer[y, x] = pixel
+                # COL0_FLAG is 1
+                self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
+                # self._screenbuffer_attributes[y, x] = bg_priority_apply
+                # if col0:
+                #     self._screenbuffer_attributes[y, x] = self._screenbuffer_attributes[y, x] | col0
             # background_enable doesn't exist for CGB. It works as master priority instead
             elif (not self.cgb and lcd._LCDC.background_enable) or self.cgb:
                 tile_addr = background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32
@@ -506,6 +515,7 @@ class Renderer:
                     yy = (8*bt + (7 - (y+by) % 8)) if vertflip else (8*bt + (y+by) % 8)
 
                     pixel = lcd.bcpd.getcolor(palette, tilecache[yy, xx])
+                    col0 = (tilecache[yy, xx] == 0) & 1
                     if bg_priority:
                         # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
                         bg_priority_apply = BG_PRIORITY_FLAG
@@ -514,11 +524,14 @@ class Renderer:
                     xx = (x+offset) % 8
                     yy = 8*bt + (y+by) % 8
                     pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
+                    col0 = (self._tilecache0[yy, xx] == 0) & 1
 
-                self._screenbuffer[y, x] = pixel | bg_priority_apply
+                self._screenbuffer[y, x] = pixel
+                self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
             else:
                 # If background is disabled, it becomes white
                 self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
+                self._screenbuffer_attributes[y, x] = 0
 
         if y == 143:
             # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
@@ -541,7 +554,7 @@ class Renderer:
             # Insert the key into its correct position in the sorted portion
             self.sprites_to_render[j + 1] = key
 
-    def scanline_sprites(self, lcd, ly, buffer, ignore_priority):
+    def scanline_sprites(self, lcd, ly, buffer, buffer_attributes, ignore_priority):
         if not lcd._LCDC.sprite_enable or lcd.disable_renderer:
             return
 
@@ -621,14 +634,14 @@ class Renderer:
                 if 0 <= x < COLS and not color_code == 0: # If pixel is not transparent
                     if self.cgb:
                         pixel = lcd.ocpd.getcolor(palette, color_code)
-                        bgmappriority = buffer[ly, x] & BG_PRIORITY_FLAG
+                        bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
 
                         if lcd._LCDC.cgb_master_priority: # If 0, sprites are always on top, if 1 follow priorities
                             if bgmappriority: # If 0, use spritepriority, if 1 take priority
-                                if buffer[ly, x] & COL0_FLAG:
+                                if buffer_attributes[ly, x] & COL0_FLAG:
                                     buffer[ly, x] = pixel
                             elif spritepriority: # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
-                                if buffer[ly, x] & COL0_FLAG:
+                                if buffer_attributes[ly, x] & COL0_FLAG:
                                     buffer[ly, x] = pixel
                             else:
                                 buffer[ly, x] = pixel
@@ -642,7 +655,7 @@ class Renderer:
                             pixel = lcd.OBP0.getcolor(color_code)
 
                         if spritepriority: # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
-                            if buffer[ly, x] & COL0_FLAG: # if BG pixel is transparent
+                            if buffer_attributes[ly, x] & COL0_FLAG: # if BG pixel is transparent
                                 buffer[ly, x] = pixel
                         else:
                             buffer[ly, x] = pixel
@@ -748,6 +761,7 @@ class Renderer:
         for y in range(ROWS):
             for x in range(COLS):
                 self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
+                self._screenbuffer_attributes[y, x] = 0
 
     def save_state(self, f):
         for y in range(ROWS):
@@ -761,6 +775,7 @@ class Renderer:
         for y in range(ROWS):
             for x in range(COLS):
                 f.write_32bit(self._screenbuffer[y, x])
+                f.write(self._screenbuffer_attributes[y, x])
 
     def load_state(self, f, state_version):
         if state_version >= 2:
@@ -777,6 +792,8 @@ class Renderer:
             for y in range(ROWS):
                 for x in range(COLS):
                     self._screenbuffer[y, x] = f.read_32bit()
+                    if state_version >= 10:
+                        self._screenbuffer_attributes[y, x] = f.read()
 
         self.clear_cache()
 
@@ -971,13 +988,12 @@ class PaletteColorRegister:
                 self.palette_mem_rgb[n + m] = self.cgb_to_rgb(c[m], m)
 
     def cgb_to_rgb(self, cgb_color, index):
+        alpha = 0xFF
         red = (cgb_color & 0x1F) << 3
         green = ((cgb_color >> 5) & 0x1F) << 3
         blue = ((cgb_color >> 10) & 0x1F) << 3
         # NOTE: Actually BGR, not RGB
-        rgb_color = ((blue << 16) | (green << 8) | red)
-        if index % 4 == 0:
-            rgb_color |= COL0_FLAG
+        rgb_color = ((alpha << 24) | (blue << 16) | (green << 8) | red)
         return rgb_color
 
     def set(self, val):

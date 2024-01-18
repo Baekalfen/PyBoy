@@ -61,11 +61,14 @@ class Screen:
         Returns
         -------
         str:
-            Color format of the raw screen buffer. E.g. 'RGBX'.
+            Color format of the raw screen buffer. E.g. 'RGBA'.
         """
         self.image = None
         """
-        Generates a PIL Image from the screen buffer. The screen buffer is internally row-major, but PIL hides this.
+        Reference to a PIL Image from the screen buffer. **Remember to copy, resize or convert this object** if you
+        intend to store it. The backing buffer will update, but it will be the same `PIL.Image` object.
+
+        The screen buffer is internally row-major, but PIL hides this.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
         case, read up on the `pyboy.api` features, [Pan Docs](https://gbdev.io/pandocs/) on tiles/sprites,
@@ -90,8 +93,10 @@ class Screen:
             dtype=np.uint8,
         ).reshape(ROWS, COLS, 4)
         """
-        Provides the screen data in NumPy format. The format is given by `pyboy.api.screen.Screen.raw_buffer_format`.
-        The screen buffer is row-major.
+        References the screen data in NumPy format. **Remember to copy this object** if you intend to store it.
+        The backing buffer will update, but it will be the same `ndarray` object.
+
+        The format is given by `pyboy.api.screen.Screen.raw_buffer_format`. The screen buffer is row-major.
 
         Returns
         -------

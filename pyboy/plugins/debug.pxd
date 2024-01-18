@@ -55,8 +55,8 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef object _window
     cdef object _sdlrenderer
     cdef object _sdltexturebuffer
-    cdef array buf
     cdef uint32_t[:,:] buf0
+    cdef uint8_t[:,:] buf0_attributes
     cdef object buf_p
 
     @cython.locals(y=int, x=int, _y=int, _x=int)
