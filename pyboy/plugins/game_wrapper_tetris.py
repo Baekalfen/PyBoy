@@ -51,7 +51,7 @@ mapping_minimal[135] = 2 # And background losing tiles BLACK which is 2
 
 class GameWrapperTetris(PyBoyGameWrapper):
     """
-    This class wraps Tetris, and provides easy access to score, lines, level and a "fitness" score for AIs.
+    This class wraps Tetris, and provides easy access to score, lines and level for AIs.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
@@ -73,13 +73,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         """The current level"""
         self.lines = 0
         """The number of cleared lines"""
-        self.fitness = 0
-        """
-        A built-in fitness scoring. The scoring is equals to `score`.
 
-        .. math::
-            fitness = score
-        """
         super().__init__(*args, **kwargs)
 
         ROWS, COLS = self.shape
@@ -102,9 +96,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self.score = self._sum_number_on_screen(13, 3, 6, blank, 0)
         self.level = self._sum_number_on_screen(14, 7, 4, blank, 0)
         self.lines = self._sum_number_on_screen(14, 10, 4, blank, 0)
-
-        if self.game_has_started:
-            self.fitness = self.score
 
     def start_game(self, timer_div=None):
         """
@@ -274,7 +265,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
             f"Score: {self.score}\n" +
             f"Level: {self.level}\n" +
             f"Lines: {self.lines}\n" +
-            f"Fitness: {self.fitness}\n" +
             "Sprites on screen:\n" +
             "\n".join([str(s) for s in self._sprites_on_screen()]) +
             "\n" +
