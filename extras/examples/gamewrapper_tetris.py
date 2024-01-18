@@ -32,7 +32,6 @@ assert tetromino_at_0x00 == "Z", tetris.next_tetromino()
 assert tetris.score == 0
 assert tetris.level == 0
 assert tetris.lines == 0
-assert tetris.fitness == 0 # A built-in fitness score for AI development
 
 # Checking that a reset on the same `timer_div` results in the same Tetromino
 tetris.reset_game(timer_div=0x00)
@@ -63,7 +62,6 @@ print(tetris)
 assert tetris.score == 0
 assert tetris.level == 0
 assert tetris.lines == 0
-assert tetris.fitness == 0 # A built-in fitness score for AI development
 
 # Assert there is something on the bottom of the game area
 assert any(filter(lambda x: x != blank_tile, game_area[-1, :]))
