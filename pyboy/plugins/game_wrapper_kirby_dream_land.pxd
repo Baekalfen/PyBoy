@@ -18,5 +18,4 @@ cdef class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     cdef readonly int score
     cdef readonly int health
     cdef readonly int lives_left
-    cdef readonly int fitness
     cdef readonly int _game_over
