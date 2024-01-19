@@ -82,7 +82,7 @@ class Debug(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.cgb = mb.cgb
+        self.cgb = mb.cartridge_cgb
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
