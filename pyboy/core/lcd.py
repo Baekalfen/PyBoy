@@ -72,10 +72,6 @@ class LCD:
             self.OBP1.palette_mem_rgb = [(c << 8) for c in color_palette]
             self.renderer = Renderer(False)
 
-        self.BGP.palette_mem_rgb[0] |= COL0_FLAG
-        self.OBP0.palette_mem_rgb[0] |= COL0_FLAG
-        self.OBP1.palette_mem_rgb[0] |= COL0_FLAG
-
     def get_lcdc(self):
         return self._LCDC.value
 
@@ -302,7 +298,10 @@ class PaletteRegister:
         return self.value
 
     def getcolor(self, i):
-        return self.palette_mem_rgb[self.lookup[i]]
+        if i==0:
+            return self.palette_mem_rgb[self.lookup[0]] | COL0_FLAG
+        else:
+            return self.palette_mem_rgb[self.lookup[i]]
 
 
 class STATRegister:
