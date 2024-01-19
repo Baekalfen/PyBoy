@@ -44,7 +44,7 @@ cdef class Motherboard:
     cdef HDMA hdma
     cdef uint8_t key1
     cdef bint double_speed
-    cdef public bint cgb
+    cdef readonly bint cgb, cartridge_cgb
 
     cdef list breakpoints_list
     cdef bint breakpoint_singlestep
