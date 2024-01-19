@@ -67,6 +67,7 @@ class Motherboard:
         self.key1 = 0
         self.double_speed = False
         self.cgb = cgb
+        self.cartridge_cgb = self.cartridge.cgb
 
         if self.cgb:
             self.hdma = HDMA()
