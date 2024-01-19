@@ -728,11 +728,11 @@ class MemoryWindow(BaseDebugWindow):
         self.dst.y = y
         for i, c in enumerate(text):
             if not 0 <= c < 256:
-                logger.warn(f"Invalid character {c} in {bytes(text).decode('cp437')}") # This may error too...
+                logger.warning(f"Invalid character {c} in {bytes(text).decode('cp437')}") # This may error too...
                 c = 0
             self.src.y = 16 * c
             if self.dst.x > self.width - 8:
-                logger.warn(f"Text overrun while printing {bytes(text).decode('cp437')}")
+                logger.warning(f"Text overrun while printing {bytes(text).decode('cp437')}")
                 break
             sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.src, self.dst)
             self.dst.x += 8
