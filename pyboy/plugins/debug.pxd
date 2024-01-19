@@ -147,6 +147,7 @@ cdef class MemoryWindow(BaseDebugWindow):
     @cython.locals(header=bytes, addr=bytes)
     cdef void write_addresses(self) noexcept
     cdef void write_memory(self) noexcept
+    @cython.locals(text=uint8_t[:])
     cdef void render_text(self) noexcept
     @cython.locals(i=int, c=uint8_t)
     cdef void draw_text(self, int, int, uint8_t[:]) noexcept
