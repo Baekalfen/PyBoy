@@ -1,6 +1,6 @@
 [project]
 name = "pyboy"
-version = "1.6.14"
+version = "2.0.0"
 authors = [
     {name = "Mads Ynddal", email = "mads@ynddal.dk"}
 ]
