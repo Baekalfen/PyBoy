@@ -114,13 +114,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312']
-        manylinux-version: ['manylinux2010_x86_64', 'manylinux_2_28_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
-        exclude:
-          - manylinux-version: manylinux2010_x86_64
-            python-version: cp311-cp311
-          - manylinux-version: manylinux2010_x86_64
-            python-version: cp312-cp312
+        python-version: ['cp38-cp38', 'cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312']
+        manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
 
     steps:
     - uses: actions/checkout@v3
@@ -137,7 +132,8 @@ jobs:
           if [[ "${{ matrix.manylinux-version }}" == "manylinux_2_28_x86_64" ]]; then
             dnf install libjpeg-devel -y
           else
-            yum -y install libjpeg-devel libffi-devel
+            apk add libjpeg jpeg-dev libffi
+            python -m ensurepip
           fi
 
           cd /work
@@ -146,10 +142,6 @@ jobs:
           python -m pip install --upgrade setuptools
 
           echo "Starting tests"
-          if [[ "${{ matrix.manylinux-version }}" == "manylinux2010_x86_64" ]]; then
-            python -m pip install cryptography==37 numpy==1.21.6
-          fi
-
           python -m pip install --prefer-binary -r requirements.txt
           python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
 
@@ -166,6 +158,10 @@ jobs:
           rm -rf dist/*.whl
           mv wheelhouse/*.whl dist/
           chmod 777 -R . # Fix permissions to help cleaning up outside of Docker
+
+          echo "Dists built:"
+          ls dist/
+
     - name: Set up Python 3.8 (just for PyPi upload)
       uses: actions/setup-python@v3
       with:
