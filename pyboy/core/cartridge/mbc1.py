@@ -26,6 +26,8 @@ class MBC1(BaseMBC):
             # Attempting to write 0b00000 will write 0b00001 instead.
             if value == 0:
                 value = 1
+            romsize = self.rombanks[0, 0x0148]
+            value = value & ((1 << (romsize + 1)) - 1);
             self.bank_select_register1 = value
         elif 0x4000 <= address < 0x6000:
             self.bank_select_register2 = value & 0b11
