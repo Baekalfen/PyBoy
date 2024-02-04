@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -38,11 +41,6 @@ docs/_build/
 # PyBuilder
 target/
 
-.DS_Store
-Report/*.pdf
-Report/*.aux
-Report/*.log
-
 # Don't want to see any ROMs being uploaded
 # This project is not for pirating games!
 *.gb
@@ -64,6 +62,7 @@ test_data.encrypted
 tetris/
 PyBoy-RL/
 
+# Cython
 /pyboy/**/*.c
 /pyboy/**/*.h
 /pyboy/**/*.html
@@ -80,24 +79,16 @@ PyBoy-RL/
 /site-packages
 /share
 
-# LaTeX files
-Projects/Projects.aux
-Projects/Projects.bbl
-Projects/Projects.blg
-Projects/Projects.out
-Projects/Projects.log
+# Bootrom
+extras/bootrom/bootrom*.map
+extras/bootrom/bootrom*.obj
+extras/bootrom/bootrom*.sym
+extras/bootrom/bootrom*.gb
+extras/bootrom/logo.asm
 
-bootrom/bootrom*.map
-bootrom/bootrom*.obj
-bootrom/bootrom*.sym
-bootrom/bootrom*.gb
-bootrom/logo.asm
-bootrom/pyboy.png
-bootrom/PYBOY_ROM.bin
-
-default_rom/default_rom.map
-default_rom/default_rom.obj
-default_rom/default_rom.sym
+extras/default_rom/default_rom.map
+extras/default_rom/default_rom.obj
+extras/default_rom/default_rom.sym
 !default_rom.gb
 
 test.replay
