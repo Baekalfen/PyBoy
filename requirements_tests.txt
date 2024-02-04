@@ -2,7 +2,7 @@
 pillow>=9.1.0
 pytest>=6.0.0
 pytest-xdist
-pytest-lazy-fixture
+pytest-lazy-fixtures
 pyopengl
 PyOpenGL_accelerate
 gym; platform_python_implementation == 'CPython'

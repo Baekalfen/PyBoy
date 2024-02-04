@@ -13,6 +13,7 @@ from pathlib import Path
 
 import PIL
 import pytest
+from pytest_lazy_fixtures import lf
 
 from pyboy import PyBoy, WindowEvent
 from pyboy import __main__ as main
@@ -188,10 +189,8 @@ OVERWRITE_PNGS = False
 
 
 @pytest.mark.parametrize("cgb", [False, True, None])
-@pytest.mark.parametrize(
-    "_bootrom, frames", [(pytest.lazy_fixture("boot_cgb_rom"), 120), (pytest.lazy_fixture("boot_rom"), 120), (None, 30)]
-)
-@pytest.mark.parametrize("rom", [pytest.lazy_fixture("tetris_rom"), pytest.lazy_fixture("any_rom_cgb")])
+@pytest.mark.parametrize("_bootrom, frames", [(lf("boot_cgb_rom"), 120), (lf("boot_rom"), 120), (None, 30)])
+@pytest.mark.parametrize("rom", [lf("tetris_rom"), lf("any_rom_cgb")])
 def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
     if cgb == False and _bootrom == boot_cgb_rom:
         pytest.skip("Invalid combination")

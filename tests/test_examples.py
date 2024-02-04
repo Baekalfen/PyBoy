@@ -9,13 +9,14 @@ import sys
 from pathlib import Path
 
 import pytest
+from pytest_lazy_fixtures import lf
 
 
 @pytest.mark.parametrize(
     "gamewrapper, rom", [
-        ("gamewrapper_tetris.py", pytest.lazy_fixture("tetris_rom")),
-        ("gamewrapper_mario.py", pytest.lazy_fixture("supermarioland_rom")),
-        ("gamewrapper_kirby.py", pytest.lazy_fixture("kirby_rom")),
+        ("gamewrapper_tetris.py", lf("tetris_rom")),
+        ("gamewrapper_mario.py", lf("supermarioland_rom")),
+        ("gamewrapper_kirby.py", lf("kirby_rom")),
     ]
 )
 def test_record_replay(gamewrapper, rom):
