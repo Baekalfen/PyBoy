@@ -98,6 +98,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
     cartridge_title = None
     argv = [("--game-wrapper", {"action": "store_true", "help": "Enable game wrapper for the current game"})]
 
+    mapping_minimal = np.arange(384 * 2, dtype=np.uint8)
+    """
+    Example mapping of 1:1
+    """
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_follow_scxy=False, **kwargs):
         super().__init__(*args, **kwargs)
         if not cythonmode:

@@ -8,6 +8,7 @@ __pdoc__ = {
     "logging": False,
     "pyboy": False,
     "utils": False,
+    "conftest": False,
 }
 __all__ = ["PyBoy", "WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
