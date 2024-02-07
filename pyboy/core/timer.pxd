@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 from pyboy.utils cimport IntIOInterface
 
@@ -23,7 +23,7 @@ cdef class Timer:
     @cython.locals(divider=cython.int)
     cdef bint tick(self, uint64_t) noexcept nogil
     @cython.locals(divider=cython.int, cyclesleft=cython.uint)
-    cdef uint64_t cycles_to_interrupt(self) noexcept nogil
+    cdef int64_t cycles_to_interrupt(self) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
