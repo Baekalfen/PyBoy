@@ -133,11 +133,26 @@ class PyBoy:
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
-            if self.mb.tick():
-                # breakpoint reached
-                self.plugin_manager.handle_breakpoint()
-            else:
-                self.frame_count += 1
+            # Reenter mb.tick until we eventually get a clean exit without breakpoints
+            while self.mb.tick():
+                # Breakpoint reached
+                # NOTE: Potentially reinject breakpoint that we have now stepped passed
+                self.mb.breakpoint_reinject()
+
+                # NOTE: PC has not been incremented when hitting breakpoint!
+                breakpoint_index = self.mb.breakpoint_reached()
+                if breakpoint_index != -1:
+                    self.mb.breakpoint_remove(breakpoint_index)
+                    self.mb.breakpoint_singlestep_latch = 0
+
+                    self.plugin_manager.handle_breakpoint()
+                else:
+                    if self.mb.breakpoint_singlestep_latch:
+                        self.plugin_manager.handle_breakpoint()
+                    # Keep singlestepping on, if that's what we're doing
+                    self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
+
+            self.frame_count += 1
         t_tick = time.perf_counter_ns()
         self._post_tick()
         t_post = time.perf_counter_ns()
