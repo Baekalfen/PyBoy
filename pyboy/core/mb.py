@@ -294,11 +294,14 @@ class Motherboard:
                 if self.cgb and self.hdma.transfer_active:
                     mode0_cycles = self.lcd.cycles_to_mode0()
 
-                cycles = min(
-                    self.lcd.cycles_to_interrupt(),
-                    self.timer.cycles_to_interrupt(),
-                    # self.serial.cycles_to_interrupt(),
-                    mode0_cycles
+                cycles = max(
+                    0,
+                    min(
+                        self.lcd.cycles_to_interrupt(),
+                        self.timer.cycles_to_interrupt(),
+                        # self.serial.cycles_to_interrupt(),
+                        mode0_cycles
+                    )
                 )
 
             #TODO: Support General Purpose DMA
