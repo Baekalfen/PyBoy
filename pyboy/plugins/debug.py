@@ -75,13 +75,7 @@ class MarkedTile:
 
 
 class Debug(PyBoyWindowPlugin):
-    argv = [("-d", "--debug", {
-        "action": "store_true",
-        "help": "Enable emulator debugging mode"
-    }), ("--breakpoints", {
-        "type": str,
-        "help": "Add breakpoints on start-up (internal use)"
-    })]
+    argv = [("-d", "--debug", {"action": "store_true", "help": "Enable emulator debugging mode"})]
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
@@ -90,36 +84,6 @@ class Debug(PyBoyWindowPlugin):
             return
 
         self.cgb = mb.cgb
-
-        self.rom_symbols = {}
-        if pyboy_argv.get("ROM"):
-            gamerom_file_no_ext, rom_ext = os.path.splitext(pyboy_argv.get("ROM"))
-            for sym_ext in [".sym", rom_ext + ".sym"]:
-                sym_path = gamerom_file_no_ext + sym_ext
-                if os.path.isfile(sym_path):
-                    with open(sym_path) as f:
-                        for _line in f.readlines():
-                            line = _line.strip()
-                            if line == "":
-                                continue
-                            elif line.startswith(";"):
-                                continue
-                            elif line.startswith("["):
-                                # Start of key group
-                                # [labels]
-                                # [definitions]
-                                continue
-
-                            try:
-                                bank, addr, sym_label = re.split(":| ", line.strip())
-                                bank = int(bank, 16)
-                                addr = int(addr, 16)
-                                if not bank in self.rom_symbols:
-                                    self.rom_symbols[bank] = {}
-
-                                self.rom_symbols[bank][addr] = sym_label
-                            except ValueError as ex:
-                                logger.warning("Skipping .sym line: %s", line.strip())
 
         self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
         if self.sdl2_event_pump:
@@ -218,19 +182,6 @@ class Debug(PyBoyWindowPlugin):
                 pos_y=(256 * self.tile1.scale) + 128
             )
 
-        for _b in (self.pyboy_argv.get("breakpoints") or "").split(","):
-            b = _b.strip()
-            if b == "":
-                continue
-
-            bank_addr = self.parse_bank_addr_sym_label(b)
-            if bank_addr is None:
-                logger.error("Couldn't parse address or label: %s", b)
-                pass
-            else:
-                self.mb.add_breakpoint(*bank_addr)
-                logger.info("Added breakpoint for address or label: %s", b)
-
     def post_tick(self):
         self.tile1.post_tick()
         self.tile2.post_tick()
@@ -267,93 +218,6 @@ class Debug(PyBoyWindowPlugin):
                 return True
         else:
             return False
-
-    def parse_bank_addr_sym_label(self, command):
-        if ":" in command:
-            bank, addr = command.split(":")
-            bank = int(bank, 16)
-            addr = int(addr, 16)
-            return bank, addr
-        else:
-            for bank, addresses in self.rom_symbols.items():
-                for addr, label in addresses.items():
-                    if label == command:
-                        return bank, addr
-        return None
-
-    def handle_breakpoint(self):
-        while True:
-            self.post_tick()
-
-            if self.mb.cpu.PC < 0x4000:
-                bank = 0
-            else:
-                bank = self.mb.cartridge.rombank_selected
-            sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
-
-            print(self.mb.cpu.dump_state(sym_label))
-            cmd = input()
-
-            if cmd == "c" or cmd.startswith("c "):
-                # continue
-                if cmd.startswith("c "):
-                    _, command = cmd.split(" ", 1)
-                    bank_addr = self.parse_bank_addr_sym_label(command)
-                    if bank_addr is None:
-                        print("Couldn't parse address or label!")
-                    else:
-                        # TODO: Possibly add a counter of 1, and remove the breakpoint after hitting it the first time
-                        self.mb.add_breakpoint(*bank_addr)
-                        break
-                else:
-                    break
-            elif cmd == "sl":
-                for bank, addresses in self.rom_symbols.items():
-                    for addr, label in addresses.items():
-                        print(f"{bank:02X}:{addr:04X} {label}")
-            elif cmd == "bl":
-                for bank, addr in self.mb.breakpoints_list:
-                    print(f"{bank:02X}:{addr:04X} {self.rom_symbols.get(bank, {}).get(addr, '')}")
-            elif cmd == "b" or cmd.startswith("b "):
-                if cmd.startswith("b "):
-                    _, command = cmd.split(" ", 1)
-                else:
-                    command = input(
-                        'Write address in the format of "00:0150" or search for a symbol label like "Main"\n'
-                    )
-
-                bank_addr = self.parse_bank_addr_sym_label(command)
-                if bank_addr is None:
-                    print("Couldn't parse address or label!")
-                else:
-                    self.mb.add_breakpoint(*bank_addr)
-
-            elif cmd == "d":
-                # Remove current breakpoint
-
-                # TODO: Share this code with breakpoint_reached
-                for i, (bank, pc) in enumerate(self.mb.breakpoints_list):
-                    if self.mb.cpu.PC == pc and (
-                        (pc < 0x4000 and bank == 0 and not self.mb.bootrom_enabled) or \
-                        (0x4000 <= pc < 0x8000 and self.mb.cartridge.rombank_selected == bank) or \
-                        (0xA000 <= pc < 0xC000 and self.mb.cartridge.rambank_selected == bank) or \
-                        (pc < 0x100 and bank == -1 and self.mb.bootrom_enabled)
-                    ):
-                        break
-                else:
-                    print("Breakpoint couldn't be deleted for current PC. Not Found.")
-                    continue
-                print(f"Removing breakpoint: {bank}:{pc}")
-                self.mb.remove_breakpoint(i)
-            elif cmd == "pdb":
-                # Start pdb
-                import pdb
-                pdb.set_trace()
-                break
-            else:
-                # Step once
-                self.mb.breakpoint_latch = 1
-                self.mb.tick()
 
 
 def make_buffer(w, h):
