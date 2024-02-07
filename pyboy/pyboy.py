@@ -7,6 +7,7 @@ The core module of the emulator
 """
 
 import os
+import re
 import time
 
 import numpy as np
@@ -39,6 +40,7 @@ class PyBoy:
         self,
         gamerom_file,
         *,
+        symbols_file=None,
         bootrom_file=None,
         sound=False,
         sound_emulated=False,
@@ -95,6 +97,13 @@ class PyBoy:
         if not os.path.isfile(gamerom_file):
             raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
         self.gamerom_file = gamerom_file
+
+        self.rom_symbols = {}
+        if symbols_file is not None:
+            if not os.path.isfile(symbols_file):
+                raise FileNotFoundError(f"Symbols file {symbols_file} was not found!")
+        self.symbols_file = symbols_file
+        self._load_symbols()
 
         self.mb = Motherboard(
             gamerom_file,
@@ -899,6 +908,43 @@ class PyBoy:
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
 
+    def _load_symbols(self):
+        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom_file)
+        for sym_path in [self.symbols_file, gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]:
+            if sym_path and os.path.isfile(sym_path):
+                logger.info("Loading symbol file: %s", sym_path)
+                with open(sym_path) as f:
+                    for _line in f.readlines():
+                        line = _line.strip()
+                        if line == "":
+                            continue
+                        elif line.startswith(";"):
+                            continue
+                        elif line.startswith("["):
+                            # Start of key group
+                            # [labels]
+                            # [definitions]
+                            continue
+
+                        try:
+                            bank, addr, sym_label = re.split(":| ", line.strip())
+                            bank = int(bank, 16)
+                            addr = int(addr, 16)
+                            if not bank in self.rom_symbols:
+                                self.rom_symbols[bank] = {}
+
+                            self.rom_symbols[bank][addr] = sym_label
+                        except ValueError as ex:
+                            logger.warning("Skipping .sym line: %s", line.strip())
+        return self.rom_symbols
+
+    def _lookup_symbol(self, symbol):
+        for bank, addresses in self.rom_symbols.items():
+            for addr, label in addresses.items():
+                if label == symbol:
+                    return bank, addr
+        raise ValueError("Symbol not found: %s" % symbol)
+
     def hook_register(self, bank, addr, callback, context):
         """
         Adds a hook into a specific bank and memory address.
@@ -910,18 +956,39 @@ class PyBoy:
         ```python
         >>> context = "Hello from hook"
         >>> def my_callback(context):
-                print(context)
-        >>> pyboy.hook_register(0, 0x2000, my_callback, context)
-        >>> pyboy.tick(60)
+        ...     print(context)
+        >>> pyboy.hook_register(0, 0x100, my_callback, context)
+        >>> pyboy.tick(70)
         Hello from hook
+        True
+
+        ```
+
+        If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
+        enable this, you'll need to place a `.sym` file next to your ROM, or provide it using:
+        `PyBoy(..., symbols_file="game_rom.gb.sym")`.
+
+        Then provide `None` for `bank` and the symbol for `addr` to trigger the automatic lookup.
+
+        Example:
+        ```python
+        >>> # Continued example above
+        >>> pyboy.hook_register(None, "Main.move", lambda x: print(x), "Hello from hook2")
+        >>> pyboy.tick(80)
+        Hello from hook2
+        True
+
         ```
 
         Args:
-            bank (int): ROM or RAM bank
-            addr (int): Address in the Game Boy's address space
+            bank (int or None): ROM or RAM bank (None for symbol lookup)
+            addr (int or str): Address in the Game Boy's address space (str for symbol lookup)
             callback (func): A function which takes `context` as argument
             context (object): Argument to pass to callback when hook is called
         """
+        if bank is None and isinstance(addr, str):
+            bank, addr = self._lookup_symbol(addr)
+
         opcode = self.memory[bank, addr]
         if opcode == 0xDB:
             raise ValueError("Hook already registered for this bank and address.")
@@ -937,15 +1004,28 @@ class PyBoy:
         ```python
         >>> context = "Hello from hook"
         >>> def my_callback(context):
-                print(context)
-        >>> hook_index = pyboy.hook_register(0, 0x2000, my_callback, context)
-        >>> pyboy.hook_deregister(hook_index)
+        ...     print(context)
+        >>> pyboy.hook_register(0, 0x2000, my_callback, context)
+        >>> pyboy.hook_deregister(0, 0x2000)
+
+        ```
+
+        This function can also deregister a hook based on a symbol. See `PyBoy.hook_register` for details.
+
+        Example:
+        ```python
+        >>> pyboy.hook_register(None, "Main", lambda x: print(x), "Hello from hook")
+        >>> pyboy.hook_deregister(None, "Main")
+
         ```
 
         Args:
-            bank (int): ROM or RAM bank
-            addr (int): Address in the Game Boy's address space
+            bank (int or None): ROM or RAM bank (None for symbol lookup)
+            addr (int or str): Address in the Game Boy's address space (str for symbol lookup)
         """
+        if bank is None and isinstance(addr, str):
+            bank, addr = self._lookup_symbol(addr)
+
         index = self.mb.breakpoint_find(bank, addr)
         if index == -1:
             raise ValueError("Breakpoint not found for bank and addr")
