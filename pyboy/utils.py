@@ -153,10 +153,9 @@ class WindowEvent:
     It can be used as follows:
 
     ```python
-    >>> from pyboy import PyBoy, WindowEvent
-    >>> pyboy = PyBoy('file.rom')
+    >>> from pyboy import WindowEvent
     >>> pyboy.send_input(WindowEvent.PAUSE)
-    >>>
+
     ```
 
     Just for button presses, it might be easier to use: `pyboy.PyBoy.button`,
@@ -296,6 +295,16 @@ def dec_to_bcd(value, byte_width=1, byteorder="little"):
         byte_width (int): The number of bytes to consider for each value.
         byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
 
+    Example:
+    ```python
+    >>> from pyboy import dec_to_bcd
+    >>> f"{dec_to_bcd(30):08b}"
+    '00110000'
+    >>> f"{dec_to_bcd(32):08b}"
+    '00110010'
+
+    ```
+
     Returns:
         int: The BCD equivalent of the decimal value.
     """
@@ -317,6 +326,16 @@ def bcd_to_dec(value, byte_width=1, byteorder="little"):
         value (int): The BCD value to convert.
         byte_width (int): The number of bytes to consider for each value.
         byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes) for more details.
+
+    Example:
+    ```python
+    >>> from pyboy import bcd_to_dec
+    >>> bcd_to_dec(0b00110000)
+    30
+    >>> bcd_to_dec(0b00110010)
+    32
+
+    ```
 
     Returns:
         int: The decimal equivalent of the BCD value.

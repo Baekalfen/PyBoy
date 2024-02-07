@@ -25,8 +25,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     cartridge_title = "KIRBY DREAM LA"
 
     def __init__(self, *args, **kwargs):
-        self.shape = (20, 16)
-        """The shape of the game area"""
         self.score = 0
         """The score provided by the game"""
         self.health = 0
@@ -36,7 +34,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self._game_over = False
         """The game over state"""
 
-        super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_follow_scxy=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 0, 20, 16), game_area_follow_scxy=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
@@ -144,25 +142,12 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         return self._game_over
 
     def __repr__(self):
-        adjust = 4
         # yapf: disable
         return (
             f"Kirby Dream Land:\n" +
             f"Score: {self.score}\n" +
             f"Health: {self.health}\n" +
             f"Lives left: {self.lives_left}\n" +
-            "Sprites on screen:\n" +
-            "\n".join([str(s) for s in self._sprites_on_screen()]) +
-            "\n" +
-            "Tiles on screen:\n" +
-            " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
-            "_"*(adjust*20+4) +
-            "\n" +
-            "\n".join(
-                [
-                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable

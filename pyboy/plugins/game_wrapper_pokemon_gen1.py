@@ -27,8 +27,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     cartridge_title = None
 
     def __init__(self, *args, **kwargs):
-        self.shape = (20, 18)
-        super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_follow_scxy=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 0, 20, 18), game_area_follow_scxy=True, **kwargs)
         self.sprite_offset = 0
 
     def enabled(self):
@@ -81,22 +80,9 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return game_area
 
     def __repr__(self):
-        adjust = 4
         # yapf: disable
         return (
             f"Pokemon Gen 1:\n" +
-            "Sprites on screen:\n" +
-            "\n".join([str(s) for s in self._sprites_on_screen()]) +
-            "\n" +
-            "Tiles on screen:\n" +
-            " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
-            "_"*(adjust*20+4) +
-            "\n" +
-            "\n".join(
-                [
-                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable

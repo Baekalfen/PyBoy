@@ -28,17 +28,13 @@ class TileMap:
 
         Example:
         ```
-        >>> tilemap = pyboy.tilemap_window
-        >>> tile = tilemap[10,10]
-        >>> print(tile)
-        34
-        >>> print(tilemap[0:10,10])
-        [43, 54, 23, 23, 23, 54, 12, 54, 54, 23]
-        >>> print(tilemap[0:10,0:4])
-        [[43, 54, 23, 23, 23, 54, 12, 54, 54, 23],
-         [43, 54, 43, 23, 23, 43, 12, 39, 54, 23],
-         [43, 54, 23, 12, 87, 54, 12, 54, 21, 23],
-         [43, 54, 23, 43, 23, 87, 12, 50, 54, 72]]
+        >>> pyboy.tilemap_window[8,8]
+        1
+        >>> pyboy.tilemap_window[7:12,8]
+        [0, 1, 0, 1, 0]
+        >>> pyboy.tilemap_window[7:12,8:11]
+        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
         ```
 
         Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
@@ -88,9 +84,9 @@ class TileMap:
 
         Example:
         ```
-        >>> tilemap = pyboy.tilemap_window
-        >>> print(tilemap.search_for_identifiers([43, 123]))
-        [[[0,0], [2,4], [8,7]], []]
+        >>> pyboy.tilemap_window.search_for_identifiers([5,3])
+        [[[9, 11]], [[9, 9], [9, 12]]]
+
         ```
 
         Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
