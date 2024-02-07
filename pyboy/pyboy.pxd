@@ -55,3 +55,8 @@ cdef class PyBoy:
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
+
+    cdef dict _hooks
+    cpdef bint _handle_hooks(self)
+    cpdef int hook_register(self, uint16_t, uint16_t, object, object) except -1
+    cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
