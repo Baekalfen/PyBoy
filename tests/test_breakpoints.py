@@ -5,6 +5,7 @@
 
 import io
 import platform
+import shutil
 from unittest.mock import Mock
 
 import pytest
@@ -70,6 +71,69 @@ def test_register_hook_context(default_rom):
         pyboy.tick()
 
     assert len(_context) == 1
+
+
+def test_register_hook_print(default_rom, capfd):
+    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy.set_emulation_speed(0)
+
+    def _inner_callback(context):
+        print(context)
+
+    bank = -1 # "ROM bank number" for bootrom
+    addr = 0xFC # Address of last instruction. Expected to execute once.
+    pyboy.hook_register(bank, addr, _inner_callback, "Hello!")
+    for _ in range(120):
+        pyboy.tick()
+
+    out, err = capfd.readouterr()
+    assert out == "Hello!\n"
+
+
+def test_symbols_none(default_rom):
+    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy.set_emulation_speed(0)
+
+    with pytest.raises(ValueError):
+        pyboy._lookup_symbol("Main.waitVBlank")
+
+
+def test_symbols_auto_locate(default_rom):
+    new_path = "extras/default_rom/default_rom.gb"
+    shutil.copyfile(default_rom, new_path)
+    pyboy = PyBoy(new_path, window_type="null")
+    pyboy.set_emulation_speed(0)
+
+    _bank, _addr = pyboy._lookup_symbol("Main.waitVBlank")
+    assert _bank is not None
+    assert _addr is not None
+
+
+def test_symbols_path_locate(default_rom):
+    pyboy = PyBoy(default_rom, window_type="null", symbols_file="extras/default_rom/default_rom.sym")
+    pyboy.set_emulation_speed(0)
+
+    _bank, _addr = pyboy._lookup_symbol("Main.waitVBlank")
+    assert _bank is not None
+    assert _addr is not None
+
+
+def test_register_hook_label(default_rom):
+    pyboy = PyBoy(default_rom, window_type="null", symbols_file="extras/default_rom/default_rom.sym")
+    pyboy.set_emulation_speed(0)
+
+    def _inner_callback(context):
+        context.append(1)
+
+    _context = []
+
+    bank = None # Use None to look up symbol
+    symbol = "Main.move" # Address of last instruction. Expected to execute once.
+    pyboy.hook_register(bank, symbol, _inner_callback, _context)
+    for _ in range(120):
+        pyboy.tick()
+
+    assert len(_context) == 31
 
 
 def test_register_hook_context2(default_rom):
