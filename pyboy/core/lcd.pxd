@@ -6,7 +6,7 @@
 import cython
 
 from cpython.array cimport array
-from libc.stdint cimport int16_t, uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.utils
 from pyboy cimport utils
@@ -48,14 +48,14 @@ cdef class LCD:
 
     @cython.locals(interrupt_flag=uint8_t)
     cdef uint8_t tick(self, int) noexcept nogil
-    cdef uint64_t cycles_to_interrupt(self) noexcept nogil
+    cdef int64_t cycles_to_interrupt(self) noexcept nogil
 
     cdef void set_lcdc(self, uint8_t) noexcept nogil
     cdef uint8_t get_lcdc(self) noexcept nogil
     cdef void set_stat(self, uint8_t) noexcept nogil
     cdef uint8_t get_stat(self) noexcept nogil
 
-    cdef int cycles_to_mode0(self) noexcept nogil
+    cdef int64_t cycles_to_mode0(self) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
