@@ -51,26 +51,39 @@ class PyBoy:
         controlled and probed by the script. It is supported to spawn multiple emulators, just instantiate the class
         multiple times.
 
-        This object, `pyboy.WindowEvent`, and the `pyboy.api` module, are the only official user-facing
-        interfaces. All other parts of the emulator, are subject to change.
-
         A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
         GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
         "bots", which interact with the game.
 
         Only the `gamerom_file` argument is required.
 
+        Example:
+        ```python
+        >>> pyboy = PyBoy('game_rom.gb')
+        >>> for _ in range(60): # Use 'while True:' for infinite
+        ...     pyboy.tick()
+        True...
+        >>> pyboy.stop()
+
+        ```
+
         Args:
             gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
-            bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            disable_renderer (bool): Can be used to optimize performance, by internally disable rendering of the screen.
-            color_palette (tuple): Specify the color palette to use for rendering.
-            cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
+            * symbols_file (str): Filepath to a .sym file to use. If unsure, specify `None`.
 
-        Other keyword arguments may exist for plugins that are not listed here. They can be viewed with the
-        `parser_arguments()` method in the pyboy.plugins.manager module, or by running pyboy --help in the terminal.
+            * bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
+
+            * sound (bool): Enable sound emulation and output
+
+            * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
+
+            * color_palette (tuple): Specify the color palette to use for rendering.
+
+            * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
+
+        Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
         """
 
         self.initialized = False
@@ -119,7 +132,17 @@ class PyBoy:
         a variety of formats.
 
         It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
-        `pyboy.api.screen.Screen.tilemap_position` for more information.
+        `pyboy.api.screen.Screen.tilemap_position_list` for more information.
+
+        Example:
+        ```python
+        >>> pyboy.screen.image.show()
+        >>> pyboy.screen.ndarray.shape
+        (144, 160, 4)
+        >>> pyboy.screen.raw_buffer_format
+        'RGBA'
+
+        ```
 
         Returns
         -------
@@ -130,11 +153,16 @@ class PyBoy:
         """
         Provides a `pyboy.PyBoyMemoryView` object for reading and writing the memory space of the Game Boy.
 
+        For a more comprehensive description, see the `pyboy.PyBoyMemoryView` class.
+
         Example:
         ```python
-        >>> values = pyboy.memory[0x0000:0x10000]
-        >>> pyboy.memory[0xC000:0xC0010] = 0
+        >>> pyboy.memory[0x0000:0x0010] # Read 16 bytes from ROM bank 0
+        [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
+        >>> pyboy.memory[1, 0x2000] = 12 # Override address 0x2000 from ROM bank 1 with the value 12
+        >>> pyboy.memory[0xC000] = 1 # Write to address 0xC000 with value 1
         ```
+
         """
 
         self.memory_scanner = MemoryScanner(self)
@@ -148,11 +176,16 @@ class PyBoy:
         ```python
         >>> current_score = 4 # You write current score in game
         >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
         >>> for _ in range(175):
-                pyboy.tick(1, True) # Progress the game to change score
+        ...     pyboy.tick(1, True) # Progress the game to change score
+        True...
         >>> current_score = 8 # You write the new score in game
+        >>> from pyboy.api.memory_scanner import DynamicComparisonType
         >>> addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
         >>> print(addresses) # If repeated enough, only one address will remain
+        []
+
         ```
         """
 
@@ -162,6 +195,17 @@ class PyBoy:
         for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
 
         Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
+
+        Example:
+        ```
+        >>> pyboy.tilemap_background[8,8]
+        1
+        >>> pyboy.tilemap_background[7:12,8]
+        [0, 1, 0, 1, 0]
+        >>> pyboy.tilemap_background[7:12,8:11]
+        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
+        ```
 
         Returns
         -------
@@ -176,6 +220,17 @@ class PyBoy:
 
         Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
 
+        Example:
+        ```
+        >>> pyboy.tilemap_window[8,8]
+        1
+        >>> pyboy.tilemap_window[7:12,8]
+        [0, 1, 0, 1, 0]
+        >>> pyboy.tilemap_window[7:12,8:11]
+        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
+        ```
+
         Returns
         -------
         `pyboy.api.tilemap.TileMap`:
@@ -186,6 +241,13 @@ class PyBoy:
         """
         The title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
         have been truncated to 11 characters.
+
+        Example:
+        ```python
+        >>> pyboy.cartridge_title # Title of PyBoy's default ROM
+        'DEFAULT-ROM'
+
+        ```
 
         Returns
         -------
@@ -206,9 +268,16 @@ class PyBoy:
         Provides an instance of a game-specific or generic wrapper. The game is detected by the cartridge's hard-coded
         game title (see `pyboy.PyBoy.cartridge_title`).
 
-        If the a game-specific wrapper is not found, a generic wrapper will be returned.
+        If a game-specific wrapper is not found, a generic wrapper will be returned.
 
         To get more information, find the wrapper for your game in `pyboy.plugins`.
+
+        Example:
+        ```python
+        >>> pyboy.game_wrapper.start_game()
+        >>> pyboy.game_wrapper.reset_game()
+
+        ```
 
         Returns
         -------
@@ -267,19 +336,39 @@ class PyBoy:
 
     def tick(self, count=1, render=True):
         """
-        Progresses the emulator ahead by one frame.
+        Progresses the emulator ahead by `count` frame(s).
 
-        To run the emulator in real-time, this will need to be called 60 times a second (for example in a while-loop).
-        This function will block for roughly 16,67ms at a time, to not run faster than real-time, unless you specify
+        To run the emulator in real-time, it will need to process 60 frames a second (for example in a while-loop).
+        This function will block for roughly 16,67ms per frame, to not run faster than real-time, unless you specify
         otherwise with the `PyBoy.set_emulation_speed` method.
 
-        _Open an issue on GitHub if you need finer control, and we will take a look at it._
+        If you need finer control than 1 frame, have a look at `PyBoy.hook_register` to inject code at a specific point
+        in the game.
 
-        Setting `render` to `True` will make PyBoy render the screen for this tick. For AI training, it's adviced to use
-        this sparingly, as it will reduce performance substantially. While setting `render` to `False`, you can still
-        access the `PyBoy.game_area` to get a simpler representation of the game.
+        Setting `render` to `True` will make PyBoy render the screen for *the last frame* of this tick. This can be seen
+        as a type of "frameskipping" optimization.
 
-        If the screen was rendered, use `pyboy.api.screen.Screen` to get NumPy buffer or a raw memory buffer.
+        For AI training, it's adviced to use as high a count as practical, as it will otherwise reduce performance
+        substantially. While setting `render` to `False`, you can still access the `PyBoy.game_area` to get a simpler
+        representation of the game.
+
+        If `render` was enabled, use `pyboy.api.screen.Screen` to get a NumPy buffer or raw memory buffer.
+
+        Example:
+        ```python
+        >>> pyboy.tick() # Progress 1 frame with rendering
+        True
+        >>> pyboy.tick(1) # Progress 1 frame with rendering
+        True
+        >>> pyboy.tick(60, False) # Progress 60 frames *without* rendering
+        True
+        >>> pyboy.tick(60, True) # Progress 60 frames and render *only the last frame*
+        True
+        >>> for _ in range(60): # Progress 60 frames and render every frame
+        ...     if not pyboy.tick(1, True):
+        ...         break
+        >>>
+        ```
 
         Args:
             count (int): Number of ticks to process
@@ -383,6 +472,13 @@ class PyBoy:
         """
         Gently stops the emulator and all sub-modules.
 
+        Example:
+        ```python
+        >>> pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
+        >>> pyboy.stop(False) # Stop emulator and discard game progress (cartridge RAM)
+
+        ```
+
         Args:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
@@ -404,6 +500,16 @@ class PyBoy:
         Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
 
         The button will automatically be released at the following call to `PyBoy.tick`.
+
+        Example:
+        ```python
+        >>> pyboy.button('a') # Press button 'a' and release after `pyboy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' released
+        True
+
+        ```
 
         Args:
             input (str): button to press
@@ -442,6 +548,19 @@ class PyBoy:
 
         The button will remain press until explicitly released with `PyBoy.button_release` or `PyBoy.send_input`.
 
+        Example:
+        ```python
+        >>> pyboy.button_press('a') # Press button 'a' and keep pressed after `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.button_release('a') # Release button 'a' on next call to `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' released
+        True
+
+        ```
+
         Args:
             input (str): button to press
         """
@@ -472,6 +591,19 @@ class PyBoy:
 
         This will release a button after a call to `PyBoy.button_press` or `PyBoy.send_input`.
 
+        Example:
+        ```python
+        >>> pyboy.button_press('a') # Press button 'a' and keep pressed after `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.button_release('a') # Release button 'a' on next call to `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' released
+        True
+
+        ```
+
         Args:
             input (str): button to release
         """
@@ -497,9 +629,24 @@ class PyBoy:
 
     def send_input(self, event):
         """
-        Send a single input to control the emulator. This is both Game Boy buttons and emulator controls.
+        Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
+        `pyboy.WindowEvent` for which events to send.
 
-        See `pyboy.WindowEvent` for which events to send.
+        Consider using `PyBoy.button` instead for easier access.
+
+        Example:
+        ```python
+        >>> from pyboy import WindowEvent
+        >>> pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button 'a' and keep pressed after `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button 'a' on next call to `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' released
+        True
+
+        ```
 
         Args:
             event (pyboy.WindowEvent): The event to send
@@ -514,13 +661,19 @@ class PyBoy:
         You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
         case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
 
-            # Save to file
-            file_like_object = open("state_file.state", "wb")
+        ```python
+        >>> # Save to file
+        >>> with open("state_file.state", "wb") as f:
+        ...     pyboy.save_state(f)
+        >>>
+        >>> # Save to memory
+        >>> import io
+        >>> with io.BytesIO() as f:
+        ...     f.seek(0)
+        ...     pyboy.save_state(f)
+        0
 
-            # Save to memory
-            import io
-            file_like_object = io.BytesIO()
-            file_like_object.seek(0)
+        ```
 
         Args:
             file_like_object (io.BufferedIOBase): A file-like object for which to write the emulator state.
@@ -540,10 +693,12 @@ class PyBoy:
         can load it here.
 
         To load a file, remember to load it as bytes:
-
-            # Load file
-            file_like_object = open("state_file.state", "rb")
-
+        ```python
+        >>> # Load file
+        >>> with open("state_file.state", "rb") as f:
+        ...     pyboy.load_state(f)
+        >>>
+        ```
 
         Args:
             file_like_object (io.BufferedIOBase): A file-like object for which to read the emulator state.
@@ -561,7 +716,11 @@ class PyBoy:
 
         Example:
         ```python
-        >>> pyboy.game_area_dimensions(0, 0, 10, 18, False)
+        >>> pyboy.game_wrapper.shape
+        (32, 32)
+        >>> pyboy.game_area_dimensions(2, 2, 10, 18, False)
+        >>> pyboy.game_wrapper.shape
+        (10, 18)
         ```
 
         Args:
@@ -571,14 +730,30 @@ class PyBoy:
             height (int): Height of game area
             follow_scrolling (bool): Whether to follow the scrolling of [SCX and SCY](https://gbdev.io/pandocs/Scrolling.html)
         """
-        self.game_wrapper.game_area_section = (x, y, width, height)
-        self.game_wrapper.game_area_follow_scxy = follow_scrolling
+        self.game_wrapper._set_dimensions(x, y, width, height, follow_scrolling=True)
 
     def game_area_collision(self):
         """
         Some game wrappers define a collision map. Check if your game wrapper has this feature implemented: `pyboy.plugins`.
 
         The output will be unique for each game wrapper.
+
+        Example:
+        ```python
+        >>> # This example show nothing, but a supported game will
+        >>> pyboy.game_area_collision()
+        array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=uint32)
+
+        ```
 
         Returns
         -------
@@ -599,12 +774,14 @@ class PyBoy:
         >>> mapping[2] = 0 # Map tile identifier 2 -> 0
         >>> mapping[3] = 0 # Map tile identifier 3 -> 0
         >>> pyboy.game_area_mapping(mapping, 1000)
+
         ```
 
         Some game wrappers will supply mappings as well. See the specific documentation for your game wrapper:
         `pyboy.plugins`.
         ```python
-        >>> pyboy.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+        >>> pyboy.game_area_mapping(pyboy.game_wrapper.mapping_one_to_one, 0)
+
         ```
 
         Args:
@@ -628,27 +805,28 @@ class PyBoy:
 
         The layout will vary from game to game. Below is an example from Tetris:
 
-        ```text
-             0   1   2   3   4   5   6   7   8   9
-        ____________________________________________
-        0  | 47  47  47  47  47  47  47  47  47  47
-        1  | 47  47  47  47  47  47  47  47  47  47
-        2  | 47  47  47  47  47  47  47  132 132 132
-        3  | 47  47  47  47  47  47  47  132 47  47
-        4  | 47  47  47  47  47  47  47  47  47  47
-        5  | 47  47  47  47  47  47  47  47  47  47
-        6  | 47  47  47  47  47  47  47  47  47  47
-        7  | 47  47  47  47  47  47  47  47  47  47
-        8  | 47  47  47  47  47  47  47  47  47  47
-        9  | 47  47  47  47  47  47  47  47  47  47
-        10 | 47  47  47  47  47  47  47  47  47  47
-        11 | 47  47  47  47  47  47  47  47  47  47
-        12 | 47  47  47  47  47  47  47  47  47  47
-        13 | 47  47  47  47  47  47  47  47  47  47
-        14 | 47  47  47  47  47  47  47  47  47  47
-        15 | 47  47  47  47  47  47  47  47  47  47
-        16 | 47  47  47  47  47  47  47  47  47  47
-        17 | 47  47  47  47  47  47  138 139 139 143
+        Example:
+        ```python
+        >>> pyboy.game_area()
+        array([[ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47, 130, 130,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47, 130, 130,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47],
+               [ 47,  47,  47,  47,  47,  47,  47,  47,  47,  47]], dtype=uint32)
+
         ```
 
         If you want a "compressed", "minimal" or raw mapping of tiles, you can change the mapping using
@@ -684,6 +862,15 @@ class PyBoy:
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
         Some window types do not implement a frame-limiter, and will always run at full speed.
+
+        Example:
+        ```python
+        >>> pyboy.tick() # Delays 16.67ms
+        True
+        >>> pyboy.set_emulation_speed(0) # Disable limit
+        >>> pyboy.tick() # As fast as possible
+        True
+        ```
 
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
@@ -777,6 +964,17 @@ class PyBoy:
         The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
         Docs](http://bgb.bircd.org/pandocs.htm).
 
+        ```python
+        >>> s = pyboy.get_sprite(12)
+        >>> s
+        Sprite [12]: Position: (-8, -16), Shape: (8, 8), Tiles: (Tile: 0), On screen: False
+        >>> s.on_screen
+        False
+        >>> s.tiles
+        [Tile: 0]
+
+        ```
+
         Args:
             index (int): Sprite index from 0 to 39.
         Returns
@@ -790,12 +988,13 @@ class PyBoy:
         """
         Provided a list of tile identifiers, this function will find all occurrences of sprites using the tile
         identifiers and return the sprite indexes where each identifier is found. Use the sprite indexes in the
-        `pyboy.sprite` function to get a `pyboy.api.sprite.Sprite` object.
+        `pyboy.PyBoy.get_sprite` function to get a `pyboy.api.sprite.Sprite` object.
 
         Example:
         ```python
         >>> print(pyboy.get_sprite_by_tile_identifier([43, 123]))
         [[0, 2, 4], []]
+
         ```
 
         Meaning, that tile identifier `43` is found at the sprite indexes: 0, 2, and 4, while tile identifier
@@ -830,6 +1029,16 @@ class PyBoy:
         The identifier is a PyBoy construct, which unifies two different scopes of indexes in the Game Boy hardware. See
         the `pyboy.api.tile.Tile` object for more information.
 
+        Example:
+        ```python
+        >>> t = pyboy.get_tile(2)
+        >>> t
+        Tile: 2
+        >>> t.shape
+        (8, 8)
+
+        ```
+
         Returns
         -------
         `pyboy.api.tile.Tile`:
@@ -839,6 +1048,106 @@ class PyBoy:
 
 
 class PyBoyMemoryView:
+    """
+    This class cannot be used directly, but is accessed through `PyBoy.memory`.
+
+    This class serves four purposes: Reading memory (ROM/RAM), writing memory (ROM/RAM), overriding memory (ROM/RAM) and special registers.
+
+    See the [Pan Docs: Memory Map](https://gbdev.io/pandocs/Memory_Map.html) for a great overview of the memory space.
+
+    Memory can be accessed as individual bytes (`pyboy.memory[0x00]`) or as slices (`pyboy.memory[0x00:0x10]`). And if
+    applicable, a specific ROM/RAM bank can be defined before the address (`pyboy.memory[0, 0x00]` or `pyboy.memory[0, 0x00:0x10]`).
+
+    The boot ROM is accessed using the special "-1" ROM bank.
+
+    The find addresses of interest, either search online for something like: "[game title] RAM map", or find them yourself
+    using `PyBoy.memory_scanner`.
+
+    **Read:**
+
+    If you're developing a bot or AI with this API, you're most likely going to be using read the most. This is how you
+    would efficiently read the score, time, coins, positions etc. in a game's memory.
+
+    ```python
+    >>> pyboy.memory[0x0000] # Read one byte at address 0x0000
+    49
+    >>> pyboy.memory[0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010)
+    [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
+    >>> pyboy.memory[-1, 0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010) from the boot ROM
+    [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
+    >>> pyboy.memory[0, 0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010) from ROM bank 0
+    [64, 65, 66, 67, 68, 69, 70, 65, 65, 65, 71, 65, 65, 65, 72, 73]
+    >>> pyboy.memory[2, 0xA000] # Read from external RAM on cartridge (if any) from bank 2 at address 0xA000
+    0
+    ```
+
+    **Write:**
+
+    Writing to Game Boy memory can be complicated because of the limited address space. There's a lot of memory that
+    isn't directly accessible, and can be hidden through "memory banking". This means that the same address range
+    (for example 0x4000 to 0x8000) can change depending on what state the game is in.
+
+    If you want to change an address in the ROM, then look at override below. Issuing writes to the ROM area actually
+    sends commands to the [Memory Bank Controller (MBC)](https://gbdev.io/pandocs/MBCs.html#mbcs) on the cartridge.
+
+    A write is done by assigning to the `PyBoy.memory` object. It's recommended to define the bank to avoid mistakes
+    (`pyboy.memory[2, 0xA000]=1`). Without defining the bank, PyBoy will pick the current bank for the given address if
+    needed (`pyboy.memory[0xA000]=1`).
+
+    At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.
+
+    ```python
+    >>> pyboy.memory[0xC000] = 123 # Write to WRAM at address 0xC000
+    >>> pyboy.memory[0xC000:0xC00A] = [0,1,2,3,4,5,6,7,8,9] # Write to WRAM from address 0xC000 to 0xC00A
+    >>> pyboy.memory[0xC010:0xC01A] = 0 # Write to WRAM from address 0xC010 to 0xC01A
+    >>> pyboy.memory[0x1000] = 123 # Not writing 123 at address 0x1000! This sends a command to the cartridge's MBC.
+    >>> pyboy.memory[2, 0xA000] = 123 # Write to external RAM on cartridge (if any) for bank 2 at address 0xA000
+    >>> # Game Boy Color (CGB) only:
+    >>> pyboy_cgb.memory[1, 0x8000] = 25 # Write to VRAM bank 1 at address 0xD000 when in CGB mode
+    >>> pyboy_cgb.memory[6, 0xD000] = 25 # Write to WRAM bank 6 at address 0xD000 when in CGB mode
+    ```
+
+    **Override:**
+
+    Override data at a given memory address of the Game Boy's ROM.
+
+    This can be used to reprogram a game ROM to change its behavior.
+
+    This will not let your override RAM or a special register. This will let you override data in the ROM at any given bank.
+    This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
+
+    _NOTE_: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
+    any overrides when reloading the ROM.
+
+    To override, it's required to provide the ROM-bank you're changing. Otherwise, it'll be considered a regular 'write' as described above.
+
+    ```python
+    >>> pyboy.memory[0, 0x0010] = 10 # Override ROM-bank 0 at address 0x0010
+    >>> pyboy.memory[0, 0x0010:0x001A] = [0,1,2,3,4,5,6,7,8,9] # Override ROM-bank 0 at address 0x0010 to 0x001A
+    >>> pyboy.memory[-1, 0x0010] = 10 # Override boot ROM at address 0x0010
+    >>> pyboy.memory[1, 0x6000] = 12 # Override ROM-bank 1 at address 0x6000
+    >>> pyboy.memory[0x1000] = 12 # This will not override, as there is no ROM bank assigned!
+    ```
+
+    **Special Registers:**
+
+    The Game Boy has a range of memory addresses known as [hardware registers](https://gbdev.io/pandocs/Hardware_Reg_List.html). These control parts of the hardware like LCD,
+    Timer, DMA, serial and so on. Even though they might appear as regular RAM addresses, reading/writing these addresses
+    often results in special side-effects.
+
+    The [DIV (0xFF04) register](https://gbdev.io/pandocs/Timer_and_Divider_Registers.html#ff04--div-divider-register) for example provides a number that increments 16 thousand times each second. This can be
+    used as a source of randomness in games. If you read the value, you'll get a pseudo-random number. But if you write
+    *any* value to the register, it'll reset to zero.
+
+    ```python
+    >>> pyboy.memory[0xFF04] # DIV register
+    163
+    >>> pyboy.memory[0xFF04] = 123 # Trying to write to it will always reset it to zero
+    >>> pyboy.memory[0xFF04]
+    0
+    ```
+
+    """
     def __init__(self, mb):
         self.mb = mb
 

@@ -32,7 +32,7 @@ class Tile:
     def __init__(self, mb, identifier):
         """
         The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
-        `pyboy.tile`, `pyboy.api.sprite.Sprite` and `pyboy.api.tilemap.TileMap`, when refering to graphics.
+        `pyboy.PyBoy.get_tile`, `pyboy.api.sprite.Sprite` and `pyboy.api.tilemap.TileMap`, when refering to graphics.
 
         This class is not meant to be instantiated by developers reading this documentation, but it will be created
         internally and returned by `pyboy.api.sprite.Sprite.tiles` and
@@ -106,6 +106,13 @@ class Tile:
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
+        Example:
+        ```python
+        >>> tile = pyboy.get_tile(1)
+        >>> tile.image().save('tile_1.png')
+
+        ```
+
         Returns
         -------
         PIL.Image :
@@ -127,6 +134,31 @@ class Tile:
         in a separate cell. The format is given by `pyboy.api.tile.Tile.raw_buffer_format`.
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+        Example:
+        ```python
+        >>> tile1 = pyboy.get_tile(1)
+        >>> tile1.ndarray()[:,:,0] # Upper part of "P"
+        array([[255, 255, 255, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255]], dtype=uint8)
+        >>> tile2 = pyboy.get_tile(2)
+        >>> tile2.ndarray()[:,:,0] # Lower part of "P"
+        array([[255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+        ```
 
         Returns
         -------
