@@ -112,6 +112,7 @@ class PyBoy:
         # Plugins
 
         self.plugin_manager = PluginManager(self, self.mb, kwargs)
+        self._hooks = {}
         self.initialized = True
 
     def tick(self):
@@ -143,10 +144,12 @@ class PyBoy:
                     self.mb.breakpoint_remove(breakpoint_index)
                     self.mb.breakpoint_singlestep_latch = 0
 
-                    self.plugin_manager.handle_breakpoint()
+                    if not self._handle_hooks():
+                        self.plugin_manager.handle_breakpoint()
                 else:
                     if self.mb.breakpoint_singlestep_latch:
-                        self.plugin_manager.handle_breakpoint()
+                        if not self._handle_hooks():
+                            self.plugin_manager.handle_breakpoint()
                     # Keep singlestepping on, if that's what we're doing
                     self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
@@ -501,8 +504,7 @@ class PyBoy:
         """
         if self.initialized:
             unsupported_window_types_enabled = [
-                self.plugin_manager.window_dummy_enabled,
-                self.plugin_manager.window_headless_enabled,
+                self.plugin_manager.window_dummy_enabled, self.plugin_manager.window_headless_enabled,
                 self.plugin_manager.window_open_gl_enabled
             ]
             if any(unsupported_window_types_enabled):
@@ -534,3 +536,66 @@ class PyBoy:
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
+
+    def hook_register(self, bank, addr, callback, context):
+        """
+        Adds a hook into a specific bank and memory address.
+        When the Game Boy executes this address, the provided callback function will be called.
+
+        By providing an object as `context`, you can later get access to information inside and outside of the callback.
+
+        Example:
+        ```python
+        >>> context = "Hello from hook"
+        >>> def my_callback(context):
+                print(context)
+        >>> pyboy.hook_register(0, 0x2000, my_callback, context)
+        >>> pyboy.tick(60)
+        Hello from hook
+        ```
+
+        Args:
+            bank (int): ROM or RAM bank
+            addr (int): Address in the Game Boy's address space
+            callback (func): A function which takes `context` as argument
+            context (object): Argument to pass to callback when hook is called
+        """
+        opcode = self.memory[bank, addr]
+        if opcode == 0xDB:
+            raise ValueError("Hook already registered for this bank and address.")
+        self.mb.breakpoint_add(bank, addr)
+        bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
+        self._hooks[bank_addr_opcode] = (callback, context)
+
+    def hook_deregister(self, bank, addr):
+        """
+        Remove a previously registered hook from a specific bank and memory address.
+
+        Example:
+        ```python
+        >>> context = "Hello from hook"
+        >>> def my_callback(context):
+                print(context)
+        >>> hook_index = pyboy.hook_register(0, 0x2000, my_callback, context)
+        >>> pyboy.hook_deregister(hook_index)
+        ```
+
+        Args:
+            bank (int): ROM or RAM bank
+            addr (int): Address in the Game Boy's address space
+        """
+        index = self.mb.breakpoint_find(bank, addr)
+        if index == -1:
+            raise ValueError("Breakpoint not found for bank and addr")
+
+        _, _, opcode = self.mb.breakpoints_list[index]
+        self.mb.breakpoint_remove(index)
+        bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
+        self._hooks.pop(bank_addr_opcode)
+
+    def _handle_hooks(self):
+        if _handler := self._hooks.get(self.mb.breakpoint_waiting):
+            (callback, context) = _handler
+            callback(context)
+            return True
+        return False
