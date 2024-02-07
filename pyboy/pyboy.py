@@ -506,29 +506,6 @@ class PyBoy:
         """
         self.events.append(WindowEvent(event))
 
-    def get_input(
-        self,
-        ignore=(
-            WindowEvent.PASS, WindowEvent._INTERNAL_TOGGLE_DEBUG, WindowEvent._INTERNAL_RENDERER_FLUSH,
-            WindowEvent._INTERNAL_MOUSE, WindowEvent._INTERNAL_MARK_TILE
-        )
-    ):
-        """
-        Get current inputs except the events specified in "ignore" tuple.
-        This is both Game Boy buttons and emulator controls.
-
-        See `pyboy.WindowEvent` for which events to get.
-
-        Args:
-            ignore (tuple): Events this function should ignore
-
-        Returns
-        -------
-        list:
-            List of the `pyboy.utils.WindowEvent`s processed for the last call to `pyboy.PyBoy.tick`
-        """
-        return [x for x in self.old_events if x not in ignore]
-
     def save_state(self, file_like_object):
         """
         Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
