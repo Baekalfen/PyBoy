@@ -98,6 +98,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
     cartridge_title = None
     argv = [("--game-wrapper", {"action": "store_true", "help": "Enable game wrapper for the current game"})]
 
+    mapping_one_to_one = np.arange(384 * 2, dtype=np.uint8)
+    """
+    Example mapping of 1:1
+    """
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_follow_scxy=False, **kwargs):
         super().__init__(*args, **kwargs)
         if not cythonmode:
@@ -110,15 +114,22 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        self.game_area_section = game_area_section
-        self.game_area_follow_scxy = game_area_follow_scxy
-        width = self.game_area_section[2] - self.game_area_section[0]
-        height = self.game_area_section[3] - self.game_area_section[1]
+        self.shape = None
+        """
+        The shape of the game area. This can be modified with `pyboy.PyBoy.game_area_dimensions`.
+
+        Example:
+        ```python
+        >>> pyboy.game_wrapper.shape
+        (32, 32)
+        ```
+        """
+        self._set_dimensions(*game_area_section, game_area_follow_scxy)
+        width, height = self.shape
         self._cached_game_area_tiles_raw = array("B", [0xFF] * (width*height*4))
+        self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
 
         self.saved_state = io.BytesIO()
-
-        self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
 
     def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.tilemap_background = self.pyboy.tilemap_background
@@ -247,9 +258,43 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.mapping = np.asarray(mapping, dtype=np.uint32)
         self.sprite_offset = sprite_offest
 
+    def _set_dimensions(self, x, y, width, height, follow_scrolling=True):
+        self.shape = (width, height)
+        self.game_area_section = (x, y, width, height)
+        self.game_area_follow_scxy = follow_scrolling
+
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0
         for i, x in enumerate(self.tilemap_background[x:x + length, y]):
             if x != blank_tile_identifier:
                 number += (x+tile_identifier_offset) * (10**(length - 1 - i))
         return number
+
+    def __repr__(self):
+        adjust = 4
+        # yapf: disable
+
+        sprites = "\n".join([str(s) for s in self._sprites_on_screen()])
+
+        tiles_header = (
+            " "*4 + "".join([f"{i: >4}" for i in range(self.shape[0])]) + "\n" +
+            "_"*(adjust*self.shape[0]+4)
+        )
+
+        tiles = "\n".join(
+                [
+                    (f"{i: <3}|" + "".join([str(tile).rjust(adjust) for tile in line])).strip()
+                    for i, line in enumerate(self.game_area())
+                ]
+            )
+
+        return (
+            "Sprites on screen:\n" +
+            sprites +
+            "\n" +
+            "Tiles on screen:\n" +
+            tiles_header +
+            "\n" +
+            tiles
+        )
+        # yapf: enable

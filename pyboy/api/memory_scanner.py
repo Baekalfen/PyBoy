@@ -30,12 +30,6 @@ class ScanMode(Enum):
 class MemoryScanner():
     """A class for scanning memory within a given range."""
     def __init__(self, pyboy):
-        """
-        Initializes the MemoryScanner with a PyBoy instance.
-
-        Args:
-            pyboy (PyBoy): The PyBoy emulator instance.
-        """
         self.pyboy = pyboy
         self._memory_cache = {}
         self._memory_cache_byte_width = 1
@@ -52,6 +46,14 @@ class MemoryScanner():
     ):
         """
         This function scans a specified range of memory for a target value from the `start_addr` to the `end_addr` (both included).
+
+        Example:
+        ```python
+        >>> current_score = 4 # You write current score in game
+        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
+
+        ```
 
         Args:
             start_addr (int): The starting address for the scan.
@@ -85,6 +87,22 @@ class MemoryScanner():
     ):
         """
         Rescans the memory and updates the memory cache based on a dynamic comparison type.
+
+        Example:
+        ```python
+        >>> current_score = 4 # You write current score in game
+        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
+        >>> for _ in range(175):
+        ...     pyboy.tick(1, True) # Progress the game to change score
+        True...
+        >>> current_score = 8 # You write the new score in game
+        >>> from pyboy.api.memory_scanner import DynamicComparisonType
+        >>> addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
+        >>> print(addresses) # If repeated enough, only one address will remain
+        []
+
+        ```
 
         Args:
             new_value (int, optional): The new value for comparison. If not provided, the current value in memory is used.
