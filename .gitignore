@@ -82,14 +82,13 @@ PyBoy-RL/
 # Bootrom
 extras/bootrom/bootrom*.map
 extras/bootrom/bootrom*.obj
-extras/bootrom/bootrom*.sym
 extras/bootrom/bootrom*.gb
 extras/bootrom/logo.asm
 
 extras/default_rom/default_rom.map
 extras/default_rom/default_rom.obj
-extras/default_rom/default_rom.sym
 !default_rom.gb
+extras/default_rom/default_rom.gb
 
 test.replay
 

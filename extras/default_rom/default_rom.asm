@@ -6,7 +6,7 @@ EntryPoint:
 	jp Main
 
 SECTION "Title", ROM0[$134]
-	db "NO-ROM"
+	db "DEFAULT-ROM"
 
 SECTION "Tileset", ROM0
 Tileset:
@@ -38,7 +38,7 @@ Main:
 	ld [hl], 144
 	inc hl
 	ld [hl], 43
-	
+
 	ld bc, $8400
 	ld de, $8700
 	ld hl, Tileset

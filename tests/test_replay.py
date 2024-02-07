@@ -81,6 +81,9 @@ def replay(
 ):
     with open(replay, "rb") as f:
         recorded_input, b64_romhash, b64_state = json.loads(zlib.decompress(f.read()).decode("ascii"))
+        if ROM.endswith("default_rom.gb"):
+            # Hotfixing replay as compiler has changed
+            b64_romhash = "MyTqOcXFBpPDbCoWMLrD4rGlM3RMLr+VYUPMFIFC5Xw="
 
     verify_file_hash(ROM, b64_romhash)
     state_data = io.BytesIO(base64.b64decode(b64_state.encode("utf8"))) if b64_state is not None else None
