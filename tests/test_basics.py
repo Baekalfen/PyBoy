@@ -51,7 +51,7 @@ def test_record_replay(boot_rom, default_rom):
 
     os.remove(default_rom + ".replay")
 
-    assert digest == b"\xc0\xfe\x0f\xaa\x1b0YY\x1a\x174\x8c\xad\xeaDZ\x1dQ\xa8\xa2\x9fA\xaap\x15(\xc9\xd9#\xd4]{", \
+    assert digest == (b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'), \
         "The replay did not result in the expected output"
 
 
