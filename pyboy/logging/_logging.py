@@ -6,16 +6,16 @@ class Logger:
         self.name = name
 
     def critical(self, fmt, *args):
-        _log(self.name, "_CRITICAL", CRITICAL, fmt, args)
+        _log(self.name, "CRITICAL", CRITICAL, fmt, args)
 
     def error(self, fmt, *args):
-        _log(self.name, "_ERROR", ERROR, fmt, args)
+        _log(self.name, "ERROR", ERROR, fmt, args)
 
     def warning(self, fmt, *args):
-        _log(self.name, "_WARNING", WARNING, fmt, args)
+        _log(self.name, "WARNING", WARNING, fmt, args)
 
     def info(self, fmt, *args):
-        _log(self.name, "_INFO", INFO, fmt, args)
+        _log(self.name, "INFO", INFO, fmt, args)
 
     def debug(self, fmt, *args):
-        _log(self.name, "_DEBUG", DEBUG, fmt, args)
+        _log(self.name, "DEBUG", DEBUG, fmt, args)
