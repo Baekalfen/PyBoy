@@ -28,10 +28,14 @@ codecov: clean
 
 build:
 	@echo "Building..."
+	cd ${ROOT_DIR}/extras/default_rom && $(MAKE)
+	cd ${ROOT_DIR}/extras/bootrom && $(MAKE)
 	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext -j $(shell getconf _NPROCESSORS_ONLN) --inplace
 
 clean:
 	@echo "Cleaning..."
+	cd ${ROOT_DIR}/extras/default_rom && $(MAKE) clean
+	cd ${ROOT_DIR}/extras/bootrom && $(MAKE) clean
 	rm -rf PyBoy.egg-info
 	rm -rf build
 	rm -rf dist

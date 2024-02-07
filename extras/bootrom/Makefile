@@ -20,4 +20,4 @@ build:
 	head -c 256 bootrom_cgb.gb > ${ROOT_DIR}/pyboy/core/bootrom_cgb.bin
 
 clean:
-	rm logo.asm bootrom_*.map bootrom_*.sym bootrom_*.obj bootrom_*.gb
+	rm -f logo.asm bootrom_*.map bootrom_*.obj bootrom_*.gb

@@ -6,7 +6,7 @@ EntryPoint:
 	jp Main
 
 SECTION "Title", ROM0[$134]
-	db "NO-ROM"
+	db "DEFAULT-ROM"
 
 SECTION "Tileset", ROM0
 Tileset:
@@ -16,6 +16,15 @@ SECTION "Tilemap", ROM0
 Tilemap:
 	db $40, $41, $42, $43, $44, $45, $46, $41, $41, $41, $47, $41, $41, $41
 	db $48, $49, $4A, $4B, $4C, $4D, $4E, $49, $4F, $50, $51, $41, $41, $41
+
+SECTION "CartridgeType", ROM0[$147]
+	db $11
+
+SECTION "CartridgeROMCount", ROM0[$148]
+	db $00
+
+SECTION "CartridgeRAMCount", ROM0[$149]
+	db $05
 
 SECTION "Main", ROM0[$150]
 Main:
@@ -38,7 +47,7 @@ Main:
 	ld [hl], 144
 	inc hl
 	ld [hl], 43
-	
+
 	ld bc, $8400
 	ld de, $8700
 	ld hl, Tileset
