@@ -133,6 +133,7 @@ class PyBoy:
         ## Plugin kwargs:
         * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
         * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
+        * gdbserver (str): Spawn GDB Server for debugging [plugin: GdbServer]
         * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
         * rewind (bool): Enable rewind function [plugin: Rewind]
 
