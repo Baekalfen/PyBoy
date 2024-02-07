@@ -27,7 +27,7 @@ class Screen:
     to make it possible to read this buffer out.
 
     If you're making an AI or bot, it's highly recommended to _not_ use this class for detecting objects on the screen.
-    It's much more efficient to use `pyboy.tilemap_background`, `pyboy.tilemap_window`, and `pyboy.sprite` instead.
+    It's much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     """
     def __init__(self, mb):
         self.mb = mb
@@ -40,6 +40,17 @@ class Screen:
 
         Use this, only if you need to bypass the overhead of `Screen.image` or `Screen.ndarray`.
 
+        Example:
+        ```python
+        >>> import numpy as np
+        >>> rows, cols = pyboy.screen.raw_buffer_dims
+        >>> ndarray = np.frombuffer(
+        ...     pyboy.screen.raw_buffer,
+        ...     dtype=np.uint8,
+        ... ).reshape(rows, cols, 4) # Just an example, use pyboy.screen.ndarray instead
+
+        ```
+
         Returns
         -------
         bytes:
@@ -49,6 +60,13 @@ class Screen:
         """
         Returns the dimensions of the raw screen buffer. The screen buffer is row-major.
 
+        Example:
+        ```python
+        >>> pyboy.screen.raw_buffer_dims
+        (144, 160)
+
+        ```
+
         Returns
         -------
         tuple:
@@ -57,6 +75,20 @@ class Screen:
         self.raw_buffer_format = self.mb.lcd.renderer.color_format
         """
         Returns the color format of the raw screen buffer. **This format is subject to change.**
+
+        Example:
+        ```python
+        >>> from PIL import Image
+        >>> pyboy.screen.raw_buffer_format
+        'RGBA'
+        >>> image = Image.frombuffer(
+        ...    pyboy.screen.raw_buffer_format,
+        ...    pyboy.screen.raw_buffer_dims[::-1],
+        ...    pyboy.screen.raw_buffer,
+        ... ) # Just an example, use pyboy.screen.image instead
+        >>> image.save('frame.png')
+
+        ```
 
         Returns
         -------
@@ -68,11 +100,18 @@ class Screen:
         Reference to a PIL Image from the screen buffer. **Remember to copy, resize or convert this object** if you
         intend to store it. The backing buffer will update, but it will be the same `PIL.Image` object.
 
-        The screen buffer is internally row-major, but PIL hides this.
-
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
         case, read up on the `pyboy.api` features, [Pan Docs](https://gbdev.io/pandocs/) on tiles/sprites,
         and join our Discord channel for more help.
+
+        Example:
+        ```python
+        >>> image = pyboy.screen.image
+        >>> type(image)
+        <class 'PIL.Image.Image'>
+        >>> image.save('frame.png')
+
+        ```
 
         Returns
         -------
@@ -98,10 +137,33 @@ class Screen:
 
         The format is given by `pyboy.api.screen.Screen.raw_buffer_format`. The screen buffer is row-major.
 
+        Example:
+        ```python
+        >>> pyboy.screen.ndarray.shape
+        (144, 160, 4)
+        >>> # Display "P" on screen from the PyBoy bootrom
+        >>> pyboy.screen.ndarray[66:80,64:72,0]
+        array([[255, 255, 255, 255, 255, 255, 255, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+        ```
+
         Returns
         -------
         numpy.ndarray:
-            Screendata in `ndarray` of bytes with shape (144, 160, 3)
+            Screendata in `ndarray` of bytes with shape (144, 160, 4)
         """
 
     @property
@@ -109,9 +171,29 @@ class Screen:
         """
         This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
         screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
-        the end of each call to `pyboy.PyBoy.tick()`. For such games, `Screen.tilemap_position` becomes useless.
+        the end of each call to `pyboy.PyBoy.tick()`.
 
-        See `Screen.tilemap_position` for more information.
+        See `Screen.get_tilemap_position` for more information.
+
+        Example:
+        ```python
+        >>> pyboy.tick(25)
+        True
+        >>> swoosh = pyboy.screen.tilemap_position_list[67:78]
+        >>> print(*swoosh, sep=newline) # Just to pretty-print it
+        [0, 0, -7, 0]
+        [1, 0, -7, 0]
+        [2, 0, -7, 0]
+        [2, 0, -7, 0]
+        [3, 0, -7, 0]
+        [3, 0, -7, 0]
+        [3, 0, -7, 0]
+        [3, 0, -7, 0]
+        [2, 0, -7, 0]
+        [1, 0, -7, 0]
+        [0, 0, -7, 0]
+
+        ```
 
         Returns
         -------
@@ -136,6 +218,13 @@ class Screen:
 
         For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
         or the Pan Docs under [LCD Position and Scrolling](https://gbdev.io/pandocs/Scrolling.html).
+
+        Example:
+        ```python
+        >>> pyboy.screen.get_tilemap_position()
+        ((0, 0), (-7, 0))
+
+        ```
 
         Returns
         -------

@@ -65,8 +65,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
     Minimal mapping for `pyboy.PyBoy.game_area_mapping`
     """
     def __init__(self, *args, **kwargs):
-        self.shape = (10, 18)
-        """The shape of the game area"""
         self.score = 0
         """The score provided by the game"""
         self.level = 0
@@ -74,13 +72,13 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self.lines = 0
         """The number of cleared lines"""
 
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
 
-        ROWS, COLS = self.shape
-        self._cached_game_area_tiles_raw = array("B", [0xFF] * (ROWS*COLS*4))
-        self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(ROWS, COLS))
+        # ROWS, COLS = self.shape
+        # self._cached_game_area_tiles_raw = array("B", [0xFF] * (ROWS*COLS*4))
+        # self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(ROWS, COLS))
 
-        super().__init__(*args, game_area_section=(2, 0) + self.shape, game_area_follow_scxy=False, **kwargs)
+        super().__init__(*args, game_area_section=(2, 0, 10, 18), game_area_follow_scxy=False, **kwargs)
 
     def _game_area_tiles(self):
         if self._tile_cache_invalid:
@@ -265,18 +263,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
             f"Score: {self.score}\n" +
             f"Level: {self.level}\n" +
             f"Lines: {self.lines}\n" +
-            "Sprites on screen:\n" +
-            "\n".join([str(s) for s in self._sprites_on_screen()]) +
-            "\n" +
-            "Tiles on screen:\n" +
-            " "*5 + "".join([f"{i: <4}" for i in range(10)]) + "\n" +
-            "_"*(adjust*10+4) +
-            "\n" +
-            "\n".join(
-                [
-                    f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable
