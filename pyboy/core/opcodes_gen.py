@@ -25,6 +25,11 @@ logger = pyboy.logging.get_logger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
+def BRK(cpu):
+    cpu.mb.breakpoint_singlestep = 1
+    cpu.mb.breakpoint_singlestep_latch = 0
+    # NOTE: We do not increment PC
+    return 0
 
 """
 
@@ -42,6 +47,7 @@ cdef uint8_t[512] OPCODE_LENGTHS
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept nogil
+cdef uint8_t BRK(cpu.CPU) noexcept nogil
 """
 
 
@@ -1203,6 +1209,10 @@ def update():
             # breakpoint()
             f_pxd.write(pxd + "\n")
             f.write(functiontext.replace("\t", " " * 4) + "\n\n\n")
+
+        # We create a new opcode to use as a software breakpoint instruction.
+        # I hope the irony of the opcode number is not lost.
+        lookuplist[0xDB] = (1, "BRK", "Breakpoint/Illegal opcode")
 
         f.write("def no_opcode(cpu):\n    return 0\n\n\n")
 

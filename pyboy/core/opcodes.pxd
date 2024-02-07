@@ -19,6 +19,7 @@ cdef uint8_t[512] OPCODE_LENGTHS
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept nogil
+cdef uint8_t BRK(cpu.CPU) noexcept nogil
 @cython.locals(v=int, flag=uint8_t, t=int)
 cdef uint8_t NOP_00(cpu.CPU) noexcept nogil # 00 NOP
 @cython.locals(v=int, flag=uint8_t, t=int)
