@@ -1,4 +1,4 @@
-exclude: opcodes.py
+exclude: (opcodes.py|manager.py|manager.pxd)
 repos:
 - repo: https://github.com/myint/unify
   rev: v0.5
