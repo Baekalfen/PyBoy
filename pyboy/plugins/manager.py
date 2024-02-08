@@ -17,6 +17,7 @@ from pyboy.plugins.rewind import Rewind # isort:skip
 from pyboy.plugins.screen_recorder import ScreenRecorder # isort:skip
 from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # isort:skip
 from pyboy.plugins.debug_prompt import DebugPrompt # isort:skip
+from pyboy.plugins.gdb_server import GdbServer # isort:skip
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # isort:skip
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
@@ -37,6 +38,7 @@ def parser_arguments():
     yield ScreenRecorder.argv
     yield ScreenshotRecorder.argv
     yield DebugPrompt.argv
+    yield GdbServer.argv
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
     yield GameWrapperKirbyDreamLand.argv
@@ -74,6 +76,8 @@ class PluginManager:
         self.screenshot_recorder_enabled = self.screenshot_recorder.enabled()
         self.debug_prompt = DebugPrompt(pyboy, mb, pyboy_argv)
         self.debug_prompt_enabled = self.debug_prompt.enabled()
+        self.gdb_server = GdbServer(pyboy, mb, pyboy_argv)
+        self.gdb_server_enabled = self.gdb_server.enabled()
         self.game_wrapper_super_mario_land = GameWrapperSuperMarioLand(pyboy, mb, pyboy_argv)
         self.game_wrapper_super_mario_land_enabled = self.game_wrapper_super_mario_land.enabled()
         self.game_wrapper_tetris = GameWrapperTetris(pyboy, mb, pyboy_argv)
@@ -120,6 +124,8 @@ class PluginManager:
             events = self.screenshot_recorder.handle_events(events)
         if self.debug_prompt_enabled:
             events = self.debug_prompt.handle_events(events)
+        if self.gdb_server_enabled:
+            events = self.gdb_server.handle_events(events)
         if self.game_wrapper_super_mario_land_enabled:
             events = self.game_wrapper_super_mario_land.handle_events(events)
         if self.game_wrapper_tetris_enabled:
@@ -149,6 +155,8 @@ class PluginManager:
             self.screenshot_recorder.post_tick()
         if self.debug_prompt_enabled:
             self.debug_prompt.post_tick()
+        if self.gdb_server_enabled:
+            self.gdb_server.post_tick()
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.post_tick()
         if self.game_wrapper_tetris_enabled:
@@ -234,6 +242,8 @@ class PluginManager:
             title += self.screenshot_recorder.window_title()
         if self.debug_prompt_enabled:
             title += self.debug_prompt.window_title()
+        if self.gdb_server_enabled:
+            title += self.gdb_server.window_title()
         if self.game_wrapper_super_mario_land_enabled:
             title += self.game_wrapper_super_mario_land.window_title()
         if self.game_wrapper_tetris_enabled:
@@ -271,6 +281,8 @@ class PluginManager:
             self.screenshot_recorder.stop()
         if self.debug_prompt_enabled:
             self.debug_prompt.stop()
+        if self.gdb_server_enabled:
+            self.gdb_server.stop()
         if self.game_wrapper_super_mario_land_enabled:
             self.game_wrapper_super_mario_land.stop()
         if self.game_wrapper_tetris_enabled:
@@ -284,5 +296,7 @@ class PluginManager:
             self.generic_game_wrapper.stop()
 
     def handle_breakpoint(self):
-        if self.debug_prompt_enabled:
+        if self.gdb_server_enabled:
+            self.gdb_server.handle_breakpoint()
+        elif self.debug_prompt_enabled:
             self.debug_prompt.handle_breakpoint()

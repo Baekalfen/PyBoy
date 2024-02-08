@@ -11,7 +11,8 @@ game_wrappers = [
     "GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand", "GameWrapperPokemonGen1"
 ]
 plugins = [
-    "DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder", "DebugPrompt"
+    "DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder", "DebugPrompt",
+    "GdbServer"
 ] + game_wrappers
 all_plugins = windows + plugins
 
