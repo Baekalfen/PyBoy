@@ -64,13 +64,16 @@ uninstall:
 	${PY} -m pip uninstall pyboy
 
 test: export DEBUG=1
-test: clean build test_cython test_pypy
+test: clean test_pypy test_cpython_doctest build test_cython
+
+test_cpython_doctest:
+	${PY} -m pytest pyboy/ -n auto -v
 
 test_cython:
-	${PY} -m pytest tests/ -n4 -v
+	${PY} -m pytest tests/ -n auto -v
 
 test_pypy:
-	${PYPY} -m pytest tests/ -n4 -v
+	${PYPY} -m pytest tests/ pyboy/ -n auto -v
 
 test_all: test
 
