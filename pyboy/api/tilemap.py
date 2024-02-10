@@ -216,19 +216,46 @@ class TileMap:
         """
         self._use_tile_objects = switch
 
+    def _fix_slice(self, addr):
+        if addr.step is None:
+            step = 1
+        else:
+            step = addr.step
+
+        if addr.start is None:
+            start = 0
+        else:
+            start = addr.start
+
+        if addr.stop is None:
+            stop = 32
+        else:
+            stop = addr.stop
+
+        if step < 0:
+            raise ValueError("Reversed ranges are unsupported")
+        elif start > stop:
+            raise ValueError("Invalid range")
+        return start, stop, step
+
     def __getitem__(self, xy):
-        x, y = xy
+        if isinstance(xy, (int, slice)):
+            x = xy
+            y = slice(None)
+        else:
+            x, y = xy
 
-        if x == slice(None):
-            x = slice(0, 32, 1)
+        x_slice = isinstance(x, slice)
+        y_slice = isinstance(y, slice)
+        if x_slice:
+            x = self._fix_slice(x)
+        else:
+            assert isinstance(x, int)
 
-        if y == slice(None):
-            y = slice(0, 32, 1)
-
-        x_slice = isinstance(x, slice) # Assume slice, otherwise int
-        y_slice = isinstance(y, slice) # Assume slice, otherwise int
-        assert x_slice or isinstance(x, int)
-        assert y_slice or isinstance(y, int)
+        if y_slice:
+            y = self._fix_slice(y)
+        else:
+            assert isinstance(y, int)
 
         if self._use_tile_objects:
             tile_fun = self.tile
@@ -236,10 +263,10 @@ class TileMap:
             tile_fun = lambda x, y: self.tile_identifier(x, y)
 
         if x_slice and y_slice:
-            return [[tile_fun(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]
+            return [[tile_fun(_x, _y) for _x in range(*x)] for _y in range(*y)]
         elif x_slice:
-            return [tile_fun(_x, y) for _x in range(x.stop)[x]]
+            return [tile_fun(_x, y) for _x in range(*x)]
         elif y_slice:
-            return [tile_fun(x, _y) for _y in range(y.stop)[y]]
+            return [tile_fun(x, _y) for _y in range(*y)]
         else:
             return tile_fun(x, y)
