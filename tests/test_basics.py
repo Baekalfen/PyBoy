@@ -107,6 +107,9 @@ def test_tilemaps(kirby_rom):
     assert bck_tilemap.map_offset != wdw_tilemap.map_offset
 
     assert bck_tilemap[0, 0] == 256
+    assert bck_tilemap[30:, 29:] == [[254, 254], [256, 256], [256, 256]]
+    # assert bck_tilemap[30::-1, 29::-1] == [[256, 256], [256, 256], [254, 254]] # TODO: Not supported
+    assert bck_tilemap[30:32, 30:32] == [[256, 256], [256, 256]]
     assert bck_tilemap[:5, 0] == [256, 256, 256, 256, 170]
     assert bck_tilemap[:20, :10] == [
         [256, 256, 256, 256, 170, 176, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
