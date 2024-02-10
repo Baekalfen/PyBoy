@@ -30,9 +30,11 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade wheel setuptools
         pip install --prefer-binary -r requirements.txt
+        pip install --prefer-binary -r requirements_tests.txt
     - name: Doctest
+      if: ${{ !contains(matrix.os, 'windows') }}
       run: |
-        python -m pytest pyboy/ --doctest-modules
+        python -m pytest pyboy/ -n auto
     - name: Build PyBoy
       run: |
         python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
@@ -47,9 +49,7 @@ jobs:
         TEST_CI: 1
         TEST_NO_UI: 1
       run: |
-        pip install --upgrade pip
-        pip install --prefer-binary -r requirements_tests.txt
-        python -m pytest tests/ -n2 -v
+        python -m pytest tests/ -n auto -v
     - name: Build and upload wheel
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
       run: |
@@ -101,18 +101,19 @@ jobs:
         pypy3 -m ensurepip
         pypy3 -m pip install --upgrade pip
         pypy3 -m pip install wheel
+        pypy3 -m pip install --prefer-binary -r requirements.txt
+        pypy3 -m pip install --prefer-binary -r requirements_tests.txt
     - name: Doctest
+      if: ${{ !contains(matrix.os, 'windows') }}
       run: |
-        pypy3 -m pytest pyboy/ --doctest-modules
+        pypy3 -m pytest pyboy/ -n auto
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
         TEST_CI: 1
         TEST_NO_UI: 1
       run: |
-        pip install --upgrade pip
-        pypy3 -m pip install --prefer-binary -r requirements_tests.txt
-        pypy3 -m pytest tests/ -n2 -v
+        pypy3 -m pytest tests/ -n auto -v
 
   test_manylinux:
     name: ManyLinux - Build, Test and Deploy
