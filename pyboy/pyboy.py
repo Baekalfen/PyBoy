@@ -38,7 +38,6 @@ class PyBoy:
         gamerom_file,
         *,
         bootrom_file=None,
-        disable_renderer=False,
         sound=False,
         sound_emulated=False,
         cgb=None,
@@ -87,7 +86,6 @@ class PyBoy:
             bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
             kwargs["color_palette"],
             kwargs["cgb_color_palette"],
-            disable_renderer,
             sound,
             sound_emulated,
             cgb,

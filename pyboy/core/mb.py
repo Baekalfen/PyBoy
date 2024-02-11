@@ -23,7 +23,6 @@ class Motherboard:
         bootrom_file,
         color_palette,
         cgb_color_palette,
-        disable_renderer,
         sound_enabled,
         sound_emulated,
         cgb,
@@ -48,7 +47,6 @@ class Motherboard:
             self.lcd = lcd.CGBLCD(
                 cgb,
                 self.cartridge.cgb,
-                disable_renderer,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
@@ -57,7 +55,6 @@ class Motherboard:
             self.lcd = lcd.LCD(
                 cgb,
                 self.cartridge.cgb,
-                disable_renderer,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,

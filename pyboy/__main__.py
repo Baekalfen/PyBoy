@@ -87,7 +87,6 @@ parser.add_argument(
     help="Specify window-type to use"
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
-parser.add_argument("--disable-renderer", action="store_true", help="Disables screen rendering for higher performance")
 parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
 
 gameboy_type_parser = parser.add_mutually_exclusive_group()
