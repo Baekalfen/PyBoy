@@ -410,7 +410,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             # "MARIO" in the title bar and 0 is placed at score
             if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
                self.tilemap_background[5, 1] == 256:
-                self.game_has_started = True
+                # Game has started
                 break
 
         self.saved_state.seek(0)

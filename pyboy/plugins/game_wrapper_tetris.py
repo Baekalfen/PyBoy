@@ -123,8 +123,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
-        self.game_has_started = True
-
         self.reset_game(timer_div=timer_div)
 
     def reset_game(self, timer_div=None):

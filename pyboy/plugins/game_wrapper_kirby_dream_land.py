@@ -88,8 +88,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         # Wait for transition to finish (exit level intro screen, enter game)
         self.pyboy.tick(60, False)
 
-        self.game_has_started = True
-
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
