@@ -22,7 +22,7 @@ cdef class Tile:
     cdef readonly int data_address
     cdef readonly tuple shape
     cpdef object image(self) noexcept
-    cpdef object image_ndarray(self) noexcept
+    cpdef object ndarray(self) noexcept
 
     cdef uint32_t[:,:] data # TODO: Add to locals instead
     @cython.locals(byte1=uint8_t, byte2=uint8_t, colorcode=uint32_t)
