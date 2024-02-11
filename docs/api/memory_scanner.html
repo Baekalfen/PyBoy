@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>pyboy.api.memory_scanner API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.api.memory_scanner</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from enum import Enum
+
+from pyboy.utils import bcd_to_dec
+
+
+class StandardComparisonType(Enum):
+    &#34;&#34;&#34;Enumeration for defining types of comparisons that do not require a previous value.&#34;&#34;&#34;
+    EXACT = 1
+    LESS_THAN = 2
+    GREATER_THAN = 3
+    LESS_THAN_OR_EQUAL = 4
+    GREATER_THAN_OR_EQUAL = 5
+
+
+class DynamicComparisonType(Enum):
+    &#34;&#34;&#34;Enumeration for defining types of comparisons that require a previous value.&#34;&#34;&#34;
+    UNCHANGED = 1
+    CHANGED = 2
+    INCREASED = 3
+    DECREASED = 4
+    MATCH = 5
+
+
+class ScanMode(Enum):
+    &#34;&#34;&#34;Enumeration for defining scanning modes.&#34;&#34;&#34;
+    INT = 1
+    BCD = 2
+
+
+class MemoryScanner():
+    &#34;&#34;&#34;A class for scanning memory within a given range.&#34;&#34;&#34;
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
+        self._memory_cache = {}
+        self._memory_cache_byte_width = 1
+
+    def scan_memory(
+        self,
+        target_value=None,
+        start_addr=0x0000,
+        end_addr=0xFFFF,
+        standard_comparison_type=StandardComparisonType.EXACT,
+        value_type=ScanMode.INT,
+        byte_width=1,
+        byteorder=&#34;little&#34;
+    ):
+        &#34;&#34;&#34;
+        This function scans a specified range of memory for a target value from the `start_addr` to the `end_addr` (both included).
+
+        Example:
+        ```python
+        &gt;&gt;&gt; current_score = 4 # You write current score in game
+        &gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
+
+        ```
+
+        Args:
+            start_addr (int): The starting address for the scan.
+            end_addr (int): The ending address for the scan.
+            target_value (int or None): The value to search for. If None, any value is considered a match.
+            standard_comparison_type (StandardComparisonType): The type of comparison to use.
+            value_type (ValueType): The type of value (INT or BCD) to consider.
+            byte_width (int): The number of bytes to consider for each value.
+            byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+
+        Returns:
+            list of int: A list of addresses where the target value is found.
+        &#34;&#34;&#34;
+        self._memory_cache = {}
+        self._memory_cache_byte_width = byte_width
+        for addr in range(start_addr, end_addr - (byte_width-1) + 1): # Adjust the loop to prevent reading past end_addr
+            # Read multiple bytes based on byte_width and byteorder
+            value_bytes = self.pyboy.memory[addr:addr + byte_width]
+            value = int.from_bytes(value_bytes, byteorder)
+
+            if value_type == ScanMode.BCD:
+                value = bcd_to_dec(value, byte_width, byteorder)
+
+            if target_value is None or self._check_value(value, target_value, standard_comparison_type.value):
+                self._memory_cache[addr] = value
+
+        return list(self._memory_cache.keys())
+
+    def rescan_memory(
+        self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, byteorder=&#34;little&#34;
+    ):
+        &#34;&#34;&#34;
+        Rescans the memory and updates the memory cache based on a dynamic comparison type.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; current_score = 4 # You write current score in game
+        &gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
+        &gt;&gt;&gt; for _ in range(175):
+        ...     pyboy.tick(1, True) # Progress the game to change score
+        True...
+        &gt;&gt;&gt; current_score = 8 # You write the new score in game
+        &gt;&gt;&gt; from pyboy.api.memory_scanner import DynamicComparisonType
+        &gt;&gt;&gt; addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
+        &gt;&gt;&gt; print(addresses) # If repeated enough, only one address will remain
+        []
+
+        ```
+
+        Args:
+            new_value (int, optional): The new value for comparison. If not provided, the current value in memory is used.
+            dynamic_comparison_type (DynamicComparisonType): The type of comparison to use. Defaults to UNCHANGED.
+
+        Returns:
+            list of int: A list of addresses remaining in the memory cache after the rescan.
+        &#34;&#34;&#34;
+        for addr, value in self._memory_cache.copy().items():
+            current_value = int.from_bytes(
+                self.pyboy.memory[addr:addr + self._memory_cache_byte_width], byteorder=byteorder
+            )
+            if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
+                if value != current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
+                if value == current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
+                if value &gt;= current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
+                if value &lt;= current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
+                if new_value == None:
+                    raise ValueError(&#34;new_value must be specified when using DynamicComparisonType.MATCH&#34;)
+                if current_value != new_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            else:
+                raise ValueError(&#34;Invalid comparison type&#34;)
+        return list(self._memory_cache.keys())
+
+    def _check_value(self, value, target_value, standard_comparison_type):
+        &#34;&#34;&#34;
+        Compares a value with the target value based on the specified compare type.
+
+        Args:
+            value (int): The value to compare.
+            target_value (int or None): The target value to compare against.
+            standard_comparison_type (StandardComparisonType): The type of comparison to use.
+
+        Returns:
+            bool: True if the comparison condition is met, False otherwise.
+        &#34;&#34;&#34;
+        if standard_comparison_type == StandardComparisonType.EXACT.value:
+            return value == target_value
+        elif standard_comparison_type == StandardComparisonType.LESS_THAN.value:
+            return value &lt; target_value
+        elif standard_comparison_type == StandardComparisonType.GREATER_THAN.value:
+            return value &gt; target_value
+        elif standard_comparison_type == StandardComparisonType.LESS_THAN_OR_EQUAL.value:
+            return value &lt;= target_value
+        elif standard_comparison_type == StandardComparisonType.GREATER_THAN_OR_EQUAL.value:
+            return value &gt;= target_value
+        else:
+            raise ValueError(&#34;Invalid comparison type&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.api.memory_scanner.StandardComparisonType"><code class="flex name class">
+<span>class <span class="ident">StandardComparisonType</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Enumeration for defining types of comparisons that do not require a previous value.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StandardComparisonType(Enum):
+    &#34;&#34;&#34;Enumeration for defining types of comparisons that do not require a previous value.&#34;&#34;&#34;
+    EXACT = 1
+    LESS_THAN = 2
+    GREATER_THAN = 3
+    LESS_THAN_OR_EQUAL = 4
+    GREATER_THAN_OR_EQUAL = 5</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.api.memory_scanner.StandardComparisonType.EXACT"><code class="name">var <span class="ident">EXACT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.StandardComparisonType.LESS_THAN"><code class="name">var <span class="ident">LESS_THAN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.StandardComparisonType.GREATER_THAN"><code class="name">var <span class="ident">GREATER_THAN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.StandardComparisonType.LESS_THAN_OR_EQUAL"><code class="name">var <span class="ident">LESS_THAN_OR_EQUAL</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.StandardComparisonType.GREATER_THAN_OR_EQUAL"><code class="name">var <span class="ident">GREATER_THAN_OR_EQUAL</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.memory_scanner.DynamicComparisonType"><code class="flex name class">
+<span>class <span class="ident">DynamicComparisonType</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Enumeration for defining types of comparisons that require a previous value.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DynamicComparisonType(Enum):
+    &#34;&#34;&#34;Enumeration for defining types of comparisons that require a previous value.&#34;&#34;&#34;
+    UNCHANGED = 1
+    CHANGED = 2
+    INCREASED = 3
+    DECREASED = 4
+    MATCH = 5</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.api.memory_scanner.DynamicComparisonType.UNCHANGED"><code class="name">var <span class="ident">UNCHANGED</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.DynamicComparisonType.CHANGED"><code class="name">var <span class="ident">CHANGED</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.DynamicComparisonType.INCREASED"><code class="name">var <span class="ident">INCREASED</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.DynamicComparisonType.DECREASED"><code class="name">var <span class="ident">DECREASED</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.DynamicComparisonType.MATCH"><code class="name">var <span class="ident">MATCH</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.memory_scanner.ScanMode"><code class="flex name class">
+<span>class <span class="ident">ScanMode</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Enumeration for defining scanning modes.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ScanMode(Enum):
+    &#34;&#34;&#34;Enumeration for defining scanning modes.&#34;&#34;&#34;
+    INT = 1
+    BCD = 2</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.api.memory_scanner.ScanMode.INT"><code class="name">var <span class="ident">INT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.api.memory_scanner.ScanMode.BCD"><code class="name">var <span class="ident">BCD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.memory_scanner.MemoryScanner"><code class="flex name class">
+<span>class <span class="ident">MemoryScanner</span></span>
+<span>(</span><span>pyboy)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>A class for scanning memory within a given range.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MemoryScanner():
+    &#34;&#34;&#34;A class for scanning memory within a given range.&#34;&#34;&#34;
+    def __init__(self, pyboy):
+        self.pyboy = pyboy
+        self._memory_cache = {}
+        self._memory_cache_byte_width = 1
+
+    def scan_memory(
+        self,
+        target_value=None,
+        start_addr=0x0000,
+        end_addr=0xFFFF,
+        standard_comparison_type=StandardComparisonType.EXACT,
+        value_type=ScanMode.INT,
+        byte_width=1,
+        byteorder=&#34;little&#34;
+    ):
+        &#34;&#34;&#34;
+        This function scans a specified range of memory for a target value from the `start_addr` to the `end_addr` (both included).
+
+        Example:
+        ```python
+        &gt;&gt;&gt; current_score = 4 # You write current score in game
+        &gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
+
+        ```
+
+        Args:
+            start_addr (int): The starting address for the scan.
+            end_addr (int): The ending address for the scan.
+            target_value (int or None): The value to search for. If None, any value is considered a match.
+            standard_comparison_type (StandardComparisonType): The type of comparison to use.
+            value_type (ValueType): The type of value (INT or BCD) to consider.
+            byte_width (int): The number of bytes to consider for each value.
+            byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+
+        Returns:
+            list of int: A list of addresses where the target value is found.
+        &#34;&#34;&#34;
+        self._memory_cache = {}
+        self._memory_cache_byte_width = byte_width
+        for addr in range(start_addr, end_addr - (byte_width-1) + 1): # Adjust the loop to prevent reading past end_addr
+            # Read multiple bytes based on byte_width and byteorder
+            value_bytes = self.pyboy.memory[addr:addr + byte_width]
+            value = int.from_bytes(value_bytes, byteorder)
+
+            if value_type == ScanMode.BCD:
+                value = bcd_to_dec(value, byte_width, byteorder)
+
+            if target_value is None or self._check_value(value, target_value, standard_comparison_type.value):
+                self._memory_cache[addr] = value
+
+        return list(self._memory_cache.keys())
+
+    def rescan_memory(
+        self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, byteorder=&#34;little&#34;
+    ):
+        &#34;&#34;&#34;
+        Rescans the memory and updates the memory cache based on a dynamic comparison type.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; current_score = 4 # You write current score in game
+        &gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+        []
+        &gt;&gt;&gt; for _ in range(175):
+        ...     pyboy.tick(1, True) # Progress the game to change score
+        True...
+        &gt;&gt;&gt; current_score = 8 # You write the new score in game
+        &gt;&gt;&gt; from pyboy.api.memory_scanner import DynamicComparisonType
+        &gt;&gt;&gt; addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
+        &gt;&gt;&gt; print(addresses) # If repeated enough, only one address will remain
+        []
+
+        ```
+
+        Args:
+            new_value (int, optional): The new value for comparison. If not provided, the current value in memory is used.
+            dynamic_comparison_type (DynamicComparisonType): The type of comparison to use. Defaults to UNCHANGED.
+
+        Returns:
+            list of int: A list of addresses remaining in the memory cache after the rescan.
+        &#34;&#34;&#34;
+        for addr, value in self._memory_cache.copy().items():
+            current_value = int.from_bytes(
+                self.pyboy.memory[addr:addr + self._memory_cache_byte_width], byteorder=byteorder
+            )
+            if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
+                if value != current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
+                if value == current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
+                if value &gt;= current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
+                if value &lt;= current_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
+                if new_value == None:
+                    raise ValueError(&#34;new_value must be specified when using DynamicComparisonType.MATCH&#34;)
+                if current_value != new_value:
+                    self._memory_cache.pop(addr)
+                else:
+                    self._memory_cache[addr] = current_value
+            else:
+                raise ValueError(&#34;Invalid comparison type&#34;)
+        return list(self._memory_cache.keys())
+
+    def _check_value(self, value, target_value, standard_comparison_type):
+        &#34;&#34;&#34;
+        Compares a value with the target value based on the specified compare type.
+
+        Args:
+            value (int): The value to compare.
+            target_value (int or None): The target value to compare against.
+            standard_comparison_type (StandardComparisonType): The type of comparison to use.
+
+        Returns:
+            bool: True if the comparison condition is met, False otherwise.
+        &#34;&#34;&#34;
+        if standard_comparison_type == StandardComparisonType.EXACT.value:
+            return value == target_value
+        elif standard_comparison_type == StandardComparisonType.LESS_THAN.value:
+            return value &lt; target_value
+        elif standard_comparison_type == StandardComparisonType.GREATER_THAN.value:
+            return value &gt; target_value
+        elif standard_comparison_type == StandardComparisonType.LESS_THAN_OR_EQUAL.value:
+            return value &lt;= target_value
+        elif standard_comparison_type == StandardComparisonType.GREATER_THAN_OR_EQUAL.value:
+            return value &gt;= target_value
+        else:
+            raise ValueError(&#34;Invalid comparison type&#34;)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.api.memory_scanner.MemoryScanner.scan_memory"><code class="name flex">
+<span>def <span class="ident">scan_memory</span></span>(<span>self, target_value=None, start_addr=0, end_addr=65535, standard_comparison_type=StandardComparisonType.EXACT, value_type=ScanMode.INT, byte_width=1, byteorder='little')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This function scans a specified range of memory for a target value from the <code>start_addr</code> to the <code>end_addr</code> (both included).</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; current_score = 4 # You write current score in game
+&gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+[]
+
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>start_addr</code></strong> :&ensp;<code>int</code></dt>
+<dd>The starting address for the scan.</dd>
+<dt><strong><code>end_addr</code></strong> :&ensp;<code>int</code></dt>
+<dd>The ending address for the scan.</dd>
+<dt><strong><code>target_value</code></strong> :&ensp;<code>int</code> or <code>None</code></dt>
+<dd>The value to search for. If None, any value is considered a match.</dd>
+<dt><strong><code>standard_comparison_type</code></strong> :&ensp;<code><a title="pyboy.api.memory_scanner.StandardComparisonType" href="#pyboy.api.memory_scanner.StandardComparisonType">StandardComparisonType</a></code></dt>
+<dd>The type of comparison to use.</dd>
+<dt><strong><code>value_type</code></strong> :&ensp;<code>ValueType</code></dt>
+<dd>The type of value (INT or BCD) to consider.</dd>
+<dt><strong><code>byte_width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of bytes to consider for each value.</dd>
+<dt><strong><code>byteorder</code></strong> :&ensp;<code>str</code></dt>
+<dd>The endian type to use. This is only used for 16-bit values and higher. See <a href="https://docs.python.org/3/library/stdtypes.html#int.from_bytes">int.from_bytes</a> for more details.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code> of <code>int</code></dt>
+<dd>A list of addresses where the target value is found.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def scan_memory(
+    self,
+    target_value=None,
+    start_addr=0x0000,
+    end_addr=0xFFFF,
+    standard_comparison_type=StandardComparisonType.EXACT,
+    value_type=ScanMode.INT,
+    byte_width=1,
+    byteorder=&#34;little&#34;
+):
+    &#34;&#34;&#34;
+    This function scans a specified range of memory for a target value from the `start_addr` to the `end_addr` (both included).
+
+    Example:
+    ```python
+    &gt;&gt;&gt; current_score = 4 # You write current score in game
+    &gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+    []
+
+    ```
+
+    Args:
+        start_addr (int): The starting address for the scan.
+        end_addr (int): The ending address for the scan.
+        target_value (int or None): The value to search for. If None, any value is considered a match.
+        standard_comparison_type (StandardComparisonType): The type of comparison to use.
+        value_type (ValueType): The type of value (INT or BCD) to consider.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+
+    Returns:
+        list of int: A list of addresses where the target value is found.
+    &#34;&#34;&#34;
+    self._memory_cache = {}
+    self._memory_cache_byte_width = byte_width
+    for addr in range(start_addr, end_addr - (byte_width-1) + 1): # Adjust the loop to prevent reading past end_addr
+        # Read multiple bytes based on byte_width and byteorder
+        value_bytes = self.pyboy.memory[addr:addr + byte_width]
+        value = int.from_bytes(value_bytes, byteorder)
+
+        if value_type == ScanMode.BCD:
+            value = bcd_to_dec(value, byte_width, byteorder)
+
+        if target_value is None or self._check_value(value, target_value, standard_comparison_type.value):
+            self._memory_cache[addr] = value
+
+    return list(self._memory_cache.keys())</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.memory_scanner.MemoryScanner.rescan_memory"><code class="name flex">
+<span>def <span class="ident">rescan_memory</span></span>(<span>self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, byteorder='little')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Rescans the memory and updates the memory cache based on a dynamic comparison type.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; current_score = 4 # You write current score in game
+&gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+[]
+&gt;&gt;&gt; for _ in range(175):
+...     pyboy.tick(1, True) # Progress the game to change score
+True...
+&gt;&gt;&gt; current_score = 8 # You write the new score in game
+&gt;&gt;&gt; from pyboy.api.memory_scanner import DynamicComparisonType
+&gt;&gt;&gt; addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
+&gt;&gt;&gt; print(addresses) # If repeated enough, only one address will remain
+[]
+
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>new_value</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The new value for comparison. If not provided, the current value in memory is used.</dd>
+<dt><strong><code>dynamic_comparison_type</code></strong> :&ensp;<code><a title="pyboy.api.memory_scanner.DynamicComparisonType" href="#pyboy.api.memory_scanner.DynamicComparisonType">DynamicComparisonType</a></code></dt>
+<dd>The type of comparison to use. Defaults to UNCHANGED.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code> of <code>int</code></dt>
+<dd>A list of addresses remaining in the memory cache after the rescan.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rescan_memory(
+    self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, byteorder=&#34;little&#34;
+):
+    &#34;&#34;&#34;
+    Rescans the memory and updates the memory cache based on a dynamic comparison type.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; current_score = 4 # You write current score in game
+    &gt;&gt;&gt; pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
+    []
+    &gt;&gt;&gt; for _ in range(175):
+    ...     pyboy.tick(1, True) # Progress the game to change score
+    True...
+    &gt;&gt;&gt; current_score = 8 # You write the new score in game
+    &gt;&gt;&gt; from pyboy.api.memory_scanner import DynamicComparisonType
+    &gt;&gt;&gt; addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
+    &gt;&gt;&gt; print(addresses) # If repeated enough, only one address will remain
+    []
+
+    ```
+
+    Args:
+        new_value (int, optional): The new value for comparison. If not provided, the current value in memory is used.
+        dynamic_comparison_type (DynamicComparisonType): The type of comparison to use. Defaults to UNCHANGED.
+
+    Returns:
+        list of int: A list of addresses remaining in the memory cache after the rescan.
+    &#34;&#34;&#34;
+    for addr, value in self._memory_cache.copy().items():
+        current_value = int.from_bytes(
+            self.pyboy.memory[addr:addr + self._memory_cache_byte_width], byteorder=byteorder
+        )
+        if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
+            if value != current_value:
+                self._memory_cache.pop(addr)
+            else:
+                self._memory_cache[addr] = current_value
+        elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
+            if value == current_value:
+                self._memory_cache.pop(addr)
+            else:
+                self._memory_cache[addr] = current_value
+        elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
+            if value &gt;= current_value:
+                self._memory_cache.pop(addr)
+            else:
+                self._memory_cache[addr] = current_value
+        elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
+            if value &lt;= current_value:
+                self._memory_cache.pop(addr)
+            else:
+                self._memory_cache[addr] = current_value
+        elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
+            if new_value == None:
+                raise ValueError(&#34;new_value must be specified when using DynamicComparisonType.MATCH&#34;)
+            if current_value != new_value:
+                self._memory_cache.pop(addr)
+            else:
+                self._memory_cache[addr] = current_value
+        else:
+            raise ValueError(&#34;Invalid comparison type&#34;)
+    return list(self._memory_cache.keys())</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy.api" href="index.html">pyboy.api</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.api.memory_scanner.StandardComparisonType" href="#pyboy.api.memory_scanner.StandardComparisonType">StandardComparisonType</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.memory_scanner.StandardComparisonType.EXACT" href="#pyboy.api.memory_scanner.StandardComparisonType.EXACT">EXACT</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.StandardComparisonType.LESS_THAN" href="#pyboy.api.memory_scanner.StandardComparisonType.LESS_THAN">LESS_THAN</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.StandardComparisonType.GREATER_THAN" href="#pyboy.api.memory_scanner.StandardComparisonType.GREATER_THAN">GREATER_THAN</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.StandardComparisonType.LESS_THAN_OR_EQUAL" href="#pyboy.api.memory_scanner.StandardComparisonType.LESS_THAN_OR_EQUAL">LESS_THAN_OR_EQUAL</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.StandardComparisonType.GREATER_THAN_OR_EQUAL" href="#pyboy.api.memory_scanner.StandardComparisonType.GREATER_THAN_OR_EQUAL">GREATER_THAN_OR_EQUAL</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.memory_scanner.DynamicComparisonType" href="#pyboy.api.memory_scanner.DynamicComparisonType">DynamicComparisonType</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.memory_scanner.DynamicComparisonType.UNCHANGED" href="#pyboy.api.memory_scanner.DynamicComparisonType.UNCHANGED">UNCHANGED</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.DynamicComparisonType.CHANGED" href="#pyboy.api.memory_scanner.DynamicComparisonType.CHANGED">CHANGED</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.DynamicComparisonType.INCREASED" href="#pyboy.api.memory_scanner.DynamicComparisonType.INCREASED">INCREASED</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.DynamicComparisonType.DECREASED" href="#pyboy.api.memory_scanner.DynamicComparisonType.DECREASED">DECREASED</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.DynamicComparisonType.MATCH" href="#pyboy.api.memory_scanner.DynamicComparisonType.MATCH">MATCH</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.memory_scanner.ScanMode" href="#pyboy.api.memory_scanner.ScanMode">ScanMode</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.memory_scanner.ScanMode.INT" href="#pyboy.api.memory_scanner.ScanMode.INT">INT</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.ScanMode.BCD" href="#pyboy.api.memory_scanner.ScanMode.BCD">BCD</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.memory_scanner.MemoryScanner" href="#pyboy.api.memory_scanner.MemoryScanner">MemoryScanner</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.memory_scanner.MemoryScanner.scan_memory" href="#pyboy.api.memory_scanner.MemoryScanner.scan_memory">scan_memory</a></code></li>
+<li><code><a title="pyboy.api.memory_scanner.MemoryScanner.rescan_memory" href="#pyboy.api.memory_scanner.MemoryScanner.rescan_memory">rescan_memory</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
