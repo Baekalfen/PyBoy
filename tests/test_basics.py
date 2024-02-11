@@ -15,9 +15,10 @@ import PIL
 import pytest
 from pytest_lazy_fixtures import lf
 
-from pyboy import PyBoy, WindowEvent
+from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
+from pyboy.utils import WindowEvent
 
 is_pypy = platform.python_implementation() == "PyPy"
 

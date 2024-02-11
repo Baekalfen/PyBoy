@@ -12,9 +12,9 @@ import PIL
 import pytest
 from PIL import ImageChops
 
-from pyboy import PyBoy, WindowEvent
+from pyboy import PyBoy
 from pyboy.api.tile import Tile
-from pyboy.utils import IntIOWrapper
+from pyboy.utils import IntIOWrapper, WindowEvent
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
