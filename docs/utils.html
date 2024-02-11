@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>pyboy.utils API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.utils</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#
+# License: See LICENSE.md file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+__all__ = [&#34;WindowEvent&#34;, &#34;dec_to_bcd&#34;, &#34;bcd_to_dec&#34;]
+
+STATE_VERSION = 10
+
+##############################################################
+# Buffer classes
+
+
+class IntIOInterface:
+    def __init__(self, buf):
+        pass
+
+    def write(self, byte):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def write_64bit(self, value):
+        self.write(value &amp; 0xFF)
+        self.write((value &gt;&gt; 8) &amp; 0xFF)
+        self.write((value &gt;&gt; 16) &amp; 0xFF)
+        self.write((value &gt;&gt; 24) &amp; 0xFF)
+        self.write((value &gt;&gt; 32) &amp; 0xFF)
+        self.write((value &gt;&gt; 40) &amp; 0xFF)
+        self.write((value &gt;&gt; 48) &amp; 0xFF)
+        self.write((value &gt;&gt; 56) &amp; 0xFF)
+
+    def read_64bit(self):
+        a = self.read()
+        b = self.read()
+        c = self.read()
+        d = self.read()
+        e = self.read()
+        f = self.read()
+        g = self.read()
+        h = self.read()
+        return a | (b &lt;&lt; 8) | (c &lt;&lt; 16) | (d &lt;&lt; 24) | (e &lt;&lt; 32) | (f &lt;&lt; 40) | (g &lt;&lt; 48) | (h &lt;&lt; 56)
+
+    def write_32bit(self, value):
+        self.write(value &amp; 0xFF)
+        self.write((value &gt;&gt; 8) &amp; 0xFF)
+        self.write((value &gt;&gt; 16) &amp; 0xFF)
+        self.write((value &gt;&gt; 24) &amp; 0xFF)
+
+    def read_32bit(self):
+        a = self.read()
+        b = self.read()
+        c = self.read()
+        d = self.read()
+        return int(a | (b &lt;&lt; 8) | (c &lt;&lt; 16) | (d &lt;&lt; 24))
+
+    def write_16bit(self, value):
+        self.write(value &amp; 0xFF)
+        self.write((value &gt;&gt; 8) &amp; 0xFF)
+
+    def read_16bit(self):
+        a = self.read()
+        b = self.read()
+        return int(a | (b &lt;&lt; 8))
+
+    def read(self):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def seek(self, pos):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def flush(self):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def new(self):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def commit(self):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def seek_frame(self, _):
+        raise Exception(&#34;Not implemented!&#34;)
+
+    def tell(self):
+        raise Exception(&#34;Not implemented!&#34;)
+
+
+class IntIOWrapper(IntIOInterface):
+    &#34;&#34;&#34;
+    Wraps a file-like object to allow writing integers to it.
+    This allows for higher performance, when writing to a memory map in rewind.
+    &#34;&#34;&#34;
+    def __init__(self, buf):
+        self.buffer = buf
+
+    def write(self, byte):
+        assert isinstance(byte, int)
+        assert 0 &lt;= byte &lt;= 0xFF
+        return self.buffer.write(byte.to_bytes(1, &#34;little&#34;))
+
+    def read(self):
+        # assert count == 1, &#34;Only a count of 1 is supported&#34;
+        data = self.buffer.read(1)
+        assert len(data) == 1, &#34;No data&#34;
+        return ord(data)
+
+    def seek(self, pos):
+        self.buffer.seek(pos)
+
+    def flush(self):
+        self.buffer.flush()
+
+    def tell(self):
+        return self.buffer.tell()
+
+
+##############################################################
+# Misc
+
+
+# TODO: Would a lookup-table increase performance? For example a lookup table of each 4-bit nibble?
+# That&#39;s 16**2 = 256 values. Index calculated as: (byte1 &amp; 0xF0) | ((byte2 &amp; 0xF0) &gt;&gt; 4)
+# and then: (byte1 &amp; 0x0F) | ((byte2 &amp; 0x0F) &gt;&gt; 4)
+# Then could even be preloaded for each color palette
+def color_code(byte1, byte2, offset):
+    &#34;&#34;&#34;Convert 2 bytes into color code at a given offset.
+
+    The colors are 2 bit and are found like this:
+
+    Color of the first pixel is 0b10
+    | Color of the second pixel is 0b01
+    v v
+    1 0 0 1 0 0 0 1 &lt;- byte1
+    0 1 1 1 1 1 0 0 &lt;- byte2
+    &#34;&#34;&#34;
+    return (((byte2 &gt;&gt; (offset)) &amp; 0b1) &lt;&lt; 1) + ((byte1 &gt;&gt; (offset)) &amp; 0b1)
+
+
+##############################################################
+# Window Events
+# Temporarily placed here to not be exposed on public API
+
+
+class WindowEvent:
+    &#34;&#34;&#34;
+    All supported events can be found in the class description below.
+
+    It can be used as follows:
+
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import WindowEvent
+    &gt;&gt;&gt; pyboy.send_input(WindowEvent.PAUSE)
+
+    ```
+
+    Just for button presses, it might be easier to use: `pyboy.PyBoy.button`,
+    `pyboy.PyBoy.button_press` and `pyboy.PyBoy.button_release`.
+    &#34;&#34;&#34;
+
+    # ONLY ADD NEW EVENTS AT THE END OF THE LIST!
+    # Otherwise, it will break replays, which depend on the id of the event
+    (
+        QUIT,
+        PRESS_ARROW_UP,
+        PRESS_ARROW_DOWN,
+        PRESS_ARROW_RIGHT,
+        PRESS_ARROW_LEFT,
+        PRESS_BUTTON_A,
+        PRESS_BUTTON_B,
+        PRESS_BUTTON_SELECT,
+        PRESS_BUTTON_START,
+        RELEASE_ARROW_UP,
+        RELEASE_ARROW_DOWN,
+        RELEASE_ARROW_RIGHT,
+        RELEASE_ARROW_LEFT,
+        RELEASE_BUTTON_A,
+        RELEASE_BUTTON_B,
+        RELEASE_BUTTON_SELECT,
+        RELEASE_BUTTON_START,
+        _INTERNAL_TOGGLE_DEBUG,
+        PRESS_SPEED_UP,
+        RELEASE_SPEED_UP,
+        STATE_SAVE,
+        STATE_LOAD,
+        PASS,
+        SCREEN_RECORDING_TOGGLE,
+        PAUSE,
+        UNPAUSE,
+        PAUSE_TOGGLE,
+        PRESS_REWIND_BACK,
+        PRESS_REWIND_FORWARD,
+        RELEASE_REWIND_BACK,
+        RELEASE_REWIND_FORWARD,
+        WINDOW_FOCUS,
+        WINDOW_UNFOCUS,
+        _INTERNAL_RENDERER_FLUSH,
+        _INTERNAL_MOUSE,
+        _INTERNAL_MARK_TILE,
+        SCREENSHOT_RECORD,
+        DEBUG_MEMORY_SCROLL_DOWN,
+        DEBUG_MEMORY_SCROLL_UP,
+        MOD_SHIFT_ON,
+        MOD_SHIFT_OFF,
+        FULL_SCREEN_TOGGLE,
+    ) = range(42)
+
+    def __init__(self, event):
+        self.event = event
+
+    def __eq__(self, x):
+        if isinstance(x, int):
+            return self.event == x
+        else:
+            return self.event == x.event
+
+    def __int__(self):
+        return self.event
+
+    def __str__(self):
+        return (
+            &#34;QUIT&#34;,
+            &#34;PRESS_ARROW_UP&#34;,
+            &#34;PRESS_ARROW_DOWN&#34;,
+            &#34;PRESS_ARROW_RIGHT&#34;,
+            &#34;PRESS_ARROW_LEFT&#34;,
+            &#34;PRESS_BUTTON_A&#34;,
+            &#34;PRESS_BUTTON_B&#34;,
+            &#34;PRESS_BUTTON_SELECT&#34;,
+            &#34;PRESS_BUTTON_START&#34;,
+            &#34;RELEASE_ARROW_UP&#34;,
+            &#34;RELEASE_ARROW_DOWN&#34;,
+            &#34;RELEASE_ARROW_RIGHT&#34;,
+            &#34;RELEASE_ARROW_LEFT&#34;,
+            &#34;RELEASE_BUTTON_A&#34;,
+            &#34;RELEASE_BUTTON_B&#34;,
+            &#34;RELEASE_BUTTON_SELECT&#34;,
+            &#34;RELEASE_BUTTON_START&#34;,
+            &#34;_INTERNAL_TOGGLE_DEBUG&#34;,
+            &#34;PRESS_SPEED_UP&#34;,
+            &#34;RELEASE_SPEED_UP&#34;,
+            &#34;STATE_SAVE&#34;,
+            &#34;STATE_LOAD&#34;,
+            &#34;PASS&#34;,
+            &#34;SCREEN_RECORDING_TOGGLE&#34;,
+            &#34;PAUSE&#34;,
+            &#34;UNPAUSE&#34;,
+            &#34;PAUSE_TOGGLE&#34;,
+            &#34;PRESS_REWIND_BACK&#34;,
+            &#34;PRESS_REWIND_FORWARD&#34;,
+            &#34;RELEASE_REWIND_BACK&#34;,
+            &#34;RELEASE_REWIND_FORWARD&#34;,
+            &#34;WINDOW_FOCUS&#34;,
+            &#34;WINDOW_UNFOCUS&#34;,
+            &#34;_INTERNAL_RENDERER_FLUSH&#34;,
+            &#34;_INTERNAL_MOUSE&#34;,
+            &#34;_INTERNAL_MARK_TILE&#34;,
+            &#34;SCREENSHOT_RECORD&#34;,
+            &#34;DEBUG_MEMORY_SCROLL_DOWN&#34;,
+            &#34;DEBUG_MEMORY_SCROLL_UP&#34;,
+            &#34;MOD_SHIFT_ON&#34;,
+            &#34;MOD_SHIFT_OFF&#34;,
+            &#34;FULL_SCREEN_TOGGLE&#34;,
+        )[self.event]
+
+
+class WindowEventMouse(WindowEvent):
+    def __init__(
+        self, *args, window_id=-1, mouse_x=-1, mouse_y=-1, mouse_scroll_x=-1, mouse_scroll_y=-1, mouse_button=-1
+    ):
+        super().__init__(*args)
+        self.window_id = window_id
+        self.mouse_x = mouse_x
+        self.mouse_y = mouse_y
+        self.mouse_scroll_x = mouse_scroll_x
+        self.mouse_scroll_y = mouse_scroll_y
+        self.mouse_button = mouse_button
+
+
+##############################################################
+# Memory Scanning
+#
+
+
+def dec_to_bcd(value, byte_width=1, byteorder=&#34;little&#34;):
+    &#34;&#34;&#34;
+    Converts a decimal value to Binary Coded Decimal (BCD).
+
+    Args:
+        value (int): The integer value to convert.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import dec_to_bcd
+    &gt;&gt;&gt; f&#34;{dec_to_bcd(30):08b}&#34;
+    &#39;00110000&#39;
+    &gt;&gt;&gt; f&#34;{dec_to_bcd(32):08b}&#34;
+    &#39;00110010&#39;
+
+    ```
+
+    Returns:
+        int: The BCD equivalent of the decimal value.
+    &#34;&#34;&#34;
+    bcd_result = []
+    for _ in range(byte_width):
+        tens = ((value%100) // 10) &lt;&lt; 4
+        units = value % 10
+        bcd_byte = (tens | units) &amp; 0xFF
+        bcd_result.append(bcd_byte)
+        value //= 100
+    return int.from_bytes(bcd_result, byteorder)
+
+
+def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
+    &#34;&#34;&#34;
+    Converts a Binary Coded Decimal (BCD) value to decimal.
+
+    Args:
+        value (int): The BCD value to convert.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes) for more details.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import bcd_to_dec
+    &gt;&gt;&gt; bcd_to_dec(0b00110000)
+    30
+    &gt;&gt;&gt; bcd_to_dec(0b00110010)
+    32
+
+    ```
+
+    Returns:
+        int: The decimal equivalent of the BCD value.
+    &#34;&#34;&#34;
+    decimal_value = 0
+    multiplier = 1
+
+    bcd_bytes = value.to_bytes(byte_width, byteorder)
+
+    for bcd_byte in bcd_bytes:
+        decimal_value += ((bcd_byte &gt;&gt; 4) * 10 + (bcd_byte &amp; 0x0F)) * multiplier
+        multiplier *= 100
+
+    return decimal_value</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="pyboy.utils.dec_to_bcd"><code class="name flex">
+<span>def <span class="ident">dec_to_bcd</span></span>(<span>value, byte_width=1, byteorder='little')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Converts a decimal value to Binary Coded Decimal (BCD).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
+<dd>The integer value to convert.</dd>
+<dt><strong><code>byte_width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of bytes to consider for each value.</dd>
+<dt><strong><code>byteorder</code></strong> :&ensp;<code>str</code></dt>
+<dd>The endian type to use. This is only used for 16-bit values and higher. See <a href="https://docs.python.org/3/library/stdtypes.html#int.from_bytes">int.from_bytes</a> for more details.</dd>
+</dl>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from pyboy.utils import dec_to_bcd
+&gt;&gt;&gt; f&quot;{dec_to_bcd(30):08b}&quot;
+'00110000'
+&gt;&gt;&gt; f&quot;{dec_to_bcd(32):08b}&quot;
+'00110010'
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>The BCD equivalent of the decimal value.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dec_to_bcd(value, byte_width=1, byteorder=&#34;little&#34;):
+    &#34;&#34;&#34;
+    Converts a decimal value to Binary Coded Decimal (BCD).
+
+    Args:
+        value (int): The integer value to convert.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import dec_to_bcd
+    &gt;&gt;&gt; f&#34;{dec_to_bcd(30):08b}&#34;
+    &#39;00110000&#39;
+    &gt;&gt;&gt; f&#34;{dec_to_bcd(32):08b}&#34;
+    &#39;00110010&#39;
+
+    ```
+
+    Returns:
+        int: The BCD equivalent of the decimal value.
+    &#34;&#34;&#34;
+    bcd_result = []
+    for _ in range(byte_width):
+        tens = ((value%100) // 10) &lt;&lt; 4
+        units = value % 10
+        bcd_byte = (tens | units) &amp; 0xFF
+        bcd_result.append(bcd_byte)
+        value //= 100
+    return int.from_bytes(bcd_result, byteorder)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.utils.bcd_to_dec"><code class="name flex">
+<span>def <span class="ident">bcd_to_dec</span></span>(<span>value, byte_width=1, byteorder='little')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Converts a Binary Coded Decimal (BCD) value to decimal.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
+<dd>The BCD value to convert.</dd>
+<dt><strong><code>byte_width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of bytes to consider for each value.</dd>
+<dt><strong><code>byteorder</code></strong> :&ensp;<code>str</code></dt>
+<dd>The endian type to use. This is only used for 16-bit values and higher. See <a href="https://docs.python.org/3/library/stdtypes.html#int.to_bytes">int.to_bytes</a> for more details.</dd>
+</dl>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from pyboy.utils import bcd_to_dec
+&gt;&gt;&gt; bcd_to_dec(0b00110000)
+30
+&gt;&gt;&gt; bcd_to_dec(0b00110010)
+32
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>The decimal equivalent of the BCD value.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
+    &#34;&#34;&#34;
+    Converts a Binary Coded Decimal (BCD) value to decimal.
+
+    Args:
+        value (int): The BCD value to convert.
+        byte_width (int): The number of bytes to consider for each value.
+        byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.to_bytes](https://docs.python.org/3/library/stdtypes.html#int.to_bytes) for more details.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import bcd_to_dec
+    &gt;&gt;&gt; bcd_to_dec(0b00110000)
+    30
+    &gt;&gt;&gt; bcd_to_dec(0b00110010)
+    32
+
+    ```
+
+    Returns:
+        int: The decimal equivalent of the BCD value.
+    &#34;&#34;&#34;
+    decimal_value = 0
+    multiplier = 1
+
+    bcd_bytes = value.to_bytes(byte_width, byteorder)
+
+    for bcd_byte in bcd_bytes:
+        decimal_value += ((bcd_byte &gt;&gt; 4) * 10 + (bcd_byte &amp; 0x0F)) * multiplier
+        multiplier *= 100
+
+    return decimal_value</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.utils.WindowEvent"><code class="flex name class">
+<span>class <span class="ident">WindowEvent</span></span>
+<span>(</span><span>event)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>All supported events can be found in the class description below.</p>
+<p>It can be used as follows:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from pyboy.utils import WindowEvent
+&gt;&gt;&gt; pyboy.send_input(WindowEvent.PAUSE)
+
+</code></pre>
+<p>Just for button presses, it might be easier to use: <code><a title="pyboy.PyBoy.button" href="index.html#pyboy.PyBoy.button">PyBoy.button()</a></code>,
+<code><a title="pyboy.PyBoy.button_press" href="index.html#pyboy.PyBoy.button_press">PyBoy.button_press()</a></code> and <code><a title="pyboy.PyBoy.button_release" href="index.html#pyboy.PyBoy.button_release">PyBoy.button_release()</a></code>.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WindowEvent:
+    &#34;&#34;&#34;
+    All supported events can be found in the class description below.
+
+    It can be used as follows:
+
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import WindowEvent
+    &gt;&gt;&gt; pyboy.send_input(WindowEvent.PAUSE)
+
+    ```
+
+    Just for button presses, it might be easier to use: `pyboy.PyBoy.button`,
+    `pyboy.PyBoy.button_press` and `pyboy.PyBoy.button_release`.
+    &#34;&#34;&#34;
+
+    # ONLY ADD NEW EVENTS AT THE END OF THE LIST!
+    # Otherwise, it will break replays, which depend on the id of the event
+    (
+        QUIT,
+        PRESS_ARROW_UP,
+        PRESS_ARROW_DOWN,
+        PRESS_ARROW_RIGHT,
+        PRESS_ARROW_LEFT,
+        PRESS_BUTTON_A,
+        PRESS_BUTTON_B,
+        PRESS_BUTTON_SELECT,
+        PRESS_BUTTON_START,
+        RELEASE_ARROW_UP,
+        RELEASE_ARROW_DOWN,
+        RELEASE_ARROW_RIGHT,
+        RELEASE_ARROW_LEFT,
+        RELEASE_BUTTON_A,
+        RELEASE_BUTTON_B,
+        RELEASE_BUTTON_SELECT,
+        RELEASE_BUTTON_START,
+        _INTERNAL_TOGGLE_DEBUG,
+        PRESS_SPEED_UP,
+        RELEASE_SPEED_UP,
+        STATE_SAVE,
+        STATE_LOAD,
+        PASS,
+        SCREEN_RECORDING_TOGGLE,
+        PAUSE,
+        UNPAUSE,
+        PAUSE_TOGGLE,
+        PRESS_REWIND_BACK,
+        PRESS_REWIND_FORWARD,
+        RELEASE_REWIND_BACK,
+        RELEASE_REWIND_FORWARD,
+        WINDOW_FOCUS,
+        WINDOW_UNFOCUS,
+        _INTERNAL_RENDERER_FLUSH,
+        _INTERNAL_MOUSE,
+        _INTERNAL_MARK_TILE,
+        SCREENSHOT_RECORD,
+        DEBUG_MEMORY_SCROLL_DOWN,
+        DEBUG_MEMORY_SCROLL_UP,
+        MOD_SHIFT_ON,
+        MOD_SHIFT_OFF,
+        FULL_SCREEN_TOGGLE,
+    ) = range(42)
+
+    def __init__(self, event):
+        self.event = event
+
+    def __eq__(self, x):
+        if isinstance(x, int):
+            return self.event == x
+        else:
+            return self.event == x.event
+
+    def __int__(self):
+        return self.event
+
+    def __str__(self):
+        return (
+            &#34;QUIT&#34;,
+            &#34;PRESS_ARROW_UP&#34;,
+            &#34;PRESS_ARROW_DOWN&#34;,
+            &#34;PRESS_ARROW_RIGHT&#34;,
+            &#34;PRESS_ARROW_LEFT&#34;,
+            &#34;PRESS_BUTTON_A&#34;,
+            &#34;PRESS_BUTTON_B&#34;,
+            &#34;PRESS_BUTTON_SELECT&#34;,
+            &#34;PRESS_BUTTON_START&#34;,
+            &#34;RELEASE_ARROW_UP&#34;,
+            &#34;RELEASE_ARROW_DOWN&#34;,
+            &#34;RELEASE_ARROW_RIGHT&#34;,
+            &#34;RELEASE_ARROW_LEFT&#34;,
+            &#34;RELEASE_BUTTON_A&#34;,
+            &#34;RELEASE_BUTTON_B&#34;,
+            &#34;RELEASE_BUTTON_SELECT&#34;,
+            &#34;RELEASE_BUTTON_START&#34;,
+            &#34;_INTERNAL_TOGGLE_DEBUG&#34;,
+            &#34;PRESS_SPEED_UP&#34;,
+            &#34;RELEASE_SPEED_UP&#34;,
+            &#34;STATE_SAVE&#34;,
+            &#34;STATE_LOAD&#34;,
+            &#34;PASS&#34;,
+            &#34;SCREEN_RECORDING_TOGGLE&#34;,
+            &#34;PAUSE&#34;,
+            &#34;UNPAUSE&#34;,
+            &#34;PAUSE_TOGGLE&#34;,
+            &#34;PRESS_REWIND_BACK&#34;,
+            &#34;PRESS_REWIND_FORWARD&#34;,
+            &#34;RELEASE_REWIND_BACK&#34;,
+            &#34;RELEASE_REWIND_FORWARD&#34;,
+            &#34;WINDOW_FOCUS&#34;,
+            &#34;WINDOW_UNFOCUS&#34;,
+            &#34;_INTERNAL_RENDERER_FLUSH&#34;,
+            &#34;_INTERNAL_MOUSE&#34;,
+            &#34;_INTERNAL_MARK_TILE&#34;,
+            &#34;SCREENSHOT_RECORD&#34;,
+            &#34;DEBUG_MEMORY_SCROLL_DOWN&#34;,
+            &#34;DEBUG_MEMORY_SCROLL_UP&#34;,
+            &#34;MOD_SHIFT_ON&#34;,
+            &#34;MOD_SHIFT_OFF&#34;,
+            &#34;FULL_SCREEN_TOGGLE&#34;,
+        )[self.event]</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>pyboy.utils.WindowEventMouse</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.utils.WindowEvent.QUIT"><code class="name">var <span class="ident">QUIT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_ARROW_UP"><code class="name">var <span class="ident">PRESS_ARROW_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_ARROW_DOWN"><code class="name">var <span class="ident">PRESS_ARROW_DOWN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_ARROW_RIGHT"><code class="name">var <span class="ident">PRESS_ARROW_RIGHT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_ARROW_LEFT"><code class="name">var <span class="ident">PRESS_ARROW_LEFT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_A"><code class="name">var <span class="ident">PRESS_BUTTON_A</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_B"><code class="name">var <span class="ident">PRESS_BUTTON_B</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_SELECT"><code class="name">var <span class="ident">PRESS_BUTTON_SELECT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_START"><code class="name">var <span class="ident">PRESS_BUTTON_START</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_UP"><code class="name">var <span class="ident">RELEASE_ARROW_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_DOWN"><code class="name">var <span class="ident">RELEASE_ARROW_DOWN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_RIGHT"><code class="name">var <span class="ident">RELEASE_ARROW_RIGHT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_LEFT"><code class="name">var <span class="ident">RELEASE_ARROW_LEFT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_A"><code class="name">var <span class="ident">RELEASE_BUTTON_A</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_B"><code class="name">var <span class="ident">RELEASE_BUTTON_B</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_SELECT"><code class="name">var <span class="ident">RELEASE_BUTTON_SELECT</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_START"><code class="name">var <span class="ident">RELEASE_BUTTON_START</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_SPEED_UP"><code class="name">var <span class="ident">PRESS_SPEED_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_SPEED_UP"><code class="name">var <span class="ident">RELEASE_SPEED_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.STATE_SAVE"><code class="name">var <span class="ident">STATE_SAVE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.STATE_LOAD"><code class="name">var <span class="ident">STATE_LOAD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PASS"><code class="name">var <span class="ident">PASS</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE"><code class="name">var <span class="ident">SCREEN_RECORDING_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PAUSE"><code class="name">var <span class="ident">PAUSE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.UNPAUSE"><code class="name">var <span class="ident">UNPAUSE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PAUSE_TOGGLE"><code class="name">var <span class="ident">PAUSE_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_REWIND_BACK"><code class="name">var <span class="ident">PRESS_REWIND_BACK</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.PRESS_REWIND_FORWARD"><code class="name">var <span class="ident">PRESS_REWIND_FORWARD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_REWIND_BACK"><code class="name">var <span class="ident">RELEASE_REWIND_BACK</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.RELEASE_REWIND_FORWARD"><code class="name">var <span class="ident">RELEASE_REWIND_FORWARD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.WINDOW_FOCUS"><code class="name">var <span class="ident">WINDOW_FOCUS</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.WINDOW_UNFOCUS"><code class="name">var <span class="ident">WINDOW_UNFOCUS</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.SCREENSHOT_RECORD"><code class="name">var <span class="ident">SCREENSHOT_RECORD</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN"><code class="name">var <span class="ident">DEBUG_MEMORY_SCROLL_DOWN</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_UP"><code class="name">var <span class="ident">DEBUG_MEMORY_SCROLL_UP</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.MOD_SHIFT_ON"><code class="name">var <span class="ident">MOD_SHIFT_ON</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.MOD_SHIFT_OFF"><code class="name">var <span class="ident">MOD_SHIFT_OFF</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE"><code class="name">var <span class="ident">FULL_SCREEN_TOGGLE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy" href="index.html">pyboy</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="pyboy.utils.dec_to_bcd" href="#pyboy.utils.dec_to_bcd">dec_to_bcd</a></code></li>
+<li><code><a title="pyboy.utils.bcd_to_dec" href="#pyboy.utils.bcd_to_dec">bcd_to_dec</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.utils.WindowEvent" href="#pyboy.utils.WindowEvent">WindowEvent</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.utils.WindowEvent.QUIT" href="#pyboy.utils.WindowEvent.QUIT">QUIT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_ARROW_UP" href="#pyboy.utils.WindowEvent.PRESS_ARROW_UP">PRESS_ARROW_UP</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_ARROW_DOWN" href="#pyboy.utils.WindowEvent.PRESS_ARROW_DOWN">PRESS_ARROW_DOWN</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_ARROW_RIGHT" href="#pyboy.utils.WindowEvent.PRESS_ARROW_RIGHT">PRESS_ARROW_RIGHT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_ARROW_LEFT" href="#pyboy.utils.WindowEvent.PRESS_ARROW_LEFT">PRESS_ARROW_LEFT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_BUTTON_A" href="#pyboy.utils.WindowEvent.PRESS_BUTTON_A">PRESS_BUTTON_A</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_BUTTON_B" href="#pyboy.utils.WindowEvent.PRESS_BUTTON_B">PRESS_BUTTON_B</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_BUTTON_SELECT" href="#pyboy.utils.WindowEvent.PRESS_BUTTON_SELECT">PRESS_BUTTON_SELECT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_BUTTON_START" href="#pyboy.utils.WindowEvent.PRESS_BUTTON_START">PRESS_BUTTON_START</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_ARROW_UP" href="#pyboy.utils.WindowEvent.RELEASE_ARROW_UP">RELEASE_ARROW_UP</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_ARROW_DOWN" href="#pyboy.utils.WindowEvent.RELEASE_ARROW_DOWN">RELEASE_ARROW_DOWN</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_ARROW_RIGHT" href="#pyboy.utils.WindowEvent.RELEASE_ARROW_RIGHT">RELEASE_ARROW_RIGHT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_ARROW_LEFT" href="#pyboy.utils.WindowEvent.RELEASE_ARROW_LEFT">RELEASE_ARROW_LEFT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_BUTTON_A" href="#pyboy.utils.WindowEvent.RELEASE_BUTTON_A">RELEASE_BUTTON_A</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_BUTTON_B" href="#pyboy.utils.WindowEvent.RELEASE_BUTTON_B">RELEASE_BUTTON_B</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_BUTTON_SELECT" href="#pyboy.utils.WindowEvent.RELEASE_BUTTON_SELECT">RELEASE_BUTTON_SELECT</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_BUTTON_START" href="#pyboy.utils.WindowEvent.RELEASE_BUTTON_START">RELEASE_BUTTON_START</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_SPEED_UP" href="#pyboy.utils.WindowEvent.PRESS_SPEED_UP">PRESS_SPEED_UP</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_SPEED_UP" href="#pyboy.utils.WindowEvent.RELEASE_SPEED_UP">RELEASE_SPEED_UP</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.STATE_SAVE" href="#pyboy.utils.WindowEvent.STATE_SAVE">STATE_SAVE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.STATE_LOAD" href="#pyboy.utils.WindowEvent.STATE_LOAD">STATE_LOAD</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PASS" href="#pyboy.utils.WindowEvent.PASS">PASS</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE" href="#pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE">SCREEN_RECORDING_TOGGLE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PAUSE" href="#pyboy.utils.WindowEvent.PAUSE">PAUSE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.UNPAUSE" href="#pyboy.utils.WindowEvent.UNPAUSE">UNPAUSE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PAUSE_TOGGLE" href="#pyboy.utils.WindowEvent.PAUSE_TOGGLE">PAUSE_TOGGLE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_REWIND_BACK" href="#pyboy.utils.WindowEvent.PRESS_REWIND_BACK">PRESS_REWIND_BACK</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.PRESS_REWIND_FORWARD" href="#pyboy.utils.WindowEvent.PRESS_REWIND_FORWARD">PRESS_REWIND_FORWARD</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_REWIND_BACK" href="#pyboy.utils.WindowEvent.RELEASE_REWIND_BACK">RELEASE_REWIND_BACK</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.RELEASE_REWIND_FORWARD" href="#pyboy.utils.WindowEvent.RELEASE_REWIND_FORWARD">RELEASE_REWIND_FORWARD</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.WINDOW_FOCUS" href="#pyboy.utils.WindowEvent.WINDOW_FOCUS">WINDOW_FOCUS</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.WINDOW_UNFOCUS" href="#pyboy.utils.WindowEvent.WINDOW_UNFOCUS">WINDOW_UNFOCUS</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.SCREENSHOT_RECORD" href="#pyboy.utils.WindowEvent.SCREENSHOT_RECORD">SCREENSHOT_RECORD</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN" href="#pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN">DEBUG_MEMORY_SCROLL_DOWN</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_UP" href="#pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_UP">DEBUG_MEMORY_SCROLL_UP</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.MOD_SHIFT_ON" href="#pyboy.utils.WindowEvent.MOD_SHIFT_ON">MOD_SHIFT_ON</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.MOD_SHIFT_OFF" href="#pyboy.utils.WindowEvent.MOD_SHIFT_OFF">MOD_SHIFT_OFF</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE" href="#pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE">FULL_SCREEN_TOGGLE</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
