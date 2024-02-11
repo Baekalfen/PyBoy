@@ -120,7 +120,7 @@ class Tile:
         else:
             return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
 
-    def image_ndarray(self):
+    def ndarray(self):
         """
         Use this function to get an `numpy.ndarray` object of the tile. The array has a shape of (8, 8, 4)
         and each value is of `numpy.uint8`. The values corresponds to an image of 8x8 pixels with each sub-color
@@ -160,8 +160,7 @@ class Tile:
 
             for x in range(8):
                 colorcode = utils.color_code(byte1, byte2, 7 - x)
-                alpha_mask = 0x00FFFFFF
-                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode) & alpha_mask
+                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode)
         return self.data
 
     def __eq__(self, other):

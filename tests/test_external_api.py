@@ -65,14 +65,14 @@ def test_tiles(default_rom):
     tile = pyboy.get_tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
-    ndarray = tile.image_ndarray()
+    ndarray = tile.ndarray()
     assert isinstance(ndarray, np.ndarray)
     assert ndarray.shape == (8, 8, NDARRAY_COLOR_DEPTH)
     assert ndarray.dtype == np.uint8
     # data = tile.image_data()
     # assert data.shape == (8, 8)
 
-    assert [[x for x in y] for y in ndarray.view(dtype=np.uint32).reshape(8, 8)
+    assert [[x & 0xFFFFFF for x in y] for y in ndarray.view(dtype=np.uint32).reshape(8, 8)
            ] == [[0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
                  [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
                  [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
@@ -104,7 +104,7 @@ def test_tiles_cgb(any_rom_cgb):
     tile = pyboy.get_tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
-    ndarray = tile.image_ndarray()
+    ndarray = tile.ndarray()
     assert isinstance(ndarray, np.ndarray)
     assert ndarray.shape == (8, 8, NDARRAY_COLOR_DEPTH)
     assert ndarray.dtype == np.uint8
