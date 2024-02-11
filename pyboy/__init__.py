@@ -5,7 +5,7 @@
 
 __pdoc__ = {
     "core": False,
-    "logger": False,
+    "logging": False,
     "pyboy": False,
     "utils": False,
 }
