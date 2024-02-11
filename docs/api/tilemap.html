@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>pyboy.botsupport.tilemap API documentation</title>
+<title>pyboy.api.tilemap API documentation</title>
 <meta name="description" content="The Game Boy has two tile maps, which defines what is rendered on the screen." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -18,7 +18,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>pyboy.botsupport.tilemap</code></h1>
+<h1 class="title">Module <code>pyboy.api.tilemap</code></h1>
 </header>
 <section id="section-intro">
 <p>The Game Boy has two tile maps, which defines what is rendered on the screen.</p>
@@ -35,6 +35,7 @@ The Game Boy has two tile maps, which defines what is rendered on the screen.
 &#34;&#34;&#34;
 
 import numpy as np
+
 from pyboy.core.lcd import LCDCRegister
 
 from .constants import HIGH_TILEMAP, LCDC_OFFSET, LOW_TILEDATA_NTILES, LOW_TILEMAP
@@ -42,39 +43,37 @@ from .tile import Tile
 
 
 class TileMap:
-    def __init__(self, mb, select):
+    def __init__(self, pyboy, mb, select):
         &#34;&#34;&#34;
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         &#34;background&#34; and &#34;window&#34;.
 
-        Use `pyboy.botsupport.BotSupportManager.tilemap_background` and
-        `pyboy.botsupport.BotSupportManager.tilemap_window` to instantiate this object.
+        Use `pyboy.tilemap_background` and
+        `pyboy.tilemap_window` to instantiate this object.
 
         This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
         identifier at a given coordinate.
 
         Example:
         ```
-        &gt;&gt;&gt; tilemap = pyboy.tilemap_window
-        &gt;&gt;&gt; tile = tilemap[10,10]
-        &gt;&gt;&gt; print(tile)
-        34
-        &gt;&gt;&gt; print(tilemap[0:10,10])
-        [43, 54, 23, 23, 23, 54, 12, 54, 54, 23]
-        &gt;&gt;&gt; print(tilemap[0:10,0:4])
-        [[43, 54, 23, 23, 23, 54, 12, 54, 54, 23],
-         [43, 54, 43, 23, 23, 43, 12, 39, 54, 23],
-         [43, 54, 23, 12, 87, 54, 12, 54, 21, 23],
-         [43, 54, 23, 43, 23, 87, 12, 50, 54, 72]]
+        &gt;&gt;&gt; pyboy.tilemap_window[8,8]
+        1
+        &gt;&gt;&gt; pyboy.tilemap_window[7:12,8]
+        [0, 1, 0, 1, 0]
+        &gt;&gt;&gt; pyboy.tilemap_window[7:12,8:11]
+        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
         ```
 
         Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
         need the entire 32x32 tile map, you can use the shortcut: `tilemap[:,:]`.
         &#34;&#34;&#34;
+        self.pyboy = pyboy
         self.mb = mb
         self._select = select
         self._use_tile_objects = False
-        self.refresh_lcdc()
+        self.frame_count_update = 0
+        self.__refresh_lcdc()
 
         self.shape = (32, 32)
         &#34;&#34;&#34;
@@ -86,7 +85,12 @@ class TileMap:
             The width and height of the tile map.
         &#34;&#34;&#34;
 
-    def refresh_lcdc(self):
+    def _refresh_lcdc(self):
+        if self.frame_count_update == self.pyboy.frame_count:
+            return 0
+        self.__refresh_lcdc()
+
+    def __refresh_lcdc(self):
         &#34;&#34;&#34;
         The tile data and view that is showed on the background and window respectively can change dynamically. If you
         believe it has changed, you can use this method to update the tilemap from the LCDC register.
@@ -108,9 +112,9 @@ class TileMap:
 
         Example:
         ```
-        &gt;&gt;&gt; tilemap = pyboy.tilemap_window
-        &gt;&gt;&gt; print(tilemap.search_for_identifiers([43, 123]))
-        [[[0,0], [2,4], [8,7]], []]
+        &gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+        [[[9, 11]], [[9, 9], [9, 12]]]
+
         ```
 
         Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
@@ -135,7 +139,7 @@ class TileMap:
         &#34;&#34;&#34;
         Returns the memory address in the tilemap for the tile at the given coordinate. The address contains the index
         of tile which will be shown at this position. This should not be confused with the actual tile data of
-        `pyboy.botsupport.tile.Tile.data_address`.
+        `pyboy.api.tile.Tile.data_address`.
 
         This can be used as an global identifier for the specific location in a tile map.
 
@@ -144,9 +148,9 @@ class TileMap:
         on the screen.
 
         The index might also be a signed number. Depending on if it is signed or not, will change where the tile data
-        is read from. Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
+        is read from. Use `pyboy.api.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
         this tile view. You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Args:
             column (int): Column in this tile map.
@@ -157,7 +161,6 @@ class TileMap:
         int:
             Address in the tile map to read a tile index.
         &#34;&#34;&#34;
-
         if not 0 &lt;= column &lt; 32:
             raise IndexError(&#34;column is out of bounds. Value of 0 to 31 is allowed&#34;)
         if not 0 &lt;= row &lt; 32:
@@ -166,8 +169,8 @@ class TileMap:
 
     def tile(self, column, row):
         &#34;&#34;&#34;
-        Provides a `pyboy.botsupport.tile.Tile`-object which allows for easy interpretation of the tile data. The
-        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.botsupport.tile.Tile`-objects might
+        Provides a `pyboy.api.tile.Tile`-object which allows for easy interpretation of the tile data. The
+        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.api.tile.Tile`-objects might
         be returned from two different coordinates in the tile map if they are shown different places on the screen.
 
         Args:
@@ -176,7 +179,7 @@ class TileMap:
 
         Returns
         -------
-        `pyboy.botsupport.tile.Tile`:
+        `pyboy.api.tile.Tile`:
             Tile object corresponding to the tile index at the given coordinate in the
             tile map.
         &#34;&#34;&#34;
@@ -191,7 +194,7 @@ class TileMap:
         0-383 (both included).
 
         You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Args:
             column (int): Column in this tile map.
@@ -202,7 +205,7 @@ class TileMap:
         int:
             Tile identifier.
         &#34;&#34;&#34;
-
+        self._refresh_lcdc()
         tile = self.mb.getitem(self._tile_address(column, row))
         if self.signed_tile_data:
             return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
@@ -210,6 +213,7 @@ class TileMap:
             return tile
 
     def __repr__(self):
+        self._refresh_lcdc()
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
@@ -235,24 +239,51 @@ class TileMap:
         Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
 
         Args:
-            switch (bool): If True, accesses will return `pyboy.botsupport.tile.Tile`-object. If False, accesses will
+            switch (bool): If True, accesses will return `pyboy.api.tile.Tile`-object. If False, accesses will
                 return an `int`.
         &#34;&#34;&#34;
         self._use_tile_objects = switch
 
+    def _fix_slice(self, addr):
+        if addr.step is None:
+            step = 1
+        else:
+            step = addr.step
+
+        if addr.start is None:
+            start = 0
+        else:
+            start = addr.start
+
+        if addr.stop is None:
+            stop = 32
+        else:
+            stop = addr.stop
+
+        if step &lt; 0:
+            raise ValueError(&#34;Reversed ranges are unsupported&#34;)
+        elif start &gt; stop:
+            raise ValueError(&#34;Invalid range&#34;)
+        return start, stop, step
+
     def __getitem__(self, xy):
-        x, y = xy
+        if isinstance(xy, (int, slice)):
+            x = xy
+            y = slice(None)
+        else:
+            x, y = xy
 
-        if x == slice(None):
-            x = slice(0, 32, 1)
+        x_slice = isinstance(x, slice)
+        y_slice = isinstance(y, slice)
+        if x_slice:
+            x = self._fix_slice(x)
+        else:
+            assert isinstance(x, int)
 
-        if y == slice(None):
-            y = slice(0, 32, 1)
-
-        x_slice = isinstance(x, slice) # Assume slice, otherwise int
-        y_slice = isinstance(y, slice) # Assume slice, otherwise int
-        assert x_slice or isinstance(x, int)
-        assert y_slice or isinstance(y, int)
+        if y_slice:
+            y = self._fix_slice(y)
+        else:
+            assert isinstance(y, int)
 
         if self._use_tile_objects:
             tile_fun = self.tile
@@ -260,11 +291,11 @@ class TileMap:
             tile_fun = lambda x, y: self.tile_identifier(x, y)
 
         if x_slice and y_slice:
-            return [[tile_fun(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]
+            return [[tile_fun(_x, _y) for _x in range(*x)] for _y in range(*y)]
         elif x_slice:
-            return [tile_fun(_x, y) for _x in range(x.stop)[x]]
+            return [tile_fun(_x, y) for _x in range(*x)]
         elif y_slice:
-            return [tile_fun(x, _y) for _y in range(y.stop)[y]]
+            return [tile_fun(x, _y) for _y in range(*y)]
         else:
             return tile_fun(x, y)</code></pre>
 </details>
@@ -278,29 +309,25 @@ class TileMap:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="pyboy.botsupport.tilemap.TileMap"><code class="flex name class">
+<dt id="pyboy.api.tilemap.TileMap"><code class="flex name class">
 <span>class <span class="ident">TileMap</span></span>
-<span>(</span><span>mb, select)</span>
+<span>(</span><span>pyboy, mb, select)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
 "background" and "window".</p>
-<p>Use <code><a title="pyboy.botsupport.BotSupportManager.tilemap_background" href="index.html#pyboy.botsupport.BotSupportManager.tilemap_background">BotSupportManager.tilemap_background()</a></code> and
-<code><a title="pyboy.botsupport.BotSupportManager.tilemap_window" href="index.html#pyboy.botsupport.BotSupportManager.tilemap_window">BotSupportManager.tilemap_window()</a></code> to instantiate this object.</p>
+<p>Use <code>pyboy.tilemap_background</code> and
+<code>pyboy.tilemap_window</code> to instantiate this object.</p>
 <p>This object defines <code>__getitem__</code>, which means it can be accessed with the square brackets to get a tile
 identifier at a given coordinate.</p>
 <p>Example:</p>
-<pre><code>&gt;&gt;&gt; tilemap = pyboy.tilemap_window
-&gt;&gt;&gt; tile = tilemap[10,10]
-&gt;&gt;&gt; print(tile)
-34
-&gt;&gt;&gt; print(tilemap[0:10,10])
-[43, 54, 23, 23, 23, 54, 12, 54, 54, 23]
-&gt;&gt;&gt; print(tilemap[0:10,0:4])
-[[43, 54, 23, 23, 23, 54, 12, 54, 54, 23],
- [43, 54, 43, 23, 23, 43, 12, 39, 54, 23],
- [43, 54, 23, 12, 87, 54, 12, 54, 21, 23],
- [43, 54, 23, 43, 23, 87, 12, 50, 54, 72]]
+<pre><code>&gt;&gt;&gt; pyboy.tilemap_window[8,8]
+1
+&gt;&gt;&gt; pyboy.tilemap_window[7:12,8]
+[0, 1, 0, 1, 0]
+&gt;&gt;&gt; pyboy.tilemap_window[7:12,8:11]
+[[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
 </code></pre>
 <p>Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
 need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</code>.</p></section>
@@ -309,39 +336,37 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class TileMap:
-    def __init__(self, mb, select):
+    def __init__(self, pyboy, mb, select):
         &#34;&#34;&#34;
         The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
         &#34;background&#34; and &#34;window&#34;.
 
-        Use `pyboy.botsupport.BotSupportManager.tilemap_background` and
-        `pyboy.botsupport.BotSupportManager.tilemap_window` to instantiate this object.
+        Use `pyboy.tilemap_background` and
+        `pyboy.tilemap_window` to instantiate this object.
 
         This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
         identifier at a given coordinate.
 
         Example:
         ```
-        &gt;&gt;&gt; tilemap = pyboy.tilemap_window
-        &gt;&gt;&gt; tile = tilemap[10,10]
-        &gt;&gt;&gt; print(tile)
-        34
-        &gt;&gt;&gt; print(tilemap[0:10,10])
-        [43, 54, 23, 23, 23, 54, 12, 54, 54, 23]
-        &gt;&gt;&gt; print(tilemap[0:10,0:4])
-        [[43, 54, 23, 23, 23, 54, 12, 54, 54, 23],
-         [43, 54, 43, 23, 23, 43, 12, 39, 54, 23],
-         [43, 54, 23, 12, 87, 54, 12, 54, 21, 23],
-         [43, 54, 23, 43, 23, 87, 12, 50, 54, 72]]
+        &gt;&gt;&gt; pyboy.tilemap_window[8,8]
+        1
+        &gt;&gt;&gt; pyboy.tilemap_window[7:12,8]
+        [0, 1, 0, 1, 0]
+        &gt;&gt;&gt; pyboy.tilemap_window[7:12,8:11]
+        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
         ```
 
         Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
         need the entire 32x32 tile map, you can use the shortcut: `tilemap[:,:]`.
         &#34;&#34;&#34;
+        self.pyboy = pyboy
         self.mb = mb
         self._select = select
         self._use_tile_objects = False
-        self.refresh_lcdc()
+        self.frame_count_update = 0
+        self.__refresh_lcdc()
 
         self.shape = (32, 32)
         &#34;&#34;&#34;
@@ -353,7 +378,12 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
             The width and height of the tile map.
         &#34;&#34;&#34;
 
-    def refresh_lcdc(self):
+    def _refresh_lcdc(self):
+        if self.frame_count_update == self.pyboy.frame_count:
+            return 0
+        self.__refresh_lcdc()
+
+    def __refresh_lcdc(self):
         &#34;&#34;&#34;
         The tile data and view that is showed on the background and window respectively can change dynamically. If you
         believe it has changed, you can use this method to update the tilemap from the LCDC register.
@@ -375,9 +405,9 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
 
         Example:
         ```
-        &gt;&gt;&gt; tilemap = pyboy.tilemap_window
-        &gt;&gt;&gt; print(tilemap.search_for_identifiers([43, 123]))
-        [[[0,0], [2,4], [8,7]], []]
+        &gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+        [[[9, 11]], [[9, 9], [9, 12]]]
+
         ```
 
         Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
@@ -402,7 +432,7 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         &#34;&#34;&#34;
         Returns the memory address in the tilemap for the tile at the given coordinate. The address contains the index
         of tile which will be shown at this position. This should not be confused with the actual tile data of
-        `pyboy.botsupport.tile.Tile.data_address`.
+        `pyboy.api.tile.Tile.data_address`.
 
         This can be used as an global identifier for the specific location in a tile map.
 
@@ -411,9 +441,9 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         on the screen.
 
         The index might also be a signed number. Depending on if it is signed or not, will change where the tile data
-        is read from. Use `pyboy.botsupport.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
+        is read from. Use `pyboy.api.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
         this tile view. You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Args:
             column (int): Column in this tile map.
@@ -424,7 +454,6 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         int:
             Address in the tile map to read a tile index.
         &#34;&#34;&#34;
-
         if not 0 &lt;= column &lt; 32:
             raise IndexError(&#34;column is out of bounds. Value of 0 to 31 is allowed&#34;)
         if not 0 &lt;= row &lt; 32:
@@ -433,8 +462,8 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
 
     def tile(self, column, row):
         &#34;&#34;&#34;
-        Provides a `pyboy.botsupport.tile.Tile`-object which allows for easy interpretation of the tile data. The
-        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.botsupport.tile.Tile`-objects might
+        Provides a `pyboy.api.tile.Tile`-object which allows for easy interpretation of the tile data. The
+        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.api.tile.Tile`-objects might
         be returned from two different coordinates in the tile map if they are shown different places on the screen.
 
         Args:
@@ -443,7 +472,7 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
 
         Returns
         -------
-        `pyboy.botsupport.tile.Tile`:
+        `pyboy.api.tile.Tile`:
             Tile object corresponding to the tile index at the given coordinate in the
             tile map.
         &#34;&#34;&#34;
@@ -458,7 +487,7 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         0-383 (both included).
 
         You can read how the indexes work in the
-        [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
         Args:
             column (int): Column in this tile map.
@@ -469,7 +498,7 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         int:
             Tile identifier.
         &#34;&#34;&#34;
-
+        self._refresh_lcdc()
         tile = self.mb.getitem(self._tile_address(column, row))
         if self.signed_tile_data:
             return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
@@ -477,6 +506,7 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
             return tile
 
     def __repr__(self):
+        self._refresh_lcdc()
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
@@ -502,24 +532,51 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
         Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
 
         Args:
-            switch (bool): If True, accesses will return `pyboy.botsupport.tile.Tile`-object. If False, accesses will
+            switch (bool): If True, accesses will return `pyboy.api.tile.Tile`-object. If False, accesses will
                 return an `int`.
         &#34;&#34;&#34;
         self._use_tile_objects = switch
 
+    def _fix_slice(self, addr):
+        if addr.step is None:
+            step = 1
+        else:
+            step = addr.step
+
+        if addr.start is None:
+            start = 0
+        else:
+            start = addr.start
+
+        if addr.stop is None:
+            stop = 32
+        else:
+            stop = addr.stop
+
+        if step &lt; 0:
+            raise ValueError(&#34;Reversed ranges are unsupported&#34;)
+        elif start &gt; stop:
+            raise ValueError(&#34;Invalid range&#34;)
+        return start, stop, step
+
     def __getitem__(self, xy):
-        x, y = xy
+        if isinstance(xy, (int, slice)):
+            x = xy
+            y = slice(None)
+        else:
+            x, y = xy
 
-        if x == slice(None):
-            x = slice(0, 32, 1)
+        x_slice = isinstance(x, slice)
+        y_slice = isinstance(y, slice)
+        if x_slice:
+            x = self._fix_slice(x)
+        else:
+            assert isinstance(x, int)
 
-        if y == slice(None):
-            y = slice(0, 32, 1)
-
-        x_slice = isinstance(x, slice) # Assume slice, otherwise int
-        y_slice = isinstance(y, slice) # Assume slice, otherwise int
-        assert x_slice or isinstance(x, int)
-        assert y_slice or isinstance(y, int)
+        if y_slice:
+            y = self._fix_slice(y)
+        else:
+            assert isinstance(y, int)
 
         if self._use_tile_objects:
             tile_fun = self.tile
@@ -527,17 +584,17 @@ need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</co
             tile_fun = lambda x, y: self.tile_identifier(x, y)
 
         if x_slice and y_slice:
-            return [[tile_fun(_x, _y) for _x in range(x.stop)[x]] for _y in range(y.stop)[y]]
+            return [[tile_fun(_x, _y) for _x in range(*x)] for _y in range(*y)]
         elif x_slice:
-            return [tile_fun(_x, y) for _x in range(x.stop)[x]]
+            return [tile_fun(_x, y) for _x in range(*x)]
         elif y_slice:
-            return [tile_fun(x, _y) for _y in range(y.stop)[y]]
+            return [tile_fun(x, _y) for _y in range(*y)]
         else:
             return tile_fun(x, y)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="pyboy.botsupport.tilemap.TileMap.shape"><code class="name">var <span class="ident">shape</span></code></dt>
+<dt id="pyboy.api.tilemap.TileMap.shape"><code class="name">var <span class="ident">shape</span></code></dt>
 <dd>
 <section class="desc"><p>Tile maps are always 32x32 tiles.</p>
 <h2 id="returns">Returns</h2>
@@ -547,42 +604,16 @@ The width and height of the tile map.</p></section>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="pyboy.botsupport.tilemap.TileMap.refresh_lcdc"><code class="name flex">
-<span>def <span class="ident">refresh_lcdc</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>The tile data and view that is showed on the background and window respectively can change dynamically. If you
-believe it has changed, you can use this method to update the tilemap from the LCDC register.</p></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def refresh_lcdc(self):
-    &#34;&#34;&#34;
-    The tile data and view that is showed on the background and window respectively can change dynamically. If you
-    believe it has changed, you can use this method to update the tilemap from the LCDC register.
-    &#34;&#34;&#34;
-    LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
-    if self._select == &#34;WINDOW&#34;:
-        self.map_offset = HIGH_TILEMAP if LCDC.windowmap_select else LOW_TILEMAP
-        self.signed_tile_data = not bool(LCDC.tiledata_select)
-    elif self._select == &#34;BACKGROUND&#34;:
-        self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
-        self.signed_tile_data = not bool(LCDC.tiledata_select)
-    else:
-        raise KeyError(f&#34;Invalid tilemap selected: {self._select}&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pyboy.botsupport.tilemap.TileMap.search_for_identifiers"><code class="name flex">
+<dt id="pyboy.api.tilemap.TileMap.search_for_identifiers"><code class="name flex">
 <span>def <span class="ident">search_for_identifiers</span></span>(<span>self, identifiers)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of these in the tilemap and return
 the coordinates where each identifier is found.</p>
 <p>Example:</p>
-<pre><code>&gt;&gt;&gt; tilemap = pyboy.tilemap_window
-&gt;&gt;&gt; print(tilemap.search_for_identifiers([43, 123]))
-[[[0,0], [2,4], [8,7]], []]
+<pre><code>&gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+[[[9, 11]], [[9, 9], [9, 12]]]
+
 </code></pre>
 <p>Meaning, that tile identifier <code>43</code> is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
 <code>123</code>was not found anywhere.</p>
@@ -607,9 +638,9 @@ the coordinates where each identifier is found.</p>
 
     Example:
     ```
-    &gt;&gt;&gt; tilemap = pyboy.tilemap_window
-    &gt;&gt;&gt; print(tilemap.search_for_identifiers([43, 123]))
-    [[[0,0], [2,4], [8,7]], []]
+    &gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+    [[[9, 11]], [[9, 9], [9, 12]]]
+
     ```
 
     Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
@@ -631,12 +662,12 @@ the coordinates where each identifier is found.</p>
     return matches</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.tilemap.TileMap.tile"><code class="name flex">
+<dt id="pyboy.api.tilemap.TileMap.tile"><code class="name flex">
 <span>def <span class="ident">tile</span></span>(<span>self, column, row)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Provides a <code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code>-object which allows for easy interpretation of the tile data. The
-object is agnostic to where it was found in the tilemap. I.e. equal <code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code>-objects might
+<section class="desc"><p>Provides a <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>-object which allows for easy interpretation of the tile data. The
+object is agnostic to where it was found in the tilemap. I.e. equal <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>-objects might
 be returned from two different coordinates in the tile map if they are shown different places on the screen.</p>
 <h2 id="args">Args</h2>
 <dl>
@@ -646,7 +677,7 @@ be returned from two different coordinates in the tile map if they are shown dif
 <dd>Row in this tile map.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p><code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code>:
+<p><code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>:
 Tile object corresponding to the tile index at the given coordinate in the
 tile map.</p></section>
 <details class="source">
@@ -655,8 +686,8 @@ tile map.</p></section>
 </summary>
 <pre><code class="python">def tile(self, column, row):
     &#34;&#34;&#34;
-    Provides a `pyboy.botsupport.tile.Tile`-object which allows for easy interpretation of the tile data. The
-    object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.botsupport.tile.Tile`-objects might
+    Provides a `pyboy.api.tile.Tile`-object which allows for easy interpretation of the tile data. The
+    object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.api.tile.Tile`-objects might
     be returned from two different coordinates in the tile map if they are shown different places on the screen.
 
     Args:
@@ -665,14 +696,14 @@ tile map.</p></section>
 
     Returns
     -------
-    `pyboy.botsupport.tile.Tile`:
+    `pyboy.api.tile.Tile`:
         Tile object corresponding to the tile index at the given coordinate in the
         tile map.
     &#34;&#34;&#34;
     return Tile(self.mb, self.tile_identifier(column, row))</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.tilemap.TileMap.tile_identifier"><code class="name flex">
+<dt id="pyboy.api.tilemap.TileMap.tile_identifier"><code class="name flex">
 <span>def <span class="ident">tile_identifier</span></span>(<span>self, column, row)</span>
 </code></dt>
 <dd>
@@ -681,7 +712,7 @@ to quickly recognize what is on the screen through this tile view.</p>
 <p>This identifier unifies the otherwise complicated indexing system on the Game Boy into a single range of
 0-383 (both included).</p>
 <p>You can read how the indexes work in the
-<a href="http://bgb.bircd.org/pandocs.htm#vramtiledata">Pan Docs: VRAM Tile Data</a>.</p>
+<a href="https://gbdev.io/pandocs/Tile_Data.html">Pan Docs: VRAM Tile Data</a>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>column</code></strong> :&ensp;<code>int</code></dt>
@@ -707,7 +738,7 @@ to quickly recognize what is on the screen through this tile view.</p>
     0-383 (both included).
 
     You can read how the indexes work in the
-    [Pan Docs: VRAM Tile Data](http://bgb.bircd.org/pandocs.htm#vramtiledata).
+    [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
     Args:
         column (int): Column in this tile map.
@@ -718,7 +749,7 @@ to quickly recognize what is on the screen through this tile view.</p>
     int:
         Tile identifier.
     &#34;&#34;&#34;
-
+    self._refresh_lcdc()
     tile = self.mb.getitem(self._tile_address(column, row))
     if self.signed_tile_data:
         return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
@@ -726,7 +757,7 @@ to quickly recognize what is on the screen through this tile view.</p>
         return tile</code></pre>
 </details>
 </dd>
-<dt id="pyboy.botsupport.tilemap.TileMap.use_tile_objects"><code class="name flex">
+<dt id="pyboy.api.tilemap.TileMap.use_tile_objects"><code class="name flex">
 <span>def <span class="ident">use_tile_objects</span></span>(<span>self, switch)</span>
 </code></dt>
 <dd>
@@ -734,7 +765,7 @@ to quickly recognize what is on the screen through this tile view.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>switch</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If True, accesses will return <code><a title="pyboy.botsupport.tile.Tile" href="tile.html#pyboy.botsupport.tile.Tile">Tile</a></code>-object. If False, accesses will
+<dd>If True, accesses will return <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>-object. If False, accesses will
 return an <code>int</code>.</dd>
 </dl></section>
 <details class="source">
@@ -746,7 +777,7 @@ return an <code>int</code>.</dd>
     Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
 
     Args:
-        switch (bool): If True, accesses will return `pyboy.botsupport.tile.Tile`-object. If False, accesses will
+        switch (bool): If True, accesses will return `pyboy.api.tile.Tile`-object. If False, accesses will
             return an `int`.
     &#34;&#34;&#34;
     self._use_tile_objects = switch</code></pre>
@@ -765,20 +796,19 @@ return an <code>int</code>.</dd>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="pyboy.botsupport" href="index.html">pyboy.botsupport</a></code></li>
+<li><code><a title="pyboy.api" href="index.html">pyboy.api</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="pyboy.botsupport.tilemap.TileMap" href="#pyboy.botsupport.tilemap.TileMap">TileMap</a></code></h4>
+<h4><code><a title="pyboy.api.tilemap.TileMap" href="#pyboy.api.tilemap.TileMap">TileMap</a></code></h4>
 <ul class="">
-<li><code><a title="pyboy.botsupport.tilemap.TileMap.refresh_lcdc" href="#pyboy.botsupport.tilemap.TileMap.refresh_lcdc">refresh_lcdc</a></code></li>
-<li><code><a title="pyboy.botsupport.tilemap.TileMap.search_for_identifiers" href="#pyboy.botsupport.tilemap.TileMap.search_for_identifiers">search_for_identifiers</a></code></li>
-<li><code><a title="pyboy.botsupport.tilemap.TileMap.tile" href="#pyboy.botsupport.tilemap.TileMap.tile">tile</a></code></li>
-<li><code><a title="pyboy.botsupport.tilemap.TileMap.tile_identifier" href="#pyboy.botsupport.tilemap.TileMap.tile_identifier">tile_identifier</a></code></li>
-<li><code><a title="pyboy.botsupport.tilemap.TileMap.use_tile_objects" href="#pyboy.botsupport.tilemap.TileMap.use_tile_objects">use_tile_objects</a></code></li>
-<li><code><a title="pyboy.botsupport.tilemap.TileMap.shape" href="#pyboy.botsupport.tilemap.TileMap.shape">shape</a></code></li>
+<li><code><a title="pyboy.api.tilemap.TileMap.search_for_identifiers" href="#pyboy.api.tilemap.TileMap.search_for_identifiers">search_for_identifiers</a></code></li>
+<li><code><a title="pyboy.api.tilemap.TileMap.tile" href="#pyboy.api.tilemap.TileMap.tile">tile</a></code></li>
+<li><code><a title="pyboy.api.tilemap.TileMap.tile_identifier" href="#pyboy.api.tilemap.TileMap.tile_identifier">tile_identifier</a></code></li>
+<li><code><a title="pyboy.api.tilemap.TileMap.use_tile_objects" href="#pyboy.api.tilemap.TileMap.use_tile_objects">use_tile_objects</a></code></li>
+<li><code><a title="pyboy.api.tilemap.TileMap.shape" href="#pyboy.api.tilemap.TileMap.shape">shape</a></code></li>
 </ul>
 </li>
 </ul>
