@@ -5,7 +5,7 @@
 import io
 import platform
 
-from pyboy import PyBoy, WindowEvent
+from pyboy import PyBoy
 
 NEXT_TETROMINO_ADDR = 0xC213
 

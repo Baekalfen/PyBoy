@@ -2,7 +2,8 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-from enum import Enum
+
+__all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
 STATE_VERSION = 10
 
@@ -133,14 +134,6 @@ def color_code(byte1, byte2, offset):
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
 
-def flatten_list(l):
-    flat_list = []
-    for sublist in l:
-        for item in sublist:
-            flat_list.append(item)
-    return flat_list
-
-
 ##############################################################
 # Window Events
 # Temporarily placed here to not be exposed on public API
@@ -153,7 +146,7 @@ class WindowEvent:
     It can be used as follows:
 
     ```python
-    >>> from pyboy import WindowEvent
+    >>> from pyboy.utils import WindowEvent
     >>> pyboy.send_input(WindowEvent.PAUSE)
 
     ```
@@ -297,7 +290,7 @@ def dec_to_bcd(value, byte_width=1, byteorder="little"):
 
     Example:
     ```python
-    >>> from pyboy import dec_to_bcd
+    >>> from pyboy.utils import dec_to_bcd
     >>> f"{dec_to_bcd(30):08b}"
     '00110000'
     >>> f"{dec_to_bcd(32):08b}"
@@ -329,7 +322,7 @@ def bcd_to_dec(value, byte_width=1, byteorder="little"):
 
     Example:
     ```python
-    >>> from pyboy import bcd_to_dec
+    >>> from pyboy.utils import bcd_to_dec
     >>> bcd_to_dec(0b00110000)
     30
     >>> bcd_to_dec(0b00110010)
