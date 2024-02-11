@@ -34,21 +34,15 @@ __pdoc__ = {
     &#34;GameWrapperPokemonGen1.post_tick&#34;: False,
 }
 
-import logging
-
 import numpy as np
 
+import pyboy
+from pyboy import utils
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
-logger = logging.getLogger(__name__)
-
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
+logger = pyboy.logging.get_logger(__name__)
 
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
@@ -60,40 +54,38 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     cartridge_title = None
 
     def __init__(self, *args, **kwargs):
-        self.shape = (20, 18)
-        super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
-        self.sprite_offset = 0x1000
+        super().__init__(*args, game_area_section=(0, 0, 20, 18), game_area_follow_scxy=True, **kwargs)
+        self.sprite_offset = 0
 
     def enabled(self):
-        return self.pyboy_argv.get(&#34;game_wrapper&#34;) and ((self.pyboy.cartridge_title() == &#34;POKEMON RED&#34;) or
-                                                        (self.pyboy.cartridge_title() == &#34;POKEMON BLUE&#34;))
+        return (self.pyboy.cartridge_title == &#34;POKEMON RED&#34;) or (self.pyboy.cartridge_title == &#34;POKEMON BLUE&#34;)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
+        scanline_parameters = self.pyboy.screen.tilemap_position_list
         WX = scanline_parameters[0][2]
         WY = scanline_parameters[0][3]
         self.use_background(WY != 0)
 
     def _get_screen_background_tilemap(self):
-        ### SIMILAR TO CURRENT pyboy.game_wrapper()._game_area_np(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
+        ### SIMILAR TO CURRENT pyboy.game_wrapper.game_area(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
         bsm = self.pyboy.botsupport_manager()
         ((scx, scy), (wx, wy)) = bsm.screen().tilemap_position()
-        tilemap = np.array(bsm.tilemap_background()[:, :])
+        tilemap = np.array(bsm.tilemap_background[:, :])
         return np.roll(np.roll(tilemap, -scy // 8, axis=0), -scx // 8, axis=1)[:18, :20]
 
     def _get_screen_walkable_matrix(self):
         walkable_tiles_indexes = []
-        collision_ptr = self.pyboy.get_memory_value(0xD530) + (self.pyboy.get_memory_value(0xD531) &lt;&lt; 8)
-        tileset_type = self.pyboy.get_memory_value(0xFFD7)
+        collision_ptr = self.pyboy.memory[0xD530] + (self.pyboy.memory[0xD531] &lt;&lt; 8)
+        tileset_type = self.pyboy.memory[0xFFD7]
         if tileset_type &gt; 0:
-            grass_tile_index = self.pyboy.get_memory_value(0xD535)
+            grass_tile_index = self.pyboy.memory[0xD535]
             if grass_tile_index != 0xFF:
                 walkable_tiles_indexes.append(grass_tile_index + 0x100)
         for i in range(0x180):
-            tile_index = self.pyboy.get_memory_value(collision_ptr + i)
+            tile_index = self.pyboy.memory[collision_ptr + i]
             if tile_index == 0xFF:
                 break
             else:
@@ -115,23 +107,10 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return game_area
 
     def __repr__(self):
-        adjust = 4
         # yapf: disable
         return (
             f&#34;Pokemon Gen 1:\n&#34; +
-            &#34;Sprites on screen:\n&#34; +
-            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
-            &#34;\n&#34; +
-            &#34;Tiles on screen:\n&#34; +
-            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(10)]) + &#34;\n&#34; +
-            &#34;_&#34;*(adjust*20+4) +
-            &#34;\n&#34; +
-            &#34;\n&#34;.join(
-                [
-                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable</code></pre>
 </details>
@@ -165,40 +144,38 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     cartridge_title = None
 
     def __init__(self, *args, **kwargs):
-        self.shape = (20, 18)
-        super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
-        self.sprite_offset = 0x1000
+        super().__init__(*args, game_area_section=(0, 0, 20, 18), game_area_follow_scxy=True, **kwargs)
+        self.sprite_offset = 0
 
     def enabled(self):
-        return self.pyboy_argv.get(&#34;game_wrapper&#34;) and ((self.pyboy.cartridge_title() == &#34;POKEMON RED&#34;) or
-                                                        (self.pyboy.cartridge_title() == &#34;POKEMON BLUE&#34;))
+        return (self.pyboy.cartridge_title == &#34;POKEMON RED&#34;) or (self.pyboy.cartridge_title == &#34;POKEMON BLUE&#34;)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        scanline_parameters = self.pyboy.botsupport_manager().screen().tilemap_position_list()
+        scanline_parameters = self.pyboy.screen.tilemap_position_list
         WX = scanline_parameters[0][2]
         WY = scanline_parameters[0][3]
         self.use_background(WY != 0)
 
     def _get_screen_background_tilemap(self):
-        ### SIMILAR TO CURRENT pyboy.game_wrapper()._game_area_np(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
+        ### SIMILAR TO CURRENT pyboy.game_wrapper.game_area(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
         bsm = self.pyboy.botsupport_manager()
         ((scx, scy), (wx, wy)) = bsm.screen().tilemap_position()
-        tilemap = np.array(bsm.tilemap_background()[:, :])
+        tilemap = np.array(bsm.tilemap_background[:, :])
         return np.roll(np.roll(tilemap, -scy // 8, axis=0), -scx // 8, axis=1)[:18, :20]
 
     def _get_screen_walkable_matrix(self):
         walkable_tiles_indexes = []
-        collision_ptr = self.pyboy.get_memory_value(0xD530) + (self.pyboy.get_memory_value(0xD531) &lt;&lt; 8)
-        tileset_type = self.pyboy.get_memory_value(0xFFD7)
+        collision_ptr = self.pyboy.memory[0xD530] + (self.pyboy.memory[0xD531] &lt;&lt; 8)
+        tileset_type = self.pyboy.memory[0xFFD7]
         if tileset_type &gt; 0:
-            grass_tile_index = self.pyboy.get_memory_value(0xD535)
+            grass_tile_index = self.pyboy.memory[0xD535]
             if grass_tile_index != 0xFF:
                 walkable_tiles_indexes.append(grass_tile_index + 0x100)
         for i in range(0x180):
-            tile_index = self.pyboy.get_memory_value(collision_ptr + i)
+            tile_index = self.pyboy.memory[collision_ptr + i]
             if tile_index == 0xFF:
                 break
             else:
@@ -220,23 +197,10 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return game_area
 
     def __repr__(self):
-        adjust = 4
         # yapf: disable
         return (
             f&#34;Pokemon Gen 1:\n&#34; +
-            &#34;Sprites on screen:\n&#34; +
-            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
-            &#34;\n&#34; +
-            &#34;Tiles on screen:\n&#34; +
-            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(10)]) + &#34;\n&#34; +
-            &#34;_&#34;*(adjust*20+4) +
-            &#34;\n&#34; +
-            &#34;\n&#34;.join(
-                [
-                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable</code></pre>
 </details>
@@ -257,8 +221,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def enabled(self):
-    return self.pyboy_argv.get(&#34;game_wrapper&#34;) and ((self.pyboy.cartridge_title() == &#34;POKEMON RED&#34;) or
-                                                    (self.pyboy.cartridge_title() == &#34;POKEMON BLUE&#34;))</code></pre>
+    return (self.pyboy.cartridge_title == &#34;POKEMON RED&#34;) or (self.pyboy.cartridge_title == &#34;POKEMON BLUE&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.game_area_collision"><code class="name flex">
@@ -289,7 +252,9 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 <ul class="hlist">
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area">game_area</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one">mapping_one_to_one</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.shape" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.shape">shape</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
 </ul>
 </li>
