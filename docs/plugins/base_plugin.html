@@ -123,6 +123,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
     &#34;&#34;&#34;
 
     cartridge_title = None
+    argv = [(&#34;--game-wrapper&#34;, {&#34;action&#34;: &#34;store_true&#34;, &#34;help&#34;: &#34;Enable game wrapper for the current game&#34;})]
 
     mapping_one_to_one = np.arange(384 * 2, dtype=np.uint8)
     &#34;&#34;&#34;
@@ -356,6 +357,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
     &#34;&#34;&#34;
 
     cartridge_title = None
+    argv = [(&#34;--game-wrapper&#34;, {&#34;action&#34;: &#34;store_true&#34;, &#34;help&#34;: &#34;Enable game wrapper for the current game&#34;})]
 
     mapping_one_to_one = np.arange(384 * 2, dtype=np.uint8)
     &#34;&#34;&#34;
