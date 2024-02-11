@@ -23,10 +23,10 @@ FRAME_CYCLES = 70224
 
 
 class LCD:
-    def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False):
+    def __init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
-        self.disable_renderer = disable_renderer
+        self.disable_renderer = False
 
         if randomize:
             for i in range(VIDEO_RAM):
@@ -782,8 +782,8 @@ class Renderer:
 
 
 class CGBLCD(LCD):
-    def __init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False):
-        LCD.__init__(self, cgb, cartridge_cgb, disable_renderer, color_palette, cgb_color_palette, randomize=False)
+    def __init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False):
+        LCD.__init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False)
         self.VRAM1 = array("B", [0] * VIDEO_RAM)
 
         self.vbk = VBKregister()
