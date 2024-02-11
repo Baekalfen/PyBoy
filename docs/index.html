@@ -83,7 +83,7 @@ GitHub, if other methods are needed for your projects. Take a look at the files 
 &gt;&gt;&gt; for _ in range(60): # Use 'while True:' for infinite
 ...     pyboy.tick()
 True...
-&gt;&gt;&gt; pyboy.stop()
+&gt;&gt;&gt; pyboy.stop(False) # False to not save the game
 
 </code></pre>
 <h2 id="args">Args</h2>
@@ -147,7 +147,7 @@ True...
         &gt;&gt;&gt; for _ in range(60): # Use &#39;while True:&#39; for infinite
         ...     pyboy.tick()
         True...
-        &gt;&gt;&gt; pyboy.stop()
+        &gt;&gt;&gt; pyboy.stop(False) # False to not save the game
 
         ```
 
@@ -580,6 +580,8 @@ True...
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
         &#34;&#34;&#34;
+        if save:
+            breakpoint()
         if self.initialized and not self.stopped:
             logger.info(&#34;###########################&#34;)
             logger.info(&#34;# Emulator is turning off #&#34;)
@@ -788,9 +790,6 @@ True...
         if isinstance(file_like_object, str):
             raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-        if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-            raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;wb&#39;)?&#34;)
-
         self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
@@ -815,9 +814,6 @@ True...
 
         if isinstance(file_like_object, str):
             raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
-
-        if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-            raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;rb&#39;)?&#34;)
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
@@ -1481,6 +1477,8 @@ provided game-ROM.</dd>
         save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
             provided game-ROM.
     &#34;&#34;&#34;
+    if save:
+        breakpoint()
     if self.initialized and not self.stopped:
         logger.info(&#34;###########################&#34;)
         logger.info(&#34;# Emulator is turning off #&#34;)
@@ -1832,9 +1830,6 @@ case. Remember to <code>seek</code> the in-memory buffer to the beginning before
     if isinstance(file_like_object, str):
         raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
 
-    if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-        raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;wb&#39;)?&#34;)
-
     self.mb.save_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
 </dd>
@@ -1883,9 +1878,6 @@ can load it here.</p>
 
     if isinstance(file_like_object, str):
         raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
-
-    if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-        raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;rb&#39;)?&#34;)
 
     self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
