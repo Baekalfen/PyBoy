@@ -1,5 +1,6 @@
-from pyboy import PyBoy, bcd_to_dec, dec_to_bcd
+from pyboy import PyBoy
 from pyboy.api.memory_scanner import DynamicComparisonType
+from pyboy.utils import bcd_to_dec, dec_to_bcd
 
 
 def test_bcd_to_dec_single_byte():

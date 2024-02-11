@@ -43,7 +43,7 @@ from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.callbacks import CheckpointCallback
 from argparse_pokemon import *
 
-from pyboy import WindowEvent
+from pyboy.utils import WindowEvent
 
 RedGymEnv.add_video_frame = lambda x: None
 
