@@ -34,20 +34,14 @@ __pdoc__ = {
     &#34;GameWrapperSuperMarioLand.post_tick&#34;: False,
 }
 
-import logging
-
 import numpy as np
+
+import pyboy
 from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
-logger = logging.getLogger(__name__)
-
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
+logger = pyboy.logging.get_logger(__name__)
 
 # Mario and Daisy
 base_scripts = list(range(81))
@@ -93,7 +87,7 @@ explosion = [157, 158]
 spike = [237]
 
 TILES = 384
-tiles_minimal = np.zeros(TILES, dtype=np.uint8)
+mapping_minimal = np.zeros(TILES, dtype=np.uint8)
 minimal_list = [
     base_scripts + plane + submarine,
     coin + mushroom + heart + star + lever,
@@ -103,9 +97,9 @@ minimal_list = [
 ]
 for i, tile_list in enumerate(minimal_list):
     for tile in tile_list:
-        tiles_minimal[tile] = i + 1
+        mapping_minimal[tile] = i + 1
 
-tiles_compressed = np.zeros(TILES, dtype=np.uint8)
+mapping_compressed = np.zeros(TILES, dtype=np.uint8)
 compressed_list = [
     base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever, neutral_blocks, moving_blocks,
     pushable_blokcs, question_block, pipes, goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill,
@@ -113,7 +107,7 @@ compressed_list = [
 ]
 for i, tile_list in enumerate(compressed_list):
     for tile in tile_list:
-        tiles_compressed[tile] = i + 1
+        mapping_compressed[tile] = i + 1
 
 np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
 
@@ -131,70 +125,222 @@ def _bcm_to_dec(value):
 
 class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     &#34;&#34;&#34;
-    This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left, world and a
-    &#34;fitness&#34; score for AIs.
-
-    __Only world 1-1 is officially supported at the moment. Support for more worlds coming soon.__
+    This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left and world for AIs.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
+
+    ![Super Mario Land](supermarioland.png)
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.tick(1, True)
+    True
+    &gt;&gt;&gt; pyboy.screen.image.resize((320,288)).save(&#39;docs/plugins/supermarioland.png&#39;) # The exact screenshot shown above
+    &gt;&gt;&gt; pyboy.game_wrapper
+    Super Mario Land: World 1-1
+    Coins: 0
+    lives_left: 2
+    Score: 0
+    Time left: 400
+    Level progress: 251
+    Sprites on screen:
+    Sprite [3]: Position: (35, 112), Shape: (8, 8), Tiles: (Tile: 0), On screen: True
+    Sprite [4]: Position: (43, 112), Shape: (8, 8), Tiles: (Tile: 1), On screen: True
+    Sprite [5]: Position: (35, 120), Shape: (8, 8), Tiles: (Tile: 16), On screen: True
+    Sprite [6]: Position: (43, 120), Shape: (8, 8), Tiles: (Tile: 17), On screen: True
+    Tiles on screen:
+           0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19
+    ____________________________________________________________________________________
+    0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
+    1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
+    2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
+    3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
+    4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+    5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+    6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+    7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
+    8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
+    9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
+    10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
+    11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
+    12 | 300 368 369 300   0   1 300 306 307 305 300 300 300 300 350 300 300 300 300 300
+    13 | 310 370 371 300  16  17 300 305 300 305 300 300 300 300 300 350 300 300 300 300
+    14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
+    15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+    ```
+
     &#34;&#34;&#34;
     cartridge_title = &#34;SUPER MARIOLAN&#34;
-    tiles_compressed = tiles_compressed
-    tiles_minimal = tiles_minimal
+    mapping_compressed = mapping_compressed
+    &#34;&#34;&#34;
+    Compressed mapping for `pyboy.PyBoy.game_area_mapping`
 
+    Example using `mapping_compressed`, Mario is `1`. He is standing on the ground which is `10`:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_compressed, 0)
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+    array([[ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0, 13,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0, 14, 14,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0, 14, 14,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+           [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], dtype=uint32)
+    ```
+    &#34;&#34;&#34;
+    mapping_minimal = mapping_minimal
+    &#34;&#34;&#34;
+    Minimal mapping for `pyboy.PyBoy.game_area_mapping`
+
+    Example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+    array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+           [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
+    ```
+    &#34;&#34;&#34;
     def __init__(self, *args, **kwargs):
-        self.shape = (20, 16)
-        &#34;&#34;&#34;The shape of the game area&#34;&#34;&#34;
         self.world = (0, 0)
-        &#34;&#34;&#34;Provides the current &#34;world&#34; Mario is in, as a tuple of as two integers (world, level).&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        Provides the current &#34;world&#34; Mario is in, as a tuple of as two integers (world, level).
+
+        You can force a level change with `set_world_level`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.world
+        (1, 1)
+        ```
+
+        &#34;&#34;&#34;
         self.coins = 0
-        &#34;&#34;&#34;The number of collected coins.&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The number of collected coins.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.coins
+        0
+        ```
+        &#34;&#34;&#34;
         self.lives_left = 0
-        &#34;&#34;&#34;The number of lives Mario has left&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The number of lives Mario has left
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+        2
+        ```
+        &#34;&#34;&#34;
         self.score = 0
-        &#34;&#34;&#34;The score provided by the game&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The score provided by the game
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.score
+        0
+        ```
+        &#34;&#34;&#34;
         self.time_left = 0
-        &#34;&#34;&#34;The number of seconds left to finish the level&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The number of seconds left to finish the level
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.time_left
+        400
+        ```
+        &#34;&#34;&#34;
         self.level_progress = 0
-        &#34;&#34;&#34;An integer of the current &#34;global&#34; X position in this level. Can be used for AI scoring.&#34;&#34;&#34;
-        self._level_progress_max = 0
-        self.fitness = 0
         &#34;&#34;&#34;
-        A built-in fitness scoring. Taking points, level progression, time left, and lives left into account.
+        An integer of the current &#34;global&#34; X position in this level. Can be used for AI scoring.
 
-        .. math::
-            fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.level_progress
+        251
+        ```
         &#34;&#34;&#34;
 
-        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 2, 20, 16), game_area_follow_scxy=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        world_level = self.pyboy.get_memory_value(ADDR_WORLD_LEVEL)
+        world_level = self.pyboy.memory[ADDR_WORLD_LEVEL]
         self.world = world_level &gt;&gt; 4, world_level &amp; 0x0F
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
-        self.lives_left = _bcm_to_dec(self.pyboy.get_memory_value(ADDR_LIVES_LEFT))
+        self.lives_left = _bcm_to_dec(self.pyboy.memory[ADDR_LIVES_LEFT])
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
         self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
 
-        level_block = self.pyboy.get_memory_value(0xC0AB)
-        mario_x = self.pyboy.get_memory_value(0xC202)
-        scx = self.pyboy.botsupport_manager().screen().tilemap_position_list()[16][0]
+        level_block = self.pyboy.memory[0xC0AB]
+        mario_x = self.pyboy.memory[0xC202]
+        scx = self.pyboy.screen.tilemap_position_list[16][0]
         self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
-
-        if self.game_has_started:
-            self._level_progress_max = max(self.level_progress, self._level_progress_max)
-            end_score = self.score + self.time_left * 10
-            self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
     def set_lives_left(self, amount):
         &#34;&#34;&#34;
         Set the amount lives to any number between 0 and 99.
 
         This should only be called when the game has started.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+        2
+        &gt;&gt;&gt; pyboy.game_wrapper.set_lives_left(10)
+        &gt;&gt;&gt; pyboy.tick(1, False)
+        True
+        &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+        10
+        ```
 
         Args:
             amount (int): The wanted number of lives
@@ -205,15 +351,24 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         if 0 &lt;= amount &lt;= 99:
             tens = amount // 10
             ones = amount % 10
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens &lt;&lt; 4) | ones)
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+            self.pyboy.memory[ADDR_LIVES_LEFT] = (tens &lt;&lt; 4) | ones
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = tens
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = ones
         else:
-            logger.error(f&#34;{amount} is out of bounds. Only values between 0 and 99 allowed.&#34;)
+            logger.error(&#34;%d is out of bounds. Only values between 0 and 99 allowed.&#34;, amount)
 
     def set_world_level(self, world, level):
         &#34;&#34;&#34;
         Patches the handler for pressing start in the menu. It hardcodes a world and level to always &#34;continue&#34; from.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_world_level(3, 2)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.world
+        (3, 2)
+        ```
 
         Args:
             world (int): The world to select a level from, 0-3
@@ -221,7 +376,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         &#34;&#34;&#34;
 
         for i in range(0x450, 0x461):
-            self.pyboy.override_memory_value(0, i, 0x00)
+            self.pyboy.memory[0, i] = 0x00
 
         patch1 = [
             0x3E, # LD A, d8
@@ -229,7 +384,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch1):
-            self.pyboy.override_memory_value(0, 0x451 + i, byte)
+            self.pyboy.memory[0, 0x451 + i] = byte
 
     def start_game(self, timer_div=None, world_level=None, unlock_level_select=False):
         &#34;&#34;&#34;
@@ -245,6 +400,14 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         If you&#39;re not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
         Enabling the selector, will make this function return before entering the game.
 
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game(world_level=(4,1))
+        &gt;&gt;&gt; pyboy.game_wrapper.world
+        (4, 1)
+        ```
+
         Kwargs:
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
             world_level (tuple): (world, level) to start the game from
@@ -257,28 +420,24 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(1, False)
             if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # &#34;START&#34; on the main menu
                 break
-        self.pyboy.tick()
-        self.pyboy.tick()
-        self.pyboy.tick()
 
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+        self.pyboy.tick(3, False)
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(1, False)
 
         while True:
             if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
-                self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+                self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
                 break
-            self.pyboy.tick()
-            self.tilemap_background.refresh_lcdc()
+            self.pyboy.tick(1, False)
 
             # &#34;MARIO&#34; in the title bar and 0 is placed at score
             if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
                self.tilemap_background[5, 1] == 256:
-                self.game_has_started = True
+                # Game has started
                 break
 
         self.saved_state.seek(0)
@@ -288,10 +447,17 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
-        After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
+        After calling `start_game`, use this method to reset Mario to the beginning of `start_game`.
 
-        If you want to reset to later parts of the game -- for example world 1-2 or 3-1 -- use the methods
-        `pyboy.PyBoy.save_state` and `pyboy.PyBoy.load_state`.
+        If you want to reset to other worlds or levels of the game -- for example world 1-2 or 3-1 -- reset the entire
+        emulator and provide the `world_level` on `start_game`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.reset_game()
+        ```
 
         Kwargs:
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
@@ -308,26 +474,28 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
         and so on. These values can be found in the variables of this class.
 
-        In this example, Mario is `0`, `1`, `16` and `17`. He is standing on the ground which is `352` and `353`:
-        ```text
-             0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19
-        ____________________________________________________________________________________
-        0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
-        1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
-        2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
-        3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
-        4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-        5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-        6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-        7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
-        8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
-        9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
-        10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
-        11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
-        12 | 300 368 369 300 0   1   300 306 307 305 300 300 300 300 350 300 300 300 300 300
-        13 | 310 370 371 300 16  17  300 305 300 305 300 300 300 300 300 350 300 300 300 300
-        14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
-        15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+        In this example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+        &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+        array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+               [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
         ```
 
         Returns
@@ -340,32 +508,18 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     def game_over(self):
         # Apparantly that address is for game over
         # https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
-        return self.pyboy.get_memory_value(0xC0A4) == 0x39
+        return self.pyboy.memory[0xC0A4] == 0x39
 
     def __repr__(self):
-        adjust = 4
         # yapf: disable
         return (
-            f&#34;Super Mario Land: World {&#39;-&#39;.join([str(i) for i in self.world])}\n&#34; +
+            f&#34;Super Mario Land: World {&#39;-&#39;.join([str(i) for i in self.world])}\n&#34;
             f&#34;Coins: {self.coins}\n&#34; +
             f&#34;lives_left: {self.lives_left}\n&#34; +
             f&#34;Score: {self.score}\n&#34; +
             f&#34;Time left: {self.time_left}\n&#34; +
             f&#34;Level progress: {self.level_progress}\n&#34; +
-            f&#34;Fitness: {self.fitness}\n&#34; +
-            &#34;Sprites on screen:\n&#34; +
-            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
-            &#34;\n&#34; +
-            &#34;Tiles on screen:\n&#34; +
-            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(20)]) + &#34;\n&#34; +
-            &#34;_&#34;*(adjust*20+4) +
-            &#34;\n&#34; +
-            &#34;\n&#34;.join(
-                [
-                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable</code></pre>
 </details>
@@ -384,80 +538,268 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left, world and a
-"fitness" score for AIs.</p>
-<p><strong>Only world 1-1 is officially supported at the moment. Support for more worlds coming soon.</strong></p>
-<p>If you call <code>print</code> on an instance of this object, it will show an overview of everything this object provides.</p></section>
+<section class="desc"><p>This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left and world for AIs.</p>
+<p>If you call <code>print</code> on an instance of this object, it will show an overview of everything this object provides.</p>
+<p><img alt="Super Mario Land" src="supermarioland.png"></p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.tick(1, True)
+True
+&gt;&gt;&gt; pyboy.screen.image.resize((320,288)).save('docs/plugins/supermarioland.png') # The exact screenshot shown above
+&gt;&gt;&gt; pyboy.game_wrapper
+Super Mario Land: World 1-1
+Coins: 0
+lives_left: 2
+Score: 0
+Time left: 400
+Level progress: 251
+Sprites on screen:
+Sprite [3]: Position: (35, 112), Shape: (8, 8), Tiles: (Tile: 0), On screen: True
+Sprite [4]: Position: (43, 112), Shape: (8, 8), Tiles: (Tile: 1), On screen: True
+Sprite [5]: Position: (35, 120), Shape: (8, 8), Tiles: (Tile: 16), On screen: True
+Sprite [6]: Position: (43, 120), Shape: (8, 8), Tiles: (Tile: 17), On screen: True
+Tiles on screen:
+       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19
+____________________________________________________________________________________
+0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
+1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
+2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
+3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
+4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
+8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
+9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
+10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
+11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
+12 | 300 368 369 300   0   1 300 306 307 305 300 300 300 300 350 300 300 300 300 300
+13 | 310 370 371 300  16  17 300 305 300 305 300 300 300 300 300 350 300 300 300 300
+14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
+15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+</code></pre></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     &#34;&#34;&#34;
-    This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left, world and a
-    &#34;fitness&#34; score for AIs.
-
-    __Only world 1-1 is officially supported at the moment. Support for more worlds coming soon.__
+    This class wraps Super Mario Land, and provides easy access to score, coins, lives left, time left and world for AIs.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
+
+    ![Super Mario Land](supermarioland.png)
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.tick(1, True)
+    True
+    &gt;&gt;&gt; pyboy.screen.image.resize((320,288)).save(&#39;docs/plugins/supermarioland.png&#39;) # The exact screenshot shown above
+    &gt;&gt;&gt; pyboy.game_wrapper
+    Super Mario Land: World 1-1
+    Coins: 0
+    lives_left: 2
+    Score: 0
+    Time left: 400
+    Level progress: 251
+    Sprites on screen:
+    Sprite [3]: Position: (35, 112), Shape: (8, 8), Tiles: (Tile: 0), On screen: True
+    Sprite [4]: Position: (43, 112), Shape: (8, 8), Tiles: (Tile: 1), On screen: True
+    Sprite [5]: Position: (35, 120), Shape: (8, 8), Tiles: (Tile: 16), On screen: True
+    Sprite [6]: Position: (43, 120), Shape: (8, 8), Tiles: (Tile: 17), On screen: True
+    Tiles on screen:
+           0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19
+    ____________________________________________________________________________________
+    0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
+    1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
+    2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
+    3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
+    4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+    5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+    6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
+    7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
+    8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
+    9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
+    10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
+    11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
+    12 | 300 368 369 300   0   1 300 306 307 305 300 300 300 300 350 300 300 300 300 300
+    13 | 310 370 371 300  16  17 300 305 300 305 300 300 300 300 300 350 300 300 300 300
+    14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
+    15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+    ```
+
     &#34;&#34;&#34;
     cartridge_title = &#34;SUPER MARIOLAN&#34;
-    tiles_compressed = tiles_compressed
-    tiles_minimal = tiles_minimal
+    mapping_compressed = mapping_compressed
+    &#34;&#34;&#34;
+    Compressed mapping for `pyboy.PyBoy.game_area_mapping`
 
+    Example using `mapping_compressed`, Mario is `1`. He is standing on the ground which is `10`:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_compressed, 0)
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+    array([[ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0, 13,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0, 14, 14,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0, 14, 14,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+           [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], dtype=uint32)
+    ```
+    &#34;&#34;&#34;
+    mapping_minimal = mapping_minimal
+    &#34;&#34;&#34;
+    Minimal mapping for `pyboy.PyBoy.game_area_mapping`
+
+    Example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+    array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+           [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
+    ```
+    &#34;&#34;&#34;
     def __init__(self, *args, **kwargs):
-        self.shape = (20, 16)
-        &#34;&#34;&#34;The shape of the game area&#34;&#34;&#34;
         self.world = (0, 0)
-        &#34;&#34;&#34;Provides the current &#34;world&#34; Mario is in, as a tuple of as two integers (world, level).&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        Provides the current &#34;world&#34; Mario is in, as a tuple of as two integers (world, level).
+
+        You can force a level change with `set_world_level`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.world
+        (1, 1)
+        ```
+
+        &#34;&#34;&#34;
         self.coins = 0
-        &#34;&#34;&#34;The number of collected coins.&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The number of collected coins.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.coins
+        0
+        ```
+        &#34;&#34;&#34;
         self.lives_left = 0
-        &#34;&#34;&#34;The number of lives Mario has left&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The number of lives Mario has left
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+        2
+        ```
+        &#34;&#34;&#34;
         self.score = 0
-        &#34;&#34;&#34;The score provided by the game&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The score provided by the game
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.score
+        0
+        ```
+        &#34;&#34;&#34;
         self.time_left = 0
-        &#34;&#34;&#34;The number of seconds left to finish the level&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        The number of seconds left to finish the level
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.time_left
+        400
+        ```
+        &#34;&#34;&#34;
         self.level_progress = 0
-        &#34;&#34;&#34;An integer of the current &#34;global&#34; X position in this level. Can be used for AI scoring.&#34;&#34;&#34;
-        self._level_progress_max = 0
-        self.fitness = 0
         &#34;&#34;&#34;
-        A built-in fitness scoring. Taking points, level progression, time left, and lives left into account.
+        An integer of the current &#34;global&#34; X position in this level. Can be used for AI scoring.
 
-        .. math::
-            fitness = (lives\\_left \\cdot 10000) + (score + time\\_left \\cdot 10) + (\\_level\\_progress\\_max \\cdot 10)
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.level_progress
+        251
+        ```
         &#34;&#34;&#34;
 
-        super().__init__(*args, game_area_section=(0, 2) + self.shape, game_area_wrap_around=True, **kwargs)
+        super().__init__(*args, game_area_section=(0, 2, 20, 16), game_area_follow_scxy=True, **kwargs)
 
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        world_level = self.pyboy.get_memory_value(ADDR_WORLD_LEVEL)
+        world_level = self.pyboy.memory[ADDR_WORLD_LEVEL]
         self.world = world_level &gt;&gt; 4, world_level &amp; 0x0F
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
-        self.lives_left = _bcm_to_dec(self.pyboy.get_memory_value(ADDR_LIVES_LEFT))
+        self.lives_left = _bcm_to_dec(self.pyboy.memory[ADDR_LIVES_LEFT])
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
         self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
 
-        level_block = self.pyboy.get_memory_value(0xC0AB)
-        mario_x = self.pyboy.get_memory_value(0xC202)
-        scx = self.pyboy.botsupport_manager().screen().tilemap_position_list()[16][0]
+        level_block = self.pyboy.memory[0xC0AB]
+        mario_x = self.pyboy.memory[0xC202]
+        scx = self.pyboy.screen.tilemap_position_list[16][0]
         self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
-
-        if self.game_has_started:
-            self._level_progress_max = max(self.level_progress, self._level_progress_max)
-            end_score = self.score + self.time_left * 10
-            self.fitness = self.lives_left * 10000 + end_score + self._level_progress_max * 10
 
     def set_lives_left(self, amount):
         &#34;&#34;&#34;
         Set the amount lives to any number between 0 and 99.
 
         This should only be called when the game has started.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+        2
+        &gt;&gt;&gt; pyboy.game_wrapper.set_lives_left(10)
+        &gt;&gt;&gt; pyboy.tick(1, False)
+        True
+        &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+        10
+        ```
 
         Args:
             amount (int): The wanted number of lives
@@ -468,15 +810,24 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         if 0 &lt;= amount &lt;= 99:
             tens = amount // 10
             ones = amount % 10
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens &lt;&lt; 4) | ones)
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
-            self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+            self.pyboy.memory[ADDR_LIVES_LEFT] = (tens &lt;&lt; 4) | ones
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = tens
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = ones
         else:
-            logger.error(f&#34;{amount} is out of bounds. Only values between 0 and 99 allowed.&#34;)
+            logger.error(&#34;%d is out of bounds. Only values between 0 and 99 allowed.&#34;, amount)
 
     def set_world_level(self, world, level):
         &#34;&#34;&#34;
         Patches the handler for pressing start in the menu. It hardcodes a world and level to always &#34;continue&#34; from.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_world_level(3, 2)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.world
+        (3, 2)
+        ```
 
         Args:
             world (int): The world to select a level from, 0-3
@@ -484,7 +835,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         &#34;&#34;&#34;
 
         for i in range(0x450, 0x461):
-            self.pyboy.override_memory_value(0, i, 0x00)
+            self.pyboy.memory[0, i] = 0x00
 
         patch1 = [
             0x3E, # LD A, d8
@@ -492,7 +843,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         ]
 
         for i, byte in enumerate(patch1):
-            self.pyboy.override_memory_value(0, 0x451 + i, byte)
+            self.pyboy.memory[0, 0x451 + i] = byte
 
     def start_game(self, timer_div=None, world_level=None, unlock_level_select=False):
         &#34;&#34;&#34;
@@ -508,6 +859,14 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         If you&#39;re not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
         Enabling the selector, will make this function return before entering the game.
 
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game(world_level=(4,1))
+        &gt;&gt;&gt; pyboy.game_wrapper.world
+        (4, 1)
+        ```
+
         Kwargs:
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
             world_level (tuple): (world, level) to start the game from
@@ -520,28 +879,24 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
         # Boot screen
         while True:
-            self.pyboy.tick()
+            self.pyboy.tick(1, False)
             if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # &#34;START&#34; on the main menu
                 break
-        self.pyboy.tick()
-        self.pyboy.tick()
-        self.pyboy.tick()
 
-        self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-        self.pyboy.tick()
-        self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+        self.pyboy.tick(3, False)
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(1, False)
 
         while True:
             if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
-                self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+                self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
                 break
-            self.pyboy.tick()
-            self.tilemap_background.refresh_lcdc()
+            self.pyboy.tick(1, False)
 
             # &#34;MARIO&#34; in the title bar and 0 is placed at score
             if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
                self.tilemap_background[5, 1] == 256:
-                self.game_has_started = True
+                # Game has started
                 break
 
         self.saved_state.seek(0)
@@ -551,10 +906,17 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
-        After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
+        After calling `start_game`, use this method to reset Mario to the beginning of `start_game`.
 
-        If you want to reset to later parts of the game -- for example world 1-2 or 3-1 -- use the methods
-        `pyboy.PyBoy.save_state` and `pyboy.PyBoy.load_state`.
+        If you want to reset to other worlds or levels of the game -- for example world 1-2 or 3-1 -- reset the entire
+        emulator and provide the `world_level` on `start_game`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.reset_game()
+        ```
 
         Kwargs:
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
@@ -571,26 +933,28 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
         and so on. These values can be found in the variables of this class.
 
-        In this example, Mario is `0`, `1`, `16` and `17`. He is standing on the ground which is `352` and `353`:
-        ```text
-             0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19
-        ____________________________________________________________________________________
-        0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
-        1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
-        2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
-        3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
-        4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-        5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-        6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-        7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
-        8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
-        9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
-        10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
-        11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
-        12 | 300 368 369 300 0   1   300 306 307 305 300 300 300 300 350 300 300 300 300 300
-        13 | 310 370 371 300 16  17  300 305 300 305 300 300 300 300 300 350 300 300 300 300
-        14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
-        15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+        In this example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+        &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+        array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+               [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
         ```
 
         Returns
@@ -603,32 +967,18 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     def game_over(self):
         # Apparantly that address is for game over
         # https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
-        return self.pyboy.get_memory_value(0xC0A4) == 0x39
+        return self.pyboy.memory[0xC0A4] == 0x39
 
     def __repr__(self):
-        adjust = 4
         # yapf: disable
         return (
-            f&#34;Super Mario Land: World {&#39;-&#39;.join([str(i) for i in self.world])}\n&#34; +
+            f&#34;Super Mario Land: World {&#39;-&#39;.join([str(i) for i in self.world])}\n&#34;
             f&#34;Coins: {self.coins}\n&#34; +
             f&#34;lives_left: {self.lives_left}\n&#34; +
             f&#34;Score: {self.score}\n&#34; +
             f&#34;Time left: {self.time_left}\n&#34; +
             f&#34;Level progress: {self.level_progress}\n&#34; +
-            f&#34;Fitness: {self.fitness}\n&#34; +
-            &#34;Sprites on screen:\n&#34; +
-            &#34;\n&#34;.join([str(s) for s in self._sprites_on_screen()]) +
-            &#34;\n&#34; +
-            &#34;Tiles on screen:\n&#34; +
-            &#34; &#34;*5 + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(20)]) + &#34;\n&#34; +
-            &#34;_&#34;*(adjust*20+4) +
-            &#34;\n&#34; +
-            &#34;\n&#34;.join(
-                [
-                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
+            super().__repr__()
         )
         # yapf: enable</code></pre>
 </details>
@@ -639,49 +989,121 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_compressed"><code class="name">var <span class="ident">tiles_compressed</span></code></dt>
+<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.mapping_compressed"><code class="name">var <span class="ident">mapping_compressed</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Compressed mapping for <code><a title="pyboy.PyBoy.game_area_mapping" href="../index.html#pyboy.PyBoy.game_area_mapping">PyBoy.game_area_mapping()</a></code></p>
+<p>Example using <code>mapping_compressed</code>, Mario is <code>1</code>. He is standing on the ground which is <code>10</code>:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_compressed, 0)
+&gt;&gt;&gt; pyboy.game_wrapper.game_area()
+array([[ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0, 13,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0, 14, 14,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [ 0, 14, 14,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+       [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+       [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], dtype=uint32)
+</code></pre></section>
 </dd>
-<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_minimal"><code class="name">var <span class="ident">tiles_minimal</span></code></dt>
+<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.mapping_minimal"><code class="name">var <span class="ident">mapping_minimal</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Minimal mapping for <code><a title="pyboy.PyBoy.game_area_mapping" href="../index.html#pyboy.PyBoy.game_area_mapping">PyBoy.game_area_mapping()</a></code></p>
+<p>Example using <code>mapping_minimal</code>, Mario is <code>1</code>. He is standing on the ground which is <code>3</code>:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+&gt;&gt;&gt; pyboy.game_wrapper.game_area()
+array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
+</code></pre></section>
 </dd>
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.shape"><code class="name">var <span class="ident">shape</span></code></dt>
-<dd>
-<section class="desc"><p>The shape of the game area</p></section>
-</dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.world"><code class="name">var <span class="ident">world</span></code></dt>
 <dd>
-<section class="desc"><p>Provides the current "world" Mario is in, as a tuple of as two integers (world, level).</p></section>
+<section class="desc"><p>Provides the current "world" Mario is in, as a tuple of as two integers (world, level).</p>
+<p>You can force a level change with <code>set_world_level</code>.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.world
+(1, 1)
+</code></pre></section>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.coins"><code class="name">var <span class="ident">coins</span></code></dt>
 <dd>
-<section class="desc"><p>The number of collected coins.</p></section>
+<section class="desc"><p>The number of collected coins.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.coins
+0
+</code></pre></section>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.lives_left"><code class="name">var <span class="ident">lives_left</span></code></dt>
 <dd>
-<section class="desc"><p>The number of lives Mario has left</p></section>
+<section class="desc"><p>The number of lives Mario has left</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.lives_left
+2
+</code></pre></section>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.score"><code class="name">var <span class="ident">score</span></code></dt>
 <dd>
-<section class="desc"><p>The score provided by the game</p></section>
+<section class="desc"><p>The score provided by the game</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.score
+0
+</code></pre></section>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.time_left"><code class="name">var <span class="ident">time_left</span></code></dt>
 <dd>
-<section class="desc"><p>The number of seconds left to finish the level</p></section>
+<section class="desc"><p>The number of seconds left to finish the level</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.time_left
+400
+</code></pre></section>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.level_progress"><code class="name">var <span class="ident">level_progress</span></code></dt>
 <dd>
-<section class="desc"><p>An integer of the current "global" X position in this level. Can be used for AI scoring.</p></section>
-</dd>
-<dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.fitness"><code class="name">var <span class="ident">fitness</span></code></dt>
-<dd>
-<section class="desc"><p>A built-in fitness scoring. Taking points, level progression, time left, and lives left into account.</p>
-<p><span><span class="MathJax_Preview"> fitness = (lives\_left \cdot 10000) + (score + time\_left \cdot 10) + (\_level\_progress\_max \cdot 10) </span><script type="math/tex; mode=display"> fitness = (lives\_left \cdot 10000) + (score + time\_left \cdot 10) + (\_level\_progress\_max \cdot 10) </script></span></p></section>
+<section class="desc"><p>An integer of the current "global" X position in this level. Can be used for AI scoring.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.level_progress
+251
+</code></pre></section>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -692,6 +1114,17 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 <dd>
 <section class="desc"><p>Set the amount lives to any number between 0 and 99.</p>
 <p>This should only be called when the game has started.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.lives_left
+2
+&gt;&gt;&gt; pyboy.game_wrapper.set_lives_left(10)
+&gt;&gt;&gt; pyboy.tick(1, False)
+True
+&gt;&gt;&gt; pyboy.game_wrapper.lives_left
+10
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>amount</code></strong> :&ensp;<code>int</code></dt>
@@ -707,6 +1140,19 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     This should only be called when the game has started.
 
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+    2
+    &gt;&gt;&gt; pyboy.game_wrapper.set_lives_left(10)
+    &gt;&gt;&gt; pyboy.tick(1, False)
+    True
+    &gt;&gt;&gt; pyboy.game_wrapper.lives_left
+    10
+    ```
+
     Args:
         amount (int): The wanted number of lives
     &#34;&#34;&#34;
@@ -716,11 +1162,11 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     if 0 &lt;= amount &lt;= 99:
         tens = amount // 10
         ones = amount % 10
-        self.pyboy.set_memory_value(ADDR_LIVES_LEFT, (tens &lt;&lt; 4) | ones)
-        self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY, tens)
-        self.pyboy.set_memory_value(ADDR_LIVES_LEFT_DISPLAY + 1, ones)
+        self.pyboy.memory[ADDR_LIVES_LEFT] = (tens &lt;&lt; 4) | ones
+        self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = tens
+        self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = ones
     else:
-        logger.error(f&#34;{amount} is out of bounds. Only values between 0 and 99 allowed.&#34;)</code></pre>
+        logger.error(&#34;%d is out of bounds. Only values between 0 and 99 allowed.&#34;, amount)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.set_world_level"><code class="name flex">
@@ -728,6 +1174,13 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 </code></dt>
 <dd>
 <section class="desc"><p>Patches the handler for pressing start in the menu. It hardcodes a world and level to always "continue" from.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.set_world_level(3, 2)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.world
+(3, 2)
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>world</code></strong> :&ensp;<code>int</code></dt>
@@ -743,13 +1196,22 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     &#34;&#34;&#34;
     Patches the handler for pressing start in the menu. It hardcodes a world and level to always &#34;continue&#34; from.
 
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.set_world_level(3, 2)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.world
+    (3, 2)
+    ```
+
     Args:
         world (int): The world to select a level from, 0-3
         level (int): The level to start from, 0-2
     &#34;&#34;&#34;
 
     for i in range(0x450, 0x461):
-        self.pyboy.override_memory_value(0, i, 0x00)
+        self.pyboy.memory[0, i] = 0x00
 
     patch1 = [
         0x3E, # LD A, d8
@@ -757,7 +1219,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     ]
 
     for i, byte in enumerate(patch1):
-        self.pyboy.override_memory_value(0, 0x451 + i, byte)</code></pre>
+        self.pyboy.memory[0, 0x451 + i] = byte</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.start_game"><code class="name flex">
@@ -772,6 +1234,12 @@ instantly.</p>
 the optional keyword-argument <code>world_level</code>.</p>
 <p>If you're not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
 Enabling the selector, will make this function return before entering the game.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game(world_level=(4,1))
+&gt;&gt;&gt; pyboy.game_wrapper.world
+(4, 1)
+</code></pre>
 <h2 id="kwargs">Kwargs</h2>
 <p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.
 world_level (tuple): (world, level) to start the game from
@@ -794,6 +1262,14 @@ unlock_level_select (bool): Unlock level selector menu</p></section>
     If you&#39;re not using the game wrapper for unattended use, you can unlock the level selector for the main menu.
     Enabling the selector, will make this function return before entering the game.
 
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game(world_level=(4,1))
+    &gt;&gt;&gt; pyboy.game_wrapper.world
+    (4, 1)
+    ```
+
     Kwargs:
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         world_level (tuple): (world, level) to start the game from
@@ -806,28 +1282,24 @@ unlock_level_select (bool): Unlock level selector menu</p></section>
 
     # Boot screen
     while True:
-        self.pyboy.tick()
+        self.pyboy.tick(1, False)
         if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # &#34;START&#34; on the main menu
             break
-    self.pyboy.tick()
-    self.pyboy.tick()
-    self.pyboy.tick()
 
-    self.pyboy.send_input(WindowEvent.PRESS_BUTTON_START)
-    self.pyboy.tick()
-    self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_START)
+    self.pyboy.tick(3, False)
+    self.pyboy.button(&#34;start&#34;)
+    self.pyboy.tick(1, False)
 
     while True:
         if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
-            self.pyboy.set_memory_value(ADDR_WIN_COUNT, 2 if unlock_level_select else 0)
+            self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
             break
-        self.pyboy.tick()
-        self.tilemap_background.refresh_lcdc()
+        self.pyboy.tick(1, False)
 
         # &#34;MARIO&#34; in the title bar and 0 is placed at score
         if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
            self.tilemap_background[5, 1] == 256:
-            self.game_has_started = True
+            # Game has started
             break
 
     self.saved_state.seek(0)
@@ -840,9 +1312,14 @@ unlock_level_select (bool): Unlock level selector menu</p></section>
 <span>def <span class="ident">reset_game</span></span>(<span>self, timer_div=None)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>After calling <code>start_game</code>, use this method to reset Mario to the beginning of world 1-1.</p>
-<p>If you want to reset to later parts of the game &ndash; for example world 1-2 or 3-1 &ndash; use the methods
-<code><a title="pyboy.PyBoy.save_state" href="../index.html#pyboy.PyBoy.save_state">PyBoy.save_state()</a></code> and <code><a title="pyboy.PyBoy.load_state" href="../index.html#pyboy.PyBoy.load_state">PyBoy.load_state()</a></code>.</p>
+<section class="desc"><p>After calling <code>start_game</code>, use this method to reset Mario to the beginning of <code>start_game</code>.</p>
+<p>If you want to reset to other worlds or levels of the game &ndash; for example world 1-2 or 3-1 &ndash; reset the entire
+emulator and provide the <code>world_level</code> on <code>start_game</code>.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.reset_game()
+</code></pre>
 <h2 id="kwargs">Kwargs</h2>
 <p>timer_div (int): Replace timer's DIV register with this value. Use <code>None</code> to randomize.</p></section>
 <details class="source">
@@ -851,10 +1328,17 @@ unlock_level_select (bool): Unlock level selector menu</p></section>
 </summary>
 <pre><code class="python">def reset_game(self, timer_div=None):
     &#34;&#34;&#34;
-    After calling `start_game`, use this method to reset Mario to the beginning of world 1-1.
+    After calling `start_game`, use this method to reset Mario to the beginning of `start_game`.
 
-    If you want to reset to later parts of the game -- for example world 1-2 or 3-1 -- use the methods
-    `pyboy.PyBoy.save_state` and `pyboy.PyBoy.load_state`.
+    If you want to reset to other worlds or levels of the game -- for example world 1-2 or 3-1 -- reset the entire
+    emulator and provide the `world_level` on `start_game`.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.reset_game()
+    ```
 
     Kwargs:
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
@@ -872,25 +1356,27 @@ unlock_level_select (bool): Unlock level selector menu</p></section>
 machine learning applications.</p>
 <p>In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
 and so on. These values can be found in the variables of this class.</p>
-<p>In this example, Mario is <code>0</code>, <code>1</code>, <code>16</code> and <code>17</code>. He is standing on the ground which is <code>352</code> and <code>353</code>:</p>
-<pre><code class="language-text">     0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19
-____________________________________________________________________________________
-0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
-1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
-2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
-3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
-4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
-8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
-9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
-10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
-11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
-12 | 300 368 369 300 0   1   300 306 307 305 300 300 300 300 350 300 300 300 300 300
-13 | 310 370 371 300 16  17  300 305 300 305 300 300 300 300 300 350 300 300 300 300
-14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
-15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+<p>In this example using <code>mapping_minimal</code>, Mario is <code>1</code>. He is standing on the ground which is <code>3</code>:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+&gt;&gt;&gt; pyboy.game_wrapper.game_area()
+array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
 </code></pre>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -909,26 +1395,28 @@ ________________________________________________________________________________
     In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
     and so on. These values can be found in the variables of this class.
 
-    In this example, Mario is `0`, `1`, `16` and `17`. He is standing on the ground which is `352` and `353`:
-    ```text
-         0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19
-    ____________________________________________________________________________________
-    0  | 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339 339
-    1  | 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320 320
-    2  | 300 300 300 300 300 300 300 300 300 300 300 300 321 322 321 322 323 300 300 300
-    3  | 300 300 300 300 300 300 300 300 300 300 300 324 325 326 325 326 327 300 300 300
-    4  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-    5  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-    6  | 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300 300
-    7  | 300 300 300 300 300 300 300 300 310 350 300 300 300 300 300 300 300 300 300 300
-    8  | 300 300 300 300 300 300 300 310 300 300 350 300 300 300 300 300 300 300 300 300
-    9  | 300 300 300 300 300 129 310 300 300 300 300 350 300 300 300 300 300 300 300 300
-    10 | 300 300 300 300 300 310 300 300 300 300 300 300 350 300 300 300 300 300 300 300
-    11 | 300 300 310 350 310 300 300 300 300 306 307 300 300 350 300 300 300 300 300 300
-    12 | 300 368 369 300 0   1   300 306 307 305 300 300 300 300 350 300 300 300 300 300
-    13 | 310 370 371 300 16  17  300 305 300 305 300 300 300 300 300 350 300 300 300 300
-    14 | 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352 352
-    15 | 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353 353
+    In this example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(supermarioland_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area_mapping(pyboy.game_wrapper.mapping_minimal, 0)
+    &gt;&gt;&gt; pyboy.game_wrapper.game_area()
+    array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+           [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+           [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
     ```
 
     Returns
@@ -945,6 +1433,8 @@ ________________________________________________________________________________
 <li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
 <ul class="hlist">
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one">mapping_one_to_one</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.shape" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.shape">shape</a></code></li>
 </ul>
 </li>
 </ul>
@@ -973,16 +1463,14 @@ ________________________________________________________________________________
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.start_game" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.start_game">start_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.reset_game" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.game_area" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.game_area">game_area</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.shape" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.shape">shape</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.world" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.world">world</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.coins" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.coins">coins</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.lives_left" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.lives_left">lives_left</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.score" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.score">score</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.time_left" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.time_left">time_left</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.level_progress" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.level_progress">level_progress</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.fitness" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.fitness">fitness</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_compressed" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_compressed">tiles_compressed</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_minimal" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.tiles_minimal">tiles_minimal</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.mapping_compressed" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.mapping_compressed">mapping_compressed</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.mapping_minimal" href="#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.mapping_minimal">mapping_minimal</a></code></li>
 </ul>
 </li>
 </ul>
