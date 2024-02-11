@@ -640,13 +640,13 @@ class PyBoy:
     def send_input(self, event):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
-        `pyboy.WindowEvent` for which events to send.
+        `pyboy.utils.WindowEvent` for which events to send.
 
         Consider using `PyBoy.button` instead for easier access.
 
         Example:
         ```python
-        >>> from pyboy import WindowEvent
+        >>> from pyboy.utils import WindowEvent
         >>> pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button 'a' and keep pressed after `PyBoy.tick()`
         >>> pyboy.tick() # Button 'a' pressed
         True

@@ -23,7 +23,8 @@ from datetime import datetime
 from core.gen_algo import get_score, Population, Network
 from core.utils import check_needed_turn, do_action, drop_down, \
     do_sideway, do_turn, check_needed_dirs, feature_names
-from pyboy import PyBoy, WindowEvent
+from pyboy import PyBoy
+from pyboy.utils import WindowEvent
 from multiprocessing import Pool, cpu_count
 
 logger = utils.getLogger("tetris")
