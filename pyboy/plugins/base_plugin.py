@@ -164,6 +164,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         if not self.pyboy.frame_count == 0:
             logger.warning("Calling start_game from an already running game. This might not work.")
+        self.game_has_started = True
+        self.saved_state.seek(0)
+        self.pyboy.save_state(self.saved_state)
 
     def reset_game(self, timer_div=None):
         """
