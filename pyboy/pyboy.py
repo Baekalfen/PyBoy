@@ -450,6 +450,11 @@ class PyBoy:
         self._update_window_title()
 
     def _post_tick(self):
+        # Fix buggy PIL. They will copy our image buffer and destroy the
+        # reference on some user operations like .save().
+        if not self.screen.image.readonly:
+            self.screen._set_image()
+
         if self.frame_count % 60 == 0:
             self._update_window_title()
         self._plugin_manager.post_tick()
