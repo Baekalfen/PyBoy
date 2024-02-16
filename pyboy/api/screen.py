@@ -120,12 +120,8 @@ class Screen:
         """
         if not Image:
             logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
-
         else:
-            self.image = Image.frombuffer(
-                self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-                self.mb.lcd.renderer._screenbuffer_raw
-            )
+            self._set_image()
 
         self.ndarray = np.frombuffer(
             self.mb.lcd.renderer._screenbuffer_raw,
@@ -165,6 +161,12 @@ class Screen:
         numpy.ndarray:
             Screendata in `ndarray` of bytes with shape (144, 160, 4)
         """
+
+    def _set_image(self):
+        self.image = Image.frombuffer(
+            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw
+        )
 
     @property
     def tilemap_position_list(self):
