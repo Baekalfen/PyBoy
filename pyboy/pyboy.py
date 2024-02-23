@@ -272,8 +272,6 @@ class PyBoy:
             Object for handling plugins in PyBoy
         """
 
-        self._hooks = {}
-
         self.game_wrapper = self._plugin_manager.gamewrapper()
         """
         Provides an instance of a game-specific or generic wrapper. The game is detected by the cartridge's hard-coded
