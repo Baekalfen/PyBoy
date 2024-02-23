@@ -262,6 +262,8 @@ class PyBoy:
             Game title
         """
 
+        self._hooks = {}
+
         self._plugin_manager = PluginManager(self, self.mb, kwargs)
         """
         Returns
@@ -269,8 +271,6 @@ class PyBoy:
         `pyboy.plugins.manager.PluginManager`:
             Object for handling plugins in PyBoy
         """
-
-        self._hooks = {}
 
         self.game_wrapper = self._plugin_manager.gamewrapper()
         """
