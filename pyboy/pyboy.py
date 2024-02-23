@@ -264,6 +264,8 @@ class PyBoy:
             Game title
         """
 
+        self._hooks = {}
+
         self._plugin_manager = PluginManager(self, self.mb, kwargs)
         """
         Returns
@@ -294,7 +296,6 @@ class PyBoy:
             A game-specific wrapper object.
         """
 
-        self._hooks = {}
         self.initialized = True
 
     def _tick(self, render):
