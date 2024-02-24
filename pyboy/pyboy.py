@@ -6,6 +6,7 @@
 The core module of the emulator
 """
 
+import heapq
 import os
 import re
 import time
@@ -128,7 +129,6 @@ class PyBoy:
         self.paused = False
         self.events = []
         self.queued_input = []
-        self.old_events = []
         self.quitting = False
         self.stopped = False
         self.window_title = "PyBoy"
@@ -461,9 +461,10 @@ class PyBoy:
         self._plugin_manager.frame_limiter(self.target_emulationspeed)
 
         # Prepare an empty list, as the API might be used to send in events between ticks
-        self.old_events = self.events
-        self.events = self.queued_input
-        self.queued_input = []
+        self.events = []
+        while self.queued_input and self.frame_count == self.queued_input[0][0]:
+            _, _event = heapq.heappop(self.queued_input)
+            self.events.append(WindowEvent(_event))
 
     def _update_window_title(self):
         avg_emu = self.avg_pre + self.avg_tick + self.avg_post
@@ -510,7 +511,7 @@ class PyBoy:
     # Scripts and bot methods
     #
 
-    def button(self, input):
+    def button(self, input, delay=1):
         """
         Send input to PyBoy in the form of "a", "b", "start", "select", "left", "right", "up" and "down".
 
@@ -523,37 +524,46 @@ class PyBoy:
         True
         >>> pyboy.tick() # Button 'a' released
         True
-
+        >>> pyboy.button('a', 3) # Press button 'a' and release after 3 `pyboy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.tick() # Button 'a' released
+        True
         ```
 
         Args:
             input (str): button to press
+            delay (int, optional): Number of frames to delay the release. Defaults to 1
         """
         input = input.lower()
         if input == "left":
             self.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_LEFT))
         elif input == "right":
             self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_RIGHT))
         elif input == "up":
             self.send_input(WindowEvent.PRESS_ARROW_UP)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_UP))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_UP))
         elif input == "down":
             self.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_ARROW_DOWN))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_DOWN))
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_A))
         elif input == "b":
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_B))
         elif input == "start":
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_START))
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            self.queued_input.append(WindowEvent(WindowEvent.RELEASE_BUTTON_SELECT))
+            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_SELECT))
         else:
             raise Exception("Unrecognized input:", input)
 
