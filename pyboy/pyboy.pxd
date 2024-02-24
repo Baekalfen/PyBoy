@@ -42,8 +42,7 @@ cdef class PyBoy:
     cdef double avg_tick
     cdef double avg_post
 
-    cdef list old_events
-    cdef list events
+    cdef readonly list events
     cdef list queued_input
     cdef bint quitting
     cdef bint stopped
