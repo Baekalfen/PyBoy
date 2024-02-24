@@ -466,6 +466,35 @@ def test_tilemap_position_list(supermarioland_rom):
     pyboy.stop(save=False)
 
 
+def test_button(default_rom):
+    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy.set_emulation_speed(0)
+
+    assert len(pyboy.events) == 0 # Nothing injected yet
+    pyboy.button("start")
+    assert len(pyboy.events) == 1 # Button press immediately
+    assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
+    pyboy.tick(1, False)
+    assert len(pyboy.events) == 1 # Button release delayed
+    assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
+    pyboy.tick(1, False)
+    assert len(pyboy.events) == 0 # No input
+
+    assert len(pyboy.events) == 0 # Nothing injected yet
+    pyboy.button("start", 3)
+    assert len(pyboy.events) == 1 # Button press immediately
+    assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
+    pyboy.tick(1, False)
+    assert len(pyboy.events) == 0 # No input
+    pyboy.tick(1, False)
+    assert len(pyboy.events) == 0 # No input
+    pyboy.tick(1, False)
+    assert len(pyboy.events) == 1 # Button release delayed
+    assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
+    pyboy.tick(1, False)
+    assert len(pyboy.events) == 0 # No input
+
+
 def test_get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window_type="null")
     pyboy.set_emulation_speed(0)
