@@ -22,6 +22,7 @@ from pyboy.plugins.screenshot_recorder cimport ScreenshotRecorder
 from pyboy.plugins.window_dummy cimport WindowDummy
 from pyboy.plugins.window_headless cimport WindowHeadless
 from pyboy.plugins.window_open_gl cimport WindowOpenGL
+from pyboy.plugins.game_wrapper_pokemon_gen1.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 # imports
 from pyboy.plugins.window_sdl2 cimport WindowSDL2
 

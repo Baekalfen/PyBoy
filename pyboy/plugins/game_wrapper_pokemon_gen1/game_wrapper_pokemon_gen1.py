@@ -2,34 +2,40 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
+
 __pdoc__ = {
     "GameWrapperPokemonGen1.cartridge_title": False,
     "GameWrapperPokemonGen1.post_tick": False,
 }
 
 import numpy as np
-
-import pyboy
-from pyboy import utils
 from pyboy.utils import WindowEvent
+from pyboy.logger import logger
+from ..base_plugin import PyBoyGameWrapper
+from .data.memory_addrs.misc import MONEY_ADDR
+from .core.pokedex import Pokedex
+from .core.pokemon import Pokemon
+from .core.player import Player
+from .core.mem_manager import MemoryManager
+from .core.game_state import GameState
 
-from .base_plugin import PyBoyGameWrapper
+PKMN_SIZE = 0x2C
+BYTE_ORDER = 'big'
 
-logger = pyboy.logging.get_logger(__name__)
 
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
     """
-    This class wraps Pokemon Red/Blue, and provides basic access for AIs.
+    This class wraps Pokemon Red/Blue.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = None
-
+    
     def __init__(self, *args, **kwargs):
         self.shape = (20, 18)
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_wrap_around=True, **kwargs)
-        self.sprite_offset = 0x1000
+        self.mem_manager = MemoryManager(self.pyboy)
 
     def enabled(self):
         return self.pyboy_argv.get("game_wrapper") and ((self.pyboy.cartridge_title() == "POKEMON RED") or
@@ -53,7 +59,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def _get_screen_walkable_matrix(self):
         walkable_tiles_indexes = []
-        collision_ptr = self.pyboy.get_memory_value(0xD530) + (self.pyboy.get_memory_value(0xD531) << 8)
+        collision_ptr = self._read_multibyte_value(0xD530, num_bytes=2)
         tileset_type = self.pyboy.get_memory_value(0xFFD7)
         if tileset_type > 0:
             grass_tile_index = self.pyboy.get_memory_value(0xD535)
@@ -101,3 +107,61 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
             )
         )
         # yapf: enable
+
+    def get_pokemon_from_party(self, party_index):
+        return Pokemon.load_pokemon_from_party(self.mem_manager, party_index)
+    
+    def get_all_pokemon_from_party(self):
+        num_pokemon = self.mem_manager.read_hex_from_memory(0xD163, 1)
+        pokemon_team = [self.get_pokemon_from_party(i+1) for i in range(num_pokemon)]
+        return pokemon_team
+
+    def get_pokedex(self):
+        return Pokedex.load_pokedex(self.mem_manager)
+    
+    def get_player(self):
+        return Player.load_player(self.mem_manager)
+    
+    def get_player_location(self):
+        player_sprite_y = self.mem_manager.read_hex_from_memory(0xD361, 1)
+        player_sprite_x = self.mem_manager.read_hex_from_memory(0xD362, 1)
+        player_sprite_map_id = self.mem_manager.read_hex_from_memory(0xD35E, 1)
+
+        return (player_sprite_x, player_sprite_y)
+    
+    def get_game_state(self):
+        return GameState.load_game_state(self.mem_manager)
+    
+    def get_screen(self):
+        return self.pyboy.botsupport_manager().screen()
+    
+    def get_screen_array(self):
+        return self.get_screen().screen_ndarray()
+    
+    '''
+    WARNING
+
+    The following functions are NOT meant to be used consistently. They exist only as
+    a way to call the heper memory access functions for testing memory fields. They 
+    WILL BE REMOVED. Ideally, some form of the memory access functions will appear in 
+    PyBoy proper, but alternatively and data accesses made with these functions should
+    be turned into a named function in the game wrapper. If you find yourself using these 
+    functions consistenly, please open up an issue at https://github.com/SnarkAttack/PyBoy
+    and indicate the memory addresses you are accessing and their use so that a named function
+    can be created. If you need those memory values, other people might too.
+    '''
+
+    def read_memory(self, address, num_bytes, read_type):
+        if read_type == 'hex':
+            return self.mem_manager.read_hex_from_memory(address, num_bytes)
+        elif read_type == 'address':
+            return self.mem_manager.read_address_from_memory(address, num_bytes)
+        elif read_type == 'bcd':
+            return self.mem_manager.read_bcd_from_memory(address, num_bytes)
+        elif read_type == 'text':
+            return self.mem_manager.read_text_from_memory(address, num_bytes)
+        else:
+            raise ValueError(f"{read_type} is not a valid read type")
+
+    def read_rom_memory(self, address, num_bytes):
+        return self.mem_manager.read_from_rom(address, num_bytes)
