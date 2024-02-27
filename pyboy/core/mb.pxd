@@ -54,7 +54,16 @@ cdef class Motherboard:
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
-    @cython.locals(cycles=int64_t, escape_halt=cython.int, mode0_cycles=int64_t)
+
+    @cython.locals(
+        lcd=pyboy.core.lcd.LCD,
+        timer=pyboy.core.timer.Timer,
+        sound=pyboy.core.sound.Sound,
+        cpu=pyboy.core.cpu.CPU,
+        hdma=HDMA,
+        cycles=uint16_t,
+        escape_halt=cython.int,
+        mode0_cycles=int64_t)
     cdef bint tick(self) noexcept nogil
 
     cdef void switch_speed(self) noexcept nogil
@@ -62,8 +71,8 @@ cdef class Motherboard:
     @cython.locals(pc=cython.int, bank=cython.int)
     cdef bint breakpoint_reached(self) noexcept with gil
 
-    cdef uint8_t getitem(self, uint16_t) noexcept nogil
-    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+    cdef uint8_t getitem(self, uint64_t) noexcept nogil
+    cdef void setitem(self, uint64_t, uint8_t) noexcept nogil
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil
@@ -83,7 +92,7 @@ cdef class HDMA:
     cdef uint16_t curr_dst
 
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
-    cdef int tick(self, Motherboard) noexcept nogil
+    cdef uint16_t tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept

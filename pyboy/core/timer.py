@@ -35,9 +35,9 @@ class Timer:
 
     def tick(self, cycles):
         self.DIV_counter += cycles
-        self.DIV += (self.DIV_counter >> 8) # Add overflown bits to DIV
+        self.DIV = (self.DIV + (self.DIV_counter >> 8)) & 0xFF # Add overflown bits to DIV
         self.DIV_counter &= 0xFF # Remove the overflown bits
-        self.DIV &= 0xFF
+        # self.DIV &= 0xFF
 
         if self.TAC & 0b100 == 0: # Check if timer is not enabled
             return False

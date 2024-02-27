@@ -129,10 +129,15 @@ class CPU:
 
         old_pc = self.PC # If the PC doesn't change, we're likely stuck
         old_sp = self.SP # Sometimes a RET can go to the same PC, so we check the SP too.
+        # Fetch and execute will mutate the PC
+        # TODO: Find a way to have opcodes not mutate cpu as much
+        # Then we can check if the PC changed, and if not, we're stuck.
+        # This way there are fewer cross-shared object dereferences
         cycles = self.fetch_and_execute()
-        if not self.halted and old_pc == self.PC and old_sp == self.SP and not self.is_stuck:
-            logger.debug("CPU is stuck: %s", self.dump_state(""))
-            self.is_stuck = True
+        # if not self.halted and old_pc == self.PC and old_sp == self.SP and not self.is_stuck:
+            # logger.error("CPU is stuck: %s", self.dump_state(""))
+        #     self.is_stuck = True
+        self.is_stuck = not self.halted and old_pc == self.PC and old_sp == self.SP and not self.is_stuck
         self.interrupt_queued = False
         return cycles
 

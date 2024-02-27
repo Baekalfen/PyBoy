@@ -117,6 +117,9 @@ class PyBoy:
         self.initialized = True
 
     def tick(self):
+        return self.tick_internal()
+
+    def tick_internal(self):
         """
         Progresses the emulator ahead by one frame.
 

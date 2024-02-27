@@ -29,8 +29,10 @@ class MBC3(BaseMBC):
             if value == 0:
                 value = 1
             self.rombank_selected = value % self.external_rom_count
+            self.rombank_view = self.rombanks[self.rombank_selected]
         elif 0x4000 <= address < 0x6000:
             self.rambank_selected = value % self.external_ram_count
+            self.rambank_view = self.rambanks[self.rambank_selected]
         elif 0x6000 <= address < 0x8000:
             if self.rtc_enabled:
                 self.rtc.writecommand(value)
@@ -41,7 +43,7 @@ class MBC3(BaseMBC):
         elif 0xA000 <= address < 0xC000:
             if self.rambank_enabled:
                 if self.rambank_selected <= 0x03:
-                    self.rambanks[self.rambank_selected, address - 0xA000] = value
+                    self.rambank_view[address - 0xA000] = value
                 elif 0x08 <= self.rambank_selected <= 0x0C:
                     self.rtc.setregister(self.rambank_selected, value)
                 # else:
