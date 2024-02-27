@@ -846,11 +846,11 @@ class MemoryWindow(BaseDebugWindow):
 
     def write_addresses(self):
         header = (f"Memory from 0x{self.start_address:04X} "
-                  f"to 0x{self.start_address+0x3FF:04X}").encode("cp437")
+                  f"to 0x{self.start_address+0x1FF:04X}").encode("cp437")
         for x in range(28):
             self.text_buffer[1, x + 2] = header[x]
         for y in range(32):
-            addr = f"0x{self.start_address + (0x20*y):04X}".encode("cp437")
+            addr = f"0x{self.start_address + (0x10*y):04X}".encode("cp437")
             for x in range(6):
                 self.text_buffer[y + 3, x + 2] = addr[x]
 
@@ -891,7 +891,7 @@ class MemoryWindow(BaseDebugWindow):
 
     def _scroll_view(self, movement):
         self.start_address += movement
-        self.start_address = max(0, min(self.start_address, 0x10000 - 0x400))
+        self.start_address = max(0, min(self.start_address, 0x10000 - 0x200))
         # if self.start_address + 0x400 > 0x10000:
         #     self.start_address = 0x10000 - 0x400
         # if self.start_address < 0:
