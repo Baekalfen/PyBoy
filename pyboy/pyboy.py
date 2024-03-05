@@ -419,6 +419,9 @@ class PyBoy:
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
 
+        if file_like_object.__class__.__name__ == "TextIOWrapper":
+            raise Exception("Text file not allowed. Did you specify open(..., 'wb')?")
+
         self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
@@ -441,6 +444,9 @@ class PyBoy:
 
         if isinstance(file_like_object, str):
             raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
+
+        if file_like_object.__class__.__name__ == "TextIOWrapper":
+            raise Exception("Text file not allowed. Did you specify open(..., 'rb')?")
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
