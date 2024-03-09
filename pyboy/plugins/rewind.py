@@ -18,7 +18,7 @@ try:
 except ImportError:
     cythonmode = False
 
-FIXED_BUFFER_SIZE = 8 * 1024 * 1024
+FIXED_BUFFER_SIZE = 256 * 1024 * 1024
 FIXED_BUFFER_MIN_ALLOC = 256 * 1024
 FILL_VALUE = 123
 
@@ -30,7 +30,10 @@ class Rewind(PyBoyPlugin):
         super().__init__(*args)
 
         self.rewind_speed = 1.0
-        self.rewind_buffer = DeltaFixedAllocBuffers()
+        if self.enabled():
+            self.rewind_buffer = DeltaFixedAllocBuffers()
+        else:
+            self.rewind_buffer = None
 
     def post_tick(self):
         if not self.pyboy.paused:
@@ -85,7 +88,7 @@ class Rewind(PyBoyPlugin):
 
 class FixedAllocBuffers(IntIOInterface):
     def __init__(self):
-        self.buffer = _malloc(FIXED_BUFFER_SIZE) # NOQA: F821
+        self.buffer = array.array("B", [0] * (FIXED_BUFFER_SIZE)) # NOQA: F821
         for n in range(FIXED_BUFFER_SIZE):
             self.buffer[n] = FILL_VALUE
         self.sections = [0]
@@ -98,7 +101,7 @@ class FixedAllocBuffers(IntIOInterface):
         self.avg_section_size = 0.0
 
     def stop(self):
-        _free(self.buffer) # NOQA: F821
+        pass
 
     def flush(self):
         pass
@@ -290,16 +293,3 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
             return False
 
         return CompressedFixedAllocBuffers.seek_frame(self, frames)
-
-
-# Having this in the top of the file, causes glitces in Vim's syntax highlighting
-if not cythonmode:
-    exec(
-        """
-def _malloc(n):
-    return array.array('B', [0]*(FIXED_BUFFER_SIZE))
-
-def _free(_):
-    pass
-""", globals(), locals()
-    )
