@@ -5,7 +5,6 @@
 
 cimport cython
 from libc.stdint cimport int64_t, uint8_t, uint64_t
-from libc.stdlib cimport free, malloc
 
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyPlugin
@@ -30,14 +29,8 @@ cdef int64_t FILL_VALUE
 DEF FIXED_BUFFER_SIZE = 8 * 1024 * 1024
 DEF FIXED_BUFFER_MIN_ALLOC = 256*1024
 
-cdef inline uint8_t* _malloc(size_t n) noexcept:
-    return <uint8_t*> malloc(FIXED_BUFFER_SIZE)
-
-cdef inline void _free(uint8_t* pointer) noexcept:
-    free(<void *> pointer)
-
 cdef class FixedAllocBuffers(IntIOInterface):
-    cdef uint8_t* buffer
+    cdef uint8_t[:] buffer
     cdef list sections
     cdef int64_t current_section
     cdef int64_t tail_pointer
