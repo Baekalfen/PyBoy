@@ -201,6 +201,24 @@ class Maps(Enum):
     CINNABAR_ISLAND = 16
     INDIGO_PLATEAU = 17
 
+class SpecialMode(Enum):
+    CATCH = 0
+    EVOLVE = 1
+    STAGE_CHANGE = 2
+
+
+class BallType(Enum):
+    POKEBALL = 0
+    GREATBALL = 2
+    ULTRABALL = 3
+    MASTERBALL = 4
+
+
+class BallSize(Enum):
+    DEFAULT = 0
+    MINI = 1
+    SUPERMINI = 2
+
 
 RedStages = [Stage.RED_TOP, Stage.RED_BOTTOM]
 BlueStages = [Stage.BLUE_TOP, Stage.BLUE_BOTTOM]
@@ -1226,23 +1244,4 @@ BlueStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625
     },
 }
-
-
-class SpecialMode(Enum):
-    CATCH = 0
-    EVOLVE = 1
-    STAGE_CHANGE = 2
-
-
-class BallType(Enum):
-    POKEBALL = 0
-    GREATBALL = 2
-    ULTRABALL = 3
-    MASTERBALL = 4
-
-
-class BallSize(Enum):
-    DEFAULT = 0
-    MINI = 1
-    SUPERMINI = 2
 
