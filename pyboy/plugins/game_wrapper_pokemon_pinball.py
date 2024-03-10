@@ -313,23 +313,8 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         #################
         self.roulette_slots_opened= 0
         self.roulette_slots_entered= 0
-        #TODO do other slots too
         
 
-        #might discard this granular tracking, as it could be inferred from the visual state of the game
-        ####################
-        # Diglett Tracking #
-        ####################
-        #self.left_diglett_hits=0
-        #self.first_left_diglett_hits=0
-        #self.second_left_diglett_hits=0
-        #self.third_left_diglett_hits=0
-        #self.right_diglett_hits=0
-        #self.first_right_diglett_hits=0
-        #self.second_right_diglett_hits=0
-        #self.third_right_diglett_hits=0
-
-        #TODO track smaller steps to larger events
 
         self._add_hooks()
 
@@ -665,15 +650,6 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             context.roulette_slots_entered += 1
         self.pyboy.hook_register(SlotRewardRoulette[0], SlotRewardRoulette[1], slot_reward_roulette, self)
 
-        #
-        #TODO test this, maybe remove idk
-        #def resolve_diglett_collision(context):
-        #    which_diglett = context.pyboy.memory[ADDR_WHICH_DIGLETT]
-        #    left_map_move_counter = context.pyboy.memory[ADDR_LEFT_MAP_MOVE_COUNTER]
-        #    right_map_move_counter = context.pyboy.memory[ADDR_RIGHT_MAP_MOVE_COUNTER]
-        #    #TODO finishi
-        #self.pyboy.hook_register(ResolveDiglettCollision[0], ResolveDiglettCollision[1], resolve_diglett_collision, self)
-
 
 def rom_address_to_bank_and_offset(address):
     """
@@ -727,9 +703,6 @@ ADDR_D580 = 0xd580
 ADDR_CURRENT_MAP = 0xd54a
 
 ADDR_POKEDEX = 0xd962
-
-# PROBABLY NOT USED ANYMORE
-ADDR_POKEMON_CAUGHT_IN_SESSION = 0xD460
 
 ADDR_STAGE_COLLISION_STATE = 0xD4AF
 ADDR_STAGE_COLLISION_STATE_HELPER = 0xD7AD
@@ -802,8 +775,6 @@ SlotRewardExtraBall=(0x3,0x6fa7)
 OpenedSlotByGetting4CaveLights_Blue=(0x7,0x667e)
 OpenedSlotByGetting4CaveLights_Red=(0x5,0x5284)
 SlotRewardRoulette=(0x3,0x6d8e)
-#ResolveDiglettCollision=(0x5,0x47aa)
-ResolveDiglettCollision=(0x5,0x47b1) #offset so it only triggers when one is hit
 
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {
