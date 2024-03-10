@@ -280,8 +280,6 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         ########################
         # Bonus stage tracking #
         ########################
-        self.bonus_stages_completed = 0
-        self.bonus_stages_visited = 0
         self.diglett_stages_completed = 0
         self.diglett_stages_visited = 0
         self.gengar_stages_completed = 0
