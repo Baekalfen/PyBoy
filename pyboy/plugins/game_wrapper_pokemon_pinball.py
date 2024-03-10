@@ -626,9 +626,9 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         def ball_upgrade_trigger(context):
             if context.ball_type == BallType.POKEBALL.value:
                 context.great_ball_upgrades += 1
-            elif context.ball_type == BallType.GREAT_BALL.value:
+            elif context.ball_type == BallType.GREATBALL.value:
                 context.ultra_ball_upgrades += 1
-            elif context.ball_type == BallType.ULTRA_BALL.value:
+            elif context.ball_type == BallType.ULTRABALL.value:
                 context.master_ball_upgrades += 1
         self.pyboy.hook_register(BallUpgradeTrigger_BlueField[0], BallUpgradeTrigger_BlueField[1], ball_upgrade_trigger, self)
         self.pyboy.hook_register(BallUpgradeTrigger_RedField[0], BallUpgradeTrigger_RedField[1], ball_upgrade_trigger, self)
