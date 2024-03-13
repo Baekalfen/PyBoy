@@ -355,7 +355,6 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self._set_timer_div(timer_div)
 
     def has_pokemon(self, pokemon):
-        #TODO TEST THIS
         """
         Check if the player has caught the given pokemon
 
@@ -411,6 +410,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE,ADDR_TO_NO_OP_STAGE_OVERRIDE] = 0b00111110
         self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE,ADDR_TO_NO_OP_STAGE_OVERRIDE + 1] = stage.value
 
+    #TODO replace with hack similar to evolve hack
     def _init_bonus_stage(self, stage):
         # set backup stage if it is a bonus stage
         if stage in RedBonusStages:
@@ -740,7 +740,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             context.roulette_slots_entered += 1
         self.pyboy.hook_register(SlotRewardRoulette[0], SlotRewardRoulette[1], slot_reward_roulette, self)
 
-
+#TODO: remove this method and the need for it
 def rom_address_to_bank_and_offset(address):
     """
     Convert a ROM address to a bank and offset
@@ -755,10 +755,19 @@ def rom_address_to_bank_and_offset(address):
     else:
         return address // 0x4000, address % 0x4000 + 0x4000
 
+
+#TODO normalize constants format
+
+#################
+# RAM Addresses #
+#################
+
 #value starts at 1, increments by 1 for each new ball launch and compares to ADDR_NUM_BALL_LIVES
 ADDR_BALLS_LEFT = 0xD49D
+
 #value gets initialized to 3 by red and blue stage initialization code
 ADDR_NUM_BALL_LIVES = 0xD49E
+
 ADDR_BALL_TYPE = 0xD47E
 ADDR_BALL_SIZE = 0xD4C8
 ADDR_EXTRA_BALLS = 0xd49b
@@ -818,17 +827,22 @@ MAX_SCORE = 999999999999 * 10
 ADDR_GAME_OVER = 0xD616
 ADDR_MULTIPLIER = 0xD482
 
-ADDR_TO_NO_OP_STAGE_OVERRIDE = 0x1774 + 37
-ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE = 3
-NO_OP_BYTE_WIDTH_STAGE_OVERRIDE = 11
+ADDR_POKEMON_TO_CATCH = 0xD579
+ADDR_RARE_POKEMON_FLAG = 0xd55b
 
 ADDR_SPECIAL_MODE = 0xD550
 ADDR_SPECIAL_MODE_ACTIVE = 0xD54B
 ADDR_SPECIAL_MODE_STATE = 0xD54D # 0 = handleEvolutionMode, 1 = CompleteEvolutionMode, 2 = FailEvolutionMode 
 # see here: https://github.com/pret/pokepinball/blob/dcfffa520017ba89108f8be97f51d76c68ea44c9/engine/pinball_game/evolution_mode/evolution_mode_blue_field.asm#L34
 
-ADDR_POKEMON_TO_CATCH = 0xD579
-ADDR_RARE_POKEMON_FLAG = 0xd55b
+
+#################
+# ROM Addresses #
+#################
+
+ADDR_TO_NO_OP_STAGE_OVERRIDE = 0x1774 + 37
+ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE = 3
+NO_OP_BYTE_WIDTH_STAGE_OVERRIDE = 11
 
 #Evolution hack related addresses
 ROM_ADDR_START_EVOLUTION_METHOD = 0x10ab3
