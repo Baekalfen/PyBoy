@@ -426,10 +426,10 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             self.pyboy.memory[ADDR_STAGE_COLLISION_STATE] = 0b100
             self.pyboy.memory[ADDR_STAGE_COLLISION_STATE_HELPER] = 0b100
 
-
+    #TODO replace with hack similar to evolve hack
     def start_catch_mode(self, pokemon=Pokemon.BULBASAUR, unlimited_time=False):
         """
-        Starts the catch mode in the game.
+        Starts the catch mode in the game. NOTE: THIS METHOD WILL PRODUCE WEIRD STAGE BEHAVIOR IF USED IN A REAL GAME.
 
         This function sets up the game state for catch mode, including the Pokemon to catch and the game timer.
 
