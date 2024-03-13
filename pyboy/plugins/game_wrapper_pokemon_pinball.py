@@ -363,6 +363,17 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         return self.pokedex[pokemon.value] == 2
 
     def set_unlimited_saver(self, unlimited_saver=True):
+        """
+        Sets the unlimited saver mode in the game.
+
+        This function allows for an unlimited saver option in the game.
+
+        Parameters:
+        unlimited_saver (bool, optional): If True, the saver mode in the game is unlimited. Defaults to True.
+
+        Returns:
+        None
+        """
         self._unlimited_saver = unlimited_saver
 
     def _set_stage(self, stage):
@@ -400,6 +411,18 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
 
     def start_catch_mode(self, pokemon=Pokemon.BULBASAUR, unlimited_time=False):
+        """
+        Starts the catch mode in the game.
+
+        This function sets up the game state for catch mode, including the Pokemon to catch and the game timer.
+
+        Parameters:
+        pokemon (Pokemon, optional): The Pokemon to catch in this mode. Defaults to Pokemon.BULBASAUR.
+        unlimited_time (bool, optional): If True, the game timer is not activated, giving unlimited time in catch mode. Defaults to False.
+
+        Returns:
+        None
+        """
         # All values are based on PRET disassembly
         self.pyboy.memory[ADDR_SPECIAL_MODE] = SpecialMode.CATCH.value
         self.pyboy.memory[ADDR_POKEMON_TO_CATCH] = pokemon.value
@@ -421,6 +444,17 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
     #replaces pause button with evolution start
     def enable_evolve_hack(self, unlimited_time=False):
+        """
+        Enables the evolution hack in the game.
+
+        This function replaces the pause button with the evolution start method. It also allows for an unlimited time option.
+
+        Parameters:
+        unlimited_time (bool, optional): If True, the game timer is disabled, giving unlimited time in the game. Defaults to False.
+
+        Returns:
+        None
+        """
         bank_addr_evo = rom_address_to_bank_and_offset(ROM_ADDR_START_EVOLUTION_METHOD)
 
         lower_8bits = bank_addr_evo[1] & 0xFF
@@ -443,7 +477,14 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
     def current_map_completed(self):
         """
-        Check if the current map has been completed by catching all available pokemon
+        Determines if all Pokemon in the current map have been caught.
+
+        This function checks whether all Pokemon, both common and rare, in the current stage's map have been caught. 
+        It supports both Red and Blue stages. If any Pokemon in the map has not been caught, the function returns False. 
+        If all Pokemon have been caught, it returns True.
+
+        Returns:
+        bool: True if all Pokemon in the current map have been caught, False otherwise.
         """
         if self.current_stage in RedStages:
             for pokemon in RedStageMapWildMons[self.current_map]:
@@ -462,6 +503,18 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         return True
 
     def start_game(self, timer_div=None, stage=None):
+        """
+        Starts the game with optional timer division and stage parameters.
+
+        This function sets up the game state, sends the necessary inputs to start the game, and saves the initial game state.
+
+        Parameters:
+        timer_div (int, optional): The division value for the game timer. Defaults to None.
+        stage (int, optional): The stage to start the game at. Defaults to None.
+
+        Returns:
+        None
+        """
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         self._set_stage(stage)
