@@ -567,10 +567,11 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self._sprite_cache_invalid = True
 
         self.ball_type = self.pyboy.memory[ADDR_BALL_TYPE]
-        self.balls_left = 4 - self.pyboy.memory[ADDR_BALLS_LEFT] + self.pyboy.memory[ADDR_EXTRA_BALLS]
+        self.balls_left = 3 - self.pyboy.memory[ADDR_BALLS_LEFT] + self.pyboy.memory[ADDR_EXTRA_BALLS]
         self.game_over = self.pyboy.memory[ADDR_GAME_OVER] == 1
 
         self.current_map = self.pyboy.memory[ADDR_CURRENT_MAP]
+        self.current_stage = self.pyboy.memory[ADDR_CURRENT_STAGE]
 
         self.score = bcd_to_dec(
             int.from_bytes(self.pyboy.memory[ADDR_SCORE:ADDR_SCORE + SCORE_BYTE_WIDTH], "little"),
