@@ -50,6 +50,8 @@ cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
     cdef public int ball_y_velocity
     cdef public int roulette_slots_opened
     cdef public int roulette_slots_entered
+    cdef public int special_mode
+    cdef public int special_mode_active
 
 
     cdef bint _unlimited_saver
