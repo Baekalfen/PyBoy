@@ -632,7 +632,26 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             "Current stage: " + str(Stage(self.current_stage).name) + "\n" +
             "Game over: " + str(self.game_over) + "\n" +
             "Ball saver seconds left: " + str(self.ball_saver_seconds_left) + "\n" +
-            "Pokemon caught in session: " + str(self.pokemon_caught_in_session) + "\n"
+            "Pokemon caught in session: " + str(self.pokemon_caught_in_session) + "\n" +
+            "Pokemon seen in session: " + str(self.pokemon_seen_in_session) + "\n" +
+            "Ball saver active: " + str(self.saver_active) + "\n" +
+            "Special mode active: " + str(self.special_mode_active) + "\n" +
+            "Evolution failure count: " + str(self.evolution_failure_count) + "\n" +
+            "Evolution success count: " + str(self.evolution_success_count) + "\n" +
+            "Pikachu saver charge: " + str(self.pikachu_saver_charge) + "\n" +
+            "Pikachu saver used: " + str(self.pikachu_saver_used) + "\n" +
+            "Great Ball upgrades: " + str(self.great_ball_upgrades) + "\n" +
+            "Ultra Ball upgrades: " + str(self.ultra_ball_upgrades) + "\n" +
+            "Master Ball upgrades: " + str(self.master_ball_upgrades) + "\n" +
+            "Extra balls added: " + str(self.extra_balls_added) + "\n" +
+            "Roulette slots opened: " + str(self.roulette_slots_opened) + "\n" +
+            "Roulette slots entered: " + str(self.roulette_slots_entered) + "\n" +
+            "Current map: " + str(self.current_map) + "\n" +
+            "Diglett stages completed: " + str(self.diglett_stages_completed) + " / Visited: " + str(self.diglett_stages_visited) + "\n" +
+            "Gengar stages completed: " + str(self.gengar_stages_completed) + " / Visited: " + str(self.gengar_stages_visited) + "\n" +
+            "Meowth stages completed: " + str(self.meowth_stages_completed) + " / Visited: " + str(self.meowth_stages_visited) + "\n" +
+            "Mewtwo stages completed: " + str(self.mewtwo_stages_completed) + " / Visited: " + str(self.mewtwo_stages_visited) + "\n" +
+            "Seel stages completed: " + str(self.seel_stages_completed) + " / Visited: " + str(self.seel_stages_visited) + "\n"
         )
         # yapf: enable
     
