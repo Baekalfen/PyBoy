@@ -58,4 +58,3 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     assert pokemon_pinball.balls_left == 2
 
     pyboy.stop()
-    pyboy.stop()
