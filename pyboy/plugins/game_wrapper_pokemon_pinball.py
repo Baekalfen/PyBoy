@@ -266,6 +266,8 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.ball_y =0
         self.ball_x_velocity =0
         self.ball_y_velocity =0
+        self.special_mode = 0
+        self.special_mode_active = False
         
         ##########################
         # Fitness Related Values #
@@ -587,6 +589,9 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
         self.current_map = self.pyboy.memory[ADDR_CURRENT_MAP]
         self.current_stage = self.pyboy.memory[ADDR_CURRENT_STAGE]
+
+        self.special_mode = self.pyboy.memory[ADDR_SPECIAL_MODE]
+        self.special_mode_active = self.pyboy.memory[ADDR_SPECIAL_MODE_ACTIVE]==1
 
         self.score = bcd_to_dec(
             int.from_bytes(self.pyboy.memory[ADDR_SCORE:ADDR_SCORE + SCORE_BYTE_WIDTH], "little"),
