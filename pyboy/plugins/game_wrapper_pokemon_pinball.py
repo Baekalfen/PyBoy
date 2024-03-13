@@ -382,9 +382,24 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         Bonus stages require further initialization
         This method should be called before the game starts
 
+        No ops out these asm lines:
+        	jr z, .pressedB
+            ld a, [wSelectedFieldIndex]
+            ld c, a
+            ld b, $0
+            ld hl, StartingStages
+            add hl, bc
+            ld a, [hl]
+
+        Inserts the following asm:
+            ld a, stage.value
+
+
         Kwargs:
             stage (Stage): The stage to set the game to.
         """
+
+
         if stage is None:
             return
         for i in range(NO_OP_BYTE_WIDTH_STAGE_OVERRIDE):
