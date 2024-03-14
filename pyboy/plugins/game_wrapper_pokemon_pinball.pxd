@@ -53,7 +53,7 @@ cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
     cdef public int seel_stages_visited
     cdef public int slots_entered
     cdef public int slots_opened
-
+    cdef public int lost_ball_during_saver
 
     cdef bint _unlimited_saver
 
