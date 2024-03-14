@@ -961,6 +961,31 @@ class PyBoy:
                     return bank, addr
         raise ValueError("Symbol not found: %s" % symbol)
 
+    def symbol_lookup(self, symbol):
+        """
+        Look up a specific symbol from provided symbols file.
+
+        This can be useful in combination with `PyBoy.memory` or even `PyBoy.hook_register`.
+
+        See `PyBoy.hook_register` for how to load symbol into PyBoy.
+
+        Example:
+        ```python
+        >>> # Continued example above
+        >>> bank, addr = pyboy.symbol_lookup("Tileset")
+        >>> pyboy.memory[bank, addr]
+        0
+        >>> pyboy.memory[bank, addr:addr+10]
+        [0, 0, 0, 0, 0, 0, 102, 102, 102, 102]
+
+        ```
+        Returns
+        -------
+        (int, int):
+            ROM/RAM bank, address
+        """
+        return self._lookup_symbol(symbol)
+
     def hook_register(self, bank, addr, callback, context):
         """
         Adds a hook into a specific bank and memory address.
