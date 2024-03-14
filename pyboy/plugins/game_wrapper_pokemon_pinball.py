@@ -408,7 +408,6 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE, ADDR_TO_NO_OP_STAGE_OVERRIDE] = 0b00111110
         self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE, ADDR_TO_NO_OP_STAGE_OVERRIDE + 1] = stage.value
 
-    #TODO replace with hack similar to evolve hack
     def _init_bonus_stage(self, stage):
         # set backup stage if it is a bonus stage
         if stage in RedBonusStages:
@@ -424,10 +423,9 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             self.pyboy.memory[ADDR_STAGE_COLLISION_STATE] = 0b100
             self.pyboy.memory[ADDR_STAGE_COLLISION_STATE_HELPER] = 0b100
 
-    #TODO replace with hack similar to evolve hack
     def start_catch_mode(self, pokemon=Pokemon.BULBASAUR, unlimited_time=False):
         """
-        Starts the catch mode in the game. NOTE: THIS METHOD WILL PRODUCE WEIRD STAGE BEHAVIOR IF USED IN A REAL GAME.
+        Starts the catch mode in the game. NOTE: This method does not change stage specific values and may need a top/bottom stage change to work properly.
 
         This function sets up the game state for catch mode, including the Pokemon to catch and the game timer.
 
