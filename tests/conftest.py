@@ -107,6 +107,10 @@ def pokemon_gold_rom(secrets):
 def pokemon_crystal_rom(secrets):
     return locate_sha256(b"d6702e353dcbe2d2c69183046c878ef13a0dae4006e8cdff521cca83dd1582fe")
 
+@pytest.fixture(scope="session")
+def pokemon_pinball_rom(secrets):
+    return locate_sha256(b"7672001d4710272009df6a41e3cbada65decd56e0eb2f185cb3d59c08d33ea0e")
+
 
 @pytest.fixture(scope="session")
 def tetris_rom(secrets):
