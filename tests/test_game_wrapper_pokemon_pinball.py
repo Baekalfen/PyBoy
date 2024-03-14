@@ -11,12 +11,12 @@ import numpy as np
 import pytest
 
 from pyboy import PyBoy
+from pyboy.plugins.game_wrapper_pokemon_pinball import Pokemon, SpecialMode, Stage
 from pyboy.utils import WindowEvent
-from pyboy.plugins.game_wrapper_pokemon_pinball import Stage,SpecialMode,Pokemon
 
 
 def test_pokemon_pinball_basics(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window_type="null",game_wrapper=True)
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null", game_wrapper=True)
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -49,7 +49,6 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     pyboy.button_press("a")
     for i in range(700):
         pyboy.tick(render=False)
-
 
     assert pokemon_pinball.score == 123200
     assert pokemon_pinball.special_mode == SpecialMode.CATCH.value
@@ -90,7 +89,6 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
     for i in range(700):
         pyboy.tick(render=False)
 
-
     assert pokemon_pinball.score == 15635100
     assert pokemon_pinball.has_pokemon(Pokemon.BULBASAUR)
     assert pokemon_pinball.has_pokemon(Pokemon.CHARMANDER) == False
@@ -98,8 +96,9 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
 
     pyboy.stop()
 
+
 def test_pokemon_pinball_game_over(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, game_wrapper=True,window_type="null")
+    pyboy = PyBoy(pokemon_pinball_rom, game_wrapper=True, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -107,7 +106,7 @@ def test_pokemon_pinball_game_over(pokemon_pinball_rom):
     pokemon_pinball.start_game()
     pyboy.button("a")
     for i in range(6185):
-        if i%100 == 0:
+        if i % 100 == 0:
             pyboy.button("a")
         pyboy.tick(render=False)
 
