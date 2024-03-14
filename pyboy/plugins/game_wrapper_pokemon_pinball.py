@@ -384,6 +384,12 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.extra_balls_added = 0 # Does not include extra balls rewarded via roulette
         """The number of extra balls added, not including those rewarded via roulette"""
 
+        ##########################
+        # Lost Ball During Saver #
+        ##########################
+        self.lost_ball_during_saver = 0
+        """The number of balls lost during a saver mode"""
+
         #################
         # Slot Tracking #
         #################
@@ -688,6 +694,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             "Pokemon caught in session: " + str(self.pokemon_caught_in_session) + "\n" +
             "Pokemon seen in session: " + str(self.pokemon_seen_in_session) + "\n" +
             "Ball saver active: " + str(self.saver_active) + "\n" +
+            "Ball lost during saver: " + str(self.lost_ball_during_saver) + "\n" +
             "Special mode active: " + str(self.special_mode_active) + "\n" +
             "Evolution failure count: " + str(self.evolution_failure_count) + "\n" +
             "Evolution success count: " + str(self.evolution_success_count) + "\n" +
@@ -902,6 +909,16 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             BANK_OFFSET_SLOT_REWARD_ROULETTE[0], BANK_OFFSET_SLOT_REWARD_ROULETTE[1], slot_reward_roulette, self
         )
 
+        def lost_ball_during_saver(context):
+            context.lost_ball_during_saver += 1
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_BALL_SAVED_RED[0], BANK_OFFSET_BALL_SAVED_RED[1], lost_ball_during_saver, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_BALL_SAVED_BLUE[0], BANK_OFFSET_BALL_SAVED_BLUE[1], lost_ball_during_saver, self
+        )
+
 
 #################
 # RAM Addresses #
@@ -1025,6 +1042,8 @@ BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE = (0x7, 0x667e)
 BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED = (0x5, 0x5284)
 BANK_OFFSET_SLOT_REWARD_ROULETTE = (0x3, 0x6d8e)
 BANK_OFFSET_DISABLE_TIMER = (4, 0x4d64)
+BANK_OFFSET_BALL_SAVED_RED = (3, 0x5d7f)
+BANK_OFFSET_BALL_SAVED_BLUE = (3, 0x5e58)
 
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {
