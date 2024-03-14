@@ -21,6 +21,7 @@ from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLan
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
 from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # isort:skip
+from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # isort:skip
 # imports end
 
 
@@ -41,6 +42,7 @@ def parser_arguments():
     yield GameWrapperTetris.argv
     yield GameWrapperKirbyDreamLand.argv
     yield GameWrapperPokemonGen1.argv
+    yield GameWrapperPokemonPinball.argv
     # yield_plugins end
     pass
 
@@ -82,6 +84,8 @@ class PluginManager:
         self.game_wrapper_kirby_dream_land_enabled = self.game_wrapper_kirby_dream_land.enabled()
         self.game_wrapper_pokemon_gen1 = GameWrapperPokemonGen1(pyboy, mb, pyboy_argv)
         self.game_wrapper_pokemon_gen1_enabled = self.game_wrapper_pokemon_gen1.enabled()
+        self.game_wrapper_pokemon_pinball = GameWrapperPokemonPinball(pyboy, mb, pyboy_argv)
+        self.game_wrapper_pokemon_pinball_enabled = self.game_wrapper_pokemon_pinball.enabled()
         # plugins_enabled end
 
     def gamewrapper(self):
@@ -90,6 +94,7 @@ class PluginManager:
         if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
         if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
         if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
+        if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
         # gamewrapper end
         self.generic_game_wrapper_enabled = True
         return self.generic_game_wrapper
@@ -128,6 +133,8 @@ class PluginManager:
             events = self.game_wrapper_kirby_dream_land.handle_events(events)
         if self.game_wrapper_pokemon_gen1_enabled:
             events = self.game_wrapper_pokemon_gen1.handle_events(events)
+        if self.game_wrapper_pokemon_pinball_enabled:
+            events = self.game_wrapper_pokemon_pinball.handle_events(events)
         # foreach end
         if self.generic_game_wrapper_enabled:
             events = self.generic_game_wrapper.handle_events(events)
@@ -157,6 +164,8 @@ class PluginManager:
             self.game_wrapper_kirby_dream_land.post_tick()
         if self.game_wrapper_pokemon_gen1_enabled:
             self.game_wrapper_pokemon_gen1.post_tick()
+        if self.game_wrapper_pokemon_pinball_enabled:
+            self.game_wrapper_pokemon_pinball.post_tick()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.post_tick()
@@ -242,6 +251,8 @@ class PluginManager:
             title += self.game_wrapper_kirby_dream_land.window_title()
         if self.game_wrapper_pokemon_gen1_enabled:
             title += self.game_wrapper_pokemon_gen1.window_title()
+        if self.game_wrapper_pokemon_pinball_enabled:
+            title += self.game_wrapper_pokemon_pinball.window_title()
         # foreach end
         return title
 
@@ -279,6 +290,8 @@ class PluginManager:
             self.game_wrapper_kirby_dream_land.stop()
         if self.game_wrapper_pokemon_gen1_enabled:
             self.game_wrapper_pokemon_gen1.stop()
+        if self.game_wrapper_pokemon_pinball_enabled:
+            self.game_wrapper_pokemon_pinball.stop()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.stop()
