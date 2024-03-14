@@ -637,6 +637,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             "Pokemon caught in session: " + str(self.pokemon_caught_in_session) + "\n" +
             "Pokemon seen in session: " + str(self.pokemon_seen_in_session) + "\n" +
             "Ball saver active: " + str(self.saver_active) + "\n" +
+            "Ball lost during saver: " + str(self.lost_ball_during_saver) + "\n" +
             "Special mode active: " + str(self.special_mode_active) + "\n" +
             "Evolution failure count: " + str(self.evolution_failure_count) + "\n" +
             "Evolution success count: " + str(self.evolution_success_count) + "\n" +
