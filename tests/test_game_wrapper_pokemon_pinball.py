@@ -98,19 +98,19 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
 
     pyboy.stop()
 
-"""
 def test_pokemon_pinball_game_over(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
+    pyboy = PyBoy(pokemon_pinball_rom, game_wrapper=True,window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper
     pokemon_pinball.start_game()
-    pokemon_pinball.set_lives_left(0)
-    pyboy.button_press("right")
-    for _ in range(500): # Enough to game over correctly, and not long enough it'll work without setting the lives
-        pyboy.tick(1, False)
-        if pokemon_pinball.game_over():
-            break
+    pyboy.button("a")
+    for i in range(6185):
+        if i%100 == 0:
+            pyboy.button("a")
+        pyboy.tick(render=False)
+
+    assert pokemon_pinball.game_over
+
     pyboy.stop()
-"""
