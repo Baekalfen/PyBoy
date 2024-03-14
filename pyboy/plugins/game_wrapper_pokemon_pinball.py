@@ -472,14 +472,14 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         Returns:
         None
         """
-        bank_addr_evo = rom_address_to_bank_and_offset(ROM_ADDR_START_EVOLUTION_METHOD)
+        bank_addr_evo = StartEvolution
 
         lower_8bits = bank_addr_evo[1] & 0xFF
         upper_8bits = (bank_addr_evo[1]>> 8) & 0xFF
 
-        bank_addr_pause=rom_address_to_bank_and_offset(ROM_ADDR_PAUSE_METHOD_CALL) 
+        bank_addr_pause = PauseMethodCall
 
-        self.pyboy.memory[rom_address_to_bank_and_offset(ROM_ADDR_PAUSE_BANK)] = bank_addr_evo[0]
+        self.pyboy.memory[PauseMethodBank] = bank_addr_evo[0]
         self.pyboy.memory[bank_addr_pause[0], bank_addr_pause[1]] = lower_8bits
         self.pyboy.memory[bank_addr_pause[0], bank_addr_pause[1]+1] = upper_8bits
         if unlimited_time:
@@ -759,20 +759,6 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             context.roulette_slots_entered += 1
         self.pyboy.hook_register(SlotRewardRoulette[0], SlotRewardRoulette[1], slot_reward_roulette, self)
 
-#TODO: remove this method and the need for it
-def rom_address_to_bank_and_offset(address):
-    """
-    Convert a ROM address to a bank and offset
-
-    Args:
-        address (int): The ROM address
-    Returns:
-        tuple: The bank and offset
-    """
-    if address < 0x4000:
-        return 0, address
-    else:
-        return address // 0x4000, address % 0x4000 + 0x4000
 
 
 #TODO normalize constants format
@@ -864,10 +850,9 @@ ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE = 3
 NO_OP_BYTE_WIDTH_STAGE_OVERRIDE = 11
 
 #Evolution hack related addresses
-ROM_ADDR_START_EVOLUTION_METHOD = 0x10ab3
-ROM_ADDR_PAUSE_BANK = 0xd954
-ROM_ADDR_PAUSE_METHOD_CALL = 0xd956
-ROM_ADDR_PAUSE_METHOD = 0x86d7
+SartEvolution=(4,0x4ab3)
+PauseMethodBank=(3,0x5954)
+PauseMethodCall=(3,0x5956)
 
 CompleteEvolutionMode_BlueField= (8,0x4d30)
 CompleteEvolutionMode_RedField=(8,0x470b)
