@@ -16,6 +16,7 @@ from .base_plugin import PyBoyGameWrapper
 
 logger = logging.getLogger(__name__)
 
+
 class Stage(Enum):
     RED_TOP = 0
     RED_BOTTOM = 1
@@ -26,6 +27,7 @@ class Stage(Enum):
     MEOWTH = 11
     DIGLETT = 13
     SEEL = 15
+
 
 class Pokemon(Enum):
     BULBASAUR = 0
@@ -201,6 +203,7 @@ class Maps(Enum):
     CINNABAR_ISLAND = 16
     INDIGO_PLATEAU = 17
 
+
 class SpecialMode(Enum):
     CATCH = 0
     EVOLVE = 1
@@ -262,13 +265,13 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         """The pokedex state"""
         self._unlimited_saver = False
         """The unlimited saver state"""
-        self.ball_x =0
-        self.ball_y =0
-        self.ball_x_velocity =0
-        self.ball_y_velocity =0
+        self.ball_x = 0
+        self.ball_y = 0
+        self.ball_x_velocity = 0
+        self.ball_y_velocity = 0
         self.special_mode = 0
         self.special_mode_active = False
-        
+
         ##########################
         # Fitness Related Values #
         ##########################
@@ -278,7 +281,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         ######################
         self.evolution_failure_count = 0
         self.evolution_success_count = 0
-        
+
         ########################
         # Bonus stage tracking #
         ########################
@@ -293,14 +296,13 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.seel_stages_completed = 0
         self.seel_stages_visited = 0
 
-        
         ##########################
         # Pikachu Saver tracking #
         ##########################
         self.pikachu_saver_charge = 0 # range of 0-15
         self.pikachu_saver_increments = 0
         self.pikachu_saver_used = 0
-        
+
         ################
         # Map tracking #
         ################
@@ -329,15 +331,12 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         #################
         # Slot Tracking #
         #################
-        self.roulette_slots_opened= 0
-        self.roulette_slots_entered= 0
-        
-
+        self.roulette_slots_opened = 0
+        self.roulette_slots_entered = 0
 
         self._add_hooks()
 
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_follow_scxy=True, **kwargs)
-
 
     def _update_pokedex(self):
         for pokemon in Pokemon:
@@ -400,15 +399,14 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             stage (Stage): The stage to set the game to.
         """
 
-
         if stage is None:
             return
         for i in range(NO_OP_BYTE_WIDTH_STAGE_OVERRIDE):
             # equivalent to no op
-            self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE,ADDR_TO_NO_OP_STAGE_OVERRIDE + i] = 0x00
+            self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE, ADDR_TO_NO_OP_STAGE_OVERRIDE + i] = 0x00
         # equivalent to ld a, stage.value
-        self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE,ADDR_TO_NO_OP_STAGE_OVERRIDE] = 0b00111110
-        self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE,ADDR_TO_NO_OP_STAGE_OVERRIDE + 1] = stage.value
+        self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE, ADDR_TO_NO_OP_STAGE_OVERRIDE] = 0b00111110
+        self.pyboy.memory[ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE, ADDR_TO_NO_OP_STAGE_OVERRIDE + 1] = stage.value
 
     #TODO replace with hack similar to evolve hack
     def _init_bonus_stage(self, stage):
@@ -475,20 +473,22 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         bank_addr_evo = BANK_OFFSET_START_EVOLUTION
 
         lower_8bits = bank_addr_evo[1] & 0xFF
-        upper_8bits = (bank_addr_evo[1]>> 8) & 0xFF
+        upper_8bits = (bank_addr_evo[1] >> 8) & 0xFF
 
-        bank_addr_pause =BANK_OFFSET_PAUSE_METHOD_CALL
+        bank_addr_pause = BANK_OFFSET_PAUSE_METHOD_CALL
 
         self.pyboy.memory[BANK_OFFSET_PAUSE_METHOD_BANK] = bank_addr_evo[0]
         self.pyboy.memory[bank_addr_pause[0], bank_addr_pause[1]] = lower_8bits
-        self.pyboy.memory[bank_addr_pause[0], bank_addr_pause[1]+1] = upper_8bits
+        self.pyboy.memory[bank_addr_pause[0], bank_addr_pause[1] + 1] = upper_8bits
         if unlimited_time:
+
             def disable_timer(context):
                 context.memory[ADDR_TIMER_ACTIVE] = 0
-            bank=4
-            offset=0x4d64
+
+            bank = 4
+            offset = 0x4d64
             try:
-                self.pyboy.hook_register(bank,offset,disable_timer,self.pyboy)
+                self.pyboy.hook_register(bank, offset, disable_timer, self.pyboy)
             except:
                 pass #hook already exists
 
@@ -591,13 +591,13 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.current_stage = self.pyboy.memory[ADDR_CURRENT_STAGE]
 
         self.special_mode = self.pyboy.memory[ADDR_SPECIAL_MODE]
-        self.special_mode_active = self.pyboy.memory[ADDR_SPECIAL_MODE_ACTIVE]==1
+        self.special_mode_active = self.pyboy.memory[ADDR_SPECIAL_MODE_ACTIVE] == 1
 
         self.score = bcd_to_dec(
             int.from_bytes(self.pyboy.memory[ADDR_SCORE:ADDR_SCORE + SCORE_BYTE_WIDTH], "little"),
             byte_width=SCORE_BYTE_WIDTH
         ) * 10
-        
+
         self.multiplier = self.pyboy.memory[ADDR_MULTIPLIER]
 
         self.ball_size = self.pyboy.memory[ADDR_BALL_SIZE]
@@ -614,7 +614,6 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             self.pyboy.memory[ADDR_BALL_SAVER_SECONDS_LEFT] = 30
 
         self._update_pokedex()
-
 
     def __repr__(self):
         adjust = 4
@@ -654,83 +653,151 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             "Seel stages completed: " + str(self.seel_stages_completed) + " / Visited: " + str(self.seel_stages_visited) + "\n"
         )
         # yapf: enable
-    
+
     def _add_hooks(self):
         def completed_evolution(context):
             context.evolution_success_count += 1
-        self.pyboy.hook_register(BANK_OFFSET_COMPLETE_EVOLUTION_MODE_RED_FIELD [0], BANK_OFFSET_COMPLETE_EVOLUTION_MODE_RED_FIELD[1], completed_evolution, self)
-        self.pyboy.hook_register(BANK_OFFSET_COMPLETE_EVOLUTION_MODE_BLUE_FIELD[0], BANK_OFFSET_COMPLETE_EVOLUTION_MODE_BLUE_FIELD[1], completed_evolution, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_COMPLETE_EVOLUTION_MODE_RED_FIELD[0], BANK_OFFSET_COMPLETE_EVOLUTION_MODE_RED_FIELD[1],
+            completed_evolution, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_COMPLETE_EVOLUTION_MODE_BLUE_FIELD[0], BANK_OFFSET_COMPLETE_EVOLUTION_MODE_BLUE_FIELD[1],
+            completed_evolution, self
+        )
 
         def failed_evolution(context):
             context.evolution_failure_count += 1
-        self.pyboy.hook_register(BANK_OFFSET_FAIL_EVOLUTION_MODE_RED_FIELD[0], BANK_OFFSET_FAIL_EVOLUTION_MODE_RED_FIELD[1], failed_evolution, self)
-        self.pyboy.hook_register(BANK_OFFSET_FAIL_EVOLUTION_MODE_BLUE_FIELD[0], BANK_OFFSET_FAIL_EVOLUTION_MODE_BLUE_FIELD[1], failed_evolution, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_FAIL_EVOLUTION_MODE_RED_FIELD[0], BANK_OFFSET_FAIL_EVOLUTION_MODE_RED_FIELD[1],
+            failed_evolution, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_FAIL_EVOLUTION_MODE_BLUE_FIELD[0], BANK_OFFSET_FAIL_EVOLUTION_MODE_BLUE_FIELD[1],
+            failed_evolution, self
+        )
 
         def pokemon_caught(context):
             context.pokemon_caught_in_session += 1
-        self.pyboy.hook_register(BANK_OFFSET_ADD_CAUGHT_POKEMON_TO_PARTY[0], BANK_OFFSET_ADD_CAUGHT_POKEMON_TO_PARTY[1], pokemon_caught, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_ADD_CAUGHT_POKEMON_TO_PARTY[0], BANK_OFFSET_ADD_CAUGHT_POKEMON_TO_PARTY[1], pokemon_caught, self
+        )
 
         def pokemon_seen(context):
             context.pokemon_seen_in_session += 1
-        self.pyboy.hook_register(BANK_OFFSET_SET_POKEMON_SEEN_FLAG[0], BANK_OFFSET_SET_POKEMON_SEEN_FLAG[1], pokemon_seen, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_SET_POKEMON_SEEN_FLAG[0], BANK_OFFSET_SET_POKEMON_SEEN_FLAG[1], pokemon_seen, self
+        )
 
         def meowth_visited(context):
             context.meowth_stages_visited += 1
-        self.pyboy.hook_register(BANK_OFFSET_INIT_MEOWTH_BONUS_STAGE[0], BANK_OFFSET_INIT_MEOWTH_BONUS_STAGE[1], meowth_visited, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_INIT_MEOWTH_BONUS_STAGE[0], BANK_OFFSET_INIT_MEOWTH_BONUS_STAGE[1], meowth_visited, self
+        )
 
         def diglett_visited(context):
             context.diglett_stages_visited += 1
-        self.pyboy.hook_register(BANK_OFFSET_INIT_DIGLETT_BONUS_STAGE[0], BANK_OFFSET_INIT_DIGLETT_BONUS_STAGE[1], diglett_visited, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_INIT_DIGLETT_BONUS_STAGE[0], BANK_OFFSET_INIT_DIGLETT_BONUS_STAGE[1], diglett_visited, self
+        )
 
         def gengar_visited(context):
             context.gengar_stages_visited += 1
-        self.pyboy.hook_register(BANK_OFFSET_INIT_GENGAR_BONUS_STAGE[0], BANK_OFFSET_INIT_GENGAR_BONUS_STAGE[1], gengar_visited, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_INIT_GENGAR_BONUS_STAGE[0], BANK_OFFSET_INIT_GENGAR_BONUS_STAGE[1], gengar_visited, self
+        )
 
         def seel_visited(context):
             context.seel_stages_visited += 1
-        self.pyboy.hook_register(BANK_OFFSET_INIT_SEEL_BONUS_STAGE[0], BANK_OFFSET_INIT_SEEL_BONUS_STAGE[1], seel_visited, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_INIT_SEEL_BONUS_STAGE[0], BANK_OFFSET_INIT_SEEL_BONUS_STAGE[1], seel_visited, self
+        )
 
         def mewtwo_visited(context):
             context.mewtwo_stages_visited += 1
-        self.pyboy.hook_register(BANK_OFFSET_INIT_MEWTWO_BONUS_STAGE[0], BANK_OFFSET_INIT_MEWTWO_BONUS_STAGE[1], mewtwo_visited, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_INIT_MEWTWO_BONUS_STAGE[0], BANK_OFFSET_INIT_MEWTWO_BONUS_STAGE[1], mewtwo_visited, self
+        )
 
         def meowth_completed(context):
             context.meowth_stages_completed += 1
-        self.pyboy.hook_register(BANK_OFFSET_MEOWTH_STAGE_COMPLETE[0], BANK_OFFSET_MEOWTH_STAGE_COMPLETE[1], meowth_completed, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_MEOWTH_STAGE_COMPLETE[0], BANK_OFFSET_MEOWTH_STAGE_COMPLETE[1], meowth_completed, self
+        )
 
         def diglett_completed(context):
             context.diglett_stages_completed += 1
-        self.pyboy.hook_register(BANK_OFFSET_DIGLETT_STAGE_COMPLETE[0], BANK_OFFSET_DIGLETT_STAGE_COMPLETE[1], diglett_completed, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_DIGLETT_STAGE_COMPLETE[0], BANK_OFFSET_DIGLETT_STAGE_COMPLETE[1], diglett_completed, self
+        )
 
         def gengar_completed(context):
             context.gengar_stages_completed += 1
-        self.pyboy.hook_register(BANK_OFFSET_GENGAR_STAGE_COMPLETE[0], BANK_OFFSET_GENGAR_STAGE_COMPLETE[1], gengar_completed, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_GENGAR_STAGE_COMPLETE[0], BANK_OFFSET_GENGAR_STAGE_COMPLETE[1], gengar_completed, self
+        )
 
         def seel_completed(context):
             context.seel_stages_completed += 1
-        self.pyboy.hook_register(BANK_OFFSET_SEEL_STAGE_COMPLETE[0], BANK_OFFSET_SEEL_STAGE_COMPLETE[1], seel_completed, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_SEEL_STAGE_COMPLETE[0], BANK_OFFSET_SEEL_STAGE_COMPLETE[1], seel_completed, self
+        )
 
         def mewtwo_completed(context):
             context.mewtwo_stages_completed += 1
-        self.pyboy.hook_register(BANK_OFFSET_MEWTWO_STAGE_COMPLETE[0], BANK_OFFSET_MEWTWO_STAGE_COMPLETE[1], mewtwo_completed, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_MEWTWO_STAGE_COMPLETE[0], BANK_OFFSET_MEWTWO_STAGE_COMPLETE[1], mewtwo_completed, self
+        )
 
         def map_change_attempt(context):
             context.map_change_attempts += 1
-        self.pyboy.hook_register(BANK_OFFSET_MAP_CHANGE_ATTEMPT[0], BANK_OFFSET_MAP_CHANGE_ATTEMPT[1], map_change_attempt, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_MAP_CHANGE_ATTEMPT[0], BANK_OFFSET_MAP_CHANGE_ATTEMPT[1], map_change_attempt, self
+        )
 
         def map_change_success(context):
             context.map_change_successes += 1
-        self.pyboy.hook_register(BANK_OFFSET_MAP_CHANGE_SUCCESS[0], BANK_OFFSET_MAP_CHANGE_SUCCESS[1], map_change_success, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_MAP_CHANGE_SUCCESS[0], BANK_OFFSET_MAP_CHANGE_SUCCESS[1], map_change_success, self
+        )
 
         def pika_saver_increment(context):
             context.pikachu_saver_increments += 1
-        self.pyboy.hook_register(BANK_OFFSET_PIKA_SAVER_INCREMENT_BLUE_FIELD[0], BANK_OFFSET_PIKA_SAVER_INCREMENT_BLUE_FIELD[1], pika_saver_increment, self)
-        self.pyboy.hook_register(BANK_OFFSET_PIKA_SAVER_INCREMENT_RED_FIELD[0], BANK_OFFSET_PIKA_SAVER_INCREMENT_RED_FIELD[1], pika_saver_increment, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_PIKA_SAVER_INCREMENT_BLUE_FIELD[0], BANK_OFFSET_PIKA_SAVER_INCREMENT_BLUE_FIELD[1],
+            pika_saver_increment, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_PIKA_SAVER_INCREMENT_RED_FIELD[0], BANK_OFFSET_PIKA_SAVER_INCREMENT_RED_FIELD[1],
+            pika_saver_increment, self
+        )
 
         def pika_saver_used(context):
             context.pikachu_saver_used += 1
-        self.pyboy.hook_register(BANK_OFFSET_PIKA_SAVER_USED_BLUE_FIELD[0], BANK_OFFSET_PIKA_SAVER_USED_BLUE_FIELD[1], pika_saver_used, self)
-        self.pyboy.hook_register(BANK_OFFSET_PIKA_SAVER_USED_RED_FIELD[0], BANK_OFFSET_PIKA_SAVER_USED_RED_FIELD[1], pika_saver_used, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_PIKA_SAVER_USED_BLUE_FIELD[0], BANK_OFFSET_PIKA_SAVER_USED_BLUE_FIELD[1], pika_saver_used, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_PIKA_SAVER_USED_RED_FIELD[0], BANK_OFFSET_PIKA_SAVER_USED_RED_FIELD[1], pika_saver_used, self
+        )
 
         def ball_upgrade_trigger(context):
             if context.ball_type == BallType.POKEBALL.value:
@@ -739,29 +806,48 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
                 context.ultra_ball_upgrades += 1
             elif context.ball_type == BallType.ULTRABALL.value:
                 context.master_ball_upgrades += 1
-        self.pyboy.hook_register(BANK_OFFSET_BALL_UPGRADE_TRIGGER_BLUE_FIELD[0], BANK_OFFSET_BALL_UPGRADE_TRIGGER_BLUE_FIELD[1], ball_upgrade_trigger, self)
-        self.pyboy.hook_register(BANK_OFFSET_BALL_UPGRADE_TRIGGER_RED_FIELD[0], BANK_OFFSET_BALL_UPGRADE_TRIGGER_RED_FIELD[1], ball_upgrade_trigger, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_BALL_UPGRADE_TRIGGER_BLUE_FIELD[0], BANK_OFFSET_BALL_UPGRADE_TRIGGER_BLUE_FIELD[1],
+            ball_upgrade_trigger, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_BALL_UPGRADE_TRIGGER_RED_FIELD[0], BANK_OFFSET_BALL_UPGRADE_TRIGGER_RED_FIELD[1],
+            ball_upgrade_trigger, self
+        )
 
         def extra_ball_added(context):
             context.extra_balls_added += 1
+
         self.pyboy.hook_register(BANK_OFFSET_ADD_EXTRA_BALL[0], BANK_OFFSET_ADD_EXTRA_BALL[1], extra_ball_added, self)
+
         #This prevents slot reward extra ball from being counted as it is mostly RNG based and not a good fitness metric
         def slot_reward_extra_ball(context):
             context.extra_balls_added -= 1
-        self.pyboy.hook_register(BANK_OFFSET_SLOT_REWARD_EXTRA_BALL[0], BANK_OFFSET_SLOT_REWARD_EXTRA_BALL[1], slot_reward_extra_ball, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_SLOT_REWARD_EXTRA_BALL[0], BANK_OFFSET_SLOT_REWARD_EXTRA_BALL[1], slot_reward_extra_ball, self
+        )
 
         def opened_slot_by_getting_4_cave_lights(context):
             context.roulette_slots_opened += 1
-        self.pyboy.hook_register(BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE[0], BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE[1], opened_slot_by_getting_4_cave_lights, self)
-        self.pyboy.hook_register(BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED[0], BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED[1], opened_slot_by_getting_4_cave_lights, self)
+
+        self.pyboy.hook_register(
+            BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE[0],
+            BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE[1], opened_slot_by_getting_4_cave_lights, self
+        )
+        self.pyboy.hook_register(
+            BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED[0],
+            BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED[1], opened_slot_by_getting_4_cave_lights, self
+        )
 
         def slot_reward_roulette(context):
             context.roulette_slots_entered += 1
-        self.pyboy.hook_register(BANK_OFFSET_SLOT_REWARD_ROULETTE[0], BANK_OFFSET_SLOT_REWARD_ROULETTE[1], slot_reward_roulette, self)
 
+        self.pyboy.hook_register(
+            BANK_OFFSET_SLOT_REWARD_ROULETTE[0], BANK_OFFSET_SLOT_REWARD_ROULETTE[1], slot_reward_roulette, self
+        )
 
-
-#TODO normalize constants format
 
 #################
 # RAM Addresses #
@@ -837,9 +923,8 @@ ADDR_RARE_POKEMON_FLAG = 0xd55b
 
 ADDR_SPECIAL_MODE = 0xD550
 ADDR_SPECIAL_MODE_ACTIVE = 0xD54B
-ADDR_SPECIAL_MODE_STATE = 0xD54D # 0 = handleEvolutionMode, 1 = CompleteEvolutionMode, 2 = FailEvolutionMode 
+ADDR_SPECIAL_MODE_STATE = 0xD54D # 0 = handleEvolutionMode, 1 = CompleteEvolutionMode, 2 = FailEvolutionMode
 # see here: https://github.com/pret/pokepinball/blob/dcfffa520017ba89108f8be97f51d76c68ea44c9/engine/pinball_game/evolution_mode/evolution_mode_blue_field.asm#L34
-
 
 #######################
 # ROM Bank and Offset #
@@ -850,39 +935,39 @@ ADDR_TO_NO_OP_BANK_STAGE_OVERRIDE = 3
 NO_OP_BYTE_WIDTH_STAGE_OVERRIDE = 11
 
 #Evolution hack related addresses
-BANK_OFFSET_START_EVOLUTION=(4,0x4ab3)
-BANK_OFFSET_PAUSE_METHOD_BANK=(3,0x5954)
-BANK_OFFSET_PAUSE_METHOD_CALL=(3,0x5956)
+BANK_OFFSET_START_EVOLUTION = (4, 0x4ab3)
+BANK_OFFSET_PAUSE_METHOD_BANK = (3, 0x5954)
+BANK_OFFSET_PAUSE_METHOD_CALL = (3, 0x5956)
 
-BANK_OFFSET_COMPLETE_EVOLUTION_MODE_BLUE_FIELD= (8,0x4d30)
-BANK_OFFSET_COMPLETE_EVOLUTION_MODE_RED_FIELD =(8,0x470b)
-BANK_OFFSET_FAIL_EVOLUTION_MODE_BLUE_FIELD=(8,0x4d7c)
-BANK_OFFSET_FAIL_EVOLUTION_MODE_RED_FIELD=(8,0x4757)
-BANK_OFFSET_ADD_CAUGHT_POKEMON_TO_PARTY=(4,0x473d)
-BANK_OFFSET_SET_POKEMON_SEEN_FLAG=(4,0x4753)
-BANK_OFFSET_INIT_DIGLETT_BONUS_STAGE=(6,0x59f2)
-BANK_OFFSET_INIT_MEOWTH_BONUS_STAGE=(9,0x4000)
-BANK_OFFSET_INIT_GENGAR_BONUS_STAGE=(6,0x4099)
-BANK_OFFSET_INIT_SEEL_BONUS_STAGE=(9,0x5a7c)
-BANK_OFFSET_INIT_MEWTWO_BONUS_STAGE=(6,0x524f)
-BANK_OFFSET_DIGLETT_STAGE_COMPLETE=(6,0x6bf2)
-BANK_OFFSET_GENGAR_STAGE_COMPLETE=(6,0x4a14)
-BANK_OFFSET_MEOWTH_STAGE_COMPLETE=(9,0x444b)
-BANK_OFFSET_SEEL_STAGE_COMPLETE=(9,0x5c5a)
-BANK_OFFSET_MEWTWO_STAGE_COMPLETE=(6,0x565e)
-BANK_OFFSET_MAP_CHANGE_ATTEMPT=(0xc,0x41ec)
-BANK_OFFSET_MAP_CHANGE_SUCCESS=(0xc,0x55d5)
-BANK_OFFSET_PIKA_SAVER_INCREMENT_BLUE_FIELD=(0x7,0x4aff)
-BANK_OFFSET_PIKA_SAVER_INCREMENT_RED_FIELD=(0x5,0x4e8a)
-BANK_OFFSET_PIKA_SAVER_USED_BLUE_FIELD=(0x7,0x50c9)
-BANK_OFFSET_PIKA_SAVER_USED_RED_FIELD=(0x5,0x6634)
-BANK_OFFSET_BALL_UPGRADE_TRIGGER_BLUE_FIELD=(0x7,0x63de)
-BANK_OFFSET_BALL_UPGRADE_TRIGGER_RED_FIELD=(0x5,0x53c0)
-BANK_OFFSET_ADD_EXTRA_BALL=(0xc,0x4164)
-BANK_OFFSET_SLOT_REWARD_EXTRA_BALL=(0x3,0x6fa7)
-BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE=(0x7,0x667e)
-BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED=(0x5,0x5284)
-BANK_OFFSET_SLOT_REWARD_ROULETTE=(0x3,0x6d8e)
+BANK_OFFSET_COMPLETE_EVOLUTION_MODE_BLUE_FIELD = (8, 0x4d30)
+BANK_OFFSET_COMPLETE_EVOLUTION_MODE_RED_FIELD = (8, 0x470b)
+BANK_OFFSET_FAIL_EVOLUTION_MODE_BLUE_FIELD = (8, 0x4d7c)
+BANK_OFFSET_FAIL_EVOLUTION_MODE_RED_FIELD = (8, 0x4757)
+BANK_OFFSET_ADD_CAUGHT_POKEMON_TO_PARTY = (4, 0x473d)
+BANK_OFFSET_SET_POKEMON_SEEN_FLAG = (4, 0x4753)
+BANK_OFFSET_INIT_DIGLETT_BONUS_STAGE = (6, 0x59f2)
+BANK_OFFSET_INIT_MEOWTH_BONUS_STAGE = (9, 0x4000)
+BANK_OFFSET_INIT_GENGAR_BONUS_STAGE = (6, 0x4099)
+BANK_OFFSET_INIT_SEEL_BONUS_STAGE = (9, 0x5a7c)
+BANK_OFFSET_INIT_MEWTWO_BONUS_STAGE = (6, 0x524f)
+BANK_OFFSET_DIGLETT_STAGE_COMPLETE = (6, 0x6bf2)
+BANK_OFFSET_GENGAR_STAGE_COMPLETE = (6, 0x4a14)
+BANK_OFFSET_MEOWTH_STAGE_COMPLETE = (9, 0x444b)
+BANK_OFFSET_SEEL_STAGE_COMPLETE = (9, 0x5c5a)
+BANK_OFFSET_MEWTWO_STAGE_COMPLETE = (6, 0x565e)
+BANK_OFFSET_MAP_CHANGE_ATTEMPT = (0xc, 0x41ec)
+BANK_OFFSET_MAP_CHANGE_SUCCESS = (0xc, 0x55d5)
+BANK_OFFSET_PIKA_SAVER_INCREMENT_BLUE_FIELD = (0x7, 0x4aff)
+BANK_OFFSET_PIKA_SAVER_INCREMENT_RED_FIELD = (0x5, 0x4e8a)
+BANK_OFFSET_PIKA_SAVER_USED_BLUE_FIELD = (0x7, 0x50c9)
+BANK_OFFSET_PIKA_SAVER_USED_RED_FIELD = (0x5, 0x6634)
+BANK_OFFSET_BALL_UPGRADE_TRIGGER_BLUE_FIELD = (0x7, 0x63de)
+BANK_OFFSET_BALL_UPGRADE_TRIGGER_RED_FIELD = (0x5, 0x53c0)
+BANK_OFFSET_ADD_EXTRA_BALL = (0xc, 0x4164)
+BANK_OFFSET_SLOT_REWARD_EXTRA_BALL = (0x3, 0x6fa7)
+BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE = (0x7, 0x667e)
+BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED = (0x5, 0x5284)
+BANK_OFFSET_SLOT_REWARD_ROULETTE = (0x3, 0x6d8e)
 
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {
@@ -1334,4 +1419,3 @@ BlueStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625
     },
 }
-
