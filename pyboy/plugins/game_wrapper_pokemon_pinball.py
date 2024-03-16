@@ -5,6 +5,8 @@
 __pdoc__ = {
     "GameWrapperPokemonPinball.cartridge_title": False,
     "GameWrapperPokemonPinball.post_tick": False,
+    "GameWrapperPokemonPinball._set_stage": False,
+    "GameWrapperPokemonPinball.ball_size": False,
 }
 
 import logging
@@ -18,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class Stage(Enum):
+    """
+    The stage values in the game.
+    """
     RED_TOP = 0
     RED_BOTTOM = 1
     BLUE_TOP = 4
@@ -30,6 +35,9 @@ class Stage(Enum):
 
 
 class Pokemon(Enum):
+    """
+    The Pokemon values in the game.
+    """
     BULBASAUR = 0
     IVYSAUR = 1
     VENUSAUR = 2
@@ -184,6 +192,9 @@ class Pokemon(Enum):
 
 
 class Maps(Enum):
+    """
+    The map values in the game.
+    """
     PALLET_TOWN = 0
     VIRIDIAN_CITY = 1
     VIRIDIAN_FOREST = 2
@@ -238,6 +249,10 @@ for stage in BlueBonusStages:
 
 
 class GameWrapperPokemonPinball(PyBoyGameWrapper):
+    """
+    This class wraps Pokemon Pinball, and provides access to game info for AIs.
+    """
+
     cartridge_title = "POKEPINBALLVPH"
 
     def __init__(self, *args, **kwargs):
@@ -258,19 +273,32 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.current_stage = 0
         """The current stage"""
         self.ball_size = 0
-        """The current ball size"""
         self.ball_saver_seconds_left = 0
         """The current ball saver seconds left"""
         self.pokedex = [False] * 151
-        """The pokedex state"""
         self._unlimited_saver = False
-        """The unlimited saver state"""
         self.ball_x = 0
+        """The x position of the ball"""
         self.ball_y = 0
+        """The y position of the ball"""
         self.ball_x_velocity = 0
+        """The x velocity of the ball"""
         self.ball_y_velocity = 0
+        """The y velocity of the ball"""
         self.special_mode = 0
+        """
+        The special mode state value
+
+        
+        Example:
+        ```python
+        >>> pyboy.game_wrapper.special_mode == SpecialMode.CATCH.value
+        True
+        ```
+        """
+
         self.special_mode_active = False
+        """The special mode active state"""
 
         ##########################
         # Fitness Related Values #
@@ -280,64 +308,99 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         # Evolution tracking #
         ######################
         self.evolution_failure_count = 0
+        """The number of times an evolution has failed"""
         self.evolution_success_count = 0
+        """The number of times an evolution has succeeded"""
 
         ########################
         # Bonus stage tracking #
         ########################
         self.diglett_stages_completed = 0
+        """The number of Diglett stages completed"""
         self.diglett_stages_visited = 0
+        """The number of Diglett stages visited"""
         self.gengar_stages_completed = 0
+        """The number of Gengar stages completed"""
         self.gengar_stages_visited = 0
+        """The number of Gengar stages visited"""
         self.meowth_stages_completed = 0
+        """The number of Meowth stages completed"""
         self.meowth_stages_visited = 0
+        """The number of Meowth stages visited"""
         self.mewtwo_stages_completed = 0
+        """The number of Mewtwo stages completed"""
         self.mewtwo_stages_visited = 0
+        """The number of Mewtwo stages visited"""
         self.seel_stages_completed = 0
+        """The number of Seel stages completed"""
         self.seel_stages_visited = 0
+        """The number of Seel stages visited"""
 
         ##########################
         # Pikachu Saver tracking #
         ##########################
         self.pikachu_saver_charge = 0 # range of 0-15
+        """The charge of the Pikachu saver, ranges from 0 to 15"""
         self.pikachu_saver_increments = 0
+        """The number of times the Pikachu saver charge has incremented"""
         self.pikachu_saver_used = 0
+        """The number of times the Pikachu saver has been used"""
 
         ################
         # Map tracking #
         ################
         self.current_map = 0
+        """The current map
+        
+        
+        Example:
+        ```python
+        >>> pyboy.game_wrapper.current_map == Maps.PALLET_TOWN.value
+        True
+        ```
+        """
         self.map_change_attempts = 0
+        """The number of times a map change has been attempted"""
         self.map_change_successes = 0
+        """The number of times a map change has been successful"""
 
         ###########################
         # Pokemon Caught Tracking #
         ###########################
         self.pokemon_caught_in_session = 0
+        """The number of pokemon caught in the current session"""
         self.pokemon_seen_in_session = 0
+        """The number of pokemon seen in the current session"""
 
         #########################
         # Ball upgrade Tracking #
         #########################
         self.great_ball_upgrades = 0
+        """The number of Great Ball upgrades obtained"""
         self.ultra_ball_upgrades = 0
+        """The number of Ultra Ball upgrades obtained"""
         self.master_ball_upgrades = 0
+        """The number of Master Ball upgrades obtained"""
 
         #######################
         # Extra Ball Tracking #
         #######################
         self.extra_balls_added = 0 # Does not include extra balls rewarded via roulette
+        """The number of extra balls added, not including those rewarded via roulette"""
 
         ##########################
         # Lost Ball During Saver #
         ##########################
         self.lost_ball_during_saver = 0
+        """The number of balls lost during a saver mode"""
 
         #################
         # Slot Tracking #
         #################
         self.roulette_slots_opened = 0
+        """The number of roulette slots opened"""
         self.roulette_slots_entered = 0
+        """The number of roulette slots entered"""
 
         self._add_hooks()
 
@@ -1094,6 +1157,7 @@ RedStageMapWildMons = {
         Pokemon.DITTO: 0.1875
     }
 }
+"""The wild Pokemon that can be found in each map in the Red stage, along with their encounter rates"""
 
 RedStageMapWildMonsRare = {
     Maps.PALLET_TOWN: {
@@ -1205,6 +1269,7 @@ RedStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625
     }
 }
+"""The rare wild Pokemon that can be found in each map in the Red stage, along with their encounter rates"""
 
 BlueStageMapWildMons = {
     Maps.VIRIDIAN_CITY: {
@@ -1318,6 +1383,7 @@ BlueStageMapWildMons = {
         Pokemon.DITTO: 0.1875
     }
 }
+"""The wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates"""
 
 BlueStageMapWildMonsRare = {
     Maps.VIRIDIAN_CITY: {
@@ -1435,3 +1501,4 @@ BlueStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625
     },
 }
+"""The rare wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates"""
