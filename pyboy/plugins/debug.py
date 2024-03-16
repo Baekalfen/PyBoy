@@ -84,7 +84,7 @@ class Debug(PyBoyWindowPlugin):
 
         self.cgb = mb.cartridge_cgb
 
-        self.sdl2_event_pump = self.pyboy_argv.get("window_type") != "SDL2"
+        self.sdl2_event_pump = self.pyboy_argv.get("window") != "SDL2"
         if self.sdl2_event_pump:
             sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
 

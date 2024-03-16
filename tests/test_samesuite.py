@@ -114,9 +114,9 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         # Then we save it, so we won't need to redo it.
         pyboy = PyBoy(
             default_rom,
-            window_type="null",
+            window="null",
             cgb=gb_type == "cgb",
-            bootrom_file=boot_cgb_rom if gb_type == "cgb" else boot_rom,
+            bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom,
             sound_emulated=True,
         )
         pyboy.set_emulation_speed(0)
@@ -127,9 +127,9 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
 
     pyboy = PyBoy(
         samesuite_dir + rom,
-        window_type="null",
+        window="null",
         cgb=gb_type == "cgb",
-        bootrom_file=boot_cgb_rom if gb_type == "cgb" else boot_rom,
+        bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom,
         sound_emulated=True,
     )
     pyboy.set_emulation_speed(0)

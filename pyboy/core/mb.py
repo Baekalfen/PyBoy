@@ -19,7 +19,7 @@ logger = pyboy.logging.get_logger(__name__)
 class Motherboard:
     def __init__(
         self,
-        gamerom_file,
+        gamerom,
         bootrom_file,
         color_palette,
         cgb_color_palette,
@@ -31,7 +31,7 @@ class Motherboard:
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
-        self.cartridge = cartridge.load_cartridge(gamerom_file)
+        self.cartridge = cartridge.load_cartridge(gamerom)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))
         if cgb is None:
             cgb = self.cartridge.cgb

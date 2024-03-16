@@ -4,6 +4,7 @@
 #
 
 import time
+
 import numpy as np
 
 import pyboy
@@ -149,7 +150,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
         return True
 
     def enabled(self):
-        if self.pyboy_argv.get("window_type") == "OpenGL":
+        if self.pyboy_argv.get("window") == "OpenGL":
             if opengl_enabled:
                 if bool(OpenGL.GLUT.freeglut.glutMainLoopEvent):
                     return True

@@ -46,9 +46,9 @@ class RecordReplay(PyBoyPlugin):
 
     def stop(self):
         save_replay(
-            self.pyboy.gamerom_file,
+            self.pyboy.gamerom,
             self.pyboy_argv.get("loadstate"),
-            self.pyboy.gamerom_file + ".replay",
+            self.pyboy.gamerom + ".replay",
             self.recorded_input,
         )
 

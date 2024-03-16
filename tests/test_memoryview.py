@@ -9,7 +9,7 @@ from pyboy import PyBoy
 
 
 def test_memoryview(default_rom, boot_rom):
-    p = PyBoy(default_rom, bootrom_file=boot_rom)
+    p = PyBoy(default_rom, bootrom=boot_rom)
 
     with open(default_rom, "rb") as f:
         rom_bytes = [ord(f.read(1)) for x in range(16)]
