@@ -5,11 +5,11 @@
 #
 
 import argparse
+import copy
 import os
 
 import pyboy
 from pyboy import PyBoy, core, utils
-from pyboy.logging import log_level
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
 
@@ -42,11 +42,10 @@ parser = argparse.ArgumentParser(
     epilog="Warning: Features marked with (internal use) might be subject to change.",
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
-parser.add_argument("-b", "--bootrom", type=valid_file_path, help="Path to a boot-ROM file")
-parser.add_argument("--randomize-ram", action="store_true", help="Randomize Game Boy RAM on startup")
+parser.add_argument("-b", "--bootrom", dest="bootrom_file", type=valid_file_path, help="Path to a boot-ROM file")
 parser.add_argument(
     "--log-level",
-    default="INFO",
+    default=defaults["log_level"],
     type=str,
     choices=["ERROR", "WARNING", "INFO", "DEBUG", "DISABLE"],
     help="Set logging level"
@@ -107,7 +106,6 @@ for arguments in parser_arguments():
 
 def main():
     argv = parser.parse_args()
-    log_level(argv.log_level)
 
     print(
         """
@@ -148,7 +146,11 @@ See "pyboy --help" for how to enable rewind and other awesome features!
     )
 
     # Start PyBoy and run loop
-    pyboy = PyBoy(argv.ROM, **vars(argv))
+    kwargs = copy.deepcopy(vars(argv))
+    kwargs.pop("ROM", None)
+    kwargs.pop("loadstate", None)
+    kwargs.pop("no_renderer", None)
+    pyboy = PyBoy(argv.ROM, **kwargs)
 
     if argv.loadstate is not None:
         if argv.loadstate == INTERNAL_LOADSTATE:

@@ -104,7 +104,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         instantly.
 
         Kwargs:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         # We don't supply the timer_div arg here, as it won't have the desired effect
         PyBoyGameWrapper.start_game(self)
@@ -130,7 +130,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         After calling `start_game`, you can call this method at any time to reset the game.
 
         Kwargs:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 

@@ -16,8 +16,8 @@ import numpy as np
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
-from pyboy.logging import get_logger
-from pyboy.plugins.manager import PluginManager
+from pyboy.logging import get_logger, log_level
+from pyboy.plugins.manager import PluginManager, parser_arguments
 from pyboy.utils import IntIOWrapper, WindowEvent
 
 from .api import Sprite, Tile, constants
@@ -33,6 +33,7 @@ defaults = {
                           (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000)),
     "scale": 3,
     "window_type": "SDL2",
+    "log_level": "ERROR",
 }
 
 
@@ -41,12 +42,13 @@ class PyBoy:
         self,
         gamerom_file,
         *,
+        window_type=defaults["window_type"],
+        scale=defaults["scale"],
         symbols_file=None,
         bootrom_file=None,
         sound=False,
         sound_emulated=False,
         cgb=None,
-        randomize=False,
         **kwargs
     ):
         """
@@ -74,16 +76,14 @@ class PyBoy:
             gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
+            * window_type (str): "SDL2", "OpenGL", or "null"
+            * scale (int): Window scale factor. Doesn't apply to API.
             * symbols_file (str): Filepath to a .sym file to use. If unsure, specify `None`.
-
             * bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-
-            * sound (bool): Enable sound emulation and output
-
+            * sound (bool): Enable sound emulation and output.
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
-
+            * cgb (bool): Forcing Game Boy Color mode.
             * color_palette (tuple): Specify the color palette to use for rendering.
-
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
@@ -91,9 +91,15 @@ class PyBoy:
 
         self.initialized = False
 
+        kwargs["window_type"] = window_type
+        kwargs["scale"] = scale
+        randomize = kwargs.pop("randomize", False) # Undocumented feature
+
         for k, v in defaults.items():
             if k not in kwargs:
                 kwargs[k] = kwargs.get(k, defaults[k])
+
+        log_level(kwargs.pop("log_level"))
 
         if not os.path.isfile(gamerom_file):
             raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
@@ -108,7 +114,7 @@ class PyBoy:
 
         self.mb = Motherboard(
             gamerom_file,
-            bootrom_file or kwargs.get("bootrom"), # Our current way to provide cli arguments is broken
+            bootrom_file,
             kwargs["color_palette"],
             kwargs["cgb_color_palette"],
             sound,
@@ -116,6 +122,18 @@ class PyBoy:
             cgb,
             randomize=randomize,
         )
+
+        # Validate all kwargs
+        plugin_manager_keywords = []
+        for x in parser_arguments():
+            if not x:
+                continue
+            plugin_manager_keywords.extend(z.strip("-").replace("-", "_") for y in x for z in y[:-1])
+
+        for k, v in kwargs.items():
+            if k not in defaults and k not in plugin_manager_keywords:
+                logger.error("Unknown keyword argument: %s", k)
+                raise KeyError("Unknown keyword argument: %s", k)
 
         # Performance measures
         self.avg_pre = 0

@@ -59,7 +59,6 @@ cdef class PyBoy:
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed
     cdef bint record_input
-    cdef bint disable_input
     cdef str record_input_file
     cdef list recorded_input
     cdef list external_input

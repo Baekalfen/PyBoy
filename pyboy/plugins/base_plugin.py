@@ -96,7 +96,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
     """
 
     cartridge_title = None
-    argv = [("--game-wrapper", {"action": "store_true", "help": "Enable game wrapper for the current game"})]
 
     mapping_one_to_one = np.arange(384 * 2, dtype=np.uint8)
     """

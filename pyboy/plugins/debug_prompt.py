@@ -14,16 +14,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 
 class DebugPrompt(PyBoyPlugin):
-    argv = [
-        ("--breakpoints", {
-            "type": str,
-            "help": "Add breakpoints on start-up (internal use)"
-        }),
-        ("--symbols-file", {
-            "type": str,
-            "help": "Path for a symbols file for ROM (internal use)"
-        }),
-    ]
+    argv = [("--breakpoints", {"type": str, "help": "Add breakpoints on start-up (internal use)"})]
 
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
