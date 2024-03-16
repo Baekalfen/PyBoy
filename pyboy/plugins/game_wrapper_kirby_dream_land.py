@@ -63,7 +63,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         instantly.
 
         Kwargs:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
@@ -98,7 +98,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         After calling `start_game`, you can call this method at any time to reset the game.
 
         Kwargs:
-            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+            * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 

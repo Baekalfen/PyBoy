@@ -69,11 +69,11 @@ def test_argv_parser(*args):
     for k, v in {
         "ROM": file_that_exists,
         "autopause": False,
-        "bootrom": None,
+        "bootrom_file": None,
         "debug": False,
         "loadstate": None,
         "no_input": False,
-        "log_level": "INFO",
+        "log_level": "ERROR",
         "record_input": False,
         "rewind": False,
         "scale": 3,

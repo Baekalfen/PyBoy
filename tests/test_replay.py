@@ -93,7 +93,6 @@ def replay(
         ROM,
         window_type=window,
         bootrom_file=bootrom_file,
-        disable_input=True,
         rewind=rewind,
         randomize=randomize,
         cgb=cgb,
