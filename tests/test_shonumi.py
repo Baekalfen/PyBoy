@@ -19,7 +19,7 @@ from pyboy import PyBoy
     "sprite_suite.gb",
 ])
 def test_shonumi(rom, shonumi_dir):
-    pyboy = PyBoy(shonumi_dir + rom, window_type="null", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
+    pyboy = PyBoy(shonumi_dir + rom, window="null", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
     pyboy.set_emulation_speed(0)
 
     # sprite_suite.gb

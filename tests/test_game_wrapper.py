@@ -18,7 +18,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_game_wrapper_basics(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     generic_wrapper = pyboy.game_wrapper
@@ -28,7 +28,7 @@ def test_game_wrapper_basics(default_rom):
 
 
 def test_game_wrapper_mapping(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null", debug=True)
+    pyboy = PyBoy(default_rom, window="null", debug=True)
     pyboy.set_emulation_speed(0)
     assert np.all(pyboy.game_area() == 256)
 

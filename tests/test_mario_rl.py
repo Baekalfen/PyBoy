@@ -84,7 +84,7 @@ checkpoint_dir = Path("checkpoints") / gameName
 ###
 #  Load emulator
 ###
-pyboy = PyBoy(game, window_type="null", scale=3, debug=False)
+pyboy = PyBoy(game, window="null", scale=3, debug=False)
 
 ###
 #  Load enviroment

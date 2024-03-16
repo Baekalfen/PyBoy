@@ -35,7 +35,7 @@ cdef class PyBoy:
     cdef Motherboard mb
     cdef readonly PluginManager _plugin_manager
     cdef readonly uint64_t frame_count
-    cdef readonly str gamerom_file
+    cdef readonly str gamerom
     cdef readonly bint paused
 
     cdef double avg_pre

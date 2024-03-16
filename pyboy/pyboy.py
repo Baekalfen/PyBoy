@@ -32,7 +32,7 @@ defaults = {
     "cgb_color_palette": ((0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000), (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000),
                           (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000)),
     "scale": 3,
-    "window_type": "SDL2",
+    "window": "SDL2",
     "log_level": "ERROR",
 }
 
@@ -40,12 +40,12 @@ defaults = {
 class PyBoy:
     def __init__(
         self,
-        gamerom_file,
+        gamerom,
         *,
-        window_type=defaults["window_type"],
+        window=defaults["window"],
         scale=defaults["scale"],
-        symbols_file=None,
-        bootrom_file=None,
+        symbols=None,
+        bootrom=None,
         sound=False,
         sound_emulated=False,
         cgb=None,
@@ -60,7 +60,7 @@ class PyBoy:
         GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
         "bots", which interact with the game.
 
-        Only the `gamerom_file` argument is required.
+        Only the `gamerom` argument is required.
 
         Example:
         ```python
@@ -73,13 +73,13 @@ class PyBoy:
         ```
 
         Args:
-            gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
+            gamerom (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
-            * window_type (str): "SDL2", "OpenGL", or "null"
+            * window (str): "SDL2", "OpenGL", or "null"
             * scale (int): Window scale factor. Doesn't apply to API.
-            * symbols_file (str): Filepath to a .sym file to use. If unsure, specify `None`.
-            * bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
+            * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
+            * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
             * sound (bool): Enable sound emulation and output.
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
             * cgb (bool): Forcing Game Boy Color mode.
@@ -91,7 +91,22 @@ class PyBoy:
 
         self.initialized = False
 
-        kwargs["window_type"] = window_type
+        if "bootrom_file" in kwargs:
+            logger.error(
+                "Deprecated use of 'bootrom_file'. Use 'bootrom' keyword argument instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0"
+            )
+            bootrom = kwargs.pop("bootrom_file")
+
+        if "window_type" in kwargs:
+            logger.error(
+                "Deprecated use of 'window_type'. Use 'window' keyword argument instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0"
+            )
+            window = kwargs.pop("window_type")
+
+        if window not in ["SDL2", "OpenGL", "null", "headless", "dummy"]:
+            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", or "null"')
+
+        kwargs["window"] = window
         kwargs["scale"] = scale
         randomize = kwargs.pop("randomize", False) # Undocumented feature
 
@@ -101,20 +116,20 @@ class PyBoy:
 
         log_level(kwargs.pop("log_level"))
 
-        if not os.path.isfile(gamerom_file):
-            raise FileNotFoundError(f"ROM file {gamerom_file} was not found!")
-        self.gamerom_file = gamerom_file
+        if not os.path.isfile(gamerom):
+            raise FileNotFoundError(f"ROM file {gamerom} was not found!")
+        self.gamerom = gamerom
 
         self.rom_symbols = {}
-        if symbols_file is not None:
-            if not os.path.isfile(symbols_file):
-                raise FileNotFoundError(f"Symbols file {symbols_file} was not found!")
-        self.symbols_file = symbols_file
+        if symbols is not None:
+            if not os.path.isfile(symbols):
+                raise FileNotFoundError(f"Symbols file {symbols} was not found!")
+        self.symbols_file = symbols
         self._load_symbols()
 
         self.mb = Motherboard(
-            gamerom_file,
-            bootrom_file,
+            gamerom,
+            bootrom,
             kwargs["color_palette"],
             kwargs["cgb_color_palette"],
             sound,
@@ -133,7 +148,7 @@ class PyBoy:
         for k, v in kwargs.items():
             if k not in defaults and k not in plugin_manager_keywords:
                 logger.error("Unknown keyword argument: %s", k)
-                raise KeyError("Unknown keyword argument: %s", k)
+                raise KeyError(f"Unknown keyword argument: {k}")
 
         # Performance measures
         self.avg_pre = 0
@@ -425,10 +440,10 @@ class PyBoy:
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.debug("Speed limit: %d", self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
-                with open(self.gamerom_file + ".state", "wb") as f:
+                with open(self.gamerom + ".state", "wb") as f:
                     self.mb.save_state(IntIOWrapper(f))
             elif event == WindowEvent.STATE_LOAD:
-                state_path = self.gamerom_file + ".state"
+                state_path = self.gamerom + ".state"
                 if not os.path.isfile(state_path):
                     logger.error("State file not found: %s", state_path)
                     continue
@@ -943,7 +958,7 @@ class PyBoy:
         return self.mb.cpu.is_stuck
 
     def _load_symbols(self):
-        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom_file)
+        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
         for sym_path in [self.symbols_file, gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]:
             if sym_path and os.path.isfile(sym_path):
                 logger.info("Loading symbol file: %s", sym_path)

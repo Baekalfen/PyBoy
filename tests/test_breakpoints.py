@@ -16,7 +16,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_debugprompt(default_rom, monkeypatch):
-    pyboy = PyBoy(default_rom, window_type="null", breakpoints="0:0100,-1:0", debug=False)
+    pyboy = PyBoy(default_rom, window="null", breakpoints="0:0100,-1:0", debug=False)
     pyboy.set_emulation_speed(0)
 
     # Break at 0, step once, continue, break at 100, continue
@@ -30,7 +30,7 @@ def test_debugprompt(default_rom, monkeypatch):
 
 @pytest.mark.parametrize("commands", ["n\nc\n", "n\nn\nc\n", "c\nc\n", "n\nn\nn\nn\nn\nn\nc\n"])
 def test_debugprompt2(default_rom, monkeypatch, commands):
-    pyboy = PyBoy(default_rom, window_type="null", breakpoints="-1:0,-1:3", debug=False)
+    pyboy = PyBoy(default_rom, window="null", breakpoints="-1:0,-1:3", debug=False)
     pyboy.set_emulation_speed(0)
 
     monkeypatch.setattr("sys.stdin", io.StringIO(commands))
@@ -42,7 +42,7 @@ def test_debugprompt2(default_rom, monkeypatch, commands):
 
 
 def test_register_hooks(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     mock = Mock()
@@ -56,7 +56,7 @@ def test_register_hooks(default_rom):
 
 
 def test_register_hook_context(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     def _inner_callback(context):
@@ -74,7 +74,7 @@ def test_register_hook_context(default_rom):
 
 
 def test_register_hook_print(default_rom, capfd):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     def _inner_callback(context):
@@ -91,7 +91,7 @@ def test_register_hook_print(default_rom, capfd):
 
 
 def test_symbols_none(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     with pytest.raises(ValueError):
@@ -101,7 +101,7 @@ def test_symbols_none(default_rom):
 def test_symbols_auto_locate(default_rom):
     new_path = "extras/default_rom/default_rom.gb"
     shutil.copyfile(default_rom, new_path)
-    pyboy = PyBoy(new_path, window_type="null")
+    pyboy = PyBoy(new_path, window="null")
     pyboy.set_emulation_speed(0)
 
     _bank, _addr = pyboy._lookup_symbol("Main.waitVBlank")
@@ -110,7 +110,7 @@ def test_symbols_auto_locate(default_rom):
 
 
 def test_symbols_path_locate(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null", symbols_file="extras/default_rom/default_rom.sym")
+    pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym")
     pyboy.set_emulation_speed(0)
 
     _bank, _addr = pyboy._lookup_symbol("Main.waitVBlank")
@@ -119,7 +119,7 @@ def test_symbols_path_locate(default_rom):
 
 
 def test_register_hook_label(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null", symbols_file="extras/default_rom/default_rom.sym")
+    pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym")
     pyboy.set_emulation_speed(0)
 
     def _inner_callback(context):
@@ -137,7 +137,7 @@ def test_register_hook_label(default_rom):
 
 
 def test_register_hook_context2(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     def _inner_callback(context):
@@ -156,7 +156,7 @@ def test_register_hook_context2(default_rom):
 
 
 def test_register_hooks_double(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     mock = Mock()
@@ -166,7 +166,7 @@ def test_register_hooks_double(default_rom):
 
 
 def test_deregister_hooks(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     mock = Mock()
@@ -183,7 +183,7 @@ def test_deregister_hooks(default_rom):
 
 
 def test_deregister_hooks2(default_rom):
-    pyboy = PyBoy(default_rom, window_type="null")
+    pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
     mock = Mock()

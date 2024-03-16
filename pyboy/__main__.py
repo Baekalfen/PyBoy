@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser(
     epilog="Warning: Features marked with (internal use) might be subject to change.",
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
-parser.add_argument("-b", "--bootrom", dest="bootrom_file", type=valid_file_path, help="Path to a boot-ROM file")
+parser.add_argument("-b", "--bootrom", dest="bootrom", type=valid_file_path, help="Path to a boot-ROM file")
 parser.add_argument(
     "--log-level",
     default=defaults["log_level"],
@@ -78,9 +78,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "-w",
-    "--window-type",
     "--window",
-    default=defaults["window_type"],
+    default=defaults["window"],
     type=str,
     choices=["SDL2", "OpenGL", "null"],
     help="Specify window-type to use"

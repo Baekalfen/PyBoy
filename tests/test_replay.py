@@ -91,8 +91,8 @@ def replay(
 
     pyboy = PyBoy(
         ROM,
-        window_type=window,
-        bootrom_file=bootrom_file,
+        window=window,
+        bootrom=bootrom_file,
         rewind=rewind,
         randomize=randomize,
         cgb=cgb,
