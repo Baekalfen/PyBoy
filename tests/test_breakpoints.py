@@ -109,6 +109,19 @@ def test_symbols_auto_locate(default_rom):
     assert _addr is not None
 
 
+def test_symbols_auto_locate_double_symbol(default_rom):
+    pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym")
+    pyboy.set_emulation_speed(0)
+
+    _bank, _addr = pyboy.symbol_lookup("Tilemap")
+    assert _bank is not None
+    assert _addr is not None
+
+    _bank2, _addr2 = pyboy.symbol_lookup("Tilemap2")
+    assert _bank == _bank2
+    assert _addr == _addr2
+
+
 def test_symbols_path_locate(default_rom):
     pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym")
     pyboy.set_emulation_speed(0)
