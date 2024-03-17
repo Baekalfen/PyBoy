@@ -982,15 +982,18 @@ class PyBoy:
                             if not bank in self.rom_symbols:
                                 self.rom_symbols[bank] = {}
 
-                            self.rom_symbols[bank][addr] = sym_label
+                            if not addr in self.rom_symbols[bank]:
+                                self.rom_symbols[bank][addr] = []
+
+                            self.rom_symbols[bank][addr].append(sym_label)
                         except ValueError as ex:
                             logger.warning("Skipping .sym line: %s", line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
         for bank, addresses in self.rom_symbols.items():
-            for addr, label in addresses.items():
-                if label == symbol:
+            for addr, labels in addresses.items():
+                if symbol in labels:
                     return bank, addr
         raise ValueError("Symbol not found: %s" % symbol)
 
