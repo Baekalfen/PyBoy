@@ -80,7 +80,7 @@ cdef class PyBoy:
 
     cdef dict _hooks
     cdef object symbols_file
-    cdef dict rom_symbols
+    cdef public dict rom_symbols
     cpdef bint _handle_hooks(self)
     cpdef int hook_register(self, uint16_t, uint16_t, object, object) except -1
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
