@@ -23,6 +23,30 @@ from pyboy.utils import WindowEvent
 is_pypy = platform.python_implementation() == "PyPy"
 
 
+def test_log_level_none(default_rom, capsys):
+    pyboy = PyBoy(default_rom, window="null")
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+
+def test_log_level_default(default_rom, capsys):
+    pyboy = PyBoy(default_rom, window="dummy")
+    captured = capsys.readouterr()
+    assert "pyboy.plugins.window_null      ERROR" in captured.out
+
+
+def test_log_level_default(default_rom, capsys):
+    pyboy = PyBoy(default_rom, window="dummy", log_level="ERROR")
+    captured = capsys.readouterr()
+    assert "pyboy.plugins.window_null      ERROR" in captured.out
+
+
+def test_log_level_critical(default_rom, capsys):
+    pyboy = PyBoy(default_rom, window="dummy", log_level="CRITICAL")
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+
 def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window="null", bootrom=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
