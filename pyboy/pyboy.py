@@ -1007,7 +1007,10 @@ class PyBoy:
 
         Example:
         ```python
-        >>> # Continued example above
+        >>> # Directly
+        >>> pyboy.memory[pyboy.symbol_lookup("Tileset")]
+        0
+        >>> # By bank and address
         >>> bank, addr = pyboy.symbol_lookup("Tileset")
         >>> pyboy.memory[bank, addr]
         0
@@ -1378,7 +1381,7 @@ class PyBoyMemoryView:
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb, "Selecting bank of VRAM is only supported for CGB mode"
+                assert self.mb.cgb or (bank == 0), "Selecting bank of VRAM is only supported for CGB mode"
                 assert stop < 0x2000, "Out of bounds for reading VRAM bank"
                 assert bank <= 1, "VRAM Bank out of range"
 
@@ -1418,7 +1421,7 @@ class PyBoyMemoryView:
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb, "Selecting bank of WRAM is only supported for CGB mode"
+                assert self.mb.cgb or (bank == 0), "Selecting bank of WRAM is only supported for CGB mode"
                 assert stop < 0x1000, "Out of bounds for reading VRAM bank"
                 assert bank <= 7, "WRAM Bank out of range"
                 if not is_single:
@@ -1516,7 +1519,7 @@ class PyBoyMemoryView:
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb, "Selecting bank of VRAM is only supported for CGB mode"
+                assert self.mb.cgb or (bank == 0), "Selecting bank of VRAM is only supported for CGB mode"
                 assert stop < 0x2000, "Out of bounds for reading VRAM bank"
                 assert bank <= 1, "VRAM Bank out of range"
 
@@ -1571,7 +1574,7 @@ class PyBoyMemoryView:
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb, "Selecting bank of WRAM is only supported for CGB mode"
+                assert self.mb.cgb or (bank == 0), "Selecting bank of WRAM is only supported for CGB mode"
                 assert stop < 0x1000, "Out of bounds for reading VRAM bank"
                 assert bank <= 7, "WRAM Bank out of range"
                 if not is_single:
