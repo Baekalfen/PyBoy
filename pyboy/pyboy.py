@@ -576,28 +576,28 @@ class PyBoy:
         input = input.lower()
         if input == "left":
             self.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_LEFT))
+            self.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay)
         elif input == "right":
             self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_RIGHT))
+            self.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay)
         elif input == "up":
             self.send_input(WindowEvent.PRESS_ARROW_UP)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_UP))
+            self.send_input(WindowEvent.RELEASE_ARROW_UP, delay)
         elif input == "down":
             self.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_DOWN))
+            self.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay)
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_A))
+            self.send_input(WindowEvent.RELEASE_BUTTON_A, delay)
         elif input == "b":
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_B))
+            self.send_input(WindowEvent.RELEASE_BUTTON_B, delay)
         elif input == "start":
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_START))
+            self.send_input(WindowEvent.RELEASE_BUTTON_START, delay)
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_SELECT))
+            self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
         else:
             raise Exception("Unrecognized input:", input)
 
@@ -686,7 +686,7 @@ class PyBoy:
         else:
             raise Exception("Unrecognized input")
 
-    def send_input(self, event):
+    def send_input(self, event, delay=0):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
         `pyboy.utils.WindowEvent` for which events to send.
@@ -704,13 +704,31 @@ class PyBoy:
         >>> pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button 'a' on next call to `PyBoy.tick()`
         >>> pyboy.tick() # Button 'a' released
         True
+        ```
 
+        And even simpler with delay:
+        ```python
+        >>> from pyboy.utils import WindowEvent
+        >>> pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button 'a' and keep pressed after `PyBoy.tick()`
+        >>> pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, 2) # Release button 'a' on third call to `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.tick() # Button 'a' released
+        True
         ```
 
         Args:
             event (pyboy.WindowEvent): The event to send
+            delay (int): 0 for immediately, number of frames to delay the input
         """
-        self.events.append(WindowEvent(event))
+
+        if delay:
+            assert delay > 0, "Only positive integers allowed"
+            heapq.heappush(self.queued_input, (self.frame_count + delay, event))
+        else:
+            self.events.append(WindowEvent(event))
 
     def save_state(self, file_like_object):
         """
