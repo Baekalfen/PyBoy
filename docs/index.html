@@ -192,6 +192,7 @@ True...
         self.gamerom = gamerom
 
         self.rom_symbols = {}
+        self.rom_symbols_inverse = {}
         if symbols is not None:
             if not os.path.isfile(symbols):
                 raise FileNotFoundError(f&#34;Symbols file {symbols} was not found!&#34;)
@@ -556,7 +557,7 @@ True...
     def _post_tick(self):
         # Fix buggy PIL. They will copy our image buffer and destroy the
         # reference on some user operations like .save().
-        if not self.screen.image.readonly:
+        if self.screen.image and not self.screen.image.readonly:
             self.screen._set_image()
 
         if self.frame_count % 60 == 0:
@@ -646,28 +647,28 @@ True...
         input = input.lower()
         if input == &#34;left&#34;:
             self.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_LEFT))
+            self.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay)
         elif input == &#34;right&#34;:
             self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_RIGHT))
+            self.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay)
         elif input == &#34;up&#34;:
             self.send_input(WindowEvent.PRESS_ARROW_UP)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_UP))
+            self.send_input(WindowEvent.RELEASE_ARROW_UP, delay)
         elif input == &#34;down&#34;:
             self.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_DOWN))
+            self.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay)
         elif input == &#34;a&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_A))
+            self.send_input(WindowEvent.RELEASE_BUTTON_A, delay)
         elif input == &#34;b&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_B))
+            self.send_input(WindowEvent.RELEASE_BUTTON_B, delay)
         elif input == &#34;start&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_START))
+            self.send_input(WindowEvent.RELEASE_BUTTON_START, delay)
         elif input == &#34;select&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_SELECT))
+            self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
         else:
             raise Exception(&#34;Unrecognized input:&#34;, input)
 
@@ -756,7 +757,7 @@ True...
         else:
             raise Exception(&#34;Unrecognized input&#34;)
 
-    def send_input(self, event):
+    def send_input(self, event, delay=0):
         &#34;&#34;&#34;
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
         `pyboy.utils.WindowEvent` for which events to send.
@@ -774,13 +775,31 @@ True...
         &gt;&gt;&gt; pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button &#39;a&#39; on next call to `PyBoy.tick()`
         &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; released
         True
+        ```
 
+        And even simpler with delay:
+        ```python
+        &gt;&gt;&gt; from pyboy.utils import WindowEvent
+        &gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button &#39;a&#39; and keep pressed after `PyBoy.tick()`
+        &gt;&gt;&gt; pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, 2) # Release button &#39;a&#39; on third call to `PyBoy.tick()`
+        &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; pressed
+        True
+        &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; still pressed
+        True
+        &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; released
+        True
         ```
 
         Args:
             event (pyboy.WindowEvent): The event to send
+            delay (int): 0 for immediately, number of frames to delay the input
         &#34;&#34;&#34;
-        self.events.append(WindowEvent(event))
+
+        if delay:
+            assert delay &gt; 0, &#34;Only positive integers allowed&#34;
+            heapq.heappush(self.queued_input, (self.frame_count + delay, event))
+        else:
+            self.events.append(WindowEvent(event))
 
     def save_state(self, file_like_object):
         &#34;&#34;&#34;
@@ -1057,16 +1076,16 @@ True...
                                 self.rom_symbols[bank][addr] = []
 
                             self.rom_symbols[bank][addr].append(sym_label)
+                            self.rom_symbols_inverse[sym_label] = (bank, addr)
                         except ValueError as ex:
                             logger.warning(&#34;Skipping .sym line: %s&#34;, line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
-        for bank, addresses in self.rom_symbols.items():
-            for addr, labels in addresses.items():
-                if symbol in labels:
-                    return bank, addr
-        raise ValueError(&#34;Symbol not found: %s&#34; % symbol)
+        bank_addr = self.rom_symbols_inverse.get(symbol)
+        if bank_addr is None:
+            raise ValueError(&#34;Symbol not found: %s&#34; % symbol)
+        return bank_addr
 
     def symbol_lookup(self, symbol):
         &#34;&#34;&#34;
@@ -1117,7 +1136,7 @@ True...
 
         If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
         enable this, you&#39;ll need to place a `.sym` file next to your ROM, or provide it using:
-        `PyBoy(..., symbols_file=&#34;game_rom.gb.sym&#34;)`.
+        `PyBoy(..., symbols=&#34;game_rom.gb.sym&#34;)`.
 
         Then provide `None` for `bank` and the symbol for `addr` to trigger the automatic lookup.
 
@@ -1608,28 +1627,28 @@ True
     input = input.lower()
     if input == &#34;left&#34;:
         self.send_input(WindowEvent.PRESS_ARROW_LEFT)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_LEFT))
+        self.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay)
     elif input == &#34;right&#34;:
         self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_RIGHT))
+        self.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay)
     elif input == &#34;up&#34;:
         self.send_input(WindowEvent.PRESS_ARROW_UP)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_UP))
+        self.send_input(WindowEvent.RELEASE_ARROW_UP, delay)
     elif input == &#34;down&#34;:
         self.send_input(WindowEvent.PRESS_ARROW_DOWN)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_DOWN))
+        self.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay)
     elif input == &#34;a&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_A)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_A))
+        self.send_input(WindowEvent.RELEASE_BUTTON_A, delay)
     elif input == &#34;b&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_B)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_B))
+        self.send_input(WindowEvent.RELEASE_BUTTON_B, delay)
     elif input == &#34;start&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_START)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_START))
+        self.send_input(WindowEvent.RELEASE_BUTTON_START, delay)
     elif input == &#34;select&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-        heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_SELECT))
+        self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
     else:
         raise Exception(&#34;Unrecognized input:&#34;, input)</code></pre>
 </details>
@@ -1774,7 +1793,7 @@ True
 </details>
 </dd>
 <dt id="pyboy.PyBoy.send_input"><code class="name flex">
-<span>def <span class="ident">send_input</span></span>(<span>self, event)</span>
+<span>def <span class="ident">send_input</span></span>(<span>self, event, delay=0)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
@@ -1790,18 +1809,30 @@ True
 &gt;&gt;&gt; pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button 'a' on next call to `PyBoy.tick()`
 &gt;&gt;&gt; pyboy.tick() # Button 'a' released
 True
-
+</code></pre>
+<p>And even simpler with delay:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from pyboy.utils import WindowEvent
+&gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button 'a' and keep pressed after `PyBoy.tick()`
+&gt;&gt;&gt; pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, 2) # Release button 'a' on third call to `PyBoy.tick()`
+&gt;&gt;&gt; pyboy.tick() # Button 'a' pressed
+True
+&gt;&gt;&gt; pyboy.tick() # Button 'a' still pressed
+True
+&gt;&gt;&gt; pyboy.tick() # Button 'a' released
+True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>event</code></strong> :&ensp;<code>pyboy.WindowEvent</code></dt>
 <dd>The event to send</dd>
+<dt><strong><code>delay</code></strong> :&ensp;<code>int</code></dt>
+<dd>0 for immediately, number of frames to delay the input</dd>
 </dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def send_input(self, event):
+<pre><code class="python">def send_input(self, event, delay=0):
     &#34;&#34;&#34;
     Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
     `pyboy.utils.WindowEvent` for which events to send.
@@ -1819,13 +1850,31 @@ True
     &gt;&gt;&gt; pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button &#39;a&#39; on next call to `PyBoy.tick()`
     &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; released
     True
+    ```
 
+    And even simpler with delay:
+    ```python
+    &gt;&gt;&gt; from pyboy.utils import WindowEvent
+    &gt;&gt;&gt; pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button &#39;a&#39; and keep pressed after `PyBoy.tick()`
+    &gt;&gt;&gt; pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, 2) # Release button &#39;a&#39; on third call to `PyBoy.tick()`
+    &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; pressed
+    True
+    &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; still pressed
+    True
+    &gt;&gt;&gt; pyboy.tick() # Button &#39;a&#39; released
+    True
     ```
 
     Args:
         event (pyboy.WindowEvent): The event to send
+        delay (int): 0 for immediately, number of frames to delay the input
     &#34;&#34;&#34;
-    self.events.append(WindowEvent(event))</code></pre>
+
+    if delay:
+        assert delay &gt; 0, &#34;Only positive integers allowed&#34;
+        heapq.heappush(self.queued_input, (self.frame_count + delay, event))
+    else:
+        self.events.append(WindowEvent(event))</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.save_state"><code class="name flex">
@@ -2343,7 +2392,7 @@ True
 </code></pre>
 <p>If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
 enable this, you'll need to place a <code>.sym</code> file next to your ROM, or provide it using:
-<code>PyBoy(..., symbols_file="game_rom.gb.sym")</code>.</p>
+<code>PyBoy(..., symbols="game_rom.gb.sym")</code>.</p>
 <p>Then provide <code>None</code> for <code>bank</code> and the symbol for <code>addr</code> to trigger the automatic lookup.</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; # Continued example above
@@ -2389,7 +2438,7 @@ True
 
     If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
     enable this, you&#39;ll need to place a `.sym` file next to your ROM, or provide it using:
-    `PyBoy(..., symbols_file=&#34;game_rom.gb.sym&#34;)`.
+    `PyBoy(..., symbols=&#34;game_rom.gb.sym&#34;)`.
 
     Then provide `None` for `bank` and the symbol for `addr` to trigger the automatic lookup.
 
