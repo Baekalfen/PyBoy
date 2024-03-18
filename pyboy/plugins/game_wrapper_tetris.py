@@ -187,6 +187,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         -------
         shape:
             `str` of which Tetromino will drop:
+
             * `"L"`: L-shape
             * `"J"`: reverse L-shape
             * `"I"`: I-shape
