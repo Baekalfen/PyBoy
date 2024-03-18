@@ -121,6 +121,7 @@ class PyBoy:
         self.gamerom = gamerom
 
         self.rom_symbols = {}
+        self.rom_symbols_inverse = {}
         if symbols is not None:
             if not os.path.isfile(symbols):
                 raise FileNotFoundError(f"Symbols file {symbols} was not found!")
@@ -986,16 +987,16 @@ class PyBoy:
                                 self.rom_symbols[bank][addr] = []
 
                             self.rom_symbols[bank][addr].append(sym_label)
+                            self.rom_symbols_inverse[sym_label] = (bank, addr)
                         except ValueError as ex:
                             logger.warning("Skipping .sym line: %s", line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
-        for bank, addresses in self.rom_symbols.items():
-            for addr, labels in addresses.items():
-                if symbol in labels:
-                    return bank, addr
-        raise ValueError("Symbol not found: %s" % symbol)
+        bank_addr = self.rom_symbols_inverse.get(symbol)
+        if bank_addr is None:
+            raise ValueError("Symbol not found: %s" % symbol)
+        return bank_addr
 
     def symbol_lookup(self, symbol):
         """

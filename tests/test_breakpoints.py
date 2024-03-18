@@ -126,8 +126,8 @@ def test_symbols_bank0_wram(default_rom):
     pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym")
     pyboy.set_emulation_speed(0)
 
-    pyboy.rom_symbols[0][0xC000] = ["test1"]
-    pyboy.rom_symbols[0][0xD000] = ["test2"]
+    pyboy.rom_symbols_inverse["test1"] = (0, 0xC000)
+    pyboy.rom_symbols_inverse["test2"] = (0, 0xD000)
 
     _bank, _addr = pyboy.symbol_lookup("test1")
     assert _bank == 0 and _addr == 0xC000
