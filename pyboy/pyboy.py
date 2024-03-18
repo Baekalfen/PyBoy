@@ -1065,7 +1065,7 @@ class PyBoy:
 
         If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
         enable this, you'll need to place a `.sym` file next to your ROM, or provide it using:
-        `PyBoy(..., symbols_file="game_rom.gb.sym")`.
+        `PyBoy(..., symbols="game_rom.gb.sym")`.
 
         Then provide `None` for `bank` and the symbol for `addr` to trigger the automatic lookup.
 
