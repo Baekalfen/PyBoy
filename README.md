@@ -62,6 +62,8 @@ The instructions are simple:
 $ pip install pyboy
 ```
 
+**Because of a bug, it's required to `pip install pillow` too.** This will be fixed as fast as possible, [pending response from PyPi](https://github.com/pypi/support/issues/3757)
+
 For details, see [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation).
 
 Now you're ready! Either use PyBoy directly from the terminal
