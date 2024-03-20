@@ -276,6 +276,8 @@ class Motherboard:
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 cycles = self.hdma.tick(self)
             else:
+                # cycles = self.cpu.jit()
+                # if not cycles:
                 cycles = self.cpu.tick()
 
             if self.cpu.halted:
