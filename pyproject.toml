@@ -52,19 +52,13 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["pyboy*"]
+packages = ["pyboy"]
 
 [tool.setuptools.package-data]
-pyboy = ["pyboy/core/bootrom_dmg.bin"]
 "*" = [
     "**/*.pxi",
     "**/*.pyx",
     "**/*.pxd",
-    "**/*.c",
-    "**/*.h",
     "**/bootrom*.bin",
     "**/font.txt"
 ]
