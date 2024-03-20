@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound=False, sound_emulated=False, cgb=None, **kwargs)</span>
+<span>(</span><span>gamerom_file, *, symbols_file=None, bootrom_file=None, sound=False, sound_emulated=False, cgb=None, randomize=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -77,7 +77,7 @@ multiple times.</p>
 <p>A range of methods are exposed, which should allow for complete control of the emulator. Please open an issue on
 GitHub, if other methods are needed for your projects. Take a look at the files in <code>examples/</code> for a crude
 "bots", which interact with the game.</p>
-<p>Only the <code>gamerom</code> argument is required.</p>
+<p>Only the <code>gamerom_file</code> argument is required.</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy('game_rom.gb')
 &gt;&gt;&gt; for _ in range(60): # Use 'while True:' for infinite
@@ -88,20 +88,29 @@ True...
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>gamerom</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>gamerom_file</code></strong> :&ensp;<code>str</code></dt>
 <dd>Filepath to a game-ROM for Game Boy or Game Boy Color.</dd>
 </dl>
 <h2 id="kwargs">Kwargs</h2>
 <ul>
-<li>window (str): "SDL2", "OpenGL", or "null"</li>
-<li>scale (int): Window scale factor. Doesn't apply to API.</li>
-<li>symbols (str): Filepath to a .sym file to use. If unsure, specify <code>None</code>.</li>
-<li>bootrom (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</li>
-<li>sound (bool): Enable sound emulation and output.</li>
-<li>sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.</li>
-<li>cgb (bool): Forcing Game Boy Color mode.</li>
-<li>color_palette (tuple): Specify the color palette to use for rendering.</li>
-<li>cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.</li>
+<li>
+<p>symbols_file (str): Filepath to a .sym file to use. If unsure, specify <code>None</code>.</p>
+</li>
+<li>
+<p>bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</p>
+</li>
+<li>
+<p>sound (bool): Enable sound emulation and output</p>
+</li>
+<li>
+<p>sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.</p>
+</li>
+<li>
+<p>color_palette (tuple): Specify the color palette to use for rendering.</p>
+</li>
+<li>
+<p>cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.</p>
+</li>
 </ul>
 <p>Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running <code>pyboy --help</code> in the terminal.</p></section>
 <details class="source">
@@ -111,15 +120,14 @@ True...
 <pre><code class="python">class PyBoy:
     def __init__(
         self,
-        gamerom,
+        gamerom_file,
         *,
-        window=defaults[&#34;window&#34;],
-        scale=defaults[&#34;scale&#34;],
-        symbols=None,
-        bootrom=None,
+        symbols_file=None,
+        bootrom_file=None,
         sound=False,
         sound_emulated=False,
         cgb=None,
+        randomize=False,
         **kwargs
     ):
         &#34;&#34;&#34;
@@ -131,7 +139,7 @@ True...
         GitHub, if other methods are needed for your projects. Take a look at the files in `examples/` for a crude
         &#34;bots&#34;, which interact with the game.
 
-        Only the `gamerom` argument is required.
+        Only the `gamerom_file` argument is required.
 
         Example:
         ```python
@@ -144,17 +152,19 @@ True...
         ```
 
         Args:
-            gamerom (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
+            gamerom_file (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
-            * window (str): &#34;SDL2&#34;, &#34;OpenGL&#34;, or &#34;null&#34;
-            * scale (int): Window scale factor. Doesn&#39;t apply to API.
-            * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
-            * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            * sound (bool): Enable sound emulation and output.
+            * symbols_file (str): Filepath to a .sym file to use. If unsure, specify `None`.
+
+            * bootrom_file (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
+
+            * sound (bool): Enable sound emulation and output
+
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
-            * cgb (bool): Forcing Game Boy Color mode.
+
             * color_palette (tuple): Specify the color palette to use for rendering.
+
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
@@ -162,45 +172,24 @@ True...
 
         self.initialized = False
 
-        if &#34;bootrom_file&#34; in kwargs:
-            logger.error(
-                &#34;Deprecated use of &#39;bootrom_file&#39;. Use &#39;bootrom&#39; keyword argument instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0&#34;
-            )
-            bootrom = kwargs.pop(&#34;bootrom_file&#34;)
-
-        if &#34;window_type&#34; in kwargs:
-            logger.error(
-                &#34;Deprecated use of &#39;window_type&#39;. Use &#39;window&#39; keyword argument instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0&#34;
-            )
-            window = kwargs.pop(&#34;window_type&#34;)
-
-        if window not in [&#34;SDL2&#34;, &#34;OpenGL&#34;, &#34;null&#34;, &#34;headless&#34;, &#34;dummy&#34;]:
-            raise KeyError(f&#39;Unknown window type: {window}. Use &#34;SDL2&#34;, &#34;OpenGL&#34;, or &#34;null&#34;&#39;)
-
-        kwargs[&#34;window&#34;] = window
-        kwargs[&#34;scale&#34;] = scale
-        randomize = kwargs.pop(&#34;randomize&#34;, False) # Undocumented feature
-
         for k, v in defaults.items():
             if k not in kwargs:
                 kwargs[k] = kwargs.get(k, defaults[k])
 
-        log_level(kwargs.pop(&#34;log_level&#34;))
-
-        if not os.path.isfile(gamerom):
-            raise FileNotFoundError(f&#34;ROM file {gamerom} was not found!&#34;)
-        self.gamerom = gamerom
+        if not os.path.isfile(gamerom_file):
+            raise FileNotFoundError(f&#34;ROM file {gamerom_file} was not found!&#34;)
+        self.gamerom_file = gamerom_file
 
         self.rom_symbols = {}
-        if symbols is not None:
-            if not os.path.isfile(symbols):
-                raise FileNotFoundError(f&#34;Symbols file {symbols} was not found!&#34;)
-        self.symbols_file = symbols
+        if symbols_file is not None:
+            if not os.path.isfile(symbols_file):
+                raise FileNotFoundError(f&#34;Symbols file {symbols_file} was not found!&#34;)
+        self.symbols_file = symbols_file
         self._load_symbols()
 
         self.mb = Motherboard(
-            gamerom,
-            bootrom,
+            gamerom_file,
+            bootrom_file or kwargs.get(&#34;bootrom&#34;), # Our current way to provide cli arguments is broken
             kwargs[&#34;color_palette&#34;],
             kwargs[&#34;cgb_color_palette&#34;],
             sound,
@@ -208,18 +197,6 @@ True...
             cgb,
             randomize=randomize,
         )
-
-        # Validate all kwargs
-        plugin_manager_keywords = []
-        for x in parser_arguments():
-            if not x:
-                continue
-            plugin_manager_keywords.extend(z.strip(&#34;-&#34;).replace(&#34;-&#34;, &#34;_&#34;) for y in x for z in y[:-1])
-
-        for k, v in kwargs.items():
-            if k not in defaults and k not in plugin_manager_keywords:
-                logger.error(&#34;Unknown keyword argument: %s&#34;, k)
-                raise KeyError(f&#34;Unknown keyword argument: {k}&#34;)
 
         # Performance measures
         self.avg_pre = 0
@@ -511,10 +488,10 @@ True...
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.debug(&#34;Speed limit: %d&#34;, self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
-                with open(self.gamerom + &#34;.state&#34;, &#34;wb&#34;) as f:
+                with open(self.gamerom_file + &#34;.state&#34;, &#34;wb&#34;) as f:
                     self.mb.save_state(IntIOWrapper(f))
             elif event == WindowEvent.STATE_LOAD:
-                state_path = self.gamerom + &#34;.state&#34;
+                state_path = self.gamerom_file + &#34;.state&#34;
                 if not os.path.isfile(state_path):
                     logger.error(&#34;State file not found: %s&#34;, state_path)
                     continue
@@ -1029,7 +1006,7 @@ True...
         return self.mb.cpu.is_stuck
 
     def _load_symbols(self):
-        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
+        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom_file)
         for sym_path in [self.symbols_file, gamerom_file_no_ext + &#34;.sym&#34;, gamerom_file_no_ext + rom_ext + &#34;.sym&#34;]:
             if sym_path and os.path.isfile(sym_path):
                 logger.info(&#34;Loading symbol file: %s&#34;, sym_path)
@@ -1053,18 +1030,15 @@ True...
                             if not bank in self.rom_symbols:
                                 self.rom_symbols[bank] = {}
 
-                            if not addr in self.rom_symbols[bank]:
-                                self.rom_symbols[bank][addr] = []
-
-                            self.rom_symbols[bank][addr].append(sym_label)
+                            self.rom_symbols[bank][addr] = sym_label
                         except ValueError as ex:
                             logger.warning(&#34;Skipping .sym line: %s&#34;, line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
         for bank, addresses in self.rom_symbols.items():
-            for addr, labels in addresses.items():
-                if symbol in labels:
+            for addr, label in addresses.items():
+                if label == symbol:
                     return bank, addr
         raise ValueError(&#34;Symbol not found: %s&#34; % symbol)
 
@@ -1078,10 +1052,7 @@ True...
 
         Example:
         ```python
-        &gt;&gt;&gt; # Directly
-        &gt;&gt;&gt; pyboy.memory[pyboy.symbol_lookup(&#34;Tileset&#34;)]
-        0
-        &gt;&gt;&gt; # By bank and address
+        &gt;&gt;&gt; # Continued example above
         &gt;&gt;&gt; bank, addr = pyboy.symbol_lookup(&#34;Tileset&#34;)
         &gt;&gt;&gt; pyboy.memory[bank, addr]
         0
@@ -2277,10 +2248,7 @@ True
 <p>This can be useful in combination with <code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">PyBoy.memory</a></code> or even <code><a title="pyboy.PyBoy.hook_register" href="#pyboy.PyBoy.hook_register">PyBoy.hook_register()</a></code>.</p>
 <p>See <code><a title="pyboy.PyBoy.hook_register" href="#pyboy.PyBoy.hook_register">PyBoy.hook_register()</a></code> for how to load symbol into PyBoy.</p>
 <p>Example:</p>
-<pre><code class="language-python">&gt;&gt;&gt; # Directly
-&gt;&gt;&gt; pyboy.memory[pyboy.symbol_lookup(&quot;Tileset&quot;)]
-0
-&gt;&gt;&gt; # By bank and address
+<pre><code class="language-python">&gt;&gt;&gt; # Continued example above
 &gt;&gt;&gt; bank, addr = pyboy.symbol_lookup(&quot;Tileset&quot;)
 &gt;&gt;&gt; pyboy.memory[bank, addr]
 0
@@ -2305,10 +2273,7 @@ ROM/RAM bank, address</p></section>
 
     Example:
     ```python
-    &gt;&gt;&gt; # Directly
-    &gt;&gt;&gt; pyboy.memory[pyboy.symbol_lookup(&#34;Tileset&#34;)]
-    0
-    &gt;&gt;&gt; # By bank and address
+    &gt;&gt;&gt; # Continued example above
     &gt;&gt;&gt; bank, addr = pyboy.symbol_lookup(&#34;Tileset&#34;)
     &gt;&gt;&gt; pyboy.memory[bank, addr]
     0
@@ -2912,7 +2877,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
+                assert self.mb.cgb, &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
                 assert stop &lt; 0x2000, &#34;Out of bounds for reading VRAM bank&#34;
                 assert bank &lt;= 1, &#34;VRAM Bank out of range&#34;
 
@@ -2952,7 +2917,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
+                assert self.mb.cgb, &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
                 assert stop &lt; 0x1000, &#34;Out of bounds for reading VRAM bank&#34;
                 assert bank &lt;= 7, &#34;WRAM Bank out of range&#34;
                 if not is_single:
@@ -3050,7 +3015,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
+                assert self.mb.cgb, &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
                 assert stop &lt; 0x2000, &#34;Out of bounds for reading VRAM bank&#34;
                 assert bank &lt;= 1, &#34;VRAM Bank out of range&#34;
 
@@ -3105,7 +3070,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
+                assert self.mb.cgb, &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
                 assert stop &lt; 0x1000, &#34;Out of bounds for reading VRAM bank&#34;
                 assert bank &lt;= 7, &#34;WRAM Bank out of range&#34;
                 if not is_single:
