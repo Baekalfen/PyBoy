@@ -5,6 +5,8 @@
 
 import array
 
+import cython
+
 from pyboy import utils
 
 from . import opcodes
@@ -57,6 +59,8 @@ class CPU:
         f.write_64bit(self.cycles)
 
     def load_state(self, f, state_version):
+        test = cython.inline("print(self.A)", self=self)
+        test()
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
         self.HL = f.read_16bit()
         self.SP = f.read_16bit()
@@ -106,6 +110,16 @@ class CPU:
 
     def set_interruptflag(self, flag):
         self.interrupts_flag_register |= flag
+
+    # def jit_analyze(self):
+    #     pass
+
+    # def jit(self):
+    #     code = self.jit_table[bank][pc]
+    #     if code:
+    #         return code()
+    #     # https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L141
+    #     self.jit_analyze()
 
     def tick(self, cycles_target):
         _cycles0 = self.cycles
