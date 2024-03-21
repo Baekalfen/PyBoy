@@ -348,9 +348,10 @@ class PyBoy:
                 self.mb.breakpoint_reinject()
 
                 # NOTE: PC has not been incremented when hitting breakpoint!
-                breakpoint_index = self.mb.breakpoint_reached()
-                if breakpoint_index != -1:
-                    self.mb.breakpoint_remove(breakpoint_index)
+                breakpoint_meta = self.mb.breakpoint_reached()
+                if breakpoint_meta != (-1, -1, -1):
+                    bank, addr, _ = breakpoint_meta
+                    self.mb.breakpoint_remove(bank, addr)
                     self.mb.breakpoint_singlestep_latch = 0
 
                     if not self._handle_hooks():
@@ -1093,6 +1094,7 @@ class PyBoy:
             raise ValueError("Hook already registered for this bank and address.")
         self.mb.breakpoint_add(bank, addr)
         bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
+        logger.debug("Adding hook for opcode %08x", bank_addr_opcode)
         self._hooks[bank_addr_opcode] = (callback, context)
 
     def hook_deregister(self, bank, addr):
@@ -1125,12 +1127,12 @@ class PyBoy:
         if bank is None and isinstance(addr, str):
             bank, addr = self._lookup_symbol(addr)
 
-        index = self.mb.breakpoint_find(bank, addr)
-        if index == -1:
+        breakpoint_meta = self.mb.breakpoint_find(bank, addr)
+        if not breakpoint_meta:
             raise ValueError("Breakpoint not found for bank and addr")
+        _, _, opcode = breakpoint_meta
 
-        _, _, opcode = self.mb.breakpoints_list[index]
-        self.mb.breakpoint_remove(index)
+        self.mb.breakpoint_remove(bank, addr)
         bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
         self._hooks.pop(bank_addr_opcode)
 

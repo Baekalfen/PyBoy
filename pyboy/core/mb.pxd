@@ -46,13 +46,13 @@ cdef class Motherboard:
     cdef bint double_speed
     cdef readonly bint cgb, cartridge_cgb
 
-    cdef list breakpoints_list
+    cdef dict breakpoints
     cdef bint breakpoint_singlestep
     cdef bint breakpoint_singlestep_latch
     cdef int64_t breakpoint_waiting
-    cdef int breakpoint_add(self, int64_t, int64_t) except -1 with gil
-    cdef void breakpoint_remove(self, int64_t) noexcept with gil
-    cdef inline int breakpoint_reached(self) noexcept with gil
+    cdef int64_t breakpoint_add(self, int64_t, int64_t) except -1 with gil
+    cdef void breakpoint_remove(self, int64_t, int64_t) noexcept with gil
+    cdef inline tuple[int64_t, int64_t, int64_t] breakpoint_reached(self) noexcept with gil
     cdef inline void breakpoint_reinject(self) noexcept nogil
 
     cdef inline bint processing_frame(self) noexcept nogil
