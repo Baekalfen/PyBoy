@@ -89,7 +89,7 @@ class DebugPrompt(PyBoyPlugin):
                     for addr, label in addresses.items():
                         print(f"{bank:02X}:{addr:04X} {label}")
             elif cmd == "bl":
-                for bank, addr in self.mb.breakpoints_list:
+                for bank, addr in self.mb.breakpoints.keys():
                     print(f"{bank:02X}:{addr:04X} {self.rom_symbols.get(bank, {}).get(addr, '')}")
             elif cmd == "b" or cmd.startswith("b "):
                 if cmd.startswith("b "):
