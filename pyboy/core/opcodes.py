@@ -11,6 +11,9 @@ logger = pyboy.logging.get_logger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
+def get_length(opcode):
+    return OPCODE_LENGTHS[opcode]
+
 def BRK(cpu):
     cpu.mb.breakpoint_singlestep = 1
     cpu.mb.breakpoint_singlestep_latch = 0
@@ -353,6 +356,7 @@ def JR_20(cpu, v): # 20 JR NZ,r8
     if ((cpu.F & (1 << FLAGZ)) == 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
         cpu.PC &= 0xFFFF
+        cpu.jit_jump = True
         return 12
     else:
         cpu.PC &= 0xFFFF
