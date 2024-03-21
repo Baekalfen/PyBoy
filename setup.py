@@ -63,6 +63,7 @@ class build_ext(_build_ext):
                 src.split(".")[0].replace(os.sep, "."),
                 [src],
                 extra_compile_args=cflags,
+                extra_link_args=["-s", "-w"],
                 include_dirs=[np.get_include()],
             ), list(py_pxd_files)
         )
