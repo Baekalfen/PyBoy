@@ -4,7 +4,7 @@ pytest>=6.0.0
 pytest-xdist
 pytest-lazy-fixtures
 pyopengl
-PyOpenGL_accelerate
+PyOpenGL_accelerate; platform_system != 'Darwin'
 filelock
 cryptography
 GitPython
