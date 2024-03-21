@@ -43,6 +43,8 @@ class CPU:
         self.is_stuck = False
         self.cycles = 0
 
+        self.jit_jump = False
+
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
             f.write(n & 0xFF)
@@ -59,8 +61,6 @@ class CPU:
         f.write_64bit(self.cycles)
 
     def load_state(self, f, state_version):
-        test = cython.inline("print(self.A)", self=self)
-        test()
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
         self.HL = f.read_16bit()
         self.SP = f.read_16bit()
@@ -85,7 +85,7 @@ class CPU:
         ] # Max 3 length, then we don't need to backtrack
 
         opcode = opcode_data[0]
-        opcode_length = opcodes.OPCODE_LENGTHS[opcode]
+        opcode_length = opcodes.get_length(opcode)
         opcode_str = f"Opcode: [{opcodes.CPU_COMMANDS[opcode]}]"
         if opcode == 0xCB:
             opcode_str += f" {opcodes.CPU_COMMANDS[opcode_data[1]+0x100]}"
@@ -146,6 +146,10 @@ class CPU:
             self.fetch_and_execute()
             if self.bail: # Possible cycles-target changes
                 break
+
+    def pending_interrupt(self):
+        return self.interrupt_queued or (self.interrupts_flag_register &
+                                         0b11111) & (self.interrupts_enabled_register & 0b11111)
 
     def check_interrupts(self):
         if self.interrupt_queued:

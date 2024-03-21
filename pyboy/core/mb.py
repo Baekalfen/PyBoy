@@ -3,10 +3,21 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import hashlib
+import importlib
+import os
+from distutils.command.build_ext import build_ext
+from distutils.core import Distribution, Extension
+from importlib.machinery import ExtensionFileLoader
+
+from Cython.Build import cythonize
+
 from pyboy import utils
+# from pyboy.core.opcodes import OPCODE_LENGTHS
+from pyboy.core.opcodes_gen import opcodes as opcodes_gen
 from pyboy.utils import STATE_VERSION
 
-from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
+from . import bootrom, cartridge, cpu, interaction, lcd, opcodes, ram, sound, timer
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 OPCODE_BRK = 0xDB
@@ -16,6 +27,12 @@ import pyboy
 logger = pyboy.logging.get_logger(__name__)
 
 MAX_CYCLES = 1 << 16
+
+
+class CodeBlock:
+    def __init__(self, body, eligible=True):
+        self.body = body
+        self.eligible = eligible
 
 
 class Motherboard:
@@ -82,6 +99,8 @@ class Motherboard:
         self.breakpoint_singlestep = False
         self.breakpoint_singlestep_latch = False
         self.breakpoint_waiting = -1
+
+        self.jit_table = {}
 
     def switch_speed(self):
         bit0 = self.key1 & 0b1
@@ -270,6 +289,130 @@ class Motherboard:
     # Coordinator
     #
 
+    # TODO: Taken from https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L95
+    def _get_build_extension(self):
+        dist = Distribution()
+        # Ensure the build respects distutils configuration by parsing
+        # the configuration files
+        config_files = dist.find_config_files()
+        dist.parse_config_files(config_files)
+        build_extension = build_ext(dist)
+        build_extension.finalize_options()
+        return build_extension
+
+    def jit_compile(self, code_text):
+        # https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L141
+        m = hashlib.sha1()
+        m.update(code_text.encode())
+        _hash = m.digest().hex()
+        jit_file = os.path.splitext(self.cartridge.filename
+                                   )[0].replace(".", "_") + "_jit_" + _hash + ".pyx" # Generate name
+        with open(jit_file, "w") as f:
+            f.write(code_text)
+
+        module_name = "jit" + _hash
+        cythonize_files = [
+            Extension(
+                module_name, #src.split(".")[0].replace(os.sep, "."),
+                [jit_file],
+                extra_compile_args=["-O3"],
+                # include_dirs=[np.get_include()],
+            )
+        ]
+        build_extension = self._get_build_extension()
+        build_extension.extensions = cythonize(
+            [*cythonize_files],
+            nthreads=1,
+            annotate=False,
+            gdb_debug=False,
+            language_level=3,
+            compiler_directives={
+                "boundscheck": False,
+                "cdivision": True,
+                "cdivision_warnings": False,
+                "infer_types": True,
+                "initializedcheck": False,
+                "nonecheck": False,
+                "overflowcheck": False,
+                # "profile" : True,
+                "wraparound": False,
+                "legacy_implicit_noexcept": True,
+            },
+        )
+        build_extension.inplace = True
+        # build_extension.build_temp = "./"# os.path.dirname(jit_file)
+        build_extension.run()
+
+        module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
+        spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, module_path))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        module.execute(self.cpu)
+        # module = load_dynamic(module_name, module_path)
+        exit(1)
+        code_body = lambda x: x
+        code = CodeBlock(code_body)
+        return code
+
+    def jit_emit_code(self, code_block):
+        preamble = """
+cimport pyboy
+
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
+cimport cython
+from pyboy.core cimport cpu as _cpu
+
+cdef uint8_t FLAGC = 4
+cdef uint8_t FLAGH = 5
+cdef uint8_t FLAGN = 6
+cdef uint8_t FLAGZ = 7
+
+"""
+        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef uint8_t t\n\tcdef uint16_t v\n\tcdef int cycles = 0"
+        for opcode, length, literal1, literal2 in code_block:
+            opcode_handler = opcodes_gen[opcode]
+            opcode_name = opcode_handler.name.split()[0]
+            code_text += "\n\t" + "# " + opcode_handler.name + "\n\t"
+            if length == 2:
+                v = literal1
+                code_text += "v = " + str(v) + "\n\t"
+            elif length == 3:
+                v = (literal2 << 8) + literal1
+                code_text += "v = " + str(v) + "\n\t"
+
+            code_text += opcode_handler.functionhandlers[opcode_name]()._code_body().replace("return", "cycles +=")
+
+        code_text += "\n\treturn cycles"
+        # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
+        # if .getitem in code, commit timer.tick(cycles); cycles = 0
+        return code_text
+
+    def jit_analyze(self):
+        boundary_instruction = [0x20] # jumps, rets, rst
+        code_block = []
+        pc = self.cpu.PC
+        while self.getitem(pc) not in boundary_instruction:
+            instruction = self.getitem(pc)
+            instruction_length = opcodes.get_length(instruction)
+            code_block.append((instruction, instruction_length, self.getitem(pc + 1), self.getitem(pc + 2)))
+            pc += instruction_length
+
+        # if len(code_block) < 10:
+        #     return CodeBlock(None, eligible=False)
+
+        code_text = self.jit_emit_code(code_block)
+        return self.jit_compile(code_text)
+
+    def jit(self, cycles):
+        code = self.jit_table.get(self.cpu.PC) # Bank collision!
+        if not code:
+            code = self.jit_analyze()
+            self.jit_table[self.cpu.PC] = code # Bank collision!
+        if code.eligible and code.cycles <= cycles:
+            return code.body()
+        return 0
+
     def processing_frame(self):
         b = (not self.lcd.frame_done)
         self.lcd.frame_done = False # Clear vblank flag for next iteration
@@ -303,6 +446,11 @@ class Motherboard:
                     )
                 )
                 self.cpu.tick(cycles_target)
+
+            if self.cpu.jit_jump:
+                if not self.cpu.pending_interrupt():
+                    cycles = self.jit(cycles)
+                self.cpu.jit_jump = False
 
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
