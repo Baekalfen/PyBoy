@@ -10,11 +10,12 @@ else
     CFLAGS='-w -DCYTHON_WITHOUT_ASSERTIONS'
 endif
 
-PY := python3
+PY ?= python3
 PYPY := pypy3
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 GITHUB_REF ?= "refs/tags/v0.0.0"
 PYBOY_VERSION ?= $(shell echo ${GITHUB_REF} | cut -d'/' -f3)
+TEST_CYTHON_ARGS ?= -n auto -v
 
 dist: clean build
 	${PY} setup.py sdist bdist_wheel
@@ -70,7 +71,7 @@ test_cpython_doctest:
 	${PY} -m pytest pyboy/ -n auto -v
 
 test_cython:
-	${PY} -m pytest tests/ -n auto -v
+	${PY} -m pytest tests/ ${TEST_CYTHON_ARGS}
 
 test_pypy:
 	${PYPY} -m pytest tests/ pyboy/ -n auto -v
