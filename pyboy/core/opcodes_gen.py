@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import os
 import re
 from html.parser import HTMLParser
 from urllib.request import urlopen
@@ -24,6 +25,9 @@ import pyboy
 logger = pyboy.logging.get_logger(__name__)
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
+
+def get_length(opcode):
+    return OPCODE_LENGTHS[opcode]
 
 def BRK(cpu):
     cpu.bail = True
@@ -47,6 +51,7 @@ cdef Logger logger
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
+cdef uint8_t get_length(int) noexcept nogil
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
 
@@ -263,7 +268,7 @@ class Code:
             "def %s_%0.2X(cpu, v): # %0.2X %s" % (self.function_name, self.opcode, self.opcode, self.name),
         ][self.takes_immediate]
         code += "\n\t"
-        code += self._code_body(code)
+        code += self._code_body()
 
         pxd = [
             "cdef uint8_t %s_%0.2X(cpu.CPU) noexcept nogil # %0.2X %s"
@@ -989,30 +994,28 @@ class OpcodeData:
         )
 
         if left is None:
-            code.addlines(
-                [
-                    "cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
-                    "cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
-                    "cpu.SP -= 2",
-                    "cpu.SP &= 0xFFFF",
-                    "cpu.PC = %s" % ("v" if right.immediate else right.get),
-                    "cpu.cycles += " + self.cycles[0],
-                ]
-            )
+            code.addlines([
+                "cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
+                "cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
+                "cpu.SP -= 2",
+                "cpu.SP &= 0xFFFF",
+                "cpu.PC = %s" % ("v" if right.immediate else right.get),
+                "cpu.jit_jump = True",
+                "cpu.cycles += " + self.cycles[0],
+            ])
         else:
-            code.addlines(
-                [
-                    "if %s:" % l_code,
-                    "\tcpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
-                    "\tcpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
-                    "\tcpu.SP -= 2",
-                    "\tcpu.SP &= 0xFFFF",
-                    "\tcpu.PC = %s" % ("v" if right.immediate else right.get),
-                    "\tcpu.cycles += " + self.cycles[0],
-                    "else:",
-                    "\tcpu.cycles += " + self.cycles[1],
-                ]
-            )
+            code.addlines([
+                "if %s:" % l_code,
+                "\tcpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
+                "\tcpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
+                "\tcpu.SP -= 2",
+                "\tcpu.SP &= 0xFFFF",
+                "\tcpu.PC = %s" % ("v" if right.immediate else right.get),
+                "\tcpu.jit_jump = True",
+                "\tcpu.cycles += " + self.cycles[0],
+                "else:",
+                "\tcpu.cycles += " + self.cycles[1],
+            ])
 
         return code
 
@@ -1093,12 +1096,11 @@ class OpcodeData:
             ]
         )
 
-        code.addlines(
-            [
-                "cpu.PC = %s" % (right.code),
-                "cpu.cycles += " + self.cycles[0],
-            ]
-        )
+        code.addlines([
+            "cpu.PC = %s" % (right.code),
+            "cpu.jit_jump = True",
+            "cpu.cycles += " + self.cycles[0],
+        ])
 
         return code
 
@@ -1332,14 +1334,6 @@ class OpcodeData:
 
 
 def update():
-    response = urlopen("http://pastraiser.com/cpu/gameboy/gameboy_opcodes.html")
-    html = response.read().replace(b"&nbsp;", b"<br>").decode()
-
-    parser = MyHTMLParser()
-    parser.feed(html)
-
-    breakpoint()
-
     opcodefunctions = map(lambda x: (None, None) if x is None else x.createfunction(), opcodes)
 
     with open(destination, "w") as f, open(pxd_destination, "w") as f_pxd:
@@ -1422,10 +1416,21 @@ def execute_opcode(cpu, opcode):
 
 
 def load():
-    # if os.path.exists(destination):
-    #     return
-    update()
+    cache = "cache.html"
+    if not os.path.isfile(cache):
+        response = urlopen("http://pastraiser.com/cpu/gameboy/gameboy_opcodes.html")
+        html = response.read().replace(b"&nbsp;", b"<br>").decode()
+
+        with open(cache, "w") as f:
+            f.write(html)
+    else:
+        with open(cache, "r") as f:
+            html = f.read()
+
+    parser = MyHTMLParser()
+    parser.feed(html)
 
 
+load()
 if __name__ == "__main__":
-    load()
+    update()

@@ -56,6 +56,9 @@ cdef class Motherboard:
     cdef inline tuple[int64_t, int64_t, int64_t] breakpoint_reached(self) noexcept with gil
     cdef inline void breakpoint_reinject(self) noexcept nogil
 
+    cdef dict jit_table
+    cdef int jit(self, int) noexcept with gil
+
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, cycles_target=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
