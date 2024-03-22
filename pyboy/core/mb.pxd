@@ -58,6 +58,7 @@ cdef class Motherboard:
 
     cdef dict jit_table
     cdef int jit(self, int) noexcept with gil
+    cdef void clear_jit_table(self) noexcept with gil
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept

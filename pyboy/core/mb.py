@@ -32,6 +32,7 @@ MAX_CYCLES = 1 << 31
 class CodeBlock:
     def __init__(self, body, eligible=True):
         self.body = body
+        # self.cycles = cycles
         self.eligible = eligible
 
 
@@ -330,54 +331,57 @@ class Motherboard:
         m = hashlib.sha1()
         m.update(code_text.encode())
         _hash = m.digest().hex()
-        jit_file = os.path.splitext(self.cartridge.filename
-                                   )[0].replace(".", "_") + "_jit_" + _hash + ".pyx" # Generate name
-        with open(jit_file, "w") as f:
-            f.write(code_text)
 
         module_name = "jit" + _hash
-        cythonize_files = [
-            Extension(
-                module_name, #src.split(".")[0].replace(os.sep, "."),
-                [jit_file],
-                extra_compile_args=["-O3"],
-                # include_dirs=[np.get_include()],
-            )
-        ]
-        build_extension = self._get_build_extension()
-        build_extension.extensions = cythonize(
-            [*cythonize_files],
-            nthreads=1,
-            annotate=False,
-            gdb_debug=False,
-            language_level=3,
-            compiler_directives={
-                "boundscheck": False,
-                "cdivision": True,
-                "cdivision_warnings": False,
-                "infer_types": True,
-                "initializedcheck": False,
-                "nonecheck": False,
-                "overflowcheck": False,
-                # "profile" : True,
-                "wraparound": False,
-                "legacy_implicit_noexcept": True,
-            },
-        )
-        build_extension.inplace = True
-        # build_extension.build_temp = "./"# os.path.dirname(jit_file)
-        build_extension.run()
-
         module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
+
+        if not os.path.exists(module_path):
+            logger.debug("Compiling JIT block: %s", module_path)
+            jit_file = os.path.splitext(self.cartridge.filename
+                                       )[0].replace(".", "_") + "_jit_" + _hash + ".pyx" # Generate name
+            with open(jit_file, "w") as f:
+                f.write(code_text)
+
+            cythonize_files = [
+                Extension(
+                    module_name, #src.split(".")[0].replace(os.sep, "."),
+                    [jit_file],
+                    extra_compile_args=["-O3"],
+                    # include_dirs=[np.get_include()],
+                )
+            ]
+            build_extension = self._get_build_extension()
+            build_extension.extensions = cythonize(
+                [*cythonize_files],
+                nthreads=1,
+                annotate=False,
+                gdb_debug=False,
+                language_level=3,
+                compiler_directives={
+                    "boundscheck": False,
+                    "cdivision": True,
+                    "cdivision_warnings": False,
+                    "infer_types": True,
+                    "initializedcheck": False,
+                    "nonecheck": False,
+                    "overflowcheck": False,
+                    # "profile" : True,
+                    "wraparound": False,
+                    "legacy_implicit_noexcept": True,
+                },
+            )
+            build_extension.inplace = True
+            # build_extension.build_temp = "./"# os.path.dirname(jit_file)
+            build_extension.run()
+        else:
+            logger.debug("JIT block already compiled: %s", module_path)
+
         spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, module_path))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        module.execute(self.cpu)
-        # module = load_dynamic(module_name, module_path)
-        exit(1)
-        code_body = lambda x: x
-        code = CodeBlock(code_body)
+        # module.execute(self.cpu)
+        code = CodeBlock(module.execute)
         return code
 
     def jit_emit_code(self, code_block):
@@ -414,7 +418,61 @@ cdef uint8_t FLAGZ = 7
         return code_text
 
     def jit_analyze(self):
-        boundary_instruction = [0x20] # jumps, rets, rst
+        boundary_instruction = [
+            # JR
+            0x20,
+            0x30,
+
+            # JR
+            0x18,
+            0x28,
+            0x38,
+
+            # RET
+            0xC0,
+            0xD0,
+
+            # JP
+            0xC2,
+            0xD2,
+
+            # JP
+            0xC3,
+
+            # CALL
+            0xC4,
+            0xD4,
+
+            # RST
+            0xC7,
+            0xD7,
+            0xE7,
+            0xF7,
+
+            # RET
+            0xC8,
+            0xD8,
+            0xC9, # RET
+            0xD9, # RETI
+            0xE9, # JP
+
+            # JP
+            0xCA,
+            0xDA,
+
+            # CALL
+            0xCC,
+            0xDC,
+
+            # CALL
+            0xDD,
+
+            # RST
+            0xCF,
+            0xDF,
+            0xEF,
+            0xFF,
+        ]
         code_block = []
         pc = self.cpu.PC
         while self.getitem(pc) not in boundary_instruction:
@@ -423,11 +481,13 @@ cdef uint8_t FLAGZ = 7
             code_block.append((instruction, instruction_length, self.getitem(pc + 1), self.getitem(pc + 2)))
             pc += instruction_length
 
-        # if len(code_block) < 10:
+        # if len(code_block) < 3:
         #     return CodeBlock(None, eligible=False)
 
         code_text = self.jit_emit_code(code_block)
-        return self.jit_compile(code_text)
+        code = self.jit_compile(code_text)
+        code.cycles = (pc - self.cpu.PC) * 4 # TODO
+        return code
 
     def jit(self, cycles):
         code = self.jit_table.get(self.cpu.PC) # Bank collision!
@@ -435,9 +495,12 @@ cdef uint8_t FLAGZ = 7
             code = self.jit_analyze()
             self.jit_table[self.cpu.PC] = code # Bank collision!
         if code.eligible and code.cycles <= cycles:
-            return code.body()
+            logger.info("Executing JIT block: PC=%x, cycles=%s", self.cpu.PC, code.cycles)
+            return code.body(self.cpu)
         return 0
 
+    def clear_jit_table(self):
+        self.jit_table = {}
 
     def tick(self):
         while not self.lcd.frame_done:
@@ -738,6 +801,7 @@ cdef uint8_t FLAGZ = 7
                 logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
                 self.cpu.bail = True
+                self.clear_jit_table()
             # CGB registers
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value
