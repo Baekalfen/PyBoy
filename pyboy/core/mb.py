@@ -303,7 +303,7 @@ class Motherboard:
         m.update(code_text.encode())
         _hash = m.digest().hex()
 
-        module_name = "jit" + _hash
+        module_name = "jit_" + _hash
         module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
 
         if not os.path.exists(module_path):
@@ -447,10 +447,14 @@ cdef uint8_t FLAGZ = 7
         code_block = []
         pc = self.cpu.PC
         while self.getitem(pc) not in boundary_instruction:
-            instruction = self.getitem(pc)
-            instruction_length = opcodes.get_length(instruction)
-            code_block.append((instruction, instruction_length, self.getitem(pc + 1), self.getitem(pc + 2)))
-            pc += instruction_length
+            opcode = self.getitem(pc)
+            if opcode == 0xCB: # Extension code
+                pc += 1
+                opcode = self.getitem(pc)
+                opcode += 0x100 # Internally shifting look-up table
+            opcode_length = opcodes.get_length(opcode)
+            code_block.append((opcode, opcode_length, self.getitem(pc + 1), self.getitem(pc + 2)))
+            pc += opcode_length
 
         # if len(code_block) < 3:
         #     return CodeBlock(None, eligible=False)
