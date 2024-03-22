@@ -32,7 +32,11 @@ build:
 	cd ${ROOT_DIR}/extras/bootrom && $(MAKE)
 	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext -j $(shell getconf _NPROCESSORS_ONLN) --inplace
 
-clean:
+
+clean_jit:
+	find . -type f -name "*jit_*" -delete
+
+clean: clean_jit
 	@echo "Cleaning..."
 	cd ${ROOT_DIR}/extras/default_rom && $(MAKE) clean
 	cd ${ROOT_DIR}/extras/bootrom && $(MAKE) clean

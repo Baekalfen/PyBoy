@@ -55,4 +55,4 @@ cdef class CPU:
     cdef void set_bc(CPU, uint16_t) noexcept nogil
     cdef void set_de(CPU, uint16_t) noexcept nogil
 
-    cdef dump_state(self, str) noexcept with gil
+    cdef void dump_state(CPU) noexcept with gil

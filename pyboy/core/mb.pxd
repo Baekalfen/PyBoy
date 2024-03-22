@@ -58,12 +58,15 @@ cdef class Motherboard:
     cdef inline bint processing_frame(self) noexcept nogil
 
     cdef dict jit_table
-    cdef int jit(self, int) noexcept with gil
+    cdef object jit_compile(self, str) noexcept with gil
+    cdef object jit_emit_code(self, object) noexcept with gil
+    cdef object jit_analyze(self) noexcept with gil
+    cdef int64_t jit(self, int64_t) noexcept with gil
     cdef void clear_jit_table(self) noexcept with gil
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
-    @cython.locals(cycles=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
+    @cython.locals(cycles=int64_t, mode0_cycles=int64_t, max_cycles=int64_t, breakpoint_index=int64_t)
     cdef bint tick(self) noexcept nogil
 
     cdef void switch_speed(self) noexcept nogil
