@@ -904,17 +904,16 @@ class OpcodeData:
         if left is None:
             code.addlines(["cpu.PC = %s" % ("v" if right.immediate else r_code), "cpu.cycles += " + self.cycles[0]])
         else:
-            code.addlines(
-                [
-                    "if %s:" % l_code,
-                    "\tcpu.PC = %s" % ("v" if right.immediate else r_code),
-                    "\tcpu.cycles += " + self.cycles[0],
-                    "else:",
-                    "\tcpu.PC += %s" % self.length,
-                    "\tcpu.PC &= 0xFFFF",
-                    "\tcpu.cycles += " + self.cycles[1],
-                ]
-            )
+            code.addlines([
+                "if %s:" % l_code,
+                "\tcpu.PC = %s" % ("v" if right.immediate else r_code),
+                "\tcpu.jit_jump = True",
+                "\tcpu.cycles += " + self.cycles[0],
+                "else:",
+                "\tcpu.PC += %s" % self.length,
+                "\tcpu.PC &= 0xFFFF",
+                "\tcpu.cycles += " + self.cycles[1],
+            ])
 
         return code
 
@@ -940,26 +939,24 @@ class OpcodeData:
             self.name.split()[0], self.opcode, self.name, right.immediate, self.length, self.cycles, branch_op=True
         )
         if left is None:
-            code.addlines(
-                [
-                    "cpu.PC += %d + " % self.length + inline_signed_int8("v"),
-                    "cpu.PC &= 0xFFFF",
-                    "cpu.cycles += " + self.cycles[0],
-                ]
-            )
+            code.addlines([
+                "cpu.PC += %d + " % self.length + inline_signed_int8("v"),
+                "cpu.PC &= 0xFFFF",
+                "cpu.jit_jump = True",
+                "cpu.cycles += " + self.cycles[0],
+            ])
         else:
-            code.addlines(
-                [
-                    "cpu.PC += %d" % self.length,
-                    "if %s:" % l_code,
-                    "\tcpu.PC += " + inline_signed_int8("v"),
-                    "\tcpu.PC &= 0xFFFF",
-                    "\tcpu.cycles += " + self.cycles[0],
-                    "else:",
-                    "\tcpu.PC &= 0xFFFF",
-                    "\tcpu.cycles += " + self.cycles[1],
-                ]
-            )
+            code.addlines([
+                "cpu.PC += %d" % self.length,
+                "if %s:" % l_code,
+                "\tcpu.PC += " + inline_signed_int8("v"),
+                "\tcpu.PC &= 0xFFFF",
+                "\tcpu.jit_jump = True",
+                "\tcpu.cycles += " + self.cycles[0],
+                "else:",
+                "\tcpu.PC &= 0xFFFF",
+                "\tcpu.cycles += " + self.cycles[1],
+            ])
 
         return code
 
@@ -1035,46 +1032,43 @@ class OpcodeData:
 
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles, branch_op=True)
         if left is None:
-            code.addlines(
-                [
-                    "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
-                    "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
-                    "cpu.SP += 2",
-                    "cpu.SP &= 0xFFFF",
-                    "cpu.cycles += " + self.cycles[0],
-                ]
-            )
+            code.addlines([
+                "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
+                "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
+                "cpu.SP += 2",
+                "cpu.SP &= 0xFFFF",
+                "cpu.jit_jump = True",
+                "cpu.cycles += " + self.cycles[0],
+            ])
         else:
-            code.addlines(
-                [
-                    "if %s:" % l_code,
-                    "\tcpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
-                    "\tcpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
-                    "\tcpu.SP += 2",
-                    "\tcpu.SP &= 0xFFFF",
-                    "\tcpu.cycles += " + self.cycles[0],
-                    "else:",
-                    "\tcpu.PC += %s" % self.length,
-                    "\tcpu.PC &= 0xFFFF",
-                    "\tcpu.cycles += " + self.cycles[1],
-                ]
-            )
+            code.addlines([
+                "if %s:" % l_code,
+                "\tcpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
+                "\tcpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
+                "\tcpu.SP += 2",
+                "\tcpu.SP &= 0xFFFF",
+                "\tcpu.jit_jump = True",
+                "\tcpu.cycles += " + self.cycles[0],
+                "else:",
+                "\tcpu.PC += %s" % self.length,
+                "\tcpu.PC &= 0xFFFF",
+                "\tcpu.cycles += " + self.cycles[1],
+            ])
 
         return code
 
     def RETI(self):
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles, branch_op=True)
-        code.addlines(
-            [
-                "cpu.interrupt_master_enable = True",
-                "cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)",
-                "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
-                "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
-                "cpu.SP += 2",
-                "cpu.SP &= 0xFFFF",
-                "cpu.cycles += " + self.cycles[0],
-            ]
-        )
+        code.addlines([
+            "cpu.interrupt_master_enable = True",
+            "cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)",
+            "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
+            "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
+            "cpu.SP += 2",
+            "cpu.SP &= 0xFFFF",
+            "cpu.jit_jump = True",
+            "cpu.cycles += " + self.cycles[0],
+        ])
 
         return code
 

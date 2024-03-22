@@ -38,7 +38,10 @@ build_pyboy:
 
 build: build_rom build_pyboy
 
-clean:
+clean_jit:
+	find . -type f -name "*jit_*" -delete
+
+clean: clean_jit
 	@echo "Cleaning..."
 	cd ${ROOT_DIR}/extras/default_rom && $(MAKE) clean
 	cd ${ROOT_DIR}/extras/bootrom && $(MAKE) clean

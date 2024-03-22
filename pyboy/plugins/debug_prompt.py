@@ -62,7 +62,7 @@ class DebugPrompt(PyBoyPlugin):
             sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
 
             # Print state
-            print(self.mb.cpu.dump_state(sym_label))
+            self.mb.cpu.dump_state()
 
             # REPL
             cmd = input()

@@ -336,7 +336,7 @@ class Motherboard:
         module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
 
         if not os.path.exists(module_path):
-            logger.debug("Compiling JIT block: %s", module_path)
+            logger.info("Compiling JIT block: %s", module_path)
             jit_file = os.path.splitext(self.cartridge.filename
                                        )[0].replace(".", "_") + "_jit_" + _hash + ".pyx" # Generate name
             with open(jit_file, "w") as f:
@@ -374,7 +374,7 @@ class Motherboard:
             # build_extension.build_temp = "./"# os.path.dirname(jit_file)
             build_extension.run()
         else:
-            logger.debug("JIT block already compiled: %s", module_path)
+            logger.info("JIT block already compiled: %s", module_path)
 
         spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, module_path))
         module = importlib.util.module_from_spec(spec)
@@ -388,7 +388,7 @@ class Motherboard:
         preamble = """
 cimport pyboy
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
 cimport cython
 from pyboy.core cimport cpu as _cpu
 
@@ -398,7 +398,7 @@ cdef uint8_t FLAGN = 6
 cdef uint8_t FLAGZ = 7
 
 """
-        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef uint8_t t\n\tcdef uint16_t v\n\tcdef int cycles = 0"
+        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef uint16_t t\n\tcdef int16_t v\n\tcdef int cycles = 0"
         for opcode, length, literal1, literal2 in code_block:
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
@@ -411,6 +411,7 @@ cdef uint8_t FLAGZ = 7
                 code_text += "v = " + str(v) + "\n\t"
 
             code_text += opcode_handler.functionhandlers[opcode_name]()._code_body().replace("return", "cycles +=")
+            code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
 
         code_text += "\n\treturn cycles"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
@@ -475,7 +476,7 @@ cdef uint8_t FLAGZ = 7
         ]
         code_block = []
         pc = self.cpu.PC
-        while self.getitem(pc) not in boundary_instruction:
+        while True:
             opcode = self.getitem(pc)
             if opcode == 0xCB: # Extension code
                 pc += 1
@@ -484,9 +485,13 @@ cdef uint8_t FLAGZ = 7
             opcode_length = opcodes.get_length(opcode)
             code_block.append((opcode, opcode_length, self.getitem(pc + 1), self.getitem(pc + 2)))
             pc += opcode_length
+            if opcode in boundary_instruction:
+                break
 
-        # if len(code_block) < 3:
-        #     return CodeBlock(None, eligible=False)
+        if len(code_block) < 3:
+            code = CodeBlock(None, eligible=False)
+            code.cycles = 0
+            return code
 
         code_text = self.jit_emit_code(code_block)
         code = self.jit_compile(code_text)
@@ -494,13 +499,19 @@ cdef uint8_t FLAGZ = 7
         return code
 
     def jit(self, cycles):
-        code = self.jit_table.get(self.cpu.PC) # Bank collision!
+        block_id = self.cpu.PC << 8 + self.cartridge.rombank_selected
+        code = self.jit_table.get(block_id) # Bank collision!
         if not code:
             code = self.jit_analyze()
-            self.jit_table[self.cpu.PC] = code # Bank collision!
-        if code.eligible and code.cycles <= cycles:
-            logger.info("Executing JIT block: PC=%x, cycles=%s", self.cpu.PC, code.cycles)
-            return code.body(self.cpu)
+            self.jit_table[block_id] = code # Bank collision!
+        if code.eligible:
+            if code.cycles <= cycles:
+                logger.debug("Executing JIT block: PC=%x, code.cycles=%s, cycles=%d", self.cpu.PC, code.cycles, cycles)
+                cycles = code.body(self.cpu)
+                logger.debug("After block: PC=%x, jit_jump=%d", self.cpu.PC, self.cpu.jit_jump)
+                return cycles
+            else:
+                logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
         return 0
 
     def clear_jit_table(self):
@@ -537,12 +548,19 @@ cdef uint8_t FLAGZ = 7
                 )
                 if self.breakpoint_singlestep:
                     cycles_target = 4
-                self.cpu.tick(cycles_target)
 
-            if self.cpu.jit_jump:
-                if not self.cpu.pending_interrupt():
-                    cycles = self.jit(cycles)
-                self.cpu.jit_jump = False
+                # Inject special opcode instead? ~~Long immediate as identifier~~
+                # Special opcode cannot be more than 1 byte, to avoid jumps to sub-parts of the jit block
+                # Compile in other thread, acquire memory lock between frames
+                if self.cpu.jit_jump:
+                    self.cpu.jit_jump = False
+                    if not self.cpu_pending_interrupt() and self.cpu.PC < 0x8000: # and cycles_target > 0:
+                        cycles = self.jit(cycles_target)
+                        # cycles = self.jit(0xFFFF)
+                    else:
+                        cycles = self.cpu.tick(cycles_target)
+                else:
+                    cycles = self.cpu.tick(cycles_target)
 
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
