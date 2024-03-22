@@ -905,6 +905,7 @@ class OpcodeData:
             code.addlines([
                 "if %s:" % l_code,
                 "\tcpu.PC = %s" % ("v" if right.immediate else r_code),
+                "\tcpu.jit_jump = True",
                 "\tcpu.cycles += " + self.cycles[0],
                 "else:",
                 "\tcpu.PC += %s" % self.length,
@@ -939,6 +940,7 @@ class OpcodeData:
             code.addlines([
                 "cpu.PC += %d + " % self.length + inline_signed_int8("v"),
                 "cpu.PC &= 0xFFFF",
+                "cpu.jit_jump = True",
                 "cpu.cycles += " + self.cycles[0],
             ])
         else:
@@ -947,6 +949,7 @@ class OpcodeData:
                 "if %s:" % l_code,
                 "\tcpu.PC += " + inline_signed_int8("v"),
                 "\tcpu.PC &= 0xFFFF",
+                "\tcpu.jit_jump = True",
                 "\tcpu.cycles += " + self.cycles[0],
                 "else:",
                 "\tcpu.PC &= 0xFFFF",
@@ -1030,6 +1033,7 @@ class OpcodeData:
                 "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
                 "cpu.SP += 2",
                 "cpu.SP &= 0xFFFF",
+                "cpu.jit_jump = True",
                 "cpu.cycles += " + self.cycles[0],
             ])
         else:
@@ -1039,6 +1043,7 @@ class OpcodeData:
                 "\tcpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
                 "\tcpu.SP += 2",
                 "\tcpu.SP &= 0xFFFF",
+                "\tcpu.jit_jump = True",
                 "\tcpu.cycles += " + self.cycles[0],
                 "else:",
                 "\tcpu.PC += %s" % self.length,
@@ -1057,6 +1062,7 @@ class OpcodeData:
             "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
             "cpu.SP += 2",
             "cpu.SP &= 0xFFFF",
+            "cpu.jit_jump = True",
             "cpu.cycles += " + self.cycles[0],
         ])
 

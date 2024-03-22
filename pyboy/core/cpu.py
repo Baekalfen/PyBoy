@@ -77,9 +77,10 @@ class CPU:
             self.interrupts_flag_register = f.read()
         if state_version >= 12:
             self.cycles = f.read_64bit()
-        logger.debug("State loaded: %s", self.dump_state(""))
+        # logger.debug("State loaded: %s", self.dump_state(""))
 
-    def dump_state(self, sym_label):
+    def dump_state(self):
+        sym_label = ""
         opcode_data = [
             self.mb.getitem(self.mb.cpu.PC + n) for n in range(3)
         ] # Max 3 length, then we don't need to backtrack
@@ -92,20 +93,20 @@ class CPU:
         else:
             opcode_str += " " + " ".join(f"{d:02X}" for d in opcode_data[1:opcode_length])
 
-        return (
-            "\n"
+        print(
+            # "\n"
             f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
             f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
-            f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})\n"
-            f"{opcode_str} "
-            f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
-            f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
-            f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
-            f"LCD Intr.: {self.mb.lcd._cycles_to_interrupt}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
-            f"Timer Intr.: {self.mb.timer._cycles_to_interrupt}\n"
-            f"halted:{self.halted}, "
-            f"interrupt_queued:{self.interrupt_queued}, "
-            f"stopped:{self.stopped}\n"
+            f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})" #\n"
+            # f"{opcode_str} "
+            # f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
+            # f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
+            # f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
+            # f"LCD Intr.: {self.mb.lcd.cycles_to_interrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
+            # f"Timer Intr.: {self.mb.timer.cycles_to_interrupt()}\n"
+            # f"halted:{self.halted}, "
+            # f"interrupt_queued:{self.interrupt_queued}, "
+            # f"stopped:{self.stopped}\n"
         )
 
     def set_interruptflag(self, flag):
