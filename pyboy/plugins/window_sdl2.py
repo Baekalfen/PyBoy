@@ -97,6 +97,10 @@ else:
     CONTROLLER_UP = {}
 # yapf: enable
 
+def set_keybinding(sdl2_key, press_window_event, release_window_event):
+    if sdl2:
+        KEY_DOWN[sdl2_key] = press_window_event
+        KEY_UP[sdl2_key] = release_window_event
 
 def sdl2_event_pump(events):
     global _sdlcontroller
