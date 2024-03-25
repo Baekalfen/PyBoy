@@ -371,7 +371,7 @@ cdef uint8_t FLAGN = 6
 cdef uint8_t FLAGZ = 7
 
 """
-        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef uint16_t t\n\tcdef int16_t v\n\tcdef int cycles = 0"
+        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef uint16_t t\n\tcdef uint16_t tr\n\tcdef int16_t v\n\tcdef int cycles = 0"
         for opcode, length, literal1, literal2 in code_block:
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
@@ -383,11 +383,16 @@ cdef uint8_t FLAGZ = 7
                 v = (literal2 << 8) + literal1
                 code_text += "v = " + str(v) + "\n\t"
 
-            code_text += opcode_handler.functionhandlers[opcode_name]()._code_body().replace("return", "cycles +=")
+            tmp_code = opcode_handler.functionhandlers[opcode_name]()._code_body()
+            tmp_code = tmp_code.replace("return", "cycles +=")
+            if "tr = " in tmp_code:
+                # if "(" in opcode_handler.name.split(',')[0]: #"setitem" in tmp_code:
+                # breakpoint()
+                # Return early on state-altering writes
+                tmp_code += "\n\tif tr: return cycles"
+            code_text += tmp_code
+            # TODO: Shouldn't this work?
             # code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
-            # if "setitem" in code_text:
-            #     code_text.replace()
-            #     code_text += "\n\tif"
 
         code_text += "\n\treturn cycles"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op

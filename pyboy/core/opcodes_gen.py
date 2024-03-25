@@ -150,7 +150,7 @@ class Operand:
         if operand == "(C)":
             self.highpointer = True
             if assign:
-                return "cpu.mb.setitem(0xFF00 + cpu.C, %s)"
+                return "tr = cpu.mb.setitem(0xFF00 + cpu.C, %s)"
             else:
                 return "cpu.mb.getitem(0xFF00 + cpu.C)"
 
@@ -164,7 +164,7 @@ class Operand:
         elif operand.startswith("(") and operand.endswith(")"):
             self.pointer = True
             if assign:
-                code = "cpu.mb.setitem(%s" % self.codegen(
+                code = "tr = cpu.mb.setitem(%s" % self.codegen(
                     False, operand=re.search(r"\(([a-zA-Z]+\d*)[\+-]?\)", operand).group(1)
                 ) + ", %s)"
             else:
