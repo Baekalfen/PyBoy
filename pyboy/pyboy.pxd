@@ -99,3 +99,5 @@ cdef class PyBoy:
     cpdef object get_sprite(self, int) noexcept
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
     cpdef object get_tile(self, int) noexcept
+
+    cpdef int64_t _cycles(self)

@@ -53,6 +53,7 @@ class PyBoy:
         cgb=None,
         gameshark=None,
         log_level=defaults["log_level"],
+        jit=False,
         **kwargs
     ):
         """
@@ -144,6 +145,7 @@ class PyBoy:
             sound,
             sound_emulated,
             cgb,
+            jit,
             randomize=randomize,
         )
 
@@ -1302,6 +1304,9 @@ class PyBoy:
             self.mb.cartridge.rtc.timelock = enable
         else:
             raise Exception("There's no RTC for this cartridge type")
+
+    def _cycles(self):
+        return self.mb._cycles
 
 
 class PyBoyRegisterFile:
