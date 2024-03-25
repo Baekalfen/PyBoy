@@ -82,3 +82,8 @@ split_penalty_for_added_line_split = 30
 split_before_logical_operator = false
 split_before_bitwise_operator = false
 arithmetic_precedence_indication = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:.*Using SDL2 binaries from pysdl2-dll.*",
+]
