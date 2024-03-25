@@ -89,7 +89,8 @@ class PyBoy:
         log_level=defaults["log_level"],
         color_palette=defaults["color_palette"],
         cgb_color_palette=defaults["cgb_color_palette"],
-        **kwargs,
+        jit=False,
+        **kwargs
     ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -204,6 +205,7 @@ class PyBoy:
             sound_emulated,
             sound_sample_rate,
             cgb,
+            jit,
             randomize=randomize,
         )
 
@@ -1397,7 +1399,7 @@ class PyBoy:
             raise PyBoyException("There's no RTC for this cartridge type")
 
     def _cycles(self):
-        return self.mb.cpu.cycles
+        return self.mb._cycles
 
 
 class PyBoyRegisterFile:

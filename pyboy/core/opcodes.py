@@ -13,6 +13,9 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 def get_length(opcode):
     return OPCODE_LENGTHS[opcode]
 
+def get_max_cycles(opcode):
+    return OPCODE_MAX_CYCLES[opcode]
+
 def BRK(cpu):
     cpu.bail = True
     cpu.mb.breakpoint_singlestep = 1
@@ -274,6 +277,7 @@ def RLA_17(cpu): # 17 RLA
 def JR_18(cpu, v): # 18 JR r8
     cpu.PC += 2 + ((v ^ 0x80) - 0x80)
     cpu.PC &= 0xFFFF
+    cpu.jit_jump = True
     cpu.cycles += 12
 
 
@@ -458,6 +462,7 @@ def JR_28(cpu, v): # 28 JR Z,r8
     if ((cpu.F & (1 << FLAGZ)) != 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
         cpu.PC &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 12
     else:
         cpu.PC &= 0xFFFF
@@ -547,6 +552,7 @@ def JR_30(cpu, v): # 30 JR NC,r8
     if ((cpu.F & (1 << FLAGC)) == 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
         cpu.PC &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 12
     else:
         cpu.PC &= 0xFFFF
@@ -631,6 +637,7 @@ def JR_38(cpu, v): # 38 JR C,r8
     if ((cpu.F & (1 << FLAGC)) != 0):
         cpu.PC += ((v ^ 0x80) - 0x80)
         cpu.PC &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 12
     else:
         cpu.PC &= 0xFFFF
@@ -2071,6 +2078,7 @@ def RET_C0(cpu): # C0 RET NZ
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
         cpu.SP &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 20
     else:
         cpu.PC += 1
@@ -2091,6 +2099,7 @@ def POP_C1(cpu): # C1 POP BC
 def JP_C2(cpu, v): # C2 JP NZ,a16
     if ((cpu.F & (1 << FLAGZ)) == 0):
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 16
     else:
         cpu.PC += 3
@@ -2112,6 +2121,7 @@ def CALL_C4(cpu, v): # C4 CALL NZ,a16
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 24
     else:
         cpu.cycles += 12
@@ -2150,6 +2160,7 @@ def RST_C7(cpu): # C7 RST 00H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 0
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2159,6 +2170,7 @@ def RET_C8(cpu): # C8 RET Z
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
         cpu.SP &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 20
     else:
         cpu.PC += 1
@@ -2171,12 +2183,14 @@ def RET_C9(cpu): # C9 RET
     cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
     cpu.SP &= 0xFFFF
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
 def JP_CA(cpu, v): # CA JP Z,a16
     if ((cpu.F & (1 << FLAGZ)) != 0):
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 16
     else:
         cpu.PC += 3
@@ -2200,6 +2214,7 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 24
     else:
         cpu.cycles += 12
@@ -2213,6 +2228,7 @@ def CALL_CD(cpu, v): # CD CALL a16
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = v
+    cpu.jit_jump = True
     cpu.cycles += 24
 
 
@@ -2239,6 +2255,7 @@ def RST_CF(cpu): # CF RST 08H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 8
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2248,6 +2265,7 @@ def RET_D0(cpu): # D0 RET NC
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
         cpu.SP &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 20
     else:
         cpu.PC += 1
@@ -2268,6 +2286,7 @@ def POP_D1(cpu): # D1 POP DE
 def JP_D2(cpu, v): # D2 JP NC,a16
     if ((cpu.F & (1 << FLAGC)) == 0):
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 16
     else:
         cpu.PC += 3
@@ -2284,6 +2303,7 @@ def CALL_D4(cpu, v): # D4 CALL NC,a16
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 24
     else:
         cpu.cycles += 12
@@ -2322,6 +2342,7 @@ def RST_D7(cpu): # D7 RST 10H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 16
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2331,6 +2352,7 @@ def RET_D8(cpu): # D8 RET C
         cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
         cpu.SP += 2
         cpu.SP &= 0xFFFF
+        cpu.jit_jump = True
         cpu.cycles += 20
     else:
         cpu.PC += 1
@@ -2345,12 +2367,14 @@ def RETI_D9(cpu): # D9 RETI
     cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
     cpu.SP &= 0xFFFF
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
 def JP_DA(cpu, v): # DA JP C,a16
     if ((cpu.F & (1 << FLAGC)) != 0):
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 16
     else:
         cpu.PC += 3
@@ -2367,6 +2391,7 @@ def CALL_DC(cpu, v): # DC CALL C,a16
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
+        cpu.jit_jump = True
         cpu.cycles += 24
     else:
         cpu.cycles += 12
@@ -2395,6 +2420,7 @@ def RST_DF(cpu): # DF RST 18H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 24
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2453,6 +2479,7 @@ def RST_E7(cpu): # E7 RST 20H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 32
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2504,6 +2531,7 @@ def RST_EF(cpu): # EF RST 28H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 40
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2570,6 +2598,7 @@ def RST_F7(cpu): # F7 RST 30H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 48
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -2632,6 +2661,7 @@ def RST_FF(cpu): # FF RST 38H
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 56
+    cpu.jit_jump = True
     cpu.cycles += 16
 
 
@@ -6350,6 +6380,42 @@ def execute_opcode(cpu, opcode):
         return SET_1FE(cpu)
     elif opcode == 0x1FF:
         return SET_1FF(cpu)
+
+
+OPCODE_MAX_CYCLES = array.array("B", [
+     4, 12,  8,  8,  4,  4,  8,  4, 20,  8,  8,  8,  4,  4,  8,  4,
+     4, 12,  8,  8,  4,  4,  8,  4, 12,  8,  8,  8,  4,  4,  8,  4,
+    12, 12,  8,  8,  4,  4,  8,  4, 12,  8,  8,  8,  4,  4,  8,  4,
+    12, 12,  8,  8, 12, 12, 12,  4, 12,  8,  8,  8,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+     8,  8,  8,  8,  8,  8,  4,  8,  4,  4,  4,  4,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+     4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,
+    20, 12, 16, 16, 24, 16,  8, 16, 20, 16, 16,  4, 24, 24,  8, 16,
+    20, 12, 16,  0, 24, 16,  8, 16, 20, 16, 16,  0, 24,  0,  8, 16,
+    12, 12,  8,  0,  0, 16,  8, 16, 16,  4, 16,  0,  0,  0,  8, 16,
+    12, 12,  8,  4,  0, 16,  8, 16, 12,  8, 16,  4,  0,  0,  8, 16,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+     8,  8,  8,  8,  8,  8, 16,  8,  8,  8,  8,  8,  8,  8, 16,  8,
+    ])
 
 
 OPCODE_LENGTHS = array.array("B", [

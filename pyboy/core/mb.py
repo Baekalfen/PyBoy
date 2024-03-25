@@ -47,6 +47,7 @@ class Motherboard:
         sound_emulated,
         sound_sample_rate,
         cgb,
+        jit_enabled,
         randomize=False,
     ):
         if bootrom_file is not None:
@@ -108,7 +109,9 @@ class Motherboard:
         self.breakpoint_singlestep_latch = False
         self.breakpoint_waiting = -1
 
+        self.jit_enabled = jit_enabled
         self.jit_table = {}
+        self._cycles = 0
 
     def switch_speed(self):
         bit0 = self.key1 & 0b1
@@ -411,7 +414,10 @@ cdef uint8_t FLAGZ = 7
                 code_text += "v = " + str(v) + "\n\t"
 
             code_text += opcode_handler.functionhandlers[opcode_name]()._code_body().replace("return", "cycles +=")
-            code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
+            # code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
+            # if "setitem" in code_text:
+            #     code_text.replace()
+            #     code_text += "\n\tif"
 
         code_text += "\n\treturn cycles"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
@@ -473,16 +479,23 @@ cdef uint8_t FLAGZ = 7
             0xDF,
             0xEF,
             0xFF,
+            0x76, # HALT
+            0x10, # STOP
         ]
         code_block = []
         pc = self.cpu.PC
+        block_max_cycles = 0
         while True:
             opcode = self.getitem(pc)
             if opcode == 0xCB: # Extension code
                 pc += 1
                 opcode = self.getitem(pc)
                 opcode += 0x100 # Internally shifting look-up table
-            opcode_length = opcodes.get_length(opcode)
+            # opcode_length = opcodes.get_length(opcode)
+            # opcode_max_cycles = opcodes.get_max_cycles(opcode)
+            opcode_length = opcodes.OPCODE_LENGTHS[opcode]
+            opcode_max_cycles = opcodes.OPCODE_MAX_CYCLES[opcode]
+            block_max_cycles += opcode_max_cycles
             code_block.append((opcode, opcode_length, self.getitem(pc + 1), self.getitem(pc + 2)))
             pc += opcode_length
             if opcode in boundary_instruction:
@@ -495,7 +508,7 @@ cdef uint8_t FLAGZ = 7
 
         code_text = self.jit_emit_code(code_block)
         code = self.jit_compile(code_text)
-        code.cycles = (pc - self.cpu.PC) * 4 # TODO
+        code.cycles = block_max_cycles # (pc - self.cpu.PC) * 4 # TODO
         return code
 
     def jit(self, cycles):
@@ -518,8 +531,18 @@ cdef uint8_t FLAGZ = 7
         self.jit_table = {}
 
     def tick(self):
+        # Threading by 'LD_21(cpu, v, cycles_left, cycles_acc)'
+        # cpu.HL = v
+        # cpu.PC += 3
+        # cpu.PC &= 0xFFFF
+        # if (cycles_left < 12):
+        #     return cpu.next_opcode(cpu, cycles_left, cycles_acc + 12)
+        # else:
+        #     return 12
+
         while not self.lcd.frame_done:
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
+                self.cpu.jit_jump = False
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
                 # Fast-forward to next interrupt:
@@ -534,7 +557,7 @@ cdef uint8_t FLAGZ = 7
                     mode0_cycles = self.lcd.cycles_to_mode0()
 
                 cycles_target = max(
-                    4,
+                    0, #4,
                     min(
                         self.timer._cycles_to_interrupt,
                         # https://gbdev.io/pandocs/STAT.html
@@ -544,7 +567,7 @@ cdef uint8_t FLAGZ = 7
                         self.sound._cycles_to_interrupt,
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles,
-                    ),
+                    ) # - 24 # TODO: Avoid overshooting?
                 )
                 if self.breakpoint_singlestep:
                     cycles_target = 4
@@ -552,7 +575,7 @@ cdef uint8_t FLAGZ = 7
                 # Inject special opcode instead? ~~Long immediate as identifier~~
                 # Special opcode cannot be more than 1 byte, to avoid jumps to sub-parts of the jit block
                 # Compile in other thread, acquire memory lock between frames
-                if self.cpu.jit_jump:
+                if self.jit_enabled and self.cpu.jit_jump:
                     self.cpu.jit_jump = False
                     if not self.cpu_pending_interrupt() and self.cpu.PC < 0x8000: # and cycles_target > 0:
                         cycles = self.jit(cycles_target)
@@ -572,6 +595,8 @@ cdef uint8_t FLAGZ = 7
 
             if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
+
+            self._cycles += cycles
 
             if self.breakpoint_singlestep:
                 break
@@ -713,7 +738,7 @@ cdef uint8_t FLAGZ = 7
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
             self.cpu.bail = True
-        elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+        elif 0x8000 <= i < 0xA000: # 8kB Video RAM
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 self.lcd.VRAM0[i - 0x8000] = value
                 if i < 0x9800:  # Is within tile data -- not tile maps
@@ -855,7 +880,7 @@ cdef uint8_t FLAGZ = 7
                 self.lcd.renderer.clear_spritecache1()
             else:
                 self.ram.non_io_internal_ram1[i - 0xFF4C] = value
-        elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
+        elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF:  # Interrupt Enable Register
             self.cpu.interrupts_enabled_register = value

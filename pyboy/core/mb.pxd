@@ -15,8 +15,11 @@ cimport pyboy.core.lcd
 cimport pyboy.core.ram
 cimport pyboy.core.sound
 cimport pyboy.core.timer
+# cimport pyboy.core.opcodes
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, WindowEvent
+
+from . cimport opcodes
 
 
 cdef Logger logger
@@ -40,6 +43,7 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
+    cdef uint64_t _cycles
 
     # CGB
     cdef HDMA hdma
@@ -57,6 +61,7 @@ cdef class Motherboard:
     cdef inline void breakpoint_reinject(self) noexcept nogil
 
     cdef dict jit_table
+    cdef bint jit_enabled
     cdef object jit_compile(self, str) noexcept with gil
     cdef object jit_emit_code(self, object) noexcept with gil
     cdef object jit_analyze(self) noexcept with gil

@@ -106,6 +106,7 @@ parser.add_argument(
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
 parser.add_argument("--no-renderer", action="store_true", help="Disable rendering (internal use)")
+parser.add_argument("--jit", action="store_true", help="Enable JIT compile (beta)")
 parser.add_argument(
     "--gameshark",
     type=str,

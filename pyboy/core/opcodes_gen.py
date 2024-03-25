@@ -29,6 +29,9 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 def get_length(opcode):
     return OPCODE_LENGTHS[opcode]
 
+def get_max_cycles(opcode):
+    return OPCODE_MAX_CYCLES[opcode]
+
 def BRK(cpu):
     cpu.bail = True
     cpu.mb.breakpoint_singlestep = 1
@@ -52,6 +55,8 @@ cdef Logger logger
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
 cdef uint8_t get_length(int) noexcept nogil
+cdef uint8_t[512] OPCODE_MAX_CYCLES
+cdef uint8_t get_max_cycles(int) noexcept nogil
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
 
@@ -362,7 +367,7 @@ class OpcodeData:
         # Compensate for CB operations being "2 bytes long"
         if self.opcode > 0xFF:
             self.length -= 1
-        return (self.length, "%s_%0.2X" % (self.name.split()[0], self.opcode), self.name), text
+        return (self.length, self.cycles, "%s_%0.2X" % (self.name.split()[0], self.opcode), self.name), text
 
     # Special carry and half-carry for E8 and F8:
     # http://forums.nesdev.com/viewtopic.php?p=42138
@@ -1337,7 +1342,6 @@ def update():
         f_pxd.write(cimports)
         lookuplist = []
         for lookuptuple, code in opcodefunctions:
-            breakpoint()
             lookuplist.append(lookuptuple)
 
             if code is None:
@@ -1351,7 +1355,7 @@ def update():
 
         # We create a new opcode to use as a software breakpoint instruction.
         # I hope the irony of the opcode number is not lost.
-        lookuplist[0xDB] = (1, "BRK", "Breakpoint/Illegal opcode")
+        lookuplist[0xDB] = (1, (0, ), "BRK", "Breakpoint/Illegal opcode")
 
         f.write("def no_opcode(cpu):\n    return 0\n\n\n")
 
@@ -1376,25 +1380,34 @@ def execute_opcode(cpu, opcode):
 
         indent = 4
         for i, t in enumerate(lookuplist):
-            t = t if t is not None else (0, "no_opcode", "")
+            t = t if t is not None else (0, (0, ), "no_opcode", "")
+            length, cycles, name, text = t
             f.write(
-                " " * indent
-                + ("if" if i == 0 else "elif")
-                + " opcode == 0x%0.2X:\n" % i
-                + " " * (indent + 4)
-                + "return "
-                + str(t[1]).replace("'", "")
-                + ("(cpu)" if t[0] <= 1 else "(cpu, v)")
-                + "\n"
+                " "*indent + ("if" if i == 0 else "elif") + " opcode == 0x%0.2X:\n"%i + " " * (indent+4) + "return " +
+                str(name).replace("'", "") + ("(cpu)" if length <= 1 else "(cpu, v)") + "\n"
             )
+        f.write("\n\n")
+
+        f.write('OPCODE_MAX_CYCLES = array.array("B", [\n    ')
+        for i, t in enumerate(lookuplist):
+            t = t if t is not None else (0, (0, ), "no_opcode", "")
+            length, cycles, name, text = t
+            f.write(str(cycles[0]).rjust(2).replace("'", "") + ",")
+            if (i+1) % 16 == 0:
+                f.write("\n" + " "*4)
+            else:
+                f.write(" ")
+
+        f.write("])\n")
         f.write("\n\n")
 
         f.write('OPCODE_LENGTHS = array.array("B", [\n    ')
         for i, t in enumerate(lookuplist):
-            t = t if t is not None else (0, "no_opcode", "")
-            f.write(str(t[0]).replace("'", "") + ",")
-            if (i + 1) % 16 == 0:
-                f.write("\n" + " " * 4)
+            t = t if t is not None else (0, (0, ), "no_opcode", "")
+            length, cycles, name, text = t
+            f.write(str(length).replace("'", "") + ",")
+            if (i+1) % 16 == 0:
+                f.write("\n" + " "*4)
             else:
                 f.write(" ")
 
@@ -1403,8 +1416,9 @@ def execute_opcode(cpu, opcode):
         f.write("\n\n")
         f.write("CPU_COMMANDS = [\n    ")
         for _, t in enumerate(lookuplist):
-            t = t if t is not None else (0, "no_opcode", "")
-            f.write(f'"{t[2]}",\n' + " " * 4)
+            t = t if t is not None else (0, (0, ), "no_opcode", "")
+            length, cycles, name, text = t
+            f.write(f"\"{text}\",\n" + " "*4)
 
         f.write("]\n")
 
