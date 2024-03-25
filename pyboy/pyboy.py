@@ -49,6 +49,7 @@ class PyBoy:
         sound=False,
         sound_emulated=False,
         cgb=None,
+        jit=False,
         **kwargs
     ):
         """
@@ -136,6 +137,7 @@ class PyBoy:
             sound,
             sound_emulated,
             cgb,
+            jit,
             randomize=randomize,
         )
 
@@ -1230,6 +1232,9 @@ class PyBoy:
             A Tile object for the given identifier.
         """
         return Tile(self.mb, identifier=identifier)
+
+    def _cycles(self):
+        return self.mb._cycles
 
 
 class PyBoyMemoryView:

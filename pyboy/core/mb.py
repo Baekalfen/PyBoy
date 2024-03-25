@@ -13,7 +13,6 @@ from importlib.machinery import ExtensionFileLoader
 from Cython.Build import cythonize
 
 from pyboy import utils
-# from pyboy.core.opcodes import OPCODE_LENGTHS
 from pyboy.core.opcodes_gen import opcodes as opcodes_gen
 from pyboy.utils import STATE_VERSION
 
@@ -44,6 +43,7 @@ class Motherboard:
         sound_enabled,
         sound_emulated,
         cgb,
+        jit_enabled,
         randomize=False,
     ):
         if bootrom_file is not None:
@@ -99,7 +99,9 @@ class Motherboard:
         self.breakpoint_singlestep_latch = False
         self.breakpoint_waiting = -1
 
+        self.jit_enabled = jit_enabled
         self.jit_table = {}
+        self._cycles = 0
 
     def switch_speed(self):
         bit0 = self.key1 & 0b1
@@ -382,7 +384,10 @@ cdef uint8_t FLAGZ = 7
                 code_text += "v = " + str(v) + "\n\t"
 
             code_text += opcode_handler.functionhandlers[opcode_name]()._code_body().replace("return", "cycles +=")
-            code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
+            # code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
+            # if "setitem" in code_text:
+            #     code_text.replace()
+            #     code_text += "\n\tif"
 
         code_text += "\n\treturn cycles"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
@@ -444,16 +449,23 @@ cdef uint8_t FLAGZ = 7
             0xDF,
             0xEF,
             0xFF,
+            0x76, # HALT
+            0x10, # STOP
         ]
         code_block = []
         pc = self.cpu.PC
+        block_max_cycles = 0
         while True:
             opcode = self.getitem(pc)
             if opcode == 0xCB: # Extension code
                 pc += 1
                 opcode = self.getitem(pc)
                 opcode += 0x100 # Internally shifting look-up table
-            opcode_length = opcodes.get_length(opcode)
+            # opcode_length = opcodes.get_length(opcode)
+            # opcode_max_cycles = opcodes.get_max_cycles(opcode)
+            opcode_length = opcodes.OPCODE_LENGTHS[opcode]
+            opcode_max_cycles = opcodes.OPCODE_MAX_CYCLES[opcode]
+            block_max_cycles += opcode_max_cycles
             code_block.append((opcode, opcode_length, self.getitem(pc + 1), self.getitem(pc + 2)))
             pc += opcode_length
             if opcode in boundary_instruction:
@@ -466,7 +478,7 @@ cdef uint8_t FLAGZ = 7
 
         code_text = self.jit_emit_code(code_block)
         code = self.jit_compile(code_text)
-        code.cycles = (pc - self.cpu.PC) * 4 # TODO
+        code.cycles = block_max_cycles # (pc - self.cpu.PC) * 4 # TODO
         return code
 
     def jit(self, cycles):
@@ -494,13 +506,26 @@ cdef uint8_t FLAGZ = 7
         return b
 
     def tick(self):
+        # Threading by 'LD_21(cpu, v, cycles_left, cycles_acc)'
+        # cpu.HL = v
+        # cpu.PC += 3
+        # cpu.PC &= 0xFFFF
+        # if (cycles_left < 12):
+        #     return cpu.next_opcode(cpu, cycles_left, cycles_acc + 12)
+        # else:
+        #     return 12
+
         while self.processing_frame():
             # if self.cpu.PC > 0x70:
             #     self.cpu.dump_state()
             # Inject special opcode instead? ~~Long immediate as identifier~~
             # Special opcode cannot be more than 1 byte, to avoid jumps to sub-parts of the jit block
             # Compile in other thread, acquire memory lock between frames
-            if self.cpu.jit_jump:
+            # logger.debug("sdf %d, %d, %d, %d", self.jit_enabled, self.cpu.jit_jump, not self.cpu.pending_interrupt(), self.cpu.PC < 0x8000)
+            if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
+                self.cpu.jit_jump = False
+                cycles = self.hdma.tick(self)
+            elif self.jit_enabled and self.cpu.jit_jump and not self.cpu.pending_interrupt() and self.cpu.PC < 0x8000:
                 self.cpu.jit_jump = False
                 mode0_cycles = 1 << 32
                 if self.cgb and self.hdma.transfer_active:
@@ -513,19 +538,17 @@ cdef uint8_t FLAGZ = 7
                         self.timer.cycles_to_interrupt(),
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles
-                    )
+                    ) - 24 # TODO: Avoid overshooting?
                 )
 
-                if not self.cpu.pending_interrupt() and self.cpu.PC < 0x8000 and max_cycles > 0:
+                logger.debug("max cycles %d", max_cycles)
+                if max_cycles > 0:
                     cycles = self.jit(max_cycles)
-                    # cycles = self.jit(0xFFFF)
-            else:
-                if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
-                    cycles = self.hdma.tick(self)
                 else:
-                    # cycles = self.cpu.jit()
-                    # if not cycles:
                     cycles = self.cpu.tick()
+            else:
+                self.cpu.jit_jump = False
+                cycles = self.cpu.tick()
 
             if self.cpu.halted:
                 # Fast-forward to next interrupt:
@@ -566,6 +589,8 @@ cdef uint8_t FLAGZ = 7
             lcd_interrupt = self.lcd.tick(cycles)
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
+
+            self._cycles += cycles
 
             if self.breakpoint_singlestep:
                 break
@@ -689,9 +714,11 @@ cdef uint8_t FLAGZ = 7
         if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
+            return 1
         elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
+            return 1
         elif 0x8000 <= i < 0xA000: # 8kB Video RAM
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 self.lcd.VRAM0[i - 0x8000] = value
@@ -773,6 +800,7 @@ cdef uint8_t FLAGZ = 7
                 self.lcd.WX = value
             else:
                 self.ram.io_ports[i - 0xFF00] = value
+            return 2
         elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
             if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
                 logger.debug("Bootrom disabled!")
@@ -807,10 +835,12 @@ cdef uint8_t FLAGZ = 7
                 self.lcd.renderer.clear_spritecache1()
             else:
                 self.ram.non_io_internal_ram1[i - 0xFF4C] = value
+            return 3
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
             self.cpu.interrupts_enabled_register = value
+            return 4
         # else:
         #     logger.critical("Memory access violation. Tried to write: 0x%0.2x to 0x%0.4x", value, i)
 
