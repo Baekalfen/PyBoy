@@ -77,9 +77,7 @@ class CPU:
 
     def dump_state(self):
         sym_label = ""
-        opcode_data = [
-            self.mb.getitem(self.mb.cpu.PC + n) for n in range(3)
-        ]  # Max 3 length, then we don't need to backtrack
+        opcode_data = [self.mb.getitem(self.PC + n) for n in range(3)] # Max 3 length, then we don't need to backtrack
 
         opcode = opcode_data[0]
         opcode_length = opcodes.get_length(opcode)

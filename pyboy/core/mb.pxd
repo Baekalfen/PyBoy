@@ -65,6 +65,7 @@ cdef class Motherboard:
     cdef object jit_compile(self, str) noexcept with gil
     cdef object jit_emit_code(self, object) noexcept with gil
     cdef object jit_analyze(self) noexcept with gil
+    @cython.locals(block_id=int64_t)
     cdef int64_t jit(self, int64_t) noexcept with gil
     cdef void clear_jit_table(self) noexcept with gil
 
