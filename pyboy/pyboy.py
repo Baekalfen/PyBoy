@@ -334,6 +334,28 @@ class PyBoy:
 
         self.initialized = True
 
+    def _single_step(self):
+        self.mb.breakpoint_singlestep = True
+        self.mb.breakpoint_singlestep_latch = True
+        self.mb.tick()
+        return (
+            self.mb.cpu.A,
+            self.mb.cpu.F,
+            self.mb.cpu.B,
+            self.mb.cpu.C,
+            self.mb.cpu.D,
+            self.mb.cpu.E,
+            self.mb.cpu.HL,
+            self.mb.cpu.SP,
+            self.mb.cpu.PC,
+            # TODO: Could be moved to test
+            self.mb.getitem(self.mb.cpu.PC + 1),
+            self.mb.getitem(self.mb.cpu.PC + 2),
+            self.mb.getitem(self.mb.cpu.HL),
+            self.mb.getitem(self.mb.cpu.HL + 1),
+            # Interrupts?
+        )
+
     def _tick(self, render):
         if self.stopped:
             return False

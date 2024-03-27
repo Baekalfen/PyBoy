@@ -371,7 +371,7 @@ cdef uint8_t FLAGN = 6
 cdef uint8_t FLAGZ = 7
 
 """
-        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef uint16_t t\n\tcdef uint16_t tr\n\tcdef int16_t v\n\tcdef int cycles = 0"
+        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
         for opcode, length, literal1, literal2 in code_block:
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
@@ -447,7 +447,7 @@ cdef uint8_t FLAGZ = 7
             0xDC,
 
             # CALL
-            0xDD,
+            0xCD,
 
             # RST
             0xCF,
@@ -456,6 +456,7 @@ cdef uint8_t FLAGZ = 7
             0xFF,
             0x76, # HALT
             0x10, # STOP
+            0xF0, # LDH A,(a8) Used often for VBLANK check
         ]
         code_block = []
         pc = self.cpu.PC
@@ -466,8 +467,6 @@ cdef uint8_t FLAGZ = 7
                 pc += 1
                 opcode = self.getitem(pc)
                 opcode += 0x100 # Internally shifting look-up table
-            # opcode_length = opcodes.get_length(opcode)
-            # opcode_max_cycles = opcodes.get_max_cycles(opcode)
             opcode_length = opcodes.OPCODE_LENGTHS[opcode]
             opcode_max_cycles = opcodes.OPCODE_MAX_CYCLES[opcode]
             block_max_cycles += opcode_max_cycles
@@ -476,7 +475,7 @@ cdef uint8_t FLAGZ = 7
             if opcode in boundary_instruction:
                 break
 
-        if len(code_block) < 3:
+        if len(code_block) < 10:
             code = CodeBlock(None, eligible=False)
             code.cycles = 0
             return code
@@ -487,16 +486,21 @@ cdef uint8_t FLAGZ = 7
         return code
 
     def jit(self, cycles):
-        block_id = self.cpu.PC << 8 + self.cartridge.rombank_selected
-        code = self.jit_table.get(block_id) # Bank collision!
+        if self.bootrom_enabled:
+            block_id = (self.cpu.PC << 8) | 0xFF
+        else:
+            block_id = (self.cpu.PC << 8) | self.cartridge.rombank_selected
+        code = self.jit_table.get(block_id)
         if not code:
             code = self.jit_analyze()
-            self.jit_table[block_id] = code # Bank collision!
+            self.jit_table[block_id] = code
         if code.eligible:
             if code.cycles <= cycles:
                 logger.debug("Executing JIT block: PC=%x, code.cycles=%s, cycles=%d", self.cpu.PC, code.cycles, cycles)
                 cycles = code.body(self.cpu)
-                logger.debug("After block: PC=%x, jit_jump=%d", self.cpu.PC, self.cpu.jit_jump)
+                logger.debug(
+                    "After block: PC=%x, jit_jump=%d, actual cycles=%d", self.cpu.PC, self.cpu.jit_jump, cycles
+                )
                 return cycles
             else:
                 logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
@@ -543,13 +547,17 @@ cdef uint8_t FLAGZ = 7
                         self.timer.cycles_to_interrupt(),
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles
-                    ) - 24 # TODO: Avoid overshooting?
+                    ) #- 24 # TODO: Avoid overshooting?
                 )
 
                 logger.debug("max cycles %d", max_cycles)
                 if max_cycles > 0:
                     cycles = self.jit(max_cycles)
+                    if cycles == 0:
+                        self.cpu.jit_jump = False
+                        cycles = self.cpu.tick()
                 else:
+                    self.cpu.jit_jump = False
                     cycles = self.cpu.tick()
             else:
                 self.cpu.jit_jump = False
