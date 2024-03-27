@@ -81,9 +81,7 @@ class CPU:
 
     def dump_state(self):
         sym_label = ""
-        opcode_data = [
-            self.mb.getitem(self.mb.cpu.PC + n) for n in range(3)
-        ] # Max 3 length, then we don't need to backtrack
+        opcode_data = [self.mb.getitem(self.PC + n) for n in range(3)] # Max 3 length, then we don't need to backtrack
 
         opcode = opcode_data[0]
         opcode_length = opcodes.get_length(opcode)
@@ -95,13 +93,13 @@ class CPU:
 
         print(
             # "\n"
-            f"A: {self.mb.cpu.A:02X}, F: {self.mb.cpu.F:02X}, B: {self.mb.cpu.B:02X}, "
-            f"C: {self.mb.cpu.C:02X}, D: {self.mb.cpu.D:02X}, E: {self.mb.cpu.E:02X}, "
-            f"HL: {self.mb.cpu.HL:04X}, SP: {self.mb.cpu.SP:04X}, PC: {self.mb.cpu.PC:04X} ({sym_label})" #\n"
+            f"A: {self.A:02X}, F: {self.F:02X}, B: {self.B:02X}, "
+            f"C: {self.C:02X}, D: {self.D:02X}, E: {self.E:02X}, "
+            f"HL: {self.HL:04X}, SP: {self.SP:04X}, PC: {self.PC:04X} ({sym_label})" #\n"
             # f"{opcode_str} "
-            # f"Interrupts - IME: {self.mb.cpu.interrupt_master_enable}, "
-            # f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
-            # f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
+            # f"Interrupts - IME: {self.interrupt_master_enable}, "
+            # f"IE: {self.interrupts_enabled_register:08b}, "
+            # f"IF: {self.interrupts_flag_register:08b}\n"
             # f"LCD Intr.: {self.mb.lcd.cycles_to_interrupt()}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
             # f"Timer Intr.: {self.mb.timer.cycles_to_interrupt()}\n"
             # f"halted:{self.halted}, "

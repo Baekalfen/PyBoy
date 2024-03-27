@@ -69,6 +69,7 @@ cdef class PyBoy:
     cdef list recorded_input
     cdef list external_input
 
+    cpdef tuple _single_step(self) noexcept
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
     cpdef bint _tick(self, bint) noexcept
     @cython.locals(running=bint, factor=double)

@@ -139,6 +139,9 @@ class LCD:
         interrupt_flag = 0
         self.clock += cycles
 
+        if cycles > 28:
+            logger.error("lcd tick cycles=%d", cycles)
+
         if self._LCDC.lcd_enable:
             if self.clock >= self.clock_target:
                 # Change to next mode
@@ -203,7 +206,7 @@ class LCD:
                         self.next_stat_mode = 2
         else:
             # See also `self.set_lcdc`
-            if self.clock >= FRAME_CYCLES:
+            if self.clock >= FRAME_CYCLES: # TODO: clock_target?
                 self.frame_done = True
                 self.clock %= FRAME_CYCLES
 
