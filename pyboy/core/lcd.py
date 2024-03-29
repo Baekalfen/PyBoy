@@ -139,8 +139,8 @@ class LCD:
         interrupt_flag = 0
         self.clock += cycles
 
-        if cycles > 28:
-            logger.error("lcd tick cycles=%d", cycles)
+        # if cycles > 28:
+        #     logger.error("lcd tick cycles=%d", cycles)
 
         if self._LCDC.lcd_enable:
             if self.clock >= self.clock_target:
