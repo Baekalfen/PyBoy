@@ -29,13 +29,6 @@ logger = pyboy.logging.get_logger(__name__)
 MAX_CYCLES = 1 << 31
 
 
-class CodeBlock:
-    def __init__(self, body, eligible=True):
-        self.body = body
-        # self.cycles = cycles
-        self.eligible = eligible
-
-
 class Motherboard:
     def __init__(
         self,
@@ -110,8 +103,11 @@ class Motherboard:
         self.breakpoint_waiting = -1
 
         self.jit_enabled = jit_enabled
-        self.jit_table = {}
         self._cycles = 0
+
+    def __cinit__(self):
+        for n in range(0xFFFFFF):
+            self.jit_cycles[n] = 0
 
     def switch_speed(self):
         bit0 = self.key1 & 0b1
@@ -339,11 +335,15 @@ class Motherboard:
         module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
 
         if not os.path.exists(module_path):
-            logger.info("Compiling JIT block: %s", module_path)
-            jit_file = os.path.splitext(self.cartridge.filename
-                                       )[0].replace(".", "_") + "_jit_" + _hash + ".pyx" # Generate name
+            # logger.info("Compiling JIT block: %s", module_path)
+            file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_jit_" + _hash # Generate name
+            jit_file = file_base + ".pyx"
             with open(jit_file, "w") as f:
                 f.write(code_text)
+
+            jit_file_pxd = file_base + ".pxd"
+            with open(jit_file_pxd, "w") as f:
+                f.write("from pyboy.core cimport cpu as _cpu\ncdef public int execute(void* __cpu) noexcept with gil")
 
             cythonize_files = [
                 Extension(
@@ -376,16 +376,21 @@ class Motherboard:
             build_extension.inplace = True
             # build_extension.build_temp = "./"# os.path.dirname(jit_file)
             build_extension.run()
-        else:
-            logger.info("JIT block already compiled: %s", module_path)
+        # else:
+        #     logger.info("JIT block already compiled: %s", module_path)
 
-        spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, module_path))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        return module_path
 
-        # module.execute(self.cpu)
-        code = CodeBlock(module.execute)
-        return code
+    # def jit_load(self, module_path):
+    #     # spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, module_path))
+    #     # module = importlib.util.module_from_spec(spec)
+    #     # spec.loader.exec_module(module)
+    #     self.jit_load(module_path)
+    #     # self.test_func = module.execute
+
+    #     # module.execute(self.cpu)
+    #     # code = CodeBlock(module.execute)
+    #     # return code
 
     def jit_emit_code(self, code_block):
         preamble = """
@@ -401,7 +406,7 @@ cdef uint8_t FLAGN = 6
 cdef uint8_t FLAGZ = 7
 
 """
-        code_text = preamble + "cpdef int execute(_cpu.CPU cpu):\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
+        code_text = preamble + "cdef public int execute(void* __cpu) noexcept with gil:\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0\n\tcdef _cpu.CPU cpu = <_cpu.CPU> __cpu"
         for opcode, length, literal1, literal2 in code_block:
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
@@ -429,7 +434,7 @@ cdef uint8_t FLAGZ = 7
         # if .getitem in code, commit timer.tick(cycles); cycles = 0
         return code_text
 
-    def jit_analyze(self):
+    def jit_analyze(self, block_id):
         boundary_instruction = [
             # JR
             0x20,
@@ -506,38 +511,43 @@ cdef uint8_t FLAGZ = 7
                 break
 
         if len(code_block) < 10:
-            code = CodeBlock(None, eligible=False)
-            code.cycles = 0
-            return code
+            return -1
 
         code_text = self.jit_emit_code(code_block)
-        code = self.jit_compile(code_text)
-        code.cycles = block_max_cycles # (pc - self.cpu.PC) * 4 # TODO
-        return code
+        module_path = self.jit_compile(code_text)
+        self.jit_load(module_path, block_id, block_max_cycles)
+        # code = CodeBlock(block_id)
+        # code.cycles = block_max_cycles
+        # return block_id
+        return 0
 
-    def jit(self, cycles):
+    def jit(self, max_cycles):
         if self.bootrom_enabled:
             block_id = (self.cpu.PC << 8) | 0xFF
         else:
             block_id = (self.cpu.PC << 8) | self.cartridge.rombank_selected
-        code = self.jit_table.get(block_id)
-        if not code:
-            code = self.jit_analyze()
-            self.jit_table[block_id] = code
-        if code.eligible:
-            if code.cycles <= cycles:
-                logger.debug("Executing JIT block: PC=%x, code.cycles=%s, cycles=%d", self.cpu.PC, code.cycles, cycles)
-                cycles = code.body(self.cpu)
-                logger.debug(
-                    "After block: PC=%x, jit_jump=%d, actual cycles=%d", self.cpu.PC, self.cpu.jit_jump, cycles
-                )
-                return cycles
-            else:
-                logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
-        return 0
 
-    def clear_jit_table(self):
-        self.jit_table = {}
+        block_max_cycles = self.jit_cycles[block_id]
+        if block_max_cycles == 0 and self.jit_analyze(block_id):
+            self.jit_cycles[block_id] = -1 # Don't retry
+
+        if block_max_cycles <= 0 or block_max_cycles > max_cycles:
+            return 0
+
+        return self.jit_execute(block_id)
+
+        # if code.eligible:
+        #     # if  <= cycles:
+        #     return self.jit_execute(block_id, code.cycles)
+        # logger.debug("Executing JIT block: PC=%x, code.cycles=%s, cycles=%d", self.cpu.PC, code.cycles, cycles)
+        # cycles = code.body(self.cpu)
+        # logger.debug(
+        #     "After block: PC=%x, jit_jump=%d, actual cycles=%d", self.cpu.PC, self.cpu.jit_jump, cycles
+        # )
+        # return cycles
+        # else:
+        #     logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
+        return 0
 
     def tick(self):
         # Threading by 'LD_21(cpu, v, cycles_left, cycles_acc)'
@@ -861,7 +871,8 @@ cdef uint8_t FLAGZ = 7
                 logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
                 self.cpu.bail = True
-                self.clear_jit_table()
+                for n in range(0xFFFFFF):
+                    self.jit_cycles[n] = 0
             # CGB registers
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value

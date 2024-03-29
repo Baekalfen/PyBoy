@@ -3,6 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from posix cimport dlfcn
+
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 import cython
@@ -30,6 +32,7 @@ cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef int STATE_VERSION
 
+ctypedef int(*f_type)(pyboy.core.cpu.CPU) noexcept nogil
 
 cdef class Motherboard:
     cdef pyboy.core.interaction.Interaction interaction
@@ -60,14 +63,34 @@ cdef class Motherboard:
     cdef inline tuple[int64_t, int64_t, int64_t] breakpoint_reached(self) noexcept with gil
     cdef inline void breakpoint_reinject(self) noexcept nogil
 
-    cdef dict jit_table
+    cdef f_type[0xFFFFFF] jit_array
+    cdef int[0xFFFFFF] jit_cycles
+
+    cdef inline int jit_load(self, str module_path, int block_id, int block_max_cycles):
+        # logger.debug("JIT LOAD %d", block_id)
+        cdef void* handle = dlfcn.dlopen(module_path.encode(), dlfcn.RTLD_NOW | dlfcn.RTLD_GLOBAL) # RTLD_LAZY?
+        if (handle == NULL):
+            return -1
+        dlfcn.dlerror() # Clear error
+
+        cdef f_type execute = <f_type> dlfcn.dlsym(handle, b"execute")
+        if (execute == NULL):
+            print(dlfcn.dlerror())
+
+        self.jit_array[block_id] = execute
+        self.jit_cycles[block_id] = block_max_cycles
+        # execute(self.cpu)
+
+    cdef inline int jit_execute(self, int block_id) noexcept nogil:
+        # logger.debug("JIT EXECUTE %d", block_id)
+        return self.jit_array[block_id](self.cpu)
+
     cdef bint jit_enabled
-    cdef object jit_compile(self, str) noexcept with gil
+    cdef str jit_compile(self, str) noexcept with gil
     cdef object jit_emit_code(self, object) noexcept with gil
-    cdef object jit_analyze(self) noexcept with gil
+    cdef int jit_analyze(self, int) noexcept with gil
     @cython.locals(block_id=int64_t)
-    cdef int64_t jit(self, int64_t) noexcept with gil
-    cdef void clear_jit_table(self) noexcept with gil
+    cdef int64_t jit(self, int64_t) noexcept nogil
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
