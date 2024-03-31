@@ -93,6 +93,7 @@ cdef class Motherboard:
     cdef int jit_analyze(self, int) noexcept with gil
     @cython.locals(block_id=int64_t)
     cdef int64_t jit(self, int64_t) noexcept nogil
+    cdef inline int cpu_pending_interrupt(self) noexcept nogil
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept

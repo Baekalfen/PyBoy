@@ -34,7 +34,6 @@ cdef class CPU:
     cdef int64_t cycles
 
     cdef inline int check_interrupts(self) noexcept nogil
-    cdef inline int pending_interrupt(self) noexcept nogil
     cdef void set_interruptflag(self, int) noexcept nogil
     cdef bint handle_interrupt(self, uint8_t, uint16_t) noexcept nogil
 

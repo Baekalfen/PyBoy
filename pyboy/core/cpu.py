@@ -146,10 +146,6 @@ class CPU:
             if self.bail: # Possible cycles-target changes
                 break
 
-    def pending_interrupt(self):
-        return self.interrupt_queued or (self.interrupts_flag_register &
-                                         0b11111) & (self.interrupts_enabled_register & 0b11111)
-
     def check_interrupts(self):
         if self.interrupt_queued:
             # Interrupt already queued. This happens only when using a debugger.
