@@ -13,6 +13,15 @@ from distutils.core import Distribution, Extension
 from importlib.machinery import ExtensionFileLoader
 
 from Cython.Build import cythonize
+from Cython.Compiler.Nodes import CFuncDefNode
+
+
+# HACK: Disable this check to allow usage of CPU outside of GIL
+def patched_validate_type_visibility(self, type, pos, env):
+    pass
+
+
+CFuncDefNode._validate_type_visibility = patched_validate_type_visibility
 
 # from pyboy.core.opcodes import OPCODE_LENGTHS
 from pyboy.core.opcodes_gen import opcodes as opcodes_gen
@@ -27,6 +36,12 @@ OPCODE_BRK = 0xDB
 logger = pyboy.logging.get_logger(__name__)
 
 MAX_CYCLES = 1 << 31
+
+try:
+    import cython
+    cython_compiled = cython.compiled
+except ImportError:
+    cython_compiled = False
 
 
 class Motherboard:
@@ -104,6 +119,8 @@ class Motherboard:
 
         self.jit_enabled = jit_enabled
         self._cycles = 0
+        # if not cython_compiled:
+        #     self.jit_cycles = [0] * 0xFFFFFF
 
     def __cinit__(self):
         for n in range(0xFFFFFF):
@@ -343,7 +360,7 @@ class Motherboard:
 
             jit_file_pxd = file_base + ".pxd"
             with open(jit_file_pxd, "w") as f:
-                f.write("from pyboy.core cimport cpu as _cpu\ncdef public int execute(void* __cpu) noexcept with gil")
+                f.write("from pyboy.core cimport cpu as _cpu\ncdef public int execute(_cpu.CPU __cpu) noexcept nogil")
 
             cythonize_files = [
                 Extension(
@@ -406,7 +423,8 @@ cdef uint8_t FLAGN = 6
 cdef uint8_t FLAGZ = 7
 
 """
-        code_text = preamble + "cdef public int execute(void* __cpu) noexcept with gil:\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0\n\tcdef _cpu.CPU cpu = <_cpu.CPU> __cpu"
+        code_text = preamble + "cdef public int execute(_cpu.CPU cpu) noexcept nogil:"
+        code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
         for opcode, length, literal1, literal2 in code_block:
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
@@ -513,6 +531,8 @@ cdef uint8_t FLAGZ = 7
         if len(code_block) < 10:
             return -1
 
+        logger.debug("Code block size: %d", len(code_block))
+
         code_text = self.jit_emit_code(code_block)
         module_path = self.jit_compile(code_text)
         self.jit_load(module_path, block_id, block_max_cycles)
@@ -548,6 +568,10 @@ cdef uint8_t FLAGZ = 7
         # else:
         #     logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
         return 0
+
+    def cpu_pending_interrupt(self):
+        return self.cpu.interrupt_queued or (self.cpu.interrupts_flag_register &
+                                             0b11111) & (self.cpu.interrupts_enabled_register & 0b11111)
 
     def tick(self):
         # Threading by 'LD_21(cpu, v, cycles_left, cycles_acc)'
