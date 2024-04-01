@@ -66,7 +66,7 @@ cdef class Motherboard:
     cdef f_type[0xFFFFFF] jit_array
     cdef int[0xFFFFFF] jit_cycles
 
-    cdef inline int jit_load(self, str module_path, int block_id, int block_max_cycles):
+    cdef inline int jit_load(self, str module_path, int block_id, int block_max_cycles) except -1 with gil:
         # logger.debug("JIT LOAD %d", block_id)
         cdef void* handle = dlfcn.dlopen(module_path.encode(), dlfcn.RTLD_NOW | dlfcn.RTLD_GLOBAL) # RTLD_LAZY?
         if (handle == NULL):

@@ -49,6 +49,11 @@ def test_jit_tick(default_rom):
 #         pyboy_jit.tick()
 
 
+def _registers(registers):
+    A, F, B, C, D, E, HL, SP, PC, PC_1, PC_2, HL_0, HL_1 = registers
+    return f"{A=:02x}, {F=:02x}, {B=:02x}, {C=:02x}, {D=:02x}, {E=:02x}, {HL=:04x}, {SP=:04x}, {PC=:04x}, {PC_1=:04x}, {PC_2=:04x}, {HL_0=:02x}, {HL_1=:02x}"
+
+
 def test_jit_single_step(default_rom):
     pyboy = PyBoy(default_rom, window="null", jit=False, debug=False)
     pyboy_jit = PyBoy(default_rom, window="null", jit=True, debug=False, log_level="DEBUG")
@@ -60,12 +65,19 @@ def test_jit_single_step(default_rom):
         registers = pyboy._single_step()
 
         if registers_jit != registers:
-            print("Fixing cycles?", pyboy._cycles(), pyboy_jit._cycles(), registers, registers_jit)
+            print(
+                "Fixing cycles?", pyboy._cycles(), pyboy_jit._cycles(), "\n", _registers(registers), "\n",
+                _registers(registers_jit)
+            )
             # breakpoint()
             while pyboy._cycles() < pyboy_jit._cycles():
                 registers = pyboy._single_step()
+                print("Inc non-jit", "\n", _registers(registers))
             assert registers == registers_jit
             assert pyboy._cycles() == pyboy_jit._cycles()
         else:
-            print("Matching cycles:", pyboy._cycles(), pyboy_jit._cycles(), registers, registers_jit)
+            print(
+                "Matching cycles:", pyboy._cycles(), pyboy_jit._cycles(), "\n", _registers(registers), "\n",
+                _registers(registers_jit)
+            )
         # breakpoint()
