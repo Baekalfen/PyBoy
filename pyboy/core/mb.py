@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import array
 import hashlib
 import importlib
 import os
@@ -37,10 +38,10 @@ logger = pyboy.logging.get_logger(__name__)
 MAX_CYCLES = 1 << 16
 
 try:
-    import cython
-    cython_compiled = cython.compiled
+    from cython import compiled
+    cythonmode = compiled
 except ImportError:
-    cython_compiled = False
+    cythonmode = False
 
 
 class Motherboard:
@@ -111,8 +112,9 @@ class Motherboard:
 
         self.jit_enabled = jit_enabled
         self._cycles = 0
-        # if not cython_compiled:
-        #     self.jit_cycles = [0] * 0xFFFFFF
+
+        # if not cythonmode:
+        #     self.jit_cycles = array.array("I", [0] * 100) #  0xFFFFFF
 
     def __cinit__(self):
         for n in range(0xFFFFFF):
@@ -340,7 +342,7 @@ class Motherboard:
                 Extension(
                     module_name, #src.split(".")[0].replace(os.sep, "."),
                     [jit_file],
-                    extra_compile_args=["-O3"],
+                    extra_compile_args=["-O3", "-march=native", "-mtune=native"],
                     # include_dirs=[np.get_include()],
                 )
             ]
@@ -384,6 +386,23 @@ class Motherboard:
     #     # return code
 
     def jit_emit_code(self, code_block):
+        flush_instructions = [
+            # Anything loading from a 16bit address pointer
+            0x0A,
+            0x1A,
+            0x2A,
+            0x3A,
+            0x46,
+            0x56,
+            0x66,
+            0x4E,
+            0x5E,
+            0x6E,
+            0x7E,
+            0xF0, # LDH A,(a8) Used often for VBLANK check
+            0xF2, # LDH A,(C)
+            0xFA,
+        ]
         preamble = """
 cimport pyboy
 
@@ -399,27 +418,36 @@ cdef uint8_t FLAGZ = 7
 """
         code_text = preamble + "cdef public int execute(_cpu.CPU cpu) noexcept nogil:"
         code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
-        for opcode, length, literal1, literal2 in code_block:
+        for i, (opcode, length, pc, literal1, literal2) in enumerate(code_block):
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
-            code_text += "\n\t" + "# " + opcode_handler.name + "\n\t"
+            code_text += "\n\t" + "# " + opcode_handler.name + f" (PC: 0x{pc:04x})\n\t"
             if length == 2:
                 v = literal1
-                code_text += "v = " + str(v) + "\n\t"
+                code_text += f"v = 0x{v:02x} # {v}\n\t"
             elif length == 3:
                 v = (literal2 << 8) + literal1
-                code_text += "v = " + str(v) + "\n\t"
+                code_text += f"v = 0x{v:04x} # {v}\n\t"
 
             tmp_code = opcode_handler.functionhandlers[opcode_name]()._code_body()
             tmp_code = tmp_code.replace("return", "cycles +=")
-            if "tr = " in tmp_code:
-                # if "(" in opcode_handler.name.split(',')[0]: #"setitem" in tmp_code:
-                # breakpoint()
+            if "if" in tmp_code:
+                # Return early on jump
+                tmp_code = tmp_code.replace("else:", "\treturn cycles\n\telse:")
+            elif "tr = " in tmp_code:
                 # Return early on state-altering writes
                 tmp_code += "\n\tif tr: return cycles"
+            elif opcode in flush_instructions:
+                # TODO: Add condition, if the flush is not necessary
+                # Statically determine from literal, or dynamically with 'if'
+                snippet = "# Perform cycles flush\n\t"
+                if i == 0: # First operation will always have cycles = 0
+                    snippet += "# [Flush skipped for first instruction in block]\n\t"
+                else:
+                    snippet += "cpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0\n\t"
+                tmp_code = snippet + tmp_code
+
             code_text += tmp_code
-            # TODO: Shouldn't this work?
-            # code_text += "\n\tcpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0"
 
         code_text += "\n\treturn cycles"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
@@ -429,28 +457,28 @@ cdef uint8_t FLAGZ = 7
     def jit_analyze(self, block_id):
         boundary_instruction = [
             # JR
-            0x20,
-            0x30,
+            # 0x20,
+            # 0x30,
 
             # JR
-            0x18,
-            0x28,
-            0x38,
+            0x18, # Unconditional
+            # 0x28,
+            # 0x38,
 
             # RET
             0xC0,
             0xD0,
 
             # JP
-            0xC2,
-            0xD2,
+            # 0xC2,
+            # 0xD2,
 
             # JP
             0xC3,
 
             # CALL
-            0xC4,
-            0xD4,
+            # 0xC4,
+            # 0xD4,
 
             # RST
             0xC7,
@@ -466,12 +494,12 @@ cdef uint8_t FLAGZ = 7
             0xE9, # JP
 
             # JP
-            0xCA,
-            0xDA,
+            # 0xCA,
+            # 0xDA,
 
             # CALL
-            0xCC,
-            0xDC,
+            # 0xCC,
+            # 0xDC,
 
             # CALL
             0xCD,
@@ -483,7 +511,9 @@ cdef uint8_t FLAGZ = 7
             0xFF,
             0x76, # HALT
             0x10, # STOP
-            0xF0, # LDH A,(a8) Used often for VBLANK check
+
+            # REQUIRED?!
+            # 0xF0, # LDH A,(a8) Used often for VBLANK check
         ]
         code_block = []
         pc = self.cpu.PC
@@ -497,7 +527,7 @@ cdef uint8_t FLAGZ = 7
             opcode_length = opcodes.OPCODE_LENGTHS[opcode]
             opcode_max_cycles = opcodes.OPCODE_MAX_CYCLES[opcode]
             block_max_cycles += opcode_max_cycles
-            code_block.append((opcode, opcode_length, self.getitem(pc + 1), self.getitem(pc + 2)))
+            code_block.append((opcode, opcode_length, pc, self.getitem(pc + 1), self.getitem(pc + 2)))
             pc += opcode_length
             if opcode in boundary_instruction:
                 break
@@ -516,10 +546,11 @@ cdef uint8_t FLAGZ = 7
         return 0
 
     def jit(self, max_cycles):
+        block_id = (self.cpu.PC << 8)
         if self.bootrom_enabled:
-            block_id = (self.cpu.PC << 8) | 0xFF
+            block_id |= 0xFF
         else:
-            block_id = (self.cpu.PC << 8) | self.cartridge.rombank_selected
+            block_id |= self.cartridge.rombank_selected
 
         block_max_cycles = self.jit_cycles[block_id]
         if block_max_cycles == 0 and self.jit_analyze(block_id):
@@ -855,8 +886,8 @@ cdef uint8_t FLAGZ = 7
                 logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
                 self.cpu.bail = True
-                for n in range(0xFFFFFF):
-                    self.jit_cycles[n] = 0
+                if self.jit_enabled:
+                    self.jit._jit_clear()
             # CGB registers
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value
@@ -888,7 +919,6 @@ cdef uint8_t FLAGZ = 7
                 self.lcd.renderer.clear_spritecache1()
             else:
                 self.ram.non_io_internal_ram1[i - 0xFF4C] = value
-            return 3
         elif 0xFF80 <= i < 0xFFFF: # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF: # Interrupt Enable Register
