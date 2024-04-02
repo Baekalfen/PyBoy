@@ -35,7 +35,7 @@ cdef class BaseMBC:
     cdef void save_ram(self, IntIOInterface) noexcept
     cdef void load_ram(self, IntIOInterface) noexcept
     cdef void init_rambanks(self, uint8_t) noexcept
-    cdef str getgamename(self, uint8_t[:,:]) noexcept
+    cdef str getgamename(self, uint8_t[:,:])
 
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil

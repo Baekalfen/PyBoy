@@ -108,7 +108,7 @@ cdef class LCDCRegister:
     cdef bint background_enable
     cdef bint cgb_master_priority
 
-    cpdef int _get_sprite_height(self)
+    cpdef int _get_sprite_height(self) noexcept
 
 cdef class Renderer:
     cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
