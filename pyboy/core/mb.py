@@ -43,6 +43,16 @@ try:
 except ImportError:
     cythonmode = False
 
+JIT_EXTENSION = ".pyx" if cythonmode else ".py"
+JIT_PREAMBLE = """
+cimport pyboy
+
+from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
+cimport cython
+from pyboy.core cimport cpu as _cpu
+
+"""
+
 
 class Motherboard:
     def __init__(
@@ -112,11 +122,9 @@ class Motherboard:
 
         self.jit_enabled = jit_enabled
         self._cycles = 0
+        self._jit_clear()
 
-        # if not cythonmode:
-        #     self.jit_cycles = array.array("I", [0] * 100) #  0xFFFFFF
-
-    def __cinit__(self):
+    def _jit_clear(self):
         for n in range(0xFFFFFF):
             self.jit_cycles[n] = 0
 
@@ -318,8 +326,7 @@ class Motherboard:
         build_extension.finalize_options()
         return build_extension
 
-    def jit_compile(self, code_text):
-        # https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L141
+    def jit_get_module_name(self, code_text):
         m = hashlib.sha1()
         m.update(code_text.encode())
         _hash = m.digest().hex()
@@ -327,63 +334,56 @@ class Motherboard:
         module_name = "jit_" + _hash
         module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
 
-        if not os.path.exists(module_path):
+        file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_jit_" + _hash # Generate name
+        return module_name, file_base, module_path
+
+    def jit_gen_files(self, code_text, file_base):
+        # https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L141
+
+        if not os.path.exists(file_base + JIT_EXTENSION):
             # logger.info("Compiling JIT block: %s", module_path)
-            file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_jit_" + _hash # Generate name
-            jit_file = file_base + ".pyx"
-            with open(jit_file, "w") as f:
+            with open(file_base + JIT_EXTENSION, "w") as f:
                 f.write(code_text)
 
-            jit_file_pxd = file_base + ".pxd"
-            with open(jit_file_pxd, "w") as f:
-                f.write("from pyboy.core cimport cpu as _cpu\ncdef public int execute(_cpu.CPU __cpu) noexcept nogil")
+            if cythonmode:
+                jit_file_pxd = file_base + ".pxd"
+                with open(jit_file_pxd, "w") as f:
+                    f.write("from pyboy.core cimport cpu as _cpu\n")
+                    f.write("cdef public int execute(_cpu.CPU __cpu) noexcept nogil")
 
-            cythonize_files = [
-                Extension(
-                    module_name, #src.split(".")[0].replace(os.sep, "."),
-                    [jit_file],
-                    extra_compile_args=["-O3", "-march=native", "-mtune=native"],
-                    # include_dirs=[np.get_include()],
-                )
-            ]
-            build_extension = self._get_build_extension()
-            build_extension.extensions = cythonize(
-                [*cythonize_files],
-                nthreads=1,
-                annotate=False,
-                gdb_debug=False,
-                language_level=3,
-                compiler_directives={
-                    "boundscheck": False,
-                    "cdivision": True,
-                    "cdivision_warnings": False,
-                    "infer_types": True,
-                    "initializedcheck": False,
-                    "nonecheck": False,
-                    "overflowcheck": False,
-                    # "profile" : True,
-                    "wraparound": False,
-                    "legacy_implicit_noexcept": True,
-                },
+    def jit_compile(self, module_name, file_base, module_path):
+        cythonize_files = [
+            Extension(
+                module_name,
+                [file_base + JIT_EXTENSION],
+                extra_compile_args=["-O3", "-march=native", "-mtune=native"],
             )
-            build_extension.inplace = True
-            # build_extension.build_temp = "./"# os.path.dirname(jit_file)
-            build_extension.run()
+        ]
+        build_extension = self._get_build_extension()
+        build_extension.extensions = cythonize(
+            [*cythonize_files],
+            nthreads=1,
+            annotate=False,
+            gdb_debug=True,
+            language_level=3,
+            compiler_directives={
+                "boundscheck": False,
+                "cdivision": True,
+                "cdivision_warnings": False,
+                "infer_types": True,
+                "initializedcheck": False,
+                "nonecheck": False,
+                "overflowcheck": False,
+                # "profile" : True,
+                "wraparound": False,
+                "legacy_implicit_noexcept": True,
+            },
+        )
+        build_extension.inplace = True
+        # build_extension.build_temp = "./"# os.path.dirname(jit_file)
+        build_extension.run()
         # else:
         #     logger.info("JIT block already compiled: %s", module_path)
-
-        return module_path
-
-    # def jit_load(self, module_path):
-    #     # spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, module_path))
-    #     # module = importlib.util.module_from_spec(spec)
-    #     # spec.loader.exec_module(module)
-    #     self.jit_load(module_path)
-    #     # self.test_func = module.execute
-
-    #     # module.execute(self.cpu)
-    #     # code = CodeBlock(module.execute)
-    #     # return code
 
     def jit_emit_code(self, code_block):
         flush_instructions = [
@@ -403,21 +403,22 @@ class Motherboard:
             0xF2, # LDH A,(C)
             0xFA,
         ]
-        preamble = """
-cimport pyboy
 
-from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
-cimport cython
-from pyboy.core cimport cpu as _cpu
+        code_text = ""
+        if not cythonmode:
+            code_text += "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
+            code_text += "def execute(cpu):\n\t"
+            code_text += "flag = 0\n\tt = 0\n\ttr = 0\n\tv = 0\n\tcycles = 0"
+        else:
+            code_text += JIT_PREAMBLE
+            code_text += "cdef public int execute(_cpu.CPU cpu) noexcept nogil:"
+            code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
+            code_text += """
+\tcdef uint16_t FLAGC = 4
+\tcdef uint16_t FLAGH = 5
+\tcdef uint16_t FLAGN = 6
+\tcdef uint16_t FLAGZ = 7"""
 
-cdef uint8_t FLAGC = 4
-cdef uint8_t FLAGH = 5
-cdef uint8_t FLAGN = 6
-cdef uint8_t FLAGZ = 7
-
-"""
-        code_text = preamble + "cdef public int execute(_cpu.CPU cpu) noexcept nogil:"
-        code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
         for i, (opcode, length, pc, literal1, literal2) in enumerate(code_block):
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
@@ -444,7 +445,7 @@ cdef uint8_t FLAGZ = 7
                 if i == 0: # First operation will always have cycles = 0
                     snippet += "# [Flush skipped for first instruction in block]\n\t"
                 else:
-                    snippet += "cpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcycles = 0\n\t"
+                    snippet += "cpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcpu.mb._cycles = cpu.mb._cycles + cycles\n\tcycles = 0\n\t"
                 tmp_code = snippet + tmp_code
 
             code_text += tmp_code
@@ -456,53 +457,22 @@ cdef uint8_t FLAGZ = 7
 
     def jit_analyze(self, block_id):
         boundary_instruction = [
-            # JR
-            # 0x20,
-            # 0x30,
-
-            # JR
-            0x18, # Unconditional
-            # 0x28,
-            # 0x38,
+            0x18, # JR r8
 
             # RET
             0xC0,
             0xD0,
-
-            # JP
-            # 0xC2,
-            # 0xD2,
-
-            # JP
-            0xC3,
-
-            # CALL
-            # 0xC4,
-            # 0xD4,
+            0xC3, # JP a16
 
             # RST
             0xC7,
             0xD7,
             0xE7,
             0xF7,
-
-            # RET
-            0xC8,
-            0xD8,
             0xC9, # RET
             0xD9, # RETI
-            0xE9, # JP
-
-            # JP
-            # 0xCA,
-            # 0xDA,
-
-            # CALL
-            # 0xCC,
-            # 0xDC,
-
-            # CALL
-            0xCD,
+            0xE9, # JP (HL)
+            0xCD, # CALL a16
 
             # RST
             0xCF,
@@ -511,9 +481,6 @@ cdef uint8_t FLAGZ = 7
             0xFF,
             0x76, # HALT
             0x10, # STOP
-
-            # REQUIRED?!
-            # 0xF0, # LDH A,(a8) Used often for VBLANK check
         ]
         code_block = []
         pc = self.cpu.PC
@@ -535,14 +502,15 @@ cdef uint8_t FLAGZ = 7
         if len(code_block) < 10:
             return -1
 
-        logger.debug("Code block size: %d", len(code_block))
+        logger.debug("Code block size: %d, block cycles: %d", len(code_block), block_max_cycles)
 
         code_text = self.jit_emit_code(code_block)
-        module_path = self.jit_compile(code_text)
-        self.jit_load(module_path, block_id, block_max_cycles)
-        # code = CodeBlock(block_id)
-        # code.cycles = block_max_cycles
-        # return block_id
+        module_name, file_base, module_path = self.jit_get_module_name(code_text)
+        self.jit_gen_files(code_text, file_base)
+        if cythonmode:
+            self.jit_compile(module_name, file_base, module_path)
+        self.jit_load(module_name, module_path, file_base, block_id, block_max_cycles)
+
         return 0
 
     def jit(self, max_cycles):
@@ -560,19 +528,6 @@ cdef uint8_t FLAGZ = 7
             return 0
 
         return self.jit_execute(block_id)
-
-        # if code.eligible:
-        #     # if  <= cycles:
-        #     return self.jit_execute(block_id, code.cycles)
-        # logger.debug("Executing JIT block: PC=%x, code.cycles=%s, cycles=%d", self.cpu.PC, code.cycles, cycles)
-        # cycles = code.body(self.cpu)
-        # logger.debug(
-        #     "After block: PC=%x, jit_jump=%d, actual cycles=%d", self.cpu.PC, self.cpu.jit_jump, cycles
-        # )
-        # return cycles
-        # else:
-        #     logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
-        return 0
 
     def processing_frame(self):
         b = (not self.lcd.frame_done)
@@ -1040,3 +995,31 @@ class HDMA:
             self.hdma5 -= 1
 
         return 206 # TODO: adjust for double speed
+
+
+# Unfortunately CPython/PyPy code has to be hidden in an exec call to
+# prevent Cython from trying to parse it. This block provides the
+# functions that are otherwise implemented as inlined cdefs in the pxd
+if not cythonmode:
+    exec(
+        """
+def _jit_load(self, module_name, module_path, file_base, block_id, block_max_cycles):
+    # spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, file_base + JIT_EXTENSION))
+    spec = importlib.util.spec_from_file_location(module_name, file_base + JIT_EXTENSION)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    self.jit_array[block_id] = module.execute
+    self.jit_cycles[block_id] = block_max_cycles
+
+def _jit_clear(self):
+    self.jit_cycles = [0] * 0xFFFFFF
+    self.jit_array = [None] * 0xFFFFFF
+
+def _jit_execute(self, block_id):
+    return self.jit_array[block_id](self.cpu)
+
+Motherboard.jit_load = _jit_load
+Motherboard._jit_clear = _jit_clear
+Motherboard.jit_execute = _jit_execute
+""", globals(), locals()
+    )

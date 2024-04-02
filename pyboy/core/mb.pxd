@@ -68,7 +68,7 @@ cdef class Motherboard:
     cdef f_type[0xFFFFFF] jit_array
     cdef int[0xFFFFFF] jit_cycles
 
-    cdef inline int jit_load(self, str module_path, int block_id, int block_max_cycles) except -1 with gil:
+    cdef inline int jit_load(self, str module_name, str module_path, str file_base, int block_id, int block_max_cycles) except -1 with gil:
         # logger.debug("JIT LOAD %d", block_id)
         cdef void* handle = dlfcn.dlopen(module_path.encode(), dlfcn.RTLD_NOW | dlfcn.RTLD_GLOBAL) # RTLD_LAZY?
         if (handle == NULL):
@@ -88,8 +88,10 @@ cdef class Motherboard:
         return self.jit_array[block_id](self.cpu)
 
     cdef bint jit_enabled
-    cdef str jit_compile(self, str) noexcept with gil
-    cdef object jit_emit_code(self, object) noexcept with gil
+    cdef tuple jit_get_module_name(self, str) with gil
+    cdef void jit_gen_files(self, str, str) noexcept with gil
+    cdef void jit_compile(self, str, str, str) noexcept with gil
+    cdef object jit_emit_code(self, object) with gil
     cdef int jit_analyze(self, int) noexcept with gil
     @cython.locals(block_id=int64_t)
     cdef int64_t jit(self, int64_t) noexcept nogil
