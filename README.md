@@ -62,14 +62,6 @@ The instructions are simple:
 $ pip install pyboy
 ```
 
-> [!WARNING]
-> **If you're having issues on Windows, try this instead:** `pip install pyboy==2.0.0 pillow`
->
-> PyPI (who maintains `pip install`) has stopped processing support tickets, and we've been unable to deploy
-> a fix for over a month now. Follow this thread for status: https://github.com/pypi/support/issues/3757
->
-> If you're able to get in contact with PyPI, then please help us get this resolved!
-
 For details, see [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation).
 
 Now you're ready! Either use PyBoy directly from the terminal
