@@ -241,11 +241,7 @@ RedBonusStages = [Stage.DIGLETT, Stage.GENGAR, Stage.MEWTWO]
 
 BlueBonusStages = [Stage.MEOWTH, Stage.SEEL, Stage.MEWTWO]
 
-AllBonusStageValues = []
-for stage in RedBonusStages:
-    AllBonusStageValues.append(stage.value)
-for stage in BlueBonusStages:
-    AllBonusStageValues.append(stage.value)
+AllBonusStageValues = RedBonusStages + BlueBonusStages
 
 
 class GameWrapperPokemonPinball(PyBoyGameWrapper):
