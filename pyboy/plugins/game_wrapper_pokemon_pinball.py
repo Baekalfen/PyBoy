@@ -961,7 +961,7 @@ ADDR_TIMER_FRAMES = 0xd57c
 ADDR_TIMER_RAN_OUT = 0xd57e # 1 = ran out
 ADDR_TIMER_PAUSED = 0xd57f # nz = paused
 ADDR_TIMER_ACTIVE = 0xd57d # 1 = active
-ADDR_D580 = 0xd580
+ADDR_D580 = 0xd580 # Something to do with the timer, needs to be initialized.
 
 ADDR_CURRENT_MAP = 0xd54a
 
