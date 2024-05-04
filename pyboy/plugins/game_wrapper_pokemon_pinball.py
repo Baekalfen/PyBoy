@@ -547,8 +547,8 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             def disable_timer(context):
                 context.memory[ADDR_TIMER_ACTIVE] = 0
 
-            bank = 4
-            offset = 0x4d64
+            bank = BANK_OFFSET_DISABLE_TIMER[0]
+            offset = BANK_OFFSET_DISABLE_TIMER[1]
             try:
                 self.pyboy.hook_register(bank, offset, disable_timer, self.pyboy)
             except:
@@ -1041,6 +1041,7 @@ BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED = (0x5, 0x5284)
 BANK_OFFSET_SLOT_REWARD_ROULETTE = (0x3, 0x6d8e)
 BANK_OFFSET_BALL_SAVED_RED = (3, 0x5d7f)
 BANK_OFFSET_BALL_SAVED_BLUE = (3, 0x5e58)
+BANK_OFFSET_DISABLE_TIMER = (4, 0x4d64)
 
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {
