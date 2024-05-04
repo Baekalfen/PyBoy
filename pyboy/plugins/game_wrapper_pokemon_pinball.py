@@ -447,7 +447,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         This method should be called before the game starts
 
         No ops out these asm lines:
-        	jr z, .pressedB
+            jr z, .pressedB
             ld a, [wSelectedFieldIndex]
             ld c, a
             ld b, $0
