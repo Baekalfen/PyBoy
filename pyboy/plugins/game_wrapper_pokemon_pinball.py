@@ -635,7 +635,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         """
         Get the number of unique pokemon caught in the current session based off the in game pokedex
         """
-        return len([pokemon for pokemon in self.pokedex if pokemon == 2])
+        return self.pokedex.count(2)
 
     def post_tick(self):
         self._tile_cache_invalid = True
