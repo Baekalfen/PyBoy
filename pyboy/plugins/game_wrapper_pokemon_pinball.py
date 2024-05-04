@@ -508,8 +508,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.pyboy.memory[ADDR_D5C6] = 0
         self.pyboy.memory[ADDR_NUM_MON_HITS] = 0
         self.pyboy.memory[ADDR_NUM_CATCH_TILES_FLIPPED] = 0
-        for i in range(TILE_ILLUMINATION_BYTE_WIDTH):
-            self.pyboy.memory[ADDR_TILE_ILLUMINATION + i] = 0
+        self.pyboy.memory[ADDR_TILE_ILLUMINATION:ADDR_TILE_ILLUMINATION + TILE_ILLUMINATION_BYTE_WIDTH] = 0
         if not unlimited_time:
             self.pyboy.memory[ADDR_TIMER_SECONDS] = 0
             self.pyboy.memory[ADDR_TIMER_MINUTES] = 2
