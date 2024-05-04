@@ -16,7 +16,10 @@ from pyboy.utils import WindowEvent
 
 
 def test_pokemon_pinball_basics(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window_type="null", game_wrapper=True)
+    pyboy = PyBoy(
+        pokemon_pinball_rom,
+        window_type="null",
+    )
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -31,7 +34,7 @@ def test_pokemon_pinball_basics(pokemon_pinball_rom):
 
 
 def test_pokemon_pinball_advanced(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, game_wrapper=True, window_type="null")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -60,7 +63,7 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
 
 
 def test_pokemon_catch_mode(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, game_wrapper=True, window_type="null")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -98,14 +101,14 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
 
 
 def test_pokemon_pinball_game_over(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, game_wrapper=True, window_type="null")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper
     pokemon_pinball.start_game()
     pyboy.button("a")
-    for i in range(6185):
+    for i in range(6176):
         if i % 100 == 0:
             pyboy.button("a")
         pyboy.tick(render=False)
