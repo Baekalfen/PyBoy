@@ -505,7 +505,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.pyboy.memory[ADDR_POKEMON_TO_CATCH] = pokemon.value
         self.pyboy.memory[ADDR_SPECIAL_MODE_ACTIVE] = 1
         self.pyboy.memory[ADDR_SPECIAL_MODE_STATE] = 0
-        self.pyboy.memory[0xd5c6] = 0
+        self.pyboy.memory[ADDR_D5C6] = 0
         self.pyboy.memory[ADDR_NUM_MON_HITS] = 0
         self.pyboy.memory[ADDR_NUM_CATCH_TILES_FLIPPED] = 0
         for i in range(TILE_ILLUMINATION_BYTE_WIDTH):
@@ -964,6 +964,8 @@ ADDR_TIMER_ACTIVE = 0xd57d # 1 = active
 ADDR_D580 = 0xd580
 
 ADDR_CURRENT_MAP = 0xd54a
+
+ADDR_D5C6 = 0xd5c6 # Something to do with the catch mode, needs to be initialized.
 
 ADDR_POKEDEX = 0xd962
 
