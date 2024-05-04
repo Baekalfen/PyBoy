@@ -7,7 +7,7 @@ from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 
 cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
     cdef public int ball_saver_seconds_left
-    cdef int ball_size
+    cdef public int ball_size
     cdef public int ball_type
     cdef public int ball_x
     cdef public int ball_x_velocity
