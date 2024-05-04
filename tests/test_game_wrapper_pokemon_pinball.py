@@ -42,16 +42,13 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     pokemon_pinball.start_game(stage=Stage.BLUE_BOTTOM)
     pyboy.button_press("a")
     pyboy.button_press("left")
-    for i in range(500):
-        pyboy.tick(render=False)
+    pyboy.tick(500, render=False)
     pyboy.button_release("left")
     pyboy.button_release("a")
-    for i in range(20):
-        pyboy.tick(render=False)
+    pyboy.tick(20, render=False)
     pyboy.button_press("left")
     pyboy.button_press("a")
-    for i in range(700):
-        pyboy.tick(render=False)
+    pyboy.tick(700, render=False)
 
     assert pokemon_pinball.score == 123200
     assert pokemon_pinball.special_mode == SpecialMode.CATCH.value
@@ -71,26 +68,20 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
     pokemon_pinball.start_game(stage=Stage.RED_BOTTOM)
     pyboy.button_press("a")
     pyboy.button_press("left")
-    for i in range(50):
-        pyboy.tick(render=False)
+    pyboy.tick(50, render=False)
     pokemon_pinball.start_catch_mode()
-    for i in range(270):
-        pyboy.tick(render=False)
+    pyboy.tick(270, render=False)
     pyboy.button_release("left")
     pyboy.button_release("a")
     pyboy.button("select")
-    for i in range(20):
-        pyboy.tick(render=False)
+    pyboy.tick(20, render=False)
     pyboy.button_press("left")
     pyboy.button_press("a")
-    for i in range(500):
-        pyboy.tick(render=False)
+    pyboy.tick(500, render=False)
     pyboy.button_release("left")
-    for i in range(21):
-        pyboy.tick(render=False)
+    pyboy.tick(21, render=False)
     pyboy.button_press("left")
-    for i in range(700):
-        pyboy.tick(render=False)
+    pyboy.tick(700, render=False)
 
     assert pokemon_pinball.score == 15635100
     assert pokemon_pinball.has_pokemon(Pokemon.BULBASAUR)
