@@ -599,7 +599,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self._set_stage(stage)
 
         # Random tilemap I observed doesn't change until shortly before input is read
-        while True and self.tilemap_background[10, 10] != 269:
+        while self.tilemap_background[10, 10] != 269:
             self.pyboy.tick()
 
         # tick needed count to get to the point where input is read
