@@ -550,7 +550,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             offset = BANK_OFFSET_DISABLE_TIMER[1]
             try:
                 self.pyboy.hook_register(bank, offset, disable_timer, self.pyboy)
-            except:
+            except ValueError:
                 pass #hook already exists
 
     def current_map_completed(self):
