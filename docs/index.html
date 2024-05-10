@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound=False, sound_emulated=False, cgb=None, **kwargs)</span>
+<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound=False, sound_emulated=False, cgb=None, log_level='ERROR', **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -100,6 +100,7 @@ True...
 <li>sound (bool): Enable sound emulation and output.</li>
 <li>sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.</li>
 <li>cgb (bool): Forcing Game Boy Color mode.</li>
+<li>log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"</li>
 <li>color_palette (tuple): Specify the color palette to use for rendering.</li>
 <li>cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.</li>
 </ul>
@@ -120,6 +121,7 @@ True...
         sound=False,
         sound_emulated=False,
         cgb=None,
+        log_level=defaults[&#34;log_level&#34;],
         **kwargs
     ):
         &#34;&#34;&#34;
@@ -154,6 +156,7 @@ True...
             * sound (bool): Enable sound emulation and output.
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
             * cgb (bool): Forcing Game Boy Color mode.
+            * log_level (str): &#34;CRITICAL&#34;, &#34;ERROR&#34;, &#34;WARNING&#34;, &#34;INFO&#34; or &#34;DEBUG&#34;
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
@@ -185,7 +188,7 @@ True...
             if k not in kwargs:
                 kwargs[k] = kwargs.get(k, defaults[k])
 
-        log_level(kwargs.pop(&#34;log_level&#34;))
+        _log_level(log_level)
 
         if not os.path.isfile(gamerom):
             raise FileNotFoundError(f&#34;ROM file {gamerom} was not found!&#34;)
@@ -419,9 +422,10 @@ True...
                 self.mb.breakpoint_reinject()
 
                 # NOTE: PC has not been incremented when hitting breakpoint!
-                breakpoint_index = self.mb.breakpoint_reached()
-                if breakpoint_index != -1:
-                    self.mb.breakpoint_remove(breakpoint_index)
+                breakpoint_meta = self.mb.breakpoint_reached()
+                if breakpoint_meta != (-1, -1, -1):
+                    bank, addr, _ = breakpoint_meta
+                    self.mb.breakpoint_remove(bank, addr)
                     self.mb.breakpoint_singlestep_latch = 0
 
                     if not self._handle_hooks():
@@ -1164,6 +1168,7 @@ True...
             raise ValueError(&#34;Hook already registered for this bank and address.&#34;)
         self.mb.breakpoint_add(bank, addr)
         bank_addr_opcode = (bank &amp; 0xFF) &lt;&lt; 24 | (addr &amp; 0xFFFF) &lt;&lt; 8 | (opcode &amp; 0xFF)
+        logger.debug(&#34;Adding hook for opcode %08x&#34;, bank_addr_opcode)
         self._hooks[bank_addr_opcode] = (callback, context)
 
     def hook_deregister(self, bank, addr):
@@ -1196,12 +1201,12 @@ True...
         if bank is None and isinstance(addr, str):
             bank, addr = self._lookup_symbol(addr)
 
-        index = self.mb.breakpoint_find(bank, addr)
-        if index == -1:
+        breakpoint_meta = self.mb.breakpoint_find(bank, addr)
+        if not breakpoint_meta:
             raise ValueError(&#34;Breakpoint not found for bank and addr&#34;)
+        _, _, opcode = breakpoint_meta
 
-        _, _, opcode = self.mb.breakpoints_list[index]
-        self.mb.breakpoint_remove(index)
+        self.mb.breakpoint_remove(bank, addr)
         bank_addr_opcode = (bank &amp; 0xFF) &lt;&lt; 24 | (addr &amp; 0xFFFF) &lt;&lt; 8 | (opcode &amp; 0xFF)
         self._hooks.pop(bank_addr_opcode)
 
@@ -2466,6 +2471,7 @@ True
         raise ValueError(&#34;Hook already registered for this bank and address.&#34;)
     self.mb.breakpoint_add(bank, addr)
     bank_addr_opcode = (bank &amp; 0xFF) &lt;&lt; 24 | (addr &amp; 0xFFFF) &lt;&lt; 8 | (opcode &amp; 0xFF)
+    logger.debug(&#34;Adding hook for opcode %08x&#34;, bank_addr_opcode)
     self._hooks[bank_addr_opcode] = (callback, context)</code></pre>
 </details>
 </dd>
@@ -2529,12 +2535,12 @@ True
     if bank is None and isinstance(addr, str):
         bank, addr = self._lookup_symbol(addr)
 
-    index = self.mb.breakpoint_find(bank, addr)
-    if index == -1:
+    breakpoint_meta = self.mb.breakpoint_find(bank, addr)
+    if not breakpoint_meta:
         raise ValueError(&#34;Breakpoint not found for bank and addr&#34;)
+    _, _, opcode = breakpoint_meta
 
-    _, _, opcode = self.mb.breakpoints_list[index]
-    self.mb.breakpoint_remove(index)
+    self.mb.breakpoint_remove(bank, addr)
     bank_addr_opcode = (bank &amp; 0xFF) &lt;&lt; 24 | (addr &amp; 0xFFFF) &lt;&lt; 8 | (opcode &amp; 0xFF)
     self._hooks.pop(bank_addr_opcode)</code></pre>
 </details>
