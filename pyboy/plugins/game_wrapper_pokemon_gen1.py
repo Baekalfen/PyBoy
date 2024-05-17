@@ -44,9 +44,8 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     def _get_screen_background_tilemap(self):
         ### SIMILAR TO CURRENT pyboy.game_wrapper.game_area(), BUT ONLY FOR BACKGROUND TILEMAP, SO NPC ARE SKIPPED
-        bsm = self.pyboy.botsupport_manager()
-        ((scx, scy), (wx, wy)) = bsm.screen().tilemap_position()
-        tilemap = np.array(bsm.tilemap_background[:, :])
+        ((scx, scy), (wx, wy)) = self.pyboy.screen.get_tilemap_position()
+        tilemap = np.array(self.pyboy.tilemap_background[:, :])
         return np.roll(np.roll(tilemap, -scy // 8, axis=0), -scx // 8, axis=1)[:18, :20]
 
     def _get_screen_walkable_matrix(self):
