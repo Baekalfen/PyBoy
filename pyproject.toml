@@ -1,6 +1,6 @@
 [project]
 name = "pyboy"
-version = "2.0.0"
+version = "2.0.3"
 authors = [
     {name = "Mads Ynddal", email = "mads@ynddal.dk"}
 ]
@@ -44,7 +44,7 @@ pyboy = "pyboy.__main__:main"
 requires = [
     "setuptools>=61.0.0",
     "wheel",
-    "cython>=3.0.6; platform_python_implementation == 'CPython'",
+    "cython>=3.0.6,!=3.0.10; platform_python_implementation == 'CPython'",
     "numpy",
 ]
 build-backend = "setuptools.build_meta"
@@ -52,19 +52,13 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["pyboy*"]
+packages = ["pyboy", "pyboy.api", "pyboy.core", "pyboy.core.cartridge", "pyboy.logging", "pyboy.plugins"]
 
 [tool.setuptools.package-data]
-pyboy = ["pyboy/core/bootrom_dmg.bin"]
 "*" = [
     "**/*.pxi",
     "**/*.pyx",
     "**/*.pxd",
-    "**/*.c",
-    "**/*.h",
     "**/bootrom*.bin",
     "**/font.txt"
 ]

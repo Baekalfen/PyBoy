@@ -76,7 +76,7 @@ class Motherboard:
         self.serialbuffer = [0] * 1024
         self.serialbuffer_count = 0
 
-        self.breakpoints_list = [] #[(0, 0x150), (0, 0x0040), (0, 0x0048), (0, 0x0050)]
+        self.breakpoints = {} #{(0, 0x150): (0x100) (0, 0x0040): 0x200, (0, 0x0048): 0x300, (0, 0x0050): 0x44}
         self.breakpoint_singlestep = False
         self.breakpoint_singlestep_latch = False
         self.breakpoint_waiting = -1
@@ -122,62 +122,64 @@ class Motherboard:
         else:
             raise Exception("Unsupported breakpoint address. If this a mistake, reach out to the developers")
 
-        self.breakpoints_list.append((bank, addr, opcode))
-        return len(self.breakpoints_list) - 1
+        self.breakpoints[(bank, addr)] = opcode
 
     def breakpoint_find(self, bank, addr):
-        for i, (_bank, _addr, _) in enumerate(self.breakpoints_list):
-            if _bank == bank and _addr == addr:
-                return i
-        return -1
+        opcode = self.breakpoints.get((bank, addr))
+        if opcode is not None:
+            return (bank, addr, opcode)
+        return tuple()
 
-    def breakpoint_remove(self, index):
-        logger.debug(f"Breakpoint remove: {index}")
-        if not 0 <= index < len(self.breakpoints_list):
-            logger.error("Cannot remove breakpoint: Index out of bounds %d/%d", index, len(self.breakpoints_list))
-            # return (None, None, None)
-        bank, addr, opcode = self.breakpoints_list.pop(index)
-        logger.debug(f"Breakpoint remove: {bank:02x}:{addr:04x} {opcode:02x}")
+    def breakpoint_remove(self, bank, addr):
+        logger.debug(f"Breakpoint remove: ({bank}, {addr})")
+        opcode = self.breakpoints.pop((bank, addr), None)
+        if opcode is not None:
+            logger.debug(f"Breakpoint remove: {bank:02x}:{addr:04x} {opcode:02x}")
 
-        # Restore opcode
-        if addr < 0x100 and bank == -1:
-            self.bootrom.bootrom[addr] = opcode
-        elif addr < 0x4000:
-            self.cartridge.rombanks[bank, addr] = opcode
-        elif 0x4000 <= addr < 0x8000:
-            self.cartridge.rombanks[bank, addr - 0x4000] = opcode
-        elif 0x8000 <= addr < 0xA000:
-            if bank == 0:
-                self.lcd.VRAM0[addr - 0x8000] = opcode
+            # Restore opcode
+            if addr < 0x100 and bank == -1:
+                self.bootrom.bootrom[addr] = opcode
+            elif addr < 0x4000:
+                self.cartridge.rombanks[bank, addr] = opcode
+            elif 0x4000 <= addr < 0x8000:
+                self.cartridge.rombanks[bank, addr - 0x4000] = opcode
+            elif 0x8000 <= addr < 0xA000:
+                if bank == 0:
+                    self.lcd.VRAM0[addr - 0x8000] = opcode
+                else:
+                    self.lcd.VRAM1[addr - 0x8000] = opcode
+            elif 0xA000 <= addr < 0xC000:
+                self.cartridge.rambanks[bank, addr - 0xA000] = opcode
+            elif 0xC000 <= addr <= 0xE000:
+                self.ram.internal_ram0[addr - 0xC000] = opcode
             else:
-                self.lcd.VRAM1[addr - 0x8000] = opcode
-        elif 0xA000 <= addr < 0xC000:
-            self.cartridge.rambanks[bank, addr - 0xA000] = opcode
-        elif 0xC000 <= addr <= 0xE000:
-            self.ram.internal_ram0[addr - 0xC000] = opcode
+                logger.error("Unsupported breakpoint address. If this a mistake, reach out to the developers")
         else:
-            logger.error("Unsupported breakpoint address. If this a mistake, reach out to the developers")
-        #     return (None, None, None)
-        # return (bank, addr, opcode)
+            logger.error("Breakpoint not found. If this a mistake, reach out to the developers")
 
     def breakpoint_reached(self):
-        for i, (bank, pc, _) in enumerate(self.breakpoints_list):
-            if self.cpu.PC == pc and (
-                (pc < 0x4000 and bank == 0 and not self.bootrom_enabled) or \
-                (0x4000 <= pc < 0x8000 and self.cartridge.rombank_selected == bank) or \
-                (0xA000 <= pc < 0xC000 and self.cartridge.rambank_selected == bank) or \
-                (0xC000 <= pc <= 0xFFFF and bank == -1) or \
-                (pc < 0x100 and bank == -1 and self.bootrom_enabled)
-            ):
-                # Breakpoint hit
-                # bank, addr, opcode = self.breakpoint_remove(i)
-                bank, addr, opcode = self.breakpoints_list[i]
-                logger.debug(f"Breakpoint reached: {bank:02x}:{addr:04x} {opcode:02x}")
-                self.breakpoint_waiting = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
-                logger.debug(f"Breakpoint waiting: {self.breakpoint_waiting:08x}")
-                return i
+        pc = self.cpu.PC
+        bank = None
+        if pc < 0x100 and self.bootrom_enabled:
+            bank = -1
+        elif pc < 0x4000:
+            bank = 0
+        elif 0x4000 <= pc < 0x8000:
+            bank = self.cartridge.rombank_selected
+        elif 0xA000 <= pc < 0xC000:
+            bank = self.cartridge.rambank_selected
+        elif 0xC000 <= pc <= 0xFFFF:
+            bank = 0
+        opcode = self.breakpoints.get((bank, pc))
+        if opcode is not None:
+            # Breakpoint hit
+            addr = pc
+            logger.debug("Breakpoint reached: %02x:%04x %02x", bank, addr, opcode)
+            self.breakpoint_waiting = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
+            logger.debug("Breakpoint waiting: %08x", self.breakpoint_waiting)
+            return (bank, addr, opcode)
         logger.debug("Invalid breakpoint reached: %04x", self.cpu.PC)
-        return -1
+        return (-1, -1, -1)
 
     def breakpoint_reinject(self):
         if self.breakpoint_waiting < 0:

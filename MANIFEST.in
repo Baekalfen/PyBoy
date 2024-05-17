@@ -1,0 +1,2 @@
+exclude **/*.c **/*.h tests/*
+include pyboy/default_rom.gb

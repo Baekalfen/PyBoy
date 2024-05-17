@@ -121,6 +121,7 @@ class PyBoy:
         self.gamerom = gamerom
 
         self.rom_symbols = {}
+        self.rom_symbols_inverse = {}
         if symbols is not None:
             if not os.path.isfile(symbols):
                 raise FileNotFoundError(f"Symbols file {symbols} was not found!")
@@ -347,9 +348,10 @@ class PyBoy:
                 self.mb.breakpoint_reinject()
 
                 # NOTE: PC has not been incremented when hitting breakpoint!
-                breakpoint_index = self.mb.breakpoint_reached()
-                if breakpoint_index != -1:
-                    self.mb.breakpoint_remove(breakpoint_index)
+                breakpoint_meta = self.mb.breakpoint_reached()
+                if breakpoint_meta != (-1, -1, -1):
+                    bank, addr, _ = breakpoint_meta
+                    self.mb.breakpoint_remove(bank, addr)
                     self.mb.breakpoint_singlestep_latch = 0
 
                     if not self._handle_hooks():
@@ -485,7 +487,7 @@ class PyBoy:
     def _post_tick(self):
         # Fix buggy PIL. They will copy our image buffer and destroy the
         # reference on some user operations like .save().
-        if not self.screen.image.readonly:
+        if self.screen.image and not self.screen.image.readonly:
             self.screen._set_image()
 
         if self.frame_count % 60 == 0:
@@ -575,28 +577,28 @@ class PyBoy:
         input = input.lower()
         if input == "left":
             self.send_input(WindowEvent.PRESS_ARROW_LEFT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_LEFT))
+            self.send_input(WindowEvent.RELEASE_ARROW_LEFT, delay)
         elif input == "right":
             self.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_RIGHT))
+            self.send_input(WindowEvent.RELEASE_ARROW_RIGHT, delay)
         elif input == "up":
             self.send_input(WindowEvent.PRESS_ARROW_UP)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_UP))
+            self.send_input(WindowEvent.RELEASE_ARROW_UP, delay)
         elif input == "down":
             self.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_ARROW_DOWN))
+            self.send_input(WindowEvent.RELEASE_ARROW_DOWN, delay)
         elif input == "a":
             self.send_input(WindowEvent.PRESS_BUTTON_A)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_A))
+            self.send_input(WindowEvent.RELEASE_BUTTON_A, delay)
         elif input == "b":
             self.send_input(WindowEvent.PRESS_BUTTON_B)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_B))
+            self.send_input(WindowEvent.RELEASE_BUTTON_B, delay)
         elif input == "start":
             self.send_input(WindowEvent.PRESS_BUTTON_START)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_START))
+            self.send_input(WindowEvent.RELEASE_BUTTON_START, delay)
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
-            heapq.heappush(self.queued_input, (self.frame_count + delay, WindowEvent.RELEASE_BUTTON_SELECT))
+            self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
         else:
             raise Exception("Unrecognized input:", input)
 
@@ -685,7 +687,7 @@ class PyBoy:
         else:
             raise Exception("Unrecognized input")
 
-    def send_input(self, event):
+    def send_input(self, event, delay=0):
         """
         Send a single input to control the emulator. This is both Game Boy buttons and emulator controls. See
         `pyboy.utils.WindowEvent` for which events to send.
@@ -703,13 +705,31 @@ class PyBoy:
         >>> pyboy.send_input(WindowEvent.RELEASE_BUTTON_A) # Release button 'a' on next call to `PyBoy.tick()`
         >>> pyboy.tick() # Button 'a' released
         True
+        ```
 
+        And even simpler with delay:
+        ```python
+        >>> from pyboy.utils import WindowEvent
+        >>> pyboy.send_input(WindowEvent.PRESS_BUTTON_A) # Press button 'a' and keep pressed after `PyBoy.tick()`
+        >>> pyboy.send_input(WindowEvent.RELEASE_BUTTON_A, 2) # Release button 'a' on third call to `PyBoy.tick()`
+        >>> pyboy.tick() # Button 'a' pressed
+        True
+        >>> pyboy.tick() # Button 'a' still pressed
+        True
+        >>> pyboy.tick() # Button 'a' released
+        True
         ```
 
         Args:
             event (pyboy.WindowEvent): The event to send
+            delay (int): 0 for immediately, number of frames to delay the input
         """
-        self.events.append(WindowEvent(event))
+
+        if delay:
+            assert delay > 0, "Only positive integers allowed"
+            heapq.heappush(self.queued_input, (self.frame_count + delay, event))
+        else:
+            self.events.append(WindowEvent(event))
 
     def save_state(self, file_like_object):
         """
@@ -986,16 +1006,16 @@ class PyBoy:
                                 self.rom_symbols[bank][addr] = []
 
                             self.rom_symbols[bank][addr].append(sym_label)
+                            self.rom_symbols_inverse[sym_label] = (bank, addr)
                         except ValueError as ex:
                             logger.warning("Skipping .sym line: %s", line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
-        for bank, addresses in self.rom_symbols.items():
-            for addr, labels in addresses.items():
-                if symbol in labels:
-                    return bank, addr
-        raise ValueError("Symbol not found: %s" % symbol)
+        bank_addr = self.rom_symbols_inverse.get(symbol)
+        if bank_addr is None:
+            raise ValueError("Symbol not found: %s" % symbol)
+        return bank_addr
 
     def symbol_lookup(self, symbol):
         """
@@ -1046,7 +1066,7 @@ class PyBoy:
 
         If a symbol file is loaded, this function can also automatically resolve a bank and address from a symbol. To
         enable this, you'll need to place a `.sym` file next to your ROM, or provide it using:
-        `PyBoy(..., symbols_file="game_rom.gb.sym")`.
+        `PyBoy(..., symbols="game_rom.gb.sym")`.
 
         Then provide `None` for `bank` and the symbol for `addr` to trigger the automatic lookup.
 
@@ -1074,6 +1094,7 @@ class PyBoy:
             raise ValueError("Hook already registered for this bank and address.")
         self.mb.breakpoint_add(bank, addr)
         bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
+        logger.debug("Adding hook for opcode %08x", bank_addr_opcode)
         self._hooks[bank_addr_opcode] = (callback, context)
 
     def hook_deregister(self, bank, addr):
@@ -1106,12 +1127,12 @@ class PyBoy:
         if bank is None and isinstance(addr, str):
             bank, addr = self._lookup_symbol(addr)
 
-        index = self.mb.breakpoint_find(bank, addr)
-        if index == -1:
+        breakpoint_meta = self.mb.breakpoint_find(bank, addr)
+        if not breakpoint_meta:
             raise ValueError("Breakpoint not found for bank and addr")
+        _, _, opcode = breakpoint_meta
 
-        _, _, opcode = self.mb.breakpoints_list[index]
-        self.mb.breakpoint_remove(index)
+        self.mb.breakpoint_remove(bank, addr)
         bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
         self._hooks.pop(bank_addr_opcode)
 

@@ -97,7 +97,7 @@ If you are looking to make a bot or AI, then these resources are a good place to
    * [Example: Kirby](https://github.com/Baekalfen/PyBoy/wiki/Example-Kirby)
    * [Example: Tetris](https://github.com/Baekalfen/PyBoy/wiki/Example-Tetris)
    * [Example: Super Mario Land](https://github.com/Baekalfen/PyBoy/wiki/Example-Super-Mario-Land)
-   * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/examples)
+   * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples)
  * [Discord](https://discord.gg/Zrf2nyH)
 
 

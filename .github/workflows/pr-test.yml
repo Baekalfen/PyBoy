@@ -50,21 +50,22 @@ jobs:
         TEST_NO_UI: 1
       run: |
         python -m pytest tests/ -n auto -v
-    - name: Build and upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
+    - name: Build wheel
       run: |
-        echo "Building wheel and uploading"
+        echo "Building wheel"
         pip install wheel twine
         python setup.py sdist bdist_wheel
+    - name: Upload wheel
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
+      run: |
+        echo "Uploading wheel"
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
         echo "Uploading source code"
         python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
-    - name: Build and upload wheel [TEST]
+    - name: Upload wheel [TEST]
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
       run: |
-        echo "Building wheel and uploading"
-        pip install wheel twine
-        python setup.py sdist bdist_wheel
+        echo "Uploading wheel"
         python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
         echo "Uploading source code"
         python -m twine upload --repository testpypi --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.tar.gz
@@ -167,7 +168,7 @@ jobs:
           chmod 777 -R . # Fix permissions to help cleaning up outside of Docker
 
           echo "Dists built:"
-          ls dist/
+          ls -lah dist/
 
     - name: Set up Python 3.8 (just for PyPi upload)
       uses: actions/setup-python@v3
