@@ -119,6 +119,9 @@ class PyBoy:
 
         _log_level(log_level)
 
+        if gamerom is None:
+            raise FileNotFoundError(f"None is not a ROM file!")
+
         if not os.path.isfile(gamerom):
             raise FileNotFoundError(f"ROM file {gamerom} was not found!")
         self.gamerom = gamerom
