@@ -413,7 +413,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             * world_level (tuple): (world, level) to start the game from
             * unlock_level_select (bool): Unlock level selector menu
         &#34;&#34;&#34;
-        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         if world_level is not None:
             self.set_world_level(*world_level)
@@ -440,10 +439,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
                 # Game has started
                 break
 
-        self.saved_state.seek(0)
-        self.pyboy.save_state(self.saved_state)
-
-        self._set_timer_div(timer_div)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
@@ -463,8 +459,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             * timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
-
-        self._set_timer_div(timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -872,7 +866,6 @@ ________________________________________________________________________________
             * world_level (tuple): (world, level) to start the game from
             * unlock_level_select (bool): Unlock level selector menu
         &#34;&#34;&#34;
-        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         if world_level is not None:
             self.set_world_level(*world_level)
@@ -899,10 +892,7 @@ ________________________________________________________________________________
                 # Game has started
                 break
 
-        self.saved_state.seek(0)
-        self.pyboy.save_state(self.saved_state)
-
-        self._set_timer_div(timer_div)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
@@ -922,8 +912,6 @@ ________________________________________________________________________________
             * timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
-
-        self._set_timer_div(timer_div)
 
     def game_area(self):
         &#34;&#34;&#34;
@@ -1277,7 +1265,6 @@ Enabling the selector, will make this function return before entering the game.<
         * world_level (tuple): (world, level) to start the game from
         * unlock_level_select (bool): Unlock level selector menu
     &#34;&#34;&#34;
-    PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
     if world_level is not None:
         self.set_world_level(*world_level)
@@ -1304,10 +1291,7 @@ Enabling the selector, will make this function return before entering the game.<
             # Game has started
             break
 
-    self.saved_state.seek(0)
-    self.pyboy.save_state(self.saved_state)
-
-    self._set_timer_div(timer_div)</code></pre>
+    PyBoyGameWrapper.start_game(self, timer_div=timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.reset_game"><code class="name flex">
@@ -1347,9 +1331,7 @@ emulator and provide the <code>world_level</code> on <code>start_game</code>.</p
     Kwargs:
         * timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
-    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
-
-    self._set_timer_div(timer_div)</code></pre>
+    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand.game_area"><code class="name flex">
