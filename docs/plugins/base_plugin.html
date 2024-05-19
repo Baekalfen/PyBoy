@@ -188,11 +188,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
 
-        if not self.pyboy.frame_count == 0:
-            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
         self.game_has_started = True
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
+        self._set_timer_div(timer_div)
 
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
@@ -205,6 +204,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         if self.game_has_started:
             self.saved_state.seek(0)
             self.pyboy.load_state(self.saved_state)
+            self._set_timer_div(timer_div)
             self.post_tick()
         else:
             logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
@@ -421,11 +421,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
 
-        if not self.pyboy.frame_count == 0:
-            logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
         self.game_has_started = True
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
+        self._set_timer_div(timer_div)
 
     def reset_game(self, timer_div=None):
         &#34;&#34;&#34;
@@ -438,6 +437,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         if self.game_has_started:
             self.saved_state.seek(0)
             self.pyboy.load_state(self.saved_state)
+            self._set_timer_div(timer_div)
             self.post_tick()
         else:
             logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)
@@ -569,6 +569,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 <ul class="hlist">
 <li><a title="pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand" href="game_wrapper_kirby_dream_land.html#pyboy.plugins.game_wrapper_kirby_dream_land.GameWrapperKirbyDreamLand">GameWrapperKirbyDreamLand</a></li>
 <li><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1" href="game_wrapper_pokemon_gen1.html#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1">GameWrapperPokemonGen1</a></li>
+<li><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball" href="game_wrapper_pokemon_pinball.html#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball">GameWrapperPokemonPinball</a></li>
 <li><a title="pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand" href="game_wrapper_super_mario_land.html#pyboy.plugins.game_wrapper_super_mario_land.GameWrapperSuperMarioLand">GameWrapperSuperMarioLand</a></li>
 <li><a title="pyboy.plugins.game_wrapper_tetris.GameWrapperTetris" href="game_wrapper_tetris.html#pyboy.plugins.game_wrapper_tetris.GameWrapperTetris">GameWrapperTetris</a></li>
 </ul>
@@ -628,11 +629,10 @@ instantly.</p>
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
 
-    if not self.pyboy.frame_count == 0:
-        logger.warning(&#34;Calling start_game from an already running game. This might not work.&#34;)
     self.game_has_started = True
     self.saved_state.seek(0)
-    self.pyboy.save_state(self.saved_state)</code></pre>
+    self.pyboy.save_state(self.saved_state)
+    self._set_timer_div(timer_div)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game"><code class="name flex">
@@ -660,6 +660,7 @@ instantly.</p>
     if self.game_has_started:
         self.saved_state.seek(0)
         self.pyboy.load_state(self.saved_state)
+        self._set_timer_div(timer_div)
         self.post_tick()
     else:
         logger.error(&#34;Tried to reset game, but it hasn&#39;t been started yet!&#34;)</code></pre>
