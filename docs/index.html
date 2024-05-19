@@ -190,6 +190,9 @@ True...
 
         _log_level(log_level)
 
+        if gamerom is None:
+            raise FileNotFoundError(f&#34;None is not a ROM file!&#34;)
+
         if not os.path.isfile(gamerom):
             raise FileNotFoundError(f&#34;ROM file {gamerom} was not found!&#34;)
         self.gamerom = gamerom
