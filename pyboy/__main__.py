@@ -47,7 +47,7 @@ parser.add_argument(
     "--log-level",
     default=defaults["log_level"],
     type=str,
-    choices=["ERROR", "WARNING", "INFO", "DEBUG", "DISABLE"],
+    choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"],
     help="Set logging level"
 )
 parser.add_argument(

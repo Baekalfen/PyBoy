@@ -36,6 +36,8 @@ def log_level(level):
         level = ERROR
     elif level == "CRITICAL":
         level = CRITICAL
+    elif level == "DISABLE":
+        level = CRITICAL
     elif isinstance(level, int):
         pass
     else:

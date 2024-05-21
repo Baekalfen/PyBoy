@@ -285,7 +285,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         """
         The special mode state value
 
-        
+
         Example:
         ```python
         >>> pyboy.game_wrapper.special_mode == SpecialMode.CATCH.value
@@ -347,8 +347,8 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         ################
         self.current_map = 0
         """The current map
-        
-        
+
+
         Example:
         ```python
         >>> pyboy.game_wrapper.current_map == Maps.PALLET_TOWN.value
@@ -398,9 +398,12 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.roulette_slots_entered = 0
         """The number of roulette slots entered"""
 
-        self._add_hooks()
-
         super().__init__(*args, game_area_section=(0, 0) + self.shape, game_area_follow_scxy=True, **kwargs)
+
+        if not self.enabled():
+            return
+
+        self._add_hooks()
 
     def _update_pokedex(self):
         for pokemon in Pokemon:
@@ -557,8 +560,8 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         """
         Determines if all Pokemon in the current map have been caught.
 
-        This function checks whether all Pokemon, both common and rare, in the current stage's map have been caught. 
-        It supports both Red and Blue stages. If any Pokemon in the map has not been caught, the function returns False. 
+        This function checks whether all Pokemon, both common and rare, in the current stage's map have been caught.
+        It supports both Red and Blue stages. If any Pokemon in the map has not been caught, the function returns False.
         If all Pokemon have been caught, it returns True.
 
         Returns:
@@ -597,30 +600,28 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
         self._set_stage(stage)
 
-        # Random tilemap I observed doesn't change until shortly before input is read
-        while self.tilemap_background[10, 10] != 269:
-            self.pyboy.tick(False)
+        render = True
 
-        # tick needed count to get to the point where input is read
-        self.pyboy.tick(18, False)
+        # tick count needed to get to the point where input is read
+        self.pyboy.tick(308, render)
 
         # start game
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(False)
+        self.pyboy.tick(render)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         # tick count needed to get to the next point where input is read
-        self.pyboy.tick(95, False)
+        self.pyboy.tick(95, render)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(False)
+        self.pyboy.tick(render)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-        self.pyboy.tick(False)
+        self.pyboy.tick(render)
 
         ticks_until_visible = 74
-        self.pyboy.tick(ticks_until_visible, False)
+        self.pyboy.tick(ticks_until_visible, render)
 
         ticks_until_input_ready = 4
-        self.pyboy.tick(ticks_until_input_ready, False)
+        self.pyboy.tick(ticks_until_input_ready, render)
 
         #needs to be called after normal initializations, otherwise it will be overwritten
         self._init_bonus_stage(stage)
@@ -1038,9 +1039,9 @@ BANK_OFFSET_SLOT_REWARD_EXTRA_BALL = (0x3, 0x6fa7)
 BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_BLUE = (0x7, 0x667e)
 BANK_OFFSET_OPENED_SLOT_BY_GETTING_4_CAVE_LIGHTS_RED = (0x5, 0x5284)
 BANK_OFFSET_SLOT_REWARD_ROULETTE = (0x3, 0x6d8e)
+BANK_OFFSET_DISABLE_TIMER = (4, 0x4d64)
 BANK_OFFSET_BALL_SAVED_RED = (3, 0x5d7f)
 BANK_OFFSET_BALL_SAVED_BLUE = (3, 0x5e58)
-BANK_OFFSET_DISABLE_TIMER = (4, 0x4d64)
 
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {

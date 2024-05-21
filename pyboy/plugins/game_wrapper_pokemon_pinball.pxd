@@ -26,7 +26,7 @@ cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
     cdef public int gengar_stages_completed
     cdef public int gengar_stages_visited
     cdef public int great_ball_upgrades
-    cdef public int lost_ball_during_saver
+    cdef public int ultra_ball_upgrades
     cdef public int map_change_attempts
     cdef public int map_change_successes
     cdef public int master_ball_upgrades
@@ -51,7 +51,7 @@ cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
     cdef public int slots_opened
     cdef public int special_mode
     cdef public int special_mode_active
-    cdef public int ultra_ball_upgrades
+    cdef public int lost_ball_during_saver
 
 
     cdef bint _unlimited_saver

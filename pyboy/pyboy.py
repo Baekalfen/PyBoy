@@ -16,7 +16,8 @@ import numpy as np
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
-from pyboy.logging import get_logger, log_level
+from pyboy.logging import get_logger
+from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
 from pyboy.utils import IntIOWrapper, WindowEvent
 
@@ -49,6 +50,7 @@ class PyBoy:
         sound=False,
         sound_emulated=False,
         cgb=None,
+        log_level=defaults["log_level"],
         **kwargs
     ):
         """
@@ -83,6 +85,7 @@ class PyBoy:
             * sound (bool): Enable sound emulation and output.
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
             * cgb (bool): Forcing Game Boy Color mode.
+            * log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
@@ -114,7 +117,10 @@ class PyBoy:
             if k not in kwargs:
                 kwargs[k] = kwargs.get(k, defaults[k])
 
-        log_level(kwargs.pop("log_level"))
+        _log_level(log_level)
+
+        if gamerom is None:
+            raise FileNotFoundError(f"None is not a ROM file!")
 
         if not os.path.isfile(gamerom):
             raise FileNotFoundError(f"ROM file {gamerom} was not found!")

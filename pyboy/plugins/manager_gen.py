@@ -8,7 +8,8 @@ import re
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowNull", "Debug"]
 game_wrappers = [
-    "GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand", "GameWrapperPokemonGen1", "GameWrapperPokemonPinball"
+    "GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand", "GameWrapperPokemonGen1",
+    "GameWrapperPokemonPinball"
 ]
 plugins = [
     "DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder", "DebugPrompt"
