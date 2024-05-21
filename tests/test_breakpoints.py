@@ -4,10 +4,12 @@
 #
 
 import io
+import os
 import platform
 import shutil
 from unittest.mock import Mock
 
+import PIL.ImageChops
 import pytest
 
 from pyboy import PyBoy
@@ -228,3 +230,34 @@ def test_deregister_hooks2(default_rom):
     pyboy.hook_register(0, 0x101, mock.method1, None)
     pyboy.hook_deregister(0, 0x101)
     pyboy.hook_deregister(0, 0x100)
+
+
+def test_data_hooking_failure(default_rom):
+    ticks = 500
+
+    # Run without hooks
+    pyboy1 = PyBoy(default_rom, window="null")
+    pyboy1.set_emulation_speed(0)
+    pyboy1.tick(ticks, True)
+
+    # Run with hooks
+    pyboy2 = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym")
+    pyboy2.set_emulation_speed(0)
+
+    mock = Mock()
+    # NOTE: We are not supposed to register hooks for data
+    pyboy2.hook_register(None, "Tilemap", mock.method1, None)
+    pyboy2.tick(ticks, True)
+    mock.method1.assert_not_called() # Shouldn't be called, as it's not a function
+
+    # Compare screens
+    image1 = pyboy1.screen.image.convert("RGB")
+    image2 = pyboy2.screen.image.convert("RGB")
+    diff = PIL.ImageChops.difference(image1, image2)
+    if not diff.getbbox() and not os.environ.get("TEST_CI"):
+        image1.show()
+        image2.show()
+        diff.show()
+
+    # NOTE: Expecting a failure!
+    assert diff.getbbox(), f"Images are not different!"
