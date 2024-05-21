@@ -16,7 +16,7 @@ from pyboy.utils import WindowEvent
 
 
 def test_pokemon_pinball_basics(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window="SDL2")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -31,7 +31,7 @@ def test_pokemon_pinball_basics(pokemon_pinball_rom):
 
 
 def test_pokemon_pinball_advanced(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window="null")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -39,15 +39,17 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     pokemon_pinball.start_game(stage=Stage.BLUE_BOTTOM)
     pyboy.button_press("a")
     pyboy.button_press("left")
-    pyboy.tick(500, render=False)
+    pyboy.tick(500)
     pyboy.button_release("left")
     pyboy.button_release("a")
-    pyboy.tick(20, render=False)
+    pyboy.tick(26)
     pyboy.button_press("left")
     pyboy.button_press("a")
-    pyboy.tick(700, render=False)
+    pyboy.tick(700)
+    pyboy.button_release("left")
+    pyboy.button_release("a")
 
-    assert pokemon_pinball.score == 123200
+    assert pokemon_pinball.score == 100100
     assert pokemon_pinball.special_mode == SpecialMode.CATCH.value
     assert pokemon_pinball.current_stage == Stage.BLUE_BOTTOM.value
     assert pokemon_pinball.special_mode_active == True
@@ -57,7 +59,7 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
 
 
 def test_pokemon_catch_mode(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window="null")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
@@ -65,22 +67,34 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
     pokemon_pinball.start_game(stage=Stage.RED_BOTTOM)
     pyboy.button_press("a")
     pyboy.button_press("left")
-    pyboy.tick(50, render=False)
+    pyboy.tick(50)
     pokemon_pinball.start_catch_mode()
-    pyboy.tick(270, render=False)
+    pyboy.tick(270)
     pyboy.button_release("left")
     pyboy.button_release("a")
     pyboy.button("select")
-    pyboy.tick(20, render=False)
+    pyboy.tick(20)
     pyboy.button_press("left")
     pyboy.button_press("a")
-    pyboy.tick(500, render=False)
+    pyboy.tick(500)
     pyboy.button_release("left")
-    pyboy.tick(21, render=False)
+    pyboy.tick(21)
     pyboy.button_press("left")
-    pyboy.tick(700, render=False)
+    pyboy.tick(100)
+    pyboy.button_release("a")
+    pyboy.tick(31)
+    pyboy.button_press("a")
+    pyboy.tick(200)
+    pyboy.button_release("left")
+    pyboy.tick(31)
+    pyboy.button_press("left")
+    pyboy.tick(200)
+    pyboy.button_release("left")
+    pyboy.tick(31)
+    pyboy.button_press("left")
+    pyboy.tick(400)
 
-    assert pokemon_pinball.score == 15635100
+    assert pokemon_pinball.score == 15030100
     assert pokemon_pinball.has_pokemon(Pokemon.BULBASAUR)
     assert pokemon_pinball.has_pokemon(Pokemon.CHARMANDER) == False
     assert pokemon_pinball.get_unique_pokemon_caught() == 1
@@ -89,16 +103,17 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
 
 
 def test_pokemon_pinball_game_over(pokemon_pinball_rom):
-    pyboy = PyBoy(pokemon_pinball_rom, window="null")
+    pyboy = PyBoy(pokemon_pinball_rom, window_type="null")
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper
     pokemon_pinball.start_game()
-
-    for _ in range(62):
-        pyboy.button("a")
-        pyboy.tick(100, render=False)
+    pyboy.button("a")
+    for i in range(6185):
+        if i % 100 == 0:
+            pyboy.button("a")
+        pyboy.tick()
 
     assert pokemon_pinball.game_over
 
