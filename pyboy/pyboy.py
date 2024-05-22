@@ -1083,6 +1083,12 @@ class PyBoy:
 
         ```
 
+        **NOTE**:
+
+        Don't register hooks to something that isn't executable (graphics data etc.). This will cause your game to show
+        weird behavior or crash. Hooks are installed by replacing the instruction at the bank and address with a special
+        opcode (`0xDB`). If the address is read by the game instead of executed as code, this value will be read instead.
+
         Args:
             bank (int or None): ROM or RAM bank (None for symbol lookup)
             addr (int or str): Address in the Game Boy's address space (str for symbol lookup)
