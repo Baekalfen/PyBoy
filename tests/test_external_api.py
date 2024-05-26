@@ -5,7 +5,7 @@
 
 import hashlib
 import io
-import os
+import time
 
 import numpy as np
 import PIL
@@ -27,6 +27,57 @@ def test_misc(default_rom):
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, False)
     pyboy.stop(save=False)
+
+
+def test_rtc_lock(pokemon_gold_rom):
+    pyboy = PyBoy(pokemon_gold_rom, window="null")
+
+    #Enable external RAM
+    pyboy.memory[0x0000] = 0x0A
+
+    # Reset seconds
+    pyboy.memory[0x4000] = 0x08
+    pyboy.memory[0xA000] = 0
+
+    # Reset minutes
+    pyboy.memory[0x4000] = 0x09
+    pyboy.memory[0xA000] = 0
+
+    # Reset hours
+    pyboy.memory[0x4000] = 0x0a
+    pyboy.memory[0xA000] = 0
+
+    # Reset days (low)
+    pyboy.memory[0x4000] = 0x0b
+    pyboy.memory[0xA000] = 0
+
+    # Reset days (high)
+    pyboy.memory[0x4000] = 0x0c
+    pyboy.memory[0xA000] = 0
+
+    time.sleep(2) # Induce a change in the seconds register
+
+    # Pan docs:
+    # When writing $00, and then $01 to this register, the current time becomes latched into the RTC registers
+    pyboy.memory[0x6000] = 0
+    pyboy.memory[0x6000] = 1
+
+    # Pan docs:
+    # When writing a value of $08-$0C, this will map the corresponding RTC register into memory at A000-BFFF
+    pyboy.memory[0x4000] = 0x08
+    assert pyboy.memory[0xA000] != 0
+
+    pyboy.memory[0x4000] = 0x09
+    assert pyboy.memory[0xA000] == 0
+
+    pyboy.memory[0x4000] = 0x0a
+    assert pyboy.memory[0xA000] == 0
+
+    pyboy.memory[0x4000] = 0x0b
+    assert pyboy.memory[0xA000] == 0
+
+    pyboy.memory[0x4000] = 0x0c
+    assert pyboy.memory[0xA000] == 0
 
 
 def test_faulty_state(default_rom):
