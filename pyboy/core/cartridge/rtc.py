@@ -17,6 +17,11 @@ class RTC:
     def __init__(self, filename):
         self.filename = filename + ".rtc"
 
+        self.timezero = time.time()
+        self.timelock = False
+        self.day_carry = 0
+        self.halt = 0
+
         if not os.path.exists(self.filename):
             logger.info("No RTC file found. Skipping.")
         else:
@@ -24,16 +29,11 @@ class RTC:
                 self.load_state(IntIOWrapper(f), STATE_VERSION)
 
         self.latch_enabled = False
-
-        self.timezero = time.time()
-
         self.sec_latch = 0
         self.min_latch = 0
         self.hour_latch = 0
         self.day_latch_low = 0
         self.day_latch_high = 0
-        self.day_carry = 0
-        self.halt = 0
 
     def stop(self):
         with open(self.filename, "wb") as f:
