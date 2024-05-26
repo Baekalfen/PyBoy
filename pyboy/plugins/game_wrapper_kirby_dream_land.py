@@ -65,7 +65,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
-        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
         # Boot screen
         while True:
@@ -88,10 +87,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         # Wait for transition to finish (exit level intro screen, enter game)
         self.pyboy.tick(60, False)
 
-        self.saved_state.seek(0)
-        self.pyboy.save_state(self.saved_state)
-
-        self._set_timer_div(timer_div)
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
     def reset_game(self, timer_div=None):
         """
@@ -101,8 +97,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
-
-        self._set_timer_div(timer_div)
 
     def game_area(self):
         """
