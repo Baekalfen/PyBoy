@@ -51,7 +51,10 @@ class RTC:
         self.day_carry = f.read()
 
     def latch_rtc(self):
-        t = time.time() - self.timezero
+        if self.timelock:
+            t = 0
+        else:
+            t = time.time() - self.timezero
         self.sec_latch = int(t % 60)
         self.min_latch = int((t//60) % 60)
         self.hour_latch = int((t//3600) % 24)
@@ -99,7 +102,10 @@ class RTC:
         if not self.latch_enabled:
             logger.debug("RTC: Set register, but nothing is latched! 0x%0.4x, 0x%0.2x", register, value)
 
-        t = time.time() - self.timezero
+        if self.timelock:
+            t = 0
+        else:
+            t = time.time() - self.timezero
         if register == 0x08:
             # TODO: What happens, when these value are larger than allowed?
             self.timezero = self.timezero - (t%60) - value

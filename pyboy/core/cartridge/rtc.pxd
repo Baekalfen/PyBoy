@@ -19,6 +19,7 @@ cdef class RTC:
     cdef str filename
     cdef bint latch_enabled
     cdef cython.double timezero
+    cdef bint timelock
     cdef uint64_t sec_latch
     cdef uint64_t min_latch
     cdef uint64_t hour_latch

@@ -152,6 +152,7 @@ def doctest_fixtures(doctest_namespace, default_rom, default_rom_cgb, supermario
         mock.patch("pyboy.PyBoy.game_area", return_value=tetris_game_area), \
         mock.patch("pyboy.PyBoy.load_state", return_value=None), \
         mock.patch("pyboy.PyBoy.stop", return_value=None), \
+        mock.patch("pyboy.PyBoy.rtc_lock_experimental", return_value=None), \
         mock.patch("PIL.Image.Image.show", return_value=None):
 
         pyboy.set_emulation_speed(0)
