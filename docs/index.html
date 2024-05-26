@@ -1314,7 +1314,34 @@ True...
         `pyboy.api.tile.Tile`:
             A Tile object for the given identifier.
         &#34;&#34;&#34;
-        return Tile(self.mb, identifier=identifier)</code></pre>
+        return Tile(self.mb, identifier=identifier)
+
+    def rtc_lock_experimental(self, enable):
+        &#34;&#34;&#34;
+        **WARN: This is an experimental API and is subject to change.**
+
+        Lock the Real Time Clock (RTC) of a supporting cartridge. It might be advantageous to lock the RTC when training
+        an AI in games that use it to change behavior (i.e. day and night).
+
+        The first time the game is turned on, an `.rtc` file is created with the current time. This is the epoch for the
+        RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game progress first,
+        before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt the game.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(&#39;game_rom.gb&#39;)
+        &gt;&gt;&gt; pyboy.rtc_lock_experimental(True) # RTC will not progress
+        ```
+
+        **WARN: This is an experimental API and is subject to change.**
+
+        Args:
+            enable (float): Point in time to lock RTC to
+        &#34;&#34;&#34;
+        if self.mb.cartridge.rtc_enabled:
+            self.mb.cartridge.rtc.timelock = enable
+        else:
+            raise Exception(&#34;There&#39;s no RTC for this cartridge type&#34;)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -2739,6 +2766,58 @@ A Tile object for the given identifier.</p></section>
     return Tile(self.mb, identifier=identifier)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.PyBoy.rtc_lock_experimental"><code class="name flex">
+<span>def <span class="ident">rtc_lock_experimental</span></span>(<span>self, enable)</span>
+</code></dt>
+<dd>
+<section class="desc"><p><strong>WARN: This is an experimental API and is subject to change.</strong></p>
+<p>Lock the Real Time Clock (RTC) of a supporting cartridge. It might be advantageous to lock the RTC when training
+an AI in games that use it to change behavior (i.e. day and night).</p>
+<p>The first time the game is turned on, an <code>.rtc</code> file is created with the current time. This is the epoch for the
+RTC. When using <code>rtc_lock_experimental</code>, the RTC will always report this point in time. If you let the game progress first,
+before using <code>rtc_lock_experimental</code>, the internal clock will move backwards and might corrupt the game.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy('game_rom.gb')
+&gt;&gt;&gt; pyboy.rtc_lock_experimental(True) # RTC will not progress
+</code></pre>
+<p><strong>WARN: This is an experimental API and is subject to change.</strong></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>enable</code></strong> :&ensp;<code>float</code></dt>
+<dd>Point in time to lock RTC to</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rtc_lock_experimental(self, enable):
+    &#34;&#34;&#34;
+    **WARN: This is an experimental API and is subject to change.**
+
+    Lock the Real Time Clock (RTC) of a supporting cartridge. It might be advantageous to lock the RTC when training
+    an AI in games that use it to change behavior (i.e. day and night).
+
+    The first time the game is turned on, an `.rtc` file is created with the current time. This is the epoch for the
+    RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game progress first,
+    before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt the game.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(&#39;game_rom.gb&#39;)
+    &gt;&gt;&gt; pyboy.rtc_lock_experimental(True) # RTC will not progress
+    ```
+
+    **WARN: This is an experimental API and is subject to change.**
+
+    Args:
+        enable (float): Point in time to lock RTC to
+    &#34;&#34;&#34;
+    if self.mb.cartridge.rtc_enabled:
+        self.mb.cartridge.rtc.timelock = enable
+    else:
+        raise Exception(&#34;There&#39;s no RTC for this cartridge type&#34;)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 <dt id="pyboy.PyBoyMemoryView"><code class="flex name class">
@@ -3251,6 +3330,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
 <li><code><a title="pyboy.PyBoy.get_sprite" href="#pyboy.PyBoy.get_sprite">get_sprite</a></code></li>
 <li><code><a title="pyboy.PyBoy.get_sprite_by_tile_identifier" href="#pyboy.PyBoy.get_sprite_by_tile_identifier">get_sprite_by_tile_identifier</a></code></li>
 <li><code><a title="pyboy.PyBoy.get_tile" href="#pyboy.PyBoy.get_tile">get_tile</a></code></li>
+<li><code><a title="pyboy.PyBoy.rtc_lock_experimental" href="#pyboy.PyBoy.rtc_lock_experimental">rtc_lock_experimental</a></code></li>
 <li><code><a title="pyboy.PyBoy.screen" href="#pyboy.PyBoy.screen">screen</a></code></li>
 <li><code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">memory</a></code></li>
 <li><code><a title="pyboy.PyBoy.memory_scanner" href="#pyboy.PyBoy.memory_scanner">memory_scanner</a></code></li>
