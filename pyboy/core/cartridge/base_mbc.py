@@ -149,7 +149,7 @@ class BaseMBC:
             "Number of RAM banks: %s" % len(self.rambanks),
             "Active RAM bank: %s" % self.rambank_selected,
             "Battery: %s" % self.battery,
-            "RTC: %s" % self.rtc
+            "RTC: %s" % self.rtc_enabled
         ])
 
 
