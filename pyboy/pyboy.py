@@ -1253,8 +1253,9 @@ class PyBoy:
         an AI in games that use it to change behavior (i.e. day and night).
 
         The first time the game is turned on, an `.rtc` file is created with the current time. This is the epoch for the
-        RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game progress first,
-        before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt the game.
+        RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game
+        progress first, before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt
+        the game.
 
         Example:
         ```python
@@ -1265,7 +1266,7 @@ class PyBoy:
         **WARN: This is an experimental API and is subject to change.**
 
         Args:
-            enable (float): Point in time to lock RTC to
+            enable (bool): True to lock RTC, False to operate normally
         """
         if self.mb.cartridge.rtc_enabled:
             self.mb.cartridge.rtc.timelock = enable

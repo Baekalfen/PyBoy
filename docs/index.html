@@ -1324,8 +1324,9 @@ True...
         an AI in games that use it to change behavior (i.e. day and night).
 
         The first time the game is turned on, an `.rtc` file is created with the current time. This is the epoch for the
-        RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game progress first,
-        before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt the game.
+        RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game
+        progress first, before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt
+        the game.
 
         Example:
         ```python
@@ -1336,7 +1337,7 @@ True...
         **WARN: This is an experimental API and is subject to change.**
 
         Args:
-            enable (float): Point in time to lock RTC to
+            enable (bool): True to lock RTC, False to operate normally
         &#34;&#34;&#34;
         if self.mb.cartridge.rtc_enabled:
             self.mb.cartridge.rtc.timelock = enable
@@ -2774,8 +2775,9 @@ A Tile object for the given identifier.</p></section>
 <p>Lock the Real Time Clock (RTC) of a supporting cartridge. It might be advantageous to lock the RTC when training
 an AI in games that use it to change behavior (i.e. day and night).</p>
 <p>The first time the game is turned on, an <code>.rtc</code> file is created with the current time. This is the epoch for the
-RTC. When using <code>rtc_lock_experimental</code>, the RTC will always report this point in time. If you let the game progress first,
-before using <code>rtc_lock_experimental</code>, the internal clock will move backwards and might corrupt the game.</p>
+RTC. When using <code>rtc_lock_experimental</code>, the RTC will always report this point in time. If you let the game
+progress first, before using <code>rtc_lock_experimental</code>, the internal clock will move backwards and might corrupt
+the game.</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy('game_rom.gb')
 &gt;&gt;&gt; pyboy.rtc_lock_experimental(True) # RTC will not progress
@@ -2783,8 +2785,8 @@ before using <code>rtc_lock_experimental</code>, the internal clock will move ba
 <p><strong>WARN: This is an experimental API and is subject to change.</strong></p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>enable</code></strong> :&ensp;<code>float</code></dt>
-<dd>Point in time to lock RTC to</dd>
+<dt><strong><code>enable</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True to lock RTC, False to operate normally</dd>
 </dl></section>
 <details class="source">
 <summary>
@@ -2798,8 +2800,9 @@ before using <code>rtc_lock_experimental</code>, the internal clock will move ba
     an AI in games that use it to change behavior (i.e. day and night).
 
     The first time the game is turned on, an `.rtc` file is created with the current time. This is the epoch for the
-    RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game progress first,
-    before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt the game.
+    RTC. When using `rtc_lock_experimental`, the RTC will always report this point in time. If you let the game
+    progress first, before using `rtc_lock_experimental`, the internal clock will move backwards and might corrupt
+    the game.
 
     Example:
     ```python
@@ -2810,7 +2813,7 @@ before using <code>rtc_lock_experimental</code>, the internal clock will move ba
     **WARN: This is an experimental API and is subject to change.**
 
     Args:
-        enable (float): Point in time to lock RTC to
+        enable (bool): True to lock RTC, False to operate normally
     &#34;&#34;&#34;
     if self.mb.cartridge.rtc_enabled:
         self.mb.cartridge.rtc.timelock = enable
