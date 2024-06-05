@@ -47,6 +47,42 @@ def test_log_level_critical(default_rom, capsys):
     assert captured.out == ""
 
 
+def test_register_file(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    pyboy.register_file.A = 0x1AB
+    assert pyboy.register_file.A == 0xAB
+    pyboy.register_file.F = 0xFF
+    assert pyboy.register_file.F == 0xF0 # Lower 4 bits always zero on F
+    pyboy.register_file.SP = 0x1234
+    assert pyboy.register_file.SP == 0x1234
+
+    def change_sp(p):
+        assert p.register_file.SP == 0xFFFE, "Expected 0xFFFE from boot ROM"
+        p.register_file.SP = 0xFF00 # We should see this at the end too
+
+    registers = [0] * 9
+
+    def dump_registers(p):
+        registers[0] = p.register_file.A
+        registers[1] = p.register_file.F
+        registers[2] = p.register_file.B
+        registers[3] = p.register_file.C
+        registers[4] = p.register_file.D
+        registers[5] = p.register_file.E
+        registers[6] = p.register_file.HL
+        registers[7] = p.register_file.SP
+        registers[8] = p.register_file.PC
+
+    pyboy.hook_register(-1, 0x3, change_sp, pyboy)
+    pyboy.hook_register(0, 0x100, dump_registers, pyboy)
+    for _ in range(120):
+        pyboy.tick()
+
+    assert registers == [0x1, 208, 0, 0, 0, 143, 135, 0xFF00, 0x100]
+
+
 def test_record_replay(boot_rom, default_rom):
     pyboy = PyBoy(default_rom, window="null", bootrom=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)

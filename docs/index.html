@@ -37,9 +37,9 @@ __pdoc__ = {
     &#34;conftest&#34;: False,
 }
 
-__all__ = [&#34;PyBoy&#34;, &#34;PyBoyMemoryView&#34;]
+__all__ = [&#34;PyBoy&#34;, &#34;PyBoyMemoryView&#34;, &#34;PyBoyRegisterFile&#34;]
 
-from .pyboy import PyBoy, PyBoyMemoryView</code></pre>
+from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile</code></pre>
 </details>
 </section>
 <section>
@@ -283,6 +283,25 @@ True...
         &gt;&gt;&gt; pyboy.memory[0xC000] = 1 # Write to address 0xC000 with value 1
         ```
 
+        &#34;&#34;&#34;
+
+        self.register_file = PyBoyRegisterFile(self.mb.cpu)
+        &#34;&#34;&#34;
+        Provides a `pyboy.PyBoyRegisterFile` object for reading and writing the CPU registers of the Game Boy.
+
+        The register file is best used inside the callback of a hook, as `PyBoy.tick` doesn&#39;t return at a specific point.
+
+        For a more comprehensive description, see the `pyboy.PyBoyRegisterFile` class.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; def my_callback(register_file):
+        ...     print(&#34;Register A:&#34;, register_file.A)
+        &gt;&gt;&gt; pyboy.hook_register(0, 0x100, my_callback, pyboy.register_file)
+        &gt;&gt;&gt; pyboy.tick(70)
+        Register A: 1
+        True
+        ```
         &#34;&#34;&#34;
 
         self.memory_scanner = MemoryScanner(self)
@@ -1373,6 +1392,20 @@ A Screen object with helper functions for reading the screen buffer.</p></sectio
 [49, 254, 255, 33, 0, 128, 175, 34, 124, 254, 160, 32, 249, 6, 48, 33]
 &gt;&gt;&gt; pyboy.memory[1, 0x2000] = 12 # Override address 0x2000 from ROM bank 1 with the value 12
 &gt;&gt;&gt; pyboy.memory[0xC000] = 1 # Write to address 0xC000 with value 1
+</code></pre></section>
+</dd>
+<dt id="pyboy.PyBoy.register_file"><code class="name">var <span class="ident">register_file</span></code></dt>
+<dd>
+<section class="desc"><p>Provides a <code><a title="pyboy.PyBoyRegisterFile" href="#pyboy.PyBoyRegisterFile">PyBoyRegisterFile</a></code> object for reading and writing the CPU registers of the Game Boy.</p>
+<p>The register file is best used inside the callback of a hook, as <code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">PyBoy.tick()</a></code> doesn't return at a specific point.</p>
+<p>For a more comprehensive description, see the <code><a title="pyboy.PyBoyRegisterFile" href="#pyboy.PyBoyRegisterFile">PyBoyRegisterFile</a></code> class.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; def my_callback(register_file):
+...     print(&quot;Register A:&quot;, register_file.A)
+&gt;&gt;&gt; pyboy.hook_register(0, 0x100, my_callback, pyboy.register_file)
+&gt;&gt;&gt; pyboy.tick(70)
+Register A: 1
+True
 </code></pre></section>
 </dd>
 <dt id="pyboy.PyBoy.memory_scanner"><code class="name">var <span class="ident">memory_scanner</span></code></dt>
@@ -3293,6 +3326,236 @@ used as a source of randomness in games. If you read the value, you'll get a pse
             self.mb.setitem(start, v)</code></pre>
 </details>
 </dd>
+<dt id="pyboy.PyBoyRegisterFile"><code class="flex name class">
+<span>class <span class="ident">PyBoyRegisterFile</span></span>
+<span>(</span><span>cpu)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This class cannot be used directly, but is accessed through <code><a title="pyboy.PyBoy.register_file" href="#pyboy.PyBoy.register_file">PyBoy.register_file</a></code>.</p>
+<p>This class serves the purpose of reading and writing to the CPU registers. It's best used inside the callback of a
+hook, as <code><a title="pyboy.PyBoy.tick" href="#pyboy.PyBoy.tick">PyBoy.tick()</a></code> doesn't return at a specific point.</p>
+<p>See the <a href="https://gbdev.io/pandocs/CPU_Registers_and_Flags.html">Pan Docs: CPU registers and flags</a> for a great overview.</p>
+<p>Registers are accessed with the following names: <code>A, F, B, C, D, E, HL, SP, PC</code> where the last three are 16-bit and
+the others are 8-bit. Trying to write a number larger than 8 or 16 bits will truncate it.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; def my_callback(pyboy):
+...     print(&quot;Register A:&quot;, pyboy.register_file.A)
+...     pyboy.memory[0xFF50] = 1 # Example: Disable boot ROM
+...     pyboy.register_file.A = 0x11 # Modify to the needed value
+...     pyboy.register_file.PC = 0x100 # Jump past existing code
+&gt;&gt;&gt; pyboy.hook_register(-1, 0xFC, my_callback, pyboy)
+&gt;&gt;&gt; pyboy.tick(120)
+Register A: 1
+True
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyRegisterFile:
+    &#34;&#34;&#34;
+    This class cannot be used directly, but is accessed through `PyBoy.register_file`.
+
+    This class serves the purpose of reading and writing to the CPU registers. It&#39;s best used inside the callback of a
+    hook, as `PyBoy.tick` doesn&#39;t return at a specific point.
+
+    See the [Pan Docs: CPU registers and flags](https://gbdev.io/pandocs/CPU_Registers_and_Flags.html) for a great overview.
+
+    Registers are accessed with the following names: `A, F, B, C, D, E, HL, SP, PC` where the last three are 16-bit and
+    the others are 8-bit. Trying to write a number larger than 8 or 16 bits will truncate it.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; def my_callback(pyboy):
+    ...     print(&#34;Register A:&#34;, pyboy.register_file.A)
+    ...     pyboy.memory[0xFF50] = 1 # Example: Disable boot ROM
+    ...     pyboy.register_file.A = 0x11 # Modify to the needed value
+    ...     pyboy.register_file.PC = 0x100 # Jump past existing code
+    &gt;&gt;&gt; pyboy.hook_register(-1, 0xFC, my_callback, pyboy)
+    &gt;&gt;&gt; pyboy.tick(120)
+    Register A: 1
+    True
+    ```
+    &#34;&#34;&#34;
+
+    def __init__(self, cpu):
+        self.cpu = cpu
+
+    @property
+    def A(self):
+        return self.cpu.A
+    @A.setter
+    def A(self, value):
+        self.cpu.A = value &amp; 0xFF
+
+    @property
+    def F(self):
+        return self.cpu.F
+    @F.setter
+    def F(self, value):
+        self.cpu.F = value &amp; 0xF0
+
+    @property
+    def B(self):
+        return self.cpu.B
+    @B.setter
+    def B(self, value):
+        self.cpu.B = value &amp; 0xFF
+
+    @property
+    def C(self):
+        return self.cpu.C
+    @C.setter
+    def C(self, value):
+        self.cpu.C = value &amp; 0xFF
+
+    @property
+    def D(self):
+        return self.cpu.D
+    @D.setter
+    def D(self, value):
+        self.cpu.D = value &amp; 0xFF
+
+    @property
+    def E(self):
+        return self.cpu.E
+    @E.setter
+    def E(self, value):
+        self.cpu.E = value &amp; 0xFF
+
+    @property
+    def HL(self):
+        return self.cpu.HL
+    @HL.setter
+    def HL(self, value):
+        self.cpu.HL = value &amp; 0xFFFF
+
+    @property
+    def SP(self):
+        return self.cpu.SP
+    @SP.setter
+    def SP(self, value):
+        self.cpu.SP = value &amp; 0xFFFF
+
+    @property
+    def PC(self):
+        return self.cpu.PC
+    @PC.setter
+    def PC(self, value):
+        self.cpu.PC = value &amp; 0xFFFF</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.PyBoyRegisterFile.A"><code class="name">var <span class="ident">A</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def A(self):
+    return self.cpu.A</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.F"><code class="name">var <span class="ident">F</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def F(self):
+    return self.cpu.F</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.B"><code class="name">var <span class="ident">B</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def B(self):
+    return self.cpu.B</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.C"><code class="name">var <span class="ident">C</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def C(self):
+    return self.cpu.C</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.D"><code class="name">var <span class="ident">D</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def D(self):
+    return self.cpu.D</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.E"><code class="name">var <span class="ident">E</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def E(self):
+    return self.cpu.E</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.HL"><code class="name">var <span class="ident">HL</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def HL(self):
+    return self.cpu.HL</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.SP"><code class="name">var <span class="ident">SP</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def SP(self):
+    return self.cpu.SP</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoyRegisterFile.PC"><code class="name">var <span class="ident">PC</span></code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def PC(self):
+    return self.cpu.PC</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 </dl>
 </section>
 </article>
@@ -3336,6 +3599,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
 <li><code><a title="pyboy.PyBoy.rtc_lock_experimental" href="#pyboy.PyBoy.rtc_lock_experimental">rtc_lock_experimental</a></code></li>
 <li><code><a title="pyboy.PyBoy.screen" href="#pyboy.PyBoy.screen">screen</a></code></li>
 <li><code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">memory</a></code></li>
+<li><code><a title="pyboy.PyBoy.register_file" href="#pyboy.PyBoy.register_file">register_file</a></code></li>
 <li><code><a title="pyboy.PyBoy.memory_scanner" href="#pyboy.PyBoy.memory_scanner">memory_scanner</a></code></li>
 <li><code><a title="pyboy.PyBoy.tilemap_background" href="#pyboy.PyBoy.tilemap_background">tilemap_background</a></code></li>
 <li><code><a title="pyboy.PyBoy.tilemap_window" href="#pyboy.PyBoy.tilemap_window">tilemap_window</a></code></li>
@@ -3345,6 +3609,20 @@ used as a source of randomness in games. If you read the value, you'll get a pse
 </li>
 <li>
 <h4><code><a title="pyboy.PyBoyMemoryView" href="#pyboy.PyBoyMemoryView">PyBoyMemoryView</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.PyBoyRegisterFile" href="#pyboy.PyBoyRegisterFile">PyBoyRegisterFile</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pyboy.PyBoyRegisterFile.A" href="#pyboy.PyBoyRegisterFile.A">A</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.F" href="#pyboy.PyBoyRegisterFile.F">F</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.B" href="#pyboy.PyBoyRegisterFile.B">B</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.C" href="#pyboy.PyBoyRegisterFile.C">C</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.D" href="#pyboy.PyBoyRegisterFile.D">D</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.E" href="#pyboy.PyBoyRegisterFile.E">E</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.HL" href="#pyboy.PyBoyRegisterFile.HL">HL</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.SP" href="#pyboy.PyBoyRegisterFile.SP">SP</a></code></li>
+<li><code><a title="pyboy.PyBoyRegisterFile.PC" href="#pyboy.PyBoyRegisterFile.PC">PC</a></code></li>
+</ul>
 </li>
 </ul>
 </li>

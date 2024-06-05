@@ -11,6 +11,7 @@ from libc.stdint cimport int64_t, uint64_t
 from pyboy.api.memory_scanner cimport MemoryScanner
 from pyboy.api.screen cimport Screen
 from pyboy.api.tilemap cimport TileMap
+from pyboy.core.cpu cimport CPU
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.manager cimport PluginManager
@@ -20,6 +21,9 @@ from pyboy.utils cimport IntIOInterface, IntIOWrapper
 cdef Logger logger
 
 cdef double SPF
+
+cdef class PyBoyRegisterFile:
+    cdef CPU cpu
 
 cdef class PyBoyMemoryView:
     cdef Motherboard mb
@@ -49,6 +53,7 @@ cdef class PyBoy:
     cdef bint initialized
     cdef readonly str window_title
     cdef readonly PyBoyMemoryView memory
+    cdef readonly PyBoyRegisterFile register_file
     cdef readonly Screen screen
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
