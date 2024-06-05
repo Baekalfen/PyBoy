@@ -214,6 +214,25 @@ class PyBoy:
 
         """
 
+        self.register_file = PyBoyRegisterFile(self.mb.cpu)
+        """
+        Provides a `pyboy.PyBoyRegisterFile` object for reading and writing the CPU registers of the Game Boy.
+
+        The register file is best used inside the callback of a hook, as `PyBoy.tick` doesn't return at a specific point.
+
+        For a more comprehensive description, see the `pyboy.PyBoyRegisterFile` class.
+
+        Example:
+        ```python
+        >>> def my_callback(register_file):
+        ...     print("Register A:", register_file.A)
+        >>> pyboy.hook_register(0, 0x100, my_callback, pyboy.register_file)
+        >>> pyboy.tick(70)
+        Register A: 1
+        True
+        ```
+        """
+
         self.memory_scanner = MemoryScanner(self)
         """
         Provides a `pyboy.api.memory_scanner.MemoryScanner` object for locating addresses of interest in the memory space
@@ -1272,6 +1291,107 @@ class PyBoy:
             self.mb.cartridge.rtc.timelock = enable
         else:
             raise Exception("There's no RTC for this cartridge type")
+
+
+class PyBoyRegisterFile:
+    """
+    This class cannot be used directly, but is accessed through `PyBoy.register_file`.
+
+    This class serves the purpose of reading and writing to the CPU registers. It's best used inside the callback of a
+    hook, as `PyBoy.tick` doesn't return at a specific point.
+
+    See the [Pan Docs: CPU registers and flags](https://gbdev.io/pandocs/CPU_Registers_and_Flags.html) for a great overview.
+
+    Registers are accessed with the following names: `A, F, B, C, D, E, HL, SP, PC` where the last three are 16-bit and
+    the others are 8-bit. Trying to write a number larger than 8 or 16 bits will truncate it.
+
+    Example:
+    ```python
+    >>> def my_callback(pyboy):
+    ...     print("Register A:", pyboy.register_file.A)
+    ...     pyboy.memory[0xFF50] = 1 # Example: Disable boot ROM
+    ...     pyboy.register_file.A = 0x11 # Modify to the needed value
+    ...     pyboy.register_file.PC = 0x100 # Jump past existing code
+    >>> pyboy.hook_register(-1, 0xFC, my_callback, pyboy)
+    >>> pyboy.tick(120)
+    Register A: 1
+    True
+    ```
+    """
+    def __init__(self, cpu):
+        self.cpu = cpu
+
+    @property
+    def A(self):
+        return self.cpu.A
+
+    @A.setter
+    def A(self, value):
+        self.cpu.A = value & 0xFF
+
+    @property
+    def F(self):
+        return self.cpu.F
+
+    @F.setter
+    def F(self, value):
+        self.cpu.F = value & 0xF0
+
+    @property
+    def B(self):
+        return self.cpu.B
+
+    @B.setter
+    def B(self, value):
+        self.cpu.B = value & 0xFF
+
+    @property
+    def C(self):
+        return self.cpu.C
+
+    @C.setter
+    def C(self, value):
+        self.cpu.C = value & 0xFF
+
+    @property
+    def D(self):
+        return self.cpu.D
+
+    @D.setter
+    def D(self, value):
+        self.cpu.D = value & 0xFF
+
+    @property
+    def E(self):
+        return self.cpu.E
+
+    @E.setter
+    def E(self, value):
+        self.cpu.E = value & 0xFF
+
+    @property
+    def HL(self):
+        return self.cpu.HL
+
+    @HL.setter
+    def HL(self, value):
+        self.cpu.HL = value & 0xFFFF
+
+    @property
+    def SP(self):
+        return self.cpu.SP
+
+    @SP.setter
+    def SP(self, value):
+        self.cpu.SP = value & 0xFFFF
+
+    @property
+    def PC(self):
+        return self.cpu.PC
+
+    @PC.setter
+    def PC(self, value):
+        self.cpu.PC = value & 0xFFFF
 
 
 class PyBoyMemoryView:
