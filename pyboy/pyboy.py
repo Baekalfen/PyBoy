@@ -115,7 +115,7 @@ class PyBoy:
 
         for k, v in defaults.items():
             if k not in kwargs:
-                kwargs[k] = kwargs.get(k, defaults[k])
+                kwargs[k] = v
 
         _log_level(log_level)
 
