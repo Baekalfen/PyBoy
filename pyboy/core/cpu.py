@@ -18,14 +18,6 @@ logger = pyboy.logging.get_logger(__name__)
 
 
 class CPU:
-    def set_bc(self, x):
-        self.B = x >> 8
-        self.C = x & 0x00FF
-
-    def set_de(self, x):
-        self.D = x >> 8
-        self.E = x & 0x00FF
-
     def __init__(self, mb):
         self.A = 0
         self.F = 0

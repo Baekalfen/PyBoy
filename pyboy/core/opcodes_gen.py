@@ -190,7 +190,7 @@ class Operand:
 
         elif operand in ["AF", "BC", "DE"]:
             if assign:
-                return "cpu.set_" + operand.lower() + "(%s)"
+                return "cpu." + operand[0] + " = %s >> 8" + "\n\t" + "cpu." + operand[1] + " = %s & 0x00FF"
             else:
                 return "((cpu." + operand[0] + " << 8) + cpu." + operand[1] + ")"
 
@@ -559,7 +559,10 @@ class OpcodeData:
         else:
             # Special handling of AF, BC, DE
             # print(left.set, right.get, hex(self.opcode))
-            code.addline(left.set % right.get)
+            if left.set.count("%") > 1:
+                code.addline(left.set % (right.get, right.get))
+            else:
+                code.addline(left.set % right.get)
 
         # Special HL-only operations
         if left.postoperation is not None:
@@ -607,7 +610,10 @@ class OpcodeData:
             lines.append("t &= 0xFF")
 
         # HAS TO BE THE LAST INSTRUCTION BECAUSE OF CP!
-        lines.append(left.set % "t")
+        if left.set.count("%") > 1:
+            lines.append(left.set % ("t", "t"))
+        else:
+            lines.append(left.set % "t")
         return lines
 
     def ADD(self):

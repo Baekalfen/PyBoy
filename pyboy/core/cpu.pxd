@@ -50,7 +50,4 @@ cdef class CPU:
 
     cdef pyboy.core.mb.Motherboard mb
 
-    cdef void set_bc(CPU, uint16_t) noexcept nogil
-    cdef void set_de(CPU, uint16_t) noexcept nogil
-
     cdef dump_state(self, str) noexcept with gil

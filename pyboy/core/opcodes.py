@@ -24,7 +24,8 @@ def NOP_00(cpu): # 00 NOP
 
 
 def LD_01(cpu, v): # 01 LD BC,d16
-    cpu.set_bc(v)
+    cpu.B = v >> 8
+    cpu.C = v & 0x00FF
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     return 12
@@ -41,7 +42,8 @@ def INC_03(cpu): # 03 INC BC
     t = ((cpu.B << 8) + cpu.C) + 1
     # No flag operations
     t &= 0xFFFF
-    cpu.set_bc(t)
+    cpu.B = t >> 8
+    cpu.C = t & 0x00FF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 8
@@ -128,7 +130,8 @@ def DEC_0B(cpu): # 0B DEC BC
     t = ((cpu.B << 8) + cpu.C) - 1
     # No flag operations
     t &= 0xFFFF
-    cpu.set_bc(t)
+    cpu.B = t >> 8
+    cpu.C = t & 0x00FF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 8
@@ -192,7 +195,8 @@ def STOP_10(cpu, v): # 10 STOP 0
 
 
 def LD_11(cpu, v): # 11 LD DE,d16
-    cpu.set_de(v)
+    cpu.D = v >> 8
+    cpu.E = v & 0x00FF
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     return 12
@@ -209,7 +213,8 @@ def INC_13(cpu): # 13 INC DE
     t = ((cpu.D << 8) + cpu.E) + 1
     # No flag operations
     t &= 0xFFFF
-    cpu.set_de(t)
+    cpu.D = t >> 8
+    cpu.E = t & 0x00FF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 8
@@ -294,7 +299,8 @@ def DEC_1B(cpu): # 1B DEC DE
     t = ((cpu.D << 8) + cpu.E) - 1
     # No flag operations
     t &= 0xFFFF
-    cpu.set_de(t)
+    cpu.D = t >> 8
+    cpu.E = t & 0x00FF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 8
@@ -6290,7 +6296,7 @@ OPCODE_LENGTHS = array.array("B", [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 3, 3, 3, 1, 2, 1, 1, 1, 3, 1, 3, 3, 2, 1,
-    1, 1, 3, 0, 3, 1, 2, 1, 1, 1, 3, 0, 3, 0, 2, 1,
+    1, 1, 3, 0, 3, 1, 2, 1, 1, 1, 3, 1, 3, 0, 2, 1,
     2, 1, 1, 0, 0, 1, 2, 1, 2, 1, 3, 0, 0, 0, 2, 1,
     2, 1, 1, 1, 0, 1, 2, 1, 2, 1, 3, 1, 0, 0, 2, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
