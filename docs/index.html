@@ -186,7 +186,7 @@ True...
 
         for k, v in defaults.items():
             if k not in kwargs:
-                kwargs[k] = kwargs.get(k, defaults[k])
+                kwargs[k] = v
 
         _log_level(log_level)
 
@@ -3201,14 +3201,12 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x4000
                     stop -= 0x4000
                 # Cartridge ROM Banks
-                assert stop &lt; 0x4000, &#34;Out of bounds for reading ROM bank&#34;
+                assert stop &lt;= 0x4000, &#34;Out of bounds for reading ROM bank&#34;
                 assert bank &lt;= self.mb.cartridge.external_rom_count, &#34;ROM Bank out of range&#34;
 
-                # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
-                # what the game writes to the address. This can be used so freeze the value for health, cash etc.
                 if bank == -1:
                     assert start &lt;= 0xFF, &#34;Start address out of range for bootrom&#34;
-                    assert stop &lt;= 0xFF, &#34;Start address out of range for bootrom&#34;
+                    assert stop &lt;= 0x100, &#34;Start address out of range for bootrom&#34;
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, &#34;__iter__&#34;):
@@ -3240,7 +3238,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 stop -= 0x8000
                 # CGB VRAM Banks
                 assert self.mb.cgb or (bank == 0), &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
-                assert stop &lt; 0x2000, &#34;Out of bounds for reading VRAM bank&#34;
+                assert stop &lt;= 0x2000, &#34;Out of bounds for reading VRAM bank&#34;
                 assert bank &lt;= 1, &#34;VRAM Bank out of range&#34;
 
                 if bank == 0:
@@ -3273,7 +3271,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0xA000
                 stop -= 0xA000
                 # Cartridge RAM banks
-                assert stop &lt; 0x2000, &#34;Out of bounds for reading cartridge RAM bank&#34;
+                assert stop &lt;= 0x2000, &#34;Out of bounds for reading cartridge RAM bank&#34;
                 assert bank &lt;= self.mb.cartridge.external_ram_count, &#34;ROM Bank out of range&#34;
                 if not is_single:
                     # Writing slice of memory space
@@ -3295,7 +3293,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     stop -= 0x1000
                 # CGB VRAM banks
                 assert self.mb.cgb or (bank == 0), &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
-                assert stop &lt; 0x1000, &#34;Out of bounds for reading VRAM bank&#34;
+                assert stop &lt;= 0x1000, &#34;Out of bounds for reading VRAM bank&#34;
                 assert bank &lt;= 7, &#34;WRAM Bank out of range&#34;
                 if not is_single:
                     # Writing slice of memory space
@@ -3377,13 +3375,13 @@ True
     True
     ```
     &#34;&#34;&#34;
-
     def __init__(self, cpu):
         self.cpu = cpu
 
     @property
     def A(self):
         return self.cpu.A
+
     @A.setter
     def A(self, value):
         self.cpu.A = value &amp; 0xFF
@@ -3391,6 +3389,7 @@ True
     @property
     def F(self):
         return self.cpu.F
+
     @F.setter
     def F(self, value):
         self.cpu.F = value &amp; 0xF0
@@ -3398,6 +3397,7 @@ True
     @property
     def B(self):
         return self.cpu.B
+
     @B.setter
     def B(self, value):
         self.cpu.B = value &amp; 0xFF
@@ -3405,6 +3405,7 @@ True
     @property
     def C(self):
         return self.cpu.C
+
     @C.setter
     def C(self, value):
         self.cpu.C = value &amp; 0xFF
@@ -3412,6 +3413,7 @@ True
     @property
     def D(self):
         return self.cpu.D
+
     @D.setter
     def D(self, value):
         self.cpu.D = value &amp; 0xFF
@@ -3419,6 +3421,7 @@ True
     @property
     def E(self):
         return self.cpu.E
+
     @E.setter
     def E(self, value):
         self.cpu.E = value &amp; 0xFF
@@ -3426,6 +3429,7 @@ True
     @property
     def HL(self):
         return self.cpu.HL
+
     @HL.setter
     def HL(self, value):
         self.cpu.HL = value &amp; 0xFFFF
@@ -3433,6 +3437,7 @@ True
     @property
     def SP(self):
         return self.cpu.SP
+
     @SP.setter
     def SP(self, value):
         self.cpu.SP = value &amp; 0xFFFF
@@ -3440,6 +3445,7 @@ True
     @property
     def PC(self):
         return self.cpu.PC
+
     @PC.setter
     def PC(self, value):
         self.cpu.PC = value &amp; 0xFFFF</code></pre>
