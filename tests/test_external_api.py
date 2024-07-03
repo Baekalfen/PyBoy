@@ -575,29 +575,3 @@ def test_button(default_rom):
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
     pyboy.tick(1, False)
     assert len(pyboy.events) == 0 # No input
-
-
-def test_get_set_override(default_rom):
-    pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
-    pyboy.tick(1, False)
-
-    assert pyboy.memory[0xFF40] == 0x00
-    pyboy.memory[0xFF40] = 0x12
-    assert pyboy.memory[0xFF40] == 0x12
-
-    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
-    assert pyboy.memory[0x0002] == 0xFF # Taken from bootrom
-    assert pyboy.memory[-1, 0x0002] == 0xFF # Taken from bootrom
-    pyboy.memory[-1, 0x0002] = 0x01 # Change bootrom
-    assert pyboy.memory[-1, 0x0002] == 0x01 # New value in bootrom
-    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
-
-    pyboy.memory[0xFF50] = 1 # Disable bootrom
-    assert pyboy.memory[0x0002] == 0x42 # Taken from ROM bank 0
-
-    pyboy.memory[0, 0x0002] = 0x12
-    assert pyboy.memory[0x0002] == 0x12
-    assert pyboy.memory[0, 0x0002] == 0x12
-
-    pyboy.stop(save=False)

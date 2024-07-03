@@ -135,3 +135,63 @@ def test_cgb_banks(cgb_acid_file): # Any CGB file
 
     with pytest.raises(AssertionError):
         p.memory[8, 0xD000] = 1 # Only bank 0-7
+
+
+def test_get_set_override(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+    pyboy.tick(1, False)
+
+    assert pyboy.memory[0xFF40] == 0x00
+    pyboy.memory[0xFF40] = 0x12
+    assert pyboy.memory[0xFF40] == 0x12
+
+    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
+    assert pyboy.memory[0x0002] == 0xFF # Taken from bootrom
+    assert pyboy.memory[-1, 0x0002] == 0xFF # Taken from bootrom
+    pyboy.memory[-1, 0x0002] = 0x01 # Change bootrom
+    assert pyboy.memory[-1, 0x0002] == 0x01 # New value in bootrom
+    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
+
+    pyboy.memory[0xFF50] = 1 # Disable bootrom
+    assert pyboy.memory[0x0002] == 0x42 # Taken from ROM bank 0
+
+    pyboy.memory[0, 0x0002] = 0x12
+    assert pyboy.memory[0x0002] == 0x12
+    assert pyboy.memory[0, 0x0002] == 0x12
+
+    pyboy.stop(save=False)
+
+
+def test_boundaries(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    # Boot ROM boundary - Expecting 0 to 0xFF both including to change
+    assert pyboy.memory[-1, 0x00] != 0
+    assert pyboy.memory[-1, 0xFF] != 0
+    pyboy.memory[-1, 0:0x100] = [0] * 0x100 # Clear boot ROM
+    with pytest.raises(AssertionError):
+        pyboy.memory[-1, 0:0x101] = [0] * 0x101 # Out of bounds
+    assert pyboy.memory[-1, 0x00] == 0
+    assert pyboy.memory[-1, 0xFF] == 0
+
+    pyboy.memory[0xFF50] = 1 # Disable bootrom
+
+    pyboy.memory[0, 0x0000] = 123
+    pyboy.memory[0, 0x3FFF] = 123
+    pyboy.memory[1, 0x4000] = 123 # Notice bank! [0,0x4000] would wrap around to 0
+
+    # ROM Bank 0 boundary - Expecting 0 to 0x3FFF both including to change
+    pyboy.memory[0, 0:0x4000] = [0] * 0x4000
+    with pytest.raises(AssertionError):
+        pyboy.memory[0, 0:0x4001] = [0] * 0x4001 # Over boundary!
+
+    # NOTE: Not specifying bank! Defaulting to 0 up to 0x3FFF and then 1 at 0x4000
+    assert pyboy.memory[0x0000] == 0
+    assert pyboy.memory[0x3FFF] == 0
+    assert pyboy.memory[0x4000] == 123
+    pyboy.memory[0, 0:0x4000] = [1] * 0x4000
+    assert pyboy.memory[0x0000] == 1
+    assert pyboy.memory[0x3FFF] == 1
+    assert pyboy.memory[0x4000] == 123
