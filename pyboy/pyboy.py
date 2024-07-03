@@ -1662,14 +1662,12 @@ class PyBoyMemoryView:
                     start -= 0x4000
                     stop -= 0x4000
                 # Cartridge ROM Banks
-                assert stop < 0x4000, "Out of bounds for reading ROM bank"
+                assert stop <= 0x4000, "Out of bounds for reading ROM bank"
                 assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
 
-                # TODO: If you change a RAM value outside of the ROM banks above, the memory value will stay the same no matter
-                # what the game writes to the address. This can be used so freeze the value for health, cash etc.
                 if bank == -1:
                     assert start <= 0xFF, "Start address out of range for bootrom"
-                    assert stop <= 0xFF, "Start address out of range for bootrom"
+                    assert stop <= 0x100, "Start address out of range for bootrom"
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
@@ -1701,7 +1699,7 @@ class PyBoyMemoryView:
                 stop -= 0x8000
                 # CGB VRAM Banks
                 assert self.mb.cgb or (bank == 0), "Selecting bank of VRAM is only supported for CGB mode"
-                assert stop < 0x2000, "Out of bounds for reading VRAM bank"
+                assert stop <= 0x2000, "Out of bounds for reading VRAM bank"
                 assert bank <= 1, "VRAM Bank out of range"
 
                 if bank == 0:
@@ -1734,7 +1732,7 @@ class PyBoyMemoryView:
                 start -= 0xA000
                 stop -= 0xA000
                 # Cartridge RAM banks
-                assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
+                assert stop <= 0x2000, "Out of bounds for reading cartridge RAM bank"
                 assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
                 if not is_single:
                     # Writing slice of memory space
@@ -1756,7 +1754,7 @@ class PyBoyMemoryView:
                     stop -= 0x1000
                 # CGB VRAM banks
                 assert self.mb.cgb or (bank == 0), "Selecting bank of WRAM is only supported for CGB mode"
-                assert stop < 0x1000, "Out of bounds for reading VRAM bank"
+                assert stop <= 0x1000, "Out of bounds for reading VRAM bank"
                 assert bank <= 7, "WRAM Bank out of range"
                 if not is_single:
                     # Writing slice of memory space
