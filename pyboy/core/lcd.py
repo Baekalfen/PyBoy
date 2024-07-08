@@ -50,9 +50,6 @@ class LCD:
         self.LY = 0x00
         self.LYC = 0x00
         # self.DMA = 0x00
-        self.BGP = PaletteRegister(0xFC)
-        self.OBP0 = PaletteRegister(0xFF)
-        self.OBP1 = PaletteRegister(0xFF)
         self.WY = 0x00
         self.WX = 0x00
         self.clock = 0
@@ -62,22 +59,23 @@ class LCD:
         self.cgb = cgb
 
         if self.cgb:
+            # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
+            bg_pal, obj0_pal, obj1_pal = cgb_color_palette
+            self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in bg_pal])
+            self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj0_pal])
+            self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj1_pal])
             if cartridge_cgb:
                 logger.debug("Starting CGB renderer")
                 self.renderer = CGBRenderer()
             else:
                 logger.debug("Starting CGB renderer in DMG-mode")
-                # Running DMG ROM on CGB hardware use the default palettes
-                bg_pal, obj0_pal, obj1_pal = cgb_color_palette
-                self.BGP.palette_mem_rgb = [(rgb_to_bgr(c)) for c in bg_pal]
-                self.OBP0.palette_mem_rgb = [(rgb_to_bgr(c)) for c in obj0_pal]
-                self.OBP1.palette_mem_rgb = [(rgb_to_bgr(c)) for c in obj1_pal]
+                # Running DMG ROM on CGB hardware uses the palettes above
                 self.renderer = Renderer(False)
         else:
             logger.debug("Starting DMG renderer")
-            self.BGP.palette_mem_rgb = [(rgb_to_bgr(c)) for c in color_palette]
-            self.OBP0.palette_mem_rgb = [(rgb_to_bgr(c)) for c in color_palette]
-            self.OBP1.palette_mem_rgb = [(rgb_to_bgr(c)) for c in color_palette]
+            self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in color_palette])
+            self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
+            self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.renderer = Renderer(False)
 
     def get_lcdc(self):
@@ -288,11 +286,11 @@ class LCD:
 
 
 class PaletteRegister:
-    def __init__(self, value):
+    def __init__(self, value, palette):
         self.value = 0
         self.lookup = [0] * 4
+        self.palette_mem_rgb = palette
         self.set(value)
-        self.palette_mem_rgb = [0] * 4
 
     def set(self, value):
         # Pokemon Blue continuously sets this without changing the value
@@ -301,14 +299,14 @@ class PaletteRegister:
 
         self.value = value
         for x in range(4):
-            self.lookup[x] = (value >> x * 2) & 0b11
+            self.lookup[x] = self.palette_mem_rgb[(value >> x * 2) & 0b11]
         return True
 
     def get(self):
         return self.value
 
     def getcolor(self, i):
-        return self.palette_mem_rgb[self.lookup[i]]
+        return self.lookup[i]
 
 
 class STATRegister:
