@@ -62,8 +62,8 @@ cdef class LCD:
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
 
-    cdef (int, int) getwindowpos(self) noexcept nogil
-    cdef (int, int) getviewport(self) noexcept nogil
+    cdef inline (int, int) getwindowpos(self) noexcept nogil
+    cdef inline (int, int) getviewport(self) noexcept nogil
 
     # CGB
     cdef bint cgb
@@ -247,7 +247,7 @@ cdef class Renderer:
         vertflip = uint8_t,
         bg_priority = uint8_t,
     )
-    cdef (int, int, int, int, int) _cgb_get_background_map_attributes(self, LCD, int) noexcept nogil
+    cdef inline (int, int, int, int, int) _cgb_get_background_map_attributes(self, LCD, int) noexcept nogil
 
 cdef class CGBLCD(LCD):
     pass
