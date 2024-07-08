@@ -155,6 +155,7 @@ cdef class Renderer:
         tilecache=uint8_t[:,:],
         bg_priority_apply=uint32_t,
         col0=uint8_t,
+        pixel=uint32_t,
     )
     cdef void scanline(self, LCD, int) noexcept nogil
 
