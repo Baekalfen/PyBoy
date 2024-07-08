@@ -5,7 +5,7 @@
 
 import cython
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 from pyboy cimport utils
 from pyboy.core.mb cimport Motherboard
@@ -25,5 +25,5 @@ cdef class Tile:
     cpdef object ndarray(self) noexcept
 
     cdef uint32_t[:,:] data # TODO: Add to locals instead
-    @cython.locals(byte1=uint8_t, byte2=uint8_t, colorcode=uint32_t)
+    @cython.locals(byte1=uint8_t, byte2=uint8_t, colorcode=uint64_t)
     cdef uint32_t[:,:] _image_data(self) noexcept

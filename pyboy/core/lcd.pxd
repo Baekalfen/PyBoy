@@ -124,7 +124,9 @@ cdef class Renderer:
     cdef array _tilecache0_raw, _spritecache0_raw, _spritecache1_raw
     cdef uint32_t[:,:] _screenbuffer
     cdef uint8_t[:,:] _screenbuffer_attributes
-    cdef uint32_t[:,:] _tilecache0, _spritecache0, _spritecache1
+    cdef uint8_t[:,:] _tilecache0, _spritecache0, _spritecache1
+    cdef uint64_t[:] _tilecache0_64, _tilecache1_64, _spritecache0_64, _spritecache1_64
+    cdef uint32_t[:] colorcode_table
 
     cdef int[10] sprites_to_render
     cdef int ly_window
@@ -136,7 +138,7 @@ cdef class Renderer:
 
     # CGB
     cdef array _tilecache1_raw
-    cdef uint32_t[:,:] _tilecache1
+    cdef uint8_t[:,:] _tilecache1
 
     @cython.locals(
         bx=int,
@@ -150,7 +152,7 @@ cdef class Renderer:
         bg_priority=bint,
         xx=int,
         yy=int,
-        tilecache=uint32_t[:,:],
+        tilecache=uint8_t[:,:],
         bg_priority_apply=uint32_t,
         col0=uint8_t,
     )
@@ -169,7 +171,7 @@ cdef class Renderer:
         yflip=bint,
         spritepriority=bint,
         palette=uint8_t,
-        spritecache=uint32_t[:,:],
+        spritecache=uint8_t[:,:],
         dy=int,
         dx=int,
         yy=int,
@@ -180,7 +182,6 @@ cdef class Renderer:
     )
     cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
     cdef void sort_sprites(self, int) noexcept nogil
-    cdef inline uint8_t color_code(self, uint8_t, uint8_t, uint8_t) noexcept nogil
 
     cdef void clear_cache(self) noexcept nogil
     cdef void clear_tilecache0(self) noexcept nogil
@@ -194,7 +195,8 @@ cdef class Renderer:
         y=int,
         byte1=uint8_t,
         byte2=uint8_t,
-        colorcode=uint32_t,
+        colorcode_low=uint64_t,
+        colorcode_high=uint64_t,
     )
     cdef void update_tilecache0(self, LCD, int, int) noexcept nogil
     @cython.locals(
@@ -204,7 +206,8 @@ cdef class Renderer:
         y=int,
         byte1=uint8_t,
         byte2=uint8_t,
-        colorcode=uint32_t,
+        colorcode_low=uint64_t,
+        colorcode_high=uint64_t,
     )
     cdef void update_tilecache1(self, LCD, int, int) noexcept nogil # CGB Only
     @cython.locals(
@@ -214,7 +217,8 @@ cdef class Renderer:
         y=int,
         byte1=uint8_t,
         byte2=uint8_t,
-        colorcode=uint32_t,
+        colorcode_low=uint64_t,
+        colorcode_high=uint64_t,
     )
     cdef void update_spritecache0(self, LCD, int, int) noexcept nogil
     @cython.locals(
@@ -224,10 +228,13 @@ cdef class Renderer:
         y=int,
         byte1=uint8_t,
         byte2=uint8_t,
-        colorcode=uint32_t,
+        colorcode_low=uint64_t,
+        colorcode_high=uint64_t,
     )
     cdef void update_spritecache1(self, LCD, int, int) noexcept nogil
 
+    @cython.locals(colorcode_low=uint64_t, colorcode_high=uint64_t)
+    cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept

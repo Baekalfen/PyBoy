@@ -116,10 +116,7 @@ class IntIOWrapper(IntIOInterface):
 # Misc
 
 
-# TODO: Would a lookup-table increase performance? For example a lookup table of each 4-bit nibble?
-# That's 16**2 = 256 values. Index calculated as: (byte1 & 0xF0) | ((byte2 & 0xF0) >> 4)
-# and then: (byte1 & 0x0F) | ((byte2 & 0x0F) >> 4)
-# Then could even be preloaded for each color palette
+# NOTE: Legacy function. Use look-up table in Renderer
 def color_code(byte1, byte2, offset):
     """Convert 2 bytes into color code at a given offset.
 
