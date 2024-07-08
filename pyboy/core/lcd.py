@@ -388,9 +388,9 @@ class Renderer:
         # Init buffers as white
         self._screenbuffer_raw = array("B", [0x00] * (ROWS*COLS*4))
         self._screenbuffer_attributes_raw = array("B", [0x00] * (ROWS*COLS))
-        self._tilecache0_raw = array("B", [0x00] * (TILES*8*8*4))
-        self._spritecache0_raw = array("B", [0x00] * (TILES*8*8*4))
-        self._spritecache1_raw = array("B", [0x00] * (TILES*8*8*4))
+        self._tilecache0_raw = array("B", [0x00] * (TILES*8*8))
+        self._spritecache0_raw = array("B", [0x00] * (TILES*8*8))
+        self._spritecache1_raw = array("B", [0x00] * (TILES*8*8))
         self.sprites_to_render = array("i", [0] * 10)
 
         self._tilecache0_state = array("B", [0] * TILES)
@@ -400,11 +400,38 @@ class Renderer:
 
         self._screenbuffer = memoryview(self._screenbuffer_raw).cast("I", shape=(ROWS, COLS))
         self._screenbuffer_attributes = memoryview(self._screenbuffer_attributes_raw).cast("B", shape=(ROWS, COLS))
-        self._tilecache0 = memoryview(self._tilecache0_raw).cast("I", shape=(TILES * 8, 8))
+        self._tilecache0 = memoryview(self._tilecache0_raw).cast("B", shape=(TILES * 8, 8))
+        self._tilecache0_64 = memoryview(self._tilecache0_raw).cast("Q", shape=(TILES * 8, ))
+
+        # The look-up table only stored 4 bits from each byte, packed into a single byte
+        self.colorcode_table = array("I", [0x00000000] * (0x100)) # Should be "L"!?
+        """Convert 2 bytes into color code at a given offset.
+
+        The colors are 2 bit and are found like this:
+
+        Color of the first pixel is 0b10
+        | Color of the second pixel is 0b01
+        v v
+        1 0 0 1 0 0 0 1 <- byte1
+        0 1 1 1 1 1 0 0 <- byte2
+        """
+        for byte in range(0x100):
+            byte1 = byte & 0xF
+            byte2 = (byte >> 4) & 0xF
+            v = 0
+            for offset in range(4):
+                t = ((((byte2 >> (offset)) & 0b1) << 1) | ((byte1 >> (offset)) & 0b1))
+                assert t < 4
+                v |= t << (8 * (3-offset)) # Store them in little-endian
+            self.colorcode_table[byte] = v
+
         # OBP0 palette
-        self._spritecache0 = memoryview(self._spritecache0_raw).cast("I", shape=(TILES * 8, 8))
+        self._spritecache0 = memoryview(self._spritecache0_raw).cast("B", shape=(TILES * 8, 8))
+        self._spritecache0_64 = memoryview(self._spritecache0_raw).cast("Q", shape=(TILES * 8, ))
         # OBP1 palette
-        self._spritecache1 = memoryview(self._spritecache1_raw).cast("I", shape=(TILES * 8, 8))
+        self._spritecache1 = memoryview(self._spritecache1_raw).cast("B", shape=(TILES * 8, 8))
+        self._spritecache1_64 = memoryview(self._spritecache1_raw).cast("Q", shape=(TILES * 8, ))
+
         self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
@@ -695,19 +722,6 @@ class Renderer:
         for i in range(TILES):
             self._spritecache1_state[i] = 0
 
-    def color_code(self, byte1, byte2, offset):
-        """Convert 2 bytes into color code at a given offset.
-
-        The colors are 2 bit and are found like this:
-
-        Color of the first pixel is 0b10
-        | Color of the second pixel is 0b01
-        v v
-        1 0 0 1 0 0 0 1 <- byte1
-        0 1 1 1 1 1 0 0 <- byte2
-        """
-        return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
-
     def update_tilecache0(self, lcd, t, bank):
         if self._tilecache0_state[t]:
             return
@@ -717,9 +731,7 @@ class Renderer:
             byte2 = lcd.VRAM0[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                colorcode = self.color_code(byte1, byte2, 7 - x)
-                self._tilecache0[y, x] = colorcode
+            self._tilecache0_64[y] = self.colorcode(byte1, byte2)
 
         self._tilecache0_state[t] = 1
 
@@ -735,9 +747,7 @@ class Renderer:
             byte2 = lcd.VRAM0[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                colorcode = self.color_code(byte1, byte2, 7 - x)
-                self._spritecache0[y, x] = colorcode
+            self._spritecache0_64[y] = self.colorcode(byte1, byte2)
 
         self._spritecache0_state[t] = 1
 
@@ -750,11 +760,14 @@ class Renderer:
             byte2 = lcd.VRAM0[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                colorcode = self.color_code(byte1, byte2, 7 - x)
-                self._spritecache1[y, x] = colorcode
+            self._spritecache1_64[y] = self.colorcode(byte1, byte2)
 
         self._spritecache1_state[t] = 1
+
+    def colorcode(self, byte1, byte2):
+        colorcode_low = self.colorcode_table[(byte1 & 0xF) | ((byte2 & 0xF) << 4)]
+        colorcode_high = self.colorcode_table[((byte1 >> 4) & 0xF) | (byte2 & 0xF0)]
+        return (colorcode_low << 32) | colorcode_high
 
     def blank_screen(self, lcd):
         # If the screen is off, fill it with a color.
@@ -825,9 +838,10 @@ class CGBRenderer(Renderer):
         self._tilecache1_state = array("B", [0] * TILES)
         Renderer.__init__(self, True)
 
-        self._tilecache1_raw = array("B", [0xFF] * (TILES*8*8*4))
+        self._tilecache1_raw = array("B", [0xFF] * (TILES*8*8))
 
-        self._tilecache1 = memoryview(self._tilecache1_raw).cast("I", shape=(TILES * 8, 8))
+        self._tilecache1 = memoryview(self._tilecache1_raw).cast("B", shape=(TILES * 8, 8))
+        self._tilecache1_64 = memoryview(self._tilecache1_raw).cast("Q", shape=(TILES * 8, ))
         self._tilecache1_state = array("B", [0] * TILES)
         self.clear_cache()
 
@@ -856,8 +870,7 @@ class CGBRenderer(Renderer):
             byte2 = vram_bank[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                self._tilecache0[y, x] = self.color_code(byte1, byte2, 7 - x)
+            self._tilecache0_64[y] = self.colorcode(byte1, byte2)
 
         self._tilecache0_state[t] = 1
 
@@ -874,8 +887,7 @@ class CGBRenderer(Renderer):
             byte2 = vram_bank[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                self._tilecache1[y, x] = self.color_code(byte1, byte2, 7 - x)
+            self._tilecache1_64[y] = self.colorcode(byte1, byte2)
 
         self._tilecache1_state[t] = 1
 
@@ -892,8 +904,7 @@ class CGBRenderer(Renderer):
             byte2 = vram_bank[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                self._spritecache0[y, x] = self.color_code(byte1, byte2, 7 - x)
+            self._spritecache0_64[y] = self.colorcode(byte1, byte2)
 
         self._spritecache0_state[t] = 1
 
@@ -910,8 +921,7 @@ class CGBRenderer(Renderer):
             byte2 = vram_bank[t*16 + k + 1]
             y = (t*16 + k) // 2
 
-            for x in range(8):
-                self._spritecache1[y, x] = self.color_code(byte1, byte2, 7 - x)
+            self._spritecache1_64[y] = self.colorcode(byte1, byte2)
 
         self._spritecache1_state[t] = 1
 

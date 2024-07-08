@@ -8,7 +8,8 @@ import platform
 
 import pytest
 
-from pyboy.core.lcd import LCD
+from pyboy.core.lcd import LCD, Renderer
+from pyboy.utils import color_code
 
 is_pypy = platform.python_implementation() == "PyPy"
 
@@ -80,6 +81,35 @@ class TestLCD:
         assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC # Trigger on seting LYC flag
         assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC # Also trigger on second call
         assert lcd.get_stat() & 0b100 # LYC flag set
+
+
+@pytest.mark.skipif(not is_pypy, reason="This test requires access to internal registers not available in Cython")
+class TestRenderer:
+    def test_colorcode_example(self):
+        renderer = Renderer(False)
+
+        # Color of the first pixel is 0b10
+        # | Color of the second pixel is 0b01
+        # v v
+        # 1 0 0 1 0 0 0 1 <- byte1
+        # 0 1 1 1 1 1 0 0 <- byte2
+        b1_l = 0b0001
+        b1_h = 0b1001
+        b2_l = 0b1100
+        b2_h = 0b0111
+        assert renderer.colorcode_table[(b2_l << 4) | b1_l] == 0x01_00_02_02
+        assert renderer.colorcode_table[(b2_h << 4) | b1_h] == 0x03_02_02_01
+
+    def test_colorcode_table(self):
+        renderer = Renderer(False)
+
+        for byte1 in range(0x100):
+            for byte2 in range(0x100):
+                colorcode_low = renderer.colorcode_table[(byte1 & 0xF) | ((byte2 & 0xF) << 4)]
+                colorcode_high = renderer.colorcode_table[((byte1 >> 4) & 0xF) | (byte2 & 0xF0)]
+                for offset in range(4):
+                    assert (colorcode_low >> (3-offset) * 8) & 0xFF == color_code(byte1, byte2, offset)
+                    assert (colorcode_high >> (3-offset) * 8) & 0xFF == color_code(byte1, byte2, offset + 4)
 
     # def test_tick(self):
     #     lcd = LCD()

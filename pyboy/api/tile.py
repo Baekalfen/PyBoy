@@ -190,9 +190,9 @@ class Tile:
                 byte1 = self.mb.lcd.VRAM1[self.data_address + k - VRAM_OFFSET]
                 byte2 = self.mb.lcd.VRAM1[self.data_address + k + 1 - VRAM_OFFSET]
 
+            colorcode = self.mb.lcd.renderer.colorcode(byte1, byte2)
             for x in range(8):
-                colorcode = utils.color_code(byte1, byte2, 7 - x)
-                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor(colorcode)
+                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor((colorcode >> x * 8) & 0xFF)
         return self.data
 
     def __eq__(self, other):
