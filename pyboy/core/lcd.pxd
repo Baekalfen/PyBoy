@@ -108,6 +108,9 @@ cdef class LCDCRegister:
     cdef bint background_enable
     cdef bint cgb_master_priority
 
+    cdef uint16_t backgroundmap_offset
+    cdef uint16_t windowmap_offset
+
     cpdef int _get_sprite_height(self)
 
 cdef class Renderer:
@@ -158,6 +161,17 @@ cdef class Renderer:
         pixel=uint32_t,
     )
     cdef void scanline(self, LCD, int) noexcept nogil
+
+    @cython.locals(tile_addr=uint64_t, tile=int)
+    cdef inline (int, int, uint16_t) _get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
+    cdef inline (int, int, uint8_t, bint, uint32_t, bint) _get_tile_cgb(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
+    @cython.locals(col0=uint8_t)
+    cdef inline void _pixel(self, uint8_t[:,:], uint32_t, int, int, int, int, uint32_t) noexcept nogil
+    cdef int scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
+    cdef int scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
+    cdef int scanline_background_cgb(self, int, int, int, int, int, LCD) noexcept nogil
+    cdef int scanline_window_cgb(self, int, int, int, int, int, LCD) noexcept nogil
+    cdef int scanline_blank(self, int, int, int, LCD) noexcept nogil
 
     @cython.locals(
         spriteheight=int,
