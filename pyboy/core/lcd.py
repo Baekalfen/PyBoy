@@ -365,6 +365,11 @@ class LCDCRegister:
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
         # yapf: enable
 
+        # All VRAM addresses are offset by 0x8000
+        # Following addresses are 0x9800 and 0x9C00
+        self.backgroundmap_offset = 0x1800 if self.backgroundmap_select == 0 else 0x1C00
+        self.windowmap_offset = 0x1800 if self.windowmap_select == 0 else 0x1C00
+
     def _get_sprite_height(self):
         return self.sprite_height
 
@@ -458,109 +463,154 @@ class Renderer:
         if lcd.disable_renderer:
             return
 
-        # All VRAM addresses are offset by 0x8000
-        # Following addresses are 0x9800 and 0x9C00
-        background_offset = 0x1800 if lcd._LCDC.backgroundmap_select == 0 else 0x1C00
-        wmap = 0x1800 if lcd._LCDC.windowmap_select == 0 else 0x1C00
+        x = 0
+        if not self.cgb:
+            if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+                # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
+                self.ly_window += 1
 
-        # Used for the half tile at the left side when scrolling
-        offset = bx & 0b111
+                # Before window
+                if wx > x:
+                    x += self.scanline_background(y, x, bx, by, wx, lcd)
 
-        # Weird behavior, where the window has it's own internal line counter. It's only incremented whenever the
-        # window is drawing something on the screen.
-        if lcd._LCDC.window_enable and wy <= y and wx < COLS:
-            self.ly_window += 1
-
-        for x in range(COLS):
-            if lcd._LCDC.window_enable and wy <= y and wx <= x:
-                tile_addr = wmap + (self.ly_window) // 8 * 32 % 0x400 + (x-wx) // 8 % 32
-                wt = lcd.VRAM0[tile_addr]
-                # If using signed tile indices, modify index
-                if not lcd._LCDC.tiledata_select:
-                    # (x ^ 0x80 - 128) to convert to signed, then
-                    # add 256 for offset (reduces to + 128)
-                    wt = (wt ^ 0x80) + 128
-
-                bg_priority_apply = 0
-                if self.cgb:
-                    palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(
-                        lcd, tile_addr
-                    )
-                    if vbank:
-                        self.update_tilecache1(lcd, wt, vbank)
-                        tilecache = self._tilecache1
-                    else:
-                        self.update_tilecache0(lcd, wt, vbank)
-                        tilecache = self._tilecache0
-
-                    xx = (7 - ((x-wx) % 8)) if horiflip else ((x-wx) % 8)
-                    yy = (8*wt + (7 - (self.ly_window) % 8)) if vertflip else (8*wt + (self.ly_window) % 8)
-
-                    pixel = lcd.bcpd.getcolor(palette, tilecache[yy, xx])
-                    col0 = (tilecache[yy, xx] == 0) & 1
-                    if bg_priority:
-                        # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
-                        bg_priority_apply = BG_PRIORITY_FLAG
-                else:
-                    self.update_tilecache0(lcd, wt, 0)
-                    xx = (x-wx) % 8
-                    yy = 8*wt + (self.ly_window) % 8
-                    pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
-                    col0 = (self._tilecache0[yy, xx] == 0) & 1
-
-                self._screenbuffer[y, x] = pixel
-                # COL0_FLAG is 1
-                self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
-                # self._screenbuffer_attributes[y, x] = bg_priority_apply
-                # if col0:
-                #     self._screenbuffer_attributes[y, x] = self._screenbuffer_attributes[y, x] | col0
-            # background_enable doesn't exist for CGB. It works as master priority instead
-            elif (not self.cgb and lcd._LCDC.background_enable) or self.cgb:
-                tile_addr = background_offset + (y+by) // 8 * 32 % 0x400 + (x+bx) // 8 % 32
-                bt = lcd.VRAM0[tile_addr]
-                # If using signed tile indices, modify index
-                if not lcd._LCDC.tiledata_select:
-                    # (x ^ 0x80 - 128) to convert to signed, then
-                    # add 256 for offset (reduces to + 128)
-                    bt = (bt ^ 0x80) + 128
-
-                bg_priority_apply = 0
-                if self.cgb:
-                    palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(
-                        lcd, tile_addr
-                    )
-
-                    if vbank:
-                        self.update_tilecache1(lcd, bt, vbank)
-                        tilecache = self._tilecache1
-                    else:
-                        self.update_tilecache0(lcd, bt, vbank)
-                        tilecache = self._tilecache0
-                    xx = (7 - ((x+offset) % 8)) if horiflip else ((x+offset) % 8)
-                    yy = (8*bt + (7 - (y+by) % 8)) if vertflip else (8*bt + (y+by) % 8)
-
-                    pixel = lcd.bcpd.getcolor(palette, tilecache[yy, xx])
-                    col0 = (tilecache[yy, xx] == 0) & 1
-                    if bg_priority:
-                        # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
-                        bg_priority_apply = BG_PRIORITY_FLAG
-                else:
-                    self.update_tilecache0(lcd, bt, 0)
-                    xx = (x+offset) % 8
-                    yy = 8*bt + (y+by) % 8
-                    pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
-                    col0 = (self._tilecache0[yy, xx] == 0) & 1
-
-                self._screenbuffer[y, x] = pixel
-                self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
+                # Window hit
+                self.scanline_window(y, x, wx, wy, COLS - x, lcd)
+            elif lcd._LCDC.background_enable:
+                # No window
+                self.scanline_background(y, x, bx, by, COLS, lcd)
             else:
-                # If background is disabled, it becomes white
-                self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
-                self._screenbuffer_attributes[y, x] = 0
+                self.scanline_blank(y, x, COLS, lcd)
+        else:
+            if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+                # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
+                self.ly_window += 1
+
+                # Before window
+                if wx > x:
+                    x += self.scanline_background_cgb(y, x, bx, by, wx, lcd)
+
+                # Window hit
+                self.scanline_window_cgb(y, x, wx, wy, COLS - x, lcd)
+            else: # background_enable doesn't exist for CGB. It works as master priority instead
+                # No window
+                self.scanline_background_cgb(y, x, bx, by, COLS, lcd)
 
         if y == 143:
             # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
             self.ly_window = -1
+
+    def _get_tile(self, y, x, offset, lcd):
+        tile_addr = offset + y//8*32%0x400 + x//8%32
+        tile = lcd.VRAM0[tile_addr]
+
+        # If using signed tile indices, modify index
+        if not lcd._LCDC.tiledata_select:
+            # (x ^ 0x80 - 128) to convert to signed, then
+            # add 256 for offset (reduces to + 128)
+            tile = (tile ^ 0x80) + 128
+
+        yy = 8*tile + y%8
+        return tile, yy, tile_addr
+
+    def _get_tile_cgb(self, y, x, offset, lcd):
+        tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
+
+        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
+
+        bg_priority_apply = 0
+        if bg_priority:
+            # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
+            bg_priority_apply = BG_PRIORITY_FLAG
+
+        if vertflip:
+            yy = (8*tile + (7 - (y) % 8))
+
+        return tile, yy, palette, horiflip, bg_priority_apply, vbank
+
+    def _pixel(self, tilecache, pixel, x, y, xx, yy, bg_priority_apply):
+        col0 = (tilecache[yy, xx] == 0) & 1
+        self._screenbuffer[y, x] = pixel
+        # COL0_FLAG is 1
+        self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
+
+    def scanline_window(self, y, _x, wx, wy, cols, lcd):
+        for x in range(_x, _x + cols):
+            xx = (x-wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, _ = self._get_tile(self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd)
+                self.update_tilecache0(lcd, wt, 0)
+
+            pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
+            self._pixel(self._tilecache0, pixel, x, y, xx, yy, 0)
+        return cols
+
+    def scanline_window_cgb(self, y, _x, wx, wy, cols, lcd):
+        bg_priority_apply = 0
+        for x in range(_x, _x + cols):
+            xx = (x-wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
+                    self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
+                )
+                # NOTE: Not allowed to return memoryview in Cython tuple
+                if vbank:
+                    self.update_tilecache1(lcd, wt, vbank)
+                    tilecache = self._tilecache1
+                else:
+                    self.update_tilecache0(lcd, wt, vbank)
+                    tilecache = self._tilecache0
+
+            if w_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(w_palette, tilecache[yy, xx])
+            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def scanline_background(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            # bx mask used for the half tile at the left side when scrolling
+            b_xx = (x + (bx & 0b111)) % 8
+            if b_xx == 0 or x == 0:
+                bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                self.update_tilecache0(lcd, bt, 0)
+
+            xx = b_xx
+            yy = b_yy
+
+            pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
+            self._pixel(self._tilecache0, pixel, x, y, xx, yy, 0)
+        return cols
+
+    def scanline_background_cgb(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            # bx mask used for the half tile at the left side when scrolling
+            xx = (x + (bx & 0b111)) % 8
+            if xx == 0 or x == 0:
+                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
+                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
+                )
+                # NOTE: Not allowed to return memoryview in Cython tuple
+                if vbank:
+                    self.update_tilecache1(lcd, bt, vbank)
+                    tilecache = self._tilecache1
+                else:
+                    self.update_tilecache0(lcd, bt, vbank)
+                    tilecache = self._tilecache0
+
+            if b_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(b_palette, tilecache[yy, xx])
+            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def scanline_blank(self, y, _x, cols, lcd):
+        # If background is disabled, it becomes white
+        for x in range(_x, _x + cols):
+            self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
+            self._screenbuffer_attributes[y, x] = 0
+        return cols
 
     def sort_sprites(self, sprite_count):
         # Use insertion sort, as it has O(n) on already sorted arrays. This
