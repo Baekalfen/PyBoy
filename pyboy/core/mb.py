@@ -336,9 +336,9 @@ class Motherboard:
             if self.bootrom_enabled and (i <= 0xFF or (self.cgb and 0x200 <= i < 0x900)):
                 return self.bootrom.getitem(i)
             else:
-                return self.cartridge.getitem(i)
+                return self.cartridge.rombanks[self.cartridge.rombank_selected_low, i]
         elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
-            return self.cartridge.getitem(i)
+            return self.cartridge.rombanks[self.cartridge.rombank_selected, i - 0x4000]
         elif 0x8000 <= i < 0xA000: # 8kB Video RAM
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 return self.lcd.VRAM0[i - 0x8000]

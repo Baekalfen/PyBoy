@@ -39,8 +39,9 @@ class BaseMBC:
         self.rambank_enabled = False
         self.rambank_selected = 0
         self.rombank_selected = 1
+        self.rombank_selected_low = 0
 
-        self.cgb = bool(self.getitem(0x0143) >> 7)
+        self.cgb = bool(self.rombanks[0, 0x0143] >> 7)
 
         if not os.path.exists(self.filename):
             logger.debug("No RAM file found. Skipping.")
@@ -118,11 +119,7 @@ class BaseMBC:
             logger.error("Invalid override address: %0.4x", address)
 
     def getitem(self, address):
-        if 0x0000 <= address < 0x4000:
-            return self.rombanks[0, address]
-        elif 0x4000 <= address < 0x8000:
-            return self.rombanks[self.rombank_selected, address - 0x4000]
-        elif 0xA000 <= address < 0xC000:
+        if 0xA000 <= address < 0xC000:
             # if not self.rambank_initialized:
             #     logger.error("RAM banks not initialized: 0.4x", address)
 
