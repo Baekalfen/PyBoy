@@ -37,19 +37,15 @@ class MBC1(BaseMBC):
                 self.rambanks[self.rambank_selected % self.external_ram_count, address - 0xA000] = value
         # else:
         #     logger.error("Invalid writing address: %0.4x", address)
+        if self.memorymodel == 1:
+            self.rombank_selected_low = (self.bank_select_register2 << 5) % self.external_rom_count
+        else:
+            self.rombank_selected_low = 0
+        self.rombank_selected = ((self.bank_select_register2 << 5) |
+                                 self.bank_select_register1) % self.external_rom_count
 
     def getitem(self, address):
-        if 0x0000 <= address < 0x4000:
-            if self.memorymodel == 1:
-                self.rombank_selected = (self.bank_select_register2 << 5) % self.external_rom_count
-            else:
-                self.rombank_selected = 0
-            return self.rombanks[self.rombank_selected, address]
-        elif 0x4000 <= address < 0x8000:
-            self.rombank_selected = \
-                    ((self.bank_select_register2 << 5) | self.bank_select_register1) % self.external_rom_count
-            return self.rombanks[self.rombank_selected, address - 0x4000]
-        elif 0xA000 <= address < 0xC000:
+        if 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
                 logger.error("RAM banks not initialized: %0.4x", address)
 
