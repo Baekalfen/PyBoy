@@ -1025,9 +1025,6 @@ class PaletteColorRegister:
 
     def getcolor(self, paletteindex, colorindex):
         # Each palette = 8 bytes or 4 colors of 2 bytes
-        # if not (paletteindex <= 7 and colorindex <= 3):
-        #     logger.error("Palette Mem Index Error, tried: Palette %d color %d", paletteindex, colorindex)
-
         return self.palette_mem_rgb[paletteindex*4 + colorindex]
 
     def save_state(self, f):
