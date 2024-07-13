@@ -5,7 +5,7 @@
 
 __all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
-STATE_VERSION = 10
+STATE_VERSION = 11
 
 ##############################################################
 # Buffer classes

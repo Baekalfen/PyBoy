@@ -202,12 +202,9 @@ class Screen:
         list:
             Nested list of SCX, SCY, WX and WY for each scanline (144x4). Returns (0, 0, 0, 0) when LCD is off.
         """
-        # self.tilemap_position_list = np.asarray(self.mb.lcd.renderer._scanlineparameters, dtype=np.uint8).reshape(144, 5)[:, :4]
-        # self.tilemap_position_list = self.mb.lcd.renderer._scanlineparameters
 
-        # # return self.mb.lcd.renderer._scanlineparameters
         if self.mb.lcd._LCDC.lcd_enable:
-            return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd.renderer._scanlineparameters]
+            return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd._scanlineparameters]
         else:
             return [[0, 0, 0, 0] for line in range(144)]
 

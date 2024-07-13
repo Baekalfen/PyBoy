@@ -57,6 +57,7 @@ class LCD:
         self.frame_done = False
         self.double_speed = False
         self.cgb = cgb
+        self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -164,6 +165,15 @@ class LCD:
                 elif self._STAT._mode == 0: # HBLANK
                     self.clock_target += 206 * multiplier
 
+                    # Recorded for API
+                    bx, by = self.getviewport()
+                    wx, wy = self.getwindowpos()
+                    self._scanlineparameters[self.LY][0] = bx
+                    self._scanlineparameters[self.LY][1] = by
+                    self._scanlineparameters[self.LY][2] = wx
+                    self._scanlineparameters[self.LY][3] = wy
+                    self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
+
                     self.renderer.scanline(self, self.LY)
                     self.renderer.scanline_sprites(
                         self, self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
@@ -218,6 +228,14 @@ class LCD:
         f.write(self.WY)
         f.write(self.WX)
 
+        for y in range(ROWS):
+            f.write(self._scanlineparameters[y][0])
+            f.write(self._scanlineparameters[y][1])
+            # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
+            f.write((self._scanlineparameters[y][2] + 7) & 0xFF)
+            f.write(self._scanlineparameters[y][3])
+            f.write(self._scanlineparameters[y][4])
+
         # CGB
         f.write(self.cgb)
         f.write(self.double_speed)
@@ -255,6 +273,16 @@ class LCD:
         self.SCX = f.read()
         self.WY = f.read()
         self.WX = f.read()
+
+        if state_version >= 11:
+            for y in range(ROWS):
+                self._scanlineparameters[y][0] = f.read()
+                self._scanlineparameters[y][1] = f.read()
+                # Restore (WX - 7) as described above
+                self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
+                self._scanlineparameters[y][3] = f.read()
+                if state_version > 3:
+                    self._scanlineparameters[y][4] = f.read()
 
         # CGB
         if state_version >= 8:
@@ -437,7 +465,6 @@ class Renderer:
 
         self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
-        self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
         self.ly_window = 0
 
     def _cgb_get_background_map_attributes(self, lcd, i):
@@ -451,17 +478,11 @@ class Renderer:
         return palette, vbank, horiflip, vertflip, bg_priority
 
     def scanline(self, lcd, y):
-        bx, by = lcd.getviewport()
-        wx, wy = lcd.getwindowpos()
-        # TODO: Move to lcd class
-        self._scanlineparameters[y][0] = bx
-        self._scanlineparameters[y][1] = by
-        self._scanlineparameters[y][2] = wx
-        self._scanlineparameters[y][3] = wy
-        self._scanlineparameters[y][4] = lcd._LCDC.tiledata_select
-
         if lcd.disable_renderer:
             return
+
+        bx, by = lcd.getviewport()
+        wx, wy = lcd.getwindowpos()
 
         x = 0
         if not self.cgb:
@@ -826,28 +847,20 @@ class Renderer:
 
     def save_state(self, f):
         for y in range(ROWS):
-            f.write(self._scanlineparameters[y][0])
-            f.write(self._scanlineparameters[y][1])
-            # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
-            f.write((self._scanlineparameters[y][2] + 7) & 0xFF)
-            f.write(self._scanlineparameters[y][3])
-            f.write(self._scanlineparameters[y][4])
-
-        for y in range(ROWS):
             for x in range(COLS):
                 f.write_32bit(self._screenbuffer[y, x])
                 f.write(self._screenbuffer_attributes[y, x])
 
     def load_state(self, f, state_version):
-        if state_version >= 2:
+        if 2 <= state_version < 11:
+            # Dummy reads to align scanline parameters. See LCD instead
             for y in range(ROWS):
-                self._scanlineparameters[y][0] = f.read()
-                self._scanlineparameters[y][1] = f.read()
-                # Restore (WX - 7) as described above
-                self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
-                self._scanlineparameters[y][3] = f.read()
+                f.read()
+                f.read()
+                f.read()
+                f.read()
                 if state_version > 3:
-                    self._scanlineparameters[y][4] = f.read()
+                    f.read()
 
         if state_version >= 6:
             for y in range(ROWS):
