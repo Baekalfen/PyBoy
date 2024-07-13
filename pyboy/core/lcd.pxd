@@ -47,8 +47,9 @@ cdef class LCD:
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
     cdef Renderer renderer
+    cdef uint8_t[144][5] _scanlineparameters
 
-    @cython.locals(interrupt_flag=uint8_t)
+    @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
     cdef uint8_t tick(self, int) noexcept nogil
     cdef int64_t cycles_to_interrupt(self) noexcept nogil
 
@@ -134,8 +135,6 @@ cdef class Renderer:
     cdef int[10] sprites_to_render
     cdef int ly_window
     cdef void invalidate_tile(self, int, int) noexcept nogil
-
-    cdef uint8_t[144][5] _scanlineparameters
 
     cdef void blank_screen(self, LCD) noexcept nogil
 
