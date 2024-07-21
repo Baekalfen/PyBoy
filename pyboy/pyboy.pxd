@@ -60,6 +60,8 @@ cdef class PyBoy:
     cdef readonly object game_wrapper
     cdef readonly MemoryScanner memory_scanner
     cdef readonly str cartridge_title
+    cdef readonly str cartridge_type
+    cdef readonly str cartridge_region
 
     cdef bint limit_emulationspeed
     cdef int emulationspeed, target_emulationspeed, save_target_emulationspeed

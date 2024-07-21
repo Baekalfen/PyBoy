@@ -34,6 +34,8 @@ class BaseMBC:
         self.external_ram_count = external_ram_count
         self.init_rambanks(external_ram_count)
         self.gamename = self.getgamename(rombanks)
+        self.gametype = self.getgametype(rombanks)
+        self.gameregion = self.getgameregion(rombanks)
 
         self.memorymodel = 0
         self.rambank_enabled = False
@@ -103,7 +105,55 @@ class BaseMBC:
         self.rambanks = memoryview(array.array("B", [0] * (8*1024*16))).cast("B", shape=(16, 8 * 1024))
 
     def getgamename(self, rombanks):
-        return "".join([chr(rombanks[0, x]) for x in range(0x0134, 0x0142)]).split("\0")[0]
+        return "".join([chr(rombanks[0, x]) for x in range(0x0134, 0x0143)]).split("\0")[0]
+
+    def getgametype(self, rombanks):
+        if rombanks[0, 0x143] == 0x80 or rombanks[0, 0x143] == 0xc0:
+            return "Game Boy Color"
+        elif rombanks[0, 0x146] == 0x03:
+            return "Super Game Boy"
+        else:
+            return "Game Boy"
+
+    def getgameregion(self, rombanks):
+        game_type = self.getgametype(rombanks)
+        # The region character is only present in GBC/SGB games only; for regular GB games can't be fetched
+        if game_type == 'Game Boy':
+            return "Unknown"
+        else:
+            # Get the last letter of the sales code that determines the region
+            region_string = "".join([chr(rombanks[0, x]) for x in range(0x13f, 0x0143)]).split("\0")[0]
+            if region_string:
+                region_code = region_string[-1]
+            else:
+                return "Unknown"
+            # Return game region according to the last letter of the serial code
+            if region_code == 'J':
+                return "Japan"
+            elif region_code == 'E':
+                return "USA"
+            elif region_code == 'P':
+                return "Europe"
+            elif region_code == 'S':
+                return "Spain"
+            elif region_code == 'I':
+                return "Italy"
+            elif region_code == 'F':
+                return "France"
+            elif region_code == 'D':
+                return "Germany"
+            elif region_code == 'A':
+                return "World"
+            elif region_code == 'X':
+                return "Europe"
+            elif region_code == 'Y':
+                return "Europe"
+            elif region_code == 'K':
+                return "Korea"
+            elif region_code == 'U':
+                return "Australia"
+            else:
+                return "Unknown"
 
     def setitem(self, address, value):
         raise Exception("Cannot set item in MBC")
@@ -138,6 +188,8 @@ class BaseMBC:
             "MBC class: %s" % self.__class__.__name__,
             "Filename: %s" % self.filename,
             "Game name: %s" % self.gamename,
+            "Game type: %s" % self.gametype,
+            "Game region: %s" % self.gameregion,
             "GB Color: %s" % str(self.rombanks[0, 0x143] == 0x80),
             "Cartridge type: %s" % hex(self.carttype),
             "Number of ROM banks: %s" % self.external_rom_count,

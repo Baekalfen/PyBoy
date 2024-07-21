@@ -323,6 +323,42 @@ class PyBoy:
             Game title
         """
 
+        self.cartridge_type = self.mb.cartridge.gametype
+        """
+        The game type stored on the currently loaded cartridge ROM. Values are:
+        Game Boy, Game Boy Color, Super Game Boy
+
+        Example:
+        ```python
+        >>> pyboy.cartridge_type # Game type of PyBoy's default ROM
+        'Game Boy Color'
+
+        ```
+
+        Returns
+        -------
+        str :
+            Game type
+        """
+
+        self.cartridge_region = self.mb.cartridge.gameregion
+        """
+        The game region stored on the currently loaded cartridge ROM. Example values are:
+        Europe, USA, Japan, Spain, Germany, World...
+
+        Example:
+        ```python
+        >>> pyboy.cartridge_region # Game region of PyBoy's default ROM
+        'Europe'
+
+        ```
+
+        Returns
+        -------
+        str :
+            Europe
+        """
+
         self._hooks = {}
 
         self._plugin_manager = PluginManager(self, self.mb, kwargs)
