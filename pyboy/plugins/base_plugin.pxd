@@ -6,7 +6,7 @@
 cimport cython
 cimport numpy as cnp
 from cpython.array cimport array
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, int64_t
 
 from pyboy.core.lcd cimport Renderer
 from pyboy.core.mb cimport Motherboard
@@ -38,6 +38,7 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
     cdef bint enable_title
     cdef Renderer renderer
 
+    cdef int64_t _ftime
     cdef bint frame_limiter(self, int) noexcept
     cdef void set_title(self, str) noexcept
 

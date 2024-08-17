@@ -25,7 +25,6 @@ cpdef list sdl2_event_pump(list) noexcept
 
 cdef class WindowSDL2(PyBoyWindowPlugin):
 
-    cdef int64_t _ftime
     cdef dict _key_down
     cdef dict _key_up
     cdef bint fullscreen

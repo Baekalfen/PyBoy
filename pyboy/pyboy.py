@@ -970,7 +970,8 @@ class PyBoy:
 
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
-        Some window types do not implement a frame-limiter, and will always run at full speed.
+        Due to backwards compatibility, the null window starts at unlimited speed (i.e. `target_speed=0`), while
+        others start at realtime (i.e. `target_speed=1`).
 
         Example:
         ```python
@@ -984,11 +985,6 @@ class PyBoy:
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         """
-        if self.initialized and self._plugin_manager.window_null_enabled:
-            logger.warning(
-                'This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\'s always running at full speed.'
-            )
-
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed

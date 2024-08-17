@@ -22,6 +22,8 @@ class WindowNull(PyBoyWindowPlugin):
                 'Deprecated use of "headless" or "dummy" window. Change to "null" window instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0'
             )
 
+        pyboy.set_emulation_speed(0)
+
     def enabled(self):
         return self.pyboy_argv.get("window") in ["null", "headless", "dummy"]
 

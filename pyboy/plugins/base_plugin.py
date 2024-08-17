@@ -13,6 +13,7 @@ __pdoc__ = {
 
 import io
 import random
+import time
 from array import array
 
 import numpy as np
@@ -65,6 +66,8 @@ class PyBoyWindowPlugin(PyBoyPlugin):
     def __init__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
 
+        self._ftime = time.perf_counter_ns()
+
         if not self.enabled():
             return
 
@@ -83,7 +86,14 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         self.renderer = self.mb.lcd.renderer
 
     def frame_limiter(self, speed):
-        return False
+        self._ftime += int((1.0 / (60.0*speed)) * 1_000_000_000)
+        now = time.perf_counter_ns()
+        if (self._ftime > now):
+            delay = (self._ftime - now) // 1_000_000
+            time.sleep(delay / 1000)
+        else:
+            self._ftime = now
+        return True
 
     def set_title(self, title):
         pass
