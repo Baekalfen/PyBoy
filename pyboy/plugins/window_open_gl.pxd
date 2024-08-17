@@ -22,7 +22,6 @@ cdef int ROWS, COLS
 cdef class WindowOpenGL(PyBoyWindowPlugin):
     cdef list events
 
-    cdef int64_t _ftime
     cdef void _glkeyboard(self, str, int, int, bint) noexcept
     cdef void _glkeyboardspecial(self, char, int, int, bint) noexcept
 

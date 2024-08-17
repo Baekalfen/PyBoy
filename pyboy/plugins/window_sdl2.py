@@ -157,9 +157,7 @@ class WindowSDL2(PyBoyWindowPlugin):
 
         if not self.enabled():
             return
-
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
-        self._ftime = time.perf_counter_ns()
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, self._scaledresolution[0],
@@ -204,16 +202,6 @@ class WindowSDL2(PyBoyWindowPlugin):
                 return True
         else:
             return False
-
-    def frame_limiter(self, speed):
-        self._ftime += int((1.0 / (60.0*speed)) * 1_000_000_000)
-        now = time.perf_counter_ns()
-        if (self._ftime > now):
-            delay = (self._ftime - now) // 1_000_000
-            sdl2.SDL_Delay(delay)
-        else:
-            self._ftime = now
-        return True
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)

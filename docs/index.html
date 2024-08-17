@@ -1041,7 +1041,8 @@ True...
 
         A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
-        Some window types do not implement a frame-limiter, and will always run at full speed.
+        Due to backwards compatibility, the null window starts at unlimited speed (i.e. `target_speed=0`), while
+        others start at realtime (i.e. `target_speed=1`).
 
         Example:
         ```python
@@ -1055,11 +1056,6 @@ True...
         Args:
             target_speed (int): Target emulation speed as multiplier of real-time.
         &#34;&#34;&#34;
-        if self.initialized and self._plugin_manager.window_null_enabled:
-            logger.warning(
-                &#39;This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\&#39;s always running at full speed.&#39;
-            )
-
         if target_speed &gt; 5:
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
         self.target_emulationspeed = target_speed
@@ -2343,7 +2339,8 @@ that is built-in with the game wrapper plugin for your game. See <code><a title=
 <code>target_speed</code>.</p>
 <p>The speed is defined as a multiple of real-time. I.e <code>target_speed=2</code> is double speed.</p>
 <p>A <code>target_speed</code> of <code>0</code> means unlimited. I.e. fastest possible execution.</p>
-<p>Some window types do not implement a frame-limiter, and will always run at full speed.</p>
+<p>Due to backwards compatibility, the null window starts at unlimited speed (i.e. <code>target_speed=0</code>), while
+others start at realtime (i.e. <code>target_speed=1</code>).</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy.tick() # Delays 16.67ms
 True
@@ -2369,7 +2366,8 @@ True
 
     A `target_speed` of `0` means unlimited. I.e. fastest possible execution.
 
-    Some window types do not implement a frame-limiter, and will always run at full speed.
+    Due to backwards compatibility, the null window starts at unlimited speed (i.e. `target_speed=0`), while
+    others start at realtime (i.e. `target_speed=1`).
 
     Example:
     ```python
@@ -2383,11 +2381,6 @@ True
     Args:
         target_speed (int): Target emulation speed as multiplier of real-time.
     &#34;&#34;&#34;
-    if self.initialized and self._plugin_manager.window_null_enabled:
-        logger.warning(
-            &#39;This window type does not support frame-limiting. `pyboy.set_emulation_speed(...)` will have no effect, as it\&#39;s always running at full speed.&#39;
-        )
-
     if target_speed &gt; 5:
         logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
     self.target_emulationspeed = target_speed</code></pre>
