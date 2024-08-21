@@ -1,14 +1,18 @@
 import logging
 import os
+import platform
 import queue
 import socket
 import sys
 import threading
+import time
 
-logger = logging.getLogger(__name__)
+import pyboy
 
-SERIAL_FREQ = 8192 # Hz
-CPU_FREQ = 4213440 # Hz
+logger = pyboy.logging.get_logger(__name__)
+
+SERIAL_FREQ = 8192  # Hz
+CPU_FREQ = 4194304  # Hz  # Corrected CPU Frequency
 
 async_recv = queue.Queue()
 
@@ -20,13 +24,15 @@ def async_comms(socket):
 
 
 class Serial:
-    def __init__(self, serial_address, serial_bind, serial_interrupt_based):
-        self.SB = 0
-        self.SC = 0
+    """Gameboy Link Cable Emulation"""
+
+    def __init__(self, mb, serial_address, serial_bind, serial_interrupt_based):
+        self.SB = 0  # Serial transfer data
+        self.SC = 0  # Serial transfer control
         self.connection = None
 
-        self.trans_bits = 0
-        self.cycles_count = 0
+        self.trans_bits = 0  # Number of bits transferred
+        self.cycles_count = 0  # Number of cycles since last transfer
         self.cycles_target = CPU_FREQ // SERIAL_FREQ
         self.serial_interrupt_based = serial_interrupt_based
 
@@ -41,6 +47,8 @@ class Serial:
         address_ip, address_port = serial_address.split(":")
         address_tuple = (address_ip, int(address_port))
 
+        self.is_master = True
+
         if serial_bind:
             self.binding_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.binding_connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -49,96 +57,64 @@ class Serial:
             self.binding_connection.listen(1)
             self.connection, _ = self.binding_connection.accept()
             logger.info(f"Client has connected!")
+            # Set as master
+            self.SC = 1
         else:
             self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             logger.info(f"Connecting to {serial_address}")
             self.connection.connect(address_tuple)
             logger.info(f"Connection successful!")
+            self.is_master = False
+            self.SC = 0
 
-        # if self.serial_interrupt_based:
-        #     logger.info("Interrupt-based serial emulation active!")
-        #     self.recv_thread = threading.Thread(target=async_comms, args=(self.connection,))
-        #     self.recv_thread.start()
+        # self.connection.setblocking(False)
+        # self.t = threading.Thread(target=async_comms, args=(self.connection,))
+        # self.t.start()
 
     def tick(self, cycles):
         if self.connection is None:
-            return
+            return False
 
-        # self.cycles_count += 1
+        if self.SC & 0x80 == 0:  # Check if transfer is enabled
+            return False
 
-        if self.serial_interrupt_based:
-            if self.SC & 0x80 == 0: # Performance optimization. Games might not set this on slave
-                return False
+        self.cycles_count += cycles  # Accumulate cycles
 
-            self.cycles_count += 1
+        if self.cycles_to_transmit() == 0:
+            send_bit = bytes([(self.SB >> 7) & 1])
+            self.connection.send(send_bit)
+            # time.sleep(1 / SERIAL_FREQ)  # Remove unnecessary sleep
 
-            if (self.cycles_to_transmit() == 0):
-                if self.SC & 1: # Master
-                    if self.SC & 0x80:
-                        logger.info(f"Master sending!")
-                        self.connection.send(bytes([self.SB]))
-                        data = self.connection.recv(1)
-                        self.SB = data[0]
-                        self.SC &= 0b0111_1111
-                        self.cycles_count = 0
-                        return True
+            try:
+                data = self.connection.recv(1)  # Receive data without timeout
+                if data:
+                    self.SB = ((self.SB << 1) & 0xFF) | data[0] & 1
                 else:
-                    # try:
-                    #     data = async_recv.get(block=False)
-                    # except queue.Empty:
-                    #     return False
-                    try:
-                        data = self.connection.recv(1, socket.MSG_DONTWAIT)
-                    except BlockingIOError:
-                        return False
+                    return False  # Handle disconnection
+            except BlockingIOError:
+                return False  # No data available yet
 
-                    logger.info(f"Slave recv!")
-                    self.connection.send(bytes([self.SB]))
-                    # data = self.connection.recv(1)
-                    self.SB = data[0]
-                    self.SC &= 0b0111_1111
-                    self.cycles_count = 0
-                    return True
+            logger.info(f"recv sb: {self.SB:08b}")
+            self.trans_bits += 1
+
+            self.cycles_count = 0  # Reset cycle count after transmission
+
+            if self.trans_bits == 8:
+                self.trans_bits = 0
+                self.SC &= 0b0111_1111  # Clear transfer start flag
+                return True  # Indicate transfer complete
             return False
-        else:
-            # Check if serial is in progress
-            if self.SC & 0x80 == 0:
-                return False
-
-            self.cycles_count += 1
-
-            if (self.cycles_to_transmit() == 0):
-                # if self.SC & 1: # Master
-                send_bit = bytes([(self.SB >> 7) & 1])
-                self.connection.send(send_bit)
-
-                data = self.connection.recv(1)
-                self.SB = ((self.SB << 1) & 0xFF) | data[0] & 1
-
-                logger.info(f"recv sb: {self.SB:08b}")
-                self.trans_bits += 1
-
-                self.cycles_count = 0
-
-                if self.trans_bits == 8:
-                    self.trans_bits = 0
-                    self.SC &= 0b0111_1111
-                    return True
-                return False
-            return False
+        return False
 
     def cycles_to_transmit(self):
         if self.connection:
             if self.SC & 0x80:
                 return max(self.cycles_target - self.cycles_count, 0)
-                # return CPU_FREQ // SERIAL_FREQ
             else:
-                return 1 << 16
+                return 1 << 16  # Large value to prevent transmission
         else:
             return 1 << 16
 
     def stop(self):
         if self.connection:
             self.connection.close()
-            # if self.serial_interrupt_based and self.recv_thread:
-            #     self.recv_thread.kill()
