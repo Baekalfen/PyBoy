@@ -106,8 +106,8 @@ class PyBoy:
             )
             window = kwargs.pop("window_type")
 
-        if window not in ["SDL2", "OpenGL", "null", "headless", "dummy"]:
-            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", or "null"')
+        if window not in ["SDL2", "OpenGL", "OpenGLHeadless", "null", "headless", "dummy"]:
+            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", "OpenGLHeadless" or "null"')
 
         kwargs["window"] = window
         kwargs["scale"] = scale
