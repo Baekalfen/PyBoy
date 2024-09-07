@@ -16,6 +16,7 @@ import numpy as np
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
+from pyboy.api.gameshark import GameShark
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
@@ -354,6 +355,8 @@ class PyBoy:
         `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
             A game-specific wrapper object.
         """
+        print("DTGS GAMESHARK")
+        self.gameshark = GameShark(self.mb)
 
         self.initialized = True
 
