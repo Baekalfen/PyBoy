@@ -11,6 +11,7 @@ from .screen import Screen
 from .sprite import Sprite
 from .tile import Tile
 from .tilemap import TileMap
+from .gameshark import GameShark
 
 # __pdoc__ = {
 #     "constants": False,
