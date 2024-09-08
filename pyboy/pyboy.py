@@ -16,6 +16,7 @@ import numpy as np
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
+from pyboy.api.gameshark import GameShark
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
@@ -354,6 +355,7 @@ class PyBoy:
         `pyboy.plugins.base_plugin.PyBoyGameWrapper`:
             A game-specific wrapper object.
         """
+        self.gameshark = GameShark(self.mb)
 
         self.initialized = True
 
@@ -365,6 +367,7 @@ class PyBoy:
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
+            self.gameshark.tick()  # Execute GS Codes every tick
             self.__rendering(render)
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():
