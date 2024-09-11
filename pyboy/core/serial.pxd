@@ -9,16 +9,18 @@ cdef class Serial:
     cdef int SC
     cdef int SB
     cdef object connection
+    cdef object recv
     cdef int trans_bits
     cdef int cycles_count
     cdef int cycles_target
     cdef int serial_interrupt_based
+    cdef bint waiting_for_byte
+    cdef int byte_retry_count
     cdef object binding_connection
     cdef int is_master
     cdef bint transfer_enabled
 
     cpdef send_bit(self)
-    cpdef bint recv_bit(self)
-    cpdef bint tick(self)
-    cpdef int cycles_to_transmit(self)
+    cpdef bint tick(self, int cycles) noexcept with gil
+    cpdef int cycles_to_transmit(self) noexcept with gil
     cpdef stop(self)

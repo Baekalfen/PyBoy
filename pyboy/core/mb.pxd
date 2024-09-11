@@ -12,13 +12,16 @@ cimport pyboy.core.cartridge.base_mbc
 cimport pyboy.core.cpu
 cimport pyboy.core.interaction
 cimport pyboy.core.lcd
-cimport pyboy.core.serial
 cimport pyboy.core.ram
+cimport pyboy.core.serial
 cimport pyboy.core.sound
 cimport pyboy.core.timer
+
 from threading import Thread
+
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, WindowEvent
+
 
 cdef Logger logger
 
@@ -63,7 +66,7 @@ cdef class Motherboard:
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
-    cdef bint tick(self) noexcept nogil
+    cdef bint tick(self) noexcept with gil
 
     cdef void switch_speed(self) noexcept nogil
 

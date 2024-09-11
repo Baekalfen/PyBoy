@@ -3,9 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy import utils
 from pyboy.utils import STATE_VERSION
-from threading import Thread
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, serial, sound, timer
 
@@ -46,6 +44,7 @@ class Motherboard:
         self.bootrom = bootrom.BootROM(bootrom_file, cgb)
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
+        self.serial = serial.Serial(self, serial_address or None, serial_bind or None, serial_interrupt_based)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
@@ -76,13 +75,6 @@ class Motherboard:
         if self.cgb:
             self.hdma = HDMA()
 
-        self.serial = serial.Serial(self, serial_address or None, serial_bind  or None, serial_interrupt_based)
-        self.serial_thread = None
-        if not serial_address and not serial_bind:
-            self.serial_thread = None
-        else:
-            self.serial_thread = Thread(target=lambda: self.serial.tick())
-            self.serial_thread.start()
         self.bootrom_enabled = True
         self.serialbuffer = [0] * 1024
         self.serialbuffer_count = 0
@@ -308,10 +300,8 @@ class Motherboard:
                 cycles = max(
                     0,
                     min(
-                        self.lcd.cycles_to_interrupt(),
-                        self.timer.cycles_to_interrupt(),
-                        # self.serial.cycles_to_transmit(),
-                        mode0_cycles
+                        self.lcd.cycles_to_interrupt(), self.timer.cycles_to_interrupt(),
+                        self.serial.cycles_to_transmit(), mode0_cycles
                     )
                 )
 
@@ -328,8 +318,8 @@ class Motherboard:
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
 
-            # if self.serial.tick(cycles):
-            #     self.cpu.set_interruptflag(INTR_SERIAL)
+            if self.serial.tick(cycles):
+                self.cpu.set_interruptflag(INTR_SERIAL)
 
             lcd_interrupt = self.lcd.tick(cycles)
             if lcd_interrupt:
@@ -501,21 +491,15 @@ class Motherboard:
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
-                # if value != self.serial.SB:
-                #     logger.info(f"SET SB: {bin(value)} (0x{value:02x})")
                 self.serial.SB = value
 
                 self.serialbuffer[self.serialbuffer_count] = value
                 self.serialbuffer_count += 1
                 self.serialbuffer_count &= 0x3FF
                 self.ram.io_ports[i - 0xFF00] = value
-                # logger.info(f"SERIAL BUFFER {self.serialbuffer}")
-
-                # print(self.serialbuffer)
             elif i == 0xFF02:
-                # if value != self.serial.SC:
-                #     logger.info(f"SET SC: {bin(value)} (0x{value:02x})")
                 self.serial.SC = value
+                self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.reset()
             elif i == 0xFF05:
