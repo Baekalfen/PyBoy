@@ -13,6 +13,7 @@ import time
 
 import numpy as np
 
+from pyboy.api.gameshark import GameShark
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.tilemap import TileMap
@@ -50,6 +51,7 @@ class PyBoy:
         sound=False,
         sound_emulated=False,
         cgb=None,
+        gameshark=None,
         log_level=defaults["log_level"],
         **kwargs
     ):
@@ -355,6 +357,21 @@ class PyBoy:
             A game-specific wrapper object.
         """
 
+        self.gameshark = GameShark(self.memory)
+        """
+        Provides an instance of the `pyboy.api.gameshark.GameShark` handler. This allows you to inject GameShark-based cheat codes.
+
+        Example:
+        ```python
+        >>> pyboy.gameshark.add("010138CD")
+        >>> pyboy.gameshark.remove("010138CD")
+        >>> pyboy.gameshark.clear_all()
+        ```
+        """
+        if gameshark:
+            for code in gameshark.split(","):
+                self.gameshark.add(code.strip())
+
         self.initialized = True
 
     def _tick(self, render):
@@ -365,6 +382,7 @@ class PyBoy:
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
+            self.gameshark.tick()
             self.__rendering(render)
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():

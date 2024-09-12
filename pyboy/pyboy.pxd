@@ -8,6 +8,7 @@ cimport cython
 from libc cimport time
 from libc.stdint cimport int64_t, uint64_t
 
+from pyboy.api.gameshark cimport GameShark
 from pyboy.api.memory_scanner cimport MemoryScanner
 from pyboy.api.screen cimport Screen
 from pyboy.api.tilemap cimport TileMap
@@ -59,6 +60,7 @@ cdef class PyBoy:
     cdef readonly TileMap tilemap_window
     cdef readonly object game_wrapper
     cdef readonly MemoryScanner memory_scanner
+    cdef readonly GameShark gameshark
     cdef readonly str cartridge_title
 
     cdef bint limit_emulationspeed
