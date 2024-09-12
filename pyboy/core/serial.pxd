@@ -10,6 +10,8 @@ cdef class Serial:
     cdef int SB
     cdef object connection
     cdef object recv
+    cdef object recv_t
+    cdef bint quitting
     cdef int trans_bits
     cdef int cycles_count
     cdef int cycles_target

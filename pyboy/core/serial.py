@@ -34,6 +34,8 @@ class Serial:
 
         self.recv = queue.Queue()
 
+        self.quitting = False
+
         if not serial_address:
             logger.info("No serial address supplied. Link Cable emulation disabled.")
             return
@@ -65,12 +67,12 @@ class Serial:
             logger.info(f"Connection successful!")
             self.is_master = False
         self.connection.setblocking(False)
-        t = threading.Thread(target=lambda: self.recv_thread())
-        t.daemon = True
-        t.start()
+        self.recv_t = threading.Thread(target=lambda: self.recv_thread())
+        self.recv_t.daemon = True
+        self.recv_t.start()
 
     def recv_thread(self):
-        while True:
+        while not self.quitting:
             try:
                 data = self.connection.recv(1)
                 self.recv.put(data)
@@ -138,5 +140,11 @@ class Serial:
             return 1 << 16
 
     def stop(self):
+        self.quitting = True
         if self.connection:
             self.connection.close()
+        if hasattr(self, "binding_connection"):
+            self.binding_connection.close()
+        self.connection = None
+        self.binding_connection = None
+        self.recv_t.join()
