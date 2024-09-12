@@ -13,8 +13,12 @@ cimport pyboy.core.cpu
 cimport pyboy.core.interaction
 cimport pyboy.core.lcd
 cimport pyboy.core.ram
+cimport pyboy.core.serial
 cimport pyboy.core.sound
 cimport pyboy.core.timer
+
+from threading import Thread
+
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, WindowEvent
 
@@ -22,6 +26,7 @@ from pyboy.utils cimport IntIOInterface, WindowEvent
 cdef Logger logger
 
 cdef uint16_t STAT, LY, LYC
+cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef int STATE_VERSION
 
@@ -35,7 +40,8 @@ cdef class Motherboard:
     cdef pyboy.core.timer.Timer timer
     cdef pyboy.core.sound.Sound sound
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
-    cdef object serial
+    cdef pyboy.core.serial.Serial serial
+    cdef object serial_thread
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
@@ -60,7 +66,7 @@ cdef class Motherboard:
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
-    cdef bint tick(self) noexcept nogil
+    cdef bint tick(self) noexcept with gil
 
     cdef void switch_speed(self) noexcept nogil
 
