@@ -87,6 +87,11 @@ parser.add_argument(
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
 parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
 parser.add_argument("--no-renderer", action="store_true", help="Disable rendering (internal use)")
+parser.add_argument(
+    "--gameshark",
+    type=str,
+    help="Add GameShark cheats on start-up. Add multiple by comma separation (i.e. '010138CD, 01033CD1')"
+)
 
 gameboy_type_parser = parser.add_mutually_exclusive_group()
 gameboy_type_parser.add_argument(

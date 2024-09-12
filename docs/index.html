@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound=False, sound_emulated=False, cgb=None, log_level='ERROR', **kwargs)</span>
+<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound=False, sound_emulated=False, cgb=None, gameshark=None, log_level='ERROR', **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -121,6 +121,7 @@ True...
         sound=False,
         sound_emulated=False,
         cgb=None,
+        gameshark=None,
         log_level=defaults[&#34;log_level&#34;],
         **kwargs
     ):
@@ -426,6 +427,21 @@ True...
             A game-specific wrapper object.
         &#34;&#34;&#34;
 
+        self.gameshark = GameShark(self.memory)
+        &#34;&#34;&#34;
+        Provides an instance of the `pyboy.api.gameshark.GameShark` handler. This allows you to inject GameShark-based cheat codes.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.gameshark.add(&#34;010138CD&#34;)
+        &gt;&gt;&gt; pyboy.gameshark.remove(&#34;010138CD&#34;)
+        &gt;&gt;&gt; pyboy.gameshark.clear_all()
+        ```
+        &#34;&#34;&#34;
+        if gameshark:
+            for code in gameshark.split(&#34;,&#34;):
+                self.gameshark.add(code.strip())
+
         self.initialized = True
 
     def _tick(self, render):
@@ -436,6 +452,7 @@ True...
         self._handle_events(self.events)
         t_pre = time.perf_counter_ns()
         if not self.paused:
+            self.gameshark.tick()
             self.__rendering(render)
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():
@@ -1489,6 +1506,15 @@ game title (see <code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.
 <h2 id="returns">Returns</h2>
 <p><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="plugins/base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></code>:
 A game-specific wrapper object.</p></section>
+</dd>
+<dt id="pyboy.PyBoy.gameshark"><code class="name">var <span class="ident">gameshark</span></code></dt>
+<dd>
+<section class="desc"><p>Provides an instance of the <code><a title="pyboy.api.gameshark.GameShark" href="api/gameshark.html#pyboy.api.gameshark.GameShark">GameShark</a></code> handler. This allows you to inject GameShark-based cheat codes.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.gameshark.add(&quot;010138CD&quot;)
+&gt;&gt;&gt; pyboy.gameshark.remove(&quot;010138CD&quot;)
+&gt;&gt;&gt; pyboy.gameshark.clear_all()
+</code></pre></section>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -3604,6 +3630,7 @@ def PC(self):
 <li><code><a title="pyboy.PyBoy.tilemap_window" href="#pyboy.PyBoy.tilemap_window">tilemap_window</a></code></li>
 <li><code><a title="pyboy.PyBoy.cartridge_title" href="#pyboy.PyBoy.cartridge_title">cartridge_title</a></code></li>
 <li><code><a title="pyboy.PyBoy.game_wrapper" href="#pyboy.PyBoy.game_wrapper">game_wrapper</a></code></li>
+<li><code><a title="pyboy.PyBoy.gameshark" href="#pyboy.PyBoy.gameshark">gameshark</a></code></li>
 </ul>
 </li>
 <li>
