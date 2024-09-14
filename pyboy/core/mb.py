@@ -45,7 +45,8 @@ class Motherboard:
         self.bootrom = bootrom.BootROM(bootrom_file, cgb)
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
-        self.serial = serial.Serial(serial_address, serial_bind, serial_interrupt_based)
+        self.serial_enabled = (serial_address or None) or (serial_bind or None)
+        self.serial = serial.Serial(self, serial_address or None, serial_bind or None, serial_interrupt_based)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
@@ -304,10 +305,9 @@ class Motherboard:
                         self.lcd.cycles_to_interrupt(),
                         self.timer.cycles_to_interrupt(),
                         self.serial.cycles_to_transmit(),
-                        mode0_cycles
+                        mode0_cycles,
                     )
                 )
-                cycles = 4
 
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
@@ -321,7 +321,8 @@ class Motherboard:
 
             if self.timer.tick(cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
-            if self.serial.tick(cycles):
+
+            if self.serial_enabled and self.serial.tick(cycles):
                 self.cpu.set_interruptflag(INTR_SERIAL)
 
             lcd_interrupt = self.lcd.tick(cycles)
@@ -373,10 +374,12 @@ class Motherboard:
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C: # I/O ports
             if i == 0xFF01:
-                logger.info(f"get SB {self.serial.SB}")
+                # logger.info(f"get SB {self.serial.SB}")
+                # if not self.serial:
+                #     return 0xFF
                 return self.serial.SB
             elif i == 0xFF02:
-                logger.info(f"get SC {self.serial.SC}")
+                # logger.info(f"get SC {self.serial.SC}")
                 return self.serial.SC
             elif i == 0xFF04:
                 return self.timer.DIV
@@ -493,7 +496,6 @@ class Motherboard:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
                 self.serial.SB = value
-                logger.info(f"SB: {value:02x}")
 
                 self.serialbuffer[self.serialbuffer_count] = value
                 self.serialbuffer_count += 1
@@ -501,7 +503,7 @@ class Motherboard:
                 self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF02:
                 self.serial.SC = value
-                logger.info(f"SC: {value:02x}")
+                # self.ram.io_ports[i - 0xFF00] = value
             elif i == 0xFF04:
                 self.timer.reset()
             elif i == 0xFF05:
