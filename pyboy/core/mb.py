@@ -277,7 +277,6 @@ class Motherboard:
 
     def tick(self):
         while self.processing_frame():
-            _cycles0 = self.cpu.cycles
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
@@ -298,6 +297,7 @@ class Motherboard:
                         self.timer._cycles_to_interrupt,
                         self.lcd._cycles_to_interrupt, # TODO: Be more agreesive. Only if actual interrupt enabled.
                         self.lcd._cycles_to_frame,
+                        self.sound._cycles_to_interrupt, # TODO: Not implemented
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles
                     )
@@ -307,14 +307,7 @@ class Motherboard:
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
-            cycles = self.cpu.cycles - _cycles0
-
-            # TODO: Unify interface
-            sclock = self.sound.clock
-            if self.cgb and self.double_speed:
-                self.sound.clock = sclock + cycles//2
-            else:
-                self.sound.clock = sclock + cycles
+            self.sound.tick(self.cpu.cycles, self.double_speed)
 
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
@@ -378,6 +371,7 @@ class Motherboard:
             elif i == 0xFF0F:
                 return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
+                self.sound.tick(self.cpu.cycles, self.double_speed)
                 return self.sound.get(i - 0xFF10)
             elif i == 0xFF40:
                 return self.lcd.get_lcdc()
@@ -499,6 +493,7 @@ class Motherboard:
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
+                self.sound.tick(self.cpu.cycles, self.double_speed)
                 self.sound.set(i - 0xFF10, value)
             elif i == 0xFF40:
                 self.lcd.set_lcdc(value)
