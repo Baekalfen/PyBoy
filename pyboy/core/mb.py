@@ -350,8 +350,7 @@ class Motherboard:
             bank_offset = 0
             if self.cgb and 0xD000 <= i:
                 # Find which bank to read from at FF70
-                bank = self.getitem(0xFF70)
-                bank &= 0b111
+                bank = self.ram.non_io_internal_ram1[0xFF70 - 0xFF4C] & 0b111
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank-1) * 0x1000
