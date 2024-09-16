@@ -91,11 +91,7 @@ cdef class SweepChannel(ToneChannel):
     cdef bint sweepenable # Internal sweep enable flag
     cdef int shadow # Shadow copy of period register for ignoring writes to sndper
 
-    cdef uint8_t getreg(self, uint8_t) noexcept nogil
-    cdef void setreg(self, uint8_t, uint8_t) noexcept nogil
     cdef bint sweep(self, bint) noexcept nogil
-    cdef void trigger(self) noexcept nogil
-    cdef void tickframe(self) noexcept nogil
 
 
 cdef class WaveChannel:
