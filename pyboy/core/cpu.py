@@ -110,27 +110,25 @@ class CPU:
     def tick(self, cycles_target):
         _cycles0 = self.cycles
         _target = _cycles0 + cycles_target
+
+        if self.check_interrupts():
+            self.halted = False
+            # TODO: Cycles it took to handle the interrupt
+
+        if self.halted and self.interrupt_queued:
+            # GBCPUman.pdf page 20
+            # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
+            # disabled (DI) on the GB,GBP, and SGB.
+            self.halted = False
+            self.PC += 1
+            self.PC &= 0xFFFF
+        elif self.halted:
+            self.cycles += cycles_target # TODO: Number of cycles for a HALT in effect?
+        self.interrupt_queued = False
+
         self.bail = False
         while self.cycles < _target:
-            if self.check_interrupts():
-                self.halted = False
-                # TODO: We return with the cycles it took to handle the interrupt
-                break
-                # return cycles
-
-            if self.halted and self.interrupt_queued:
-                # GBCPUman.pdf page 20
-                # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
-                # disabled (DI) on the GB,GBP, and SGB.
-                self.halted = False
-                self.PC += 1
-                self.PC &= 0xFFFF
-            elif self.halted:
-                self.cycles += cycles_target # TODO: Number of cycles for a HALT in effect?
-                break
-
-            self.interrupt_queued = False
-
+            # TODO: cpu-stuck check for blargg tests?
             self.cycles += self.fetch_and_execute()
             if self.bail: # Possible cycles-target changes
                 break
