@@ -460,6 +460,7 @@ class OpcodeData:
         # TODO: Implement HALT bug.
         code.addlines([
             "cpu.halted = True",
+            "cpu.bail = True",
             "return " + self.cycles[0],
         ])
         return code.getcode()

@@ -1088,6 +1088,7 @@ def LD_75(cpu): # 75 LD (HL),L
 
 def HALT_76(cpu): # 76 HALT
     cpu.halted = True
+    cpu.bail = True
     return 4
 
 
