@@ -133,45 +133,39 @@ class CPU:
             # Interrupt already queued. This happens only when using a debugger.
             return False
 
-        if (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111):
-            if self.handle_interrupt(INTR_VBLANK, 0x0040):
-                self.interrupt_queued = True
-            elif self.handle_interrupt(INTR_LCDC, 0x0048):
-                self.interrupt_queued = True
-            elif self.handle_interrupt(INTR_TIMER, 0x0050):
-                self.interrupt_queued = True
-            elif self.handle_interrupt(INTR_SERIAL, 0x0058):
-                self.interrupt_queued = True
-            elif self.handle_interrupt(INTR_HIGHTOLOW, 0x0060):
-                self.interrupt_queued = True
-            else:
-                logger.error("No interrupt triggered, but it should!")
-                self.interrupt_queued = False
+        raised_and_enabled = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
+        if raised_and_enabled:
+            # Clear interrupt flag
+            if self.halted:
+                self.PC += 1 # Escape HALT on return
+                self.PC &= 0xFFFF
+
+            if self.interrupt_master_enable:
+                if raised_and_enabled & INTR_VBLANK:
+                    self.handle_interrupt(INTR_VBLANK, 0x0040)
+                elif raised_and_enabled & INTR_LCDC:
+                    self.handle_interrupt(INTR_LCDC, 0x0048)
+                elif raised_and_enabled & INTR_TIMER:
+                    self.handle_interrupt(INTR_TIMER, 0x0050)
+                elif raised_and_enabled & INTR_SERIAL:
+                    self.handle_interrupt(INTR_SERIAL, 0x0058)
+                elif raised_and_enabled & INTR_HIGHTOLOW:
+                    self.handle_interrupt(INTR_HIGHTOLOW, 0x0060)
+            self.interrupt_queued = True
             return True
         else:
             self.interrupt_queued = False
         return False
 
     def handle_interrupt(self, flag, addr):
-        if (self.interrupts_enabled_register & flag) and (self.interrupts_flag_register & flag):
-            # Clear interrupt flag
-            if self.halted:
-                self.PC += 1 # Escape HALT on return
-                self.PC &= 0xFFFF
+        self.interrupts_flag_register ^= flag # Remove flag
+        self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
+        self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
+        self.SP -= 2
+        self.SP &= 0xFFFF
 
-            # Handle interrupt vectors
-            if self.interrupt_master_enable:
-                self.interrupts_flag_register ^= flag # Remove flag
-                self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
-                self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
-                self.SP -= 2
-                self.SP &= 0xFFFF
-
-                self.PC = addr
-                self.interrupt_master_enable = False
-
-            return True
-        return False
+        self.PC = addr
+        self.interrupt_master_enable = False
 
     def fetch_and_execute(self):
         opcode = self.mb.getitem(self.PC)
