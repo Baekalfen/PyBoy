@@ -86,6 +86,15 @@ with PyBoy('game_rom.gb') as pyboy:
         pass
 ``` -->
 
+The buttons are mapped as follows:
+```
+Movement: Arrow keys
+A: A
+B: S
+Start: Enter
+Select: Backspace
+```
+
 
 The API
 =======
