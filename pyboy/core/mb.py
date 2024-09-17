@@ -565,7 +565,7 @@ class Motherboard:
                     mode0_cycles = self.lcd.cycles_to_mode0()
 
                 cycles_target = max(
-                    0, #4,
+                    4, #0, #4,
                     min(
                         self.timer._cycles_to_interrupt,
                         self.lcd._cycles_to_interrupt, # TODO: Be more agreesive. Only if actual interrupt enabled.
