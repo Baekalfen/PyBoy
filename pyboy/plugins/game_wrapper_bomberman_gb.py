@@ -17,33 +17,33 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
     everything this object provides.
     """
 
-    cartridge_title = 'BOMBER MAN GB'
+    cartridge_title = "BOMBER MAN GB"
 
     def __init__(self, *args, **kwargs):
         # Readonly Vars
         self._GAME_AREA_SHAPE = (2, 2, 18, 14)
-        self._ENEMY = ['ENEMY_1', 'ENEMY_2', 'ENEMY_3']
+        self._ENEMY = ["ENEMY_1", "ENEMY_2", "ENEMY_3"]
 
-        self.AGENT_DEAD = 51233  # 0xc821
-        self.AGENT_STATS_BOMB_PLACED = 49462  # 0xc136
-        self.AGENT_STATS_BOMB_MAX = 49461  # 0xc135
-        self.AGENT_STATS_BOMB_RANGE = 49463  # 0xc137
+        self.AGENT_DEAD = 51233 # 0xc821
+        self.AGENT_STATS_BOMB_PLACED = 49462 # 0xc136
+        self.AGENT_STATS_BOMB_MAX = 49461 # 0xc135
+        self.AGENT_STATS_BOMB_RANGE = 49463 # 0xc137
 
         self._COORD_MEM_ADDR = {
-            'AGENT': (51202, 51206),
-            'ENEMY_1': (51458, 51462),
-            'ENEMY_2': (51714, 51718),
-            'ENEMY_3': (51970, 51974),
+            "AGENT": (51202, 51206),
+            "ENEMY_1": (51458, 51462),
+            "ENEMY_2": (51714, 51718),
+            "ENEMY_3": (51970, 51974),
         }
 
         self._ENEMY_DEAD_MEM_ADDR = {
-            'ENEMY_1': 51489,
-            'ENEMY_2': 51745,
-            'ENEMY_3': 52001,
+            "ENEMY_1": 51489,
+            "ENEMY_2": 51745,
+            "ENEMY_3": 52001,
         }
 
-        self.BOMBINFO_START = 50721  # 0xc621
-        self.BOMBINGO_END = 50945  # 0xc701
+        self.BOMBINFO_START = 50721 # 0xc621
+        self.BOMBINGO_END = 50945 # 0xc701
 
         # Game Vars
         self._ENEMY_ALIVE = []
@@ -81,9 +81,9 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         """
         if not enemies:
             enemies = np.random.default_rng().integers(1, 4)
-        
-        logger.info('STARTING GAME')
-        logger.info(f'Enemies: {enemies}, Wins: {win}, Time: {time}')
+
+        logger.info("STARTING GAME")
+        logger.info(f"Enemies: {enemies}, Wins: {win}, Time: {time}")
 
         PyBoyGameWrapper.start_game(self, timer_div)
 
@@ -93,11 +93,11 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         self._handle_password_screen()
 
         # Confirme Player One
-        self.pyboy.button('start')
+        self.pyboy.button("start")
         self.pyboy.tick(100, render=False)
 
         # The point to reset is before enemy selection
-        logger.info('SAVE STATE CREATED')
+        logger.info("SAVE STATE CREATED")
         self.saved_state.seek(0)
         self.pyboy.save_state(self.saved_state)
 
@@ -110,7 +110,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         # Select Stage
         self._select_stage_screen()
         self._reset_settings()
-        logger.info('STARTED GAME')
+        logger.info("STARTED GAME")
 
     def reset_game(self, timer_div=None, enemies=None, win=1, time=1) -> None:
         """After calling `start_game`, use this method to reset to save state.
@@ -126,8 +126,8 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         if not enemies:
             enemies = np.random.default_rng().integers(1, 4)
 
-        logger.info('RESETING GAME')
-        logger.info(f'Enemies: {enemies}, Wins: {win}, Time: {time}')
+        logger.info("RESETING GAME")
+        logger.info(f"Enemies: {enemies}, Wins: {win}, Time: {time}")
 
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
@@ -140,7 +140,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         # Select Stage
         self._select_stage_screen()
         self._reset_settings()
-        logger.info('RESET GAME')
+        logger.info("RESET GAME")
 
     def game_over(self) -> bool:
         """This function checks if the game is over.
@@ -151,23 +151,21 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         Returns:
             bool: True if game over.
         """
-        logger.info('CHECKING GAME OVER')
+        logger.info("CHECKING GAME OVER")
 
         map_changed = self.pyboy.game_area()[2, 2] != 12
         win = (len(self._ENEMY_ALIVE) == 0) and not self._agent_dead
 
-        end = self._agent_dead or map_changed or win  # or time_up
+        end = self._agent_dead or map_changed or win # or time_up
 
-        logger.info(
-            f'\nGAME END: {end}\nDEAD: {self._agent_dead}\n \
-            MAP:{map_changed}\nWIN:{win}',
-        )
+        logger.info(f"\nGAME END: {end}\nDEAD: {self._agent_dead}\n \
+            MAP:{map_changed}\nWIN:{win}", )
 
         return end
 
     def _reset_settings(self) -> None:
         """This function resets the players stats."""
-        logger.info('RESETING STATS')
+        logger.info("RESETING STATS")
         self._ENEMY_ALIVE = []
 
         self._agent_bombs_available = 1
@@ -187,7 +185,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         self._score_last_dist = 0
         self._agent_in_bomb_range = 0
 
-        logger.info('STATS RESETED')
+        logger.info("STATS RESETED")
 
     def post_tick(self) -> None:
         """This function is called after `.tick()`."""
@@ -199,7 +197,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         self._agent_dead = self.pyboy.memory[self.AGENT_DEAD]
 
         if self._agent_dead:
-            logger.info('AGENT DEAD')
+            logger.info("AGENT DEAD")
             self._agent_suicide = self._suicide()
 
         # This has some timing issues going on
@@ -299,23 +297,21 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         bomb_map = np.empty((7, 9), dtype=np.uint8)
         bomb_map = self._get_explosion_map()
 
-        x_coord, y_coord = self._player_game_area_coordinate('AGENT')
+        x_coord, y_coord = self._player_game_area_coordinate("AGENT")
 
         if bomb_map[y_coord // 2, x_coord // 2] in self._agent_bombs:
-            logger.info('SUICIDE')
+            logger.info("SUICIDE")
             return 1
 
         return 0
 
-    def _get_explosion_map(self) -> NDArray[uint8]:  # noqa: F821
+    def _get_explosion_map(self) -> NDArray[uint8]: # noqa: F821
         """This Function returns a "map" with bombs on it.
 
         Returns:
             np.ndarray: "Map"
         """
-        bombs = self.pyboy.memory[
-            self.BOMBINFO_START : self.BOMBINGO_END
-        ]  # See PlayerInfo
+        bombs = self.pyboy.memory[self.BOMBINFO_START:self.BOMBINGO_END] # See PlayerInfo
 
         # Reshape and deselect VRAM
         return np.reshape(np.array(bombs, dtype=np.uint8), (7, -1))[:7, :9]
@@ -335,16 +331,14 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         y_pixle_coordinate = self.pyboy.memory[self._COORD_MEM_ADDR[player][1]]
 
         # See global var GAME_AREA_SHAPE
-        x_coordinate = (
-            x_pixle_coordinate // 8
-        ) - 3  # //8 for Pixelsize -2 game_area offset.
-        y_coordinate = (y_pixle_coordinate // 8) - 3
+        x_coordinate = (x_pixle_coordinate//8) - 3 # //8 for Pixelsize -2 game_area offset.
+        y_coordinate = (y_pixle_coordinate//8) - 3
 
         # To much logging.
         # logger.info(f"UPPERLEFT COORDINATES {player}:")
         # logger.info(f"X: {x_coordinate}, Y: {y_coordinate}")
 
-        return (x_coordinate, y_coordinate)  # Coordinate of the upperleft quarter.
+        return (x_coordinate, y_coordinate) # Coordinate of the upperleft quarter.
 
     def _update_enemy_alive_cache(self) -> None:
         """This function creates or updates the enemy cache.
@@ -357,9 +351,9 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
                 if self.pyboy.memory[self._ENEMY_DEAD_MEM_ADDR[enemy]]:
                     self._check_agent_kill(enemy)
                     self._ENEMY_ALIVE.remove(enemy)
-                    logger.info(f'REMOVE {enemy}')
+                    logger.info(f"REMOVE {enemy}")
         else:
-            logger.info('CREATING NEW ENEMY CACHE')
+            logger.info("CREATING NEW ENEMY CACHE")
             for enemy in self._ENEMY:
                 if not self.pyboy.memory[self._ENEMY_DEAD_MEM_ADDR[enemy]]:
                     self._ENEMY_ALIVE.append(enemy)
@@ -371,7 +365,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
 
         if bomb_map[y_coord // 2, x_coord // 2] in self._agent_bombs:
             self._score_agent_kill = 1
-            logger.info('PIEETS IS UNSTOPPABLE')
+            logger.info("PIEETS IS UNSTOPPABLE")
 
     def _update_agent_bomb_info(self) -> None:
         """Updated Pieets bomb information.
@@ -403,7 +397,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
             bomb_map = np.empty((7, 9), dtype=np.uint8)
             bomb_map = self._get_explosion_map()
 
-            x_coord, y_coord = self._player_game_area_coordinate('AGENT')
+            x_coord, y_coord = self._player_game_area_coordinate("AGENT")
             agent_bomb_number = bomb_map[y_coord // 2, x_coord // 2]
 
             # logger.info(f"BOMB PLACED")
@@ -427,8 +421,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
             int: See above.
         """
         bomb_amount_current = (
-            self.pyboy.memory[self.AGENT_STATS_BOMB_MAX]
-            - self.pyboy.memory[self.AGENT_STATS_BOMB_PLACED]
+            self.pyboy.memory[self.AGENT_STATS_BOMB_MAX] - self.pyboy.memory[self.AGENT_STATS_BOMB_PLACED]
         )
 
         bomb_amount_last = self._agent_bombs_available
@@ -500,10 +493,10 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         return y_block_destroy
 
     def _distance_checks(self) -> None:
-        x_agent, y_agent = self._player_game_area_coordinate('AGENT')
+        x_agent, y_agent = self._player_game_area_coordinate("AGENT")
 
         min_enemy_dist = 99
-        enemy_dist_diff = 0  # Because of all enemies dead no assignment
+        enemy_dist_diff = 0 # Because of all enemies dead no assignment
 
         for enemy in self._ENEMY_ALIVE:
             x_enemy, y_enemy = self._player_game_area_coordinate(enemy)
@@ -521,8 +514,8 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         if enemy_dist_diff >= 0:
             # logger.info("CLOSER THEN LAST STEP")
             self._score_last_dist = 1
-            if min_enemy_dist < self._min_global_distance:  # MAYBE NOT EQUAL
-                logger.info('GLOBAL LOWEST DIFF')
+            if min_enemy_dist < self._min_global_distance: # MAYBE NOT EQUAL
+                logger.info("GLOBAL LOWEST DIFF")
                 self._min_global_distance = min_enemy_dist
                 self._score_min_global_dist = 1
         if enemy_dist_diff < 0:
@@ -584,7 +577,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
     # ----------------------------------------------------------------------------
     # Not so important methods
 
-    def _minimal_mapping(self) -> NDArray[uint8]:  # noqa: F821
+    def _minimal_mapping(self) -> NDArray[uint8]: # noqa: F821
         """This function returns the minimal mapping for BombermanGB.
 
         Returns:
@@ -979,15 +972,13 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
 
         return np.array(created_mapping, dtype=np.uint8)
 
-    def _save_picture(self, name=None):  # Maybe remove since other calls can be used.
-        datestring = datetime.now(tz=datetime.timezone.utc).strftime(
-            '%Y_%m_%d_%H_%M_%S_',
-        )
+    def _save_picture(self, name=None): # Maybe remove since other calls can be used.
+        datestring = datetime.now(tz=datetime.timezone.utc).strftime("%Y_%m_%d_%H_%M_%S_", )
 
-        name = datestring + 'screenshot' if not name else datestring + name
+        name = datestring + "screenshot" if not name else datestring + name
 
         image = self.pyboy.screen.image
-        image.save(f'./reports/vis/helper_func/{name}.png')
+        image.save(f"./reports/vis/helper_func/{name}.png")
 
     def _full_player_coordinate(
         self,
@@ -1004,9 +995,7 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         Returns:
             tuple[tuple[int, int], tuple[int, int]]: All coordinates.
         """
-        x_upperleft_coordinate, y_upperleft_coordinate = (
-            self._player_game_area_coordinate(player)
-        )
+        x_upperleft_coordinate, y_upperleft_coordinate = (self._player_game_area_coordinate(player))
         x_coord = [x_upperleft_coordinate, x_upperleft_coordinate + 1]
         y_coord = [y_upperleft_coordinate, y_upperleft_coordinate + 1]
 
@@ -1020,14 +1009,14 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         # logger.info("START: NAVIGATE TO PASSWORD SCREEN")
         # Skip to main menu
         self.pyboy.tick(200, render=False)
-        self.pyboy.button('start')
+        self.pyboy.button("start")
         self.pyboy.tick(69, render=False)
 
         # Select password in main menu
         for _ in range(3):
-            self.pyboy.button('down')
+            self.pyboy.button("down")
             self.pyboy.tick(10, render=False)
-        self.pyboy.button('a')
+        self.pyboy.button("a")
         self.pyboy.tick(99, render=False)
 
         # logger.info("END:  NAVIGATE TO PASSWORD SCREEN")
@@ -1035,31 +1024,31 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
     def _handle_password_screen(self) -> None:
         # logger.info("START: HANDLE PASSWORD SCREEN")
         for _ in range(5):
-            self.pyboy.button('up')
+            self.pyboy.button("up")
             self.pyboy.tick(10, render=False)
 
-        self.pyboy.button('right')
+        self.pyboy.button("right")
         self.pyboy.tick(10, render=False)
 
         for _ in range(6):
-            self.pyboy.button('up')
+            self.pyboy.button("up")
             self.pyboy.tick(10, render=False)
 
-        self.pyboy.button('right')
+        self.pyboy.button("right")
         self.pyboy.tick(10, render=False)
 
         for _ in range(5):
-            self.pyboy.button('up')
+            self.pyboy.button("up")
             self.pyboy.tick(10, render=False)
 
-        self.pyboy.button('right')
+        self.pyboy.button("right")
         self.pyboy.tick(10, render=False)
 
         for _ in range(6):
-            self.pyboy.button('up')
+            self.pyboy.button("up")
             self.pyboy.tick(10, render=False)
 
-        self.pyboy.button('start')
+        self.pyboy.button("start")
         self.pyboy.tick(100, render=False)
         # logger.info("END:  HANDLE PASSWORD SCREEN")
 
@@ -1073,37 +1062,37 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
             n_enemy (int): Number of enemies
             shuffle (bool, optional): Shuffle enemy selection. Defaults to None.
         """
-        enemy_list = np.arange(2, -1, -1)  # Reverse so at 1v1 most away enemy
+        enemy_list = np.arange(2, -1, -1) # Reverse so at 1v1 most away enemy
 
-        logger.info(f'START: SET ENEMIES {n_enemy}')
+        logger.info(f"START: SET ENEMIES {n_enemy}")
 
         if shuffle:
-            logger.info(f'SHUFFLE: SET ENEMIES {n_enemy}')
+            logger.info(f"SHUFFLE: SET ENEMIES {n_enemy}")
             np.random.default_rng().shuffle(enemy_list)
 
         selected_enemies = enemy_list[:n_enemy]
-        logger.info(f'SELECTED: ENEMIES {selected_enemies+2}')
+        logger.info(f"SELECTED: ENEMIES {selected_enemies+2}")
 
         def select_enemie(enemy):
             if enemy != 0:
                 for _ in range(enemy):
-                    self.pyboy.button('right')
+                    self.pyboy.button("right")
                     self.pyboy.tick(2, render=False)
 
-            self.pyboy.button('down')
+            self.pyboy.button("down")
             self.pyboy.tick(2, render=False)
 
             if enemy != 0:
                 for _ in range(enemy):
-                    self.pyboy.button('left')
+                    self.pyboy.button("left")
                     self.pyboy.tick(2, render=False)
 
         for player in selected_enemies:
             select_enemie(player)
 
-        self.pyboy.button('start')
+        self.pyboy.button("start")
         self.pyboy.tick(69, render=False)
-        logger.info(f'END:SET ENMIES {n_enemy}')
+        logger.info(f"END:SET ENMIES {n_enemy}")
 
     def _handle_rules_screen(self, win=1, time=1) -> None:
         # logger.info(f"START: SETTING RULES Win:{win}, Time:{time}")
@@ -1112,36 +1101,36 @@ class GameWrapperBombermanGB(PyBoyGameWrapper):
         win_diff = 4 - win
 
         if time_diff == 0 and win_diff == 0:
-            self.pyboy.button('start')
+            self.pyboy.button("start")
             self.pyboy.tick(46, render=False)
 
         if time_diff < 0:
             for _ in range(time - 3):
-                self.pyboy.button('right')
+                self.pyboy.button("right")
                 self.pyboy.tick(5, render=False)
         if time_diff > 0:
             for _ in range(3 - time):
-                self.pyboy.button('left')
+                self.pyboy.button("left")
                 self.pyboy.tick(5, render=False)
 
-        self.pyboy.button('down')
+        self.pyboy.button("down")
         self.pyboy.tick(5, render=False)
 
         if win_diff < 0:
             for _ in range(win - 4):
-                self.pyboy.button('right')
+                self.pyboy.button("right")
                 self.pyboy.tick(5, render=False)
         if win_diff > 0:
             for _ in range(4 - win):
-                self.pyboy.button('left')
+                self.pyboy.button("left")
                 self.pyboy.tick(5, render=False)
 
-        self.pyboy.button('start')
+        self.pyboy.button("start")
         self.pyboy.tick(69, render=False)
         # logger.info(f"END:   SETTING RULES Win:{win}, Time:{time}")
 
     def _select_stage_screen(self, stage=1):
         # logger.info(f"START: SELECT STAGE")
-        self.pyboy.button('start')
+        self.pyboy.button("start")
         self.pyboy.tick(46, render=True)
         # logger.info(f"END:   SELECT STAGE")
