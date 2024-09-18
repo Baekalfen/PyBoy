@@ -2881,16 +2881,17 @@ the game.</p>
 </code></dt>
 <dd>
 <section class="desc"><p>This class cannot be used directly, but is accessed through <code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">PyBoy.memory</a></code>.</p>
-<p>This class serves four purposes: Reading memory (ROM/RAM), writing memory (ROM/RAM), overriding memory (ROM/RAM) and special registers.</p>
+<p>This class serves four purposes: Reading memory (ROM/RAM), writing memory (RAM), overriding memory (ROM) and special registers.</p>
 <p>See the <a href="https://gbdev.io/pandocs/Memory_Map.html">Pan Docs: Memory Map</a> for a great overview of the memory space.</p>
 <p>Memory can be accessed as individual bytes (<code>pyboy.memory[0x00]</code>) or as slices (<code>pyboy.memory[0x00:0x10]</code>). And if
 applicable, a specific ROM/RAM bank can be defined before the address (<code>pyboy.memory[0, 0x00]</code> or <code>pyboy.memory[0, 0x00:0x10]</code>).</p>
-<p>The boot ROM is accessed using the special "-1" ROM bank.</p>
+<p>The boot ROM is accessed using the special <code>-1</code> ROM bank.</p>
 <p>The find addresses of interest, either search online for something like: "[game title] RAM map", or find them yourself
 using <code><a title="pyboy.PyBoy.memory_scanner" href="#pyboy.PyBoy.memory_scanner">PyBoy.memory_scanner</a></code>.</p>
 <p><strong>Read:</strong></p>
 <p>If you're developing a bot or AI with this API, you're most likely going to be using read the most. This is how you
 would efficiently read the score, time, coins, positions etc. in a game's memory.</p>
+<p>At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy.memory[0x0000] # Read one byte at address 0x0000
 49
 &gt;&gt;&gt; pyboy.memory[0x0000:0x0010] # Read 16 bytes from 0x0000 to 0x0010 (excluding 0x0010)
@@ -2911,7 +2912,6 @@ sends commands to the <a href="https://gbdev.io/pandocs/MBCs.html#mbcs">Memory B
 <p>A write is done by assigning to the <code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">PyBoy.memory</a></code> object. It's recommended to define the bank to avoid mistakes
 (<code>pyboy.memory[2, 0xA000]=1</code>). Without defining the bank, PyBoy will pick the current bank for the given address if
 needed (<code>pyboy.memory[0xA000]=1</code>).</p>
-<p>At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy.memory[0xC000] = 123 # Write to WRAM at address 0xC000
 &gt;&gt;&gt; pyboy.memory[0xC000:0xC00A] = [0,1,2,3,4,5,6,7,8,9] # Write to WRAM from address 0xC000 to 0xC00A
 &gt;&gt;&gt; pyboy.memory[0xC010:0xC01A] = 0 # Write to WRAM from address 0xC010 to 0xC01A
@@ -2924,7 +2924,7 @@ needed (<code>pyboy.memory[0xA000]=1</code>).</p>
 <p><strong>Override:</strong></p>
 <p>Override data at a given memory address of the Game Boy's ROM.</p>
 <p>This can be used to reprogram a game ROM to change its behavior.</p>
-<p>This will not let your override RAM or a special register. This will let you override data in the ROM at any given bank.
+<p>This will not let you override RAM or a special register. This will let you override data in the ROM at any given bank.
 This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.</p>
 <p><em>NOTE</em>: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
 any overrides when reloading the ROM.</p>
@@ -2956,14 +2956,14 @@ used as a source of randomness in games. If you read the value, you'll get a pse
     &#34;&#34;&#34;
     This class cannot be used directly, but is accessed through `PyBoy.memory`.
 
-    This class serves four purposes: Reading memory (ROM/RAM), writing memory (ROM/RAM), overriding memory (ROM/RAM) and special registers.
+    This class serves four purposes: Reading memory (ROM/RAM), writing memory (RAM), overriding memory (ROM) and special registers.
 
     See the [Pan Docs: Memory Map](https://gbdev.io/pandocs/Memory_Map.html) for a great overview of the memory space.
 
     Memory can be accessed as individual bytes (`pyboy.memory[0x00]`) or as slices (`pyboy.memory[0x00:0x10]`). And if
     applicable, a specific ROM/RAM bank can be defined before the address (`pyboy.memory[0, 0x00]` or `pyboy.memory[0, 0x00:0x10]`).
 
-    The boot ROM is accessed using the special &#34;-1&#34; ROM bank.
+    The boot ROM is accessed using the special `-1` ROM bank.
 
     The find addresses of interest, either search online for something like: &#34;[game title] RAM map&#34;, or find them yourself
     using `PyBoy.memory_scanner`.
@@ -2972,6 +2972,8 @@ used as a source of randomness in games. If you read the value, you'll get a pse
 
     If you&#39;re developing a bot or AI with this API, you&#39;re most likely going to be using read the most. This is how you
     would efficiently read the score, time, coins, positions etc. in a game&#39;s memory.
+
+    At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.
 
     ```python
     &gt;&gt;&gt; pyboy.memory[0x0000] # Read one byte at address 0x0000
@@ -2999,8 +3001,6 @@ used as a source of randomness in games. If you read the value, you'll get a pse
     (`pyboy.memory[2, 0xA000]=1`). Without defining the bank, PyBoy will pick the current bank for the given address if
     needed (`pyboy.memory[0xA000]=1`).
 
-    At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.
-
     ```python
     &gt;&gt;&gt; pyboy.memory[0xC000] = 123 # Write to WRAM at address 0xC000
     &gt;&gt;&gt; pyboy.memory[0xC000:0xC00A] = [0,1,2,3,4,5,6,7,8,9] # Write to WRAM from address 0xC000 to 0xC00A
@@ -3018,7 +3018,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
 
     This can be used to reprogram a game ROM to change its behavior.
 
-    This will not let your override RAM or a special register. This will let you override data in the ROM at any given bank.
+    This will not let you override RAM or a special register. This will let you override data in the ROM at any given bank.
     This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
 
     _NOTE_: Any changes here are not saved or loaded to game states! Use this function with caution and reapply

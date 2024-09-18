@@ -1412,14 +1412,14 @@ class PyBoyMemoryView:
     """
     This class cannot be used directly, but is accessed through `PyBoy.memory`.
 
-    This class serves four purposes: Reading memory (ROM/RAM), writing memory (ROM/RAM), overriding memory (ROM/RAM) and special registers.
+    This class serves four purposes: Reading memory (ROM/RAM), writing memory (RAM), overriding memory (ROM) and special registers.
 
     See the [Pan Docs: Memory Map](https://gbdev.io/pandocs/Memory_Map.html) for a great overview of the memory space.
 
     Memory can be accessed as individual bytes (`pyboy.memory[0x00]`) or as slices (`pyboy.memory[0x00:0x10]`). And if
     applicable, a specific ROM/RAM bank can be defined before the address (`pyboy.memory[0, 0x00]` or `pyboy.memory[0, 0x00:0x10]`).
 
-    The boot ROM is accessed using the special "-1" ROM bank.
+    The boot ROM is accessed using the special `-1` ROM bank.
 
     The find addresses of interest, either search online for something like: "[game title] RAM map", or find them yourself
     using `PyBoy.memory_scanner`.
@@ -1428,6 +1428,8 @@ class PyBoyMemoryView:
 
     If you're developing a bot or AI with this API, you're most likely going to be using read the most. This is how you
     would efficiently read the score, time, coins, positions etc. in a game's memory.
+
+    At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.
 
     ```python
     >>> pyboy.memory[0x0000] # Read one byte at address 0x0000
@@ -1455,8 +1457,6 @@ class PyBoyMemoryView:
     (`pyboy.memory[2, 0xA000]=1`). Without defining the bank, PyBoy will pick the current bank for the given address if
     needed (`pyboy.memory[0xA000]=1`).
 
-    At this point, all reads will return a new list of the values in the given range. The slices will not reference back to the PyBoy memory. This feature might come in the future.
-
     ```python
     >>> pyboy.memory[0xC000] = 123 # Write to WRAM at address 0xC000
     >>> pyboy.memory[0xC000:0xC00A] = [0,1,2,3,4,5,6,7,8,9] # Write to WRAM from address 0xC000 to 0xC00A
@@ -1474,7 +1474,7 @@ class PyBoyMemoryView:
 
     This can be used to reprogram a game ROM to change its behavior.
 
-    This will not let your override RAM or a special register. This will let you override data in the ROM at any given bank.
+    This will not let you override RAM or a special register. This will let you override data in the ROM at any given bank.
     This is the memory allocated at 0x0000 to 0x8000, where 0x4000 to 0x8000 can be changed from the MBC.
 
     _NOTE_: Any changes here are not saved or loaded to game states! Use this function with caution and reapply
