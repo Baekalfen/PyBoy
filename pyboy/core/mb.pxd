@@ -46,7 +46,6 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
-    cdef uint64_t _cycles
 
     # CGB
     cdef HDMA hdma
