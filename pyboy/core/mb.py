@@ -7,6 +7,7 @@ import array
 import hashlib
 import importlib
 import os
+import sysconfig
 from distutils.command.build_ext import build_ext
 from distutils.core import Distribution, Extension
 from importlib.machinery import ExtensionFileLoader
@@ -43,6 +44,7 @@ try:
 except ImportError:
     cythonmode = False
 
+EXT_SUFFIX = sysconfig.get_config_var("EXT_SUFFIX")
 JIT_EXTENSION = ".pyx" if cythonmode else ".py"
 JIT_PREAMBLE = """
 cimport pyboy
@@ -331,7 +333,7 @@ class Motherboard:
         _hash = m.digest().hex()
 
         module_name = "jit_" + _hash
-        module_path = module_name + ".cpython-311-darwin.so" #os.path.splitext(jit_file)[0] + '.so'
+        module_path = module_name + EXT_SUFFIX #os.path.splitext(jit_file)[0] + '.so'
 
         file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_jit_" + _hash # Generate name
         return module_name, file_base, module_path
