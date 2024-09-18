@@ -1328,7 +1328,7 @@ class PyBoy:
             raise Exception("There's no RTC for this cartridge type")
 
     def _cycles(self):
-        return self.mb._cycles
+        return self.mb.cpu.cycles
 
 
 class PyBoyRegisterFile:

@@ -121,7 +121,6 @@ class Motherboard:
         self.breakpoint_waiting = -1
 
         self.jit_enabled = jit_enabled
-        self._cycles = 0
         self._jit_clear()
 
     def _jit_clear(self):
@@ -408,11 +407,11 @@ class Motherboard:
         if not cythonmode:
             code_text += "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
             code_text += "def execute(cpu):\n\t"
-            code_text += "flag = 0\n\tt = 0\n\ttr = 0\n\tv = 0\n\tcycles = 0"
+            code_text += "flag = 0\n\tt = 0\n\ttr = 0\n\tv = 0"
         else:
             code_text += JIT_PREAMBLE
-            code_text += "cdef public int execute(_cpu.CPU cpu) noexcept nogil:"
-            code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v\n\tcdef int cycles = 0"
+            code_text += "cdef public void execute(_cpu.CPU cpu) noexcept nogil:"
+            code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v"
             code_text += """
 \tcdef uint16_t FLAGC = 4
 \tcdef uint16_t FLAGH = 5
@@ -431,13 +430,13 @@ class Motherboard:
                 code_text += f"v = 0x{v:04x} # {v}\n\t"
 
             tmp_code = opcode_handler.functionhandlers[opcode_name]()._code_body()
-            tmp_code = tmp_code.replace("return", "cycles +=")
+            tmp_code = tmp_code.replace("return", "cpu.cycles +=")
             if "if" in tmp_code:
                 # Return early on jump
-                tmp_code = tmp_code.replace("else:", "\treturn cycles\n\telse:")
-            elif "tr = " in tmp_code:
+                tmp_code = tmp_code.replace("else:", "\treturn\n\telse:")
+            elif "tr = " in tmp_code: # TODO: Replace with cpu._bail
                 # Return early on state-altering writes
-                tmp_code += "\n\tif tr: return cycles"
+                tmp_code += "\n\tif tr: return"
             elif opcode in flush_instructions:
                 # TODO: Add condition, if the flush is not necessary
                 # Statically determine from literal, or dynamically with 'if'
@@ -445,12 +444,12 @@ class Motherboard:
                 if i == 0: # First operation will always have cycles = 0
                     snippet += "# [Flush skipped for first instruction in block]\n\t"
                 else:
-                    snippet += "cpu.mb.timer.tick(cycles)\n\tcpu.mb.lcd.tick(cycles)\n\tcpu.mb._cycles = cpu.mb._cycles + cycles\n\tcycles = 0\n\t"
+                    snippet += "cpu.mb.timer.tick(cpu.cycles)\n\tcpu.mb.lcd.tick(cpu.cycles)\n\t"
                 tmp_code = snippet + tmp_code
 
             code_text += tmp_code
 
-        code_text += "\n\treturn cycles"
+        code_text += "\n\treturn"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
         # if .getitem in code, commit timer.tick(cycles); cycles = 0
         return code_text
@@ -547,7 +546,6 @@ class Motherboard:
         #     return cpu.next_opcode(cpu, cycles_left, cycles_acc + 12)
         # else:
         #     return 12
-
         while self.processing_frame():
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 self.cpu.jit_jump = False
@@ -584,15 +582,15 @@ class Motherboard:
                     self.cpu.jit_jump = False
                     if not self.cpu_pending_interrupt() and self.cpu.PC < 0x8000: # and cycles_target > 0:
                         cycles = self.jit(cycles_target)
-                        # cycles = self.jit(0xFFFF)
-                        # WARN: Shouldn't we just do a loop and come back with self.cpu.jit_jump==False
+                        # self.cpu.cycles += cycles # TODO: Should be done in emitted code
+
                         if cycles == 0: # If nothing was jit'ed
-                            self.cpu.jit_jump = False
-                            cycles = self.cpu.tick(4) # NOTE: cycles?
+                            self.cpu.jit_jump = False # NOTE: Necessary?
+                            self.cpu.tick(cycles_target)
                     else:
-                        cycles = self.cpu.tick(cycles_target)
+                        self.cpu.tick(cycles_target)
                 else:
-                    cycles = self.cpu.tick(cycles_target)
+                    self.cpu.tick(cycles_target)
 
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
@@ -605,8 +603,6 @@ class Motherboard:
             lcd_interrupt = self.lcd.tick(self.cpu.cycles)
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
-
-            self._cycles += cycles
 
             if self.breakpoint_singlestep:
                 break
