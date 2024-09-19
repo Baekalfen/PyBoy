@@ -91,7 +91,7 @@ cdef class Motherboard:
     cdef void jit_gen_files(self, str, str) noexcept with gil
     cdef void jit_compile(self, str, str, str) noexcept with gil
     cdef object jit_emit_code(self, object) with gil
-    cdef int jit_analyze(self, int) noexcept with gil
+    cdef bint jit_analyze(self, int) noexcept with gil
     @cython.locals(block_id=int64_t)
     cdef int64_t jit(self, int64_t) noexcept nogil
     cdef inline int cpu_pending_interrupt(self) noexcept nogil
@@ -124,7 +124,7 @@ cdef class HDMA:
     cdef uint16_t curr_dst
 
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
-    cdef int tick(self, Motherboard) noexcept nogil
+    cdef int64_t tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
