@@ -412,7 +412,7 @@ class Motherboard:
 
     def jit_emit_code(self, code_block):
         flush_instructions = [
-            # Anything loading from a 16bit address pointer
+            # Anything loading from a 16bit address pointer, as it could be special registers
             0x0A,
             0x1A,
             0x2A,
@@ -447,7 +447,7 @@ class Motherboard:
         for i, (opcode, length, pc, literal1, literal2) in enumerate(code_block):
             opcode_handler = opcodes_gen[opcode]
             opcode_name = opcode_handler.name.split()[0]
-            code_text += "\n\t" + "# " + opcode_handler.name + f" (PC: 0x{pc:04x})\n\t"
+            code_text += "\n\t\n\t" + "# " + opcode_handler.name + f" (PC: 0x{pc:04x})\n\t"
             if length == 2:
                 v = literal1
                 code_text += f"v = 0x{v:02x} # {v}\n\t"
@@ -511,6 +511,8 @@ class Motherboard:
         pc = self.cpu.PC
         block_max_cycles = 0
         while True:
+            # for _ in range(200):
+            # while block_max_cycles < 200:
             opcode = self.getitem(pc)
             if opcode == 0xCB: # Extension code
                 pc += 1
@@ -524,8 +526,8 @@ class Motherboard:
             if opcode in boundary_instruction:
                 break
 
-        if len(code_block) < 10:
-            return -1
+        if len(code_block) < 25:
+            return False
 
         logger.debug("Code block size: %d, block cycles: %d", len(code_block), block_max_cycles)
 
@@ -534,11 +536,12 @@ class Motherboard:
         self.jit_gen_files(code_text, file_base)
         if cythonmode:
             self.jit_compile(module_name, file_base, module_path)
+        logger.debug("Loading: %s %x %d", file_base, block_id, block_max_cycles)
         self.jit_load(module_name, module_path, file_base, block_id, block_max_cycles)
 
-        return 0
+        return True
 
-    def jit(self, max_cycles):
+    def jit(self, cycles_target):
         block_id = (self.cpu.PC << 8)
         if self.bootrom_enabled:
             block_id |= 0xFF
@@ -546,13 +549,19 @@ class Motherboard:
             block_id |= self.cartridge.rombank_selected
 
         block_max_cycles = self.jit_cycles[block_id]
-        if block_max_cycles == 0 and self.jit_analyze(block_id):
+
+        # Hot path
+        if 0 < block_max_cycles < cycles_target:
+            # logger.critical("Execute block: %d of %d id:%x", block_max_cycles, cycles_target, block_id)
+            self.jit_execute(block_id)
+            return True
+
+        if block_max_cycles == 0 and not self.jit_analyze(block_id):
             self.jit_cycles[block_id] = -1 # Don't retry
 
-        if block_max_cycles <= 0 or block_max_cycles > max_cycles:
-            return 0
-
-        return self.jit_execute(block_id)
+        # if not block_max_cycles == -1:
+        #     logger.debug("Skipping block: %d of %d id:%x", block_max_cycles, cycles_target, block_id)
+        return False
 
         # if code.eligible:
         #     # if  <= cycles:
@@ -598,7 +607,7 @@ class Motherboard:
                     mode0_cycles = self.lcd.cycles_to_mode0()
 
                 cycles_target = max(
-                    4, #0, #4,
+                    4,
                     min(
                         self.timer._cycles_to_interrupt,
                         # https://gbdev.io/pandocs/STAT.html
@@ -618,14 +627,8 @@ class Motherboard:
                 # Compile in other thread, acquire memory lock between frames
                 if self.jit_enabled and self.cpu.jit_jump:
                     self.cpu.jit_jump = False
-                    if not self.cpu_pending_interrupt() and self.cpu.PC < 0x8000: # and cycles_target > 0:
-                        cycles = self.jit(cycles_target)
-                        # self.cpu.cycles += cycles # TODO: Should be done in emitted code
-
-                        if cycles == 0: # If nothing was jit'ed
-                            self.cpu.jit_jump = False # NOTE: Necessary?
-                            self.cpu.tick(cycles_target)
-                    else:
+                    if not self.cpu_pending_interrupt() and self.cpu.PC < 0x8000 and not self.jit(cycles_target):
+                        # If nothing was run with jit
                         self.cpu.tick(cycles_target)
                 else:
                     self.cpu.tick(cycles_target)
