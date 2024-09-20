@@ -205,8 +205,14 @@ class Debug(PyBoyWindowPlugin):
         return events
 
     def stop(self):
-        if self.sdl2_event_pump:
-            sdl2.SDL_Quit()
+        self.tile1.stop()
+        self.tile2.stop()
+        self.tiledata0.stop()
+        if self.cgb:
+            self.tiledata1.stop()
+        self.sprite.stop()
+        self.spriteview.stop()
+        self.memory.stop()
 
     def enabled(self):
         if self.pyboy_argv.get("debug"):
