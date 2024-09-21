@@ -32,7 +32,7 @@ cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef int STATE_VERSION
 
-ctypedef int(*f_type)(pyboy.core.cpu.CPU) noexcept nogil
+ctypedef int(*f_type)(pyboy.core.cpu.CPU, int64_t) noexcept nogil
 
 cdef class Motherboard:
     cdef pyboy.core.interaction.Interaction interaction
@@ -80,9 +80,9 @@ cdef class Motherboard:
         self.jit_cycles[block_id] = block_max_cycles
         # execute(self.cpu)
 
-    cdef inline int jit_execute(self, int block_id) noexcept nogil:
+    cdef inline int jit_execute(self, int block_id, int64_t cycles_target) noexcept nogil:
         # logger.debug("JIT EXECUTE %d", block_id)
-        return self.jit_array[block_id](self.cpu)
+        return self.jit_array[block_id](self.cpu, cycles_target)
 
     cdef bint jit_enabled
     cdef tuple jit_get_module_name(self, str) with gil
