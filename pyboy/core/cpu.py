@@ -125,8 +125,8 @@ class CPU:
         _target = _cycles0 + cycles_target
 
         if self.check_interrupts():
+            # TODO: Cycles it took to handle the interrupt?
             self.halted = False
-            # TODO: Cycles it took to handle the interrupt
 
         if self.halted and self.interrupt_queued:
             # GBCPUman.pdf page 20

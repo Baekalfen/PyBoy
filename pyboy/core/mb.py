@@ -49,7 +49,7 @@ JIT_EXTENSION = ".pyx" if cythonmode else ".py"
 JIT_PREAMBLE = """
 cimport pyboy
 
-from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t, int64_t
 cimport cython
 from pyboy.core cimport cpu as _cpu
 
@@ -335,6 +335,7 @@ class Motherboard:
         module_name = "jit_" + _hash
         module_path = module_name + EXT_SUFFIX #os.path.splitext(jit_file)[0] + '.so'
 
+        # logger.debug("%s %s", self.cartridge.filename, _hash)
         file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_jit_" + _hash # Generate name
         return module_name, file_base, module_path
 
@@ -350,7 +351,7 @@ class Motherboard:
                 jit_file_pxd = file_base + ".pxd"
                 with open(jit_file_pxd, "w") as f:
                     f.write("from pyboy.core cimport cpu as _cpu\n")
-                    f.write("cdef public int execute(_cpu.CPU __cpu) noexcept nogil")
+                    f.write("cdef public int execute(_cpu.CPU __cpu, int64_t cycles_target) noexcept nogil")
 
     def jit_compile(self, module_name, file_base, module_path):
         cythonize_files = [
@@ -408,11 +409,11 @@ class Motherboard:
         code_text = ""
         if not cythonmode:
             code_text += "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
-            code_text += "def execute(cpu):\n\t"
+            code_text += "def execute(cpu, cycles_target):\n\t"
             code_text += "flag = 0\n\tt = 0\n\ttr = 0\n\tv = 0"
         else:
             code_text += JIT_PREAMBLE
-            code_text += "cdef public void execute(_cpu.CPU cpu) noexcept nogil:"
+            code_text += "cdef public void execute(_cpu.CPU cpu, int64_t cycles_target) noexcept nogil:"
             code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v"
             code_text += """
 \tcdef uint16_t FLAGC = 4
@@ -450,6 +451,8 @@ class Motherboard:
                 tmp_code = snippet + tmp_code
 
             code_text += tmp_code
+
+            # code_text += "\n\tif cpu.cycles > cycles_target: return"
 
         code_text += "\n\treturn"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
@@ -518,26 +521,14 @@ class Motherboard:
         return True
 
     def jit(self, cycles_target):
-        block_id = (self.cpu.PC << 8)
-        if self.bootrom_enabled:
-            block_id |= 0xFF
-        else:
-            block_id |= self.cartridge.rombank_selected
+        pass
 
-        block_max_cycles = self.jit_cycles[block_id]
+        # if block_max_cycles == 0 and not self.jit_analyze(block_id):
+        #     self.jit_cycles[block_id] = -1 # Don't retry
 
-        # Hot path
-        if 0 < block_max_cycles < cycles_target:
-            # logger.critical("Execute block: %d of %d id:%x", block_max_cycles, cycles_target, block_id)
-            self.jit_execute(block_id)
-            return True
-
-        if block_max_cycles == 0 and not self.jit_analyze(block_id):
-            self.jit_cycles[block_id] = -1 # Don't retry
-
-        # if not block_max_cycles == -1:
-        #     logger.debug("Skipping block: %d of %d id:%x", block_max_cycles, cycles_target, block_id)
-        return False
+        # # if not block_max_cycles == -1:
+        # #     logger.debug("Skipping block: %d of %d id:%x", block_max_cycles, cycles_target, block_id)
+        # return False
 
     def processing_frame(self):
         b = (not self.lcd.frame_done)
@@ -588,10 +579,20 @@ class Motherboard:
                 # Inject special opcode instead? ~~Long immediate as identifier~~
                 # Special opcode cannot be more than 1 byte, to avoid jumps to sub-parts of the jit block
                 # Compile in other thread, acquire memory lock between frames
-                if self.jit_enabled and self.cpu.jit_jump:
-                    self.cpu.jit_jump = False
-                    if not self.cpu_pending_interrupt() and self.cpu.PC < 0x8000 and not self.jit(cycles_target):
-                        # If nothing was run with jit
+                if self.jit_enabled and self.cpu.PC < 0x8000 and not self.bootrom_enabled:
+                    block_id = (self.cpu.PC << 8)
+                    block_id |= self.cartridge.rombank_selected
+
+                    block_max_cycles = self.jit.cycles[block_id]
+
+                    # Hot path
+                    if 0 < block_max_cycles and not self.cpu_pending_interrupt():
+                        self.jit.execute(block_id, cycles_target)
+                    else:
+                        if self.cpu.jit_jump and block_max_cycles == 0:
+                            self.jit.offload(block_id, cycles_target, self.cpu.interrupt_master_enable)
+
+                        self.cpu.jit_jump = False
                         self.cpu.tick(cycles_target)
                 else:
                     self.cpu.tick(cycles_target)
@@ -1015,8 +1016,8 @@ def _jit_clear(self):
     self.jit_cycles = [0] * 0xFFFFFF
     self.jit_array = [None] * 0xFFFFFF
 
-def _jit_execute(self, block_id):
-    return self.jit_array[block_id](self.cpu)
+def _jit_execute(self, block_id, cycles_target):
+    return self.jit_array[block_id](self.cpu, cycles_target)
 
 Motherboard.jit_load = _jit_load
 Motherboard._jit_clear = _jit_clear
