@@ -523,6 +523,11 @@ class Motherboard:
     def jit(self, cycles_target):
         pass
 
+        # TODO: Send cycles_target and which interrupt to jit_analyze. Track interrupt enable and flags on JIT block?
+        # Interrupts are likely to hit the same rythm -- sync on halt, do hblank, do vblank, etc.
+        # JIT interrupt routines and just straight to them?
+        # Predict which interrupt and inline interrupt vector?
+
         # if block_max_cycles == 0 and not self.jit_analyze(block_id):
         #     self.jit_cycles[block_id] = -1 # Don't retry
 
