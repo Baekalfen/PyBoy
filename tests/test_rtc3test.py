@@ -45,7 +45,7 @@ def test_rtc3test(subtest, rtc3test_file):
         # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
-        if diff.getbbox() and not os.environ.get("TEST_CI"):
+        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
             old_image.show()
             diff.show()

@@ -284,7 +284,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
 
         old_image = PIL.Image.open(png_buf).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
-        if diff.getbbox() and not os.environ.get("TEST_CI"):
+        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
             old_image.show()
             diff.show()

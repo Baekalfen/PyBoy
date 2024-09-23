@@ -37,7 +37,7 @@ def test_shonumi(rom, shonumi_dir):
     old_image = old_image.resize(image.size, resample=PIL.Image.Dither.NONE)
     diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
 
-    if diff.getbbox() and not os.environ.get("TEST_CI"):
+    if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
         image.show()
         old_image.show()
         diff.show()

@@ -46,7 +46,7 @@ jobs:
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
-        TEST_CI: 1
+        TEST_VERBOSE_IMAGES: 0
         TEST_NO_UI: 1
       run: |
         python -m pytest tests/ -n auto -v
@@ -111,7 +111,7 @@ jobs:
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
-        TEST_CI: 1
+        TEST_VERBOSE_IMAGES: 0
         TEST_NO_UI: 1
       run: |
         pypy3 -m pytest tests/ -n auto -v

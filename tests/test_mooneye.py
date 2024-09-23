@@ -185,7 +185,7 @@ def test_mooneye(clean, rom, mooneye_dir, default_rom):
         else:
             diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
 
-        if diff.getbbox() and not os.environ.get("TEST_CI"):
+        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
             old_image.show()
             diff.show()
