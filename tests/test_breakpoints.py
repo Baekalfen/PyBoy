@@ -254,7 +254,7 @@ def test_data_hooking_failure(default_rom):
     image1 = pyboy1.screen.image.convert("RGB")
     image2 = pyboy2.screen.image.convert("RGB")
     diff = PIL.ImageChops.difference(image1, image2)
-    if not diff.getbbox() and not os.environ.get("TEST_CI"):
+    if not diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
         image1.show()
         image2.show()
         diff.show()
