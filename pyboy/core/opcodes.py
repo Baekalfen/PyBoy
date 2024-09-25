@@ -3587,7 +3587,7 @@ def BIT_146(cpu): # 146 BIT 0,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_147(cpu): # 147 BIT 0,A
@@ -3675,7 +3675,7 @@ def BIT_14E(cpu): # 14E BIT 1,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_14F(cpu): # 14F BIT 1,A
@@ -3763,7 +3763,7 @@ def BIT_156(cpu): # 156 BIT 2,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_157(cpu): # 157 BIT 2,A
@@ -3851,7 +3851,7 @@ def BIT_15E(cpu): # 15E BIT 3,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_15F(cpu): # 15F BIT 3,A
@@ -3939,7 +3939,7 @@ def BIT_166(cpu): # 166 BIT 4,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_167(cpu): # 167 BIT 4,A
@@ -4027,7 +4027,7 @@ def BIT_16E(cpu): # 16E BIT 5,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_16F(cpu): # 16F BIT 5,A
@@ -4115,7 +4115,7 @@ def BIT_176(cpu): # 176 BIT 6,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_177(cpu): # 177 BIT 6,A
@@ -4203,7 +4203,7 @@ def BIT_17E(cpu): # 17E BIT 7,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    return 16
+    return 12
 
 
 def BIT_17F(cpu): # 17F BIT 7,A
