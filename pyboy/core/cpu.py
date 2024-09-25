@@ -129,7 +129,7 @@ class CPU:
         self.bail = False
         while self.cycles < _target:
             # TODO: cpu-stuck check for blargg tests?
-            self.cycles += self.fetch_and_execute()
+            self.fetch_and_execute()
             if self.bail: # Possible cycles-target changes
                 break
 

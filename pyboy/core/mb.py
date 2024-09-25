@@ -359,7 +359,10 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C: # I/O ports
-            assert not self.timer.tick(self.cpu.cycles)
+            # NOTE: A bit ad-hoc, but interrupts can occur right between writes
+            if self.timer.tick(self.cpu.cycles):
+                self.cpu.set_interruptflag(INTR_TIMER)
+
             if i == 0xFF04:
                 return self.timer.DIV
             elif i == 0xFF05:
@@ -474,7 +477,10 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         elif 0xFF00 <= i < 0xFF4C: # I/O ports
-            assert not self.timer.tick(self.cpu.cycles)
+            # NOTE: A bit ad-hoc, but interrupts can occur right between writes
+            if self.timer.tick(self.cpu.cycles):
+                self.cpu.set_interruptflag(INTR_TIMER)
+
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
