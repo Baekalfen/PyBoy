@@ -35,11 +35,14 @@ def BRK(cpu):
 """
 
 cimports = """
-from . cimport cpu
 cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
 from pyboy.logging.logging cimport Logger
+
+from . cimport cpu
+
+
 cdef Logger logger
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
