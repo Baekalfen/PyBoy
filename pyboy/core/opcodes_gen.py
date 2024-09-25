@@ -1170,6 +1170,12 @@ class OpcodeData:
         left = Literal(r0)
         right = Operand(r1)
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
+
+        if self.opcode in [0x146, 0x14E, 0x156, 0x15E, 0x166, 0x16E, 0x176, 0x17E]:
+            # FIX: Corrent cycle count is 12, not 16!
+            code.cycles = ("12", )
+
+
         code.addline("t = %s & (1 << %s)" % (right.get, left.get))
         code.addlines(self.handleflags8bit(left.get, right.get, None, False))
 
