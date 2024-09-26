@@ -483,7 +483,7 @@ class Motherboard:
         # if .getitem in code, commit timer.tick(cycles); cycles = 0
         return code_text
 
-    def jit_analyze(self, block_id):
+    def jit_analyze(self, block_id, cycles_target, interrupt_master_enable):
         boundary_instruction = [
             0x18, # JR r8
 
@@ -509,6 +509,7 @@ class Motherboard:
             0xFF,
             0x76, # HALT
             0x10, # STOP
+            0xFB, # EI
         ]
         code_block = []
         pc = self.cpu.PC
@@ -523,14 +524,18 @@ class Motherboard:
                 opcode += 0x100 # Internally shifting look-up table
             opcode_length = opcodes.OPCODE_LENGTHS[opcode]
             opcode_max_cycles = opcodes.OPCODE_MAX_CYCLES[opcode]
+            if (not interrupt_master_enable) and (block_max_cycles + opcode_max_cycles > cycles_target):
+                break
             block_max_cycles += opcode_max_cycles
             code_block.append((opcode, opcode_length, pc, self.getitem(pc + 1), self.getitem(pc + 2)))
             pc += opcode_length
             if opcode in boundary_instruction:
                 break
 
-        if len(code_block) < 25:
+        if block_max_cycles < 100:
             return False
+        # if len(code_block) < 25:
+        #     return False
 
         logger.debug("Code block size: %d, block cycles: %d", len(code_block), block_max_cycles)
 
