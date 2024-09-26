@@ -90,6 +90,7 @@ cdef class Motherboard:
     cdef void jit_gen_files(self, str, str) noexcept with gil
     cdef void jit_compile(self, str, str, str) noexcept with gil
     cdef object jit_emit_code(self, object) with gil
+    @cython.locals(block_max_cycles=int64_t)
     cdef bint jit_analyze(self, int, int64_t, bint) noexcept with gil
     cdef void jit_offload(self, int, int64_t, bint) noexcept with gil
     @cython.locals(block_id=int64_t, cycles_target=int64_t, interrupt_master_enable=bint, count=int64_t)
