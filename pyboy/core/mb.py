@@ -132,6 +132,7 @@ class Motherboard:
         self._jit_clear()
 
     def _jit_clear(self):
+        self.jit_queue = {}
         for n in range(0xFFFFFF):
             self.jit_cycles[n] = 0
 
@@ -412,24 +413,6 @@ class Motherboard:
         #     logger.info("JIT block already compiled: %s", module_path)
 
     def jit_emit_code(self, code_block):
-        flush_instructions = [
-            # Anything loading from a 16bit address pointer, as it could be special registers
-            0x0A,
-            0x1A,
-            0x2A,
-            0x3A,
-            0x46,
-            0x56,
-            0x66,
-            0x4E,
-            0x5E,
-            0x6E,
-            0x7E,
-            0xF0, # LDH A,(a8) Used often for VBLANK check
-            0xF2, # LDH A,(C)
-            0xFA,
-        ]
-
         code_text = ""
         if not cythonmode:
             code_text += "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
@@ -464,24 +447,21 @@ class Motherboard:
             elif "tr = " in tmp_code: # TODO: Replace with cpu._bail
                 # Return early on state-altering writes
                 tmp_code += "\n\tif tr: return"
-            elif opcode in flush_instructions:
-                # TODO: Add condition, if the flush is not necessary
-                # Statically determine from literal, or dynamically with 'if'
-                snippet = "# Perform cycles flush\n\t"
-                if i == 0: # First operation will always have cycles = 0
-                    snippet += "# [Flush skipped for first instruction in block]\n\t"
-                else:
-                    snippet += "cpu.mb.timer.tick(cpu.cycles)\n\tcpu.mb.lcd.tick(cpu.cycles)\n\t"
-                tmp_code = snippet + tmp_code
-
             code_text += tmp_code
-
-            # code_text += "\n\tif cpu.cycles > cycles_target: return"
 
         code_text += "\n\treturn"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
         # if .getitem in code, commit timer.tick(cycles); cycles = 0
         return code_text
+
+    def getitem_bank(self, bank, i):
+        if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
+            if bank == 0xFF and (i <= 0xFF or (self.cgb and 0x200 <= i < 0x900)):
+                return self.bootrom.getitem(i)
+            else:
+                return self.cartridge.rombanks[0, i] # TODO: Actually self.cartridge.rombank_selected_low
+        elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
+            return self.cartridge.rombanks[bank, i - 0x4000]
 
     def jit_analyze(self, block_id, cycles_target, interrupt_master_enable):
         boundary_instruction = [
@@ -512,22 +492,28 @@ class Motherboard:
             0xFB, # EI
         ]
         code_block = []
-        pc = self.cpu.PC
+        pc = block_id >> 8
+        assert pc < 0x8000
+        rom_bank = block_id & 0xFF
+
         block_max_cycles = 0
         while True:
             # for _ in range(200):
             # while block_max_cycles < 200:
-            opcode = self.getitem(pc)
+            opcode = self.getitem_bank(rom_bank, pc)
             if opcode == 0xCB: # Extension code
                 pc += 1
-                opcode = self.getitem(pc)
+                opcode = self.getitem_bank(rom_bank, pc)
                 opcode += 0x100 # Internally shifting look-up table
             opcode_length = opcodes.OPCODE_LENGTHS[opcode]
             opcode_max_cycles = opcodes.OPCODE_MAX_CYCLES[opcode]
-            if (not interrupt_master_enable) and (block_max_cycles + opcode_max_cycles > cycles_target):
+            # if (not interrupt_master_enable) and (block_max_cycles + opcode_max_cycles > cycles_target):
+            if (block_max_cycles + opcode_max_cycles > cycles_target):
                 break
             block_max_cycles += opcode_max_cycles
-            code_block.append((opcode, opcode_length, pc, self.getitem(pc + 1), self.getitem(pc + 2)))
+            code_block.append(
+                (opcode, opcode_length, pc, self.getitem_bank(rom_bank, pc + 1), self.getitem_bank(rom_bank, pc + 2))
+            )
             pc += opcode_length
             if opcode in boundary_instruction:
                 break
@@ -549,20 +535,33 @@ class Motherboard:
 
         return True
 
-    def jit(self, cycles_target):
-        pass
+    def jit_offload(self, block_id, cycles_target, interrupt_master_enable):
+        if cycles_target < 200:
+            return
 
+        if self.jit_queue.get(block_id) is None:
+            self.jit_queue[block_id] = []
+        self.jit_queue[block_id].append((cycles_target, interrupt_master_enable))
+
+    def jit_process(self):
         # TODO: Send cycles_target and which interrupt to jit_analyze. Track interrupt enable and flags on JIT block?
         # Interrupts are likely to hit the same rythm -- sync on halt, do hblank, do vblank, etc.
         # JIT interrupt routines and just straight to them?
         # Predict which interrupt and inline interrupt vector?
 
-        # if block_max_cycles == 0 and not self.jit_analyze(block_id):
-        #     self.jit_cycles[block_id] = -1 # Don't retry
+        priority_list = []
+        for k, v in self.jit_queue.items():
+            priority_list.append((k, len(v))) # block_id, number of hits
 
-        # # if not block_max_cycles == -1:
-        # #     logger.debug("Skipping block: %d of %d id:%x", block_max_cycles, cycles_target, block_id)
-        # return False
+        # Pick the 10 most frequent
+        for block_id, count in sorted(priority_list, key=lambda x: x[1], reverse=True)[:10]:
+            cycles_target, interrupt_master_enable = self.jit_queue[block_id][
+                0] # TODO: Currently just picking the first entry!
+            logger.critical("analyze: %x, %d, %d", block_id, cycles_target, interrupt_master_enable)
+            if not self.jit_analyze(block_id, cycles_target, interrupt_master_enable):
+                self.jit_cycles[block_id] = -1 # Don't retry
+
+        self.jit_queue = {} # Throw the rest away to not grow the list indefinitely. Maybe there's a better way.
 
         # if code.eligible:
         #     # if  <= cycles:
@@ -642,6 +641,7 @@ class Motherboard:
                         self.cpu.jit_jump = False
                         self.cpu.tick(cycles_target)
                 else:
+                    self.cpu.jit_jump = False
                     self.cpu.tick(cycles_target)
 
             #TODO: Support General Purpose DMA
@@ -657,6 +657,8 @@ class Motherboard:
 
             if self.breakpoint_singlestep:
                 break
+
+        self.jit_process()
 
         return self.breakpoint_singlestep
 
@@ -1074,6 +1076,7 @@ def _jit_load(self, module_name, module_path, file_base, block_id, block_max_cyc
     self.jit_cycles[block_id] = block_max_cycles
 
 def _jit_clear(self):
+    self.jit_queue = {}
     self.jit_cycles = [0] * 0xFFFFFF
     self.jit_array = [None] * 0xFFFFFF
 

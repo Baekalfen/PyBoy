@@ -119,16 +119,6 @@ class CPU:
     def set_interruptflag(self, flag):
         self.interrupts_flag_register |= flag
 
-    # def jit_analyze(self):
-    #     pass
-
-    # def jit(self):
-    #     code = self.jit_table[bank][pc]
-    #     if code:
-    #         return code()
-    #     # https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L141
-    #     self.jit_analyze()
-
     def tick(self, cycles_target):
         _cycles0 = self.cycles
         _target = _cycles0 + cycles_target
