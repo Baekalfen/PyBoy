@@ -417,13 +417,12 @@ class Motherboard:
                 code_text += f"v = 0x{v:04x} # {v}\n\t"
 
             tmp_code = opcode_handler.functionhandlers[opcode_name]()._code_body()
-            tmp_code = tmp_code.replace("return", "cpu.cycles +=")
             if "if" in tmp_code:
                 # Return early on jump
                 tmp_code = tmp_code.replace("else:", "\treturn\n\telse:")
-            elif "tr = " in tmp_code: # TODO: Replace with cpu._bail
+            elif "cpu.mb.setitem" in tmp_code:
                 # Return early on state-altering writes
-                tmp_code += "\n\tif tr: return"
+                tmp_code += "\n\tif cpu.bail: return"
             code_text += tmp_code
 
         code_text += "\n\treturn"
@@ -740,21 +739,11 @@ class Motherboard:
         if 0x0000 <= i < 0x4000: # 16kB ROM bank #0
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
-<<<<<<< HEAD
-            self.cpu.bail = True
-            return 1
-        elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
-            # Doesn't change the data. This is for MBC commands
-            self.cartridge.setitem(i, value)
-            self.cpu.bail = True
-            return 1
-=======
             self.cpu.bail = True # TODO: This is not something to bail for in non-jit mode
         elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
             # Doesn't change the data. This is for MBC commands
             self.cartridge.setitem(i, value)
             self.cpu.bail = True # TODO: This is not something to bail for in non-jit mode
->>>>>>> f44ecdec (fixup! Much better, but not quite there)
         elif 0x8000 <= i < 0xA000: # 8kB Video RAM
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 self.lcd.VRAM0[i - 0x8000] = value
