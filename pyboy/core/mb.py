@@ -45,7 +45,11 @@ except ImportError:
 
 EXT_SUFFIX = sysconfig.get_config_var("EXT_SUFFIX")
 JIT_EXTENSION = ".pyx" if cythonmode else ".py"
-JIT_PREAMBLE = """
+
+if not cythonmode:
+    JIT_PREAMBLE = "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
+else:
+    JIT_PREAMBLE = """
 cimport pyboy
 
 from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t, int64_t
@@ -364,7 +368,7 @@ class Motherboard:
         file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_jit_" + _hash # Generate name
         return module_name, file_base, module_path
 
-    def jit_gen_files(self, code_text, file_base):
+    def jit_gen_files(self, code_text, file_base, block_manifest):
         # https://github.com/cython/cython/blob/4e0eee43210d6b7822859f3001202910888644af/Cython/Build/Inline.py#L141
 
         if not os.path.exists(file_base + JIT_EXTENSION):
@@ -376,7 +380,8 @@ class Motherboard:
                 jit_file_pxd = file_base + ".pxd"
                 with open(jit_file_pxd, "w") as f:
                     f.write("from pyboy.core cimport cpu as _cpu\n")
-                    f.write("cdef public int execute(_cpu.CPU __cpu, int64_t cycles_target) noexcept nogil")
+                    for func_name in block_manifest:
+                        f.write(f"cdef public int {func_name}(_cpu.CPU __cpu, int64_t cycles_target) noexcept nogil\n")
 
     def jit_compile(self, module_name, file_base, module_path):
         cythonize_files = [
@@ -412,15 +417,13 @@ class Motherboard:
         # else:
         #     logger.info("JIT block already compiled: %s", module_path)
 
-    def jit_emit_code(self, code_block):
+    def jit_emit_code(self, code_block, func_name):
         code_text = ""
         if not cythonmode:
-            code_text += "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
-            code_text += "def execute(cpu, cycles_target):\n\t"
+            code_text += f"def {func_name}(cpu, cycles_target):\n\t"
             code_text += "flag = 0\n\tt = 0\n\ttr = 0\n\tv = 0"
         else:
-            code_text += JIT_PREAMBLE
-            code_text += "cdef public void execute(_cpu.CPU cpu, int64_t cycles_target) noexcept nogil:"
+            code_text += f"cdef public void {func_name}(_cpu.CPU cpu, int64_t cycles_target) noexcept nogil:"
             code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v"
             code_text += """
 \tcdef uint16_t FLAGC = 4
@@ -448,7 +451,7 @@ class Motherboard:
                 tmp_code += "\n\tif cpu.bail: return"
             code_text += tmp_code
 
-        code_text += "\n\treturn"
+        code_text += "\n\treturn\n\n"
         # opcodes[7].functionhandlers[opcodes[7].name.split()[0]]().branch_op
         # if .getitem in code, commit timer.tick(cycles); cycles = 0
         return code_text
@@ -462,7 +465,7 @@ class Motherboard:
         elif 0x4000 <= i < 0x8000: # 16kB switchable ROM bank
             return self.cartridge.rombanks[bank, i - 0x4000]
 
-    def jit_analyze(self, block_id, cycles_target, interrupt_master_enable):
+    def jit_collect_block(self, block_id, cycles_target):
         boundary_instruction = [
             0x18, # JR r8
 
@@ -517,22 +520,7 @@ class Motherboard:
             if opcode in boundary_instruction:
                 break
 
-        if block_max_cycles < 100:
-            return False
-        # if len(code_block) < 25:
-        #     return False
-
-        logger.debug("Code block size: %d, block cycles: %d", len(code_block), block_max_cycles)
-
-        code_text = self.jit_emit_code(code_block)
-        module_name, file_base, module_path = self.jit_get_module_name(code_text)
-        self.jit_gen_files(code_text, file_base)
-        if cythonmode:
-            self.jit_compile(module_name, file_base, module_path)
-        logger.debug("Loading: %s %x %d", file_base, block_id, block_max_cycles)
-        self.jit_load(module_name, module_path, file_base, block_id, block_max_cycles)
-
-        return True
+        return code_block, block_max_cycles
 
     def jit_offload(self, block_id, cycles_target, interrupt_master_enable):
         if cycles_target < 200:
@@ -552,13 +540,43 @@ class Motherboard:
         for k, v in self.jit_queue.items():
             priority_list.append((k, len(v))) # block_id, number of hits
 
+        block_manifest = []
+        code_text = JIT_PREAMBLE
         # Pick the 10 most frequent
-        for block_id, count in sorted(priority_list, key=lambda x: x[1], reverse=True)[:10]:
-            cycles_target, interrupt_master_enable = self.jit_queue[block_id][
-                0] # TODO: Currently just picking the first entry!
+        for block_id, count in sorted(priority_list, key=lambda x: x[1], reverse=True)[:50]:
+
+            # TODO: Currently just picking the first entry!
+            cycles_target, interrupt_master_enable = self.jit_queue[block_id][0]
+
             logger.critical("analyze: %x, %d, %d", block_id, cycles_target, interrupt_master_enable)
-            if not self.jit_analyze(block_id, cycles_target, interrupt_master_enable):
+
+            code_block, block_max_cycles = self.jit_collect_block(block_id, cycles_target)
+
+            if block_max_cycles < 100:
                 self.jit_cycles[block_id] = -1 # Don't retry
+                continue
+
+            # if len(code_block) < 25:
+            #     continue
+
+            func_name = f"block_{block_id:08x}"
+
+            logger.debug("Code block size: %d, block cycles: %d", len(code_block), block_max_cycles)
+            code_text += self.jit_emit_code(code_block, func_name)
+
+            block_manifest.append((func_name, block_id, block_max_cycles))
+
+        if not block_manifest:
+            return
+
+        code_text = "block_manifest = " + str(block_manifest) + "\n\n" + code_text
+
+        module_name, file_base, module_path = self.jit_get_module_name(code_text)
+        self.jit_gen_files(code_text, file_base, block_manifest)
+        if cythonmode:
+            self.jit_compile(module_name, file_base, module_path)
+        # logger.debug("Loading: %s %x %d", file_base, block_id, block_max_cycles)
+        self.jit_load(module_name, module_path, file_base, block_manifest)
 
         self.jit_queue = {} # Throw the rest away to not grow the list indefinitely. Maybe there's a better way.
 
@@ -1066,13 +1084,15 @@ class HDMA:
 if not cythonmode:
     exec(
         """
-def _jit_load(self, module_name, module_path, file_base, block_id, block_max_cycles):
+def _jit_load(self, module_name, module_path, file_base, block_manifest):
     # spec = importlib.util.spec_from_file_location(module_name, loader=ExtensionFileLoader(module_name, file_base + JIT_EXTENSION))
     spec = importlib.util.spec_from_file_location(module_name, file_base + JIT_EXTENSION)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    self.jit_array[block_id] = module.execute
-    self.jit_cycles[block_id] = block_max_cycles
+
+    for func_name, block_id, block_max_cycles in block_manifest:
+        self.jit_array[block_id] = getattr(module, func_name)
+        self.jit_cycles[block_id] = block_max_cycles
 
 def _jit_clear(self):
     self.jit_queue = {}
