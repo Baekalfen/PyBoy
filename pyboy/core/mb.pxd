@@ -68,20 +68,23 @@ cdef class Motherboard:
     cdef f_type[0xFFFFFF] jit_array
     cdef int[0xFFFFFF] jit_cycles
 
-    cdef inline int jit_load(self, str module_name, str module_path, str file_base, int block_id, int block_max_cycles) except -1 with gil:
+    cdef inline int jit_load(self, str module_name, str module_path, str file_base, list block_manifest) except -1 with gil:
         # logger.debug("JIT LOAD %d", block_id)
         cdef void* handle = dlfcn.dlopen(module_path.encode(), dlfcn.RTLD_NOW | dlfcn.RTLD_GLOBAL) # RTLD_LAZY?
         if (handle == NULL):
             return -1
         dlfcn.dlerror() # Clear error
 
-        cdef f_type execute = <f_type> dlfcn.dlsym(handle, b"execute")
-        if (execute == NULL):
-            print(dlfcn.dlerror())
+        cdef f_type execute;
+        for func_name, block_id, block_max_cycles in block_manifest:
+            execute = <f_type> dlfcn.dlsym(handle, func_name.encode())
+            if (execute == NULL):
+                print(dlfcn.dlerror())
 
-        self.jit_array[block_id] = execute
-        self.jit_cycles[block_id] = block_max_cycles
-        # execute(self.cpu)
+            # block_id = int(func_name.split('_')[-1], 16)
+
+            self.jit_array[block_id] = execute
+            self.jit_cycles[block_id] = block_max_cycles
 
     cdef inline int jit_execute(self, int block_id, int64_t cycles_target) noexcept nogil:
         # logger.debug("JIT EXECUTE %d", block_id)
@@ -89,11 +92,11 @@ cdef class Motherboard:
 
     cdef bint jit_enabled
     cdef tuple jit_get_module_name(self, str) with gil
-    cdef void jit_gen_files(self, str, str) noexcept with gil
+    cdef void jit_gen_files(self, str, str, list) noexcept with gil
     cdef void jit_compile(self, str, str, str) noexcept with gil
-    cdef object jit_emit_code(self, object) with gil
-    @cython.locals(block_max_cycles=int64_t)
-    cdef bint jit_analyze(self, int, int64_t, bint) noexcept with gil
+    cdef object jit_emit_code(self, object, str) with gil
+    # @cython.locals(block_max_cycles=int64_t)
+    # cdef bint jit_analyze(self, int, int64_t, bint) noexcept with gil
     cdef void jit_offload(self, int, int64_t, bint) noexcept with gil
     @cython.locals(block_id=int64_t, cycles_target=int64_t, interrupt_master_enable=bint, count=int64_t)
     cdef void jit_process(self) noexcept with gil
