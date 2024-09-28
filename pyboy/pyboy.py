@@ -8,7 +8,9 @@ The core module of the emulator
 
 import heapq
 import os
+import queue
 import re
+import threading
 import time
 
 import numpy as np
