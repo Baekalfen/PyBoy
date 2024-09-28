@@ -50,10 +50,7 @@ if not cythonmode:
     JIT_PREAMBLE = "FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)\n\n"
 else:
     JIT_PREAMBLE = """
-cimport pyboy
-
 from libc.stdint cimport uint8_t, uint16_t, int16_t, uint32_t, int64_t
-cimport cython
 from pyboy.core cimport cpu as _cpu
 
 """
@@ -134,6 +131,7 @@ class Motherboard:
 
         self.jit_enabled = jit_enabled
         self._jit_clear()
+        self.jit_init_load()
 
     def _jit_clear(self):
         self.jit_queue = {}
@@ -424,7 +422,7 @@ class Motherboard:
             code_text += "flag = 0\n\tt = 0\n\ttr = 0\n\tv = 0"
         else:
             code_text += f"cdef public void {func_name}(_cpu.CPU cpu, int64_t cycles_target) noexcept nogil:"
-            code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef uint16_t tr\n\tcdef int v"
+            code_text += "\n\tcdef uint8_t flag\n\tcdef int t\n\tcdef int v"
             code_text += """
 \tcdef uint16_t FLAGC = 4
 \tcdef uint16_t FLAGH = 5
@@ -530,6 +528,25 @@ class Motherboard:
             self.jit_queue[block_id] = []
         self.jit_queue[block_id].append((cycles_target, interrupt_master_enable))
 
+    def jit_init_load(self):
+        # breakpoint()
+        logger.critical("initload")
+        for module_path in os.listdir():
+            logger.critical("file: %s", module_path)
+            if module_path.startswith("jit_") and module_path.endswith(EXT_SUFFIX):
+                logger.critical("match")
+                module_name = module_path.split(".")[0]
+                file_base = os.path.splitext(self.cartridge.filename)[0].replace(".", "_") + "_" + module_name
+
+                spec = importlib.util.spec_from_file_location(module_name, module_path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                if getattr(module, "cartridge") == self.cartridge.gamename:
+                    block_manifest = getattr(module, "block_manifest")
+                    self.jit_load(module_name, module_path, file_base, block_manifest)
+                del spec, module
+
     def jit_process(self):
         # TODO: Send cycles_target and which interrupt to jit_analyze. Track interrupt enable and flags on JIT block?
         # Interrupts are likely to hit the same rythm -- sync on halt, do hblank, do vblank, etc.
@@ -566,10 +583,13 @@ class Motherboard:
 
             block_manifest.append((func_name, block_id, block_max_cycles))
 
+        self.jit_queue = {} # Throw the rest away to not grow the list indefinitely. Maybe there's a better way.
         if not block_manifest:
             return
 
-        code_text = "block_manifest = " + str(block_manifest) + "\n\n" + code_text
+        code_text = "block_manifest = " + str(
+            block_manifest
+        ) + "\n" + f"cartridge = '{self.cartridge.gamename}'\n\n" + code_text
 
         module_name, file_base, module_path = self.jit_get_module_name(code_text)
         self.jit_gen_files(code_text, file_base, block_manifest)
@@ -592,6 +612,7 @@ class Motherboard:
         # else:
         #     logger.debug("Too narrow to execute JIT block %s, %d", code.cycles, cycles)
         # return 0
+
 
     def cpu_pending_interrupt(self):
         return self.cpu.interrupt_queued or (self.cpu.interrupts_flag_register &
