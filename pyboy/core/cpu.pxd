@@ -4,7 +4,7 @@
 #
 
 
-from libc.stdint cimport int16_t, uint8_t, uint16_t, int64_t
+from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, int64_t
 
 cimport pyboy.core.mb
 from pyboy.utils cimport IntIOInterface

@@ -18,12 +18,12 @@ cdef class Timer:
     cdef uint64_t DIV, TIMA, TMA, TAC
     cdef uint16_t DIV_counter, TIMA_counter
     cdef uint64_t[4] dividers
+    cdef int64_t _cycles_to_interrupt
+    cdef uint64_t last_cycles
 
     cdef void reset(self) noexcept nogil
     @cython.locals(divider=cython.int)
     cdef bint tick(self, uint64_t) noexcept nogil
-    @cython.locals(divider=cython.int, cyclesleft=cython.uint)
-    cdef int64_t cycles_to_interrupt(self) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
