@@ -43,9 +43,8 @@ cdef class PyBoy:
     cdef readonly str gamerom
     cdef readonly bint paused
 
-    cdef double avg_pre
     cdef double avg_tick
-    cdef double avg_post
+    cdef double avg_emu
 
     cdef readonly list events
     cdef list queued_input
@@ -72,7 +71,7 @@ cdef class PyBoy:
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
     cpdef bint _tick(self, bint) noexcept
-    @cython.locals(running=bint)
+    @cython.locals(running=bint, factor=double)
     cpdef bint tick(self, count=*, render=*) noexcept
     cpdef void stop(self, save=*) noexcept
     cpdef int save_state(self, object) except -1
@@ -84,6 +83,7 @@ cdef class PyBoy:
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
+    cdef void _post_handle_events(self) noexcept
 
     cdef dict _hooks
     cdef object symbols_file

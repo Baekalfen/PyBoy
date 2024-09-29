@@ -47,6 +47,12 @@ def test_log_level_critical(default_rom, capsys):
     assert captured.out == ""
 
 
+def test_tick_zero(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    # Not permitted, but shouldn't crash the emulator either
+    pyboy.tick(0)
+
+
 def test_register_file(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
