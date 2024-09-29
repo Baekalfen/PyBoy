@@ -58,6 +58,8 @@ class LCD:
         self.double_speed = False
         self.cgb = cgb
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
+        self.last_cycles = 0
+        self._cycles_to_interrupt = 0
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -103,9 +105,6 @@ class LCD:
     def set_stat(self, value):
         self._STAT.set(value)
 
-    def cycles_to_interrupt(self):
-        return self.clock_target - self.clock
-
     def cycles_to_mode0(self):
         multiplier = 2 if self.double_speed else 1
         mode2 = 80 * multiplier
@@ -130,7 +129,12 @@ class LCD:
         #     logger.critical("Unsupported STAT mode: %d", mode)
         #     return 0
 
-    def tick(self, cycles):
+    def tick(self, _cycles):
+        cycles = _cycles - self.last_cycles
+        if cycles == 0:
+            return False
+        self.last_cycles = _cycles
+
         interrupt_flag = 0
         self.clock += cycles
 
@@ -205,6 +209,7 @@ class LCD:
                 # Renderer
                 self.renderer.blank_screen(self)
 
+        self._cycles_to_interrupt = self.clock_target - self.clock
         return interrupt_flag
 
     def save_state(self, f):
@@ -239,6 +244,7 @@ class LCD:
         # CGB
         f.write(self.cgb)
         f.write(self.double_speed)
+        f.write_64bit(self.last_cycles)
         f.write_64bit(self.clock)
         f.write_64bit(self.clock_target)
         f.write(self.next_stat_mode)
@@ -293,6 +299,8 @@ class LCD:
             self.cgb = _cgb
             self.double_speed = f.read()
 
+            if state_version >= 12:
+                self.last_cycles = f.read_64bit()
             self.clock = f.read_64bit()
             self.clock_target = f.read_64bit()
             self.next_stat_mode = f.read()

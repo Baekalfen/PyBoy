@@ -295,8 +295,8 @@ class Motherboard:
                 cycles_target = max(
                     4,
                     min(
-                        self.lcd.cycles_to_interrupt(),
-                        self.timer.cycles_to_interrupt(),
+                        self.timer._cycles_to_interrupt,
+                        self.lcd._cycles_to_interrupt, # TODO: Be more agreesive. Only if actual interrupt enabled.
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles
                     )
@@ -315,10 +315,10 @@ class Motherboard:
             else:
                 self.sound.clock = sclock + cycles
 
-            if self.timer.tick(cycles):
+            if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
 
-            lcd_interrupt = self.lcd.tick(cycles)
+            lcd_interrupt = self.lcd.tick(self.cpu.cycles)
             if lcd_interrupt:
                 self.cpu.set_interruptflag(lcd_interrupt)
 
@@ -365,6 +365,7 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C: # I/O ports
+            assert not self.timer.tick(self.cpu.cycles)
             if i == 0xFF04:
                 return self.timer.DIV
             elif i == 0xFF05:
@@ -478,6 +479,7 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00: # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         elif 0xFF00 <= i < 0xFF4C: # I/O ports
+            assert not self.timer.tick(self.cpu.cycles)
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
