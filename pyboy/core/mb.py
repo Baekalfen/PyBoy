@@ -297,6 +297,7 @@ class Motherboard:
                     min(
                         self.timer._cycles_to_interrupt,
                         self.lcd._cycles_to_interrupt, # TODO: Be more agreesive. Only if actual interrupt enabled.
+                        self.lcd._cycles_to_frame,
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles
                     )

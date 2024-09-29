@@ -60,6 +60,7 @@ class LCD:
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
         self.last_cycles = 0
         self._cycles_to_interrupt = 0
+        self._cycles_to_frame = FRAME_CYCLES
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -210,6 +211,7 @@ class LCD:
                 self.renderer.blank_screen(self)
 
         self._cycles_to_interrupt = self.clock_target - self.clock
+        self._cycles_to_frame = self.clock - FRAME_CYCLES
         return interrupt_flag
 
     def save_state(self, f):
@@ -303,6 +305,7 @@ class LCD:
                 self.last_cycles = f.read_64bit()
             self.clock = f.read_64bit()
             self.clock_target = f.read_64bit()
+            self._cycles_to_frame = self.clock - FRAME_CYCLES
             self.next_stat_mode = f.read()
 
             if self.cgb:

@@ -49,7 +49,7 @@ cdef class LCD:
     cdef Renderer renderer
     cdef uint8_t[144][5] _scanlineparameters
     cdef uint64_t last_cycles
-    cdef int64_t _cycles_to_interrupt
+    cdef int64_t _cycles_to_interrupt, _cycles_to_frame
 
     @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
     cdef uint8_t tick(self, int) noexcept nogil
