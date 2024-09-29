@@ -169,7 +169,7 @@ See "pyboy --help" for how to enable rewind and other awesome features!
             pyboy.load_state(f)
 
     render = not argv.no_renderer
-    while pyboy._tick(render):
+    while pyboy.tick():
         pass
 
     pyboy.stop()

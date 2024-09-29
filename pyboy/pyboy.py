@@ -160,9 +160,8 @@ class PyBoy:
                 raise KeyError(f"Unknown keyword argument: {k}")
 
         # Performance measures
-        self.avg_pre = 0
         self.avg_tick = 0
-        self.avg_post = 0
+        self.avg_emu = 0
 
         # Absolute frame count of the emulation
         self.frame_count = 0
@@ -378,9 +377,7 @@ class PyBoy:
         if self.stopped:
             return False
 
-        t_start = time.perf_counter_ns()
         self._handle_events(self.events)
-        t_pre = time.perf_counter_ns()
         if not self.paused:
             self.gameshark.tick()
             self.__rendering(render)
@@ -407,18 +404,7 @@ class PyBoy:
                     self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
             self.frame_count += 1
-        t_tick = time.perf_counter_ns()
-        self._post_tick()
-        t_post = time.perf_counter_ns()
-
-        nsecs = t_pre - t_start
-        self.avg_pre = 0.9 * self.avg_pre + (0.1*nsecs/1_000_000_000)
-
-        nsecs = t_tick - t_pre
-        self.avg_tick = 0.9 * self.avg_tick + (0.1*nsecs/1_000_000_000)
-
-        nsecs = t_post - t_tick
-        self.avg_post = 0.9 * self.avg_post + (0.1*nsecs/1_000_000_000)
+            self._post_handle_events()
 
         return not self.quitting
 
@@ -467,11 +453,22 @@ class PyBoy:
             False if emulation has ended otherwise True
         """
 
+        _count = count
         running = False
+        t_start = time.perf_counter_ns()
         while count != 0:
             _render = render and count == 1 # Only render on last tick to improve performance
             running = self._tick(_render)
             count -= 1
+        t_tick = time.perf_counter_ns()
+        self._post_tick()
+        t_post = time.perf_counter_ns()
+
+        if _count > 0:
+            nsecs = t_tick - t_start
+            self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1*nsecs/1_000_000_000)
+            nsecs = t_post - t_start
+            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1*nsecs/1_000_000_000)
         return running
 
     def _handle_events(self, events):
@@ -538,6 +535,7 @@ class PyBoy:
         self._plugin_manager.post_tick()
         self._plugin_manager.frame_limiter(self.target_emulationspeed)
 
+    def _post_handle_events(self):
         # Prepare an empty list, as the API might be used to send in events between ticks
         self.events = []
         while self.queued_input and self.frame_count == self.queued_input[0][0]:
@@ -545,9 +543,8 @@ class PyBoy:
             self.events.append(WindowEvent(_event))
 
     def _update_window_title(self):
-        avg_emu = self.avg_pre + self.avg_tick + self.avg_post
-        self.window_title = f"CPU/frame: {(self.avg_pre + self.avg_tick) / SPF * 100:0.2f}%"
-        self.window_title += f' Emulation: x{(round(SPF / avg_emu) if avg_emu > 0 else "INF")}'
+        self.window_title = f"CPU/frame: {(self.avg_tick) / SPF * 100:0.2f}%"
+        self.window_title += f' Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu > 0 else "INF")}'
         if self.paused:
             self.window_title += "[PAUSED]"
         self.window_title += self._plugin_manager.window_title()
