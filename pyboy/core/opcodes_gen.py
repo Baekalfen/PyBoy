@@ -26,6 +26,7 @@ logger = pyboy.logging.get_logger(__name__)
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
 def BRK(cpu):
+    cpu.bail = True
     cpu.mb.breakpoint_singlestep = 1
     cpu.mb.breakpoint_singlestep_latch = 0
     # NOTE: We do not increment PC
@@ -470,7 +471,10 @@ class OpcodeData:
 
     def EI(self):
         code = Code(self.name.split()[0], self.opcode, self.name, 0, self.length, self.cycles)
-        code.addline("cpu.interrupt_master_enable = True")
+        code.addlines([
+            "cpu.interrupt_master_enable = True",
+            "cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)",
+        ])
         return code.getcode()
 
     def DI(self):
@@ -1001,8 +1005,9 @@ class OpcodeData:
 
     def RETI(self):
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles, branch_op=True)
-        code.addline("cpu.interrupt_master_enable = True")
         code.addlines([
+            "cpu.interrupt_master_enable = True",
+            "cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)",
             "cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
             "cpu.PC |= cpu.mb.getitem(cpu.SP) # Low",
             "cpu.SP += 2",

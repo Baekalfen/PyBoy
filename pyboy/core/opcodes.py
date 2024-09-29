@@ -12,6 +12,7 @@ logger = pyboy.logging.get_logger(__name__)
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 
 def BRK(cpu):
+    cpu.bail = True
     cpu.mb.breakpoint_singlestep = 1
     cpu.mb.breakpoint_singlestep_latch = 0
     # NOTE: We do not increment PC
@@ -2332,6 +2333,7 @@ def RET_D8(cpu): # D8 RET C
 
 def RETI_D9(cpu): # D9 RETI
     cpu.interrupt_master_enable = True
+    cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)
     cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
     cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
     cpu.SP += 2
@@ -2591,6 +2593,7 @@ def LD_FA(cpu, v): # FA LD A,(a16)
 
 def EI_FB(cpu): # FB EI
     cpu.interrupt_master_enable = True
+    cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     return 4
