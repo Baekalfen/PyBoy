@@ -21,6 +21,7 @@ from pyboy.utils cimport IntIOInterface, WindowEvent
 
 cdef Logger logger
 
+cdef int64_t MAX_CYCLES
 cdef uint16_t STAT, LY, LYC
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
@@ -59,7 +60,7 @@ cdef class Motherboard:
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
-    @cython.locals(cycles=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
+    @cython.locals(cycles=int64_t, cycles_target=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
     cdef bint tick(self) noexcept nogil
 
     cdef void switch_speed(self) noexcept nogil

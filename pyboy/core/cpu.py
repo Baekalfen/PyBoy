@@ -39,6 +39,7 @@ class CPU:
         self.halted = False
         self.stopped = False
         self.is_stuck = False
+        self.cycles = 0
 
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
@@ -53,6 +54,7 @@ class CPU:
         f.write(self.interrupts_enabled_register)
         f.write(self.interrupt_queued)
         f.write(self.interrupts_flag_register)
+        f.write_64bit(self.cycles)
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
@@ -69,6 +71,8 @@ class CPU:
         if state_version >= 8:
             self.interrupt_queued = f.read()
             self.interrupts_flag_register = f.read()
+        if state_version >= 12:
+            self.cycles = f.read_64bit()
         logger.debug("State loaded: %s", self.dump_state(""))
 
     def dump_state(self, sym_label):
@@ -103,30 +107,33 @@ class CPU:
     def set_interruptflag(self, flag):
         self.interrupts_flag_register |= flag
 
-    def tick(self):
-        if self.check_interrupts():
-            self.halted = False
-            # TODO: We return with the cycles it took to handle the interrupt
-            return 0
+    def tick(self, cycles_target):
+        _cycles0 = self.cycles
+        _target = _cycles0 + cycles_target
+        self.bail = False
+        while self.cycles < _target:
+            if self.check_interrupts():
+                self.halted = False
+                # TODO: We return with the cycles it took to handle the interrupt
+                break
+                # return cycles
 
-        if self.halted and self.interrupt_queued:
-            # GBCPUman.pdf page 20
-            # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
-            # disabled (DI) on the GB,GBP, and SGB.
-            self.halted = False
-            self.PC += 1
-            self.PC &= 0xFFFF
-        elif self.halted:
-            return 4 # TODO: Number of cycles for a HALT in effect?
+            if self.halted and self.interrupt_queued:
+                # GBCPUman.pdf page 20
+                # WARNING: The instruction immediately following the HALT instruction is "skipped" when interrupts are
+                # disabled (DI) on the GB,GBP, and SGB.
+                self.halted = False
+                self.PC += 1
+                self.PC &= 0xFFFF
+            elif self.halted:
+                self.cycles += cycles_target # TODO: Number of cycles for a HALT in effect?
+                break
 
-        old_pc = self.PC # If the PC doesn't change, we're likely stuck
-        old_sp = self.SP # Sometimes a RET can go to the same PC, so we check the SP too.
-        cycles = self.fetch_and_execute()
-        if not self.halted and old_pc == self.PC and old_sp == self.SP and not self.is_stuck and not self.mb.breakpoint_singlestep:
-            logger.debug("CPU is stuck: %s", self.dump_state(""))
-            self.is_stuck = True
-        self.interrupt_queued = False
-        return cycles
+            self.interrupt_queued = False
+
+            self.cycles += self.fetch_and_execute()
+            if self.bail: # Possible cycles-target changes
+                break
 
     def check_interrupts(self):
         if self.interrupt_queued:

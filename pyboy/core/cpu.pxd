@@ -4,7 +4,7 @@
 #
 
 
-from libc.stdint cimport int16_t, uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdint cimport int16_t, uint8_t, uint16_t, int64_t
 
 cimport pyboy.core.mb
 from pyboy.utils cimport IntIOInterface
@@ -30,13 +30,16 @@ cdef class CPU:
 
     cdef uint8_t interrupts_flag, interrupts_enabled, interrupts_flag_register, interrupts_enabled_register
 
+    cdef int64_t cycles
+
     cdef inline int check_interrupts(self) noexcept nogil
     cdef void set_interruptflag(self, int) noexcept nogil
     cdef bint handle_interrupt(self, uint8_t, uint16_t) noexcept nogil
 
     @cython.locals(opcode=uint16_t)
     cdef inline uint8_t fetch_and_execute(self) noexcept nogil
-    cdef int tick(self) noexcept nogil
+    @cython.locals(_cycles0=int64_t)
+    cdef int tick(self, int64_t) noexcept nogil
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept
 

@@ -15,6 +15,8 @@ import pyboy
 
 logger = pyboy.logging.get_logger(__name__)
 
+MAX_CYCLES = 1 << 16
+
 
 class Motherboard:
     def __init__(
@@ -275,12 +277,10 @@ class Motherboard:
 
     def tick(self):
         while self.processing_frame():
+            _cycles0 = self.cpu.cycles
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
-                cycles = self.hdma.tick(self)
+                self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
-                cycles = self.cpu.tick()
-
-            if self.cpu.halted:
                 # Fast-forward to next interrupt:
                 # As we are halted, we are guaranteed, that our state
                 # cannot be altered by other factors than time.
@@ -288,13 +288,12 @@ class Motherboard:
                 # it gets triggered mid-frame or by next frame
                 # Serial is not implemented, so this isn't a concern
 
-                # Help Cython with types
-                mode0_cycles = 1 << 32
+                mode0_cycles = MAX_CYCLES
                 if self.cgb and self.hdma.transfer_active:
                     mode0_cycles = self.lcd.cycles_to_mode0()
 
-                cycles = max(
-                    0,
+                cycles_target = max(
+                    4,
                     min(
                         self.lcd.cycles_to_interrupt(),
                         self.timer.cycles_to_interrupt(),
@@ -302,9 +301,12 @@ class Motherboard:
                         mode0_cycles
                     )
                 )
+                self.cpu.tick(cycles_target)
 
             #TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
+
+            cycles = self.cpu.cycles - _cycles0
 
             # TODO: Unify interface
             sclock = self.sound.clock
