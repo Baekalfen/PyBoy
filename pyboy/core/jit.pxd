@@ -43,8 +43,6 @@ cdef class JIT:
             if (execute == NULL):
                 print(dlfcn.dlerror())
 
-            # block_id = int(func_name.split('_')[-1], 16)
-
             self.array[block_id] = execute
             self.cycles[block_id] = block_max_cycles
 
