@@ -209,28 +209,36 @@ class JIT:
 
     def collect_block(self, block_id, cycles_target):
         boundary_instruction = [
-            0x18, # JR r8
-
-            # RET
-            0xC0,
-            0xD0,
-            0xC3, # JP a16
-
-            # RST
-            0xC7,
-            0xD7,
-            0xE7,
-            0xF7,
-            0xC9, # RET
-            0xD9, # RETI
-            0xE9, # JP (HL)
+            0xC7, # RST 00H
+            0xCF, # RST 08H
+            0xD7, # RST 10H
+            0xDF, # RST 18H
+            0xE7, # RST 20H
+            0xEF, # RST 28H
+            0xF7, # RST 30H
+            0xFF, # RST 38H
+            0xC4, # CALL NZ,a16
+            0xCC, # CALL Z,a16
             0xCD, # CALL a16
-
-            # RST
-            0xCF,
-            0xDF,
-            0xEF,
-            0xFF,
+            0xD4, # CALL NC,a16
+            0xDC, # CALL C,a16
+            0xC0, # RET NZ
+            0xC8, # RET Z
+            0xC9, # RET
+            0xD0, # RET NC
+            0xD8, # RET C
+            0xD9, # RETI
+            0x18, # JR r8
+            0x20, # JR NZ,r8
+            0x28, # JR Z,r8
+            0x30, # JR NC,r8
+            0x38, # JR C,r8
+            0xC2, # JP NZ,a16
+            0xC3, # JP a16
+            0xCA, # JP Z,a16
+            0xD2, # JP NC,a16
+            0xDA, # JP C,a16
+            0xE9, # JP (HL)
             0x76, # HALT
             0x10, # STOP
             0xFB, # EI
