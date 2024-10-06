@@ -82,7 +82,7 @@ class build_ext(_build_ext):
                 "nonecheck": False,
                 "overflowcheck": False,
                 # "profile" : True,
-                "wraparound": False,
+                # "wraparound": False,
                 "legacy_implicit_noexcept": True,
             },
         )
