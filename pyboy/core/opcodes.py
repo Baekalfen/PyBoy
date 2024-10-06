@@ -2396,7 +2396,7 @@ def RST_DF(cpu): # DF RST 18H
 
 def LDH_E0(cpu, v): # E0 LDH (a8),A
     cpu.cycles += 4
-    cpu.mb.setitem(v + 0xFF00, cpu.A)
+    cpu.mb.setitem_io_ports(v | 0xFF00, cpu.A)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
     cpu.cycles += 8
@@ -2412,7 +2412,7 @@ def POP_E1(cpu): # E1 POP HL
 
 
 def LD_E2(cpu): # E2 LD (C),A
-    cpu.mb.setitem(0xFF00 + cpu.C, cpu.A)
+    cpu.mb.setitem_io_ports(0xFF00 | cpu.C, cpu.A)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 8
@@ -2505,7 +2505,7 @@ def RST_EF(cpu): # EF RST 28H
 
 def LDH_F0(cpu, v): # F0 LDH A,(a8)
     cpu.cycles += 4
-    cpu.A = cpu.mb.getitem(v + 0xFF00)
+    cpu.A = cpu.mb.getitem_io_ports(v | 0xFF00)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
     cpu.cycles += 8
@@ -2522,7 +2522,7 @@ def POP_F1(cpu): # F1 POP AF
 
 
 def LD_F2(cpu): # F2 LD A,(C)
-    cpu.A = cpu.mb.getitem(0xFF00 + cpu.C)
+    cpu.A = cpu.mb.getitem_io_ports(0xFF00 | cpu.C)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 8
