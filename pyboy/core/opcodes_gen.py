@@ -144,9 +144,9 @@ class Operand:
         if operand == "(C)":
             self.highpointer = True
             if assign:
-                return "cpu.mb.setitem(0xFF00 + cpu.C, %s)"
+                return "cpu.mb.setitem_io_ports(0xFF00 | cpu.C, %s)"
             else:
-                return "cpu.mb.getitem(0xFF00 + cpu.C)"
+                return "cpu.mb.getitem_io_ports(0xFF00 | cpu.C)"
 
         elif operand == "SP+r8":
             self.immediate = True
@@ -156,17 +156,14 @@ class Operand:
             return "cpu.SP + " + inline_signed_int8("v")
 
         elif operand.startswith("(") and operand.endswith(")"):
+            _operand = re.search(r"\(([a-zA-Z]+\d*)[\+-]?\)", operand).group(1)
             self.pointer = True
             if assign:
-                code = (
-                    "cpu.mb.setitem(%s"
-                    % self.codegen(False, operand=re.search(r"\(([a-zA-Z]+\d*)[\+-]?\)", operand).group(1))
-                    + ", %s)"
-                )
+                code = "cpu.mb.setitem_io_ports" if self.highpointer else "cpu.mb.setitem"
+                code += "(%s" % self.codegen(False, operand=_operand) + ", %s)"
             else:
-                code = "cpu.mb.getitem(%s)" % self.codegen(
-                    False, operand=re.search(r"\(([a-zA-Z]+\d*)[\+-]?\)", operand).group(1)
-                )
+                code = "cpu.mb.getitem_io_ports" if self.highpointer else "cpu.mb.getitem"
+                code += "(%s)" % self.codegen(False, operand=_operand)
 
             if "-" in operand or "+" in operand:
                 # TODO: Replace with opcode 23 (INC HL)?
@@ -219,7 +216,7 @@ class Operand:
                 code = inline_signed_int8(code)
                 self.signed = True
             elif operand == "a8":
-                code += " + 0xFF00"
+                code += " | 0xFF00"
                 self.highpointer = True
             return code
 
