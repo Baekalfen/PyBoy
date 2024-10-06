@@ -31,7 +31,7 @@ RESET_REPLAYS = False
 
 def verify_screen_image_np(pyboy, saved_array):
     match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.screen.ndarray)
-    if not match and not os.environ.get("TEST_CI"):
+    if not match and os.environ.get("TEST_VERBOSE_IMAGES"):
         from PIL import Image
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()

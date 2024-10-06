@@ -15,6 +15,9 @@ cdef Logger logger
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
+cdef uint8_t get_length(int) noexcept nogil
+cdef uint8_t[512] OPCODE_MAX_CYCLES
+cdef uint8_t get_max_cycles(int) noexcept nogil
 @cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
 cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
 

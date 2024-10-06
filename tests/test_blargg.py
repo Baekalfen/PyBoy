@@ -20,7 +20,7 @@ OVERWRITE_JSON = False
 blargg_json = "tests/test_results/blargg.json"
 
 
-def run_rom(rom):
+def run_rom(rom, max_frames):
     pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom, sound_emulated=True)
     pyboy.set_emulation_speed(0)
     t = time.time()
@@ -31,7 +31,7 @@ def run_rom(rom):
             result += b
             t = time.time()
 
-        if pyboy._is_cpu_stuck():
+        if pyboy._is_cpu_stuck() or pyboy.frame_count > max_frames:
             break
 
     pyboy.tick(10, False)
@@ -51,69 +51,69 @@ def run_rom(rom):
 
 
 @pytest.mark.parametrize(
-    "test_rom", [
-        "cgb_sound/cgb_sound.gb",
-        "cgb_sound/rom_singles/01-registers.gb",
-        "cgb_sound/rom_singles/02-len ctr.gb",
-        "cgb_sound/rom_singles/03-trigger.gb",
-        "cgb_sound/rom_singles/04-sweep.gb",
-        "cgb_sound/rom_singles/05-sweep details.gb",
-        "cgb_sound/rom_singles/06-overflow on trigger.gb",
-        "cgb_sound/rom_singles/07-len sweep period sync.gb",
-        "cgb_sound/rom_singles/08-len ctr during power.gb",
-        "cgb_sound/rom_singles/09-wave read while on.gb",
-        "cgb_sound/rom_singles/10-wave trigger while on.gb",
-        "cgb_sound/rom_singles/11-regs after power.gb",
-        "cgb_sound/rom_singles/12-wave.gb",
-        "cpu_instrs/cpu_instrs.gb",
-        "cpu_instrs/individual/01-special.gb",
-        "cpu_instrs/individual/02-interrupts.gb",
-        "cpu_instrs/individual/03-op sp,hl.gb",
-        "cpu_instrs/individual/04-op r,imm.gb",
-        "cpu_instrs/individual/05-op rp.gb",
-        "cpu_instrs/individual/06-ld r,r.gb",
-        "cpu_instrs/individual/07-jr,jp,call,ret,rst.gb",
-        "cpu_instrs/individual/08-misc instrs.gb",
-        "cpu_instrs/individual/09-op r,r.gb",
-        "cpu_instrs/individual/10-bit ops.gb",
-        "cpu_instrs/individual/11-op a,(hl).gb",
-        "dmg_sound/dmg_sound.gb",
-        "dmg_sound/rom_singles/01-registers.gb",
-        "dmg_sound/rom_singles/02-len ctr.gb",
-        "dmg_sound/rom_singles/03-trigger.gb",
-        "dmg_sound/rom_singles/04-sweep.gb",
-        "dmg_sound/rom_singles/05-sweep details.gb",
-        "dmg_sound/rom_singles/06-overflow on trigger.gb",
-        "dmg_sound/rom_singles/07-len sweep period sync.gb",
-        "dmg_sound/rom_singles/08-len ctr during power.gb",
-        "dmg_sound/rom_singles/09-wave read while on.gb",
-        "dmg_sound/rom_singles/10-wave trigger while on.gb",
-        "dmg_sound/rom_singles/11-regs after power.gb",
-        "dmg_sound/rom_singles/12-wave write while on.gb",
-        "instr_timing/instr_timing.gb",
-        "interrupt_time/interrupt_time.gb",
-        "mem_timing/individual/01-read_timing.gb",
-        "mem_timing/individual/02-write_timing.gb",
-        "mem_timing/individual/03-modify_timing.gb",
-        "mem_timing/mem_timing.gb",
-        "mem_timing-2/mem_timing.gb",
-        "mem_timing-2/rom_singles/01-read_timing.gb",
-        "mem_timing-2/rom_singles/02-write_timing.gb",
-        "mem_timing-2/rom_singles/03-modify_timing.gb",
-        "oam_bug/oam_bug.gb",
-        "oam_bug/rom_singles/1-lcd_sync.gb",
-        "oam_bug/rom_singles/2-causes.gb",
-        "oam_bug/rom_singles/3-non_causes.gb",
-        "oam_bug/rom_singles/4-scanline_timing.gb",
-        "oam_bug/rom_singles/5-timing_bug.gb",
-        "oam_bug/rom_singles/6-timing_no_bug.gb",
-        "oam_bug/rom_singles/7-timing_effect.gb",
-        "oam_bug/rom_singles/8-instr_effect.gb",
+    "test_rom, max_frames", [
+        ("cgb_sound/cgb_sound.gb", 4_000),
+        ("cgb_sound/rom_singles/01-registers.gb", 700),
+        ("cgb_sound/rom_singles/02-len ctr.gb", 700),
+        ("cgb_sound/rom_singles/03-trigger.gb", 700),
+        ("cgb_sound/rom_singles/04-sweep.gb", 700),
+        ("cgb_sound/rom_singles/05-sweep details.gb", 700),
+        ("cgb_sound/rom_singles/06-overflow on trigger.gb", 700),
+        ("cgb_sound/rom_singles/07-len sweep period sync.gb", 700),
+        ("cgb_sound/rom_singles/08-len ctr during power.gb", 700),
+        ("cgb_sound/rom_singles/09-wave read while on.gb", 700),
+        ("cgb_sound/rom_singles/10-wave trigger while on.gb", 700),
+        ("cgb_sound/rom_singles/11-regs after power.gb", 700),
+        ("cgb_sound/rom_singles/12-wave.gb", 700),
+        ("cpu_instrs/cpu_instrs.gb", 4_000),
+        ("cpu_instrs/individual/01-special.gb", 700),
+        ("cpu_instrs/individual/02-interrupts.gb", 700),
+        ("cpu_instrs/individual/03-op sp,hl.gb", 700),
+        ("cpu_instrs/individual/04-op r,imm.gb", 700),
+        ("cpu_instrs/individual/05-op rp.gb", 700),
+        ("cpu_instrs/individual/06-ld r,r.gb", 700),
+        ("cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", 700),
+        ("cpu_instrs/individual/08-misc instrs.gb", 700),
+        ("cpu_instrs/individual/09-op r,r.gb", 700),
+        ("cpu_instrs/individual/10-bit ops.gb", 2_000),
+        ("cpu_instrs/individual/11-op a,(hl).gb", 2_000),
+        ("dmg_sound/dmg_sound.gb", 700),
+        ("dmg_sound/rom_singles/01-registers.gb", 700),
+        ("dmg_sound/rom_singles/02-len ctr.gb", 700),
+        ("dmg_sound/rom_singles/03-trigger.gb", 700),
+        ("dmg_sound/rom_singles/04-sweep.gb", 700),
+        ("dmg_sound/rom_singles/05-sweep details.gb", 700),
+        ("dmg_sound/rom_singles/06-overflow on trigger.gb", 700),
+        ("dmg_sound/rom_singles/07-len sweep period sync.gb", 700),
+        ("dmg_sound/rom_singles/08-len ctr during power.gb", 700),
+        ("dmg_sound/rom_singles/09-wave read while on.gb", 700),
+        ("dmg_sound/rom_singles/10-wave trigger while on.gb", 700),
+        ("dmg_sound/rom_singles/11-regs after power.gb", 700),
+        ("dmg_sound/rom_singles/12-wave write while on.gb", 700),
+        ("instr_timing/instr_timing.gb", 2_000),
+        ("interrupt_time/interrupt_time.gb", 700),
+        ("mem_timing/individual/01-read_timing.gb", 700),
+        ("mem_timing/individual/02-write_timing.gb", 700),
+        ("mem_timing/individual/03-modify_timing.gb", 700),
+        ("mem_timing/mem_timing.gb", 700),
+        ("mem_timing-2/mem_timing.gb", 700),
+        ("mem_timing-2/rom_singles/01-read_timing.gb", 700),
+        ("mem_timing-2/rom_singles/02-write_timing.gb", 700),
+        ("mem_timing-2/rom_singles/03-modify_timing.gb", 700),
+        ("oam_bug/oam_bug.gb", 2_000),
+        ("oam_bug/rom_singles/1-lcd_sync.gb", 700),
+        ("oam_bug/rom_singles/2-causes.gb", 700),
+        ("oam_bug/rom_singles/3-non_causes.gb", 700),
+        ("oam_bug/rom_singles/4-scanline_timing.gb", 700),
+        ("oam_bug/rom_singles/5-timing_bug.gb", 700),
+        ("oam_bug/rom_singles/6-timing_no_bug.gb", 700),
+        ("oam_bug/rom_singles/7-timing_effect.gb", 700),
+        ("oam_bug/rom_singles/8-instr_effect.gb", 700),
     ]
 )
-def test_blarggs(test_rom, blargg_dir):
+def test_blarggs(test_rom, max_frames, blargg_dir):
     rom = str(blargg_dir / Path(test_rom))
-    result = run_rom(rom)
+    result = run_rom(rom, max_frames)
 
     if os.path.isfile(blargg_json):
         with open(blargg_json, "r") as f:

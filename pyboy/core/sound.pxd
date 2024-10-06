@@ -4,7 +4,7 @@
 #
 
 cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint64_t
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint64_t
 
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
@@ -28,6 +28,8 @@ cdef class Sound:
     cdef object audiobuffer
     cdef object audiobuffer_p
 
+    cdef uint64_t last_cycles
+    cdef int64_t _cycles_to_interrupt
     cdef int clock
 
     cdef bint poweron
@@ -42,6 +44,7 @@ cdef class Sound:
     cdef uint8_t get(self, uint8_t) noexcept nogil
     cdef void set(self, uint8_t, uint8_t) noexcept nogil
 
+    cdef void tick(self, int64_t, bint) noexcept nogil
     @cython.locals(nsamples=int, sample=int, i=int)
     cdef void sync(self) noexcept with gil # TODO: nogil
     @cython.locals(queued_time=int, samples_per_frame=int)
@@ -91,11 +94,7 @@ cdef class SweepChannel(ToneChannel):
     cdef bint sweepenable # Internal sweep enable flag
     cdef int shadow # Shadow copy of period register for ignoring writes to sndper
 
-    cdef uint8_t getreg(self, uint8_t) noexcept nogil
-    cdef void setreg(self, uint8_t, uint8_t) noexcept nogil
     cdef bint sweep(self, bint) noexcept nogil
-    cdef void trigger(self) noexcept nogil
-    cdef void tickframe(self) noexcept nogil
 
 
 cdef class WaveChannel:

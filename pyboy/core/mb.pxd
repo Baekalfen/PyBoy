@@ -11,6 +11,7 @@ cimport pyboy.core.bootrom
 cimport pyboy.core.cartridge.base_mbc
 cimport pyboy.core.cpu
 cimport pyboy.core.interaction
+cimport pyboy.core.jit
 cimport pyboy.core.lcd
 cimport pyboy.core.ram
 cimport pyboy.core.sound
@@ -21,11 +22,11 @@ from pyboy.utils cimport IntIOInterface, WindowEvent
 
 cdef Logger logger
 
+cdef int64_t MAX_CYCLES
 cdef uint16_t STAT, LY, LYC
 cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
 cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef int STATE_VERSION
-
 
 cdef class Motherboard:
     cdef pyboy.core.interaction.Interaction interaction
@@ -35,6 +36,8 @@ cdef class Motherboard:
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
     cdef pyboy.core.sound.Sound sound
+    cdef bint jit_enabled
+    cdef pyboy.core.jit.JIT jit
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
@@ -57,9 +60,11 @@ cdef class Motherboard:
 
     cdef inline bint processing_frame(self) noexcept nogil
 
+    cdef inline int cpu_pending_interrupt(self) noexcept nogil
+
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
-    @cython.locals(cycles=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
+    @cython.locals(cycles=int64_t, cycles_target=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
     cdef bint tick(self) noexcept nogil
 
     cdef void switch_speed(self) noexcept nogil
@@ -85,7 +90,7 @@ cdef class HDMA:
     cdef uint16_t curr_dst
 
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
-    cdef int tick(self, Motherboard) noexcept nogil
+    cdef int64_t tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
     cdef void load_state(self, IntIOInterface, int) noexcept

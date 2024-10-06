@@ -47,6 +47,12 @@ def test_log_level_critical(default_rom, capsys):
     assert captured.out == ""
 
 
+def test_tick_zero(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    # Not permitted, but shouldn't crash the emulator either
+    pyboy.tick(0)
+
+
 def test_register_file(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
@@ -284,7 +290,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
 
         old_image = PIL.Image.open(png_buf).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
-        if diff.getbbox() and not os.environ.get("TEST_CI"):
+        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
             old_image.show()
             diff.show()

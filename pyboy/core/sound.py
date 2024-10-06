@@ -59,6 +59,8 @@ class Sound:
         self.audiobuffer = array("b", [0] * 4096) # Over 2 frames
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
+        self.last_cycles = 0
+        self._cycles_to_interrupt = 1 << 16
         self.clock = 0
 
         self.poweron = True
@@ -149,6 +151,15 @@ class Sound:
             self.wavechannel.setwavebyte(offset - 32, value)
         else:
             raise IndexError(f"Attempted to write register {offset} in sound memory")
+
+    def tick(self, _cycles, double_speed):
+        cycles = _cycles - self.last_cycles
+        self.last_cycles = _cycles
+
+        if double_speed:
+            self.clock += cycles // 2
+        else:
+            self.clock += cycles
 
     def sync(self):
         """Run the audio for the number of clock cycles stored in self.clock"""

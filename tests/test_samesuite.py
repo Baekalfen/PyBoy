@@ -155,7 +155,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
 
-        if diff.getbbox() and not os.environ.get("TEST_CI"):
+        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
             old_image.show()
             diff.show()
