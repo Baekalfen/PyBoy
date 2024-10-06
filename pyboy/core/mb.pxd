@@ -65,6 +65,8 @@ cdef class Motherboard:
 
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+    cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
+    cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil
