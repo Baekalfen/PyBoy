@@ -569,9 +569,6 @@ class Motherboard:
             if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
                 logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
-                self.cpu.bail = True
-                if self.jit_enabled:
-                    self.jit._jit_clear()
             # CGB registers
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value
