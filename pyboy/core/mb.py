@@ -389,7 +389,11 @@ class Motherboard:
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
-        elif 0xFF00 <= i < 0xFF4C:  # I/O ports
+        else:
+            return self.getitem_io_ports(i)
+
+    def getitem_io_ports(self, i):
+        if 0xFF00 <= i < 0xFF4C:  # I/O ports
             if 0xFF01 <= i <= 0xFF02:
                 if self.serial.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_SERIAL)
@@ -409,6 +413,7 @@ class Motherboard:
                     return self.timer.TMA
                 elif i == 0xFF07:
                     return self.timer.TAC
+
             elif i == 0xFF0F:
                 return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
@@ -483,8 +488,6 @@ class Motherboard:
             return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF:  # Interrupt Enable Register
             return self.cpu.interrupts_enabled_register
-        # else:
-        #     logger.critical("Memory access violation. Tried to read: %0.4x", i)
 
     def setitem(self, i, value):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
@@ -524,7 +527,11 @@ class Motherboard:
             self.lcd.OAM[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
-        elif 0xFF00 <= i < 0xFF4C:  # I/O ports
+        else:
+            self.setitem_io_ports(i, value)
+
+    def setitem_io_ports(self, i, value):
+        if 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif 0xFF01 <= i <= 0xFF02:
@@ -642,8 +649,6 @@ class Motherboard:
         elif i == 0xFFFF:  # Interrupt Enable Register
             self.cpu.interrupts_enabled_register = value
             self.cpu.bail = True
-        # else:
-        #     logger.critical("Memory access violation. Tried to write: 0x%0.2x to 0x%0.4x", value, i)
 
     def transfer_DMA(self, src):
         # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
