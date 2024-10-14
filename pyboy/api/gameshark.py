@@ -7,6 +7,10 @@ from pyboy.logging import get_logger
 
 logger = get_logger(__name__)
 
+__pdoc__ = {
+    "GameShark.tick": False,
+}
+
 
 class GameShark:
     def __init__(self, memory):

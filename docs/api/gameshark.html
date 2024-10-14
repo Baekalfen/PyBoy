@@ -34,6 +34,10 @@ from pyboy.logging import get_logger
 
 logger = get_logger(__name__)
 
+__pdoc__ = {
+    &#34;GameShark.tick&#34;: False,
+}
+
 
 class GameShark:
     def __init__(self, memory):
@@ -462,25 +466,6 @@ class GameShark:
         self.remove(code, restore_value)</code></pre>
 </details>
 </dd>
-<dt id="pyboy.api.gameshark.GameShark.tick"><code class="name flex">
-<span>def <span class="ident">tick</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def tick(self):
-    if not self.enabled:
-        return
-    # https://gbdev.io/pandocs/Shark_Cheats.html
-    # &#34;As far as it is understood, patching is implemented by hooking the original VBlank interrupt handler, and
-    # re-writing RAM values each frame.&#34;
-    for _, (_, (_type, value, address)) in self.cheats.items():
-        self._set_value(_type, value, address)</code></pre>
-</details>
-</dd>
 </dl>
 </dd>
 </dl>
@@ -505,7 +490,6 @@ class GameShark:
 <li><code><a title="pyboy.api.gameshark.GameShark.add" href="#pyboy.api.gameshark.GameShark.add">add</a></code></li>
 <li><code><a title="pyboy.api.gameshark.GameShark.remove" href="#pyboy.api.gameshark.GameShark.remove">remove</a></code></li>
 <li><code><a title="pyboy.api.gameshark.GameShark.clear_all" href="#pyboy.api.gameshark.GameShark.clear_all">clear_all</a></code></li>
-<li><code><a title="pyboy.api.gameshark.GameShark.tick" href="#pyboy.api.gameshark.GameShark.tick">tick</a></code></li>
 </ul>
 </li>
 </ul>
