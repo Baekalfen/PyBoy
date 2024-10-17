@@ -394,6 +394,42 @@ True...
             Game title
         &#34;&#34;&#34;
 
+        self.cartridge_title = self.mb.cartridge.gametype
+        &#34;&#34;&#34;
+        The game type stored on the currently loaded cartridge ROM. Values are:
+        Game Boy, Game Boy Color, Super Game Boy
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.cartridge_type # Game type of PyBoy&#39;s default ROM
+        &#39;Game Boy Color&#39;
+
+        ```
+
+        Returns
+        -------
+        str :
+            Game type
+        &#34;&#34;&#34;
+
+        self.cartridge_region = self.mb.cartridge.gameregion
+        &#34;&#34;&#34;
+        The game region stored on the currently loaded cartridge ROM. Example values are:
+        Europe, USA, Japan, Spain, Germany, World...
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.cartridge_region # Game region of PyBoy&#39;s default ROM
+        &#39;Europe&#39;
+
+        ```
+
+        Returns
+        -------
+        str :
+            Europe
+        &#34;&#34;&#34;
+
         self._hooks = {}
 
         self._plugin_manager = PluginManager(self, self.mb, kwargs)
