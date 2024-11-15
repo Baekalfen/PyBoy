@@ -8,6 +8,7 @@ This class gives access to the frame buffer and other screen parameters of PyBoy
 
 import numpy as np
 
+from pyboy import utils
 from pyboy.logging import get_logger
 
 from .constants import COLS, ROWS
@@ -120,6 +121,7 @@ class Screen:
         """
         if not Image:
             logger.warning('Cannot generate screen image. Missing dependency "Pillow".')
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
