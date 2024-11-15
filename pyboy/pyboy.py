@@ -96,6 +96,8 @@ class PyBoy:
 
         self.initialized = False
 
+        _log_level(log_level)
+
         if "bootrom_file" in kwargs:
             logger.error(
                 "Deprecated use of 'bootrom_file'. Use 'bootrom' keyword argument instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0"
@@ -119,7 +121,6 @@ class PyBoy:
             if k not in kwargs:
                 kwargs[k] = v
 
-        _log_level(log_level)
 
         if gamerom is None:
             raise FileNotFoundError(f"None is not a ROM file!")
