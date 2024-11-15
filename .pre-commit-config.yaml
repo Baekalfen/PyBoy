@@ -1,12 +1,12 @@
 exclude: (opcodes.py|manager.py|manager.pxd)
 repos:
-- repo: https://github.com/myint/unify
-  rev: v0.5
-  hooks:
-    - id: unify
-      args: [--quote, '"', --in-place]
-      language: python
-      types: [python]
+# - repo: https://github.com/myint/unify
+#   rev: v0.5
+#   hooks:
+#     - id: unify
+#       args: [--quote, '"', --in-place]
+#       language: python
+#       types: [python]
 - repo: https://github.com/google/yapf
   rev: 'v0.40.2'
   hooks:
