@@ -120,6 +120,7 @@ class Screen:
         """
         if not Image:
             logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
