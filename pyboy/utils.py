@@ -12,6 +12,18 @@ class PyBoyException(Exception):
     pass
 
 
+class PyBoyDependencyError(PyBoyException):
+    pass
+
+
+class PillowImportError:
+    def __bool__(self):
+        return False
+
+    def __getattribute__(self, name):
+        raise PyBoyDependencyError("Missing depencency Pillow!")
+
+
 try:
     from cython import compiled
 

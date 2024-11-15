@@ -114,7 +114,7 @@ class Tile:
         """
         if Image is None:
             logger.error(f'{__name__}: Missing dependency "Pillow".')
-            return None
+            utils.PillowImportError()._raise_import_error()
 
         if utils.cython_compiled:
             return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
