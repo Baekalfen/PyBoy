@@ -4,9 +4,11 @@ import pytest
 
 is_pypy = platform.python_implementation() == "PyPy"
 
+# isort: skip_file
 if is_pypy:
-    from pyboy.plugins.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, \
-                                    FILL_VALUE, FIXED_BUFFER_SIZE
+    from pyboy.plugins.rewind import (
+        FILL_VALUE, FIXED_BUFFER_SIZE, CompressedFixedAllocBuffers, DeltaFixedAllocBuffers, FixedAllocBuffers
+    )
 
 
 def write_bytes(buf, values):

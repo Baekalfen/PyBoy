@@ -3,25 +3,26 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import time
-
 import numpy as np
 
 import pyboy
-from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent
 
 logger = pyboy.logging.get_logger(__name__)
 
+# isort: skip_file
 try:
     import OpenGL.GLUT.freeglut
-    from OpenGL.GL import (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, glClear,
-                           glDrawPixels, glFlush, glPixelZoom)
-    from OpenGL.GLUT import (GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE,
-                             glutCreateWindow, glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit,
-                             glutInitDisplayMode, glutInitWindowSize, glutKeyboardFunc, glutKeyboardUpFunc,
-                             glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc)
+    from OpenGL.GL import (
+        GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, glClear, glDrawPixels, glFlush,
+        glPixelZoom
+    )
+    from OpenGL.GLUT import (
+        GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE, glutCreateWindow,
+        glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit, glutInitDisplayMode, glutInitWindowSize,
+        glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc
+    )
     opengl_enabled = True
 except (ImportError, AttributeError):
     opengl_enabled = False
@@ -50,7 +51,6 @@ class WindowOpenGL(PyBoyWindowPlugin):
         glPixelZoom(self.scale, self.scale)
         glutReshapeFunc(self._glreshape)
         glutDisplayFunc(self._gldraw)
-        
 
     # Cython does not cooperate with lambdas
     def _key(self, c, x, y):
