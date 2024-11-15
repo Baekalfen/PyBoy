@@ -20,7 +20,7 @@ from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
-from pyboy.utils import IntIOWrapper, WindowEvent
+from pyboy.utils import IntIOWrapper, WindowEvent, cython_compiled
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
@@ -100,6 +100,8 @@ class PyBoy:
         self.initialized = False
 
         _log_level(log_level)
+
+        logger.debug("Cython compilation status: %s", cython_compiled)
 
         if "bootrom_file" in kwargs:
             logger.error(

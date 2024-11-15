@@ -20,15 +20,9 @@ import numpy as np
 
 import pyboy
 from pyboy.api.constants import SPRITES, TILES_CGB
+from pyboy import utils
 
 logger = pyboy.logging.get_logger(__name__)
-
-try:
-    from cython import compiled
-
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
 
 ROWS, COLS = 144, 160
 
@@ -37,7 +31,7 @@ class PyBoyPlugin:
     argv = []
 
     def __init__(self, pyboy, mb, pyboy_argv):
-        if not cythonmode:
+        if not utils.cython_compiled:
             self.pyboy = pyboy
             self.mb = mb
             self.pyboy_argv = pyboy_argv
@@ -80,7 +74,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         logger.debug("Scale: x%d (%d, %d)", self.scale, self._scaledresolution[0], self._scaledresolution[1])
 
         self.enable_title = True
-        if not cythonmode:
+        if not utils.cython_compiled:
             self.renderer = mb.lcd.renderer
 
     def __cinit__(self, *args, **kwargs):
@@ -115,7 +109,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_follow_scxy=False, **kwargs):
         super().__init__(*args, **kwargs)
-        if not cythonmode:
+        if not utils.cython_compiled:
             self.tilemap_background = self.pyboy.tilemap_background
             self.tilemap_window = self.pyboy.tilemap_window
         self.tilemap_use_background = True
