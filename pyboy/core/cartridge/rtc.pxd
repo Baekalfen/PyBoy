@@ -30,7 +30,7 @@ cdef class RTC:
 
     cdef void stop(self) noexcept
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
     @cython.locals(days=uint64_t)
     cdef void latch_rtc(self) noexcept nogil
     cdef void writecommand(self, uint8_t) noexcept nogil

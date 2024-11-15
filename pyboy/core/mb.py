@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.utils import STATE_VERSION
+from pyboy.utils import STATE_VERSION, PyBoyException
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
@@ -238,13 +238,21 @@ class Motherboard:
             logger.debug("State version: 0-1")
             # HACK: The byte wasn't a state version, but the bootrom flag
             self.bootrom_enabled = state_version
+
+        if state_version < STATE_VERSION:
+            logger.warning("Loading state from an older version of PyBoy. This might cause compatibility issues.")
+        elif state_version > STATE_VERSION:
+            raise PyBoyException("Cannot load state from a newer version of PyBoy")
+
         if state_version >= 8:
             self.key1 = f.read()
             self.double_speed = f.read()
             _cgb = f.read()
-            if self.cgb != _cgb:
-                raise Exception("Loading state which is not CGB, but PyBoy is loaded in CGB mode!")
-            self.cgb = _cgb
+            if self.cgb and not _cgb:
+                raise PyBoyException("Loading state which *is not* CGB-mode, but PyBoy *is* in CGB mode!")
+            if not self.cgb and _cgb:
+                raise PyBoyException("Loading state which *is* CGB-mode, but PyBoy *is not* in CGB mode!")
+
             if self.cgb:
                 self.hdma.load_state(f, state_version)
         self.cpu.load_state(f, state_version)

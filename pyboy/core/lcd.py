@@ -8,6 +8,7 @@ from ctypes import c_void_p
 from random import getrandbits
 
 import pyboy
+from pyboy.utils import PyBoyException
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -293,9 +294,10 @@ class LCD:
         # CGB
         if state_version >= 8:
             _cgb = f.read()
-            if self.cgb != _cgb:
-                logger.critical("Loading state which is not CGB, but PyBoy is loaded in CGB mode!")
-                return
+            if self.cgb and not _cgb:
+                raise PyBoyException("Loading state which *is not* CGB-mode, but PyBoy *is* in CGB mode!")
+            if not self.cgb and _cgb:
+                raise PyBoyException("Loading state which *is* CGB-mode, but PyBoy *is not* in CGB mode!")
             self.cgb = _cgb
             self.double_speed = f.read()
 
