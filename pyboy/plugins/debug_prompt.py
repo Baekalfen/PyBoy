@@ -3,12 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os
-import re
 
 import pyboy
 from pyboy.plugins.base_plugin import PyBoyPlugin
-from pyboy.utils import WindowEvent
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -106,7 +103,7 @@ class DebugPrompt(PyBoyPlugin):
                     self.mb.breakpoint_add(bank, addr)
 
             elif cmd == "d":
-                print(f"Removing breakpoint at current PC")
+                print("Removing breakpoint at current PC")
                 self.mb.breakpoint_reached()  # NOTE: This removes the breakpoint we are currently at
             elif cmd == "pdb":
                 # Start pdb

@@ -125,7 +125,7 @@ class PyBoy:
         _log_level(log_level)
 
         if gamerom is None:
-            raise FileNotFoundError(f"None is not a ROM file!")
+            raise FileNotFoundError("None is not a ROM file!")
 
         if not os.path.isfile(gamerom):
             raise FileNotFoundError(f"ROM file {gamerom} was not found!")
@@ -1038,15 +1038,15 @@ class PyBoy:
                             bank, addr, sym_label = re.split(":| ", line.strip())
                             bank = int(bank, 16)
                             addr = int(addr, 16)
-                            if not bank in self.rom_symbols:
+                            if bank not in self.rom_symbols:
                                 self.rom_symbols[bank] = {}
 
-                            if not addr in self.rom_symbols[bank]:
+                            if addr not in self.rom_symbols[bank]:
                                 self.rom_symbols[bank][addr] = []
 
                             self.rom_symbols[bank][addr].append(sym_label)
                             self.rom_symbols_inverse[sym_label] = (bank, addr)
-                        except ValueError as ex:
+                        except ValueError:
                             logger.warning("Skipping .sym line: %s", line.strip())
         return self.rom_symbols
 

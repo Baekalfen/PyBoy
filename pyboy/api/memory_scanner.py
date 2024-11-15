@@ -142,7 +142,7 @@ class MemoryScanner:
                 else:
                     self._memory_cache[addr] = current_value
             elif dynamic_comparison_type == DynamicComparisonType.MATCH:
-                if new_value == None:
+                if new_value is None:
                     raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
                 if current_value != new_value:
                     self._memory_cache.pop(addr)

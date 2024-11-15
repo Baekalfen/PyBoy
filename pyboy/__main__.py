@@ -9,7 +9,7 @@ import copy
 import os
 
 import pyboy
-from pyboy import PyBoy, core, utils
+from pyboy import PyBoy
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
 
@@ -168,7 +168,6 @@ See "pyboy --help" for how to enable rewind and other awesome features!
         with open(state_path, "rb") as f:
             pyboy.load_state(f)
 
-    render = not argv.no_renderer
     while pyboy.tick():
         pass
 

@@ -6,22 +6,22 @@
 from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 # imports
-from pyboy.plugins.window_sdl2 import WindowSDL2 # isort:skip
-from pyboy.plugins.window_open_gl import WindowOpenGL # isort:skip
-from pyboy.plugins.window_null import WindowNull # isort:skip
-from pyboy.plugins.debug import Debug # isort:skip
-from pyboy.plugins.disable_input import DisableInput # isort:skip
-from pyboy.plugins.auto_pause import AutoPause # isort:skip
-from pyboy.plugins.record_replay import RecordReplay # isort:skip
-from pyboy.plugins.rewind import Rewind # isort:skip
-from pyboy.plugins.screen_recorder import ScreenRecorder # isort:skip
-from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # isort:skip
-from pyboy.plugins.debug_prompt import DebugPrompt # isort:skip
-from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # isort:skip
-from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # isort:skip
-from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # isort:skip
-from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # isort:skip
-from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # isort:skip
+from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
+from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
+from pyboy.plugins.window_null import WindowNull # noqa
+from pyboy.plugins.debug import Debug # noqa
+from pyboy.plugins.disable_input import DisableInput # noqa
+from pyboy.plugins.auto_pause import AutoPause # noqa
+from pyboy.plugins.record_replay import RecordReplay # noqa
+from pyboy.plugins.rewind import Rewind # noqa
+from pyboy.plugins.screen_recorder import ScreenRecorder # noqa
+from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # noqa
+from pyboy.plugins.debug_prompt import DebugPrompt # noqa
+from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # noqa
+from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
+from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # noqa
+from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
+from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
 # imports end
 
 

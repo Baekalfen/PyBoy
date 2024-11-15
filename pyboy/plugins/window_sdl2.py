@@ -3,9 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import time
 
-from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
 

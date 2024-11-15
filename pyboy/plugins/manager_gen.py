@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
                 for p in all_plugins:
                     p_name = to_snake_case(p)
-                    lines.append(f"from pyboy.plugins.{p_name} import {p} # isort:skip\n")
+                    lines.append(f"from pyboy.plugins.{p_name} import {p} # noqa\n")
 
                 lines.append("# imports end\n")
                 out_lines.extend([indentation + l for l in lines])

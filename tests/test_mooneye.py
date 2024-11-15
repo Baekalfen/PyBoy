@@ -7,7 +7,6 @@ import io
 import os.path
 import platform
 from pathlib import Path
-from zipfile import ZipFile
 
 import PIL
 import pytest

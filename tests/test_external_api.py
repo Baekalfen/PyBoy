@@ -226,7 +226,7 @@ def test_tiles_cgb(any_rom_cgb):
 
 def test_screen_buffer_and_image(tetris_rom, boot_rom):
     cformat = "RGBA"
-    boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
+    # boot_logo_hash_predigested = b"_M\x0e\xd9\xe2\xdb\\o]\x83U\x93\xebZm\x1e\xaaFR/Q\xa52\x1c{8\xe7g\x95\xbcIz"
 
     pyboy = PyBoy(tetris_rom, window="null", bootrom=boot_rom)
     pyboy.set_emulation_speed(0)
@@ -309,7 +309,7 @@ def test_tetris(tetris_rom):
     tile_map = pyboy.tilemap_background
     state_data = io.BytesIO()
     for frame in range(5282):  # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
-        image = pyboy.tick(1, True)
+        pyboy.tick(1, True)
 
         assert pyboy.screen.get_tilemap_position() == ((0, 0), (-7, 0))
 

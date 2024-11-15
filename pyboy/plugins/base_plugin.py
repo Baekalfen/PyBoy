@@ -258,6 +258,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             _x = (s.x // 8) - xx
             _y = (s.y // 8) - yy
             if 0 <= _x < width:
+                # Adding offset to try to seperate sprites from tiles
                 if 0 <= _y < height:
                     tiles_matrix[_y][_x] = self.mapping[s.tile_identifier] + self.sprite_offset
                 if len(s.tiles) == 2 and 0 <= _y + 1 < height:  # Sprite has two tiles

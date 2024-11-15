@@ -124,7 +124,6 @@ def test_pokemon_rl(git_pokemon_red_experiments, pokemon_red_rom):
     with open(Path(git_pokemon_red_experiments) / "baselines" / script_py, "w") as f:
         f.write(record_gif_py)
 
-    root_path = Path("../")
     assert os.system(f'rm -rf {Path(git_pokemon_red_experiments) / "recordings"}') == 0
     assert (
         os.system(

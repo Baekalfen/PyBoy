@@ -12,7 +12,6 @@ def test_gameshark(default_rom):
 
     code = "010138CD"
     value = 0x01
-    bank = 0x00
     address = 0xCD38
 
     # Establish truth
@@ -44,7 +43,6 @@ def test_gameshark_clear(default_rom):
     code1 = "010138CD"
     code2 = "010138CE"
     value = 0x01
-    bank = 0x00
     address1 = 0xCD38
     address2 = 0xCE38
 
