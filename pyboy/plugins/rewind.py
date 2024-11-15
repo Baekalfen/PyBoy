@@ -11,13 +11,6 @@ from pyboy.utils import IntIOInterface, WindowEvent
 
 logger = pyboy.logging.get_logger(__name__)
 
-try:
-    from cython import compiled
-
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
 FIXED_BUFFER_SIZE = 256 * 1024 * 1024
 FIXED_BUFFER_MIN_ALLOC = 256 * 1024
 FILL_VALUE = 123

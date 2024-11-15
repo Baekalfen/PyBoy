@@ -10,6 +10,7 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 import numpy as np
 
 import pyboy
+from pyboy import utils
 
 from .constants import LOW_TILEDATA, TILES, TILES_CGB, VRAM_OFFSET
 
@@ -19,13 +20,6 @@ try:
     from PIL import Image
 except ImportError:
     Image = None
-
-try:
-    from cython import compiled
-
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
 
 
 class Tile:
@@ -122,7 +116,7 @@ class Tile:
             logger.error(f'{__name__}: Missing dependency "Pillow".')
             return None
 
-        if cythonmode:
+        if utils.cython_compiled:
             return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
         else:
             return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
