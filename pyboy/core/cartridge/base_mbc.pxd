@@ -32,7 +32,7 @@ cdef class BaseMBC:
     cdef bint cgb
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
     cdef void save_ram(self, IntIOInterface) noexcept
     cdef void load_ram(self, IntIOInterface) noexcept
     cdef void init_rambanks(self, uint8_t) noexcept
