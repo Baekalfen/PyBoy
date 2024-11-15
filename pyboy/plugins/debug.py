@@ -16,13 +16,6 @@ from pyboy.plugins.window_sdl2 import sdl2_event_pump
 from pyboy.utils import WindowEvent
 
 try:
-    from cython import compiled
-
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
-
-try:
     import sdl2
 except ImportError:
     sdl2 = None
