@@ -12,6 +12,12 @@ class PyBoyException(Exception):
     pass
 
 
+try:
+    from cython import compiled
+    cython_compiled = compiled
+except ImportError:
+    cython_compiled = False
+
 ##############################################################
 # Buffer classes
 
