@@ -190,7 +190,6 @@ def test_tetris_ai(git_tetris_ai, tetris_rom):
     with open(Path(git_tetris_ai) / script_py, "w") as f:
         f.write(record_gif_py)
 
-    root_path = Path("../")
     assert os.system(f'rm -rf {Path(git_tetris_ai) / "recordings"}') == 0
     assert os.system(f"cp {tetris_rom} {Path(git_tetris_ai) / 'tetris_1.1.gb'}") == 0
     assert os.system(f'cd {git_tetris_ai} && . {Path(".venv") / "bin" / "activate"} && python {script_py}') == 0

@@ -7,7 +7,6 @@ import os
 import time
 
 import pyboy
-from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.utils import WindowEvent
 

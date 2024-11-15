@@ -10,7 +10,6 @@ The Game Boy uses tiles as the building block for all graphics on the screen. Th
 import numpy as np
 
 import pyboy
-from pyboy import utils
 
 from .constants import LOW_TILEDATA, TILES, TILES_CGB, VRAM_OFFSET
 

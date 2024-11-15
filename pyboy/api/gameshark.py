@@ -121,7 +121,7 @@ class GameShark:
             restore_value (bool): True to restore original value at address, otherwise don't restore
         """
 
-        if not code in self.cheats:
+        if code not in self.cheats:
             raise ValueError("GameShark code cannot be removed. Hasn't been applied.")
 
         original_value, (_type, _, address) = self.cheats.pop(code)

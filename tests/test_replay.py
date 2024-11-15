@@ -11,10 +11,8 @@ import os
 import sys
 import time
 import zlib
-from unittest import mock
 
 import numpy as np
-import pytest
 
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
@@ -60,7 +58,7 @@ def move_gif(game, dest):
             gif = sorted(filter(lambda x: game in x, os.listdir(record_dir)))[-1]
             os.replace(record_dir + "/" + gif, dest)
             break
-        except:
+        except:  # noqa
             time.sleep(1)
     else:
         raise FileNotFoundError(f"Couldn't find gif to move for game {game}")

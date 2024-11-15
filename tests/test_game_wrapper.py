@@ -3,16 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os
 import platform
-import sys
 
 import numpy as np
-import pytest
 
 from pyboy import PyBoy
 from pyboy.api.constants import LCDC_OFFSET, OAM_OFFSET, VRAM_OFFSET
-from pyboy.utils import WindowEvent
 
 py_version = platform.python_version()[:3]
 is_pypy = platform.python_implementation() == "PyPy"

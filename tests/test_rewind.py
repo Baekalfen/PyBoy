@@ -4,6 +4,7 @@ import pytest
 
 is_pypy = platform.python_implementation() == "PyPy"
 
+# isort: skip_file
 if is_pypy:
     from pyboy.plugins.rewind import (
         FILL_VALUE,

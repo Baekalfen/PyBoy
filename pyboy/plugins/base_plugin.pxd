@@ -6,7 +6,7 @@
 cimport cython
 cimport numpy as cnp
 from cpython.array cimport array
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, int64_t
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t
 
 from pyboy.core.lcd cimport Renderer
 from pyboy.core.mb cimport Motherboard

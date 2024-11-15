@@ -6,7 +6,6 @@
 from array import array
 
 import pyboy
-from pyboy import utils
 
 from .base_mbc import ROMOnly
 from .mbc1 import MBC1

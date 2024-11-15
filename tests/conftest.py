@@ -11,16 +11,16 @@ import time
 import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
+import git
+import pytest
+from cryptography.fernet import Fernet
+from filelock import FileLock
 
 import numpy as np
 
 np.set_printoptions(threshold=2**32)
 np.set_printoptions(linewidth=np.inf)
 
-import git
-import pytest
-from cryptography.fernet import Fernet
-from filelock import FileLock
 
 BOOTROM_FRAMES_UNTIL_LOGO = 6
 BOOTROM_FRAMES_UNTIL_END = 60 + BOOTROM_FRAMES_UNTIL_LOGO
@@ -145,7 +145,7 @@ os.makedirs(extra_test_rom_dir, exist_ok=True)
 @pytest.fixture(scope="session")
 def samesuite_dir():
     path = extra_test_rom_dir / Path("SameSuite")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.SameSuite.txt"))
             samesuite_data = io.BytesIO(url_open("https://pyboy.dk/mirror/SameSuite.zip"))
@@ -157,7 +157,7 @@ def samesuite_dir():
 @pytest.fixture(scope="session")
 def mooneye_dir():
     path = extra_test_rom_dir / Path("mooneye")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.mooneye.txt"))
             mooneye_data = io.BytesIO(url_open("https://pyboy.dk/mirror/mooneye.zip"))
@@ -169,7 +169,7 @@ def mooneye_dir():
 @pytest.fixture(scope="session")
 def magen_test_file():
     path = extra_test_rom_dir / Path("magen_test2.gb")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.magen_test.txt"))
             magen_test_data = url_open("https://pyboy.dk/mirror/magen_test_bg_oam_priority.gbc")
@@ -181,7 +181,7 @@ def magen_test_file():
 @pytest.fixture(scope="session")
 def blargg_dir():
     path = Path(extra_test_rom_dir) / Path("blargg")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.blargg.txt"))
 
@@ -205,7 +205,7 @@ def blargg_dir():
 @pytest.fixture(scope="session")
 def dmg_acid_file():
     path = extra_test_rom_dir / Path("dmg_acid2.gb")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.dmg-acid2.txt"))
             dmg_acid_data = url_open("https://pyboy.dk/mirror/dmg-acid2.gb")
@@ -217,7 +217,7 @@ def dmg_acid_file():
 @pytest.fixture(scope="session")
 def cgb_acid_file():
     path = extra_test_rom_dir / Path("cgb_acid2.gbc")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.cgb-acid2.txt"))
             cgb_acid_data = url_open("https://pyboy.dk/mirror/cgb-acid2.gbc")
@@ -229,7 +229,7 @@ def cgb_acid_file():
 @pytest.fixture(scope="session")
 def shonumi_dir():
     path = extra_test_rom_dir / Path("GB Tests")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             print(url_open("https://pyboy.dk/mirror/SOURCE.GBTests.txt"))
             shonumi_data = io.BytesIO(url_open("https://pyboy.dk/mirror/GB%20Tests.zip"))
@@ -241,7 +241,7 @@ def shonumi_dir():
 @pytest.fixture(scope="session")
 def rtc3test_file():
     path = extra_test_rom_dir / Path("rtc3test.gb")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.rtc3test.txt"))
             rtc3test_data = url_open("https://pyboy.dk/mirror/rtc3test.gb")
@@ -254,7 +254,7 @@ def rtc3test_file():
 @pytest.fixture(scope="session")
 def which_file():
     path = extra_test_rom_dir / Path("which.gb")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.which.txt"))
             which_data = url_open("https://pyboy.dk/mirror/which.gb")
@@ -267,7 +267,7 @@ def which_file():
 @pytest.fixture(scope="session")
 def whichboot_file():
     path = extra_test_rom_dir / Path("whichboot.gb")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
             print(url_open("https://pyboy.dk/mirror/LICENSE.whichboot.txt"))
             whichboot_data = url_open("https://pyboy.dk/mirror/whichboot.gb")
@@ -284,7 +284,7 @@ def git_tetris_ai():
     import venv
 
     path = Path("tetris")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             # NOTE: No affiliation
             repo = git.Repo.clone_from("https://github.com/uiucanh/tetris.git", path)
@@ -312,7 +312,7 @@ def git_pyboy_rl():
     import venv
 
     path = Path("PyBoy-RL")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             # NOTE: No affiliation
             repo = git.Repo.clone_from("https://github.com/lixado/PyBoy-RL.git", path)
@@ -335,7 +335,7 @@ def git_pokemon_red_experiments():
     import venv
 
     path = Path("PokemonRedExperiments")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             # NOTE: No affiliation
             repo = git.Repo.clone_from("https://github.com/PWhiddy/PokemonRedExperiments.git", path)
@@ -356,7 +356,7 @@ def git_pokemon_red_experiments():
 @pytest.fixture(scope="session")
 def secrets():
     path = extra_test_rom_dir / Path("secrets")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             if not os.environ.get("PYTEST_SECRETS_KEY"):
                 pytest.skip("Cannot access secrets")

@@ -3,9 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import io
 import os.path
-import platform
 from pathlib import Path
 
 import PIL

@@ -115,12 +115,10 @@ def test_memoryscanner_relative(kirby_rom):
     pyboy.button_press("right")
 
     pyboy.tick(175, True)
-    addresses1 = pyboy.memory_scanner.rescan_memory(None, DynamicComparisonType.INCREASED)
-    values1 = [pyboy.memory[x] for x in addresses1]
+    pyboy.memory_scanner.rescan_memory(None, DynamicComparisonType.INCREASED)
 
     pyboy.tick(175, True)
     addresses2 = pyboy.memory_scanner.rescan_memory(None, DynamicComparisonType.INCREASED)
-    values2 = [pyboy.memory[x] for x in addresses2]
 
     # Actual score address for third digit
     assert SCORE_100 in addresses2

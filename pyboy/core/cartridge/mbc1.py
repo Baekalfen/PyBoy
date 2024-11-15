@@ -4,7 +4,6 @@
 #
 
 import pyboy
-from pyboy import utils
 
 from .base_mbc import BaseMBC
 

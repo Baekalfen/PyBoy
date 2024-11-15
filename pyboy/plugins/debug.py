@@ -4,7 +4,6 @@
 #
 
 import os
-import re
 import zlib
 from array import array
 from base64 import b64decode
@@ -352,7 +351,6 @@ class TileViewWindow(BaseDebugWindow):
                 self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb  # TODO: Select palette by adding offset
             else:
                 # Fake palette index
-                palette = 0
                 self.renderer.update_tilecache0(self.mb.lcd, tile_index, 0)
                 self.tilecache = self.renderer._tilecache0
                 horiflip, vertflip = False, False
@@ -382,7 +380,7 @@ class TileViewWindow(BaseDebugWindow):
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // 8, event.mouse_y // 8
                     tile_identifier = self.tilemap.tile_identifier(tile_x, tile_y)
-                    logger.info(f"Tile clicked on %d, %d", tile_x, tile_y)
+                    logger.info("Tile clicked on %d, %d", tile_x, tile_y)
                     marked_tiles.add(
                         MarkedTile(tile_identifier=tile_identifier, mark_id="TILE", mark_color=MARK[mark_counter])
                     )
@@ -541,7 +539,6 @@ class SpriteWindow(BaseDebugWindow):
             yy = (((n // 4) * 8) // self.width) * sprite_height
 
             if self.cgb:
-                palette = attributes & 0b111
                 if attributes & 0b1000:
                     self.renderer.update_spritecache1(self.mb.lcd, t, 1)
                     if self.mb.lcd._LCDC.sprite_height:
@@ -555,7 +552,6 @@ class SpriteWindow(BaseDebugWindow):
                 self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb  # TODO: Select palette by adding offset
             else:
                 # Fake palette index
-                palette = 0
                 if attributes & 0b10000:
                     self.renderer.update_spritecache1(self.mb.lcd, t, 0)
                     if self.mb.lcd._LCDC.sprite_height:

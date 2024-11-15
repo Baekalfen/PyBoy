@@ -6,7 +6,6 @@
 import array
 
 import pyboy
-from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.utils import IntIOInterface, WindowEvent
 

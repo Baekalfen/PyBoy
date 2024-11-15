@@ -1,4 +1,4 @@
-from . import CRITICAL, DEBUG, ERROR, INFO, WARNING, _log, get_log_level
+from . import CRITICAL, DEBUG, ERROR, INFO, WARNING, _log
 
 
 class Logger:

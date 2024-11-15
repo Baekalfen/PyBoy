@@ -260,4 +260,4 @@ def test_data_hooking_failure(default_rom):
         diff.show()
 
     # NOTE: Expecting a failure!
-    assert diff.getbbox(), f"Images are not different!"
+    assert diff.getbbox(), "Images are not different!"
