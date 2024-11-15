@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 import os
-import platform
 import subprocess
 import sys
 from pathlib import Path

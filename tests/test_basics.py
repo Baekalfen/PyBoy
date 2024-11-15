@@ -24,25 +24,25 @@ is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_log_level_none(default_rom, capsys):
-    pyboy = PyBoy(default_rom, window="null")
+    PyBoy(default_rom, window="null")
     captured = capsys.readouterr()
     assert captured.out == ""
 
 
 def test_log_level_default(default_rom, capsys):
-    pyboy = PyBoy(default_rom, window="dummy")
+    PyBoy(default_rom, window="dummy")
     captured = capsys.readouterr()
     assert "pyboy.plugins.window_null      ERROR" in captured.out
 
 
-def test_log_level_default(default_rom, capsys):
-    pyboy = PyBoy(default_rom, window="dummy", log_level="ERROR")
+def test_log_level_error(default_rom, capsys):
+    PyBoy(default_rom, window="dummy", log_level="ERROR")
     captured = capsys.readouterr()
     assert "pyboy.plugins.window_null      ERROR" in captured.out
 
 
 def test_log_level_critical(default_rom, capsys):
-    pyboy = PyBoy(default_rom, window="dummy", log_level="CRITICAL")
+    PyBoy(default_rom, window="dummy", log_level="CRITICAL")
     captured = capsys.readouterr()
     assert captured.out == ""
 
@@ -280,7 +280,7 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
     if cgb == False and _bootrom == boot_cgb_rom:
         pytest.skip("Invalid combination")
 
-    if cgb == None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
+    if cgb is None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
         pytest.skip("Invalid combination")
 
     pyboy = PyBoy(rom, window="null", bootrom=_bootrom, cgb=cgb)

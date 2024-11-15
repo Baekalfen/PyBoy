@@ -10,7 +10,6 @@
 from array import array
 from ctypes import c_void_p
 
-from pyboy import utils
 
 try:
     import sdl2

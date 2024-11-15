@@ -2,17 +2,13 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-
-import array
-
-from pyboy import utils
+import pyboy
 
 from . import opcodes
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
-import pyboy
 
 logger = pyboy.logging.get_logger(__name__)
 

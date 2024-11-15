@@ -7,12 +7,10 @@ __pdoc__ = {
     "GameWrapperTetris.post_tick": False,
 }
 
-from array import array
 
 import numpy as np
 
 import pyboy
-from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -253,7 +251,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
     def __repr__(self):
         return (
-            f"Tetris:\n"
+            "Tetris:\n"
             + f"Score: {self.score}\n"
             + f"Level: {self.level}\n"
             + f"Lines: {self.lines}\n"

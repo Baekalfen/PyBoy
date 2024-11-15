@@ -7,7 +7,6 @@ import array
 import os
 
 import pyboy
-from pyboy import utils
 from pyboy.utils import IntIOWrapper
 
 from .rtc import RTC

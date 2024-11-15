@@ -77,7 +77,7 @@ def locate_sha256(digest):
 @pytest.fixture(scope="session")
 def secrets():
     path = extra_test_rom_dir / Path("secrets")
-    with FileLock(path.with_suffix(".lock")) as lock:
+    with FileLock(path.with_suffix(".lock")):
         if not os.path.isdir(path):
             if not os.environ.get("PYTEST_SECRETS_KEY"):
                 pytest.skip("Cannot access secrets")
@@ -160,7 +160,7 @@ def doctest_fixtures(doctest_namespace, default_rom, default_rom_cgb, supermario
         # fmt: on
 
         pyboy.set_emulation_speed(0)
-        pyboy.tick(10) # Just a few to get the logo up
+        pyboy.tick(10)  # Just a few to get the logo up
         doctest_namespace["pyboy"] = pyboy
         doctest_namespace["pyboy_cgb"] = pyboy_cgb
         doctest_namespace["PyBoy"] = mock_PyBoy
@@ -298,7 +298,6 @@ class DoctestTextfile(pytest.Module):
 
 # NOTE: Taken from Pytest
 def pytest_collect_file(file_path, parent):
-    config = parent.config
     if file_path.suffix == ".py":
         txt = DoctestTextfile.from_parent(parent, path=file_path)
         return txt

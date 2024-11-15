@@ -4,12 +4,10 @@
 #
 
 from array import array
-from copy import deepcopy
 from ctypes import c_void_p
 from random import getrandbits
 
 import pyboy
-from pyboy import utils
 
 logger = pyboy.logging.get_logger(__name__)
 

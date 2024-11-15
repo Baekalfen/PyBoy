@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy import utils
+import pyboy
 from pyboy.utils import STATE_VERSION
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
@@ -11,7 +11,6 @@ from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 OPCODE_BRK = 0xDB
 
-import pyboy
 
 logger = pyboy.logging.get_logger(__name__)
 

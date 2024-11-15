@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 import io
-import platform
 
 from pyboy import PyBoy
 

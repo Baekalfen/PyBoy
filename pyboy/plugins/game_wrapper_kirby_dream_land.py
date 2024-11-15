@@ -8,8 +8,6 @@ __pdoc__ = {
 }
 
 import pyboy
-from pyboy import utils
-from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -136,7 +134,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
     def __repr__(self):
         return (
-            f"Kirby Dream Land:\n"
+            "Kirby Dream Land:\n"
             + f"Score: {self.score}\n"
             + f"Health: {self.health}\n"
             + f"Lives left: {self.lives_left}\n"

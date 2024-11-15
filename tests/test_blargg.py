@@ -3,12 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import io
 import json
 import os.path
-import platform
-import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -23,13 +19,11 @@ blargg_json = "tests/test_results/blargg.json"
 def run_rom(rom, max_frames):
     pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom, sound_emulated=True)
     pyboy.set_emulation_speed(0)
-    t = time.time()
     result = ""
     while pyboy.tick(1, False):
         b = pyboy._serial()
         if b != "":
             result += b
-            t = time.time()
 
         if pyboy._is_cpu_stuck() or pyboy.frame_count > max_frames:
             break

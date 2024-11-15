@@ -3,16 +3,9 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os
-import platform
-import sys
-
-import numpy as np
-import pytest
 
 from pyboy import PyBoy
 from pyboy.plugins.game_wrapper_pokemon_pinball import Pokemon, SpecialMode, Stage
-from pyboy.utils import WindowEvent
 
 
 def test_pokemon_pinball_basics(pokemon_pinball_rom):
