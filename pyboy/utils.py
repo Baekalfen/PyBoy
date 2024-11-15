@@ -7,6 +7,11 @@ __all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
 STATE_VERSION = 12
 
+
+class PyBoyException(Exception):
+    pass
+
+
 ##############################################################
 # Buffer classes
 

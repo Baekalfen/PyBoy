@@ -124,7 +124,6 @@ class PyBoy:
             if k not in kwargs:
                 kwargs[k] = v
 
-
         if gamerom is None:
             raise FileNotFoundError("None is not a ROM file!")
 
