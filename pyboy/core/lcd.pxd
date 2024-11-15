@@ -62,7 +62,7 @@ cdef class LCD:
     cdef int64_t cycles_to_mode0(self) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
     cdef inline (int, int) getwindowpos(self) noexcept nogil
     cdef inline (int, int) getviewport(self) noexcept nogil
@@ -252,7 +252,7 @@ cdef class Renderer:
     cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
     @cython.locals(
         tile_num = uint8_t,
@@ -294,7 +294,7 @@ cdef class PaletteIndexRegister:
     cdef void shouldincrement(self) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
 cdef class PaletteColorRegister:
     cdef uint16_t[8 * 4] palette_mem
@@ -307,4 +307,4 @@ cdef class PaletteColorRegister:
     cdef inline uint32_t getcolor(self, uint8_t, uint8_t) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1

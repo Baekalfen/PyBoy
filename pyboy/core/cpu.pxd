@@ -41,7 +41,7 @@ cdef class CPU:
     @cython.locals(_cycles0=int64_t)
     cdef int tick(self, int64_t) noexcept nogil
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
     # Only char (8-bit) needed, but I'm not sure all intermittent
     # results do not overflow

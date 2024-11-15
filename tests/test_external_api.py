@@ -14,7 +14,7 @@ from PIL import ImageChops
 
 from pyboy import PyBoy
 from pyboy.api.tile import Tile
-from pyboy.utils import IntIOWrapper, WindowEvent
+from pyboy.utils import IntIOWrapper, PyBoyException, WindowEvent
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
@@ -128,8 +128,11 @@ def test_faulty_state(default_rom):
     with pytest.raises(AssertionError):
         a.read()
 
-    b = io.BytesIO(b"1234")
+    b = io.BytesIO(b"\x001234")
     with pytest.raises(AssertionError):
+        pyboy.load_state(b)
+    b = io.BytesIO(b"991234")
+    with pytest.raises(PyBoyException):
         pyboy.load_state(b)
     pyboy.stop(save=False)
 

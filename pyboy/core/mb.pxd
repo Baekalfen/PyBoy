@@ -89,4 +89,4 @@ cdef class HDMA:
     cdef int tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
