@@ -70,20 +70,20 @@ cdef class PyBoy:
     cdef list external_input
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
-    cpdef bint _tick(self, bint) noexcept
-    @cython.locals(running=bint, factor=double)
-    cpdef bint tick(self, count=*, render=*) noexcept
+    cdef bint _tick(self, bint) noexcept nogil
+    @cython.locals(running=bint, _render=bint)
+    cpdef bint tick(self, int count=*, bint render=*) noexcept
     cpdef void stop(self, save=*) noexcept
     cpdef int save_state(self, object) except -1
     cpdef int load_state(self, object) except -1
 
     @cython.locals(state_path=str)
-    cdef void _handle_events(self, list) noexcept
+    cdef void _handle_events(self, list) noexcept with gil
     cpdef void _pause(self) noexcept
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
     cdef void _post_tick(self) noexcept
-    cdef void _post_handle_events(self) noexcept
+    cdef void _post_handle_events(self) noexcept with gil
 
     cdef dict _hooks
     cdef object symbols_file
@@ -94,7 +94,7 @@ cdef class PyBoy:
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
 
     cpdef bint _is_cpu_stuck(self) noexcept
-    cdef void __rendering(self, int) noexcept
+    cdef void __rendering(self, int) noexcept nogil
 
     cpdef object get_sprite(self, int)
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*)
