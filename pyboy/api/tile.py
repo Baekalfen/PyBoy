@@ -11,6 +11,7 @@ import numpy as np
 
 import pyboy
 from pyboy import utils
+from pyboy.utils import PyBoyOutOfBoundsException
 
 from .constants import LOW_TILEDATA, TILES, TILES_CGB, VRAM_OFFSET
 
@@ -38,9 +39,11 @@ class Tile:
         self.mb = mb
 
         if self.mb.cgb:
-            assert 0 <= identifier < TILES_CGB, "Identifier out of range"
+            if not (0 <= identifier < TILES_CGB):
+                raise PyBoyOutOfBoundsException("Identifier out of range")
         else:
-            assert 0 <= identifier < TILES, "Identifier out of range"
+            if not (0 <= identifier < TILES):
+                raise PyBoyOutOfBoundsException("Identifier out of range")
 
         self.data_address = LOW_TILEDATA + (16 * (identifier % TILES))
         """
