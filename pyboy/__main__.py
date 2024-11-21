@@ -12,6 +12,7 @@ import pyboy
 from pyboy import PyBoy
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
+from pyboy.utils import PyBoyInvalidInputException
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -20,13 +21,15 @@ INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
 
 def color_tuple(string):
     color_palette = [int(c.strip(), 16) for c in string.split(",")]
-    assert len(color_palette) == 4, f"Not the correct amount of colors! Expected four, got {len(color_palette)}"
+    if not (len(color_palette) == 4):
+        raise PyBoyInvalidInputException(f"Not the correct amount of colors! Expected four, got {len(color_palette)}")
     return color_palette
 
 
 def cgb_color_tuple(string):
     color_palette = [int(c.strip(), 16) for c in string.split(",")]
-    assert len(color_palette) == 12, f"Not the correct amount of colors! Expected twelve, got {len(color_palette)}"
+    if not (len(color_palette) == 12):
+        raise PyBoyInvalidInputException(f"Not the correct amount of colors! Expected twelve, got {len(color_palette)}")
     return [color_palette[0:4], color_palette[4:8], color_palette[8:12]]
 
 
