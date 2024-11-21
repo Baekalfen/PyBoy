@@ -11,7 +11,7 @@ from pyboy.core.mb cimport Motherboard
 
 cdef class Screen:
     cdef Motherboard mb
-    cpdef ((int, int), (int, int)) get_tilemap_position(self)
+    cpdef ((int, int), (int, int)) get_tilemap_position(self) noexcept
     # cdef readonly list tilemap_position_list
     # cdef readonly uint8_t[:,:] tilemap_position_list
     cdef readonly uint32_t[:,:] raw_buffer

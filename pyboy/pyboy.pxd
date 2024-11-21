@@ -30,7 +30,7 @@ cdef class PyBoyMemoryView:
     cdef Motherboard mb
 
     @cython.locals(start=int,stop=int,step=int)
-    cpdef (int,int,int) _fix_slice(self, slice)
+    cpdef (int,int,int) _fix_slice(self, slice) noexcept
     @cython.locals(start=int,stop=int,step=int)
     cdef object __getitem(self, int, int, int, int, bint, bint)
     @cython.locals(start=int,stop=int,step=int,x=int, bank=int)
@@ -89,13 +89,13 @@ cdef class PyBoy:
     cdef object symbols_file
     cdef public dict rom_symbols
     cdef public dict rom_symbols_inverse
-    cpdef bint _handle_hooks(self)
+    cpdef bint _handle_hooks(self) noexcept
     cpdef int hook_register(self, uint16_t, uint16_t, object, object) except -1
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
 
-    cpdef bint _is_cpu_stuck(self)
+    cpdef bint _is_cpu_stuck(self) noexcept
     cdef void __rendering(self, int) noexcept
 
-    cpdef object get_sprite(self, int) noexcept
-    cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*) noexcept
-    cpdef object get_tile(self, int) noexcept
+    cpdef object get_sprite(self, int)
+    cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*)
+    cpdef object get_tile(self, int)

@@ -16,7 +16,7 @@ from .base_mbc cimport BaseMBC
 cdef Logger logger
 
 @cython.locals(carttype=uint8_t, cart_name=basestring, cart_line=basestring)
-cpdef BaseMBC load_cartridge(str) noexcept
+cpdef BaseMBC load_cartridge(str)
 cdef bint validate_checksum(uint8_t[:,:]) noexcept
 
 @cython.locals(romdata=array, banksize=int)
