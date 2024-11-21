@@ -58,8 +58,9 @@ def load_romfile(filename):
 
     banksize = 16 * 1024
     if len(romdata) % banksize != 0:
-        logger.error("Unexpected ROM file length")
-        raise PyBoyException("Bad ROM file size")
+        raise PyBoyException(
+            f"Unexpected ROM file length! ROM data of {len(romdata)} doesn't divide evenly into bank size {banksize}"
+        )
 
     return memoryview(romdata).cast("B", shape=(len(romdata) // banksize, banksize))
 
