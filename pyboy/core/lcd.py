@@ -478,16 +478,6 @@ class Renderer:
 
         self.ly_window = 0
 
-    def _cgb_get_background_map_attributes(self, lcd, i):
-        tile_num = lcd.VRAM1[i]
-        palette = tile_num & 0b111
-        vbank = (tile_num >> 3) & 1
-        horiflip = (tile_num >> 5) & 1
-        vertflip = (tile_num >> 6) & 1
-        bg_priority = (tile_num >> 7) & 1
-
-        return palette, vbank, horiflip, vertflip, bg_priority
-
     def scanline(self, lcd, y):
         if lcd.disable_renderer:
             return
@@ -496,36 +486,21 @@ class Renderer:
         wx, wy = lcd.getwindowpos()
 
         x = 0
-        if not self.cgb:
-            if lcd._LCDC.window_enable and wy <= y and wx < COLS:
-                # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
-                self.ly_window += 1
+        if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+            # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
+            self.ly_window += 1
 
-                # Before window
-                if wx > x:
-                    x += self.scanline_background(y, x, bx, by, wx, lcd)
+            # Before window
+            if wx > x:
+                x += self.scanline_background(y, x, bx, by, wx, lcd)
 
-                # Window hit
-                self.scanline_window(y, x, wx, wy, COLS - x, lcd)
-            elif lcd._LCDC.background_enable:
-                # No window
-                self.scanline_background(y, x, bx, by, COLS, lcd)
-            else:
-                self.scanline_blank(y, x, COLS, lcd)
+            # Window hit
+            self.scanline_window(y, x, wx, wy, COLS - x, lcd)
+        elif lcd._LCDC.background_enable:
+            # No window
+            self.scanline_background(y, x, bx, by, COLS, lcd)
         else:
-            if lcd._LCDC.window_enable and wy <= y and wx < COLS:
-                # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
-                self.ly_window += 1
-
-                # Before window
-                if wx > x:
-                    x += self.scanline_background_cgb(y, x, bx, by, wx, lcd)
-
-                # Window hit
-                self.scanline_window_cgb(y, x, wx, wy, COLS - x, lcd)
-            else:  # background_enable doesn't exist for CGB. It works as master priority instead
-                # No window
-                self.scanline_background_cgb(y, x, bx, by, COLS, lcd)
+            self.scanline_blank(y, x, COLS, lcd)
 
         if y == 143:
             # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
@@ -544,21 +519,6 @@ class Renderer:
         yy = 8 * tile + y % 8
         return tile, yy, tile_addr
 
-    def _get_tile_cgb(self, y, x, offset, lcd):
-        tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
-
-        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
-
-        bg_priority_apply = 0
-        if bg_priority:
-            # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
-            bg_priority_apply = BG_PRIORITY_FLAG
-
-        if vertflip:
-            yy = 8 * tile + (7 - (y) % 8)
-
-        return tile, yy, palette, horiflip, bg_priority_apply, vbank
-
     def _pixel(self, tilecache, pixel, x, y, xx, yy, bg_priority_apply):
         col0 = (tilecache[yy, xx] == 0) & 1
         self._screenbuffer[y, x] = pixel
@@ -576,29 +536,6 @@ class Renderer:
             self._pixel(self._tilecache0, pixel, x, y, xx, yy, 0)
         return cols
 
-    def scanline_window_cgb(self, y, _x, wx, wy, cols, lcd):
-        bg_priority_apply = 0
-        for x in range(_x, _x + cols):
-            xx = (x - wx) % 8
-            if xx == 0 or x == _x:
-                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
-                    self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
-                )
-                # NOTE: Not allowed to return memoryview in Cython tuple
-                if vbank:
-                    self.update_tilecache1(lcd, wt, vbank)
-                    tilecache = self._tilecache1
-                else:
-                    self.update_tilecache0(lcd, wt, vbank)
-                    tilecache = self._tilecache0
-
-            if w_horiflip:
-                xx = 7 - xx
-
-            pixel = lcd.bcpd.getcolor(w_palette, tilecache[yy, xx])
-            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
-        return cols
-
     def scanline_background(self, y, _x, bx, by, cols, lcd):
         for x in range(_x, _x + cols):
             # bx mask used for the half tile at the left side when scrolling
@@ -612,29 +549,6 @@ class Renderer:
 
             pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
             self._pixel(self._tilecache0, pixel, x, y, xx, yy, 0)
-        return cols
-
-    def scanline_background_cgb(self, y, _x, bx, by, cols, lcd):
-        for x in range(_x, _x + cols):
-            # bx mask used for the half tile at the left side when scrolling
-            xx = (x + (bx & 0b111)) % 8
-            if xx == 0 or x == 0:
-                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
-                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
-                )
-                # NOTE: Not allowed to return memoryview in Cython tuple
-                if vbank:
-                    self.update_tilecache1(lcd, bt, vbank)
-                    tilecache = self._tilecache1
-                else:
-                    self.update_tilecache0(lcd, bt, vbank)
-                    tilecache = self._tilecache0
-
-            if b_horiflip:
-                xx = 7 - xx
-
-            pixel = lcd.bcpd.getcolor(b_palette, tilecache[yy, xx])
-            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
         return cols
 
     def scanline_blank(self, y, _x, cols, lcd):
@@ -918,6 +832,104 @@ class CGBRenderer(Renderer):
         self._tilecache1_64 = memoryview(self._tilecache1_raw).cast("Q", shape=(TILES * 8,))
         self._tilecache1_state = array("B", [0] * TILES)
         self.clear_cache()
+
+    def _cgb_get_background_map_attributes(self, lcd, i):
+        tile_num = lcd.VRAM1[i]
+        palette = tile_num & 0b111
+        vbank = (tile_num >> 3) & 1
+        horiflip = (tile_num >> 5) & 1
+        vertflip = (tile_num >> 6) & 1
+        bg_priority = (tile_num >> 7) & 1
+
+        return palette, vbank, horiflip, vertflip, bg_priority
+
+    def _get_tile_cgb(self, y, x, offset, lcd):
+        tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
+
+        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
+
+        bg_priority_apply = 0
+        if bg_priority:
+            # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
+            bg_priority_apply = BG_PRIORITY_FLAG
+
+        if vertflip:
+            yy = 8 * tile + (7 - (y) % 8)
+
+        return tile, yy, palette, horiflip, bg_priority_apply, vbank
+
+    def scanline_window(self, y, _x, wx, wy, cols, lcd):
+        bg_priority_apply = 0
+        for x in range(_x, _x + cols):
+            xx = (x - wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
+                    self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
+                )
+                # NOTE: Not allowed to return memoryview in Cython tuple
+                if vbank:
+                    self.update_tilecache1(lcd, wt, vbank)
+                    tilecache = self._tilecache1
+                else:
+                    self.update_tilecache0(lcd, wt, vbank)
+                    tilecache = self._tilecache0
+
+            if w_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(w_palette, tilecache[yy, xx])
+            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def scanline_background(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            # bx mask used for the half tile at the left side when scrolling
+            xx = (x + (bx & 0b111)) % 8
+            if xx == 0 or x == 0:
+                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
+                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
+                )
+                # NOTE: Not allowed to return memoryview in Cython tuple
+                if vbank:
+                    self.update_tilecache1(lcd, bt, vbank)
+                    tilecache = self._tilecache1
+                else:
+                    self.update_tilecache0(lcd, bt, vbank)
+                    tilecache = self._tilecache0
+
+            if b_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(b_palette, tilecache[yy, xx])
+            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def scanline(self, lcd, y):
+        if lcd.disable_renderer:
+            return
+
+        bx, by = lcd.getviewport()
+        wx, wy = lcd.getwindowpos()
+
+        x = 0
+
+        if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+            # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
+            self.ly_window += 1
+
+            # Before window
+            if wx > x:
+                x += self.scanline_background(y, x, bx, by, wx, lcd)
+
+            # Window hit
+            self.scanline_window(y, x, wx, wy, COLS - x, lcd)
+        else:  # background_enable doesn't exist for CGB. It works as master priority instead
+            # No window
+            self.scanline_background(y, x, bx, by, COLS, lcd)
+
+        if y == 143:
+            # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
+            self.ly_window = -1
 
     def clear_cache(self):
         self.clear_tilecache0()
