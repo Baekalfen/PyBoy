@@ -12,6 +12,18 @@ class PyBoyException(Exception):
     pass
 
 
+class PyBoyOutOfBoundsException(PyBoyException):
+    pass
+
+
+class PyBoyNotImplementedException(PyBoyException):
+    pass
+
+
+class PyBoyInvalidInputException(PyBoyException):
+    pass
+
+
 class PyBoyDependencyError(PyBoyException):
     pass
 
@@ -39,7 +51,7 @@ class IntIOInterface:
         pass
 
     def write(self, byte):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def write_64bit(self, value):
         self.write(value & 0xFF)
@@ -85,25 +97,25 @@ class IntIOInterface:
         return int(a | (b << 8))
 
     def read(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def seek(self, pos):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def flush(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def new(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def commit(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def seek_frame(self, _):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def tell(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
 
 class IntIOWrapper(IntIOInterface):
