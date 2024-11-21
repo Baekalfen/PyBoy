@@ -505,7 +505,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
         and so on. These values can be found in the variables of this class.
 
-        In this example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+        In this example using `GameWrapperSuperMarioLand.mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
         ```python
         >>> pyboy = PyBoy(supermarioland_rom)
         >>> pyboy.game_wrapper.start_game()

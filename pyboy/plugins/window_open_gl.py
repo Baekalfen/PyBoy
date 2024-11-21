@@ -7,7 +7,7 @@ import numpy as np
 
 import pyboy
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.utils import WindowEvent
+from pyboy.utils import WindowEvent, PyBoyException
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -61,7 +61,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
             return
 
         if not glutInit():
-            raise Exception("OpenGL couldn't initialize!")
+            raise PyBoyException("OpenGL couldn't initialize!")
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*self._scaledresolution)
         glutCreateWindow("PyBoy")

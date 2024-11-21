@@ -20,7 +20,7 @@ from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
-from pyboy.utils import IntIOWrapper, WindowEvent, cython_compiled
+from pyboy.utils import IntIOWrapper, PyBoyException, PyBoyInvalidInputException, WindowEvent, cython_compiled
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
@@ -645,7 +645,7 @@ class PyBoy:
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
             self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
         else:
-            raise Exception("Unrecognized input:", input)
+            raise PyBoyInvalidInputException("Unrecognized input:", input)
 
     def button_press(self, input):
         """
@@ -688,7 +688,7 @@ class PyBoy:
         elif input == "select":
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
         else:
-            raise Exception("Unrecognized input")
+            raise PyBoyInvalidInputException("Unrecognized input")
 
     def button_release(self, input):
         """
@@ -730,7 +730,7 @@ class PyBoy:
         elif input == "select":
             self.send_input(WindowEvent.RELEASE_BUTTON_SELECT)
         else:
-            raise Exception("Unrecognized input")
+            raise PyBoyInvalidInputException("Unrecognized input")
 
     def send_input(self, event, delay=0):
         """
@@ -803,10 +803,12 @@ class PyBoy:
         """
 
         if isinstance(file_like_object, str):
-            raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
+            raise PyBoyInvalidInputException(
+                "String not allowed. Did you specify a filepath instead of a file-like object?"
+            )
 
         if file_like_object.__class__.__name__ == "TextIOWrapper":
-            raise Exception("Text file not allowed. Did you specify open(..., 'wb')?")
+            raise PyBoyInvalidInputException("Text file not allowed. Did you specify open(..., 'wb')?")
 
         self.mb.save_state(IntIOWrapper(file_like_object))
 
@@ -831,10 +833,12 @@ class PyBoy:
         """
 
         if isinstance(file_like_object, str):
-            raise Exception("String not allowed. Did you specify a filepath instead of a file-like object?")
+            raise PyBoyInvalidInputException(
+                "String not allowed. Did you specify a filepath instead of a file-like object?"
+            )
 
         if file_like_object.__class__.__name__ == "TextIOWrapper":
-            raise Exception("Text file not allowed. Did you specify open(..., 'rb')?")
+            raise PyBoyInvalidInputException("Text file not allowed. Did you specify open(..., 'rb')?")
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
@@ -1306,7 +1310,7 @@ class PyBoy:
         if self.mb.cartridge.rtc_enabled:
             self.mb.cartridge.rtc.timelock = enable
         else:
-            raise Exception("There's no RTC for this cartridge type")
+            raise PyBoyException("There's no RTC for this cartridge type")
 
 
 class PyBoyRegisterFile:
