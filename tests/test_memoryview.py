@@ -6,6 +6,7 @@
 import pytest
 
 from pyboy import PyBoy
+from pyboy.utils import PyBoyInvalidInputException, PyBoyOutOfBoundsException
 
 
 def test_memoryview(default_rom, boot_rom):
@@ -27,23 +28,23 @@ def test_memoryview(default_rom, boot_rom):
     assert p.memory[0xFFFF] == 1
 
     # Requires start and end address
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[:10] == []
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[20:10] == []
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[:10:] == []
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00:] == []
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00::] == []
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[:10] = 0
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[:10:] = 0
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00:] = 0
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00::] = 0
 
     # Attempt write to ROM area
@@ -66,17 +67,17 @@ def test_memoryview(default_rom, boot_rom):
     assert p.memory[0xC000:0xC00A] == [1] * 10
 
     # Attempt to write too large memory slice into memory area
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xC000:0xC001] = [1] * 10
 
     # Attempt to write too small memory slice into memory area
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xC000:0xC00A] = [1] * 2
 
     # Read specific ROM bank
     assert p.memory[0, 0x00:0x10] == rom_bytes[:16]
     assert p.memory[1, 0x00] == 0
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         # Slicing currently unsupported
         assert p.memory[0:2, 0x00:0x10] == []
 
@@ -90,7 +91,7 @@ def test_memoryview(default_rom, boot_rom):
     assert p.memory[1, 0xA000] == 2
     assert p.memory[1, 0xA001] == 2
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyOutOfBoundsException):
         # Out of bounds
         p.memory[0, 0x00:0x9000]
 
@@ -126,14 +127,14 @@ def test_cgb_banks(cgb_acid_file):  # Any CGB file
     assert p.memory[0, 0xD000:0xD010] == [1] * 16
     assert p.memory[7, 0xD000:0xD010] == [2] * 16
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyInvalidInputException):
         # Slicing currently unsupported
         p.memory[0:2, 0xD000:0xD010] = 1
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyOutOfBoundsException):
         p.memory[8, 0xD000]  # Only bank 0-7
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyOutOfBoundsException):
         p.memory[8, 0xD000] = 1  # Only bank 0-7
 
 
@@ -171,7 +172,7 @@ def test_boundaries(default_rom):
     assert pyboy.memory[-1, 0x00] != 0
     assert pyboy.memory[-1, 0xFF] != 0
     pyboy.memory[-1, 0:0x100] = [0] * 0x100  # Clear boot ROM
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyOutOfBoundsException):
         pyboy.memory[-1, 0:0x101] = [0] * 0x101  # Out of bounds
     assert pyboy.memory[-1, 0x00] == 0
     assert pyboy.memory[-1, 0xFF] == 0
@@ -184,7 +185,7 @@ def test_boundaries(default_rom):
 
     # ROM Bank 0 boundary - Expecting 0 to 0x3FFF both including to change
     pyboy.memory[0, 0:0x4000] = [0] * 0x4000
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyOutOfBoundsException):
         pyboy.memory[0, 0:0x4001] = [0] * 0x4001  # Over boundary!
 
     # NOTE: Not specifying bank! Defaulting to 0 up to 0x3FFF and then 1 at 0x4000
