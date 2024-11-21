@@ -17,7 +17,7 @@ cdef class GameShark:
 
     cdef uint8_t _get_value(self, int, int) noexcept
     cdef void _set_value(self, int, int, int) noexcept
-    cdef tuple _convert_cheat(self, str code) noexcept
+    cdef tuple _convert_cheat(self, str code)
     cpdef void add(self, str code) noexcept
     cpdef void remove(self, str code, bint restore_value=*) noexcept
     cpdef void clear_all(self, bint restore_value=*) noexcept

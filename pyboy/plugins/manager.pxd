@@ -66,11 +66,11 @@ cdef class PluginManager:
     cdef bint game_wrapper_pokemon_pinball_enabled
     # plugin_cdef end
 
-    cdef list handle_events(self, list) noexcept
+    cdef list handle_events(self, list)
     cpdef void post_tick(self) noexcept
     cdef void _post_tick_windows(self) noexcept
     cdef void frame_limiter(self, int) noexcept
-    cdef str window_title(self) noexcept
+    cdef str window_title(self)
     cdef void stop(self) noexcept
     cdef void _set_title(self) noexcept
     cdef void handle_breakpoint(self) noexcept
