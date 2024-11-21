@@ -20,7 +20,7 @@ cdef class GameWrapperTetris(PyBoyGameWrapper):
     cdef readonly int lines
 
     cpdef void set_tetromino(self, str) noexcept
-    cpdef str next_tetromino(self) noexcept
+    cpdef str next_tetromino(self)
 
     cpdef void start_game(self, timer_div=*) noexcept
     cpdef void reset_game(self, timer_div=*) noexcept

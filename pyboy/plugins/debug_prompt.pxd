@@ -11,4 +11,4 @@ cdef Logger logger
 
 cdef class DebugPrompt(PyBoyPlugin):
     cdef dict rom_symbols
-    cdef void handle_breakpoint(self)
+    cdef void handle_breakpoint(self) noexcept

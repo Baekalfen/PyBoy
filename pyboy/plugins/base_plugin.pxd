@@ -24,9 +24,9 @@ cdef class PyBoyPlugin:
     cdef bint cgb
     cdef dict pyboy_argv
     @cython.locals(event=WindowEvent)
-    cdef list handle_events(self, list) noexcept
+    cdef list handle_events(self, list)
     cdef void post_tick(self) noexcept
-    cdef str window_title(self) noexcept
+    cdef str window_title(self)
     cdef void stop(self) noexcept
     cpdef bint enabled(self) noexcept
 
@@ -56,16 +56,16 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef array _cached_game_area_tiles_raw
     cdef object _cached_game_area_tiles
     @cython.locals(xx=int, yy=int, width=int, height=int, SCX=int, SCY=int, _x=int, _y=int)
-    cdef cnp.ndarray[cnp.uint32_t, ndim=2] _game_area_tiles(self) noexcept
+    cdef cnp.ndarray[cnp.uint32_t, ndim=2] _game_area_tiles(self)
 
     cdef bint game_area_follow_scxy
     cdef tuple game_area_section
     @cython.locals(tiles_matrix=cnp.ndarray, sprites=list, xx=int, yy=int, width=int, height=int, _x=int, _y=int)
-    cpdef cnp.ndarray[cnp.uint32_t, ndim=2] game_area(self) noexcept
+    cpdef cnp.ndarray[cnp.uint32_t, ndim=2] game_area(self)
 
     cdef bint _sprite_cache_invalid
     cdef list _cached_sprites_on_screen
-    cpdef list _sprites_on_screen(self) noexcept
+    cpdef list _sprites_on_screen(self)
 
     cdef object saved_state
 
