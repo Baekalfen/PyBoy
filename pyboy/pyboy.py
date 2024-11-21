@@ -11,6 +11,7 @@ import os
 import re
 import time
 
+import cython
 import numpy as np
 
 from pyboy.api.gameshark import GameShark
@@ -399,21 +400,22 @@ class PyBoy:
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed
                 self.mb.breakpoint_reinject()
 
-                # NOTE: PC has not been incremented when hitting breakpoint!
-                breakpoint_meta = self.mb.breakpoint_reached()
-                if breakpoint_meta != (-1, -1, -1):
-                    bank, addr, _ = breakpoint_meta
-                    self.mb.breakpoint_remove(bank, addr)
-                    self.mb.breakpoint_singlestep_latch = 0
+                with cython.gil:
+                    # NOTE: PC has not been incremented when hitting breakpoint!
+                    breakpoint_meta = self.mb.breakpoint_reached()
+                    if breakpoint_meta != (-1, -1, -1):
+                        bank, addr, _ = breakpoint_meta
+                        self.mb.breakpoint_remove(bank, addr)
+                        self.mb.breakpoint_singlestep_latch = 0
 
-                    if not self._handle_hooks():
-                        self._plugin_manager.handle_breakpoint()
-                else:
-                    if self.mb.breakpoint_singlestep_latch:
                         if not self._handle_hooks():
                             self._plugin_manager.handle_breakpoint()
-                    # Keep singlestepping on, if that's what we're doing
-                    self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
+                    else:
+                        if self.mb.breakpoint_singlestep_latch:
+                            if not self._handle_hooks():
+                                self._plugin_manager.handle_breakpoint()
+                        # Keep singlestepping on, if that's what we're doing
+                        self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
             self.frame_count += 1
             self._post_handle_events()
@@ -468,10 +470,11 @@ class PyBoy:
         _count = count
         running = False
         t_start = time.perf_counter_ns()
-        while count != 0:
-            _render = render and count == 1  # Only render on last tick to improve performance
-            running = self._tick(_render)
-            count -= 1
+        with cython.nogil:
+            while count != 0:
+                _render = render and count == 1  # Only render on last tick to improve performance
+                running = self._tick(_render)
+                count -= 1
         t_tick = time.perf_counter_ns()
         self._post_tick()
         t_post = time.perf_counter_ns()

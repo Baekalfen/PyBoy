@@ -1,5 +1,5 @@
 
-.PHONY: build clean run install test
+.PHONY: build clean run install test benchmark
 
 all: build
 
@@ -65,7 +65,7 @@ uninstall:
 	${PY} -m pip uninstall pyboy
 
 test: export DEBUG=1
-test: clean test_pypy test_cpython_doctest build test_cython
+test: clean test_pypy test_cpython_doctest build test_cython benchmark
 
 test_cpython_doctest:
 	${PY} -m pytest pyboy/ ${PYTEST_ARGS}
@@ -77,6 +77,9 @@ test_pypy:
 	${PYPY} -m pytest tests/ pyboy/ ${PYTEST_ARGS}
 
 test_all: test
+
+benchmark:
+	${PY} -m pytest -m benchmark tests/test_benchmark.py --benchmark-enable --benchmark-min-rounds=10
 
 docs: clean
 	bash -O extglob -c 'rm -rf -- ${ROOT_DIR}/docs/!(templates|CNAME)'

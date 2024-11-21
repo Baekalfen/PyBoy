@@ -21,4 +21,4 @@ cdef class GameShark:
     cpdef void add(self, str code) noexcept
     cpdef void remove(self, str code, bint restore_value=*) noexcept
     cpdef void clear_all(self, bint restore_value=*) noexcept
-    cdef void tick(self) noexcept
+    cdef void tick(self) noexcept with gil
