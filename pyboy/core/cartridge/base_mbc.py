@@ -7,7 +7,7 @@ import array
 import os
 
 import pyboy
-from pyboy.utils import IntIOWrapper
+from pyboy.utils import IntIOWrapper, PyBoyException
 
 from .rtc import RTC
 
@@ -105,7 +105,7 @@ class BaseMBC:
         return "".join([chr(rombanks[0, x]) for x in range(0x0134, 0x0142)]).split("\0")[0]
 
     def setitem(self, address, value):
-        raise Exception("Cannot set item in MBC")
+        raise PyBoyException("Cannot set item in MBC")
 
     def overrideitem(self, rom_bank, address, value):
         if 0x0000 <= address < 0x4000:

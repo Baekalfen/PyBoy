@@ -3,7 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from pyboy.utils import STATE_VERSION, PyBoyException
+import pyboy
+from pyboy.utils import STATE_VERSION, PyBoyException, PyBoyOutOfBoundsException
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
@@ -96,12 +97,16 @@ class Motherboard:
             self.bootrom.bootrom[addr] = OPCODE_BRK
         elif addr < 0x4000:
             if self.cartridge.external_rom_count < bank:
-                raise Exception(f"ROM bank out of bounds. Asked for {bank}, max is {self.cartridge.external_rom_count}")
+                raise PyBoyOutOfBoundsException(
+                    f"ROM bank out of bounds. Asked for {bank}, max is {self.cartridge.external_rom_count}"
+                )
             opcode = self.cartridge.rombanks[bank, addr]
             self.cartridge.rombanks[bank, addr] = OPCODE_BRK
         elif 0x4000 <= addr < 0x8000:
             if self.cartridge.external_rom_count < bank:
-                raise Exception(f"ROM bank out of bounds. Asked for {bank}, max is {self.cartridge.external_rom_count}")
+                raise PyBoyOutOfBoundsException(
+                    f"ROM bank out of bounds. Asked for {bank}, max is {self.cartridge.external_rom_count}"
+                )
             opcode = self.cartridge.rombanks[bank, addr - 0x4000]
             self.cartridge.rombanks[bank, addr - 0x4000] = OPCODE_BRK
         elif 0x8000 <= addr < 0xA000:
@@ -113,14 +118,18 @@ class Motherboard:
                 self.lcd.VRAM1[addr - 0x8000] = OPCODE_BRK
         elif 0xA000 <= addr < 0xC000:
             if self.cartridge.external_ram_count < bank:
-                raise Exception(f"RAM bank out of bounds. Asked for {bank}, max is {self.cartridge.external_ram_count}")
+                raise PyBoyOutOfBoundsException(
+                    f"RAM bank out of bounds. Asked for {bank}, max is {self.cartridge.external_ram_count}"
+                )
             opcode = self.cartridge.rambanks[bank, addr - 0xA000]
             self.cartridge.rambanks[bank, addr - 0xA000] = OPCODE_BRK
         elif 0xC000 <= addr <= 0xE000:
             opcode = self.ram.internal_ram0[addr - 0xC000]
             self.ram.internal_ram0[addr - 0xC000] = OPCODE_BRK
         else:
-            raise Exception("Unsupported breakpoint address. If this a mistake, reach out to the developers")
+            raise PyBoyOutOfBoundsException(
+                "Unsupported breakpoint address. If this a mistake, reach out to the developers"
+            )
 
         self.breakpoints[(bank, addr)] = opcode
 
