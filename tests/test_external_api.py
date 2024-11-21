@@ -14,7 +14,7 @@ from PIL import ImageChops
 
 from pyboy import PyBoy
 from pyboy.api.tile import Tile
-from pyboy.utils import IntIOWrapper, PyBoyException, WindowEvent
+from pyboy.utils import IntIOWrapper, PyBoyAssertException, PyBoyException, PyBoyOutOfBoundsException, WindowEvent
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
 
@@ -117,19 +117,19 @@ def test_faulty_state(default_rom):
     a = IntIOWrapper(io.BytesIO(b"abcd"))
     a.seek(0)
     a.write(0xFF)
-    # Cython causes OverflowError, PyPy causes AssertionError
-    with pytest.raises((OverflowError, AssertionError)):
+    # Cython causes OverflowError, PyPy causes PyBoyOutOfBoundsException
+    with pytest.raises((OverflowError, PyBoyOutOfBoundsException)):
         a.write(0x100)
     a.seek(0)
     assert a.read() == 0xFF
     assert a.read() == ord("b")
     assert a.read() == ord("c")
     assert a.read() == ord("d")
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyAssertException):
         a.read()
 
     b = io.BytesIO(b"\x001234")
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyAssertException):
         pyboy.load_state(b)
     b = io.BytesIO(b"991234")
     with pytest.raises(PyBoyException):
@@ -145,7 +145,7 @@ def test_tiles(default_rom):
     tile = pyboy.tilemap_window.tile(0, 0)
     assert isinstance(tile, Tile)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(PyBoyOutOfBoundsException):
         pyboy.get_tile(384)  # Not CGB
     tile = pyboy.get_tile(1)
     image = tile.image()
