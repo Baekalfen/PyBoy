@@ -7,7 +7,7 @@ import array
 
 import pyboy
 from pyboy.plugins.base_plugin import PyBoyPlugin
-from pyboy.utils import IntIOInterface, WindowEvent
+from pyboy.utils import IntIOInterface, PyBoyException, WindowEvent
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -123,14 +123,14 @@ class FixedAllocBuffers(IntIOInterface):
 
     def read(self):
         if self.section_pointer == self.section_head:
-            raise Exception("Read beyond section")
+            raise PyBoyException("Read beyond section")
         data = self.buffer[self.section_pointer]
         self.section_pointer = (self.section_pointer + 1) % FIXED_BUFFER_SIZE
         return data
 
     def commit(self):
         if not self.section_head == self.section_pointer:
-            raise Exception("Section wasn't read to finish. This would likely be unintentional")
+            raise PyBoyException("Section wasn't read to finish. This would likely be unintentional")
         self.sections = self.sections[: self.current_section + 1]
 
     def seek_frame(self, frames):

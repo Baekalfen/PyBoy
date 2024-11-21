@@ -31,7 +31,7 @@ def test_misc(default_rom):
 
 def test_rtc_lock_no_rtc(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    with pytest.raises(Exception):
+    with pytest.raises(PyBoyException):
         pyboy.rtc_lock_experimental(True)
 
 
@@ -171,9 +171,9 @@ def test_tiles(default_rom):
     for identifier in range(384):
         t = pyboy.get_tile(identifier)
         assert t.tile_identifier == identifier
-    with pytest.raises(Exception):
+    with pytest.raises(PyBoyException):
         pyboy.get_tile(-1)
-    with pytest.raises(Exception):
+    with pytest.raises(PyBoyException):
         pyboy.get_tile(385)
 
     pyboy.stop(save=False)
@@ -211,9 +211,9 @@ def test_tiles_cgb(any_rom_cgb):
     for identifier in range(384):
         t = pyboy.get_tile(identifier)
         assert t.tile_identifier == identifier
-    with pytest.raises(Exception):
+    with pytest.raises(PyBoyException):
         pyboy.get_tile(-1)
-    with pytest.raises(Exception):
+    with pytest.raises(PyBoyException):
         pyboy.get_tile(385)
 
     pyboy.stop(save=False)
