@@ -20,7 +20,14 @@ from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
-from pyboy.utils import IntIOWrapper, PyBoyException, PyBoyInvalidInputException, WindowEvent, cython_compiled
+from pyboy.utils import (
+    IntIOWrapper,
+    PyBoyException,
+    PyBoyInvalidInputException,
+    PyBoyOutOfBoundsException,
+    WindowEvent,
+    cython_compiled,
+)
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
@@ -771,7 +778,8 @@ class PyBoy:
         """
 
         if delay:
-            assert delay > 0, "Only positive integers allowed"
+            if not (delay > 0):
+                raise PyBoyInvalidInputException("Only positive integers allowed")
             heapq.heappush(self.queued_input, (self.frame_count + delay, event))
         else:
             self.events.append(WindowEvent(event))
@@ -1540,13 +1548,17 @@ class PyBoyMemoryView:
         bank = 0
         if is_bank:
             bank, addr = addr
-            assert isinstance(bank, int), "Bank has to be integer. Slicing is not supported."
+            if not (isinstance(bank, int)):
+                raise PyBoyInvalidInputException("Bank has to be integer. Slicing is not supported.")
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            assert start >= 0 or stop >= 0, "Start address has to come before end address"
-            assert start >= 0, "Start address required"
-            assert stop >= 0, "End address required"
+            if not (start >= 0 or stop >= 0):
+                raise PyBoyInvalidInputException("Start address has to come before end address")
+            if not (start >= 0):
+                raise PyBoyInvalidInputException("Start address required")
+            if not (stop >= 0):
+                raise PyBoyInvalidInputException("End address required")
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
         else:
             return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
@@ -1560,10 +1572,13 @@ class PyBoyMemoryView:
                     start -= 0x4000
                     stop -= 0x4000
                 # Cartridge ROM Banks
-                assert stop < 0x4000, "Out of bounds for reading ROM bank"
+                if not (stop < 0x4000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading ROM bank")
                 if bank == -1:
-                    assert start <= 0xFF, "Start address out of range for bootrom"
-                    assert stop <= 0xFF, "Start address out of range for bootrom"
+                    if not (start <= 0xFF):
+                        raise PyBoyOutOfBoundsException("Start address out of range for bootrom")
+                    if not (stop <= 0xFF):
+                        raise PyBoyOutOfBoundsException("Start address out of range for bootrom")
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
@@ -1572,7 +1587,8 @@ class PyBoyMemoryView:
                     else:
                         return self.mb.bootrom.bootrom[start]
                 else:
-                    assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+                    if not (bank <= self.mb.cartridge.external_rom_count):
+                        raise PyBoyOutOfBoundsException("ROM Bank out of range")
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
@@ -1584,9 +1600,12 @@ class PyBoyMemoryView:
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb or (bank == 0), "Selecting bank of VRAM is only supported for CGB mode"
-                assert stop < 0x2000, "Out of bounds for reading VRAM bank"
-                assert bank <= 1, "VRAM Bank out of range"
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException("Selecting bank of VRAM is only supported for CGB mode")
+                if not (stop < 0x2000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading VRAM bank")
+                if not (bank <= 1):
+                    raise PyBoyOutOfBoundsException("VRAM Bank out of range")
 
                 if bank == 0:
                     if not is_single:
@@ -1608,8 +1627,10 @@ class PyBoyMemoryView:
                 start -= 0xA000
                 stop -= 0xA000
                 # Cartridge RAM banks
-                assert stop < 0x2000, "Out of bounds for reading cartridge RAM bank"
-                assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
+                if not (stop < 0x2000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading cartridge RAM bank")
+                if not (bank <= self.mb.cartridge.external_ram_count):
+                    raise PyBoyOutOfBoundsException("ROM Bank out of range")
                 if not is_single:
                     mem_slice = [0] * slice_length
                     for x in range(start, stop, step):
@@ -1624,9 +1645,12 @@ class PyBoyMemoryView:
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb or (bank == 0), "Selecting bank of WRAM is only supported for CGB mode"
-                assert stop < 0x1000, "Out of bounds for reading VRAM bank"
-                assert bank <= 7, "WRAM Bank out of range"
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException("Selecting bank of WRAM is only supported for CGB mode")
+                if not (stop < 0x1000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading VRAM bank")
+                if not (bank <= 7):
+                    raise PyBoyOutOfBoundsException("WRAM Bank out of range")
                 if not is_single:
                     mem_slice = [0] * slice_length
                     for x in range(start, stop, step):
@@ -1635,7 +1659,7 @@ class PyBoyMemoryView:
                 else:
                     return self.mb.ram.internal_ram0[start + bank * 0x1000]
             else:
-                assert None, "Invalid memory address for bank"
+                raise PyBoyInvalidInputException("Invalid memory address for bank")
         elif not is_single:
             # Reading slice of memory space
             mem_slice = [0] * slice_length
@@ -1651,12 +1675,15 @@ class PyBoyMemoryView:
         bank = 0
         if is_bank:
             bank, addr = addr
-            assert isinstance(bank, int), "Bank has to be integer. Slicing is not supported."
+            if not (isinstance(bank, int)):
+                raise PyBoyInvalidInputException("Bank has to be integer. Slicing is not supported.")
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            assert start >= 0, "Start address required"
-            assert stop >= 0, "End address required"
+            if not (start >= 0):
+                raise PyBoyInvalidInputException("Start address required")
+            if not (stop >= 0):
+                raise PyBoyInvalidInputException("End address required")
             self.__setitem(start, stop, step, v, bank, is_single, is_bank)
         else:
             self.__setitem(addr, 0, 0, v, bank, is_single, is_bank)
@@ -1684,16 +1711,21 @@ class PyBoyMemoryView:
                     start -= 0x4000
                     stop -= 0x4000
                 # Cartridge ROM Banks
-                assert stop <= 0x4000, "Out of bounds for reading ROM bank"
-                assert bank <= self.mb.cartridge.external_rom_count, "ROM Bank out of range"
+                if not (stop <= 0x4000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading ROM bank")
+                if not (bank <= self.mb.cartridge.external_rom_count):
+                    raise PyBoyOutOfBoundsException("ROM Bank out of range")
 
                 if bank == -1:
-                    assert start <= 0xFF, "Start address out of range for bootrom"
-                    assert stop <= 0x100, "Start address out of range for bootrom"
+                    if not (start <= 0xFF):
+                        raise PyBoyOutOfBoundsException("Start address out of range for bootrom")
+                    if not (stop <= 0x100):
+                        raise PyBoyOutOfBoundsException("Start address out of range for bootrom")
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop - start) // step == len(v), "slice does not match length of data"
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.bootrom.bootrom[x] = next(_v)
@@ -1706,7 +1738,8 @@ class PyBoyMemoryView:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop - start) // step == len(v), "slice does not match length of data"
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.cartridge.overrideitem(bank, x, next(_v))
@@ -1720,15 +1753,19 @@ class PyBoyMemoryView:
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb or (bank == 0), "Selecting bank of VRAM is only supported for CGB mode"
-                assert stop <= 0x2000, "Out of bounds for reading VRAM bank"
-                assert bank <= 1, "VRAM Bank out of range"
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException("Selecting bank of VRAM is only supported for CGB mode")
+                if not (stop <= 0x2000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading VRAM bank")
+                if not (bank <= 1):
+                    raise PyBoyOutOfBoundsException("VRAM Bank out of range")
 
                 if bank == 0:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop - start) // step == len(v), "slice does not match length of data"
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM0[x] = next(_v)
@@ -1741,7 +1778,8 @@ class PyBoyMemoryView:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop - start) // step == len(v), "slice does not match length of data"
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM1[x] = next(_v)
@@ -1754,12 +1792,15 @@ class PyBoyMemoryView:
                 start -= 0xA000
                 stop -= 0xA000
                 # Cartridge RAM banks
-                assert stop <= 0x2000, "Out of bounds for reading cartridge RAM bank"
-                assert bank <= self.mb.cartridge.external_ram_count, "ROM Bank out of range"
+                if not (stop <= 0x2000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading cartridge RAM bank")
+                if not (bank <= self.mb.cartridge.external_ram_count):
+                    raise PyBoyOutOfBoundsException("ROM Bank out of range")
                 if not is_single:
                     # Writing slice of memory space
                     if hasattr(v, "__iter__"):
-                        assert (stop - start) // step == len(v), "slice does not match length of data"
+                        if not ((stop - start) // step == len(v)):
+                            raise PyBoyInvalidInputException("slice does not match length of data")
                         _v = iter(v)
                         for x in range(start, stop, step):
                             self.mb.cartridge.rambanks[bank, x] = next(_v)
@@ -1775,13 +1816,17 @@ class PyBoyMemoryView:
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb or (bank == 0), "Selecting bank of WRAM is only supported for CGB mode"
-                assert stop <= 0x1000, "Out of bounds for reading VRAM bank"
-                assert bank <= 7, "WRAM Bank out of range"
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException("Selecting bank of WRAM is only supported for CGB mode")
+                if not (stop <= 0x1000):
+                    raise PyBoyOutOfBoundsException("Out of bounds for reading VRAM bank")
+                if not (bank <= 7):
+                    raise PyBoyOutOfBoundsException("WRAM Bank out of range")
                 if not is_single:
                     # Writing slice of memory space
                     if hasattr(v, "__iter__"):
-                        assert (stop - start) // step == len(v), "slice does not match length of data"
+                        if not ((stop - start) // step == len(v)):
+                            raise PyBoyInvalidInputException("slice does not match length of data")
                         _v = iter(v)
                         for x in range(start, stop, step):
                             self.mb.ram.internal_ram0[x + bank * 0x1000] = next(_v)
@@ -1791,11 +1836,12 @@ class PyBoyMemoryView:
                 else:
                     self.mb.ram.internal_ram0[start + bank * 0x1000] = v
             else:
-                assert None, "Invalid memory address for bank"
+                raise PyBoyInvalidInputException("Invalid memory address for bank")
         elif not is_single:
             # Writing slice of memory space
             if hasattr(v, "__iter__"):
-                assert (stop - start) // step == len(v), "slice does not match length of data"
+                if not ((stop - start) // step == len(v)):
+                    raise PyBoyInvalidInputException("slice does not match length of data")
                 _v = iter(v)
                 for x in range(start, stop, step):
                     self.mb.setitem(x, next(_v))

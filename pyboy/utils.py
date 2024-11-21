@@ -12,6 +12,10 @@ class PyBoyException(Exception):
     pass
 
 
+class PyBoyAssertException(PyBoyException):
+    pass
+
+
 class PyBoyOutOfBoundsException(PyBoyException):
     pass
 
@@ -129,14 +133,16 @@ class IntIOWrapper(IntIOInterface):
         self.buffer = buf
 
     def write(self, byte):
-        assert isinstance(byte, int)
-        assert 0 <= byte <= 0xFF
+        if not isinstance(byte, int):
+            raise PyBoyAssertException("Input has to be of type 'int'")
+        if not (0 <= byte <= 0xFF):
+            raise PyBoyOutOfBoundsException("Input has to be positive and less than or equal to 255")
         return self.buffer.write(byte.to_bytes(1, "little"))
 
     def read(self):
-        # assert count == 1, "Only a count of 1 is supported"
         data = self.buffer.read(1)
-        assert len(data) == 1, "No data"
+        if not (len(data) == 1):
+            raise PyBoyAssertException("No data")
         return ord(data)
 
     def seek(self, pos):
