@@ -2,9 +2,9 @@
 <img src="extras/README/pyboy.svg" width="480">
 </p>
 
-__If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/Zrf2nyH).__
+__If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/wUbag3KNqQ).__
 
-[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/Zrf2nyH)
+[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/wUbag3KNqQ)
 
 <!---
 Generate GIF with the layout and captions
@@ -98,7 +98,7 @@ If you are looking to make a bot or AI, then these resources are a good place to
    * [Example: Tetris](https://github.com/Baekalfen/PyBoy/wiki/Example-Tetris)
    * [Example: Super Mario Land](https://github.com/Baekalfen/PyBoy/wiki/Example-Super-Mario-Land)
    * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples)
- * [Discord](https://discord.gg/Zrf2nyH)
+ * [Discord](https://discord.gg/wUbag3KNqQ)
 
 
 When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
@@ -186,9 +186,9 @@ do 3160 hours of gameplay in 1 hour.
 
 Contributing
 ============
-Any contribution is appreciated. The currently known problems are tracked in [the Issues tab](https://github.com/Baekalfen/PyBoy/issues). Feel free to take a swing at any one of them. If you have something original in mind, come and [discuss it on on Discord](https://discord.gg/Zrf2nyH).
+Any contribution is appreciated. The currently known problems are tracked in [the Issues tab](https://github.com/Baekalfen/PyBoy/issues). Feel free to take a swing at any one of them. If you have something original in mind, come and [discuss it on on Discord](https://discord.gg/wUbag3KNqQ).
 
-[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/Zrf2nyH)
+[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/wUbag3KNqQ)
 
 For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list in the Wiki](https://github.com/Baekalfen/PyBoy/wiki/Student-Projects):
 * Hacking games
