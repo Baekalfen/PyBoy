@@ -3,9 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import io
 
 import pytest
 
+from pyboy import PyBoy
 from pyboy.core.lcd import LCD, Renderer
 from pyboy.utils import color_code, cython_compiled
 
@@ -17,6 +19,35 @@ cgb_color_palette = (
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
 )
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_saveload_cycles(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    print(pyboy.mb.lcd._cycles_to_frame, pyboy.mb.lcd.clock, pyboy.mb.lcd.clock_target)
+
+    for _ in range(120):
+        pyboy.tick(1, False)
+        print(pyboy.mb.lcd._cycles_to_frame, pyboy.mb.lcd.clock, pyboy.mb.lcd.clock_target)
+        assert (
+            pyboy.mb.lcd._cycles_to_frame >= 0
+        )  # Could be slightly negative? >= -20? (longest opcode 24, minus 4 as the minimum missing before 0)
+        assert pyboy.mb.lcd.clock >= 0
+        assert pyboy.mb.lcd.clock_target >= 0
+
+    saved_state = io.BytesIO()
+    pyboy.save_state(saved_state)
+
+    pyboy.tick(10, False)  # Any unaccounted cycles will be offset
+
+    # Load
+    saved_state.seek(0)
+    pyboy.load_state(saved_state)
+
+    assert pyboy.mb.lcd._cycles_to_frame >= 0
+    assert pyboy.mb.lcd.clock >= 0
+    assert pyboy.mb.lcd.clock_target >= 0
+
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 class TestLCD:
