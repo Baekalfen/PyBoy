@@ -15,14 +15,37 @@ logger = pyboy.logging.get_logger(__name__)
 try:
     import OpenGL.GLUT.freeglut
     from OpenGL.GL import (
-        GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, glClear, glDrawPixels, glFlush,
-        glPixelZoom
+        GL_COLOR_BUFFER_BIT,
+        GL_DEPTH_BUFFER_BIT,
+        GL_RGBA,
+        GL_UNSIGNED_INT_8_8_8_8_REV,
+        glClear,
+        glDrawPixels,
+        glFlush,
+        glPixelZoom,
     )
     from OpenGL.GLUT import (
-        GLUT_KEY_DOWN, GLUT_KEY_LEFT, GLUT_KEY_RIGHT, GLUT_KEY_UP, GLUT_RGBA, GLUT_SINGLE, glutCreateWindow,
-        glutDestroyWindow, glutDisplayFunc, glutGetWindow, glutInit, glutInitDisplayMode, glutInitWindowSize,
-        glutKeyboardFunc, glutKeyboardUpFunc, glutReshapeFunc, glutSetWindowTitle, glutSpecialFunc, glutSpecialUpFunc
+        GLUT_KEY_DOWN,
+        GLUT_KEY_LEFT,
+        GLUT_KEY_RIGHT,
+        GLUT_KEY_UP,
+        GLUT_RGBA,
+        GLUT_SINGLE,
+        glutCreateWindow,
+        glutDestroyWindow,
+        glutDisplayFunc,
+        glutGetWindow,
+        glutInit,
+        glutInitDisplayMode,
+        glutInitWindowSize,
+        glutKeyboardFunc,
+        glutKeyboardUpFunc,
+        glutReshapeFunc,
+        glutSetWindowTitle,
+        glutSpecialFunc,
+        glutSpecialUpFunc,
     )
+
     opengl_enabled = True
 except (ImportError, AttributeError):
     opengl_enabled = False
@@ -145,9 +168,9 @@ class WindowOpenGL(PyBoyWindowPlugin):
                 if bool(OpenGL.GLUT.freeglut.glutMainLoopEvent):
                     return True
                 else:
-                    logger.error("Failed to load \"PyOpenGL\". OpenGL window disabled")
+                    logger.error('Failed to load "PyOpenGL". OpenGL window disabled')
             else:
-                logger.error("Missing depencency \"PyOpenGL\". OpenGL window disabled")
+                logger.error('Missing depencency "PyOpenGL". OpenGL window disabled')
         return False
 
     def post_tick(self):
@@ -156,5 +179,5 @@ class WindowOpenGL(PyBoyWindowPlugin):
 
     def stop(self):
         glutDestroyWindow(glutGetWindow())
-        for _ in range(10): # At least 2 to close
+        for _ in range(10):  # At least 2 to close
             OpenGL.GLUT.freeglut.glutMainLoopEvent()

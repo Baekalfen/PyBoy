@@ -33,11 +33,13 @@ def verify_screen_image_np(pyboy, saved_array):
     match = np.all(np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3) == pyboy.screen.ndarray)
     if not match and os.environ.get("TEST_VERBOSE_IMAGES"):
         from PIL import Image
+
         original = Image.frombytes("RGB", (160, 144), np.frombuffer(saved_array, dtype=np.uint8).reshape(144, 160, 3))
         original.show()
         new = pyboy.screen.image.convert("RGB")
         new.show()
         import PIL.ImageChops
+
         PIL.ImageChops.difference(original, new).show()
 
     assert match
@@ -107,9 +109,12 @@ def replay(
     # Filters out the blacklisted events
     recorded_input = list(
         map(
-            lambda event_tuple:
-            (event_tuple[0], list(filter(lambda x: x not in event_filter, event_tuple[1])), event_tuple[2]),
-            recorded_input
+            lambda event_tuple: (
+                event_tuple[0],
+                list(filter(lambda x: x not in event_filter, event_tuple[1])),
+                event_tuple[2],
+            ),
+            recorded_input,
         )
     )
 
@@ -126,7 +131,7 @@ def replay(
             for e in next_event[1]:
                 pyboy.send_input(e)
 
-                if verify and not overwrite and frame_count > 1: # First frame or two might be wrong on old statefiles
+                if verify and not overwrite and frame_count > 1:  # First frame or two might be wrong on old statefiles
                     verify_screen_image_np(pyboy, base64.b64decode(next_event[2].encode("utf8")))
             next_event = recorded_input.pop(0)
         frame_count += 1

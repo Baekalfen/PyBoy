@@ -52,22 +52,22 @@ def test_memoryscanner_boundary(default_rom):
     # Byte width of 1
     pyboy.memory[0xC000:0xD000] = 0
     addresses = pyboy.memory_scanner.scan_memory(0, start_addr=0xC000, end_addr=0xC0FF, byte_width=1)
-    assert len(addresses) == 0x100 # We scan all two-byte addresses from 0, 1, 2, ..., n (including n)
+    assert len(addresses) == 0x100  # We scan all two-byte addresses from 0, 1, 2, ..., n (including n)
 
     pyboy.memory[0xC0FF] = 1
     addresses = pyboy.memory_scanner.scan_memory(0, start_addr=0xC000, end_addr=0xC0FF, byte_width=1)
-    assert len(addresses) == 0x100 - 1 # Where one value is now not 0
+    assert len(addresses) == 0x100 - 1  # Where one value is now not 0
 
     # Byte width of 2
     pyboy.memory[0xC000:0xD000] = 0
     addresses = pyboy.memory_scanner.scan_memory(0, start_addr=0xC000, end_addr=0xC0FF, byte_width=2)
-    assert len(
-        addresses
-    ) == 0x100 - 1 # We scan all two-byte addresses from 0, 1, 2, ..., n-1 (excluding n, as we can't go to n+1 for the second byte)
+    assert (
+        len(addresses) == 0x100 - 1
+    )  # We scan all two-byte addresses from 0, 1, 2, ..., n-1 (excluding n, as we can't go to n+1 for the second byte)
 
     pyboy.memory[0xC0FF] = 1
     addresses = pyboy.memory_scanner.scan_memory(0, start_addr=0xC000, end_addr=0xC0FF, byte_width=2)
-    assert len(addresses) == 0x100 - 1 - 1 # Where one value is now not 0, and we cannot get n+1
+    assert len(addresses) == 0x100 - 1 - 1  # Where one value is now not 0, and we cannot get n+1
 
 
 SCORE_100 = 0xD072

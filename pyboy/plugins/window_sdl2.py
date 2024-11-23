@@ -3,9 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import time
 
-from pyboy import utils
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.utils import WindowEvent, WindowEventMouse
 
@@ -120,7 +118,7 @@ def sdl2_event_pump(events):
                     WindowEvent._INTERNAL_MOUSE,
                     window_id=event.motion.windowID,
                     mouse_scroll_x=event.wheel.x,
-                    mouse_scroll_y=event.wheel.y
+                    mouse_scroll_y=event.wheel.y,
                 )
             )
         elif event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONUP:
@@ -137,7 +135,7 @@ def sdl2_event_pump(events):
                     window_id=event.motion.windowID,
                     mouse_x=event.motion.x,
                     mouse_y=event.motion.y,
-                    mouse_button=mouse_button
+                    mouse_button=mouse_button,
                 )
             )
         elif event.type == sdl2.SDL_CONTROLLERDEVICEADDED:
@@ -160,8 +158,12 @@ class WindowSDL2(PyBoyWindowPlugin):
         sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
 
         self._window = sdl2.SDL_CreateWindow(
-            b"PyBoy", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, self._scaledresolution[0],
-            self._scaledresolution[1], sdl2.SDL_WINDOW_RESIZABLE
+            b"PyBoy",
+            sdl2.SDL_WINDOWPOS_CENTERED,
+            sdl2.SDL_WINDOWPOS_CENTERED,
+            self._scaledresolution[0],
+            self._scaledresolution[1],
+            sdl2.SDL_WINDOW_RESIZABLE,
         )
 
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
@@ -197,7 +199,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         if self.pyboy_argv.get("window") in ("SDL2", None):
             if not sdl2:
                 logger.error("Failed to import sdl2, needed for sdl2 window")
-                return False # Disable, or raise exception?
+                return False  # Disable, or raise exception?
             else:
                 return True
         else:
@@ -205,6 +207,6 @@ class WindowSDL2(PyBoyWindowPlugin):
 
     def stop(self):
         sdl2.SDL_DestroyWindow(self._window)
-        for _ in range(10): # At least 2 to close
+        for _ in range(10):  # At least 2 to close
             get_events()
         sdl2.SDL_Quit()

@@ -78,7 +78,7 @@ class CPU:
     def dump_state(self, sym_label):
         opcode_data = [
             self.mb.getitem(self.mb.cpu.PC + n) for n in range(3)
-        ] # Max 3 length, then we don't need to backtrack
+        ]  # Max 3 length, then we don't need to backtrack
 
         opcode = opcode_data[0]
         opcode_length = opcodes.OPCODE_LENGTHS[opcode]
@@ -123,14 +123,14 @@ class CPU:
             self.PC += 1
             self.PC &= 0xFFFF
         elif self.halted:
-            self.cycles += cycles_target # TODO: Number of cycles for a HALT in effect?
+            self.cycles += cycles_target  # TODO: Number of cycles for a HALT in effect?
         self.interrupt_queued = False
 
         self.bail = False
         while self.cycles < _target:
             # TODO: cpu-stuck check for blargg tests?
             self.fetch_and_execute()
-            if self.bail: # Possible cycles-target changes
+            if self.bail:  # Possible cycles-target changes
                 break
 
     def check_interrupts(self):
@@ -142,7 +142,7 @@ class CPU:
         if raised_and_enabled:
             # Clear interrupt flag
             if self.halted:
-                self.PC += 1 # Escape HALT on return
+                self.PC += 1  # Escape HALT on return
                 self.PC &= 0xFFFF
 
             if self.interrupt_master_enable:
@@ -163,9 +163,9 @@ class CPU:
         return False
 
     def handle_interrupt(self, flag, addr):
-        self.interrupts_flag_register ^= flag # Remove flag
-        self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8) # High
-        self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF) # Low
+        self.interrupts_flag_register ^= flag  # Remove flag
+        self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8)  # High
+        self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF)  # Low
         self.SP -= 2
         self.SP &= 0xFFFF
 
@@ -174,8 +174,8 @@ class CPU:
 
     def fetch_and_execute(self):
         opcode = self.mb.getitem(self.PC)
-        if opcode == 0xCB: # Extension code
+        if opcode == 0xCB:  # Extension code
             opcode = self.mb.getitem(self.PC + 1)
-            opcode += 0x100 # Internally shifting look-up table
+            opcode += 0x100  # Internally shifting look-up table
 
         return opcodes.execute_opcode(self, opcode)

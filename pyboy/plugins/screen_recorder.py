@@ -65,7 +65,7 @@ class ScreenRecorder(PyBoyPlugin):
                 loop=0,
                 optimize=True,
                 append_images=self.frames[1:],
-                duration=int(round(1000 / fps, -1))
+                duration=int(round(1000 / fps, -1)),
             )
 
             logger.info("Screen recording saved in {}".format(path))
@@ -75,6 +75,6 @@ class ScreenRecorder(PyBoyPlugin):
 
     def enabled(self):
         if Image is None:
-            logger.warning("%s: Missing dependency \"Pillow\". Recording disabled", __name__)
+            logger.warning('%s: Missing dependency "Pillow". Recording disabled', __name__)
             return False
         return True

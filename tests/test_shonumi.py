@@ -14,10 +14,13 @@ import pytest
 from pyboy import PyBoy
 
 
-@pytest.mark.parametrize("rom", [
-    "LYC.gb",
-    "sprite_suite.gb",
-])
+@pytest.mark.parametrize(
+    "rom",
+    [
+        "LYC.gb",
+        "sprite_suite.gb",
+    ],
+)
 def test_shonumi(rom, shonumi_dir):
     pyboy = PyBoy(shonumi_dir + rom, window="null", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
     pyboy.set_emulation_speed(0)

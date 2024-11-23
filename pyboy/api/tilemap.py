@@ -137,7 +137,7 @@ class TileMap:
             raise IndexError("column is out of bounds. Value of 0 to 31 is allowed")
         if not 0 <= row < 32:
             raise IndexError("row is out of bounds. Value of 0 to 31 is allowed")
-        return self.map_offset + 32*row + column
+        return self.map_offset + 32 * row + column
 
     def tile(self, column, row):
         """
@@ -191,11 +191,14 @@ class TileMap:
         self.use_tile_objects(False)
 
         return_data = (
-            f"Tile Map Address: {self.map_offset:#0{6}x}, " +
-            f"Signed Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n" +
-            " "*5 + "".join([f"{i: <4}" for i in range(32)]) + "\n" +
-            "_"*(adjust*32+2) + "\n" +
-            "\n".join(
+            f"Tile Map Address: {self.map_offset:#0{6}x}, "
+            + f"Signed Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n"
+            + " " * 5
+            + "".join([f"{i: <4}" for i in range(32)])
+            + "\n"
+            + "_" * (adjust * 32 + 2)
+            + "\n"
+            + "\n".join(
                 [
                     f"{i: <3}| " + "".join([str(tile).ljust(adjust) for tile in line])
                     for i, line in enumerate(self[:, :])

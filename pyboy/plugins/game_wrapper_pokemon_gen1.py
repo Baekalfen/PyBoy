@@ -10,8 +10,6 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
-from pyboy import utils
-from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -24,6 +22,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
+
     cartridge_title = None
 
     def __init__(self, *args, **kwargs):
@@ -38,7 +37,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self._sprite_cache_invalid = True
 
         scanline_parameters = self.pyboy.screen.tilemap_position_list
-        WX = scanline_parameters[0][2]
+        # WX = scanline_parameters[0][2]
         WY = scanline_parameters[0][3]
         self.use_background(WY != 0)
 
@@ -63,7 +62,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
             else:
                 walkable_tiles_indexes.append(tile_index + 0x100)
         screen_tiles = self._get_screen_background_tilemap()
-        bottom_left_screen_tiles = screen_tiles[1:1 + screen_tiles.shape[0]:2, ::2]
+        bottom_left_screen_tiles = screen_tiles[1 : 1 + screen_tiles.shape[0] : 2, ::2]
         walkable_matrix = np.isin(bottom_left_screen_tiles, walkable_tiles_indexes).astype(np.uint8)
         return walkable_matrix
 
@@ -74,8 +73,8 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         _collision = self._get_screen_walkable_matrix()
         for i in range(height // 2):
             for j in range(width // 2):
-                game_area[i * 2][j * 2:j*2 + 2] = _collision[i][j]
-                game_area[i*2 + 1][j * 2:j*2 + 2] = _collision[i][j]
+                game_area[i * 2][j * 2 : j * 2 + 2] = _collision[i][j]
+                game_area[i * 2 + 1][j * 2 : j * 2 + 2] = _collision[i][j]
         return game_area
 
     def __repr__(self):

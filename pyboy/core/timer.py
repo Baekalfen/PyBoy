@@ -19,8 +19,8 @@
 
 class Timer:
     def __init__(self):
-        self.DIV = 0 # Always showing self.counter with mode 3 divider
-        self.TIMA = 0 # Can be set from RAM 0xFF05
+        self.DIV = 0  # Always showing self.counter with mode 3 divider
+        self.TIMA = 0  # Can be set from RAM 0xFF05
         self.DIV_counter = 0
         self.TIMA_counter = 0
         self.TMA = 0
@@ -42,11 +42,11 @@ class Timer:
         self.last_cycles = _cycles
 
         self.DIV_counter += cycles
-        self.DIV += (self.DIV_counter >> 8) # Add overflown bits to DIV
-        self.DIV_counter &= 0xFF # Remove the overflown bits
+        self.DIV += self.DIV_counter >> 8  # Add overflown bits to DIV
+        self.DIV_counter &= 0xFF  # Remove the overflown bits
         self.DIV &= 0xFF
 
-        if self.TAC & 0b100 == 0: # Check if timer is not enabled
+        if self.TAC & 0b100 == 0:  # Check if timer is not enabled
             self._cycles_to_interrupt = 1 << 16
             return False
 
@@ -55,7 +55,7 @@ class Timer:
 
         ret = False
         while self.TIMA_counter >= (1 << divider):
-            self.TIMA_counter -= (1 << divider) # Keeps possible remainder
+            self.TIMA_counter -= 1 << divider  # Keeps possible remainder
             self.TIMA += 1
 
             if self.TIMA > 0xFF:

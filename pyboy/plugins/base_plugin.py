@@ -81,9 +81,9 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         self.renderer = self.mb.lcd.renderer
 
     def frame_limiter(self, speed):
-        self._ftime += int((1.0 / (60.0*speed)) * 1_000_000_000)
+        self._ftime += int((1.0 / (60.0 * speed)) * 1_000_000_000)
         now = time.perf_counter_ns()
-        if (self._ftime > now):
+        if self._ftime > now:
             delay = (self._ftime - now) // 1_000_000
             time.sleep(delay / 1000)
         else:
@@ -106,6 +106,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
     """
     Example mapping of 1:1
     """
+
     def __init__(self, *args, game_area_section=(0, 0, 32, 32), game_area_follow_scxy=False, **kwargs):
         super().__init__(*args, **kwargs)
         if not utils.cython_compiled:
@@ -130,7 +131,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         """
         self._set_dimensions(*game_area_section, game_area_follow_scxy)
         width, height = self.shape
-        self._cached_game_area_tiles_raw = array("B", [0xFF] * (width*height*4))
+        self._cached_game_area_tiles_raw = array("B", [0xFF] * (width * height * 4))
         self._cached_game_area_tiles = memoryview(self._cached_game_area_tiles_raw).cast("I", shape=(width, height))
 
         self.saved_state = io.BytesIO()
@@ -214,11 +215,11 @@ class PyBoyGameWrapper(PyBoyPlugin):
             if self.game_area_follow_scxy:
                 self._cached_game_area_tiles = np.ndarray(shape=(height, width), dtype=np.uint32)
                 for y in range(height):
-                    SCX = scanline_parameters[(yy+y) * 8][0] // 8
-                    SCY = scanline_parameters[(yy+y) * 8][1] // 8
+                    SCX = scanline_parameters[(yy + y) * 8][0] // 8
+                    SCY = scanline_parameters[(yy + y) * 8][1] // 8
                     for x in range(width):
-                        _x = (xx+x+SCX) % 32
-                        _y = (yy+y+SCY) % 32
+                        _x = (xx + x + SCX) % 32
+                        _y = (yy + y + SCY) % 32
                         if self.tilemap_use_background:
                             self._cached_game_area_tiles[y, x] = self.tilemap_background.tile_identifier(_x, _y)
                         else:
@@ -226,11 +227,11 @@ class PyBoyGameWrapper(PyBoyPlugin):
             else:
                 if self.tilemap_use_background:
                     self._cached_game_area_tiles = np.asarray(
-                        self.tilemap_background[xx:xx + width, yy:yy + height], dtype=np.uint32
+                        self.tilemap_background[xx : xx + width, yy : yy + height], dtype=np.uint32
                     )
                 else:
                     self._cached_game_area_tiles = np.asarray(
-                        self.tilemap_window[xx:xx + width, yy:yy + height], dtype=np.uint32
+                        self.tilemap_window[xx : xx + width, yy : yy + height], dtype=np.uint32
                     )
             self._tile_cache_invalid = False
         return self._cached_game_area_tiles
@@ -257,8 +258,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
             _x = (s.x // 8) - xx
             _y = (s.y // 8) - yy
             if 0 <= _y < height and 0 <= _x < width:
-                tiles_matrix[_y][_x] = self.mapping[
-                    s.tile_identifier] + self.sprite_offset # Adding offset to try to seperate sprites from tiles
+                tiles_matrix[_y][_x] = (
+                    self.mapping[s.tile_identifier] + self.sprite_offset
+                )  # Adding offset to try to seperate sprites from tiles
         return tiles_matrix
 
     def game_area_mapping(self, mapping, sprite_offest):
@@ -272,9 +274,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def _sum_number_on_screen(self, x, y, length, blank_tile_identifier, tile_identifier_offset):
         number = 0
-        for i, x in enumerate(self.tilemap_background[x:x + length, y]):
+        for i, x in enumerate(self.tilemap_background[x : x + length, y]):
             if x != blank_tile_identifier:
-                number += (x+tile_identifier_offset) * (10**(length - 1 - i))
+                number += (x + tile_identifier_offset) * (10 ** (length - 1 - i))
         return number
 
     def __repr__(self):
@@ -283,23 +285,14 @@ class PyBoyGameWrapper(PyBoyPlugin):
         sprites = "\n".join([str(s) for s in self._sprites_on_screen()])
 
         tiles_header = (
-            " "*4 + "".join([f"{i: >4}" for i in range(self.shape[0])]) + "\n" +
-            "_"*(adjust*self.shape[0]+4)
+            " " * 4 + "".join([f"{i: >4}" for i in range(self.shape[0])]) + "\n" + "_" * (adjust * self.shape[0] + 4)
         )
 
         tiles = "\n".join(
-                [
-                    (f"{i: <3}|" + "".join([str(tile).rjust(adjust) for tile in line])).strip()
-                    for i, line in enumerate(self.game_area())
-                ]
-            )
-
-        return (
-            "Sprites on screen:\n" +
-            sprites +
-            "\n" +
-            "Tiles on screen:\n" +
-            tiles_header +
-            "\n" +
-            tiles
+            [
+                (f"{i: <3}|" + "".join([str(tile).rjust(adjust) for tile in line])).strip()
+                for i, line in enumerate(self.game_area())
+            ]
         )
+
+        return "Sprites on screen:\n" + sprites + "\n" + "Tiles on screen:\n" + tiles_header + "\n" + tiles

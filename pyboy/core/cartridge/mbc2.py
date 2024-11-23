@@ -15,8 +15,8 @@ class MBC2(BaseMBC):
     def setitem(self, address, value):
         if 0x0000 <= address < 0x4000:
             value &= 0b00001111
-            if ((address & 0x100) == 0):
-                self.rambank_enabled = (value == 0b00001010)
+            if (address & 0x100) == 0:
+                self.rambank_enabled = value == 0b00001010
             else:
                 if value == 0:
                     value = 1
