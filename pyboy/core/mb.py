@@ -308,6 +308,8 @@ class Motherboard:
                     4,
                     min(
                         self.timer._cycles_to_interrupt,
+                        # https://gbdev.io/pandocs/STAT.html
+                        # STAT (_cycles_to_interrupt) vs. VBLANK interrupt (_cycles_to_interrupt) vs. end frame (_cycles_to_frame)
                         self.lcd._cycles_to_interrupt,  # TODO: Be more agreesive. Only if actual interrupt enabled.
                         self.lcd._cycles_to_frame,
                         self.sound._cycles_to_interrupt,  # TODO: Not implemented
