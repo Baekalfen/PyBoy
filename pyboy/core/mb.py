@@ -14,7 +14,7 @@ OPCODE_BRK = 0xDB
 
 logger = pyboy.logging.get_logger(__name__)
 
-MAX_CYCLES = 1 << 16
+MAX_CYCLES = 1 << 31
 
 
 class Motherboard:
@@ -288,13 +288,8 @@ class Motherboard:
     # Coordinator
     #
 
-    def processing_frame(self):
-        b = not self.lcd.frame_done
-        self.lcd.frame_done = False  # Clear vblank flag for next iteration
-        return b
-
     def tick(self):
-        while self.processing_frame():
+        while not self.lcd.frame_done:
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
@@ -338,6 +333,8 @@ class Motherboard:
 
             if self.breakpoint_singlestep:
                 break
+
+        self.lcd.frame_done = False
 
         # TODO: Move SDL2 sync to plugin
         self.sound.sync()
@@ -397,9 +394,9 @@ class Motherboard:
                 self.sound.tick(self.cpu.cycles, self.double_speed)
                 return self.sound.get(i - 0xFF10)
             elif i == 0xFF40:
-                return self.lcd.get_lcdc()
+                return self.lcd._LCDC.value
             elif i == 0xFF41:
-                return self.lcd.get_stat()
+                return self.lcd._STAT.value
             elif i == 0xFF42:
                 return self.lcd.SCY
             elif i == 0xFF43:
@@ -524,13 +521,14 @@ class Motherboard:
             elif i == 0xFF40:
                 self.lcd.set_lcdc(value)
             elif i == 0xFF41:
-                self.lcd.set_stat(value)
+                self.lcd._STAT.set(value)
             elif i == 0xFF42:
                 self.lcd.SCY = value
             elif i == 0xFF43:
                 self.lcd.SCX = value
             elif i == 0xFF44:
-                self.lcd.LY = value
+                # LCDC Read-only
+                return
             elif i == 0xFF45:
                 self.lcd.LYC = value
             elif i == 0xFF46:
