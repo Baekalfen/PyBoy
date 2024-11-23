@@ -3,13 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import platform
-
-
 from pyboy import PyBoy
-
-py_version = platform.python_version()[:3]
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_mario_basics(supermarioland_rom):
