@@ -10,8 +10,8 @@ import sys
 file_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, file_path + "/../..")
 
-from pyboy import PyBoy # isort:skip
-from pyboy.utils import WindowEvent # isort:skip
+from pyboy import PyBoy  # isort:skip
+from pyboy.utils import WindowEvent  # isort:skip
 
 # Check if the ROM is given through argv
 if len(sys.argv) > 1:
@@ -33,7 +33,7 @@ assert kirby.lives_left == 4
 assert kirby.health == 6
 
 pyboy.button_press("right")
-for _ in range(280): # Walk for 280 ticks
+for _ in range(280):  # Walk for 280 ticks
     # We tick one frame at a time to still render the screen for every step
     pyboy.tick(1, True)
 

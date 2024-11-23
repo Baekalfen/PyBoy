@@ -49,7 +49,7 @@ def locate_roms(path=default_rom_path):
         lambda x: path + x,
         filter(
             lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"), os.listdir(path)
-        )
+        ),
     )
 
     entries = {}
@@ -282,6 +282,7 @@ def git_tetris_ai():
         return None
 
     import venv
+
     path = Path("tetris")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -292,9 +293,12 @@ def git_tetris_ai():
         _venv_path = Path(".venv")
         _venv.create(path / _venv_path)
         # _venv_context = _venv.ensure_directories(path / Path('.venv'))
-        assert os.system(
-            f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install numpy torch matplotlib graphviz'
-        ) == 0
+        assert (
+            os.system(
+                f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install numpy torch matplotlib graphviz'
+            )
+            == 0
+        )
         # Overwrite PyBoy with local version
         assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
     return str(path)
@@ -306,6 +310,7 @@ def git_pyboy_rl():
         return None
 
     import venv
+
     path = Path("PyBoy-RL")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -328,6 +333,7 @@ def git_pokemon_red_experiments():
         return None
 
     import venv
+
     path = Path("PokemonRedExperiments")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -338,9 +344,10 @@ def git_pokemon_red_experiments():
         _venv_path = Path(".venv")
         _venv.create(path / _venv_path)
         # _venv_context = _venv.ensure_directories(path / Path('.venv'))
-        assert os.system(
-            f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r baselines/requirements.txt'
-        ) == 0
+        assert (
+            os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r baselines/requirements.txt')
+            == 0
+        )
         # Overwrite PyBoy with local version
         assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
     return str(path)
