@@ -134,7 +134,6 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         return self._game_over
 
     def __repr__(self):
-        # yapf: disable
         return (
             f"Kirby Dream Land:\n" +
             f"Score: {self.score}\n" +
@@ -142,4 +141,3 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
             f"Lives left: {self.lives_left}\n" +
             super().__repr__()
         )
-        # yapf: enable
