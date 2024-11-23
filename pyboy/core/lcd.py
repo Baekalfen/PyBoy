@@ -392,7 +392,7 @@ class LCDCRegister:
         self.value = value
 
         # No need to convert to bool. Any non-zero value is true.
-        # yapf: disable
+        # fmt: off
         self.lcd_enable           = value & (1 << 7)
         self.windowmap_select     = value & (1 << 6)
         self.window_enable        = value & (1 << 5)
@@ -402,7 +402,7 @@ class LCDCRegister:
         self.sprite_enable        = value & (1 << 1)
         self.background_enable    = value & (1 << 0)
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
-        # yapf: enable
+        # fmt: on
 
         # All VRAM addresses are offset by 0x8000
         # Following addresses are 0x9800 and 0x9C00

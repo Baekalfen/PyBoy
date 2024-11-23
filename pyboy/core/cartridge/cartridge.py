@@ -64,7 +64,7 @@ def load_romfile(filename):
     return memoryview(romdata).cast("B", shape=(len(romdata) // banksize, banksize))
 
 
-# yapf: disable
+# fmt: off
 CARTRIDGE_TABLE = {
     #      MBC     , SRAM  , Battery , RTC
     0x00: (ROMOnly , False , False   , False) , # ROM
@@ -87,7 +87,7 @@ CARTRIDGE_TABLE = {
     0x1D: (MBC5    , True  , False   , False) , # MBC5+RUMBLE+RAM
     0x1E: (MBC5    , True  , True    , False) , # MBC5+RUMBLE+RAM+BATT
 }
-# yapf: enable
+# fmt: on
 
 # Number of external 8KB banks in the cartridge. Taken from Pan Docs
 EXTERNAL_RAM_TABLE = {

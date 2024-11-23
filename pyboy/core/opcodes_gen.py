@@ -303,7 +303,6 @@ class OpcodeData:
         self.is16bit = bit16
 
         # TODO: There's no need for this to be so explicit
-        # yapf: disable
         self.functionhandlers = {
             "NOP"    : self.NOP,
             "HALT"   : self.HALT,
@@ -351,7 +350,6 @@ class OpcodeData:
             "RES"    : self.RES,
             "SET"    : self.SET,
         }
-        # yapf: enable
 
     def createfunction(self):
         text = self.functionhandlers[self.name.split()[0]]()

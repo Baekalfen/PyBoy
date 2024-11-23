@@ -284,7 +284,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def __repr__(self):
         adjust = 4
-        # yapf: disable
 
         sprites = "\n".join([str(s) for s in self._sprites_on_screen()])
 
@@ -309,4 +308,3 @@ class PyBoyGameWrapper(PyBoyPlugin):
             "\n" +
             tiles
         )
-        # yapf: enable

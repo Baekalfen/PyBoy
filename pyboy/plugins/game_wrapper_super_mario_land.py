@@ -478,7 +478,6 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         return self.pyboy.memory[0xC0A4] == 0x39
 
     def __repr__(self):
-        # yapf: disable
         return (
             f"Super Mario Land: World {'-'.join([str(i) for i in self.world])}\n"
             f"Coins: {self.coins}\n" +
@@ -488,4 +487,3 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             f"Level progress: {self.level_progress}\n" +
             super().__repr__()
         )
-        # yapf: enable

@@ -22,7 +22,7 @@ logger = pyboy.logging.get_logger(__name__)
 ROWS, COLS = 144, 160
 
 # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
-# yapf: disable
+# fmt: off
 if sdl2:
     KEY_DOWN = {
         sdl2.SDLK_UP        : WindowEvent.PRESS_ARROW_UP,
@@ -95,7 +95,7 @@ else:
     KEY_UP = {}
     CONTROLLER_DOWN = {}
     CONTROLLER_UP = {}
-# yapf: enable
+# fmt: on
 
 
 def sdl2_event_pump(events):
