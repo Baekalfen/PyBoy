@@ -201,7 +201,7 @@ class LCD:
                 self.renderer.blank_screen(self)
 
         self._cycles_to_interrupt = self.clock_target - self.clock
-        self._cycles_to_frame = self.clock - FRAME_CYCLES
+        self._cycles_to_frame = FRAME_CYCLES - self.clock
         return interrupt_flag
 
     def save_state(self, f):
@@ -294,9 +294,9 @@ class LCD:
 
             if state_version >= 12:
                 self.last_cycles = f.read_64bit()
-            self.clock = f.read_64bit()
-            self.clock_target = f.read_64bit()
-            self._cycles_to_frame = self.clock - FRAME_CYCLES
+            self.clock = f.read_64bit() % FRAME_CYCLES
+            self.clock_target = f.read_64bit() % FRAME_CYCLES
+            self._cycles_to_frame = FRAME_CYCLES - self.clock
             self.next_stat_mode = f.read()
 
             if self.cgb:
