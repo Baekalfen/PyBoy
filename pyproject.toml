@@ -63,22 +63,14 @@ packages = ["pyboy", "pyboy.api", "pyboy.core", "pyboy.core.cartridge", "pyboy.l
     "**/font.txt"
 ]
 
-[tool.isort]
-line_length = 120
+[tool.ruff]
+line-length = 120
 
-[tool.yapf]
-based_on_style = "facebook"
-spaces_before_comment = 1
-column_limit = 120
-align_closing_bracket_with_visual_indent = false
-dedent_closing_brackets = true
-coalesce_brackets = true
-indent_closing_brackets = false
-indent_dictionary_value = true
-join_multiple_lines = false
-split_penalty_after_opening_bracket = 0
-split_penalty_before_if_expr = 30
-split_penalty_for_added_line_split = 30
-split_before_logical_operator = false
-split_before_bitwise_operator = false
-arithmetic_precedence_indication = true
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = false
+
+[tool.ruff.lint]
+# select = ["E", "F"]
+# select = ["E4", "E7", "E9", "F"]
+ignore = ["E741", "E731", "E712"]

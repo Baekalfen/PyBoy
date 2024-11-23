@@ -147,6 +147,7 @@ def doctest_fixtures(doctest_namespace, default_rom, default_rom_cgb, supermario
         return PyBoy(filename, *args, window="null", **kwargs)
 
     # We mock get_sprite_by_tile_identifier as default_rom doesn't use sprites
+    # fmt: off
     with mock.patch("pyboy.PyBoy.get_sprite_by_tile_identifier", return_value=[[0, 2, 4], []]), \
         mock.patch("pyboy.PyBoy.game_area_collision", return_value=np.zeros(shape=(10,9), dtype=np.uint32)), \
         mock.patch("pyboy.PyBoy.game_area", return_value=tetris_game_area), \
@@ -154,6 +155,7 @@ def doctest_fixtures(doctest_namespace, default_rom, default_rom_cgb, supermario
         mock.patch("pyboy.PyBoy.stop", return_value=None), \
         mock.patch("pyboy.PyBoy.rtc_lock_experimental", return_value=None), \
         mock.patch("PIL.Image.Image.show", return_value=None):
+        # fmt: on
 
         pyboy.set_emulation_speed(0)
         pyboy.tick(10) # Just a few to get the logo up

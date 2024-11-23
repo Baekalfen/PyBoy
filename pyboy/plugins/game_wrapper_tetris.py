@@ -250,8 +250,6 @@ class GameWrapperTetris(PyBoyGameWrapper):
         return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over
 
     def __repr__(self):
-        adjust = 4
-        # yapf: disable
         return (
             f"Tetris:\n" +
             f"Score: {self.score}\n" +
@@ -259,4 +257,3 @@ class GameWrapperTetris(PyBoyGameWrapper):
             f"Lines: {self.lines}\n" +
             super().__repr__()
         )
-        # yapf: enable

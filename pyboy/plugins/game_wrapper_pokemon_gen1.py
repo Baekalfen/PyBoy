@@ -79,9 +79,4 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return game_area
 
     def __repr__(self):
-        # yapf: disable
-        return (
-            f"Pokemon Gen 1:\n" +
-            super().__repr__()
-        )
-        # yapf: enable
+        return "Pokemon Gen 1:\n" + super().__repr__()

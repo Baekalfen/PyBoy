@@ -189,7 +189,7 @@ class TileMap:
         adjust = 4
         _use_tile_objects = self._use_tile_objects
         self.use_tile_objects(False)
-        # yapf: disable
+
         return_data = (
             f"Tile Map Address: {self.map_offset:#0{6}x}, " +
             f"Signed Tile Data: {'Yes' if self.signed_tile_data else 'No'}\n" +
@@ -202,7 +202,6 @@ class TileMap:
                 ]
             )
         )
-        # yapf: enable
         self.use_tile_objects(_use_tile_objects)
         return return_data
 
