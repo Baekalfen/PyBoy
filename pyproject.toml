@@ -63,6 +63,18 @@ packages = ["pyboy", "pyboy.api", "pyboy.core", "pyboy.core.cartridge", "pyboy.l
     "**/font.txt"
 ]
 
+[tool.pytest.ini_options]
+addopts = "--benchmark-disable"
+testpaths = [
+    "tests",
+    "pyboy",
+]
+filterwarnings = [
+    "error",
+    "ignore:Using SDL2 binaries from pysdl2-dll.*",
+    "ignore:pysdl2-dll is installed as source-only.*"
+]
+
 [tool.ruff]
 line-length = 120
 
