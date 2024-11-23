@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: [3.8, 3.9, "3.10", 3.11, 3.12, 3.13]
+        python-version: [3.9, "3.10", 3.11, 3.12, 3.13]
 
     steps:
     - uses: actions/checkout@v3
@@ -129,7 +129,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['cp38-cp38', 'cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312', 'cp313-cp313']
+        python-version: ['cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312', 'cp313-cp313']
         manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
 
     steps:
@@ -177,10 +177,10 @@ jobs:
           echo "Dists built:"
           ls -lah dist/
 
-    - name: Set up Python 3.8 (just for PyPi upload)
+    - name: Set up Python 3.11 (just for PyPi upload)
       uses: actions/setup-python@v3
       with:
-        python-version: 3.8
+        python-version: 3.11
     - name: Upload wheel
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }}
       run: |
