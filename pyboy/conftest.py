@@ -18,6 +18,8 @@ import pytest
 from cryptography.fernet import Fernet
 from filelock import FileLock
 
+from pyboy.utils import cython_compiled
+
 from . import PyBoy
 
 np.set_printoptions(threshold=2**32)
@@ -147,6 +149,9 @@ def doctest_fixtures(doctest_namespace, default_rom, default_rom_cgb, supermario
             filename = default_rom
         kwargs.pop("window", None)
         return PyBoy(filename, *args, window="null", **kwargs)
+
+    if cython_compiled:
+        pytest.skip("Cannot mock components if compiled with Cython")
 
     # We mock get_sprite_by_tile_identifier as default_rom doesn't use sprites
     # fmt: off
