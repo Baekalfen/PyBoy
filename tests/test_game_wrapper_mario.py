@@ -3,18 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os
-import platform
-import sys
-
-import numpy as np
-import pytest
-
 from pyboy import PyBoy
-from pyboy.utils import WindowEvent
-
-py_version = platform.python_version()[:3]
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_mario_basics(supermarioland_rom):
