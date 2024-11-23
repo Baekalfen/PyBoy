@@ -81,9 +81,6 @@ class LCD:
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.renderer = Renderer(False)
 
-    def get_lcdc(self):
-        return self._LCDC.value
-
     def set_lcdc(self, value):
         self._LCDC.set(value)
 
@@ -98,12 +95,6 @@ class LCD:
             self._STAT.set_mode(0)
             self.next_stat_mode = 2
             self.LY = 0
-
-    def get_stat(self):
-        return self._STAT.value
-
-    def set_stat(self, value):
-        self._STAT.set(value)
 
     def cycles_to_mode0(self):
         multiplier = 2 if self.double_speed else 1
@@ -272,7 +263,7 @@ class LCD:
         self.OBP1.set(f.read())
 
         if state_version >= 5:
-            self.set_stat(f.read())
+            self._STAT.set(f.read())
             self.LY = f.read()
             self.LYC = f.read()
 
