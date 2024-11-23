@@ -59,7 +59,7 @@ class LCD:
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
         self.last_cycles = 0
         self._cycles_to_interrupt = 0
-        self._cycles_to_frame = FRAME_CYCLES
+        self._cycles_to_frame = FRAME_CYCLES - self.clock
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -82,6 +82,7 @@ class LCD:
             self.renderer = Renderer(False)
 
     def set_lcdc(self, value):
+        _lcd_enable = self._LCDC.lcd_enable
         self._LCDC.set(value)
 
         if not self._LCDC.lcd_enable:
@@ -92,9 +93,21 @@ class LCD:
             # 3. I believe the LCD enters Mode 0.
             self.clock = 0
             self.clock_target = FRAME_CYCLES  # Doesn't render anything for the first frame
+            self._cycles_to_frame = FRAME_CYCLES - self.clock
             self._STAT.set_mode(0)
             self.next_stat_mode = 2
             self.LY = 0
+        elif (not _lcd_enable) and self._LCDC.lcd_enable:  # When switching from disabled to enabled
+            # Registers are actually supposed to be frozen when LCD is disabled. This is mimicked by reseting them again
+            self.clock = 0
+            self.clock_target = 0  # This will trigger an immediate update in tick()
+            self._cycles_to_frame = 0
+            self._STAT.set_mode(0)
+            self.next_stat_mode = 2
+            self.LY = 153  # 0???
+
+            # Close current frame immediately to get clock and clock_target aligned with FRAME_CYCLES
+            self.frame_done = True
 
     def cycles_to_mode0(self):
         multiplier = 2 if self.double_speed else 1
@@ -233,7 +246,6 @@ class LCD:
             f.write(self._scanlineparameters[y][3])
             f.write(self._scanlineparameters[y][4])
 
-        # CGB
         f.write(self.cgb)
         f.write(self.double_speed)
         f.write(self.frame_done)
@@ -283,7 +295,6 @@ class LCD:
                 if state_version > 3:
                     self._scanlineparameters[y][4] = f.read()
 
-        # CGB
         if state_version >= 8:
             _cgb = f.read()
             if self.cgb and not _cgb:
