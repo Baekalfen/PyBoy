@@ -55,9 +55,6 @@ cdef class LCD:
     cdef uint8_t tick(self, int) noexcept nogil
 
     cdef void set_lcdc(self, uint8_t) noexcept nogil
-    cdef uint8_t get_lcdc(self) noexcept nogil
-    cdef void set_stat(self, uint8_t) noexcept nogil
-    cdef uint8_t get_stat(self) noexcept nogil
 
     cdef int64_t cycles_to_mode0(self) noexcept nogil
 

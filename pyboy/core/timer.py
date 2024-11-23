@@ -47,7 +47,7 @@ class Timer:
         self.DIV &= 0xFF
 
         if self.TAC & 0b100 == 0:  # Check if timer is not enabled
-            self._cycles_to_interrupt = 1 << 16
+            self._cycles_to_interrupt = 1 << 31
             return False
 
         self.TIMA_counter += cycles

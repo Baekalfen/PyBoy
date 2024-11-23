@@ -59,7 +59,7 @@ class Sound:
         self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
 
         self.last_cycles = 0
-        self._cycles_to_interrupt = 1 << 16
+        self._cycles_to_interrupt = 1 << 31
         self.clock = 0
 
         self.poweron = True
