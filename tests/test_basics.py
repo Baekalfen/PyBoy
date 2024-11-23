@@ -6,7 +6,6 @@ import base64
 import hashlib
 import os
 import os.path
-import platform
 import sys
 from io import BytesIO
 from pathlib import Path
@@ -19,8 +18,6 @@ from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
 from pyboy.utils import WindowEvent
-
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_log_level_none(default_rom, capsys):
