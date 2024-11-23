@@ -3,15 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import platform
-
 import numpy as np
 
 from pyboy import PyBoy
 from pyboy.api.constants import LCDC_OFFSET, OAM_OFFSET, VRAM_OFFSET
-
-py_version = platform.python_version()[:3]
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_game_wrapper_basics(default_rom):
