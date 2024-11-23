@@ -12,7 +12,6 @@ import os
 import re
 import time
 
-import cython
 import numpy as np
 
 from pyboy.api.gameshark import GameShark
@@ -24,6 +23,21 @@ from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
 from pyboy.utils import (IntIOWrapper, PyBoyException, PyBoyInvalidInputException, PyBoyOutOfBoundsException,
                          WindowEvent, cython_compiled)
+
+try:
+    import cython
+except ImportError:
+    class _mock:
+        def __enter__(self):
+            pass
+
+        def __exit__(self, *args):
+            pass
+    exec("""
+class cython:
+    gil = _mock()
+    nogil = _mock()
+""", globals(), locals())
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
