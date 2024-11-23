@@ -673,8 +673,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self._update_pokedex()
 
     def __repr__(self):
-        adjust = 4
-        # yapf: disable
+        # fmt: off
         return (
             "PokemonPinball:\n" +
             "Score: " + str(self.score) + "\n" +
@@ -709,7 +708,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             "Mewtwo stages completed: " + str(self.mewtwo_stages_completed) + " / Visited: " + str(self.mewtwo_stages_visited) + "\n" +
             "Seel stages completed: " + str(self.seel_stages_completed) + " / Visited: " + str(self.seel_stages_visited) + "\n"
         )
-        # yapf: enable
+        # fmt: on
 
     def _add_hooks(self):
         def completed_evolution(context):

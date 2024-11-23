@@ -6,7 +6,6 @@
 The core module of the emulator
 """
 
-# yapf: disable
 import heapq
 import os
 import re
@@ -42,7 +41,6 @@ class cython:
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
 
-# yapf: enable
 logger = get_logger(__name__)
 
 SPF = 1 / 60. # inverse FPS (frame-per-second)
