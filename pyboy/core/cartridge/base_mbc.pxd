@@ -15,6 +15,8 @@ cdef Logger logger
 cdef class BaseMBC:
     cdef str filename
     cdef str gamename
+    cdef srt gametype
+    cdef str gameregion
     cdef uint8_t[:, :] rombanks
     cdef uint8_t[:,:] rambanks
     cdef uint8_t carttype
@@ -37,6 +39,8 @@ cdef class BaseMBC:
     cdef void load_ram(self, IntIOInterface) noexcept
     cdef void init_rambanks(self, uint8_t) noexcept
     cdef str getgamename(self, uint8_t[:,:]) noexcept
+    cdef str getgametype(self, uint8_t[:,:]) noexcept
+    cdef str getgameregion(self, uint8_t[:,:]) noexcept
 
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
