@@ -71,7 +71,8 @@ testpaths = [
 ]
 filterwarnings = [
     "error",
-    "ignore:Using SDL2 binaries from pysdl2-dll.*"
+    "ignore:Using SDL2 binaries from pysdl2-dll.*",
+    "ignore:pysdl2-dll is installed as source-only.*"
 ]
 
 [tool.ruff]
