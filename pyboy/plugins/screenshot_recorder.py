@@ -30,7 +30,6 @@ class ScreenshotRecorder(PyBoyPlugin):
         return events
 
     def save(self, path=None):
-
         if path is None:
             directory = os.path.join(os.path.curdir, "screenshots")
             if not os.path.exists(directory):
@@ -43,6 +42,6 @@ class ScreenshotRecorder(PyBoyPlugin):
 
     def enabled(self):
         if Image is None:
-            logger.warning("%s: Missing dependency \"Pillow\". Screenshots disabled", __name__)
+            logger.warning('%s: Missing dependency "Pillow". Screenshots disabled', __name__)
             return False
         return True

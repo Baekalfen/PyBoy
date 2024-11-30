@@ -7,8 +7,8 @@ from array import array
 from random import getrandbits
 
 # MEMORY SIZES
-INTERNAL_RAM0 = 8 * 1024 # 8KiB
-INTERNAL_RAM0_CGB = INTERNAL_RAM0 * 4 # 8 banks of 4KiB
+INTERNAL_RAM0 = 8 * 1024  # 8KiB
+INTERNAL_RAM0_CGB = INTERNAL_RAM0 * 4  # 8 banks of 4KiB
 NON_IO_INTERNAL_RAM0 = 0x60
 IO_PORTS = 0x4C
 NON_IO_INTERNAL_RAM1 = 0x34

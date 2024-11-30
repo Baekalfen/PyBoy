@@ -16,7 +16,7 @@ cdef class RAM:
     @cython.locals(n=int)
     cdef void save_state(self, IntIOInterface) noexcept
     @cython.locals(n=int)
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
     cdef uint8_t[:] internal_ram0 # Dynamic size for DMG/CGB
     cdef uint8_t[0x60] non_io_internal_ram0

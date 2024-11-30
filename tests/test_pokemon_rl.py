@@ -116,9 +116,8 @@ if __name__ == '__main__':
 
 
 @pytest.mark.skipif(
-    True or \
-    os.path.isfile("extras/README/8.gif") or platform.system() == "Windows",
-    reason="This test takes too long for regular use"
+    True or os.path.isfile("extras/README/8.gif") or platform.system() == "Windows",
+    reason="This test takes too long for regular use",
 )
 def test_pokemon_rl(git_pokemon_red_experiments, pokemon_red_rom):
     script_py = "record_gif.py"
@@ -127,7 +126,10 @@ def test_pokemon_rl(git_pokemon_red_experiments, pokemon_red_rom):
 
     root_path = Path("../")
     assert os.system(f'rm -rf {Path(git_pokemon_red_experiments) / "recordings"}') == 0
-    assert os.system(
-        f'cp "{pokemon_red_rom}" {git_pokemon_red_experiments}/PokemonRed.gb && cd {git_pokemon_red_experiments}/baselines && . {"../" / Path(".venv") / "bin" / "activate"} && python {script_py}'
-    ) == 0
+    assert (
+        os.system(
+            f'cp "{pokemon_red_rom}" {git_pokemon_red_experiments}/PokemonRed.gb && cd {git_pokemon_red_experiments}/baselines && . {"../" / Path(".venv") / "bin" / "activate"} && python {script_py}'
+        )
+        == 0
+    )
     assert os.system(f'mv {Path(git_pokemon_red_experiments) / "recordings" / "SUPER*"} {Path("README/8.gif")}') == 0

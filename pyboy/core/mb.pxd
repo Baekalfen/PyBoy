@@ -56,8 +56,6 @@ cdef class Motherboard:
     cdef inline tuple[int64_t, int64_t, int64_t] breakpoint_reached(self) noexcept with gil
     cdef inline void breakpoint_reinject(self) noexcept nogil
 
-    cdef inline bint processing_frame(self) noexcept nogil
-
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
     @cython.locals(cycles=int64_t, cycles_target=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
@@ -89,4 +87,4 @@ cdef class HDMA:
     cdef int tick(self, Motherboard) noexcept nogil
 
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1

@@ -3,18 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os
-import platform
-import sys
-
-import numpy as np
-import pytest
-
 from pyboy import PyBoy
-from pyboy.utils import WindowEvent
-
-py_version = platform.python_version()[:3]
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_mario_basics(supermarioland_rom):
@@ -58,7 +47,7 @@ def test_mario_game_over(supermarioland_rom):
     mario.start_game()
     mario.set_lives_left(0)
     pyboy.button_press("right")
-    for _ in range(500): # Enough to game over correctly, and not long enough it'll work without setting the lives
+    for _ in range(500):  # Enough to game over correctly, and not long enough it'll work without setting the lives
         pyboy.tick(1, False)
         if mario.game_over():
             break

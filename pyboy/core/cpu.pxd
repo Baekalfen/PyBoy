@@ -4,7 +4,7 @@
 #
 
 
-from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, int64_t
+from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t
 
 cimport pyboy.core.mb
 from pyboy.utils cimport IntIOInterface
@@ -41,7 +41,7 @@ cdef class CPU:
     @cython.locals(_cycles0=int64_t)
     cdef int tick(self, int64_t) noexcept nogil
     cdef void save_state(self, IntIOInterface) noexcept
-    cdef void load_state(self, IntIOInterface, int) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
     # Only char (8-bit) needed, but I'm not sure all intermittent
     # results do not overflow
@@ -53,4 +53,4 @@ cdef class CPU:
 
     cdef pyboy.core.mb.Motherboard mb
 
-    cdef dump_state(self, str) noexcept with gil
+    cdef str dump_state(self, str) with gil

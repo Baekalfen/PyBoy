@@ -41,8 +41,9 @@ class MBC1(BaseMBC):
             self.rombank_selected_low = (self.bank_select_register2 << 5) % self.external_rom_count
         else:
             self.rombank_selected_low = 0
-        self.rombank_selected = ((self.bank_select_register2 << 5) |
-                                 self.bank_select_register1) % self.external_rom_count
+        self.rombank_selected = (
+            (self.bank_select_register2 << 5) | self.bank_select_register1
+        ) % self.external_rom_count
 
     def getitem(self, address):
         if 0xA000 <= address < 0xC000:
