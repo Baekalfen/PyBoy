@@ -112,6 +112,7 @@ class PyBoy:
             * sound (bool): Enable sound emulation and output.
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
             * cgb (bool): Forcing Game Boy Color mode.
+            * gameshark (str): GameShark codes to apply.
             * log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
