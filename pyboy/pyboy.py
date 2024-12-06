@@ -122,6 +122,13 @@ class PyBoy:
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
 
+        ## Plugin kwargs:
+        * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
+        * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
+        * no_input (bool): Disable all user-input (mostly for autonomous testing) [plugin: DisableInput]
+        * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
+        * rewind (bool): Enable rewind function [plugin: Rewind]
+
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
         """
 
