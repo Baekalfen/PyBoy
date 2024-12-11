@@ -84,6 +84,8 @@ class PyBoy:
         cgb=None,
         gameshark=None,
         log_level=defaults["log_level"],
+        color_palette=defaults["color_palette"],
+        cgb_color_palette=defaults["cgb_color_palette"],
         **kwargs,
     ):
         """
@@ -180,8 +182,8 @@ class PyBoy:
         self.mb = Motherboard(
             gamerom,
             bootrom,
-            kwargs["color_palette"],
-            kwargs["cgb_color_palette"],
+            color_palette,
+            cgb_color_palette,
             sound,
             sound_emulated,
             cgb,
