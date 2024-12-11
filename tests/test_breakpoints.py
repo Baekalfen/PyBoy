@@ -66,8 +66,8 @@ def test_register_hook_context(default_rom):
 
     _context = []
 
-    bank = -1 # "ROM bank number" for bootrom
-    addr = 0xFC # Address of last instruction. Expected to execute once.
+    bank = -1  # "ROM bank number" for bootrom
+    addr = 0xFC  # Address of last instruction. Expected to execute once.
     pyboy.hook_register(bank, addr, _inner_callback, _context)
     for _ in range(120):
         pyboy.tick()
@@ -82,8 +82,8 @@ def test_register_hook_print(default_rom, capfd):
     def _inner_callback(context):
         print(context)
 
-    bank = -1 # "ROM bank number" for bootrom
-    addr = 0xFC # Address of last instruction. Expected to execute once.
+    bank = -1  # "ROM bank number" for bootrom
+    addr = 0xFC  # Address of last instruction. Expected to execute once.
     pyboy.hook_register(bank, addr, _inner_callback, "Hello!")
     for _ in range(120):
         pyboy.tick()
@@ -159,8 +159,8 @@ def test_register_hook_label(default_rom):
 
     _context = []
 
-    bank = None # Use None to look up symbol
-    symbol = "Main.move" # Address of last instruction. Expected to execute once.
+    bank = None  # Use None to look up symbol
+    symbol = "Main.move"  # Address of last instruction. Expected to execute once.
     pyboy.hook_register(bank, symbol, _inner_callback, _context)
     for _ in range(120):
         pyboy.tick()
@@ -177,8 +177,8 @@ def test_register_hook_context2(default_rom):
 
     _context = []
 
-    bank = -1 # "ROM bank number" for bootrom
-    addr = 0x06 # Erase routine, expected 8192 times
+    bank = -1  # "ROM bank number" for bootrom
+    addr = 0x06  # Erase routine, expected 8192 times
     pyboy.hook_register(bank, addr, _inner_callback, _context)
 
     for _ in range(120):
@@ -248,7 +248,7 @@ def test_data_hooking_failure(default_rom):
     # NOTE: We are not supposed to register hooks for data
     pyboy2.hook_register(None, "Tilemap", mock.method1, None)
     pyboy2.tick(ticks, True)
-    mock.method1.assert_not_called() # Shouldn't be called, as it's not a function
+    mock.method1.assert_not_called()  # Shouldn't be called, as it's not a function
 
     # Compare screens
     image1 = pyboy1.screen.image.convert("RGB")

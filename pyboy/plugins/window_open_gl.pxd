@@ -4,16 +4,13 @@
 #
 
 import cython
-cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
-
-from pyboy.logging.logging cimport Logger
-from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 
 cimport cython
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t
 
+from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
+
 
 cdef Logger logger
 

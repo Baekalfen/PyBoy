@@ -5,6 +5,7 @@ from pyboy.utils import bcd_to_dec
 
 class StandardComparisonType(Enum):
     """Enumeration for defining types of comparisons that do not require a previous value."""
+
     EXACT = 1
     LESS_THAN = 2
     GREATER_THAN = 3
@@ -14,6 +15,7 @@ class StandardComparisonType(Enum):
 
 class DynamicComparisonType(Enum):
     """Enumeration for defining types of comparisons that require a previous value."""
+
     UNCHANGED = 1
     CHANGED = 2
     INCREASED = 3
@@ -23,12 +25,14 @@ class DynamicComparisonType(Enum):
 
 class ScanMode(Enum):
     """Enumeration for defining scanning modes."""
+
     INT = 1
     BCD = 2
 
 
-class MemoryScanner():
+class MemoryScanner:
     """A class for scanning memory within a given range."""
+
     def __init__(self, pyboy):
         self.pyboy = pyboy
         self._memory_cache = {}
@@ -42,7 +46,7 @@ class MemoryScanner():
         standard_comparison_type=StandardComparisonType.EXACT,
         value_type=ScanMode.INT,
         byte_width=1,
-        byteorder="little"
+        byteorder="little",
     ):
         """
         This function scans a specified range of memory for a target value from the `start_addr` to the `end_addr` (both included).
@@ -69,9 +73,11 @@ class MemoryScanner():
         """
         self._memory_cache = {}
         self._memory_cache_byte_width = byte_width
-        for addr in range(start_addr, end_addr - (byte_width-1) + 1): # Adjust the loop to prevent reading past end_addr
+        for addr in range(
+            start_addr, end_addr - (byte_width - 1) + 1
+        ):  # Adjust the loop to prevent reading past end_addr
             # Read multiple bytes based on byte_width and byteorder
-            value_bytes = self.pyboy.memory[addr:addr + byte_width]
+            value_bytes = self.pyboy.memory[addr : addr + byte_width]
             value = int.from_bytes(value_bytes, byteorder)
 
             if value_type == ScanMode.BCD:
@@ -113,29 +119,29 @@ class MemoryScanner():
         """
         for addr, value in self._memory_cache.copy().items():
             current_value = int.from_bytes(
-                self.pyboy.memory[addr:addr + self._memory_cache_byte_width], byteorder=byteorder
+                self.pyboy.memory[addr : addr + self._memory_cache_byte_width], byteorder=byteorder
             )
-            if (dynamic_comparison_type == DynamicComparisonType.UNCHANGED):
+            if dynamic_comparison_type == DynamicComparisonType.UNCHANGED:
                 if value != current_value:
                     self._memory_cache.pop(addr)
                 else:
                     self._memory_cache[addr] = current_value
-            elif (dynamic_comparison_type == DynamicComparisonType.CHANGED):
+            elif dynamic_comparison_type == DynamicComparisonType.CHANGED:
                 if value == current_value:
                     self._memory_cache.pop(addr)
                 else:
                     self._memory_cache[addr] = current_value
-            elif (dynamic_comparison_type == DynamicComparisonType.INCREASED):
+            elif dynamic_comparison_type == DynamicComparisonType.INCREASED:
                 if value >= current_value:
                     self._memory_cache.pop(addr)
                 else:
                     self._memory_cache[addr] = current_value
-            elif (dynamic_comparison_type == DynamicComparisonType.DECREASED):
+            elif dynamic_comparison_type == DynamicComparisonType.DECREASED:
                 if value <= current_value:
                     self._memory_cache.pop(addr)
                 else:
                     self._memory_cache[addr] = current_value
-            elif (dynamic_comparison_type == DynamicComparisonType.MATCH):
+            elif dynamic_comparison_type == DynamicComparisonType.MATCH:
                 if new_value == None:
                     raise ValueError("new_value must be specified when using DynamicComparisonType.MATCH")
                 if current_value != new_value:

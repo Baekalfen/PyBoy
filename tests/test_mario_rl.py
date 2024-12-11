@@ -184,7 +184,7 @@ env.close()
 
 @pytest.mark.skipif(
     os.path.isfile("extras/README/6.gif") or platform.system() == "Windows",
-    reason="This test takes too long for regular use"
+    reason="This test takes too long for regular use",
 )
 def test_mario_rl(git_pyboy_rl, supermarioland_rom):
     script_py = "record_gif.py"
@@ -193,7 +193,10 @@ def test_mario_rl(git_pyboy_rl, supermarioland_rom):
 
     root_path = Path("../")
     assert os.system(f'rm -rf {Path(git_pyboy_rl) / "recordings"}') == 0
-    assert os.system(
-        f'cd {git_pyboy_rl} && . {Path(".venv") / "bin" / "activate"} && python {script_py} {root_path / supermarioland_rom} Super_Mario_Land'
-    ) == 0
+    assert (
+        os.system(
+            f'cd {git_pyboy_rl} && . {Path(".venv") / "bin" / "activate"} && python {script_py} {root_path / supermarioland_rom} Super_Mario_Land'
+        )
+        == 0
+    )
     assert os.system(f'mv {Path(git_pyboy_rl) / "recordings" / "SUPER*"} {Path("extras/README/6.gif")}') == 0

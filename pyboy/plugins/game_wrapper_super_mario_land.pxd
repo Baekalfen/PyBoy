@@ -24,4 +24,4 @@ cdef class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     cpdef void start_game(self, timer_div=*, world_level=*, unlock_level_select=*) noexcept
     cpdef void reset_game(self, timer_div=*) noexcept
-    cpdef set_lives_left(self, int) noexcept
+    cpdef void set_lives_left(self, int) noexcept

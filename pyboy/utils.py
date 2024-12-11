@@ -7,6 +7,46 @@ __all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
 STATE_VERSION = 12
 
+
+class PyBoyException(Exception):
+    pass
+
+
+class PyBoyAssertException(PyBoyException):
+    pass
+
+
+class PyBoyOutOfBoundsException(PyBoyException):
+    pass
+
+
+class PyBoyNotImplementedException(PyBoyException):
+    pass
+
+
+class PyBoyInvalidInputException(PyBoyException):
+    pass
+
+
+class PyBoyDependencyError(PyBoyException):
+    pass
+
+
+class PillowImportError:
+    def __bool__(self):
+        return False
+
+    def __getattribute__(self, name):
+        raise PyBoyDependencyError("Missing depencency Pillow!")
+
+
+try:
+    from cython import compiled
+
+    cython_compiled = compiled
+except ImportError:
+    cython_compiled = False
+
 ##############################################################
 # Buffer classes
 
@@ -16,7 +56,7 @@ class IntIOInterface:
         pass
 
     def write(self, byte):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def write_64bit(self, value):
         self.write(value & 0xFF)
@@ -62,25 +102,25 @@ class IntIOInterface:
         return int(a | (b << 8))
 
     def read(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def seek(self, pos):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def flush(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def new(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def commit(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def seek_frame(self, _):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
     def tell(self):
-        raise Exception("Not implemented!")
+        raise PyBoyNotImplementedException("Not implemented!")
 
 
 class IntIOWrapper(IntIOInterface):
@@ -88,18 +128,21 @@ class IntIOWrapper(IntIOInterface):
     Wraps a file-like object to allow writing integers to it.
     This allows for higher performance, when writing to a memory map in rewind.
     """
+
     def __init__(self, buf):
         self.buffer = buf
 
     def write(self, byte):
-        assert isinstance(byte, int)
-        assert 0 <= byte <= 0xFF
+        if not isinstance(byte, int):
+            raise PyBoyAssertException("Input has to be of type 'int'")
+        if not (0 <= byte <= 0xFF):
+            raise PyBoyOutOfBoundsException("Input has to be positive and less than or equal to 255")
         return self.buffer.write(byte.to_bytes(1, "little"))
 
     def read(self):
-        # assert count == 1, "Only a count of 1 is supported"
         data = self.buffer.read(1)
-        assert len(data) == 1, "No data"
+        if not (len(data) == 1):
+            raise PyBoyAssertException("No data")
         return ord(data)
 
     def seek(self, pos):
@@ -300,7 +343,7 @@ def dec_to_bcd(value, byte_width=1, byteorder="little"):
     """
     bcd_result = []
     for _ in range(byte_width):
-        tens = ((value%100) // 10) << 4
+        tens = ((value % 100) // 10) << 4
         units = value % 10
         bcd_byte = (tens | units) & 0xFF
         bcd_result.append(bcd_byte)

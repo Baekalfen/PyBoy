@@ -11,6 +11,7 @@ import numpy as np
 
 import pyboy
 from pyboy import utils
+from pyboy.utils import PyBoyOutOfBoundsException
 
 from .constants import LOW_TILEDATA, TILES, TILES_CGB, VRAM_OFFSET
 
@@ -20,12 +21,6 @@ try:
     from PIL import Image
 except ImportError:
     Image = None
-
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
 
 
 class Tile:
@@ -44,11 +39,13 @@ class Tile:
         self.mb = mb
 
         if self.mb.cgb:
-            assert 0 <= identifier < TILES_CGB, "Identifier out of range"
+            if not (0 <= identifier < TILES_CGB):
+                raise PyBoyOutOfBoundsException("Identifier out of range")
         else:
-            assert 0 <= identifier < TILES, "Identifier out of range"
+            if not (0 <= identifier < TILES):
+                raise PyBoyOutOfBoundsException("Identifier out of range")
 
-        self.data_address = LOW_TILEDATA + (16 * (identifier%TILES))
+        self.data_address = LOW_TILEDATA + (16 * (identifier % TILES))
         """
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.api.tile.Tile.image` or one of the
@@ -119,10 +116,10 @@ class Tile:
             Image of tile in 8x8 pixels and RGBA colors.
         """
         if Image is None:
-            logger.error(f"{__name__}: Missing dependency \"Pillow\".")
-            return None
+            logger.error(f'{__name__}: Missing dependency "Pillow".')
+            utils.PillowImportError()._raise_import_error()
 
-        if cythonmode:
+        if utils.cython_compiled:
             return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
         else:
             return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
@@ -182,7 +179,7 @@ class Tile:
             Image data of tile in 8x8 pixels and RGB colors.
         """
         self.data = np.zeros((8, 8), dtype=np.uint32)
-        for k in range(0, 16, 2): # 2 bytes for each line
+        for k in range(0, 16, 2):  # 2 bytes for each line
             if self.vram_bank == 0:
                 byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
                 byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]

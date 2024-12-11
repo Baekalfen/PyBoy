@@ -10,7 +10,7 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
-from pyboy.utils import WindowEvent
+from pyboy.utils import PyBoyInvalidInputException
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -36,8 +36,35 @@ lever = [255]
 
 # Solid blocks
 neutral_blocks = [
-    142, 143, 221, 222, 231, 232, 233, 234, 235, 236, 301, 302, 303, 304, 319, 340, 352, 353, 355, 356, 357, 358, 359,
-    360, 361, 362, 381, 382, 383
+    142,
+    143,
+    221,
+    222,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    301,
+    302,
+    303,
+    304,
+    319,
+    340,
+    352,
+    353,
+    355,
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    362,
+    381,
+    382,
+    383,
 ]
 moving_blocks = [230, 238, 239]
 pushable_blokcs = [128, 130, 354]
@@ -65,8 +92,19 @@ minimal_list = [
     base_scripts + plane + submarine,
     coin + mushroom + heart + star + lever,
     neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
-    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion +
-    spike,
+    goomba
+    + koopa
+    + plant
+    + moth
+    + flying_moth
+    + sphinx
+    + big_sphinx
+    + fist
+    + bill
+    + projectiles
+    + shell
+    + explosion
+    + spike,
 ]
 for i, tile_list in enumerate(minimal_list):
     for tile in tile_list:
@@ -74,9 +112,33 @@ for i, tile_list in enumerate(minimal_list):
 
 mapping_compressed = np.zeros(TILES, dtype=np.uint8)
 compressed_list = [
-    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever, neutral_blocks, moving_blocks,
-    pushable_blokcs, question_block, pipes, goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill,
-    projectiles, shell, explosion, spike
+    base_scripts,
+    plane,
+    submarine,
+    shoots,
+    coin,
+    mushroom,
+    heart,
+    star,
+    lever,
+    neutral_blocks,
+    moving_blocks,
+    pushable_blokcs,
+    question_block,
+    pipes,
+    goomba,
+    koopa,
+    plant,
+    moth,
+    flying_moth,
+    sphinx,
+    big_sphinx,
+    fist,
+    bill,
+    projectiles,
+    shell,
+    explosion,
+    spike,
 ]
 for i, tile_list in enumerate(compressed_list):
     for tile in tile_list:
@@ -86,6 +148,7 @@ np_in_mario_tiles = np.vectorize(lambda x: x in base_scripts)
 
 # Apparantly that address is for lives left
 # https://datacrystal.romhacking.net/wiki/Super_Mario_Land:RAM_map
+ADDR_TIME_LEFT = 0xDA01
 ADDR_LIVES_LEFT = 0xDA15
 ADDR_LIVES_LEFT_DISPLAY = 0x9806
 ADDR_WORLD_LEVEL = 0xFFB4
@@ -143,6 +206,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     ```
 
     """
+
     cartridge_title = "SUPER MARIOLAN"
     mapping_compressed = mapping_compressed
     """
@@ -200,12 +264,13 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
            [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
     ```
     """
+
     def __init__(self, *args, **kwargs):
         self.world = (0, 0)
         """
         Provides the current "world" Mario is in, as a tuple of as two integers (world, level).
 
-        You can force a level change with `set_world_level`.
+        You can force a level change with `GameWrapperSuperMarioLand.set_world_level`.
 
         Example:
         ```python
@@ -230,7 +295,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         """
         self.lives_left = 0
         """
-        The number of lives Mario has left
+        The number of lives Mario has left.
+
+        You can change this with `GameWrapperSuperMarioLand.set_lives_left`.
 
         Example:
         ```python
@@ -254,7 +321,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         """
         self.time_left = 0
         """
-        The number of seconds left to finish the level
+        The number of seconds left to finish the level.
+
+        You can change this with `GameWrapperSuperMarioLand.set_time_left`.
 
         Example:
         ```python
@@ -290,11 +359,48 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.lives_left = _bcm_to_dec(self.pyboy.memory[ADDR_LIVES_LEFT])
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
         self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
+        tens_one = self.pyboy.memory[ADDR_TIME_LEFT]
+        hundreds = self.pyboy.memory[ADDR_TIME_LEFT + 1]
+        self.time_left = hundreds * 100 + (tens_one >> 4) * 10 + (tens_one & 0xF)
 
         level_block = self.pyboy.memory[0xC0AB]
         mario_x = self.pyboy.memory[0xC202]
         scx = self.pyboy.screen.tilemap_position_list[16][0]
-        self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
+        self.level_progress = level_block * 16 + (scx - 7) % 16 + mario_x
+
+    def set_time_left(self, time):
+        """
+        Set the amount of time left to any number between 0 and 999.
+
+        This should only be called when the game has started.
+
+        Example:
+        ```python
+        >>> pyboy = PyBoy(supermarioland_rom)
+        >>> pyboy.game_wrapper.start_game()
+        >>> pyboy.game_wrapper.time_left
+        400
+        >>> pyboy.game_wrapper.set_time_left(123)
+        >>> pyboy.tick(1, False)
+        True
+        >>> pyboy.game_wrapper.time_left
+        123
+        ```
+
+        Args:
+            time (int): The wanted time left
+        """
+        if not self.game_has_started:
+            logger.warning("Please call set_lives_left after starting the game")
+
+        if 0 <= time <= 999:
+            hundreds = time // 100
+            tens = (time - hundreds * 100) // 10
+            ones = time % 10
+            self.pyboy.memory[ADDR_TIME_LEFT] = (tens << 4) | ones
+            self.pyboy.memory[ADDR_TIME_LEFT + 1] = hundreds
+        else:
+            raise PyBoyInvalidInputException(f"{time} is out of bounds. Only values between 0 and 999 allowed.")
 
     def set_lives_left(self, amount):
         """
@@ -328,7 +434,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = tens
             self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = ones
         else:
-            logger.error("%d is out of bounds. Only values between 0 and 99 allowed.", amount)
+            raise PyBoyInvalidInputException(f"{amount} is out of bounds. Only values between 0 and 99 allowed.")
 
     def set_world_level(self, world, level):
         """
@@ -352,8 +458,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             self.pyboy.memory[0, i] = 0x00
 
         patch1 = [
-            0x3E, # LD A, d8
-            (world << 4) | (level & 0x0F), # d8
+            0x3E,  # LD A, d8
+            (world << 4) | (level & 0x0F),  # d8
         ]
 
         for i, byte in enumerate(patch1):
@@ -393,7 +499,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # "START" on the main menu
+            if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]:  # "START" on the main menu
                 break
 
         self.pyboy.tick(3, False)
@@ -401,14 +507,15 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.pyboy.tick(1, False)
 
         while True:
-            if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
+            if (
+                unlock_level_select and self.pyboy.frame_count == 71
+            ):  # An arbitrary frame count, where the write will work
                 self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
                 break
             self.pyboy.tick(1, False)
 
             # "MARIO" in the title bar and 0 is placed at score
-            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
-               self.tilemap_background[5, 1] == 256:
+            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and self.tilemap_background[5, 1] == 256:
                 # Game has started
                 break
 
@@ -441,7 +548,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         In Super Mario Land, this is almost the entire screen, expect for the top part showing the score, lives left
         and so on. These values can be found in the variables of this class.
 
-        In this example using `mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
+        In this example using `GameWrapperSuperMarioLand.mapping_minimal`, Mario is `1`. He is standing on the ground which is `3`:
         ```python
         >>> pyboy = PyBoy(supermarioland_rom)
         >>> pyboy.game_wrapper.start_game()
@@ -478,14 +585,12 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         return self.pyboy.memory[0xC0A4] == 0x39
 
     def __repr__(self):
-        # yapf: disable
         return (
             f"Super Mario Land: World {'-'.join([str(i) for i in self.world])}\n"
-            f"Coins: {self.coins}\n" +
-            f"lives_left: {self.lives_left}\n" +
-            f"Score: {self.score}\n" +
-            f"Time left: {self.time_left}\n" +
-            f"Level progress: {self.level_progress}\n" +
-            super().__repr__()
+            f"Coins: {self.coins}\n"
+            + f"lives_left: {self.lives_left}\n"
+            + f"Score: {self.score}\n"
+            + f"Time left: {self.time_left}\n"
+            + f"Level progress: {self.level_progress}\n"
+            + super().__repr__()
         )
-        # yapf: enable

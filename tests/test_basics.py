@@ -6,10 +6,10 @@ import base64
 import hashlib
 import os
 import os.path
-import platform
 import sys
 from io import BytesIO
 from pathlib import Path
+from unittest import mock
 
 import PIL
 import pytest
@@ -19,8 +19,6 @@ from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
 from pyboy.utils import WindowEvent
-
-is_pypy = platform.python_implementation() == "PyPy"
 
 
 def test_log_level_none(default_rom, capsys):
@@ -35,7 +33,7 @@ def test_log_level_default(default_rom, capsys):
     assert "pyboy.plugins.window_null      ERROR" in captured.out
 
 
-def test_log_level_default(default_rom, capsys):
+def test_log_level_error(default_rom, capsys):
     pyboy = PyBoy(default_rom, window="dummy", log_level="ERROR")
     captured = capsys.readouterr()
     assert "pyboy.plugins.window_null      ERROR" in captured.out
@@ -60,13 +58,13 @@ def test_register_file(default_rom):
     pyboy.register_file.A = 0x1AB
     assert pyboy.register_file.A == 0xAB
     pyboy.register_file.F = 0xFF
-    assert pyboy.register_file.F == 0xF0 # Lower 4 bits always zero on F
+    assert pyboy.register_file.F == 0xF0  # Lower 4 bits always zero on F
     pyboy.register_file.SP = 0x1234
     assert pyboy.register_file.SP == 0x1234
 
     def change_sp(p):
         assert p.register_file.SP == 0xFFFE, "Expected 0xFFFE from boot ROM"
-        p.register_file.SP = 0xFF00 # We should see this at the end too
+        p.register_file.SP = 0xFF00  # We should see this at the end too
 
     registers = [0] * 9
 
@@ -87,6 +85,35 @@ def test_register_file(default_rom):
         pyboy.tick()
 
     assert registers == [0x1, 208, 0, 0, 0, 143, 135, 0xFF00, 0x100]
+
+
+def test_button(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    pyboy.tick(1, False)
+    pyboy.memory[0xFF00] = 0b0010_0000  # Select d-pad (bit-4 low)
+    assert pyboy.memory[0xFF00] == 0b0000_1111  # High means released
+
+    pyboy.button("down")
+    pyboy.tick(1, False)
+    pyboy.memory[0xFF00] = 0b0010_0000
+    assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
+    pyboy.tick(1, False)
+    pyboy.memory[0xFF00] = 0b0010_0000
+    assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
+
+    pyboy.button("down")
+    pyboy.tick(1, False)
+    pyboy.memory[0xFF00] = 0b0010_0000
+    assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
+    pyboy.button("down")
+    pyboy.tick(1, False)
+    pyboy.memory[0xFF00] = 0b0010_0000
+    assert pyboy.memory[0xFF00] == 0b0000_0111  # down is kept pressed
+    pyboy.tick(1, False)
+    pyboy.memory[0xFF00] = 0b0010_0000
+    assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
 
 
 def test_record_replay(boot_rom, default_rom):
@@ -118,8 +145,9 @@ def test_record_replay(boot_rom, default_rom):
 
     os.remove(default_rom + ".replay")
 
-    assert digest == (b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'), \
-        "The replay did not result in the expected output"
+    assert digest == (
+        b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'
+    ), "The replay did not result in the expected output"
 
 
 def test_argv_parser(*args):
@@ -143,16 +171,16 @@ def test_argv_parser(*args):
         "record_input": False,
         "rewind": False,
         "scale": 3,
-        "window": "SDL2"
+        "window": "SDL2",
     }.items():
         assert empty[k] == v
 
     # Check the assumed behavior of loadstate with and without argument
     assert parser.parse_args(file_that_exists.split(" ")).loadstate is None
     assert parser.parse_args(f"{file_that_exists} --loadstate".split(" ")).loadstate == main.INTERNAL_LOADSTATE
-    assert parser.parse_args(
-        f"{file_that_exists} --loadstate {file_that_exists}".split(" ")
-    ).loadstate == file_that_exists
+    assert (
+        parser.parse_args(f"{file_that_exists} --loadstate {file_that_exists}".split(" ")).loadstate == file_that_exists
+    )
 
     # Check flags become True
     flags = parser.parse_args(
@@ -160,6 +188,38 @@ def test_argv_parser(*args):
     ).__dict__
     for k, v in {"autopause": True, "debug": True, "no_input": True, "log_level": "INFO", "rewind": True}.items():
         assert flags[k] == v
+
+
+def test_no_input_enabled(default_rom):
+    pyboy = PyBoy(default_rom, no_input=True)
+    pyboy.set_emulation_speed(0)
+    with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
+        pyboy.tick()
+        assert not pyboy.paused
+
+    pyboy.send_input(WindowEvent.PAUSE)
+    pyboy.tick()
+    assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.UNPAUSE)
+    pyboy.tick()
+    assert not pyboy.paused
+
+
+def test_no_input_disabled(default_rom):
+    pyboy = PyBoy(default_rom, no_input=False)
+    pyboy.set_emulation_speed(0)
+    with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
+        pyboy.tick()
+        assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.PAUSE)
+    pyboy.tick()
+    assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.UNPAUSE)
+    pyboy.tick()
+    assert not pyboy.paused
 
 
 def test_tilemaps(kirby_rom):
@@ -188,7 +248,7 @@ def test_tilemaps(kirby_rom):
         [256, 259, 275, 291, 307, 323, 339, 355, 371, 271, 287, 303, 319, 335, 351, 367, 383, 256, 256, 256],
         [256, 256, 276, 292, 308, 324, 340, 356, 372, 272, 320, 260, 261, 262, 361, 182, 346, 256, 256, 256],
         [256, 256, 277, 293, 309, 325, 341, 357, 373, 128, 181, 362, 378, 299, 315, 331, 256, 256, 256, 256],
-        [256, 256, 278, 294, 310, 326, 342, 358, 374, 129, 164, 132, 136, 140, 143, 146, 150, 167, 157, 168]
+        [256, 256, 278, 294, 310, 326, 342, 358, 374, 129, 164, 132, 136, 140, 143, 146, 150, 167, 157, 168],
     ]
     assert isinstance(bck_tilemap.tile(0, 0), Tile)
     assert bck_tilemap.tile_identifier(0, 0) == 256
@@ -209,7 +269,7 @@ def test_tilemaps(kirby_rom):
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
         [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
-        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256]
+        [256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256],
     ]
     assert isinstance(wdw_tilemap.tile(0, 0), Tile)
     assert wdw_tilemap.tile_identifier(0, 0) == 256
@@ -249,8 +309,22 @@ def test_not_cgb(pokemon_crystal_rom):
     pyboy.tick(60 * 7, False)
 
     assert pyboy.tilemap_background[1:16, 16] == [
-        134, 160, 172, 164, 383, 129, 174, 184, 383, 130, 174, 171, 174, 177, 232
-    ] # Assert that the screen says "Game Boy Color." at the bottom.
+        134,
+        160,
+        172,
+        164,
+        383,
+        129,
+        174,
+        184,
+        383,
+        130,
+        174,
+        171,
+        174,
+        177,
+        232,
+    ]  # Assert that the screen says "Game Boy Color." at the bottom.
 
     pyboy.stop(save=False)
 

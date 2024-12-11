@@ -66,7 +66,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef void mark_tile(self, int, int, uint32_t, int, int, bint) noexcept
 
     @cython.locals(event=WindowEvent)
-    cdef list handle_events(self, list) noexcept
+    cdef list handle_events(self, list)
 
 
 cdef class TileViewWindow(BaseDebugWindow):
@@ -85,7 +85,7 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef void draw_overlay(self) noexcept
 
     @cython.locals(tile_x=int, tile_y=int, tile_identifier=int)
-    cdef list handle_events(self, list) noexcept
+    cdef list handle_events(self, list)
 
 
 cdef class TileDataWindow(BaseDebugWindow):
@@ -97,7 +97,7 @@ cdef class TileDataWindow(BaseDebugWindow):
     cdef void post_tick(self) noexcept
 
     @cython.locals(tile_x=int, tile_y=int, tile_identifier=int)
-    cdef list handle_events(self, list) noexcept
+    cdef list handle_events(self, list)
 
     @cython.locals(t=MarkedTile, column=int, row=int)
     cdef void draw_overlay(self) noexcept
@@ -105,7 +105,7 @@ cdef class TileDataWindow(BaseDebugWindow):
 
 cdef class SpriteWindow(BaseDebugWindow):
     @cython.locals(tile_x=int, tile_y=int, sprite_identifier=int, sprite=object)
-    cdef list handle_events(self, list) noexcept
+    cdef list handle_events(self, list)
 
     @cython.locals(t=MarkedTile, xx=int, yy=int, sprite=object, i=int)
     cdef void draw_overlay(self) noexcept
