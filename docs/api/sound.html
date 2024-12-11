@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.11.5" />
+<title>pyboy.api.sound API documentation</title>
+<meta name="description" content="This class gives access to the sound buffer of PyBoy." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.api.sound</code></h1>
+</header>
+<section id="section-intro">
+<p>This class gives access to the sound buffer of PyBoy.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#
+# License: See LICENSE.md file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+&#34;&#34;&#34;
+This class gives access to the sound buffer of PyBoy.
+&#34;&#34;&#34;
+
+import numpy as np
+
+from pyboy import utils
+from pyboy.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+class Sound:
+    &#34;&#34;&#34;
+    As part of the emulation, we generate a sound buffer for each frame on the screen. This class has several helper
+    methods to make it possible to read this buffer out.
+
+    When the game enables/disables the LCD, the timing will be shorter than 70224 emulated cycles. Therefore the sound
+    buffer will also be shorter than 16.667ms (60 FPS).
+
+    Because the number of samples and the timing of frames don&#39;t match exactly, you can expect a little fluctuation in
+    the number of samples per frame. Normally at a sample rate of 24,000Hz, it&#39;ll be 400 samples/second. But some times,
+    it might become 401. As described above, when the LCD enables/disables, it might be even less -- maybe 30, 143,
+    or 200 samples. This timespan represent what the real hardware would have shown.
+
+    If you&#39;re working with encoding the screen and sound in a video stream, you could drop these shorter frames, if they
+    cause problems. They usually only happen in transitions from menu to game or similar.
+    &#34;&#34;&#34;
+
+    def __init__(self, mb):
+        self.mb = mb
+
+        self.sample_rate = self.mb.sound.sample_rate
+        &#34;&#34;&#34;
+        Read-only. Changing this, will not change the sample rate. See `PyBoy` constructor instead.
+
+        The sample rate is reported per second, while the frame rate of the Game Boy is ~60 frame per second.
+        So expect the sound buffer to have 1/60 of this value in the buffer after every frame. Although it will
+        fluctuate. See top of the page.
+
+        ```python
+        &gt;&gt;&gt; pyboy.sound.sample_rate # in Hz
+        48000
+        &gt;&gt;&gt; pyboy.sound.sample_rate // 60 # Expected samples per frame
+        800
+        &gt;&gt;&gt; (800+1) * 2 # Minimum buffer size for you to prepare (2 channels, +1 for fluctuating lengths)
+        1602
+        &gt;&gt;&gt; 1602 == pyboy.sound.raw_buffer_length # This is how the length is calculated at the moment
+        True
+        ```
+
+        Returns
+        -------
+        int:
+            The sample rate in Hz (samples per second)
+        &#34;&#34;&#34;
+
+        self.raw_buffer_format = self.mb.sound.buffer_format
+        &#34;&#34;&#34;
+        Returns the color format of the raw sound buffer. **This format is subject to change.**
+
+        See how to interpret the format on: https://docs.python.org/3/library/struct.html#format-characters
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.sound.raw_buffer_format
+        &#39;b&#39;
+        ```
+
+        Returns
+        -------
+        str:
+            Struct format of the raw sound buffer. E.g. &#39;b&#39; for signed 8-bit
+        &#34;&#34;&#34;
+
+        self.raw_buffer_length = self.mb.sound.audiobuffer_length
+        &#34;&#34;&#34;
+        Read-only. Changing this, will not change the buffer length.
+
+        This is the total length of the allocated raw buffer. Use this only to allocate an appropriate buffer in your
+        script. The length of the valid data in the buffer is found using `Sound.raw_buffer_head`.
+
+        Returns
+        -------
+        int:
+            Total raw buffer length
+        &#34;&#34;&#34;
+
+        self.raw_buffer = memoryview(self.mb.sound.audiobuffer).cast(
+            self.raw_buffer_format, shape=(self.mb.sound.audiobuffer_length,)
+        )
+        &#34;&#34;&#34;
+        Provides a raw, unfiltered `memoryview` object with the data from sound buffer. Check
+        `Sound.raw_buffer_format` to see which dataformat is used. **The returned type and dataformat are
+        subject to change.** The sound buffer is in stereo format, so the odd indexes are the left channel,
+        and even indexes are the right channel.
+
+        Use this, only if you need to bypass the overhead of `Sound.ndarray`.
+
+        Be aware to use the `Sound.raw_buffer_head`, as not all &#39;frames&#39; are of equal length.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; from array import array
+        &gt;&gt;&gt; sound_buffer = array(pyboy.sound.raw_buffer_format, pyboy.sound.raw_buffer[:pyboy.sound.raw_buffer_head])
+        &gt;&gt;&gt; sound_buffer
+        array(&#39;b&#39;, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...])
+        ```
+
+        Returns
+        -------
+        memoryview:
+            memoryview of sound data.
+        &#34;&#34;&#34;
+
+        self.raw_ndarray = None
+        &#34;&#34;&#34;
+        ndarray
+        &#34;&#34;&#34;
+        if self.mb.sound.emulate:
+            self.raw_ndarray = np.frombuffer(
+                self.mb.sound.audiobuffer,
+                dtype=np.int8,
+            ).reshape(self.mb.sound.audiobuffer_length // 2, 2)
+        else:
+            self.raw_ndarray = utils.SoundEnabledError()
+
+    @property
+    def raw_buffer_head(self):
+        &#34;&#34;&#34;
+        This returns the
+
+        See the explanation at the top of the page.
+        &#34;&#34;&#34;
+        return self.mb.sound.audiobuffer_head
+
+    @property
+    def ndarray(self):
+        &#34;&#34;&#34;
+        References the sound data in NumPy format. **Remember to copy this object** if you intend to store it.
+        The backing buffer will update, but it will be the same `ndarray` object.
+
+        The format is given by `pyboy.api.sound.Sound.raw_buffer_format`. The sound buffer is in stereo format,
+        so the first index is the left channel, and the second index is the right channel.
+
+        This property returns an `ndarray` that is already accounting for the changing length of the sound buffer.
+        See the explanation at the top of the page.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.sound.ndarray.shape # 401 samples, 2 channels (stereo)
+        (801, 2)
+        &gt;&gt;&gt; pyboy.sound.ndarray
+        array([[0, 0],
+               [0, 0],
+               ...
+               [0, 0],
+               [0, 0]], dtype=int8)
+
+        ```
+
+        Returns
+        -------
+        numpy.ndarray:
+            Sound data in `ndarray` of bytes with shape given by sample rate
+        &#34;&#34;&#34;
+        if self.mb.sound.emulate:
+            return self.raw_ndarray[: self.mb.sound.audiobuffer_head]
+        else:
+            raise utils.PyBoyFeatureDisabledError(&#34;Sound is not enabled!&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.api.sound.Sound"><code class="flex name class">
+<span>class <span class="ident">Sound</span></span>
+<span>(</span><span>mb)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>As part of the emulation, we generate a sound buffer for each frame on the screen. This class has several helper
+methods to make it possible to read this buffer out.</p>
+<p>When the game enables/disables the LCD, the timing will be shorter than 70224 emulated cycles. Therefore the sound
+buffer will also be shorter than 16.667ms (60 FPS).</p>
+<p>Because the number of samples and the timing of frames don't match exactly, you can expect a little fluctuation in
+the number of samples per frame. Normally at a sample rate of 24,000Hz, it'll be 400 samples/second. But some times,
+it might become 401. As described above, when the LCD enables/disables, it might be even less &ndash; maybe 30, 143,
+or 200 samples. This timespan represent what the real hardware would have shown.</p>
+<p>If you're working with encoding the screen and sound in a video stream, you could drop these shorter frames, if they
+cause problems. They usually only happen in transitions from menu to game or similar.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Sound:
+    &#34;&#34;&#34;
+    As part of the emulation, we generate a sound buffer for each frame on the screen. This class has several helper
+    methods to make it possible to read this buffer out.
+
+    When the game enables/disables the LCD, the timing will be shorter than 70224 emulated cycles. Therefore the sound
+    buffer will also be shorter than 16.667ms (60 FPS).
+
+    Because the number of samples and the timing of frames don&#39;t match exactly, you can expect a little fluctuation in
+    the number of samples per frame. Normally at a sample rate of 24,000Hz, it&#39;ll be 400 samples/second. But some times,
+    it might become 401. As described above, when the LCD enables/disables, it might be even less -- maybe 30, 143,
+    or 200 samples. This timespan represent what the real hardware would have shown.
+
+    If you&#39;re working with encoding the screen and sound in a video stream, you could drop these shorter frames, if they
+    cause problems. They usually only happen in transitions from menu to game or similar.
+    &#34;&#34;&#34;
+
+    def __init__(self, mb):
+        self.mb = mb
+
+        self.sample_rate = self.mb.sound.sample_rate
+        &#34;&#34;&#34;
+        Read-only. Changing this, will not change the sample rate. See `PyBoy` constructor instead.
+
+        The sample rate is reported per second, while the frame rate of the Game Boy is ~60 frame per second.
+        So expect the sound buffer to have 1/60 of this value in the buffer after every frame. Although it will
+        fluctuate. See top of the page.
+
+        ```python
+        &gt;&gt;&gt; pyboy.sound.sample_rate # in Hz
+        48000
+        &gt;&gt;&gt; pyboy.sound.sample_rate // 60 # Expected samples per frame
+        800
+        &gt;&gt;&gt; (800+1) * 2 # Minimum buffer size for you to prepare (2 channels, +1 for fluctuating lengths)
+        1602
+        &gt;&gt;&gt; 1602 == pyboy.sound.raw_buffer_length # This is how the length is calculated at the moment
+        True
+        ```
+
+        Returns
+        -------
+        int:
+            The sample rate in Hz (samples per second)
+        &#34;&#34;&#34;
+
+        self.raw_buffer_format = self.mb.sound.buffer_format
+        &#34;&#34;&#34;
+        Returns the color format of the raw sound buffer. **This format is subject to change.**
+
+        See how to interpret the format on: https://docs.python.org/3/library/struct.html#format-characters
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.sound.raw_buffer_format
+        &#39;b&#39;
+        ```
+
+        Returns
+        -------
+        str:
+            Struct format of the raw sound buffer. E.g. &#39;b&#39; for signed 8-bit
+        &#34;&#34;&#34;
+
+        self.raw_buffer_length = self.mb.sound.audiobuffer_length
+        &#34;&#34;&#34;
+        Read-only. Changing this, will not change the buffer length.
+
+        This is the total length of the allocated raw buffer. Use this only to allocate an appropriate buffer in your
+        script. The length of the valid data in the buffer is found using `Sound.raw_buffer_head`.
+
+        Returns
+        -------
+        int:
+            Total raw buffer length
+        &#34;&#34;&#34;
+
+        self.raw_buffer = memoryview(self.mb.sound.audiobuffer).cast(
+            self.raw_buffer_format, shape=(self.mb.sound.audiobuffer_length,)
+        )
+        &#34;&#34;&#34;
+        Provides a raw, unfiltered `memoryview` object with the data from sound buffer. Check
+        `Sound.raw_buffer_format` to see which dataformat is used. **The returned type and dataformat are
+        subject to change.** The sound buffer is in stereo format, so the odd indexes are the left channel,
+        and even indexes are the right channel.
+
+        Use this, only if you need to bypass the overhead of `Sound.ndarray`.
+
+        Be aware to use the `Sound.raw_buffer_head`, as not all &#39;frames&#39; are of equal length.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; from array import array
+        &gt;&gt;&gt; sound_buffer = array(pyboy.sound.raw_buffer_format, pyboy.sound.raw_buffer[:pyboy.sound.raw_buffer_head])
+        &gt;&gt;&gt; sound_buffer
+        array(&#39;b&#39;, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...])
+        ```
+
+        Returns
+        -------
+        memoryview:
+            memoryview of sound data.
+        &#34;&#34;&#34;
+
+        self.raw_ndarray = None
+        &#34;&#34;&#34;
+        ndarray
+        &#34;&#34;&#34;
+        if self.mb.sound.emulate:
+            self.raw_ndarray = np.frombuffer(
+                self.mb.sound.audiobuffer,
+                dtype=np.int8,
+            ).reshape(self.mb.sound.audiobuffer_length // 2, 2)
+        else:
+            self.raw_ndarray = utils.SoundEnabledError()
+
+    @property
+    def raw_buffer_head(self):
+        &#34;&#34;&#34;
+        This returns the
+
+        See the explanation at the top of the page.
+        &#34;&#34;&#34;
+        return self.mb.sound.audiobuffer_head
+
+    @property
+    def ndarray(self):
+        &#34;&#34;&#34;
+        References the sound data in NumPy format. **Remember to copy this object** if you intend to store it.
+        The backing buffer will update, but it will be the same `ndarray` object.
+
+        The format is given by `pyboy.api.sound.Sound.raw_buffer_format`. The sound buffer is in stereo format,
+        so the first index is the left channel, and the second index is the right channel.
+
+        This property returns an `ndarray` that is already accounting for the changing length of the sound buffer.
+        See the explanation at the top of the page.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.sound.ndarray.shape # 401 samples, 2 channels (stereo)
+        (801, 2)
+        &gt;&gt;&gt; pyboy.sound.ndarray
+        array([[0, 0],
+               [0, 0],
+               ...
+               [0, 0],
+               [0, 0]], dtype=int8)
+
+        ```
+
+        Returns
+        -------
+        numpy.ndarray:
+            Sound data in `ndarray` of bytes with shape given by sample rate
+        &#34;&#34;&#34;
+        if self.mb.sound.emulate:
+            return self.raw_ndarray[: self.mb.sound.audiobuffer_head]
+        else:
+            raise utils.PyBoyFeatureDisabledError(&#34;Sound is not enabled!&#34;)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.api.sound.Sound.raw_buffer_head"><code class="name">var <span class="ident">raw_buffer_head</span></code></dt>
+<dd>
+<section class="desc"><p>This returns the</p>
+<p>See the explanation at the top of the page.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def raw_buffer_head(self):
+    &#34;&#34;&#34;
+    This returns the
+
+    See the explanation at the top of the page.
+    &#34;&#34;&#34;
+    return self.mb.sound.audiobuffer_head</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.sound.Sound.ndarray"><code class="name">var <span class="ident">ndarray</span></code></dt>
+<dd>
+<section class="desc"><p>References the sound data in NumPy format. <strong>Remember to copy this object</strong> if you intend to store it.
+The backing buffer will update, but it will be the same <code>ndarray</code> object.</p>
+<p>The format is given by <code><a title="pyboy.api.sound.Sound.raw_buffer_format" href="#pyboy.api.sound.Sound.raw_buffer_format">Sound.raw_buffer_format</a></code>. The sound buffer is in stereo format,
+so the first index is the left channel, and the second index is the right channel.</p>
+<p>This property returns an <code>ndarray</code> that is already accounting for the changing length of the sound buffer.
+See the explanation at the top of the page.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.sound.ndarray.shape # 401 samples, 2 channels (stereo)
+(801, 2)
+&gt;&gt;&gt; pyboy.sound.ndarray
+array([[0, 0],
+       [0, 0],
+       ...
+       [0, 0],
+       [0, 0]], dtype=int8)
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray:</code></dt>
+<dd>Sound data in <code>ndarray</code> of bytes with shape given by sample rate</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ndarray(self):
+    &#34;&#34;&#34;
+    References the sound data in NumPy format. **Remember to copy this object** if you intend to store it.
+    The backing buffer will update, but it will be the same `ndarray` object.
+
+    The format is given by `pyboy.api.sound.Sound.raw_buffer_format`. The sound buffer is in stereo format,
+    so the first index is the left channel, and the second index is the right channel.
+
+    This property returns an `ndarray` that is already accounting for the changing length of the sound buffer.
+    See the explanation at the top of the page.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.sound.ndarray.shape # 401 samples, 2 channels (stereo)
+    (801, 2)
+    &gt;&gt;&gt; pyboy.sound.ndarray
+    array([[0, 0],
+           [0, 0],
+           ...
+           [0, 0],
+           [0, 0]], dtype=int8)
+
+    ```
+
+    Returns
+    -------
+    numpy.ndarray:
+        Sound data in `ndarray` of bytes with shape given by sample rate
+    &#34;&#34;&#34;
+    if self.mb.sound.emulate:
+        return self.raw_ndarray[: self.mb.sound.audiobuffer_head]
+    else:
+        raise utils.PyBoyFeatureDisabledError(&#34;Sound is not enabled!&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.sound.Sound.sample_rate"><code class="name">var <span class="ident">sample_rate</span></code></dt>
+<dd>
+<section class="desc"><p>Read-only. Changing this, will not change the sample rate. See <code>PyBoy</code> constructor instead.</p>
+<p>The sample rate is reported per second, while the frame rate of the Game Boy is ~60 frame per second.
+So expect the sound buffer to have 1/60 of this value in the buffer after every frame. Although it will
+fluctuate. See top of the page.</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.sound.sample_rate # in Hz
+48000
+&gt;&gt;&gt; pyboy.sound.sample_rate // 60 # Expected samples per frame
+800
+&gt;&gt;&gt; (800+1) * 2 # Minimum buffer size for you to prepare (2 channels, +1 for fluctuating lengths)
+1602
+&gt;&gt;&gt; 1602 == pyboy.sound.raw_buffer_length # This is how the length is calculated at the moment
+True
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>The sample rate in Hz (samples per second)</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.sound.Sound.raw_buffer_format"><code class="name">var <span class="ident">raw_buffer_format</span></code></dt>
+<dd>
+<section class="desc"><p>Returns the color format of the raw sound buffer. <strong>This format is subject to change.</strong></p>
+<p>See how to interpret the format on: <a href="https://docs.python.org/3/library/struct.html#format-characters">https://docs.python.org/3/library/struct.html#format-characters</a></p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.sound.raw_buffer_format
+'b'
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str:</code></dt>
+<dd>Struct format of the raw sound buffer. E.g. 'b' for signed 8-bit</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.sound.Sound.raw_buffer_length"><code class="name">var <span class="ident">raw_buffer_length</span></code></dt>
+<dd>
+<section class="desc"><p>Read-only. Changing this, will not change the buffer length.</p>
+<p>This is the total length of the allocated raw buffer. Use this only to allocate an appropriate buffer in your
+script. The length of the valid data in the buffer is found using <code><a title="pyboy.api.sound.Sound.raw_buffer_head" href="#pyboy.api.sound.Sound.raw_buffer_head">Sound.raw_buffer_head</a></code>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>Total raw buffer length</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.sound.Sound.raw_buffer"><code class="name">var <span class="ident">raw_buffer</span></code></dt>
+<dd>
+<section class="desc"><p>Provides a raw, unfiltered <code>memoryview</code> object with the data from sound buffer. Check
+<code><a title="pyboy.api.sound.Sound.raw_buffer_format" href="#pyboy.api.sound.Sound.raw_buffer_format">Sound.raw_buffer_format</a></code> to see which dataformat is used. <strong>The returned type and dataformat are
+subject to change.</strong> The sound buffer is in stereo format, so the odd indexes are the left channel,
+and even indexes are the right channel.</p>
+<p>Use this, only if you need to bypass the overhead of <code><a title="pyboy.api.sound.Sound.ndarray" href="#pyboy.api.sound.Sound.ndarray">Sound.ndarray</a></code>.</p>
+<p>Be aware to use the <code><a title="pyboy.api.sound.Sound.raw_buffer_head" href="#pyboy.api.sound.Sound.raw_buffer_head">Sound.raw_buffer_head</a></code>, as not all 'frames' are of equal length.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from array import array
+&gt;&gt;&gt; sound_buffer = array(pyboy.sound.raw_buffer_format, pyboy.sound.raw_buffer[:pyboy.sound.raw_buffer_head])
+&gt;&gt;&gt; sound_buffer
+array('b', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...])
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>memoryview:</code></dt>
+<dd>memoryview of sound data.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.sound.Sound.raw_ndarray"><code class="name">var <span class="ident">raw_ndarray</span></code></dt>
+<dd>
+<section class="desc"><p>ndarray</p></section>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy.api" href="index.html">pyboy.api</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.api.sound.Sound" href="#pyboy.api.sound.Sound">Sound</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pyboy.api.sound.Sound.raw_buffer_head" href="#pyboy.api.sound.Sound.raw_buffer_head">raw_buffer_head</a></code></li>
+<li><code><a title="pyboy.api.sound.Sound.ndarray" href="#pyboy.api.sound.Sound.ndarray">ndarray</a></code></li>
+<li><code><a title="pyboy.api.sound.Sound.sample_rate" href="#pyboy.api.sound.Sound.sample_rate">sample_rate</a></code></li>
+<li><code><a title="pyboy.api.sound.Sound.raw_buffer_format" href="#pyboy.api.sound.Sound.raw_buffer_format">raw_buffer_format</a></code></li>
+<li><code><a title="pyboy.api.sound.Sound.raw_buffer_length" href="#pyboy.api.sound.Sound.raw_buffer_length">raw_buffer_length</a></code></li>
+<li><code><a title="pyboy.api.sound.Sound.raw_buffer" href="#pyboy.api.sound.Sound.raw_buffer">raw_buffer</a></code></li>
+<li><code><a title="pyboy.api.sound.Sound.raw_ndarray" href="#pyboy.api.sound.Sound.raw_ndarray">raw_ndarray</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

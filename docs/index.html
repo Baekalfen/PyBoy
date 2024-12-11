@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound=False, sound_emulated=False, cgb=None, gameshark=None, log_level='ERROR', **kwargs)</span>
+<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='ERROR', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -97,12 +97,22 @@ True...
 <li>scale (int): Window scale factor. Doesn't apply to API.</li>
 <li>symbols (str): Filepath to a .sym file to use. If unsure, specify <code>None</code>.</li>
 <li>bootrom (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</li>
-<li>sound (bool): Enable sound emulation and output.</li>
-<li>sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.</li>
+<li>sound_volume (int): Set sound volume in percent (0-100).</li>
+<li>sound_emulated (bool): Disables sound emulation (not just muted!).</li>
+<li>sound_sample_rate (int): Set sound sample rate. Has to be divisible in 60.</li>
 <li>cgb (bool): Forcing Game Boy Color mode.</li>
+<li>gameshark (str): GameShark codes to apply.</li>
+<li>no_input (bool): Disable all user-input (mostly for autonomous testing)</li>
 <li>log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"</li>
 <li>color_palette (tuple): Specify the color palette to use for rendering.</li>
 <li>cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.</li>
+</ul>
+<h2 id="plugin-kwargs">Plugin kwargs:</h2>
+<ul>
+<li>autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]</li>
+<li>breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]</li>
+<li>record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]</li>
+<li>rewind (bool): Enable rewind function [plugin: Rewind]</li>
 </ul>
 <p>Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running <code>pyboy --help</code> in the terminal.</p></section>
 <details class="source">
@@ -118,12 +128,16 @@ True...
         scale=defaults[&#34;scale&#34;],
         symbols=None,
         bootrom=None,
-        sound=False,
-        sound_emulated=False,
+        sound_volume=100,
+        sound_emulated=True,
+        sound_sample_rate=None,
         cgb=None,
         gameshark=None,
+        no_input=False,
         log_level=defaults[&#34;log_level&#34;],
-        **kwargs
+        color_palette=defaults[&#34;color_palette&#34;],
+        cgb_color_palette=defaults[&#34;cgb_color_palette&#34;],
+        **kwargs,
     ):
         &#34;&#34;&#34;
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -154,17 +168,31 @@ True...
             * scale (int): Window scale factor. Doesn&#39;t apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
             * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            * sound (bool): Enable sound emulation and output.
-            * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
+            * sound_volume (int): Set sound volume in percent (0-100).
+            * sound_emulated (bool): Disables sound emulation (not just muted!).
+            * sound_sample_rate (int): Set sound sample rate. Has to be divisible in 60.
             * cgb (bool): Forcing Game Boy Color mode.
+            * gameshark (str): GameShark codes to apply.
+            * no_input (bool): Disable all user-input (mostly for autonomous testing)
             * log_level (str): &#34;CRITICAL&#34;, &#34;ERROR&#34;, &#34;WARNING&#34;, &#34;INFO&#34; or &#34;DEBUG&#34;
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
+
+        ## Plugin kwargs:
+        * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
+        * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
+        * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
+        * rewind (bool): Enable rewind function [plugin: Rewind]
 
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
         &#34;&#34;&#34;
 
         self.initialized = False
+        self.no_input = no_input
+
+        _log_level(log_level)
+
+        logger.debug(&#34;Cython compilation status: %s&#34;, cython_compiled)
 
         if &#34;bootrom_file&#34; in kwargs:
             logger.error(
@@ -183,16 +211,14 @@ True...
 
         kwargs[&#34;window&#34;] = window
         kwargs[&#34;scale&#34;] = scale
-        randomize = kwargs.pop(&#34;randomize&#34;, False) # Undocumented feature
+        randomize = kwargs.pop(&#34;randomize&#34;, False)  # Undocumented feature
 
         for k, v in defaults.items():
             if k not in kwargs:
                 kwargs[k] = v
 
-        _log_level(log_level)
-
         if gamerom is None:
-            raise FileNotFoundError(f&#34;None is not a ROM file!&#34;)
+            raise FileNotFoundError(&#34;None is not a ROM file!&#34;)
 
         if not os.path.isfile(gamerom):
             raise FileNotFoundError(f&#34;ROM file {gamerom} was not found!&#34;)
@@ -206,13 +232,25 @@ True...
         self.symbols_file = symbols
         self._load_symbols()
 
+        # Backwards compatibility
+        # Setting volume if True, but we don&#39;t disable emulation if False/None.
+        if kwargs.pop(&#34;sound&#34;, None):
+            sound_volume = 100
+            logger.error(
+                &#39;Deprecated use of &#34;sound&#34; on PyBoy constructor. Use &#34;sound_volume&#34; or &#34;sound_emulated&#34; instead.&#39;
+            )
+
+        if not (0 &lt;= sound_volume &lt;= 100):
+            raise PyBoyInvalidInputException(&#34;Sound volume has to be between 0 and 100.&#34;)
+
         self.mb = Motherboard(
             gamerom,
             bootrom,
-            kwargs[&#34;color_palette&#34;],
-            kwargs[&#34;cgb_color_palette&#34;],
-            sound,
+            color_palette,
+            cgb_color_palette,
+            sound_volume,
             sound_emulated,
+            sound_sample_rate,
             cgb,
             randomize=randomize,
         )
@@ -264,10 +302,34 @@ True...
 
         ```
 
+        NOTE: See `PyBoy.sound` to get the sound buffer.
+
         Returns
         -------
         `pyboy.api.screen.Screen`:
             A Screen object with helper functions for reading the screen buffer.
+        &#34;&#34;&#34;
+        self.sound = Sound(self.mb)
+        &#34;&#34;&#34;
+        Use this method to get a `pyboy.api.sound.Sound` object. This can be used to get the sound buffer of the
+        latest screen frame (see `PyBoy.screen`).
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.sound.ndarray.shape # 801 samples, 2 channels (stereo)
+        (801, 2)
+        &gt;&gt;&gt; pyboy.sound.ndarray
+        array([[0, 0],
+               [0, 0],
+               ...
+               [0, 0],
+               [0, 0]], dtype=int8)
+        ```
+
+        Returns
+        -------
+        `pyboy.api.sound.Sound`:
+            A Sound object with helper functions for accessing the sound buffer.
         &#34;&#34;&#34;
         self.memory = PyBoyMemoryView(self.mb)
         &#34;&#34;&#34;
@@ -443,42 +505,46 @@ True...
 
         self.initialized = True
 
-    def _tick(self, render):
+    def _tick(self, render, sound):
         if self.stopped:
             return False
 
         self._handle_events(self.events)
         if not self.paused:
             self.gameshark.tick()
-            self.__rendering(render)
+            self.mb.lcd.frame_done = False
+            self.mb.lcd.disable_renderer = not render
+            self.mb.sound.disable_sampling = not sound
+            self.mb.sound.clear_buffer()
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():
                 # Breakpoint reached
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed
                 self.mb.breakpoint_reinject()
 
-                # NOTE: PC has not been incremented when hitting breakpoint!
-                breakpoint_meta = self.mb.breakpoint_reached()
-                if breakpoint_meta != (-1, -1, -1):
-                    bank, addr, _ = breakpoint_meta
-                    self.mb.breakpoint_remove(bank, addr)
-                    self.mb.breakpoint_singlestep_latch = 0
+                with cython.gil:
+                    # NOTE: PC has not been incremented when hitting breakpoint!
+                    breakpoint_meta = self.mb.breakpoint_reached()
+                    if breakpoint_meta != (-1, -1, -1):
+                        bank, addr, _ = breakpoint_meta
+                        self.mb.breakpoint_remove(bank, addr)
+                        self.mb.breakpoint_singlestep_latch = 0
 
-                    if not self._handle_hooks():
-                        self._plugin_manager.handle_breakpoint()
-                else:
-                    if self.mb.breakpoint_singlestep_latch:
                         if not self._handle_hooks():
                             self._plugin_manager.handle_breakpoint()
-                    # Keep singlestepping on, if that&#39;s what we&#39;re doing
-                    self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
+                    else:
+                        if self.mb.breakpoint_singlestep_latch:
+                            if not self._handle_hooks():
+                                self._plugin_manager.handle_breakpoint()
+                        # Keep singlestepping on, if that&#39;s what we&#39;re doing
+                        self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
             self.frame_count += 1
-            self._post_handle_events()
+        self._post_handle_events()
 
         return not self.quitting
 
-    def tick(self, count=1, render=True):
+    def tick(self, count=1, render=True, sound=True):
         &#34;&#34;&#34;
         Progresses the emulator ahead by `count` frame(s).
 
@@ -526,24 +592,28 @@ True...
         _count = count
         running = False
         t_start = time.perf_counter_ns()
-        while count != 0:
-            _render = render and count == 1 # Only render on last tick to improve performance
-            running = self._tick(_render)
-            count -= 1
+        with cython.nogil:
+            while count != 0:
+                # Only render screen and sample sound on last tick to improve performance
+                _render = render and count == 1
+                _sound = sound and count == 1
+                running = self._tick(_render, _sound)
+                count -= 1
         t_tick = time.perf_counter_ns()
         self._post_tick()
         t_post = time.perf_counter_ns()
 
         if _count &gt; 0:
             nsecs = t_tick - t_start
-            self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1*nsecs/1_000_000_000)
+            self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1 * nsecs / 1_000_000_000)
             nsecs = t_post - t_start
-            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1*nsecs/1_000_000_000)
+            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
         return running
 
     def _handle_events(self, events):
-        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
-        events = self._plugin_manager.handle_events(events)
+        if not self.no_input:
+            # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+            events = self._plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
                 self.quitting = True
@@ -562,7 +632,7 @@ True...
                 with open(state_path, &#34;rb&#34;) as f:
                     self.mb.load_state(IntIOWrapper(f))
             elif event == WindowEvent.PASS:
-                pass # Used in place of None in Cython, when key isn&#39;t mapped to anything
+                pass  # Used in place of None in Cython, when key isn&#39;t mapped to anything
             elif event == WindowEvent.PAUSE_TOGGLE:
                 if self.paused:
                     self._unpause()
@@ -585,6 +655,7 @@ True...
         self.target_emulationspeed = 1
         logger.info(&#34;Emulation paused!&#34;)
         self._update_window_title()
+        self._plugin_manager.paused(True)
 
     def _unpause(self):
         if not self.paused:
@@ -593,6 +664,7 @@ True...
         self.target_emulationspeed = self.save_target_emulationspeed
         logger.info(&#34;Emulation unpaused!&#34;)
         self._update_window_title()
+        self._plugin_manager.paused(False)
 
     def _post_tick(self):
         # Fix buggy PIL. They will copy our image buffer and destroy the
@@ -710,7 +782,7 @@ True...
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
             self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
         else:
-            raise Exception(&#34;Unrecognized input:&#34;, input)
+            raise PyBoyInvalidInputException(&#34;Unrecognized input:&#34;, input)
 
     def button_press(self, input):
         &#34;&#34;&#34;
@@ -753,7 +825,7 @@ True...
         elif input == &#34;select&#34;:
             self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
         else:
-            raise Exception(&#34;Unrecognized input&#34;)
+            raise PyBoyInvalidInputException(&#34;Unrecognized input&#34;)
 
     def button_release(self, input):
         &#34;&#34;&#34;
@@ -795,7 +867,7 @@ True...
         elif input == &#34;select&#34;:
             self.send_input(WindowEvent.RELEASE_BUTTON_SELECT)
         else:
-            raise Exception(&#34;Unrecognized input&#34;)
+            raise PyBoyInvalidInputException(&#34;Unrecognized input&#34;)
 
     def send_input(self, event, delay=0):
         &#34;&#34;&#34;
@@ -836,7 +908,8 @@ True...
         &#34;&#34;&#34;
 
         if delay:
-            assert delay &gt; 0, &#34;Only positive integers allowed&#34;
+            if not (delay &gt; 0):
+                raise PyBoyInvalidInputException(&#34;Only positive integers allowed&#34;)
             heapq.heappush(self.queued_input, (self.frame_count + delay, event))
         else:
             self.events.append(WindowEvent(event))
@@ -868,10 +941,12 @@ True...
         &#34;&#34;&#34;
 
         if isinstance(file_like_object, str):
-            raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+            raise PyBoyInvalidInputException(
+                &#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;
+            )
 
         if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-            raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;wb&#39;)?&#34;)
+            raise PyBoyInvalidInputException(&#34;Text file not allowed. Did you specify open(..., &#39;wb&#39;)?&#34;)
 
         self.mb.save_state(IntIOWrapper(file_like_object))
 
@@ -896,10 +971,12 @@ True...
         &#34;&#34;&#34;
 
         if isinstance(file_like_object, str):
-            raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+            raise PyBoyInvalidInputException(
+                &#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;
+            )
 
         if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-            raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;rb&#39;)?&#34;)
+            raise PyBoyInvalidInputException(&#34;Text file not allowed. Did you specify open(..., &#39;rb&#39;)?&#34;)
 
         self.mb.load_state(IntIOWrapper(file_like_object))
 
@@ -1074,12 +1151,6 @@ True...
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
         self.target_emulationspeed = target_speed
 
-    def __rendering(self, value):
-        &#34;&#34;&#34;
-        Disable or enable rendering
-        &#34;&#34;&#34;
-        self.mb.lcd.disable_renderer = not value
-
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
 
@@ -1105,15 +1176,15 @@ True...
                             bank, addr, sym_label = re.split(&#34;:| &#34;, line.strip())
                             bank = int(bank, 16)
                             addr = int(addr, 16)
-                            if not bank in self.rom_symbols:
+                            if bank not in self.rom_symbols:
                                 self.rom_symbols[bank] = {}
 
-                            if not addr in self.rom_symbols[bank]:
+                            if addr not in self.rom_symbols[bank]:
                                 self.rom_symbols[bank][addr] = []
 
                             self.rom_symbols[bank][addr].append(sym_label)
                             self.rom_symbols_inverse[sym_label] = (bank, addr)
-                        except ValueError as ex:
+                        except ValueError:
                             logger.warning(&#34;Skipping .sym line: %s&#34;, line.strip())
         return self.rom_symbols
 
@@ -1180,7 +1251,7 @@ True...
         ```python
         &gt;&gt;&gt; # Continued example above
         &gt;&gt;&gt; pyboy.hook_register(None, &#34;Main.move&#34;, lambda x: print(x), &#34;Hello from hook2&#34;)
-        &gt;&gt;&gt; pyboy.tick(80)
+        &gt;&gt;&gt; pyboy.tick(81)
         Hello from hook2
         True
 
@@ -1371,7 +1442,10 @@ True...
         if self.mb.cartridge.rtc_enabled:
             self.mb.cartridge.rtc.timelock = enable
         else:
-            raise Exception(&#34;There&#39;s no RTC for this cartridge type&#34;)</code></pre>
+            raise PyBoyException(&#34;There&#39;s no RTC for this cartridge type&#34;)
+
+    def _cycles(self):
+        return self.mb.cpu.cycles</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1389,9 +1463,28 @@ a variety of formats.</p>
 'RGBA'
 
 </code></pre>
+<p>NOTE: See <code><a title="pyboy.PyBoy.sound" href="#pyboy.PyBoy.sound">PyBoy.sound</a></code> to get the sound buffer.</p>
 <h2 id="returns">Returns</h2>
 <p><code><a title="pyboy.api.screen.Screen" href="api/screen.html#pyboy.api.screen.Screen">Screen</a></code>:
 A Screen object with helper functions for reading the screen buffer.</p></section>
+</dd>
+<dt id="pyboy.PyBoy.sound"><code class="name">var <span class="ident">sound</span></code></dt>
+<dd>
+<section class="desc"><p>Use this method to get a <code><a title="pyboy.api.sound.Sound" href="api/sound.html#pyboy.api.sound.Sound">Sound</a></code> object. This can be used to get the sound buffer of the
+latest screen frame (see <code><a title="pyboy.PyBoy.screen" href="#pyboy.PyBoy.screen">PyBoy.screen</a></code>).</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.sound.ndarray.shape # 801 samples, 2 channels (stereo)
+(801, 2)
+&gt;&gt;&gt; pyboy.sound.ndarray
+array([[0, 0],
+       [0, 0],
+       ...
+       [0, 0],
+       [0, 0]], dtype=int8)
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.sound.Sound" href="api/sound.html#pyboy.api.sound.Sound">Sound</a></code>:
+A Sound object with helper functions for accessing the sound buffer.</p></section>
 </dd>
 <dt id="pyboy.PyBoy.memory"><code class="name">var <span class="ident">memory</span></code></dt>
 <dd>
@@ -1517,7 +1610,7 @@ A game-specific wrapper object.</p></section>
 <h3>Methods</h3>
 <dl>
 <dt id="pyboy.PyBoy.tick"><code class="name flex">
-<span>def <span class="ident">tick</span></span>(<span>self, count=1, render=True)</span>
+<span>def <span class="ident">tick</span></span>(<span>self, count=1, render=True, sound=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Progresses the emulator ahead by <code>count</code> frame(s).</p>
@@ -1560,7 +1653,7 @@ False if emulation has ended otherwise True</p></section>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tick(self, count=1, render=True):
+<pre><code class="python">def tick(self, count=1, render=True, sound=True):
     &#34;&#34;&#34;
     Progresses the emulator ahead by `count` frame(s).
 
@@ -1608,19 +1701,22 @@ False if emulation has ended otherwise True</p></section>
     _count = count
     running = False
     t_start = time.perf_counter_ns()
-    while count != 0:
-        _render = render and count == 1 # Only render on last tick to improve performance
-        running = self._tick(_render)
-        count -= 1
+    with cython.nogil:
+        while count != 0:
+            # Only render screen and sample sound on last tick to improve performance
+            _render = render and count == 1
+            _sound = sound and count == 1
+            running = self._tick(_render, _sound)
+            count -= 1
     t_tick = time.perf_counter_ns()
     self._post_tick()
     t_post = time.perf_counter_ns()
 
     if _count &gt; 0:
         nsecs = t_tick - t_start
-        self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1*nsecs/1_000_000_000)
+        self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1 * nsecs / 1_000_000_000)
         nsecs = t_post - t_start
-        self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1*nsecs/1_000_000_000)
+        self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
     return running</code></pre>
 </details>
 </dd>
@@ -1755,7 +1851,7 @@ True
         self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
         self.send_input(WindowEvent.RELEASE_BUTTON_SELECT, delay)
     else:
-        raise Exception(&#34;Unrecognized input:&#34;, input)</code></pre>
+        raise PyBoyInvalidInputException(&#34;Unrecognized input:&#34;, input)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.button_press"><code class="name flex">
@@ -1825,7 +1921,7 @@ True
     elif input == &#34;select&#34;:
         self.send_input(WindowEvent.PRESS_BUTTON_SELECT)
     else:
-        raise Exception(&#34;Unrecognized input&#34;)</code></pre>
+        raise PyBoyInvalidInputException(&#34;Unrecognized input&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.button_release"><code class="name flex">
@@ -1894,7 +1990,7 @@ True
     elif input == &#34;select&#34;:
         self.send_input(WindowEvent.RELEASE_BUTTON_SELECT)
     else:
-        raise Exception(&#34;Unrecognized input&#34;)</code></pre>
+        raise PyBoyInvalidInputException(&#34;Unrecognized input&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.send_input"><code class="name flex">
@@ -1976,7 +2072,8 @@ True
     &#34;&#34;&#34;
 
     if delay:
-        assert delay &gt; 0, &#34;Only positive integers allowed&#34;
+        if not (delay &gt; 0):
+            raise PyBoyInvalidInputException(&#34;Only positive integers allowed&#34;)
         heapq.heappush(self.queued_input, (self.frame_count + delay, event))
     else:
         self.events.append(WindowEvent(event))</code></pre>
@@ -2038,10 +2135,12 @@ case. Remember to <code>seek</code> the in-memory buffer to the beginning before
     &#34;&#34;&#34;
 
     if isinstance(file_like_object, str):
-        raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+        raise PyBoyInvalidInputException(
+            &#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;
+        )
 
     if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-        raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;wb&#39;)?&#34;)
+        raise PyBoyInvalidInputException(&#34;Text file not allowed. Did you specify open(..., &#39;wb&#39;)?&#34;)
 
     self.mb.save_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
@@ -2090,10 +2189,12 @@ can load it here.</p>
     &#34;&#34;&#34;
 
     if isinstance(file_like_object, str):
-        raise Exception(&#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;)
+        raise PyBoyInvalidInputException(
+            &#34;String not allowed. Did you specify a filepath instead of a file-like object?&#34;
+        )
 
     if file_like_object.__class__.__name__ == &#34;TextIOWrapper&#34;:
-        raise Exception(&#34;Text file not allowed. Did you specify open(..., &#39;rb&#39;)?&#34;)
+        raise PyBoyInvalidInputException(&#34;Text file not allowed. Did you specify open(..., &#39;rb&#39;)?&#34;)
 
     self.mb.load_state(IntIOWrapper(file_like_object))</code></pre>
 </details>
@@ -2499,7 +2600,7 @@ enable this, you'll need to place a <code>.sym</code> file next to your ROM, or 
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; # Continued example above
 &gt;&gt;&gt; pyboy.hook_register(None, &quot;Main.move&quot;, lambda x: print(x), &quot;Hello from hook2&quot;)
-&gt;&gt;&gt; pyboy.tick(80)
+&gt;&gt;&gt; pyboy.tick(81)
 Hello from hook2
 True
 
@@ -2552,7 +2653,7 @@ opcode (<code>0xDB</code>). If the address is read by the game instead of execut
     ```python
     &gt;&gt;&gt; # Continued example above
     &gt;&gt;&gt; pyboy.hook_register(None, &#34;Main.move&#34;, lambda x: print(x), &#34;Hello from hook2&#34;)
-    &gt;&gt;&gt; pyboy.tick(80)
+    &gt;&gt;&gt; pyboy.tick(81)
     Hello from hook2
     True
 
@@ -2878,7 +2979,7 @@ the game.</p>
     if self.mb.cartridge.rtc_enabled:
         self.mb.cartridge.rtc.timelock = enable
     else:
-        raise Exception(&#34;There&#39;s no RTC for this cartridge type&#34;)</code></pre>
+        raise PyBoyException(&#34;There&#39;s no RTC for this cartridge type&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -2951,7 +3052,7 @@ often results in special side-effects.</p>
 used as a source of randomness in games. If you read the value, you'll get a pseudo-random number. But if you write
 <em>any</em> value to the register, it'll reset to zero.</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy.memory[0xFF04] # DIV register
-163
+231
 &gt;&gt;&gt; pyboy.memory[0xFF04] = 123 # Trying to write to it will always reset it to zero
 &gt;&gt;&gt; pyboy.memory[0xFF04]
 0
@@ -3054,13 +3155,14 @@ used as a source of randomness in games. If you read the value, you'll get a pse
 
     ```python
     &gt;&gt;&gt; pyboy.memory[0xFF04] # DIV register
-    163
+    231
     &gt;&gt;&gt; pyboy.memory[0xFF04] = 123 # Trying to write to it will always reset it to zero
     &gt;&gt;&gt; pyboy.memory[0xFF04]
     0
     ```
 
     &#34;&#34;&#34;
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -3084,19 +3186,23 @@ used as a source of randomness in games. If you read the value, you'll get a pse
         bank = 0
         if is_bank:
             bank, addr = addr
-            assert isinstance(bank, int), &#34;Bank has to be integer. Slicing is not supported.&#34;
+            if not (isinstance(bank, int)):
+                raise PyBoyInvalidInputException(&#34;Bank has to be integer. Slicing is not supported.&#34;)
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            assert start &gt;= 0 or stop &gt;= 0, &#34;Start address has to come before end address&#34;
-            assert start &gt;= 0, &#34;Start address required&#34;
-            assert stop &gt;= 0, &#34;End address required&#34;
+            if not (start &gt;= 0 or stop &gt;= 0):
+                raise PyBoyInvalidInputException(&#34;Start address has to come before end address&#34;)
+            if not (start &gt;= 0):
+                raise PyBoyInvalidInputException(&#34;Start address required&#34;)
+            if not (stop &gt;= 0):
+                raise PyBoyInvalidInputException(&#34;End address required&#34;)
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
         else:
             return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
 
     def __getitem(self, start, stop, step, bank, is_single, is_bank):
-        slice_length = (stop-start) // step
+        slice_length = (stop - start) // step
         if is_bank:
             # Reading a specific bank
             if start &lt; 0x8000:
@@ -3104,23 +3210,27 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x4000
                     stop -= 0x4000
                 # Cartridge ROM Banks
-                assert stop &lt; 0x4000, &#34;Out of bounds for reading ROM bank&#34;
+                if not (stop &lt; 0x4000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading ROM bank&#34;)
                 if bank == -1:
-                    assert start &lt;= 0xFF, &#34;Start address out of range for bootrom&#34;
-                    assert stop &lt;= 0xFF, &#34;Start address out of range for bootrom&#34;
+                    if not (start &lt;= 0xFF):
+                        raise PyBoyOutOfBoundsException(&#34;Start address out of range for bootrom&#34;)
+                    if not (stop &lt;= 0xFF):
+                        raise PyBoyOutOfBoundsException(&#34;Start address out of range for bootrom&#34;)
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.bootrom.bootrom[x]
+                            mem_slice[(x - start) // step] = self.mb.bootrom.bootrom[x]
                         return mem_slice
                     else:
                         return self.mb.bootrom.bootrom[start]
                 else:
-                    assert bank &lt;= self.mb.cartridge.external_rom_count, &#34;ROM Bank out of range&#34;
+                    if not (bank &lt;= self.mb.cartridge.external_rom_count):
+                        raise PyBoyOutOfBoundsException(&#34;ROM Bank out of range&#34;)
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.cartridge.rombanks[bank, x]
+                            mem_slice[(x - start) // step] = self.mb.cartridge.rombanks[bank, x]
                         return mem_slice
                     else:
                         return self.mb.cartridge.rombanks[bank, start]
@@ -3128,15 +3238,18 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
-                assert stop &lt; 0x2000, &#34;Out of bounds for reading VRAM bank&#34;
-                assert bank &lt;= 1, &#34;VRAM Bank out of range&#34;
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException(&#34;Selecting bank of VRAM is only supported for CGB mode&#34;)
+                if not (stop &lt; 0x2000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading VRAM bank&#34;)
+                if not (bank &lt;= 1):
+                    raise PyBoyOutOfBoundsException(&#34;VRAM Bank out of range&#34;)
 
                 if bank == 0:
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM0[x]
+                            mem_slice[(x - start) // step] = self.mb.lcd.VRAM0[x]
                         return mem_slice
                     else:
                         return self.mb.lcd.VRAM0[start]
@@ -3144,7 +3257,7 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM1[x]
+                            mem_slice[(x - start) // step] = self.mb.lcd.VRAM1[x]
                         return mem_slice
                     else:
                         return self.mb.lcd.VRAM1[start]
@@ -3152,12 +3265,14 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0xA000
                 stop -= 0xA000
                 # Cartridge RAM banks
-                assert stop &lt; 0x2000, &#34;Out of bounds for reading cartridge RAM bank&#34;
-                assert bank &lt;= self.mb.cartridge.external_ram_count, &#34;ROM Bank out of range&#34;
+                if not (stop &lt; 0x2000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading cartridge RAM bank&#34;)
+                if not (bank &lt;= self.mb.cartridge.external_ram_count):
+                    raise PyBoyOutOfBoundsException(&#34;ROM Bank out of range&#34;)
                 if not is_single:
                     mem_slice = [0] * slice_length
                     for x in range(start, stop, step):
-                        mem_slice[(x-start) // step] = self.mb.cartridge.rambanks[bank, x]
+                        mem_slice[(x - start) // step] = self.mb.cartridge.rambanks[bank, x]
                     return mem_slice
                 else:
                     return self.mb.cartridge.rambanks[bank, start]
@@ -3168,23 +3283,26 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
-                assert stop &lt; 0x1000, &#34;Out of bounds for reading VRAM bank&#34;
-                assert bank &lt;= 7, &#34;WRAM Bank out of range&#34;
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException(&#34;Selecting bank of WRAM is only supported for CGB mode&#34;)
+                if not (stop &lt; 0x1000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading VRAM bank&#34;)
+                if not (bank &lt;= 7):
+                    raise PyBoyOutOfBoundsException(&#34;WRAM Bank out of range&#34;)
                 if not is_single:
                     mem_slice = [0] * slice_length
                     for x in range(start, stop, step):
-                        mem_slice[(x-start) // step] = self.mb.ram.internal_ram0[x + bank*0x1000]
+                        mem_slice[(x - start) // step] = self.mb.ram.internal_ram0[x + bank * 0x1000]
                     return mem_slice
                 else:
-                    return self.mb.ram.internal_ram0[start + bank*0x1000]
+                    return self.mb.ram.internal_ram0[start + bank * 0x1000]
             else:
-                assert None, &#34;Invalid memory address for bank&#34;
+                raise PyBoyInvalidInputException(&#34;Invalid memory address for bank&#34;)
         elif not is_single:
             # Reading slice of memory space
             mem_slice = [0] * slice_length
             for x in range(start, stop, step):
-                mem_slice[(x-start) // step] = self.mb.getitem(x)
+                mem_slice[(x - start) // step] = self.mb.getitem(x)
             return mem_slice
         else:
             # Reading specific address of memory space
@@ -3195,12 +3313,15 @@ used as a source of randomness in games. If you read the value, you'll get a pse
         bank = 0
         if is_bank:
             bank, addr = addr
-            assert isinstance(bank, int), &#34;Bank has to be integer. Slicing is not supported.&#34;
+            if not (isinstance(bank, int)):
+                raise PyBoyInvalidInputException(&#34;Bank has to be integer. Slicing is not supported.&#34;)
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            assert start &gt;= 0, &#34;Start address required&#34;
-            assert stop &gt;= 0, &#34;End address required&#34;
+            if not (start &gt;= 0):
+                raise PyBoyInvalidInputException(&#34;Start address required&#34;)
+            if not (stop &gt;= 0):
+                raise PyBoyInvalidInputException(&#34;End address required&#34;)
             self.__setitem(start, stop, step, v, bank, is_single, is_bank)
         else:
             self.__setitem(addr, 0, 0, v, bank, is_single, is_bank)
@@ -3228,16 +3349,21 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x4000
                     stop -= 0x4000
                 # Cartridge ROM Banks
-                assert stop &lt;= 0x4000, &#34;Out of bounds for reading ROM bank&#34;
-                assert bank &lt;= self.mb.cartridge.external_rom_count, &#34;ROM Bank out of range&#34;
+                if not (stop &lt;= 0x4000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading ROM bank&#34;)
+                if not (bank &lt;= self.mb.cartridge.external_rom_count):
+                    raise PyBoyOutOfBoundsException(&#34;ROM Bank out of range&#34;)
 
                 if bank == -1:
-                    assert start &lt;= 0xFF, &#34;Start address out of range for bootrom&#34;
-                    assert stop &lt;= 0x100, &#34;Start address out of range for bootrom&#34;
+                    if not (start &lt;= 0xFF):
+                        raise PyBoyOutOfBoundsException(&#34;Start address out of range for bootrom&#34;)
+                    if not (stop &lt;= 0x100):
+                        raise PyBoyOutOfBoundsException(&#34;Start address out of range for bootrom&#34;)
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, &#34;__iter__&#34;):
-                            assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.bootrom.bootrom[x] = next(_v)
@@ -3250,7 +3376,8 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, &#34;__iter__&#34;):
-                            assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.cartridge.overrideitem(bank, x, next(_v))
@@ -3264,15 +3391,19 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0x8000
                 stop -= 0x8000
                 # CGB VRAM Banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of VRAM is only supported for CGB mode&#34;
-                assert stop &lt;= 0x2000, &#34;Out of bounds for reading VRAM bank&#34;
-                assert bank &lt;= 1, &#34;VRAM Bank out of range&#34;
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException(&#34;Selecting bank of VRAM is only supported for CGB mode&#34;)
+                if not (stop &lt;= 0x2000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading VRAM bank&#34;)
+                if not (bank &lt;= 1):
+                    raise PyBoyOutOfBoundsException(&#34;VRAM Bank out of range&#34;)
 
                 if bank == 0:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, &#34;__iter__&#34;):
-                            assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM0[x] = next(_v)
@@ -3285,7 +3416,8 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, &#34;__iter__&#34;):
-                            assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                            if not ((stop - start) // step == len(v)):
+                                raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM1[x] = next(_v)
@@ -3298,12 +3430,15 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 start -= 0xA000
                 stop -= 0xA000
                 # Cartridge RAM banks
-                assert stop &lt;= 0x2000, &#34;Out of bounds for reading cartridge RAM bank&#34;
-                assert bank &lt;= self.mb.cartridge.external_ram_count, &#34;ROM Bank out of range&#34;
+                if not (stop &lt;= 0x2000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading cartridge RAM bank&#34;)
+                if not (bank &lt;= self.mb.cartridge.external_ram_count):
+                    raise PyBoyOutOfBoundsException(&#34;ROM Bank out of range&#34;)
                 if not is_single:
                     # Writing slice of memory space
                     if hasattr(v, &#34;__iter__&#34;):
-                        assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                        if not ((stop - start) // step == len(v)):
+                            raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                         _v = iter(v)
                         for x in range(start, stop, step):
                             self.mb.cartridge.rambanks[bank, x] = next(_v)
@@ -3319,27 +3454,32 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                     start -= 0x1000
                     stop -= 0x1000
                 # CGB VRAM banks
-                assert self.mb.cgb or (bank == 0), &#34;Selecting bank of WRAM is only supported for CGB mode&#34;
-                assert stop &lt;= 0x1000, &#34;Out of bounds for reading VRAM bank&#34;
-                assert bank &lt;= 7, &#34;WRAM Bank out of range&#34;
+                if not (self.mb.cgb or (bank == 0)):
+                    raise PyBoyInvalidInputException(&#34;Selecting bank of WRAM is only supported for CGB mode&#34;)
+                if not (stop &lt;= 0x1000):
+                    raise PyBoyOutOfBoundsException(&#34;Out of bounds for reading VRAM bank&#34;)
+                if not (bank &lt;= 7):
+                    raise PyBoyOutOfBoundsException(&#34;WRAM Bank out of range&#34;)
                 if not is_single:
                     # Writing slice of memory space
                     if hasattr(v, &#34;__iter__&#34;):
-                        assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                        if not ((stop - start) // step == len(v)):
+                            raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                         _v = iter(v)
                         for x in range(start, stop, step):
-                            self.mb.ram.internal_ram0[x + bank*0x1000] = next(_v)
+                            self.mb.ram.internal_ram0[x + bank * 0x1000] = next(_v)
                     else:
                         for x in range(start, stop, step):
-                            self.mb.ram.internal_ram0[x + bank*0x1000] = v
+                            self.mb.ram.internal_ram0[x + bank * 0x1000] = v
                 else:
-                    self.mb.ram.internal_ram0[start + bank*0x1000] = v
+                    self.mb.ram.internal_ram0[start + bank * 0x1000] = v
             else:
-                assert None, &#34;Invalid memory address for bank&#34;
+                raise PyBoyInvalidInputException(&#34;Invalid memory address for bank&#34;)
         elif not is_single:
             # Writing slice of memory space
             if hasattr(v, &#34;__iter__&#34;):
-                assert (stop-start) // step == len(v), &#34;slice does not match length of data&#34;
+                if not ((stop - start) // step == len(v)):
+                    raise PyBoyInvalidInputException(&#34;slice does not match length of data&#34;)
                 _v = iter(v)
                 for x in range(start, stop, step):
                     self.mb.setitem(x, next(_v))
@@ -3402,6 +3542,7 @@ True
     True
     ```
     &#34;&#34;&#34;
+
     def __init__(self, cpu):
         self.cpu = cpu
 
@@ -3631,6 +3772,7 @@ def PC(self):
 <li><code><a title="pyboy.PyBoy.get_tile" href="#pyboy.PyBoy.get_tile">get_tile</a></code></li>
 <li><code><a title="pyboy.PyBoy.rtc_lock_experimental" href="#pyboy.PyBoy.rtc_lock_experimental">rtc_lock_experimental</a></code></li>
 <li><code><a title="pyboy.PyBoy.screen" href="#pyboy.PyBoy.screen">screen</a></code></li>
+<li><code><a title="pyboy.PyBoy.sound" href="#pyboy.PyBoy.sound">sound</a></code></li>
 <li><code><a title="pyboy.PyBoy.memory" href="#pyboy.PyBoy.memory">memory</a></code></li>
 <li><code><a title="pyboy.PyBoy.register_file" href="#pyboy.PyBoy.register_file">register_file</a></code></li>
 <li><code><a title="pyboy.PyBoy.memory_scanner" href="#pyboy.PyBoy.memory_scanner">memory_scanner</a></code></li>
@@ -3664,7 +3806,7 @@ def PC(self):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

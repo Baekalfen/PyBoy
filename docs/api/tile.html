@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy.api.tile API documentation</title>
 <meta name="description" content="The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used both for
 `pyboy.api.sprite.Sprite` and …" />
@@ -41,6 +41,7 @@ import numpy as np
 
 import pyboy
 from pyboy import utils
+from pyboy.utils import PyBoyOutOfBoundsException
 
 from .constants import LOW_TILEDATA, TILES, TILES_CGB, VRAM_OFFSET
 
@@ -50,12 +51,6 @@ try:
     from PIL import Image
 except ImportError:
     Image = None
-
-try:
-    from cython import compiled
-    cythonmode = compiled
-except ImportError:
-    cythonmode = False
 
 
 class Tile:
@@ -74,11 +69,13 @@ class Tile:
         self.mb = mb
 
         if self.mb.cgb:
-            assert 0 &lt;= identifier &lt; TILES_CGB, &#34;Identifier out of range&#34;
+            if not (0 &lt;= identifier &lt; TILES_CGB):
+                raise PyBoyOutOfBoundsException(&#34;Identifier out of range&#34;)
         else:
-            assert 0 &lt;= identifier &lt; TILES, &#34;Identifier out of range&#34;
+            if not (0 &lt;= identifier &lt; TILES):
+                raise PyBoyOutOfBoundsException(&#34;Identifier out of range&#34;)
 
-        self.data_address = LOW_TILEDATA + (16 * (identifier%TILES))
+        self.data_address = LOW_TILEDATA + (16 * (identifier % TILES))
         &#34;&#34;&#34;
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.api.tile.Tile.image` or one of the
@@ -149,10 +146,10 @@ class Tile:
             Image of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
         if Image is None:
-            logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
-            return None
+            logger.error(f&#39;{__name__}: Missing dependency &#34;Pillow&#34;.&#39;)
+            utils.PillowImportError()._raise_import_error()
 
-        if cythonmode:
+        if utils.cython_compiled:
             return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
         else:
             return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
@@ -212,7 +209,7 @@ class Tile:
             Image data of tile in 8x8 pixels and RGB colors.
         &#34;&#34;&#34;
         self.data = np.zeros((8, 8), dtype=np.uint32)
-        for k in range(0, 16, 2): # 2 bytes for each line
+        for k in range(0, 16, 2):  # 2 bytes for each line
             if self.vram_bank == 0:
                 byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
                 byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]
@@ -273,11 +270,13 @@ needed. Beware that the graphics for the tile can change between each call to <c
         self.mb = mb
 
         if self.mb.cgb:
-            assert 0 &lt;= identifier &lt; TILES_CGB, &#34;Identifier out of range&#34;
+            if not (0 &lt;= identifier &lt; TILES_CGB):
+                raise PyBoyOutOfBoundsException(&#34;Identifier out of range&#34;)
         else:
-            assert 0 &lt;= identifier &lt; TILES, &#34;Identifier out of range&#34;
+            if not (0 &lt;= identifier &lt; TILES):
+                raise PyBoyOutOfBoundsException(&#34;Identifier out of range&#34;)
 
-        self.data_address = LOW_TILEDATA + (16 * (identifier%TILES))
+        self.data_address = LOW_TILEDATA + (16 * (identifier % TILES))
         &#34;&#34;&#34;
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.api.tile.Tile.image` or one of the
@@ -348,10 +347,10 @@ needed. Beware that the graphics for the tile can change between each call to <c
             Image of tile in 8x8 pixels and RGBA colors.
         &#34;&#34;&#34;
         if Image is None:
-            logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
-            return None
+            logger.error(f&#39;{__name__}: Missing dependency &#34;Pillow&#34;.&#39;)
+            utils.PillowImportError()._raise_import_error()
 
-        if cythonmode:
+        if utils.cython_compiled:
             return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
         else:
             return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
@@ -411,7 +410,7 @@ needed. Beware that the graphics for the tile can change between each call to <c
             Image data of tile in 8x8 pixels and RGB colors.
         &#34;&#34;&#34;
         self.data = np.zeros((8, 8), dtype=np.uint32)
-        for k in range(0, 16, 2): # 2 bytes for each line
+        for k in range(0, 16, 2):  # 2 bytes for each line
             if self.vram_bank == 0:
                 byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
                 byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]
@@ -514,10 +513,10 @@ The width and height of the tile.</p></section>
         Image of tile in 8x8 pixels and RGBA colors.
     &#34;&#34;&#34;
     if Image is None:
-        logger.error(f&#34;{__name__}: Missing dependency \&#34;Pillow\&#34;.&#34;)
-        return None
+        logger.error(f&#39;{__name__}: Missing dependency &#34;Pillow&#34;.&#39;)
+        utils.PillowImportError()._raise_import_error()
 
-    if cythonmode:
+    if utils.cython_compiled:
         return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
     else:
         return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())</code></pre>
@@ -641,7 +640,7 @@ array([[255,   0,   0,   0,   0,   0,   0, 255],
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>
