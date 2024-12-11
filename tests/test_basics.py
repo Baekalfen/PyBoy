@@ -9,6 +9,7 @@ import os.path
 import sys
 from io import BytesIO
 from pathlib import Path
+from unittest import mock
 
 import PIL
 import pytest
@@ -17,7 +18,7 @@ from pytest_lazy_fixtures import lf
 from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
-from pyboy.utils import WindowEvent
+from pyboy.utils import WindowEvent, cython_compiled
 
 
 def test_log_level_none(default_rom, capsys):
@@ -187,6 +188,40 @@ def test_argv_parser(*args):
     ).__dict__
     for k, v in {"autopause": True, "debug": True, "no_input": True, "log_level": "INFO", "rewind": True}.items():
         assert flags[k] == v
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
+def test_no_input_enabled(default_rom):
+    pyboy = PyBoy(default_rom, no_input=True)
+    pyboy.set_emulation_speed(0)
+    with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
+        pyboy.tick()
+        assert not pyboy.paused
+
+    pyboy.send_input(WindowEvent.PAUSE)
+    pyboy.tick()
+    assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.UNPAUSE)
+    pyboy.tick()
+    assert not pyboy.paused
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
+def test_no_input_disabled(default_rom):
+    pyboy = PyBoy(default_rom, no_input=False)
+    pyboy.set_emulation_speed(0)
+    with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
+        pyboy.tick()
+        assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.PAUSE)
+    pyboy.tick()
+    assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.UNPAUSE)
+    pyboy.tick()
+    assert not pyboy.paused
 
 
 def test_tilemaps(kirby_rom):
