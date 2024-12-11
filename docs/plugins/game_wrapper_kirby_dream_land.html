@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy.plugins.game_wrapper_kirby_dream_land API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -35,8 +35,7 @@ __pdoc__ = {
 }
 
 import pyboy
-from pyboy import utils
-from pyboy.utils import WindowEvent
+from pyboy.utils import PyBoyException
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -49,7 +48,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
-    cartridge_title = &#34;KIRBY DREAM LA&#34;
+
+    cartridge_title = &#34;KIRBY DREAM LAN&#34;
 
     def __init__(self, *args, **kwargs):
         self.score = 0
@@ -70,7 +70,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 4
         for n in range(score_digits):
-            self.score += self.pyboy.memory[0xD070 + n] * 10**(score_digits - n)
+            self.score += self.pyboy.memory[0xD070 + n] * 10 ** (score_digits - n)
 
         # Check if game is over
         prev_health = self.health
@@ -92,11 +92,13 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
+        if self.game_has_started:
+            raise PyBoyException(&#34;Gamewrapper already started! Use &#39;reset&#39; instead.&#34;)
 
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[0:3, 16] == [231, 224, 235]: # &#39;HAL&#39; on the first screen
+            if self.tilemap_background[0:3, 16] == [231, 224, 235]:  # &#39;HAL&#39; on the first screen
                 break
 
         # Wait for transition to finish (start screen)
@@ -161,15 +163,13 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         return self._game_over
 
     def __repr__(self):
-        # yapf: disable
         return (
-            f&#34;Kirby Dream Land:\n&#34; +
-            f&#34;Score: {self.score}\n&#34; +
-            f&#34;Health: {self.health}\n&#34; +
-            f&#34;Lives left: {self.lives_left}\n&#34; +
-            super().__repr__()
-        )
-        # yapf: enable</code></pre>
+            &#34;Kirby Dream Land:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Health: {self.health}\n&#34;
+            + f&#34;Lives left: {self.lives_left}\n&#34;
+            + super().__repr__()
+        )</code></pre>
 </details>
 </section>
 <section>
@@ -198,7 +198,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
-    cartridge_title = &#34;KIRBY DREAM LA&#34;
+
+    cartridge_title = &#34;KIRBY DREAM LAN&#34;
 
     def __init__(self, *args, **kwargs):
         self.score = 0
@@ -219,7 +220,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 4
         for n in range(score_digits):
-            self.score += self.pyboy.memory[0xD070 + n] * 10**(score_digits - n)
+            self.score += self.pyboy.memory[0xD070 + n] * 10 ** (score_digits - n)
 
         # Check if game is over
         prev_health = self.health
@@ -241,11 +242,13 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
+        if self.game_has_started:
+            raise PyBoyException(&#34;Gamewrapper already started! Use &#39;reset&#39; instead.&#34;)
 
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[0:3, 16] == [231, 224, 235]: # &#39;HAL&#39; on the first screen
+            if self.tilemap_background[0:3, 16] == [231, 224, 235]:  # &#39;HAL&#39; on the first screen
                 break
 
         # Wait for transition to finish (start screen)
@@ -310,15 +313,13 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         return self._game_over
 
     def __repr__(self):
-        # yapf: disable
         return (
-            f&#34;Kirby Dream Land:\n&#34; +
-            f&#34;Score: {self.score}\n&#34; +
-            f&#34;Health: {self.health}\n&#34; +
-            f&#34;Lives left: {self.lives_left}\n&#34; +
-            super().__repr__()
-        )
-        # yapf: enable</code></pre>
+            &#34;Kirby Dream Land:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Health: {self.health}\n&#34;
+            + f&#34;Lives left: {self.lives_left}\n&#34;
+            + super().__repr__()
+        )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -369,11 +370,13 @@ instantly.</p>
     Kwargs:
         * timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
+    if self.game_has_started:
+        raise PyBoyException(&#34;Gamewrapper already started! Use &#39;reset&#39; instead.&#34;)
 
     # Boot screen
     while True:
         self.pyboy.tick(1, False)
-        if self.tilemap_background[0:3, 16] == [231, 224, 235]: # &#39;HAL&#39; on the first screen
+        if self.tilemap_background[0:3, 16] == [231, 224, 235]:  # &#39;HAL&#39; on the first screen
             break
 
     # Wait for transition to finish (start screen)
@@ -528,7 +531,7 @@ instantly.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

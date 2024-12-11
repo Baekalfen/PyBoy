@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy.api API documentation</title>
 <meta name="description" content="Tools to help interfacing with the Game Boy hardware" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -42,8 +42,17 @@ from .tile import Tile
 from .tilemap import TileMap
 
 # __pdoc__ = {
-#     &#34;gameshark.GameShark.tick&#34;: False,
-# }</code></pre>
+#     &#34;constants&#34;: False,
+#     &#34;manager&#34;: False,
+# }
+__all__ = [
+    &#34;constants&#34;,
+    &#34;GameShark&#34;,
+    &#34;Screen&#34;,
+    &#34;Sprite&#34;,
+    &#34;Tile&#34;,
+    &#34;TileMap&#34;,
+]</code></pre>
 </details>
 </section>
 <section>
@@ -65,6 +74,10 @@ from .tilemap import TileMap
 <dd>
 <section class="desc"><p>This class gives access to the frame buffer and other screen parameters of PyBoy.</p></section>
 </dd>
+<dt><code class="name"><a title="pyboy.api.sound" href="sound.html">pyboy.api.sound</a></code></dt>
+<dd>
+<section class="desc"><p>This class gives access to the sound buffer of PyBoy.</p></section>
+</dd>
 <dt><code class="name"><a title="pyboy.api.sprite" href="sprite.html">pyboy.api.sprite</a></code></dt>
 <dd>
 <section class="desc"><p>This class presents an interface to the sprites held in the OAM data on the Game Boy.</p></section>
@@ -85,6 +98,1936 @@ from .tilemap import TileMap
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.api.GameShark"><code class="flex name class">
+<span>class <span class="ident">GameShark</span></span>
+<span>(</span><span>memory)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GameShark:
+    def __init__(self, memory):
+        self.memory = memory
+        self.cheats = {}
+        self.enabled = False
+
+    def _convert_cheat(self, gameshark_code):
+        &#34;&#34;&#34;
+        A GameShark code for these consoles is written in the format ttvvaaaa. tt specifies the type, which is usually 01.
+        vv specifies the hexadecimal value the code will write into the game&#39;s memory. aaaa specifies the memory address
+        that will be modified, with the low byte first (e.g. address C056 is written as 56C0).
+        Example 011556C0 would output:
+        type = 01
+        value = 0x15
+        address = 0x56C0
+
+        For more details:
+        https://doc.kodewerx.org/hacking_gb.html
+
+        There seems to be conflicting information about the presence of other types than 01.
+        &#34;&#34;&#34;
+        # Check if the input cheat code has the correct length (8 characters)
+        if len(gameshark_code) != 8:
+            raise ValueError(&#34;Invalid cheat code length. Cheat code must be 8 characters long.&#34;)
+
+        # Extract components from the cheat code
+        _type = int(gameshark_code[:2], 16)
+        value = int(gameshark_code[2:4], 16)  # Convert hexadecimal value to an integer
+        unconverted_address = gameshark_code[4:]  # Ex:   1ED1
+        lower = unconverted_address[:2]  # Ex:  1E
+        upper = unconverted_address[2:]  # Ex:  D1
+        address_converted = upper + lower  # Ex: 0xD11E   # Converting to Ram Readable address
+        address = int(address_converted, 16)
+
+        if not 0x8000 &lt;= address:
+            raise ValueError(&#34;Invalid GameShark code provided. Address not in the RAM range&#34;)
+
+        return (_type, value, address)
+
+    def _get_value(self, _type, address):
+        if _type == 0x01:
+            # 8-bit RAM write
+            # Writes the byte xx to the address zzyy.
+            return self.memory[address]
+        # elif (_type &amp; 0xF0) == 0x80:
+        #     # 8-bit RAM write (with bank change)
+        #     # Changes the RAM bank to b, then writes the byte xx to the address zzyy.
+        #     bank = _type &amp; 0xF
+        #     pass
+        # elif (_type &amp; 0xF0) == 0x90:
+        #     # 8-bit RAM write (with WRAM bank change)
+        #     # Changes the WRAM bank to b and then writes the byte xx to the address zzyy. GBC only.
+        #     bank = _type &amp; 0xF
+        #     pass
+        else:
+            raise ValueError(&#34;Invalid GameShark type&#34;, _type)
+
+    def _set_value(self, _type, value, address):
+        if _type == 0x01:
+            # 8-bit RAM write
+            # Writes the byte xx to the address zzyy.
+            self.memory[address] = value
+        # elif (_type &amp; 0xF0) == 0x80:
+        #     # 8-bit RAM write (with bank change)
+        #     # Changes the RAM bank to b, then writes the byte xx to the address zzyy.
+        #     bank = _type &amp; 0xF
+        #     pass
+        # elif (_type &amp; 0xF0) == 0x90:
+        #     # 8-bit RAM write (with WRAM bank change)
+        #     # Changes the WRAM bank to b and then writes the byte xx to the address zzyy. GBC only.
+        #     bank = _type &amp; 0xF
+        #     pass
+        else:
+            raise ValueError(&#34;Invalid GameShark type&#34;, _type)
+
+    def add(self, code):
+        &#34;&#34;&#34;
+        Add a GameShark cheat to the emulator.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.gameshark.add(&#34;01FF16D0&#34;)
+        ```
+
+        Args:
+            code (str): GameShark code to add
+        &#34;&#34;&#34;
+        self.enabled = True
+        _type, value, address = self._convert_cheat(code)
+        if code not in self.cheats:
+            self.cheats[code] = (self._get_value(_type, address), (_type, value, address))
+        else:
+            raise PyBoyInvalidInputException(&#34;GameShark code already applied!&#34;)
+
+    def remove(self, code, restore_value=True):
+        &#34;&#34;&#34;
+        Remove a GameShark cheat from the emulator.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.gameshark.add(&#34;01FF16D0&#34;)
+        &gt;&gt;&gt; pyboy.gameshark.remove(&#34;01FF16D0&#34;)
+        ```
+
+        Args:
+            code (str): GameShark code to remove
+            restore_value (bool): True to restore original value at address, otherwise don&#39;t restore
+        &#34;&#34;&#34;
+
+        if code not in self.cheats:
+            raise ValueError(&#34;GameShark code cannot be removed. Hasn&#39;t been applied.&#34;)
+
+        original_value, (_type, _, address) = self.cheats.pop(code)
+        if restore_value:
+            self._set_value(_type, original_value, address)
+
+        if len(self.cheats) == 0:
+            self.enabled = False
+
+    def clear_all(self, restore_value=True):
+        &#34;&#34;&#34;
+        Remove all GameShark cheats from the emulator.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.gameshark.clear_all()
+        ```
+
+        Args:
+            restore_value (bool): Restore the original values of the memory addresses that were modified by the cheats.
+        &#34;&#34;&#34;
+        # NOTE: Create a list so we don&#39;t remove from the iterator we are going through
+        for code in list(self.cheats.keys()):
+            self.remove(code, restore_value)
+
+    def tick(self):
+        if not self.enabled:
+            return 0
+        # https://gbdev.io/pandocs/Shark_Cheats.html
+        # &#34;As far as it is understood, patching is implemented by hooking the original VBlank interrupt handler, and
+        # re-writing RAM values each frame.&#34;
+        for _, (_, (_type, value, address)) in self.cheats.items():
+            self._set_value(_type, value, address)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.api.GameShark.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, code)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Add a GameShark cheat to the emulator.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.gameshark.add(&quot;01FF16D0&quot;)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>code</code></strong> :&ensp;<code>str</code></dt>
+<dd>GameShark code to add</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add(self, code):
+    &#34;&#34;&#34;
+    Add a GameShark cheat to the emulator.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.gameshark.add(&#34;01FF16D0&#34;)
+    ```
+
+    Args:
+        code (str): GameShark code to add
+    &#34;&#34;&#34;
+    self.enabled = True
+    _type, value, address = self._convert_cheat(code)
+    if code not in self.cheats:
+        self.cheats[code] = (self._get_value(_type, address), (_type, value, address))
+    else:
+        raise PyBoyInvalidInputException(&#34;GameShark code already applied!&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.GameShark.remove"><code class="name flex">
+<span>def <span class="ident">remove</span></span>(<span>self, code, restore_value=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Remove a GameShark cheat from the emulator.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.gameshark.add(&quot;01FF16D0&quot;)
+&gt;&gt;&gt; pyboy.gameshark.remove(&quot;01FF16D0&quot;)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>code</code></strong> :&ensp;<code>str</code></dt>
+<dd>GameShark code to remove</dd>
+<dt><strong><code>restore_value</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True to restore original value at address, otherwise don't restore</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove(self, code, restore_value=True):
+    &#34;&#34;&#34;
+    Remove a GameShark cheat from the emulator.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.gameshark.add(&#34;01FF16D0&#34;)
+    &gt;&gt;&gt; pyboy.gameshark.remove(&#34;01FF16D0&#34;)
+    ```
+
+    Args:
+        code (str): GameShark code to remove
+        restore_value (bool): True to restore original value at address, otherwise don&#39;t restore
+    &#34;&#34;&#34;
+
+    if code not in self.cheats:
+        raise ValueError(&#34;GameShark code cannot be removed. Hasn&#39;t been applied.&#34;)
+
+    original_value, (_type, _, address) = self.cheats.pop(code)
+    if restore_value:
+        self._set_value(_type, original_value, address)
+
+    if len(self.cheats) == 0:
+        self.enabled = False</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.GameShark.clear_all"><code class="name flex">
+<span>def <span class="ident">clear_all</span></span>(<span>self, restore_value=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Remove all GameShark cheats from the emulator.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.gameshark.clear_all()
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>restore_value</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Restore the original values of the memory addresses that were modified by the cheats.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clear_all(self, restore_value=True):
+    &#34;&#34;&#34;
+    Remove all GameShark cheats from the emulator.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.gameshark.clear_all()
+    ```
+
+    Args:
+        restore_value (bool): Restore the original values of the memory addresses that were modified by the cheats.
+    &#34;&#34;&#34;
+    # NOTE: Create a list so we don&#39;t remove from the iterator we are going through
+    for code in list(self.cheats.keys()):
+        self.remove(code, restore_value)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.GameShark.tick"><code class="name flex">
+<span>def <span class="ident">tick</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tick(self):
+    if not self.enabled:
+        return 0
+    # https://gbdev.io/pandocs/Shark_Cheats.html
+    # &#34;As far as it is understood, patching is implemented by hooking the original VBlank interrupt handler, and
+    # re-writing RAM values each frame.&#34;
+    for _, (_, (_type, value, address)) in self.cheats.items():
+        self._set_value(_type, value, address)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.Screen"><code class="flex name class">
+<span>class <span class="ident">Screen</span></span>
+<span>(</span><span>mb)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>As part of the emulation, we generate a screen buffer in 32-bit RGBA format. This class has several helper methods
+to make it possible to read this buffer out.</p>
+<p>If you're making an AI or bot, it's highly recommended to <em>not</em> use this class for detecting objects on the screen.
+It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" href="../index.html#pyboy.PyBoy.tilemap_background">PyBoy.tilemap_background</a></code>, <code><a title="pyboy.PyBoy.tilemap_window" href="../index.html#pyboy.PyBoy.tilemap_window">PyBoy.tilemap_window</a></code>, and <code><a title="pyboy.PyBoy.get_sprite" href="../index.html#pyboy.PyBoy.get_sprite">PyBoy.get_sprite()</a></code> instead.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Screen:
+    &#34;&#34;&#34;
+    As part of the emulation, we generate a screen buffer in 32-bit RGBA format. This class has several helper methods
+    to make it possible to read this buffer out.
+
+    If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
+    It&#39;s much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
+    &#34;&#34;&#34;
+
+    def __init__(self, mb):
+        self.mb = mb
+
+        self.raw_buffer = self.mb.lcd.renderer._screenbuffer
+        &#34;&#34;&#34;
+        Provides a raw, unfiltered `bytes` object with the data from the screen. Check
+        `Screen.raw_buffer_format` to see which dataformat is used. **The returned type and dataformat are
+        subject to change.** The screen buffer is row-major.
+
+        Use this, only if you need to bypass the overhead of `Screen.image` or `Screen.ndarray`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; import numpy as np
+        &gt;&gt;&gt; rows, cols = pyboy.screen.raw_buffer_dims
+        &gt;&gt;&gt; ndarray = np.frombuffer(
+        ...     pyboy.screen.raw_buffer,
+        ...     dtype=np.uint8,
+        ... ).reshape(rows, cols, 4) # Just an example, use pyboy.screen.ndarray instead
+
+        ```
+
+        Returns
+        -------
+        memoryview:
+            92160 bytes memoryview of screen data.
+        &#34;&#34;&#34;
+        self.raw_buffer_dims = self.mb.lcd.renderer.buffer_dims
+        &#34;&#34;&#34;
+        Returns the dimensions of the raw screen buffer. The screen buffer is row-major.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.screen.raw_buffer_dims
+        (144, 160)
+
+        ```
+
+        Returns
+        -------
+        tuple:
+            A two-tuple of the buffer dimensions. E.g. (144, 160).
+        &#34;&#34;&#34;
+        self.raw_buffer_format = self.mb.lcd.renderer.color_format
+        &#34;&#34;&#34;
+        Returns the color format of the raw screen buffer. **This format is subject to change.**
+
+        Example:
+        ```python
+        &gt;&gt;&gt; from PIL import Image
+        &gt;&gt;&gt; pyboy.screen.raw_buffer_format
+        &#39;RGBA&#39;
+        &gt;&gt;&gt; image = Image.frombuffer(
+        ...    pyboy.screen.raw_buffer_format,
+        ...    pyboy.screen.raw_buffer_dims[::-1],
+        ...    pyboy.screen.raw_buffer,
+        ... ) # Just an example, use pyboy.screen.image instead
+        &gt;&gt;&gt; image.save(&#39;frame.png&#39;)
+
+        ```
+
+        Returns
+        -------
+        str:
+            Color format of the raw screen buffer. E.g. &#39;RGBA&#39;.
+        &#34;&#34;&#34;
+        self.image = None
+        &#34;&#34;&#34;
+        Reference to a PIL Image from the screen buffer. **Remember to copy, resize or convert this object** if you
+        intend to store it. The backing buffer will update, but it will be the same `PIL.Image` object.
+
+        Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+        case, read up on the `pyboy.api` features, [Pan Docs](https://gbdev.io/pandocs/) on tiles/sprites,
+        and join our Discord channel for more help.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; image = pyboy.screen.image
+        &gt;&gt;&gt; type(image)
+        &lt;class &#39;PIL.Image.Image&#39;&gt;
+        &gt;&gt;&gt; image.save(&#39;frame.png&#39;)
+
+        ```
+
+        Returns
+        -------
+        PIL.Image:
+            RGB image of (160, 144) pixels
+        &#34;&#34;&#34;
+        if not Image:
+            logger.warning(&#39;Cannot generate screen image. Missing dependency &#34;Pillow&#34;.&#39;)
+            self.image = utils.PillowImportError()
+        else:
+            self._set_image()
+
+        self.ndarray = np.frombuffer(
+            self.mb.lcd.renderer._screenbuffer_raw,
+            dtype=np.uint8,
+        ).reshape(ROWS, COLS, 4)
+        &#34;&#34;&#34;
+        References the screen data in NumPy format. **Remember to copy this object** if you intend to store it.
+        The backing buffer will update, but it will be the same `ndarray` object.
+
+        The format is given by `pyboy.api.screen.Screen.raw_buffer_format`. The screen buffer is row-major.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.screen.ndarray.shape
+        (144, 160, 4)
+        &gt;&gt;&gt; # Display &#34;P&#34; on screen from the PyBoy bootrom
+        &gt;&gt;&gt; pyboy.screen.ndarray[66:80,64:72,0]
+        array([[255, 255, 255, 255, 255, 255, 255, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+        ```
+
+        Returns
+        -------
+        numpy.ndarray:
+            Screendata in `ndarray` of bytes with shape (144, 160, 4)
+        &#34;&#34;&#34;
+
+    def _set_image(self):
+        self.image = Image.frombuffer(
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
+        )
+
+    @property
+    def tilemap_position_list(self):
+        &#34;&#34;&#34;
+        This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
+        screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+        the end of each call to `pyboy.PyBoy.tick()`.
+
+        See `Screen.get_tilemap_position` for more information.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.tick(25)
+        True
+        &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
+        &gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
+        [0, 0, -7, 0]
+        [1, 0, -7, 0]
+        [2, 0, -7, 0]
+        [2, 0, -7, 0]
+        [2, 0, -7, 0]
+        [3, 0, -7, 0]
+        [3, 0, -7, 0]
+        [2, 0, -7, 0]
+        [1, 0, -7, 0]
+        [1, 0, -7, 0]
+        [0, 0, -7, 0]
+
+        ```
+
+        Returns
+        -------
+        list:
+            Nested list of SCX, SCY, WX and WY for each scanline (144x4). Returns (0, 0, 0, 0) when LCD is off.
+        &#34;&#34;&#34;
+
+        if self.mb.lcd._LCDC.lcd_enable:
+            return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
+        else:
+            return [[0, 0, 0, 0] for line in range(144)]
+
+    def get_tilemap_position(self):
+        &#34;&#34;&#34;
+        These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
+        that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
+        to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
+        of the tile map.
+
+        For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
+        or the Pan Docs under [LCD Position and Scrolling](https://gbdev.io/pandocs/Scrolling.html).
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.screen.get_tilemap_position()
+        ((0, 0), (-7, 0))
+
+        ```
+
+        Returns
+        -------
+        tuple:
+            Returns the tuple of registers ((SCX, SCY), (WX - 7, WY))
+        &#34;&#34;&#34;
+        return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.api.Screen.tilemap_position_list"><code class="name">var <span class="ident">tilemap_position_list</span></code></dt>
+<dd>
+<section class="desc"><p>This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
+screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+the end of each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
+<p>See <code><a title="pyboy.api.Screen.get_tilemap_position" href="#pyboy.api.Screen.get_tilemap_position">Screen.get_tilemap_position()</a></code> for more information.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.tick(25)
+True
+&gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
+&gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
+[0, 0, -7, 0]
+[1, 0, -7, 0]
+[2, 0, -7, 0]
+[2, 0, -7, 0]
+[2, 0, -7, 0]
+[3, 0, -7, 0]
+[3, 0, -7, 0]
+[2, 0, -7, 0]
+[1, 0, -7, 0]
+[1, 0, -7, 0]
+[0, 0, -7, 0]
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list:</code></dt>
+<dd>Nested list of SCX, SCY, WX and WY for each scanline (144x4). Returns (0, 0, 0, 0) when LCD is off.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def tilemap_position_list(self):
+    &#34;&#34;&#34;
+    This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
+    screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
+    the end of each call to `pyboy.PyBoy.tick()`.
+
+    See `Screen.get_tilemap_position` for more information.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.tick(25)
+    True
+    &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
+    &gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
+    [0, 0, -7, 0]
+    [1, 0, -7, 0]
+    [2, 0, -7, 0]
+    [2, 0, -7, 0]
+    [2, 0, -7, 0]
+    [3, 0, -7, 0]
+    [3, 0, -7, 0]
+    [2, 0, -7, 0]
+    [1, 0, -7, 0]
+    [1, 0, -7, 0]
+    [0, 0, -7, 0]
+
+    ```
+
+    Returns
+    -------
+    list:
+        Nested list of SCX, SCY, WX and WY for each scanline (144x4). Returns (0, 0, 0, 0) when LCD is off.
+    &#34;&#34;&#34;
+
+    if self.mb.lcd._LCDC.lcd_enable:
+        return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
+    else:
+        return [[0, 0, 0, 0] for line in range(144)]</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.Screen.raw_buffer"><code class="name">var <span class="ident">raw_buffer</span></code></dt>
+<dd>
+<section class="desc"><p>Provides a raw, unfiltered <code>bytes</code> object with the data from the screen. Check
+<code><a title="pyboy.api.Screen.raw_buffer_format" href="#pyboy.api.Screen.raw_buffer_format">Screen.raw_buffer_format</a></code> to see which dataformat is used. <strong>The returned type and dataformat are
+subject to change.</strong> The screen buffer is row-major.</p>
+<p>Use this, only if you need to bypass the overhead of <code><a title="pyboy.api.Screen.image" href="#pyboy.api.Screen.image">Screen.image</a></code> or <code><a title="pyboy.api.Screen.ndarray" href="#pyboy.api.Screen.ndarray">Screen.ndarray</a></code>.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; rows, cols = pyboy.screen.raw_buffer_dims
+&gt;&gt;&gt; ndarray = np.frombuffer(
+...     pyboy.screen.raw_buffer,
+...     dtype=np.uint8,
+... ).reshape(rows, cols, 4) # Just an example, use pyboy.screen.ndarray instead
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>memoryview:</code></dt>
+<dd>92160 bytes memoryview of screen data.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Screen.raw_buffer_dims"><code class="name">var <span class="ident">raw_buffer_dims</span></code></dt>
+<dd>
+<section class="desc"><p>Returns the dimensions of the raw screen buffer. The screen buffer is row-major.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.screen.raw_buffer_dims
+(144, 160)
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>tuple:</code></dt>
+<dd>A two-tuple of the buffer dimensions. E.g. (144, 160).</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Screen.raw_buffer_format"><code class="name">var <span class="ident">raw_buffer_format</span></code></dt>
+<dd>
+<section class="desc"><p>Returns the color format of the raw screen buffer. <strong>This format is subject to change.</strong></p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from PIL import Image
+&gt;&gt;&gt; pyboy.screen.raw_buffer_format
+'RGBA'
+&gt;&gt;&gt; image = Image.frombuffer(
+...    pyboy.screen.raw_buffer_format,
+...    pyboy.screen.raw_buffer_dims[::-1],
+...    pyboy.screen.raw_buffer,
+... ) # Just an example, use pyboy.screen.image instead
+&gt;&gt;&gt; image.save('frame.png')
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str:</code></dt>
+<dd>Color format of the raw screen buffer. E.g. 'RGBA'.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Screen.image"><code class="name">var <span class="ident">image</span></code></dt>
+<dd>
+<section class="desc"><p>Reference to a PIL Image from the screen buffer. <strong>Remember to copy, resize or convert this object</strong> if you
+intend to store it. The backing buffer will update, but it will be the same <code>PIL.Image</code> object.</p>
+<p>Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
+case, read up on the <code><a title="pyboy.api" href="#pyboy.api">pyboy.api</a></code> features, <a href="https://gbdev.io/pandocs/">Pan Docs</a> on tiles/sprites,
+and join our Discord channel for more help.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; image = pyboy.screen.image
+&gt;&gt;&gt; type(image)
+&lt;class 'PIL.Image.Image'&gt;
+&gt;&gt;&gt; image.save('frame.png')
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>PIL.Image:</code></dt>
+<dd>RGB image of (160, 144) pixels</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Screen.ndarray"><code class="name">var <span class="ident">ndarray</span></code></dt>
+<dd>
+<section class="desc"><p>References the screen data in NumPy format. <strong>Remember to copy this object</strong> if you intend to store it.
+The backing buffer will update, but it will be the same <code>ndarray</code> object.</p>
+<p>The format is given by <code><a title="pyboy.api.screen.Screen.raw_buffer_format" href="screen.html#pyboy.api.screen.Screen.raw_buffer_format">Screen.raw_buffer_format</a></code>. The screen buffer is row-major.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.screen.ndarray.shape
+(144, 160, 4)
+&gt;&gt;&gt; # Display &quot;P&quot; on screen from the PyBoy bootrom
+&gt;&gt;&gt; pyboy.screen.ndarray[66:80,64:72,0]
+array([[255, 255, 255, 255, 255, 255, 255, 255],
+       [255,   0,   0,   0,   0,   0, 255, 255],
+       [255,   0,   0,   0,   0,   0,   0, 255],
+       [255,   0,   0, 255, 255,   0,   0, 255],
+       [255,   0,   0, 255, 255,   0,   0, 255],
+       [255,   0,   0, 255, 255,   0,   0, 255],
+       [255,   0,   0,   0,   0,   0,   0, 255],
+       [255,   0,   0,   0,   0,   0, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray:</code></dt>
+<dd>Screendata in <code>ndarray</code> of bytes with shape (144, 160, 4)</dd>
+</dl></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.api.Screen.get_tilemap_position"><code class="name flex">
+<span>def <span class="ident">get_tilemap_position</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
+that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
+to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
+of the tile map.</p>
+<p>For more details, see "7.4 Viewport" in the <a href="https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf">report</a>,
+or the Pan Docs under <a href="https://gbdev.io/pandocs/Scrolling.html">LCD Position and Scrolling</a>.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.screen.get_tilemap_position()
+((0, 0), (-7, 0))
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>tuple:</code></dt>
+<dd>Returns the tuple of registers ((SCX, SCY), (WX - 7, WY))</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_tilemap_position(self):
+    &#34;&#34;&#34;
+    These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
+    that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
+    to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
+    of the tile map.
+
+    For more details, see &#34;7.4 Viewport&#34; in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
+    or the Pan Docs under [LCD Position and Scrolling](https://gbdev.io/pandocs/Scrolling.html).
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.screen.get_tilemap_position()
+    ((0, 0), (-7, 0))
+
+    ```
+
+    Returns
+    -------
+    tuple:
+        Returns the tuple of registers ((SCX, SCY), (WX - 7, WY))
+    &#34;&#34;&#34;
+    return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.Sprite"><code class="flex name class">
+<span>class <span class="ident">Sprite</span></span>
+<span>(</span><span>mb, sprite_index)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This class presents an interface to the sprites held in the OAM data on the Game Boy.</p>
+<p>The purpose is to make it easier to interpret events on the screen, in order to program a bot, or train an AI.</p>
+<p>Sprites are used on the Game Boy for enemy and player characters, as only sprites can have transparency, and can
+move at pixel-precision on the screen. The other method of graphics &ndash; tile maps &ndash; can only be placed in a
+grid-size of 8x8 pixels precision, and can have no transparency.</p>
+<p>Sprites on the Game Boy are tightly associated with tiles. The sprites can be seen as "upgraded" tiles, as the
+image data still refers back to one (or two) tiles. The tile that a sprite will show, can change between each
+call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>, so make sure to verify the <code><a title="pyboy.api.Sprite.tile_identifier" href="#pyboy.api.Sprite.tile_identifier">Sprite.tile_identifier</a></code> hasn't changed.</p>
+<p>By knowing the tile identifiers of players, enemies, power-ups and so on, you'll be able to search for them
+using <code>pyboy.sprite_by_tile_identifier</code> and feed it to your bot or AI.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Sprite:
+    def __init__(self, mb, sprite_index):
+        &#34;&#34;&#34;
+        This class presents an interface to the sprites held in the OAM data on the Game Boy.
+
+        The purpose is to make it easier to interpret events on the screen, in order to program a bot, or train an AI.
+
+        Sprites are used on the Game Boy for enemy and player characters, as only sprites can have transparency, and can
+        move at pixel-precision on the screen. The other method of graphics -- tile maps -- can only be placed in a
+        grid-size of 8x8 pixels precision, and can have no transparency.
+
+        Sprites on the Game Boy are tightly associated with tiles. The sprites can be seen as &#34;upgraded&#34; tiles, as the
+        image data still refers back to one (or two) tiles. The tile that a sprite will show, can change between each
+        call to `pyboy.PyBoy.tick`, so make sure to verify the `Sprite.tile_identifier` hasn&#39;t changed.
+
+        By knowing the tile identifiers of players, enemies, power-ups and so on, you&#39;ll be able to search for them
+        using `pyboy.sprite_by_tile_identifier` and feed it to your bot or AI.
+        &#34;&#34;&#34;
+        if not (0 &lt;= sprite_index &lt; SPRITES):
+            raise PyBoyOutOfBoundsException(f&#34;Sprite index of {sprite_index} is out of range (0-{SPRITES})&#34;)
+        self.mb = mb
+        self._offset = sprite_index * 4
+
+        self._sprite_index = sprite_index
+        &#34;&#34;&#34;
+        The index of the sprite itself. Beware, that this only represents the index or a &#34;slot&#34; in OAM memory.
+        Many games will change the image data of the sprite in the &#34;slot&#34; several times per second.
+
+        Returns
+        -------
+        int:
+            unsigned tile index
+        &#34;&#34;&#34;
+
+        # Documentation states the y coordinate needs to be subtracted by 16
+        self.y = self.mb.getitem(OAM_OFFSET + self._offset + 0) - 16
+        &#34;&#34;&#34;
+        The Y-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.
+
+        Returns
+        -------
+        int:
+            Y-coordinate
+        &#34;&#34;&#34;
+
+        # Documentation states the x coordinate needs to be subtracted by 8
+        self.x = self.mb.getitem(OAM_OFFSET + self._offset + 1) - 8
+        &#34;&#34;&#34;
+        The X-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.
+
+        Returns
+        -------
+        int:
+            X-coordinate
+        &#34;&#34;&#34;
+
+        # Sprites can only use unsigned tile indexes in the lower tile data.
+        self.tile_identifier = self.mb.getitem(OAM_OFFSET + self._offset + 2)
+        &#34;&#34;&#34;
+        The identifier of the tile the sprite uses. To get a better representation, see the method
+        `pyboy.api.sprite.Sprite.tiles`.
+
+        For double-height sprites, this will only give the identifier of the first tile. The second tile will
+        always be the one immediately following the first (`tile_identifier + 1`).
+
+        Returns
+        -------
+        int:
+            unsigned tile index
+        &#34;&#34;&#34;
+
+        attr = self.mb.getitem(OAM_OFFSET + self._offset + 3)
+        self.attr_obj_bg_priority = _bit(attr, 7)
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
+
+        Returns
+        -------
+        bool:
+            The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+
+        self.attr_y_flip = _bit(attr, 6)
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
+
+        Returns
+        -------
+        bool:
+            The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+
+        self.attr_x_flip = _bit(attr, 5)
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
+
+        Returns
+        -------
+        bool:
+            The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+
+        self.attr_palette_number = 0
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
+
+        Returns
+        -------
+        int:
+            The state of the bit(s) in the attributes lookup.
+        &#34;&#34;&#34;
+
+        self.attr_cgb_bank_number = 0
+        &#34;&#34;&#34;
+        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html).
+
+        Returns
+        -------
+        bool:
+            The state of the bit in the attributes lookup.
+        &#34;&#34;&#34;
+
+        if self.mb.cgb:
+            self.attr_palette_number = attr &amp; 0b111
+            self.attr_cgb_bank_number = _bit(attr, 3)
+        else:
+            self.attr_palette_number = _bit(attr, 4)
+
+        LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+        sprite_height = 16 if LCDC._get_sprite_height() else 8
+        self.shape = (8, sprite_height)
+        &#34;&#34;&#34;
+        Sprites can be set to be 8x8 or 8x16 pixels (16 pixels tall). This is defined globally for the rendering
+        hardware, so it&#39;s either all sprites using 8x16 pixels, or all sprites using 8x8 pixels.
+
+        Returns
+        -------
+        (int, int):
+            The width and height of the sprite.
+        &#34;&#34;&#34;
+
+        self.tiles = [Tile(self.mb, self.tile_identifier)]
+        &#34;&#34;&#34;
+        The Game Boy support sprites of single-height (8x8 pixels) and double-height (8x16 pixels).
+
+        In the single-height format, one tile is used. For double-height sprites, the Game Boy will also use the tile
+        immediately following the identifier given, and render it below the first.
+
+        More information can be found in the [Pan Docs: VRAM Sprite Attribute Table
+        (OAM)](https://gbdev.io/pandocs/OAM.html)
+
+        Returns
+        -------
+        list:
+            A list of `pyboy.api.tile.Tile` object(s) representing the graphics data for the sprite
+        &#34;&#34;&#34;
+        if sprite_height == 16:
+            self.tiles += [Tile(self.mb, self.tile_identifier + 1)]
+
+        self.on_screen = -sprite_height &lt; self.y &lt; 144 and -8 &lt; self.x &lt; 160
+        &#34;&#34;&#34;
+        To disable sprites from being rendered on screen, developers will place the sprite outside the area of the
+        screen. This is often a good way to determine if the sprite is inactive.
+
+        This check doesn&#39;t take transparency into account, and will only check the sprite&#39;s bounding-box of 8x8 or 8x16
+        pixels.
+
+        Returns
+        -------
+        bool:
+            True if the sprite has at least one pixel on screen.
+        &#34;&#34;&#34;
+
+    def __eq__(self, other):
+        return self._offset == other._offset
+
+    def __repr__(self):
+        tiles = &#34;, &#34;.join([str(t) for t in self.tiles])
+        return f&#34;Sprite [{self._sprite_index}]: Position: ({self.x}, {self.y}), Shape: {self.shape}, Tiles: ({tiles}), On screen: {self.on_screen}&#34;</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.api.Sprite.y"><code class="name">var <span class="ident">y</span></code></dt>
+<dd>
+<section class="desc"><p>The Y-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>Y-coordinate</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.x"><code class="name">var <span class="ident">x</span></code></dt>
+<dd>
+<section class="desc"><p>The X-coordinate on the screen to show the Sprite. The (x,y) coordinate points to the top-left corner of the sprite.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>X-coordinate</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.tile_identifier"><code class="name">var <span class="ident">tile_identifier</span></code></dt>
+<dd>
+<section class="desc"><p>The identifier of the tile the sprite uses. To get a better representation, see the method
+<code><a title="pyboy.api.sprite.Sprite.tiles" href="sprite.html#pyboy.api.sprite.Sprite.tiles">Sprite.tiles</a></code>.</p>
+<p>For double-height sprites, this will only give the identifier of the first tile. The second tile will
+always be the one immediately following the first (<code>tile_identifier + 1</code>).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>unsigned tile index</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.attr_obj_bg_priority"><code class="name">var <span class="ident">attr_obj_bg_priority</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="https://gbdev.io/pandocs/OAM.html">Pan Docs: VRAM Sprite Attribute Table
+(OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool:</code></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.attr_y_flip"><code class="name">var <span class="ident">attr_y_flip</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="https://gbdev.io/pandocs/OAM.html">Pan Docs: VRAM Sprite Attribute Table
+(OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool:</code></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.attr_x_flip"><code class="name">var <span class="ident">attr_x_flip</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="https://gbdev.io/pandocs/OAM.html">Pan Docs: VRAM Sprite Attribute Table
+(OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool:</code></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.attr_palette_number"><code class="name">var <span class="ident">attr_palette_number</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="https://gbdev.io/pandocs/OAM.html">Pan Docs: VRAM Sprite Attribute Table
+(OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>The state of the bit(s) in the attributes lookup.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.attr_cgb_bank_number"><code class="name">var <span class="ident">attr_cgb_bank_number</span></code></dt>
+<dd>
+<section class="desc"><p>To better understand this values, look in the <a href="https://gbdev.io/pandocs/OAM.html">Pan Docs: VRAM Sprite Attribute Table
+(OAM)</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool:</code></dt>
+<dd>The state of the bit in the attributes lookup.</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.shape"><code class="name">var <span class="ident">shape</span></code></dt>
+<dd>
+<section class="desc"><p>Sprites can be set to be 8x8 or 8x16 pixels (16 pixels tall). This is defined globally for the rendering
+hardware, so it's either all sprites using 8x16 pixels, or all sprites using 8x8 pixels.</p>
+<h2 id="returns">Returns</h2>
+<p>(int, int):
+The width and height of the sprite.</p></section>
+</dd>
+<dt id="pyboy.api.Sprite.tiles"><code class="name">var <span class="ident">tiles</span></code></dt>
+<dd>
+<section class="desc"><p>The Game Boy support sprites of single-height (8x8 pixels) and double-height (8x16 pixels).</p>
+<p>In the single-height format, one tile is used. For double-height sprites, the Game Boy will also use the tile
+immediately following the identifier given, and render it below the first.</p>
+<p>More information can be found in the <a href="https://gbdev.io/pandocs/OAM.html">Pan Docs: VRAM Sprite Attribute Table
+(OAM)</a></p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list:</code></dt>
+<dd>A list of <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code> object(s) representing the graphics data for the sprite</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Sprite.on_screen"><code class="name">var <span class="ident">on_screen</span></code></dt>
+<dd>
+<section class="desc"><p>To disable sprites from being rendered on screen, developers will place the sprite outside the area of the
+screen. This is often a good way to determine if the sprite is inactive.</p>
+<p>This check doesn't take transparency into account, and will only check the sprite's bounding-box of 8x8 or 8x16
+pixels.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool:</code></dt>
+<dd>True if the sprite has at least one pixel on screen.</dd>
+</dl></section>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.Tile"><code class="flex name class">
+<span>class <span class="ident">Tile</span></span>
+<span>(</span><span>mb, identifier)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
+<code><a title="pyboy.PyBoy.get_tile" href="../index.html#pyboy.PyBoy.get_tile">PyBoy.get_tile()</a></code>, <code><a title="pyboy.api.sprite.Sprite" href="sprite.html#pyboy.api.sprite.Sprite">Sprite</a></code> and <code><a title="pyboy.api.tilemap.TileMap" href="tilemap.html#pyboy.api.tilemap.TileMap">TileMap</a></code>, when refering to graphics.</p>
+<p>This class is not meant to be instantiated by developers reading this documentation, but it will be created
+internally and returned by <code><a title="pyboy.api.sprite.Sprite.tiles" href="sprite.html#pyboy.api.sprite.Sprite.tiles">Sprite.tiles</a></code> and
+<code><a title="pyboy.api.tilemap.TileMap.tile" href="tilemap.html#pyboy.api.tilemap.TileMap.tile">TileMap.tile()</a></code>.</p>
+<p>The data of this class is static, apart from the image data, which is loaded from the Game Boy's memory when
+needed. Beware that the graphics for the tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Tile:
+    def __init__(self, mb, identifier):
+        &#34;&#34;&#34;
+        The Game Boy uses tiles as the building block for all graphics on the screen. This base-class is used for
+        `pyboy.PyBoy.get_tile`, `pyboy.api.sprite.Sprite` and `pyboy.api.tilemap.TileMap`, when refering to graphics.
+
+        This class is not meant to be instantiated by developers reading this documentation, but it will be created
+        internally and returned by `pyboy.api.sprite.Sprite.tiles` and
+        `pyboy.api.tilemap.TileMap.tile`.
+
+        The data of this class is static, apart from the image data, which is loaded from the Game Boy&#39;s memory when
+        needed. Beware that the graphics for the tile can change between each call to `pyboy.PyBoy.tick`.
+        &#34;&#34;&#34;
+        self.mb = mb
+
+        if self.mb.cgb:
+            if not (0 &lt;= identifier &lt; TILES_CGB):
+                raise PyBoyOutOfBoundsException(&#34;Identifier out of range&#34;)
+        else:
+            if not (0 &lt;= identifier &lt; TILES):
+                raise PyBoyOutOfBoundsException(&#34;Identifier out of range&#34;)
+
+        self.data_address = LOW_TILEDATA + (16 * (identifier % TILES))
+        &#34;&#34;&#34;
+        The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
+        corresponding to the tile identifier. It is advised to use `pyboy.api.tile.Tile.image` or one of the
+        other `image`-functions if you want to view the tile.
+
+        You can read how the data is read in the
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
+
+        Returns
+        -------
+        int:
+            address in VRAM where tile data starts
+        &#34;&#34;&#34;
+
+        if identifier &lt; TILES:
+            self.vram_bank = 0
+        else:
+            self.vram_bank = 1
+
+        self.tile_identifier = identifier
+        &#34;&#34;&#34;
+        The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+        complicated indexing system on the Game Boy into a single range of 0-383 (both included) or 0-767 for Game Boy
+        Color.
+
+        Returns
+        -------
+        int:
+            Unique identifier for the tile
+        &#34;&#34;&#34;
+
+        self.shape = (8, 8)
+        &#34;&#34;&#34;
+        Tiles are always 8x8 pixels.
+
+        Returns
+        -------
+        (int, int):
+            The width and height of the tile.
+        &#34;&#34;&#34;
+
+        self.raw_buffer_format = self.mb.lcd.renderer.color_format
+        &#34;&#34;&#34;
+        Returns the color format of the raw screen buffer.
+
+        Returns
+        -------
+        str:
+            Color format of the raw screen buffer. E.g. &#39;RGBA&#39;.
+        &#34;&#34;&#34;
+
+    def image(self):
+        &#34;&#34;&#34;
+        Use this function to get an `PIL.Image` object of the tile. The image is 8x8 pixels. The format or &#34;mode&#34; might change at any time.
+
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; tile = pyboy.get_tile(1)
+        &gt;&gt;&gt; tile.image().save(&#39;tile_1.png&#39;)
+
+        ```
+
+        Returns
+        -------
+        PIL.Image :
+            Image of tile in 8x8 pixels and RGBA colors.
+        &#34;&#34;&#34;
+        if Image is None:
+            logger.error(f&#39;{__name__}: Missing dependency &#34;Pillow&#34;.&#39;)
+            utils.PillowImportError()._raise_import_error()
+
+        if utils.cython_compiled:
+            return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
+        else:
+            return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
+
+    def ndarray(self):
+        &#34;&#34;&#34;
+        Use this function to get an `numpy.ndarray` object of the tile. The array has a shape of (8, 8, 4)
+        and each value is of `numpy.uint8`. The values corresponds to an image of 8x8 pixels with each sub-color
+        in a separate cell. The format is given by `pyboy.api.tile.Tile.raw_buffer_format`.
+
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; tile1 = pyboy.get_tile(1)
+        &gt;&gt;&gt; tile1.ndarray()[:,:,0] # Upper part of &#34;P&#34;
+        array([[255, 255, 255, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255],
+               [255,   0,   0, 255, 255,   0,   0, 255]], dtype=uint8)
+        &gt;&gt;&gt; tile2 = pyboy.get_tile(2)
+        &gt;&gt;&gt; tile2.ndarray()[:,:,0] # Lower part of &#34;P&#34;
+        array([[255,   0,   0,   0,   0,   0,   0, 255],
+               [255,   0,   0,   0,   0,   0, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255,   0,   0, 255, 255, 255, 255, 255],
+               [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+        ```
+
+        Returns
+        -------
+        numpy.ndarray :
+            Array of shape (8, 8, 4) with data type of `numpy.uint8`.
+        &#34;&#34;&#34;
+        # The data is laid out as (X, red, green, blue), where X is currently always zero, but this is not guarenteed
+        # across versions of PyBoy.
+        return np.asarray(self._image_data()).view(dtype=np.uint8).reshape(8, 8, 4)
+
+    def _image_data(self):
+        &#34;&#34;&#34;
+        Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
+        colors.
+
+        Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+        Returns
+        -------
+        memoryview :
+            Image data of tile in 8x8 pixels and RGB colors.
+        &#34;&#34;&#34;
+        self.data = np.zeros((8, 8), dtype=np.uint32)
+        for k in range(0, 16, 2):  # 2 bytes for each line
+            if self.vram_bank == 0:
+                byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
+                byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]
+            else:
+                byte1 = self.mb.lcd.VRAM1[self.data_address + k - VRAM_OFFSET]
+                byte2 = self.mb.lcd.VRAM1[self.data_address + k + 1 - VRAM_OFFSET]
+
+            colorcode = self.mb.lcd.renderer.colorcode(byte1, byte2)
+            for x in range(8):
+                self.data[k // 2][x] = self.mb.lcd.BGP.getcolor((colorcode &gt;&gt; x * 8) &amp; 0xFF)
+        return self.data
+
+    def __eq__(self, other):
+        return self.data_address == other.data_address and self.vram_bank == other.vram_bank
+
+    def __repr__(self):
+        return f&#34;Tile: {self.tile_identifier}&#34;</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.api.Tile.data_address"><code class="name">var <span class="ident">data_address</span></code></dt>
+<dd>
+<section class="desc"><p>The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
+corresponding to the tile identifier. It is advised to use <code><a title="pyboy.api.tile.Tile.image" href="tile.html#pyboy.api.tile.Tile.image">Tile.image()</a></code> or one of the
+other <code>image</code>-functions if you want to view the tile.</p>
+<p>You can read how the data is read in the
+<a href="https://gbdev.io/pandocs/Tile_Data.html">Pan Docs: VRAM Tile Data</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>address in VRAM where tile data starts</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Tile.tile_identifier"><code class="name">var <span class="ident">tile_identifier</span></code></dt>
+<dd>
+<section class="desc"><p>The Game Boy has a slightly complicated indexing system for tiles. This identifier unifies the otherwise
+complicated indexing system on the Game Boy into a single range of 0-383 (both included) or 0-767 for Game Boy
+Color.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>Unique identifier for the tile</dd>
+</dl></section>
+</dd>
+<dt id="pyboy.api.Tile.shape"><code class="name">var <span class="ident">shape</span></code></dt>
+<dd>
+<section class="desc"><p>Tiles are always 8x8 pixels.</p>
+<h2 id="returns">Returns</h2>
+<p>(int, int):
+The width and height of the tile.</p></section>
+</dd>
+<dt id="pyboy.api.Tile.raw_buffer_format"><code class="name">var <span class="ident">raw_buffer_format</span></code></dt>
+<dd>
+<section class="desc"><p>Returns the color format of the raw screen buffer.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str:</code></dt>
+<dd>Color format of the raw screen buffer. E.g. 'RGBA'.</dd>
+</dl></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.api.Tile.image"><code class="name flex">
+<span>def <span class="ident">image</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Use this function to get an <code>PIL.Image</code> object of the tile. The image is 8x8 pixels. The format or "mode" might change at any time.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; tile = pyboy.get_tile(1)
+&gt;&gt;&gt; tile.image().save('tile_1.png')
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>PIL.Image :</code></dt>
+<dd>Image of tile in 8x8 pixels and RGBA colors.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def image(self):
+    &#34;&#34;&#34;
+    Use this function to get an `PIL.Image` object of the tile. The image is 8x8 pixels. The format or &#34;mode&#34; might change at any time.
+
+    Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; tile = pyboy.get_tile(1)
+    &gt;&gt;&gt; tile.image().save(&#39;tile_1.png&#39;)
+
+    ```
+
+    Returns
+    -------
+    PIL.Image :
+        Image of tile in 8x8 pixels and RGBA colors.
+    &#34;&#34;&#34;
+    if Image is None:
+        logger.error(f&#39;{__name__}: Missing dependency &#34;Pillow&#34;.&#39;)
+        utils.PillowImportError()._raise_import_error()
+
+    if utils.cython_compiled:
+        return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
+    else:
+        return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.Tile.ndarray"><code class="name flex">
+<span>def <span class="ident">ndarray</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Use this function to get an <code>numpy.ndarray</code> object of the tile. The array has a shape of (8, 8, 4)
+and each value is of <code>numpy.uint8</code>. The values corresponds to an image of 8x8 pixels with each sub-color
+in a separate cell. The format is given by <code><a title="pyboy.api.tile.Tile.raw_buffer_format" href="tile.html#pyboy.api.tile.Tile.raw_buffer_format">Tile.raw_buffer_format</a></code>.</p>
+<p>Be aware, that the graphics for this tile can change between each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; tile1 = pyboy.get_tile(1)
+&gt;&gt;&gt; tile1.ndarray()[:,:,0] # Upper part of &quot;P&quot;
+array([[255, 255, 255, 255, 255, 255, 255, 255],
+       [255, 255, 255, 255, 255, 255, 255, 255],
+       [255, 255, 255, 255, 255, 255, 255, 255],
+       [255,   0,   0,   0,   0,   0, 255, 255],
+       [255,   0,   0,   0,   0,   0,   0, 255],
+       [255,   0,   0, 255, 255,   0,   0, 255],
+       [255,   0,   0, 255, 255,   0,   0, 255],
+       [255,   0,   0, 255, 255,   0,   0, 255]], dtype=uint8)
+&gt;&gt;&gt; tile2 = pyboy.get_tile(2)
+&gt;&gt;&gt; tile2.ndarray()[:,:,0] # Lower part of &quot;P&quot;
+array([[255,   0,   0,   0,   0,   0,   0, 255],
+       [255,   0,   0,   0,   0,   0, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255,   0,   0, 255, 255, 255, 255, 255],
+       [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+</code></pre>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray :</code></dt>
+<dd>Array of shape (8, 8, 4) with data type of <code>numpy.uint8</code>.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ndarray(self):
+    &#34;&#34;&#34;
+    Use this function to get an `numpy.ndarray` object of the tile. The array has a shape of (8, 8, 4)
+    and each value is of `numpy.uint8`. The values corresponds to an image of 8x8 pixels with each sub-color
+    in a separate cell. The format is given by `pyboy.api.tile.Tile.raw_buffer_format`.
+
+    Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; tile1 = pyboy.get_tile(1)
+    &gt;&gt;&gt; tile1.ndarray()[:,:,0] # Upper part of &#34;P&#34;
+    array([[255, 255, 255, 255, 255, 255, 255, 255],
+           [255, 255, 255, 255, 255, 255, 255, 255],
+           [255, 255, 255, 255, 255, 255, 255, 255],
+           [255,   0,   0,   0,   0,   0, 255, 255],
+           [255,   0,   0,   0,   0,   0,   0, 255],
+           [255,   0,   0, 255, 255,   0,   0, 255],
+           [255,   0,   0, 255, 255,   0,   0, 255],
+           [255,   0,   0, 255, 255,   0,   0, 255]], dtype=uint8)
+    &gt;&gt;&gt; tile2 = pyboy.get_tile(2)
+    &gt;&gt;&gt; tile2.ndarray()[:,:,0] # Lower part of &#34;P&#34;
+    array([[255,   0,   0,   0,   0,   0,   0, 255],
+           [255,   0,   0,   0,   0,   0, 255, 255],
+           [255,   0,   0, 255, 255, 255, 255, 255],
+           [255,   0,   0, 255, 255, 255, 255, 255],
+           [255,   0,   0, 255, 255, 255, 255, 255],
+           [255,   0,   0, 255, 255, 255, 255, 255],
+           [255,   0,   0, 255, 255, 255, 255, 255],
+           [255, 255, 255, 255, 255, 255, 255, 255]], dtype=uint8)
+
+    ```
+
+    Returns
+    -------
+    numpy.ndarray :
+        Array of shape (8, 8, 4) with data type of `numpy.uint8`.
+    &#34;&#34;&#34;
+    # The data is laid out as (X, red, green, blue), where X is currently always zero, but this is not guarenteed
+    # across versions of PyBoy.
+    return np.asarray(self._image_data()).view(dtype=np.uint8).reshape(8, 8, 4)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pyboy.api.TileMap"><code class="flex name class">
+<span>class <span class="ident">TileMap</span></span>
+<span>(</span><span>pyboy, mb, select)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
+"background" and "window".</p>
+<p>Use <code>pyboy.tilemap_background</code> and
+<code>pyboy.tilemap_window</code> to instantiate this object.</p>
+<p>This object defines <code>__getitem__</code>, which means it can be accessed with the square brackets to get a tile
+identifier at a given coordinate.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; pyboy.tilemap_window[8,8]
+1
+&gt;&gt;&gt; pyboy.tilemap_window[7:12,8]
+[0, 1, 0, 1, 0]
+&gt;&gt;&gt; pyboy.tilemap_window[7:12,8:11]
+[[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
+</code></pre>
+<p>Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
+need the entire 32x32 tile map, you can use the shortcut: <code>tilemap[:,:]</code>.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TileMap:
+    def __init__(self, pyboy, mb, select):
+        &#34;&#34;&#34;
+        The Game Boy has two tile maps, which defines what is rendered on the screen. These are also referred to as
+        &#34;background&#34; and &#34;window&#34;.
+
+        Use `pyboy.tilemap_background` and
+        `pyboy.tilemap_window` to instantiate this object.
+
+        This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
+        identifier at a given coordinate.
+
+        Example:
+        ```
+        &gt;&gt;&gt; pyboy.tilemap_window[8,8]
+        1
+        &gt;&gt;&gt; pyboy.tilemap_window[7:12,8]
+        [0, 1, 0, 1, 0]
+        &gt;&gt;&gt; pyboy.tilemap_window[7:12,8:11]
+        [[0, 1, 0, 1, 0], [0, 2, 3, 4, 5], [0, 0, 6, 0, 0]]
+
+        ```
+
+        Each element in the matrix, is the tile identifier of the tile to be shown on screen for each position. If you
+        need the entire 32x32 tile map, you can use the shortcut: `tilemap[:,:]`.
+        &#34;&#34;&#34;
+        self.pyboy = pyboy
+        self.mb = mb
+        self._select = select
+        self._use_tile_objects = False
+        self.frame_count_update = 0
+        self.__refresh_lcdc()
+
+        self.shape = (32, 32)
+        &#34;&#34;&#34;
+        Tile maps are always 32x32 tiles.
+
+        Returns
+        -------
+        (int, int):
+            The width and height of the tile map.
+        &#34;&#34;&#34;
+
+    def _refresh_lcdc(self):
+        if self.frame_count_update == self.pyboy.frame_count:
+            return 0
+        self.__refresh_lcdc()
+
+    def __refresh_lcdc(self):
+        &#34;&#34;&#34;
+        The tile data and view that is showed on the background and window respectively can change dynamically. If you
+        believe it has changed, you can use this method to update the tilemap from the LCDC register.
+        &#34;&#34;&#34;
+        LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
+        if self._select == &#34;WINDOW&#34;:
+            self.map_offset = HIGH_TILEMAP if LCDC.windowmap_select else LOW_TILEMAP
+            self.signed_tile_data = not bool(LCDC.tiledata_select)
+        elif self._select == &#34;BACKGROUND&#34;:
+            self.map_offset = HIGH_TILEMAP if LCDC.backgroundmap_select else LOW_TILEMAP
+            self.signed_tile_data = not bool(LCDC.tiledata_select)
+        else:
+            raise KeyError(f&#34;Invalid tilemap selected: {self._select}&#34;)
+
+    def search_for_identifiers(self, identifiers):
+        &#34;&#34;&#34;
+        Provided a list of tile identifiers, this function will find all occurrences of these in the tilemap and return
+        the coordinates where each identifier is found.
+
+        Example:
+        ```
+        &gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+        [[[9, 11]], [[9, 9], [9, 12]]]
+
+        ```
+
+        Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
+        `123`was not found anywhere.
+
+        Args:
+            identifiers (list): List of tile identifiers (int)
+
+        Returns
+        -------
+        list:
+            list of matches for every tile identifier in the input
+        &#34;&#34;&#34;
+        # TODO: Crude implementation
+        tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
+        matches = []
+        for i in identifiers:
+            matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers == i)])
+        return matches
+
+    def _tile_address(self, column, row):
+        &#34;&#34;&#34;
+        Returns the memory address in the tilemap for the tile at the given coordinate. The address contains the index
+        of tile which will be shown at this position. This should not be confused with the actual tile data of
+        `pyboy.api.tile.Tile.data_address`.
+
+        This can be used as an global identifier for the specific location in a tile map.
+
+        Be aware, that the tile index referenced at the memory address might change between calls to
+        `pyboy.PyBoy.tick`. And the tile data for the same tile index might also change to display something else
+        on the screen.
+
+        The index might also be a signed number. Depending on if it is signed or not, will change where the tile data
+        is read from. Use `pyboy.api.tilemap.TileMap.signed_tile_index` to test if the indexes are signed for
+        this tile view. You can read how the indexes work in the
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
+
+        Args:
+            column (int): Column in this tile map.
+            row (int): Row in this tile map.
+
+        Returns
+        -------
+        int:
+            Address in the tile map to read a tile index.
+        &#34;&#34;&#34;
+        if not 0 &lt;= column &lt; 32:
+            raise IndexError(&#34;column is out of bounds. Value of 0 to 31 is allowed&#34;)
+        if not 0 &lt;= row &lt; 32:
+            raise IndexError(&#34;row is out of bounds. Value of 0 to 31 is allowed&#34;)
+        return self.map_offset + 32 * row + column
+
+    def tile(self, column, row):
+        &#34;&#34;&#34;
+        Provides a `pyboy.api.tile.Tile`-object which allows for easy interpretation of the tile data. The
+        object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.api.tile.Tile`-objects might
+        be returned from two different coordinates in the tile map if they are shown different places on the screen.
+
+        Args:
+            column (int): Column in this tile map.
+            row (int): Row in this tile map.
+
+        Returns
+        -------
+        `pyboy.api.tile.Tile`:
+            Tile object corresponding to the tile index at the given coordinate in the
+            tile map.
+        &#34;&#34;&#34;
+        return Tile(self.mb, self.tile_identifier(column, row))
+
+    def tile_identifier(self, column, row):
+        &#34;&#34;&#34;
+        Returns an identifier (integer) of the tile at the given coordinate in the tile map. The identifier can be used
+        to quickly recognize what is on the screen through this tile view.
+
+        This identifier unifies the otherwise complicated indexing system on the Game Boy into a single range of
+        0-383 (both included).
+
+        You can read how the indexes work in the
+        [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
+
+        Args:
+            column (int): Column in this tile map.
+            row (int): Row in this tile map.
+
+        Returns
+        -------
+        int:
+            Tile identifier.
+        &#34;&#34;&#34;
+        self._refresh_lcdc()
+        tile = self.mb.getitem(self._tile_address(column, row))
+        if self.signed_tile_data:
+            return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
+        else:
+            return tile
+
+    def __repr__(self):
+        self._refresh_lcdc()
+        adjust = 4
+        _use_tile_objects = self._use_tile_objects
+        self.use_tile_objects(False)
+
+        return_data = (
+            f&#34;Tile Map Address: {self.map_offset:#0{6}x}, &#34;
+            + f&#34;Signed Tile Data: {&#39;Yes&#39; if self.signed_tile_data else &#39;No&#39;}\n&#34;
+            + &#34; &#34; * 5
+            + &#34;&#34;.join([f&#34;{i: &lt;4}&#34; for i in range(32)])
+            + &#34;\n&#34;
+            + &#34;_&#34; * (adjust * 32 + 2)
+            + &#34;\n&#34;
+            + &#34;\n&#34;.join(
+                [
+                    f&#34;{i: &lt;3}| &#34; + &#34;&#34;.join([str(tile).ljust(adjust) for tile in line])
+                    for i, line in enumerate(self[:, :])
+                ]
+            )
+        )
+        self.use_tile_objects(_use_tile_objects)
+        return return_data
+
+    def use_tile_objects(self, switch):
+        &#34;&#34;&#34;
+        Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
+
+        Args:
+            switch (bool): If True, accesses will return `pyboy.api.tile.Tile`-object. If False, accesses will
+                return an `int`.
+        &#34;&#34;&#34;
+        self._use_tile_objects = switch
+
+    def _fix_slice(self, addr):
+        if addr.step is None:
+            step = 1
+        else:
+            step = addr.step
+
+        if addr.start is None:
+            start = 0
+        else:
+            start = addr.start
+
+        if addr.stop is None:
+            stop = 32
+        else:
+            stop = addr.stop
+
+        if step &lt; 0:
+            raise ValueError(&#34;Reversed ranges are unsupported&#34;)
+        elif start &gt; stop:
+            raise ValueError(&#34;Invalid range&#34;)
+        return start, stop, step
+
+    def __getitem__(self, xy):
+        if isinstance(xy, (int, slice)):
+            x = xy
+            y = slice(None)
+        else:
+            x, y = xy
+
+        x_slice = isinstance(x, slice)
+        y_slice = isinstance(y, slice)
+        if x_slice:
+            x = self._fix_slice(x)
+        else:
+            assert isinstance(x, int)
+
+        if y_slice:
+            y = self._fix_slice(y)
+        else:
+            assert isinstance(y, int)
+
+        if self._use_tile_objects:
+            tile_fun = self.tile
+        else:
+            tile_fun = lambda x, y: self.tile_identifier(x, y)
+
+        if x_slice and y_slice:
+            return [[tile_fun(_x, _y) for _x in range(*x)] for _y in range(*y)]
+        elif x_slice:
+            return [tile_fun(_x, y) for _x in range(*x)]
+        elif y_slice:
+            return [tile_fun(x, _y) for _y in range(*y)]
+        else:
+            return tile_fun(x, y)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.api.TileMap.shape"><code class="name">var <span class="ident">shape</span></code></dt>
+<dd>
+<section class="desc"><p>Tile maps are always 32x32 tiles.</p>
+<h2 id="returns">Returns</h2>
+<p>(int, int):
+The width and height of the tile map.</p></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.api.TileMap.search_for_identifiers"><code class="name flex">
+<span>def <span class="ident">search_for_identifiers</span></span>(<span>self, identifiers)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provided a list of tile identifiers, this function will find all occurrences of these in the tilemap and return
+the coordinates where each identifier is found.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+[[[9, 11]], [[9, 9], [9, 12]]]
+
+</code></pre>
+<p>Meaning, that tile identifier <code>43</code> is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
+<code>123</code>was not found anywhere.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>identifiers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of tile identifiers (int)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list:</code></dt>
+<dd>list of matches for every tile identifier in the input</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def search_for_identifiers(self, identifiers):
+    &#34;&#34;&#34;
+    Provided a list of tile identifiers, this function will find all occurrences of these in the tilemap and return
+    the coordinates where each identifier is found.
+
+    Example:
+    ```
+    &gt;&gt;&gt; pyboy.tilemap_window.search_for_identifiers([5,3])
+    [[[9, 11]], [[9, 9], [9, 12]]]
+
+    ```
+
+    Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
+    `123`was not found anywhere.
+
+    Args:
+        identifiers (list): List of tile identifiers (int)
+
+    Returns
+    -------
+    list:
+        list of matches for every tile identifier in the input
+    &#34;&#34;&#34;
+    # TODO: Crude implementation
+    tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)
+    matches = []
+    for i in identifiers:
+        matches.append([[int(y) for y in x] for x in np.argwhere(tilemap_identifiers == i)])
+    return matches</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.TileMap.tile"><code class="name flex">
+<span>def <span class="ident">tile</span></span>(<span>self, column, row)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Provides a <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>-object which allows for easy interpretation of the tile data. The
+object is agnostic to where it was found in the tilemap. I.e. equal <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>-objects might
+be returned from two different coordinates in the tile map if they are shown different places on the screen.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>column</code></strong> :&ensp;<code>int</code></dt>
+<dd>Column in this tile map.</dd>
+<dt><strong><code>row</code></strong> :&ensp;<code>int</code></dt>
+<dd>Row in this tile map.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p><code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>:
+Tile object corresponding to the tile index at the given coordinate in the
+tile map.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tile(self, column, row):
+    &#34;&#34;&#34;
+    Provides a `pyboy.api.tile.Tile`-object which allows for easy interpretation of the tile data. The
+    object is agnostic to where it was found in the tilemap. I.e. equal `pyboy.api.tile.Tile`-objects might
+    be returned from two different coordinates in the tile map if they are shown different places on the screen.
+
+    Args:
+        column (int): Column in this tile map.
+        row (int): Row in this tile map.
+
+    Returns
+    -------
+    `pyboy.api.tile.Tile`:
+        Tile object corresponding to the tile index at the given coordinate in the
+        tile map.
+    &#34;&#34;&#34;
+    return Tile(self.mb, self.tile_identifier(column, row))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.TileMap.tile_identifier"><code class="name flex">
+<span>def <span class="ident">tile_identifier</span></span>(<span>self, column, row)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns an identifier (integer) of the tile at the given coordinate in the tile map. The identifier can be used
+to quickly recognize what is on the screen through this tile view.</p>
+<p>This identifier unifies the otherwise complicated indexing system on the Game Boy into a single range of
+0-383 (both included).</p>
+<p>You can read how the indexes work in the
+<a href="https://gbdev.io/pandocs/Tile_Data.html">Pan Docs: VRAM Tile Data</a>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>column</code></strong> :&ensp;<code>int</code></dt>
+<dd>Column in this tile map.</dd>
+<dt><strong><code>row</code></strong> :&ensp;<code>int</code></dt>
+<dd>Row in this tile map.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int:</code></dt>
+<dd>Tile identifier.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tile_identifier(self, column, row):
+    &#34;&#34;&#34;
+    Returns an identifier (integer) of the tile at the given coordinate in the tile map. The identifier can be used
+    to quickly recognize what is on the screen through this tile view.
+
+    This identifier unifies the otherwise complicated indexing system on the Game Boy into a single range of
+    0-383 (both included).
+
+    You can read how the indexes work in the
+    [Pan Docs: VRAM Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
+
+    Args:
+        column (int): Column in this tile map.
+        row (int): Row in this tile map.
+
+    Returns
+    -------
+    int:
+        Tile identifier.
+    &#34;&#34;&#34;
+    self._refresh_lcdc()
+    tile = self.mb.getitem(self._tile_address(column, row))
+    if self.signed_tile_data:
+        return ((tile ^ 0x80) - 128) + LOW_TILEDATA_NTILES
+    else:
+        return tile</code></pre>
+</details>
+</dd>
+<dt id="pyboy.api.TileMap.use_tile_objects"><code class="name flex">
+<span>def <span class="ident">use_tile_objects</span></span>(<span>self, switch)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Used to change which object is returned when using the <code>__getitem__</code> method (i.e. <code><a title="pyboy.api.tilemap" href="tilemap.html">pyboy.api.tilemap</a>[0,0]</code>).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>switch</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, accesses will return <code><a title="pyboy.api.tile.Tile" href="tile.html#pyboy.api.tile.Tile">Tile</a></code>-object. If False, accesses will
+return an <code>int</code>.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def use_tile_objects(self, switch):
+    &#34;&#34;&#34;
+    Used to change which object is returned when using the ``__getitem__`` method (i.e. `tilemap[0,0]`).
+
+    Args:
+        switch (bool): If True, accesses will return `pyboy.api.tile.Tile`-object. If False, accesses will
+            return an `int`.
+    &#34;&#34;&#34;
+    self._use_tile_objects = switch</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -104,16 +2047,79 @@ from .tilemap import TileMap
 <li><code><a title="pyboy.api.gameshark" href="gameshark.html">pyboy.api.gameshark</a></code></li>
 <li><code><a title="pyboy.api.memory_scanner" href="memory_scanner.html">pyboy.api.memory_scanner</a></code></li>
 <li><code><a title="pyboy.api.screen" href="screen.html">pyboy.api.screen</a></code></li>
+<li><code><a title="pyboy.api.sound" href="sound.html">pyboy.api.sound</a></code></li>
 <li><code><a title="pyboy.api.sprite" href="sprite.html">pyboy.api.sprite</a></code></li>
 <li><code><a title="pyboy.api.tile" href="tile.html">pyboy.api.tile</a></code></li>
 <li><code><a title="pyboy.api.tilemap" href="tilemap.html">pyboy.api.tilemap</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.api.GameShark" href="#pyboy.api.GameShark">GameShark</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.GameShark.add" href="#pyboy.api.GameShark.add">add</a></code></li>
+<li><code><a title="pyboy.api.GameShark.remove" href="#pyboy.api.GameShark.remove">remove</a></code></li>
+<li><code><a title="pyboy.api.GameShark.clear_all" href="#pyboy.api.GameShark.clear_all">clear_all</a></code></li>
+<li><code><a title="pyboy.api.GameShark.tick" href="#pyboy.api.GameShark.tick">tick</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.Screen" href="#pyboy.api.Screen">Screen</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.Screen.get_tilemap_position" href="#pyboy.api.Screen.get_tilemap_position">get_tilemap_position</a></code></li>
+<li><code><a title="pyboy.api.Screen.tilemap_position_list" href="#pyboy.api.Screen.tilemap_position_list">tilemap_position_list</a></code></li>
+<li><code><a title="pyboy.api.Screen.raw_buffer" href="#pyboy.api.Screen.raw_buffer">raw_buffer</a></code></li>
+<li><code><a title="pyboy.api.Screen.raw_buffer_dims" href="#pyboy.api.Screen.raw_buffer_dims">raw_buffer_dims</a></code></li>
+<li><code><a title="pyboy.api.Screen.raw_buffer_format" href="#pyboy.api.Screen.raw_buffer_format">raw_buffer_format</a></code></li>
+<li><code><a title="pyboy.api.Screen.image" href="#pyboy.api.Screen.image">image</a></code></li>
+<li><code><a title="pyboy.api.Screen.ndarray" href="#pyboy.api.Screen.ndarray">ndarray</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.Sprite" href="#pyboy.api.Sprite">Sprite</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.Sprite.y" href="#pyboy.api.Sprite.y">y</a></code></li>
+<li><code><a title="pyboy.api.Sprite.x" href="#pyboy.api.Sprite.x">x</a></code></li>
+<li><code><a title="pyboy.api.Sprite.tile_identifier" href="#pyboy.api.Sprite.tile_identifier">tile_identifier</a></code></li>
+<li><code><a title="pyboy.api.Sprite.attr_obj_bg_priority" href="#pyboy.api.Sprite.attr_obj_bg_priority">attr_obj_bg_priority</a></code></li>
+<li><code><a title="pyboy.api.Sprite.attr_y_flip" href="#pyboy.api.Sprite.attr_y_flip">attr_y_flip</a></code></li>
+<li><code><a title="pyboy.api.Sprite.attr_x_flip" href="#pyboy.api.Sprite.attr_x_flip">attr_x_flip</a></code></li>
+<li><code><a title="pyboy.api.Sprite.attr_palette_number" href="#pyboy.api.Sprite.attr_palette_number">attr_palette_number</a></code></li>
+<li><code><a title="pyboy.api.Sprite.attr_cgb_bank_number" href="#pyboy.api.Sprite.attr_cgb_bank_number">attr_cgb_bank_number</a></code></li>
+<li><code><a title="pyboy.api.Sprite.shape" href="#pyboy.api.Sprite.shape">shape</a></code></li>
+<li><code><a title="pyboy.api.Sprite.tiles" href="#pyboy.api.Sprite.tiles">tiles</a></code></li>
+<li><code><a title="pyboy.api.Sprite.on_screen" href="#pyboy.api.Sprite.on_screen">on_screen</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.Tile" href="#pyboy.api.Tile">Tile</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pyboy.api.Tile.image" href="#pyboy.api.Tile.image">image</a></code></li>
+<li><code><a title="pyboy.api.Tile.ndarray" href="#pyboy.api.Tile.ndarray">ndarray</a></code></li>
+<li><code><a title="pyboy.api.Tile.data_address" href="#pyboy.api.Tile.data_address">data_address</a></code></li>
+<li><code><a title="pyboy.api.Tile.tile_identifier" href="#pyboy.api.Tile.tile_identifier">tile_identifier</a></code></li>
+<li><code><a title="pyboy.api.Tile.shape" href="#pyboy.api.Tile.shape">shape</a></code></li>
+<li><code><a title="pyboy.api.Tile.raw_buffer_format" href="#pyboy.api.Tile.raw_buffer_format">raw_buffer_format</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pyboy.api.TileMap" href="#pyboy.api.TileMap">TileMap</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.api.TileMap.search_for_identifiers" href="#pyboy.api.TileMap.search_for_identifiers">search_for_identifiers</a></code></li>
+<li><code><a title="pyboy.api.TileMap.tile" href="#pyboy.api.TileMap.tile">tile</a></code></li>
+<li><code><a title="pyboy.api.TileMap.tile_identifier" href="#pyboy.api.TileMap.tile_identifier">tile_identifier</a></code></li>
+<li><code><a title="pyboy.api.TileMap.use_tile_objects" href="#pyboy.api.TileMap.use_tile_objects">use_tile_objects</a></code></li>
+<li><code><a title="pyboy.api.TileMap.shape" href="#pyboy.api.TileMap.shape">shape</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>
