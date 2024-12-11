@@ -24,7 +24,6 @@ game_wrappers = [
     "GameWrapperPokemonPinball",
 ]
 plugins = [
-    "DisableInput",
     "AutoPause",
     "RecordReplay",
     "Rewind",

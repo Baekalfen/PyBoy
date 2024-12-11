@@ -46,6 +46,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
 parser.add_argument("-b", "--bootrom", dest="bootrom", type=valid_file_path, help="Path to a boot-ROM file")
+parser.add_argument("--no-input", action="store_true", help="Disable all user-input (mostly for autonomous testing)")
 parser.add_argument(
     "--log-level",
     default=defaults["log_level"],

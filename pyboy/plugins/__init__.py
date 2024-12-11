@@ -12,6 +12,7 @@ __pdoc__ = {
     "window_sdl2": False,
     "window_open_gl": False,
     "debug": False,
+    "debug_prompt": False,
     "record_replay": False,
     "rewind": False,
     "debug_prompt": False,

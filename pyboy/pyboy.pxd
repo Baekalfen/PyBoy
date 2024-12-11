@@ -51,6 +51,7 @@ cdef class PyBoy:
     cdef bint quitting
     cdef bint stopped
     cdef bint initialized
+    cdef bint no_input
     cdef readonly str window_title
     cdef readonly PyBoyMemoryView memory
     cdef readonly PyBoyRegisterFile register_file

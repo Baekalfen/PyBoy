@@ -83,6 +83,7 @@ class PyBoy:
         sound_emulated=False,
         cgb=None,
         gameshark=None,
+        no_input=False,
         log_level=defaults["log_level"],
         color_palette=defaults["color_palette"],
         cgb_color_palette=defaults["cgb_color_palette"],
@@ -121,6 +122,7 @@ class PyBoy:
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
             * cgb (bool): Forcing Game Boy Color mode.
             * gameshark (str): GameShark codes to apply.
+            * no_input (bool): Disable all user-input (mostly for autonomous testing)
             * log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
@@ -128,7 +130,6 @@ class PyBoy:
         ## Plugin kwargs:
         * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
         * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
-        * no_input (bool): Disable all user-input (mostly for autonomous testing) [plugin: DisableInput]
         * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
         * rewind (bool): Enable rewind function [plugin: Rewind]
 
@@ -136,6 +137,7 @@ class PyBoy:
         """
 
         self.initialized = False
+        self.no_input = no_input
 
         _log_level(log_level)
 
@@ -517,8 +519,9 @@ class PyBoy:
         return running
 
     def _handle_events(self, events):
-        # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
-        events = self._plugin_manager.handle_events(events)
+        if not self.no_input:
+            # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
+            events = self._plugin_manager.handle_events(events)
         for event in events:
             if event == WindowEvent.QUIT:
                 self.quitting = True
