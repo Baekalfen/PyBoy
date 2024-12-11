@@ -57,6 +57,7 @@ class Screen:
     If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
     It&#39;s much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     &#34;&#34;&#34;
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -147,7 +148,8 @@ class Screen:
             RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if not Image:
-            logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+            logger.warning(&#39;Cannot generate screen image. Missing dependency &#34;Pillow&#34;.&#39;)
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
@@ -192,8 +194,9 @@ class Screen:
 
     def _set_image(self):
         self.image = Image.frombuffer(
-            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-            self.mb.lcd.renderer._screenbuffer_raw
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
         )
 
     @property
@@ -291,6 +294,7 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
     If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
     It&#39;s much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     &#34;&#34;&#34;
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -381,7 +385,8 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
             RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if not Image:
-            logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+            logger.warning(&#39;Cannot generate screen image. Missing dependency &#34;Pillow&#34;.&#39;)
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
@@ -426,8 +431,9 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
 
     def _set_image(self):
         self.image = Image.frombuffer(
-            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-            self.mb.lcd.renderer._screenbuffer_raw
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
         )
 
     @property

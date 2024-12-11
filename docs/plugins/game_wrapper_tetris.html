@@ -34,12 +34,10 @@ __pdoc__ = {
     &#34;GameWrapperTetris.post_tick&#34;: False,
 }
 
-from array import array
 
 import numpy as np
 
 import pyboy
-from pyboy.utils import WindowEvent
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -71,9 +69,9 @@ for tiles_type_ID, tiles_type in enumerate(tiles_types):
         mapping_compressed[tile_ID] = tiles_type_ID
 
 # Minimal has 3 id&#39;s: Background, Tetromino and &#34;losing tile&#34; (which fills the board when losing)
-mapping_minimal = np.ones(TILES, dtype=np.uint8) # For minimal everything is 1
-mapping_minimal[47] = 0 # Except BLANK which is 0
-mapping_minimal[135] = 2 # And background losing tiles BLACK which is 2
+mapping_minimal = np.ones(TILES, dtype=np.uint8)  # For minimal everything is 1
+mapping_minimal[47] = 0  # Except BLANK which is 0
+mapping_minimal[135] = 2  # And background losing tiles BLACK which is 2
 
 
 class GameWrapperTetris(PyBoyGameWrapper):
@@ -82,6 +80,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
+
     cartridge_title = &#34;TETRIS&#34;
     mapping_compressed = mapping_compressed
     &#34;&#34;&#34;
@@ -91,6 +90,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
     &#34;&#34;&#34;
     Minimal mapping for `pyboy.PyBoy.game_area_mapping`
     &#34;&#34;&#34;
+
     def __init__(self, *args, **kwargs):
         self.score = 0
         &#34;&#34;&#34;The score provided by the game&#34;&#34;&#34;
@@ -137,7 +137,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
+            if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]:  # &#39;1PLAYER&#39; on the first screen
                 break
 
         # Start game. Just press Start when the game allows us.
@@ -252,17 +252,17 @@ class GameWrapperTetris(PyBoyGameWrapper):
         # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
 
         patch1 = [
-            0x3E, # LD A, Tetromino
-            shape_number, # Tetromino
-            0x00, # NOOP
+            0x3E,  # LD A, Tetromino
+            shape_number,  # Tetromino
+            0x00,  # NOOP
         ]
 
         for i, byte in enumerate(patch1):
             self.pyboy.memory[0, 0x206E + i] = byte
 
         patch2 = [
-            0x3E, # LD A, Tetromino
-            shape_number, # Tetromino
+            0x3E,  # LD A, Tetromino
+            shape_number,  # Tetromino
         ]
 
         for i, byte in enumerate(patch2):
@@ -274,19 +274,16 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         Game over happens, when the game area is filled with Tetrominos without clearing any rows.
         &#34;&#34;&#34;
-        return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over
+        return self.tilemap_background[2, 0] == 135  # The tile that fills up the screen when the game is over
 
     def __repr__(self):
-        adjust = 4
-        # yapf: disable
         return (
-            f&#34;Tetris:\n&#34; +
-            f&#34;Score: {self.score}\n&#34; +
-            f&#34;Level: {self.level}\n&#34; +
-            f&#34;Lines: {self.lines}\n&#34; +
-            super().__repr__()
-        )
-        # yapf: enable</code></pre>
+            &#34;Tetris:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Level: {self.level}\n&#34;
+            + f&#34;Lines: {self.lines}\n&#34;
+            + super().__repr__()
+        )</code></pre>
 </details>
 </section>
 <section>
@@ -315,6 +312,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     &#34;&#34;&#34;
+
     cartridge_title = &#34;TETRIS&#34;
     mapping_compressed = mapping_compressed
     &#34;&#34;&#34;
@@ -324,6 +322,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
     &#34;&#34;&#34;
     Minimal mapping for `pyboy.PyBoy.game_area_mapping`
     &#34;&#34;&#34;
+
     def __init__(self, *args, **kwargs):
         self.score = 0
         &#34;&#34;&#34;The score provided by the game&#34;&#34;&#34;
@@ -370,7 +369,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
+            if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]:  # &#39;1PLAYER&#39; on the first screen
                 break
 
         # Start game. Just press Start when the game allows us.
@@ -485,17 +484,17 @@ class GameWrapperTetris(PyBoyGameWrapper):
         # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
 
         patch1 = [
-            0x3E, # LD A, Tetromino
-            shape_number, # Tetromino
-            0x00, # NOOP
+            0x3E,  # LD A, Tetromino
+            shape_number,  # Tetromino
+            0x00,  # NOOP
         ]
 
         for i, byte in enumerate(patch1):
             self.pyboy.memory[0, 0x206E + i] = byte
 
         patch2 = [
-            0x3E, # LD A, Tetromino
-            shape_number, # Tetromino
+            0x3E,  # LD A, Tetromino
+            shape_number,  # Tetromino
         ]
 
         for i, byte in enumerate(patch2):
@@ -507,19 +506,16 @@ class GameWrapperTetris(PyBoyGameWrapper):
 
         Game over happens, when the game area is filled with Tetrominos without clearing any rows.
         &#34;&#34;&#34;
-        return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over
+        return self.tilemap_background[2, 0] == 135  # The tile that fills up the screen when the game is over
 
     def __repr__(self):
-        adjust = 4
-        # yapf: disable
         return (
-            f&#34;Tetris:\n&#34; +
-            f&#34;Score: {self.score}\n&#34; +
-            f&#34;Level: {self.level}\n&#34; +
-            f&#34;Lines: {self.lines}\n&#34; +
-            super().__repr__()
-        )
-        # yapf: enable</code></pre>
+            &#34;Tetris:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Level: {self.level}\n&#34;
+            + f&#34;Lines: {self.lines}\n&#34;
+            + super().__repr__()
+        )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -585,7 +581,7 @@ instantly.</p>
     # Boot screen
     while True:
         self.pyboy.tick(1, False)
-        if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]: # &#39;1PLAYER&#39; on the first screen
+        if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]:  # &#39;1PLAYER&#39; on the first screen
             break
 
     # Start game. Just press Start when the game allows us.
@@ -809,17 +805,17 @@ any overrides when reloading the ROM. This also applies to
     # ROM0:20B0 F0 AE            ld   a,(ff00+AE)
 
     patch1 = [
-        0x3E, # LD A, Tetromino
-        shape_number, # Tetromino
-        0x00, # NOOP
+        0x3E,  # LD A, Tetromino
+        shape_number,  # Tetromino
+        0x00,  # NOOP
     ]
 
     for i, byte in enumerate(patch1):
         self.pyboy.memory[0, 0x206E + i] = byte
 
     patch2 = [
-        0x3E, # LD A, Tetromino
-        shape_number, # Tetromino
+        0x3E,  # LD A, Tetromino
+        shape_number,  # Tetromino
     ]
 
     for i, byte in enumerate(patch2):
@@ -842,7 +838,7 @@ any overrides when reloading the ROM. This also applies to
 
     Game over happens, when the game area is filled with Tetrominos without clearing any rows.
     &#34;&#34;&#34;
-    return self.tilemap_background[2, 0] == 135 # The tile that fills up the screen when the game is over</code></pre>
+    return self.tilemap_background[2, 0] == 135  # The tile that fills up the screen when the game is over</code></pre>
 </details>
 </dd>
 </dl>
