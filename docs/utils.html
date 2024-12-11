@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy.utils API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -30,9 +30,146 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__all__ = [&#34;WindowEvent&#34;, &#34;dec_to_bcd&#34;, &#34;bcd_to_dec&#34;]
+__all__ = [
+    &#34;WindowEvent&#34;,
+    &#34;dec_to_bcd&#34;,
+    &#34;bcd_to_dec&#34;,
+    &#34;PyBoyException&#34;,
+    &#34;PyBoyInternalError&#34;,
+    &#34;PyBoyAssertException&#34;,
+    &#34;PyBoyOutOfBoundsException&#34;,
+    &#34;PyBoyNotImplementedException&#34;,
+    &#34;PyBoyInvalidInputException&#34;,
+    &#34;PyBoyDependencyError&#34;,
+    &#34;PyBoyFeatureDisabledError&#34;,
+    &#34;AccessError&#34;,
+    &#34;PillowImportError&#34;,
+    &#34;SoundEnabledError&#34;,
+]
 
-STATE_VERSION = 12
+STATE_VERSION = 14
+
+
+class PyBoyException(Exception):
+    &#34;&#34;&#34;
+    Custom exception class for PyBoy-related errors.
+
+    This exception is raised for errors specific to the PyBoy emulator.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyInternalError(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for internal errors in the PyBoy emulator.
+
+    This exception is used to indicate errors that occur within the PyBoy
+    emulator that are not expected to be encountered by the end user.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyAssertException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception is used to indicate assertion errors that occur within the PyBoy emulator.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyOutOfBoundsException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for errors when an operation exceeds array or integer bounds in PyBoy.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyNotImplementedException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for methods that are not yet implemented in a base class.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyInvalidInputException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception is used to indicate that an invalid input has been provided to a PyBoy function or method.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyDependencyError(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for errors related to missing dependencies in PyBoy.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyFeatureDisabledError(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised when the user requests a feature that has been disabled.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class AccessError:
+    &#34;&#34;&#34;
+    Base class that replaces an optional feature. Whenever this object is accessed,
+    it raises a predefined exception. I.e. on missing dependencies etc.
+    &#34;&#34;&#34;
+
+    _exception_type = PyBoyException
+    _exception_message = &#34;Access Error&#34;
+
+    def __bool__(self):
+        return False
+
+    def __getattribute__(self, name):
+        if name in (&#34;_exception_type&#34;, &#34;_exception_message&#34;):
+            return super().__getattribute__(name)
+        raise self._exception_type(self._exception_message)
+
+    def __setattribute__(self, *args):
+        raise self._exception_type(self._exception_message)
+
+    def __getitem__(self, *args):
+        raise self._exception_type(self._exception_message)
+
+    def __setitem__(self, *args):
+        raise self._exception_type(self._exception_message)
+
+
+class PillowImportError(AccessError):
+    &#34;&#34;&#34;
+    Exception raised when the Pillow library is not found.
+    &#34;&#34;&#34;
+
+    _exception_type = PyBoyDependencyError
+    _exception_message = &#34;Missing depencency Pillow!&#34;
+
+
+class SoundEnabledError(AccessError):
+    &#34;&#34;&#34;
+    Exception raised when the user requests a feature in the sound module that has been disabled.
+    &#34;&#34;&#34;
+
+    _exception_type = PyBoyFeatureDisabledError
+    _exception_message = &#34;Sound is not enabled!&#34;
+
+
+try:
+    from cython import compiled
+
+    cython_compiled = compiled
+except ImportError:
+    cython_compiled = False
 
 ##############################################################
 # Buffer classes
@@ -43,7 +180,7 @@ class IntIOInterface:
         pass
 
     def write(self, byte):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def write_64bit(self, value):
         self.write(value &amp; 0xFF)
@@ -89,25 +226,25 @@ class IntIOInterface:
         return int(a | (b &lt;&lt; 8))
 
     def read(self):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def seek(self, pos):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def flush(self):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def new(self):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def commit(self):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def seek_frame(self, _):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
     def tell(self):
-        raise Exception(&#34;Not implemented!&#34;)
+        raise PyBoyNotImplementedException(&#34;Not implemented!&#34;)
 
 
 class IntIOWrapper(IntIOInterface):
@@ -115,18 +252,21 @@ class IntIOWrapper(IntIOInterface):
     Wraps a file-like object to allow writing integers to it.
     This allows for higher performance, when writing to a memory map in rewind.
     &#34;&#34;&#34;
+
     def __init__(self, buf):
         self.buffer = buf
 
     def write(self, byte):
-        assert isinstance(byte, int)
-        assert 0 &lt;= byte &lt;= 0xFF
+        if not isinstance(byte, int):
+            raise PyBoyAssertException(&#34;Input has to be of type &#39;int&#39;&#34;)
+        if not (0 &lt;= byte &lt;= 0xFF):
+            raise PyBoyOutOfBoundsException(&#34;Input has to be positive and less than or equal to 255&#34;)
         return self.buffer.write(byte.to_bytes(1, &#34;little&#34;))
 
     def read(self):
-        # assert count == 1, &#34;Only a count of 1 is supported&#34;
         data = self.buffer.read(1)
-        assert len(data) == 1, &#34;No data&#34;
+        if not (len(data) == 1):
+            raise PyBoyAssertException(&#34;No data&#34;)
         return ord(data)
 
     def seek(self, pos):
@@ -157,6 +297,15 @@ def color_code(byte1, byte2, offset):
     &#34;&#34;&#34;
     return (((byte2 &gt;&gt; (offset)) &amp; 0b1) &lt;&lt; 1) + ((byte1 &gt;&gt; (offset)) &amp; 0b1)
 
+
+if not cython_compiled:
+    exec(
+        &#34;&#34;&#34;
+from math import ceil
+def double_to_uint64_ceil(val):
+    return ceil(val)
+&#34;&#34;&#34;
+    )
 
 ##############################################################
 # Window Events
@@ -298,9 +447,22 @@ class WindowEventMouse(WindowEvent):
         self.mouse_button = mouse_button
 
 
-##############################################################
-# Memory Scanning
-#
+def _dec_to_bcd(bytes):
+    bcd_result = []
+    for b in bytes:
+        tens = (b // 10) &lt;&lt; 4
+        ones = b % 10
+        bcd_result.append(tens | ones)
+    return bcd_result
+
+
+def _bcd_to_dec(bytes):
+    dec_results = []
+    for b in bytes:
+        tens = (b &gt;&gt; 4) * 10
+        ones = b &amp; 0x0F
+        dec_results.append(tens + ones)
+    return dec_results
 
 
 def dec_to_bcd(value, byte_width=1, byteorder=&#34;little&#34;):
@@ -327,7 +489,7 @@ def dec_to_bcd(value, byte_width=1, byteorder=&#34;little&#34;):
     &#34;&#34;&#34;
     bcd_result = []
     for _ in range(byte_width):
-        tens = ((value%100) // 10) &lt;&lt; 4
+        tens = ((value % 100) // 10) &lt;&lt; 4
         units = value % 10
         bcd_byte = (tens | units) &amp; 0xFF
         bcd_result.append(bcd_byte)
@@ -431,7 +593,7 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
     &#34;&#34;&#34;
     bcd_result = []
     for _ in range(byte_width):
-        tens = ((value%100) // 10) &lt;&lt; 4
+        tens = ((value % 100) // 10) &lt;&lt; 4
         units = value % 10
         bcd_byte = (tens | units) &amp; 0xFF
         bcd_result.append(bcd_byte)
@@ -807,6 +969,301 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
 </dd>
 </dl>
 </dd>
+<dt id="pyboy.utils.PyBoyException"><code class="flex name class">
+<span>class <span class="ident">PyBoyException</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Custom exception class for PyBoy-related errors.</p>
+<p>This exception is raised for errors specific to the PyBoy emulator.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyException(Exception):
+    &#34;&#34;&#34;
+    Custom exception class for PyBoy-related errors.
+
+    This exception is raised for errors specific to the PyBoy emulator.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyAssertException" href="#pyboy.utils.PyBoyAssertException">PyBoyAssertException</a></li>
+<li><a title="pyboy.utils.PyBoyDependencyError" href="#pyboy.utils.PyBoyDependencyError">PyBoyDependencyError</a></li>
+<li><a title="pyboy.utils.PyBoyFeatureDisabledError" href="#pyboy.utils.PyBoyFeatureDisabledError">PyBoyFeatureDisabledError</a></li>
+<li><a title="pyboy.utils.PyBoyInternalError" href="#pyboy.utils.PyBoyInternalError">PyBoyInternalError</a></li>
+<li><a title="pyboy.utils.PyBoyInvalidInputException" href="#pyboy.utils.PyBoyInvalidInputException">PyBoyInvalidInputException</a></li>
+<li><a title="pyboy.utils.PyBoyNotImplementedException" href="#pyboy.utils.PyBoyNotImplementedException">PyBoyNotImplementedException</a></li>
+<li><a title="pyboy.utils.PyBoyOutOfBoundsException" href="#pyboy.utils.PyBoyOutOfBoundsException">PyBoyOutOfBoundsException</a></li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyInternalError"><code class="flex name class">
+<span>class <span class="ident">PyBoyInternalError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised for internal errors in the PyBoy emulator.</p>
+<p>This exception is used to indicate errors that occur within the PyBoy
+emulator that are not expected to be encountered by the end user.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyInternalError(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for internal errors in the PyBoy emulator.
+
+    This exception is used to indicate errors that occur within the PyBoy
+    emulator that are not expected to be encountered by the end user.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyAssertException"><code class="flex name class">
+<span>class <span class="ident">PyBoyAssertException</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception is used to indicate assertion errors that occur within the PyBoy emulator.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyAssertException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception is used to indicate assertion errors that occur within the PyBoy emulator.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyOutOfBoundsException"><code class="flex name class">
+<span>class <span class="ident">PyBoyOutOfBoundsException</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised for errors when an operation exceeds array or integer bounds in PyBoy.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyOutOfBoundsException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for errors when an operation exceeds array or integer bounds in PyBoy.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyNotImplementedException"><code class="flex name class">
+<span>class <span class="ident">PyBoyNotImplementedException</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised for methods that are not yet implemented in a base class.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyNotImplementedException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for methods that are not yet implemented in a base class.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyInvalidInputException"><code class="flex name class">
+<span>class <span class="ident">PyBoyInvalidInputException</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception is used to indicate that an invalid input has been provided to a PyBoy function or method.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyInvalidInputException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception is used to indicate that an invalid input has been provided to a PyBoy function or method.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyDependencyError"><code class="flex name class">
+<span>class <span class="ident">PyBoyDependencyError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised for errors related to missing dependencies in PyBoy.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyDependencyError(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised for errors related to missing dependencies in PyBoy.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PyBoyFeatureDisabledError"><code class="flex name class">
+<span>class <span class="ident">PyBoyFeatureDisabledError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised when the user requests a feature that has been disabled.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PyBoyFeatureDisabledError(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised when the user requests a feature that has been disabled.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="pyboy.utils.AccessError"><code class="flex name class">
+<span>class <span class="ident">AccessError</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Base class that replaces an optional feature. Whenever this object is accessed,
+it raises a predefined exception. I.e. on missing dependencies etc.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AccessError:
+    &#34;&#34;&#34;
+    Base class that replaces an optional feature. Whenever this object is accessed,
+    it raises a predefined exception. I.e. on missing dependencies etc.
+    &#34;&#34;&#34;
+
+    _exception_type = PyBoyException
+    _exception_message = &#34;Access Error&#34;
+
+    def __bool__(self):
+        return False
+
+    def __getattribute__(self, name):
+        if name in (&#34;_exception_type&#34;, &#34;_exception_message&#34;):
+            return super().__getattribute__(name)
+        raise self._exception_type(self._exception_message)
+
+    def __setattribute__(self, *args):
+        raise self._exception_type(self._exception_message)
+
+    def __getitem__(self, *args):
+        raise self._exception_type(self._exception_message)
+
+    def __setitem__(self, *args):
+        raise self._exception_type(self._exception_message)</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.PillowImportError" href="#pyboy.utils.PillowImportError">PillowImportError</a></li>
+<li><a title="pyboy.utils.SoundEnabledError" href="#pyboy.utils.SoundEnabledError">SoundEnabledError</a></li>
+</ul>
+</dd>
+<dt id="pyboy.utils.PillowImportError"><code class="flex name class">
+<span>class <span class="ident">PillowImportError</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised when the Pillow library is not found.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PillowImportError(AccessError):
+    &#34;&#34;&#34;
+    Exception raised when the Pillow library is not found.
+    &#34;&#34;&#34;
+
+    _exception_type = PyBoyDependencyError
+    _exception_message = &#34;Missing depencency Pillow!&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.AccessError" href="#pyboy.utils.AccessError">AccessError</a></li>
+</ul>
+</dd>
+<dt id="pyboy.utils.SoundEnabledError"><code class="flex name class">
+<span>class <span class="ident">SoundEnabledError</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Exception raised when the user requests a feature in the sound module that has been disabled.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SoundEnabledError(AccessError):
+    &#34;&#34;&#34;
+    Exception raised when the user requests a feature in the sound module that has been disabled.
+    &#34;&#34;&#34;
+
+    _exception_type = PyBoyFeatureDisabledError
+    _exception_message = &#34;Sound is not enabled!&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.utils.AccessError" href="#pyboy.utils.AccessError">AccessError</a></li>
+</ul>
+</dd>
 </dl>
 </section>
 </article>
@@ -872,13 +1329,46 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
 <li><code><a title="pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE" href="#pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE">FULL_SCREEN_TOGGLE</a></code></li>
 </ul>
 </li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyException" href="#pyboy.utils.PyBoyException">PyBoyException</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyInternalError" href="#pyboy.utils.PyBoyInternalError">PyBoyInternalError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyAssertException" href="#pyboy.utils.PyBoyAssertException">PyBoyAssertException</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyOutOfBoundsException" href="#pyboy.utils.PyBoyOutOfBoundsException">PyBoyOutOfBoundsException</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyNotImplementedException" href="#pyboy.utils.PyBoyNotImplementedException">PyBoyNotImplementedException</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyInvalidInputException" href="#pyboy.utils.PyBoyInvalidInputException">PyBoyInvalidInputException</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyDependencyError" href="#pyboy.utils.PyBoyDependencyError">PyBoyDependencyError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PyBoyFeatureDisabledError" href="#pyboy.utils.PyBoyFeatureDisabledError">PyBoyFeatureDisabledError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.AccessError" href="#pyboy.utils.AccessError">AccessError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.PillowImportError" href="#pyboy.utils.PillowImportError">PillowImportError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyboy.utils.SoundEnabledError" href="#pyboy.utils.SoundEnabledError">SoundEnabledError</a></code></h4>
+</li>
 </ul>
 </li>
 </ul>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>
