@@ -16,7 +16,6 @@ def test_game_wrapper_basics(default_rom):
     generic_wrapper = pyboy.game_wrapper
     assert generic_wrapper is not None
     pyboy.game_area()
-    pyboy.stop()
 
 
 def test_game_wrapper_sprites_tall(default_rom):
@@ -110,5 +109,3 @@ def test_game_wrapper_mapping(default_rom):
             dtype=np.uint32,
         )
     )
-
-    pyboy.stop()
