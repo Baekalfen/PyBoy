@@ -10,7 +10,6 @@ from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
 from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
 from pyboy.plugins.window_null import WindowNull # noqa
 from pyboy.plugins.debug import Debug # noqa
-from pyboy.plugins.disable_input import DisableInput # noqa
 from pyboy.plugins.auto_pause import AutoPause # noqa
 from pyboy.plugins.record_replay import RecordReplay # noqa
 from pyboy.plugins.rewind import Rewind # noqa
@@ -31,7 +30,6 @@ def parser_arguments():
     yield WindowOpenGL.argv
     yield WindowNull.argv
     yield Debug.argv
-    yield DisableInput.argv
     yield AutoPause.argv
     yield RecordReplay.argv
     yield Rewind.argv
@@ -62,8 +60,6 @@ class PluginManager:
         self.window_null_enabled = self.window_null.enabled()
         self.debug = Debug(pyboy, mb, pyboy_argv)
         self.debug_enabled = self.debug.enabled()
-        self.disable_input = DisableInput(pyboy, mb, pyboy_argv)
-        self.disable_input_enabled = self.disable_input.enabled()
         self.auto_pause = AutoPause(pyboy, mb, pyboy_argv)
         self.auto_pause_enabled = self.auto_pause.enabled()
         self.record_replay = RecordReplay(pyboy, mb, pyboy_argv)
@@ -111,8 +107,6 @@ class PluginManager:
             events = self.debug.handle_events(events)
         # foreach end
         # foreach plugins events = [].handle_events(events)
-        if self.disable_input_enabled:
-            events = self.disable_input.handle_events(events)
         if self.auto_pause_enabled:
             events = self.auto_pause.handle_events(events)
         if self.record_replay_enabled:
@@ -142,8 +136,6 @@ class PluginManager:
 
     def post_tick(self):
         # foreach plugins [].post_tick()
-        if self.disable_input_enabled:
-            self.disable_input.post_tick()
         if self.auto_pause_enabled:
             self.auto_pause.post_tick()
         if self.record_replay_enabled:
@@ -229,8 +221,6 @@ class PluginManager:
             title += self.debug.window_title()
         # foreach end
         # foreach plugins title += [].window_title()
-        if self.disable_input_enabled:
-            title += self.disable_input.window_title()
         if self.auto_pause_enabled:
             title += self.auto_pause.window_title()
         if self.record_replay_enabled:
@@ -268,8 +258,6 @@ class PluginManager:
             self.debug.stop()
         # foreach end
         # foreach plugins [].stop()
-        if self.disable_input_enabled:
-            self.disable_input.stop()
         if self.auto_pause_enabled:
             self.auto_pause.stop()
         if self.record_replay_enabled:
