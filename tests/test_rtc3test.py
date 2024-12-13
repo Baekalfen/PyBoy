@@ -19,7 +19,6 @@ OVERWRITE_PNGS = False
 @pytest.mark.parametrize("subtest", [0, 1, 2])
 def test_rtc3test(subtest, rtc3test_file):
     pyboy = PyBoy(rtc3test_file, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)
 

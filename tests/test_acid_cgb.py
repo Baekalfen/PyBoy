@@ -16,7 +16,6 @@ OVERWRITE_PNGS = False
 # https://github.com/mattcurrie/cgb-acid2
 def test_cgb_acid(cgb_acid_file):
     pyboy = PyBoy(cgb_acid_file, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)
 

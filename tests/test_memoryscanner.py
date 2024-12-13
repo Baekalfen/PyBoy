@@ -36,7 +36,6 @@ def test_bcd_to_dec_complex2():
 
 def test_memoryscanner_basic(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     addresses = pyboy.memory_scanner.scan_memory()
     assert len(addresses) == 0x10000
     addresses = pyboy.memory_scanner.scan_memory(start_addr=0xC000, end_addr=0xDFFF)
@@ -47,7 +46,6 @@ def test_memoryscanner_basic(default_rom):
 
 def test_memoryscanner_boundary(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     # Byte width of 1
     pyboy.memory[0xC000:0xD000] = 0
@@ -75,7 +73,6 @@ SCORE_100 = 0xD072
 
 def test_memoryscanner_absolute(kirby_rom):
     pyboy = PyBoy(kirby_rom, window="null")
-    pyboy.set_emulation_speed(0)
     kirby = pyboy.game_wrapper
     kirby.start_game()
 
@@ -103,7 +100,6 @@ def test_memoryscanner_absolute(kirby_rom):
 
 def test_memoryscanner_relative(kirby_rom):
     pyboy = PyBoy(kirby_rom, window="null")
-    pyboy.set_emulation_speed(0)
     kirby = pyboy.game_wrapper
     kirby.start_game()
 

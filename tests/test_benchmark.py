@@ -16,7 +16,6 @@ is_pypy = platform.python_implementation() == "PyPy"
 @pytest.mark.benchmark(group="nogil")
 def test_threads_baseline(benchmark, default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     benchmark(pyboy.tick, 2000, False)
 
 
@@ -27,7 +26,6 @@ def test_threads_nogil(benchmark, count, default_rom):
     # Threaded run with no GIL. Should result in roughly same time.
     def thread_run():
         pyboy = PyBoy(default_rom, window="null")
-        pyboy.set_emulation_speed(0)
         pyboy.tick(2000, False)
 
     def bench():

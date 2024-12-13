@@ -8,7 +8,6 @@ from pyboy import PyBoy
 
 def test_mario_basics(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "SUPER MARIOLAN"
 
     mario = pyboy.game_wrapper
@@ -22,7 +21,6 @@ def test_mario_basics(supermarioland_rom):
 
 def test_mario_advanced(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "SUPER MARIOLAN"
 
     mario = pyboy.game_wrapper
@@ -39,7 +37,6 @@ def test_mario_advanced(supermarioland_rom):
 
 def test_mario_game_over(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     mario = pyboy.game_wrapper
     mario.start_game()
