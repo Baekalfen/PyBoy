@@ -174,7 +174,7 @@ class Screen:
     @property
     def tilemap_position_list(self):
         """
-        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
         screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
         the end of each call to `pyboy.PyBoy.tick()`.
 
