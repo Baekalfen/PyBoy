@@ -9,7 +9,6 @@ from pyboy.plugins.game_wrapper_pokemon_pinball import Pokemon, SpecialMode, Sta
 
 def test_pokemon_pinball_basics(pokemon_pinball_rom):
     pyboy = PyBoy(pokemon_pinball_rom, window="null")
-    pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper
@@ -23,7 +22,6 @@ def test_pokemon_pinball_basics(pokemon_pinball_rom):
 
 def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     pyboy = PyBoy(pokemon_pinball_rom, window="null")
-    pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper
@@ -49,7 +47,6 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
 
 def test_pokemon_catch_mode(pokemon_pinball_rom):
     pyboy = PyBoy(pokemon_pinball_rom, window="null")
-    pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper
@@ -91,7 +88,6 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
 
 def test_pokemon_pinball_game_over(pokemon_pinball_rom):
     pyboy = PyBoy(pokemon_pinball_rom, window="null")
-    pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
     pokemon_pinball = pyboy.game_wrapper

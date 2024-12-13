@@ -11,7 +11,6 @@ from pyboy.api.constants import LCDC_OFFSET, OAM_OFFSET, VRAM_OFFSET
 
 def test_game_wrapper_basics(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     generic_wrapper = pyboy.game_wrapper
     assert generic_wrapper is not None

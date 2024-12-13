@@ -53,7 +53,6 @@ def test_tick_zero(default_rom):
 
 def test_register_file(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     pyboy.register_file.A = 0x1AB
     assert pyboy.register_file.A == 0xAB
@@ -89,7 +88,6 @@ def test_register_file(default_rom):
 
 def test_button(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     pyboy.tick(1, False)
     pyboy.memory[0xFF00] = 0b0010_0000  # Select d-pad (bit-4 low)
@@ -248,7 +246,6 @@ def test_no_input_disabled(default_rom):
 
 def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(120, False)
 
     bck_tilemap = pyboy.tilemap_background

@@ -25,7 +25,6 @@ NDARRAY_COLOR_FORMAT = "RGBA"
 
 def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(1, False)
     pyboy.stop(save=False)
 
@@ -140,7 +139,6 @@ def test_faulty_state(default_rom):
 
 def test_tiles(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
     tile = pyboy.tilemap_window.tile(0, 0)
@@ -184,7 +182,6 @@ def test_tiles(default_rom):
 
 def test_tiles_cgb(any_rom_cgb):
     pyboy = PyBoy(any_rom_cgb, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
     tile = pyboy.tilemap_window.tile(0, 0)
@@ -299,7 +296,6 @@ def test_tetris(tetris_rom):
     NEXT_TETROMINO = 0xC213
 
     pyboy = PyBoy(tetris_rom, bootrom="pyboy_fast", window="null")
-    pyboy.set_emulation_speed(0)
     tetris = pyboy.game_wrapper
     tetris.set_tetromino("T")
 
@@ -518,7 +514,6 @@ def test_tilemap_position_list(supermarioland_rom):
 
 def test_button(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     assert len(pyboy.events) == 0  # Nothing injected yet
     pyboy.button("start")

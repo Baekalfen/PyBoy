@@ -140,7 +140,6 @@ def test_cgb_banks(cgb_acid_file):  # Any CGB file
 
 def test_get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(1, False)
 
     assert pyboy.memory[0xFF40] == 0x00
@@ -166,7 +165,6 @@ def test_get_set_override(default_rom):
 
 def test_boundaries(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     # Boot ROM boundary - Expecting 0 to 0xFF both including to change
     assert pyboy.memory[-1, 0x00] != 0
