@@ -94,6 +94,8 @@ cdef class STATRegister:
     cdef uint8_t set_mode(self, uint8_t) noexcept nogil
     cdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept nogil
     cdef void set(self, uint64_t) noexcept nogil
+    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int load_state(self, IntIOInterface, int) except -1
 
 cdef class LCDCRegister:
     cdef uint8_t value
