@@ -73,6 +73,7 @@ class Timer:
         f.write(self.TMA)
         f.write(self.TAC)
         f.write_64bit(self.last_cycles)
+        f.write_64bit(self._cycles_to_interrupt)
 
     def load_state(self, f, state_version):
         self.DIV = f.read()
@@ -83,3 +84,5 @@ class Timer:
         self.TAC = f.read()
         if state_version >= 12:
             self.last_cycles = f.read_64bit()
+        if state_version >= 13:
+            self._cycles_to_interrupt = f.read_64bit()
