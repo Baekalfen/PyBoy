@@ -537,8 +537,13 @@ def test_tetris(tetris_rom):
 
 def test_tilemap_position_list(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    pyboy.set_emulation_speed(0)
-    pyboy.tick(100, False)
+    pyboy.tick(1, False)
+    assert len(pyboy.screen.tilemap_position_list) == 144, "Expected 144 scanlines"
+    assert len(pyboy.screen.tilemap_position_list[0]) == 4, "Expected (SCX, SCY, WX, WY)"
+    assert (
+        sum((sum(x) for x in pyboy.screen.tilemap_position_list)) == 0
+    ), "Expected LCD to be disabled, and positions be 0"
+    pyboy.tick(99, False)
 
     # Start the game
     pyboy.button("start")
