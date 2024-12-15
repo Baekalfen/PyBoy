@@ -174,7 +174,7 @@ class LCD:
                     wx, wy = self.getwindowpos()
                     self._scanlineparameters[self.LY][0] = bx
                     self._scanlineparameters[self.LY][1] = by
-                    self._scanlineparameters[self.LY][2] = wx
+                    self._scanlineparameters[self.LY][2] = wx + 7
                     self._scanlineparameters[self.LY][3] = wy
                     self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
 
@@ -237,8 +237,8 @@ class LCD:
         for y in range(ROWS):
             f.write(self._scanlineparameters[y][0])
             f.write(self._scanlineparameters[y][1])
-            # We store (WX - 7). We add 7 and mask 8 bits to make it easier to serialize
-            f.write((self._scanlineparameters[y][2] + 7) & 0xFF)
+            # We store (WX + 7). We added 7 earlier to make it easier to serialize
+            f.write(self._scanlineparameters[y][2])
             f.write(self._scanlineparameters[y][3])
             f.write(self._scanlineparameters[y][4])
 
@@ -286,7 +286,7 @@ class LCD:
                 self._scanlineparameters[y][0] = f.read()
                 self._scanlineparameters[y][1] = f.read()
                 # Restore (WX - 7) as described above
-                self._scanlineparameters[y][2] = (f.read() - 7) & 0xFF
+                self._scanlineparameters[y][2] = f.read()
                 self._scanlineparameters[y][3] = f.read()
                 if state_version > 3:
                     self._scanlineparameters[y][4] = f.read()
