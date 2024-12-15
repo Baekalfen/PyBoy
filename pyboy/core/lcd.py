@@ -234,7 +234,7 @@ class LCD:
         f.write(self.OBP0.value)
         f.write(self.OBP1.value)
 
-        f.write(self._STAT.value)  # TODO: Mode to class
+        self._STAT.save_state(f)
         f.write(self.LY)
         f.write(self.LYC)
 
@@ -281,7 +281,7 @@ class LCD:
         self.OBP1.set(f.read())
 
         if state_version >= 5:
-            self._STAT.set(f.read())  # TODO: Mode to class
+            self._STAT.load_state(f, state_version)
             self.LY = f.read()
             self.LYC = f.read()
 
@@ -393,6 +393,14 @@ class STATRegister:
         if mode != 3 and self.value & (1 << (mode + 3)):
             return INTR_LCDC
         return 0
+
+    def save_state(self, f):
+        f.write(self.value)
+
+    def load_state(self, f, state_version):
+        value = f.read()
+        self.value = value
+        self._mode = value & 0b11
 
 
 class LCDCRegister:
