@@ -20,6 +20,45 @@ cgb_color_palette = (
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
 )
+FRAME_CYCLES = 70224
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_cycles_when_enabling_lcd(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+    c = 0
+    assert pyboy._cycles() == 0
+
+    for n in range(4):  # Specific number of frames where LCDC is disabled on boot.
+        pyboy.tick(1)
+        print("cycles for frame:", pyboy._cycles() - c, bool(pyboy.mb.lcd._LCDC.lcd_enable))
+        assert pyboy._cycles() - c == FRAME_CYCLES
+        assert not bool(pyboy.mb.lcd._LCDC.lcd_enable)
+        c = pyboy._cycles()
+
+    pyboy.tick(1)
+    print("cycles for frame:", pyboy._cycles() - c, bool(pyboy.mb.lcd._LCDC.lcd_enable))
+    assert pyboy._cycles() - c == 17016  # Specific cycles when LCD is reenabled, and tick-frame is flushed.
+    assert bool(pyboy.mb.lcd._LCDC.lcd_enable)
+    c = pyboy._cycles()
+
+    # We expect a new frame to be calulated immediately as per "cycle accurate"?
+    for n in range(200):
+        pyboy.tick(1)
+        print("cycles for frame:", pyboy._cycles() - c, bool(pyboy.mb.lcd._LCDC.lcd_enable))
+        assert pyboy._cycles() - c == FRAME_CYCLES
+        assert bool(pyboy.mb.lcd._LCDC.lcd_enable)
+        c = pyboy._cycles()
+
+
+def test_cycles_when_disabling_lcd(default_rom):
+    pass
+
+
+def test_cycles_when_enabling_lcd2(default_rom):
+    pass
+
 
 def test_firstwhite(firstwhite_file):
     pyboy = PyBoy(firstwhite_file, window="null")
