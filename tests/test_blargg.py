@@ -123,13 +123,14 @@ def test_blarggs(test_rom, max_frames, blargg_dir):
             old_blargg[rom] = result
             json.dump(old_blargg, f, indent=4)
 
-        blargg_md = "../PyBoy.wiki/blargg.md"
-        if os.path.isdir(blargg_md):
-            with open(blargg_md, "w") as f:
-                f.write("# Test results for Blargg's test ROMs\n")
-                f.write("|ROM|Result|\n")
-                f.write("|---|---|\n")
-                for (rom, _), res in zip(test_roms, old_blargg):
-                    f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))
+        # TODO: Not usable atm.
+        # blargg_md = "../PyBoy.wiki/blargg.md"
+        # if os.path.isdir(blargg_md):
+        #     with open(blargg_md, "w") as f:
+        #         f.write("# Test results for Blargg's test ROMs\n")
+        #         f.write("|ROM|Result|\n")
+        #         f.write("|---|---|\n")
+        #         for (rom, _), res in zip(test_roms, old_blargg):
+        #             f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))
     else:
         assert old_blargg[rom] == result, f"Outputs don't match for {rom}"
