@@ -276,6 +276,19 @@ def whichboot_file():
     return str(path)
 
 
+# https://gitlab.com/BonsaiDen/vectroid.gb
+@pytest.fixture(scope="session")
+def vectroid_file():
+    path = extra_test_rom_dir / Path("vectroid.gb")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.vectroid.txt"))
+            vectroid_data = url_open("https://pyboy.dk/mirror/vectroid.gbc")
+            with open(path, "wb") as rom_file:
+                rom_file.write(vectroid_data)
+    return str(path)
+
+
 @pytest.fixture(scope="session")
 def git_tetris_ai():
     if os.path.isfile("extras/README/7.gif") or platform.system() == "Windows":
