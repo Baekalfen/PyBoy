@@ -10,7 +10,7 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
-from pyboy.utils import PyBoyInvalidInputException, PyBoyException
+from pyboy.utils import PyBoyException, PyBoyInvalidInputException, _bcd_to_dec, bcd_to_dec, dec_to_bcd
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -356,12 +356,11 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.world = world_level >> 4, world_level & 0x0F
         blank = 300
         self.coins = self._sum_number_on_screen(9, 1, 2, blank, -256)
-        self.lives_left = _bcm_to_dec(self.pyboy.memory[ADDR_LIVES_LEFT])
+        self.lives_left = bcd_to_dec(self.pyboy.memory[ADDR_LIVES_LEFT])
         self.score = self._sum_number_on_screen(0, 1, 6, blank, -256)
-        self.time_left = self._sum_number_on_screen(17, 1, 3, blank, -256)
-        tens_one = self.pyboy.memory[ADDR_TIME_LEFT]
-        hundreds = self.pyboy.memory[ADDR_TIME_LEFT + 1]
-        self.time_left = hundreds * 100 + (tens_one >> 4) * 10 + (tens_one & 0xF)
+
+        _time_left = _bcd_to_dec(self.pyboy.memory[ADDR_TIME_LEFT : ADDR_TIME_LEFT + 2])
+        self.time_left = _time_left[0] + _time_left[1] * 100
 
         level_block = self.pyboy.memory[0xC0AB]
         mario_x = self.pyboy.memory[0xC202]
@@ -394,11 +393,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             logger.warning("Please call set_lives_left after starting the game")
 
         if 0 <= time <= 999:
-            hundreds = time // 100
-            tens = (time - hundreds * 100) // 10
-            ones = time % 10
-            self.pyboy.memory[ADDR_TIME_LEFT] = (tens << 4) | ones
-            self.pyboy.memory[ADDR_TIME_LEFT + 1] = hundreds
+            self.pyboy.memory[ADDR_TIME_LEFT] = dec_to_bcd(time % 100)
+            self.pyboy.memory[ADDR_TIME_LEFT + 1] = time // 100
         else:
             raise PyBoyInvalidInputException(f"{time} is out of bounds. Only values between 0 and 999 allowed.")
 
@@ -428,11 +424,10 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             logger.warning("Please call set_lives_left after starting the game")
 
         if 0 <= amount <= 99:
-            tens = amount // 10
-            ones = amount % 10
-            self.pyboy.memory[ADDR_LIVES_LEFT] = (tens << 4) | ones
-            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = tens
-            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = ones
+            v = dec_to_bcd(amount)
+            self.pyboy.memory[ADDR_LIVES_LEFT] = v
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY] = (v >> 4) & 0xF
+            self.pyboy.memory[ADDR_LIVES_LEFT_DISPLAY + 1] = v & 0xF
         else:
             raise PyBoyInvalidInputException(f"{amount} is out of bounds. Only values between 0 and 99 allowed.")
 
