@@ -314,9 +314,22 @@ class WindowEventMouse(WindowEvent):
         self.mouse_button = mouse_button
 
 
-##############################################################
-# Memory Scanning
-#
+def _dec_to_bcd(bytes):
+    bcd_result = []
+    for b in bytes:
+        tens = (b // 10) << 4
+        ones = b % 10
+        bcd_result.append(tens | ones)
+    return bcd_result
+
+
+def _bcd_to_dec(bytes):
+    dec_results = []
+    for b in bytes:
+        tens = (b >> 4) * 10
+        ones = b & 0x0F
+        dec_results.append(tens + ones)
+    return dec_results
 
 
 def dec_to_bcd(value, byte_width=1, byteorder="little"):
