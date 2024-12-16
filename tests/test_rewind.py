@@ -1,11 +1,9 @@
-import platform
-
 import pytest
 
-is_pypy = platform.python_implementation() == "PyPy"
+from pyboy.utils import cython_compiled
 
 # isort: skip_file
-if is_pypy:
+if not cython_compiled:
     from pyboy.plugins.rewind import (
         FILL_VALUE,
         FIXED_BUFFER_SIZE,
@@ -20,7 +18,7 @@ def write_bytes(buf, values):
         buf.write(v % 0x100)
 
 
-@pytest.mark.skipif(not is_pypy, reason="This test doesn't work in Cython")
+@pytest.mark.skipif(cython_compiled, reason="This test doesn't work in Cython")
 class TestRewind:
     def test_all(self):
         for buf in [FixedAllocBuffers(), CompressedFixedAllocBuffers(), DeltaFixedAllocBuffers()]:
