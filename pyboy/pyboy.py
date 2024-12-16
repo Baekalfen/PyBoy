@@ -1163,7 +1163,7 @@ class PyBoy:
         ```python
         >>> # Continued example above
         >>> pyboy.hook_register(None, "Main.move", lambda x: print(x), "Hello from hook2")
-        >>> pyboy.tick(80)
+        >>> pyboy.tick(81)
         Hello from hook2
         True
 
@@ -1556,7 +1556,7 @@ class PyBoyMemoryView:
 
     ```python
     >>> pyboy.memory[0xFF04] # DIV register
-    163
+    213
     >>> pyboy.memory[0xFF04] = 123 # Trying to write to it will always reset it to zero
     >>> pyboy.memory[0xFF04]
     0
