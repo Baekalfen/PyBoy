@@ -187,7 +187,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self._set_timer_div(timer_div)
             self.post_tick()
         else:
-            logger.error("Tried to reset game, but it hasn't been started yet!")
+            raise utils.PyBoyException("Tried to reset game, but it hasn't been started yet!")
 
     def game_over(self):
         """

@@ -8,6 +8,7 @@ __pdoc__ = {
 }
 
 import pyboy
+from pyboy.utils import PyBoyException
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -64,6 +65,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
+        if self.game_has_started:
+            raise PyBoyException("Gamewrapper already started! Use 'reset' instead.")
 
         # Boot screen
         while True:
