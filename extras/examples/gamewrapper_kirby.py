@@ -46,4 +46,4 @@ kirby.reset_game()
 assert kirby.score == 0
 assert kirby.health == 6
 
-pyboy.stop()
+pyboy.stop(save=False)
