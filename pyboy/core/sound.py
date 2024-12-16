@@ -218,10 +218,13 @@ class Sound:
             sdl2.SDL_CloseAudioDevice(self.device)
 
     def save_state(self, file):
-        pass
+        file.write_64bit(self.last_cycles)
+        file.write_64bit(self.clock)
 
     def load_state(self, file, state_version):
-        pass
+        if state_version >= 13:
+            self.last_cycles = file.read_64bit()
+            self.clock = file.read_64bit()
 
 
 class ToneChannel:
