@@ -228,7 +228,7 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             f.write(self.OAM[n])
 
-        f.write(self._LCDC.value)
+        f.write(self._LCDC.value)  # TODO: Mode to class
         f.write(self.BGP.value)
         f.write(self.OBP0.value)
         f.write(self.OBP1.value)
@@ -274,7 +274,7 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             self.OAM[n] = f.read()
 
-        self.set_lcdc(f.read())
+        self.set_lcdc(f.read())  # TODO: Mode to class
         self.BGP.set(f.read())
         self.OBP0.set(f.read())
         self.OBP1.set(f.read())
