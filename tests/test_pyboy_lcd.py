@@ -143,7 +143,7 @@ class TestLCD:
         assert lcd._STAT.value & 0b100  # LYC flag set
 
 
-@pytest.mark.skipif(not is_pypy, reason="This test requires access to internal registers not available in Cython")
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 class TestRenderer:
     def test_colorcode_example(self):
         renderer = Renderer(False)
