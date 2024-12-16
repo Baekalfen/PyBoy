@@ -3,14 +3,11 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import platform
 
 import pytest
 
 from pyboy.core.lcd import LCD, Renderer
-from pyboy.utils import color_code
-
-is_pypy = platform.python_implementation() == "PyPy"
+from pyboy.utils import color_code, cython_compiled
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
@@ -82,7 +79,7 @@ class TestLCD:
         assert lcd.get_stat() & 0b100  # LYC flag set
 
 
-@pytest.mark.skipif(not is_pypy, reason="This test requires access to internal registers not available in Cython")
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 class TestRenderer:
     def test_colorcode_example(self):
         renderer = Renderer(False)

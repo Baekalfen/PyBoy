@@ -3,14 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import platform
 from threading import Thread
 
 import pytest
 
 from pyboy import PyBoy
-
-is_pypy = platform.python_implementation() == "PyPy"
+from pyboy.utils import cython_compiled
 
 
 @pytest.mark.benchmark(group="nogil")
@@ -20,7 +18,7 @@ def test_threads_baseline(benchmark, default_rom):
     benchmark(pyboy.tick, 2000, False)
 
 
-@pytest.mark.skipif(is_pypy, reason="No-GIL is not relevant for PyPy")
+@pytest.mark.skipif(not cython_compiled, reason="No-GIL is only relevant for Cython")
 @pytest.mark.benchmark(group="nogil")
 @pytest.mark.parametrize("count", [1, 2, 4])
 def test_threads_nogil(benchmark, count, default_rom):
