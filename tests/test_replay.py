@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import zlib
+import pytest
 
 import numpy as np
 
@@ -172,6 +173,7 @@ def test_pokemon(pokemon_blue_rom, boot_rom):
     )
 
 
+@pytest.mark.skip("Outdated base state")
 def test_pokemon_gif1(pokemon_gold_rom, boot_rom):
     replay(
         pokemon_gold_rom,

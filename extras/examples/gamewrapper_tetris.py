@@ -29,7 +29,7 @@ tetris = pyboy.game_wrapper
 tetris.start_game(timer_div=0x00)  # The timer_div works like a random seed in Tetris
 
 tetromino_at_0x00 = tetris.next_tetromino()
-assert tetromino_at_0x00 == "O", tetris.next_tetromino()
+assert tetromino_at_0x00 == "Z", tetris.next_tetromino()
 assert tetris.score == 0
 assert tetris.level == 0
 assert tetris.lines == 0

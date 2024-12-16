@@ -102,11 +102,11 @@ def get_modules(pyboy):
         pyboy.mb.lcd.OBP0,
         pyboy.mb.lcd.OBP1,
         pyboy.mb.lcd.renderer,
-        # pyboy.mb.sound, # TODO: Reenable when sound is implemented
-        # pyboy.mb.sound.noisechannel,
-        # pyboy.mb.sound.sweepchannel,
-        # pyboy.mb.sound.tonechannel,
-        # pyboy.mb.sound.wavechannel,
+        pyboy.mb.sound,
+        pyboy.mb.sound.noisechannel,
+        pyboy.mb.sound.sweepchannel,
+        pyboy.mb.sound.tonechannel,
+        pyboy.mb.sound.wavechannel,
     ]
     if pyboy.mb.hdma is not None:
         modules.append(pyboy.mb.hdma)
