@@ -28,4 +28,4 @@ def test_record_replay(gamewrapper, rom):
     return_code = p.wait()
     if return_code != 0:
         print(p.communicate())
-        sys.exit(return_code)
+    assert return_code == 0
