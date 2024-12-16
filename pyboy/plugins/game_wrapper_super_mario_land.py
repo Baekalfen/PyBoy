@@ -10,7 +10,7 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
-from pyboy.utils import PyBoyInvalidInputException
+from pyboy.utils import PyBoyInvalidInputException, PyBoyException
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -492,6 +492,9 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             * world_level (tuple): (world, level) to start the game from
             * unlock_level_select (bool): Unlock level selector menu
         """
+
+        if self.game_has_started:
+            raise PyBoyException("Gamewrapper already started! Use 'reset' instead.")
 
         if world_level is not None:
             self.set_world_level(*world_level)
