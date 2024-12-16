@@ -72,6 +72,8 @@ class Motherboard:
 
         if self.cgb:
             self.hdma = HDMA()
+        else:
+            self.hdma = None
 
         self.bootrom_enabled = True
         self.serialbuffer = [0] * 1024
