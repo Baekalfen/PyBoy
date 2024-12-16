@@ -33,8 +33,10 @@ jobs:
         pip install --prefer-binary -r requirements_tests.txt
     - name: Doctest
       if: ${{ !contains(matrix.os, 'windows') }}
+      env:
+        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
-        python -m pytest pyboy/ -n auto
+        python -m pytest pyboy/ -n auto -v
     - name: Build PyBoy
       run: |
         python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
@@ -113,8 +115,10 @@ jobs:
         pypy3 -m pip install --prefer-binary -r requirements_tests.txt
     - name: Doctest
       if: ${{ !contains(matrix.os, 'windows') }}
+      env:
+        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
-        pypy3 -m pytest pyboy/ -n auto
+        pypy3 -m pytest pyboy/ -n auto -v
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
