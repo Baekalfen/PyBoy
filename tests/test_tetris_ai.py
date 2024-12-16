@@ -143,7 +143,7 @@ def eval_network(epoch, child_index, child_model, record_to):
                 append_images=frames[1:],
                 duration=int(round(1000 / 30, -1))
             )
-            pyboy.stop()
+            pyboy.stop(save=False)
             exit(0)
 
         # Game over:
@@ -152,7 +152,7 @@ def eval_network(epoch, child_index, child_model, record_to):
             levels.append(tetris.level)
             lines.append(tetris.lines)
             if run == run_per_child - 1:
-                pyboy.stop()
+                pyboy.stop(save=False)
             else:
                 tetris.reset_game()
             run += 1
