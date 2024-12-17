@@ -29,6 +29,7 @@ class Screen:
     If you're making an AI or bot, it's highly recommended to _not_ use this class for detecting objects on the screen.
     It's much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     """
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -119,7 +120,8 @@ class Screen:
             RGB image of (160, 144) pixels
         """
         if not Image:
-            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            logger.warning('Cannot generate screen image. Missing dependency "Pillow".')
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
@@ -164,14 +166,15 @@ class Screen:
 
     def _set_image(self):
         self.image = Image.frombuffer(
-            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-            self.mb.lcd.renderer._screenbuffer_raw
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
         )
 
     @property
     def tilemap_position_list(self):
         """
-        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
         screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
         the end of each call to `pyboy.PyBoy.tick()`.
 
@@ -181,17 +184,17 @@ class Screen:
         ```python
         >>> pyboy.tick(25)
         True
-        >>> swoosh = pyboy.screen.tilemap_position_list[67:78]
+        >>> swoosh = pyboy.screen.tilemap_position_list[66:77]
         >>> print(*swoosh, sep=newline) # Just to pretty-print it
         [0, 0, -7, 0]
         [1, 0, -7, 0]
         [2, 0, -7, 0]
         [2, 0, -7, 0]
-        [3, 0, -7, 0]
-        [3, 0, -7, 0]
+        [2, 0, -7, 0]
         [3, 0, -7, 0]
         [3, 0, -7, 0]
         [2, 0, -7, 0]
+        [1, 0, -7, 0]
         [1, 0, -7, 0]
         [0, 0, -7, 0]
 
@@ -204,7 +207,7 @@ class Screen:
         """
 
         if self.mb.lcd._LCDC.lcd_enable:
-            return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd._scanlineparameters]
+            return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
         else:
             return [[0, 0, 0, 0] for line in range(144)]
 

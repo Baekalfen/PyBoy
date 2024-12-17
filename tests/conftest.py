@@ -49,7 +49,7 @@ def locate_roms(path=default_rom_path):
         lambda x: path + x,
         filter(
             lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"), os.listdir(path)
-        )
+        ),
     )
 
     entries = {}
@@ -107,6 +107,7 @@ def pokemon_gold_rom(secrets):
 def pokemon_crystal_rom(secrets):
     return locate_sha256(b"d6702e353dcbe2d2c69183046c878ef13a0dae4006e8cdff521cca83dd1582fe")
 
+
 @pytest.fixture(scope="session")
 def pokemon_pinball_rom(secrets):
     return locate_sha256(b"7672001d4710272009df6a41e3cbada65decd56e0eb2f185cb3d59c08d33ea0e")
@@ -128,8 +129,8 @@ def kirby_rom(secrets):
 
 
 @pytest.fixture(scope="session")
-def any_rom(default_rom):
-    return default_rom
+def any_rom(secrets, tetris_rom):
+    return tetris_rom
 
 
 @pytest.fixture(scope="session")
@@ -275,12 +276,26 @@ def whichboot_file():
     return str(path)
 
 
+# https://gitlab.com/BonsaiDen/vectroid.gb
+@pytest.fixture(scope="session")
+def vectroid_file():
+    path = extra_test_rom_dir / Path("vectroid.gb")
+    with FileLock(path.with_suffix(".lock")) as lock:
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.vectroid.txt"))
+            vectroid_data = url_open("https://pyboy.dk/mirror/vectroid.gbc")
+            with open(path, "wb") as rom_file:
+                rom_file.write(vectroid_data)
+    return str(path)
+
+
 @pytest.fixture(scope="session")
 def git_tetris_ai():
     if os.path.isfile("extras/README/7.gif") or platform.system() == "Windows":
         return None
 
     import venv
+
     path = Path("tetris")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -291,9 +306,12 @@ def git_tetris_ai():
         _venv_path = Path(".venv")
         _venv.create(path / _venv_path)
         # _venv_context = _venv.ensure_directories(path / Path('.venv'))
-        assert os.system(
-            f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install numpy torch matplotlib graphviz'
-        ) == 0
+        assert (
+            os.system(
+                f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install numpy torch matplotlib graphviz'
+            )
+            == 0
+        )
         # Overwrite PyBoy with local version
         assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
     return str(path)
@@ -305,6 +323,7 @@ def git_pyboy_rl():
         return None
 
     import venv
+
     path = Path("PyBoy-RL")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -327,6 +346,7 @@ def git_pokemon_red_experiments():
         return None
 
     import venv
+
     path = Path("PokemonRedExperiments")
     with FileLock(path.with_suffix(".lock")) as lock:
         if not os.path.isdir(path):
@@ -337,9 +357,10 @@ def git_pokemon_red_experiments():
         _venv_path = Path(".venv")
         _venv.create(path / _venv_path)
         # _venv_context = _venv.ensure_directories(path / Path('.venv'))
-        assert os.system(
-            f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r baselines/requirements.txt'
-        ) == 0
+        assert (
+            os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r baselines/requirements.txt')
+            == 0
+        )
         # Overwrite PyBoy with local version
         assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
     return str(path)

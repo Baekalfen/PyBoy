@@ -1,5 +1,5 @@
 
-.PHONY: build clean run install test
+.PHONY: build clean run install test benchmark docs
 
 all: build
 
@@ -65,7 +65,7 @@ uninstall:
 	${PY} -m pip uninstall pyboy
 
 test: export DEBUG=1
-test: clean test_pypy test_cpython_doctest build test_cython
+test: clean test_pypy test_cpython_doctest build test_cython benchmark
 
 test_cpython_doctest:
 	${PY} -m pytest pyboy/ ${PYTEST_ARGS}
@@ -78,9 +78,13 @@ test_pypy:
 
 test_all: test
 
+benchmark:
+	${PY} -m pytest -m benchmark tests/test_benchmark.py --benchmark-enable --benchmark-min-rounds=10
+
 docs: clean
-	bash -O extglob -c 'rm -rf -- ${ROOT_DIR}/docs/!(templates|CNAME)'
+	find ./docs -type f ! -path "./docs/templates/*" ! -path "./docs/CNAME" ! -name "*.png" -exec rm -rf {} +
 	mkdir -p ${ROOT_DIR}/docs/templates
+	cd ${ROOT_DIR}/pyboy/plugins && ${PY} manager_gen.py
 	pdoc --html --force -c latex_math=True -c sort_identifiers=False -c show_type_annotations=True --template-dir docs/templates pyboy
 	cp -r html/pyboy/ ${ROOT_DIR}/docs/
 	rm -rf html

@@ -8,8 +8,7 @@ __pdoc__ = {
 }
 
 import pyboy
-from pyboy import utils
-from pyboy.utils import WindowEvent
+from pyboy.utils import PyBoyException
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -22,6 +21,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
+
     cartridge_title = "KIRBY DREAM LA"
 
     def __init__(self, *args, **kwargs):
@@ -43,7 +43,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 4
         for n in range(score_digits):
-            self.score += self.pyboy.memory[0xD070 + n] * 10**(score_digits - n)
+            self.score += self.pyboy.memory[0xD070 + n] * 10 ** (score_digits - n)
 
         # Check if game is over
         prev_health = self.health
@@ -65,11 +65,13 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
+        if self.game_has_started:
+            raise PyBoyException("Gamewrapper already started! Use 'reset' instead.")
 
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[0:3, 16] == [231, 224, 235]: # 'HAL' on the first screen
+            if self.tilemap_background[0:3, 16] == [231, 224, 235]:  # 'HAL' on the first screen
                 break
 
         # Wait for transition to finish (start screen)
@@ -134,12 +136,10 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         return self._game_over
 
     def __repr__(self):
-        # yapf: disable
         return (
-            f"Kirby Dream Land:\n" +
-            f"Score: {self.score}\n" +
-            f"Health: {self.health}\n" +
-            f"Lives left: {self.lives_left}\n" +
-            super().__repr__()
+            "Kirby Dream Land:\n"
+            + f"Score: {self.score}\n"
+            + f"Health: {self.health}\n"
+            + f"Lives left: {self.lives_left}\n"
+            + super().__repr__()
         )
-        # yapf: enable

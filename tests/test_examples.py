@@ -13,11 +13,12 @@ from pytest_lazy_fixtures import lf
 
 
 @pytest.mark.parametrize(
-    "gamewrapper, rom", [
+    "gamewrapper, rom",
+    [
         ("gamewrapper_tetris.py", lf("tetris_rom")),
         ("gamewrapper_mario.py", lf("supermarioland_rom")),
         ("gamewrapper_kirby.py", lf("kirby_rom")),
-    ]
+    ],
 )
 def test_record_replay(gamewrapper, rom):
     script_path = os.path.dirname(os.path.realpath(__file__))
@@ -28,4 +29,4 @@ def test_record_replay(gamewrapper, rom):
     return_code = p.wait()
     if return_code != 0:
         print(p.communicate())
-        sys.exit(return_code)
+    assert return_code == 0

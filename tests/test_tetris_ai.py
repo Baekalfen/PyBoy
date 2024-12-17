@@ -52,7 +52,6 @@ frames = []
 
 def eval_network(epoch, child_index, child_model, record_to):
     pyboy = PyBoy('tetris_1.1.gb', window="null")
-    pyboy.set_emulation_speed(0)
     tetris = pyboy.game_wrapper
     tetris.start_game()
     pyboy._rendering(False)
@@ -143,7 +142,7 @@ def eval_network(epoch, child_index, child_model, record_to):
                 append_images=frames[1:],
                 duration=int(round(1000 / 30, -1))
             )
-            pyboy.stop()
+            pyboy.stop(save=False)
             exit(0)
 
         # Game over:
@@ -152,7 +151,7 @@ def eval_network(epoch, child_index, child_model, record_to):
             levels.append(tetris.level)
             lines.append(tetris.lines)
             if run == run_per_child - 1:
-                pyboy.stop()
+                pyboy.stop(save=False)
             else:
                 tetris.reset_game()
             run += 1
@@ -183,7 +182,7 @@ if __name__ == '__main__':
 
 @pytest.mark.skipif(
     os.path.isfile("extras/README/7.gif") or platform.system() == "Windows",
-    reason="This test takes too long for regular use"
+    reason="This test takes too long for regular use",
 )
 def test_tetris_ai(git_tetris_ai, tetris_rom):
     script_py = "tetris_gif.py"
