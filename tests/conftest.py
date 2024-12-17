@@ -129,8 +129,8 @@ def kirby_rom(secrets):
 
 
 @pytest.fixture(scope="session")
-def any_rom(default_rom):
-    return default_rom
+def any_rom(secrets, tetris_rom):
+    return tetris_rom
 
 
 @pytest.fixture(scope="session")
