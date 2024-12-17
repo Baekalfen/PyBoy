@@ -36,7 +36,7 @@ jobs:
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
-        python -m pytest pyboy/ -n auto -v
+        python -m pytest pyboy/ -v
     - name: Build PyBoy
       run: |
         python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
@@ -118,7 +118,7 @@ jobs:
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
-        pypy3 -m pytest pyboy/ -n auto -v
+        pypy3 -m pytest pyboy/ -v
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -156,16 +156,22 @@ jobs:
           fi
 
           cd /work
-          echo "Starting build"
+          echo "Preparing pip"
           python -m pip install --upgrade pip
           python -m pip install --upgrade setuptools
 
           echo "Starting tests"
           python -m pip install --prefer-binary -r requirements.txt
+          python -m pip install --prefer-binary -r requirements_tests.txt
+
+          echo "Starting Doctests"
+          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ -v
+
+          echo "Building PyBoy"
           python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
 
-          python -m pip install --prefer-binary -r requirements_tests.txt
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_CI=1 TEST_NO_UI=1 python -m pytest tests/ -n2 -v
+          echo "Starting pytests"
+          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n2 -v
 
           echo "Building wheel"
           python -m pip install wheel
