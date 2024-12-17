@@ -299,7 +299,8 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
 def test_tetris(tetris_rom):
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom="pyboy_fast", window="null")
+    pyboy = PyBoy(tetris_rom, window="null")
+    pyboy.tick(120, False)
     tetris = pyboy.game_wrapper
     tetris.set_tetromino("T")
 
@@ -307,7 +308,7 @@ def test_tetris(tetris_rom):
     tile_map = pyboy.tilemap_background
     state_data = io.BytesIO()
     for frame in range(5282):  # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
-        image = pyboy.tick(1, True)
+        pyboy.tick(1, False)
 
         assert pyboy.screen.get_tilemap_position() == ((0, 0), (-7, 0))
 
