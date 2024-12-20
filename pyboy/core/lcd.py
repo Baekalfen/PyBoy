@@ -54,6 +54,7 @@ class LCD:
         self.clock = 0
         self.clock_target = 0
         self.frame_done = False
+        self.first_frame = False
         self.double_speed = False
         self.cgb = cgb
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
@@ -108,6 +109,10 @@ class LCD:
 
             # Close current frame immediately to get clock and clock_target aligned with FRAME_CYCLES
             self.frame_done = True
+
+            # The Cycle Accurate Game Boy Docs:
+            # the LCD won't show any image during the first frame it is turned on. The first drawn frame is the second one.
+            self.first_frame = True  # used to postpose rendering of first frame
 
     def cycles_to_mode0(self):
         multiplier = 2 if self.double_speed else 1
@@ -200,6 +205,12 @@ class LCD:
                     if self.LY == 144:
                         interrupt_flag |= INTR_VBLANK
                         self.frame_done = True
+                        if self.first_frame:
+                            # Pan Docs: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable
+                            # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
+                            # will stay blank during the first frame.
+                            self.renderer.blank_screen(self)
+                            self.first_frame = False
 
                     if self.LY == 153:
                         # Reset to new frame and start from mode 2
@@ -249,6 +260,7 @@ class LCD:
         f.write(self.cgb)
         f.write(self.double_speed)
         f.write(self.frame_done)
+        f.write(self.first_frame)
         f.write_64bit(self.last_cycles)
         f.write_64bit(self.clock)
         f.write_64bit(self.clock_target)
@@ -305,6 +317,7 @@ class LCD:
             self.double_speed = f.read()
             if state_version >= 13:
                 self.frame_done = f.read()
+                self.first_frame = f.read()
 
             if state_version >= 12:
                 self.last_cycles = f.read_64bit()
