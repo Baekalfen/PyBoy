@@ -36,6 +36,7 @@ cdef class LCD:
     cdef uint8_t WX
     cdef uint8_t next_stat_mode
     cdef bint frame_done
+    cdef bint first_frame
     cdef uint8_t max_ly
     cdef uint8_t LY
     cdef uint8_t LYC

@@ -7,6 +7,7 @@ import io
 
 import pytest
 
+import numpy as np
 from pyboy import PyBoy
 from pyboy.core.lcd import LCD, Renderer
 from pyboy.utils import color_code, cython_compiled
@@ -57,6 +58,16 @@ def test_cycles_when_disabling_lcd(default_rom):
 
 def test_cycles_when_enabling_lcd2(default_rom):
     pass
+
+
+def test_firstwhite(firstwhite_file):
+    pyboy = PyBoy(firstwhite_file, window="null")
+    pyboy.tick(120, True)
+    for _ in range(30):
+        # Because the LCD should never render the first frame after enabling LCDC
+        # We should always see a white (disabled) screen.
+        pyboy.tick(1, True)
+        assert np.all(pyboy.screen.ndarray == 255)
 
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
