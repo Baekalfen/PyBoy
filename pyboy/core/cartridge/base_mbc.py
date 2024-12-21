@@ -7,7 +7,7 @@ import array
 import os
 
 import pyboy
-from pyboy.utils import IntIOWrapper, PyBoyException
+from pyboy.utils import IntIOWrapper, PyBoyException, PyBoyInvalidInputException
 
 from .rtc import RTC
 
@@ -118,7 +118,7 @@ class BaseMBC:
             )
             self.rombanks[rom_bank, address] = value
         else:
-            logger.error("Invalid override address: %0.4x", address)
+            raise PyBoyInvalidInputException("Invalid override address: %0.4x", address)
 
     def getitem(self, address):
         if 0xA000 <= address < 0xC000:

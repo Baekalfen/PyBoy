@@ -170,9 +170,9 @@ class Motherboard:
             elif 0xC000 <= addr <= 0xE000:
                 self.ram.internal_ram0[addr - 0xC000] = opcode
             else:
-                logger.error("Unsupported breakpoint address. If this a mistake, reach out to the developers")
+                raise PyBoyException("Unsupported breakpoint address. If this a mistake, reach out to the developers")
         else:
-            logger.error("Breakpoint not found. If this a mistake, reach out to the developers")
+            raise PyBoyException("Breakpoint not found. If this a mistake, reach out to the developers")
 
     def breakpoint_reached(self):
         pc = self.cpu.PC
