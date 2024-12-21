@@ -10,6 +10,7 @@
 from array import array
 from ctypes import c_void_p
 
+from pyboy.utils import PyBoyException
 
 try:
     import sdl2
@@ -29,6 +30,7 @@ class Sound:
         self.enabled = enabled and (sdl2 is not None)
         self.emulate = emulate or enabled  # Just emulate registers etc.
         if self.enabled:
+            # TODO: Refactor SDL2 out of sound.py
             # Initialization is handled in the windows, otherwise we'd need this
             if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
                 # Open audio device
@@ -43,13 +45,9 @@ class Sound:
                     self.sample_rate = spec_have.freq
                     self.sampleclocks = CPU_FREQ // self.sample_rate
                 else:
-                    # TODO: Refactor SDL2 out of sound.py
-                    logger.error("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
-                    self.enabled = False  # We will continue with emulation
+                    raise PyBoyException("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
             else:
-                # TODO: Refactor SDL2 out of sound.py
-                logger.error("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
-                self.enabled = False  # We will continue with emulation
+                raise PyBoyException("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
 
         if not self.enabled:
             self.sample_rate = 32768
