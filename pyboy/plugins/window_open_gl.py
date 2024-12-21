@@ -168,9 +168,9 @@ class WindowOpenGL(PyBoyWindowPlugin):
                 if bool(OpenGL.GLUT.freeglut.glutMainLoopEvent):
                     return True
                 else:
-                    logger.error('Failed to load "PyOpenGL". OpenGL window disabled')
+                    raise PyBoyException('Failed to load "PyOpenGL"')
             else:
-                logger.error('Missing depencency "PyOpenGL". OpenGL window disabled')
+                raise PyBoyException('Missing depencency "PyOpenGL"')
         return False
 
     def post_tick(self):

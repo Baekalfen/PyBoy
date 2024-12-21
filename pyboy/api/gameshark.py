@@ -4,6 +4,7 @@
 #
 
 from pyboy.logging import get_logger
+from pyboy.utils import PyBoyInvalidInputException
 
 logger = get_logger(__name__)
 
@@ -104,7 +105,7 @@ class GameShark:
         if code not in self.cheats:
             self.cheats[code] = (self._get_value(_type, address), (_type, value, address))
         else:
-            logger.error("GameShark code already applied!")
+            raise PyBoyInvalidInputException("GameShark code already applied!")
 
     def remove(self, code, restore_value=True):
         """
