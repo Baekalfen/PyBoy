@@ -71,9 +71,9 @@ cdef class PyBoy:
     cdef list external_input
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
-    cdef bint _tick(self, bint) noexcept nogil
+    cdef int64_t _tick(self, bint) except -1 nogil
     @cython.locals(running=bint, _render=bint)
-    cpdef bint tick(self, int count=*, bint render=*) noexcept
+    cpdef int64_t tick(self, int count=*, bint render=*) except -1
     cpdef void stop(self, save=*) noexcept
     cpdef int save_state(self, object) except -1
     cpdef int load_state(self, object) except -1

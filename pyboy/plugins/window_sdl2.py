@@ -14,7 +14,7 @@ except ImportError:
     sdl2 = None
 
 import pyboy
-from pyboy.utils import PyBoyException
+from pyboy.utils import PyBoyDependencyError
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -199,7 +199,7 @@ class WindowSDL2(PyBoyWindowPlugin):
     def enabled(self):
         if self.pyboy_argv.get("window") in ("SDL2", None):
             if not sdl2:
-                raise PyBoyException("Failed to import sdl2, needed for sdl2 window")
+                raise PyBoyDependencyError("Failed to import sdl2, needed for sdl2 window")
             else:
                 return True
         else:

@@ -150,7 +150,7 @@ class GameShark:
 
     def tick(self):
         if not self.enabled:
-            return
+            return 0
         # https://gbdev.io/pandocs/Shark_Cheats.html
         # "As far as it is understood, patching is implemented by hooking the original VBlank interrupt handler, and
         # re-writing RAM values each frame."
