@@ -28,7 +28,7 @@ cdef class PyBoyPlugin:
     cdef void post_tick(self) noexcept
     cdef str window_title(self)
     cdef void stop(self) noexcept
-    cpdef bint enabled(self) noexcept
+    cpdef object enabled(self) # object for actual Python bool and exceptions
 
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):

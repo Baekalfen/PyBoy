@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, int64_t
 
 from pyboy.core.cartridge.rtc cimport RTC
 from pyboy.logging.logging cimport Logger
@@ -40,7 +40,7 @@ cdef class BaseMBC:
 
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
-    cdef void overrideitem(self, int, uint16_t, uint8_t) noexcept nogil
+    cdef int64_t overrideitem(self, int, uint16_t, uint8_t) except -1 nogil
 
 cdef class ROMOnly(BaseMBC):
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil

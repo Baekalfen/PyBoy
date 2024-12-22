@@ -7,7 +7,7 @@ import numpy as np
 
 import pyboy
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.utils import WindowEvent, PyBoyException
+from pyboy.utils import WindowEvent, PyBoyException, PyBoyDependencyError
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -170,7 +170,7 @@ class WindowOpenGL(PyBoyWindowPlugin):
                 else:
                     raise PyBoyException('Failed to load "PyOpenGL"')
             else:
-                raise PyBoyException('Missing depencency "PyOpenGL"')
+                raise PyBoyDependencyError('Missing depencency "PyOpenGL"')
         return False
 
     def post_tick(self):
