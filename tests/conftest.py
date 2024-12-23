@@ -238,6 +238,19 @@ def shonumi_dir():
     return str(path) + "/"
 
 
+# https://github.com/Powerlated/TurtleTests
+@pytest.fixture(scope="session")
+def turtletests_dir():
+    path = extra_test_rom_dir / Path("TurtleTests")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isdir(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.TurtleTests.txt"))
+            turtle_data = io.BytesIO(url_open("https://pyboy.dk/mirror/TurtleTests.zip"))
+            with ZipFile(turtle_data) as _zip:
+                _zip.extractall(path)
+    return str(path) + "/"
+
+
 @pytest.fixture(scope="session")
 def rtc3test_file():
     path = extra_test_rom_dir / Path("rtc3test.gb")
