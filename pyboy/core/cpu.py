@@ -98,6 +98,7 @@ class CPU:
             f"halted:{self.halted}, "
             f"interrupt_queued:{self.interrupt_queued}, "
             f"stopped:{self.stopped}\n"
+            f"cycles:{self.cycles}\n"
         )
 
     def set_interruptflag(self, flag):
