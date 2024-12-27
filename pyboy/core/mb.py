@@ -317,6 +317,8 @@ class Motherboard:
                         mode0_cycles,
                     ),
                 )
+                if self.breakpoint_singlestep:
+                    cycles_target = 4
                 self.cpu.tick(cycles_target)
 
             # TODO: Support General Purpose DMA
