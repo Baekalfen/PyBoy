@@ -15,6 +15,11 @@ from pyboy import __main__ as main
 from pyboy.api.tile import Tile
 from pyboy.utils import WindowEvent, cython_compiled
 
+try:
+    import sdl2
+except ImportError:
+    sdl2 = None
+
 
 def test_log_level_none(default_rom, capsys):
     PyBoy(default_rom, window="null")
@@ -207,9 +212,11 @@ def test_pause_toggle(default_rom):
         assert not pyboy.paused
 
 
-@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
+@pytest.mark.skipif(
+    cython_compiled or not sdl2, reason="This test requires access to internal functions not available in Cython"
+)
 def test_no_input_enabled(default_rom):
-    pyboy = PyBoy(default_rom, no_input=True)
+    pyboy = PyBoy(default_rom, window="SDL2", no_input=True)
     pyboy.set_emulation_speed(0)
     with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
         pyboy.tick()
@@ -224,9 +231,11 @@ def test_no_input_enabled(default_rom):
     assert not pyboy.paused
 
 
-@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
+@pytest.mark.skipif(
+    cython_compiled or not sdl2, reason="This test requires access to internal functions not available in Cython"
+)
 def test_no_input_disabled(default_rom):
-    pyboy = PyBoy(default_rom, no_input=False)
+    pyboy = PyBoy(default_rom, window="SDL2", no_input=False)
     pyboy.set_emulation_speed(0)
     with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
         pyboy.tick()
