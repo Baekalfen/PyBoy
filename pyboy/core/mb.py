@@ -383,47 +383,51 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
-            # NOTE: A bit ad-hoc, but interrupts can occur right between writes
-            if self.timer.tick(self.cpu.cycles):
-                self.cpu.set_interruptflag(INTR_TIMER)
+            if 0xFF04 <= i <= 0xFF07:
+                if self.timer.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_TIMER)
 
-            if i == 0xFF04:
-                return self.timer.DIV
-            elif i == 0xFF05:
-                return self.timer.TIMA
-            elif i == 0xFF06:
-                return self.timer.TMA
-            elif i == 0xFF07:
-                return self.timer.TAC
+                if i == 0xFF04:
+                    return self.timer.DIV
+                elif i == 0xFF05:
+                    return self.timer.TIMA
+                elif i == 0xFF06:
+                    return self.timer.TMA
+                elif i == 0xFF07:
+                    return self.timer.TAC
             elif i == 0xFF0F:
                 return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles, self.double_speed)
                 return self.sound.get(i - 0xFF10)
-            elif i == 0xFF40:
-                return self.lcd._LCDC.value
-            elif i == 0xFF41:
-                return self.lcd._STAT.value
-            elif i == 0xFF42:
-                return self.lcd.SCY
-            elif i == 0xFF43:
-                return self.lcd.SCX
-            elif i == 0xFF44:
-                return self.lcd.LY
-            elif i == 0xFF45:
-                return self.lcd.LYC
-            elif i == 0xFF46:
-                return 0x00  # DMA
-            elif i == 0xFF47:
-                return self.lcd.BGP.get()
-            elif i == 0xFF48:
-                return self.lcd.OBP0.get()
-            elif i == 0xFF49:
-                return self.lcd.OBP1.get()
-            elif i == 0xFF4A:
-                return self.lcd.WY
-            elif i == 0xFF4B:
-                return self.lcd.WX
+            elif 0xFF40 <= i <= 0xFF4B:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+
+                if i == 0xFF40:
+                    return self.lcd._LCDC.value
+                elif i == 0xFF41:
+                    return self.lcd._STAT.value
+                elif i == 0xFF42:
+                    return self.lcd.SCY
+                elif i == 0xFF43:
+                    return self.lcd.SCX
+                elif i == 0xFF44:
+                    return self.lcd.LY
+                elif i == 0xFF45:
+                    return self.lcd.LYC
+                elif i == 0xFF46:
+                    return 0x00  # DMA
+                elif i == 0xFF47:
+                    return self.lcd.BGP.get()
+                elif i == 0xFF48:
+                    return self.lcd.OBP0.get()
+                elif i == 0xFF49:
+                    return self.lcd.OBP1.get()
+                elif i == 0xFF4A:
+                    return self.lcd.WY
+                elif i == 0xFF4B:
+                    return self.lcd.WX
             else:
                 return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -501,10 +505,6 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
-            # NOTE: A bit ad-hoc, but interrupts can occur right between writes
-            if self.timer.tick(self.cpu.cycles):
-                self.cpu.set_interruptflag(INTR_TIMER)
-
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
@@ -512,50 +512,58 @@ class Motherboard:
                 self.serialbuffer_count += 1
                 self.serialbuffer_count &= 0x3FF
                 self.ram.io_ports[i - 0xFF00] = value
-            elif i == 0xFF04:
-                self.timer.reset()
-            elif i == 0xFF05:
-                self.timer.TIMA = value
-            elif i == 0xFF06:
-                self.timer.TMA = value
-            elif i == 0xFF07:
-                self.timer.TAC = value & 0b111  # TODO: Move logic to Timer class
+            elif 0xFF04 <= i <= 0xFF07:
+                if self.timer.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_TIMER)
+
+                if i == 0xFF04:
+                    self.timer.reset()
+                elif i == 0xFF05:
+                    self.timer.TIMA = value
+                elif i == 0xFF06:
+                    self.timer.TMA = value
+                elif i == 0xFF07:
+                    self.timer.TAC = value & 0b111  # TODO: Move logic to Timer class
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles, self.double_speed)
                 self.sound.set(i - 0xFF10, value)
-            elif i == 0xFF40:
-                self.lcd.set_lcdc(value)
-            elif i == 0xFF41:
-                self.lcd._STAT.set(value)
-            elif i == 0xFF42:
-                self.lcd.SCY = value
-            elif i == 0xFF43:
-                self.lcd.SCX = value
-            elif i == 0xFF44:
-                # LCDC Read-only
-                return
-            elif i == 0xFF45:
-                self.lcd.LYC = value
-            elif i == 0xFF46:
-                self.transfer_DMA(value)
-            elif i == 0xFF47:
-                if self.lcd.BGP.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_tilecache0()
-            elif i == 0xFF48:
-                if self.lcd.OBP0.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_spritecache0()
-            elif i == 0xFF49:
-                if self.lcd.OBP1.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_spritecache1()
-            elif i == 0xFF4A:
-                self.lcd.WY = value
-            elif i == 0xFF4B:
-                self.lcd.WX = value
+            elif 0xFF40 <= i <= 0xFF4B:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+
+                if i == 0xFF40:
+                    self.lcd.set_lcdc(value)
+                elif i == 0xFF41:
+                    self.lcd._STAT.set(value)
+                elif i == 0xFF42:
+                    self.lcd.SCY = value
+                elif i == 0xFF43:
+                    self.lcd.SCX = value
+                elif i == 0xFF44:
+                    # LCDC Read-only
+                    return
+                elif i == 0xFF45:
+                    self.lcd.LYC = value
+                elif i == 0xFF46:
+                    self.transfer_DMA(value)
+                elif i == 0xFF47:
+                    if self.lcd.BGP.set(value):
+                        # TODO: Move out of MB
+                        self.lcd.renderer.clear_tilecache0()
+                elif i == 0xFF48:
+                    if self.lcd.OBP0.set(value):
+                        # TODO: Move out of MB
+                        self.lcd.renderer.clear_spritecache0()
+                elif i == 0xFF49:
+                    if self.lcd.OBP1.set(value):
+                        # TODO: Move out of MB
+                        self.lcd.renderer.clear_spritecache1()
+                elif i == 0xFF4A:
+                    self.lcd.WY = value
+                elif i == 0xFF4B:
+                    self.lcd.WX = value
             else:
                 self.ram.io_ports[i - 0xFF00] = value
             self.cpu.bail = True
