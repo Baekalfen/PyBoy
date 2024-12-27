@@ -9,6 +9,7 @@ from setuptools import Extension, setup
 
 CYTHON = platform.python_implementation() == "CPython"
 ROOT_DIR = "pyboy"
+DEBUG = False
 
 if not CYTHON:
     setup()
@@ -56,6 +57,8 @@ class build_ext(_build_ext):
             multiprocessing.set_start_method("fork", force=True)
 
         cflags = ["-O3"]
+        if not DEBUG:
+            cflags.append("-DCYTHON_WITHOUT_ASSERTIONS")
         # NOTE: For performance. Check if other platforms need an equivalent change.
         if sys.platform == "darwin":
             cflags.append("-DCYTHON_INLINE=inline __attribute__ ((__unused__)) __attribute__((always_inline))")
@@ -66,7 +69,7 @@ class build_ext(_build_ext):
                 src.split(".")[0].replace(os.sep, "."),
                 [src],
                 extra_compile_args=cflags,
-                extra_link_args=["-s", "-w"],
+                extra_link_args=[] if DEBUG else ["-s", "-w"],
                 include_dirs=[np.get_include()],
             ),
             list(py_pxd_files),
