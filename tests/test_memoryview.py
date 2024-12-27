@@ -10,7 +10,7 @@ from pyboy.utils import PyBoyInvalidInputException, PyBoyOutOfBoundsException
 
 
 def test_memoryview(default_rom, boot_rom):
-    p = PyBoy(default_rom, bootrom=boot_rom)
+    p = PyBoy(default_rom, window="null", bootrom=boot_rom)
 
     with open(default_rom, "rb") as f:
         rom_bytes = [ord(f.read(1)) for x in range(16)]
@@ -97,7 +97,7 @@ def test_memoryview(default_rom, boot_rom):
 
 
 def test_cgb_banks(cgb_acid_file):  # Any CGB file
-    p = PyBoy(cgb_acid_file)
+    p = PyBoy(cgb_acid_file, window="null")
 
     # Read VRAM banks through both aliases
     assert p.memory[0, 0x8000:0x8010] == [0] * 16
