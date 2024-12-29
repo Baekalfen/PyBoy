@@ -9,6 +9,7 @@
 00:0187 Main.readTilemap
 00:01a0 Main.clearOAM
 00:01ab Main.loop
+00:01b2 Main.inner_loop
 00:01bb Main.sync
 00:01c2 Main.move
 00:01cd Tileset
