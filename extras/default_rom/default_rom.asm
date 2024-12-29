@@ -99,7 +99,7 @@ Main:
 	ld a, [rWY]
 	cp a, 90
 	jr c, .loop
-
+.inner_loop ; Used in test
 	ldh a, [rDIV]
 	cp a, 255
 	jp z, .move
