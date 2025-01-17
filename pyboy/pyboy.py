@@ -444,7 +444,7 @@ class PyBoy:
                         self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
 
             self.frame_count += 1
-            self._post_handle_events()
+        self._post_handle_events()
 
         return not self.quitting
 
