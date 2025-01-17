@@ -25,5 +25,5 @@ cdef class Timer:
     @cython.locals(divider=uint8_t)
     cdef bint tick(self, uint64_t) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1

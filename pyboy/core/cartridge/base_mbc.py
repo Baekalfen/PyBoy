@@ -76,7 +76,7 @@ class BaseMBC:
     def save_ram(self, f):
         if not self.rambank_initialized:
             logger.warning("Saving RAM is not supported on %0.2x", self.carttype)
-            return
+            return 0
 
         for bank in range(self.external_ram_count):
             for byte in range(8 * 1024):
@@ -87,7 +87,7 @@ class BaseMBC:
     def load_ram(self, f):
         if not self.rambank_initialized:
             logger.warning("Loading RAM is not supported on %0.2x", self.carttype)
-            return
+            return 0
 
         for bank in range(self.external_ram_count):
             for byte in range(8 * 1024):

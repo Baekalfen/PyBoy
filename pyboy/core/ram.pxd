@@ -14,7 +14,7 @@ cdef Logger logger
 
 cdef class RAM:
     @cython.locals(n=int)
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     @cython.locals(n=int)
     cdef int load_state(self, IntIOInterface, int) except -1
 

@@ -86,5 +86,5 @@ cdef class HDMA:
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
     cdef int tick(self, Motherboard) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1

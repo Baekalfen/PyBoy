@@ -31,10 +31,10 @@ cdef class BaseMBC:
     cdef uint16_t rombank_selected_low
     cdef bint cgb
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
-    cdef void save_ram(self, IntIOInterface) noexcept
-    cdef void load_ram(self, IntIOInterface) noexcept
+    cdef int save_ram(self, IntIOInterface) except -1
+    cdef int load_ram(self, IntIOInterface) except -1
     cdef void init_rambanks(self, uint8_t) noexcept
     cdef str getgamename(self, uint8_t[:,:])
 
