@@ -16,6 +16,7 @@ import numpy as np
 from pyboy.api.gameshark import GameShark
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
+from pyboy.api.sound import Sound
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
@@ -248,10 +249,34 @@ class PyBoy:
 
         ```
 
+        NOTE: See `PyBoy.sound` to get the sound buffer.
+
         Returns
         -------
         `pyboy.api.screen.Screen`:
             A Screen object with helper functions for reading the screen buffer.
+        """
+        self.sound = Sound(self.mb)
+        """
+        Use this method to get a `pyboy.api.sound.Sound` object. This can be used to get the sound buffer of the
+        latest screen frame (see `PyBoy.screen`).
+
+        Example:
+        ```python
+        >>> pyboy.sound.ndarray.shape # 801 samples, 2 channels (stereo)
+        (801, 2)
+        >>> pyboy.sound.ndarray
+        array([[0, 0],
+               [0, 0],
+               ...
+               [0, 0],
+               [0, 0]], dtype=int8)
+        ```
+
+        Returns
+        -------
+        `pyboy.api.sound.Sound`:
+            A Sound object with helper functions for accessing the sound buffer.
         """
         self.memory = PyBoyMemoryView(self.mb)
         """

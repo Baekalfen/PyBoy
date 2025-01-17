@@ -39,6 +39,7 @@ cdef class Sound:
     cdef uint64_t samples_per_frame
     cdef cython.double cycles_per_sample
     cdef int8_t[:] audiobuffer
+    cdef str buffer_format
 
     cdef uint8_t noise_left
     cdef uint8_t wave_left
