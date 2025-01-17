@@ -89,6 +89,7 @@ class Motherboard:
         if bit0 == 1:
             self.double_speed = not self.double_speed
             self.lcd.double_speed = self.double_speed
+            logger.debug("CGB double speed is now: %d", self.double_speed)
             self.key1 ^= 0b10000001
 
     def breakpoint_add(self, bank, addr):
