@@ -26,6 +26,7 @@ class Motherboard:
         cgb_color_palette,
         sound_enabled,
         sound_emulated,
+        sound_sample_rate,
         cgb,
         randomize=False,
     ):
@@ -67,11 +68,8 @@ class Motherboard:
                 randomize=randomize,
             )
 
-        sound_emulated = True
-        sound_enabled = True
-        # QUIRK: Force emulation of sound (muted)
-        sound_emulated |= self.cartridge.gamename == "ZELDA DIN"
-        self.sound = sound.Sound(sound_enabled, sound_emulated, cgb)
+        # breakpoint()
+        self.sound = sound.Sound(sound_enabled, sound_emulated, sound_sample_rate, cgb)
 
         self.key1 = 0
         self.double_speed = False
@@ -456,6 +454,12 @@ class Motherboard:
                 return 0x00  # Not readable
             elif self.cgb and i == 0xFF55:
                 return self.hdma.hdma5 & 0xFF
+            elif self.cgb and i == 0xFF76:
+                self.sound.tick(self.cpu.cycles)
+                return self.sound.pcm12()
+            elif self.cgb and i == 0xFF77:
+                self.sound.tick(self.cpu.cycles)
+                return self.sound.pcm34()
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]
