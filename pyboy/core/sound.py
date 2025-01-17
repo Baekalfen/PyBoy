@@ -30,7 +30,7 @@ CYCLES_512HZ = 8192
 
 
 class Sound:
-    def __init__(self, volume, emulate, cgb):
+    def __init__(self, volume, emulate, sample_rate, cgb):
         self.volume = volume
         self.enabled = bool(self.volume) and (sdl2 is not None)
         self.disable_sampling = not self.enabled
@@ -38,12 +38,12 @@ class Sound:
         logger.debug("Sound emulated: %d, sound enabled: %d", self.emulate, self.enabled)
         self.cgb = cgb
 
-        # self.sample_rate = 30000 # Hz
-        # self.sample_rate = 15000 # Hz
-        # self.sample_rate = 44100 # Hz
-        # self.sample_rate = 48000 # Hz
-        self.sample_rate = 24000  # Hz
-        # self.sample_rate = 32768 # Per second
+        if sample_rate is None:
+            # self.sample_rate = 44100 # Hz
+            self.sample_rate = 48000  # Hz
+            # self.sample_rate = 24000  # Hz
+        else:
+            self.sample_rate = sample_rate
         assert self.sample_rate % 60 == 0, "We do not want a sample rate that doesn't divide the frame rate"
         self.audiobuffer_head = 0
         self.samples_per_frame = self.sample_rate // 60
@@ -53,14 +53,17 @@ class Sound:
         self.audiobuffer = array("b", [0] * self.audiobuffer_length)
 
         self.speed_shift = 0
-        self.cycles_target = self.cycles_per_sample
+        if self.emulate and not self.enabled:
+            # No need to sample, when not enabled
+            self.cycles_target = 1 << 31
+        else:
+            self.cycles_target = self.cycles_per_sample
         self.cycles_target_512Hz = CYCLES_512HZ << self.speed_shift
         # We have to use ceil on the double to round any decimals up to the next cycle. We have to pass the target
         # entirely, and as the cycles are integer, we cannot just round down, as that would be 1 cycle too early.
         self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
 
         self.cycles = 0
-        self.cycles_target = 0
         self.last_cycles = 0
 
         self.div_apu_counter = 0

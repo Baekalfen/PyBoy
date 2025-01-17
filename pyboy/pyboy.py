@@ -79,8 +79,9 @@ class PyBoy:
         scale=defaults["scale"],
         symbols=None,
         bootrom=None,
-        sound=False,
-        sound_emulated=False,
+        sound=0,
+        sound_emulated=True,
+        sound_sample_rate=None,
         cgb=None,
         gameshark=None,
         no_input=False,
@@ -118,7 +119,7 @@ class PyBoy:
             * scale (int): Window scale factor. Doesn't apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
             * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            * sound (bool): Enable sound emulation and output.
+            * sound (bool | int): Enable sound and set volume.
             * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
             * cgb (bool): Forcing Game Boy Color mode.
             * gameshark (str): GameShark codes to apply.
@@ -181,6 +182,13 @@ class PyBoy:
         self.symbols_file = symbols
         self._load_symbols()
 
+        # Backwards compatibility
+        if isinstance(sound, bool):
+            sound = 100 if sound else 0
+
+        if not (0 <= sound <= 100):
+            raise PyBoyInvalidInputException("Sound volume has to be between 0 and 100.")
+
         self.mb = Motherboard(
             gamerom,
             bootrom,
@@ -188,6 +196,7 @@ class PyBoy:
             cgb_color_palette,
             sound,
             sound_emulated,
+            sound_sample_rate,
             cgb,
             randomize=randomize,
         )

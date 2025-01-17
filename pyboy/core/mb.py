@@ -26,6 +26,7 @@ class Motherboard:
         cgb_color_palette,
         sound_enabled,
         sound_emulated,
+        sound_sample_rate,
         cgb,
         randomize=False,
     ):
@@ -66,11 +67,8 @@ class Motherboard:
                 randomize=randomize,
             )
 
-        sound_emulated = True
-        sound_enabled = True
-        # QUIRK: Force emulation of sound (muted)
-        sound_emulated |= self.cartridge.gamename == "ZELDA DIN"
-        self.sound = sound.Sound(sound_enabled, sound_emulated, cgb)
+        # breakpoint()
+        self.sound = sound.Sound(sound_enabled, sound_emulated, sound_sample_rate, cgb)
 
         self.key1 = 0
         self.double_speed = False
