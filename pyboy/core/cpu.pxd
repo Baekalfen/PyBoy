@@ -40,7 +40,7 @@ cdef class CPU:
     cdef inline uint8_t fetch_and_execute(self) noexcept nogil
     @cython.locals(_cycles0=int64_t)
     cdef int tick(self, int64_t) noexcept nogil
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
     # Only char (8-bit) needed, but I'm not sure all intermittent
