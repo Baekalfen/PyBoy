@@ -40,6 +40,22 @@ def valid_file_path(path):
     return path
 
 
+def valid_volume(vol):
+    if isinstance(vol, bool):
+        return 100 if vol else 0
+    elif vol.isnumeric() and (0 <= int(vol) <= 100):
+        return int(vol)
+    else:
+        raise ValueError("Invalid volume")
+
+
+def valid_sample_rate(freq):
+    if freq.isnumeric() and int(freq) % 60 == 0:
+        return int(freq)
+    else:
+        raise ValueError("Invalid sample rate")
+
+
 parser = argparse.ArgumentParser(
     description="PyBoy -- Game Boy emulator written in Python",
     epilog="Warning: Features marked with (internal use) might be subject to change.",
@@ -89,7 +105,6 @@ parser.add_argument(
     help="Specify window-type to use",
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
-parser.add_argument("--sound", action="store_true", help="Enable sound (beta)")
 parser.add_argument("--no-renderer", action="store_true", help="Disable rendering (internal use)")
 parser.add_argument(
     "--gameshark",
@@ -103,6 +118,25 @@ gameboy_type_parser.add_argument(
 )
 gameboy_type_parser.add_argument(
     "--cgb", action="store_const", const=True, dest="cgb", help="Force emulator to run as Game Boy Color"
+)
+
+
+sound_parser = parser.add_mutually_exclusive_group()
+
+sound_parser.add_argument("--sound", nargs="?", default=0, const=100, type=valid_volume, help="Set sound volume 0-100")
+# NOTE: Inverted logic on variable
+sound_parser.add_argument(
+    "--no-sound-emulation",
+    default=True,
+    action="store_false",
+    dest="sound_emulated",
+    help="Disables sound emulation (not just muted!)",
+)
+parser.add_argument(
+    "--sound-sample-rate",
+    default=None,
+    type=valid_sample_rate,
+    help="Set sound sample rate. Has to be divisible in 60.",
 )
 
 for arguments in parser_arguments():
@@ -158,6 +192,9 @@ See "pyboy --help" for how to enable rewind and other awesome features!
     kwargs.pop("ROM", None)
     kwargs.pop("loadstate", None)
     kwargs.pop("no_renderer", None)
+    if kwargs.pop("sound_emulated", None) is False:
+        # This disables the entire sound emulation, not just muting the sound.
+        kwargs["sound"] = False
     pyboy = PyBoy(argv.ROM, **kwargs)
 
     if argv.loadstate is not None:
