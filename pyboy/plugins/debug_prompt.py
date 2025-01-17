@@ -45,7 +45,7 @@ class DebugPrompt(PyBoyPlugin):
             return bank, addr
         else:
             try:
-                self.pyboy._lookup_symbol(command)
+                return self.pyboy._lookup_symbol(command)
             except ValueError:
                 pass
         return None, None
