@@ -11,6 +11,7 @@ from libc.stdint cimport int64_t, uint64_t
 from pyboy.api.gameshark cimport GameShark
 from pyboy.api.memory_scanner cimport MemoryScanner
 from pyboy.api.screen cimport Screen
+from pyboy.api.sound cimport Sound
 from pyboy.api.tilemap cimport TileMap
 from pyboy.core.cpu cimport CPU
 from pyboy.core.mb cimport Motherboard
@@ -56,6 +57,7 @@ cdef class PyBoy:
     cdef readonly PyBoyMemoryView memory
     cdef readonly PyBoyRegisterFile register_file
     cdef readonly Screen screen
+    cdef readonly Sound sound
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
     cdef readonly object game_wrapper
