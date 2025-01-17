@@ -190,6 +190,28 @@ def test_argv_parser(*args):
         assert flags[k] == v
 
 
+def test_pause_toggle(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    pyboy.send_input(WindowEvent.PAUSE_TOGGLE)
+    pyboy.tick()
+    assert pyboy.paused
+
+    # Just verify pause sticks
+    for _ in range(10):
+        pyboy.tick()
+        assert pyboy.paused
+
+    pyboy.send_input(WindowEvent.PAUSE_TOGGLE)
+    pyboy.tick()
+    assert not pyboy.paused
+
+    # Just verify unpause sticks
+    for _ in range(10):
+        pyboy.tick()
+        assert not pyboy.paused
+
+
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
 def test_no_input_enabled(default_rom):
     pyboy = PyBoy(default_rom, no_input=True)
