@@ -9,7 +9,7 @@ import re
 windows = ["WindowSDL2", "WindowOpenGL", "WindowNull", "Debug"]
 game_wrappers = [
     "GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand", "GameWrapperPokemonGen1",
-    "GameWrapperPokemonPinball"
+    "GameWrapperPokemonPinball", "GameWrapperMetroidII"
 ]
 plugins = [
     "DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder", "DebugPrompt"
