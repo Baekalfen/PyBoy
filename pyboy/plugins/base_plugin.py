@@ -93,6 +93,9 @@ class PyBoyWindowPlugin(PyBoyPlugin):
             self._ftime = now
         return True
 
+    def paused(self, pause):
+        pass
+
     def set_title(self, title):
         pass
 
