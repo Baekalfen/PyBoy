@@ -51,6 +51,14 @@ def test_tick_zero(default_rom):
     pyboy.tick(0)
 
 
+def test_memoryviewslice_type(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.tick()
+
+    assert pyboy.screen.raw_buffer.__class__.__name__ in ("memoryview", "_memoryviewslice")
+    assert pyboy.sound.raw_buffer.__class__.__name__ in ("memoryview", "_memoryviewslice")
+
+
 def test_register_file(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
