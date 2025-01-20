@@ -181,6 +181,7 @@ class WindowSDL2(PyBoyWindowPlugin):
 
         sdl2.SDL_ShowWindow(self._window)
         self.fullscreen = False
+        self.sound_paused = True
 
         # Helps Cython access mb.sound
         self.init_audio(mb)
@@ -210,6 +211,7 @@ class WindowSDL2(PyBoyWindowPlugin):
                     self.mixingbuffer_p = cast(c_void_p(mixingbuffer), POINTER(c_ubyte))
 
                     sdl2.SDL_PauseAudioDevice(self.sound_device, 0)
+                    self.sound_paused = False
                 else:
                     self.sound_support = False
                     logger.warning("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
@@ -239,7 +241,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         sdl2.SDL_RenderPresent(self._sdlrenderer)
         sdl2.SDL_RenderClear(self._sdlrenderer)
 
-        if self.sound_support:
+        if self.sound_support and not self.sound_paused:
             queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
 
             # NOTE: Fixes audio after running more than 1x realtime
@@ -260,6 +262,13 @@ class WindowSDL2(PyBoyWindowPlugin):
             )
 
             sdl2.SDL_QueueAudio(self.sound_device, self.mixingbuffer_p, length)
+
+    def paused(self, pause):
+        self.sound_paused = pause
+        if self.sound_paused:
+            sdl2.SDL_PauseAudioDevice(self.sound_device, 1)
+        else:
+            sdl2.SDL_PauseAudioDevice(self.sound_device, 0)
 
     def enabled(self):
         if self.pyboy_argv.get("window") in ("SDL2", None):
