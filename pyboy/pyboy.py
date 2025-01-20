@@ -574,6 +574,7 @@ class PyBoy:
         self.target_emulationspeed = 1
         logger.info("Emulation paused!")
         self._update_window_title()
+        self._plugin_manager.paused(True)
 
     def _unpause(self):
         if not self.paused:
@@ -582,6 +583,7 @@ class PyBoy:
         self.target_emulationspeed = self.save_target_emulationspeed
         logger.info("Emulation unpaused!")
         self._update_window_title()
+        self._plugin_manager.paused(False)
 
     def _post_tick(self):
         # Fix buggy PIL. They will copy our image buffer and destroy the
