@@ -17,7 +17,6 @@ cdef class Screen:
     cdef readonly uint32_t[:,:] raw_buffer
     cdef readonly (int, int) raw_buffer_dims
     cdef readonly str raw_buffer_format
-    # cdef readonly uint8_t[144][160][4] memoryview
-    # cpdef np.ndarray[np.uint8_t, ndim=3] get_ndarray(self)
+
     cdef readonly object ndarray
     cdef readonly object image

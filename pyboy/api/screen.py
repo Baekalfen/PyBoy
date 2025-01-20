@@ -54,8 +54,8 @@ class Screen:
 
         Returns
         -------
-        bytes:
-            92160 bytes of screen data in a `bytes` object.
+        memoryview:
+            92160 bytes memoryview of screen data.
         """
         self.raw_buffer_dims = self.mb.lcd.renderer.buffer_dims
         """
