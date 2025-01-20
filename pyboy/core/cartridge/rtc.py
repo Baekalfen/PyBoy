@@ -39,13 +39,16 @@ class RTC:
             self.save_state(IntIOWrapper(f))
 
     def save_state(self, f):
-        for b in struct.pack("f", self.timezero):
+        for b in struct.pack("d", self.timezero):
             f.write(b)
         f.write(self.halt)
         f.write(self.day_carry)
 
     def load_state(self, f, state_version):
-        self.timezero = int(struct.unpack("f", bytes([f.read() for _ in range(4)]))[0])
+        if state_version <= 13:
+            self.timezero = int(struct.unpack("f", bytes([f.read() for _ in range(4)]))[0])
+        else:
+            self.timezero = struct.unpack("d", bytes([f.read() for _ in range(8)]))[0]
         self.halt = f.read()
         self.day_carry = f.read()
 
