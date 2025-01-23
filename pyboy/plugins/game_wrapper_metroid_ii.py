@@ -26,6 +26,7 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
 
     def __init__(self, *args, **kwargs):
         self._game_over = False        
+        self.global_metroid_count = 0
         # may need to change game area section. Copied from the kirby code
         super().__init__(*args, game_area_section=(0, 0, 20, 16), game_area_follow_scxy=True, **kwargs)
 
@@ -33,14 +34,40 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
         
-        # For the kirby code, they do all of the RAM checking here
-        # I will probably want the following
-        #   health, previous_health
-        #   number of metroids
-        #   num missles
-        #   game over (?)
-        
-        # TODO implement me
+        # Access RAM for a ton of information about the game
+        # I'm getting all of the values from datacrystal
+        # https://datacrystal.tcrf.net/wiki/Metroid_II:_Return_of_Samus/RAM_map
+        # I've skipped some of the values like music related ones
+
+        # X position within area (pixels/screen)
+        self.x_pos_pixels = self.pyboy.memory[0xD027]
+        self.y_pos_pixels = self.pyboy.memory[0xD028]
+        self.x_pos_area = self.pyboy.memory[0xD029]
+        self.y_pos_area = self.pyboy.memory[0xD02A]
+
+        self.samus_facing = self.pyboy.memory[0xD02B]
+        self.current_major_upgrades = self.pyboy.memory[0xD045]
+        # Yeah I have no idea, just says "related to interacting with water"
+        self.water_info = self.pyboy.memory[0xD048]
+
+        self.current_beam = self.pyboy.memory[0xD04D]
+        self.current_e_tanks = self.pyboy.memory[0xD050]
+        self.current_hp = self.pyboy.memory[0xD051]
+        self.current_full_e_tanks = self.pyboy.memory[0xD052]
+        self.current_missiles = self.pyboy.memory[0xD053]
+
+        # Question mark next to this one on datacrystal
+        # self.num_sprites_onscreen = self.pyboy.memory[0xD064]
+
+        self.current_missile_capacity = self.pyboy.memory[0xD081]
+
+        self.displayed_hp = self.pyboy.memory[0xD084]
+        self.displayed_missiles = self.pyboy.memory[0xD086]
+        self.global_metroid_count = self.pyboy.memory[0xD09A]
+        self.local_metroid_count = self.pyboy.memory[0xD0A7]
+
+        # TODO calculate health percent using E tank counts
+
 
 
     def start_game(self, timer_div=None):
@@ -56,7 +83,6 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
         """
 
         # TODO  implement me
-        print("Metroid II game started from wrapper!")
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
     def reset_game(self, timer_div=None):
@@ -110,6 +136,21 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
         return (
             f"Metroid II:\n" +
             # TODO add relevant variables to print for debugging purposes
-            super().__repr__()
+            f"XY Pixels: {(self.x_pos_pixels, self.y_pos_pixels)}\n" + 
+            f"XY Area: {(self.x_pos_area, self.y_pos_area)}\n" + 
+            f"Facing: {self.samus_facing}\n" + 
+            f"Upgrades: {self.current_major_upgrades}\n" + 
+            f"Water Info: {self.water_info}\n" + 
+            f"Curr Beam: {self.current_beam}\n" +
+            f"Curr E tanks: {self.current_e_tanks}\n" + 
+            f"Curr HP: {self.current_hp}\n" + 
+            f"Curr Full E Tanks: {self.current_full_e_tanks}\n" + 
+            f"Curr missiles: {self.current_missiles}\n" + 
+            f"Curr missile capacity: {self.current_missile_capacity}\n" + 
+            f"Displayed HP: {self.displayed_hp}\n" + 
+            f"Displayed Missiles: {self.displayed_missiles}\n"+
+            f"GMC: {self.global_metroid_count}\n" +  
+            f"LMC: {self.global_metroid_count}\n"
+            # super().__repr__()
         )
         # yapf: enable
