@@ -19,7 +19,6 @@ logger = pyboy.logging.get_logger(__name__)
 class GameWrapperMetroidII(PyBoyGameWrapper):
     """
     This class wraps Metroid II, and provides easy access for AIs.
-
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
     cartridge_title = "METROID2"
@@ -82,7 +81,15 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
 
-        # TODO  implement me
+        self.pyboy.tick()
+        self.pyboy.button("start")
+        self.pyboy.tick(300)
+        # start the game
+        self.pyboy.button("start")
+        # wait for samus's "blinking" to stop 
+        self.pyboy.tick(500)
+       
+        
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
 
     def reset_game(self, timer_div=None):
