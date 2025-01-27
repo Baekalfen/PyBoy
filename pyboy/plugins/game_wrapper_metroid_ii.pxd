@@ -20,6 +20,8 @@ cdef class GameWrapperMetroidII(PyBoyGameWrapper):
     cdef readonly int y_pos_pixels
     cdef readonly int x_pos_area
     cdef readonly int y_pos_area
+    cdef readonly int pose
+
     cdef readonly int samus_facing
     cdef readonly int current_major_upgrades
     cdef readonly int water_info
