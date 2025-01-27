@@ -53,8 +53,8 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
 
         # X position within area (pixels/screen)
         self.x_pos_pixels = self.pyboy.memory[0xD027]
-        self.y_pos_pixels = self.pyboy.memory[0xD028]
-        self.x_pos_area = self.pyboy.memory[0xD029]
+        self.y_pos_pixels = self.pyboy.memory[0xD029]
+        self.x_pos_area = self.pyboy.memory[0xD028]
         self.y_pos_area = self.pyboy.memory[0xD02A]
 
         self.pose = self.pyboy.memory[0xD020]
@@ -99,17 +99,17 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
         """
 
         # NOTE, I may be able to make these tick waits shorter
-        self.pyboy.tick()
+        self.pyboy.tick(False)
         self.pyboy.button("start")
-        self.pyboy.tick(300)
+        self.pyboy.tick(300, False)
 
         # start the game
         self.pyboy.button("start")
         # wait for samus's "blinking" to stop
-        self.pyboy.tick(500)
-       
+        self.pyboy.tick(500, False)
         
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
 
     def reset_game(self, timer_div=None):
         """
