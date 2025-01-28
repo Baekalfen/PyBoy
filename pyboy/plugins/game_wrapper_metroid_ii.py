@@ -118,7 +118,6 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
-        print("Reset called from metroid gamewrapper")
         # TODO implement me, I don't know if I really need to do anything here?
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
