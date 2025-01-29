@@ -334,14 +334,11 @@ class Motherboard:
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
 
-            lcd_interrupt = self.lcd.tick(self.cpu.cycles)
-            if lcd_interrupt:
+            if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
 
             if self.breakpoint_singlestep:
                 break
-
-        self.lcd.frame_done = False
 
         # TODO: Move SDL2 sync to plugin
         self.sound.sync()

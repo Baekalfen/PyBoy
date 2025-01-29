@@ -26,38 +26,93 @@ FRAME_CYCLES = 70224
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 def test_cycles_when_enabling_lcd(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     c = 0
     assert pyboy._cycles() == 0
 
     for n in range(4):  # Specific number of frames where LCDC is disabled on boot.
         pyboy.tick(1)
-        print("cycles for frame:", pyboy._cycles() - c, bool(pyboy.mb.lcd._LCDC.lcd_enable))
+        print("cycles for frame:", pyboy._cycles() - c)
         assert pyboy._cycles() - c == FRAME_CYCLES
-        assert not bool(pyboy.mb.lcd._LCDC.lcd_enable)
+        assert not pyboy.mb.lcd._LCDC.lcd_enable
+        assert pyboy.mb.lcd.LY == 0
         c = pyboy._cycles()
 
-    pyboy.tick(1)
-    print("cycles for frame:", pyboy._cycles() - c, bool(pyboy.mb.lcd._LCDC.lcd_enable))
+    pyboy.tick(1, True)  # Enable render to check blank screen
+    assert np.all(pyboy.screen.ndarray == 255)
+    print("cycles for frame:", pyboy._cycles() - c)
+    assert pyboy.mb.lcd._LCDC.lcd_enable
     assert pyboy._cycles() - c == 17016  # Specific cycles when LCD is reenabled, and tick-frame is flushed.
-    assert bool(pyboy.mb.lcd._LCDC.lcd_enable)
+
+    # When disabling LCD, we still do the write to set_lcdc before accounting for the 8-cycle opcode.
+    # These 8 cycles are placed on the closing frame and we start on a clean slate.
+    assert pyboy.mb.lcd.clock == 0
+    assert pyboy.mb.lcd.clock_target == 80
+
+    # Because the LCD should never render the first frame after enabling LCDC
+    # We should always see a white (disabled) screen.
     c = pyboy._cycles()
+    pyboy.tick(1, True)
+    assert np.all(pyboy.screen.ndarray == 255)
+    assert abs((pyboy._cycles() - c) - FRAME_CYCLES) <= 20, "Frame cycles should be within maximum possible overshoot"
+
+    c = pyboy._cycles()
+    pyboy.tick(1, True)
+    assert not np.all(pyboy.screen.ndarray == 255)
+    assert abs((pyboy._cycles() - c) - FRAME_CYCLES) <= 20, "Frame cycles should be within maximum possible overshoot"
 
     # We expect a new frame to be calulated immediately as per "cycle accurate"?
     for n in range(200):
-        pyboy.tick(1)
-        print("cycles for frame:", pyboy._cycles() - c, bool(pyboy.mb.lcd._LCDC.lcd_enable))
-        assert pyboy._cycles() - c == FRAME_CYCLES
-        assert bool(pyboy.mb.lcd._LCDC.lcd_enable)
+        pyboy.mb.lcd.frame_done = False
         c = pyboy._cycles()
+        pyboy.tick(1)
+        print("cycles for frame:", pyboy._cycles() - c)
+        assert (
+            abs((pyboy._cycles() - c) - FRAME_CYCLES) <= 20
+        ), "Frame cycles should be within maximum possible overshoot"
+
+    c = pyboy._cycles()
+    assert (
+        c - 17016
+    ) // FRAME_CYCLES == 206, "Expected 206 frames worth of cycles plus the odd cycles when turning LCD on"
+    assert (c - 17016) % FRAME_CYCLES <= 20, "Expected the only remainder to be within the maximum overshoot of a frame"
 
 
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 def test_cycles_when_disabling_lcd(default_rom):
-    pass
+    pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym", log_level="DEBUG")
+    pyboy.tick(60, False)
 
+    def hook(context):
+        if context[0].memory[0xFF40] & 0x80:
+            context[0].memory[0xFF40] &= 0b0111_1111  # Disable LCD
+            context[1] += 1
+            print("frame count", context[0].frame_count)
+            # if context[1] > 1:
+            #     breakpoint()
+            pass
+            # breakpoint()
 
-def test_cycles_when_enabling_lcd2(default_rom):
-    pass
+    context = [pyboy, 0]
+    pyboy.hook_register(None, "Main.inner_loop", hook, context)
+
+    # Hook will disable in VBLANK, but continue until full frame is done.
+    while not context[1]:
+        c = pyboy._cycles()
+        pyboy.tick(1, False)
+
+    assert context[1] == 1
+    assert not pyboy.mb.lcd._LCDC.lcd_enable
+
+    cycles = pyboy._cycles() - c
+    # Should actually be significantly lower than FRAME_CYCLES, as we disabled LCD early in VBLANK
+    assert cycles <= FRAME_CYCLES
+    # Fragile, but used as sanity check for now
+    assert cycles // 456 == 148
+
+    # Next cycle should be a full FRAME_CYCLE, as it's just a regular frame with LCD disabled
+    c = pyboy._cycles()
+    pyboy.tick(1, False)
+    assert abs((pyboy._cycles() - c) - FRAME_CYCLES) <= 20, "Frame cycles should be within maximum possible overshoot"
 
 
 def test_firstwhite(firstwhite_file):
@@ -156,6 +211,138 @@ class TestLCD:
         assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC  # Also trigger on second call
         assert lcd._STAT.value & 0b100  # LYC flag set
 
+    def test_frame_cycles_disabled(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        assert not lcd._LCDC.lcd_enable
+
+        assert lcd.clock == 0
+        assert lcd.clock_target == FRAME_CYCLES
+        assert lcd._cycles_to_interrupt == 0
+        assert lcd._cycles_to_frame == FRAME_CYCLES
+
+        lcd.tick(FRAME_CYCLES - 1)
+        assert lcd.clock == FRAME_CYCLES - 1
+        assert lcd.clock_target == FRAME_CYCLES
+        assert lcd._cycles_to_interrupt == 1
+        assert lcd._cycles_to_frame == 1
+
+        lcd.tick(FRAME_CYCLES)
+        assert lcd.clock == 0
+        assert lcd.clock_target == FRAME_CYCLES
+        assert lcd._cycles_to_interrupt == FRAME_CYCLES
+        assert lcd._cycles_to_frame == FRAME_CYCLES
+
+    def test_frame_cycles_toggle_on(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        assert not lcd._LCDC.lcd_enable
+
+        lcd.set_lcdc(1 << 7)  # Enable LCD
+        lcd.tick(FRAME_CYCLES - 1000)
+        assert lcd._LCDC.lcd_enable
+
+        # Whatever clock for outstanding blank frame is flushed
+        assert lcd.clock == 0
+        assert lcd.frame_done
+        assert lcd.first_frame
+
+        lcd.tick(FRAME_CYCLES - 1000 + 1)  # Tick 1 cycles to update stat mode, clock target, _cycles_to_...
+        assert lcd._STAT._mode == 2  # First STAT mode for scanline
+        assert lcd.clock_target == 80  # Assumed from stat mode 2
+        assert lcd._cycles_to_interrupt == 80 - 1
+        assert lcd._cycles_to_frame == FRAME_CYCLES - 1
+
+    def test_frame_cycles_enabled(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        lcd.set_lcdc(1 << 7)  # Enable LCD
+        assert lcd._LCDC.lcd_enable
+
+        pre_ticks = 1
+        lcd.tick(pre_ticks)  # Need to tick to update registers
+
+        assert lcd.clock == 0
+        assert lcd.clock_target == 80  # STAT mode 2
+        assert lcd._cycles_to_interrupt == 80
+        assert lcd._cycles_to_frame == FRAME_CYCLES
+        assert lcd.frame_done  # When initially enable the LCD, we flush the frame
+        lcd.frame_done = False  # frame_done is reset from MB
+
+        for i, cycle in enumerate(range(pre_ticks, FRAME_CYCLES - 1 + pre_ticks)):
+            lcd.tick(cycle)  # Progresses cycles to new absolute cycles. NOT RELATIVE!
+            assert lcd._cycles_to_frame == FRAME_CYCLES - i
+            assert not lcd.frame_done
+
+        # We should now be in a state of 1 cycle left, and frame not done!
+        lcd.tick(FRAME_CYCLES + pre_ticks)
+        assert lcd.clock == 0
+        assert lcd.clock_target == 80  # STAT mode 2
+        assert lcd._cycles_to_interrupt == 80
+        assert lcd._cycles_to_frame == FRAME_CYCLES
+        assert lcd.frame_done  # We just exactly close the frame
+
+    def test_frame_cycles_enabled_overshoot(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        lcd.set_lcdc(1 << 7)  # Enable LCD
+        assert lcd._LCDC.lcd_enable
+
+        # The maximum possible overshoot. Longest opcode is 24 cycles, minus 4, as the smallest missing cycles
+        lcd.tick(FRAME_CYCLES + 20)
+
+    def test_frame_cycles_toggle_off(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        assert not lcd._LCDC.lcd_enable
+
+        lcd.tick(FRAME_CYCLES - 1000)
+        lcd.set_lcdc(1 << 7)  # Enable LCD
+        assert lcd._LCDC.lcd_enable
+
+        # 1. Run until part of VBLANK
+        # 2. Disabled LCD
+        # 3. Clock gets reset
+        # 4. Reenable LCD
+        # 5. The cycles between LY 144 and 153 from the first frame are lost
+
+        # Enable should start immediately
+
+        # Disable in VBLANK, but continue until full frame is done.
+
+        # Check one blank frame after enabling, but it should be progressing and increase LCD registers (cycles, LY, LYC)
+        # https://forums.nesdev.org/viewtopic.php?f=20&t=18023
+
+    def test_frame_cycles_modes(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        lcd.set_lcdc(1 << 7)  # Enable LCD
+        assert lcd._LCDC.lcd_enable
+
+        pre_ticks = 1
+        lcd.tick(pre_ticks)  # Need to tick to update registers
+        lcd.frame_done = False  # frame_done is reset from MB
+
+        for i, cycle in enumerate(range(pre_ticks, FRAME_CYCLES - 1 + pre_ticks)):
+            lcd.tick(cycle)  # Progresses cycles to new absolute cycles. NOT RELATIVE!
+            assert lcd.clock == i
+            assert lcd._cycles_to_frame == FRAME_CYCLES - i
+            assert not lcd.frame_done
+
+            ly = lcd.clock // 456
+            assert lcd.LY == ly
+            if ly < 144:
+                ly_remainder = lcd.clock % 456
+                if ly_remainder < 80:
+                    assert lcd._STAT._mode == 2
+                    assert lcd.cycles_to_mode0() == 456 - 206 - ly_remainder
+                elif ly_remainder < 80 + 170:
+                    assert lcd._STAT._mode == 3
+                    assert lcd.cycles_to_mode0() == 456 - 206 - ly_remainder
+                elif ly_remainder < 80 + 170 + 206:
+                    assert lcd._STAT._mode == 0  # HBLANK
+                    assert lcd.cycles_to_mode0() == 0
+                else:
+                    assert None, "Invalid STAT mode for LY and clock"
+            else:
+                ly_remainder = lcd.clock % 456
+                assert lcd._STAT._mode == 1  # VBLANK
+                assert lcd.cycles_to_mode0() == 456 * (153 - lcd.LY + 1) + (456 - 206 - ly_remainder)
+
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 class TestRenderer:
@@ -184,50 +371,3 @@ class TestRenderer:
                 for offset in range(4):
                     assert (colorcode_low >> (3 - offset) * 8) & 0xFF == color_code(byte1, byte2, offset)
                     assert (colorcode_high >> (3 - offset) * 8) & 0xFF == color_code(byte1, byte2, offset + 4)
-
-    # def test_tick(self):
-    #     lcd = LCD()
-    #     assert lcd.clock == 0
-    #     assert lcd.clock_target == 0
-
-    #     def cycles_to_interrupt(self):
-    #         return self.clock_target - self.clock
-
-    #     def tick(self, cycles):
-    #         interrupt_flag = 0
-
-    #         if self.LCDC.lcd_enable:
-    #             self.clock += cycles
-
-    #             self.LY = (self.clock % 70224) // 456
-    #             interrupt_flag |= self.check_LYC() # Triggered many times?
-
-    #             if self.clock >= self.clock_target:
-    #                 # Change to next mode
-    #                 if self._mode == 0 and self.LY != 144:
-    #                     self._mode = 2
-    #                 else:
-    #                     self._mode += 1
-    #                     self._mode %= 4
-
-    #                 # Handle new mode
-    #                 if self._mode == 0: # HBLANK
-    #                     interrupt_flag |= self.set_STAT_mode(0)
-    #                     self.clock_target += 206
-    #                 elif self._mode == 1: # VBLANK
-    #                     interrupt_flag |= INTR_VBLANK
-    #                     interrupt_flag |= self.set_STAT_mode(1)
-    #                     self.clock_target += 456 * 10
-    #                     # Interrupt will trigger renderer.render_screen
-    #                 elif self._mode == 2: # Searching OAM
-    #                     interrupt_flag |= self.set_STAT_mode(2)
-    #                     self.clock_target += 80
-    #                 elif self._mode == 3: # Transferring data to LCD driver
-    #                     interrupt_flag |= self.set_STAT_mode(3)
-    #                     self.clock_target += 170
-    #                     # Interrupt will trigger renderer.scanline
-    #         else:
-    #             self.clock = 0
-    #             self.clock_target = 1 << 16
-    #             self.LY = 0
-    #         return interrupt_flag
