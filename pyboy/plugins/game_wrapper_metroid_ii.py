@@ -49,6 +49,7 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
         # runs *could* add up?
         if self.tilemap_background[6:10, 8] == [342, 336, 348, 340]:
             self._game_over = True
+            # No need to update the rest of the values, we're dead!
             return
 
         # X position within area (pixels/screen)
@@ -119,6 +120,9 @@ class GameWrapperMetroidII(PyBoyGameWrapper):
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
         # TODO implement me, I don't know if I really need to do anything here?
+
+        self._game_over = False
+
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
     def game_area(self):
