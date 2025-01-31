@@ -19,7 +19,7 @@ from array import array
 import numpy as np
 
 import pyboy
-from pyboy.api.sprite import Sprite
+from pyboy.api.constants import SPRITES, TILES_CGB
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -107,7 +107,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     cartridge_title = None
 
-    mapping_one_to_one = np.arange(384 * 2, dtype=np.uint8)
+    mapping_one_to_one = np.arange(TILES_CGB, dtype=np.uint8)
     """
     Example mapping of 1:1
     """
@@ -117,7 +117,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self.tilemap_background = self.pyboy.tilemap_background
             self.tilemap_window = self.pyboy.tilemap_window
         self.tilemap_use_background = True
-        self.mapping = np.asarray([x for x in range(768)], dtype=np.uint32)
+        self.mapping = np.arange(TILES_CGB, dtype=np.uint32)
         self.sprite_offset = 0
         self.game_has_started = False
         self._tile_cache_invalid = True
@@ -201,8 +201,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
     def _sprites_on_screen(self):
         if self._sprite_cache_invalid:
             self._cached_sprites_on_screen = []
-            for s in range(40):
-                sprite = Sprite(self.mb, s)
+            for s in range(SPRITES):
+                sprite = self.pyboy.get_sprite(s)
                 if sprite.on_screen:
                     self._cached_sprites_on_screen.append(sprite)
             self._sprite_cache_invalid = False
@@ -210,10 +210,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def _game_area_tiles(self):
         if self._tile_cache_invalid:
-            xx = self.game_area_section[0]
-            yy = self.game_area_section[1]
-            width = self.game_area_section[2]
-            height = self.game_area_section[3]
+            xx, yy, width, height = self.game_area_section
             scanline_parameters = self.pyboy.screen.tilemap_position_list
 
             if self.game_area_follow_scxy:
@@ -254,10 +251,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
         """
         tiles_matrix = self.mapping[self._game_area_tiles()]
         sprites = self._sprites_on_screen()
-        xx = self.game_area_section[0]
-        yy = self.game_area_section[1]
-        width = self.game_area_section[2]
-        height = self.game_area_section[3]
+        xx, yy, width, height = self.game_area_section
         for s in sprites:
             _x = (s.x // 8) - xx
             _y = (s.y // 8) - yy
