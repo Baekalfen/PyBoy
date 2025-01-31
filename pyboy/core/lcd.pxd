@@ -37,7 +37,7 @@ cdef class LCD:
     cdef uint8_t next_stat_mode
     cdef bint frame_done
     cdef bint first_frame
-    cdef uint8_t max_ly
+    cdef bint reset
     cdef uint8_t LY
     cdef uint8_t LYC
     cdef uint64_t clock
@@ -53,7 +53,7 @@ cdef class LCD:
     cdef int64_t _cycles_to_interrupt, _cycles_to_frame
 
     @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
-    cdef uint8_t tick(self, int) noexcept nogil
+    cdef uint8_t tick(self, uint64_t) noexcept nogil
 
     cdef void set_lcdc(self, uint8_t) noexcept nogil
 
