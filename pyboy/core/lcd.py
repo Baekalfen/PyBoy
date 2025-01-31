@@ -43,18 +43,25 @@ class LCD:
 
         self._LCDC = LCDCRegister(0)
         self._STAT = STATRegister()  # Bit 7 is always set.
+
+        self.clock = 0
+        self.clock_target = FRAME_CYCLES
+        self.frame_done = False
+        self.first_frame = False
+        self.reset = False
+        self._cycles_to_interrupt = 0
+        self._cycles_to_frame = FRAME_CYCLES - self.clock
         self.next_stat_mode = 2
+        self.LY = 0x00
+        self._STAT.set_mode(0)
+
         self.SCY = 0x00
         self.SCX = 0x00
-        self.LY = 0x00
         self.LYC = 0x00
         # self.DMA = 0x00
         self.WY = 0x00
         self.WX = 0x00
-        self.clock = 0
-        self.clock_target = 0
-        self.frame_done = False
-        self.first_frame = False
+
         self.double_speed = False
         self.cgb = cgb
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
@@ -86,33 +93,30 @@ class LCD:
         _lcd_enable = self._LCDC.lcd_enable
         self._LCDC.set(value)
 
-        if not self._LCDC.lcd_enable:
+        if _lcd_enable and (not self._LCDC.lcd_enable):
             # https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/
             # 1. LY (current rendering line) resets to zero. A few games rely on this behavior, namely Mr. Do! When LY
             # is reset to zero, no LYC check is done, so no STAT interrupt happens either.
             # 2. The LCD clock is reset to zero as far as I can tell.
             # 3. I believe the LCD enters Mode 0.
             self.clock = 0
-            self.clock_target = FRAME_CYCLES  # Doesn't render anything for the first frame
-            self._cycles_to_frame = FRAME_CYCLES - self.clock
+            self.clock_target = 0
+            self._cycles_to_frame = 0
             self._STAT.set_mode(0)
-            self.next_stat_mode = 2
+            if self.LY < 144:
+                logger.debug("LCD disabled outside of VBLANK!")
             self.LY = 0
         elif (not _lcd_enable) and self._LCDC.lcd_enable:  # When switching from disabled to enabled
             # Registers are actually supposed to be frozen when LCD is disabled. This is mimicked by reseting them again
-            self.clock = 0
             self.clock_target = 0  # This will trigger an immediate update in tick()
-            self._cycles_to_frame = 0
-            self._STAT.set_mode(0)
-            self.next_stat_mode = 2
-            self.LY = 153  # 0???
-
-            # Close current frame immediately to get clock and clock_target aligned with FRAME_CYCLES
-            self.frame_done = True
 
             # The Cycle Accurate Game Boy Docs:
             # the LCD won't show any image during the first frame it is turned on. The first drawn frame is the second one.
             self.first_frame = True  # used to postpose rendering of first frame
+
+            # Will schedule a full reset on next call to LCD.tick. This will happen immediately, as CPU.tick returns
+            # because of CPU.bail and MB.tick proceeds to call LCD.tick.
+            self.reset = True
 
     def cycles_to_mode0(self):
         multiplier = 2 if self.double_speed else 1
@@ -147,8 +151,33 @@ class LCD:
         interrupt_flag = 0
         self.clock += cycles
 
-        if self._LCDC.lcd_enable:
-            if self.clock >= self.clock_target:
+        if self.clock >= self.clock_target:
+            if self._LCDC.lcd_enable and (self.LY == 153 or self.reset):
+                if self.reset:
+                    # RESET
+                    self.clock = 0
+                    self.clock_target = 0
+                    self._STAT.set_mode(0)  # Side-effects?
+                    self.reset = False
+
+                self.frame_done = True
+
+                # Reset to new frame and start from mode 2
+                self.LY = 0
+                self.clock %= FRAME_CYCLES
+                self.clock_target = 0
+                self.next_stat_mode = 2
+
+                # Change to next mode
+                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+
+                # self._STAT._mode == 2:  # Searching OAM
+                multiplier = 2 if self.double_speed else 1
+                self.clock_target += 80 * multiplier
+                self.next_stat_mode = 3
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            elif self._LCDC.lcd_enable:
                 # Change to next mode
                 interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
 
@@ -162,13 +191,7 @@ class LCD:
 
                 # LCD state machine
                 if self._STAT._mode == 2:  # Searching OAM
-                    if self.LY == 153:
-                        self.LY = 0
-                        self.clock %= FRAME_CYCLES
-                        self.clock_target %= FRAME_CYCLES
-                    else:
-                        self.LY += 1
-
+                    self.LY += 1
                     self.clock_target += 80 * multiplier
                     self.next_stat_mode = 3
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
@@ -204,27 +227,23 @@ class LCD:
 
                     if self.LY == 144:
                         interrupt_flag |= INTR_VBLANK
-                        self.frame_done = True
                         if self.first_frame:
                             # Pan Docs: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
                             self.renderer.blank_screen(self)
                             self.first_frame = False
-
-                    if self.LY == 153:
-                        # Reset to new frame and start from mode 2
-                        self.next_stat_mode = 2
-        else:
-            # See also `self.set_lcdc`
-            if self.clock >= FRAME_CYCLES:
+            else:
+                # See also `self.set_lcdc`
                 self.frame_done = True
                 self.clock %= FRAME_CYCLES
+                self.clock_target = FRAME_CYCLES
 
                 # Renderer
                 self.renderer.blank_screen(self)
 
         self._cycles_to_interrupt = self.clock_target - self.clock
+        # TODO: STAT Cycles to interrupts
         self._cycles_to_frame = FRAME_CYCLES - self.clock
         return interrupt_flag
 
@@ -261,6 +280,7 @@ class LCD:
         f.write(self.double_speed)
         f.write(self.frame_done)
         f.write(self.first_frame)
+        f.write(self.reset)
         f.write_64bit(self.last_cycles)
         f.write_64bit(self.clock)
         f.write_64bit(self.clock_target)
@@ -318,6 +338,7 @@ class LCD:
             if state_version >= 13:
                 self.frame_done = f.read()
                 self.first_frame = f.read()
+                self.reset = f.read()
 
             if state_version >= 12:
                 self.last_cycles = f.read_64bit()
