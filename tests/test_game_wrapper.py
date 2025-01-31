@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 from pyboy import PyBoy
+from pyboy.api.constants import LCDC_OFFSET, OAM_OFFSET, VRAM_OFFSET
 from pyboy.utils import WindowEvent
 
 py_version = platform.python_version()[:3]
@@ -25,6 +26,40 @@ def test_game_wrapper_basics(default_rom):
     assert generic_wrapper is not None
     pyboy.game_area()
     pyboy.stop()
+
+
+def test_game_wrapper_sprites_tall(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    generic_wrapper = pyboy.game_wrapper
+    assert generic_wrapper is not None
+    pyboy.tick(120)
+
+    pyboy.memory[LCDC_OFFSET] = (
+        0b10000000 | # LCD On
+        0b10000100 | # Sprites 8x16
+        0b10000010 # Sprites on
+    )
+
+    pyboy.memory[VRAM_OFFSET:VRAM_OFFSET + 0x2000] = 0x00 # Clear all tile data!
+    pyboy.memory[VRAM_OFFSET:VRAM_OFFSET + 32] = 0xFF # First 2 tiles are black
+
+    for y in [0, 8, 16, 24]:
+        pyboy.memory[OAM_OFFSET:OAM_OFFSET + 4] = [
+            y, # Y: Value -16, so above the screen and move down
+            16, # X: A bit out
+            0, # Tile index 0
+            0, # Attributes
+        ]
+        pyboy.tick(1)
+
+        if y == 0:
+            assert len(np.where(generic_wrapper.game_area().flatten().flatten() != 256)[0]) == 0
+        elif y == 8:
+            assert len(np.where(generic_wrapper.game_area().flatten().flatten() != 256)[0]) == 1
+        elif y == 16:
+            assert len(np.where(generic_wrapper.game_area().flatten().flatten() != 256)[0]) == 2
+        elif y == 24:
+            assert len(np.where(generic_wrapper.game_area().flatten().flatten() != 256)[0]) == 2
 
 
 def test_game_wrapper_mapping(default_rom):
