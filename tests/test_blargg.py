@@ -36,7 +36,7 @@ def run_rom(rom, max_frames):
 
     pyboy.tick(10, False)
     pyboy.stop(save=False)
-    result += pyboy._serial() # Getting the absolute last. Some times the tests says "Failed X tests".
+    result += pyboy._serial()  # Getting the absolute last. Some times the tests says "Failed X tests".
     if result == "":
         n = 0
         while True:
@@ -51,7 +51,8 @@ def run_rom(rom, max_frames):
 
 
 @pytest.mark.parametrize(
-    "test_rom, max_frames", [
+    "test_rom, max_frames",
+    [
         ("cgb_sound/cgb_sound.gb", 4_000),
         ("cgb_sound/rom_singles/01-registers.gb", 700),
         ("cgb_sound/rom_singles/02-len ctr.gb", 700),
@@ -109,7 +110,7 @@ def run_rom(rom, max_frames):
         ("oam_bug/rom_singles/6-timing_no_bug.gb", 700),
         ("oam_bug/rom_singles/7-timing_effect.gb", 700),
         ("oam_bug/rom_singles/8-instr_effect.gb", 700),
-    ]
+    ],
 )
 def test_blarggs(test_rom, max_frames, blargg_dir):
     rom = str(blargg_dir / Path(test_rom))
@@ -121,7 +122,7 @@ def test_blarggs(test_rom, max_frames, blargg_dir):
     else:
         old_blargg = None
 
-    rom = rom.replace("\\", "/") # Fix Windows lookup
+    rom = rom.replace("\\", "/")  # Fix Windows lookup
     rom = rom.replace("test_roms/", "")
     if OVERWRITE_JSON:
         with open(blargg_json, "w") as f:

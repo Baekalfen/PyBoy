@@ -100,7 +100,7 @@ class BaseMBC:
         self.rambank_initialized = True
         # In real life the values in RAM are scrambled on initialization.
         # Allocating the maximum, as it is easier in Cython. And it's just 128KB...
-        self.rambanks = memoryview(array.array("B", [0] * (8*1024*16))).cast("B", shape=(16, 8 * 1024))
+        self.rambanks = memoryview(array.array("B", [0] * (8 * 1024 * 16))).cast("B", shape=(16, 8 * 1024))
 
     def getgamename(self, rombanks):
         return "".join([chr(rombanks[0, x]) for x in range(0x0134, 0x0142)]).split("\0")[0]
@@ -111,8 +111,11 @@ class BaseMBC:
     def overrideitem(self, rom_bank, address, value):
         if 0x0000 <= address < 0x4000:
             logger.debug(
-                "Performing overwrite on address: 0x%04x:0x%04x. New value: 0x%04x Old value: 0x%04x", rom_bank,
-                address, value, self.rombanks[rom_bank, address]
+                "Performing overwrite on address: 0x%04x:0x%04x. New value: 0x%04x Old value: 0x%04x",
+                rom_bank,
+                address,
+                value,
+                self.rombanks[rom_bank, address],
             )
             self.rombanks[rom_bank, address] = value
         else:
@@ -134,20 +137,22 @@ class BaseMBC:
         #     logger.error("Reading address invalid: %0.4x", address)
 
     def __repr__(self):
-        return "\n".join([
-            "MBC class: %s" % self.__class__.__name__,
-            "Filename: %s" % self.filename,
-            "Game name: %s" % self.gamename,
-            "GB Color: %s" % str(self.rombanks[0, 0x143] == 0x80),
-            "Cartridge type: %s" % hex(self.carttype),
-            "Number of ROM banks: %s" % self.external_rom_count,
-            "Active ROM bank: %s" % self.rombank_selected,
-            # "Memory bank type: %s" % self.ROMBankController,
-            "Number of RAM banks: %s" % len(self.rambanks),
-            "Active RAM bank: %s" % self.rambank_selected,
-            "Battery: %s" % self.battery,
-            "RTC: %s" % self.rtc_enabled
-        ])
+        return "\n".join(
+            [
+                "MBC class: %s" % self.__class__.__name__,
+                "Filename: %s" % self.filename,
+                "Game name: %s" % self.gamename,
+                "GB Color: %s" % str(self.rombanks[0, 0x143] == 0x80),
+                "Cartridge type: %s" % hex(self.carttype),
+                "Number of ROM banks: %s" % self.external_rom_count,
+                "Active ROM bank: %s" % self.rombank_selected,
+                # "Memory bank type: %s" % self.ROMBankController,
+                "Number of RAM banks: %s" % len(self.rambanks),
+                "Active RAM bank: %s" % self.rambank_selected,
+                "Battery: %s" % self.battery,
+                "RTC: %s" % self.rtc_enabled,
+            ]
+        )
 
 
 class ROMOnly(BaseMBC):
@@ -155,7 +160,7 @@ class ROMOnly(BaseMBC):
         if 0x2000 <= address < 0x4000:
             if value == 0:
                 value = 1
-            self.rombank_selected = (value & 0b1)
+            self.rombank_selected = value & 0b1
             logger.debug("Switching bank 0x%0.4x, 0x%0.2x", address, value)
         elif 0xA000 <= address < 0xC000:
             self.rambanks[self.rambank_selected, address - 0xA000] = value

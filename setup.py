@@ -24,12 +24,12 @@ def patched_error(position, message):
         # We ignore this error to pass PyObject* to logging
         return
     else:
-        #print("Errors.error:", repr(position), repr(message)) ###
+        # print("Errors.error:", repr(position), repr(message)) ###
         if position is None:
             raise Errors.InternalError(message)
         err = Errors.CompileError(position, message)
         if DebugFlags.debug_exception_on_error:
-            raise Exception(err) # debug
+            raise Exception(err)  # debug
         Errors.report_error(err)
         return err
 
@@ -43,13 +43,16 @@ class build_ext(_build_ext):
         self.parallel = cpu_count()
 
         if sys.platform == "win32":
-            thread_count = 0 # Disables multiprocessing
+            thread_count = 0  # Disables multiprocessing
         else:
             thread_count = cpu_count()
 
         # Fixing issue with nthreads in Cython
-        if (3,
-            8) <= sys.version_info[:2] and sys.platform == "darwin" and multiprocessing.get_start_method() == "spawn":
+        if (
+            (3, 8) <= sys.version_info[:2]
+            and sys.platform == "darwin"
+            and multiprocessing.get_start_method() == "spawn"
+        ):
             multiprocessing.set_start_method("fork", force=True)
 
         cflags = ["-O3"]
@@ -65,7 +68,8 @@ class build_ext(_build_ext):
                 extra_compile_args=cflags,
                 extra_link_args=["-s", "-w"],
                 include_dirs=[np.get_include()],
-            ), list(py_pxd_files)
+            ),
+            list(py_pxd_files),
         )
         self.distribution.ext_modules = cythonize(
             [*cythonize_files],
@@ -107,5 +111,5 @@ setup(
     cmdclass={
         "build_ext": build_ext,
     },
-    ext_modules=[Extension("", [""])], # Added to trigger a binary wheel
+    ext_modules=[Extension("", [""])],  # Added to trigger a binary wheel
 )

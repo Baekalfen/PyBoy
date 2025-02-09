@@ -88,6 +88,7 @@ class IntIOWrapper(IntIOInterface):
     Wraps a file-like object to allow writing integers to it.
     This allows for higher performance, when writing to a memory map in rewind.
     """
+
     def __init__(self, buf):
         self.buffer = buf
 
@@ -300,7 +301,7 @@ def dec_to_bcd(value, byte_width=1, byteorder="little"):
     """
     bcd_result = []
     for _ in range(byte_width):
-        tens = ((value%100) // 10) << 4
+        tens = ((value % 100) // 10) << 4
         units = value % 10
         bcd_byte = (tens | units) & 0xFF
         bcd_result.append(bcd_byte)

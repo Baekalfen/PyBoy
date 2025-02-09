@@ -92,7 +92,7 @@ def test_pokemon_catch_mode(pokemon_pinball_rom):
     pyboy.button_release("left")
     pyboy.tick(31, False)
     pyboy.button_press("left")
-    pyboy.tick(400, False) # NOTE: This sequence broke because of changed instruction timings
+    pyboy.tick(400, False)  # NOTE: This sequence broke because of changed instruction timings
 
     assert pokemon_pinball.score == 9030100
     assert not pokemon_pinball.has_pokemon(Pokemon.BULBASAUR)

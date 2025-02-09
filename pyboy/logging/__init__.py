@@ -1,4 +1,10 @@
-DEBUG, INFO, WARNING, ERROR, CRITICAL, = range(5)
+(
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+    CRITICAL,
+) = range(5)
 
 _log_level = ERROR
 

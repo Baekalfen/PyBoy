@@ -107,10 +107,11 @@ class DebugPrompt(PyBoyPlugin):
 
             elif cmd == "d":
                 print(f"Removing breakpoint at current PC")
-                self.mb.breakpoint_reached() # NOTE: This removes the breakpoint we are currently at
+                self.mb.breakpoint_reached()  # NOTE: This removes the breakpoint we are currently at
             elif cmd == "pdb":
                 # Start pdb
                 import pdb
+
                 pdb.set_trace()
                 break
             else:

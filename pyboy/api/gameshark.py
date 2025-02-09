@@ -19,7 +19,7 @@ class GameShark:
         self.enabled = False
 
     def _convert_cheat(self, gameshark_code):
-        '''
+        """
         A GameShark code for these consoles is written in the format ttvvaaaa. tt specifies the type, which is usually 01.
         vv specifies the hexadecimal value the code will write into the game's memory. aaaa specifies the memory address
         that will be modified, with the low byte first (e.g. address C056 is written as 56C0).
@@ -32,18 +32,18 @@ class GameShark:
         https://doc.kodewerx.org/hacking_gb.html
 
         There seems to be conflicting information about the presence of other types than 01.
-        '''
+        """
         # Check if the input cheat code has the correct length (8 characters)
         if len(gameshark_code) != 8:
             raise ValueError("Invalid cheat code length. Cheat code must be 8 characters long.")
 
         # Extract components from the cheat code
         _type = int(gameshark_code[:2], 16)
-        value = int(gameshark_code[2:4], 16) # Convert hexadecimal value to an integer
-        unconverted_address = gameshark_code[4:] # Ex:   1ED1
-        lower = unconverted_address[:2] # Ex:  1E
-        upper = unconverted_address[2:] # Ex:  D1
-        address_converted = upper + lower # Ex: 0xD11E   # Converting to Ram Readable address
+        value = int(gameshark_code[2:4], 16)  # Convert hexadecimal value to an integer
+        unconverted_address = gameshark_code[4:]  # Ex:   1ED1
+        lower = unconverted_address[:2]  # Ex:  1E
+        upper = unconverted_address[2:]  # Ex:  D1
+        address_converted = upper + lower  # Ex: 0xD11E   # Converting to Ram Readable address
         address = int(address_converted, 16)
 
         if not 0x8000 <= address:

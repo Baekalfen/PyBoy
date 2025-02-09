@@ -175,7 +175,7 @@ class Sprite:
         if sprite_height == 16:
             self.tiles += [Tile(self.mb, self.tile_identifier + 1)]
 
-        self.on_screen = (-sprite_height < self.y < 144 and -8 < self.x < 160)
+        self.on_screen = -sprite_height < self.y < 144 and -8 < self.x < 160
         """
         To disable sprites from being rendered on screen, developers will place the sprite outside the area of the
         screen. This is often a good way to determine if the sprite is inactive.
