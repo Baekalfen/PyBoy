@@ -74,13 +74,13 @@ main:
 
     ; Sound Setup
     ld A, $80
-    ldh [$26], A ; Enable sound - NR52
-    ldh [$11], A ; Use 50% duty cycle - NR11
+    ldh [$FF00+$26], A ; Enable sound - NR52
+    ldh [$FF00+$11], A ; Use 50% duty cycle - NR11
     ld A, $F3
-    ldh [$12], A
-    ldh [$25], A
+    ldh [$FF00+$12], A
+    ldh [$FF00+$25], A
     ld A, $77
-    ldh [$24], A
+    ldh [$FF00+$24], A
 
     ; #########################
     ; Graphics effect and wait
@@ -123,24 +123,24 @@ main:
 .play_sound
     ; Adjust frequency sweep
     ld A, %0010011
-    ldh [$10], A
+    ldh [$FF00+$10], A
 
     ld A, $48
-    ldh [$13], A
+    ldh [$FF00+$13], A
 
     ; Trigger
     ld A, $81
-    ldh [$14], A
+    ldh [$FF00+$14], A
     ret
 
 .adj_sound
     ; Adjust frequency sweep
     ld A, %0011001
-    ldh [$10], A
+    ldh [$FF00+$10], A
 
     ; Trigger
     ld A, $81
-    ldh [$14], A
+    ldh [$FF00+$14], A
     ret
 
 
