@@ -7,79 +7,88 @@
 # http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 # http://www.devrs.com/gb/files/hosted/GBSOUND.txt
 
+import struct
 from array import array
-from ctypes import c_void_p
 
-from pyboy.utils import PyBoyException
+import pyboy
+from pyboy.utils import PyBoyAssertException, cython_compiled
+
+if not cython_compiled:
+    from pyboy.core.lcd import FRAME_CYCLES
+
+    # Hide it from Cython in 'exec' statement
+    exec("from pyboy.utils import double_to_uint64_ceil")
 
 try:
     import sdl2
 except ImportError:
     sdl2 = None
 
-import pyboy
-
 logger = pyboy.logging.get_logger(__name__)
 
-SOUND_DESYNC_THRESHOLD = 5
-CPU_FREQ = 4213440  # hz
+CYCLES_512HZ = 8192
 
 
 class Sound:
-    def __init__(self, enabled, emulate):
-        self.enabled = enabled and (sdl2 is not None)
-        self.emulate = emulate or enabled  # Just emulate registers etc.
-        if self.enabled:
-            # TODO: Refactor SDL2 out of sound.py
-            # Initialization is handled in the windows, otherwise we'd need this
-            if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
-                # Open audio device
-                spec_want = sdl2.SDL_AudioSpec(32768, sdl2.AUDIO_S8, 2, 64)
-                spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
-                self.device = sdl2.SDL_OpenAudioDevice(None, 0, spec_want, spec_have, 0)
+    def __init__(self, volume, emulate, cgb):
+        self.volume = volume
+        self.enabled = bool(self.volume) and (sdl2 is not None)
+        self.disable_sampling = not self.enabled
+        self.emulate = emulate or self.enabled  # Just emulate registers etc.
+        logger.debug("Sound emulated: %d, sound enabled: %d", self.emulate, self.enabled)
+        self.cgb = cgb
 
-                if self.device > 1:
-                    # Start playback (move out of __init__ if needed, maybe for null)
-                    sdl2.SDL_PauseAudioDevice(self.device, 0)
+        # self.sample_rate = 30000 # Hz
+        # self.sample_rate = 15000 # Hz
+        # self.sample_rate = 44100 # Hz
+        # self.sample_rate = 48000 # Hz
+        self.sample_rate = 24000  # Hz
+        # self.sample_rate = 32768 # Per second
+        assert self.sample_rate % 60 == 0, "We do not want a sample rate that doesn't divide the frame rate"
+        self.audiobuffer_head = 0
+        self.samples_per_frame = self.sample_rate // 60
+        self.cycles_per_sample = FRAME_CYCLES // self.samples_per_frame  # Notice use of float
+        # Buffer for 1 frame of stereo 8-bit sound. +1 for rounding error
+        self.audiobuffer_length = (self.samples_per_frame + 1) * 2
+        self.audiobuffer = array("b", [0] * self.audiobuffer_length)
 
-                    self.sample_rate = spec_have.freq
-                    self.sampleclocks = CPU_FREQ // self.sample_rate
-                else:
-                    raise PyBoyException("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
-            else:
-                raise PyBoyException("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
+        self.speed_shift = 0
+        self.cycles_target = self.cycles_per_sample
+        self.cycles_target_512Hz = CYCLES_512HZ << self.speed_shift
+        # We have to use ceil on the double to round any decimals up to the next cycle. We have to pass the target
+        # entirely, and as the cycles are integer, we cannot just round down, as that would be 1 cycle too early.
+        self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
 
-        if not self.enabled:
-            self.sample_rate = 32768
-            self.sampleclocks = CPU_FREQ // self.sample_rate
-
-        self.audiobuffer = array("b", [0] * 4096)  # Over 2 frames
-        self.audiobuffer_p = c_void_p(self.audiobuffer.buffer_info()[0])
-
+        self.cycles = 0
+        self.cycles_target = 0
         self.last_cycles = 0
-        self._cycles_to_interrupt = 1 << 31
-        self.clock = 0
 
-        self.poweron = True
+        self.div_apu_counter = 0
+        self.div_apu = 0
+        self.poweron = 0
 
         self.sweepchannel = SweepChannel()
         self.tonechannel = ToneChannel()
-        self.wavechannel = WaveChannel()
+        self.wavechannel = WaveChannel(self.cgb)
         self.noisechannel = NoiseChannel()
 
-        self.leftnoise = False
-        self.leftwave = False
-        self.lefttone = False
-        self.leftsweep = False
-        self.rightnoise = False
-        self.rightwave = False
-        self.righttone = False
-        self.rightsweep = False
+        self.noise_left = 0
+        self.wave_left = 0
+        self.tone_left = 0
+        self.sweep_left = 0
+        self.noise_right = 0
+        self.wave_right = 0
+        self.tone_right = 0
+        self.sweep_right = 0
+
+    def reset_apu_div(self):
+        # self.div_apu_counter = 0
+        # self.div_apu = 0
+        self.cycles_target_512Hz = self.cycles + (CYCLES_512HZ << self.speed_shift)
 
     def get(self, offset):
         if not self.emulate:
             return 0
-        self.sync()
         if offset < 20:
             i = offset // 5
             if i == 0:
@@ -94,35 +103,38 @@ class Sound:
             return 0
         elif offset == 21:  # Control register NR51: Channel stereo enable/panning
             return (
-                (0x80 if self.leftnoise else 0)
-                | (0x40 if self.leftwave else 0)
-                | (0x20 if self.lefttone else 0)
-                | (0x10 if self.leftsweep else 0)
-                | (0x08 if self.rightnoise else 0)
-                | (0x04 if self.rightwave else 0)
-                | (0x02 if self.righttone else 0)
-                | (0x01 if self.rightsweep else 0)
+                self.noise_left
+                | self.wave_left
+                | self.tone_left
+                | self.sweep_left
+                | self.noise_right
+                | self.wave_right
+                | self.tone_right
+                | self.sweep_right
             )
         elif offset == 22:  # Control register NR52: Sound/channel enable
-            return 0x70 | (
-                (0x80 if self.poweron else 0)
-                | (0x08 if self.noisechannel.enable else 0)
-                | (0x04 if self.wavechannel.enable else 0)
-                | (0x02 if self.tonechannel.enable else 0)
-                | (0x01 if self.sweepchannel.enable else 0)
+            return (
+                0b0111_0000
+                | self.poweron
+                | self.noisechannel.enable
+                | self.wavechannel.enable
+                | self.tonechannel.enable
+                | self.sweepchannel.enable
             )
         elif offset < 32:  # Unused registers, read as 0xFF
             return 0xFF
         elif offset < 48:  # Wave Table
             return self.wavechannel.getwavebyte(offset - 32)
         else:
-            raise IndexError(f"Attempted to read register {offset} in sound memory")
+            logger.error("Attempted to read register %d in sound memory", offset)
 
     def set(self, offset, value):
         if not self.emulate:
             return
-        self.sync()
-        if offset < 20 and self.poweron:
+
+        # Pan-docs:
+        # Read-only until turned back on, except NR52 and the length timers (in NRx1) on monochrome models.
+        if offset < 20 and (self.poweron or (not self.cgb and offset % 5 == 1)):
             i = offset // 5
             if i == 0:
                 self.sweepchannel.setreg(offset % 5, value)
@@ -132,99 +144,241 @@ class Sound:
                 self.wavechannel.setreg(offset % 5, value)
             elif i == 3:
                 self.noisechannel.setreg(offset % 5, value)
-        elif offset == 20 and self.poweron:  # Control register NR50: Vin enable and volume -- not implemented
-            return
+        elif offset == 20 and self.poweron:  # Control register NR50: Vin enable and volume
+            # Not implemented
+            pass
         elif offset == 21 and self.poweron:  # Control register NR51: Channel stereo enable/panning
-            self.leftnoise = value & 0x80
-            self.leftwave = value & 0x40
-            self.lefttone = value & 0x20
-            self.leftsweep = value & 0x10
-            self.rightnoise = value & 0x08
-            self.rightwave = value & 0x04
-            self.righttone = value & 0x02
-            self.rightsweep = value & 0x01
+            self.noise_left = value & 0b1000_0000
+            self.wave_left = value & 0b0100_0000
+            self.tone_left = value & 0b0010_0000
+            self.sweep_left = value & 0b0001_0000
+            self.noise_right = value & 0b0000_1000
+            self.wave_right = value & 0b0000_0100
+            self.tone_right = value & 0b0000_0010
+            self.sweep_right = value & 0b0000_0001
             return
         elif offset == 22:  # Control register NR52: Sound on/off
             if value & 0x80 == 0:  # Sound power off
                 for n in range(22):
                     self.set(n, 0)
-                self.poweron = False
+                self.poweron = 0
             else:
-                self.poweron = True
-            return
+                self.poweron = 0x80
+                # self.reset_apu_div()
         elif offset < 32:  # Unused registers, unwritable?
-            return
-        elif offset < 48:  # Wave Table
+            pass
+        elif offset < 48:  # Wave pattern RAM
             self.wavechannel.setwavebyte(offset - 32, value)
         else:
-            raise IndexError(f"Attempted to write register {offset} in sound memory")
+            logger.error("Attempted to write register %d in sound memory", offset)
 
-    def tick(self, _cycles, double_speed):
+    def tick(self, _cycles):
         cycles = _cycles - self.last_cycles
         self.last_cycles = _cycles
 
-        if double_speed:
-            self.clock += cycles // 2
-        else:
-            self.clock += cycles
-
-    def sync(self):
-        """Run the audio for the number of clock cycles stored in self.clock"""
         if not self.emulate:
             return
 
-        nsamples = self.clock // self.sampleclocks
-
-        for i in range(min(2048, nsamples)):
-            if self.poweron:
-                self.sweepchannel.run(self.sampleclocks)
-                self.tonechannel.run(self.sampleclocks)
-                self.wavechannel.run(self.sampleclocks)
-                self.noisechannel.run(self.sampleclocks)
-                sample = (
-                    (self.sweepchannel.sample() if self.leftsweep else 0)
-                    + (self.tonechannel.sample() if self.lefttone else 0)
-                    + (self.wavechannel.sample() if self.leftwave else 0)
-                    + (self.noisechannel.sample() if self.leftnoise else 0)
-                )
-                self.audiobuffer[2 * i] = min(max(sample, 0), 127)
-                sample = (
-                    (self.sweepchannel.sample() if self.rightsweep else 0)
-                    + (self.tonechannel.sample() if self.righttone else 0)
-                    + (self.wavechannel.sample() if self.rightwave else 0)
-                    + (self.noisechannel.sample() if self.rightnoise else 0)
-                )
-                self.audiobuffer[2 * i + 1] = min(max(sample, 0), 127)
-                self.clock -= self.sampleclocks
+        # Tick channels until point of sample (repeating) or however many cycles we have.
+        while cycles > 0:
+            if self.enabled:
+                _cycles = max(0, min(double_to_uint64_ceil(self.cycles_target) - self.cycles, cycles))
             else:
-                self.audiobuffer[2 * i] = 0
-                self.audiobuffer[2 * i + 1] = 0
+                _cycles = cycles
 
-        if self.enabled:
-            self.enqueue_sound(nsamples)
-        self.clock %= self.sampleclocks
+            self.cycles += _cycles
+            # Pan Docs:
+            # Turning the APU off, however, does not affect ... the DIV-APU counter
+            old_div_apu = self.div_apu
+            if self.cycles >= self.cycles_target_512Hz:
+                self.div_apu += 1
+                self.cycles_target_512Hz += CYCLES_512HZ << self.speed_shift
+            div_tick_count = self.div_apu - old_div_apu
 
-    def enqueue_sound(self, nsamples):
-        # Clear queue, if we are behind
-        queued_time = sdl2.SDL_GetQueuedAudioSize(self.device)
-        samples_per_frame = (self.sample_rate / 60) * 2  # Data of 1 frame's worth (60) in stereo (2)
-        if queued_time > samples_per_frame * SOUND_DESYNC_THRESHOLD:
-            sdl2.SDL_ClearQueuedAudio(self.device)
+            if self.poweron:
+                self.sweepchannel.tick(_cycles >> self.speed_shift)
+                self.tonechannel.tick(_cycles >> self.speed_shift)
+                self.wavechannel.tick(_cycles >> self.speed_shift)
+                self.noisechannel.tick(_cycles >> self.speed_shift)
 
-        sdl2.SDL_QueueAudio(self.device, self.audiobuffer_p, 2 * nsamples)
+                # Progress the channels by 1 tick at 512Hz
+                # assert div_tick_count <= 1
+                if div_tick_count:  # and self.enabled?
+                    # Pan docs:
+                    # A “DIV-APU” counter is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0, therefore
+                    # at a frequency of 512 Hz (regardless of whether double-speed is active). Thus, the counter can be made to
+                    # increase faster by writing to DIV while its relevant bit is set (which clears DIV, and triggers the falling edge).
 
-    def stop(self):
-        if self.enabled:
-            sdl2.SDL_CloseAudioDevice(self.device)
+                    # The following events occur every N DIV-APU ticks:
+                    # Event           Rate Frequency3
+                    # Envelope sweep  8    64 Hz
+                    # Sound length    2    256 Hz
+                    # CH1 freq sweep  4    128 Hz
+                    # 3 Indicated values are under normal operation; the frequencies will obviously differ if writing to DIV to
+                    # increase the counter faster.
+
+                    # Progress the channels by 1 tick at 256Hz
+                    if self.div_apu % 2 == 0:
+                        self.sweepchannel.tick_length()
+                        self.tonechannel.tick_length()
+                        self.wavechannel.tick_length()
+                        self.noisechannel.tick_length()
+
+                    # Progress the channels by 1 tick at 128Hz
+                    if self.div_apu % 4 == 0:
+                        self.sweepchannel.tick_sweep()
+
+                    # Progress the channels by 1 tick at 64Hz
+                    if self.div_apu % 8 == 0:
+                        self.sweepchannel.tick_envelope()
+                        self.tonechannel.tick_envelope()
+                        self.noisechannel.tick_envelope()
+
+            if self.enabled and self.cycles >= self.cycles_target:
+                if not self.disable_sampling:
+                    self.sample()
+
+                self.cycles_target += self.cycles_per_sample * (1 << self.speed_shift)
+                self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
+            else:
+                self._cycles_to_interrupt = double_to_uint64_ceil(self.cycles_target_512Hz)
+            cycles -= _cycles
+
+    def sample(self):
+        if self.poweron:
+            # Left channel
+            left_sample = 0
+            if self.sweep_left:
+                left_sample += self.sweepchannel.sample()
+            if self.tone_left:
+                left_sample += self.tonechannel.sample()
+            if self.wave_left:
+                left_sample += self.wavechannel.sample()
+            if self.noise_left:
+                left_sample += self.noisechannel.sample()
+
+            # Right channel
+            right_sample = 0
+            if self.sweep_right:
+                right_sample += self.sweepchannel.sample()
+            if self.tone_right:
+                right_sample += self.tonechannel.sample()
+            if self.wave_right:
+                right_sample += self.wavechannel.sample()
+            if self.noise_right:
+                right_sample += self.noisechannel.sample()
+
+            # Why cap it at 0<=sample<=127 when it's 8 bit and not 7 bit?
+            left_sample = min(max(left_sample, 0), 127)
+            right_sample = min(max(right_sample, 0), 127)
+        else:
+            left_sample = 0
+            right_sample = 0
+
+        if self.audiobuffer_head >= self.audiobuffer_length:
+            logger.critical("Buffer overrun! %d of %d", self.audiobuffer_head, self.audiobuffer_length)
+            return
+        self.audiobuffer[self.audiobuffer_head] = left_sample
+        self.audiobuffer[self.audiobuffer_head + 1] = right_sample
+
+        self.audiobuffer_head += 2
+
+    def clear_buffer(self):
+        self.audiobuffer_head = 0
 
     def save_state(self, file):
+        file.write_64bit(self.audiobuffer_head)
+        file.write_64bit(self.samples_per_frame)
+        for b in struct.pack("d", self.cycles_per_sample):
+            file.write(b)
+
+        for n in range(self.audiobuffer_length):
+            file.write(self.audiobuffer[n])
+
+        file.write(self.speed_shift)
+        for b in struct.pack("d", self.cycles_target):
+            file.write(b)
+        for b in struct.pack("d", self.cycles_target_512Hz):
+            file.write(b)
+        file.write_64bit(self._cycles_to_interrupt)
+
+        file.write_64bit(self.cycles)
         file.write_64bit(self.last_cycles)
-        file.write_64bit(self.clock)
+
+        file.write_64bit(self.div_apu_counter)
+        file.write_64bit(self.div_apu)
+        file.write(self.poweron)
+        file.write(self.disable_sampling)
+
+        file.write(self.noise_left)
+        file.write(self.wave_left)
+        file.write(self.tone_left)
+        file.write(self.sweep_left)
+        file.write(self.noise_right)
+        file.write(self.wave_right)
+        file.write(self.tone_right)
+        file.write(self.sweep_right)
+
+        self.sweepchannel.save_state(file)
+        self.tonechannel.save_state(file)
+        self.wavechannel.save_state(file)
+        self.noisechannel.save_state(file)
 
     def load_state(self, file, state_version):
-        if state_version >= 13:
+        if state_version == 13:
             self.last_cycles = file.read_64bit()
-            self.clock = file.read_64bit()
+            self.cycles = file.read_64bit()
+
+            self.sweepchannel.load_state(file, state_version)
+            self.tonechannel.load_state(file, state_version)
+            self.wavechannel.load_state(file, state_version)
+            self.noisechannel.load_state(file, state_version)
+        elif state_version >= 14:
+            self.audiobuffer_head = file.read_64bit()
+            _samples_per_frame = file.read_64bit()
+            if not _samples_per_frame == self.samples_per_frame:
+                raise PyBoyAssertException(
+                    "'Samples per frame' of saved state (%d) does not match current configuration (%d)",
+                    _samples_per_frame,
+                    self.samples_per_frame,
+                )
+            # self.samples_per_frame = _samples_per_frame
+            self.cycles_per_sample = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
+
+            for n in range(self.audiobuffer_length):
+                self.audiobuffer[n] = file.read()
+
+            self.speed_shift = file.read()
+            self.cycles_target = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
+            self.cycles_target_512Hz = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
+            self._cycles_to_interrupt = (
+                file.read_64bit()
+            )  # double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
+
+            self.cycles = file.read_64bit()
+            self.last_cycles = file.read_64bit()
+
+            self.div_apu_counter = file.read_64bit()
+            self.div_apu = file.read_64bit()
+            self.poweron = file.read()
+            self.disable_sampling = file.read()
+
+            self.noise_left = file.read()
+            self.wave_left = file.read()
+            self.tone_left = file.read()
+            self.sweep_left = file.read()
+            self.noise_right = file.read()
+            self.wave_right = file.read()
+            self.tone_right = file.read()
+            self.sweep_right = file.read()
+
+            self.sweepchannel.load_state(file, state_version)
+            self.tonechannel.load_state(file, state_version)
+            self.wavechannel.load_state(file, state_version)
+            self.noisechannel.load_state(file, state_version)
+
+    def stop(self):
+        pass
 
 
 class ToneChannel:
@@ -237,132 +391,170 @@ class ToneChannel:
             [0, 0, 0, 0, 0, 0, 0, 1],  # 12.5% Duty cycle square
             [1, 0, 0, 0, 0, 0, 0, 1],  # 25%
             [1, 0, 0, 0, 0, 1, 1, 1],  # 50%
-            [0, 1, 1, 1, 1, 1, 1, 0],
-        ]  # 75% (25% inverted)
+            [0, 1, 1, 1, 1, 1, 1, 0],  # 75% (25% inverted)
+        ]
 
         # Register values (abbreviated to keep track of what's external)
         # Register 0 is unused in the non-sweep tone channel
-        self.wavsel = 0  # Register 1 bits 7-6: wave table selection (duty cycle)
-        self.sndlen = 0  # Register 1 bits 5-0: time to play sound before stop (64-x)
-        self.envini = 0  # Register 2 bits 7-4: volume envelope initial volume
-        self.envdir = 0  # Register 2 bit 3: volume envelope change direction (0: decrease)
-        self.envper = 0  # Register 2 bits 2-0: volume envelope period (0: disabled)
-        self.sndper = 0  # Register 4 bits 2-0 MSB + register 3 all: period of tone ("frequency" on gg8 wiki)
+        self.wave_duty = 0  # Register 1 bits 7-6: wave table selection (duty cycle)
+        self.init_length_timer = 0  # Register 1 bits 5-0: time to play sound before stop (64-x)
+
+        self.envelope_volume = 0  # Register 2 bits 7-4: volume envelope initial volume
+        self.envelope_direction = 0  # Register 2 bit 3: volume envelope change direction (0: decrease)
+        self.envelope_pace = 0  # Register 2 bits 2-0: volume envelope period (0: disabled)
+
+        self.sound_period = 0  # Register 4 bits 2-0 LSB + register 3 all: period of tone ("frequency" on gg8 wiki)
+        self.length_enable = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
         # Register 4 bit 7: Write-only trigger bit. Process immediately.
-        self.uselen = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
 
         # Internal values
-        self.enable = False  # Enable flag, turned on by trigger bit and off by length timer
+        self.enable = 0  # Enable flag, turned on by trigger bit and off by length timer
         self.lengthtimer = 64  # Length timer, counts down to disable channel automatically
-        self.periodtimer = 0  # Period timer, counts down to signal change in wave frame
         self.envelopetimer = 0  # Volume envelope timer, counts down to signal change in volume
-        self.period = 4  # Calculated copy of period, 4 * (2048 - sndper)
+        self.periodtimer = 0  # Period timer, counts down to signal change in wave frame
+        self.period = 4  # Calculated copy of period, 4 * (2048 - sound_period)
         self.waveframe = 0  # Wave frame index into wave table entries
-        self.frametimer = 0x2000  # Frame sequencer timer, underflows to signal change in frame sequences
-        self.frame = 0  # Frame sequencer value, generates clocks for length/envelope/(sweep)
         self.volume = 0  # Current volume level, modulated by envelope
 
     def getreg(self, reg):
         if reg == 0:
             return 0
         elif reg == 1:
-            return self.wavsel << 6  # Other bits are write-only
+            return self.wave_duty << 6  # Other bits are write-only
         elif reg == 2:
-            return self.envini << 4 | self.envdir << 3 | self.envper
+            return self.envelope_volume << 4 | self.envelope_direction << 3 | self.envelope_pace
         elif reg == 3:
             return 0  # Write-only register?
         elif reg == 4:
-            return self.uselen << 6  # Other bits are write-only
+            return self.length_enable << 6
         else:
-            raise IndexError("Attempt to read register {} in ToneChannel".format(reg))
+            logger.error("Attempt to read register %d in ToneChannel", reg)
 
     def setreg(self, reg, val):
         if reg == 0:
-            return
+            # NR20
+            pass
         elif reg == 1:
-            self.wavsel = (val >> 6) & 0x03
-            self.sndlen = val & 0x1F
-            self.lengthtimer = 64 - self.sndlen
+            # NR11 NR21
+            self.wave_duty = (val >> 6) & 0x03
+            self.init_length_timer = val & 0x1F
+            self.lengthtimer = 64 - self.init_length_timer
         elif reg == 2:
-            self.envini = (val >> 4) & 0x0F
-            self.envdir = (val >> 3) & 0x01
-            self.envper = val & 0x07
-            if self.envini == 0 and self.envdir == 0:
-                self.enable = False
+            # NR12 NR22
+            self.envelope_volume = (val >> 4) & 0x0F
+            self.envelope_direction = (val >> 3) & 0x01
+            self.envelope_pace = val & 0x07
+            if self.envelope_volume == 0 and self.envelope_direction == 0:
+                self.enable = 0
         elif reg == 3:
-            self.sndper = (self.sndper & 0x700) + val  # Is this ever written solo?
-            self.period = 4 * (0x800 - self.sndper)
+            # NR13 NR23
+            self.sound_period = (self.sound_period & 0x700) | val
+            # The pulse channels’ period dividers are clocked at 1048576 Hz (not the same as wave channel!)
+            self.period = 4 * (0x800 - self.sound_period)
         elif reg == 4:
-            self.uselen = (val >> 6) & 0x01
-            self.sndper = ((val << 8) & 0x0700) + (self.sndper & 0xFF)
-            self.period = 4 * (0x800 - self.sndper)
+            # NR14 NR24
+            self.length_enable = (val >> 6) & 0x01
+            self.sound_period = ((val << 8) & 0x0700) | (self.sound_period & 0xFF)
+            # The pulse channels’ period dividers are clocked at 1048576 Hz (not the same as wave channel!)
+            self.period = 4 * (0x800 - self.sound_period)
             if val & 0x80:
                 self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
         else:
-            raise IndexError("Attempt to write register {} in ToneChannel".format(reg))
+            logger.error("Attempt to write register%d} in ToneChannel", reg)
 
-    def run(self, clocks):
-        """Advances time to sync with system state.
-
-        Doesn't generate samples, but we assume that it is called at
-        the sample rate or faster, so this might not be not prepared
-        to handle high values for 'clocks'.
-
-        """
-        self.periodtimer -= clocks
+    def tick(self, cycles):
+        self.periodtimer -= cycles
         while self.periodtimer <= 0:
             self.periodtimer += self.period
             self.waveframe = (self.waveframe + 1) % 8
 
-        self.frametimer -= clocks
-        while self.frametimer <= 0:
-            self.frametimer += 0x2000
-            self.tickframe()
-
-    def tickframe(self):
-        self.frame = (self.frame + 1) % 8
-        # Clock length timer on 0, 2, 4, 6
-        if self.uselen and self.frame & 1 == 0 and self.lengthtimer > 0:
+    def tick_length(self):
+        if self.length_enable and self.lengthtimer > 0:
             self.lengthtimer -= 1
             if self.lengthtimer == 0:
-                self.enable = False
-        # Clock envelope timer on 7
-        if self.frame == 7 and self.envelopetimer != 0:
+                self.enable = 0
+
+    def tick_envelope(self):
+        if self.envelopetimer != 0:
             self.envelopetimer -= 1
             if self.envelopetimer == 0:
-                newvolume = self.volume + (self.envdir or -1)
+                newvolume = self.volume + (self.envelope_direction or -1)
                 if newvolume < 0 or newvolume > 15:
                     self.envelopetimer = 0
                 else:
-                    self.envelopetimer = self.envper
+                    self.envelopetimer = self.envelope_pace
                     self.volume = newvolume
                 # Note that setting envelopetimer to 0 disables it
 
     def sample(self):
-        return self.volume * self.wavetables[self.wavsel][self.waveframe] if self.enable else 0
+        if self.enable:
+            return self.volume * self.wavetables[self.wave_duty][self.waveframe]
+        else:
+            return 0
 
     def trigger(self):
-        self.enable = True
+        self.enable = 0x02
         self.lengthtimer = self.lengthtimer or 64
         self.periodtimer = self.period
-        self.envelopetimer = self.envper
-        self.volume = self.envini
+        self.envelopetimer = self.envelope_pace
+        self.volume = self.envelope_volume
         # TODO: If channel DAC is off (NRx2 & 0xF8 == 0) then this
         #   will be undone and the channel immediately disabled.
         #   Probably need a new DAC power state/variable.
         # For now:
-        if self.envper == 0 and self.envini == 0:
-            self.enable = False
+        if self.envelope_pace == 0 and self.envelope_volume == 0:
+            self.enable = 0
+
+    def save_state(self, file):
+        file.write(self.wave_duty)
+        file.write(self.init_length_timer)
+
+        file.write(self.envelope_volume)
+        file.write(self.envelope_direction)
+        file.write(self.envelope_pace)
+
+        file.write_16bit(self.sound_period)
+        file.write(self.length_enable)
+
+        file.write(self.enable)
+        file.write_64bit(self.lengthtimer)
+        file.write_64bit(self.envelopetimer)
+        file.write_64bit(self.periodtimer)
+        file.write_64bit(self.period)
+        file.write_64bit(self.waveframe)
+        file.write_64bit(self.volume)
+
+    def load_state(self, file, state_version):
+        self.wave_duty = file.read()
+        self.init_length_timer = file.read()
+
+        self.envelope_volume = file.read()
+        self.envelope_direction = file.read()
+        self.envelope_pace = file.read()
+
+        self.sound_period = file.read_16bit()
+        self.length_enable = file.read()
+
+        self.enable = file.read()
+        self.lengthtimer = file.read_64bit()
+        self.envelopetimer = file.read_64bit()
+        self.periodtimer = file.read_64bit()
+        self.period = file.read_64bit()
+        self.waveframe = file.read_64bit()
+        self.volume = file.read_64bit()
 
 
 class SweepChannel(ToneChannel):
     def __init__(self):
         ToneChannel.__init__(self)
-
         # Register Values
-        self.swpper = 0  # Register 0 bits 6-4: Sweep period
-        self.swpdir = 0  # Register 0 bit 3: Sweep direction (0: increase)
-        self.swpmag = 0  # Register 0 bits 2-0: Sweep size as a bit shift
+        self.sweep_pace = 0  # Register 0 bits 6-4: Sweep pace
+        self.sweep_direction = 0  # Register 0 bit 3: Sweep direction (0: increase)
+        # Pan docs:
+        # Note that the value written to this field is not re-read by the hardware until a sweep iteration completes,
+        # or the channel is (re)triggered.
+        self.sweep_magnitude = 0  # Register 0 bits 2-0: Sweep size as a bit shift
+        # self.sweep_magnitude_latch = 0
 
         # Internal Values
         self.sweeptimer = 0  # Sweep timer, counts down to shift pitch
@@ -371,75 +563,111 @@ class SweepChannel(ToneChannel):
 
     def getreg(self, reg):
         if reg == 0:
-            return self.swpper << 4 | self.swpdir << 3 | self.swpmag
+            return self.sweep_pace << 4 | self.sweep_direction << 3 | self.sweep_magnitude | 0x80
         else:
             return ToneChannel.getreg(self, reg)
 
     def setreg(self, reg, val):
         if reg == 0:
-            self.swpper = val >> 4 & 0x07
-            self.swpdir = val >> 3 & 0x01
-            self.swpmag = val & 0x07
+            # NR10
+            self.sweep_pace = val >> 4 & 0x07
+            self.sweep_direction = val >> 3 & 0x01
+
+            # self.sweep_magnitude_latch = val & 0x07
+            self.sweep_magnitude = val & 0x07
+            # However, if 0 is written to this field, then iterations are instantly disabled,
+            # and it will be reloaded as soon as it’s set to something else.
+            # if self.sweep_magnitude_latch == 0:
+            #     self.sweep_magnitude = 0
         else:
             ToneChannel.setreg(self, reg, val)
 
-    # run() is the same as in ToneChannel, so we only override tickframe
-    def tickframe(self):
-        ToneChannel.tickframe(self)
+    def tick_sweep(self):
         # Clock sweep timer on 2 and 6
-        if self.sweepenable and self.swpper and self.frame & 3 == 2:
+        if self.sweepenable and self.sweep_pace:
             self.sweeptimer -= 1
             if self.sweeptimer == 0:
                 if self.sweep(True):
-                    self.sweeptimer = self.swpper
+                    self.sweeptimer = self.sweep_pace
                     self.sweep(False)
 
     def trigger(self):
         ToneChannel.trigger(self)
-        self.shadow = self.sndper
-        self.sweeptimer = self.swpper
-        self.sweepenable = True if (self.swpper or self.swpmag) else False
-        if self.swpmag:
+        if self.enable:  # Fixes NR52 enabled read
+            self.enable = 0x01
+        self.shadow = self.sound_period
+        self.sweeptimer = self.sweep_pace
+        # self.sweep_magnitude = self.sweep_magnitude_latch
+        self.sweepenable = self.sweep_pace or self.sweep_magnitude
+        if self.sweep_magnitude:
             self.sweep(False)
 
     def sweep(self, save):
-        if self.swpdir == 0:
-            newper = self.shadow + (self.shadow >> self.swpmag)
+        if self.sweep_direction == 0:
+            newper = self.shadow + (self.shadow >> self.sweep_magnitude)
         else:
-            newper = self.shadow - (self.shadow >> self.swpmag)
-        if newper >= 0x800:
+            newper = self.shadow - (self.shadow >> self.sweep_magnitude)
+
+        # Pan Docs:
+        # Note that if the period ever becomes 0, the period sweep will never be able to change it. For the same reason,
+        # the period sweep cannot underflow the period (which would turn the channel off).
+
+        # Pan Docs:
+        # If the period value would overflow (i.e. ... more than $7FF), the channel is turned off instead
+        if newper >= 0x800:  # NOTE: Pan docs: This occurs even if sweep iterations are disabled by the pace being 0.
             self.enable = False
+            # Is this "sweep complete?"
+            # self.sweep_magnitude = self.sweep_magnitude_latch
             return False
-        elif save and self.swpmag:
-            self.sndper = self.shadow = newper
-            self.period = 4 * (0x800 - self.sndper)
+        elif save and self.sweep_magnitude:
+            # Pan Docs:
+            # On each sweep iteration, the period in NR13 and NR14 is modified and written back.
+            self.sound_period = self.shadow = newper
+            self.period = 4 * (0x800 - self.sound_period)  # 2048*4 = 8192 cycles = 512Hz
             return True
+
+    def save_state(self, file):
+        ToneChannel.save_state(self, file)
+        file.write(self.sweep_pace)
+        file.write(self.sweep_direction)
+        file.write(self.sweep_magnitude)
+        file.write_64bit(self.sweeptimer)
+        file.write(self.sweepenable)
+        file.write_64bit(self.shadow)
+
+    def load_state(self, file, state_version):
+        ToneChannel.load_state(self, file, state_version)
+        self.sweep_pace = file.read()
+        self.sweep_direction = file.read()
+        self.sweep_magnitude = file.read()
+        self.sweeptimer = file.read_64bit()
+        self.sweepenable = file.read()
+        self.shadow = file.read_64bit()
 
 
 class WaveChannel:
     """Third sound channel--sample-based playback"""
 
-    def __init__(self):
+    def __init__(self, cgb):
         # Memory for wave sample
         self.wavetable = array("B", [0xFF] * 16)
+        self.cgb = cgb
 
         # Register values (abbreviated to keep track of what's external)
         # Register 0 is unused in the wave channel
         self.dacpow = 0  # Register 0 bit 7: DAC Power, enable playback
-        self.sndlen = 0  # Register 1 bits 7-0: time to play sound before stop (256-x)
+        self.init_length_timer = 0  # Register 1 bits 7-0: time to play sound before stop (256-x)
         self.volreg = 0  # Register 2 bits 6-5: volume code
-        self.sndper = 0  # Register 4 bits 2-0 MSB + register 3 all: period of tone ("frequency" on gg8 wiki)
+        self.sound_period = 0  # Register 4 bits 2-0 MSB + register 3 all: period of tone ("frequency" on gg8 wiki)
         # Register 4 bit 7: Write-only trigger bit. Process immediately.
-        self.uselen = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
+        self.length_enable = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
 
         # Internal values
-        self.enable = False  # Enable flag, turned on by trigger bit and off by length timer
+        self.enable = 0  # Enable flag, turned on by trigger bit and off by length timer
         self.lengthtimer = 256  # Length timer, counts down to disable channel automatically
         self.periodtimer = 0  # Period timer, counts down to signal change in wave frame
-        self.period = 4  # Calculated copy of period, 4 * (2048 - sndper)
+        self.period = 4  # Calculated copy of period, 4 * (0x800 - sndper)
         self.waveframe = 0  # Wave frame index into wave table entries
-        self.frametimer = 0x2000  # Frame sequencer timer, underflows to signal change in frame sequences
-        self.frame = 0  # Frame sequencer value, generates clocks for length/envelope/(sweep)
         self.volumeshift = 0  # Bitshift for volume, set by volreg
 
     def getreg(self, reg):
@@ -453,79 +681,125 @@ class WaveChannel:
         elif reg == 3:
             return 0xFF
         elif reg == 4:
-            return self.uselen << 6 | 0xBF
+            return self.length_enable << 6 | 0xBF
         else:
-            raise IndexError("Attempt to read register {} in ToneChannel".format(reg))
+            logger.error("Attempt to read register %d in ToneChannel", reg)
 
     def setreg(self, reg, val):
         if reg == 0:
             self.dacpow = val >> 7 & 0x01
             if self.dacpow == 0:
-                self.enable = False
+                self.enable = 0
         elif reg == 1:
-            self.sndlen = val
-            self.lengthtimer = 256 - self.sndlen
+            self.init_length_timer = val
+            self.lengthtimer = 256 - self.init_length_timer
         elif reg == 2:
             self.volreg = val >> 5 & 0x03
-            self.volumeshift = self.volreg - 1 if self.volreg > 0 else 4
+            if self.volreg > 0:
+                self.volumeshift = self.volreg - 1
+            else:
+                self.volumeshift = 4  # Muted as it's a 4-bit wave table
         elif reg == 3:
-            self.sndper = (self.sndper & 0x700) + val  # Is this ever written solo?
-            self.period = 2 * (0x800 - self.sndper)
+            self.sound_period = (self.sound_period & 0x700) + val
+            # The wave channel’s period divider is clocked at 2097152 Hz (not the same as tone channels!)
+            self.period = 2 * (0x800 - self.sound_period)  # Cycles per period
         elif reg == 4:
-            self.uselen = val >> 6 & 0x01
-            self.sndper = (val << 8 & 0x0700) + (self.sndper & 0xFF)
-            self.period = 2 * (0x800 - self.sndper)
+            self.length_enable = val >> 6 & 0x01
+            self.sound_period = (val << 8 & 0x0700) + (self.sound_period & 0xFF)
+            # The wave channel’s period divider is clocked at 2097152 Hz (not the same as tone channels!)
+            self.period = 2 * (0x800 - self.sound_period)  # Cycles per period
             if val & 0x80:
                 self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
         else:
-            raise IndexError("Attempt to write register {} in WaveChannel".format(reg))
+            logger.error("Attempt to write register %d in WaveChannel", reg)
 
     def getwavebyte(self, offset):
-        if self.dacpow:
-            return self.wavetable[self.waveframe % 16]
+        # Pan docs:
+        # Wave RAM can be accessed normally even if the DAC is on, as long as the channel is not active.
+        if self.enable:
+            if self.cgb:
+                return self.wavetable[self.waveframe % 16]
+            else:
+                # Pan docs:
+                # On monochrome consoles, wave RAM can only be accessed on the same cycle that CH3 does. Otherwise,
+                # reads return $FF, and writes are ignored.
+                return 0xFF
         else:
             return self.wavetable[offset]
 
     def setwavebyte(self, offset, value):
-        # In GBA, a write is ignored while the channel is running.
-        # Otherwise, it usually goes at the current frame byte.
-        if self.dacpow:
-            self.wavetable[self.waveframe % 16] = value
+        # Pan docs:
+        # Wave RAM can be accessed normally even if the DAC is on, as long as the channel is not active.
+        if self.enable:
+            if self.cgb:
+                self.wavetable[self.waveframe % 16] = value
+            else:
+                pass
         else:
             self.wavetable[offset] = value
 
-    def run(self, clocks):
-        """Advances time to sync with system state."""
-        self.periodtimer -= clocks
+    def tick(self, cycles):
+        self.periodtimer -= cycles
         while self.periodtimer <= 0:
             self.periodtimer += self.period
             self.waveframe += 1
             self.waveframe %= 32
 
-        self.frametimer -= clocks
-        while self.frametimer <= 0:
-            self.frametimer += 0x2000
-            self.tickframe()
-
-    def tickframe(self):
-        self.frame = (self.frame + 1) % 8
-        # Clock length timer on 0, 2, 4, 6
-        if self.uselen and self.frame & 1 == 0 and self.lengthtimer > 0:
+    def tick_length(self):
+        if self.length_enable and self.lengthtimer > 0:
             self.lengthtimer -= 1
             if self.lengthtimer == 0:
-                self.enable = False
+                self.enable = 0
 
     def sample(self):
         if self.enable and self.dacpow:
-            sample = self.wavetable[self.waveframe // 2] >> (0 if self.waveframe % 2 else 4) & 0x0F
+            sample = self.wavetable[self.waveframe // 2]
+            if self.waveframe % 2 == 1:  # Read 4-bit value
+                sample >>= 4
+            sample &= 0x0F
             return sample >> self.volumeshift
         else:
             return 0
 
     def trigger(self):
-        self.enable = True if self.dacpow else False
+        self.enable = 0x04 if self.dacpow else 0
         self.lengthtimer = self.lengthtimer or 256
         self.periodtimer = self.period
+        # self.waveframe = 1 # Implement CH3 bug, that first sample is skipped
+
+    def save_state(self, file):
+        for n in range(16):
+            file.write(self.wavetable[n])
+
+        file.write(self.dacpow)
+        file.write(self.init_length_timer)
+        file.write(self.volreg)
+        file.write_16bit(self.sound_period)
+        file.write(self.length_enable)
+
+        file.write(self.enable)
+        file.write_64bit(self.lengthtimer)
+        file.write_64bit(self.periodtimer)
+        file.write_64bit(self.period)
+        file.write_64bit(self.waveframe)
+        file.write_64bit(self.volumeshift)
+
+    def load_state(self, file, state_version):
+        for n in range(16):
+            self.wavetable[n] = file.read()
+
+        self.dacpow = file.read()
+        self.init_length_timer = file.read()
+        self.volreg = file.read()
+        self.sound_period = file.read_16bit()
+        self.length_enable = file.read()
+
+        self.enable = file.read()
+        self.lengthtimer = file.read_64bit()
+        self.periodtimer = file.read_64bit()
+        self.period = file.read_64bit()
+        self.waveframe = file.read_64bit()
+        self.volumeshift = file.read_64bit()
 
 
 class NoiseChannel:
@@ -536,26 +810,24 @@ class NoiseChannel:
 
         # Register values (abbreviated to keep track of what's external)
         # Register 0 is unused in the noise channel
-        self.sndlen = 0  # Register 1 bits 5-0: time to play sound before stop (64-x)
-        self.envini = 0  # Register 2 bits 7-4: volume envelope initial volume
-        self.envdir = 0  # Register 2 bit 3: volume envelope change direction (0: decrease)
-        self.envper = 0  # Register 2 bits 2-0: volume envelope period (0: disabled)
+        self.init_length_timer = 0  # Register 1 bits 5-0: time to play sound before stop (64-x)
+        self.envelope_volume = 0  # Register 2 bits 7-4: volume envelope initial volume
+        self.envelope_direction = 0  # Register 2 bit 3: volume envelope change direction (0: decrease)
+        self.envelope_pace = 0  # Register 2 bits 2-0: volume envelope period (0: disabled)
         self.clkpow = 0  # Register 3 bits 7-4: lfsr clock shift
         self.regwid = 0  # Register 3 bit 3: lfsr bit width (0: 15, 1: 7)
         self.clkdiv = 0  # Register 3 bits 2-0: base divider for lfsr clock
         # Register 4 bit 7: Write-only trigger bit. Process immediately.
-        self.uselen = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
+        self.length_enable = 0  # Register 4 bit 6: enable/disable sound length timer in reg 1 (0: continuous)
 
         # Internal values
-        self.enable = False  # Enable flag, turned on by trigger bit and off by length timer
+        self.enable = 0  # Enable flag, turned on by trigger bit and off by length timer
         self.lengthtimer = 64  # Length timer, counts down to disable channel automatically
         self.periodtimer = 0  # Period timer, counts down to signal change in wave frame
         self.envelopetimer = 0  # Volume envelope timer, counts down to signal change in volume
         self.period = 8  # Calculated copy of period, 8 << 0
         self.shiftregister = 1  # Internal shift register value
         self.lfsrfeed = 0x4000  # Bit mask for inserting feedback in shift register
-        self.frametimer = 0x2000  # Frame sequencer timer, underflows to signal change in frame sequences
-        self.frame = 0  # Frame sequencer value, generates clocks for length/envelope/(sweep)
         self.volume = 0  # Current volume level, modulated by envelope
 
     def getreg(self, reg):
@@ -564,26 +836,26 @@ class NoiseChannel:
         elif reg == 1:
             return 0xFF
         elif reg == 2:
-            return self.envini << 4 | self.envdir << 3 | self.envper
+            return self.envelope_volume << 4 | self.envelope_direction << 3 | self.envelope_pace
         elif reg == 3:
             return self.clkpow << 4 | self.regwid << 3 | self.clkdiv
         elif reg == 4:
-            return self.uselen << 6 | 0xBF
+            return self.length_enable << 6 | 0xBF
         else:
-            raise IndexError("Attempt to read register {} in NoiseChannel".format(reg))
+            logger.error("Attempt to read register %d in NoiseChannel", reg)
 
     def setreg(self, reg, val):
         if reg == 0:
             return
         elif reg == 1:
-            self.sndlen = val & 0x1F
-            self.lengthtimer = 64 - self.sndlen
+            self.init_length_timer = val & 0x1F
+            self.lengthtimer = 64 - self.init_length_timer
         elif reg == 2:
-            self.envini = val >> 4 & 0x0F
-            self.envdir = val >> 3 & 0x01
-            self.envper = val & 0x07
-            if self.envini == 0 and self.envdir == 0:
-                self.enable = False
+            self.envelope_volume = val >> 4 & 0x0F
+            self.envelope_direction = val >> 3 & 0x01
+            self.envelope_pace = val & 0x07
+            if self.envelope_volume == 0 and self.envelope_direction == 0:
+                self.enable = 0
         elif reg == 3:
             self.clkpow = val >> 4 & 0x0F
             self.regwid = val >> 3 & 0x01
@@ -591,15 +863,14 @@ class NoiseChannel:
             self.period = self.DIVTABLE[self.clkdiv] << self.clkpow
             self.lfsrfeed = 0x4040 if self.regwid else 0x4000
         elif reg == 4:
-            self.uselen = val >> 6 & 0x01
+            self.length_enable = val >> 6 & 0x01
             if val & 0x80:
                 self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
         else:
-            raise IndexError("Attempt to write register {} in ToneChannel".format(reg))
+            logger.error("Attempt to write register %d in ToneChannel", reg)
 
-    def run(self, clocks):
-        """Advances time to sync with system state."""
-        self.periodtimer -= clocks
+    def tick(self, cycles):
+        self.periodtimer -= cycles
         while self.periodtimer <= 0:
             self.periodtimer += self.period
             # Advance shift register
@@ -612,27 +883,21 @@ class NoiseChannel:
             else:
                 self.shiftregister &= ~self.lfsrfeed
 
-        self.frametimer -= clocks
-        while self.frametimer <= 0:
-            self.frametimer += 0x2000
-            self.tickframe()
-
-    def tickframe(self):
-        self.frame = (self.frame + 1) % 8
-        # Clock length timer on 0, 2, 4, 6
-        if self.uselen and self.frame & 1 == 0 and self.lengthtimer > 0:
+    def tick_length(self):
+        if self.length_enable and self.lengthtimer > 0:
             self.lengthtimer -= 1
             if self.lengthtimer == 0:
-                self.enable = False
-        # Clock envelope timer on 7
-        if self.frame == 7 and self.envelopetimer != 0:
+                self.enable = 0
+
+    def tick_envelope(self):
+        if self.envelopetimer != 0:
             self.envelopetimer -= 1
             if self.envelopetimer == 0:
-                newvolume = self.volume + (self.envdir or -1)
+                newvolume = self.volume + (self.envelope_direction or -1)
                 if newvolume < 0 or newvolume > 15:
                     self.envelopetimer = 0
                 else:
-                    self.envelopetimer = self.envper
+                    self.envelopetimer = self.envelope_pace
                     self.volume = newvolume
                 # Note that setting envelopetimer to 0 disables it
 
@@ -643,12 +908,50 @@ class NoiseChannel:
             return 0
 
     def trigger(self):
-        self.enable = True
+        self.enable = 0x08
         self.lengthtimer = self.lengthtimer or 64
         self.periodtimer = self.period
-        self.envelopetimer = self.envper
-        self.volume = self.envini
+        self.envelopetimer = self.envelope_pace
+        self.volume = self.envelope_volume
         self.shiftregister = 0x7FFF
         # TODO: tidy instead of double change variable
-        if self.envper == 0 and self.envini == 0:
-            self.enable = False
+        if self.envelope_pace == 0 and self.envelope_volume == 0:
+            self.enable = 0
+
+    def save_state(self, file):
+        file.write(self.init_length_timer)
+        file.write(self.envelope_volume)
+        file.write(self.envelope_direction)
+        file.write(self.envelope_pace)
+        file.write(self.clkpow)
+        file.write(self.regwid)
+        file.write(self.clkdiv)
+        file.write(self.length_enable)
+
+        file.write(self.enable)
+        file.write_64bit(self.lengthtimer)
+        file.write_64bit(self.periodtimer)
+        file.write_64bit(self.envelopetimer)
+        file.write_64bit(self.period)
+        file.write_64bit(self.shiftregister)
+        file.write_64bit(self.lfsrfeed)
+        file.write_64bit(self.volume)
+
+    def load_state(self, file, state_version):
+        self.init_length_timer = file.read()
+        self.envelope_volume = file.read()
+        self.envelope_direction = file.read()
+        self.envelope_pace = file.read()
+        self.clkpow = file.read()
+        self.regwid = file.read()
+        self.clkdiv = file.read()
+        self.length_enable = file.read()
+
+        self.enable = file.read()
+        self.lengthtimer = file.read_64bit()
+        self.periodtimer = file.read_64bit()
+        self.envelopetimer = file.read_64bit()
+        self.period = file.read_64bit()
+        self.shiftregister = file.read_64bit()
+        self.lfsrfeed = file.read_64bit()
+        self.volume = file.read_64bit()
