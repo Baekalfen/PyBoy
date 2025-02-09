@@ -51,19 +51,19 @@ def test_memoryview(default_rom, boot_rom):
     assert p.memory[0:10] == bootrom_bytes[:10]
 
     # Actually do write to RAM area
-    assert p.memory[0xC000:0xC00a] == [0] * 10
-    p.memory[0xC000:0xC00a] = 123
-    assert p.memory[0xC000:0xC00a] == [123] * 10
+    assert p.memory[0xC000:0xC00A] == [0] * 10
+    p.memory[0xC000:0xC00A] = 123
+    assert p.memory[0xC000:0xC00A] == [123] * 10
 
     # Attempt to write slice to ROM area
     p.memory[0:5] = [0, 1, 2, 3, 4]
     assert p.memory[0:10] == bootrom_bytes[:10]
 
     # Actually do write slice to RAM area
-    p.memory[0xC000:0xC00a] = [0] * 10
-    assert p.memory[0xC000:0xC00a] == [0] * 10
-    p.memory[0xC000:0xC00a] = [1] * 10
-    assert p.memory[0xC000:0xC00a] == [1] * 10
+    p.memory[0xC000:0xC00A] = [0] * 10
+    assert p.memory[0xC000:0xC00A] == [0] * 10
+    p.memory[0xC000:0xC00A] = [1] * 10
+    assert p.memory[0xC000:0xC00A] == [1] * 10
 
     # Attempt to write too large memory slice into memory area
     with pytest.raises(AssertionError):
@@ -71,7 +71,7 @@ def test_memoryview(default_rom, boot_rom):
 
     # Attempt to write too small memory slice into memory area
     with pytest.raises(AssertionError):
-        p.memory[0xC000:0xC00a] = [1] * 2
+        p.memory[0xC000:0xC00A] = [1] * 2
 
     # Read specific ROM bank
     assert p.memory[0, 0x00:0x10] == rom_bytes[:16]
@@ -95,7 +95,7 @@ def test_memoryview(default_rom, boot_rom):
         p.memory[0, 0x00:0x9000]
 
 
-def test_cgb_banks(cgb_acid_file): # Any CGB file
+def test_cgb_banks(cgb_acid_file):  # Any CGB file
     p = PyBoy(cgb_acid_file)
 
     # Read VRAM banks through both aliases
@@ -131,10 +131,10 @@ def test_cgb_banks(cgb_acid_file): # Any CGB file
         p.memory[0:2, 0xD000:0xD010] = 1
 
     with pytest.raises(AssertionError):
-        p.memory[8, 0xD000] # Only bank 0-7
+        p.memory[8, 0xD000]  # Only bank 0-7
 
     with pytest.raises(AssertionError):
-        p.memory[8, 0xD000] = 1 # Only bank 0-7
+        p.memory[8, 0xD000] = 1  # Only bank 0-7
 
 
 def test_get_set_override(default_rom):
@@ -146,15 +146,15 @@ def test_get_set_override(default_rom):
     pyboy.memory[0xFF40] = 0x12
     assert pyboy.memory[0xFF40] == 0x12
 
-    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
-    assert pyboy.memory[0x0002] == 0xFF # Taken from bootrom
-    assert pyboy.memory[-1, 0x0002] == 0xFF # Taken from bootrom
-    pyboy.memory[-1, 0x0002] = 0x01 # Change bootrom
-    assert pyboy.memory[-1, 0x0002] == 0x01 # New value in bootrom
-    assert pyboy.memory[0, 0x0002] == 0x42 # Taken from ROM bank 0
+    assert pyboy.memory[0, 0x0002] == 0x42  # Taken from ROM bank 0
+    assert pyboy.memory[0x0002] == 0xFF  # Taken from bootrom
+    assert pyboy.memory[-1, 0x0002] == 0xFF  # Taken from bootrom
+    pyboy.memory[-1, 0x0002] = 0x01  # Change bootrom
+    assert pyboy.memory[-1, 0x0002] == 0x01  # New value in bootrom
+    assert pyboy.memory[0, 0x0002] == 0x42  # Taken from ROM bank 0
 
-    pyboy.memory[0xFF50] = 1 # Disable bootrom
-    assert pyboy.memory[0x0002] == 0x42 # Taken from ROM bank 0
+    pyboy.memory[0xFF50] = 1  # Disable bootrom
+    assert pyboy.memory[0x0002] == 0x42  # Taken from ROM bank 0
 
     pyboy.memory[0, 0x0002] = 0x12
     assert pyboy.memory[0x0002] == 0x12
@@ -170,22 +170,22 @@ def test_boundaries(default_rom):
     # Boot ROM boundary - Expecting 0 to 0xFF both including to change
     assert pyboy.memory[-1, 0x00] != 0
     assert pyboy.memory[-1, 0xFF] != 0
-    pyboy.memory[-1, 0:0x100] = [0] * 0x100 # Clear boot ROM
+    pyboy.memory[-1, 0:0x100] = [0] * 0x100  # Clear boot ROM
     with pytest.raises(AssertionError):
-        pyboy.memory[-1, 0:0x101] = [0] * 0x101 # Out of bounds
+        pyboy.memory[-1, 0:0x101] = [0] * 0x101  # Out of bounds
     assert pyboy.memory[-1, 0x00] == 0
     assert pyboy.memory[-1, 0xFF] == 0
 
-    pyboy.memory[0xFF50] = 1 # Disable bootrom
+    pyboy.memory[0xFF50] = 1  # Disable bootrom
 
     pyboy.memory[0, 0x0000] = 123
     pyboy.memory[0, 0x3FFF] = 123
-    pyboy.memory[1, 0x4000] = 123 # Notice bank! [0,0x4000] would wrap around to 0
+    pyboy.memory[1, 0x4000] = 123  # Notice bank! [0,0x4000] would wrap around to 0
 
     # ROM Bank 0 boundary - Expecting 0 to 0x3FFF both including to change
     pyboy.memory[0, 0:0x4000] = [0] * 0x4000
     with pytest.raises(AssertionError):
-        pyboy.memory[0, 0:0x4001] = [0] * 0x4001 # Over boundary!
+        pyboy.memory[0, 0:0x4001] = [0] * 0x4001  # Over boundary!
 
     # NOTE: Not specifying bank! Defaulting to 0 up to 0x3FFF and then 1 at 0x4000
     assert pyboy.memory[0x0000] == 0

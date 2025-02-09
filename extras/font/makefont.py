@@ -40,7 +40,7 @@ def main(bdffile, unifile, *args):
                     chars[int(newchar.meta["ENCODING"])] = newchar
                     break
                 else:
-                    newchar.meta[line[0]] = (line[1:] if len(line) > 2 else line[1])
+                    newchar.meta[line[0]] = line[1:] if len(line) > 2 else line[1]
 
     chars437 = [chars[n] for n in uni]
     with open("font.txt", "w") as f:
@@ -56,7 +56,7 @@ The full source code for the Terminus font is available at
 
 -----------------------------------------------------------
 """,
-            file=f
+            file=f,
         )
 
         with open("OFL.txt", "r") as licensefile:
@@ -67,7 +67,7 @@ The full source code for the Terminus font is available at
         print("BASE64DATA:", file=f)
         blob = b64encode(zlib.compress(b"".join((b for c in chars437 for b in c.bits))))
         for n in range(0, len(blob), 72):
-            print(blob[n:n + 72].decode(), file=f)
+            print(blob[n : n + 72].decode(), file=f)
 
     if "--bitmap" in args:
         if not Image:
@@ -77,7 +77,7 @@ The full source code for the Terminus font is available at
             for row in range(16):
                 for pixrow in range(16):
                     for col in range(16):
-                        buf += chars437[16*row + col].bits[pixrow]
+                        buf += chars437[16 * row + col].bits[pixrow]
 
             image = Image.frombytes("1", (128, 256), bytes(buf))
             image.save("fontsheet.bmp")

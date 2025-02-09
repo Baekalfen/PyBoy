@@ -50,7 +50,7 @@ def locate_roms(path=default_rom_path):
         lambda x: path + x,
         filter(
             lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"), os.listdir(path)
-        )
+        ),
     )
 
     entries = {}
@@ -112,27 +112,29 @@ def pokemon_pinball_rom(secrets):
     return locate_sha256(b"7672001d4710272009df6a41e3cbada65decd56e0eb2f185cb3d59c08d33ea0e")
 
 
-tetris_game_area = np.array([
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 130, 130, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 130, 130, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-],
-                            dtype=np.uint32)
+tetris_game_area = np.array(
+    [
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 130, 130, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 130, 130, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+        [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+    ],
+    dtype=np.uint32,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -200,6 +202,7 @@ class PytestDoctestRunner(doctest.DebugRunner):
     Note that the out variable in this case is a list instead of a
     stdout-like object.
     """
+
     def __init__(
         self,
         checker=None,
@@ -275,15 +278,15 @@ class DoctestTextfile(pytest.Module):
         grouped_examples = [[]]
         for (lineno, example), i in zip([(e.lineno, e) for e in examples], range(len(examples))):
             # Fix parsing error when example ends
-            example.want = example.want.split("```\n")[0] # Stop parsing, if the docstring ends
+            example.want = example.want.split("```\n")[0]  # Stop parsing, if the docstring ends
 
             if lineno - i == last:
                 grouped_examples[-1].append(example)
             else:
                 grouped_examples.append([example])
                 last = lineno - i
-            last += example.source.count("\n") - 1 # Handle multi-line definitions
-            last += example.want.count("\n") # Handle multi-line definitions
+            last += example.source.count("\n") - 1  # Handle multi-line definitions
+            last += example.want.count("\n")  # Handle multi-line definitions
 
         # TODO: Better naming
         for test in [

@@ -27,12 +27,15 @@ from .core.mb import Motherboard
 
 logger = get_logger(__name__)
 
-SPF = 1 / 60. # inverse FPS (frame-per-second)
+SPF = 1 / 60.0  # inverse FPS (frame-per-second)
 
 defaults = {
     "color_palette": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
-    "cgb_color_palette": ((0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000), (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000),
-                          (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000)),
+    "cgb_color_palette": (
+        (0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000),
+        (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000),
+        (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000),
+    ),
     "scale": 3,
     "window": "SDL2",
     "log_level": "ERROR",
@@ -53,7 +56,7 @@ class PyBoy:
         cgb=None,
         gameshark=None,
         log_level=defaults["log_level"],
-        **kwargs
+        **kwargs,
     ):
         """
         PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -113,7 +116,7 @@ class PyBoy:
 
         kwargs["window"] = window
         kwargs["scale"] = scale
-        randomize = kwargs.pop("randomize", False) # Undocumented feature
+        randomize = kwargs.pop("randomize", False)  # Undocumented feature
 
         for k, v in defaults.items():
             if k not in kwargs:
@@ -457,7 +460,7 @@ class PyBoy:
         running = False
         t_start = time.perf_counter_ns()
         while count != 0:
-            _render = render and count == 1 # Only render on last tick to improve performance
+            _render = render and count == 1  # Only render on last tick to improve performance
             running = self._tick(_render)
             count -= 1
         t_tick = time.perf_counter_ns()
@@ -466,9 +469,9 @@ class PyBoy:
 
         if _count > 0:
             nsecs = t_tick - t_start
-            self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1*nsecs/1_000_000_000)
+            self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1 * nsecs / 1_000_000_000)
             nsecs = t_post - t_start
-            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1*nsecs/1_000_000_000)
+            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
         return running
 
     def _handle_events(self, events):
@@ -492,7 +495,7 @@ class PyBoy:
                 with open(state_path, "rb") as f:
                     self.mb.load_state(IntIOWrapper(f))
             elif event == WindowEvent.PASS:
-                pass # Used in place of None in Cython, when key isn't mapped to anything
+                pass  # Used in place of None in Cython, when key isn't mapped to anything
             elif event == WindowEvent.PAUSE_TOGGLE:
                 if self.paused:
                     self._unpause()
@@ -1329,6 +1332,7 @@ class PyBoyRegisterFile:
     True
     ```
     """
+
     def __init__(self, cpu):
         self.cpu = cpu
 
@@ -1506,6 +1510,7 @@ class PyBoyMemoryView:
     ```
 
     """
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -1541,7 +1546,7 @@ class PyBoyMemoryView:
             return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
 
     def __getitem(self, start, stop, step, bank, is_single, is_bank):
-        slice_length = (stop-start) // step
+        slice_length = (stop - start) // step
         if is_bank:
             # Reading a specific bank
             if start < 0x8000:
@@ -1556,7 +1561,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.bootrom.bootrom[x]
+                            mem_slice[(x - start) // step] = self.mb.bootrom.bootrom[x]
                         return mem_slice
                     else:
                         return self.mb.bootrom.bootrom[start]
@@ -1565,7 +1570,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.cartridge.rombanks[bank, x]
+                            mem_slice[(x - start) // step] = self.mb.cartridge.rombanks[bank, x]
                         return mem_slice
                     else:
                         return self.mb.cartridge.rombanks[bank, start]
@@ -1581,7 +1586,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM0[x]
+                            mem_slice[(x - start) // step] = self.mb.lcd.VRAM0[x]
                         return mem_slice
                     else:
                         return self.mb.lcd.VRAM0[start]
@@ -1589,7 +1594,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         mem_slice = [0] * slice_length
                         for x in range(start, stop, step):
-                            mem_slice[(x-start) // step] = self.mb.lcd.VRAM1[x]
+                            mem_slice[(x - start) // step] = self.mb.lcd.VRAM1[x]
                         return mem_slice
                     else:
                         return self.mb.lcd.VRAM1[start]
@@ -1602,7 +1607,7 @@ class PyBoyMemoryView:
                 if not is_single:
                     mem_slice = [0] * slice_length
                     for x in range(start, stop, step):
-                        mem_slice[(x-start) // step] = self.mb.cartridge.rambanks[bank, x]
+                        mem_slice[(x - start) // step] = self.mb.cartridge.rambanks[bank, x]
                     return mem_slice
                 else:
                     return self.mb.cartridge.rambanks[bank, start]
@@ -1619,17 +1624,17 @@ class PyBoyMemoryView:
                 if not is_single:
                     mem_slice = [0] * slice_length
                     for x in range(start, stop, step):
-                        mem_slice[(x-start) // step] = self.mb.ram.internal_ram0[x + bank*0x1000]
+                        mem_slice[(x - start) // step] = self.mb.ram.internal_ram0[x + bank * 0x1000]
                     return mem_slice
                 else:
-                    return self.mb.ram.internal_ram0[start + bank*0x1000]
+                    return self.mb.ram.internal_ram0[start + bank * 0x1000]
             else:
                 assert None, "Invalid memory address for bank"
         elif not is_single:
             # Reading slice of memory space
             mem_slice = [0] * slice_length
             for x in range(start, stop, step):
-                mem_slice[(x-start) // step] = self.mb.getitem(x)
+                mem_slice[(x - start) // step] = self.mb.getitem(x)
             return mem_slice
         else:
             # Reading specific address of memory space
@@ -1682,7 +1687,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            assert (stop - start) // step == len(v), "slice does not match length of data"
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.bootrom.bootrom[x] = next(_v)
@@ -1695,7 +1700,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            assert (stop - start) // step == len(v), "slice does not match length of data"
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.cartridge.overrideitem(bank, x, next(_v))
@@ -1717,7 +1722,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            assert (stop - start) // step == len(v), "slice does not match length of data"
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM0[x] = next(_v)
@@ -1730,7 +1735,7 @@ class PyBoyMemoryView:
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
-                            assert (stop-start) // step == len(v), "slice does not match length of data"
+                            assert (stop - start) // step == len(v), "slice does not match length of data"
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM1[x] = next(_v)
@@ -1748,7 +1753,7 @@ class PyBoyMemoryView:
                 if not is_single:
                     # Writing slice of memory space
                     if hasattr(v, "__iter__"):
-                        assert (stop-start) // step == len(v), "slice does not match length of data"
+                        assert (stop - start) // step == len(v), "slice does not match length of data"
                         _v = iter(v)
                         for x in range(start, stop, step):
                             self.mb.cartridge.rambanks[bank, x] = next(_v)
@@ -1770,21 +1775,21 @@ class PyBoyMemoryView:
                 if not is_single:
                     # Writing slice of memory space
                     if hasattr(v, "__iter__"):
-                        assert (stop-start) // step == len(v), "slice does not match length of data"
+                        assert (stop - start) // step == len(v), "slice does not match length of data"
                         _v = iter(v)
                         for x in range(start, stop, step):
-                            self.mb.ram.internal_ram0[x + bank*0x1000] = next(_v)
+                            self.mb.ram.internal_ram0[x + bank * 0x1000] = next(_v)
                     else:
                         for x in range(start, stop, step):
-                            self.mb.ram.internal_ram0[x + bank*0x1000] = v
+                            self.mb.ram.internal_ram0[x + bank * 0x1000] = v
                 else:
-                    self.mb.ram.internal_ram0[start + bank*0x1000] = v
+                    self.mb.ram.internal_ram0[start + bank * 0x1000] = v
             else:
                 assert None, "Invalid memory address for bank"
         elif not is_single:
             # Writing slice of memory space
             if hasattr(v, "__iter__"):
-                assert (stop-start) // step == len(v), "slice does not match length of data"
+                assert (stop - start) // step == len(v), "slice does not match length of data"
                 _v = iter(v)
                 for x in range(start, stop, step):
                     self.mb.setitem(x, next(_v))

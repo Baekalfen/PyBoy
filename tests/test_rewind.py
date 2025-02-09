@@ -5,8 +5,13 @@ import pytest
 is_pypy = platform.python_implementation() == "PyPy"
 
 if is_pypy:
-    from pyboy.plugins.rewind import DeltaFixedAllocBuffers, CompressedFixedAllocBuffers, FixedAllocBuffers, \
-                                    FILL_VALUE, FIXED_BUFFER_SIZE
+    from pyboy.plugins.rewind import (
+        FILL_VALUE,
+        FIXED_BUFFER_SIZE,
+        CompressedFixedAllocBuffers,
+        DeltaFixedAllocBuffers,
+        FixedAllocBuffers,
+    )
 
 
 def write_bytes(buf, values):
@@ -130,7 +135,7 @@ class TestRewind:
         assert all(
             map(
                 lambda x: x[0] == x[1],
-                zip(buf.buffer[:60], [0, 1] + list(range(1, 20)) + [0x80] * 20 + [FILL_VALUE] * 20)
+                zip(buf.buffer[:60], [0, 1] + list(range(1, 20)) + [0x80] * 20 + [FILL_VALUE] * 20),
             )
         )
         assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], list(range(0x80, 0x80 + 20)) + [0] * 40)))
@@ -142,8 +147,8 @@ class TestRewind:
                 lambda x: x[0] == x[1],
                 zip(
                     buf.buffer[:61],
-                    [0, 1] + list(range(1, 20)) + [0x80] * 20 + [x ^ 0xFF for x in list(range(0x80, 0x80 + 20))]
-                )
+                    [0, 1] + list(range(1, 20)) + [0x80] * 20 + [x ^ 0xFF for x in list(range(0x80, 0x80 + 20))],
+                ),
             )
         )
         assert all(map(lambda x: x[0] == x[1], zip(buf.internal_buffer[:60], [0xFF] * 20 + [0] * 40)))
@@ -180,7 +185,7 @@ class TestRewind:
         buf = FixedAllocBuffers()
         # Fill almost entire buffer, as we want this section to be removed when we write more than the buffer can
         # contain.
-        write_bytes(buf, [0xAA] * (FIXED_BUFFER_SIZE-10))
+        write_bytes(buf, [0xAA] * (FIXED_BUFFER_SIZE - 10))
         buf.new()
         # We should have the first [0] section plus the one above.
         assert len(buf.sections) == 2

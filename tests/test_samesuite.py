@@ -25,7 +25,8 @@ saved_state = None
 
 
 @pytest.mark.parametrize(
-    "clean, gb_type, rom", [
+    "clean, gb_type, rom",
+    [
         (True, "dmg", "interrupt/ei_delay_halt.gb"),
         (True, "dmg", "apu/div_write_trigger.gb"),
         (True, "dmg", "apu/div_write_trigger_volume_10.gb"),
@@ -104,7 +105,7 @@ saved_state = None
         (True, "cgb", "dma/hdma_lcd_off.gb"),
         (True, "cgb", "dma/gbc_dma_cont.gb"),
         (True, "dmg", "ppu/blocking_bgpi_increase.gb"),
-    ]
+    ],
 )
 def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, default_rom):
     global saved_state

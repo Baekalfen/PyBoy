@@ -29,6 +29,7 @@ class Screen:
     If you're making an AI or bot, it's highly recommended to _not_ use this class for detecting objects on the screen.
     It's much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     """
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -119,7 +120,7 @@ class Screen:
             RGB image of (160, 144) pixels
         """
         if not Image:
-            logger.warning("Cannot generate screen image. Missing dependency \"Pillow\".")
+            logger.warning('Cannot generate screen image. Missing dependency "Pillow".')
         else:
             self._set_image()
 
@@ -164,8 +165,9 @@ class Screen:
 
     def _set_image(self):
         self.image = Image.frombuffer(
-            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-            self.mb.lcd.renderer._screenbuffer_raw
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
         )
 
     @property

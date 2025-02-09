@@ -37,7 +37,6 @@ saved_state = None
         # (False, "misc/boot_regs-cgb.gb"),
         # (False, "misc/ppu/vblank_stat_intr-C.gb"),
         # (False, "misc/bits/unused_hwio-C.gb"),
-
         # (False, "utils/bootrom_dumper.gb"),
         # (False, "utils/dump_boot_hwio.gb"),
         (False, "manual-only/sprite_priority.gb"),
@@ -144,7 +143,7 @@ saved_state = None
         (True, "emulator-only/mbc1/multicart_rom_8Mb.gb"),
         (True, "emulator-only/mbc1/rom_8Mb.gb"),
         (True, "emulator-only/mbc1/rom_16Mb.gb"),
-    ]
+    ],
 )
 def test_mooneye(clean, rom, mooneye_dir, default_rom):
     global saved_state

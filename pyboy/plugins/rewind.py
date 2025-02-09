@@ -14,6 +14,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 try:
     from cython import compiled
+
     cythonmode = compiled
 except ImportError:
     cythonmode = False
@@ -88,7 +89,7 @@ class Rewind(PyBoyPlugin):
 
 class FixedAllocBuffers(IntIOInterface):
     def __init__(self):
-        self.buffer = array.array("B", [0] * (FIXED_BUFFER_SIZE)) # NOQA: F821
+        self.buffer = array.array("B", [0] * (FIXED_BUFFER_SIZE))  # NOQA: F821
         for n in range(FIXED_BUFFER_SIZE):
             self.buffer[n] = FILL_VALUE
         self.sections = [0]
@@ -113,7 +114,7 @@ class FixedAllocBuffers(IntIOInterface):
         self.current_section += 1
         section_size = (self.section_head - self.section_tail + FIXED_BUFFER_SIZE) % FIXED_BUFFER_SIZE
         # Exponentially decaying moving average
-        self.avg_section_size = (0.9 * self.avg_section_size) + (0.1*section_size)
+        self.avg_section_size = (0.9 * self.avg_section_size) + (0.1 * section_size)
         self.section_tail = self.section_pointer
 
     def write(self, val):
@@ -138,7 +139,7 @@ class FixedAllocBuffers(IntIOInterface):
     def commit(self):
         if not self.section_head == self.section_pointer:
             raise Exception("Section wasn't read to finish. This would likely be unintentional")
-        self.sections = self.sections[:self.current_section + 1]
+        self.sections = self.sections[: self.current_section + 1]
 
     def seek_frame(self, frames):
         # TODO: Move for loop to Delta version
@@ -182,7 +183,7 @@ class CompressedFixedAllocBuffers(FixedAllocBuffers):
                 FixedAllocBuffers.write(self, 0)
                 FixedAllocBuffers.write(self, 0xFF)
 
-            if (rest != 0):
+            if rest != 0:
                 FixedAllocBuffers.write(self, 0)
                 FixedAllocBuffers.write(self, rest)
 
@@ -224,6 +225,7 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     I chose to keep the code simple at the expense of some edge cases acting different from the other buffers.
     When seeking, the last frame will be lost. This has no practical effect, and is only noticeble in unittesting.
     """
+
     def __init__(self):
         CompressedFixedAllocBuffers.__init__(self)
         self.internal_pointer = 0

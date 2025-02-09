@@ -36,8 +36,35 @@ lever = [255]
 
 # Solid blocks
 neutral_blocks = [
-    142, 143, 221, 222, 231, 232, 233, 234, 235, 236, 301, 302, 303, 304, 319, 340, 352, 353, 355, 356, 357, 358, 359,
-    360, 361, 362, 381, 382, 383
+    142,
+    143,
+    221,
+    222,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    301,
+    302,
+    303,
+    304,
+    319,
+    340,
+    352,
+    353,
+    355,
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    362,
+    381,
+    382,
+    383,
 ]
 moving_blocks = [230, 238, 239]
 pushable_blokcs = [128, 130, 354]
@@ -65,8 +92,19 @@ minimal_list = [
     base_scripts + plane + submarine,
     coin + mushroom + heart + star + lever,
     neutral_blocks + moving_blocks + pushable_blokcs + question_block + pipes,
-    goomba + koopa + plant + moth + flying_moth + sphinx + big_sphinx + fist + bill + projectiles + shell + explosion +
-    spike,
+    goomba
+    + koopa
+    + plant
+    + moth
+    + flying_moth
+    + sphinx
+    + big_sphinx
+    + fist
+    + bill
+    + projectiles
+    + shell
+    + explosion
+    + spike,
 ]
 for i, tile_list in enumerate(minimal_list):
     for tile in tile_list:
@@ -74,9 +112,33 @@ for i, tile_list in enumerate(minimal_list):
 
 mapping_compressed = np.zeros(TILES, dtype=np.uint8)
 compressed_list = [
-    base_scripts, plane, submarine, shoots, coin, mushroom, heart, star, lever, neutral_blocks, moving_blocks,
-    pushable_blokcs, question_block, pipes, goomba, koopa, plant, moth, flying_moth, sphinx, big_sphinx, fist, bill,
-    projectiles, shell, explosion, spike
+    base_scripts,
+    plane,
+    submarine,
+    shoots,
+    coin,
+    mushroom,
+    heart,
+    star,
+    lever,
+    neutral_blocks,
+    moving_blocks,
+    pushable_blokcs,
+    question_block,
+    pipes,
+    goomba,
+    koopa,
+    plant,
+    moth,
+    flying_moth,
+    sphinx,
+    big_sphinx,
+    fist,
+    bill,
+    projectiles,
+    shell,
+    explosion,
+    spike,
 ]
 for i, tile_list in enumerate(compressed_list):
     for tile in tile_list:
@@ -143,6 +205,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     ```
 
     """
+
     cartridge_title = "SUPER MARIOLAN"
     mapping_compressed = mapping_compressed
     """
@@ -200,6 +263,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
            [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]], dtype=uint32)
     ```
     """
+
     def __init__(self, *args, **kwargs):
         self.world = (0, 0)
         """
@@ -294,7 +358,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         level_block = self.pyboy.memory[0xC0AB]
         mario_x = self.pyboy.memory[0xC202]
         scx = self.pyboy.screen.tilemap_position_list[16][0]
-        self.level_progress = level_block*16 + (scx-7) % 16 + mario_x
+        self.level_progress = level_block * 16 + (scx - 7) % 16 + mario_x
 
     def set_lives_left(self, amount):
         """
@@ -352,8 +416,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
             self.pyboy.memory[0, i] = 0x00
 
         patch1 = [
-            0x3E, # LD A, d8
-            (world << 4) | (level & 0x0F), # d8
+            0x3E,  # LD A, d8
+            (world << 4) | (level & 0x0F),  # d8
         ]
 
         for i, byte in enumerate(patch1):
@@ -393,7 +457,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]: # "START" on the main menu
+            if self.tilemap_background[6:11, 13] == [284, 285, 266, 283, 285]:  # "START" on the main menu
                 break
 
         self.pyboy.tick(3, False)
@@ -401,14 +465,15 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         self.pyboy.tick(1, False)
 
         while True:
-            if unlock_level_select and self.pyboy.frame_count == 71: # An arbitrary frame count, where the write will work
+            if (
+                unlock_level_select and self.pyboy.frame_count == 71
+            ):  # An arbitrary frame count, where the write will work
                 self.pyboy.memory[ADDR_WIN_COUNT] = 2 if unlock_level_select else 0
                 break
             self.pyboy.tick(1, False)
 
             # "MARIO" in the title bar and 0 is placed at score
-            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and \
-               self.tilemap_background[5, 1] == 256:
+            if self.tilemap_background[0:5, 0] == [278, 266, 283, 274, 280] and self.tilemap_background[5, 1] == 256:
                 # Game has started
                 break
 
@@ -480,10 +545,10 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
     def __repr__(self):
         return (
             f"Super Mario Land: World {'-'.join([str(i) for i in self.world])}\n"
-            f"Coins: {self.coins}\n" +
-            f"lives_left: {self.lives_left}\n" +
-            f"Score: {self.score}\n" +
-            f"Time left: {self.time_left}\n" +
-            f"Level progress: {self.level_progress}\n" +
-            super().__repr__()
+            f"Coins: {self.coins}\n"
+            + f"lives_left: {self.lives_left}\n"
+            + f"Score: {self.score}\n"
+            + f"Time left: {self.time_left}\n"
+            + f"Level progress: {self.level_progress}\n"
+            + super().__repr__()
         )

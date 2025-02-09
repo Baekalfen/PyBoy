@@ -8,11 +8,20 @@ import re
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowNull", "Debug"]
 game_wrappers = [
-    "GameWrapperSuperMarioLand", "GameWrapperTetris", "GameWrapperKirbyDreamLand", "GameWrapperPokemonGen1",
-    "GameWrapperPokemonPinball"
+    "GameWrapperSuperMarioLand",
+    "GameWrapperTetris",
+    "GameWrapperKirbyDreamLand",
+    "GameWrapperPokemonGen1",
+    "GameWrapperPokemonPinball",
 ]
 plugins = [
-    "DisableInput", "AutoPause", "RecordReplay", "Rewind", "ScreenRecorder", "ScreenshotRecorder", "DebugPrompt"
+    "DisableInput",
+    "AutoPause",
+    "RecordReplay",
+    "Rewind",
+    "ScreenRecorder",
+    "ScreenshotRecorder",
+    "DebugPrompt",
 ] + game_wrappers
 all_plugins = windows + plugins
 
@@ -40,7 +49,6 @@ if __name__ == "__main__":
 
             # Find place to inject
             if line.strip().startswith("# foreach"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# foreach")
 
@@ -58,7 +66,6 @@ if __name__ == "__main__":
                 lines.append("# foreach end\n")
                 out_lines.extend([indentation + l for l in lines])
             elif line.strip().startswith("# plugins_enabled"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# plugins_enabled")
 
@@ -72,7 +79,6 @@ if __name__ == "__main__":
                 lines.append("# plugins_enabled end\n")
                 out_lines.extend([indentation + l for l in lines])
             elif line.strip().startswith("# yield_plugins"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# yield_plugins")
 
@@ -85,7 +91,6 @@ if __name__ == "__main__":
                 lines.append("# yield_plugins end\n")
                 out_lines.extend([indentation + l for l in lines])
             elif line.strip().startswith("# imports"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# imports")
 
@@ -98,7 +103,6 @@ if __name__ == "__main__":
                 lines.append("# imports end\n")
                 out_lines.extend([indentation + l for l in lines])
             elif line.strip().startswith("# gamewrapper"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# gamewrapper")
 
@@ -126,7 +130,6 @@ if __name__ == "__main__":
 
             # Find place to inject
             if line.strip().startswith("# plugin_cdef"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# plugin_cdef")
 
@@ -143,7 +146,6 @@ if __name__ == "__main__":
                 lines.append("# plugin_cdef end\n")
                 out_lines.extend([indentation + l for l in lines])
             elif line.strip().startswith("# imports"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# imports")
 
@@ -171,7 +173,6 @@ if __name__ == "__main__":
 
             # Find place to inject
             if line.strip().startswith("# docs exclude"):
-
                 lines = [line.strip() + "\n"]
                 indentation = " " * line.index("# docs exclude")
 
@@ -179,7 +180,7 @@ if __name__ == "__main__":
 
                 for p in (set(all_plugins) - set(game_wrappers)) | set(["manager", "manager_gen"]):
                     p_name = to_snake_case(p)
-                    lines.append(f"\"{p_name}\": False,\n")
+                    lines.append(f'"{p_name}": False,\n')
 
                 lines.append("# docs exclude end\n")
                 out_lines.extend([indentation + l for l in lines])

@@ -15,7 +15,7 @@ class MBC5(BaseMBC):
     def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
             # 8-bit register. All bits matter, so only 0b00001010 enables RAM.
-            self.rambank_enabled = (value == 0b00001010)
+            self.rambank_enabled = value == 0b00001010
         elif 0x2000 <= address < 0x3000:
             # 8-bit register used for the lower 8 bits of the ROM bank number.
             self.rombank_selected = ((self.rombank_selected & 0b100000000) | value) % self.external_rom_count

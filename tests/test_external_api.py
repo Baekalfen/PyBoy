@@ -39,7 +39,7 @@ def test_rtc_lock(pokemon_gold_rom):
     pyboy = PyBoy(pokemon_gold_rom, window="null")
     pyboy.rtc_lock_experimental(False)
 
-    #Enable external RAM
+    # Enable external RAM
     pyboy.memory[0x0000] = 0x0A
 
     # Reset seconds
@@ -51,18 +51,18 @@ def test_rtc_lock(pokemon_gold_rom):
     pyboy.memory[0xA000] = 0
 
     # Reset hours
-    pyboy.memory[0x4000] = 0x0a
+    pyboy.memory[0x4000] = 0x0A
     pyboy.memory[0xA000] = 0
 
     # Reset days (low)
-    pyboy.memory[0x4000] = 0x0b
+    pyboy.memory[0x4000] = 0x0B
     pyboy.memory[0xA000] = 0
 
     # Reset days (high)
-    pyboy.memory[0x4000] = 0x0c
+    pyboy.memory[0x4000] = 0x0C
     pyboy.memory[0xA000] = 0
 
-    time.sleep(2) # Induce a change in the seconds register
+    time.sleep(2)  # Induce a change in the seconds register
 
     # Pan docs:
     # When writing $00, and then $01 to this register, the current time becomes latched into the RTC registers
@@ -77,13 +77,13 @@ def test_rtc_lock(pokemon_gold_rom):
     pyboy.memory[0x4000] = 0x09
     assert pyboy.memory[0xA000] == 0
 
-    pyboy.memory[0x4000] = 0x0a
+    pyboy.memory[0x4000] = 0x0A
     assert pyboy.memory[0xA000] == 0
 
-    pyboy.memory[0x4000] = 0x0b
+    pyboy.memory[0x4000] = 0x0B
     assert pyboy.memory[0xA000] == 0
 
-    pyboy.memory[0x4000] = 0x0c
+    pyboy.memory[0x4000] = 0x0C
     assert pyboy.memory[0xA000] == 0
 
     pyboy.rtc_lock_experimental(True)
@@ -101,13 +101,13 @@ def test_rtc_lock(pokemon_gold_rom):
     pyboy.memory[0x4000] = 0x09
     assert pyboy.memory[0xA000] == 0
 
-    pyboy.memory[0x4000] = 0x0a
+    pyboy.memory[0x4000] = 0x0A
     assert pyboy.memory[0xA000] == 0
 
-    pyboy.memory[0x4000] = 0x0b
+    pyboy.memory[0x4000] = 0x0B
     assert pyboy.memory[0xA000] == 0
 
-    pyboy.memory[0x4000] = 0x0c
+    pyboy.memory[0x4000] = 0x0C
     assert pyboy.memory[0xA000] == 0
 
 
@@ -143,7 +143,7 @@ def test_tiles(default_rom):
     assert isinstance(tile, Tile)
 
     with pytest.raises(AssertionError):
-        pyboy.get_tile(384) # Not CGB
+        pyboy.get_tile(384)  # Not CGB
     tile = pyboy.get_tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
@@ -154,15 +154,16 @@ def test_tiles(default_rom):
     # data = tile.image_data()
     # assert data.shape == (8, 8)
 
-    assert [[x & 0xFFFFFF for x in y] for y in ndarray.view(dtype=np.uint32).reshape(8, 8)
-           ] == [[0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
-                 [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
-                 [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
-                 [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF],
-                 [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF],
-                 [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
-                 [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
-                 [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF]]
+    assert [[x & 0xFFFFFF for x in y] for y in ndarray.view(dtype=np.uint32).reshape(8, 8)] == [
+        [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+    ]
 
     for identifier in range(384):
         t = pyboy.get_tile(identifier)
@@ -193,15 +194,16 @@ def test_tiles_cgb(any_rom_cgb):
     # data = tile.image_data()
     # assert data.shape == (8, 8)
 
-    assert [[x for x in y]
-            for y in ndarray] == [[0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
-                                  [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
-                                  [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
-                                  [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF],
-                                  [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF],
-                                  [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
-                                  [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
-                                  [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF]]
+    assert [[x for x in y] for y in ndarray] == [
+        [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+        [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
+    ]
 
     for identifier in range(384):
         t = pyboy.get_tile(identifier)
@@ -219,7 +221,7 @@ def test_tiles_cgb(any_rom_cgb):
     pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
-    pyboy.get_tile(384) # Allowed on CGB
+    pyboy.get_tile(384)  # Allowed on CGB
 
 
 def test_screen_buffer_and_image(tetris_rom, boot_rom):
@@ -228,7 +230,7 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
 
     pyboy = PyBoy(tetris_rom, window="null", bootrom=boot_rom)
     pyboy.set_emulation_speed(0)
-    pyboy.tick(275, True) # Iterate to boot logo
+    pyboy.tick(275, True)  # Iterate to boot logo
 
     assert pyboy.screen.raw_buffer_dims == (144, 160)
     assert pyboy.screen.raw_buffer_format == cformat
@@ -236,16 +238,15 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
     boot_logo_hash = hashlib.sha256()
 
     if hasattr(pyboy.screen.raw_buffer, "tobytes"):
-        boot_logo_hash.update(pyboy.screen.raw_buffer.tobytes()) # PyPy
+        boot_logo_hash.update(pyboy.screen.raw_buffer.tobytes())  # PyPy
     else:
-        boot_logo_hash.update(pyboy.screen.raw_buffer.base) # Cython
+        boot_logo_hash.update(pyboy.screen.raw_buffer.base)  # Cython
     # assert boot_logo_hash.digest() == boot_logo_hash_predigested
     # assert isinstance(pyboy.screen.raw_buffer, bytes)
 
     # The output of `image` is supposed to be homogeneous, which means a shared hash between versions.
     boot_logo_png_hash_predigested = (
-        b"\x1b\xab\x90r^\xfb\x0e\xef\xf1\xdb\xf8\xba\xb6:^\x01"
-        b"\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$"
+        b"\x1b\xab\x90r^\xfb\x0e\xef\xf1\xdb\xf8\xba\xb6:^\x01" b"\xa4\x0eR&\xda9\xfcg\xf7\x0f|\xba}\x08\xb6$"
     )
     boot_logo_png_hash = hashlib.sha256()
     image = pyboy.screen.image.convert("RGB")
@@ -307,7 +308,7 @@ def test_tetris(tetris_rom):
     first_brick = False
     tile_map = pyboy.tilemap_background
     state_data = io.BytesIO()
-    for frame in range(5282): # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
+    for frame in range(5282):  # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
         image = pyboy.tick(1, True)
 
         assert pyboy.screen.get_tilemap_position() == ((0, 0), (-7, 0))
@@ -350,24 +351,28 @@ def test_tetris(tetris_rom):
                     print("First brick touched the bottom!")
 
                     game_board_matrix = list(tile_map[2:12, :18])
-                    assert game_board_matrix == ([[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 133, 133, 133],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 133, 47]])
+                    assert game_board_matrix == (
+                        [
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 133, 133, 133],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 133, 47],
+                        ]
+                    )
 
                     tile_map.use_tile_objects(True)
 
@@ -379,24 +384,28 @@ def test_tetris(tetris_rom):
 
                     game_board_matrix = [[x.tile_identifier for x in row] for row in tile_map[2:12, :18]]
                     tile_map.use_tile_objects(False)
-                    assert game_board_matrix == ([[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                                  [47, 47, 47, 47, 47, 47, 47, 133, 133, 133],
-                                                  [47, 47, 47, 47, 47, 47, 47, 47, 133, 47]])
+                    assert game_board_matrix == (
+                        [
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                            [47, 47, 47, 47, 47, 47, 47, 133, 133, 133],
+                            [47, 47, 47, 47, 47, 47, 47, 47, 133, 47],
+                        ]
+                    )
 
             if frame == 1012:
                 assert not first_brick
@@ -411,56 +420,61 @@ def test_tetris(tetris_rom):
                 assert s1.tiles[0] == s2.tiles[0], "Testing equal tiles of two different sprites"
 
                 # Test that both ways of getting identifiers work and provides the same result.
-                all_sprites = [(s.x, s.y, s.tiles[0].tile_identifier, s.on_screen)
-                               for s in [pyboy.get_sprite(n) for n in range(40)]]
-                all_sprites2 = [(s.x, s.y, s.tile_identifier, s.on_screen)
-                                for s in [pyboy.get_sprite(n) for n in range(40)]]
+                all_sprites = [
+                    (s.x, s.y, s.tiles[0].tile_identifier, s.on_screen)
+                    for s in [pyboy.get_sprite(n) for n in range(40)]
+                ]
+                all_sprites2 = [
+                    (s.x, s.y, s.tile_identifier, s.on_screen) for s in [pyboy.get_sprite(n) for n in range(40)]
+                ]
                 assert all_sprites == all_sprites2
 
                 # Verify data with known reference
                 # pyboy.screen.image.show()
-                assert all_sprites == ([
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (72, 128, 133, True),
-                    (80, 128, 133, True),
-                    (88, 128, 133, True),
-                    (80, 136, 133, True),
-                    (120, 112, 133, True),
-                    (128, 112, 133, True),
-                    (136, 112, 133, True),
-                    (128, 120, 133, True),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                    (-8, -16, 0, False),
-                ])
+                assert all_sprites == (
+                    [
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (72, 128, 133, True),
+                        (80, 128, 133, True),
+                        (88, 128, 133, True),
+                        (80, 136, 133, True),
+                        (120, 112, 133, True),
+                        (128, 112, 133, True),
+                        (136, 112, 133, True),
+                        (128, 120, 133, True),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                        (-8, -16, 0, False),
+                    ]
+                )
 
                 assert pyboy.memory[NEXT_TETROMINO] == 24
                 assert tetris.next_tetromino() == "T"
@@ -479,30 +493,34 @@ def test_tetris(tetris_rom):
 
         if frame == 1864:
             game_board_matrix = list(tile_map[2:12, :18])
-            assert game_board_matrix == ([[47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                                          [47, 47, 47, 133, 133, 133, 47, 133, 133, 133],
-                                          [47, 47, 47, 47, 133, 47, 47, 47, 133, 47]])
+            assert game_board_matrix == (
+                [
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
+                    [47, 47, 47, 133, 133, 133, 47, 133, 133, 133],
+                    [47, 47, 47, 47, 133, 47, 47, 47, 133, 47],
+                ]
+            )
             pre_load_game_board_matrix = game_board_matrix
 
-    state_data.seek(0) # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
+    state_data.seek(0)  # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
     tmp_state.seek(0)
-    for _f in [tmp_state, state_data]: # Tests both file-written state and in-memory state
-        pyboy.load_state(_f) # Reverts memory state to before we changed the Tetromino
+    for _f in [tmp_state, state_data]:  # Tests both file-written state and in-memory state
+        pyboy.load_state(_f)  # Reverts memory state to before we changed the Tetromino
         pyboy.tick(1, False)
         for frame in range(1016, 1865):
             pyboy.tick(1, False)
@@ -530,9 +548,9 @@ def test_tilemap_position_list(supermarioland_rom):
     # Get screen positions, and verify the values
     positions = pyboy.screen.tilemap_position_list
     for y in range(1, 16):
-        assert positions[y][0] == 0 # HUD
+        assert positions[y][0] == 0  # HUD
     for y in range(16, 144):
-        assert positions[y][0] >= 50 # Actual screen position
+        assert positions[y][0] >= 50  # Actual screen position
         last_y = positions[y][0]
 
     # Progress another 10 frames to see and increase in SCX
@@ -541,9 +559,9 @@ def test_tilemap_position_list(supermarioland_rom):
     # Get screen positions, and verify the values
     positions = pyboy.screen.tilemap_position_list
     for y in range(1, 16):
-        assert positions[y][0] == 0 # HUD
+        assert positions[y][0] == 0  # HUD
     for y in range(16, 144):
-        assert positions[y][0] >= last_y + 10 # Actual screen position
+        assert positions[y][0] >= last_y + 10  # Actual screen position
 
     pyboy.stop(save=False)
 
@@ -552,26 +570,26 @@ def test_button(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
-    assert len(pyboy.events) == 0 # Nothing injected yet
+    assert len(pyboy.events) == 0  # Nothing injected yet
     pyboy.button("start")
-    assert len(pyboy.events) == 1 # Button press immediately
+    assert len(pyboy.events) == 1  # Button press immediately
     assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
     pyboy.tick(1, False)
-    assert len(pyboy.events) == 1 # Button release delayed
+    assert len(pyboy.events) == 1  # Button release delayed
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
     pyboy.tick(1, False)
-    assert len(pyboy.events) == 0 # No input
+    assert len(pyboy.events) == 0  # No input
 
-    assert len(pyboy.events) == 0 # Nothing injected yet
+    assert len(pyboy.events) == 0  # Nothing injected yet
     pyboy.button("start", 3)
-    assert len(pyboy.events) == 1 # Button press immediately
+    assert len(pyboy.events) == 1  # Button press immediately
     assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
     pyboy.tick(1, False)
-    assert len(pyboy.events) == 0 # No input
+    assert len(pyboy.events) == 0  # No input
     pyboy.tick(1, False)
-    assert len(pyboy.events) == 0 # No input
+    assert len(pyboy.events) == 0  # No input
     pyboy.tick(1, False)
-    assert len(pyboy.events) == 1 # Button release delayed
+    assert len(pyboy.events) == 1  # Button release delayed
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
     pyboy.tick(1, False)
-    assert len(pyboy.events) == 0 # No input
+    assert len(pyboy.events) == 0  # No input

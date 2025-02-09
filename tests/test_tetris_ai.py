@@ -183,7 +183,7 @@ if __name__ == '__main__':
 
 @pytest.mark.skipif(
     os.path.isfile("extras/README/7.gif") or platform.system() == "Windows",
-    reason="This test takes too long for regular use"
+    reason="This test takes too long for regular use",
 )
 def test_tetris_ai(git_tetris_ai, tetris_rom):
     script_py = "tetris_gif.py"

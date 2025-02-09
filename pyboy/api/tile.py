@@ -23,6 +23,7 @@ except ImportError:
 
 try:
     from cython import compiled
+
     cythonmode = compiled
 except ImportError:
     cythonmode = False
@@ -48,7 +49,7 @@ class Tile:
         else:
             assert 0 <= identifier < TILES, "Identifier out of range"
 
-        self.data_address = LOW_TILEDATA + (16 * (identifier%TILES))
+        self.data_address = LOW_TILEDATA + (16 * (identifier % TILES))
         """
         The tile data is defined in a specific area of the Game Boy. This function returns the address of the tile data
         corresponding to the tile identifier. It is advised to use `pyboy.api.tile.Tile.image` or one of the
@@ -119,7 +120,7 @@ class Tile:
             Image of tile in 8x8 pixels and RGBA colors.
         """
         if Image is None:
-            logger.error(f"{__name__}: Missing dependency \"Pillow\".")
+            logger.error(f'{__name__}: Missing dependency "Pillow".')
             return None
 
         if cythonmode:
@@ -182,7 +183,7 @@ class Tile:
             Image data of tile in 8x8 pixels and RGB colors.
         """
         self.data = np.zeros((8, 8), dtype=np.uint32)
-        for k in range(0, 16, 2): # 2 bytes for each line
+        for k in range(0, 16, 2):  # 2 bytes for each line
             if self.vram_bank == 0:
                 byte1 = self.mb.lcd.VRAM0[self.data_address + k - VRAM_OFFSET]
                 byte2 = self.mb.lcd.VRAM0[self.data_address + k + 1 - VRAM_OFFSET]

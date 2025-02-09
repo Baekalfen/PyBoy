@@ -22,6 +22,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
+
     cartridge_title = "KIRBY DREAM LA"
 
     def __init__(self, *args, **kwargs):
@@ -43,7 +44,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         self.score = 0
         score_digits = 4
         for n in range(score_digits):
-            self.score += self.pyboy.memory[0xD070 + n] * 10**(score_digits - n)
+            self.score += self.pyboy.memory[0xD070 + n] * 10 ** (score_digits - n)
 
         # Check if game is over
         prev_health = self.health
@@ -69,7 +70,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         # Boot screen
         while True:
             self.pyboy.tick(1, False)
-            if self.tilemap_background[0:3, 16] == [231, 224, 235]: # 'HAL' on the first screen
+            if self.tilemap_background[0:3, 16] == [231, 224, 235]:  # 'HAL' on the first screen
                 break
 
         # Wait for transition to finish (start screen)
@@ -135,9 +136,9 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
 
     def __repr__(self):
         return (
-            f"Kirby Dream Land:\n" +
-            f"Score: {self.score}\n" +
-            f"Health: {self.health}\n" +
-            f"Lives left: {self.lives_left}\n" +
-            super().__repr__()
+            f"Kirby Dream Land:\n"
+            + f"Score: {self.score}\n"
+            + f"Health: {self.health}\n"
+            + f"Lives left: {self.lives_left}\n"
+            + super().__repr__()
         )
