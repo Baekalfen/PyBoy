@@ -428,6 +428,7 @@ class PyBoy:
             self.__rendering(render)
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             self.mb.lcd.frame_done = False
+            self.mb.sound.clear_buffer()  # TODO: Only sample on last frame
             while self.mb.tick():
                 # Breakpoint reached
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed

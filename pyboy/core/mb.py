@@ -66,9 +66,11 @@ class Motherboard:
                 randomize=randomize,
             )
 
+        sound_emulated = True
+        sound_enabled = True
         # QUIRK: Force emulation of sound (muted)
         sound_emulated |= self.cartridge.gamename == "ZELDA DIN"
-        self.sound = sound.Sound(sound_enabled, sound_emulated)
+        self.sound = sound.Sound(sound_enabled, sound_emulated, cgb)
 
         self.key1 = 0
         self.double_speed = False
@@ -94,6 +96,7 @@ class Motherboard:
         if bit0 == 1:
             self.double_speed = not self.double_speed
             self.lcd.speed_shift = 1 if self.double_speed else 0
+            self.sound.speed_shift = 1 if self.double_speed else 0
             logger.debug("CGB double speed is now: %d", self.double_speed)
             self.key1 ^= 0b10000001
 
@@ -317,7 +320,7 @@ class Motherboard:
                         # STAT (_cycles_to_interrupt) vs. VBLANK interrupt (_cycles_to_interrupt) vs. end frame (_cycles_to_frame)
                         self.lcd._cycles_to_interrupt,  # TODO: Be more agreesive. Only if actual interrupt enabled.
                         self.lcd._cycles_to_frame,
-                        self.sound._cycles_to_interrupt,  # TODO: Not implemented
+                        self.sound._cycles_to_interrupt,
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles,
                     ),
@@ -329,7 +332,7 @@ class Motherboard:
             # TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
-            self.sound.tick(self.cpu.cycles, self.double_speed)
+            self.sound.tick(self.cpu.cycles)
 
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
@@ -339,9 +342,6 @@ class Motherboard:
 
             if self.breakpoint_singlestep:
                 break
-
-        # TODO: Move SDL2 sync to plugin
-        self.sound.sync()
 
         return self.breakpoint_singlestep
 
@@ -395,7 +395,7 @@ class Motherboard:
             elif i == 0xFF0F:
                 return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
-                self.sound.tick(self.cpu.cycles, self.double_speed)
+                self.sound.tick(self.cpu.cycles)
                 return self.sound.get(i - 0xFF10)
             elif 0xFF40 <= i <= 0xFF4B:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
@@ -514,6 +514,15 @@ class Motherboard:
                     self.cpu.set_interruptflag(INTR_TIMER)
 
                 if i == 0xFF04:
+                    # Pan docs:
+                    # “DIV-APU” ... is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0 ...
+                    # the counter can be made to increase faster by writing to DIV while its relevant bit is set (which
+                    # clears DIV, and triggers the falling edge).
+                    if self.timer.DIV & (0b1_0000 << self.sound.speed_shift):
+                        self.sound.tick(self.cpu.cycles)  # Process outstanding cycles
+                        # TODO: Force a falling edge tick
+                        self.sound.reset_apu_div()
+
                     self.timer.reset()
                 elif i == 0xFF05:
                     self.timer.TIMA = value
@@ -524,7 +533,7 @@ class Motherboard:
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
-                self.sound.tick(self.cpu.cycles, self.double_speed)
+                self.sound.tick(self.cpu.cycles)
                 self.sound.set(i - 0xFF10, value)
             elif 0xFF40 <= i <= 0xFF4B:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
