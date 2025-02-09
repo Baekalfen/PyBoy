@@ -67,7 +67,7 @@ cdef class LCD:
 
     # CGB
     cdef bint cgb
-    cdef bint double_speed
+    cdef uint8_t speed_shift
     cdef uint8_t[8 * 1024] VRAM1
     cdef VBKregister vbk
     cdef PaletteIndexRegister bcps
