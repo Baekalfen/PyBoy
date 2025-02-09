@@ -472,9 +472,6 @@ class Renderer:
 
         self.buffer_dims = (ROWS, COLS)
 
-        # self.clearcache = False
-        # self.tiles_changed0 = set([])
-
         # Init buffers as white
         self._screenbuffer_raw = array("B", [0x00] * (ROWS * COLS * 4))
         self._screenbuffer_attributes_raw = array("B", [0x00] * (ROWS * COLS))
