@@ -5,6 +5,7 @@
 
 cimport cython
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
+from libc.math cimport ceil
 
 ##############################################################
 # Buffer classes
@@ -32,6 +33,9 @@ cdef class IntIOWrapper(IntIOInterface):
 # Misc
 
 cpdef uint8_t color_code(uint8_t, uint8_t, uint8_t) noexcept nogil
+
+cdef inline uint64_t double_to_uint64_ceil(double val) noexcept nogil:
+    return <uint64_t> ceil(val)
 
 ##############################################################
 # Window Events

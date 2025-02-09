@@ -9,6 +9,7 @@ from cpython.array cimport array
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t
 
 from pyboy.core.lcd cimport Renderer
+from pyboy.core.sound cimport Sound
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport WindowEvent
@@ -32,11 +33,12 @@ cdef class PyBoyPlugin:
 
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):
-
+    cdef bint sound_support
     cdef int scale
     cdef int[2] _scaledresolution
     cdef bint enable_title
     cdef Renderer renderer
+    cdef Sound sound
 
     cdef int64_t _ftime
     cdef bint frame_limiter(self, int) noexcept

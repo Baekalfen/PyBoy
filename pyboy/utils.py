@@ -5,10 +5,14 @@
 
 __all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
-STATE_VERSION = 13
+STATE_VERSION = 14
 
 
 class PyBoyException(Exception):
+    pass
+
+
+class PyBoyInternalError(PyBoyException):
     pass
 
 
@@ -173,6 +177,15 @@ def color_code(byte1, byte2, offset):
     """
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
+
+if not cython_compiled:
+    exec(
+        """
+from math import ceil
+def double_to_uint64_ceil(val):
+    return ceil(val)
+"""
+    )
 
 ##############################################################
 # Window Events
