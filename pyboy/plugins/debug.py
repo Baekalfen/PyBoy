@@ -4,6 +4,7 @@
 #
 
 import os
+import time
 import zlib
 from array import array
 from base64 import b64decode
@@ -17,6 +18,7 @@ from pyboy.utils import WindowEvent
 
 try:
     import sdl2
+    from sdl2.ext import get_events
 except ImportError:
     sdl2 = None
 
@@ -206,6 +208,11 @@ class Debug(PyBoyWindowPlugin):
         self.sprite.stop()
         self.spriteview.stop()
         self.memory.stop()
+        if self.sdl2_event_pump:
+            for _ in range(3):  # At least 2 to close
+                get_events()
+                time.sleep(0.1)
+            sdl2.SDL_Quit()
 
     def enabled(self):
         if self.pyboy_argv.get("debug"):
