@@ -3,9 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from array import array
+import time
+from ctypes import POINTER, c_ubyte, c_void_p, cast
 
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.utils import WindowEvent, WindowEventMouse
+from pyboy.utils import WindowEvent, WindowEventMouse, cython_compiled
 
 try:
     import sdl2
@@ -19,6 +22,9 @@ from pyboy.utils import PyBoyDependencyError
 logger = pyboy.logging.get_logger(__name__)
 
 ROWS, COLS = 144, 160
+
+SOUND_DESYNC_THRESHOLD = 4
+SOUND_PREBUFFER_THRESHOLD = 2
 
 # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
 # fmt: off
@@ -156,7 +162,7 @@ class WindowSDL2(PyBoyWindowPlugin):
 
         if not self.enabled():
             return
-        sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
+        assert sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER) >= 0
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy",
@@ -175,6 +181,43 @@ class WindowSDL2(PyBoyWindowPlugin):
 
         sdl2.SDL_ShowWindow(self._window)
         self.fullscreen = False
+
+        # Helps Cython access mb.sound
+        self.init_audio(mb)
+
+    def init_audio(self, mb):
+        if mb.sound.enabled and mb.sound.emulate:
+            if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
+                # NOTE: We have to keep spec variables alive to avoid segfault
+                self.spec_want = sdl2.SDL_AudioSpec(self.mb.sound.sample_rate, sdl2.AUDIO_S8, 2, 128)
+                self.spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
+                self.sound_device = sdl2.SDL_OpenAudioDevice(None, 0, self.spec_want, self.spec_have, 0)
+
+                if self.sound_device > 1:
+                    assert self.spec_have.freq == self.mb.sound.sample_rate
+                    assert self.spec_have.format == sdl2.AUDIO_S8
+                    assert self.spec_have.channels == 2
+                    self.sound_support = True
+
+                    self.mixingbuffer = array(self.sound.buffer_format, [0] * self.sound.audiobuffer_length)
+                    if cython_compiled:
+                        audiobuffer, _ = self.sound.audiobuffer.base.buffer_info()
+                        mixingbuffer, _ = self.mixingbuffer.base.buffer_info()
+                    else:
+                        audiobuffer, _ = self.sound.audiobuffer.buffer_info()
+                        mixingbuffer, _ = self.mixingbuffer.buffer_info()
+                    self.audiobuffer_p = cast(c_void_p(audiobuffer), POINTER(c_ubyte))
+                    self.mixingbuffer_p = cast(c_void_p(mixingbuffer), POINTER(c_ubyte))
+
+                    sdl2.SDL_PauseAudioDevice(self.sound_device, 0)
+                else:
+                    self.sound_support = False
+                    logger.warning("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
+            else:
+                self.sound_support = False
+                logger.warning("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
+        else:
+            self.sound_support = False
 
     def set_title(self, title):
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
@@ -196,6 +239,28 @@ class WindowSDL2(PyBoyWindowPlugin):
         sdl2.SDL_RenderPresent(self._sdlrenderer)
         sdl2.SDL_RenderClear(self._sdlrenderer)
 
+        if self.sound_support:
+            queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
+
+            # NOTE: Fixes audio after running more than 1x realtime
+            if queued_bytes > 2 * self.mb.sound.samples_per_frame * (
+                SOUND_PREBUFFER_THRESHOLD + SOUND_DESYNC_THRESHOLD
+            ):
+                logger.debug(
+                    "Sound device buffer drifting above threshold (%s frames), resetting buffer", SOUND_DESYNC_THRESHOLD
+                )
+                sdl2.SDL_ClearQueuedAudio(self.sound_device)
+
+            length = self.sound.audiobuffer_head
+            # TODO: Maybe combine the zero and mixing steps
+            for i in range(length):
+                self.mixingbuffer[i] = 0
+            sdl2.SDL_MixAudioFormat(
+                self.mixingbuffer_p, self.audiobuffer_p, sdl2.AUDIO_S8, length, self.mb.sound.volume * 128 // 100
+            )
+
+            sdl2.SDL_QueueAudio(self.sound_device, self.mixingbuffer_p, length)
+
     def enabled(self):
         if self.pyboy_argv.get("window") in ("SDL2", None):
             if not sdl2:
@@ -206,7 +271,12 @@ class WindowSDL2(PyBoyWindowPlugin):
             return False
 
     def stop(self):
-        sdl2.SDL_DestroyWindow(self._window)
-        for _ in range(10):  # At least 2 to close
-            get_events()
-        sdl2.SDL_Quit()
+        if self.enabled():
+            if self.sound_support:
+                sdl2.SDL_CloseAudioDevice(self.sound_device)
+
+            sdl2.SDL_DestroyWindow(self._window)
+            for _ in range(3):  # At least 2 to close
+                get_events()
+                time.sleep(0.1)
+            sdl2.SDL_Quit()
