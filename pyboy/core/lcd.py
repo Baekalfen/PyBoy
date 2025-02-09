@@ -44,13 +44,14 @@ class LCD:
         self._LCDC = LCDCRegister(0)
         self._STAT = STATRegister()  # Bit 7 is always set.
 
+        self.speed_shift = 0
         self.clock = 0
-        self.clock_target = FRAME_CYCLES
+        self.clock_target = FRAME_CYCLES << self.speed_shift
         self.frame_done = False
         self.first_frame = False
         self.reset = False
         self._cycles_to_interrupt = 0
-        self._cycles_to_frame = FRAME_CYCLES - self.clock
+        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
         self.next_stat_mode = 2
         self.LY = 0x00
         self._STAT.set_mode(0)
@@ -62,12 +63,11 @@ class LCD:
         self.WY = 0x00
         self.WX = 0x00
 
-        self.double_speed = False
         self.cgb = cgb
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
         self.last_cycles = 0
         self._cycles_to_interrupt = 0
-        self._cycles_to_frame = FRAME_CYCLES - self.clock
+        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -119,10 +119,9 @@ class LCD:
             self.reset = True
 
     def cycles_to_mode0(self):
-        multiplier = 2 if self.double_speed else 1
-        mode2 = 80 * multiplier
-        mode3 = 170 * multiplier
-        mode1 = 456 * multiplier
+        mode2 = 80 << self.speed_shift
+        mode3 = 170 << self.speed_shift
+        mode1 = 456 << self.speed_shift
 
         mode = self._STAT._mode
         # Remaining cycles for this already active mode
@@ -164,7 +163,7 @@ class LCD:
 
                 # Reset to new frame and start from mode 2
                 self.LY = 0
-                self.clock %= FRAME_CYCLES
+                self.clock %= FRAME_CYCLES << self.speed_shift
                 self.clock_target = 0
                 self.next_stat_mode = 2
 
@@ -172,8 +171,7 @@ class LCD:
                 interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
 
                 # self._STAT._mode == 2:  # Searching OAM
-                multiplier = 2 if self.double_speed else 1
-                self.clock_target += 80 * multiplier
+                self.clock_target += 80 << self.speed_shift
                 self.next_stat_mode = 3
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
@@ -187,19 +185,18 @@ class LCD:
                 #   Mode 3  _33____33____33____33____33____33__________________3___
                 #   Mode 0  ___000___000___000___000___000___000________________000
                 #   Mode 1  ____________________________________11111111111111_____
-                multiplier = 2 if self.double_speed else 1
 
                 # LCD state machine
                 if self._STAT._mode == 2:  # Searching OAM
                     self.LY += 1
-                    self.clock_target += 80 * multiplier
+                    self.clock_target += 80 << self.speed_shift
                     self.next_stat_mode = 3
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
                 elif self._STAT._mode == 3:
-                    self.clock_target += 170 * multiplier
+                    self.clock_target += 170 << self.speed_shift
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0:  # HBLANK
-                    self.clock_target += 206 * multiplier
+                    self.clock_target += 206 << self.speed_shift
 
                     # Recorded for API
                     bx, by = self.getviewport()
@@ -219,7 +216,7 @@ class LCD:
                     else:
                         self.next_stat_mode = 1
                 elif self._STAT._mode == 1:  # VBLANK
-                    self.clock_target += 456 * multiplier
+                    self.clock_target += 456 << self.speed_shift
                     self.next_stat_mode = 1
 
                     self.LY += 1
@@ -236,15 +233,15 @@ class LCD:
             else:
                 # See also `self.set_lcdc`
                 self.frame_done = True
-                self.clock %= FRAME_CYCLES
-                self.clock_target = FRAME_CYCLES
+                self.clock %= FRAME_CYCLES << self.speed_shift
+                self.clock_target = FRAME_CYCLES << self.speed_shift
 
                 # Renderer
                 self.renderer.blank_screen(self)
 
         self._cycles_to_interrupt = self.clock_target - self.clock
         # TODO: STAT Cycles to interrupts
-        self._cycles_to_frame = FRAME_CYCLES - self.clock
+        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
         return interrupt_flag
 
     def save_state(self, f):
@@ -277,7 +274,7 @@ class LCD:
             f.write(self._scanlineparameters[y][4])
 
         f.write(self.cgb)
-        f.write(self.double_speed)
+        f.write(self.speed_shift)
         f.write(self.frame_done)
         f.write(self.first_frame)
         f.write(self.reset)
@@ -334,7 +331,7 @@ class LCD:
             if not self.cgb and _cgb:
                 raise PyBoyException("Loading state which *is* CGB-mode, but PyBoy *is not* in CGB mode!")
             self.cgb = _cgb
-            self.double_speed = f.read()
+            self.speed_shift = f.read()
             if state_version >= 13:
                 self.frame_done = f.read()
                 self.first_frame = f.read()
@@ -345,7 +342,7 @@ class LCD:
             self.clock = f.read_64bit()
             self.clock_target = f.read_64bit()
             self._cycles_to_interrupt = self.clock_target - self.clock
-            self._cycles_to_frame = FRAME_CYCLES - self.clock
+            self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
             self.next_stat_mode = f.read()
 
             if self.cgb:
