@@ -119,8 +119,6 @@ cdef class Renderer:
     cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
     cdef str color_format
     cdef tuple buffer_dims
-    cdef bint clearcache
-    cdef bint double_speed
     cdef bint cgb
 
     cdef array _screenbuffer_raw
