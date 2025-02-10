@@ -36,12 +36,40 @@ class PyBoyDependencyError(PyBoyException):
     pass
 
 
-class PillowImportError:
+class PyBoyFeatureDisabledError(PyBoyException):
+    pass
+
+
+class AccessError:
+    exception_type = PyBoyException
+    exception_message = "Access Error"
+
     def __bool__(self):
         return False
 
     def __getattribute__(self, name):
-        raise PyBoyDependencyError("Missing depencency Pillow!")
+        if name in ("exception_type", "exception_message"):
+            return super().__getattribute__(name)
+        raise self.exception_type(self.exception_message)
+
+    def __setattribute__(self, *args):
+        raise self.exception_type(self.exception_message)
+
+    def __getitem__(self, *args):
+        raise self.exception_type(self.exception_message)
+
+    def __setitem__(self, *args):
+        raise self.exception_type(self.exception_message)
+
+
+class PillowImportError(AccessError):
+    exception_type = PyBoyDependencyError
+    exception_message = "Missing depencency Pillow!"
+
+
+class SoundEnabledError(AccessError):
+    exception_type = PyBoyFeatureDisabledError
+    exception_message = "Sound is not enabled!"
 
 
 try:
