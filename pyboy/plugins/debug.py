@@ -77,8 +77,6 @@ class Debug(PyBoyWindowPlugin):
         if not self.enabled():
             return
 
-        self.cgb = mb.cartridge_cgb
-
         self.sdl2_event_pump = self.pyboy_argv.get("window") != "SDL2"
         if self.sdl2_event_pump:
             sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
@@ -238,7 +236,6 @@ def make_buffer(w, h, depth=4):
 class BaseDebugWindow(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv, *, scale, title, width, height, pos_x, pos_y):
         super().__init__(pyboy, mb, pyboy_argv)
-        self.cgb = mb.cgb
         self.scale = scale
         self.width, self.height = width, height
         self.base_title = title
