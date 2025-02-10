@@ -83,7 +83,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
     def frame_limiter(self, speed):
         self._ftime += int((1.0 / (60.0 * speed)) * 1_000_000_000)
         now = time.perf_counter_ns()
-        if self._ftime > now:
+        if speed > 0 and self._ftime > now:
             delay = (self._ftime - now) // 1_000_000
             time.sleep(delay / 1000)
         else:
