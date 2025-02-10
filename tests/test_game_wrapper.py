@@ -20,9 +20,10 @@ def test_game_wrapper_basics(default_rom):
 
 def test_game_wrapper_sprites_tall(default_rom):
     pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
     generic_wrapper = pyboy.game_wrapper
     assert generic_wrapper is not None
-    pyboy.tick(120)
+    pyboy.tick(120, False)
 
     pyboy.memory[LCDC_OFFSET] = (
         0b10000000  # LCD On
