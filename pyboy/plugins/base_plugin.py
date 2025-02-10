@@ -35,6 +35,7 @@ class PyBoyPlugin:
             self.pyboy = pyboy
             self.mb = mb
             self.pyboy_argv = pyboy_argv
+        self.cgb = mb.cgb
 
     def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.pyboy = pyboy
