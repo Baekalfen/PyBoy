@@ -127,7 +127,7 @@ class Sound:
                 dtype=np.int8,
             ).reshape(self.mb.sound.audiobuffer_length // 2, 2)
         else:
-            self.raw_ndarray = None
+            self.raw_ndarray = utils.SoundEnabledError()
 
     @property
     def raw_buffer_head(self):
