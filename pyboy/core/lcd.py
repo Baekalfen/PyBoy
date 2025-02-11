@@ -210,7 +210,7 @@ class LCD:
                 self.renderer.blank_screen(self)
 
         self._cycles_to_interrupt = self.clock_target - self.clock
-        self._cycles_to_frame = self.clock - FRAME_CYCLES
+        self._cycles_to_frame = FRAME_CYCLES - self.clock
         return interrupt_flag
 
     def save_state(self, f):
@@ -245,6 +245,7 @@ class LCD:
         # CGB
         f.write(self.cgb)
         f.write(self.double_speed)
+        f.write(self.frame_done)
         f.write_64bit(self.last_cycles)
         f.write_64bit(self.clock)
         f.write_64bit(self.clock_target)
@@ -300,12 +301,15 @@ class LCD:
                 raise PyBoyException("Loading state which *is* CGB-mode, but PyBoy *is not* in CGB mode!")
             self.cgb = _cgb
             self.double_speed = f.read()
+            if state_version >= 13:
+                self.frame_done = f.read()
 
             if state_version >= 12:
                 self.last_cycles = f.read_64bit()
             self.clock = f.read_64bit()
             self.clock_target = f.read_64bit()
-            self._cycles_to_frame = self.clock - FRAME_CYCLES
+            self._cycles_to_interrupt = self.clock_target - self.clock
+            self._cycles_to_frame = FRAME_CYCLES - self.clock
             self.next_stat_mode = f.read()
 
             if self.cgb:
