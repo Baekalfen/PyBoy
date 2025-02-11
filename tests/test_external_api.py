@@ -14,6 +14,7 @@ from PIL import ImageChops
 
 from pyboy import PyBoy
 from pyboy.api.tile import Tile
+from pyboy.api.constants import TILES_CGB, TILES
 from pyboy.utils import IntIOWrapper, PyBoyAssertException, PyBoyException, PyBoyOutOfBoundsException, WindowEvent
 
 from .conftest import BOOTROM_FRAMES_UNTIL_LOGO
@@ -145,8 +146,10 @@ def test_tiles(default_rom):
     tile = pyboy.tilemap_window.tile(0, 0)
     assert isinstance(tile, Tile)
 
+    pyboy.get_tile(TILES - 1)  # DMG
     with pytest.raises(PyBoyOutOfBoundsException):
-        pyboy.get_tile(384)  # Not CGB
+        pyboy.get_tile(TILES)  # Not CGB
+
     tile = pyboy.get_tile(1)
     image = tile.image()
     assert isinstance(image, PIL.Image.Image)
@@ -168,13 +171,13 @@ def test_tiles(default_rom):
         [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
     ]
 
-    for identifier in range(384):
+    for identifier in range(TILES):
         t = pyboy.get_tile(identifier)
         assert t.tile_identifier == identifier
     with pytest.raises(PyBoyException):
         pyboy.get_tile(-1)
     with pytest.raises(PyBoyException):
-        pyboy.get_tile(385)
+        pyboy.get_tile(TILES_CGB)
 
     pyboy.stop(save=False)
 
@@ -197,7 +200,7 @@ def test_tiles_cgb(any_rom_cgb):
     # data = tile.image_data()
     # assert data.shape == (8, 8)
 
-    assert [[x for x in y] for y in ndarray] == [
+    assert [[x & 0xFFFFFF for x in y] for y in ndarray.view(dtype=np.uint32).reshape(8, 8)] == [
         [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
         [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
         [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF],
@@ -208,23 +211,15 @@ def test_tiles_cgb(any_rom_cgb):
         [0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF, 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF],
     ]
 
-    for identifier in range(384):
+    for identifier in range(TILES_CGB):
         t = pyboy.get_tile(identifier)
         assert t.tile_identifier == identifier
     with pytest.raises(PyBoyException):
         pyboy.get_tile(-1)
     with pytest.raises(PyBoyException):
-        pyboy.get_tile(385)
+        pyboy.get_tile(TILES_CGB)
 
     pyboy.stop(save=False)
-
-
-def test_tiles_cgb(any_rom_cgb):
-    pyboy = PyBoy(any_rom_cgb, window="null")
-    pyboy.set_emulation_speed(0)
-    pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
-
-    pyboy.get_tile(384)  # Allowed on CGB
 
 
 def test_screen_buffer_and_image(tetris_rom, boot_rom):
