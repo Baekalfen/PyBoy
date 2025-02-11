@@ -12,9 +12,9 @@ class AutoPause(PyBoyPlugin):
     def handle_events(self, events):
         for event in events:
             if event == WindowEvent.WINDOW_UNFOCUS:
-                events.append(WindowEvent.PAUSE)
+                events.append(WindowEvent(WindowEvent.PAUSE))
             elif event == WindowEvent.WINDOW_FOCUS:
-                events.append(WindowEvent.UNPAUSE)
+                events.append(WindowEvent(WindowEvent.UNPAUSE))
         return events
 
     def enabled(self):
