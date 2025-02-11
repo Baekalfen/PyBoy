@@ -351,11 +351,12 @@ class WindowEvent:
     def __init__(self, event):
         self.event = event
 
-    def __eq__(self, x):
-        if isinstance(x, int):
-            return self.event == x
-        else:
-            return self.event == x.event
+    def __eq__(self, other):
+        if isinstance(other, WindowEvent):
+            return self.event == other.event
+        elif isinstance(other, int):
+            return self.event == other
+        return NotImplemented
 
     def __int__(self):
         return self.event
