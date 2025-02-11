@@ -50,7 +50,7 @@ class Rewind(PyBoyPlugin):
                 self.pyboy._pause()
                 if self.rewind_buffer.seek_frame(1):
                     self.mb.load_state(self.rewind_buffer)
-                    events.append(WindowEvent._INTERNAL_RENDERER_FLUSH)
+                    events.append(WindowEvent(WindowEvent._INTERNAL_RENDERER_FLUSH))
                     self.rewind_speed = min(self.rewind_speed * 1.1, 5)
                 else:
                     logger.info("Rewind limit reached")
@@ -60,7 +60,7 @@ class Rewind(PyBoyPlugin):
                 self.pyboy._pause()
                 if self.rewind_buffer.seek_frame(-1):
                     self.mb.load_state(self.rewind_buffer)
-                    events.append(WindowEvent._INTERNAL_RENDERER_FLUSH)
+                    events.append(WindowEvent(WindowEvent._INTERNAL_RENDERER_FLUSH))
                     self.rewind_speed = min(self.rewind_speed * 1.1, 5)
                 else:
                     logger.info("Rewind limit reached")
