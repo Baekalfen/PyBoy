@@ -10,7 +10,7 @@ import pytest
 import numpy as np
 from pyboy import PyBoy
 from pyboy.core.lcd import LCD, Renderer
-from pyboy.utils import color_code, cython_compiled
+from pyboy.utils import cython_compiled
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
@@ -362,6 +362,19 @@ class TestRenderer:
         assert renderer.colorcode_table[(b2_h << 4) | b1_h] == 0x03_02_02_01
 
     def test_colorcode_table(self):
+        def legacy_color_code(byte1, byte2, offset):
+            """Convert 2 bytes into color code at a given offset.
+
+            The colors are 2 bit and are found like this:
+
+            Color of the first pixel is 0b10
+            | Color of the second pixel is 0b01
+            v v
+            1 0 0 1 0 0 0 1 <- byte1
+            0 1 1 1 1 1 0 0 <- byte2
+            """
+            return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
+
         renderer = Renderer(False)
 
         for byte1 in range(0x100):
@@ -369,5 +382,5 @@ class TestRenderer:
                 colorcode_low = renderer.colorcode_table[(byte1 & 0xF) | ((byte2 & 0xF) << 4)]
                 colorcode_high = renderer.colorcode_table[((byte1 >> 4) & 0xF) | (byte2 & 0xF0)]
                 for offset in range(4):
-                    assert (colorcode_low >> (3 - offset) * 8) & 0xFF == color_code(byte1, byte2, offset)
-                    assert (colorcode_high >> (3 - offset) * 8) & 0xFF == color_code(byte1, byte2, offset + 4)
+                    assert (colorcode_low >> (3 - offset) * 8) & 0xFF == legacy_color_code(byte1, byte2, offset)
+                    assert (colorcode_high >> (3 - offset) * 8) & 0xFF == legacy_color_code(byte1, byte2, offset + 4)

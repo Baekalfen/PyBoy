@@ -255,22 +255,6 @@ class IntIOWrapper(IntIOInterface):
 ##############################################################
 # Misc
 
-
-# NOTE: Legacy function. Use look-up table in Renderer
-def color_code(byte1, byte2, offset):
-    """Convert 2 bytes into color code at a given offset.
-
-    The colors are 2 bit and are found like this:
-
-    Color of the first pixel is 0b10
-    | Color of the second pixel is 0b01
-    v v
-    1 0 0 1 0 0 0 1 <- byte1
-    0 1 1 1 1 1 0 0 <- byte2
-    """
-    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
-
-
 if not cython_compiled:
     exec(
         """
@@ -281,6 +265,7 @@ def double_to_uint64_ceil(val):
     )
 
 ##############################################################
+
 # Window Events
 # Temporarily placed here to not be exposed on public API
 
