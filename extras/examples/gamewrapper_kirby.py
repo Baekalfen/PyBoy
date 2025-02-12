@@ -23,7 +23,7 @@ else:
 quiet = "--quiet" in sys.argv
 pyboy = PyBoy(filename, window="null" if quiet else "SDL2", scale=3, debug=not quiet)
 pyboy.set_emulation_speed(0)
-assert pyboy.cartridge_title == "KIRBY DREAM LA"
+assert pyboy.cartridge_title == "KIRBY DREAM LAN"
 
 kirby = pyboy.game_wrapper
 kirby.start_game()

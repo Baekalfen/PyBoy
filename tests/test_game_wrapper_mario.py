@@ -8,7 +8,7 @@ from pyboy import PyBoy
 
 def test_mario_basics(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    assert pyboy.cartridge_title == "SUPER MARIOLAN"
+    assert pyboy.cartridge_title == "SUPER MARIOLAND"
 
     mario = pyboy.game_wrapper
     mario.start_game(world_level=(1, 1))
@@ -21,7 +21,7 @@ def test_mario_basics(supermarioland_rom):
 
 def test_mario_advanced(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    assert pyboy.cartridge_title == "SUPER MARIOLAN"
+    assert pyboy.cartridge_title == "SUPER MARIOLAND"
 
     mario = pyboy.game_wrapper
     mario.start_game(world_level=(3, 2))

@@ -22,7 +22,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
 
-    cartridge_title = "KIRBY DREAM LA"
+    cartridge_title = "KIRBY DREAM LAN"
 
     def __init__(self, *args, **kwargs):
         self.score = 0
