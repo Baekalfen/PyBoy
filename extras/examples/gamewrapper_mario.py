@@ -23,7 +23,7 @@ else:
 quiet = "--quiet" in sys.argv
 pyboy = PyBoy(filename, window="null" if quiet else "SDL2", scale=3, debug=not quiet)
 pyboy.set_emulation_speed(0)
-assert pyboy.cartridge_title == "SUPER MARIOLAN"
+assert pyboy.cartridge_title == "SUPER MARIOLAND"
 
 mario = pyboy.game_wrapper
 mario.start_game()

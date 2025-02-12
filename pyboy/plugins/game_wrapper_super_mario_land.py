@@ -207,7 +207,7 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
     """
 
-    cartridge_title = "SUPER MARIOLAN"
+    cartridge_title = "SUPER MARIOLAND"
     mapping_compressed = mapping_compressed
     """
     Compressed mapping for `pyboy.PyBoy.game_area_mapping`
