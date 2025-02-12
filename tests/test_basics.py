@@ -322,10 +322,10 @@ def test_randomize_ram(default_rom):
     pyboy.stop(save=False)
 
 
-def test_not_cgb(pokemon_crystal_rom):
-    pyboy = PyBoy(pokemon_crystal_rom, window="null", cgb=False)
+def test_not_cgb(pokemon_crystal_rom, boot_rom):
+    pyboy = PyBoy(pokemon_crystal_rom, window="null", cgb=False, bootrom=boot_rom)
     pyboy.set_emulation_speed(0)
-    pyboy.tick(60 * 7, False)
+    pyboy.tick(60 * 10, True)
 
     assert pyboy.tilemap_background[1:16, 16] == [
         134,

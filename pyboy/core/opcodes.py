@@ -3,7 +3,6 @@
 # DO NOT MODIFY THIS FILE.
 # CHANGES TO THE CODE SHOULD BE MADE IN 'opcodes_gen.py'.
 
-from pyboy import utils
 import array
 
 import pyboy
