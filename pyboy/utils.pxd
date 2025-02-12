@@ -35,10 +35,9 @@ cpdef uint8_t color_code(uint8_t, uint8_t, uint8_t) noexcept nogil
 
 ##############################################################
 # Window Events
-# Temporarily placed here to not be exposed on public API
 
 cdef class WindowEvent:
-    cdef readonly int event
+    cdef readonly int __event
 
 cdef class WindowEventMouse(WindowEvent):
     cdef readonly int window_id
