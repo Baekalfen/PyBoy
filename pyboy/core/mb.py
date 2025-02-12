@@ -34,20 +34,25 @@ class Motherboard:
 
         self.cartridge = cartridge.load_cartridge(gamerom)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))
+
+        self.bootrom = bootrom.BootROM(bootrom_file, self.cartridge.cgb)
+        if self.bootrom.cgb:
+            logger.debug("Boot ROM type auto-detected to %s", ("CGB" if self.bootrom.cgb else "DMG"))
+            cgb = cgb or True
+
         if cgb is None:
             cgb = self.cartridge.cgb
-            logger.debug("Cartridge type auto-detected to %s", ("CGB" if cgb else "DMG"))
+            logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
 
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
-        self.bootrom = bootrom.BootROM(bootrom_file, cgb)
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
                 cgb,
-                self.cartridge.cgb,
+                self.cartridge.cgb or self.bootrom.cgb,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
@@ -55,7 +60,7 @@ class Motherboard:
         else:
             self.lcd = lcd.LCD(
                 cgb,
-                self.cartridge.cgb,
+                self.cartridge.cgb or self.bootrom.cgb,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
@@ -348,7 +353,7 @@ class Motherboard:
     #
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-            if self.bootrom_enabled and (i <= 0xFF or (self.cgb and 0x200 <= i < 0x900)):
+            if self.bootrom_enabled and (i <= 0xFF or (self.bootrom.cgb and 0x200 <= i < 0x900)):
                 return self.bootrom.getitem(i)
             else:
                 return self.cartridge.rombanks[self.cartridge.rombank_selected_low, i]

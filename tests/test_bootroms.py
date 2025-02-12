@@ -4,8 +4,6 @@
 #
 
 import os.path
-import sys
-from io import BytesIO
 from pathlib import Path
 
 import PIL
@@ -25,22 +23,14 @@ def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb):
     pyboy.tick(frames, True)
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
-    png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
+    cgb_mode = "cgb" if cgb is True else ("dmg" if cgb is False else "None")
+    png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb_mode}_{os.path.basename(str(_bootrom))}.png")
     image = pyboy.screen.image
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
-        png_buf = BytesIO()
-        image.save(png_buf, "png")
-        with open(png_path, "wb") as f:
-            f.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in png_buf.getvalue()]))
+        image.save(png_path)
     else:
-        png_buf = BytesIO()
-        with open(png_path, "rb") as f:
-            data = f.read()
-            png_buf.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in data]))
-        png_buf.seek(0)
-
-        old_image = PIL.Image.open(png_buf).convert("RGB")
+        old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
         if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
