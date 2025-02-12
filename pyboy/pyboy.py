@@ -459,10 +459,10 @@ class PyBoy:
         self._handle_events(self.events)
         if not self.paused:
             self.gameshark.tick()
-            self.__rendering(render)
-            # Reenter mb.tick until we eventually get a clean exit without breakpoints
             self.mb.lcd.frame_done = False
+            self.mb.lcd.disable_renderer = not render
             self.mb.sound.clear_buffer()  # TODO: Only sample on last frame
+            # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():
                 # Breakpoint reached
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed
@@ -1094,12 +1094,6 @@ class PyBoy:
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
-
-    def __rendering(self, value):
-        """
-        Disable or enable rendering
-        """
-        self.mb.lcd.disable_renderer = not value
 
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
