@@ -80,7 +80,7 @@ class PyBoy:
         scale=defaults["scale"],
         symbols=None,
         bootrom=None,
-        sound=0,
+        sound_volume=100,
         sound_emulated=True,
         sound_sample_rate=None,
         cgb=None,
@@ -120,8 +120,9 @@ class PyBoy:
             * scale (int): Window scale factor. Doesn't apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
             * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            * sound (bool | int): Enable sound and set volume.
-            * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
+            * sound_volume (int): Set sound volume in percent (0-100).
+            * sound_emulated (bool): Disables sound emulation (not just muted!).
+            * sound_sample_rate (int): Set sound sample rate. Has to be divisible in 60.
             * cgb (bool): Forcing Game Boy Color mode.
             * gameshark (str): GameShark codes to apply.
             * no_input (bool): Disable all user-input (mostly for autonomous testing)
@@ -184,10 +185,14 @@ class PyBoy:
         self._load_symbols()
 
         # Backwards compatibility
-        if isinstance(sound, bool):
-            sound = 100 if sound else 0
+        # Setting volume if True, but we don't disable emulation if False/None.
+        if kwargs.pop("sound", None):
+            sound_volume = 100
+            logger.error(
+                'Deprecated use of "sound" on PyBoy constructor. Use "sound_volume" or "sound_emulated" instead.'
+            )
 
-        if not (0 <= sound <= 100):
+        if not (0 <= sound_volume <= 100):
             raise PyBoyInvalidInputException("Sound volume has to be between 0 and 100.")
 
         self.mb = Motherboard(
@@ -195,7 +200,7 @@ class PyBoy:
             bootrom,
             color_palette,
             cgb_color_palette,
-            sound,
+            sound_volume,
             sound_emulated,
             sound_sample_rate,
             cgb,

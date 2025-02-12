@@ -121,7 +121,7 @@ class Sound:
         """
         ndarray
         """
-        if self.mb.sound.enabled:
+        if self.mb.sound.emulate:
             self.raw_ndarray = np.frombuffer(
                 self.mb.sound.audiobuffer,
                 dtype=np.int8,
@@ -168,7 +168,7 @@ class Sound:
         numpy.ndarray:
             Sound data in `ndarray` of bytes with shape given by sample rate
         """
-        if self.mb.sound.enabled:
+        if self.mb.sound.emulate:
             return self.raw_ndarray[: self.mb.sound.audiobuffer_head]
         else:
             raise utils.PyBoyFeatureDisabledError("Sound is not enabled!")

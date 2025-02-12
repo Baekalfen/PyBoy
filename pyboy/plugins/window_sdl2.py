@@ -187,7 +187,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         self.init_audio(mb)
 
     def init_audio(self, mb):
-        if mb.sound.enabled and mb.sound.emulate:
+        if mb.sound.emulate:
             if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
                 # NOTE: We have to keep spec variables alive to avoid segfault
                 self.spec_want = sdl2.SDL_AudioSpec(self.mb.sound.sample_rate, sdl2.AUDIO_S8, 2, 128)

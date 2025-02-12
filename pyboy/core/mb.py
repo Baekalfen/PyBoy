@@ -24,7 +24,7 @@ class Motherboard:
         bootrom_file,
         color_palette,
         cgb_color_palette,
-        sound_enabled,
+        sound_volume,
         sound_emulated,
         sound_sample_rate,
         cgb,
@@ -68,7 +68,7 @@ class Motherboard:
             )
 
         # breakpoint()
-        self.sound = sound.Sound(sound_enabled, sound_emulated, sound_sample_rate, cgb)
+        self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, cgb)
 
         self.key1 = 0
         self.double_speed = False

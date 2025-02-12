@@ -120,18 +120,32 @@ gameboy_type_parser.add_argument(
     "--cgb", action="store_const", const=True, dest="cgb", help="Force emulator to run as Game Boy Color"
 )
 
-
-sound_parser = parser.add_mutually_exclusive_group()
-
-sound_parser.add_argument("--sound", nargs="?", default=0, const=100, type=valid_volume, help="Set sound volume 0-100")
 # NOTE: Inverted logic on variable
-sound_parser.add_argument(
+parser.add_argument(
     "--no-sound-emulation",
     default=True,
     action="store_false",
     dest="sound_emulated",
     help="Disables sound emulation (not just muted!)",
 )
+
+sound_parser = parser.add_mutually_exclusive_group()
+
+sound_parser.add_argument(
+    "--sound",
+    action="store_const",
+    const=100,
+    dest="sound_volume",
+    help="Deprecated setting. Now sets sound volume to 100%. See '--sound-volume'",
+)
+sound_parser.add_argument(
+    "--sound-volume",
+    default=100,
+    type=valid_volume,
+    help="Set sound volume in percent (0-100)",
+)
+parser.set_defaults(sound_volume=100)
+
 parser.add_argument(
     "--sound-sample-rate",
     default=None,
