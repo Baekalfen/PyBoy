@@ -349,17 +349,17 @@ class WindowEvent:
     ) = range(42)
 
     def __init__(self, event):
-        self.event = event
+        self.__event = event
 
     def __eq__(self, other):
         if isinstance(other, WindowEvent):
-            return self.event == other.event
+            return self.__event == other.__event
         elif isinstance(other, int):
-            return self.event == other
+            return self.__event == other
         return NotImplemented
 
     def __int__(self):
-        return self.event
+        return self.__event
 
     def __str__(self):
         return (
@@ -405,7 +405,7 @@ class WindowEvent:
             "MOD_SHIFT_ON",
             "MOD_SHIFT_OFF",
             "FULL_SCREEN_TOGGLE",
-        )[self.event]
+        )[self.__event]
 
 
 class WindowEventMouse(WindowEvent):
