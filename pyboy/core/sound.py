@@ -19,11 +19,6 @@ if not cython_compiled:
     # Hide it from Cython in 'exec' statement
     exec("from pyboy.utils import double_to_uint64_ceil")
 
-try:
-    import sdl2
-except ImportError:
-    sdl2 = None
-
 logger = pyboy.logging.get_logger(__name__)
 
 CYCLES_512HZ = 8192
@@ -32,10 +27,14 @@ CYCLES_512HZ = 8192
 class Sound:
     def __init__(self, volume, emulate, sample_rate, cgb):
         self.volume = volume
-        self.enabled = bool(self.volume) and (sdl2 is not None)
-        self.disable_sampling = not self.enabled
-        self.emulate = emulate or self.enabled  # Just emulate registers etc.
-        logger.debug("Sound emulated: %d, sound enabled: %d", self.emulate, self.enabled)
+        self.disable_sampling = False
+        self.emulate = emulate  # Just emulate registers etc.
+        logger.debug(
+            "Sound emulated: %d, sound volume: %d, sound disable sampling: %d",
+            self.emulate,
+            self.volume,
+            self.disable_sampling,
+        )
         self.cgb = cgb
 
         if sample_rate is None:
@@ -54,7 +53,7 @@ class Sound:
         self.audiobuffer = array(self.buffer_format, [0] * self.audiobuffer_length)
 
         self.speed_shift = 0
-        if self.emulate and not self.enabled:
+        if self.emulate and self.disable_sampling:
             # No need to sample, when not enabled
             self.cycles_target = 1 << 31
         else:
@@ -185,10 +184,10 @@ class Sound:
 
         # Tick channels until point of sample (repeating) or however many cycles we have.
         while cycles > 0:
-            if self.enabled:
-                _cycles = max(0, min(double_to_uint64_ceil(self.cycles_target) - self.cycles, cycles))
-            else:
-                _cycles = cycles
+            # if self.enabled:
+            _cycles = max(0, min(double_to_uint64_ceil(self.cycles_target) - self.cycles, cycles))
+            # else:
+            #     _cycles = cycles
 
             self.cycles += _cycles
             # Pan Docs:
@@ -238,7 +237,7 @@ class Sound:
                         self.tonechannel.tick_envelope()
                         self.noisechannel.tick_envelope()
 
-            if self.enabled and self.cycles >= self.cycles_target:
+            if self.cycles >= self.cycles_target:
                 if not self.disable_sampling:
                     self.sample()
 
