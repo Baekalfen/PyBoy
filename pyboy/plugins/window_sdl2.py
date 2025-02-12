@@ -230,7 +230,7 @@ class WindowSDL2(PyBoyWindowPlugin):
     def handle_events(self, events):
         events = sdl2_event_pump(events)
         for e in events:
-            if e.event == WindowEvent.FULL_SCREEN_TOGGLE:
+            if e == WindowEvent.FULL_SCREEN_TOGGLE:
                 if self.fullscreen:
                     sdl2.SDL_SetWindowFullscreen(self._window, 0)
                 else:

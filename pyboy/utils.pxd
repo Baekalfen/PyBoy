@@ -39,10 +39,9 @@ cdef inline uint64_t double_to_uint64_ceil(double val) noexcept nogil:
 
 ##############################################################
 # Window Events
-# Temporarily placed here to not be exposed on public API
 
 cdef class WindowEvent:
-    cdef readonly int event
+    cdef readonly int __event
 
 cdef class WindowEventMouse(WindowEvent):
     cdef readonly int window_id
