@@ -156,25 +156,6 @@ class IntIOWrapper(IntIOInterface):
 
 
 ##############################################################
-# Misc
-
-
-# NOTE: Legacy function. Use look-up table in Renderer
-def color_code(byte1, byte2, offset):
-    """Convert 2 bytes into color code at a given offset.
-
-    The colors are 2 bit and are found like this:
-
-    Color of the first pixel is 0b10
-    | Color of the second pixel is 0b01
-    v v
-    1 0 0 1 0 0 0 1 <- byte1
-    0 1 1 1 1 1 0 0 <- byte2
-    """
-    return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
-
-
-##############################################################
 # Window Events
 # Temporarily placed here to not be exposed on public API
 
@@ -243,16 +224,17 @@ class WindowEvent:
     ) = range(42)
 
     def __init__(self, event):
-        self.event = event
+        self.__event = event
 
-    def __eq__(self, x):
-        if isinstance(x, int):
-            return self.event == x
-        else:
-            return self.event == x.event
+    def __eq__(self, other):
+        if isinstance(other, WindowEvent):
+            return self.__event == other.__event
+        elif isinstance(other, int):
+            return self.__event == other
+        return NotImplemented
 
     def __int__(self):
-        return self.event
+        return self.__event
 
     def __str__(self):
         return (
@@ -298,7 +280,7 @@ class WindowEvent:
             "MOD_SHIFT_ON",
             "MOD_SHIFT_OFF",
             "FULL_SCREEN_TOGGLE",
-        )[self.event]
+        )[self.__event]
 
 
 class WindowEventMouse(WindowEvent):
