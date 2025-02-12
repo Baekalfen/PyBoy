@@ -29,11 +29,6 @@ cdef class IntIOWrapper(IntIOInterface):
     cdef object buffer
 
 ##############################################################
-# Misc
-
-cpdef uint8_t color_code(uint8_t, uint8_t, uint8_t) noexcept nogil
-
-##############################################################
 # Window Events
 
 cdef class WindowEvent:
