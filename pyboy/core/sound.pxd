@@ -17,7 +17,7 @@ cdef uint64_t CYCLES_512HZ
 
 cdef class Sound:
     cdef int64_t volume
-    cdef bint enabled, emulate, cgb, disable_sampling
+    cdef bint emulate, cgb, disable_sampling
 
     cdef uint64_t sample_rate
 
