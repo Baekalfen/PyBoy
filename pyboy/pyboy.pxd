@@ -97,7 +97,6 @@ cdef class PyBoy:
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
 
     cpdef bint _is_cpu_stuck(self) noexcept
-    cdef void __rendering(self, int) noexcept nogil
 
     cpdef object get_sprite(self, int)
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*)
