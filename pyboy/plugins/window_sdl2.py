@@ -222,6 +222,9 @@ class WindowSDL2(PyBoyWindowPlugin):
             self.sound_support = False
 
     def set_title(self, title):
+        # if self.sound_support:
+        #     queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
+        #     title += f" {queued_bytes}"
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
     def handle_events(self, events):
@@ -234,6 +237,18 @@ class WindowSDL2(PyBoyWindowPlugin):
                     sdl2.SDL_SetWindowFullscreen(self._window, sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP)
                 self.fullscreen ^= True
         return events
+
+    def frame_limiter(self, speed):
+        if self.sound_support and speed == 1:
+            queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
+            frames_buffered = queued_bytes / (self.sound.samples_per_frame * 2.0)
+            if frames_buffered > 2:
+                # logger.debug("%d %f %f", queued_bytes, frames_buffered, (frames_buffered-float(2)) * (1./60.))
+                # Sleep for the excees of the 2 frames of buffer we have
+                time.sleep(min(1 / 60.0, (frames_buffered - float(2)) * (1.0 / 60.0)))
+            return True
+        else:
+            return PyBoyWindowPlugin.frame_limiter(self, speed)
 
     def post_tick(self):
         sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS * 4)

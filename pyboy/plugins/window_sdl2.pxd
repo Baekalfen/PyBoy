@@ -42,7 +42,7 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
 
     cdef void init_audio(self, Motherboard) noexcept
 
-    @cython.locals(now=int64_t, delay=int64_t)
+    @cython.locals(queued_bytes=int, frames_buffered=cython.double)
     cdef bint frame_limiter(self, int) noexcept
 
     @cython.locals(queued_bytes=int)
