@@ -99,27 +99,27 @@ def test_button(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000  # Select d-pad (bit-4 low)
     assert pyboy.memory[0xFF00] == 0b0000_1111  # High means released
 
     pyboy.button("down")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
 
     pyboy.button("down")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
     pyboy.button("down")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_0111  # down is kept pressed
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
 
@@ -224,7 +224,7 @@ def test_pause_toggle(default_rom):
     cython_compiled or not sdl2, reason="This test requires access to internal functions not available in Cython"
 )
 def test_no_input_enabled(default_rom):
-    pyboy = PyBoy(default_rom, window="SDL2", no_input=True)
+    pyboy = PyBoy(default_rom, window="SDL2", no_input=True, sound_volume=0)
     pyboy.set_emulation_speed(0)
     with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
         pyboy.tick()
@@ -243,7 +243,7 @@ def test_no_input_enabled(default_rom):
     cython_compiled or not sdl2, reason="This test requires access to internal functions not available in Cython"
 )
 def test_no_input_disabled(default_rom):
-    pyboy = PyBoy(default_rom, window="SDL2", no_input=False)
+    pyboy = PyBoy(default_rom, window="SDL2", no_input=False, sound_volume=0)
     pyboy.set_emulation_speed(0)
     with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
         pyboy.tick()
@@ -261,7 +261,7 @@ def test_no_input_disabled(default_rom):
 def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window="null")
     pyboy.set_emulation_speed(0)
-    pyboy.tick(120, False)
+    pyboy.tick(120, False, False)
 
     bck_tilemap = pyboy.tilemap_background
     wdw_tilemap = pyboy.tilemap_window

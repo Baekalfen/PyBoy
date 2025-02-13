@@ -26,7 +26,7 @@ NDARRAY_COLOR_FORMAT = "RGBA"
 def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.stop(save=False)
 
 
@@ -300,14 +300,14 @@ def test_tetris(tetris_rom):
 
     pyboy = PyBoy(tetris_rom, window="null")
     pyboy.set_emulation_speed(0)
-    pyboy.tick(120, False)
+    pyboy.tick(120, False, False)
     tetris = pyboy.game_wrapper
     tetris.set_tetromino("T")
 
     first_brick = False
     tile_map = pyboy.tilemap_background
     for frame in range(5282):  # Enough frames to get a "Game Over"
-        pyboy.tick(1, False)
+        pyboy.tick(1, False, False)
 
         assert pyboy.screen.get_tilemap_position() == ((0, 0), (-7, 0))
 
@@ -480,17 +480,17 @@ def test_tetris(tetris_rom):
 
 def test_tilemap_position_list(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.screen.tilemap_position_list) == 144, "Expected 144 scanlines"
     assert len(pyboy.screen.tilemap_position_list[0]) == 4, "Expected (SCX, SCY, WX, WY)"
     assert (
         sum((sum(x) for x in pyboy.screen.tilemap_position_list)) == 0
     ), "Expected LCD to be disabled, and positions be 0"
-    pyboy.tick(99, False)
+    pyboy.tick(99, False, False)
 
     # Start the game
     pyboy.button("start")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
 
     # Move right for 100 frame
     pyboy.button_press("right")
@@ -505,7 +505,7 @@ def test_tilemap_position_list(supermarioland_rom):
         last_y = positions[y][0]
 
     # Progress another 10 frames to see and increase in SCX
-    pyboy.tick(10, False)
+    pyboy.tick(10, False, False)
 
     # Get screen positions, and verify the values
     positions = pyboy.screen.tilemap_position_list
@@ -525,22 +525,22 @@ def test_button(default_rom):
     pyboy.button("start")
     assert len(pyboy.events) == 1  # Button press immediately
     assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 1  # Button release delayed
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
 
     assert len(pyboy.events) == 0  # Nothing injected yet
     pyboy.button("start", 3)
     assert len(pyboy.events) == 1  # Button press immediately
     assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 1  # Button release delayed
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
