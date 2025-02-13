@@ -118,7 +118,6 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
             window="null",
             cgb=gb_type == "cgb",
             bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom,
-            sound_emulated=True,
         )
         pyboy.set_emulation_speed(0)
         saved_state = io.BytesIO()
@@ -131,7 +130,6 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         window="null",
         cgb=gb_type == "cgb",
         bootrom=boot_cgb_rom if gb_type == "cgb" else boot_rom,
-        sound_emulated=True,
     )
     pyboy.set_emulation_speed(0)
     saved_state.seek(0)
