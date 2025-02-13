@@ -223,6 +223,16 @@ def test_deregister_hooks2(default_rom):
     pyboy.hook_deregister(0, 0x100)
 
 
+def test_deregister_within_hook(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    def hook(pyboy):
+        pyboy.hook_deregister(-1, 0)  # Remove the hook itself
+
+    pyboy.hook_register(-1, 0, hook, pyboy)
+    pyboy.tick(1, False, False)
+
+
 def test_data_hooking_failure(default_rom):
     ticks = 500
 

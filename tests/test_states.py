@@ -19,7 +19,7 @@ def copy_attrs(obj, allowed_types=("int", "str", "float", "array", "dict", "list
 def boot(pyboy):
     # Boot screen
     while True:
-        pyboy.tick(1, False)
+        pyboy.tick(1, False, False)
         tilemap_background = pyboy.tilemap_background
         if tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]:  # '1PLAYER' on the first screen
             break
@@ -27,15 +27,15 @@ def boot(pyboy):
     # Start game. Just press Start when the game allows us.
     for i in range(2):
         pyboy.button("start")
-        pyboy.tick(7, False)
+        pyboy.tick(7, False, False)
 
 
 def progress(pyboy):
     for _ in range(3):
         # Do something
-        pyboy.tick(10, False)
+        pyboy.tick(10, False, False)
         pyboy.button("a")
-    pyboy.tick(1, False)  # Flush input
+    pyboy.tick(1, False, False)  # Flush input
 
 
 ignored_attrs = [

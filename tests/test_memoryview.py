@@ -140,7 +140,7 @@ def test_cgb_banks(cgb_acid_file):  # Any CGB file
 
 def test_get_set_override(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
 
     assert pyboy.memory[0xFF40] == 0x00
     pyboy.memory[0xFF40] = 0x12

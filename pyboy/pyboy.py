@@ -455,7 +455,7 @@ class PyBoy:
 
         self.initialized = True
 
-    def _tick(self, render):
+    def _tick(self, render, sound):
         if self.stopped:
             return False
 
@@ -464,7 +464,8 @@ class PyBoy:
             self.gameshark.tick()
             self.mb.lcd.frame_done = False
             self.mb.lcd.disable_renderer = not render
-            self.mb.sound.clear_buffer()  # TODO: Only sample on last frame
+            self.mb.sound.disable_sampling = not sound
+            self.mb.sound.clear_buffer()
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():
                 # Breakpoint reached
@@ -493,7 +494,7 @@ class PyBoy:
 
         return not self.quitting
 
-    def tick(self, count=1, render=True):
+    def tick(self, count=1, render=True, sound=True):
         """
         Progresses the emulator ahead by `count` frame(s).
 
@@ -543,8 +544,10 @@ class PyBoy:
         t_start = time.perf_counter_ns()
         with cython.nogil:
             while count != 0:
-                _render = render and count == 1  # Only render on last tick to improve performance
-                running = self._tick(_render)
+                # Only render screen and sample sound on last tick to improve performance
+                _render = render and count == 1
+                _sound = sound and count == 1
+                running = self._tick(_render, _sound)
                 count -= 1
         t_tick = time.perf_counter_ns()
         self._post_tick()

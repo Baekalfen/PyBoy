@@ -18,9 +18,10 @@ from pyboy.utils import PyBoyFeatureDisabledError
 OVERWRITE_PNGS = False
 
 
-def test_swoosh(default_rom):
+@pytest.mark.parametrize("sampling", [True, False])
+def test_swoosh(default_rom, sampling):
     sample_rate = 24000
-    pyboy = PyBoy(default_rom, window="null", sound=True, sound_sample_rate=sample_rate)
+    pyboy = PyBoy(default_rom, window="null", sound_sample_rate=sample_rate)
 
     frames = 60
     pointer = 0
@@ -28,7 +29,7 @@ def test_swoosh(default_rom):
     # array("b", [0] * (sample_rate) * 2 * (frames//60))
 
     for _ in range(frames):
-        pyboy.tick(1, sound=True)
+        pyboy.tick(1, sound=sampling)
         audiobuffer = pyboy.sound.ndarray
         length, _ = audiobuffer.shape
         buffers[pointer : pointer + length] = audiobuffer[:]
@@ -56,7 +57,7 @@ def test_swoosh(default_rom):
 
     plt.tight_layout()
 
-    png_path = Path("tests/test_results/sound_swoosh.png")
+    png_path = Path(f"tests/test_results/sound_swoosh_{'sampling' if sampling else 'nosampling'}.png")
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         plt.savefig(png_path)
@@ -77,36 +78,22 @@ def test_swoosh(default_rom):
 
 
 def test_api(default_rom):
-    pyboy = PyBoy(default_rom, window="null", sound=True)
+    pyboy = PyBoy(default_rom, window="null")
 
     pyboy.sound.raw_buffer
 
 
 def test_api_sound_enabled(default_rom):
-    pyboy = PyBoy(default_rom, window="null", sound=True)
+    pyboy = PyBoy(default_rom, window="null", sound_emulated=True)
 
     pyboy.sound.raw_buffer[0]  # No exception
     pyboy.sound.raw_ndarray[0]  # No exception
     assert pyboy.sound.ndarray.shape == (0, 2), "Assumed empty sound buffer"
 
-    # Sampling follows rendering!
-
-
 def test_api_sound_disabled(default_rom):
-    pyboy = PyBoy(default_rom, window="null", sound=False)  # Sound emulation disabled
+    pyboy = PyBoy(default_rom, window="null", sound_emulated=False)
 
     assert pyboy.sound.raw_buffer[0] == 0  # Always defined, but empty
-    with pytest.raises(PyBoyFeatureDisabledError):
-        pyboy.sound.raw_ndarray[0]
-    with pytest.raises(PyBoyFeatureDisabledError):
-        pyboy.sound.ndarray[0]
-
-
-def test_api_sound_emulated(default_rom):
-    pyboy = PyBoy(default_rom, window="null", sound=0)  # Sound muted
-
-    assert pyboy.sound.raw_buffer[0] == 0  # Always defined, but empty
-
     with pytest.raises(PyBoyFeatureDisabledError):
         pyboy.sound.raw_ndarray[0]
     with pytest.raises(PyBoyFeatureDisabledError):

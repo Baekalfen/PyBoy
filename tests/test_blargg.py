@@ -17,10 +17,10 @@ blargg_json = "tests/test_results/blargg.json"
 
 
 def run_rom(rom, max_frames):
-    pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom, sound_emulated=True)
+    pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom)
     pyboy.set_emulation_speed(0)
     result = ""
-    while pyboy.tick(1, False):
+    while pyboy.tick(1, False, False):
         b = pyboy._serial()
         if b != "":
             result += b
@@ -28,7 +28,7 @@ def run_rom(rom, max_frames):
         if pyboy._is_cpu_stuck() or pyboy.frame_count > max_frames:
             break
 
-    pyboy.tick(10, False)
+    pyboy.tick(10, False, False)
     pyboy.stop(save=False)
     result += pyboy._serial()  # Getting the absolute last. Some times the tests says "Failed X tests".
     if result == "":

@@ -80,7 +80,7 @@ def test_cycles_when_enabling_lcd(default_rom):
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 def test_cycles_when_disabling_lcd(default_rom):
     pyboy = PyBoy(default_rom, window="null", symbols="extras/default_rom/default_rom.sym", log_level="DEBUG")
-    pyboy.tick(60, False)
+    pyboy.tick(60, False, False)
 
     def hook(context):
         if context[0].memory[0xFF40] & 0x80:
@@ -98,7 +98,7 @@ def test_cycles_when_disabling_lcd(default_rom):
     # Hook will disable in VBLANK, but continue until full frame is done.
     while not context[1]:
         c = pyboy._cycles()
-        pyboy.tick(1, False)
+        pyboy.tick(1, False, False)
 
     assert context[1] == 1
     assert not pyboy.mb.lcd._LCDC.lcd_enable
@@ -111,7 +111,7 @@ def test_cycles_when_disabling_lcd(default_rom):
 
     # Next cycle should be a full FRAME_CYCLE, as it's just a regular frame with LCD disabled
     c = pyboy._cycles()
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert abs((pyboy._cycles() - c) - FRAME_CYCLES) <= 20, "Frame cycles should be within maximum possible overshoot"
 
 
@@ -132,7 +132,7 @@ def test_saveload_cycles(default_rom):
     print(pyboy.mb.lcd._cycles_to_frame, pyboy.mb.lcd.clock, pyboy.mb.lcd.clock_target)
 
     for _ in range(120):
-        pyboy.tick(1, False)
+        pyboy.tick(1, False, False)
         print(pyboy.mb.lcd._cycles_to_frame, pyboy.mb.lcd.clock, pyboy.mb.lcd.clock_target)
         assert (
             pyboy.mb.lcd._cycles_to_frame >= 0
@@ -143,7 +143,7 @@ def test_saveload_cycles(default_rom):
     saved_state = io.BytesIO()
     pyboy.save_state(saved_state)
 
-    pyboy.tick(10, False)  # Any unaccounted cycles will be offset
+    pyboy.tick(10, False, False)  # Any unaccounted cycles will be offset
 
     # Load
     saved_state.seek(0)
