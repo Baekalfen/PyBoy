@@ -5,10 +5,14 @@
 
 __all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
 
-STATE_VERSION = 13
+STATE_VERSION = 14
 
 
 class PyBoyException(Exception):
+    pass
+
+
+class PyBoyInternalError(PyBoyException):
     pass
 
 
@@ -32,12 +36,40 @@ class PyBoyDependencyError(PyBoyException):
     pass
 
 
-class PillowImportError:
+class PyBoyFeatureDisabledError(PyBoyException):
+    pass
+
+
+class AccessError:
+    exception_type = PyBoyException
+    exception_message = "Access Error"
+
     def __bool__(self):
         return False
 
     def __getattribute__(self, name):
-        raise PyBoyDependencyError("Missing depencency Pillow!")
+        if name in ("exception_type", "exception_message"):
+            return super().__getattribute__(name)
+        raise self.exception_type(self.exception_message)
+
+    def __setattribute__(self, *args):
+        raise self.exception_type(self.exception_message)
+
+    def __getitem__(self, *args):
+        raise self.exception_type(self.exception_message)
+
+    def __setitem__(self, *args):
+        raise self.exception_type(self.exception_message)
+
+
+class PillowImportError(AccessError):
+    exception_type = PyBoyDependencyError
+    exception_message = "Missing depencency Pillow!"
+
+
+class SoundEnabledError(AccessError):
+    exception_type = PyBoyFeatureDisabledError
+    exception_message = "Sound is not enabled!"
 
 
 try:
@@ -173,6 +205,15 @@ def color_code(byte1, byte2, offset):
     """
     return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
+
+if not cython_compiled:
+    exec(
+        """
+from math import ceil
+def double_to_uint64_ceil(val):
+    return ceil(val)
+"""
+    )
 
 ##############################################################
 # Window Events
@@ -314,9 +355,22 @@ class WindowEventMouse(WindowEvent):
         self.mouse_button = mouse_button
 
 
-##############################################################
-# Memory Scanning
-#
+def _dec_to_bcd(bytes):
+    bcd_result = []
+    for b in bytes:
+        tens = (b // 10) << 4
+        ones = b % 10
+        bcd_result.append(tens | ones)
+    return bcd_result
+
+
+def _bcd_to_dec(bytes):
+    dec_results = []
+    for b in bytes:
+        tens = (b >> 4) * 10
+        ones = b & 0x0F
+        dec_results.append(tens + ones)
+    return dec_results
 
 
 def dec_to_bcd(value, byte_width=1, byteorder="little"):

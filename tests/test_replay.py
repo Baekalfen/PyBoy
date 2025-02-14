@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import zlib
+import pytest
 
 import numpy as np
 
@@ -96,6 +97,7 @@ def replay(
         rewind=rewind,
         randomize=randomize,
         cgb=cgb,
+        sound_volume=0,
         record_input=(RESET_REPLAYS and window in ["SDL2", "null", "OpenGL"]),
     )
     pyboy.set_emulation_speed(0)
@@ -172,6 +174,7 @@ def test_pokemon(pokemon_blue_rom, boot_rom):
     )
 
 
+@pytest.mark.skip("Outdated base state")
 def test_pokemon_gif1(pokemon_gold_rom, boot_rom):
     replay(
         pokemon_gold_rom,

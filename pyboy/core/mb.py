@@ -14,7 +14,7 @@ OPCODE_BRK = 0xDB
 
 logger = pyboy.logging.get_logger(__name__)
 
-MAX_CYCLES = 1 << 16
+MAX_CYCLES = 1 << 31
 
 
 class Motherboard:
@@ -24,8 +24,9 @@ class Motherboard:
         bootrom_file,
         color_palette,
         cgb_color_palette,
-        sound_enabled,
+        sound_volume,
         sound_emulated,
+        sound_sample_rate,
         cgb,
         randomize=False,
     ):
@@ -34,20 +35,26 @@ class Motherboard:
 
         self.cartridge = cartridge.load_cartridge(gamerom)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))
+
+        # TODO: python3 -m pyboy ROMs/pokecrystal.gbc --bootrom ROMs/DMG_ROM.bin --cgb
+        self.bootrom = bootrom.BootROM(bootrom_file, self.cartridge.cgb)
+        if self.bootrom.cgb:
+            logger.debug("Boot ROM type auto-detected to %s", ("CGB" if self.bootrom.cgb else "DMG"))
+            cgb = cgb or True
+
         if cgb is None:
             cgb = self.cartridge.cgb
-            logger.debug("Cartridge type auto-detected to %s", ("CGB" if cgb else "DMG"))
+            logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
 
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
-        self.bootrom = bootrom.BootROM(bootrom_file, cgb)
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
                 cgb,
-                self.cartridge.cgb,
+                self.cartridge.cgb or self.bootrom.cgb,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
@@ -55,15 +62,14 @@ class Motherboard:
         else:
             self.lcd = lcd.LCD(
                 cgb,
-                self.cartridge.cgb,
+                self.cartridge.cgb or self.bootrom.cgb,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
             )
 
-        # QUIRK: Force emulation of sound (muted)
-        sound_emulated |= self.cartridge.gamename == "ZELDA DIN"
-        self.sound = sound.Sound(sound_enabled, sound_emulated)
+        # breakpoint()
+        self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, cgb)
 
         self.key1 = 0
         self.double_speed = False
@@ -88,7 +94,8 @@ class Motherboard:
         bit0 = self.key1 & 0b1
         if bit0 == 1:
             self.double_speed = not self.double_speed
-            self.lcd.double_speed = self.double_speed
+            self.lcd.speed_shift = 1 if self.double_speed else 0
+            self.sound.speed_shift = 1 if self.double_speed else 0
             logger.debug("CGB double speed is now: %d", self.double_speed)
             self.key1 ^= 0b10000001
 
@@ -165,9 +172,9 @@ class Motherboard:
             elif 0xC000 <= addr <= 0xE000:
                 self.ram.internal_ram0[addr - 0xC000] = opcode
             else:
-                logger.error("Unsupported breakpoint address. If this a mistake, reach out to the developers")
+                raise PyBoyException("Unsupported breakpoint address. If this a mistake, reach out to the developers")
         else:
-            logger.error("Breakpoint not found. If this a mistake, reach out to the developers")
+            raise PyBoyException("Breakpoint not found. If this a mistake, reach out to the developers")
 
     def breakpoint_reached(self):
         pc = self.cpu.PC
@@ -288,13 +295,8 @@ class Motherboard:
     # Coordinator
     #
 
-    def processing_frame(self):
-        b = not self.lcd.frame_done
-        self.lcd.frame_done = False  # Clear vblank flag for next iteration
-        return b
-
     def tick(self):
-        while self.processing_frame():
+        while not self.lcd.frame_done:
             if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
@@ -313,9 +315,11 @@ class Motherboard:
                     4,
                     min(
                         self.timer._cycles_to_interrupt,
+                        # https://gbdev.io/pandocs/STAT.html
+                        # STAT (_cycles_to_interrupt) vs. VBLANK interrupt (_cycles_to_interrupt) vs. end frame (_cycles_to_frame)
                         self.lcd._cycles_to_interrupt,  # TODO: Be more agreesive. Only if actual interrupt enabled.
                         self.lcd._cycles_to_frame,
-                        self.sound._cycles_to_interrupt,  # TODO: Not implemented
+                        self.sound._cycles_to_interrupt,
                         # self.serial.cycles_to_interrupt(),
                         mode0_cycles,
                     ),
@@ -327,20 +331,16 @@ class Motherboard:
             # TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
-            self.sound.tick(self.cpu.cycles, self.double_speed)
+            self.sound.tick(self.cpu.cycles)
 
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
 
-            lcd_interrupt = self.lcd.tick(self.cpu.cycles)
-            if lcd_interrupt:
+            if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
 
             if self.breakpoint_singlestep:
                 break
-
-        # TODO: Move SDL2 sync to plugin
-        self.sound.sync()
 
         return self.breakpoint_singlestep
 
@@ -349,7 +349,7 @@ class Motherboard:
     #
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
-            if self.bootrom_enabled and (i <= 0xFF or (self.cgb and 0x200 <= i < 0x900)):
+            if self.bootrom_enabled and (i <= 0xFF or (self.bootrom.cgb and 0x200 <= i < 0x900)):
                 return self.bootrom.getitem(i)
             else:
                 return self.cartridge.rombanks[self.cartridge.rombank_selected_low, i]
@@ -379,47 +379,51 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
-            # NOTE: A bit ad-hoc, but interrupts can occur right between writes
-            if self.timer.tick(self.cpu.cycles):
-                self.cpu.set_interruptflag(INTR_TIMER)
+            if 0xFF04 <= i <= 0xFF07:
+                if self.timer.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_TIMER)
 
-            if i == 0xFF04:
-                return self.timer.DIV
-            elif i == 0xFF05:
-                return self.timer.TIMA
-            elif i == 0xFF06:
-                return self.timer.TMA
-            elif i == 0xFF07:
-                return self.timer.TAC
+                if i == 0xFF04:
+                    return self.timer.DIV
+                elif i == 0xFF05:
+                    return self.timer.TIMA
+                elif i == 0xFF06:
+                    return self.timer.TMA
+                elif i == 0xFF07:
+                    return self.timer.TAC
             elif i == 0xFF0F:
                 return self.cpu.interrupts_flag_register
             elif 0xFF10 <= i < 0xFF40:
-                self.sound.tick(self.cpu.cycles, self.double_speed)
+                self.sound.tick(self.cpu.cycles)
                 return self.sound.get(i - 0xFF10)
-            elif i == 0xFF40:
-                return self.lcd.get_lcdc()
-            elif i == 0xFF41:
-                return self.lcd.get_stat()
-            elif i == 0xFF42:
-                return self.lcd.SCY
-            elif i == 0xFF43:
-                return self.lcd.SCX
-            elif i == 0xFF44:
-                return self.lcd.LY
-            elif i == 0xFF45:
-                return self.lcd.LYC
-            elif i == 0xFF46:
-                return 0x00  # DMA
-            elif i == 0xFF47:
-                return self.lcd.BGP.get()
-            elif i == 0xFF48:
-                return self.lcd.OBP0.get()
-            elif i == 0xFF49:
-                return self.lcd.OBP1.get()
-            elif i == 0xFF4A:
-                return self.lcd.WY
-            elif i == 0xFF4B:
-                return self.lcd.WX
+            elif 0xFF40 <= i <= 0xFF4B:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+
+                if i == 0xFF40:
+                    return self.lcd._LCDC.value
+                elif i == 0xFF41:
+                    return self.lcd._STAT.value
+                elif i == 0xFF42:
+                    return self.lcd.SCY
+                elif i == 0xFF43:
+                    return self.lcd.SCX
+                elif i == 0xFF44:
+                    return self.lcd.LY
+                elif i == 0xFF45:
+                    return self.lcd.LYC
+                elif i == 0xFF46:
+                    return 0x00  # DMA
+                elif i == 0xFF47:
+                    return self.lcd.BGP.get()
+                elif i == 0xFF48:
+                    return self.lcd.OBP0.get()
+                elif i == 0xFF49:
+                    return self.lcd.OBP1.get()
+                elif i == 0xFF4A:
+                    return self.lcd.WY
+                elif i == 0xFF4B:
+                    return self.lcd.WX
             else:
                 return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -450,6 +454,12 @@ class Motherboard:
                 return 0x00  # Not readable
             elif self.cgb and i == 0xFF55:
                 return self.hdma.hdma5 & 0xFF
+            elif self.cgb and i == 0xFF76:
+                self.sound.tick(self.cpu.cycles)
+                return self.sound.pcm12()
+            elif self.cgb and i == 0xFF77:
+                self.sound.tick(self.cpu.cycles)
+                return self.sound.pcm34()
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]
@@ -497,10 +507,6 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
-            # NOTE: A bit ad-hoc, but interrupts can occur right between writes
-            if self.timer.tick(self.cpu.cycles):
-                self.cpu.set_interruptflag(INTR_TIMER)
-
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
             elif i == 0xFF01:
@@ -508,49 +514,67 @@ class Motherboard:
                 self.serialbuffer_count += 1
                 self.serialbuffer_count &= 0x3FF
                 self.ram.io_ports[i - 0xFF00] = value
-            elif i == 0xFF04:
-                self.timer.reset()
-            elif i == 0xFF05:
-                self.timer.TIMA = value
-            elif i == 0xFF06:
-                self.timer.TMA = value
-            elif i == 0xFF07:
-                self.timer.TAC = value & 0b111  # TODO: Move logic to Timer class
+            elif 0xFF04 <= i <= 0xFF07:
+                if self.timer.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_TIMER)
+
+                if i == 0xFF04:
+                    # Pan docs:
+                    # “DIV-APU” ... is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0 ...
+                    # the counter can be made to increase faster by writing to DIV while its relevant bit is set (which
+                    # clears DIV, and triggers the falling edge).
+                    if self.timer.DIV & (0b1_0000 << self.sound.speed_shift):
+                        self.sound.tick(self.cpu.cycles)  # Process outstanding cycles
+                        # TODO: Force a falling edge tick
+                        self.sound.reset_apu_div()
+
+                    self.timer.reset()
+                elif i == 0xFF05:
+                    self.timer.TIMA = value
+                elif i == 0xFF06:
+                    self.timer.TMA = value
+                elif i == 0xFF07:
+                    self.timer.TAC = value & 0b111  # TODO: Move logic to Timer class
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value
             elif 0xFF10 <= i < 0xFF40:
-                self.sound.tick(self.cpu.cycles, self.double_speed)
+                self.sound.tick(self.cpu.cycles)
                 self.sound.set(i - 0xFF10, value)
-            elif i == 0xFF40:
-                self.lcd.set_lcdc(value)
-            elif i == 0xFF41:
-                self.lcd.set_stat(value)
-            elif i == 0xFF42:
-                self.lcd.SCY = value
-            elif i == 0xFF43:
-                self.lcd.SCX = value
-            elif i == 0xFF44:
-                self.lcd.LY = value
-            elif i == 0xFF45:
-                self.lcd.LYC = value
-            elif i == 0xFF46:
-                self.transfer_DMA(value)
-            elif i == 0xFF47:
-                if self.lcd.BGP.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_tilecache0()
-            elif i == 0xFF48:
-                if self.lcd.OBP0.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_spritecache0()
-            elif i == 0xFF49:
-                if self.lcd.OBP1.set(value):
-                    # TODO: Move out of MB
-                    self.lcd.renderer.clear_spritecache1()
-            elif i == 0xFF4A:
-                self.lcd.WY = value
-            elif i == 0xFF4B:
-                self.lcd.WX = value
+            elif 0xFF40 <= i <= 0xFF4B:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+
+                if i == 0xFF40:
+                    self.lcd.set_lcdc(value)
+                elif i == 0xFF41:
+                    self.lcd._STAT.set(value)
+                elif i == 0xFF42:
+                    self.lcd.SCY = value
+                elif i == 0xFF43:
+                    self.lcd.SCX = value
+                elif i == 0xFF44:
+                    # LCDC Read-only
+                    return
+                elif i == 0xFF45:
+                    self.lcd.LYC = value
+                elif i == 0xFF46:
+                    self.transfer_DMA(value)
+                elif i == 0xFF47:
+                    if self.lcd.BGP.set(value):
+                        # TODO: Move out of MB
+                        self.lcd.renderer.clear_tilecache0()
+                elif i == 0xFF48:
+                    if self.lcd.OBP0.set(value):
+                        # TODO: Move out of MB
+                        self.lcd.renderer.clear_spritecache0()
+                elif i == 0xFF49:
+                    if self.lcd.OBP1.set(value):
+                        # TODO: Move out of MB
+                        self.lcd.renderer.clear_spritecache1()
+                elif i == 0xFF4A:
+                    self.lcd.WY = value
+                elif i == 0xFF4B:
+                    self.lcd.WX = value
             else:
                 self.ram.io_ports[i - 0xFF00] = value
             self.cpu.bail = True
@@ -558,6 +582,7 @@ class Motherboard:
             if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
                 logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
+                # TODO: Lock FF4C https://gbdev.io/pandocs/CGB_Registers.html#ff4c--key0-cgb-mode-only-cpu-mode-select
                 self.cpu.bail = True
             # CGB registers
             elif self.cgb and i == 0xFF4D:

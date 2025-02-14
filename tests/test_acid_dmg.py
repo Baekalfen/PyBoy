@@ -17,7 +17,6 @@ OVERWRITE_PNGS = False
 @pytest.mark.parametrize("cgb", [False, True])
 def test_dmg_acid(cgb, dmg_acid_file):
     pyboy = PyBoy(dmg_acid_file, window="null", cgb=cgb)
-    pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)
 

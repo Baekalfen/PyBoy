@@ -6,7 +6,6 @@
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyPlugin
 
-
 cdef Logger logger
 
 cdef class DebugPrompt(PyBoyPlugin):

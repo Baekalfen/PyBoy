@@ -18,10 +18,10 @@ from .tilemap import TileMap
 #     "manager": False,
 # }
 __all__ = [
-    constants,
-    GameShark,
-    Screen,
-    Sprite,
-    Tile,
-    TileMap,
+    "constants",
+    "GameShark",
+    "Screen",
+    "Sprite",
+    "Tile",
+    "TileMap",
 ]

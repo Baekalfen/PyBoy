@@ -43,23 +43,31 @@ class LCD:
 
         self._LCDC = LCDCRegister(0)
         self._STAT = STATRegister()  # Bit 7 is always set.
+
+        self.speed_shift = 0
+        self.clock = 0
+        self.clock_target = FRAME_CYCLES << self.speed_shift
+        self.frame_done = False
+        self.first_frame = False
+        self.reset = False
+        self._cycles_to_interrupt = 0
+        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
         self.next_stat_mode = 2
+        self.LY = 0x00
+        self._STAT.set_mode(0)
+
         self.SCY = 0x00
         self.SCX = 0x00
-        self.LY = 0x00
         self.LYC = 0x00
         # self.DMA = 0x00
         self.WY = 0x00
         self.WX = 0x00
-        self.clock = 0
-        self.clock_target = 0
-        self.frame_done = False
-        self.double_speed = False
+
         self.cgb = cgb
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
         self.last_cycles = 0
         self._cycles_to_interrupt = 0
-        self._cycles_to_frame = FRAME_CYCLES
+        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -81,35 +89,39 @@ class LCD:
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.renderer = Renderer(False)
 
-    def get_lcdc(self):
-        return self._LCDC.value
-
     def set_lcdc(self, value):
+        _lcd_enable = self._LCDC.lcd_enable
         self._LCDC.set(value)
 
-        if not self._LCDC.lcd_enable:
+        if _lcd_enable and (not self._LCDC.lcd_enable):
             # https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/
             # 1. LY (current rendering line) resets to zero. A few games rely on this behavior, namely Mr. Do! When LY
             # is reset to zero, no LYC check is done, so no STAT interrupt happens either.
             # 2. The LCD clock is reset to zero as far as I can tell.
             # 3. I believe the LCD enters Mode 0.
             self.clock = 0
-            self.clock_target = FRAME_CYCLES  # Doesn't render anything for the first frame
+            self.clock_target = 0
+            self._cycles_to_frame = 0
             self._STAT.set_mode(0)
-            self.next_stat_mode = 2
+            if self.LY < 144:
+                logger.debug("LCD disabled outside of VBLANK!")
             self.LY = 0
+        elif (not _lcd_enable) and self._LCDC.lcd_enable:  # When switching from disabled to enabled
+            # Registers are actually supposed to be frozen when LCD is disabled. This is mimicked by reseting them again
+            self.clock_target = 0  # This will trigger an immediate update in tick()
 
-    def get_stat(self):
-        return self._STAT.value
+            # The Cycle Accurate Game Boy Docs:
+            # the LCD won't show any image during the first frame it is turned on. The first drawn frame is the second one.
+            self.first_frame = True  # used to postpose rendering of first frame
 
-    def set_stat(self, value):
-        self._STAT.set(value)
+            # Will schedule a full reset on next call to LCD.tick. This will happen immediately, as CPU.tick returns
+            # because of CPU.bail and MB.tick proceeds to call LCD.tick.
+            self.reset = True
 
     def cycles_to_mode0(self):
-        multiplier = 2 if self.double_speed else 1
-        mode2 = 80 * multiplier
-        mode3 = 170 * multiplier
-        mode1 = 456 * multiplier
+        mode2 = 80 << self.speed_shift
+        mode3 = 170 << self.speed_shift
+        mode1 = 456 << self.speed_shift
 
         mode = self._STAT._mode
         # Remaining cycles for this already active mode
@@ -138,8 +150,32 @@ class LCD:
         interrupt_flag = 0
         self.clock += cycles
 
-        if self._LCDC.lcd_enable:
-            if self.clock >= self.clock_target:
+        if self.clock >= self.clock_target:
+            if self._LCDC.lcd_enable and (self.LY == 153 or self.reset):
+                if self.reset:
+                    # RESET
+                    self.clock = 0
+                    self.clock_target = 0
+                    self._STAT.set_mode(0)  # Side-effects?
+                    self.reset = False
+
+                self.frame_done = True
+
+                # Reset to new frame and start from mode 2
+                self.LY = 0
+                self.clock %= FRAME_CYCLES << self.speed_shift
+                self.clock_target = 0
+                self.next_stat_mode = 2
+
+                # Change to next mode
+                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+
+                # self._STAT._mode == 2:  # Searching OAM
+                self.clock_target += 80 << self.speed_shift
+                self.next_stat_mode = 3
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            elif self._LCDC.lcd_enable:
                 # Change to next mode
                 interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
 
@@ -149,25 +185,18 @@ class LCD:
                 #   Mode 3  _33____33____33____33____33____33__________________3___
                 #   Mode 0  ___000___000___000___000___000___000________________000
                 #   Mode 1  ____________________________________11111111111111_____
-                multiplier = 2 if self.double_speed else 1
 
                 # LCD state machine
                 if self._STAT._mode == 2:  # Searching OAM
-                    if self.LY == 153:
-                        self.LY = 0
-                        self.clock %= FRAME_CYCLES
-                        self.clock_target %= FRAME_CYCLES
-                    else:
-                        self.LY += 1
-
-                    self.clock_target += 80 * multiplier
+                    self.LY += 1
+                    self.clock_target += 80 << self.speed_shift
                     self.next_stat_mode = 3
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
                 elif self._STAT._mode == 3:
-                    self.clock_target += 170 * multiplier
+                    self.clock_target += 170 << self.speed_shift
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0:  # HBLANK
-                    self.clock_target += 206 * multiplier
+                    self.clock_target += 206 << self.speed_shift
 
                     # Recorded for API
                     bx, by = self.getviewport()
@@ -187,7 +216,7 @@ class LCD:
                     else:
                         self.next_stat_mode = 1
                 elif self._STAT._mode == 1:  # VBLANK
-                    self.clock_target += 456 * multiplier
+                    self.clock_target += 456 << self.speed_shift
                     self.next_stat_mode = 1
 
                     self.LY += 1
@@ -195,22 +224,24 @@ class LCD:
 
                     if self.LY == 144:
                         interrupt_flag |= INTR_VBLANK
-                        self.frame_done = True
-
-                    if self.LY == 153:
-                        # Reset to new frame and start from mode 2
-                        self.next_stat_mode = 2
-        else:
-            # See also `self.set_lcdc`
-            if self.clock >= FRAME_CYCLES:
+                        if self.first_frame:
+                            # Pan Docs: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable
+                            # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
+                            # will stay blank during the first frame.
+                            self.renderer.blank_screen(self)
+                            self.first_frame = False
+            else:
+                # See also `self.set_lcdc`
                 self.frame_done = True
-                self.clock %= FRAME_CYCLES
+                self.clock %= FRAME_CYCLES << self.speed_shift
+                self.clock_target = FRAME_CYCLES << self.speed_shift
 
                 # Renderer
                 self.renderer.blank_screen(self)
 
         self._cycles_to_interrupt = self.clock_target - self.clock
-        self._cycles_to_frame = FRAME_CYCLES - self.clock
+        # TODO: STAT Cycles to interrupts
+        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
         return interrupt_flag
 
     def save_state(self, f):
@@ -220,7 +251,7 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             f.write(self.OAM[n])
 
-        f.write(self._LCDC.value)
+        f.write(self._LCDC.value)  # TODO: Mode to class
         f.write(self.BGP.value)
         f.write(self.OBP0.value)
         f.write(self.OBP1.value)
@@ -242,10 +273,11 @@ class LCD:
             f.write(self._scanlineparameters[y][3])
             f.write(self._scanlineparameters[y][4])
 
-        # CGB
         f.write(self.cgb)
-        f.write(self.double_speed)
+        f.write(self.speed_shift)
         f.write(self.frame_done)
+        f.write(self.first_frame)
+        f.write(self.reset)
         f.write_64bit(self.last_cycles)
         f.write_64bit(self.clock)
         f.write_64bit(self.clock_target)
@@ -267,7 +299,7 @@ class LCD:
         for n in range(OBJECT_ATTRIBUTE_MEMORY):
             self.OAM[n] = f.read()
 
-        self.set_lcdc(f.read())
+        self.set_lcdc(f.read())  # TODO: Mode to class
         self.BGP.set(f.read())
         self.OBP0.set(f.read())
         self.OBP1.set(f.read())
@@ -292,7 +324,6 @@ class LCD:
                 if state_version > 3:
                     self._scanlineparameters[y][4] = f.read()
 
-        # CGB
         if state_version >= 8:
             _cgb = f.read()
             if self.cgb and not _cgb:
@@ -300,16 +331,18 @@ class LCD:
             if not self.cgb and _cgb:
                 raise PyBoyException("Loading state which *is* CGB-mode, but PyBoy *is not* in CGB mode!")
             self.cgb = _cgb
-            self.double_speed = f.read()
+            self.speed_shift = f.read()
             if state_version >= 13:
                 self.frame_done = f.read()
+                self.first_frame = f.read()
+                self.reset = f.read()
 
             if state_version >= 12:
                 self.last_cycles = f.read_64bit()
             self.clock = f.read_64bit()
             self.clock_target = f.read_64bit()
             self._cycles_to_interrupt = self.clock_target - self.clock
-            self._cycles_to_frame = FRAME_CYCLES - self.clock
+            self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
             self.next_stat_mode = f.read()
 
             if self.cgb:
@@ -435,9 +468,6 @@ class Renderer:
         self.color_format = "RGBA"
 
         self.buffer_dims = (ROWS, COLS)
-
-        # self.clearcache = False
-        # self.tiles_changed0 = set([])
 
         # Init buffers as white
         self._screenbuffer_raw = array("B", [0x00] * (ROWS * COLS * 4))

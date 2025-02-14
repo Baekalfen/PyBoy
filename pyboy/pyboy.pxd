@@ -11,6 +11,7 @@ from libc.stdint cimport int64_t, uint64_t
 from pyboy.api.gameshark cimport GameShark
 from pyboy.api.memory_scanner cimport MemoryScanner
 from pyboy.api.screen cimport Screen
+from pyboy.api.sound cimport Sound
 from pyboy.api.tilemap cimport TileMap
 from pyboy.core.cpu cimport CPU
 from pyboy.core.mb cimport Motherboard
@@ -56,6 +57,7 @@ cdef class PyBoy:
     cdef readonly PyBoyMemoryView memory
     cdef readonly PyBoyRegisterFile register_file
     cdef readonly Screen screen
+    cdef readonly Sound sound
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
     cdef readonly object game_wrapper
@@ -71,9 +73,9 @@ cdef class PyBoy:
     cdef list external_input
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
-    cdef bint _tick(self, bint) noexcept nogil
-    @cython.locals(running=bint, _render=bint)
-    cpdef bint tick(self, int count=*, bint render=*) noexcept
+    cdef int64_t _tick(self, bint, bint) except -1 nogil
+    @cython.locals(running=bint, _render=bint, _sound=bint)
+    cpdef int64_t tick(self, int count=*, bint render=*, bint sound=*) except -1
     cpdef void stop(self, save=*) noexcept
     cpdef int save_state(self, object) except -1
     cpdef int load_state(self, object) except -1
@@ -95,7 +97,6 @@ cdef class PyBoy:
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
 
     cpdef bint _is_cpu_stuck(self) noexcept
-    cdef void __rendering(self, int) noexcept nogil
 
     cpdef object get_sprite(self, int)
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*)

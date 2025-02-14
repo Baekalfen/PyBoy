@@ -36,7 +36,8 @@ cdef class LCD:
     cdef uint8_t WX
     cdef uint8_t next_stat_mode
     cdef bint frame_done
-    cdef uint8_t max_ly
+    cdef bint first_frame
+    cdef bint reset
     cdef uint8_t LY
     cdef uint8_t LYC
     cdef uint64_t clock
@@ -52,16 +53,13 @@ cdef class LCD:
     cdef int64_t _cycles_to_interrupt, _cycles_to_frame
 
     @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
-    cdef uint8_t tick(self, int) noexcept nogil
+    cdef uint8_t tick(self, uint64_t) noexcept nogil
 
     cdef void set_lcdc(self, uint8_t) noexcept nogil
-    cdef uint8_t get_lcdc(self) noexcept nogil
-    cdef void set_stat(self, uint8_t) noexcept nogil
-    cdef uint8_t get_stat(self) noexcept nogil
 
     cdef int64_t cycles_to_mode0(self) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
     cdef inline (int, int) getwindowpos(self) noexcept nogil
@@ -69,7 +67,7 @@ cdef class LCD:
 
     # CGB
     cdef bint cgb
-    cdef bint double_speed
+    cdef uint8_t speed_shift
     cdef uint8_t[8 * 1024] VRAM1
     cdef VBKregister vbk
     cdef PaletteIndexRegister bcps
@@ -94,7 +92,7 @@ cdef class STATRegister:
     cdef uint8_t set_mode(self, uint8_t) noexcept nogil
     cdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept nogil
     cdef void set(self, uint64_t) noexcept nogil
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
 cdef class LCDCRegister:
@@ -121,8 +119,6 @@ cdef class Renderer:
     cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
     cdef str color_format
     cdef tuple buffer_dims
-    cdef bint clearcache
-    cdef bint double_speed
     cdef bint cgb
 
     cdef array _screenbuffer_raw
@@ -250,7 +246,7 @@ cdef class Renderer:
     @cython.locals(colorcode_low=uint64_t, colorcode_high=uint64_t)
     cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
 
@@ -293,7 +289,7 @@ cdef class PaletteIndexRegister:
     cdef int getindex(self) noexcept nogil
     cdef void shouldincrement(self) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
 cdef class PaletteColorRegister:
@@ -306,5 +302,5 @@ cdef class PaletteColorRegister:
     cdef uint16_t get(self) noexcept nogil
     cdef inline uint32_t getcolor(self, uint8_t, uint8_t) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1

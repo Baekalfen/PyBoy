@@ -76,11 +76,11 @@ main:
     ld A, $80
     ldh [$FF00+$26], A ; Enable sound - NR52
     ldh [$FF00+$11], A ; Use 50% duty cycle - NR11
-    ld A, $F3
-    ldh [$FF00+$12], A
-    ldh [$FF00+$25], A
+    ld A, $F3 ; F: Volume max, 3: Minimum sweep pace
+    ldh [$FF00+$12], A ; NR12
+    ldh [$FF00+$25], A ; NR51: F: All left channels, 3: CH2 and CH1 on right. Acceptable, as we only use CH1
     ld A, $77
-    ldh [$FF00+$24], A
+    ldh [$FF00+$24], A; NR50: Max volume left and right
 
     ; #########################
     ; Graphics effect and wait
@@ -123,24 +123,24 @@ main:
 .play_sound
     ; Adjust frequency sweep
     ld A, %0010011
-    ldh [$FF00+$10], A
+    ldh [$FF00+$10], A ; NR10
 
     ld A, $48
-    ldh [$FF00+$13], A
+    ldh [$FF00+$13], A ; NR13
 
     ; Trigger
     ld A, $81
-    ldh [$FF00+$14], A
+    ldh [$FF00+$14], A ; NR14
     ret
 
 .adj_sound
     ; Adjust frequency sweep
     ld A, %0011001
-    ldh [$FF00+$10], A
+    ldh [$FF00+$10], A ; NR10
 
     ; Trigger
     ld A, $81
-    ldh [$FF00+$14], A
+    ldh [$FF00+$14], A ; NR14
     ret
 
 

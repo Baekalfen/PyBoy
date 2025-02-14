@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy.api.gameshark API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -31,6 +31,7 @@
 #
 
 from pyboy.logging import get_logger
+from pyboy.utils import PyBoyInvalidInputException
 
 logger = get_logger(__name__)
 
@@ -46,7 +47,7 @@ class GameShark:
         self.enabled = False
 
     def _convert_cheat(self, gameshark_code):
-        &#39;&#39;&#39;
+        &#34;&#34;&#34;
         A GameShark code for these consoles is written in the format ttvvaaaa. tt specifies the type, which is usually 01.
         vv specifies the hexadecimal value the code will write into the game&#39;s memory. aaaa specifies the memory address
         that will be modified, with the low byte first (e.g. address C056 is written as 56C0).
@@ -59,18 +60,18 @@ class GameShark:
         https://doc.kodewerx.org/hacking_gb.html
 
         There seems to be conflicting information about the presence of other types than 01.
-        &#39;&#39;&#39;
+        &#34;&#34;&#34;
         # Check if the input cheat code has the correct length (8 characters)
         if len(gameshark_code) != 8:
             raise ValueError(&#34;Invalid cheat code length. Cheat code must be 8 characters long.&#34;)
 
         # Extract components from the cheat code
         _type = int(gameshark_code[:2], 16)
-        value = int(gameshark_code[2:4], 16) # Convert hexadecimal value to an integer
-        unconverted_address = gameshark_code[4:] # Ex:   1ED1
-        lower = unconverted_address[:2] # Ex:  1E
-        upper = unconverted_address[2:] # Ex:  D1
-        address_converted = upper + lower # Ex: 0xD11E   # Converting to Ram Readable address
+        value = int(gameshark_code[2:4], 16)  # Convert hexadecimal value to an integer
+        unconverted_address = gameshark_code[4:]  # Ex:   1ED1
+        lower = unconverted_address[:2]  # Ex:  1E
+        upper = unconverted_address[2:]  # Ex:  D1
+        address_converted = upper + lower  # Ex: 0xD11E   # Converting to Ram Readable address
         address = int(address_converted, 16)
 
         if not 0x8000 &lt;= address:
@@ -131,7 +132,7 @@ class GameShark:
         if code not in self.cheats:
             self.cheats[code] = (self._get_value(_type, address), (_type, value, address))
         else:
-            logger.error(&#34;GameShark code already applied!&#34;)
+            raise PyBoyInvalidInputException(&#34;GameShark code already applied!&#34;)
 
     def remove(self, code, restore_value=True):
         &#34;&#34;&#34;
@@ -148,7 +149,7 @@ class GameShark:
             restore_value (bool): True to restore original value at address, otherwise don&#39;t restore
         &#34;&#34;&#34;
 
-        if not code in self.cheats:
+        if code not in self.cheats:
             raise ValueError(&#34;GameShark code cannot be removed. Hasn&#39;t been applied.&#34;)
 
         original_value, (_type, _, address) = self.cheats.pop(code)
@@ -176,7 +177,7 @@ class GameShark:
 
     def tick(self):
         if not self.enabled:
-            return
+            return 0
         # https://gbdev.io/pandocs/Shark_Cheats.html
         # &#34;As far as it is understood, patching is implemented by hooking the original VBlank interrupt handler, and
         # re-writing RAM values each frame.&#34;
@@ -210,7 +211,7 @@ class GameShark:
         self.enabled = False
 
     def _convert_cheat(self, gameshark_code):
-        &#39;&#39;&#39;
+        &#34;&#34;&#34;
         A GameShark code for these consoles is written in the format ttvvaaaa. tt specifies the type, which is usually 01.
         vv specifies the hexadecimal value the code will write into the game&#39;s memory. aaaa specifies the memory address
         that will be modified, with the low byte first (e.g. address C056 is written as 56C0).
@@ -223,18 +224,18 @@ class GameShark:
         https://doc.kodewerx.org/hacking_gb.html
 
         There seems to be conflicting information about the presence of other types than 01.
-        &#39;&#39;&#39;
+        &#34;&#34;&#34;
         # Check if the input cheat code has the correct length (8 characters)
         if len(gameshark_code) != 8:
             raise ValueError(&#34;Invalid cheat code length. Cheat code must be 8 characters long.&#34;)
 
         # Extract components from the cheat code
         _type = int(gameshark_code[:2], 16)
-        value = int(gameshark_code[2:4], 16) # Convert hexadecimal value to an integer
-        unconverted_address = gameshark_code[4:] # Ex:   1ED1
-        lower = unconverted_address[:2] # Ex:  1E
-        upper = unconverted_address[2:] # Ex:  D1
-        address_converted = upper + lower # Ex: 0xD11E   # Converting to Ram Readable address
+        value = int(gameshark_code[2:4], 16)  # Convert hexadecimal value to an integer
+        unconverted_address = gameshark_code[4:]  # Ex:   1ED1
+        lower = unconverted_address[:2]  # Ex:  1E
+        upper = unconverted_address[2:]  # Ex:  D1
+        address_converted = upper + lower  # Ex: 0xD11E   # Converting to Ram Readable address
         address = int(address_converted, 16)
 
         if not 0x8000 &lt;= address:
@@ -295,7 +296,7 @@ class GameShark:
         if code not in self.cheats:
             self.cheats[code] = (self._get_value(_type, address), (_type, value, address))
         else:
-            logger.error(&#34;GameShark code already applied!&#34;)
+            raise PyBoyInvalidInputException(&#34;GameShark code already applied!&#34;)
 
     def remove(self, code, restore_value=True):
         &#34;&#34;&#34;
@@ -312,7 +313,7 @@ class GameShark:
             restore_value (bool): True to restore original value at address, otherwise don&#39;t restore
         &#34;&#34;&#34;
 
-        if not code in self.cheats:
+        if code not in self.cheats:
             raise ValueError(&#34;GameShark code cannot be removed. Hasn&#39;t been applied.&#34;)
 
         original_value, (_type, _, address) = self.cheats.pop(code)
@@ -340,7 +341,7 @@ class GameShark:
 
     def tick(self):
         if not self.enabled:
-            return
+            return 0
         # https://gbdev.io/pandocs/Shark_Cheats.html
         # &#34;As far as it is understood, patching is implemented by hooking the original VBlank interrupt handler, and
         # re-writing RAM values each frame.&#34;
@@ -383,7 +384,7 @@ class GameShark:
     if code not in self.cheats:
         self.cheats[code] = (self._get_value(_type, address), (_type, value, address))
     else:
-        logger.error(&#34;GameShark code already applied!&#34;)</code></pre>
+        raise PyBoyInvalidInputException(&#34;GameShark code already applied!&#34;)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.api.gameshark.GameShark.remove"><code class="name flex">
@@ -421,7 +422,7 @@ class GameShark:
         restore_value (bool): True to restore original value at address, otherwise don&#39;t restore
     &#34;&#34;&#34;
 
-    if not code in self.cheats:
+    if code not in self.cheats:
         raise ValueError(&#34;GameShark code cannot be removed. Hasn&#39;t been applied.&#34;)
 
     original_value, (_type, _, address) = self.cheats.pop(code)
@@ -498,7 +499,7 @@ class GameShark:
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

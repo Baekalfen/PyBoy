@@ -16,6 +16,7 @@ import numpy as np
 from pyboy.api.gameshark import GameShark
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
+from pyboy.api.sound import Sound
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
@@ -32,17 +33,23 @@ from pyboy.utils import (
 try:
     import cython
 except ImportError:
+
     class _mock:
         def __enter__(self):
             pass
 
         def __exit__(self, *args):
             pass
-    exec("""
+
+    exec(
+        """
 class cython:
     gil = _mock()
     nogil = _mock()
-""", globals(), locals())
+""",
+        globals(),
+        locals(),
+    )
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
@@ -73,8 +80,9 @@ class PyBoy:
         scale=defaults["scale"],
         symbols=None,
         bootrom=None,
-        sound=False,
-        sound_emulated=False,
+        sound_volume=100,
+        sound_emulated=True,
+        sound_sample_rate=None,
         cgb=None,
         gameshark=None,
         no_input=False,
@@ -112,8 +120,9 @@ class PyBoy:
             * scale (int): Window scale factor. Doesn't apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
             * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            * sound (bool): Enable sound emulation and output.
-            * sound_emulated (bool): Enable sound emulation without any output. Used for compatibility.
+            * sound_volume (int): Set sound volume in percent (0-100).
+            * sound_emulated (bool): Disables sound emulation (not just muted!).
+            * sound_sample_rate (int): Set sound sample rate. Has to be divisible in 60.
             * cgb (bool): Forcing Game Boy Color mode.
             * gameshark (str): GameShark codes to apply.
             * no_input (bool): Disable all user-input (mostly for autonomous testing)
@@ -175,13 +184,23 @@ class PyBoy:
         self.symbols_file = symbols
         self._load_symbols()
 
+        # Backwards compatibility
+        # Setting volume if True, but we don't disable emulation if False/None.
+        if kwargs.pop('sound', None):
+            sound_volume = 100
+            logger.error('Deprecated use of "sound" on PyBoy constructor. Use "sound_volume" or "sound_emulated" instead.')
+
+        if not (0 <= sound_volume <= 100):
+            raise PyBoyInvalidInputException("Sound volume has to be between 0 and 100.")
+
         self.mb = Motherboard(
             gamerom,
             bootrom,
             color_palette,
             cgb_color_palette,
-            sound,
+            sound_volume,
             sound_emulated,
+            sound_sample_rate,
             cgb,
             randomize=randomize,
         )
@@ -233,10 +252,34 @@ class PyBoy:
 
         ```
 
+        NOTE: See `PyBoy.sound` to get the sound buffer.
+
         Returns
         -------
         `pyboy.api.screen.Screen`:
             A Screen object with helper functions for reading the screen buffer.
+        """
+        self.sound = Sound(self.mb)
+        """
+        Use this method to get a `pyboy.api.sound.Sound` object. This can be used to get the sound buffer of the
+        latest screen frame (see `PyBoy.screen`).
+
+        Example:
+        ```python
+        >>> pyboy.sound.ndarray.shape # 402 samples, 2 channels (stereo)
+        (402, 2)
+        >>> pyboy.sound.ndarray
+        array([[0, 0],
+               [0, 0],
+               ...
+               [0, 0],
+               [0, 0]], dtype=int8)
+        ```
+
+        Returns
+        -------
+        `pyboy.api.sound.Sound`:
+            A Sound object with helper functions for accessing the sound buffer.
         """
         self.memory = PyBoyMemoryView(self.mb)
         """
@@ -412,14 +455,17 @@ class PyBoy:
 
         self.initialized = True
 
-    def _tick(self, render):
+    def _tick(self, render, sound):
         if self.stopped:
             return False
 
         self._handle_events(self.events)
         if not self.paused:
             self.gameshark.tick()
-            self.__rendering(render)
+            self.mb.lcd.frame_done = False
+            self.mb.lcd.disable_renderer = not render
+            self.mb.sound.disable_sampling = not sound
+            self.mb.sound.clear_buffer()
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
             while self.mb.tick():
                 # Breakpoint reached
@@ -448,7 +494,7 @@ class PyBoy:
 
         return not self.quitting
 
-    def tick(self, count=1, render=True):
+    def tick(self, count=1, render=True, sound=True):
         """
         Progresses the emulator ahead by `count` frame(s).
 
@@ -498,8 +544,10 @@ class PyBoy:
         t_start = time.perf_counter_ns()
         with cython.nogil:
             while count != 0:
-                _render = render and count == 1  # Only render on last tick to improve performance
-                running = self._tick(_render)
+                # Only render screen and sample sound on last tick to improve performance
+                _render = render and count == 1
+                _sound = sound and count == 1
+                running = self._tick(_render, _sound)
                 count -= 1
         t_tick = time.perf_counter_ns()
         self._post_tick()
@@ -557,6 +605,7 @@ class PyBoy:
         self.target_emulationspeed = 1
         logger.info("Emulation paused!")
         self._update_window_title()
+        self._plugin_manager.paused(True)
 
     def _unpause(self):
         if not self.paused:
@@ -565,6 +614,7 @@ class PyBoy:
         self.target_emulationspeed = self.save_target_emulationspeed
         logger.info("Emulation unpaused!")
         self._update_window_title()
+        self._plugin_manager.paused(False)
 
     def _post_tick(self):
         # Fix buggy PIL. They will copy our image buffer and destroy the
@@ -1051,12 +1101,6 @@ class PyBoy:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
 
-    def __rendering(self, value):
-        """
-        Disable or enable rendering
-        """
-        self.mb.lcd.disable_renderer = not value
-
     def _is_cpu_stuck(self):
         return self.mb.cpu.is_stuck
 
@@ -1157,7 +1201,7 @@ class PyBoy:
         ```python
         >>> # Continued example above
         >>> pyboy.hook_register(None, "Main.move", lambda x: print(x), "Hello from hook2")
-        >>> pyboy.tick(80)
+        >>> pyboy.tick(81)
         Hello from hook2
         True
 
@@ -1349,6 +1393,9 @@ class PyBoy:
             self.mb.cartridge.rtc.timelock = enable
         else:
             raise PyBoyException("There's no RTC for this cartridge type")
+
+    def _cycles(self):
+        return self.mb.cpu.cycles
 
 
 class PyBoyRegisterFile:
@@ -1547,7 +1594,7 @@ class PyBoyMemoryView:
 
     ```python
     >>> pyboy.memory[0xFF04] # DIV register
-    163
+    231
     >>> pyboy.memory[0xFF04] = 123 # Trying to write to it will always reset it to zero
     >>> pyboy.memory[0xFF04]
     0

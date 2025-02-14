@@ -112,6 +112,7 @@ class GameWrapperTetris(PyBoyGameWrapper):
             self.pyboy.tick(1, False)
             if self.tilemap_background[2:9, 14] == [89, 25, 21, 10, 34, 14, 27]:  # '1PLAYER' on the first screen
                 break
+        self.pyboy.tick(5, False)
 
         # Start game. Just press Start when the game allows us.
         for i in range(2):

@@ -12,5 +12,5 @@ from pyboy import PyBoy
 
 def test_vectroid(vectroid_file):
     pyboy = PyBoy(vectroid_file, window="null")
-    pyboy.tick(120, False)
+    pyboy.tick(120, False, False)
     pyboy.screen.image

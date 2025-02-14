@@ -20,5 +20,5 @@ cdef class Interaction:
     cdef uint8_t directional, standard
     cdef bint key_event(self, WindowEvent) noexcept
     cdef uint8_t pull(self, uint8_t) noexcept nogil
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1

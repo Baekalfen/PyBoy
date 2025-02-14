@@ -7,6 +7,8 @@
 import pyboy
 from pyboy.plugins.base_plugin import PyBoyPlugin
 
+# from pyboy.core.opcodes import CPU_COMMANDS, OPCODE_LENGTHS
+
 logger = pyboy.logging.get_logger(__name__)
 
 
@@ -63,6 +65,19 @@ class DebugPrompt(PyBoyPlugin):
 
             # Print state
             print(self.mb.cpu.dump_state(sym_label))
+
+            # address = self.mb.cpu.PC
+            # first = True
+            # for _ in range(20):
+            #     opcode = self.mb.getitem(address)
+            #     if opcode == 0xCB:
+            #         opcode += 0x100
+            #         opcode = self.mb.getitem(address+1)
+            #     length = OPCODE_LENGTHS[opcode]
+            #     name = CPU_COMMANDS[opcode]
+            #     print(("-> " if first else "   ") + f"{address:04X} {opcode:02X} {name}")
+            #     first = False
+            #     address += length
 
             # REPL
             cmd = input()

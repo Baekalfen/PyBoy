@@ -190,6 +190,19 @@ class PluginManager:
         # foreach end
         pass
 
+    def paused(self, pause):
+        # foreach windows [].paused(pause)
+        if self.window_sdl2_enabled:
+            self.window_sdl2.paused(pause)
+        if self.window_open_gl_enabled:
+            self.window_open_gl.paused(pause)
+        if self.window_null_enabled:
+            self.window_null.paused(pause)
+        if self.debug_enabled:
+            self.debug.paused(pause)
+        # foreach end
+        pass
+
     def frame_limiter(self, speed):
         if speed <= 0:
             return

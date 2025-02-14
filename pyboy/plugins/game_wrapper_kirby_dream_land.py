@@ -8,6 +8,7 @@ __pdoc__ = {
 }
 
 import pyboy
+from pyboy.utils import PyBoyException
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -21,7 +22,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
 
-    cartridge_title = "KIRBY DREAM LA"
+    cartridge_title = "KIRBY DREAM LAN"
 
     def __init__(self, *args, **kwargs):
         self.score = 0
@@ -64,6 +65,8 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
+        if self.game_has_started:
+            raise PyBoyException("Gamewrapper already started! Use 'reset' instead.")
 
         # Boot screen
         while True:

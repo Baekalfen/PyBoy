@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, int64_t
 
 from pyboy.logging.logging cimport Logger
 
@@ -15,10 +15,10 @@ cdef class GameShark:
     cdef dict cheats
     cdef bint enabled
 
-    cdef uint8_t _get_value(self, int, int) noexcept
-    cdef void _set_value(self, int, int, int) noexcept
+    cdef int64_t _get_value(self, int, int) except -1
+    cdef int64_t _set_value(self, int, int, int) except -1
     cdef tuple _convert_cheat(self, str code)
-    cpdef void add(self, str code) noexcept
-    cpdef void remove(self, str code, bint restore_value=*) noexcept
-    cpdef void clear_all(self, bint restore_value=*) noexcept
-    cdef void tick(self) noexcept with gil
+    cpdef int64_t add(self, str code) except -1
+    cpdef int64_t remove(self, str code, bint restore_value=*) except -1
+    cpdef int64_t clear_all(self, bint restore_value=*) except -1
+    cdef int64_t tick(self) except -1 with gil

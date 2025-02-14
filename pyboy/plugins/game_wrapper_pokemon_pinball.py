@@ -12,7 +12,7 @@ __pdoc__ = {
 import logging
 from enum import Enum
 
-from pyboy.utils import WindowEvent, bcd_to_dec
+from pyboy.utils import PyBoyException, WindowEvent, bcd_to_dec
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -590,6 +590,8 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         Returns:
         None
         """
+        if self.game_has_started:
+            raise PyBoyException("Gamewrapper already started! Use 'reset' instead.")
 
         self._set_stage(stage)
 

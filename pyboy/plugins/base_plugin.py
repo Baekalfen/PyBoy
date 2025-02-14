@@ -63,6 +63,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         super().__init__(pyboy, mb, pyboy_argv, *args, **kwargs)
 
         self._ftime = time.perf_counter_ns()
+        self.sound_support = False
 
         if not self.enabled():
             return
@@ -77,6 +78,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         self.enable_title = True
         if not utils.cython_compiled:
             self.renderer = mb.lcd.renderer
+        self.sound = self.mb.sound
 
     def __cinit__(self, *args, **kwargs):
         self.renderer = self.mb.lcd.renderer
@@ -90,6 +92,9 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         else:
             self._ftime = now
         return True
+
+    def paused(self, pause):
+        pass
 
     def set_title(self, title):
         pass
@@ -187,7 +192,7 @@ class PyBoyGameWrapper(PyBoyPlugin):
             self._set_timer_div(timer_div)
             self.post_tick()
         else:
-            logger.error("Tried to reset game, but it hasn't been started yet!")
+            raise utils.PyBoyException("Tried to reset game, but it hasn't been started yet!")
 
     def game_over(self):
         """

@@ -52,11 +52,9 @@ cdef class Motherboard:
     cdef bint breakpoint_singlestep_latch
     cdef int64_t breakpoint_waiting
     cdef int64_t breakpoint_add(self, int64_t, int64_t) except -1 with gil
-    cdef void breakpoint_remove(self, int64_t, int64_t) noexcept with gil
+    cdef int64_t breakpoint_remove(self, int64_t, int64_t) except -1 with gil
     cdef inline tuple[int64_t, int64_t, int64_t] breakpoint_reached(self) noexcept with gil
     cdef inline void breakpoint_reinject(self) noexcept nogil
-
-    cdef inline bint processing_frame(self) noexcept nogil
 
     cdef void buttonevent(self, WindowEvent) noexcept
     cdef void stop(self, bint) noexcept
@@ -88,5 +86,5 @@ cdef class HDMA:
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
     cdef int tick(self, Motherboard) noexcept nogil
 
-    cdef void save_state(self, IntIOInterface) noexcept
+    cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1

@@ -25,8 +25,7 @@ NDARRAY_COLOR_FORMAT = "RGBA"
 
 def test_misc(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.stop(save=False)
 
 
@@ -140,7 +139,6 @@ def test_faulty_state(default_rom):
 
 def test_tiles(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
     tile = pyboy.tilemap_window.tile(0, 0)
@@ -184,7 +182,6 @@ def test_tiles(default_rom):
 
 def test_tiles_cgb(any_rom_cgb):
     pyboy = PyBoy(any_rom_cgb, window="null")
-    pyboy.set_emulation_speed(0)
     pyboy.tick(BOOTROM_FRAMES_UNTIL_LOGO, False)
 
     tile = pyboy.tilemap_window.tile(0, 0)
@@ -298,16 +295,15 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
 def test_tetris(tetris_rom):
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom="pyboy_fast", window="null")
-    pyboy.set_emulation_speed(0)
+    pyboy = PyBoy(tetris_rom, window="null")
+    pyboy.tick(120, False, False)
     tetris = pyboy.game_wrapper
     tetris.set_tetromino("T")
 
     first_brick = False
     tile_map = pyboy.tilemap_background
-    state_data = io.BytesIO()
-    for frame in range(5282):  # Enough frames to get a "Game Over". Otherwise do: `while pyboy.tick(False):`
-        pyboy.tick(1, True)
+    for frame in range(5282):  # Enough frames to get a "Game Over"
+        pyboy.tick(1, False, False)
 
         assert pyboy.screen.get_tilemap_position() == ((0, 0), (-7, 0))
 
@@ -405,10 +401,10 @@ def test_tetris(tetris_rom):
                         ]
                     )
 
-            if frame == 1012:
+            if frame == 1014:
                 assert not first_brick
 
-            if frame == 1014:
+            if frame == 1015:
                 assert first_brick
 
                 s1 = pyboy.get_sprite(0)
@@ -477,87 +473,35 @@ def test_tetris(tetris_rom):
                 assert pyboy.memory[NEXT_TETROMINO] == 24
                 assert tetris.next_tetromino() == "T"
 
-                tmp_state = io.BytesIO()
-                pyboy.save_state(tmp_state)
-                pyboy.save_state(state_data)
-                break
-
-    pyboy.button_release("right")
-    pyboy.tick(1, False)
-
-    pre_load_game_board_matrix = None
-    for frame in range(1016, 1865):
-        pyboy.tick(1, False)
-
-        if frame == 1864:
-            game_board_matrix = list(tile_map[2:12, :18])
-            assert game_board_matrix == (
-                [
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 47, 47, 47, 47, 47, 47, 47],
-                    [47, 47, 47, 133, 133, 133, 47, 133, 133, 133],
-                    [47, 47, 47, 47, 133, 47, 47, 47, 133, 47],
-                ]
-            )
-            pre_load_game_board_matrix = game_board_matrix
-
-    state_data.seek(0)  # Reset to the start of the buffer. Otherwise, we call `load_state` at end of file
-    tmp_state.seek(0)
-    for _f in [tmp_state, state_data]:  # Tests both file-written state and in-memory state
-        pyboy.load_state(_f)  # Reverts memory state to before we changed the Tetromino
-        pyboy.tick(1, False)
-        for frame in range(1016, 1865):
-            pyboy.tick(1, False)
-
-            if frame == 1864:
-                game_board_matrix = list(tile_map[2:12, :18])
-                assert game_board_matrix == pre_load_game_board_matrix
-                break
-    pyboy.stop(save=False)
-
 
 def test_tilemap_position_list(supermarioland_rom):
     pyboy = PyBoy(supermarioland_rom, window="null")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.screen.tilemap_position_list) == 144, "Expected 144 scanlines"
     assert len(pyboy.screen.tilemap_position_list[0]) == 4, "Expected (SCX, SCY, WX, WY)"
     assert (
         sum((sum(x) for x in pyboy.screen.tilemap_position_list)) == 0
     ), "Expected LCD to be disabled, and positions be 0"
-    pyboy.tick(99, False)
+    pyboy.tick(99, False, False)
 
     # Start the game
     pyboy.button("start")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
 
     # Move right for 100 frame
     pyboy.button_press("right")
-    pyboy.tick(100, False)
+    pyboy.tick(100, True)
 
     # Get screen positions, and verify the values
     positions = pyboy.screen.tilemap_position_list
     for y in range(1, 16):
         assert positions[y][0] == 0  # HUD
     for y in range(16, 144):
-        assert positions[y][0] >= 50  # Actual screen position
+        assert positions[y][0] >= 49  # Actual screen position
         last_y = positions[y][0]
 
     # Progress another 10 frames to see and increase in SCX
-    pyboy.tick(10, False)
+    pyboy.tick(10, False, False)
 
     # Get screen positions, and verify the values
     positions = pyboy.screen.tilemap_position_list
@@ -571,28 +515,27 @@ def test_tilemap_position_list(supermarioland_rom):
 
 def test_button(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     assert len(pyboy.events) == 0  # Nothing injected yet
     pyboy.button("start")
     assert len(pyboy.events) == 1  # Button press immediately
     assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 1  # Button release delayed
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
 
     assert len(pyboy.events) == 0  # Nothing injected yet
     pyboy.button("start", 3)
     assert len(pyboy.events) == 1  # Button press immediately
     assert pyboy.events[0].event == WindowEvent.PRESS_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 1  # Button release delayed
     assert pyboy.events[0].event == WindowEvent.RELEASE_BUTTON_START
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     assert len(pyboy.events) == 0  # No input

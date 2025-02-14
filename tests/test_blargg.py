@@ -17,10 +17,10 @@ blargg_json = "tests/test_results/blargg.json"
 
 
 def run_rom(rom, max_frames):
-    pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom, sound_emulated=True)
+    pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom)
     pyboy.set_emulation_speed(0)
     result = ""
-    while pyboy.tick(1, False):
+    while pyboy.tick(1, False, False):
         b = pyboy._serial()
         if b != "":
             result += b
@@ -28,7 +28,7 @@ def run_rom(rom, max_frames):
         if pyboy._is_cpu_stuck() or pyboy.frame_count > max_frames:
             break
 
-    pyboy.tick(10, False)
+    pyboy.tick(10, False, False)
     pyboy.stop(save=False)
     result += pyboy._serial()  # Getting the absolute last. Some times the tests says "Failed X tests".
     if result == "":
@@ -123,13 +123,14 @@ def test_blarggs(test_rom, max_frames, blargg_dir):
             old_blargg[rom] = result
             json.dump(old_blargg, f, indent=4)
 
-        blargg_md = "../PyBoy.wiki/blargg.md"
-        if os.path.isdir(blargg_md):
-            with open(blargg_md, "w") as f:
-                f.write("# Test results for Blargg's test ROMs\n")
-                f.write("|ROM|Result|\n")
-                f.write("|---|---|\n")
-                for (rom, _), res in zip(test_roms, old_blargg):
-                    f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))
+        # TODO: Not usable atm.
+        # blargg_md = "../PyBoy.wiki/blargg.md"
+        # if os.path.isdir(blargg_md):
+        #     with open(blargg_md, "w") as f:
+        #         f.write("# Test results for Blargg's test ROMs\n")
+        #         f.write("|ROM|Result|\n")
+        #         f.write("|---|---|\n")
+        #         for (rom, _), res in zip(test_roms, old_blargg):
+        #             f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))
     else:
         assert old_blargg[rom] == result, f"Outputs don't match for {rom}"

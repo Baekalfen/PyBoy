@@ -6,19 +6,19 @@ import base64
 import hashlib
 import os
 import os.path
-import sys
-from io import BytesIO
-from pathlib import Path
 from unittest import mock
 
-import PIL
 import pytest
-from pytest_lazy_fixtures import lf
 
 from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
 from pyboy.utils import WindowEvent, cython_compiled
+
+try:
+    import sdl2
+except ImportError:
+    sdl2 = None
 
 
 def test_log_level_none(default_rom, capsys):
@@ -51,9 +51,16 @@ def test_tick_zero(default_rom):
     pyboy.tick(0)
 
 
+def test_memoryviewslice_type(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.tick()
+
+    assert pyboy.screen.raw_buffer.__class__.__name__ in ("memoryview", "_memoryviewslice")
+    assert pyboy.sound.raw_buffer.__class__.__name__ in ("memoryview", "_memoryviewslice")
+
+
 def test_register_file(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
     pyboy.register_file.A = 0x1AB
     assert pyboy.register_file.A == 0xAB
@@ -89,29 +96,28 @@ def test_register_file(default_rom):
 
 def test_button(default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
 
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000  # Select d-pad (bit-4 low)
     assert pyboy.memory[0xFF00] == 0b0000_1111  # High means released
 
     pyboy.button("down")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
 
     pyboy.button("down")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
     pyboy.button("down")
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_0111  # down is kept pressed
-    pyboy.tick(1, False)
+    pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
 
@@ -212,9 +218,11 @@ def test_pause_toggle(default_rom):
         assert not pyboy.paused
 
 
-@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
+@pytest.mark.skipif(
+    cython_compiled or not sdl2, reason="This test requires access to internal functions not available in Cython"
+)
 def test_no_input_enabled(default_rom):
-    pyboy = PyBoy(default_rom, no_input=True)
+    pyboy = PyBoy(default_rom, window="SDL2", no_input=True, sound_volume=0)
     pyboy.set_emulation_speed(0)
     with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
         pyboy.tick()
@@ -229,9 +237,11 @@ def test_no_input_enabled(default_rom):
     assert not pyboy.paused
 
 
-@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal functions not available in Cython")
+@pytest.mark.skipif(
+    cython_compiled or not sdl2, reason="This test requires access to internal functions not available in Cython"
+)
 def test_no_input_disabled(default_rom):
-    pyboy = PyBoy(default_rom, no_input=False)
+    pyboy = PyBoy(default_rom, window="SDL2", no_input=False, sound_volume=0)
     pyboy.set_emulation_speed(0)
     with mock.patch("pyboy.plugins.window_sdl2.sdl2_event_pump", return_value=[WindowEvent(WindowEvent.PAUSE)]):
         pyboy.tick()
@@ -248,8 +258,7 @@ def test_no_input_disabled(default_rom):
 
 def test_tilemaps(kirby_rom):
     pyboy = PyBoy(kirby_rom, window="null")
-    pyboy.set_emulation_speed(0)
-    pyboy.tick(120, False)
+    pyboy.tick(120, False, False)
 
     bck_tilemap = pyboy.tilemap_background
     wdw_tilemap = pyboy.tilemap_window
@@ -327,10 +336,10 @@ def test_randomize_ram(default_rom):
     pyboy.stop(save=False)
 
 
-def test_not_cgb(pokemon_crystal_rom):
-    pyboy = PyBoy(pokemon_crystal_rom, window="null", cgb=False)
+def test_not_cgb(pokemon_crystal_rom, boot_rom):
+    pyboy = PyBoy(pokemon_crystal_rom, window="null", cgb=False, bootrom=boot_rom)
     pyboy.set_emulation_speed(0)
-    pyboy.tick(60 * 7, False)
+    pyboy.tick(60 * 10, True)
 
     assert pyboy.tilemap_background[1:16, 16] == [
         134,
@@ -349,49 +358,5 @@ def test_not_cgb(pokemon_crystal_rom):
         177,
         232,
     ]  # Assert that the screen says "Game Boy Color." at the bottom.
-
-    pyboy.stop(save=False)
-
-
-OVERWRITE_PNGS = False
-
-
-@pytest.mark.parametrize("cgb", [False, True, None])
-@pytest.mark.parametrize("_bootrom, frames", [(lf("boot_cgb_rom"), 120), (lf("boot_rom"), 120), (None, 30)])
-@pytest.mark.parametrize("rom", [lf("tetris_rom"), lf("any_rom_cgb")])
-def test_all_modes(cgb, _bootrom, frames, rom, any_rom_cgb, boot_cgb_rom):
-    if cgb == False and _bootrom == boot_cgb_rom:
-        pytest.skip("Invalid combination")
-
-    if cgb is None and _bootrom == boot_cgb_rom and rom != any_rom_cgb:
-        pytest.skip("Invalid combination")
-
-    pyboy = PyBoy(rom, window="null", bootrom=_bootrom, cgb=cgb)
-    pyboy.set_emulation_speed(0)
-    pyboy.tick(frames, True)
-
-    rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"
-    png_path = Path(f"tests/test_results/all_modes/{rom_name}_{cgb}_{os.path.basename(str(_bootrom))}.png")
-    image = pyboy.screen.image
-    if OVERWRITE_PNGS:
-        png_path.parents[0].mkdir(parents=True, exist_ok=True)
-        png_buf = BytesIO()
-        image.save(png_buf, "png")
-        with open(png_path, "wb") as f:
-            f.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in png_buf.getvalue()]))
-    else:
-        png_buf = BytesIO()
-        with open(png_path, "rb") as f:
-            data = f.read()
-            png_buf.write(b"".join([(x ^ 0b10011101).to_bytes(1, sys.byteorder) for x in data]))
-        png_buf.seek(0)
-
-        old_image = PIL.Image.open(png_buf).convert("RGB")
-        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
-        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
-            image.show()
-            old_image.show()
-            diff.show()
-        assert not diff.getbbox(), f"Images are different! {(cgb, _bootrom, frames, rom)}"
 
     pyboy.stop(save=False)

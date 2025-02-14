@@ -7,7 +7,7 @@ import array
 import os
 
 import pyboy
-from pyboy.utils import IntIOWrapper, PyBoyException
+from pyboy.utils import IntIOWrapper, PyBoyException, PyBoyInvalidInputException
 
 from .rtc import RTC
 
@@ -32,6 +32,9 @@ class BaseMBC:
         self.external_rom_count = len(rombanks)
         self.external_ram_count = external_ram_count
         self.init_rambanks(external_ram_count)
+
+        # CGB flag overlaps with earlier game titles
+        self.cgb = bool(self.rombanks[0, 0x0143] >> 7)
         self.gamename = self.getgamename(rombanks)
 
         self.memorymodel = 0
@@ -39,8 +42,6 @@ class BaseMBC:
         self.rambank_selected = 0
         self.rombank_selected = 1
         self.rombank_selected_low = 0
-
-        self.cgb = bool(self.rombanks[0, 0x0143] >> 7)
 
         if not os.path.exists(self.filename):
             logger.debug("No RAM file found. Skipping.")
@@ -76,7 +77,7 @@ class BaseMBC:
     def save_ram(self, f):
         if not self.rambank_initialized:
             logger.warning("Saving RAM is not supported on %0.2x", self.carttype)
-            return
+            return 0
 
         for bank in range(self.external_ram_count):
             for byte in range(8 * 1024):
@@ -87,7 +88,7 @@ class BaseMBC:
     def load_ram(self, f):
         if not self.rambank_initialized:
             logger.warning("Loading RAM is not supported on %0.2x", self.carttype)
-            return
+            return 0
 
         for bank in range(self.external_ram_count):
             for byte in range(8 * 1024):
@@ -102,7 +103,14 @@ class BaseMBC:
         self.rambanks = memoryview(array.array("B", [0] * (8 * 1024 * 16))).cast("B", shape=(16, 8 * 1024))
 
     def getgamename(self, rombanks):
-        return "".join([chr(rombanks[0, x]) for x in range(0x0134, 0x0142)]).split("\0")[0]
+        # Title was originally 0x134-0x143.
+        # Later 0x13F-0x142 became manufacturer code and 0x143 became a CGB flag
+        if self.cgb:
+            end = 0x0142  # Including manufacturer code
+            # end = 0x013F # Excluding potential(?) manufacturer code
+        else:
+            end = 0x0143
+        return "".join([chr(rombanks[0, x]) for x in range(0x0134, end)]).split("\0")[0]
 
     def setitem(self, address, value):
         raise PyBoyException("Cannot set item in MBC")
@@ -118,7 +126,7 @@ class BaseMBC:
             )
             self.rombanks[rom_bank, address] = value
         else:
-            logger.error("Invalid override address: %0.4x", address)
+            raise PyBoyInvalidInputException("Invalid override address: %0.4x", address)
 
     def getitem(self, address):
         if 0xA000 <= address < 0xC000:

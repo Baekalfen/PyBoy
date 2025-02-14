@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="generator" content="pdoc 0.11.5" />
 <title>pyboy.api.screen API documentation</title>
 <meta name="description" content="This class gives access to the frame buffer and other screen parameters of PyBoy." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -57,6 +57,7 @@ class Screen:
     If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
     It&#39;s much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     &#34;&#34;&#34;
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -81,8 +82,8 @@ class Screen:
 
         Returns
         -------
-        bytes:
-            92160 bytes of screen data in a `bytes` object.
+        memoryview:
+            92160 bytes memoryview of screen data.
         &#34;&#34;&#34;
         self.raw_buffer_dims = self.mb.lcd.renderer.buffer_dims
         &#34;&#34;&#34;
@@ -147,7 +148,8 @@ class Screen:
             RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if not Image:
-            logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+            logger.warning(&#39;Cannot generate screen image. Missing dependency &#34;Pillow&#34;.&#39;)
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
@@ -192,14 +194,15 @@ class Screen:
 
     def _set_image(self):
         self.image = Image.frombuffer(
-            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-            self.mb.lcd.renderer._screenbuffer_raw
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
         )
 
     @property
     def tilemap_position_list(self):
         &#34;&#34;&#34;
-        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
         screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
         the end of each call to `pyboy.PyBoy.tick()`.
 
@@ -209,17 +212,17 @@ class Screen:
         ```python
         &gt;&gt;&gt; pyboy.tick(25)
         True
-        &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[67:78]
+        &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
         &gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
         [0, 0, -7, 0]
         [1, 0, -7, 0]
         [2, 0, -7, 0]
         [2, 0, -7, 0]
-        [3, 0, -7, 0]
-        [3, 0, -7, 0]
+        [2, 0, -7, 0]
         [3, 0, -7, 0]
         [3, 0, -7, 0]
         [2, 0, -7, 0]
+        [1, 0, -7, 0]
         [1, 0, -7, 0]
         [0, 0, -7, 0]
 
@@ -232,7 +235,7 @@ class Screen:
         &#34;&#34;&#34;
 
         if self.mb.lcd._LCDC.lcd_enable:
-            return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd._scanlineparameters]
+            return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
         else:
             return [[0, 0, 0, 0] for line in range(144)]
 
@@ -291,6 +294,7 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
     If you&#39;re making an AI or bot, it&#39;s highly recommended to _not_ use this class for detecting objects on the screen.
     It&#39;s much more efficient to use `pyboy.PyBoy.tilemap_background`, `pyboy.PyBoy.tilemap_window`, and `pyboy.PyBoy.get_sprite` instead.
     &#34;&#34;&#34;
+
     def __init__(self, mb):
         self.mb = mb
 
@@ -315,8 +319,8 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
 
         Returns
         -------
-        bytes:
-            92160 bytes of screen data in a `bytes` object.
+        memoryview:
+            92160 bytes memoryview of screen data.
         &#34;&#34;&#34;
         self.raw_buffer_dims = self.mb.lcd.renderer.buffer_dims
         &#34;&#34;&#34;
@@ -381,7 +385,8 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
             RGB image of (160, 144) pixels
         &#34;&#34;&#34;
         if not Image:
-            logger.warning(&#34;Cannot generate screen image. Missing dependency \&#34;Pillow\&#34;.&#34;)
+            logger.warning(&#39;Cannot generate screen image. Missing dependency &#34;Pillow&#34;.&#39;)
+            self.image = utils.PillowImportError()
         else:
             self._set_image()
 
@@ -426,14 +431,15 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
 
     def _set_image(self):
         self.image = Image.frombuffer(
-            self.mb.lcd.renderer.color_format, self.mb.lcd.renderer.buffer_dims[::-1],
-            self.mb.lcd.renderer._screenbuffer_raw
+            self.mb.lcd.renderer.color_format,
+            self.mb.lcd.renderer.buffer_dims[::-1],
+            self.mb.lcd.renderer._screenbuffer_raw,
         )
 
     @property
     def tilemap_position_list(self):
         &#34;&#34;&#34;
-        This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+        This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
         screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
         the end of each call to `pyboy.PyBoy.tick()`.
 
@@ -443,17 +449,17 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
         ```python
         &gt;&gt;&gt; pyboy.tick(25)
         True
-        &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[67:78]
+        &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
         &gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
         [0, 0, -7, 0]
         [1, 0, -7, 0]
         [2, 0, -7, 0]
         [2, 0, -7, 0]
-        [3, 0, -7, 0]
-        [3, 0, -7, 0]
+        [2, 0, -7, 0]
         [3, 0, -7, 0]
         [3, 0, -7, 0]
         [2, 0, -7, 0]
+        [1, 0, -7, 0]
         [1, 0, -7, 0]
         [0, 0, -7, 0]
 
@@ -466,7 +472,7 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
         &#34;&#34;&#34;
 
         if self.mb.lcd._LCDC.lcd_enable:
-            return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd._scanlineparameters]
+            return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
         else:
             return [[0, 0, 0, 0] for line in range(144)]
 
@@ -498,24 +504,24 @@ It's much more efficient to use <code><a title="pyboy.PyBoy.tilemap_background" 
 <dl>
 <dt id="pyboy.api.screen.Screen.tilemap_position_list"><code class="name">var <span class="ident">tilemap_position_list</span></code></dt>
 <dd>
-<section class="desc"><p>This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+<section class="desc"><p>This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
 screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
 the end of each call to <code><a title="pyboy.PyBoy.tick" href="../index.html#pyboy.PyBoy.tick">PyBoy.tick()</a></code>.</p>
 <p>See <code><a title="pyboy.api.screen.Screen.get_tilemap_position" href="#pyboy.api.screen.Screen.get_tilemap_position">Screen.get_tilemap_position()</a></code> for more information.</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy.tick(25)
 True
-&gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[67:78]
+&gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
 &gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
 [0, 0, -7, 0]
 [1, 0, -7, 0]
 [2, 0, -7, 0]
 [2, 0, -7, 0]
-[3, 0, -7, 0]
-[3, 0, -7, 0]
+[2, 0, -7, 0]
 [3, 0, -7, 0]
 [3, 0, -7, 0]
 [2, 0, -7, 0]
+[1, 0, -7, 0]
 [1, 0, -7, 0]
 [0, 0, -7, 0]
 
@@ -532,7 +538,7 @@ True
 <pre><code class="python">@property
 def tilemap_position_list(self):
     &#34;&#34;&#34;
-    This function provides the screen (SCX, SCY) and window (WX. WY) position for each horizontal line in the
+    This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
     screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
     the end of each call to `pyboy.PyBoy.tick()`.
 
@@ -542,17 +548,17 @@ def tilemap_position_list(self):
     ```python
     &gt;&gt;&gt; pyboy.tick(25)
     True
-    &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[67:78]
+    &gt;&gt;&gt; swoosh = pyboy.screen.tilemap_position_list[66:77]
     &gt;&gt;&gt; print(*swoosh, sep=newline) # Just to pretty-print it
     [0, 0, -7, 0]
     [1, 0, -7, 0]
     [2, 0, -7, 0]
     [2, 0, -7, 0]
-    [3, 0, -7, 0]
-    [3, 0, -7, 0]
+    [2, 0, -7, 0]
     [3, 0, -7, 0]
     [3, 0, -7, 0]
     [2, 0, -7, 0]
+    [1, 0, -7, 0]
     [1, 0, -7, 0]
     [0, 0, -7, 0]
 
@@ -565,7 +571,7 @@ def tilemap_position_list(self):
     &#34;&#34;&#34;
 
     if self.mb.lcd._LCDC.lcd_enable:
-        return [[line[0], line[1], line[2], line[3]] for line in self.mb.lcd._scanlineparameters]
+        return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
     else:
         return [[0, 0, 0, 0] for line in range(144)]</code></pre>
 </details>
@@ -587,8 +593,8 @@ subject to change.</strong> The screen buffer is row-major.</p>
 </code></pre>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>bytes:</code></dt>
-<dd>92160 bytes of screen data in a <code>bytes</code> object.</dd>
+<dt><code>memoryview:</code></dt>
+<dd>92160 bytes memoryview of screen data.</dd>
 </dl></section>
 </dd>
 <dt id="pyboy.api.screen.Screen.raw_buffer_dims"><code class="name">var <span class="ident">raw_buffer_dims</span></code></dt>
@@ -766,7 +772,7 @@ or the Pan Docs under <a href="https://gbdev.io/pandocs/Scrolling.html">LCD Posi
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

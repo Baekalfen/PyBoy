@@ -6,5 +6,5 @@
 from .cartridge import load_cartridge
 
 __all__ = [
-    load_cartridge,
+    "load_cartridge",
 ]

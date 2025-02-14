@@ -9,6 +9,7 @@ from cpython.array cimport array
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t
 
 from pyboy.core.lcd cimport Renderer
+from pyboy.core.sound cimport Sound
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport WindowEvent
@@ -28,15 +29,16 @@ cdef class PyBoyPlugin:
     cdef void post_tick(self) noexcept
     cdef str window_title(self)
     cdef void stop(self) noexcept
-    cpdef bint enabled(self) noexcept
+    cpdef object enabled(self) # object for actual Python bool and exceptions
 
 
 cdef class PyBoyWindowPlugin(PyBoyPlugin):
-
+    cdef bint sound_support
     cdef int scale
     cdef int[2] _scaledresolution
     cdef bint enable_title
     cdef Renderer renderer
+    cdef Sound sound
 
     cdef int64_t _ftime
     cdef bint frame_limiter(self, int) noexcept
@@ -71,5 +73,5 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
 
     cpdef void post_tick(self) noexcept
 
-    cpdef void start_game(self, timer_div=*) noexcept
-    cpdef void reset_game(self, timer_div=*) noexcept
+    cpdef int start_game(self, timer_div=*) except -1
+    cpdef int reset_game(self, timer_div=*) except -1

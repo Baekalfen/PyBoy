@@ -14,7 +14,6 @@ from pyboy.utils import cython_compiled
 @pytest.mark.benchmark(group="nogil")
 def test_threads_baseline(benchmark, default_rom):
     pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
     benchmark(pyboy.tick, 2000, False)
 
 
@@ -25,8 +24,7 @@ def test_threads_nogil(benchmark, count, default_rom):
     # Threaded run with no GIL. Should result in roughly same time.
     def thread_run():
         pyboy = PyBoy(default_rom, window="null")
-        pyboy.set_emulation_speed(0)
-        pyboy.tick(2000, False)
+        pyboy.tick(2000, False, False)
 
     def bench():
         threads = [Thread(target=thread_run) for _ in range(count)]

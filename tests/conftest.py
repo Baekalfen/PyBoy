@@ -129,8 +129,8 @@ def kirby_rom(secrets):
 
 
 @pytest.fixture(scope="session")
-def any_rom(default_rom):
-    return default_rom
+def any_rom(secrets, tetris_rom):
+    return tetris_rom
 
 
 @pytest.fixture(scope="session")
@@ -260,6 +260,20 @@ def rtc3test_file():
             rtc3test_data = url_open("https://pyboy.dk/mirror/rtc3test.gb")
             with open(path, "wb") as rom_file:
                 rom_file.write(rtc3test_data)
+    return str(path)
+
+
+# https://github.com/pinobatch/little-things-gb
+# https://forums.nesdev.org/viewtopic.php?f=20&t=18023
+@pytest.fixture(scope="session")
+def firstwhite_file():
+    path = extra_test_rom_dir / Path("firstwhite.gb")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.firstwhite.txt"))
+            firstwhite_data = url_open("https://pyboy.dk/mirror/firstwhite.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(firstwhite_data)
     return str(path)
 
 
