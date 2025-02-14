@@ -582,6 +582,7 @@ class Motherboard:
             if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
                 logger.debug("Bootrom disabled!")
                 self.bootrom_enabled = False
+                # TODO: Lock FF4C https://gbdev.io/pandocs/CGB_Registers.html#ff4c--key0-cgb-mode-only-cpu-mode-select
                 self.cpu.bail = True
             # CGB registers
             elif self.cgb and i == 0xFF4D:
