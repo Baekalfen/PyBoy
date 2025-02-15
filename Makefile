@@ -27,11 +27,16 @@ codecov: clean
 	${PY} setup.py test --codecov-trace
 	codecov
 
-build:
-	@echo "Building..."
+build_rom:
+	@echo "Building ROMs..."
 	cd ${ROOT_DIR}/extras/default_rom && $(MAKE)
 	cd ${ROOT_DIR}/extras/bootrom && $(MAKE)
+
+build_pyboy:
+	@echo "Building PyBoy..."
 	CFLAGS=$(CFLAGS) ${PY} setup.py build_ext -j $(shell getconf _NPROCESSORS_ONLN) --inplace
+
+build: build_rom build_pyboy
 
 clean:
 	@echo "Cleaning..."
