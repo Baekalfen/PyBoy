@@ -53,15 +53,20 @@ class Sound:
         self.audiobuffer = array(self.buffer_format, [0] * self.audiobuffer_length)
 
         self.speed_shift = 0
-        if self.emulate and self.disable_sampling:
+        if not self.emulate:
             # No need to sample, when not enabled
             self.cycles_target = 1 << 31
+            self.cycles_target_512Hz = 1 << 31
+            self._cycles_to_interrupt = 1 << 31
         else:
-            self.cycles_target = self.cycles_per_sample
-        self.cycles_target_512Hz = CYCLES_512HZ << self.speed_shift
-        # We have to use ceil on the double to round any decimals up to the next cycle. We have to pass the target
-        # entirely, and as the cycles are integer, we cannot just round down, as that would be 1 cycle too early.
-        self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
+            if self.disable_sampling:
+                self.cycles_target = 1 << 31
+            else:
+                self.cycles_target = self.cycles_per_sample
+            self.cycles_target_512Hz = CYCLES_512HZ << self.speed_shift
+            # We have to use ceil on the double to round any decimals up to the next cycle. We have to pass the target
+            # entirely, and as the cycles are integer, we cannot just round down, as that would be 1 cycle too early.
+            self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
 
         self.cycles = 0
         self.last_cycles = 0
@@ -87,7 +92,10 @@ class Sound:
     def reset_apu_div(self):
         # self.div_apu_counter = 0
         # self.div_apu = 0
-        self.cycles_target_512Hz = self.cycles + (CYCLES_512HZ << self.speed_shift)
+        if self.emulate:
+            self.cycles_target_512Hz = self.cycles + (CYCLES_512HZ << self.speed_shift)
+        else:
+            self.cycles_target_512Hz = 1 << 31
 
     def get(self, offset):
         if not self.emulate:
@@ -184,16 +192,15 @@ class Sound:
 
         # Tick channels until point of sample (repeating) or however many cycles we have.
         while cycles > 0:
-            # if self.enabled:
-            _cycles = max(0, min(double_to_uint64_ceil(self.cycles_target) - self.cycles, cycles))
-            # else:
-            #     _cycles = cycles
+            if not self.disable_sampling:
+                _cycles = max(0, min(double_to_uint64_ceil(self.cycles_target) - self.cycles, cycles))
+            else:
+                _cycles = cycles
 
-            self.cycles += _cycles
             # Pan Docs:
             # Turning the APU off, however, does not affect ... the DIV-APU counter
             old_div_apu = self.div_apu
-            if self.cycles >= self.cycles_target_512Hz:
+            while self.cycles >= self.cycles_target_512Hz:
                 self.div_apu += 1
                 self.cycles_target_512Hz += CYCLES_512HZ << self.speed_shift
             div_tick_count = self.div_apu - old_div_apu
@@ -204,9 +211,8 @@ class Sound:
                 self.wavechannel.tick(_cycles >> self.speed_shift)
                 self.noisechannel.tick(_cycles >> self.speed_shift)
 
-                # Progress the channels by 1 tick at 512Hz
-                # assert div_tick_count <= 1
-                if div_tick_count:  # and self.enabled?
+                # Progress the channels by ticks of 512Hz
+                for _ in range(div_tick_count):
                     # Pan docs:
                     # A “DIV-APU” counter is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0, therefore
                     # at a frequency of 512 Hz (regardless of whether double-speed is active). Thus, the counter can be made to
@@ -237,14 +243,13 @@ class Sound:
                         self.tonechannel.tick_envelope()
                         self.noisechannel.tick_envelope()
 
-            if self.cycles >= self.cycles_target:
+            self.cycles += _cycles
+            while self.cycles >= self.cycles_target:
                 if not self.disable_sampling:
                     self.sample()
-
                 self.cycles_target += self.cycles_per_sample * (1 << self.speed_shift)
-                self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
-            else:
-                self._cycles_to_interrupt = double_to_uint64_ceil(self.cycles_target_512Hz)
+
+            self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
             cycles -= _cycles
 
     def pcm12(self):

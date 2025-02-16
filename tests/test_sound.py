@@ -12,13 +12,15 @@ import numpy as np
 import PIL
 import pytest
 
+from pyboy.utils import cython_compiled
 from pyboy import PyBoy
 from pyboy.utils import PyBoyFeatureDisabledError
 
 OVERWRITE_PNGS = False
+odds = None
 
 
-@pytest.mark.parametrize("sampling", [True, False])
+@pytest.mark.parametrize("sampling", [True, False, odds])
 def test_swoosh(default_rom, sampling):
     sample_rate = 24000
     pyboy = PyBoy(default_rom, window="null", sound_sample_rate=sample_rate)
@@ -28,8 +30,12 @@ def test_swoosh(default_rom, sampling):
     buffers = np.zeros((sample_rate // 60 * frames, 2))
     # array("b", [0] * (sample_rate) * 2 * (frames//60))
 
-    for _ in range(frames):
-        pyboy.tick(1, sound=sampling)
+    for n in range(frames):
+        if sampling is odds:
+            # Bit of a hack, but to test enable/disable sampling, we switch it on and off
+            pyboy.tick(1, False, sound=n % 2)
+        else:
+            pyboy.tick(1, False, sound=sampling)
         audiobuffer = pyboy.sound.ndarray
         length, _ = audiobuffer.shape
         buffers[pointer : pointer + length] = audiobuffer[:]
@@ -57,7 +63,8 @@ def test_swoosh(default_rom, sampling):
 
     plt.tight_layout()
 
-    png_path = Path(f"tests/test_results/sound_swoosh_{'sampling' if sampling else 'nosampling'}.png")
+    name = "sampling" if sampling else ("oddsampling" if sampling is odds else "nosampling")
+    png_path = Path(f"tests/test_results/sound_swoosh_{name}.png")
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         plt.savefig(png_path)
@@ -116,3 +123,18 @@ def test_buffer_overrun(default_rom, capsys, sample_rate):
     # Watch out for critical "Buffer overrun" log from sound
     captured = capsys.readouterr()
     assert captured.out == ""
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_sound_not_emulated_cycles_to_interrupt(default_rom):
+    pyboy = PyBoy(default_rom, window="null", sound_emulated=False)
+    # We want sound to report a large amount, so it won't interfere with the CPU's cycles target
+    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    pyboy.tick(1, False, True)
+    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    for _ in range(200):
+        pyboy.tick(1, False, True)
+    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    for _ in range(200):
+        pyboy.tick(1, False, False)
+    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
