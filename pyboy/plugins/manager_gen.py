@@ -22,7 +22,7 @@ game_wrappers = [
     "GameWrapperKirbyDreamLand",
     "GameWrapperPokemonGen1",
     "GameWrapperPokemonPinball",
-     "GameWrapperMetroidII",
+    "GameWrapperMetroidII",
 ]
 plugins = [
     "AutoPause",
