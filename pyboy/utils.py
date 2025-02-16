@@ -3,73 +3,138 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__all__ = ["WindowEvent", "dec_to_bcd", "bcd_to_dec"]
+__all__ = [
+    "WindowEvent",
+    "dec_to_bcd",
+    "bcd_to_dec",
+    "PyBoyException",
+    "PyBoyInternalError",
+    "PyBoyAssertException",
+    "PyBoyOutOfBoundsException",
+    "PyBoyNotImplementedException",
+    "PyBoyInvalidInputException",
+    "PyBoyDependencyError",
+    "PyBoyFeatureDisabledError",
+    "AccessError",
+    "PillowImportError",
+    "SoundEnabledError",
+]
 
 STATE_VERSION = 14
 
 
 class PyBoyException(Exception):
+    """
+    Custom exception class for PyBoy-related errors.
+
+    This exception is raised for errors specific to the PyBoy emulator.
+    """
+
     pass
 
 
 class PyBoyInternalError(PyBoyException):
+    """
+    Exception raised for internal errors in the PyBoy emulator.
+
+    This exception is used to indicate errors that occur within the PyBoy
+    emulator that are not expected to be encountered by the end user.
+    """
+
     pass
 
 
 class PyBoyAssertException(PyBoyException):
+    """
+    Exception is used to indicate assertion errors that occur within the PyBoy emulator.
+    """
+
     pass
 
 
 class PyBoyOutOfBoundsException(PyBoyException):
+    """
+    Exception raised for errors when an operation exceeds array or integer bounds in PyBoy.
+    """
+
     pass
 
 
 class PyBoyNotImplementedException(PyBoyException):
+    """
+    Exception raised for methods that are not yet implemented in a base class.
+    """
+
     pass
 
 
 class PyBoyInvalidInputException(PyBoyException):
+    """
+    Exception is used to indicate that an invalid input has been provided to a PyBoy function or method.
+    """
+
     pass
 
 
 class PyBoyDependencyError(PyBoyException):
+    """
+    Exception raised for errors related to missing dependencies in PyBoy.
+    """
+
     pass
 
 
 class PyBoyFeatureDisabledError(PyBoyException):
+    """
+    Exception raised when the user requests a feature that has been disabled.
+    """
+
     pass
 
 
 class AccessError:
-    exception_type = PyBoyException
-    exception_message = "Access Error"
+    """
+    Base class that replaces an optional feature. Whenever this object is accessed,
+    it raises a predefined exception. I.e. on missing dependencies etc.
+    """
+
+    _exception_type = PyBoyException
+    _exception_message = "Access Error"
 
     def __bool__(self):
         return False
 
     def __getattribute__(self, name):
-        if name in ("exception_type", "exception_message"):
+        if name in ("_exception_type", "_exception_message"):
             return super().__getattribute__(name)
-        raise self.exception_type(self.exception_message)
+        raise self._exception_type(self._exception_message)
 
     def __setattribute__(self, *args):
-        raise self.exception_type(self.exception_message)
+        raise self._exception_type(self._exception_message)
 
     def __getitem__(self, *args):
-        raise self.exception_type(self.exception_message)
+        raise self._exception_type(self._exception_message)
 
     def __setitem__(self, *args):
-        raise self.exception_type(self.exception_message)
+        raise self._exception_type(self._exception_message)
 
 
 class PillowImportError(AccessError):
-    exception_type = PyBoyDependencyError
-    exception_message = "Missing depencency Pillow!"
+    """
+    Exception raised when the Pillow library is not found.
+    """
+
+    _exception_type = PyBoyDependencyError
+    _exception_message = "Missing depencency Pillow!"
 
 
 class SoundEnabledError(AccessError):
-    exception_type = PyBoyFeatureDisabledError
-    exception_message = "Sound is not enabled!"
+    """
+    Exception raised when the user requests a feature in the sound module that has been disabled.
+    """
+
+    _exception_type = PyBoyFeatureDisabledError
+    _exception_message = "Sound is not enabled!"
 
 
 try:
