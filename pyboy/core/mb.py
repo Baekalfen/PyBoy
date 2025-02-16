@@ -453,6 +453,12 @@ class Motherboard:
                 return 0x00  # Not readable
             elif self.cgb and i == 0xFF55:
                 return self.hdma.hdma5 & 0xFF
+            elif self.cgb and i == 0xFF76:
+                self.sound.tick(self.cpu.cycles)
+                return self.sound.pcm12()
+            elif self.cgb and i == 0xFF77:
+                self.sound.tick(self.cpu.cycles)
+                return self.sound.pcm34()
             return self.ram.non_io_internal_ram1[i - 0xFF4C]
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]

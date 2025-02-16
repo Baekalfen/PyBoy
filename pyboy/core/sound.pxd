@@ -61,6 +61,8 @@ cdef class Sound:
     @cython.locals(cycles=uint64_t)
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void sample(self) noexcept nogil
+    cdef uint8_t pcm12(self) noexcept nogil
+    cdef uint8_t pcm34(self) noexcept nogil
     cdef void clear_buffer(self) noexcept nogil
     cdef void reset_apu_div(self) noexcept nogil
     cdef void stop(self) noexcept
