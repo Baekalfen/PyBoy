@@ -184,17 +184,17 @@ class Screen:
         ```python
         >>> pyboy.tick(25)
         True
-        >>> swoosh = pyboy.screen.tilemap_position_list[67:78]
+        >>> swoosh = pyboy.screen.tilemap_position_list[66:77]
         >>> print(*swoosh, sep=newline) # Just to pretty-print it
         [0, 0, -7, 0]
         [1, 0, -7, 0]
         [2, 0, -7, 0]
         [2, 0, -7, 0]
-        [3, 0, -7, 0]
-        [3, 0, -7, 0]
+        [2, 0, -7, 0]
         [3, 0, -7, 0]
         [3, 0, -7, 0]
         [2, 0, -7, 0]
+        [1, 0, -7, 0]
         [1, 0, -7, 0]
         [0, 0, -7, 0]
 
