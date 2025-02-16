@@ -247,6 +247,14 @@ class Sound:
                 self._cycles_to_interrupt = double_to_uint64_ceil(self.cycles_target_512Hz)
             cycles -= _cycles
 
+    def pcm12(self):
+        # NOTE: Volume can apparantly not exceed 15?
+        return self.sweepchannel.sample() & 0xF | ((self.tonechannel.sample() & 0xF) << 4)
+
+    def pcm34(self):
+        # NOTE: Volume can apparantly not exceed 15?
+        return self.wavechannel.sample() & 0xF | ((self.noisechannel.sample() & 0xF) << 4)
+
     def sample(self):
         if self.poweron:
             # Left channel
