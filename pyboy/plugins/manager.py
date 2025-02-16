@@ -21,6 +21,7 @@ from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # noqa
 from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
 from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
+from pyboy.plugins.game_wrapper_metroid_ii import GameWrapperMetroidII # noqa
 # imports end
 
 
@@ -41,6 +42,7 @@ def parser_arguments():
     yield GameWrapperKirbyDreamLand.argv
     yield GameWrapperPokemonGen1.argv
     yield GameWrapperPokemonPinball.argv
+    yield GameWrapperMetroidII.argv
     # yield_plugins end
     pass
 
@@ -82,6 +84,8 @@ class PluginManager:
         self.game_wrapper_pokemon_gen1_enabled = self.game_wrapper_pokemon_gen1.enabled()
         self.game_wrapper_pokemon_pinball = GameWrapperPokemonPinball(pyboy, mb, pyboy_argv)
         self.game_wrapper_pokemon_pinball_enabled = self.game_wrapper_pokemon_pinball.enabled()
+        self.game_wrapper_metroid_ii = GameWrapperMetroidII(pyboy, mb, pyboy_argv)
+        self.game_wrapper_metroid_ii_enabled = self.game_wrapper_metroid_ii.enabled()
         # plugins_enabled end
 
     def gamewrapper(self):
@@ -91,6 +95,7 @@ class PluginManager:
         if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
         if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
         if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
+        if self.game_wrapper_metroid_ii_enabled: return self.game_wrapper_metroid_ii
         # gamewrapper end
         self.generic_game_wrapper_enabled = True
         return self.generic_game_wrapper
@@ -129,6 +134,8 @@ class PluginManager:
             events = self.game_wrapper_pokemon_gen1.handle_events(events)
         if self.game_wrapper_pokemon_pinball_enabled:
             events = self.game_wrapper_pokemon_pinball.handle_events(events)
+        if self.game_wrapper_metroid_ii_enabled:
+            events = self.game_wrapper_metroid_ii.handle_events(events)
         # foreach end
         if self.generic_game_wrapper_enabled:
             events = self.generic_game_wrapper.handle_events(events)
@@ -158,6 +165,8 @@ class PluginManager:
             self.game_wrapper_pokemon_gen1.post_tick()
         if self.game_wrapper_pokemon_pinball_enabled:
             self.game_wrapper_pokemon_pinball.post_tick()
+        if self.game_wrapper_metroid_ii_enabled:
+            self.game_wrapper_metroid_ii.post_tick()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.post_tick()
@@ -243,6 +252,8 @@ class PluginManager:
             title += self.game_wrapper_pokemon_gen1.window_title()
         if self.game_wrapper_pokemon_pinball_enabled:
             title += self.game_wrapper_pokemon_pinball.window_title()
+        if self.game_wrapper_metroid_ii_enabled:
+            title += self.game_wrapper_metroid_ii.window_title()
         # foreach end
         return title
 
@@ -280,6 +291,8 @@ class PluginManager:
             self.game_wrapper_pokemon_gen1.stop()
         if self.game_wrapper_pokemon_pinball_enabled:
             self.game_wrapper_pokemon_pinball.stop()
+        if self.game_wrapper_metroid_ii_enabled:
+            self.game_wrapper_metroid_ii.stop()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.stop()

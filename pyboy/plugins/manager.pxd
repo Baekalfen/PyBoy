@@ -22,6 +22,7 @@ from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
 from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
 from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 from pyboy.plugins.game_wrapper_pokemon_pinball cimport GameWrapperPokemonPinball
+from pyboy.plugins.game_wrapper_metroid_ii cimport GameWrapperMetroidII
 # imports end
 
 
@@ -46,6 +47,7 @@ cdef class PluginManager:
     cdef public GameWrapperKirbyDreamLand game_wrapper_kirby_dream_land
     cdef public GameWrapperPokemonGen1 game_wrapper_pokemon_gen1
     cdef public GameWrapperPokemonPinball game_wrapper_pokemon_pinball
+    cdef public GameWrapperMetroidII game_wrapper_metroid_ii
     cdef bint window_sdl2_enabled
     cdef bint window_open_gl_enabled
     cdef bint window_null_enabled
@@ -61,6 +63,7 @@ cdef class PluginManager:
     cdef bint game_wrapper_kirby_dream_land_enabled
     cdef bint game_wrapper_pokemon_gen1_enabled
     cdef bint game_wrapper_pokemon_pinball_enabled
+    cdef bint game_wrapper_metroid_ii_enabled
     # plugin_cdef end
 
     cdef list handle_events(self, list)
