@@ -298,8 +298,9 @@ def test_screen_buffer_and_image(tetris_rom, boot_rom):
 def test_tetris(tetris_rom):
     NEXT_TETROMINO = 0xC213
 
-    pyboy = PyBoy(tetris_rom, bootrom="pyboy_fast", window="null")
+    pyboy = PyBoy(tetris_rom, window="null")
     pyboy.set_emulation_speed(0)
+    pyboy.tick(120, False)
     tetris = pyboy.game_wrapper
     tetris.set_tetromino("T")
 
