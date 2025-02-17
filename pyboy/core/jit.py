@@ -105,11 +105,209 @@ def threaded_processor(jit):
             jit.queue[block_id].append((cycles_target, interrupt_master_enable))
         logger.critical("PROCESSING!")
         jit.process()
-        time.sleep(0.1)
+        if jit.threads > 0:
+            time.sleep(0.1)
+        else:
+            return
+
+
+def getitem_io_ports_inline(i):
+    if 0xFF00 <= i < 0xFF4C: # I/O ports
+        code += """
+# NOTE: A bit ad-hoc, but interrupts can occur right between writes
+if self.timer.tick(self.cpu.cycles):
+    self.cpu.set_interruptflag(INTR_TIMER)
+"""
+
+        if i == 0xFF04:
+            return self.timer.DIV
+        elif i == 0xFF05:
+            return self.timer.TIMA
+        elif i == 0xFF06:
+            return self.timer.TMA
+        elif i == 0xFF07:
+            return self.timer.TAC
+        elif i == 0xFF0F:
+            return self.cpu.interrupts_flag_register
+        elif 0xFF10 <= i < 0xFF40:
+            self.sound.tick(self.cpu.cycles, self.double_speed)
+            return self.sound.get(i - 0xFF10)
+        elif i == 0xFF40:
+            return self.lcd.get_lcdc()
+        elif i == 0xFF41:
+            return self.lcd.get_stat()
+        elif i == 0xFF42:
+            return self.lcd.SCY
+        elif i == 0xFF43:
+            return self.lcd.SCX
+        elif i == 0xFF44:
+            return self.lcd.LY
+        elif i == 0xFF45:
+            return self.lcd.LYC
+        elif i == 0xFF46:
+            return 0x00 # DMA
+        elif i == 0xFF47:
+            return self.lcd.BGP.get()
+        elif i == 0xFF48:
+            return self.lcd.OBP0.get()
+        elif i == 0xFF49:
+            return self.lcd.OBP1.get()
+        elif i == 0xFF4A:
+            return self.lcd.WY
+        elif i == 0xFF4B:
+            return self.lcd.WX
+        else:
+            return self.ram.io_ports[i - 0xFF00]
+    elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
+        # CGB registers
+        if self.cgb and i == 0xFF4D:
+            return self.key1
+        elif self.cgb and i == 0xFF4F:
+            return self.lcd.vbk.get()
+        elif self.cgb and i == 0xFF68:
+            return self.lcd.bcps.get() | 0x40
+        elif self.cgb and i == 0xFF69:
+            return self.lcd.bcpd.get()
+        elif self.cgb and i == 0xFF6A:
+            return self.lcd.ocps.get() | 0x40
+        elif self.cgb and i == 0xFF6B:
+            return self.lcd.ocpd.get()
+        elif self.cgb and i == 0xFF51:
+            # logger.debug("HDMA1 is not readable")
+            return 0x00 # Not readable
+        elif self.cgb and i == 0xFF52:
+            # logger.debug("HDMA2 is not readable")
+            return 0x00 # Not readable
+        elif self.cgb and i == 0xFF53:
+            # logger.debug("HDMA3 is not readable")
+            return 0x00 # Not readable
+        elif self.cgb and i == 0xFF54:
+            # logger.debug("HDMA4 is not readable")
+            return 0x00 # Not readable
+        elif self.cgb and i == 0xFF55:
+            return self.hdma.hdma5 & 0xFF
+        return self.ram.non_io_internal_ram1[i - 0xFF4C]
+    elif 0xFF80 <= i < 0xFFFF: # Internal RAM
+        return self.ram.internal_ram1[i - 0xFF80]
+    elif i == 0xFFFF: # Interrupt Enable Register
+        return self.cpu.interrupts_enabled_register
+
+
+def setitem_io_ports_inline(i):
+    code = ""
+    if 0xFF00 <= i < 0xFF4C: # I/O ports
+        code += """
+# NOTE: A bit ad-hoc, but interrupts can occur right between writes
+if self.timer.tick(self.cpu.cycles):
+    self.cpu.set_interruptflag(INTR_TIMER)
+"""
+
+        if i == 0xFF00:
+            code += "self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)"
+        elif i == 0xFF01:
+            code += """
+self.serialbuffer[self.serialbuffer_count] = value
+self.serialbuffer_count += 1
+self.serialbuffer_count &= 0x3FF
+self.ram.io_ports[i - 0xFF00] = value
+"""
+        elif i == 0xFF04:
+            code += "self.timer.reset()"
+        elif i == 0xFF05:
+            code += "self.timer.TIMA = value"
+        elif i == 0xFF06:
+            code += "self.timer.TMA = value"
+        elif i == 0xFF07:
+            code += "self.timer.TAC = value & 0b111 # TODO: Move logic to Timer class"
+        elif i == 0xFF0F:
+            code += "self.cpu.interrupts_flag_register = value"
+        elif 0xFF10 <= i < 0xFF40:
+            code += """
+self.sound.tick(self.cpu.cycles, self.double_speed)
+self.sound.set(i - 0xFF10, value)
+"""
+        elif i == 0xFF40:
+            code += "self.lcd.set_lcdc(value)"
+        elif i == 0xFF41:
+            code += "self.lcd.set_stat(value)"
+        elif i == 0xFF42:
+            code += "self.lcd.SCY = value"
+        elif i == 0xFF43:
+            code += "self.lcd.SCX = value"
+        elif i == 0xFF44:
+            code += "self.lcd.LY = value"
+        elif i == 0xFF45:
+            code += "self.lcd.LYC = value"
+        elif i == 0xFF46:
+            code += "self.transfer_DMA(value)"
+        elif i == 0xFF47:
+            code += "if self.lcd.BGP.set(value): self.lcd.renderer.clear_tilecache0()"
+        elif i == 0xFF48:
+            code += "if self.lcd.OBP0.set(value): self.lcd.renderer.clear_spritecache0()"
+        elif i == 0xFF49:
+            code += "if self.lcd.OBP1.set(value): self.lcd.renderer.clear_spritecache1()"
+        elif i == 0xFF4A:
+            code += "self.lcd.WY = value"
+        elif i == 0xFF4B:
+            code += "self.lcd.WX = value"
+        else:
+            code += "self.ram.io_ports[i - 0xFF00] = value"
+        code += "self.cpu.bail = True"
+    elif 0xFF4C <= i < 0xFF80: # Empty but unusable for I/O
+        if self.bootrom_enabled and i == 0xFF50 and (value == 0x1 or value == 0x11):
+            code += "self.bootrom_enabled = False"
+        # CGB registers
+        elif self.cgb and i == 0xFF4D:
+            code += """
+self.key1 = value
+self.cpu.bail = True
+"""
+        elif self.cgb and i == 0xFF4F:
+            code += "self.lcd.vbk.set(value)"
+        elif self.cgb and i == 0xFF51:
+            code += "self.hdma.hdma1 = value"
+        elif self.cgb and i == 0xFF52:
+            code += "self.hdma.hdma2 = value # & 0xF0"
+        elif self.cgb and i == 0xFF53:
+            code += "self.hdma.hdma3 = value # & 0x1F"
+        elif self.cgb and i == 0xFF54:
+            code += "self.hdma.hdma4 = value # & 0xF0"
+        elif self.cgb and i == 0xFF55:
+            code += """
+self.hdma.set_hdma5(value, self)
+self.cpu.bail = True
+"""
+        elif self.cgb and i == 0xFF68:
+            code += "self.lcd.bcps.set(value)"
+        elif self.cgb and i == 0xFF69:
+            code += """
+self.lcd.bcpd.set(value)
+self.lcd.renderer.clear_tilecache0()
+self.lcd.renderer.clear_tilecache1()
+"""
+        elif self.cgb and i == 0xFF6A:
+            code += "self.lcd.ocps.set(value)"
+        elif self.cgb and i == 0xFF6B:
+            code += """
+self.lcd.ocpd.set(value)
+self.lcd.renderer.clear_spritecache0()
+self.lcd.renderer.clear_spritecache1()
+"""
+        else:
+            code += "self.ram.non_io_internal_ram1[i - 0xFF4C] = value"
+    elif 0xFF80 <= i < 0xFFFF: # Internal RAM
+        code += "self.ram.internal_ram1[i - 0xFF80] = value"
+    elif i == 0xFFFF: # Interrupt Enable Register
+        code += """
+self.cpu.interrupts_enabled_register = value
+self.cpu.bail = True
+"""
+    else:
+        raise IndexError(f"Address {i:04X} is out of range for IO ports")
 
 
 class JIT:
-    def __init__(self, cpu, cartridge):
+    def __init__(self, cpu, cartridge, threads):
         self.cpu = cpu
         self.cartridge = cartridge
         self._jit_clear()
@@ -117,8 +315,16 @@ class JIT:
 
         self.thread_queue = queue.Queue()
         self.thread = threading.Thread(target=threaded_processor, args=(self, ))
+        self.threads = 1
         self.thread_stop = False
-        self.thread.start()
+        if self.threads:
+            self.thread.start()
+
+    def process_non_threaded(self):
+        if self.threads > 0:
+            return
+
+        threaded_processor(self)
 
     def stop(self):
         self.thread_stop = True
@@ -355,6 +561,14 @@ class JIT:
         return True
 
     def optimize_block(self, raw_code_block, raw_block_max_cycles, has_internal_jump):
+        # TODO: Find LDH E0, E2, F0, F2 and hard code if offset is a literal or deferred literal (C)
+        # F0 LDH A,(a8) # cpu.A = cpu.mb.getitem_io_ports(0xFF00 | a8) -> cpu.A = cpu.mb.timer.TIMA
+        # F2 LD A,(C)
+        # E0 LDH (a8),A  # cpu.mb.getitem_io_ports(0xFF00 | a8, cpu.A) -> cpu.mb.timer.TIMA = cpu.A
+        # E2 LD (C),A
+
+        # TODO: DAA and PUSH AF are the only users of the half-carry
+
         if not has_internal_jump:
             return raw_code_block
 

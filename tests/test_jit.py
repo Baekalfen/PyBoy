@@ -56,9 +56,13 @@ def _registers(registers):
 
 def test_jit_single_step(default_rom):
     pyboy = PyBoy(default_rom, window="null", jit=False, debug=False)
-    pyboy_jit = PyBoy(default_rom, window="null", jit=True, debug=False, log_level="DEBUG")
+    # NOTE: jit_threads=0 forces post-tick compilation
+    # Maybe instead do a "flush jit queue" on close? We probably have to run the whole thing twice anyway
+    pyboy_jit = PyBoy(default_rom, window="null", jit=True, jit_threads=0, debug=False, log_level="DEBUG")
     pyboy_jit.set_emulation_speed(0)
     pyboy.set_emulation_speed(0)
+
+    # TODO: Need to force JIT compile. Maybe force for all tests?
 
     for step in range(1_000_000):
         registers_jit = pyboy_jit._single_step()

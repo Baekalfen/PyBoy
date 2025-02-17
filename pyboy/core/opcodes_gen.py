@@ -388,14 +388,14 @@ class OpcodeData:
         # Sets the flags that always get set by operation
         lines.append("flag = " + format(sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)), "#010b"))
 
-        # flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
+        # flag |= (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
         if self.flag_h == "H":
             c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
-            lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
+            lines.append("flag |= (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
 
-        # flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
+        # flag |= (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
         if self.flag_c == "C":
-            lines.append("flag += (((%s & 0xFF) %s (%s & 0xFF)%s) > 0xFF) << FLAGC" % (r0, op, r1, c))
+            lines.append("flag |= (((%s & 0xFF) %s (%s & 0xFF)%s) > 0xFF) << FLAGC" % (r0, op, r1, c))
 
         # Clears all flags affected by the operation
         lines.append("cpu.F &= " + format(flagmask, "#010b"))
@@ -416,10 +416,10 @@ class OpcodeData:
 
         if self.flag_h == "H":
             c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
-            lines.append("flag += (((%s & 0xFFF) %s (%s & 0xFFF)%s) > 0xFFF) << FLAGH" % (r0, op, r1, c))
+            lines.append("flag |= (((%s & 0xFFF) %s (%s & 0xFFF)%s) > 0xFFF) << FLAGH" % (r0, op, r1, c))
 
         if self.flag_c == "C":
-            lines.append("flag += (t > 0xFFFF) << FLAGC")
+            lines.append("flag |= (t > 0xFFFF) << FLAGC")
 
         # Clears all flags affected by the operation
         lines.append("cpu.F &= " + format(flagmask, "#010b"))
@@ -439,19 +439,19 @@ class OpcodeData:
         lines.append("flag = " + format(sum(map(lambda nf: (nf[1] == "1") << (nf[0] + 4), self.flags)), "#010b"))
 
         if self.flag_z == "Z":
-            lines.append("flag += ((t & 0xFF) == 0) << FLAGZ")
+            lines.append("flag |= ((t & 0xFF) == 0) << FLAGZ")
 
         if self.flag_h == "H" and op == "-":
             c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
-            lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) < 0) << FLAGH" % (r0, op, r1, c))
+            lines.append("flag |= (((%s & 0xF) %s (%s & 0xF)%s) < 0) << FLAGH" % (r0, op, r1, c))
         elif self.flag_h == "H":
             c = " %s ((cpu.F & (1 << FLAGC)) != 0)" % op if carry else ""
-            lines.append("flag += (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
+            lines.append("flag |= (((%s & 0xF) %s (%s & 0xF)%s) > 0xF) << FLAGH" % (r0, op, r1, c))
 
         if self.flag_c == "C" and op == "-":
-            lines.append("flag += (t < 0) << FLAGC")
+            lines.append("flag |= (t < 0) << FLAGC")
         elif self.flag_c == "C":
-            lines.append("flag += (t > 0xFF) << FLAGC")
+            lines.append("flag |= (t > 0xFF) << FLAGC")
 
         # Clears all flags affected by the operation
         lines.append("cpu.F &= " + format(flagmask, "#010b"))
@@ -525,8 +525,8 @@ class OpcodeData:
             "\tcorr |= 0x60 if t > 0x99 else 0x00",
             "\tt += corr",
             "flag = 0",
-            "flag += ((t & 0xFF) == 0) << FLAGZ",
-            "flag += (corr & 0x60 != 0) << FLAGC",
+            "flag |= ((t & 0xFF) == 0) << FLAGZ",
+            "flag |= (corr & 0x60 != 0) << FLAGC",
             "cpu.F &= 0b01000000",
             "cpu.F |= flag",
             "t &= 0xFF",

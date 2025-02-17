@@ -92,6 +92,7 @@ class PyBoy:
         color_palette=defaults["color_palette"],
         cgb_color_palette=defaults["cgb_color_palette"],
         jit=False,
+        jit_threads=1,
         **kwargs
     ):
         """
@@ -208,6 +209,7 @@ class PyBoy:
             sound_sample_rate,
             cgb,
             jit,
+            jit_threads,
             randomize=randomize,
         )
 
@@ -585,7 +587,9 @@ class PyBoy:
             nsecs = t_tick - t_start
             self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1 * nsecs / 1_000_000_000)
             nsecs = t_post - t_start
-            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
+            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1*nsecs/1_000_000_000)
+
+        # self.mb.jit.process_non_threaded() # Will only do something if enabled
         return running
 
     def _handle_events(self, events):

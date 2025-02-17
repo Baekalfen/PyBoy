@@ -26,6 +26,7 @@ cdef class JIT:
     cdef bint thread_stop
     cdef object thread_queue
     cdef object thread
+    cdef int64_t threads
 
     cdef f_type[0xFFFFFF] array
     cdef int[0xFFFFFF] cycles
@@ -54,6 +55,7 @@ cdef class JIT:
 
     cdef uint8_t getitem_bank(self, uint8_t, uint16_t) noexcept nogil
 
+    cdef void process_non_threaded(self) noexcept with gil
     cdef void _jit_clear(self) noexcept with gil
     cdef tuple get_module_name(self, str) with gil
     cdef void gen_files(self, str, str, list) noexcept with gil

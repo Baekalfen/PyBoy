@@ -29,6 +29,7 @@ class Motherboard:
         sound_sample_rate,
         cgb,
         jit_enabled,
+        jit_threads,
         randomize=False,
     ):
         if bootrom_file is not None:
@@ -52,7 +53,7 @@ class Motherboard:
         self.cpu = cpu.CPU(self)
         self.jit_enabled = jit_enabled
         if self.jit_enabled:
-            self.jit = jit.JIT(self.cpu, self.cartridge)
+            self.jit = jit.JIT(self.cpu, self.cartridge, jit_threads)
 
         if cgb:
             self.lcd = lcd.CGBLCD(
