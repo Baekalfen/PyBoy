@@ -206,9 +206,6 @@ See "pyboy --help" for how to enable rewind and other awesome features!
     kwargs.pop("ROM", None)
     kwargs.pop("loadstate", None)
     kwargs.pop("no_renderer", None)
-    if kwargs.pop("sound_emulated", None) is False:
-        # This disables the entire sound emulation, not just muting the sound.
-        kwargs["sound"] = False
     pyboy = PyBoy(argv.ROM, **kwargs)
 
     if argv.loadstate is not None:
