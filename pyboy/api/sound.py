@@ -118,9 +118,6 @@ class Sound:
         """
 
         self.raw_ndarray = None
-        """
-        ndarray
-        """
         if self.mb.sound.emulate:
             self.raw_ndarray = np.frombuffer(
                 self.mb.sound.audiobuffer,
