@@ -146,9 +146,6 @@ class Sound:
         &#34;&#34;&#34;
 
         self.raw_ndarray = None
-        &#34;&#34;&#34;
-        ndarray
-        &#34;&#34;&#34;
         if self.mb.sound.emulate:
             self.raw_ndarray = np.frombuffer(
                 self.mb.sound.audiobuffer,
@@ -334,9 +331,6 @@ cause problems. They usually only happen in transitions from menu to game or sim
         &#34;&#34;&#34;
 
         self.raw_ndarray = None
-        &#34;&#34;&#34;
-        ndarray
-        &#34;&#34;&#34;
         if self.mb.sound.emulate:
             self.raw_ndarray = np.frombuffer(
                 self.mb.sound.audiobuffer,
@@ -539,10 +533,6 @@ array('b', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...])
 <dd>memoryview of sound data.</dd>
 </dl></section>
 </dd>
-<dt id="pyboy.api.sound.Sound.raw_ndarray"><code class="name">var <span class="ident">raw_ndarray</span></code></dt>
-<dd>
-<section class="desc"><p>ndarray</p></section>
-</dd>
 </dl>
 </dd>
 </dl>
@@ -570,7 +560,6 @@ array('b', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...])
 <li><code><a title="pyboy.api.sound.Sound.raw_buffer_format" href="#pyboy.api.sound.Sound.raw_buffer_format">raw_buffer_format</a></code></li>
 <li><code><a title="pyboy.api.sound.Sound.raw_buffer_length" href="#pyboy.api.sound.Sound.raw_buffer_length">raw_buffer_length</a></code></li>
 <li><code><a title="pyboy.api.sound.Sound.raw_buffer" href="#pyboy.api.sound.Sound.raw_buffer">raw_buffer</a></code></li>
-<li><code><a title="pyboy.api.sound.Sound.raw_ndarray" href="#pyboy.api.sound.Sound.raw_ndarray">raw_ndarray</a></code></li>
 </ul>
 </li>
 </ul>

@@ -282,22 +282,6 @@ class IntIOWrapper(IntIOInterface):
 ##############################################################
 # Misc
 
-
-# NOTE: Legacy function. Use look-up table in Renderer
-def color_code(byte1, byte2, offset):
-    &#34;&#34;&#34;Convert 2 bytes into color code at a given offset.
-
-    The colors are 2 bit and are found like this:
-
-    Color of the first pixel is 0b10
-    | Color of the second pixel is 0b01
-    v v
-    1 0 0 1 0 0 0 1 &lt;- byte1
-    0 1 1 1 1 1 0 0 &lt;- byte2
-    &#34;&#34;&#34;
-    return (((byte2 &gt;&gt; (offset)) &amp; 0b1) &lt;&lt; 1) + ((byte1 &gt;&gt; (offset)) &amp; 0b1)
-
-
 if not cython_compiled:
     exec(
         &#34;&#34;&#34;
@@ -308,6 +292,7 @@ def double_to_uint64_ceil(val):
     )
 
 ##############################################################
+
 # Window Events
 # Temporarily placed here to not be exposed on public API
 
@@ -376,16 +361,17 @@ class WindowEvent:
     ) = range(42)
 
     def __init__(self, event):
-        self.event = event
+        self.__event = event
 
-    def __eq__(self, x):
-        if isinstance(x, int):
-            return self.event == x
-        else:
-            return self.event == x.event
+    def __eq__(self, other):
+        if isinstance(other, WindowEvent):
+            return self.__event == other.__event
+        elif isinstance(other, int):
+            return self.__event == other
+        return NotImplemented
 
     def __int__(self):
-        return self.event
+        return self.__event
 
     def __str__(self):
         return (
@@ -431,7 +417,7 @@ class WindowEvent:
             &#34;MOD_SHIFT_ON&#34;,
             &#34;MOD_SHIFT_OFF&#34;,
             &#34;FULL_SCREEN_TOGGLE&#34;,
-        )[self.event]
+        )[self.__event]
 
 
 class WindowEventMouse(WindowEvent):
@@ -752,16 +738,17 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
     ) = range(42)
 
     def __init__(self, event):
-        self.event = event
+        self.__event = event
 
-    def __eq__(self, x):
-        if isinstance(x, int):
-            return self.event == x
-        else:
-            return self.event == x.event
+    def __eq__(self, other):
+        if isinstance(other, WindowEvent):
+            return self.__event == other.__event
+        elif isinstance(other, int):
+            return self.__event == other
+        return NotImplemented
 
     def __int__(self):
-        return self.event
+        return self.__event
 
     def __str__(self):
         return (
@@ -807,7 +794,7 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
             &#34;MOD_SHIFT_ON&#34;,
             &#34;MOD_SHIFT_OFF&#34;,
             &#34;FULL_SCREEN_TOGGLE&#34;,
-        )[self.event]</code></pre>
+        )[self.__event]</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
