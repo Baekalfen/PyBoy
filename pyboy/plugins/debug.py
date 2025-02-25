@@ -14,7 +14,7 @@ from pyboy.api import Sprite, constants
 from pyboy.api.tilemap import TileMap
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
-from pyboy.utils import WindowEvent
+from pyboy.utils import WindowEvent, PyBoyAssertException
 
 try:
     import sdl2
@@ -78,8 +78,8 @@ class Debug(PyBoyWindowPlugin):
             return
 
         self.sdl2_event_pump = self.pyboy_argv.get("window") != "SDL2"
-        if self.sdl2_event_pump:
-            sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO)
+        if self.sdl2_event_pump and sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_VIDEO) < 0:
+            raise PyBoyAssertException(f"SDL_InitSubSystem video failed: {sdl2.SDL_GetError().decode()}")
 
         # self.scale = 2
         window_pos = 0
@@ -210,7 +210,7 @@ class Debug(PyBoyWindowPlugin):
             for _ in range(3):  # At least 2 to close
                 get_events()
                 time.sleep(0.1)
-            sdl2.SDL_Quit()
+            sdl2.SDL_QuitSubSystem(sdl2.SDL_INIT_VIDEO)
 
     def enabled(self):
         if self.pyboy_argv.get("debug"):

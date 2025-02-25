@@ -8,7 +8,7 @@ import time
 from ctypes import POINTER, c_ubyte, c_void_p, cast
 
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
-from pyboy.utils import WindowEvent, WindowEventMouse, cython_compiled
+from pyboy.utils import WindowEvent, WindowEventMouse, cython_compiled, PyBoyAssertException
 
 try:
     import sdl2
@@ -162,7 +162,9 @@ class WindowSDL2(PyBoyWindowPlugin):
 
         if not self.enabled():
             return
-        assert sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER) >= 0
+
+        if sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER) < 0:
+            raise PyBoyAssertException("SDL_InitSubSystem video failed: %s", sdl2.SDL_GetError().decode())
 
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy",
@@ -188,7 +190,7 @@ class WindowSDL2(PyBoyWindowPlugin):
 
     def init_audio(self, mb):
         if mb.sound.emulate:
-            if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) >= 0:
+            if sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_AUDIO) >= 0:
                 # NOTE: We have to keep spec variables alive to avoid segfault
                 self.spec_want = sdl2.SDL_AudioSpec(self.mb.sound.sample_rate, sdl2.AUDIO_S8, 2, 128)
                 self.spec_have = sdl2.SDL_AudioSpec(0, 0, 0, 0)
@@ -217,7 +219,7 @@ class WindowSDL2(PyBoyWindowPlugin):
                     logger.warning("SDL_OpenAudioDevice failed: %s", sdl2.SDL_GetError().decode())
             else:
                 self.sound_support = False
-                logger.warning("SDL_Init audio failed: %s", sdl2.SDL_GetError().decode())
+                logger.warning("SDL_InitSubSystem audio failed: %s", sdl2.SDL_GetError().decode())
         else:
             self.sound_support = False
 
@@ -303,4 +305,4 @@ class WindowSDL2(PyBoyWindowPlugin):
             for _ in range(3):  # At least 2 to close
                 get_events()
                 time.sleep(0.1)
-            sdl2.SDL_Quit()
+            sdl2.SDL_QuitSubSystem(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER)
