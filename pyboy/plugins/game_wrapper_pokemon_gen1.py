@@ -15,6 +15,22 @@ from .base_plugin import PyBoyGameWrapper
 
 logger = pyboy.logging.get_logger(__name__)
 
+# Set of addresses for information on pokemon
+# Based on the following link: https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map
+ADDR_NUMBER_OF_POKEMON = 0xD163 # In party
+
+#Item related values
+ADDR_TOTAL_ITEMS = 0xD53A
+ADDR_BADGES = 0xD356 # Currently requires conversion (each bit is an independent switch and represents a badge)
+
+# Game Time
+ADDR_HOURS = 0xDA40
+ADDR_MINUTES = 0xDA42
+ADDR_SECONDS = 0xDA44
+
+# Battle mode
+ADDR_BATTLE = 0xD057
+
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
     """
@@ -35,6 +51,22 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
+
+        self.number_of_pokemon = self.pyboy.memory[ADDR_NUMBER_OF_POKEMON]
+        self.total_items = self.pyboy.memory[ADDR_TOTAL_ITEMS]
+        # Extract the time in game:
+        _hours = self.pyboy.memory[ADDR_HOURS]
+        _minutes = self.pyboy.memory[ADDR_MINUTES]
+        _seconds = self.pyboy.memory[ADDR_SECONDS]
+        self.game_time = f'{_hours}:{_minutes}:{_seconds}'
+
+        # Check whether the player is in battle mode or out of battle
+        if self.pyboy.memory[ADDR_BATTLE] == 0:
+            self.battle_state = 'In Battle'
+        else:
+            self.battle_state = 'Overworld'
+
+        self.badges = self.pyboy.memory[ADDR_BADGES] #Research how this works.
 
         scanline_parameters = self.pyboy.screen.tilemap_position_list
         # WX = scanline_parameters[0][2]
