@@ -78,7 +78,7 @@ class RTC:
                 self.latch_rtc()
             self.latch_enabled = True
         else:
-            logger.warning("Invalid RTC command: %0.2x", value)
+            logger.debug("Invalid RTC command: %0.2x", value)
 
     def getregister(self, register):
         if not self.latch_enabled:
@@ -98,7 +98,7 @@ class RTC:
             day_carry = self.day_carry << 7
             return day_high + halt + day_carry
         else:
-            logger.warning("Invalid RTC register: %0.4x", register)
+            logger.debug("Invalid RTC register: %0.4x", register)
 
     def setregister(self, register, value):
         if not self.latch_enabled:
@@ -126,9 +126,9 @@ class RTC:
             if self.halt == 0:
                 pass  # TODO: Start the timer
             else:
-                logger.warning("Stopping RTC is not implemented!")
+                logger.debug("Stopping RTC is not implemented!")
 
             self.timezero = self.timezero - (t // 3600 // 24) - (day_high << 8)
             self.day_carry = day_carry
         else:
-            logger.warning("Invalid RTC register: %0.4x %0.2x", register, value)
+            logger.debug("Invalid RTC register: %0.4x %0.2x", register, value)

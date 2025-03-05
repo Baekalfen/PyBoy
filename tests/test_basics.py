@@ -175,7 +175,7 @@ def test_argv_parser(*args):
         "debug": False,
         "loadstate": None,
         "no_input": False,
-        "log_level": "ERROR",
+        "log_level": "WARNING",
         "record_input": False,
         "rewind": False,
         "scale": 3,

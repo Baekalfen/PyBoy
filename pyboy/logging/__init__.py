@@ -6,7 +6,7 @@
     CRITICAL,
 ) = range(5)
 
-_log_level = ERROR
+_log_level = WARNING
 
 
 def get_log_level():
