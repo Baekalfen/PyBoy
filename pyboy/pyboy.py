@@ -67,7 +67,7 @@ defaults = {
     ),
     "scale": 3,
     "window": "SDL2",
-    "log_level": "ERROR",
+    "log_level": "WARNING",
 }
 
 
