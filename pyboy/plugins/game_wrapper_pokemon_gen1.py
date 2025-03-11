@@ -10,6 +10,7 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
+from pyboy.utils import _bcd_to_dec, bcd_to_dec
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -29,7 +30,7 @@ ADDR_HOURS = 0xDA40
 ADDR_MINUTES = 0xDA42
 ADDR_SECONDS = 0xDA44
 
-# Battle mode
+# Battle mode - May remove this due to not knowing exactly what it does.
 ADDR_BATTLE = 0xD057
 
 
@@ -45,24 +46,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, game_area_section=(0, 0, 20, 18), game_area_follow_scxy=True, **kwargs)
         self.sprite_offset = 0
-        if self.pyboy.memory[ADDR_TITLE_SCREEN] == 0:
-            pass
-        else:
-            self.number_of_pokemon = self.pyboy.memory[ADDR_NUMBER_OF_POKEMON]
-            self.total_items = self.pyboy.memory[ADDR_TOTAL_ITEMS]
-            # Extract the time in game:
-            _hours = self.pyboy.memory[ADDR_HOURS]
-            _minutes = self.pyboy.memory[ADDR_MINUTES]
-            _seconds = self.pyboy.memory[ADDR_SECONDS]
-            self.game_time = f'{_hours}:{_minutes}:{_seconds}'
-
-            # Check whether the player is in battle mode or out of battle
-            if self.pyboy.memory[ADDR_BATTLE] == 1:
-                self.battle_state = 'In Battle'
-            else:
-                self.battle_state = 'Overworld'
-
-            self.badges = self.pyboy.memory[ADDR_BADGES] #Research how this works.
 
     def enabled(self):
         return (self.pyboy.cartridge_title == "POKEMON RED") or (self.pyboy.cartridge_title == "POKEMON BLUE")
@@ -71,12 +54,13 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        self.number_of_pokemon = self.pyboy.memory[ADDR_NUMBER_OF_POKEMON]
-        self.total_items = self.pyboy.memory[ADDR_TOTAL_ITEMS]
+        self.number_of_pokemon = bcd_to_dec(self.pyboy.memory[ADDR_NUMBER_OF_POKEMON])
+        _total_items = bcd_to_dec(self.pyboy.memory[ADDR_TOTAL_ITEMS])
+        self.total_items = _total_items - 1 # This is because the cancel button seems to be counted as an item.
         # Extract the time in game:
-        _hours = self.pyboy.memory[ADDR_HOURS]
-        _minutes = self.pyboy.memory[ADDR_MINUTES]
-        _seconds = self.pyboy.memory[ADDR_SECONDS]
+        _hours = _bcd_to_dec(self.pyboy.memory[ADDR_HOURS: ADDR_HOURS+2])
+        _minutes = _bcd_to_dec(self.pyboy.memory[ADDR_MINUTES: ADDR_MINUTES+2])
+        _seconds = bcd_to_dec(self.pyboy.memory[ADDR_SECONDS])
         self.game_time = f'{_hours}:{_minutes}:{_seconds}'
 
         # Check whether the player is in battle mode or out of battle
@@ -85,7 +69,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         else:
             self.battle_state = 'Overworld'
 
-        self.badges = self.pyboy.memory[ADDR_BADGES] #Research how this works.
 
         scanline_parameters = self.pyboy.screen.tilemap_position_list
         # WX = scanline_parameters[0][2]
