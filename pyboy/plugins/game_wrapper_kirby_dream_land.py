@@ -98,6 +98,7 @@ class GameWrapperKirbyDreamLand(PyBoyGameWrapper):
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
         """
+        self._game_over = False
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
     def game_area(self):
