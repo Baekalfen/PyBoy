@@ -228,7 +228,7 @@ class BallType(Enum):
     POKEBALL = 0
     GREATBALL = 2
     ULTRABALL = 3
-    MASTERBALL = 4
+    MASTERBALL = 5
 
 
 class BallSize(Enum):
