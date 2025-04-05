@@ -10,6 +10,8 @@
 import struct
 from array import array
 
+import math
+
 import pyboy
 from pyboy.utils import PyBoyAssertException, cython_compiled
 
@@ -23,6 +25,9 @@ logger = pyboy.logging.get_logger(__name__)
 
 CYCLES_512HZ = 8192
 
+# converting float value to 64-bit integer rounding ceiling
+def double_to_uint64_ceil(value):
+    return int(math.ceil(value))
 
 class Sound:
     def __init__(self, volume, emulate, sample_rate, cgb):
