@@ -98,6 +98,47 @@ class Sound:
         self.wave_right = 0
         self.tone_right = 0
         self.sweep_right = 0
+
+    #updates buffer with sound data from one frame. Extracts and collect data from each sound channel. Updates main audio and extraction buffers
+    #https://docs.python.org/3/c-api/buffer.html
+    #https://stackoverflow.com/questions/63377251/manipulating-audio-buffers-in-real-time-python-3-7
+    def update_audio_buffer(self):
+
+        for i in range(self.samples_per_frame):
+            left_sample = 0
+            right_sample = 0
+
+            # Collect samples for the left channel from active channels
+            if self.sweep_left:
+                left_sample += self.sweepchannel.sample()
+            if self.tone_left:
+                left_sample += self.tonechannel.sample()
+            if self.wave_left:
+                left_sample += self.wavechannel.sample()
+            if self.noise_left:
+                left_sample += self.noisechannel.sample()
+
+            # Collect samples for the right channel from active channels
+            if self.sweep_right:
+                right_sample += self.sweepchannel.sample()
+            if self.tone_right:
+                right_sample += self.tonechannel.sample()
+            if self.wave_right:
+                right_sample += self.wavechannel.sample()
+            if self.noise_right:
+                right_sample += self.noisechannel.sample()
+
+            # ensure values are in range of 8bit signed integers
+            left_sample = max(min(left_sample, 127), -128)
+            right_sample = max(min(right_sample, 127), -128)
+
+            # update main audio buffer
+            self.audiobuffer[i * 2] = left_sample
+            self.audiobuffer[i * 2 + 1] = right_sample
+
+            # Update sound extraction buffer
+            self.sound_buffer[i] = (left_sample, right_sample)
+
     def reset_apu_div(self):
         # self.div_apu_counter = 0
         # self.div_apu = 0
