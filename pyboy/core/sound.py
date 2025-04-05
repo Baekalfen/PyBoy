@@ -44,6 +44,8 @@ class Sound:
         else:
             self.sample_rate = sample_rate
         assert self.sample_rate % 60 == 0, "We do not want a sample rate that doesn't divide the frame rate"
+
+        # Initialization of instance variables
         self.audiobuffer_head = 0
         self.samples_per_frame = self.sample_rate // 60
         self.cycles_per_sample = float(FRAME_CYCLES) / self.samples_per_frame  # Notice use of float
@@ -51,6 +53,9 @@ class Sound:
         # Buffer for 1 frame of stereo 8-bit sound. +1 for rounding error
         self.audiobuffer_length = (self.samples_per_frame + 1) * 2
         self.audiobuffer = array(self.buffer_format, [0] * self.audiobuffer_length)
+
+
+        self.sound_buffer = [0] * self.samples_per_frame
 
         self.speed_shift = 0
         if not self.emulate:
@@ -88,7 +93,6 @@ class Sound:
         self.wave_right = 0
         self.tone_right = 0
         self.sweep_right = 0
-
     def reset_apu_div(self):
         # self.div_apu_counter = 0
         # self.div_apu = 0
