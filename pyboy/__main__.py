@@ -202,6 +202,7 @@ See "pyboy --help" for how to enable rewind and other awesome features!
     )
 
     # Start PyBoy and run loop
+    print(vars(argv))
     kwargs = copy.deepcopy(vars(argv))
     kwargs.pop("ROM", None)
     kwargs.pop("loadstate", None)
