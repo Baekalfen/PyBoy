@@ -604,7 +604,7 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
         # start game
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(2, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         # tick count needed to get to the next point where input is read
         self.pyboy.tick(95, False)
