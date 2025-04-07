@@ -597,28 +597,28 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
         # Random tilemap I observed doesn't change until shortly before input is read
         while self.tilemap_background[10, 10] != 269:
-            self.pyboy.tick(1, False)
+            self.pyboy.tick(1, False, False)
 
         # tick needed count to get to the point where input is read
-        self.pyboy.tick(18, False)
+        self.pyboy.tick(18, False, False)
 
         # start game
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(2, False)
+        self.pyboy.tick(2, False, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         # tick count needed to get to the next point where input is read
-        self.pyboy.tick(95, False)
+        self.pyboy.tick(95, False, False)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
 
         ticks_until_visible = 74
-        self.pyboy.tick(ticks_until_visible, False)
+        self.pyboy.tick(ticks_until_visible, False, False)
 
         ticks_until_input_ready = 4
-        self.pyboy.tick(ticks_until_input_ready, False)
+        self.pyboy.tick(ticks_until_input_ready, False, False)
 
         # needs to be called after normal initializations, otherwise it will be overwritten
         self._init_bonus_stage(stage)
