@@ -16,14 +16,28 @@ def test_sound_extraction_api():
     Tests different sound scenarios and verifies the API works correctly.
     """
     print("\n=== Sound Extraction API Test (Issue #217) ===")
-    print("This test verifies that PyBoy can capture audio from GameBoy games.")
-    print("We'll use Tetris as it has clear sound effects at startup.\n")
+    print("This test verifies that PyBoy can capture audio from GameBoy games.")    
     
+    # Check if ROM directory exists
+    rom_dir = "roms"
+    if not os.path.exists(rom_dir):
+        print(f"Error: ROM directory '{rom_dir}' not found")
+        return
+        
     # Initialize PyBoy with a ROM that produces sound
-    rom_path = "ROMs/Tetris (USA) (Rev-A).gb"
+    rom_path = os.path.join(rom_dir, "Tetris (USA) (Rev-A).gb")
+    if not os.path.exists(rom_path):
+        print(f"Error: ROM file '{rom_path}' not found")
+        return
+        
     print(f"1. Loading ROM: {rom_path}")
     print("   Enabling sound emulation...")
-    pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True)
+    
+    try:
+        pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True)
+    except Exception as e:
+        print(f"Error initializing PyBoy: {str(e)}")
+        return
     
     print("\n2. Starting game sequence:")
     print("   - Pressing START to begin")
@@ -35,8 +49,6 @@ def test_sound_extraction_api():
     pyboy_instance.tick()
     pyboy_instance.send_input(WindowEvent.RELEASE_BUTTON_START)
     pyboy_instance.tick()
-    
-    # Press A to start game
     pyboy_instance.send_input(WindowEvent.PRESS_BUTTON_A)
     pyboy_instance.tick()
     pyboy_instance.send_input(WindowEvent.RELEASE_BUTTON_A)

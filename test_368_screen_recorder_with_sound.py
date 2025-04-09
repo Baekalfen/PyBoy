@@ -19,14 +19,15 @@ def test_screen_recorder_with_sound():
     print("We'll record Tetris gameplay with its sound effects.\n")
     
     # Initialize PyBoy with a ROM that produces sound
+    #UPDATE HARDCODED ROM PATH BELOW
     rom_path = "roms/Tetris (USA) (Rev-A).gb"
     print(f"1. Loading ROM: {rom_path}")
     print("   Enabling sound and screen recording...")
     pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True)
-    
-    # Add small delay to allow window to initialize
     time.sleep(1)
     
+
+
     # Create output directory if it doesn't exist
     output_dir = "test_output"
     if os.path.exists(output_dir):
@@ -94,7 +95,9 @@ def test_screen_recorder_with_sound():
     # Save audio to WAV
     audio_file = os.path.join(output_dir, "temp_audio.wav")
     
-    # Scale and save audio
+
+
+    #save audio
     scale = 32768 // 128  # Scale 8-bit to 16-bit
     left_samples = np.array(all_left_samples, dtype=np.int16) * scale
     right_samples = np.array(all_right_samples, dtype=np.int16) * scale
@@ -103,12 +106,16 @@ def test_screen_recorder_with_sound():
     stereo_samples[0::2] = left_samples
     stereo_samples[1::2] = right_samples
     
+
+
     with wave.open(audio_file, 'wb') as wav_file:
         wav_file.setnchannels(2)
         wav_file.setsampwidth(2)
         wav_file.setframerate(sample_rate)
         wav_file.writeframes(stereo_samples.tobytes())
     
+
+
     # Combine video and audio using ffmpeg
     cmd = [
         'ffmpeg', '-y',
@@ -120,7 +127,8 @@ def test_screen_recorder_with_sound():
     ]
     subprocess.run(cmd, check=True)
     
-    # Clean up temporary files
+
+
     os.remove(temp_video)
     os.remove(audio_file)
     

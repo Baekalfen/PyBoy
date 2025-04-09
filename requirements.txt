@@ -4,6 +4,7 @@ cython>=3.0.6,!=3.0.10; platform_python_implementation == 'CPython'
 numpy>=2.2.4
 pysdl2>=0.9.17
 pysdl2-dll>=2.32.0
+tomli
 
 # Screen recording dependencies
 opencv-python>=4.11.0
