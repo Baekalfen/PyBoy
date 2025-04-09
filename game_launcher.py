@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from tkinter import font
 import json
+import sys
 
 
 class KeybindsConfig:
@@ -143,7 +144,7 @@ class GameBoyLauncher:
         search_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.search_var = tk.StringVar()
-        self.search_var.trace('w', self.filter_games)
+        self.search_var.trace_add('write', self.filter_games)
         search_entry = tk.Entry(search_frame,
                                 textvariable=self.search_var,
                                 font=('Courier', 12),
@@ -271,7 +272,7 @@ class GameBoyLauncher:
         roms_dir = Path("roms")
         if roms_dir.exists():
             for file in roms_dir.glob("*.gb"):
-                self.games.append(file.name)
+                self.games.append(file.stem)
             self.games.sort()
             self.update_listbox()
             self.update_stats()
@@ -282,7 +283,6 @@ class GameBoyLauncher:
     def update_listbox(self):
         self.listbox.delete(0, tk.END)
         for game in self.games:
-            game = game.replace('.gb', '')
             self.listbox.insert(tk.END, f" {game}")
         self.update_stats()
 
@@ -301,7 +301,7 @@ class GameBoyLauncher:
             self.status_var.set(f"LAUNCHING: {game}")
             self.root.update()
             keybinds = json.dumps(self.keybinds)
-            subprocess.Popen(["python", "-m", "pyboy", f"roms/{game}.gb"])
+            subprocess.Popen([sys.executable, "-m", "pyboy", f"roms/{game}.gb"])
             self.status_var.set("SYSTEM READY")
 
 
