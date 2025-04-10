@@ -171,7 +171,7 @@ class GameBoyLauncher:
         search_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.search_var = tk.StringVar()
-        self.search_var.trace('w', self.filter_games)
+        self.search_var.trace_add('write', self.filter_games)
         search_entry = tk.Entry(search_frame,
                                 textvariable=self.search_var,
                                 font=('Courier', 12),

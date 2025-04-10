@@ -6,6 +6,7 @@ import time
 import numpy as np
 import wave
 import struct
+import json
 
 # Add the current directory to the path so we can import pyboy
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -34,7 +35,19 @@ def test_sound_extraction_api():
     print("   Enabling sound emulation...")
     
     try:
-        pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True)
+        keybinds = json.dumps({
+            "UP": "Up",
+            "DOWN": "Down",
+            "LEFT": "Left",
+            "RIGHT": "Right",
+            "A": "a",
+            "B": "s",
+            "START": "Return",
+            "SELECT": "BackSpace",
+        })
+        pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True, keybinds=keybinds, window="SDL2")
+        # Set emulation speed to 1x (real-time)
+        pyboy_instance.set_emulation_speed(1)
     except Exception as e:
         print(f"Error initializing PyBoy: {str(e)}")
         return
@@ -100,7 +113,7 @@ def test_sound_extraction_api():
     pyboy_instance.stop()
     
     print("   Creating new instance with sound disabled...")
-    pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=False)
+    pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=False, keybinds=keybinds)
     
 
 
