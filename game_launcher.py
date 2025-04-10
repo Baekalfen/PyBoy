@@ -327,7 +327,7 @@ class GameBoyLauncher:
         self.listbox.delete(0, tk.END)
         for game in self.games:
             if search_term in game.lower():
-                self.listbox.insert(tk.END, f" {game}")
+                self.listbox.insert(tk.END, f" {game.strip('.gb')}")
         self.update_stats()
 
     def launch_game(self):

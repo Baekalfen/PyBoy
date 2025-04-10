@@ -214,7 +214,7 @@ class Sound:
                 # Progress the channels by ticks of 512Hz
                 for _ in range(div_tick_count):
                     # Pan docs:
-                    # A “DIV-APU” counter is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0, therefore
+                    # A "DIV-APU" counter is increased every time DIV's bit 4 (5 in double-speed mode) goes from 1 to 0, therefore
                     # at a frequency of 512 Hz (regardless of whether double-speed is active). Thus, the counter can be made to
                     # increase faster by writing to DIV while its relevant bit is set (which clears DIV, and triggers the falling edge).
 
@@ -301,6 +301,28 @@ class Sound:
 
     def clear_buffer(self):
         self.audiobuffer_head = 0
+
+    def get_current_frame_samples(self):
+        """
+        Returns the audio samples for the current frame.
+        
+        Returns
+        -------
+        tuple:
+            A tuple containing:
+            - samples_per_frame: Number of samples in this frame
+            - left_channel: Array of left channel samples
+            - right_channel: Array of right channel samples
+        """
+        if not self.emulate:
+            return 0, [], []
+            
+        # Get the current frame's samples
+        samples = self.samples_per_frame
+        left_channel = self.audiobuffer[:samples]
+        right_channel = self.audiobuffer[samples:samples*2]
+        
+        return samples, left_channel, right_channel
 
     def save_state(self, file):
         file.write_64bit(self.audiobuffer_head)
@@ -465,13 +487,13 @@ class ToneChannel:
         elif reg == 3:
             # NR13 NR23
             self.sound_period = (self.sound_period & 0x700) | val
-            # The pulse channels’ period dividers are clocked at 1048576 Hz (not the same as wave channel!)
+            # The pulse channels' period dividers are clocked at 1048576 Hz (not the same as wave channel!)
             self.period = 4 * (0x800 - self.sound_period)
         elif reg == 4:
             # NR14 NR24
             self.length_enable = (val >> 6) & 0x01
             self.sound_period = ((val << 8) & 0x0700) | (self.sound_period & 0xFF)
-            # The pulse channels’ period dividers are clocked at 1048576 Hz (not the same as wave channel!)
+            # The pulse channels' period dividers are clocked at 1048576 Hz (not the same as wave channel!)
             self.period = 4 * (0x800 - self.sound_period)
             if val & 0x80:
                 self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
@@ -592,7 +614,7 @@ class SweepChannel(ToneChannel):
             # self.sweep_magnitude_latch = val & 0x07
             self.sweep_magnitude = val & 0x07
             # However, if 0 is written to this field, then iterations are instantly disabled,
-            # and it will be reloaded as soon as it’s set to something else.
+            # and it will be reloaded as soon as it's set to something else.
             # if self.sweep_magnitude_latch == 0:
             #     self.sweep_magnitude = 0
         else:
@@ -717,12 +739,12 @@ class WaveChannel:
                 self.volumeshift = 4  # Muted as it's a 4-bit wave table
         elif reg == 3:
             self.sound_period = (self.sound_period & 0x700) + val
-            # The wave channel’s period divider is clocked at 2097152 Hz (not the same as tone channels!)
+            # The wave channel's period divider is clocked at 2097152 Hz (not the same as tone channels!)
             self.period = 2 * (0x800 - self.sound_period)  # Cycles per period
         elif reg == 4:
             self.length_enable = val >> 6 & 0x01
             self.sound_period = (val << 8 & 0x0700) + (self.sound_period & 0xFF)
-            # The wave channel’s period divider is clocked at 2097152 Hz (not the same as tone channels!)
+            # The wave channel's period divider is clocked at 2097152 Hz (not the same as tone channels!)
             self.period = 2 * (0x800 - self.sound_period)  # Cycles per period
             if val & 0x80:
                 self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
