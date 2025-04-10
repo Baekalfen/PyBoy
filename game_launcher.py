@@ -309,3 +309,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = GameBoyLauncher(root)
     root.mainloop()
+#some snippets of code implemented by ai
