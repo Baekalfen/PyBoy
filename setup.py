@@ -36,6 +36,7 @@ def patched_error(position, message):
 
 
 Errors.error = patched_error
+#some snippets of code implemented by ai
 
 
 class build_ext(_build_ext):
