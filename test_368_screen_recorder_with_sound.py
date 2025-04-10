@@ -137,3 +137,5 @@ def test_screen_recorder_with_sound():
 
 if __name__ == "__main__":
     test_screen_recorder_with_sound() 
+
+#some snippets of code implemented by ai
