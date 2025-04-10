@@ -76,6 +76,7 @@ class PyBoy:
         self,
         gamerom,
         *,
+        keybinds, # MODIFIED CODE: ANDREW JANEDY
         window=defaults["window"],
         scale=defaults["scale"],
         symbols=None,
@@ -138,6 +139,10 @@ class PyBoy:
 
         Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
         """
+
+        """ ######################### MODIFIED CODE: ANDREW JANEDY ################################################# """
+        self.keybinds = keybinds
+
 
         self.initialized = False
         self.no_input = no_input

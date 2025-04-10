@@ -13,6 +13,7 @@ from pyboy import PyBoy
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
 from pyboy.utils import PyBoyInvalidInputException
+import time
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -61,6 +62,12 @@ parser = argparse.ArgumentParser(
     epilog="Warning: Features marked with (internal use) might be subject to change.",
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
+
+""" ########################### MODIFIED CODE: ANDREW JANEDY ###################################################### """
+parser.add_argument("-k", "--keybinds", type=str, help="JSON string of key bind map")
+""" ############################ END MODIFIED CODE ################################################################# """
+
+
 parser.add_argument("-b", "--bootrom", dest="bootrom", type=valid_file_path, help="Path to a boot-ROM file")
 parser.add_argument("--no-input", action="store_true", help="Disable all user-input (mostly for autonomous testing)")
 parser.add_argument(
@@ -221,7 +228,12 @@ See "pyboy --help" for how to enable rewind and other awesome features!
         with open(state_path, "rb") as f:
             pyboy.load_state(f)
 
+    start_time = time.time()
     while pyboy.tick():
+        current_time = time.time()
+        time_elapsed = current_time - start_time
+        print(f"Tick time: {time_elapsed}")
+        start_time = current_time
         pass
 
     pyboy.stop()
