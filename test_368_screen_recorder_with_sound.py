@@ -8,6 +8,7 @@ import wave
 import cv2
 import subprocess
 import shutil
+import json
 
 def test_screen_recorder_with_sound():
     """
@@ -23,7 +24,20 @@ def test_screen_recorder_with_sound():
     rom_path = "roms/Tetris (USA) (Rev-A).gb"
     print(f"1. Loading ROM: {rom_path}")
     print("   Enabling sound and screen recording...")
-    pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True)
+    
+    # Define keybinds for the emulator as a JSON string
+    keybinds = json.dumps({
+        "up": "up",
+        "down": "down",
+        "left": "left",
+        "right": "right",
+        "a": "a",
+        "b": "s",
+        "start": "return",
+        "select": "backspace"
+    })
+    
+    pyboy_instance = pyboy.PyBoy(rom_path, sound_emulated=True, keybinds=keybinds)
     time.sleep(1)
     
 

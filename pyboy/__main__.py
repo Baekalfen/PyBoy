@@ -7,6 +7,7 @@
 import argparse
 import copy
 import os
+import time
 
 import pyboy
 from pyboy import PyBoy
@@ -228,7 +229,12 @@ See "pyboy --help" for how to enable rewind and other awesome features!
         with open(state_path, "rb") as f:
             pyboy.load_state(f)
 
+    start_time = time.time()
     while pyboy.tick():
+        current_time = time.time()
+        time_elapsed = current_time - start_time
+        print(f"Tick time: {time_elapsed}")
+        start_time = current_time
         pass
 
     pyboy.stop()
@@ -236,3 +242,4 @@ See "pyboy --help" for how to enable rewind and other awesome features!
 
 if __name__ == "__main__":
     main()
+

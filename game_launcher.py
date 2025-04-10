@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from tkinter import font
 import json
+import os
 
 from functools import partial
 
@@ -170,7 +171,7 @@ class GameBoyLauncher:
         search_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.search_var = tk.StringVar()
-        self.search_var.trace('w', self.filter_games)
+        self.search_var.trace_add('write', self.filter_games)
         search_entry = tk.Entry(search_frame,
                                 textvariable=self.search_var,
                                 font=('Courier', 12),
@@ -327,19 +328,35 @@ class GameBoyLauncher:
         self.listbox.delete(0, tk.END)
         for game in self.games:
             if search_term in game.lower():
-                self.listbox.insert(tk.END, f" {game.strip('.gb')}")
+                self.listbox.insert(tk.END, f" {game}")
         self.update_stats()
 
     def launch_game(self):
+        """Launch the selected game with PyBoy"""
         selection = self.listbox.curselection()
         if selection:
             game = self.listbox.get(selection[0]).strip()
-            self.status_var.set(f"LAUNCHING: {game}")
+            # Remove .gb extension if it exists in the game name
+            game = game.replace('.gb', '')
+            rom_path = f"roms/{game}.gb"
+            print(f"Attempting to launch game with path: {rom_path}")
+            
+            # Check if the ROM file exists
+            if not os.path.exists(rom_path):
+                print(f"Error: ROM file not found: {rom_path}")
+                self.status_var.set("ROM NOT FOUND")
+                return
+                
+            self.status_var.set(f"LAUNCHING {game.upper()}...")
             self.root.update()
             keybinds = json.dumps(self.keybinds)
-            subprocess.Popen(["python", "-m", "pyboy", f"roms/{game}.gb"])
-            # subprocess.Popen(["python", "-m", "pyboy", f"roms/{game}.gb", "-k", keybinds])
-            self.status_var.set("SYSTEM READY")
+            try:
+                subprocess.Popen(["python", "-m", "pyboy", rom_path])
+                # subprocess.Popen(["python", "-m", "pyboy", f"roms/{game}.gb", "-k", keybinds])
+                self.status_var.set("SYSTEM READY")
+            except Exception as e:
+                print(f"Error launching game: {e}")
+                self.status_var.set("LAUNCH FAILED")
 
 
 def install_linux_dependencies():
@@ -388,3 +405,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = GameBoyLauncher(root)
     root.mainloop()
+#some code snippets added by ai

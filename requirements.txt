@@ -1,6 +1,14 @@
-# Change in setup.py
+# Core dependencies
 setuptools>=61.0.0
 cython>=3.0.6,!=3.0.10; platform_python_implementation == 'CPython'
-numpy
-pysdl2
-pysdl2-dll
+numpy>=2.2.4
+pysdl2>=0.9.17
+pysdl2-dll>=2.32.0
+tomli
+
+# Screen recording dependencies
+opencv-python>=4.11.0
+pillow>=11.1.0
+
+# Development dependencies
+pytest>=8.0.0  # for running tests
