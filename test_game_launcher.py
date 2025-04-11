@@ -219,3 +219,4 @@ def test_game_launch(setup_game_launcher, setup_rom_list):
         # Verify Popen was called with correct arguments
         mock_popen.assert_called_once()
 
+#some snippets added by ai
