@@ -98,3 +98,18 @@ test.replay
 /GB Tests/
 /SameSuite/
 .vscode/
+
+# Test outputs
+test_output/
+.vs/
+
+# IDE settings
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+
+# Local configuration
+keybinds.json
+setup_vs_env.bat
+ter

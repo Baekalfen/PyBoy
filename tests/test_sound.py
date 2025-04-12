@@ -138,3 +138,38 @@ def test_sound_not_emulated_cycles_to_interrupt(default_rom):
     for _ in range(200):
         pyboy.tick(1, False, False)
     assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+
+
+def test_get_current_frame_samples(default_rom):
+    pyboy = PyBoy(default_rom, window="null", sound_emulated=True)
+    
+    # Initially should be empty
+    samples, left, right = pyboy.sound.get_current_frame_samples()
+    assert samples == 0
+    assert len(left) == 0
+    assert len(right) == 0
+    
+    # Run for a few frames to generate some sound
+    for _ in range(60):
+        pyboy.tick(1, False, True)
+        
+    # Get samples from current frame
+    samples, left, right = pyboy.sound.get_current_frame_samples()
+    
+    # Verify format
+    assert isinstance(samples, int)
+    assert isinstance(left, list)
+    assert isinstance(right, list)
+    assert len(left) == samples
+    assert len(right) == samples
+    
+    # Verify sample values are 8-bit signed integers
+    for sample in left + right:
+        assert -128 <= sample <= 127
+
+
+def test_get_current_frame_samples_disabled(default_rom):
+    pyboy = PyBoy(default_rom, window="null", sound_emulated=False)
+    
+    with pytest.raises(PyBoyFeatureDisabledError):
+        pyboy.sound.get_current_frame_samples()

@@ -169,3 +169,30 @@ class Sound:
             return self.raw_ndarray[: self.mb.sound.audiobuffer_head]
         else:
             raise utils.PyBoyFeatureDisabledError("Sound is not enabled!")
+
+    def get_current_frame_samples(self):
+        """
+        Returns the audio samples for the current frame in a format suitable for use with other audio libraries.
+        
+        Returns
+        -------
+        tuple:
+            A tuple containing:
+            - samples_per_frame: Number of samples in this frame
+            - left_channel: Array of left channel samples (8-bit signed integers)
+            - right_channel: Array of right channel samples (8-bit signed integers)
+            
+        Example:
+        ```python
+        >>> samples, left, right = pyboy.sound.get_current_frame_samples()
+        >>> samples  # Number of samples in this frame
+        800
+        >>> left[:5]  # First 5 samples from left channel
+        [0, 0, 0, 0, 0]
+        >>> right[:5]  # First 5 samples from right channel
+        [0, 0, 0, 0, 0]
+        ```
+        """
+        if not self.mb.sound.emulate:
+            raise utils.PyBoyFeatureDisabledError("Sound is not enabled!")
+        return self.mb.sound.get_current_frame_samples()

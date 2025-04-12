@@ -10,6 +10,8 @@
 import struct
 from array import array
 
+import math
+
 import pyboy
 from pyboy.utils import PyBoyAssertException, cython_compiled
 
@@ -23,6 +25,9 @@ logger = pyboy.logging.get_logger(__name__)
 
 CYCLES_512HZ = 8192
 
+# converting float value to 64-bit integer rounding ceiling
+def double_to_uint64_ceil(value):
+    return int(math.ceil(value))
 
 class Sound:
     def __init__(self, volume, emulate, sample_rate, cgb):
@@ -44,6 +49,8 @@ class Sound:
         else:
             self.sample_rate = sample_rate
         assert self.sample_rate % 60 == 0, "We do not want a sample rate that doesn't divide the frame rate"
+
+        # Initialization of instance variables
         self.audiobuffer_head = 0
         self.samples_per_frame = self.sample_rate // 60
         self.cycles_per_sample = float(FRAME_CYCLES) / self.samples_per_frame  # Notice use of float
@@ -51,6 +58,9 @@ class Sound:
         # Buffer for 1 frame of stereo 8-bit sound. +1 for rounding error
         self.audiobuffer_length = (self.samples_per_frame + 1) * 2
         self.audiobuffer = array(self.buffer_format, [0] * self.audiobuffer_length)
+
+
+        self.sound_buffer = [0] * self.samples_per_frame
 
         self.speed_shift = 0
         if not self.emulate:
@@ -88,6 +98,46 @@ class Sound:
         self.wave_right = 0
         self.tone_right = 0
         self.sweep_right = 0
+
+    #updates buffer with sound data from one frame. Extracts and collect data from each sound channel. Updates main audio and extraction buffers
+    #https://docs.python.org/3/c-api/buffer.html
+    #https://stackoverflow.com/questions/63377251/manipulating-audio-buffers-in-real-time-python-3-7
+    def update_audio_buffer(self):
+
+        for i in range(self.samples_per_frame):
+            left_sample = 0
+            right_sample = 0
+
+            # Collect samples for the left channel from active channels
+            if self.sweep_left:
+                left_sample += self.sweepchannel.sample()
+            if self.tone_left:
+                left_sample += self.tonechannel.sample()
+            if self.wave_left:
+                left_sample += self.wavechannel.sample()
+            if self.noise_left:
+                left_sample += self.noisechannel.sample()
+
+            # Collect samples for the right channel from active channels
+            if self.sweep_right:
+                right_sample += self.sweepchannel.sample()
+            if self.tone_right:
+                right_sample += self.tonechannel.sample()
+            if self.wave_right:
+                right_sample += self.wavechannel.sample()
+            if self.noise_right:
+                right_sample += self.noisechannel.sample()
+
+            # ensure values are in range of 8bit signed integers
+            left_sample = max(min(left_sample, 127), -128)
+            right_sample = max(min(right_sample, 127), -128)
+
+            # update main audio buffer
+            self.audiobuffer[i * 2] = left_sample
+            self.audiobuffer[i * 2 + 1] = right_sample
+
+            # Update sound extraction buffer
+            self.sound_buffer[i] = (left_sample, right_sample)
 
     def reset_apu_div(self):
         # self.div_apu_counter = 0
@@ -315,14 +365,20 @@ class Sound:
             - right_channel: Array of right channel samples
         """
         if not self.emulate:
-            return 0, [], []
+            return (0, [], [])
             
-        # Get the current frame's samples
-        samples = self.samples_per_frame
-        left_channel = self.audiobuffer[:samples]
-        right_channel = self.audiobuffer[samples:samples*2]
+        # Get the number of samples in this frame
+        samples_in_frame = self.audiobuffer_head // 2
         
-        return samples, left_channel, right_channel
+        # Extract left and right channel samples
+        left_channel = []
+        right_channel = []
+        
+        for i in range(0, self.audiobuffer_head, 2):
+            left_channel.append(self.audiobuffer[i])
+            right_channel.append(self.audiobuffer[i + 1])
+            
+        return (samples_in_frame, left_channel, right_channel)
 
     def save_state(self, file):
         file.write_64bit(self.audiobuffer_head)
