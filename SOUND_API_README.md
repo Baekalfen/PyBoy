@@ -33,6 +33,31 @@ python3 test_217_sound_extraction_api.py
 python3 test_368_screen_recorder_with_sound.py
 ```
 
+## Running Tests Properly
+
+To ensure tests run correctly and don't hang, always use pytest to run the tests:
+
+1. For the game launcher tests:
+```bash
+python -m pytest test_game_launcher.py -v
+```
+
+2. For the sound API tests:
+```bash
+python -m pytest test_217_sound_extraction_api.py -v
+```
+
+3. For the screen recorder tests:
+```bash
+python -m pytest test_368_screen_recorder_with_sound.py -v
+```
+
+**Important Notes:**
+- Always use `pytest` to run tests, not direct Python execution
+- The `-v` flag provides verbose output
+- Tests use mocking to simulate GUI components and file operations
+- Running tests directly with Python may cause them to hang due to GUI window creation
+
 **Important Note**: Before running the tests, make sure to update the ROM path in both test files (`test_217_sound_extraction_api.py` and `test_368_screen_recorder_with_sound.py`) to point to your Game Boy ROM file. Look for the comment `#UPDATE HARDCODED ROM PATH BELOW` in each file.
 
 ## Sound Extraction API
@@ -61,18 +86,17 @@ def ndarray(self):
 import pyboy
 
 # Initialize PyBoy with sound enabled
-pyboy_instance = pyboy.PyBoy("roms/tetris.gb", sound_emulated=True)
+pyboy_instance = pyboy.PyBoy("game.gb", sound_emulated=True, sound_volume=100)
 
 # Run the emulator for a few frames
 for _ in range(10):
     pyboy_instance.tick()
     
     # Get the audio samples for this frame
-    audio_samples = pyboy_instance.sound.ndarray
-    left_channel = audio_samples[:, 0]
-    right_channel = audio_samples[:, 1]
+    samples_count, left_channel, right_channel = pyboy_instance.sound.get_current_frame_samples()
     
     # Process the audio samples as needed
+    print(f"Frame: {samples_count} samples")
     print(f"Left channel: {len(left_channel)} samples")
     print(f"Right channel: {len(right_channel)} samples")
 
@@ -80,111 +104,139 @@ for _ in range(10):
 pyboy_instance.stop()
 ```
 
-## Screen Recorder with Sound
+### Notes
 
-The screen recorder with sound support provides a complete solution for recording gameplay with synchronized audio. It captures both video frames and audio samples in real-time and combines them into a single MP4 file.
+- The method returns samples for the current frame only. You need to call it each frame to get continuous audio.
+- If sound is disabled, the method returns empty arrays.
+- The samples are floating-point values that need to be normalized to 16-bit integers for WAV output.
+- The sample rate is fixed at 48000 Hz in the current version.
+- Use `sound_emulated=True` and `sound_volume=100` for best results.
 
-### Features
+## Screen Recorder with Sound Support
 
-- Real-time capture of both video frames and audio samples
-- Proper audio scaling from 8-bit to 16-bit
-- Synchronized audio and video
-- Automatic cleanup of temporary files
-- Single output file in MP4 format
+The Screen Recorder with Sound Support feature allows recording gameplay with audio. This is implemented by combining the screen capture functionality with the sound extraction API.
 
-### Example Implementation
-
-See `test_368_screen_recorder_with_sound.py` for a complete implementation. Here's a simplified version:
+### Implementation Example
 
 ```python
 import pyboy
 import numpy as np
 import wave
-import cv2
+from PIL import Image
 import os
 
-# Initialize PyBoy with sound
-pyboy_instance = pyboy.PyBoy("roms/tetris.gb", sound_emulated=True)
+# Initialize PyBoy with sound enabled
+pyboy_instance = pyboy.PyBoy("game.gb", sound_emulated=True, sound_volume=100)
 
-# Initialize arrays for frames and audio
+# Create output directory
+output_dir = "recording_output"
+os.makedirs(output_dir, exist_ok=True)
+
+# Initialize arrays to store frames and audio samples
 frames = []
 all_left_samples = []
 all_right_samples = []
+non_zero_samples = 0
 
-# Record frames and audio
-for _ in range(300):  # 5 seconds at 60fps
+# Record for a few seconds
+for frame in range(180):  # 3 seconds at 60fps
+    # Tick the emulator
     pyboy_instance.tick()
     
-    # Capture screen
-    screen = pyboy_instance.screen.ndarray
-    rgb_frame = cv2.cvtColor(screen, cv2.COLOR_RGBA2RGB)
-    frames.append(rgb_frame)
+    # Capture the screen
+    screen = np.array(pyboy_instance.screen.image)
+    frames.append(screen.copy())
     
-    # Capture audio
-    audio_samples = pyboy_instance.sound.ndarray
-    all_left_samples.extend(audio_samples[:, 0])
-    all_right_samples.extend(audio_samples[:, 1])
+    # Get audio samples
+    _, left_channel, right_channel = pyboy_instance.sound.get_current_frame_samples()
+    all_left_samples.extend(left_channel)
+    all_right_samples.extend(right_channel)
+    
+    # Track non-zero samples to verify audio capture
+    non_zero_samples += np.count_nonzero(left_channel) + np.count_nonzero(right_channel)
 
-# Save video
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter('temp_video.mp4', fourcc, 60.0, (160, 144))
-for frame in frames:
-    out.write(frame)
-out.release()
+# Stop the emulator
+pyboy_instance.stop()
 
-# Save audio
-scale = 32768 // 128  # Scale 8-bit to 16-bit
-left_samples = np.array(all_left_samples, dtype=np.int16) * scale
-right_samples = np.array(all_right_samples, dtype=np.int16) * scale
+# Save frames as images
+for i, frame in enumerate(frames):
+    img = Image.fromarray(frame)
+    img.save(os.path.join(output_dir, f"frame_{i:04d}.png"))
 
+# Process audio samples
+left_samples = np.array(all_left_samples, dtype=np.float32)
+right_samples = np.array(all_right_samples, dtype=np.float32)
+
+# Normalize samples to 16-bit range
+if np.max(np.abs(left_samples)) > 0:
+    left_samples = (left_samples / np.max(np.abs(left_samples)) * 32767).astype(np.int16)
+if np.max(np.abs(right_samples)) > 0:
+    right_samples = (right_samples / np.max(np.abs(right_samples)) * 32767).astype(np.int16)
+
+# Create stereo audio
 stereo_samples = np.empty(len(left_samples) + len(right_samples), dtype=np.int16)
 stereo_samples[0::2] = left_samples
 stereo_samples[1::2] = right_samples
 
-with wave.open('temp_audio.wav', 'wb') as wav_file:
-    wav_file.setnchannels(2)
-    wav_file.setsampwidth(2)
-    wav_file.setframerate(pyboy_instance.sound.sample_rate)
+# Save to WAV file
+audio_file = os.path.join(output_dir, "audio.wav")
+with wave.open(audio_file, 'wb') as wav_file:
+    wav_file.setnchannels(2)  # Stereo
+    wav_file.setsampwidth(2)  # 2 bytes per sample (16-bit)
+    wav_file.setframerate(48000)  # Fixed sample rate
     wav_file.writeframes(stereo_samples.tobytes())
-
-# Combine video and audio using FFmpeg
-os.system('ffmpeg -y -i temp_video.mp4 -i temp_audio.wav -c:v copy -c:a aac output.mp4')
-
-# Cleanup
-os.remove('temp_video.mp4')
-os.remove('temp_audio.wav')
-pyboy_instance.stop()
 ```
 
-## Requirements
+### Combining Video and Audio
 
-- Python 3.6+
-- PyBoy
-- NumPy
-- OpenCV (opencv-python)
-- Pillow
-- FFmpeg (system installation)
+To combine the video frames and audio into a single video file, you can use a tool like FFmpeg:
 
-## Troubleshooting
-
-1. **No video output**: Make sure OpenCV is installed correctly with `pip install opencv-python`
-2. **No audio**: Verify that PyBoy was initialized with `sound_emulated=True`
-3. **FFmpeg errors**: Ensure FFmpeg is installed on your system and accessible from the command line
-4. **Import errors**: Make sure all required packages are installed in your virtual environment
+```bash
+ffmpeg -framerate 60 -i recording_output/frame_%04d.png -i recording_output/audio.wav -c:v libx264 -pix_fmt yuv420p -c:a aac recording_output/output.mp4
+```
 
 ## Testing
 
-Two test files are provided:
-1. `test_217_sound_extraction_api.py`: Tests the sound extraction API
-2. `test_368_screen_recorder_with_sound.py`: Tests the screen recorder with sound support
+Two test scripts are provided to demonstrate the functionality:
 
-To run the tests:
-```bash
-# Activate virtual environment first
-source .venv/bin/activate  # On Unix/macOS
-# or
-.venv\Scripts\activate     # On Windows
+1. `test_217_sound_extraction_api.py` - Tests the sound extraction API (Issue #217)
+   - Tests basic API functionality
+   - Verifies sound sample collection
+   - Saves normalized audio to WAV
+   - Includes waveform visualization
+   - Tracks non-zero samples for verification
 
-# Run the tests
-python test_368_screen_recorder_with_sound.py
-``` 
+2. `test_368_screen_recorder_with_sound.py` - Tests the screen recorder with sound support (Issue #368)
+   - Captures both video frames and audio
+   - Handles game interaction to trigger sounds
+   - Saves synchronized video and audio data
+   - Provides progress tracking and verification
+
+Run these scripts to verify that the features are working correctly.
+
+## Dependencies
+
+The implementation requires the following Python packages:
+- numpy (for array operations and audio processing)
+- Pillow (PIL) (for image handling)
+- matplotlib (for waveform visualization)
+- wave (for WAV file output)
+- pyboy[all] (includes all optional dependencies)
+
+For combining video and audio, FFmpeg is recommended.
+
+## Troubleshooting
+
+1. No sound in output:
+   - Verify `sound_emulated=True` and `sound_volume=100`
+   - Check non-zero samples count in test output
+   - Try different games known to have sound
+   - Interact with the game to trigger sound effects
+
+2. Sample rate issues:
+   - The sample rate is fixed at 48000 Hz
+   - Custom sample rates are not supported in the current version
+
+3. Audio normalization:
+   - Samples are normalized to 16-bit range (-32768 to 32767)
+   - Check the waveform visualization for proper audio levels 

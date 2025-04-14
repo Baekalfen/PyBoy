@@ -61,17 +61,33 @@ def setup_keybinds_config(setup_game_launcher):
     """
     launcher, root = setup_game_launcher
     keybinds = {
-        "UP": "Up",
-        "DOWN": "Down",
-        "LEFT": "Left",
-        "RIGHT": "Right",
-        "A": "a",
-        "S": "s",
-        "START": "Return",
-        "SELECT": "BackSpace"
+        "PRESS_ARROW_RIGHT": "Right",
+        "PRESS_ARROW_LEFT": "Left",
+        "PRESS_ARROW_UP": "Up",
+        "PRESS_ARROW_DOWN": "Down",
+        "PRESS_BUTTON_a": "a",
+        "PRESS_BUTTON_b": "s",
+        "PRESS_BUTTON_START": "Return",
+        "PRESS_BUTTON_SELECT": "Backspace"
     }
     
-    keybinds_config = KeybindsConfig(root, keybinds)
+    # Create a mock Toplevel window
+    mock_toplevel = MagicMock(spec=tk.Toplevel)
+    mock_toplevel.title = MagicMock()
+    mock_toplevel.geometry = MagicMock()
+    mock_toplevel.configure = MagicMock()
+    mock_toplevel.grid_rowconfigure = MagicMock()
+    mock_toplevel.destroy = MagicMock()
+    mock_toplevel.tk = root.tk  # Add the tk attribute from root
+    
+    # Mock Label and Button classes
+    mock_label = MagicMock(spec=tk.Label)
+    mock_button = MagicMock(spec=tk.Button)
+    
+    with patch('tkinter.Toplevel', return_value=mock_toplevel), \
+         patch('tkinter.Label', return_value=mock_label), \
+         patch('tkinter.Button', return_value=mock_button):
+        keybinds_config = KeybindsConfig(launcher, keybinds)
     
     # Mock the buttons
     keybinds_config.buttons = {
@@ -105,14 +121,14 @@ def test_game_launcher_initialization(setup_game_launcher):
     
     # Verify keybinds are initialized
     assert isinstance(launcher.keybinds, dict)
-    assert "UP" in launcher.keybinds
-    assert "DOWN" in launcher.keybinds
-    assert "LEFT" in launcher.keybinds
-    assert "RIGHT" in launcher.keybinds
-    assert "A" in launcher.keybinds
-    assert "S" in launcher.keybinds
-    assert "START" in launcher.keybinds
-    assert "SELECT" in launcher.keybinds
+    assert "PRESS_ARROW_UP" in launcher.keybinds
+    assert "PRESS_ARROW_DOWN" in launcher.keybinds
+    assert "PRESS_ARROW_LEFT" in launcher.keybinds
+    assert "PRESS_ARROW_RIGHT" in launcher.keybinds
+    assert "PRESS_BUTTON_a" in launcher.keybinds
+    assert "PRESS_BUTTON_b" in launcher.keybinds
+    assert "PRESS_BUTTON_START" in launcher.keybinds
+    assert "PRESS_BUTTON_SELECT" in launcher.keybinds
     
     # Verify window properties
     assert launcher.root == root
@@ -151,10 +167,10 @@ def test_keybind_update(setup_keybinds_config):
     mock_event.keysym = "w"
     
     # Update a keybind
-    keybinds_config.update_binding("UP", "w", keybinds_config.buttons["UP"])
+    keybinds_config.update_binding("PRESS_ARROW_UP", "w", keybinds_config.buttons["PRESS_ARROW_UP"])
     
     # Verify the keybind was updated
-    assert keybinds_config.keybinds["UP"] == "w"
+    assert keybinds_config.keybinds["PRESS_ARROW_UP"] == "w"
 
 
 def test_rom_directory_change(setup_game_launcher):
@@ -187,7 +203,7 @@ def test_game_filtering(setup_game_launcher, setup_rom_list):
         launcher.listbox.insert = MagicMock()
 
         # Set a search term
-        search_term = ("Wario")  # Use a generic term that can match multiple games
+        search_term = "Pokemon"  # Use a term that matches one of our test games
         launcher.search_var.get.return_value = search_term
 
         # Call filter function
@@ -212,10 +228,12 @@ def test_game_launch(setup_game_launcher, setup_rom_list):
     
     # Mock selected game
     launcher.listbox.curselection.return_value = (0,)
-    launcher.listbox.get.return_value = "Wario Land - Super Mario Land 3 (World).gb" # Change this to a gb located in your ROM directory
+    launcher.listbox.get.return_value = "Pokemon Red.gb"  # Use a game from our test ROM list
     
-    # Mock subprocess.Popen
-    with patch('subprocess.Popen') as mock_popen:
+    # Mock both os.path.exists and pathlib.Path.exists to return True
+    with patch('os.path.exists', return_value=True), \
+         patch('pathlib.Path.exists', return_value=True), \
+         patch('subprocess.Popen') as mock_popen:
         launcher.launch_game()
         
         # Verify Popen was called with correct arguments
