@@ -198,6 +198,24 @@ def test_argv_parser(*args):
         assert flags[k] == v
 
 
+def test_argv_help_message(capsys):
+    parser = main.parser
+
+    # Simulate calling the script with --help
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--help"])
+
+    # Capture the output
+    captured = capsys.readouterr()
+
+    assert captured.out.startswith("usage:")
+    # Just check a few options
+    assert "--sound" in captured.out
+    assert "--gameshark" in captured.out
+    assert "--log-level" in captured.out
+    assert "Now sets sound volume to 100%." in captured.out
+
+
 def test_pause_toggle(default_rom):
     pyboy = PyBoy(default_rom, window="null")
 

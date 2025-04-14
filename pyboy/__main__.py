@@ -137,7 +137,7 @@ sound_parser.add_argument(
     action="store_const",
     const=100,
     dest="sound_volume",
-    help="Deprecated setting. Now sets sound volume to 100%. See '--sound-volume'",
+    help="Deprecated setting. Now sets sound volume to 100%%. See '--sound-volume'",
 )
 sound_parser.add_argument(
     "--sound-volume",

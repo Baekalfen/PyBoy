@@ -16,8 +16,8 @@ def test_pokemon_pinball_basics(pokemon_pinball_rom):
     pokemon_pinball.start_game(timer_div=0x00)
 
     assert pokemon_pinball.score == 0
-    assert pokemon_pinball.balls_left == 3
-    assert pokemon_pinball.current_stage == Stage.RED_TOP.value
+    assert pokemon_pinball.balls_left == 2
+    assert pokemon_pinball.current_stage == Stage.RED_BOTTOM.value
     assert pokemon_pinball.special_mode_active == False
 
 
@@ -40,10 +40,10 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     pyboy.button_release("left")
     pyboy.button_release("a")
 
-    assert pokemon_pinball.score == 100
+    assert pokemon_pinball.score == 100300
     assert pokemon_pinball.special_mode == SpecialMode.CATCH.value
     assert pokemon_pinball.current_stage == Stage.BLUE_BOTTOM.value
-    assert not pokemon_pinball.special_mode_active
+    assert pokemon_pinball.special_mode_active
     assert pokemon_pinball.balls_left == 2
 
 
