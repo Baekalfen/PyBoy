@@ -171,6 +171,7 @@ def test_rom_directory_change(setup_game_launcher):
         # Verify the ROM directory was updated
         assert launcher.rom_directory == Path("/new/rom/path")
 
+
 def test_game_filtering(setup_game_launcher, setup_rom_list):
     """
     Test the game filtering functionality.
@@ -186,7 +187,7 @@ def test_game_filtering(setup_game_launcher, setup_rom_list):
         launcher.listbox.insert = MagicMock()
 
         # Set a search term
-        search_term = "Land"  # Use a generic term that can match multiple games
+        search_term = ("Wario")  # Use a generic term that can match multiple games
         launcher.search_var.get.return_value = search_term
 
         # Call filter function
@@ -199,6 +200,7 @@ def test_game_filtering(setup_game_launcher, setup_rom_list):
         inserted_args = [call[0][1] for call in launcher.listbox.insert.call_args_list]
         assert any(search_term.lower() in game.lower() for game in inserted_args), \
             f"Expected some game to contain the term '{search_term}'"
+
 
 def test_game_launch(setup_game_launcher, setup_rom_list):
     """
@@ -219,4 +221,4 @@ def test_game_launch(setup_game_launcher, setup_rom_list):
         # Verify Popen was called with correct arguments
         mock_popen.assert_called_once()
 
-#some snippets added by ai
+# some snippets added by ai
