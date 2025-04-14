@@ -7,12 +7,14 @@
 import argparse
 import copy
 import os
+import time
 
 import pyboy
 from pyboy import PyBoy
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
 from pyboy.utils import PyBoyInvalidInputException
+import time
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -61,6 +63,12 @@ parser = argparse.ArgumentParser(
     epilog="Warning: Features marked with (internal use) might be subject to change.",
 )
 parser.add_argument("ROM", type=valid_file_path, help="Path to a Game Boy compatible ROM file")
+
+""" ########################### MODIFIED CODE: ANDREW JANEDY ###################################################### """
+parser.add_argument("-k", "--keybinds", type=str, help="JSON string of key bind map")
+""" ############################ END MODIFIED CODE ################################################################# """
+
+
 parser.add_argument("-b", "--bootrom", dest="bootrom", type=valid_file_path, help="Path to a boot-ROM file")
 parser.add_argument("--no-input", action="store_true", help="Disable all user-input (mostly for autonomous testing)")
 parser.add_argument(
@@ -202,6 +210,7 @@ See "pyboy --help" for how to enable rewind and other awesome features!
     )
 
     # Start PyBoy and run loop
+    print(vars(argv))
     kwargs = copy.deepcopy(vars(argv))
     kwargs.pop("ROM", None)
     kwargs.pop("loadstate", None)
@@ -228,3 +237,4 @@ See "pyboy --help" for how to enable rewind and other awesome features!
 
 if __name__ == "__main__":
     main()
+

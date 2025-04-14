@@ -42,6 +42,7 @@ cdef class PyBoy:
     cdef readonly PluginManager _plugin_manager
     cdef readonly uint64_t frame_count
     cdef readonly str gamerom
+    cdef str keybinds
     cdef readonly bint paused
 
     cdef double avg_tick
