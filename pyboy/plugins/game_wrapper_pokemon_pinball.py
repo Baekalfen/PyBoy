@@ -634,6 +634,36 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         """
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
 
+    def reset_tracking(self):
+        """
+        Resets all tracking values to 0.
+        """
+        self.pokemon_caught_in_session = 0
+        self.pokemon_seen_in_session = 0
+        self.evolution_failure_count = 0
+        self.evolution_success_count = 0
+        self.diglett_stages_completed = 0
+        self.diglett_stages_visited = 0
+        self.gengar_stages_completed = 0
+        self.gengar_stages_visited = 0
+        self.meowth_stages_completed = 0
+        self.meowth_stages_visited = 0
+        self.mewtwo_stages_completed = 0
+        self.mewtwo_stages_visited = 0
+        self.seel_stages_completed = 0
+        self.seel_stages_visited = 0
+        self.pikachu_saver_increments = 0
+        self.pikachu_saver_used = 0
+        self.map_change_attempts = 0
+        self.map_change_successes = 0
+        self.great_ball_upgrades = 0
+        self.ultra_ball_upgrades = 0
+        self.master_ball_upgrades = 0
+        self.extra_balls_added = 0
+        self.lost_ball_during_saver = 0
+        self.roulette_slots_opened = 0
+        self.roulette_slots_entered = 0
+
     def get_unique_pokemon_caught(self):
         """
         Get the number of unique pokemon caught in the current session based off the in game pokedex
