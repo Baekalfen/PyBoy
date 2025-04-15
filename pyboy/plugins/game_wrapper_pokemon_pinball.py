@@ -1098,6 +1098,7 @@ BANK_OFFSET_DISABLE_TIMER = (4, 0x4D64)
 BANK_OFFSET_BALL_SAVED_RED = (3, 0x5D7F)
 BANK_OFFSET_BALL_SAVED_BLUE = (3, 0x5E58)
 
+"""The wild Pokemon that can be found in each map in the Red stage, along with their encounter rates"""
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {
         Pokemon.BULBASAUR: 0.0625,
@@ -1172,7 +1173,12 @@ RedStageMapWildMons = {
         Pokemon.GOLDEEN: 0.125,
         Pokemon.MAGIKARP: 0.125,
     },
-    Maps.SAFARI_ZONE: {Pokemon.NIDORAN_M: 0.25, Pokemon.PARAS: 0.25, Pokemon.DODUO: 0.25, Pokemon.RHYHORN: 0.25},
+    Maps.SAFARI_ZONE: {
+        Pokemon.NIDORAN_M: 0.25,
+        Pokemon.PARAS: 0.25, 
+        Pokemon.DODUO: 0.25,
+        Pokemon.RHYHORN: 0.25
+    },
     Maps.SEAFOAM_ISLANDS: {
         Pokemon.ZUBAT: 0.0625,
         Pokemon.PSYDUCK: 0.0625,
@@ -1202,7 +1208,7 @@ RedStageMapWildMons = {
         Pokemon.DITTO: 0.1875,
     },
 }
-"""The wild Pokemon that can be found in each map in the Red stage, along with their encounter rates"""
+
 
 RedStageMapWildMonsRare = {
     Maps.PALLET_TOWN: {
@@ -1286,7 +1292,12 @@ RedStageMapWildMonsRare = {
         Pokemon.TAUROS: 0.125,
         Pokemon.DRATINI: 0.125,
     },
-    Maps.SEAFOAM_ISLANDS: {Pokemon.SEEL: 0.3125, Pokemon.GOLDEEN: 0.25, Pokemon.STARYU: 0.25, Pokemon.ARTICUNO: 0.1875},
+    Maps.SEAFOAM_ISLANDS: {
+        Pokemon.SEEL: 0.3125,
+        Pokemon.GOLDEEN: 0.25,
+        Pokemon.STARYU: 0.25,
+        Pokemon.ARTICUNO: 0.1875
+    },
     Maps.CINNABAR_ISLAND: {
         Pokemon.GROWLITHE: 0.125,
         Pokemon.PONYTA: 0.125,
@@ -1309,7 +1320,7 @@ RedStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625,
     },
 }
-"""The rare wild Pokemon that can be found in each map in the Red stage, along with their encounter rates"""
+"""The wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates"""
 
 BlueStageMapWildMons = {
     Maps.VIRIDIAN_CITY: {
@@ -1389,7 +1400,12 @@ BlueStageMapWildMons = {
         Pokemon.GOLDEEN: 0.1875,
         Pokemon.MAGIKARP: 0.25,
     },
-    Maps.SAFARI_ZONE: {Pokemon.NIDORAN_F: 0.25, Pokemon.PARAS: 0.25, Pokemon.DODUO: 0.25, Pokemon.RHYHORN: 0.25},
+    Maps.SAFARI_ZONE: {
+        Pokemon.NIDORAN_F: 0.25,
+        Pokemon.PARAS: 0.25,
+        Pokemon.DODUO: 0.25,
+        Pokemon.RHYHORN: 0.25
+    },
     Maps.SAFFRON_CITY: {
         Pokemon.PIDGEY: 0.125,
         Pokemon.EKANS: 0.1875,
@@ -1418,7 +1434,6 @@ BlueStageMapWildMons = {
         Pokemon.DITTO: 0.1875,
     },
 }
-"""The wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates"""
 
 BlueStageMapWildMonsRare = {
     Maps.VIRIDIAN_CITY: {
@@ -1536,4 +1551,3 @@ BlueStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625,
     },
 }
-"""The rare wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates"""
