@@ -12,7 +12,7 @@ __pdoc__ = {
 import logging
 from enum import Enum
 
-from pyboy.utils import PyBoyException, WindowEvent, bcd_to_dec
+from pyboy.utils import PyBoyException, WindowEvent, bcd_to_dec, fixed_point_to_value
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -695,11 +695,28 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.multiplier = self.pyboy.memory[ADDR_MULTIPLIER]
 
         self.ball_size = self.pyboy.memory[ADDR_BALL_SIZE]
-
-        self.ball_x = self.pyboy.memory[ADDR_BALL_X]
-        self.ball_y = self.pyboy.memory[ADDR_BALL_Y]
-        self.ball_x_velocity = self.pyboy.memory[ADDR_BALL_X_VELOCITY]
-        self.ball_y_velocity = self.pyboy.memory[ADDR_BALL_Y_VELOCITY]
+        self.ball_x = fixed_point_to_value(
+            self.pyboy.memory[ADDR_BALL_X:ADDR_BALL_X+2], 
+            num_bytes=2,
+            is_signed=True
+        )
+        self.ball_y = fixed_point_to_value(
+            self.pyboy.memory[ADDR_BALL_Y:ADDR_BALL_Y+2], 
+            num_bytes=2,
+            is_signed=True
+        )
+    
+        # Velocity values (likely signed since they can be negative)
+        self.ball_x_velocity = fixed_point_to_value(
+            self.pyboy.memory[ADDR_BALL_X_VELOCITY:ADDR_BALL_X_VELOCITY+2], 
+            num_bytes=2,
+            is_signed=True
+        )
+        self.ball_y_velocity = fixed_point_to_value(
+            self.pyboy.memory[ADDR_BALL_Y_VELOCITY:ADDR_BALL_Y_VELOCITY+2], 
+            num_bytes=2,
+            is_signed=True
+        )
 
         self.pikachu_saver_charge = self.pyboy.memory[ADDR_PIKACHU_SAVER_CHARGE]
 
