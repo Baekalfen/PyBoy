@@ -3,7 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import io
 import os
 from pathlib import Path
 
@@ -15,6 +14,8 @@ import pytest
 from pyboy.utils import cython_compiled
 from pyboy import PyBoy
 from pyboy.utils import PyBoyFeatureDisabledError
+
+from PIL import Image, ImageDraw
 
 OVERWRITE_PNGS = False
 odds = None
@@ -43,43 +44,64 @@ def test_swoosh(default_rom, sampling):
 
     left_channel = buffers[:, 0]
     right_channel = buffers[:, 1]
-    time = np.linspace(0, len(left_channel) / sample_rate, num=len(left_channel))
 
-    # Plot the channels
-    plt.figure(figsize=(12, 6))
-    plt.subplot(2, 1, 1)
-    plt.plot(time, left_channel, label="Left Channel", color="blue")
-    plt.title("Left Channel")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
-    plt.ylim(-0.4, 15.4)
+    height = 16
 
-    plt.subplot(2, 1, 2)
-    plt.plot(time, right_channel, label="Right Channel", color="red")
-    plt.title("Right Channel")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
-    plt.ylim(-0.4, 15.4)
+    # Create a new image with white background
+    image = Image.new("RGB", (buffers.shape[0], height * 2), "white")
+    draw = ImageDraw.Draw(image)
 
-    plt.tight_layout()
+    # Plot the samples for each channel
+    prev_x = 0
+    prev_y1 = height - left_channel[0] - 1
+    prev_y2 = height - right_channel[0] - 1 + height
+    for i in range(buffers.shape[0]):
+        y1 = height - left_channel[i] - 1
+        y2 = height - right_channel[i] - 1 + height
+
+        draw.line([(prev_x, prev_y1), (i, y1)], fill="blue")
+        draw.line([(prev_x, prev_y2), (i, y2)], fill="red")
+
+        prev_x = i
+        prev_y1 = y1
+        prev_y2 = y2
 
     name = "sampling" if sampling else ("oddsampling" if sampling is odds else "nosampling")
     png_path = Path(f"tests/test_results/sound_swoosh_{name}.png")
+
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
-        plt.savefig(png_path)
+        image.save(png_path)
     else:
         # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-        plt_data = io.BytesIO()
-        plt.savefig(plt_data, format="png")
-        plt_data.seek(0)
-        image = PIL.Image.open(plt_data).convert("RGB")
+        image = image.convert("RGB")
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image, old_image)
         if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
             old_image.show()
             diff.show()
+
+        if diff.getbbox():
+            time = np.linspace(0, len(left_channel) / sample_rate, num=len(left_channel))
+
+            # Plot the channels
+            plt.figure(figsize=(12, 6))
+            plt.subplot(2, 1, 1)
+            plt.plot(time, left_channel, label="Left Channel", color="blue")
+            plt.title("Left Channel")
+            plt.xlabel("Time (s)")
+            plt.ylabel("Amplitude")
+            plt.ylim(-0.4, 15.4)
+
+            plt.subplot(2, 1, 2)
+            plt.plot(time, right_channel, label="Right Channel", color="red")
+            plt.title("Right Channel")
+            plt.xlabel("Time (s)")
+            plt.ylabel("Amplitude")
+            plt.ylim(-0.4, 15.4)
+
+            plt.tight_layout()
             plt.show()
         assert not diff.getbbox(), "Images are different!"
 
