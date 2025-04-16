@@ -153,6 +153,8 @@ parser.add_argument(
     help="Set sound sample rate. Has to be divisible in 60.",
 )
 
+parser.add_argument("--title-status", action="store_true", help="Enable performance status in window title")
+
 for arguments in parser_arguments():
     for a in arguments:
         *args, kwargs = a

@@ -224,9 +224,9 @@ class WindowSDL2(PyBoyWindowPlugin):
             self.sound_support = False
 
     def set_title(self, title):
-        # if self.sound_support:
-        #     queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
-        #     title += f" {queued_bytes}"
+        if self.sound_support and self.pyboy.title_status:
+            queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
+            title += f" Sound: {queued_bytes}B"
         sdl2.SDL_SetWindowTitle(self._window, title.encode())
 
     def handle_events(self, events):

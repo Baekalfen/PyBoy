@@ -89,6 +89,7 @@ class PyBoy:
         log_level=defaults["log_level"],
         color_palette=defaults["color_palette"],
         cgb_color_palette=defaults["cgb_color_palette"],
+        title_status=False,
         **kwargs,
     ):
         """
@@ -129,6 +130,7 @@ class PyBoy:
             * log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
+            * title_status (bool): Enable performance status in window title
 
         ## Plugin kwargs:
         * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
@@ -232,7 +234,8 @@ class PyBoy:
         self.queued_input = []
         self.quitting = False
         self.stopped = False
-        self.window_title = "PyBoy"
+        self.window_title = ""
+        self.title_status = title_status
 
         ###################
         # API attributes
@@ -637,10 +640,13 @@ class PyBoy:
             self.events.append(WindowEvent(_event))
 
     def _update_window_title(self):
-        self.window_title = f"CPU/frame: {(self.avg_tick) / SPF * 100:0.2f}%"
-        self.window_title += f' Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu > 0 else "INF")}'
+        if self.title_status:
+            self.window_title = f"CPU/frame: {(self.avg_tick) / SPF * 100:0.2f}%"
+            self.window_title += f' Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu > 0 else "INF")}'
+        else:
+            self.window_title = "PyBoy"
         if self.paused:
-            self.window_title += "[PAUSED]"
+            self.window_title += " [PAUSED]"
         self.window_title += self._plugin_manager.window_title()
         self._plugin_manager._set_title()
 
