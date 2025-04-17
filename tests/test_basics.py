@@ -5,7 +5,7 @@
 import base64
 import hashlib
 import os
-import os.path
+import sys
 from unittest import mock
 
 import pytest
@@ -14,6 +14,7 @@ from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
 from pyboy.utils import WindowEvent, cython_compiled
+from pytest_lazy_fixtures import lf
 
 try:
     import sdl2
@@ -124,7 +125,7 @@ def test_button(default_rom):
     assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
 
 
-def test_record_replay(boot_rom, default_rom):
+def test_record_replay(boot_rom, default_rom, capsys):
     pyboy = PyBoy(default_rom, window="null", bootrom=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, True)
@@ -157,13 +158,19 @@ def test_record_replay(boot_rom, default_rom):
         b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'
     ), "The replay did not result in the expected output"
 
+    # FIXME
+    assert "To replay input consistently later, it is recommended to load a state at boot" in capsys.readouterr().out
 
-def test_argv_parser(*args):
+
+def test_argv_parser(*args, capsys):
     parser = main.parser
 
     # Check error when ROM doesn't exist
     with pytest.raises(SystemExit):
         parser.parse_args("not_a_rom_file_that_would_exist.rom".split(" "))
+    outerr = capsys.readouterr()
+    assert outerr.out == ""
+    assert "Filepath 'not_a_rom_file_that_would_exist.rom' couldn't be found, or isn't a file!" in outerr.err
 
     file_that_exists = "setup.py"
     # Check defaults
@@ -381,3 +388,20 @@ def test_not_cgb(pokemon_crystal_rom, boot_rom):
     ]  # Assert that the screen says "Game Boy Color." at the bottom.
 
     pyboy.stop(save=False)
+
+
+@pytest.mark.xfail
+def test_debug1():
+    sys.stderr.write("NO1!\n")
+
+
+def test_debug2(capsys):
+    sys.stderr.write("NO2!\n")
+    capsys.readouterr()  # Clear buffers
+
+
+@pytest.mark.parametrize("rom_fixture", [lf("default_rom"), lf("any_rom_cgb")])
+def test_debug(rom_fixture):
+    pyboy = PyBoy(rom_fixture, window="null", debug=True)
+    pyboy.set_emulation_speed(0)
+    pyboy.tick(1, True, True)

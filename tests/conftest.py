@@ -434,3 +434,16 @@ def pack_secrets():
         f.write(fernet.encrypt(data.getvalue()))
 
     print(key.decode())
+
+
+@pytest.fixture(autouse=True, scope="function")
+def check_stderr_empty(request):
+    capsys = request.getfixturevalue("capsys")
+    yield
+    # If tests want to ignore errors on stderr, they should issue capsys.readouterr() after known errors
+    captured = capsys.readouterr()
+    try:
+        assert captured.err == "", "stderr is not empty"
+        # assert captured.out == "", "stdout is not empty"
+    except AssertionError as e:
+        raise e
