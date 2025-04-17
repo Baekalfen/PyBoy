@@ -709,12 +709,10 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         # Velocity values (likely signed since they can be negative)
         self.ball_x_velocity = fixed_point_to_value(
             self.pyboy.memory[ADDR_BALL_X_VELOCITY:ADDR_BALL_X_VELOCITY+2], 
-            num_bytes=2,
             is_signed=True
         )
         self.ball_y_velocity = fixed_point_to_value(
             self.pyboy.memory[ADDR_BALL_Y_VELOCITY:ADDR_BALL_Y_VELOCITY+2], 
-            num_bytes=2,
             is_signed=True
         )
 
