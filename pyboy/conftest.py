@@ -177,6 +177,19 @@ def doctest_fixtures(doctest_namespace, default_rom, default_rom_cgb, supermario
         yield None
 
 
+@pytest.fixture(autouse=True, scope="function")
+def check_stderr_empty(request):
+    capsys = request.getfixturevalue("capsys")
+    yield
+    # If tests want to ignore errors on stderr, they should issue capsys.readouterr() after known errors
+    captured = capsys.readouterr()
+    try:
+        assert captured.err == "", "stderr is not empty"
+        # assert captured.out == "", "stdout is not empty"
+    except AssertionError as e:
+        raise e
+
+
 # Code taken from PyTest is licensed with the following:
 # The MIT License (MIT)
 

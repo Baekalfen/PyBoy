@@ -75,7 +75,7 @@ def test_register_hook_context(default_rom):
     assert len(_context) == 1
 
 
-def test_register_hook_print(default_rom, capfd):
+def test_register_hook_print(default_rom, capsys):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
 
@@ -88,7 +88,7 @@ def test_register_hook_print(default_rom, capfd):
     for _ in range(120):
         pyboy.tick()
 
-    out, err = capfd.readouterr()
+    out, err = capsys.readouterr()
     assert out == "Hello!\n"
 
 
