@@ -697,12 +697,10 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
         self.ball_size = self.pyboy.memory[ADDR_BALL_SIZE]
         self.ball_x = fixed_point_to_value(
             self.pyboy.memory[ADDR_BALL_X:ADDR_BALL_X+2], 
-            num_bytes=2,
             is_signed=True
         )
         self.ball_y = fixed_point_to_value(
             self.pyboy.memory[ADDR_BALL_Y:ADDR_BALL_Y+2], 
-            num_bytes=2,
             is_signed=True
         )
     
