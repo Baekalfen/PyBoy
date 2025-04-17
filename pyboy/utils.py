@@ -489,13 +489,12 @@ def bcd_to_dec(value, byte_width=1, byteorder="little"):
 
     return decimal_value
 
-def fixed_point_to_value(raw_bytes, num_bytes=2, is_signed=False, fractional_bits=8):
+def fixed_point_to_value(raw_bytes, is_signed=False, fractional_bits=8):
     """
     Convert fixed-point bytes to appropriate value
     
     Args:
         raw_bytes: Byte array containing the fixed-point value
-        num_bytes: Number of bytes in the value (default: 2 for 16-bit)
         is_signed: Whether to interpret as signed (two's complement)
         fractional_bits: Number of bits used for the fractional part
     
@@ -504,7 +503,7 @@ def fixed_point_to_value(raw_bytes, num_bytes=2, is_signed=False, fractional_bit
     """
     value = int.from_bytes(raw_bytes, "little")
     
-    total_bits = num_bytes * 8
+    total_bits = len(raw_bytes) * 8
     
     # Calculate integer and fractional parts
     integer_part = value >> fractional_bits
