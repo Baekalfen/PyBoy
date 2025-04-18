@@ -15,7 +15,6 @@ from zipfile import ZipFile
 
 import numpy as np
 import pytest
-from cryptography.fernet import Fernet
 from filelock import FileLock
 
 from pyboy.utils import cython_compiled
@@ -83,6 +82,8 @@ def secrets():
         if not os.path.isdir(path):
             if not os.environ.get("PYTEST_SECRETS_KEY"):
                 pytest.skip("Cannot access secrets")
+            from cryptography.fernet import Fernet
+
             fernet = Fernet(os.environ["PYTEST_SECRETS_KEY"].encode())
 
             test_data = url_open("https://pyboy.dk/mirror/test_data.encrypted")
