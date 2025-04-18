@@ -4,16 +4,18 @@
 #
 
 import pyboy
-from pyboy.utils import STATE_VERSION, PyBoyException, PyBoyOutOfBoundsException
+from pyboy.utils import (
+    STATE_VERSION,
+    PyBoyException,
+    PyBoyOutOfBoundsException,
+    INTR_TIMER,
+    INTR_HIGHTOLOW,
+    OPCODE_BRK,
+)
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
-INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
-OPCODE_BRK = 0xDB
-
-
 logger = pyboy.logging.get_logger(__name__)
-
 MAX_CYCLES = 1 << 31
 
 

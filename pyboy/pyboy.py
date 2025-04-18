@@ -13,6 +13,7 @@ import time
 
 import numpy as np
 
+from pyboy.api.constants import TILES, TILES_CGB
 from pyboy.api.gameshark import GameShark
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
@@ -28,6 +29,7 @@ from pyboy.utils import (
     PyBoyOutOfBoundsException,
     WindowEvent,
     cython_compiled,
+    OPCODE_BRK,
 )
 
 try:
@@ -997,7 +999,8 @@ class PyBoy:
 
         Example of custom mapping:
         ```python
-        >>> mapping = [x for x in range(384)] # 1:1 mapping
+        >>> from pyboy.api.constants import TILES
+        >>> mapping = [x for x in range(TILES)] # 1:1 mapping of 384 tiles
         >>> mapping[0] = 0 # Map tile identifier 0 -> 0
         >>> mapping[1] = 0 # Map tile identifier 1 -> 0
         >>> mapping[2] = 0 # Map tile identifier 2 -> 0
@@ -1019,11 +1022,11 @@ class PyBoy:
         """
 
         if mapping is None:
-            mapping = [x for x in range(768)]
+            mapping = [x for x in range(TILES_CGB)]
 
         assert isinstance(sprite_offset, int)
         assert isinstance(mapping, (np.ndarray, list))
-        assert len(mapping) == 384 or len(mapping) == 768
+        assert len(mapping) == TILES or len(mapping) == TILES_CGB
 
         self.game_wrapper.game_area_mapping(mapping, sprite_offset)
 
@@ -1231,7 +1234,7 @@ class PyBoy:
             bank, addr = self._lookup_symbol(addr)
 
         opcode = self.memory[bank, addr]
-        if opcode == 0xDB:
+        if opcode == OPCODE_BRK:
             raise ValueError("Hook already registered for this bank and address.")
         self.mb.breakpoint_add(bank, addr)
         bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)

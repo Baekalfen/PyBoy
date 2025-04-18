@@ -5,9 +5,9 @@
 import pyboy
 
 from . import opcodes
+from pyboy.utils import INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
-INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
 
 
 logger = pyboy.logging.get_logger(__name__)

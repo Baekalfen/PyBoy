@@ -8,7 +8,8 @@ from libc.stdint cimport int8_t, int64_t, uint8_t, uint16_t, uint64_t
 
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, double_to_uint64_ceil
-from pyboy.core.lcd cimport FRAME_CYCLES
+
+cdef int FRAME_CYCLES
 
 
 cdef Logger logger

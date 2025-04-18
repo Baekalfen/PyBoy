@@ -11,6 +11,7 @@ import numpy as np
 
 import pyboy
 from pyboy.utils import PyBoyException, PyBoyInvalidInputException, _bcd_to_dec, bcd_to_dec, dec_to_bcd
+from pyboy.api.constants import TILES
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -86,7 +87,6 @@ shell = [154, 155]
 explosion = [157, 158]
 spike = [237]
 
-TILES = 384
 mapping_minimal = np.zeros(TILES, dtype=np.uint8)
 minimal_list = [
     base_scripts + plane + submarine,

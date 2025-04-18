@@ -19,6 +19,7 @@ from pyboy.logging.logging cimport Logger
 from pyboy.plugins.manager cimport PluginManager
 from pyboy.utils cimport IntIOInterface, IntIOWrapper
 
+cdef int TILES, TILES_CGB, OPCODE_BRK
 
 cdef Logger logger
 

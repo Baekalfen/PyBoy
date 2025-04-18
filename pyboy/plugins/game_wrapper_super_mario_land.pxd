@@ -11,7 +11,7 @@ from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 
 cdef Logger logger
 
-cdef int ROWS, COLS
+cdef int TILES
 
 
 cdef class GameWrapperSuperMarioLand(PyBoyGameWrapper):

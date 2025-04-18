@@ -23,8 +23,8 @@ cdef Logger logger
 
 cdef int64_t MAX_CYCLES
 cdef uint16_t STAT, LY, LYC
-cdef short VBLANK, LCDC, TIMER, SERIAL, HIGHTOLOW
-cdef int INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
+cdef int INTR_TIMER, INTR_HIGHTOLOW
+cdef uint16_t OPCODE_BRK
 cdef int STATE_VERSION
 
 
