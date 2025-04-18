@@ -8,13 +8,9 @@ import argparse
 import copy
 import os
 
-import pyboy
 from pyboy import PyBoy
 from pyboy.plugins.manager import parser_arguments
 from pyboy.pyboy import defaults
-from pyboy.utils import PyBoyInvalidInputException
-
-logger = pyboy.logging.get_logger(__name__)
 
 INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
 
@@ -22,21 +18,20 @@ INTERNAL_LOADSTATE = "INTERNAL_LOADSTATE_TOKEN"
 def color_tuple(string):
     color_palette = [int(c.strip(), 16) for c in string.split(",")]
     if not (len(color_palette) == 4):
-        raise PyBoyInvalidInputException(f"Not the correct amount of colors! Expected four, got {len(color_palette)}")
+        parser.error(f"Not the correct amount of colors! Expected four, got {len(color_palette)}")
     return color_palette
 
 
 def cgb_color_tuple(string):
     color_palette = [int(c.strip(), 16) for c in string.split(",")]
     if not (len(color_palette) == 12):
-        raise PyBoyInvalidInputException(f"Not the correct amount of colors! Expected twelve, got {len(color_palette)}")
+        parser.error(f"Not the correct amount of colors! Expected twelve, got {len(color_palette)}")
     return [color_palette[0:4], color_palette[4:8], color_palette[8:12]]
 
 
 def valid_file_path(path):
     if not path == INTERNAL_LOADSTATE and not os.path.isfile(path):
-        logger.error("Filepath '%s' couldn't be found, or isn't a file!", path)
-        exit(1)
+        parser.error(f"Filepath '{path}' couldn't be found, or isn't a file!")
     return path
 
 
@@ -46,14 +41,14 @@ def valid_volume(vol):
     elif vol.isnumeric() and (0 <= int(vol) <= 100):
         return int(vol)
     else:
-        raise ValueError("Invalid volume")
+        parser.error("Invalid volume")
 
 
 def valid_sample_rate(freq):
     if freq.isnumeric() and int(freq) % 60 == 0:
         return int(freq)
     else:
-        raise ValueError("Invalid sample rate")
+        parser.error("Invalid sample rate")
 
 
 parser = argparse.ArgumentParser(
