@@ -454,9 +454,6 @@ class LCDCRegister:
         self.backgroundmap_offset = 0x1800 if self.backgroundmap_select == 0 else 0x1C00
         self.windowmap_offset = 0x1800 if self.windowmap_select == 0 else 0x1C00
 
-    def _get_sprite_height(self):
-        return self.sprite_height
-
 
 COL0_FLAG = 0b01
 BG_PRIORITY_FLAG = 0b10

@@ -105,15 +105,13 @@ cdef class LCDCRegister:
     cdef bint window_enable
     cdef bint tiledata_select
     cdef bint backgroundmap_select
-    cdef bint sprite_height
+    cdef readonly bint sprite_height
     cdef bint sprite_enable
     cdef bint background_enable
     cdef bint cgb_master_priority
 
     cdef uint16_t backgroundmap_offset
     cdef uint16_t windowmap_offset
-
-    cpdef int _get_sprite_height(self) noexcept
 
 cdef class Renderer:
     cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state

@@ -147,7 +147,7 @@ class Sprite:
             self.attr_palette_number = _bit(attr, 4)
 
         LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
-        sprite_height = 16 if LCDC._get_sprite_height() else 8
+        sprite_height = 16 if LCDC.sprite_height else 8
         self.shape = (8, sprite_height)
         """
         Sprites can be set to be 8x8 or 8x16 pixels (16 pixels tall). This is defined globally for the rendering
