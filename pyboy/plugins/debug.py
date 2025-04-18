@@ -10,7 +10,8 @@ from array import array
 from base64 import b64decode
 from ctypes import c_void_p
 
-from pyboy.api import Sprite, constants
+from pyboy.api.sprite import Sprite
+from pyboy.api.constants import COLS, ROWS, TILES, VRAM_OFFSET, HIGH_TILEMAP, SPRITES
 from pyboy.api.tilemap import TileMap
 from pyboy.plugins.base_plugin import PyBoyWindowPlugin
 from pyboy.plugins.window_sdl2 import sdl2_event_pump
@@ -122,8 +123,8 @@ class Debug(PyBoyWindowPlugin):
             pyboy_argv,
             scale=2,
             title="Sprite View",
-            width=constants.COLS,
-            height=constants.ROWS,
+            width=COLS,
+            height=ROWS,
             pos_x=window_pos,
             pos_y=0,
         )
@@ -139,7 +140,7 @@ class Debug(PyBoyWindowPlugin):
             pos_x=window_pos,
             pos_y=self.spriteview.height * 2 + 68,
         )
-        window_pos += constants.COLS * self.spriteview.scale
+        window_pos += COLS * self.spriteview.scale
 
         self.memory = MemoryWindow(
             pyboy, mb, pyboy_argv, scale=1, title="Memory", width=8 * 60, height=16 * 36, pos_x=window_pos, pos_y=0
@@ -148,7 +149,7 @@ class Debug(PyBoyWindowPlugin):
 
         window_pos = 0
         tile_data_width = 16 * 8  # Change the 16 to however wide you want the tile window
-        tile_data_height = ((constants.TILES * 8) // tile_data_width) * 8
+        tile_data_height = ((TILES * 8) // tile_data_width) * 8
         self.tiledata0 = TileDataWindow(
             pyboy,
             mb,
@@ -323,7 +324,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def post_tick(self):
         # Updating screen buffer by copying tiles from cache
-        mem_offset = self.tilemap.map_offset - constants.VRAM_OFFSET
+        mem_offset = self.tilemap.map_offset - VRAM_OFFSET
         for n in range(mem_offset, mem_offset + 0x400):
             tile_index = self.mb.lcd.VRAM0[n]
 
@@ -392,11 +393,7 @@ class TileViewWindow(BaseDebugWindow):
 
     def update_title(self):
         title = self.base_title
-        title += (
-            " [HIGH MAP 0x9C00-0x9FFF]"
-            if self.tilemap.map_offset == constants.HIGH_TILEMAP
-            else " [LOW MAP 0x9800-0x9BFF]"
-        )
+        title += " [HIGH MAP 0x9C00-0x9FFF]" if self.tilemap.map_offset == HIGH_TILEMAP else " [LOW MAP 0x9800-0x9BFF]"
         title += (
             " [HIGH DATA (SIGNED) 0x8800-0x97FF]"
             if self.tilemap.signed_tile_data
@@ -410,41 +407,40 @@ class TileViewWindow(BaseDebugWindow):
 
     def draw_overlay(self):
         global marked_tiles
-        scanlineparameters = self.pyboy.screen.tilemap_position_list
 
         background_view = self.scanline_x == 0
 
         # TODO: Refactor this
         # Mark screen area
-        for y in range(constants.ROWS):
-            xx = int(scanlineparameters[y][self.scanline_x])
-            yy = int(scanlineparameters[y][self.scanline_y])
+        for y in range(ROWS):
+            xx = self.mb.lcd._scanlineparameters[y][self.scanline_x]
+            yy = self.mb.lcd._scanlineparameters[y][self.scanline_y]
 
             if background_view:  # Background
                 # Wraps around edges of the screen
-                if y == 0 or y == constants.ROWS - 1:  # Draw top/bottom bar
-                    for x in range(constants.COLS):
+                if y == 0 or y == ROWS - 1:  # Draw top/bottom bar
+                    for x in range(COLS):
                         self.buf0[(yy + y) % 0xFF, (xx + x) % 0xFF] = COLOR
                 else:  # Draw body
                     self.buf0[(yy + y) % 0xFF, xx % 0xFF] = COLOR
-                    for x in range(constants.COLS):
+                    for x in range(COLS):
                         self.buf0[(yy + y) % 0xFF, (xx + x) % 0xFF] &= self.color
-                    self.buf0[(yy + y) % 0xFF, (xx + constants.COLS) % 0xFF] = COLOR
+                    self.buf0[(yy + y) % 0xFF, (xx + COLS) % 0xFF] = COLOR
             else:  # Window
                 # Takes a cut of the screen
                 xx = -xx
                 yy = -yy
-                if yy + y == 0 or y == constants.ROWS - 1:  # Draw top/bottom bar
-                    for x in range(constants.COLS):
-                        if 0 <= xx + x < constants.COLS:
+                if yy + y == 0 or y == ROWS - 1:  # Draw top/bottom bar
+                    for x in range(COLS):
+                        if 0 <= xx + x < COLS:
                             self.buf0[yy + y, xx + x] = COLOR
                 else:  # Draw body
                     if 0 <= yy + y:
                         self.buf0[yy + y, max(xx, 0)] = COLOR
-                        for x in range(constants.COLS):
-                            if 0 <= xx + x < constants.COLS:
+                        for x in range(COLS):
+                            if 0 <= xx + x < COLS:
                                 self.buf0[yy + y, xx + x] &= self.color
-                        self.buf0[yy + y, xx + constants.COLS] = COLOR
+                        self.buf0[yy + y, xx + COLS] = COLOR
 
         # Mark selected tiles
         for t, match in zip(
@@ -457,10 +453,10 @@ class TileViewWindow(BaseDebugWindow):
 
         # Mark current scanline directly from LY,SCX,SCY,WX,WY
         if background_view:
-            for x in range(constants.COLS):
+            for x in range(COLS):
                 self.buf0[(self.mb.lcd.SCY + self.mb.lcd.LY) % 0xFF, (self.mb.lcd.SCX + x) % 0xFF] = 0xFF00CE12
         else:
-            for x in range(constants.COLS):
+            for x in range(COLS):
                 self.buf0[(self.mb.lcd.WY + self.mb.lcd.LY) % 0xFF, (self.mb.lcd.WX + x) % 0xFF] = 0xFF00CE12
 
 
@@ -481,7 +477,7 @@ class TileDataWindow(BaseDebugWindow):
         else:
             self.palette_rgb = self.mb.lcd.BGP.palette_mem_rgb
 
-        for t in range(constants.TILES):
+        for t in range(TILES):
             if self.tilecache_select:
                 self.renderer.update_tilecache1(self.mb.lcd, t, 1)
             else:
@@ -581,7 +577,7 @@ class SpriteWindow(BaseDebugWindow):
                 if event.mouse_button == 0:
                     tile_x, tile_y = event.mouse_x // 8, event.mouse_y // sprite_height
                     sprite_identifier = tile_y * (self.width // 8) + tile_x
-                    if sprite_identifier > constants.SPRITES:
+                    if sprite_identifier > SPRITES:
                         # Out of bounds
                         continue
                     sprite = Sprite(self.mb, sprite_identifier)
@@ -624,8 +620,8 @@ class SpriteWindow(BaseDebugWindow):
 
 class SpriteViewWindow(BaseDebugWindow):
     def post_tick(self):
-        for y in range(constants.ROWS):
-            for x in range(constants.COLS):
+        for y in range(ROWS):
+            for x in range(COLS):
                 self.buf0[y, x] = SPRITE_BACKGROUND
 
         for ly in range(144):

@@ -9,11 +9,15 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.plugins.window_sdl2
 from pyboy.api.tilemap cimport TileMap
+from pyboy.api.tile cimport Tile
+from pyboy.api.sprite cimport Sprite
 from pyboy.core.lcd cimport Renderer, CGBRenderer
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
 
+cdef uint64_t COLS, ROWS, TILES, VRAM_OFFSET, HIGH_TILEMAP, SPRITES
+cdef uint32_t COLOR, COLOR_BACKGROUND, SPRITE_BACKGROUND, COLOR_WINDOW
 
 cdef Logger logger
 
@@ -92,7 +96,7 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef void post_tick(self) noexcept
 
     # scanlineparameters=uint8_t[:,:],
-    @cython.locals(x=int, y=int, xx=int, yy=int, row=int, column=int)
+    @cython.locals(x=int, y=int, xx=int, yy=int, row=int, column=int, background_view=bint, t=MarkedTile)
     cdef void draw_overlay(self) noexcept
 
     @cython.locals(tile_x=int, tile_y=int, tile_identifier=int)
@@ -118,7 +122,7 @@ cdef class SpriteWindow(BaseDebugWindow):
     @cython.locals(tile_x=int, tile_y=int, sprite_identifier=int, sprite=object)
     cdef list handle_events(self, list)
 
-    @cython.locals(t=MarkedTile, xx=int, yy=int, sprite=object, i=int)
+    @cython.locals(m=MarkedTile, xx=int, yy=int, sprite=object, i=int, sprite_index=int)
     cdef void draw_overlay(self) noexcept
 
     @cython.locals(title=str)
@@ -131,7 +135,7 @@ cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
     cdef void post_tick(self) noexcept
 
-    @cython.locals(t=MarkedTile, sprite=object, i=int)
+    @cython.locals(m=MarkedTile, sprite=Sprite, i=int, sprite_index=int)
     cdef void draw_overlay(self) noexcept
 
     @cython.locals(title=str)
@@ -153,10 +157,12 @@ cdef class MemoryWindow(BaseDebugWindow):
     cdef int[3] bg_color
 
     cdef void write_border(self) noexcept
-    @cython.locals(header=bytes, addr=bytes)
+    # @cython.locals(header=uint8_t[:], addr=uint8_t[:])
     cdef void write_addresses(self) noexcept
+    # @cython.locals(a=uint8_t[:])
     cdef void write_memory(self) noexcept
     @cython.locals(text=uint8_t[:])
     cdef void render_text(self) noexcept
     @cython.locals(i=int, c=uint8_t)
     cdef void draw_text(self, int, int, uint8_t[:]) noexcept
+    cdef void _scroll_view(self, int)
