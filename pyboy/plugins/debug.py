@@ -339,8 +339,8 @@ class TileViewWindow(BaseDebugWindow):
 
             # tilecache = None
             # palette_rgb = None
-            if self.cgb:
-                palette, vbank, horiflip, vertflip, bg_priority = self.renderer._cgb_get_background_map_attributes(
+            if self.is_cgb_renderer:
+                palette, vbank, horiflip, vertflip, bg_priority = self.cgb_renderer._cgb_get_background_map_attributes(
                     self.mb.lcd, n
                 )
                 self.renderer.update_tilecache1(self.mb.lcd, tile_index, 1)
