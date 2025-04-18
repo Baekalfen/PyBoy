@@ -9,7 +9,7 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cimport pyboy.plugins.window_sdl2
 from pyboy.api.tilemap cimport TileMap
-from pyboy.core.mb cimport Motherboard
+from pyboy.core.lcd cimport Renderer, CGBRenderer
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
@@ -77,7 +77,18 @@ cdef class TileViewWindow(BaseDebugWindow):
 
     cdef uint8_t[:,:] tilecache # Fixing Cython locals
     cdef uint32_t[:] palette_rgb # Fixing Cython locals
-    @cython.locals(mem_offset=uint16_t, tile_index=int, tile_column=int, tile_row=int)
+    @cython.locals(
+        mem_offset=uint16_t,
+        tile_index=int,
+        tile_column=int,
+        tile_row=int,
+        tile_num = uint8_t,
+        palette = uint8_t,
+        vbank = uint8_t,
+        horiflip = uint8_t,
+        vertflip = uint8_t,
+        bg_priority = uint8_t,
+    )
     cdef void post_tick(self) noexcept
 
     # scanlineparameters=uint8_t[:,:],
