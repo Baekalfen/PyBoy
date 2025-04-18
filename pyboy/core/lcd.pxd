@@ -14,7 +14,7 @@ from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
 
-cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
+cdef uint8_t INTR_VBLANK, INTR_LCDC
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
 cdef int ROWS, COLS, TILES, FRAME_CYCLES, VIDEO_RAM, OBJECT_ATTRIBUTE_MEMORY
 cdef uint32_t COL0_FLAG, BG_PRIORITY_FLAG

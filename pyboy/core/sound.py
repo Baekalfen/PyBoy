@@ -12,10 +12,9 @@ from array import array
 
 import pyboy
 from pyboy.utils import PyBoyAssertException, cython_compiled
+from pyboy.utils import FRAME_CYCLES
 
 if not cython_compiled:
-    from pyboy.core.lcd import FRAME_CYCLES
-
     # Hide it from Cython in 'exec' statement
     exec("from pyboy.utils import double_to_uint64_ceil")
 

@@ -6,7 +6,7 @@
 import numpy as np
 
 from pyboy import PyBoy
-from pyboy.api.constants import LCDC_OFFSET, OAM_OFFSET, VRAM_OFFSET
+from pyboy.api.constants import LCDC_OFFSET, OAM_OFFSET, VRAM_OFFSET, TILES
 
 
 def test_game_wrapper_basics(default_rom):
@@ -74,7 +74,7 @@ def test_game_wrapper_mapping(default_rom):
     )
 
     # List-based mapping, don't call tick
-    mapping = [x for x in range(384)]  # 1:1 mapping
+    mapping = [x for x in range(TILES)]  # 1:1 mapping
     mapping[0] = 10
     mapping[1] = 10
     mapping[2] = 10

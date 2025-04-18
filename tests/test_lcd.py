@@ -10,9 +10,7 @@ import pytest
 import numpy as np
 from pyboy import PyBoy
 from pyboy.core.lcd import LCD, Renderer
-from pyboy.utils import cython_compiled
-
-INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
+from pyboy.utils import cython_compiled, INTR_LCDC, FRAME_CYCLES
 
 color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
 cgb_color_palette = (
@@ -20,7 +18,6 @@ cgb_color_palette = (
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
 )
-FRAME_CYCLES = 70224
 
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")

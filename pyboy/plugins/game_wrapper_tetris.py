@@ -13,6 +13,7 @@ import numpy as np
 import pyboy
 
 from .base_plugin import PyBoyGameWrapper
+from pyboy.api.constants import TILES
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -31,8 +32,6 @@ inverse_tetromino_table = {v: k for k, v in tetromino_table.items()}
 NEXT_TETROMINO_ADDR = 0xC213
 
 # Construct a translation table for tile ID's to a minimal/compressed id system
-TILES = 384
-
 # Compressed assigns an ID to each Tetromino type
 mapping_compressed = np.zeros(TILES, dtype=np.uint8)
 # BLANK, J, Z, O, L, T, S, I, BLACK

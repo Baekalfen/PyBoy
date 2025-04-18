@@ -8,17 +8,13 @@ from ctypes import c_void_p
 from random import getrandbits
 
 import pyboy
-from pyboy.utils import PyBoyException
+from pyboy.utils import PyBoyException, INTR_VBLANK, INTR_LCDC, FRAME_CYCLES
+from pyboy.api.constants import ROWS, COLS, TILES
 
 logger = pyboy.logging.get_logger(__name__)
 
 VIDEO_RAM = 8 * 1024  # 8KB
 OBJECT_ATTRIBUTE_MEMORY = 0xA0
-INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 << x for x in range(5)]
-ROWS, COLS = 144, 160
-TILES = 384
-
-FRAME_CYCLES = 70224
 
 
 def rgb_to_bgr(color):
@@ -622,7 +618,7 @@ class Renderer:
         # The lowest X-coordinate has priority, when overlapping
         spriteheight = 16 if lcd._LCDC.sprite_height else 8
         sprite_count = 0
-        for n in range(0x00, 0xA0, 4):
+        for n in range(0x00, OBJECT_ATTRIBUTE_MEMORY, 4):
             y = lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
             x = lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
 
