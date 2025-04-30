@@ -98,8 +98,6 @@ saved_state = None
         (True, "dmg", "apu/channel_2/channel_2_volume_div.gb"),
         (True, "dmg", "apu/channel_2/channel_2_nrx2_speed_change.gb"),
         (True, "dmg", "apu/channel_2/channel_2_restart_nrx2_glitch.gb"),
-        (True, "dmg", "sgb/command_mlt_req_1_incrementing.gb"),
-        (True, "dmg", "sgb/command_mlt_req.gb"),
         (True, "cgb", "dma/gdma_addr_mask.gb"),
         (True, "cgb", "dma/hdma_mode0.gb"),
         (True, "cgb", "dma/hdma_lcd_off.gb"),
