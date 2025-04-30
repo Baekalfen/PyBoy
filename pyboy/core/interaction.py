@@ -79,15 +79,15 @@ class Interaction:
         # Guess to make first 4 and last 2 bits true, while keeping selected bits
         joystickByte = 0xFF & (joystickbyte | 0b11001111)
         if P14 and P15:
-            pass
+            joystickByte = 0xF
         elif not P14 and not P15:
-            pass
+            pass  # FIXME: What happens when both are requested?
         elif not P14:
             joystickByte &= self.directional
         elif not P15:
             joystickByte &= self.standard
 
-        return joystickByte
+        return joystickByte | 0b11000000
 
     def save_state(self, f):
         f.write(self.directional)
