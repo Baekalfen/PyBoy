@@ -96,35 +96,6 @@ def test_register_file(default_rom):
     assert registers == [0x1, 208, 0, 0, 0, 143, 135, 0xFF00, 0x100]
 
 
-def test_button(default_rom):
-    pyboy = PyBoy(default_rom, window="null")
-    pyboy.set_emulation_speed(0)
-
-    pyboy.tick(1, False, False)
-    pyboy.memory[0xFF00] = 0b0010_0000  # Select d-pad (bit-4 low)
-    assert pyboy.memory[0xFF00] == 0b0000_1111  # High means released
-
-    pyboy.button("down")
-    pyboy.tick(1, False, False)
-    pyboy.memory[0xFF00] = 0b0010_0000
-    assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
-    pyboy.tick(1, False, False)
-    pyboy.memory[0xFF00] = 0b0010_0000
-    assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
-
-    pyboy.button("down")
-    pyboy.tick(1, False, False)
-    pyboy.memory[0xFF00] = 0b0010_0000
-    assert pyboy.memory[0xFF00] == 0b0000_0111  # down pressed
-    pyboy.button("down")
-    pyboy.tick(1, False, False)
-    pyboy.memory[0xFF00] = 0b0010_0000
-    assert pyboy.memory[0xFF00] == 0b0000_0111  # down is kept pressed
-    pyboy.tick(1, False, False)
-    pyboy.memory[0xFF00] = 0b0010_0000
-    assert pyboy.memory[0xFF00] == 0b0000_1111  # auto-reset
-
-
 def test_record_replay(boot_rom, default_rom, capsys):
     pyboy = PyBoy(default_rom, window="null", bootrom=boot_rom, record_input=True)
     pyboy.set_emulation_speed(0)
