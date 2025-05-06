@@ -20,7 +20,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
+    - name: CCache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        # create-symlink: true
+        key: ${{ matrix.os }}-${{ matrix.python-version }}
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
@@ -137,23 +141,33 @@ jobs:
         manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    - name: CCache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ matrix.os }}-${{ matrix.manylinux-version }}-${{ matrix.python-version }}
     - name: Docker Run Action
       uses: addnab/docker-run-action@v3
       with:
         image: quay.io/pypa/${{ matrix.manylinux-version }}:latest
-        options: -v ${{ github.workspace }}:/work -e GITHUB_REF=${{ github.ref }} --rm
+        options: -v ${{ github.workspace }}:/work -v ${{ github.workspace }}/.ccache:/ccache -e GITHUB_REF=${{ github.ref }} --rm
         run: |
           set -e
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
           if [[ "${{ matrix.manylinux-version }}" == "manylinux_2_28_x86_64" ]]; then
-            dnf install libjpeg-devel -y
+            dnf install libjpeg-devel ccache -y
           else
-            apk add libjpeg jpeg-dev libffi
+            apk add libjpeg jpeg-dev libffi ccache
             python -m ensurepip
           fi
+          ccache --set-config=cache_dir=/ccache
+          ccache --set-config=max_size=500M
+          ccache --set-config=compression=true
+          export CCACHE_DIR=/ccache
+          export CC="ccache gcc"
+          export CXX="ccache g++"
 
           cd /work
           echo "Preparing pip"
