@@ -8,7 +8,7 @@ from libc.stdint cimport int64_t, uint8_t, uint64_t
 
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyPlugin
-from pyboy.utils cimport IntIOInterface
+from pyboy.utils cimport IntIOInterface, malloc, free
 
 
 cdef Logger logger
@@ -55,7 +55,7 @@ cdef class CompressedFixedAllocBuffers(FixedAllocBuffers):
 cdef class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
     cdef int64_t internal_pointer
     cdef int64_t prev_internal_pointer
-    cdef uint8_t[FIXED_BUFFER_MIN_ALLOC] internal_buffer
+    cdef uint8_t[:] internal_buffer
     cdef bint internal_buffer_dirty
     cdef int64_t base_frame
     cdef int64_t injected_zero_frame

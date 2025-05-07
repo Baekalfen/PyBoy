@@ -3,11 +3,12 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import array
-
 import pyboy
 from pyboy.plugins.base_plugin import PyBoyPlugin
-from pyboy.utils import IntIOInterface, PyBoyException, WindowEvent
+from pyboy.utils import IntIOInterface, PyBoyException, WindowEvent, cython_compiled
+
+if not cython_compiled:
+    exec("from pyboy.utils import malloc, free")
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -73,6 +74,9 @@ class Rewind(PyBoyPlugin):
     def enabled(self):
         return self.pyboy_argv.get("rewind")
 
+    def stop(self):
+        self.rewind_buffer.stop()
+
 
 ##############################################################
 # Homogeneous cyclic buffer
@@ -81,7 +85,7 @@ class Rewind(PyBoyPlugin):
 
 class FixedAllocBuffers(IntIOInterface):
     def __init__(self):
-        self.buffer = array.array("B", [0] * (FIXED_BUFFER_SIZE))  # NOQA: F821
+        self.buffer = malloc(FIXED_BUFFER_SIZE)
         for n in range(FIXED_BUFFER_SIZE):
             self.buffer[n] = FILL_VALUE
         self.sections = [0]
@@ -94,7 +98,7 @@ class FixedAllocBuffers(IntIOInterface):
         self.avg_section_size = 0.0
 
     def stop(self):
-        pass
+        free(self.buffer)
 
     def flush(self):
         pass
@@ -224,7 +228,7 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         self.prev_internal_pointer = 0
         # The initial values needs to be 0 to act as the "null-frame" and make the first frame a one-to-one copy
         # TODO: It would work with any values, but it makes it easier to debug
-        self.internal_buffer = array.array("B", [0] * FIXED_BUFFER_MIN_ALLOC)
+        self.internal_buffer = malloc(FIXED_BUFFER_MIN_ALLOC)
         self.internal_buffer_dirty = False
 
         # A side effect of the implementation will create a zero-frame in the beginning. Keep track of this,
@@ -232,6 +236,10 @@ class DeltaFixedAllocBuffers(CompressedFixedAllocBuffers):
         self.base_frame = 0
         # The frame we inject in the end to flush the last frame out
         self.injected_zero_frame = 0
+
+    def stop(self):
+        super().stop()
+        free(self.internal_buffer)
 
     def write(self, data):
         self.internal_buffer_dirty = True
