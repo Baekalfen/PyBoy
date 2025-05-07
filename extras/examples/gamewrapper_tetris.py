@@ -84,4 +84,4 @@ for _ in range(10):
     selection.add(tetris.next_tetromino())
 assert len(selection) > 1  # If it's random, we will see more than one kind
 
-pyboy.stop()
+pyboy.stop(save=False)

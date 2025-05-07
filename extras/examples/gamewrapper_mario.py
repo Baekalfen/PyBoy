@@ -52,4 +52,4 @@ else:
 mario.reset_game()
 assert mario.lives_left == 2
 
-pyboy.stop()
+pyboy.stop(save=False)
