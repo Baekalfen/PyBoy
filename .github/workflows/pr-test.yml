@@ -67,6 +67,9 @@ jobs:
       run: |
         python -m pytest tests/test_benchmark.py --benchmark-enable --benchmark-min-rounds=10
     - name: Build wheel
+      env:
+        CC: "ccache gcc"
+        CXX: "ccache g++"
       run: |
         echo "Building wheel"
         pip install wheel twine
