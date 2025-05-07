@@ -15,18 +15,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest, rpi]
         python-version: [3.9, "3.10", 3.11, 3.12, 3.13]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: CCache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         # create-symlink: true
         key: ${{ matrix.os }}-${{ matrix.python-version }}
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Python dependencies
@@ -36,19 +36,22 @@ jobs:
         pip install --prefer-binary -r requirements.txt
         pip install --prefer-binary -r requirements_tests.txt
     - name: Doctest
-      if: ${{ !contains(matrix.os, 'windows') }}
+      if: ${{ !contains(matrix.os, 'windows') && !contains(matrix.os, 'rpi') }}
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
         python -m pytest pyboy/ -v
     - name: Build PyBoy
+      env:
+        CC: "ccache gcc"
+        CXX: "ccache g++"
       run: |
         python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
     - name: Setup Ubuntu - OpenGL dependencies
-      if: ${{ contains(matrix.os, 'ubuntu') }}
+      if: ${{ contains(matrix.os, 'ubuntu') || contains(matrix.os, 'rpi') }}
       run: |
         sudo apt update
-        sudo apt install libopengl0 freeglut3-dev
+        sudo apt install libopengl0 freeglut3-dev -y
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -69,14 +72,14 @@ jobs:
         pip install wheel twine
         python setup.py sdist bdist_wheel
     - name: Upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'rpi') }}
       run: |
         echo "Uploading wheel"
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
         echo "Uploading source code"
         python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
     - name: Upload wheel [TEST]
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'rpi')}}
       run: |
         echo "Uploading wheel"
         python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
@@ -133,12 +136,20 @@ jobs:
 
   test_manylinux:
     name: ManyLinux - Build, Test and Deploy
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, rpi]
         python-version: ['cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312', 'cp313-cp313']
-        manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64'] # GHA doesn't support manylinux_2_24_aarch64
+        manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64', 'manylinux_2_28_aarch64']
+        exclude:
+          - os: rpi
+            manylinux-version: manylinux_2_28_x86_64
+          - os: rpi
+            manylinux-version: musllinux_1_2_x86_64
+          - os: ubuntu-latest
+            manylinux-version: manylinux_2_28_aarch64
 
     steps:
     - uses: actions/checkout@v4
@@ -156,7 +167,7 @@ jobs:
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
-          if [[ "${{ matrix.manylinux-version }}" == "manylinux_2_28_x86_64" ]]; then
+          if [[ "${{ matrix.manylinux-version }}" == manylinux_2_28* ]]; then
             dnf install libjpeg-devel ccache -y
           else
             apk add libjpeg jpeg-dev libffi ccache
@@ -179,7 +190,9 @@ jobs:
           python -m pip install --prefer-binary -r requirements_tests.txt
 
           echo "Starting Doctests"
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ -v
+          if [[ "${{ matrix.os }}" != "rpi" ]]; then
+            PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ -v
+          fi
 
           echo "Building PyBoy"
           python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
@@ -202,7 +215,7 @@ jobs:
           ls -lah dist/
 
     - name: Set up Python 3.11 (just for PyPi upload)
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: 3.11
     - name: Upload wheel
