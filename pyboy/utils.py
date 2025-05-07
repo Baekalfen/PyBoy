@@ -265,8 +265,23 @@ if not cython_compiled:
 from math import ceil
 def double_to_uint64_ceil(val):
     return ceil(val)
+
+import array
+def malloc(n):
+    return array.array('B', [0]*(n))
+
+def free(buffer):
+    del(buffer)
 """
     )
+else:
+    exec("""
+def malloc(n):
+    raise PyBoyInternalError("Called Python version of malloc from Cython! Should be cimported")
+
+def free(buffer):
+    raise PyBoyInternalError("Called Python version of free from Cython! Should be cimported")
+""")
 
 ##############################################################
 

@@ -6,6 +6,7 @@
 cimport cython
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 from libc.math cimport ceil
+from libc.stdlib cimport free as _free, malloc as _malloc
 
 ##############################################################
 # Buffer classes
@@ -34,6 +35,12 @@ cdef class IntIOWrapper(IntIOInterface):
 
 cdef inline uint64_t double_to_uint64_ceil(double val) noexcept nogil:
     return <uint64_t> ceil(val)
+
+cdef inline uint8_t[:] malloc(size_t n) noexcept:
+    return <uint8_t[:n]> _malloc(n)
+
+cdef inline void free(uint8_t[:] pointer) noexcept:
+    _free(<void *> &pointer[0])
 
 ##############################################################
 # Window Events
