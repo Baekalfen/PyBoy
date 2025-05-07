@@ -142,7 +142,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, rpi]
         python-version: ['cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312', 'cp313-cp313']
-        manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64', 'manylinux_2_28_aarch64']
+        manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64', 'manylinux_2_28_aarch64', 'musllinux_1_2_aarch64']
         exclude:
           - os: rpi
             manylinux-version: manylinux_2_28_x86_64
@@ -150,6 +150,8 @@ jobs:
             manylinux-version: musllinux_1_2_x86_64
           - os: ubuntu-latest
             manylinux-version: manylinux_2_28_aarch64
+          - os: ubuntu-latest
+            manylinux-version: musllinux_1_2_aarch64
 
     steps:
     - uses: actions/checkout@v4
