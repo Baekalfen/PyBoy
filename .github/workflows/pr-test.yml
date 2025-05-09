@@ -220,6 +220,7 @@ jobs:
           ls -lah dist/
 
     - name: Set up Python 3.11 (just for PyPi upload)
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }}
       uses: actions/setup-python@v5
       with:
         python-version: 3.11
