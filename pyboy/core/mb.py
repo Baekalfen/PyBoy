@@ -9,12 +9,13 @@ from pyboy.utils import (
     PyBoyException,
     PyBoyOutOfBoundsException,
     INTR_TIMER,
+    INTR_SERIAL,
     INTR_HIGHTOLOW,
     OPCODE_BRK,
     MAX_CYCLES,
 )
 
-from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
+from . import bootrom, cartridge, cpu, interaction, lcd, ram, serial, sound, timer
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -48,6 +49,7 @@ class Motherboard:
             logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
 
         self.timer = timer.Timer()
+        self.serial = serial.Serial()
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
@@ -244,6 +246,7 @@ class Motherboard:
         self.timer.save_state(f)
         self.cartridge.save_state(f)
         self.interaction.save_state(f)
+        self.serial.save_state(f)
         f.flush()
         logger.debug("State saved.")
 
@@ -289,6 +292,8 @@ class Motherboard:
             self.timer.load_state(f, state_version)
         self.cartridge.load_state(f, state_version)
         self.interaction.load_state(f, state_version)
+        if state_version >= 15:
+            self.serial.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 
@@ -321,7 +326,7 @@ class Motherboard:
                         self.lcd._cycles_to_interrupt,  # TODO: Be more agreesive. Only if actual interrupt enabled.
                         self.lcd._cycles_to_frame,
                         self.sound._cycles_to_interrupt,
-                        # self.serial.cycles_to_interrupt(),
+                        self.serial._cycles_to_interrupt,
                         mode0_cycles,
                     ),
                 )
@@ -333,6 +338,9 @@ class Motherboard:
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
             self.sound.tick(self.cpu.cycles)
+
+            if self.serial.tick(self.cpu.cycles):
+                self.cpu.set_interruptflag(INTR_SERIAL)
 
             if self.timer.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(INTR_TIMER)
@@ -380,7 +388,14 @@ class Motherboard:
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
-            if 0xFF04 <= i <= 0xFF07:
+            if 0xFF01 <= i <= 0xFF02:
+                if self.serial.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_SERIAL)
+                if i == 0xFF01:
+                    return self.serial.SB
+                elif i == 0xFF02:
+                    return self.serial.SC
+            elif 0xFF04 <= i <= 0xFF07:
                 if self.timer.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_TIMER)
 
@@ -510,11 +525,16 @@ class Motherboard:
         elif 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
-            elif i == 0xFF01:
-                self.serialbuffer[self.serialbuffer_count] = value
-                self.serialbuffer_count += 1
-                self.serialbuffer_count &= 0x3FF
-                self.ram.io_ports[i - 0xFF00] = value
+            elif 0xFF01 <= i <= 0xFF02:
+                if self.serial.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_SERIAL)
+                if i == 0xFF01:
+                    self.serialbuffer[self.serialbuffer_count] = value
+                    self.serialbuffer_count += 1
+                    self.serialbuffer_count &= 0x3FF
+                    self.serial.set_SB(value)
+                elif i == 0xFF02:
+                    self.serial.set_SC(value)
             elif 0xFF04 <= i <= 0xFF07:
                 if self.timer.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_TIMER)
