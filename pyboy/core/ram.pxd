@@ -4,11 +4,12 @@
 #
 
 cimport cython
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, uint16_t
 
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
+cdef uint16_t INTERNAL_RAM0, INTERNAL_RAM0_CGB, NON_IO_INTERNAL_RAM0, IO_PORTS, NON_IO_INTERNAL_RAM1, INTERNAL_RAM1
 
 cdef Logger logger
 
