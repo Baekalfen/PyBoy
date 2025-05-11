@@ -23,7 +23,7 @@ cdef Logger logger
 
 cdef int64_t MAX_CYCLES
 cdef uint16_t STAT, LY, LYC
-cdef int INTR_TIMER, INTR_HIGHTOLOW
+cdef int INTR_TIMER, INTR_HIGHTOLOW, INTR_SERIAL
 cdef uint16_t OPCODE_BRK
 cdef int STATE_VERSION
 
@@ -37,6 +37,7 @@ cdef class Motherboard:
     cdef pyboy.core.timer.Timer timer
     cdef pyboy.core.sound.Sound sound
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
+    cdef object serial
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
