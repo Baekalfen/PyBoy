@@ -13,6 +13,7 @@ cimport pyboy.core.cpu
 cimport pyboy.core.interaction
 cimport pyboy.core.lcd
 cimport pyboy.core.ram
+cimport pyboy.core.serial
 cimport pyboy.core.sound
 cimport pyboy.core.timer
 from pyboy.logging.logging cimport Logger
@@ -23,7 +24,7 @@ cdef Logger logger
 
 cdef int64_t MAX_CYCLES
 cdef uint16_t STAT, LY, LYC
-cdef int INTR_TIMER, INTR_HIGHTOLOW
+cdef int INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef uint16_t OPCODE_BRK
 cdef int STATE_VERSION
 
@@ -35,6 +36,7 @@ cdef class Motherboard:
     cdef pyboy.core.lcd.LCD lcd
     cdef pyboy.core.cpu.CPU cpu
     cdef pyboy.core.timer.Timer timer
+    cdef pyboy.core.serial.Serial serial
     cdef pyboy.core.sound.Sound sound
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
     cdef bint bootrom_enabled
