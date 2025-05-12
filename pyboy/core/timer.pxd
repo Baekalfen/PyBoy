@@ -11,6 +11,7 @@ import cython
 
 from pyboy.logging.logging cimport Logger
 
+cdef uint64_t MAX_CYCLES
 
 cdef Logger logger
 

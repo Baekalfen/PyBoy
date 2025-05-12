@@ -12,7 +12,7 @@ from array import array
 
 import pyboy
 from pyboy.utils import PyBoyAssertException, cython_compiled
-from pyboy.utils import FRAME_CYCLES
+from pyboy.utils import FRAME_CYCLES, MAX_CYCLES
 
 if not cython_compiled:
     # Hide it from Cython in 'exec' statement
@@ -54,12 +54,12 @@ class Sound:
         self.speed_shift = 0
         if not self.emulate:
             # No need to sample, when not enabled
-            self.cycles_target = 1 << 31
-            self.cycles_target_512Hz = 1 << 31
-            self._cycles_to_interrupt = 1 << 31
+            self.cycles_target = MAX_CYCLES
+            self.cycles_target_512Hz = MAX_CYCLES
+            self._cycles_to_interrupt = MAX_CYCLES
         else:
             if self.disable_sampling:
-                self.cycles_target = 1 << 31
+                self.cycles_target = MAX_CYCLES
             else:
                 self.cycles_target = self.cycles_per_sample
             self.cycles_target_512Hz = CYCLES_512HZ << self.speed_shift
@@ -94,7 +94,7 @@ class Sound:
         if self.emulate:
             self.cycles_target_512Hz = self.cycles + (CYCLES_512HZ << self.speed_shift)
         else:
-            self.cycles_target_512Hz = 1 << 31
+            self.cycles_target_512Hz = MAX_CYCLES
 
     def get(self, offset):
         if not self.emulate:

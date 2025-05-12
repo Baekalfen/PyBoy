@@ -11,12 +11,12 @@ from pyboy.utils import (
     INTR_TIMER,
     INTR_HIGHTOLOW,
     OPCODE_BRK,
+    MAX_CYCLES,
 )
 
 from . import bootrom, cartridge, cpu, interaction, lcd, ram, sound, timer
 
 logger = pyboy.logging.get_logger(__name__)
-MAX_CYCLES = 1 << 31
 
 
 class Motherboard:

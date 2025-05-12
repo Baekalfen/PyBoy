@@ -11,9 +11,8 @@ import numpy as np
 import PIL
 import pytest
 
-from pyboy.utils import cython_compiled
+from pyboy.utils import cython_compiled, MAX_CYCLES, PyBoyFeatureDisabledError
 from pyboy import PyBoy
-from pyboy.utils import PyBoyFeatureDisabledError
 
 from PIL import Image, ImageDraw
 
@@ -151,12 +150,12 @@ def test_buffer_overrun(default_rom, capsys, sample_rate):
 def test_sound_not_emulated_cycles_to_interrupt(default_rom):
     pyboy = PyBoy(default_rom, window="null", sound_emulated=False)
     # We want sound to report a large amount, so it won't interfere with the CPU's cycles target
-    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    assert pyboy.mb.sound._cycles_to_interrupt == MAX_CYCLES
     pyboy.tick(1, False, True)
-    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    assert pyboy.mb.sound._cycles_to_interrupt == MAX_CYCLES
     for _ in range(200):
         pyboy.tick(1, False, True)
-    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    assert pyboy.mb.sound._cycles_to_interrupt == MAX_CYCLES
     for _ in range(200):
         pyboy.tick(1, False, False)
-    assert pyboy.mb.sound._cycles_to_interrupt == 1 << 31
+    assert pyboy.mb.sound._cycles_to_interrupt == MAX_CYCLES
