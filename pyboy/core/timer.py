@@ -3,6 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from pyboy.utils import MAX_CYCLES
+
 # http://problemkaputt.de/pandocs.htm#gameboytechnicaldata Unless the
 # oscillator frequency is multiplied or divided before it gets to the
 # CPU, it must be running at 4.194304MHz (or if the CPU has an
@@ -47,7 +49,7 @@ class Timer:
         self.DIV &= 0xFF
 
         if self.TAC & 0b100 == 0:  # Check if timer is not enabled
-            self._cycles_to_interrupt = 1 << 31
+            self._cycles_to_interrupt = MAX_CYCLES
             return False
 
         self.TIMA_counter += cycles
