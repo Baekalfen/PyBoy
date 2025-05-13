@@ -41,8 +41,8 @@ Errors.error = patched_error
 class build_ext(_build_ext):
     def initialize_options(self):
         super().initialize_options()
-        self.parallel = cpu_count()
 
+        # This is only for Cythonize. Use '-j' on the commandline for parallel C-compilers.
         if sys.platform == "win32":
             thread_count = 0  # Disables multiprocessing
         else:
