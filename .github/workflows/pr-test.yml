@@ -25,6 +25,7 @@ jobs:
       with:
         # create-symlink: true
         key: ${{ matrix.os }}-${{ matrix.python-version }}
+        variant: ${{ contains(matrix.os, 'windows') && 'sccache' || 'ccache' }}
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
