@@ -72,7 +72,7 @@ jobs:
         TEST_VERBOSE_IMAGES: 0
         TEST_NO_UI: 1
       run: |
-        python -m pytest tests/ -n auto -v
+        python -m pytest tests/ -n auto -v --benchmark-disable
     - name: Run PyTest Benchmark
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -149,7 +149,7 @@ jobs:
         TEST_VERBOSE_IMAGES: 0
         TEST_NO_UI: 1
       run: |
-        pypy3 -m pytest tests/ -n auto -v
+        pypy3 -m pytest tests/ -n auto -v --benchmark-disable
 
   test_manylinux:
     name: ManyLinux - Build, Test and Deploy
@@ -224,7 +224,7 @@ jobs:
           python setup.py build_ext -j $NUM_PROCESSORS --inplace
 
           echo "Starting pytests"
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n auto -v
+          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n auto -v --benchmark-disable
 
           echo "Building wheel"
           python -m pip install wheel
