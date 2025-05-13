@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest, rpi]
+        os: [macos-latest, ubuntu-latest, windows-latest, linux-arm64]
         python-version: [3.9, "3.10", 3.11, 3.12, 3.13]
 
     steps:
@@ -41,14 +41,27 @@ jobs:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
         python -m pytest pyboy/ -v
+    - name: Set NUM_PROCESSORS environment variable (Windows)
+      if: ${{ contains(matrix.os, 'windows') }}
+      run: |
+        $env:NUM_PROCESSORS = (Get-WmiObject -Class Win32_ComputerSystem).NumberOfLogicalProcessors
+        echo "NUM_PROCESSORS=$env:NUM_PROCESSORS" >> $env:GITHUB_ENV
+    - name: Set NUM_PROCESSORS environment variable
+      if: ${{ !contains(matrix.os, 'windows') }}
+      run: |
+        if [[ "${{ runner.name }}" == *"rpi"* ]]; then
+          echo "NUM_PROCESSORS=2" >> $GITHUB_ENV
+        else
+          echo "NUM_PROCESSORS=$(getconf _NPROCESSORS_ONLN)" >> $GITHUB_ENV
+        fi
     - name: Build PyBoy
       env:
         CC: "ccache gcc"
         CXX: "ccache g++"
       run: |
-        python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
+        python setup.py build_ext -j ${{ env.NUM_PROCESSORS }} --inplace
     - name: Setup Ubuntu - OpenGL dependencies
-      if: ${{ contains(matrix.os, 'ubuntu') || contains(matrix.os, 'rpi') }}
+      if: ${{ contains(matrix.os, 'ubuntu') || contains(matrix.os, 'linux-arm64') }}
       run: |
         sudo apt update
         sudo apt install libopengl0 freeglut3-dev -y
@@ -143,13 +156,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, rpi]
+        os: [ubuntu-latest, linux-arm64]
         python-version: ['cp39-cp39', 'cp310-cp310', 'cp311-cp311', 'cp312-cp312', 'cp313-cp313']
         manylinux-version: ['manylinux_2_28_x86_64', 'musllinux_1_2_x86_64', 'manylinux_2_28_aarch64', 'musllinux_1_2_aarch64']
         exclude:
-          - os: rpi
+          - os: linux-arm64
             manylinux-version: manylinux_2_28_x86_64
-          - os: rpi
+          - os: linux-arm64
             manylinux-version: musllinux_1_2_x86_64
           - os: ubuntu-latest
             manylinux-version: manylinux_2_28_aarch64
@@ -169,6 +182,13 @@ jobs:
         options: -v ${{ github.workspace }}:/work -v ${{ github.workspace }}/.ccache:/ccache -e GITHUB_REF=${{ github.ref }} --rm
         run: |
           set -e
+
+          if [[ "${{ runner.name }}" == *"rpi"* ]]; then
+            export NUM_PROCESSORS=2
+          else
+            export NUM_PROCESSORS=$(getconf _NPROCESSORS_ONLN)
+          fi
+
           echo "Linking Python version ${{ matrix.python-version }}"
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
@@ -195,15 +215,15 @@ jobs:
           python -m pip install --prefer-binary -r requirements_tests.txt
 
           echo "Starting Doctests"
-          if [[ "${{ matrix.os }}" != "rpi" ]]; then
+          if [[ "${{ matrix.os }}" != "linux-arm64" ]]; then
             PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ -v
           fi
 
           echo "Building PyBoy"
-          python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
+          python setup.py build_ext -j $NUM_PROCESSORS --inplace
 
           echo "Starting pytests"
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n2 -v
+          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n auto -v --benchmark-disable
 
           echo "Building wheel"
           python -m pip install wheel
