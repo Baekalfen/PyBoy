@@ -5,8 +5,6 @@
 
 import os
 from pathlib import Path
-
-import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 import pytest
@@ -83,6 +81,8 @@ def test_swoosh(default_rom, sampling):
 
         if diff.getbbox():
             time = np.linspace(0, len(left_channel) / sample_rate, num=len(left_channel))
+
+            import matplotlib.pyplot as plt
 
             # Plot the channels
             plt.figure(figsize=(12, 6))

@@ -8,4 +8,3 @@ pyopengl
 filelock
 cryptography
 GitPython
-matplotlib
