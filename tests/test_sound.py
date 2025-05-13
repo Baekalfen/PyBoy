@@ -5,8 +5,6 @@
 
 import os
 from pathlib import Path
-
-import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 import pytest
@@ -84,24 +82,29 @@ def test_swoosh(default_rom, sampling):
         if diff.getbbox():
             time = np.linspace(0, len(left_channel) / sample_rate, num=len(left_channel))
 
-            # Plot the channels
-            plt.figure(figsize=(12, 6))
-            plt.subplot(2, 1, 1)
-            plt.plot(time, left_channel, label="Left Channel", color="blue")
-            plt.title("Left Channel")
-            plt.xlabel("Time (s)")
-            plt.ylabel("Amplitude")
-            plt.ylim(-0.4, 15.4)
+            try:
+                import matplotlib.pyplot as plt
 
-            plt.subplot(2, 1, 2)
-            plt.plot(time, right_channel, label="Right Channel", color="red")
-            plt.title("Right Channel")
-            plt.xlabel("Time (s)")
-            plt.ylabel("Amplitude")
-            plt.ylim(-0.4, 15.4)
+                # Plot the channels
+                plt.figure(figsize=(12, 6))
+                plt.subplot(2, 1, 1)
+                plt.plot(time, left_channel, label="Left Channel", color="blue")
+                plt.title("Left Channel")
+                plt.xlabel("Time (s)")
+                plt.ylabel("Amplitude")
+                plt.ylim(-0.4, 15.4)
 
-            plt.tight_layout()
-            plt.show()
+                plt.subplot(2, 1, 2)
+                plt.plot(time, right_channel, label="Right Channel", color="red")
+                plt.title("Right Channel")
+                plt.xlabel("Time (s)")
+                plt.ylabel("Amplitude")
+                plt.ylim(-0.4, 15.4)
+
+                plt.tight_layout()
+                plt.show()
+            except ImportError:
+                print("matplotlib not installed. Couldn't generate debug view.")
         assert not diff.getbbox(), "Images are different!"
 
 
