@@ -42,12 +42,12 @@ class LCD:
 
         self.speed_shift = 0
         self.clock = 0
-        self.clock_target = FRAME_CYCLES << self.speed_shift
+        self.clock_target = FRAME_CYCLES
         self.frame_done = False
         self.first_frame = False
         self.reset = False
         self._cycles_to_interrupt = 0
-        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
+        self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         self.next_stat_mode = 2
         self.LY = 0x00
         self._STAT.set_mode(0)
@@ -63,7 +63,7 @@ class LCD:
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
         self.last_cycles = 0
         self._cycles_to_interrupt = 0
-        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
+        self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
 
         if self.cgb:
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
@@ -115,9 +115,9 @@ class LCD:
             self.reset = True
 
     def cycles_to_mode0(self):
-        mode2 = 80 << self.speed_shift
-        mode3 = 170 << self.speed_shift
-        mode1 = 456 << self.speed_shift
+        mode2 = 80
+        mode3 = 170
+        mode1 = 456
 
         mode = self._STAT._mode
         # Remaining cycles for this already active mode
@@ -144,7 +144,7 @@ class LCD:
         self.last_cycles = _cycles
 
         interrupt_flag = 0
-        self.clock += cycles
+        self.clock += cycles >> self.speed_shift
 
         if self.clock >= self.clock_target:
             if self._LCDC.lcd_enable and (self.LY == 153 or self.reset):
@@ -159,7 +159,7 @@ class LCD:
 
                 # Reset to new frame and start from mode 2
                 self.LY = 0
-                self.clock %= FRAME_CYCLES << self.speed_shift
+                self.clock %= FRAME_CYCLES
                 self.clock_target = 0
                 self.next_stat_mode = 2
 
@@ -167,7 +167,7 @@ class LCD:
                 interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
 
                 # self._STAT._mode == 2:  # Searching OAM
-                self.clock_target += 80 << self.speed_shift
+                self.clock_target += 80
                 self.next_stat_mode = 3
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
@@ -185,14 +185,14 @@ class LCD:
                 # LCD state machine
                 if self._STAT._mode == 2:  # Searching OAM
                     self.LY += 1
-                    self.clock_target += 80 << self.speed_shift
+                    self.clock_target += 80
                     self.next_stat_mode = 3
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
                 elif self._STAT._mode == 3:
-                    self.clock_target += 170 << self.speed_shift
+                    self.clock_target += 170
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0:  # HBLANK
-                    self.clock_target += 206 << self.speed_shift
+                    self.clock_target += 206
 
                     # Recorded for API
                     bx, by = self.getviewport()
@@ -212,7 +212,7 @@ class LCD:
                     else:
                         self.next_stat_mode = 1
                 elif self._STAT._mode == 1:  # VBLANK
-                    self.clock_target += 456 << self.speed_shift
+                    self.clock_target += 456
                     self.next_stat_mode = 1
 
                     self.LY += 1
@@ -229,15 +229,16 @@ class LCD:
             else:
                 # See also `self.set_lcdc`
                 self.frame_done = True
-                self.clock %= FRAME_CYCLES << self.speed_shift
-                self.clock_target = FRAME_CYCLES << self.speed_shift
+                self.clock %= FRAME_CYCLES
+                self.clock_target = FRAME_CYCLES
 
                 # Renderer
                 self.renderer.blank_screen(self)
 
-        self._cycles_to_interrupt = self.clock_target - self.clock
+        # NOTE: speed_shift because they are using in externally in mb
+        self._cycles_to_interrupt = (self.clock_target - self.clock) << self.speed_shift
         # TODO: STAT Cycles to interrupts
-        self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
+        self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         return interrupt_flag
 
     def save_state(self, f):
@@ -337,8 +338,9 @@ class LCD:
                 self.last_cycles = f.read_64bit()
             self.clock = f.read_64bit()
             self.clock_target = f.read_64bit()
-            self._cycles_to_interrupt = self.clock_target - self.clock
-            self._cycles_to_frame = (FRAME_CYCLES << self.speed_shift) - self.clock
+            # NOTE: speed_shift because they are using in externally in mb
+            self._cycles_to_interrupt = (self.clock_target - self.clock) << self.speed_shift
+            self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
             self.next_stat_mode = f.read()
 
             if self.cgb:
