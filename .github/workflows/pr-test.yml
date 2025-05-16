@@ -1,4 +1,4 @@
-name: PyTest PyBoy
+name: PyBoy
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test_cython:
-    name: Cython - Build, Test and Deploy
+    name: Cython
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -97,7 +97,7 @@ jobs:
         python -m twine upload --repository testpypi --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.tar.gz
 
   test_pypy:
-    name: PyPy - Test
+    name: PyPy
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -145,7 +145,7 @@ jobs:
         pypy3 -m pytest tests/ -n auto -v --benchmark-disable
 
   test_manylinux:
-    name: ManyLinux - Build, Test and Deploy
+    name: ManyLinux
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
