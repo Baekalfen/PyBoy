@@ -9,7 +9,7 @@ import pytest
 
 import numpy as np
 from pyboy import PyBoy
-from pyboy.core.lcd import LCD, Renderer
+from pyboy.core.lcd import CGBLCD, LCD, Renderer
 from pyboy.utils import cython_compiled, INTR_LCDC, FRAME_CYCLES
 
 color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
@@ -304,6 +304,42 @@ class TestLCD:
 
         # Check one blank frame after enabling, but it should be progressing and increase LCD registers (cycles, LY, LYC)
         # https://forums.nesdev.org/viewtopic.php?f=20&t=18023
+
+    def test_frame_cycles_double_speed(self):
+        lcd = CGBLCD(True, True, color_palette, cgb_color_palette)
+        lcd.set_lcdc(1 << 7)  # Enable LCD
+        assert lcd._LCDC.lcd_enable
+
+        lcd.speed_shift = 1  # Emulation CGB double speed mode. Now we need twice as many cycles on .tick() as before.
+
+        pre_ticks = 2
+        lcd.tick(pre_ticks)  # Need to tick to update registers
+
+        assert lcd.clock == 0
+        # NOTE: CGB double speed: clock_target is internal and shows normal timings
+        assert lcd.clock_target == 80  # STAT mode 2
+        # NOTE: CGB double speed: _cycles_to_interrupt is external and shows double timings
+        assert lcd._cycles_to_interrupt == 80 * 2
+        assert lcd._cycles_to_frame == FRAME_CYCLES * 2
+        assert lcd.frame_done  # When initially enable the LCD, we flush the frame
+        lcd.frame_done = False  # frame_done is reset from MB
+
+        for i, cycle in enumerate(
+            range(pre_ticks, FRAME_CYCLES * 2 - 2 + pre_ticks, 2)
+        ):  # Resolution not less than 2 cycles! Real hardware shows no less than 4...
+            lcd.tick(cycle)  # Progresses cycles to new absolute cycles. NOT RELATIVE!
+            assert lcd._cycles_to_frame == FRAME_CYCLES * 2 - i * 2
+            assert not lcd.frame_done
+
+        # We should now be in a state of 1 cycle left, and frame not done!
+        lcd.tick(FRAME_CYCLES * 2 + pre_ticks)
+        assert lcd.clock == 0
+        # NOTE: CGB double speed: clock_target is internal and shows normal timings
+        assert lcd.clock_target == 80  # STAT mode 2
+        # NOTE: CGB double speed: _cycles_to_interrupt is external and shows double timings
+        assert lcd._cycles_to_interrupt == 80 * 2
+        assert lcd._cycles_to_frame == FRAME_CYCLES * 2
+        assert lcd.frame_done  # We just exactly close the frame
 
     def test_frame_cycles_modes(self):
         lcd = LCD(False, False, color_palette, cgb_color_palette)
