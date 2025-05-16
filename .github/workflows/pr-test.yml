@@ -81,6 +81,7 @@ jobs:
       run: |
         python -m pytest tests/test_benchmark.py --benchmark-enable --benchmark-min-rounds=10
     - name: Build wheel
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'linux-arm64') }}
       env:
         CC: "ccache gcc"
         CXX: "ccache g++"
@@ -226,19 +227,21 @@ jobs:
           echo "Starting pytests"
           PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n auto -v --benchmark-disable
 
-          echo "Building wheel"
-          python -m pip install wheel
-          python setup.py sdist bdist_wheel
+          if [[ ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }} ]]; then
+            echo "Building wheel"
+            python -m pip install wheel
+            python setup.py sdist bdist_wheel
 
-          python -m pip install auditwheel
-          auditwheel repair dist/*.whl
+            python -m pip install auditwheel
+            auditwheel repair dist/*.whl
 
-          rm -rf dist/*.whl
-          mv wheelhouse/*.whl dist/
-          chmod 777 -R . # Fix permissions to help cleaning up outside of Docker
+            rm -rf dist/*.whl
+            mv wheelhouse/*.whl dist/
+            chmod 777 -R . # Fix permissions to help cleaning up outside of Docker
 
-          echo "Dists built:"
-          ls -lah dist/
+            echo "Dists built:"
+            ls -lah dist/
+          fi
 
     - name: Set up Python 3.11 (just for PyPi upload)
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }}
