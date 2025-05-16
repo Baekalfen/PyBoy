@@ -62,10 +62,13 @@ class Sound:
                 self.cycles_target = MAX_CYCLES
             else:
                 self.cycles_target = self.cycles_per_sample
-            self.cycles_target_512Hz = CYCLES_512HZ << self.speed_shift
+            self.cycles_target_512Hz = CYCLES_512HZ
             # We have to use ceil on the double to round any decimals up to the next cycle. We have to pass the target
             # entirely, and as the cycles are integer, we cannot just round down, as that would be 1 cycle too early.
-            self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
+            # NOTE: speed_shift because they are using in externally in mb
+            self._cycles_to_interrupt = (
+                double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz)) << self.speed_shift
+            )
 
         self.cycles = 0
         self.last_cycles = 0
@@ -92,7 +95,7 @@ class Sound:
         # self.div_apu_counter = 0
         # self.div_apu = 0
         if self.emulate:
-            self.cycles_target_512Hz = self.cycles + (CYCLES_512HZ << self.speed_shift)
+            self.cycles_target_512Hz = self.cycles + CYCLES_512HZ
         else:
             self.cycles_target_512Hz = MAX_CYCLES
 
@@ -189,6 +192,8 @@ class Sound:
         if not self.emulate:
             return
 
+        cycles >>= self.speed_shift
+
         # Tick channels until point of sample (repeating) or however many cycles we have.
         while cycles > 0:
             if not self.disable_sampling:
@@ -201,14 +206,14 @@ class Sound:
             old_div_apu = self.div_apu
             while self.cycles >= self.cycles_target_512Hz:
                 self.div_apu += 1
-                self.cycles_target_512Hz += CYCLES_512HZ << self.speed_shift
+                self.cycles_target_512Hz += CYCLES_512HZ
             div_tick_count = self.div_apu - old_div_apu
 
             if self.poweron:
-                self.sweepchannel.tick(_cycles >> self.speed_shift)
-                self.tonechannel.tick(_cycles >> self.speed_shift)
-                self.wavechannel.tick(_cycles >> self.speed_shift)
-                self.noisechannel.tick(_cycles >> self.speed_shift)
+                self.sweepchannel.tick(_cycles)
+                self.tonechannel.tick(_cycles)
+                self.wavechannel.tick(_cycles)
+                self.noisechannel.tick(_cycles)
 
                 # Progress the channels by ticks of 512Hz
                 for _ in range(div_tick_count):
@@ -246,9 +251,12 @@ class Sound:
             while self.cycles >= self.cycles_target:
                 if not self.disable_sampling:
                     self.sample()
-                self.cycles_target += self.cycles_per_sample * (1 << self.speed_shift)
+                self.cycles_target += self.cycles_per_sample
 
-            self._cycles_to_interrupt = double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz))
+            # NOTE: speed_shift because they are using in externally in mb
+            self._cycles_to_interrupt = (
+                double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz)) << self.speed_shift
+            )
             cycles -= _cycles
 
     def pcm12(self):

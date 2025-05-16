@@ -270,7 +270,7 @@ class WindowSDL2(PyBoyWindowPlugin):
                 )
                 sdl2.SDL_ClearQueuedAudio(self.sound_device)
 
-            length = self.sound.audiobuffer_head
+            length = min(self.sound.audiobuffer_head, self.sound.audiobuffer_length)
             # TODO: Maybe combine the zero and mixing steps
             for i in range(length):
                 self.mixingbuffer[i] = 0

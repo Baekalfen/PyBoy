@@ -97,7 +97,9 @@ class Motherboard:
         bit0 = self.key1 & 0b1
         if bit0 == 1:
             self.double_speed = not self.double_speed
+            self.lcd.tick(self.cpu.cycles)
             self.lcd.speed_shift = 1 if self.double_speed else 0
+            self.sound.tick(self.cpu.cycles)
             self.sound.speed_shift = 1 if self.double_speed else 0
             logger.debug("CGB double speed is now: %d", self.double_speed)
             self.key1 ^= 0b10000001

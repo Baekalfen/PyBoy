@@ -59,7 +59,7 @@ cdef class Sound:
     cdef uint8_t get(self, uint8_t) noexcept nogil
     cdef void set(self, uint8_t, uint8_t) noexcept nogil
 
-    @cython.locals(cycles=uint64_t)
+    @cython.locals(cycles=uint64_t, _cycles=uint64_t)
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void sample(self) noexcept nogil
     cdef uint8_t pcm12(self) noexcept nogil
