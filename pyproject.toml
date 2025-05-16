@@ -7,9 +7,8 @@ authors = [
 keywords = ["gameboy", "game boy", "emulator", "cython", "pypy"]
 description = "Game Boy emulator written in Python"
 readme = "README.md"
-license = {file = "LICENSE.md"}
+license = "LGPL-3.0-only"
 classifiers = [
-    "License :: Free for non-commercial use",
     "Operating System :: OS Independent",
     "Programming Language :: Cython",
     "Programming Language :: Python :: 3",
