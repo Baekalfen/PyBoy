@@ -37,7 +37,7 @@ jobs:
         pip install --prefer-binary -r requirements.txt
         pip install --prefer-binary -r requirements_tests.txt
     - name: Doctest
-      if: ${{ !contains(matrix.os, 'windows') && !contains(matrix.os, 'rpi') }}
+      if: ${{ !contains(matrix.os, 'windows') && !contains(matrix.os, 'linux-arm64') }}
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
@@ -89,14 +89,14 @@ jobs:
         pip install wheel twine
         python setup.py sdist bdist_wheel
     - name: Upload wheel
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'rpi') }}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'linux-arm64') }}
       run: |
         echo "Uploading wheel"
         python -m twine upload --non-interactive -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.whl
         echo "Uploading source code"
         python -m twine upload --non-interactive --skip-existing -u '__token__' -p ${{ secrets.PYPI_API_TOKEN }} dist/*.tar.gz
     - name: Upload wheel [TEST]
-      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'rpi')}}
+      if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease && !contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'linux-arm64')}}
       run: |
         echo "Uploading wheel"
         python -m twine upload --repository testpypi --non-interactive -u '__token__' -p ${{ secrets.PYPI_TEST_API_TOKEN }} dist/*.whl
