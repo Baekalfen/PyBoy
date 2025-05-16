@@ -371,6 +371,7 @@ def test_debug2(capsys):
     capsys.readouterr()  # Clear buffers
 
 
+@pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test because of UI")
 @pytest.mark.parametrize("rom_fixture", [lf("default_rom"), lf("any_rom_cgb")])
 def test_debug(rom_fixture):
     pyboy = PyBoy(rom_fixture, window="null", debug=True)
