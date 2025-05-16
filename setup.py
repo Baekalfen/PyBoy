@@ -41,8 +41,7 @@ Errors.error = patched_error
 class build_ext(_build_ext):
     def initialize_options(self):
         super().initialize_options()
-
-        # This is only for Cythonize. Use '-j' on the commandline for parallel C-compilers.
+        # This is only for Cythonize. See finalize_options.
         if sys.platform == "win32":
             thread_count = 0  # Disables multiprocessing
         else:
@@ -93,6 +92,12 @@ class build_ext(_build_ext):
                 "legacy_implicit_noexcept": True,
             },
         )
+
+    def finalize_options(self):
+        # Use '-j' on the commandline to specify parallelism. Otherwise auto-detect.
+        if getattr(self, "parallel", None) is None:
+            self.parallel = cpu_count()
+        super().finalize_options()
 
 
 def prep_pxd_py_files():
