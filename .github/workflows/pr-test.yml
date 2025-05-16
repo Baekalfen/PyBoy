@@ -103,9 +103,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest, ubuntu-24.04-arm]
-        python-version: ['pypy-3.9'] # TODO: 'pypy-3.10'
+        python-version: ['pypy-3.11']
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup macOS
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
@@ -120,7 +120,7 @@ jobs:
         sudo apt install libopengl0 freeglut3-dev
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install PyPy dependencies
