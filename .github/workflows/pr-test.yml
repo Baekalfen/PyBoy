@@ -102,7 +102,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest, ubuntu-24.04-arm]
+        os: [macos-latest, ubuntu-latest, ubuntu-24.04-arm] # TODO: windows-latest broken on NumPy
         python-version: ['pypy-3.11']
     steps:
     - uses: actions/checkout@v4
