@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='ERROR', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), **kwargs)</span>
+<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='WARNING', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), title_status=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -106,6 +106,7 @@ True...
 <li>log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"</li>
 <li>color_palette (tuple): Specify the color palette to use for rendering.</li>
 <li>cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.</li>
+<li>title_status (bool): Enable performance status in window title</li>
 </ul>
 <h2 id="plugin-kwargs">Plugin kwargs:</h2>
 <ul>
@@ -137,6 +138,7 @@ True...
         log_level=defaults[&#34;log_level&#34;],
         color_palette=defaults[&#34;color_palette&#34;],
         cgb_color_palette=defaults[&#34;cgb_color_palette&#34;],
+        title_status=False,
         **kwargs,
     ):
         &#34;&#34;&#34;
@@ -177,6 +179,7 @@ True...
             * log_level (str): &#34;CRITICAL&#34;, &#34;ERROR&#34;, &#34;WARNING&#34;, &#34;INFO&#34; or &#34;DEBUG&#34;
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
+            * title_status (bool): Enable performance status in window title
 
         ## Plugin kwargs:
         * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
@@ -280,7 +283,8 @@ True...
         self.queued_input = []
         self.quitting = False
         self.stopped = False
-        self.window_title = &#34;PyBoy&#34;
+        self.window_title = &#34;&#34;
+        self.title_status = title_status
 
         ###################
         # API attributes
@@ -685,10 +689,13 @@ True...
             self.events.append(WindowEvent(_event))
 
     def _update_window_title(self):
-        self.window_title = f&#34;CPU/frame: {(self.avg_tick) / SPF * 100:0.2f}%&#34;
-        self.window_title += f&#39; Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu &gt; 0 else &#34;INF&#34;)}&#39;
+        if self.title_status:
+            self.window_title = f&#34;CPU/frame: {(self.avg_tick) / SPF * 100:0.2f}%&#34;
+            self.window_title += f&#39; Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu &gt; 0 else &#34;INF&#34;)}&#39;
+        else:
+            self.window_title = &#34;PyBoy&#34;
         if self.paused:
-            self.window_title += &#34;[PAUSED]&#34;
+            self.window_title += &#34; [PAUSED]&#34;
         self.window_title += self._plugin_manager.window_title()
         self._plugin_manager._set_title()
 
@@ -1039,7 +1046,8 @@ True...
 
         Example of custom mapping:
         ```python
-        &gt;&gt;&gt; mapping = [x for x in range(384)] # 1:1 mapping
+        &gt;&gt;&gt; from pyboy.api.constants import TILES
+        &gt;&gt;&gt; mapping = [x for x in range(TILES)] # 1:1 mapping of 384 tiles
         &gt;&gt;&gt; mapping[0] = 0 # Map tile identifier 0 -&gt; 0
         &gt;&gt;&gt; mapping[1] = 0 # Map tile identifier 1 -&gt; 0
         &gt;&gt;&gt; mapping[2] = 0 # Map tile identifier 2 -&gt; 0
@@ -1061,11 +1069,11 @@ True...
         &#34;&#34;&#34;
 
         if mapping is None:
-            mapping = [x for x in range(768)]
+            mapping = [x for x in range(TILES_CGB)]
 
         assert isinstance(sprite_offset, int)
         assert isinstance(mapping, (np.ndarray, list))
-        assert len(mapping) == 384 or len(mapping) == 768
+        assert len(mapping) == TILES or len(mapping) == TILES_CGB
 
         self.game_wrapper.game_area_mapping(mapping, sprite_offset)
 
@@ -1273,7 +1281,7 @@ True...
             bank, addr = self._lookup_symbol(addr)
 
         opcode = self.memory[bank, addr]
-        if opcode == 0xDB:
+        if opcode == OPCODE_BRK:
             raise ValueError(&#34;Hook already registered for this bank and address.&#34;)
         self.mb.breakpoint_add(bank, addr)
         bank_addr_opcode = (bank &amp; 0xFF) &lt;&lt; 24 | (addr &amp; 0xFFFF) &lt;&lt; 8 | (opcode &amp; 0xFF)
@@ -2320,7 +2328,8 @@ array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
 <dd>
 <section class="desc"><p>Define custom mappings for tile identifiers in the game area.</p>
 <p>Example of custom mapping:</p>
-<pre><code class="language-python">&gt;&gt;&gt; mapping = [x for x in range(384)] # 1:1 mapping
+<pre><code class="language-python">&gt;&gt;&gt; from pyboy.api.constants import TILES
+&gt;&gt;&gt; mapping = [x for x in range(TILES)] # 1:1 mapping of 384 tiles
 &gt;&gt;&gt; mapping[0] = 0 # Map tile identifier 0 -&gt; 0
 &gt;&gt;&gt; mapping[1] = 0 # Map tile identifier 1 -&gt; 0
 &gt;&gt;&gt; mapping[2] = 0 # Map tile identifier 2 -&gt; 0
@@ -2350,7 +2359,8 @@ array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
 
     Example of custom mapping:
     ```python
-    &gt;&gt;&gt; mapping = [x for x in range(384)] # 1:1 mapping
+    &gt;&gt;&gt; from pyboy.api.constants import TILES
+    &gt;&gt;&gt; mapping = [x for x in range(TILES)] # 1:1 mapping of 384 tiles
     &gt;&gt;&gt; mapping[0] = 0 # Map tile identifier 0 -&gt; 0
     &gt;&gt;&gt; mapping[1] = 0 # Map tile identifier 1 -&gt; 0
     &gt;&gt;&gt; mapping[2] = 0 # Map tile identifier 2 -&gt; 0
@@ -2372,11 +2382,11 @@ array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
     &#34;&#34;&#34;
 
     if mapping is None:
-        mapping = [x for x in range(768)]
+        mapping = [x for x in range(TILES_CGB)]
 
     assert isinstance(sprite_offset, int)
     assert isinstance(mapping, (np.ndarray, list))
-    assert len(mapping) == 384 or len(mapping) == 768
+    assert len(mapping) == TILES or len(mapping) == TILES_CGB
 
     self.game_wrapper.game_area_mapping(mapping, sprite_offset)</code></pre>
 </details>
@@ -2675,7 +2685,7 @@ opcode (<code>0xDB</code>). If the address is read by the game instead of execut
         bank, addr = self._lookup_symbol(addr)
 
     opcode = self.memory[bank, addr]
-    if opcode == 0xDB:
+    if opcode == OPCODE_BRK:
         raise ValueError(&#34;Hook already registered for this bank and address.&#34;)
     self.mb.breakpoint_add(bank, addr)
     bank_addr_opcode = (bank &amp; 0xFF) &lt;&lt; 24 | (addr &amp; 0xFFFF) &lt;&lt; 8 | (opcode &amp; 0xFF)

@@ -255,7 +255,7 @@ class BallType(Enum):
     POKEBALL = 0
     GREATBALL = 2
     ULTRABALL = 3
-    MASTERBALL = 4
+    MASTERBALL = 5
 
 
 class BallSize(Enum):
@@ -624,28 +624,28 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
         # Random tilemap I observed doesn&#39;t change until shortly before input is read
         while self.tilemap_background[10, 10] != 269:
-            self.pyboy.tick(1, False)
+            self.pyboy.tick(1, False, False)
 
         # tick needed count to get to the point where input is read
-        self.pyboy.tick(18, False)
+        self.pyboy.tick(18, False, False)
 
         # start game
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(2, False, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         # tick count needed to get to the next point where input is read
-        self.pyboy.tick(95, False)
+        self.pyboy.tick(95, False, False)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
 
         ticks_until_visible = 74
-        self.pyboy.tick(ticks_until_visible, False)
+        self.pyboy.tick(ticks_until_visible, False, False)
 
         ticks_until_input_ready = 4
-        self.pyboy.tick(ticks_until_input_ready, False)
+        self.pyboy.tick(ticks_until_input_ready, False, False)
 
         # needs to be called after normal initializations, otherwise it will be overwritten
         self._init_bonus_stage(stage)
@@ -660,6 +660,36 @@ class GameWrapperPokemonPinball(PyBoyGameWrapper):
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+    def reset_tracking(self):
+        &#34;&#34;&#34;
+        Resets all tracking values to 0.
+        &#34;&#34;&#34;
+        self.pokemon_caught_in_session = 0
+        self.pokemon_seen_in_session = 0
+        self.evolution_failure_count = 0
+        self.evolution_success_count = 0
+        self.diglett_stages_completed = 0
+        self.diglett_stages_visited = 0
+        self.gengar_stages_completed = 0
+        self.gengar_stages_visited = 0
+        self.meowth_stages_completed = 0
+        self.meowth_stages_visited = 0
+        self.mewtwo_stages_completed = 0
+        self.mewtwo_stages_visited = 0
+        self.seel_stages_completed = 0
+        self.seel_stages_visited = 0
+        self.pikachu_saver_increments = 0
+        self.pikachu_saver_used = 0
+        self.map_change_attempts = 0
+        self.map_change_successes = 0
+        self.great_ball_upgrades = 0
+        self.ultra_ball_upgrades = 0
+        self.master_ball_upgrades = 0
+        self.extra_balls_added = 0
+        self.lost_ball_during_saver = 0
+        self.roulette_slots_opened = 0
+        self.roulette_slots_entered = 0
 
     def get_unique_pokemon_caught(self):
         &#34;&#34;&#34;
@@ -1095,6 +1125,7 @@ BANK_OFFSET_DISABLE_TIMER = (4, 0x4D64)
 BANK_OFFSET_BALL_SAVED_RED = (3, 0x5D7F)
 BANK_OFFSET_BALL_SAVED_BLUE = (3, 0x5E58)
 
+&#34;&#34;&#34;The wild Pokemon that can be found in each map in the Red stage, along with their encounter rates&#34;&#34;&#34;
 RedStageMapWildMons = {
     Maps.PALLET_TOWN: {
         Pokemon.BULBASAUR: 0.0625,
@@ -1169,7 +1200,12 @@ RedStageMapWildMons = {
         Pokemon.GOLDEEN: 0.125,
         Pokemon.MAGIKARP: 0.125,
     },
-    Maps.SAFARI_ZONE: {Pokemon.NIDORAN_M: 0.25, Pokemon.PARAS: 0.25, Pokemon.DODUO: 0.25, Pokemon.RHYHORN: 0.25},
+    Maps.SAFARI_ZONE: {
+        Pokemon.NIDORAN_M: 0.25,
+        Pokemon.PARAS: 0.25, 
+        Pokemon.DODUO: 0.25,
+        Pokemon.RHYHORN: 0.25
+    },
     Maps.SEAFOAM_ISLANDS: {
         Pokemon.ZUBAT: 0.0625,
         Pokemon.PSYDUCK: 0.0625,
@@ -1199,7 +1235,7 @@ RedStageMapWildMons = {
         Pokemon.DITTO: 0.1875,
     },
 }
-&#34;&#34;&#34;The wild Pokemon that can be found in each map in the Red stage, along with their encounter rates&#34;&#34;&#34;
+
 
 RedStageMapWildMonsRare = {
     Maps.PALLET_TOWN: {
@@ -1283,7 +1319,12 @@ RedStageMapWildMonsRare = {
         Pokemon.TAUROS: 0.125,
         Pokemon.DRATINI: 0.125,
     },
-    Maps.SEAFOAM_ISLANDS: {Pokemon.SEEL: 0.3125, Pokemon.GOLDEEN: 0.25, Pokemon.STARYU: 0.25, Pokemon.ARTICUNO: 0.1875},
+    Maps.SEAFOAM_ISLANDS: {
+        Pokemon.SEEL: 0.3125,
+        Pokemon.GOLDEEN: 0.25,
+        Pokemon.STARYU: 0.25,
+        Pokemon.ARTICUNO: 0.1875
+    },
     Maps.CINNABAR_ISLAND: {
         Pokemon.GROWLITHE: 0.125,
         Pokemon.PONYTA: 0.125,
@@ -1306,7 +1347,7 @@ RedStageMapWildMonsRare = {
         Pokemon.MEW: 0.0625,
     },
 }
-&#34;&#34;&#34;The rare wild Pokemon that can be found in each map in the Red stage, along with their encounter rates&#34;&#34;&#34;
+&#34;&#34;&#34;The wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates&#34;&#34;&#34;
 
 BlueStageMapWildMons = {
     Maps.VIRIDIAN_CITY: {
@@ -1386,7 +1427,12 @@ BlueStageMapWildMons = {
         Pokemon.GOLDEEN: 0.1875,
         Pokemon.MAGIKARP: 0.25,
     },
-    Maps.SAFARI_ZONE: {Pokemon.NIDORAN_F: 0.25, Pokemon.PARAS: 0.25, Pokemon.DODUO: 0.25, Pokemon.RHYHORN: 0.25},
+    Maps.SAFARI_ZONE: {
+        Pokemon.NIDORAN_F: 0.25,
+        Pokemon.PARAS: 0.25,
+        Pokemon.DODUO: 0.25,
+        Pokemon.RHYHORN: 0.25
+    },
     Maps.SAFFRON_CITY: {
         Pokemon.PIDGEY: 0.125,
         Pokemon.EKANS: 0.1875,
@@ -1415,7 +1461,6 @@ BlueStageMapWildMons = {
         Pokemon.DITTO: 0.1875,
     },
 }
-&#34;&#34;&#34;The wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates&#34;&#34;&#34;
 
 BlueStageMapWildMonsRare = {
     Maps.VIRIDIAN_CITY: {
@@ -1532,8 +1577,7 @@ BlueStageMapWildMonsRare = {
         Pokemon.MEWTWO: 0.1875,
         Pokemon.MEW: 0.0625,
     },
-}
-&#34;&#34;&#34;The rare wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates&#34;&#34;&#34;</code></pre>
+}</code></pre>
 </details>
 </section>
 <section>
@@ -1545,21 +1589,13 @@ BlueStageMapWildMonsRare = {
 <dd>
 <section class="desc"><p>The maximum score possible, multiplied by ten to add the implied extra 0 the game uses</p></section>
 </dd>
-<dt id="pyboy.plugins.game_wrapper_pokemon_pinball.RedStageMapWildMons"><code class="name">var <span class="ident">RedStageMapWildMons</span></code></dt>
+<dt id="pyboy.plugins.game_wrapper_pokemon_pinball.BANK_OFFSET_BALL_SAVED_BLUE"><code class="name">var <span class="ident">BANK_OFFSET_BALL_SAVED_BLUE</span></code></dt>
 <dd>
 <section class="desc"><p>The wild Pokemon that can be found in each map in the Red stage, along with their encounter rates</p></section>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_pokemon_pinball.RedStageMapWildMonsRare"><code class="name">var <span class="ident">RedStageMapWildMonsRare</span></code></dt>
 <dd>
-<section class="desc"><p>The rare wild Pokemon that can be found in each map in the Red stage, along with their encounter rates</p></section>
-</dd>
-<dt id="pyboy.plugins.game_wrapper_pokemon_pinball.BlueStageMapWildMons"><code class="name">var <span class="ident">BlueStageMapWildMons</span></code></dt>
-<dd>
 <section class="desc"><p>The wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates</p></section>
-</dd>
-<dt id="pyboy.plugins.game_wrapper_pokemon_pinball.BlueStageMapWildMonsRare"><code class="name">var <span class="ident">BlueStageMapWildMonsRare</span></code></dt>
-<dd>
-<section class="desc"><p>The rare wild Pokemon that can be found in each map in the Blue stage, along with their encounter rates</p></section>
 </dd>
 </dl>
 </section>
@@ -2647,7 +2683,7 @@ attributes &ndash; see the documentation for details.</p></section>
     POKEBALL = 0
     GREATBALL = 2
     ULTRABALL = 3
-    MASTERBALL = 4</code></pre>
+    MASTERBALL = 5</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -3102,28 +3138,28 @@ attributes &ndash; see the documentation for details.</p></section>
 
         # Random tilemap I observed doesn&#39;t change until shortly before input is read
         while self.tilemap_background[10, 10] != 269:
-            self.pyboy.tick(1, False)
+            self.pyboy.tick(1, False, False)
 
         # tick needed count to get to the point where input is read
-        self.pyboy.tick(18, False)
+        self.pyboy.tick(18, False, False)
 
         # start game
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(2, False, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
         # tick count needed to get to the next point where input is read
-        self.pyboy.tick(95, False)
+        self.pyboy.tick(95, False, False)
 
         self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
         self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
 
         ticks_until_visible = 74
-        self.pyboy.tick(ticks_until_visible, False)
+        self.pyboy.tick(ticks_until_visible, False, False)
 
         ticks_until_input_ready = 4
-        self.pyboy.tick(ticks_until_input_ready, False)
+        self.pyboy.tick(ticks_until_input_ready, False, False)
 
         # needs to be called after normal initializations, otherwise it will be overwritten
         self._init_bonus_stage(stage)
@@ -3138,6 +3174,36 @@ attributes &ndash; see the documentation for details.</p></section>
             timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
         &#34;&#34;&#34;
         PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+
+    def reset_tracking(self):
+        &#34;&#34;&#34;
+        Resets all tracking values to 0.
+        &#34;&#34;&#34;
+        self.pokemon_caught_in_session = 0
+        self.pokemon_seen_in_session = 0
+        self.evolution_failure_count = 0
+        self.evolution_success_count = 0
+        self.diglett_stages_completed = 0
+        self.diglett_stages_visited = 0
+        self.gengar_stages_completed = 0
+        self.gengar_stages_visited = 0
+        self.meowth_stages_completed = 0
+        self.meowth_stages_visited = 0
+        self.mewtwo_stages_completed = 0
+        self.mewtwo_stages_visited = 0
+        self.seel_stages_completed = 0
+        self.seel_stages_visited = 0
+        self.pikachu_saver_increments = 0
+        self.pikachu_saver_used = 0
+        self.map_change_attempts = 0
+        self.map_change_successes = 0
+        self.great_ball_upgrades = 0
+        self.ultra_ball_upgrades = 0
+        self.master_ball_upgrades = 0
+        self.extra_balls_added = 0
+        self.lost_ball_during_saver = 0
+        self.roulette_slots_opened = 0
+        self.roulette_slots_entered = 0
 
     def get_unique_pokemon_caught(self):
         &#34;&#34;&#34;
@@ -3851,28 +3917,28 @@ None</p></section>
 
     # Random tilemap I observed doesn&#39;t change until shortly before input is read
     while self.tilemap_background[10, 10] != 269:
-        self.pyboy.tick(1, False)
+        self.pyboy.tick(1, False, False)
 
     # tick needed count to get to the point where input is read
-    self.pyboy.tick(18, False)
+    self.pyboy.tick(18, False, False)
 
     # start game
     self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-    self.pyboy.tick(1, False)
+    self.pyboy.tick(2, False, False)
     self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
     # tick count needed to get to the next point where input is read
-    self.pyboy.tick(95, False)
+    self.pyboy.tick(95, False, False)
 
     self.pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-    self.pyboy.tick(1, False)
+    self.pyboy.tick(1, False, False)
     self.pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-    self.pyboy.tick(1, False)
+    self.pyboy.tick(1, False, False)
 
     ticks_until_visible = 74
-    self.pyboy.tick(ticks_until_visible, False)
+    self.pyboy.tick(ticks_until_visible, False, False)
 
     ticks_until_input_ready = 4
-    self.pyboy.tick(ticks_until_input_ready, False)
+    self.pyboy.tick(ticks_until_input_ready, False, False)
 
     # needs to be called after normal initializations, otherwise it will be overwritten
     self._init_bonus_stage(stage)
@@ -3899,6 +3965,46 @@ None</p></section>
         timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
     &#34;&#34;&#34;
     PyBoyGameWrapper.reset_game(self, timer_div=timer_div)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.reset_tracking"><code class="name flex">
+<span>def <span class="ident">reset_tracking</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Resets all tracking values to 0.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_tracking(self):
+    &#34;&#34;&#34;
+    Resets all tracking values to 0.
+    &#34;&#34;&#34;
+    self.pokemon_caught_in_session = 0
+    self.pokemon_seen_in_session = 0
+    self.evolution_failure_count = 0
+    self.evolution_success_count = 0
+    self.diglett_stages_completed = 0
+    self.diglett_stages_visited = 0
+    self.gengar_stages_completed = 0
+    self.gengar_stages_visited = 0
+    self.meowth_stages_completed = 0
+    self.meowth_stages_visited = 0
+    self.mewtwo_stages_completed = 0
+    self.mewtwo_stages_visited = 0
+    self.seel_stages_completed = 0
+    self.seel_stages_visited = 0
+    self.pikachu_saver_increments = 0
+    self.pikachu_saver_used = 0
+    self.map_change_attempts = 0
+    self.map_change_successes = 0
+    self.great_ball_upgrades = 0
+    self.ultra_ball_upgrades = 0
+    self.master_ball_upgrades = 0
+    self.extra_balls_added = 0
+    self.lost_ball_during_saver = 0
+    self.roulette_slots_opened = 0
+    self.roulette_slots_entered = 0</code></pre>
 </details>
 </dd>
 <dt id="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.get_unique_pokemon_caught"><code class="name flex">
@@ -3947,10 +4053,8 @@ None</p></section>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.MAX_SCORE" href="#pyboy.plugins.game_wrapper_pokemon_pinball.MAX_SCORE">MAX_SCORE</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.RedStageMapWildMons" href="#pyboy.plugins.game_wrapper_pokemon_pinball.RedStageMapWildMons">RedStageMapWildMons</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.BANK_OFFSET_BALL_SAVED_BLUE" href="#pyboy.plugins.game_wrapper_pokemon_pinball.BANK_OFFSET_BALL_SAVED_BLUE">BANK_OFFSET_BALL_SAVED_BLUE</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.RedStageMapWildMonsRare" href="#pyboy.plugins.game_wrapper_pokemon_pinball.RedStageMapWildMonsRare">RedStageMapWildMonsRare</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.BlueStageMapWildMons" href="#pyboy.plugins.game_wrapper_pokemon_pinball.BlueStageMapWildMons">BlueStageMapWildMons</a></code></li>
-<li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.BlueStageMapWildMonsRare" href="#pyboy.plugins.game_wrapper_pokemon_pinball.BlueStageMapWildMonsRare">BlueStageMapWildMonsRare</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -4183,6 +4287,7 @@ None</p></section>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.current_map_completed" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.current_map_completed">current_map_completed</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.start_game" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.start_game">start_game</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.reset_game" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.reset_game">reset_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.reset_tracking" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.reset_tracking">reset_tracking</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.get_unique_pokemon_caught" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.get_unique_pokemon_caught">get_unique_pokemon_caught</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.score" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.score">score</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.balls_left" href="#pyboy.plugins.game_wrapper_pokemon_pinball.GameWrapperPokemonPinball.balls_left">balls_left</a></code></li>

@@ -47,6 +47,7 @@ import numpy as np
 
 import pyboy
 from pyboy.api.constants import SPRITES, TILES_CGB
+from pyboy.core.lcd import CGBRenderer
 from pyboy import utils
 
 logger = pyboy.logging.get_logger(__name__)
@@ -58,16 +59,14 @@ class PyBoyPlugin:
     argv = []
 
     def __init__(self, pyboy, mb, pyboy_argv):
-        if not utils.cython_compiled:
-            self.pyboy = pyboy
-            self.mb = mb
-            self.pyboy_argv = pyboy_argv
         self.cgb = mb.cgb
-
-    def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.pyboy = pyboy
         self.mb = mb
         self.pyboy_argv = pyboy_argv
+        self.renderer = self.mb.lcd.renderer
+        self.is_cgb_renderer = isinstance(self.mb.lcd.renderer, CGBRenderer)
+        if self.is_cgb_renderer:
+            self.cgb_renderer = self.mb.lcd.renderer
 
     def handle_events(self, events):
         return events
@@ -106,9 +105,6 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         if not utils.cython_compiled:
             self.renderer = mb.lcd.renderer
         self.sound = self.mb.sound
-
-    def __cinit__(self, *args, **kwargs):
-        self.renderer = self.mb.lcd.renderer
 
     def frame_limiter(self, speed):
         self._ftime += int((1.0 / (60.0 * speed)) * 1_000_000_000)
@@ -169,7 +165,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         self.saved_state = io.BytesIO()
 
-    def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.tilemap_background = self.pyboy.tilemap_background
         self.tilemap_window = self.pyboy.tilemap_window
 
@@ -390,7 +385,6 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         self.saved_state = io.BytesIO()
 
-    def __cinit__(self, pyboy, mb, pyboy_argv, *args, **kwargs):
         self.tilemap_background = self.pyboy.tilemap_background
         self.tilemap_window = self.pyboy.tilemap_window
 

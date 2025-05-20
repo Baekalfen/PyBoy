@@ -47,7 +47,12 @@ __all__ = [
     &#34;SoundEnabledError&#34;,
 ]
 
-STATE_VERSION = 14
+STATE_VERSION = 15
+
+INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 &lt;&lt; x for x in range(5)]
+OPCODE_BRK = 0xDB
+FRAME_CYCLES = 70224
+MAX_CYCLES = 1 &lt;&lt; 31
 
 
 class PyBoyException(Exception):
@@ -288,8 +293,23 @@ if not cython_compiled:
 from math import ceil
 def double_to_uint64_ceil(val):
     return ceil(val)
+
+import array
+def malloc(n):
+    return array.array(&#39;B&#39;, [0]*(n))
+
+def free(buffer):
+    del(buffer)
 &#34;&#34;&#34;
     )
+else:
+    exec(&#34;&#34;&#34;
+def malloc(n):
+    raise PyBoyInternalError(&#34;Called Python version of malloc from Cython! Should be cimported&#34;)
+
+def free(buffer):
+    raise PyBoyInternalError(&#34;Called Python version of free from Cython! Should be cimported&#34;)
+&#34;&#34;&#34;)
 
 ##############################################################
 
