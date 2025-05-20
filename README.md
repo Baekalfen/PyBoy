@@ -35,7 +35,7 @@ Generate GIF with the layout and captions
     <tr>
       <td align="center">Play the classics<br>
       </td>
-      <td align="center"><a href=https://github.com/lixado/PyBoy-RL>Create your own AI</a><br>
+      <td align="center"><a href=https://github.com/NicoleFaye/PokemonPinballRL>Create your own AI</a><br>
       </td>
       <td align="center"><a href=https://github.com/uiucanh/tetris>Beat world records with AI</a><br>
       </td>
@@ -45,7 +45,7 @@ Generate GIF with the layout and captions
         <img src="extras/README/1.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/6.gif" width="250">
+        <img src="extras/README/pinball.gif" width="250">
       </td>
       <td align="center">
         <img src="extras/README/7.gif" width="250">
