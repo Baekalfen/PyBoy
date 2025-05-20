@@ -226,7 +226,7 @@ class PyBoy:
 
         for k, v in kwargs.items():
             if k not in defaults and k not in plugin_manager_keywords:
-                logger.error("Unknown keyword argument: %s", k)
+                logger.critical("Unknown keyword argument: %s", k)
                 raise KeyError(f"Unknown keyword argument: {k}")
 
         # Performance measures
@@ -616,7 +616,7 @@ class PyBoy:
         self.paused = True
         self.save_target_emulationspeed = self.target_emulationspeed
         self.target_emulationspeed = 1
-        logger.info("Emulation paused!")
+        logger.debug("Emulation paused!")
         self._update_window_title()
         self._plugin_manager.paused(True)
 
@@ -625,7 +625,7 @@ class PyBoy:
             return
         self.paused = False
         self.target_emulationspeed = self.save_target_emulationspeed
-        logger.info("Emulation unpaused!")
+        logger.debug("Emulation unpaused!")
         self._update_window_title()
         self._plugin_manager.paused(False)
 
@@ -683,9 +683,9 @@ class PyBoy:
                 provided game-ROM.
         """
         if self.initialized and not self.stopped:
-            logger.info("###########################")
-            logger.info("# Emulator is turning off #")
-            logger.info("###########################")
+            logger.debug("###########################")
+            logger.debug("# Emulator is turning off #")
+            logger.debug("###########################")
             self._plugin_manager.stop()
             self.mb.stop(save)
             self.stopped = True
@@ -1125,7 +1125,7 @@ class PyBoy:
         gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
         for sym_path in [self.symbols_file, gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]:
             if sym_path and os.path.isfile(sym_path):
-                logger.info("Loading symbol file: %s", sym_path)
+                logger.debug("Loading symbol file: %s", sym_path)
                 with open(sym_path) as f:
                     for _line in f.readlines():
                         line = _line.strip()

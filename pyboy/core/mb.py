@@ -37,7 +37,7 @@ class Motherboard:
         serial_interrupt_based=False,
     ):
         if bootrom_file is not None:
-            logger.info("Boot-ROM file provided")
+            logger.debug("Boot-ROM file provided")
 
         self.cartridge = cartridge.load_cartridge(gamerom)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))

@@ -299,7 +299,7 @@ class Sound:
             right_sample = 0
 
         if self.audiobuffer_head >= self.audiobuffer_length:
-            logger.critical("Buffer overrun! %d of %d", self.audiobuffer_head, self.audiobuffer_length)
+            logger.warning("Buffer overrun! %d of %d", self.audiobuffer_head, self.audiobuffer_length)
             return
         self.audiobuffer[self.audiobuffer_head] = left_sample
         self.audiobuffer[self.audiobuffer_head + 1] = right_sample

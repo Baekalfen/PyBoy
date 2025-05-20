@@ -53,7 +53,7 @@ def load_romfile(filename):
 
     logger.debug("Loading ROM file: %d bytes", len(romdata))
     if len(romdata) == 0:
-        logger.error("ROM file is empty!")
+        logger.critical("ROM file is empty!")
         raise PyBoyException("Empty ROM file")
 
     banksize = 16 * 1024
