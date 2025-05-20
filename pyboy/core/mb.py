@@ -39,7 +39,7 @@ class Motherboard:
         randomize=False,
     ):
         if bootrom_file is not None:
-            logger.info("Boot-ROM file provided")
+            logger.debug("Boot-ROM file provided")
 
         self.cartridge = cartridge.load_cartridge(gamerom_file, ram_file, rtc_file)
         logger.debug("Cartridge started:\n%s", self.cartridge)

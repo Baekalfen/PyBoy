@@ -284,7 +284,7 @@ class PyBoy:
 
         for k, v in kwargs.items():
             if k not in defaults and k not in plugin_manager_keywords:
-                logger.error("Unknown keyword argument: %s", k)
+                logger.critical("Unknown keyword argument: %s", k)
                 raise KeyError(f"Unknown keyword argument: {k}")
 
         # Performance measures
@@ -692,7 +692,7 @@ class PyBoy:
         self.paused = True
         self.save_target_emulationspeed = self.target_emulationspeed
         self.target_emulationspeed = 1
-        logger.info("Emulation paused!")
+        logger.debug("Emulation paused!")
         self._update_window_title()
         self._plugin_manager.paused(True)
 
@@ -701,7 +701,7 @@ class PyBoy:
             return
         self.paused = False
         self.target_emulationspeed = self.save_target_emulationspeed
-        logger.info("Emulation unpaused!")
+        logger.debug("Emulation unpaused!")
         self._update_window_title()
         self._plugin_manager.paused(False)
 
@@ -766,9 +766,9 @@ class PyBoy:
             rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
         """
         if self.initialized and not self.stopped:
-            logger.info("###########################")
-            logger.info("# Emulator is turning off #")
-            logger.info("###########################")
+            logger.debug("###########################")
+            logger.debug("# Emulator is turning off #")
+            logger.debug("###########################")
             self._plugin_manager.stop()
 
             # Battery implies saving RAM
@@ -1252,7 +1252,7 @@ class PyBoy:
             ]
         for sym_path in [self.symbols_file] + gamerom_paths:
             if sym_path and os.path.isfile(sym_path):
-                logger.info("Loading symbol file: %s", sym_path)
+                logger.debug("Loading symbol file: %s", sym_path)
                 if sym_path.endswith(".map"):
                     self._load_map_file(sym_path)
                 else:
@@ -1289,7 +1289,7 @@ class PyBoy:
                         self.rom_symbols[bank][addr].append(sym_label)
                         self.rom_symbols_inverse[sym_label] = (bank, addr)
                     except ValueError:
-                        logger.warning("Skipping .sym line: %s", line.strip())
+                        logger.debug("Skipping .sym line: %s", line.strip())
                 elif group == "definitions":
                     pass
                 else:

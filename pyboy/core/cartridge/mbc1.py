@@ -47,7 +47,7 @@ class MBC1(BaseMBC):
     def getitem(self, address):
         if 0xA000 <= address < 0xC000:
             if not self.rambank_initialized:
-                logger.error("RAM banks not initialized: %0.4x", address)
+                logger.warning("RAM banks not initialized: %0.4x", address)
 
             if not self.rambank_enabled:
                 return 0xFF
