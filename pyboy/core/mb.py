@@ -398,6 +398,9 @@ class Motherboard:
                 if self.serial.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_SERIAL)
                 if i == 0xFF01:
+                    # logger.debug(("Master " if self.serial.is_master else "Slave ") + "Read SB: %02x", self.serial.SB)
+                    assert self.serial.sending_state == 2  # PASSIVE
+                    assert self.serial.SC & 0x80 == 0  # No transfer active
                     return self.serial.SB
                 elif i == 0xFF02:
                     return self.serial.SC
