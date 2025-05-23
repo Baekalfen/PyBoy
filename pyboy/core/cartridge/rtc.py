@@ -22,7 +22,7 @@ class RTC:
         self.halt = 0
 
         if not os.path.exists(self.filename):
-            logger.info("No RTC file found. Skipping.")
+            logger.debug("No RTC file found. Skipping.")
         else:
             with open(self.filename, "rb") as f:
                 self.load_state(IntIOWrapper(f), STATE_VERSION)
