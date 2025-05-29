@@ -17,7 +17,6 @@ warning = """
 """
 
 imports = """
-from pyboy import utils
 import array
 
 import pyboy
@@ -1116,9 +1115,9 @@ class OpcodeData:
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         left.assign = False
         if throughcarry:
-            code.addline(("t = (%s << 1)" % left.get) + " + ((cpu.F & (1 << FLAGC)) != 0)")
+            code.addline(("t = (%s << 1)" % left.get) + " | ((cpu.F & (1 << FLAGC)) != 0)")
         else:
-            code.addline("t = (%s << 1) + (%s >> 7)" % (left.get, left.get))
+            code.addline("t = (%s << 1) | (%s >> 7)" % (left.get, left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
         code.addline("t &= 0xFF")
         left.assign = True
@@ -1162,12 +1161,12 @@ class OpcodeData:
             # Trigger "overflow" for carry flag
             code.addline(
                 ("t = (%s >> 1)" % left.get)
-                + " + (((cpu.F & (1 << FLAGC)) != 0) << 7)"
-                + " + ((%s & 1) << 8)" % (left.get)
+                + " | (((cpu.F & (1 << FLAGC)) != 0) << 7)"
+                + " | ((%s & 1) << 8)" % (left.get)
             )
         else:
             # Trigger "overflow" for carry flag
-            code.addline("t = (%s >> 1) + ((%s & 1) << 7)" % (left.get, left.get) + " + ((%s & 1) << 8)" % (left.get))
+            code.addline("t = (%s >> 1) | ((%s & 1) << 7)" % (left.get, left.get) + " | ((%s & 1) << 8)" % (left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
         code.addline("t &= 0xFF")
 
@@ -1228,7 +1227,7 @@ class OpcodeData:
         self.flag_c = "C"
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
         # Actual shift / MSB unchanged / Trigger "overflow" for carry flag
-        code.addline("t = ((%s >> 1) | (%s & 0x80)) + ((%s & 1) << 8)" % (left.get, left.get, left.get))
+        code.addline("t = ((%s >> 1) | (%s & 0x80)) | ((%s & 1) << 8)" % (left.get, left.get, left.get))
         code.addlines(self.handleflags8bit(left.get, None, None, False))
         code.addline("t &= 0xFF")
 
