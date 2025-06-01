@@ -20,8 +20,25 @@ class Interaction:
     def __init__(self):
         self.directional = 0xF
         self.standard = 0xF
+        self.debug = False
+
+    def toggle_debug(self):
+        self.debug = not self.debug
 
     def key_event(self, key):
+        if self.debug:
+            # Try to get the event name, otherwise fall back to the raw value
+            try:
+                # key is usually an int when coming from send_input or tests
+                if isinstance(key, WindowEvent):
+                    # This case might occur if key_event is called internally with an existing WindowEvent instance
+                    event_name = str(key)
+                else:
+                    # Assume key is an integer value, create a WindowEvent instance and get its string form
+                    event_name = str(WindowEvent(key))
+            except (ValueError, IndexError): # IndexError if key is out of range for the tuple in __str__
+                event_name = key # Fallback for values not in enum or if str() fails
+            print(f"Key event: {event_name}")
         _directional = self.directional
         _standard = self.standard
         if key == WindowEvent.PRESS_ARROW_RIGHT:
@@ -59,6 +76,9 @@ class Interaction:
             self.standard = set_bit(self.standard, P12)
         elif key == WindowEvent.RELEASE_BUTTON_START:
             self.standard = set_bit(self.standard, P13)
+
+        if self.debug:
+            print(f"Directional: {self.directional:#0x}, Standard: {self.standard:#0x}")
 
         # XOR to find the changed bits, AND it to see if it was high before.
         # Test for both directional and standard buttons.

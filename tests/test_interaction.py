@@ -71,3 +71,46 @@ def test_button(default_rom):
     pyboy.tick(1, False, False)
     pyboy.memory[0xFF00] = 0b0010_0000
     assert pyboy.memory[0xFF00] == 0b1100_1111  # auto-reset
+
+
+def test_interaction_debug_output(capsys):
+    interaction = Interaction()
+
+    # 1. Debug off - Press A
+    interaction.key_event(WindowEvent.PRESS_BUTTON_A)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert interaction.standard == 0xE # P10 (A) is reset (0)
+
+    # 2. Toggle debug on
+    interaction.toggle_debug()
+    assert interaction.debug is True
+
+    # 3. Debug on - Press B
+    interaction.key_event(WindowEvent.PRESS_BUTTON_B)
+    captured = capsys.readouterr()
+    assert "Key event: PRESS_BUTTON_B" in captured.out
+    # Directional is 0xf, Standard A (0) and B (1) are reset -> 0b1100 -> 0xc
+    assert f"Directional: {interaction.directional:#0x}, Standard: {interaction.standard:#0x}" in captured.out
+    assert "Directional: 0xf, Standard: 0xc" in captured.out
+    assert interaction.standard == 0xC
+
+    # 4. Debug on - Release A
+    interaction.key_event(WindowEvent.RELEASE_BUTTON_A)
+    captured = capsys.readouterr()
+    assert "Key event: RELEASE_BUTTON_A" in captured.out
+    # Directional is 0xf, Standard B (1) is reset, A (0) is set -> 0b1101 -> 0xd
+    assert f"Directional: {interaction.directional:#0x}, Standard: {interaction.standard:#0x}" in captured.out
+    assert "Directional: 0xf, Standard: 0xd" in captured.out
+    assert interaction.standard == 0xD
+
+    # 5. Toggle debug off
+    interaction.toggle_debug()
+    assert interaction.debug is False
+
+    # 6. Debug off - Press Start
+    interaction.key_event(WindowEvent.PRESS_BUTTON_START)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    # Standard B (1) and START (3) are reset -> 0b0101 -> 0x5
+    assert interaction.standard == 0x5
