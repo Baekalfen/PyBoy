@@ -9,8 +9,8 @@ from pyboy.utils import (
     PyBoyException,
     PyBoyOutOfBoundsException,
     INTR_TIMER,
-    INTR_SERIAL,
     INTR_HIGHTOLOW,
+    INTR_SERIAL,
     OPCODE_BRK,
     MAX_CYCLES,
 )
@@ -32,9 +32,12 @@ class Motherboard:
         sound_sample_rate,
         cgb,
         randomize=False,
+        serial_address=None,
+        serial_bind=None,
+        serial_interrupt_based=False,
     ):
         if bootrom_file is not None:
-            logger.info("Boot-ROM file provided")
+            logger.debug("Boot-ROM file provided")
 
         self.cartridge = cartridge.load_cartridge(gamerom)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))
@@ -49,7 +52,7 @@ class Motherboard:
             logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
 
         self.timer = timer.Timer()
-        self.serial = serial.Serial()
+        self.serial = serial.Serial(serial_address, serial_bind, serial_interrupt_based)
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
@@ -228,6 +231,7 @@ class Motherboard:
 
     def stop(self, save):
         self.sound.stop()
+        self.serial.stop()
         if save:
             self.cartridge.stop()
 
@@ -394,6 +398,9 @@ class Motherboard:
                 if self.serial.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_SERIAL)
                 if i == 0xFF01:
+                    # logger.debug(("Master " if self.serial.is_master else "Slave ") + "Read SB: %02x", self.serial.SB)
+                    assert self.serial.sending_state == 2  # PASSIVE
+                    assert self.serial.SC & 0x80 == 0  # No transfer active
                     return self.serial.SB
                 elif i == 0xFF02:
                     return self.serial.SC

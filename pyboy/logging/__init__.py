@@ -1,12 +1,12 @@
 (
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR,
-    CRITICAL,
+    DEBUG,  # Only for developers
+    WARNING,  # Unexpected failure that can be worked around
+    ERROR,  # Unexpected failure that impacts usability
+    CRITICAL,  # Unexpected failure where we cannot continue
+    INFO,  # Normal operation, that the user *needs* or *wants* to be aware of
 ) = range(5)
 
-_log_level = WARNING
+_log_level = INFO
 
 
 def get_log_level():
