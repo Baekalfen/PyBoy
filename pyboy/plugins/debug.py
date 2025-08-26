@@ -285,12 +285,12 @@ class BaseDebugWindow(PyBoyWindowPlugin):
 
     ##########################
     # Internal functions
-    def copy_tile(self, from_buffer, t, xx, yy, to_buffer, hflip, vflip, palette):
+    def copy_tile(self, from_buffer, vbank, t, xx, yy, to_buffer, hflip, vflip, palette):
         for y in range(8):
             _y = 7 - y if vflip else y
             for x in range(8):
                 _x = 7 - x if hflip else x
-                to_buffer[yy + y, xx + x] = palette[from_buffer[_y + t * 8, _x]]
+                to_buffer[yy + y, xx + x] = palette[from_buffer[vbank, _y + t * 8, _x]]
 
     def mark_tile(self, x, y, color, height, width, grid):
         tw = width  # Tile width
@@ -340,22 +340,24 @@ class TileViewWindow(BaseDebugWindow):
 
             # tilecache = None
             # palette_rgb = None
+            vbank = 0
             if self.is_cgb_renderer:
                 palette, vbank, horiflip, vertflip, bg_priority = self.cgb_renderer._cgb_get_background_map_attributes(
                     self.mb.lcd, n
                 )
-                self.renderer.update_tilecache1(self.mb.lcd, tile_index, 1)
-                self.tilecache = self.renderer._tilecache1 if vbank else self.renderer._tilecache0
+                self.renderer.update_tilecache(1, self.mb.lcd, tile_index, 1)
+                # self.tilecache = self.renderer._tilecache1 if vbank else self.renderer._tilecache0
                 self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb  # TODO: Select palette by adding offset
             else:
                 # Fake palette index
-                self.renderer.update_tilecache0(self.mb.lcd, tile_index, 0)
-                self.tilecache = self.renderer._tilecache0
+                self.renderer.update_tilecache(0, self.mb.lcd, tile_index, 0)
+                # self.tilecache = self.renderer._tilecache0
                 horiflip, vertflip = False, False
                 self.palette_rgb = self.mb.lcd.BGP.palette_mem_rgb
 
             self.copy_tile(
-                self.tilecache,
+                self.renderer._tilecache,
+                vbank,
                 tile_index,
                 tile_column * 8,
                 tile_row * 8,
@@ -467,10 +469,13 @@ class TileDataWindow(BaseDebugWindow):
 
     def post_tick(self):
         # TODO: We could select different palettes on CGB
+        vbank = 0
         if self.tilecache_select:
-            tilecache = self.renderer._tilecache1
+            vbank = 1
+            # tilecache = self.renderer._tilecache1
         else:
-            tilecache = self.renderer._tilecache0
+            vbank = 0
+            # tilecache = self.renderer._tilecache0
 
         if self.cgb:
             self.palette_rgb = self.mb.lcd.bcpd.palette_mem_rgb  # TODO: Select palette by adding offset
@@ -479,12 +484,12 @@ class TileDataWindow(BaseDebugWindow):
 
         for t in range(TILES):
             if self.tilecache_select:
-                self.renderer.update_tilecache1(self.mb.lcd, t, 1)
+                self.renderer.update_tilecache(1, self.mb.lcd, t, 1)
             else:
-                self.renderer.update_tilecache0(self.mb.lcd, t, 0)
+                self.renderer.update_tilecache(0, self.mb.lcd, t, 0)
             xx = (t * 8) % self.width
             yy = ((t * 8) // self.width) * 8
-            self.copy_tile(tilecache, t, xx, yy, self.buf0, False, False, self.palette_rgb)
+            self.copy_tile(self.renderer._tilecache, vbank, t, xx, yy, self.buf0, False, False, self.palette_rgb)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
@@ -531,36 +536,43 @@ class SpriteWindow(BaseDebugWindow):
             xx = ((n // 4) * 8) % self.width
             yy = (((n // 4) * 8) // self.width) * sprite_height
 
+            vbank = 0
             if self.cgb:
                 if attributes & 0b1000:
-                    self.renderer.update_spritecache1(self.mb.lcd, t, 1)
+                    self.renderer.update_spritecache(1, self.mb.lcd, t, 1)
                     if self.mb.lcd._LCDC.sprite_height:
-                        self.renderer.update_spritecache1(self.mb.lcd, t + 1, 1)
-                    self.spritecache = self.renderer._spritecache1
+                        self.renderer.update_spritecache(1, self.mb.lcd, t + 1, 1)
+                    # self.spritecache = self.renderer._spritecache1
+                    vbank = 1
                 else:
-                    self.renderer.update_spritecache0(self.mb.lcd, t, 0)
+                    self.renderer.update_spritecache(0, self.mb.lcd, t, 0)
                     if self.mb.lcd._LCDC.sprite_height:
-                        self.renderer.update_spritecache0(self.mb.lcd, t + 1, 0)
-                    self.spritecache = self.renderer._spritecache0
+                        self.renderer.update_spritecache(0, self.mb.lcd, t + 1, 0)
+                    # self.spritecache = self.renderer._spritecache0
+                    vbank = 0
                 self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb  # TODO: Select palette by adding offset
             else:
                 # Fake palette index
                 if attributes & 0b10000:
-                    self.renderer.update_spritecache1(self.mb.lcd, t, 0)
+                    self.renderer.update_spritecache(1, self.mb.lcd, t, 0)
                     if self.mb.lcd._LCDC.sprite_height:
-                        self.renderer.update_spritecache1(self.mb.lcd, t + 1, 0)
-                    self.spritecache = self.renderer._spritecache1
+                        self.renderer.update_spritecache(1, self.mb.lcd, t + 1, 0)
+                    # self.spritecache = self.renderer._spritecache1
+                    vbank = 1
                     self.palette_rgb = self.mb.lcd.OBP1.palette_mem_rgb
                 else:
-                    self.renderer.update_spritecache0(self.mb.lcd, t, 0)
+                    self.renderer.update_spritecache(0, self.mb.lcd, t, 0)
                     if self.mb.lcd._LCDC.sprite_height:
-                        self.renderer.update_spritecache0(self.mb.lcd, t + 1, 0)
-                    self.spritecache = self.renderer._spritecache0
+                        self.renderer.update_spritecache(0, self.mb.lcd, t + 1, 0)
+                    # self.spritecache = self.renderer._spritecache0
+                    vbank = 0
                     self.palette_rgb = self.mb.lcd.OBP0.palette_mem_rgb
 
-            self.copy_tile(self.spritecache, t, xx, yy, self.buf0, False, False, self.palette_rgb)
+            self.copy_tile(self.renderer._spritecache, vbank, t, xx, yy, self.buf0, False, False, self.palette_rgb)
             if sprite_height:
-                self.copy_tile(self.spritecache, t + 1, xx, yy + 8, self.buf0, False, False, self.palette_rgb)
+                self.copy_tile(
+                    self.renderer._spritecache, vbank, t + 1, xx, yy + 8, self.buf0, False, False, self.palette_rgb
+                )
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)

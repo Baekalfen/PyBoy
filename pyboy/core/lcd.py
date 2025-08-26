@@ -467,20 +467,25 @@ class Renderer:
         # Init buffers as white
         self._screenbuffer_raw = array("B", [0x00] * (ROWS * COLS * 4))
         self._screenbuffer_attributes_raw = array("B", [0x00] * (ROWS * COLS))
-        self._tilecache0_raw = array("B", [0x00] * (TILES * 8 * 8))
-        self._spritecache0_raw = array("B", [0x00] * (TILES * 8 * 8))
-        self._spritecache1_raw = array("B", [0x00] * (TILES * 8 * 8))
+        self._tilecache_raw = array("B", [0x00] * (TILES * 8 * 8 * 2))
+        self._spritecache_raw = array("B", [0x00] * (TILES * 8 * 8 * 2))
         self.sprites_to_render = array("i", [0] * 10)
 
-        self._tilecache0_state = array("B", [0] * TILES)
-        self._spritecache0_state = array("B", [0] * TILES)
-        self._spritecache1_state = array("B", [0] * TILES)
+        # Allocate both cache 0 and 1. Even on DMG, where tilecache[0] is only used.
+        self._tilecache_state = array("B", [0] * TILES * 2)
+        self._spritecache_state = array("B", [0] * TILES * 2)
         self.clear_cache()
 
         self._screenbuffer = memoryview(self._screenbuffer_raw).cast("I", shape=(ROWS, COLS))
         self._screenbuffer_attributes = memoryview(self._screenbuffer_attributes_raw).cast("B", shape=(ROWS, COLS))
-        self._tilecache0 = memoryview(self._tilecache0_raw).cast("B", shape=(TILES * 8, 8))
-        self._tilecache0_64 = memoryview(self._tilecache0_raw).cast("Q", shape=(TILES * 8,))
+        self._tilecache = memoryview(self._tilecache_raw).cast("B", shape=(2, TILES * 8, 8))
+        self._tilecache_64 = memoryview(self._tilecache_raw).cast(
+            "Q",
+            shape=(
+                2,
+                TILES * 8,
+            ),
+        )
 
         # The look-up table only stored 4 bits from each byte, packed into a single byte
         self.colorcode_table = array("I", [0x00000000] * (0x100))  # Should be "L"!?
@@ -504,12 +509,9 @@ class Renderer:
                 v |= t << (8 * (3 - offset))  # Store them in little-endian
             self.colorcode_table[byte] = v
 
-        # OBP0 palette
-        self._spritecache0 = memoryview(self._spritecache0_raw).cast("B", shape=(TILES * 8, 8))
-        self._spritecache0_64 = memoryview(self._spritecache0_raw).cast("Q", shape=(TILES * 8,))
-        # OBP1 palette
-        self._spritecache1 = memoryview(self._spritecache1_raw).cast("B", shape=(TILES * 8, 8))
-        self._spritecache1_64 = memoryview(self._spritecache1_raw).cast("Q", shape=(TILES * 8,))
+        # OBP0 and OBP1 palette
+        self._spritecache = memoryview(self._spritecache_raw).cast("B", shape=(2, TILES * 8, 8))
+        self._spritecache_64 = memoryview(self._spritecache_raw).cast("Q", shape=(2, TILES * 8))
 
         self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
@@ -556,8 +558,8 @@ class Renderer:
         yy = 8 * tile + y % 8
         return tile, yy, tile_addr
 
-    def _pixel(self, tilecache, pixel, x, y, xx, yy, bg_priority_apply):
-        col0 = (tilecache[yy, xx] == 0) & 1
+    def _pixel(self, cache_index, pixel, x, y, xx, yy, bg_priority_apply):
+        col0 = (self._tilecache[cache_index, yy, xx] == 0) & 1
         self._screenbuffer[y, x] = pixel
         # COL0_FLAG is 1
         self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
@@ -567,10 +569,10 @@ class Renderer:
             xx = (x - wx) % 8
             if xx == 0 or x == _x:
                 wt, yy, _ = self._get_tile(self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd)
-                self.update_tilecache0(lcd, wt, 0)
+                self.update_tilecache(0, lcd, wt, 0)
 
-            pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
-            self._pixel(self._tilecache0, pixel, x, y, xx, yy, 0)
+            pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
+            self._pixel(0, pixel, x, y, xx, yy, 0)
         return cols
 
     def scanline_background(self, y, _x, bx, by, cols, lcd):
@@ -579,13 +581,13 @@ class Renderer:
             b_xx = (x + (bx & 0b111)) % 8
             if b_xx == 0 or x == 0:
                 bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
-                self.update_tilecache0(lcd, bt, 0)
+                self.update_tilecache(0, lcd, bt, 0)
 
             xx = b_xx
             yy = b_yy
 
-            pixel = lcd.BGP.getcolor(self._tilecache0[yy, xx])
-            self._pixel(self._tilecache0, pixel, x, y, xx, yy, 0)
+            pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
+            self._pixel(0, pixel, x, y, xx, yy, 0)
         return cols
 
     def scanline_blank(self, y, _x, cols, lcd):
@@ -657,38 +659,27 @@ class Renderer:
             xflip = attributes & 0b00100000
             yflip = attributes & 0b01000000
             spritepriority = (attributes & 0b10000000) and not ignore_priority
+            sprite_cache_no = 0
             if self.cgb:
                 palette = attributes & 0b111
                 if attributes & 0b1000:
-                    self.update_spritecache1(lcd, tileindex, 1)
-                    if lcd._LCDC.sprite_height:
-                        self.update_spritecache1(lcd, tileindex + 1, 1)
-                    spritecache = self._spritecache1
-                else:
-                    self.update_spritecache0(lcd, tileindex, 0)
-                    if lcd._LCDC.sprite_height:
-                        self.update_spritecache0(lcd, tileindex + 1, 0)
-                    spritecache = self._spritecache0
+                    sprite_cache_no = 1
             else:
                 # Fake palette index
                 palette = 0
                 if attributes & 0b10000:
-                    self.update_spritecache1(lcd, tileindex, 0)
-                    if lcd._LCDC.sprite_height:
-                        self.update_spritecache1(lcd, tileindex + 1, 0)
-                    spritecache = self._spritecache1
-                else:
-                    self.update_spritecache0(lcd, tileindex, 0)
-                    if lcd._LCDC.sprite_height:
-                        self.update_spritecache0(lcd, tileindex + 1, 0)
-                    spritecache = self._spritecache0
+                    sprite_cache_no = 1
+
+            self.update_spritecache(sprite_cache_no, lcd, tileindex, sprite_cache_no if self.cgb else 0)
+            if lcd._LCDC.sprite_height:
+                self.update_spritecache(sprite_cache_no, lcd, tileindex + 1, sprite_cache_no if self.cgb else 0)
 
             dy = ly - y
             yy = spriteheight - dy - 1 if yflip else dy
 
             for dx in range(8):
                 xx = 7 - dx if xflip else dx
-                color_code = spritecache[8 * tileindex + yy, xx]
+                color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
                 if 0 <= x < COLS and not color_code == 0:  # If pixel is not transparent
                     if self.cgb:
                         pixel = lcd.ocpd.getcolor(palette, color_code)
@@ -723,40 +714,34 @@ class Renderer:
             x -= 8
 
     def clear_cache(self):
-        self.clear_tilecache0()
-        self.clear_spritecache0()
-        self.clear_spritecache1()
+        self.clear_tilecache(0)
+        self.clear_spritecache(0)
+        self.clear_spritecache(1)
 
     def invalidate_tile(self, tile, vbank):
+        # TODO: Is this right?
         if vbank and self.cgb:
-            self._tilecache0_state[tile] = 0
-            self._tilecache1_state[tile] = 0
-            self._spritecache0_state[tile] = 0
-            self._spritecache1_state[tile] = 0
+            self._tilecache_state[tile] = 0
+            self._tilecache_state[tile + TILES] = 0
+            self._spritecache_state[tile] = 0
+            self._spritecache_state[tile + TILES] = 0
         else:
-            self._tilecache0_state[tile] = 0
+            self._tilecache_state[tile] = 0
             if self.cgb:
-                self._tilecache1_state[tile] = 0
-            self._spritecache0_state[tile] = 0
-            self._spritecache1_state[tile] = 0
+                self._tilecache_state[tile + TILES] = 0
+            self._spritecache_state[tile] = 0
+            self._spritecache_state[tile + TILES] = 0
 
-    def clear_tilecache0(self):
+    def clear_tilecache(self, cache_no):
         for i in range(TILES):
-            self._tilecache0_state[i] = 0
+            self._tilecache_state[i + (TILES if cache_no else 0)] = 0
 
-    def clear_tilecache1(self):
-        pass
-
-    def clear_spritecache0(self):
+    def clear_spritecache(self, cache_no):
         for i in range(TILES):
-            self._spritecache0_state[i] = 0
+            self._spritecache_state[i + (TILES if cache_no else 0)] = 0
 
-    def clear_spritecache1(self):
-        for i in range(TILES):
-            self._spritecache1_state[i] = 0
-
-    def update_tilecache0(self, lcd, t, bank):
-        if self._tilecache0_state[t]:
+    def update_tilecache(self, cache_no, lcd, t, bank):
+        if self._tilecache_state[t + (TILES if cache_no else 0)]:
             return
         # for t in self.tiles_changed0:
         for k in range(0, 16, 2):  # 2 bytes for each line
@@ -764,15 +749,12 @@ class Renderer:
             byte2 = lcd.VRAM0[t * 16 + k + 1]
             y = (t * 16 + k) // 2
 
-            self._tilecache0_64[y] = self.colorcode(byte1, byte2)
+            self._tilecache_64[cache_no, y] = self.colorcode(byte1, byte2)
 
-        self._tilecache0_state[t] = 1
+        self._tilecache_state[t + (TILES if cache_no else 0)] = 1
 
-    def update_tilecache1(self, lcd, t, bank):
-        pass
-
-    def update_spritecache0(self, lcd, t, bank):
-        if self._spritecache0_state[t]:
+    def update_spritecache(self, cache_no, lcd, t, bank):
+        if self._spritecache_state[t + (TILES if cache_no else 0)]:
             return
         # for t in self.tiles_changed0:
         for k in range(0, 16, 2):  # 2 bytes for each line
@@ -780,22 +762,9 @@ class Renderer:
             byte2 = lcd.VRAM0[t * 16 + k + 1]
             y = (t * 16 + k) // 2
 
-            self._spritecache0_64[y] = self.colorcode(byte1, byte2)
+            self._spritecache_64[cache_no, y] = self.colorcode(byte1, byte2)
 
-        self._spritecache0_state[t] = 1
-
-    def update_spritecache1(self, lcd, t, bank):
-        if self._spritecache1_state[t]:
-            return
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = lcd.VRAM0[t * 16 + k]
-            byte2 = lcd.VRAM0[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._spritecache1_64[y] = self.colorcode(byte1, byte2)
-
-        self._spritecache1_state[t] = 1
+        self._spritecache_state[t + (TILES if cache_no else 0)] = 1
 
     def colorcode(self, byte1, byte2):
         colorcode_low = self.colorcode_table[(byte1 & 0xF) | ((byte2 & 0xF) << 4)]
@@ -860,15 +829,7 @@ class CGBLCD(LCD):
 
 class CGBRenderer(Renderer):
     def __init__(self):
-        self._tilecache1_state = array("B", [0] * TILES)
         Renderer.__init__(self, True)
-
-        self._tilecache1_raw = array("B", [0xFF] * (TILES * 8 * 8))
-
-        self._tilecache1 = memoryview(self._tilecache1_raw).cast("B", shape=(TILES * 8, 8))
-        self._tilecache1_64 = memoryview(self._tilecache1_raw).cast("Q", shape=(TILES * 8,))
-        self._tilecache1_state = array("B", [0] * TILES)
-        self.clear_cache()
 
     def _cgb_get_background_map_attributes(self, lcd, i):
         tile_num = lcd.VRAM1[i]
@@ -903,19 +864,13 @@ class CGBRenderer(Renderer):
                 wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
                     self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
                 )
-                # NOTE: Not allowed to return memoryview in Cython tuple
-                if vbank:
-                    self.update_tilecache1(lcd, wt, vbank)
-                    tilecache = self._tilecache1
-                else:
-                    self.update_tilecache0(lcd, wt, vbank)
-                    tilecache = self._tilecache0
+                self.update_tilecache(vbank, lcd, wt, vbank)
 
             if w_horiflip:
                 xx = 7 - xx
 
-            pixel = lcd.bcpd.getcolor(w_palette, tilecache[yy, xx])
-            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
+            pixel = lcd.bcpd.getcolor(w_palette, self._tilecache[vbank, yy, xx])
+            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
         return cols
 
     def scanline_background(self, y, _x, bx, by, cols, lcd):
@@ -926,19 +881,13 @@ class CGBRenderer(Renderer):
                 bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
                     y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
                 )
-                # NOTE: Not allowed to return memoryview in Cython tuple
-                if vbank:
-                    self.update_tilecache1(lcd, bt, vbank)
-                    tilecache = self._tilecache1
-                else:
-                    self.update_tilecache0(lcd, bt, vbank)
-                    tilecache = self._tilecache0
+                self.update_tilecache(vbank, lcd, bt, vbank)
 
             if b_horiflip:
                 xx = 7 - xx
 
-            pixel = lcd.bcpd.getcolor(b_palette, tilecache[yy, xx])
-            self._pixel(tilecache, pixel, x, y, xx, yy, bg_priority_apply)
+            pixel = lcd.bcpd.getcolor(b_palette, self._tilecache[vbank, yy, xx])
+            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
         return cols
 
     def scanline(self, lcd, y):
@@ -969,17 +918,13 @@ class CGBRenderer(Renderer):
             self.ly_window = -1
 
     def clear_cache(self):
-        self.clear_tilecache0()
-        self.clear_tilecache1()
-        self.clear_spritecache0()
-        self.clear_spritecache1()
+        self.clear_tilecache(0)
+        self.clear_tilecache(1)
+        self.clear_spritecache(0)
+        self.clear_spritecache(1)
 
-    def clear_tilecache1(self):
-        for i in range(TILES):
-            self._tilecache1_state[i] = 0
-
-    def update_tilecache0(self, lcd, t, bank):
-        if self._tilecache0_state[t]:
+    def update_tilecache(self, cache_no, lcd, t, bank):
+        if self._tilecache_state[t + (TILES if cache_no else 0)]:
             return
 
         if bank:
@@ -993,12 +938,12 @@ class CGBRenderer(Renderer):
             byte2 = vram_bank[t * 16 + k + 1]
             y = (t * 16 + k) // 2
 
-            self._tilecache0_64[y] = self.colorcode(byte1, byte2)
+            self._tilecache_64[cache_no, y] = self.colorcode(byte1, byte2)
 
-        self._tilecache0_state[t] = 1
+        self._tilecache_state[t + (TILES if cache_no else 0)] = 1
 
-    def update_tilecache1(self, lcd, t, bank):
-        if self._tilecache1_state[t]:
+    def update_spritecache(self, cache_no, lcd, t, bank):
+        if self._spritecache_state[t + (TILES if cache_no else 0)]:
             return
         if bank:
             vram_bank = lcd.VRAM1
@@ -1010,43 +955,9 @@ class CGBRenderer(Renderer):
             byte2 = vram_bank[t * 16 + k + 1]
             y = (t * 16 + k) // 2
 
-            self._tilecache1_64[y] = self.colorcode(byte1, byte2)
+            self._spritecache_64[cache_no, y] = self.colorcode(byte1, byte2)
 
-        self._tilecache1_state[t] = 1
-
-    def update_spritecache0(self, lcd, t, bank):
-        if self._spritecache0_state[t]:
-            return
-        if bank:
-            vram_bank = lcd.VRAM1
-        else:
-            vram_bank = lcd.VRAM0
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = vram_bank[t * 16 + k]
-            byte2 = vram_bank[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._spritecache0_64[y] = self.colorcode(byte1, byte2)
-
-        self._spritecache0_state[t] = 1
-
-    def update_spritecache1(self, lcd, t, bank):
-        if self._spritecache1_state[t]:
-            return
-        if bank:
-            vram_bank = lcd.VRAM1
-        else:
-            vram_bank = lcd.VRAM0
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = vram_bank[t * 16 + k]
-            byte2 = vram_bank[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._spritecache1_64[y] = self.colorcode(byte1, byte2)
-
-        self._spritecache1_state[t] = 1
+        self._spritecache_state[t + (TILES if cache_no else 0)] = 1
 
 
 class VBKregister:

@@ -114,7 +114,7 @@ cdef class LCDCRegister:
     cdef uint16_t windowmap_offset
 
 cdef class Renderer:
-    cdef uint8_t[:] _tilecache0_state, _tilecache1_state, _spritecache0_state, _spritecache1_state
+    cdef uint8_t[:] _tilecache_state, _spritecache_state
     cdef str color_format
     cdef tuple buffer_dims
     cdef bint cgb
@@ -122,11 +122,11 @@ cdef class Renderer:
     cdef array _screenbuffer_raw
     cdef array _screenbuffer_attributes_raw
     cdef object _screenbuffer_ptr
-    cdef array _tilecache0_raw, _spritecache0_raw, _spritecache1_raw
+    cdef array _tilecache_raw, _spritecache_raw
     cdef uint32_t[:,:] _screenbuffer
     cdef uint8_t[:,:] _screenbuffer_attributes
-    cdef uint8_t[:,:] _tilecache0, _spritecache0, _spritecache1
-    cdef uint64_t[:] _tilecache0_64, _tilecache1_64, _spritecache0_64, _spritecache1_64
+    cdef uint8_t[:,:,:] _tilecache, _spritecache
+    cdef uint64_t[:, :] _tilecache_64, _spritecache_64
     cdef uint32_t[:] colorcode_table
 
     cdef int[10] sprites_to_render
@@ -134,10 +134,6 @@ cdef class Renderer:
     cdef void invalidate_tile(self, int, int) noexcept nogil
 
     cdef void blank_screen(self, LCD) noexcept nogil
-
-    # CGB
-    cdef array _tilecache1_raw
-    cdef uint8_t[:,:] _tilecache1
 
     @cython.locals(
         bx=int,
@@ -161,8 +157,10 @@ cdef class Renderer:
     @cython.locals(tile_addr=uint64_t, tile=int)
     cdef inline (int, int, uint16_t) _get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
     @cython.locals(col0=uint8_t)
-    cdef inline void _pixel(self, uint8_t[:,:], uint32_t, int, int, int, int, uint32_t) noexcept nogil
+    cdef inline void _pixel(self, int, uint32_t, int, int, int, int, uint32_t) noexcept nogil
+    @cython.locals(tilecache=uint8_t[:,:])
     cdef int scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
+    @cython.locals(tilecache=uint8_t[:,:])
     cdef int scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
     cdef int scanline_blank(self, int, int, int, LCD) noexcept nogil
 
@@ -187,15 +185,14 @@ cdef class Renderer:
         color_code=uint8_t,
         pixel=uint32_t,
         bgmappriority=bint,
+        sprite_cache_no=bint,
     )
     cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
     cdef void sort_sprites(self, int) noexcept nogil
 
     cdef void clear_cache(self) noexcept nogil
-    cdef void clear_tilecache0(self) noexcept nogil
-    cdef void clear_tilecache1(self) noexcept nogil # CGB Only
-    cdef void clear_spritecache0(self) noexcept nogil
-    cdef void clear_spritecache1(self) noexcept nogil
+    cdef void clear_tilecache(self, int) noexcept nogil
+    cdef void clear_spritecache(self, int) noexcept nogil
     @cython.locals(
         x=int,
         t=int,
@@ -206,7 +203,7 @@ cdef class Renderer:
         colorcode_low=uint64_t,
         colorcode_high=uint64_t,
     )
-    cdef void update_tilecache0(self, LCD, int, int) noexcept nogil
+    cdef void update_tilecache(self, int, LCD, int, int) noexcept nogil
     @cython.locals(
         x=int,
         t=int,
@@ -217,29 +214,7 @@ cdef class Renderer:
         colorcode_low=uint64_t,
         colorcode_high=uint64_t,
     )
-    cdef void update_tilecache1(self, LCD, int, int) noexcept nogil # CGB Only
-    @cython.locals(
-        x=int,
-        t=int,
-        k=int,
-        y=int,
-        byte1=uint8_t,
-        byte2=uint8_t,
-        colorcode_low=uint64_t,
-        colorcode_high=uint64_t,
-    )
-    cdef void update_spritecache0(self, LCD, int, int) noexcept nogil
-    @cython.locals(
-        x=int,
-        t=int,
-        k=int,
-        y=int,
-        byte1=uint8_t,
-        byte2=uint8_t,
-        colorcode_low=uint64_t,
-        colorcode_high=uint64_t,
-    )
-    cdef void update_spritecache1(self, LCD, int, int) noexcept nogil
+    cdef void update_spritecache(self, int, LCD, int, int) noexcept nogil
 
     @cython.locals(colorcode_low=uint64_t, colorcode_high=uint64_t)
     cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil

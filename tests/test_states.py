@@ -39,10 +39,10 @@ def progress(pyboy):
 
 
 ignored_attrs = [
-    "_spritecache0_raw",
-    "_spritecache0_state",
-    "_tilecache0_raw",
-    "_tilecache0_state",
+    "_spritecache_raw",
+    "_spritecache_state",
+    "_tilecache_raw",
+    "_tilecache_state",
     "sprites_to_render",
     "serialbuffer",
     "serialbuffer_count",
