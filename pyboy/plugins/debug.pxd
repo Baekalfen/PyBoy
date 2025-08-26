@@ -64,7 +64,7 @@ cdef class BaseDebugWindow(PyBoyWindowPlugin):
     cdef object buf_p
 
     @cython.locals(y=int, x=int, _y=int, _x=int)
-    cdef void copy_tile(self, uint8_t[:,:], int, int, int, uint32_t[:,:], bint, bint, uint32_t[:]) noexcept
+    cdef void copy_tile(self, uint8_t[:, :, :], int, int, int, int, uint32_t[:,:], bint, bint, uint32_t[:]) noexcept
 
     @cython.locals(i=int, tw=int, th=int, xx=int, yy=int)
     cdef void mark_tile(self, int, int, uint32_t, int, int, bint) noexcept
@@ -79,7 +79,7 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef TileMap tilemap
     cdef uint32_t color
 
-    cdef uint8_t[:,:] tilecache # Fixing Cython locals
+    # cdef uint8_t[:,:] tilecache # Fixing Cython locals
     cdef uint32_t[:] palette_rgb # Fixing Cython locals
     @cython.locals(
         mem_offset=uint16_t,
@@ -106,7 +106,7 @@ cdef class TileViewWindow(BaseDebugWindow):
 cdef class TileDataWindow(BaseDebugWindow):
     cdef bint tilecache_select
 
-    cdef uint8_t[:,:] tilecache # Fixing Cython locals
+    # cdef uint8_t[:,:] tilecache # Fixing Cython locals
     cdef uint32_t[:] palette_rgb # Fixing Cython locals
     @cython.locals(t=int, xx=int, yy=int)
     cdef void post_tick(self) noexcept
@@ -128,7 +128,7 @@ cdef class SpriteWindow(BaseDebugWindow):
     @cython.locals(title=str)
     cdef void update_title(self) noexcept
 
-    cdef uint8_t[:,:] spritecache # Fixing Cython locals
+    # cdef uint8_t[:,:] spritecache # Fixing Cython locals
     cdef uint32_t[:] palette_rgb # Fixing Cython locals
 
 cdef class SpriteViewWindow(BaseDebugWindow):
