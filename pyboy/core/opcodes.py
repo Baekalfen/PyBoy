@@ -52,8 +52,8 @@ def INC_03(cpu): # 03 INC BC
 def INC_04(cpu): # 04 INC B
     t = cpu.B + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.B & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.B & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -66,8 +66,8 @@ def INC_04(cpu): # 04 INC B
 def DEC_05(cpu): # 05 DEC B
     t = cpu.B - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.B & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.B & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -87,7 +87,7 @@ def LD_06(cpu, v): # 06 LD B,d8
 def RLCA_07(cpu): # 07 RLCA
     t = (cpu.A << 1) | (cpu.A >> 7)
     flag = 0b00000000
-    flag += (t > 0xFF) << FLAGC
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -108,8 +108,8 @@ def LD_08(cpu, v): # 08 LD (a16),SP
 def ADD_09(cpu): # 09 ADD HL,BC
     t = cpu.HL + ((cpu.B << 8) + cpu.C)
     flag = 0b00000000
-    flag += (((cpu.HL & 0xFFF) + (((cpu.B << 8) + cpu.C) & 0xFFF)) > 0xFFF) << FLAGH
-    flag += (t > 0xFFFF) << FLAGC
+    flag |= (((cpu.HL & 0xFFF) + (((cpu.B << 8) + cpu.C) & 0xFFF)) > 0xFFF) << FLAGH
+    flag |= (t > 0xFFFF) << FLAGC
     cpu.F &= 0b10000000
     cpu.F |= flag
     t &= 0xFFFF
@@ -140,8 +140,8 @@ def DEC_0B(cpu): # 0B DEC BC
 def INC_0C(cpu): # 0C INC C
     t = cpu.C + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.C & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.C & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -154,8 +154,8 @@ def INC_0C(cpu): # 0C INC C
 def DEC_0D(cpu): # 0D DEC C
     t = cpu.C - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.C & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.C & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -175,7 +175,7 @@ def LD_0E(cpu, v): # 0E LD C,d8
 def RRCA_0F(cpu): # 0F RRCA
     t = (cpu.A >> 1) | ((cpu.A & 1) << 7) | ((cpu.A & 1) << 8)
     flag = 0b00000000
-    flag += (t > 0xFF) << FLAGC
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -223,8 +223,8 @@ def INC_13(cpu): # 13 INC DE
 def INC_14(cpu): # 14 INC D
     t = cpu.D + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.D & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.D & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -237,8 +237,8 @@ def INC_14(cpu): # 14 INC D
 def DEC_15(cpu): # 15 DEC D
     t = cpu.D - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.D & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.D & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -258,7 +258,7 @@ def LD_16(cpu, v): # 16 LD D,d8
 def RLA_17(cpu): # 17 RLA
     t = (cpu.A << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += (t > 0xFF) << FLAGC
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -277,8 +277,8 @@ def JR_18(cpu, v): # 18 JR r8
 def ADD_19(cpu): # 19 ADD HL,DE
     t = cpu.HL + ((cpu.D << 8) + cpu.E)
     flag = 0b00000000
-    flag += (((cpu.HL & 0xFFF) + (((cpu.D << 8) + cpu.E) & 0xFFF)) > 0xFFF) << FLAGH
-    flag += (t > 0xFFFF) << FLAGC
+    flag |= (((cpu.HL & 0xFFF) + (((cpu.D << 8) + cpu.E) & 0xFFF)) > 0xFFF) << FLAGH
+    flag |= (t > 0xFFFF) << FLAGC
     cpu.F &= 0b10000000
     cpu.F |= flag
     t &= 0xFFFF
@@ -309,8 +309,8 @@ def DEC_1B(cpu): # 1B DEC DE
 def INC_1C(cpu): # 1C INC E
     t = cpu.E + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.E & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.E & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -323,8 +323,8 @@ def INC_1C(cpu): # 1C INC E
 def DEC_1D(cpu): # 1D DEC E
     t = cpu.E - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.E & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.E & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -344,7 +344,7 @@ def LD_1E(cpu, v): # 1E LD E,d8
 def RRA_1F(cpu): # 1F RRA
     t = (cpu.A >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.A & 1) << 8)
     flag = 0b00000000
-    flag += (t > 0xFF) << FLAGC
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -394,8 +394,8 @@ def INC_23(cpu): # 23 INC HL
 def INC_24(cpu): # 24 INC H
     t = (cpu.HL >> 8) + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += ((((cpu.HL >> 8) & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((((cpu.HL >> 8) & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -408,8 +408,8 @@ def INC_24(cpu): # 24 INC H
 def DEC_25(cpu): # 25 DEC H
     t = (cpu.HL >> 8) - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += ((((cpu.HL >> 8) & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((((cpu.HL >> 8) & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -438,8 +438,8 @@ def DAA_27(cpu): # 27 DAA
         corr |= 0x60 if t > 0x99 else 0x00
         t += corr
     flag = 0
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (corr & 0x60 != 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (corr & 0x60 != 0) << FLAGC
     cpu.F &= 0b01000000
     cpu.F |= flag
     t &= 0xFF
@@ -463,8 +463,8 @@ def JR_28(cpu, v): # 28 JR Z,r8
 def ADD_29(cpu): # 29 ADD HL,HL
     t = cpu.HL + cpu.HL
     flag = 0b00000000
-    flag += (((cpu.HL & 0xFFF) + (cpu.HL & 0xFFF)) > 0xFFF) << FLAGH
-    flag += (t > 0xFFFF) << FLAGC
+    flag |= (((cpu.HL & 0xFFF) + (cpu.HL & 0xFFF)) > 0xFFF) << FLAGH
+    flag |= (t > 0xFFFF) << FLAGC
     cpu.F &= 0b10000000
     cpu.F |= flag
     t &= 0xFFFF
@@ -496,8 +496,8 @@ def DEC_2B(cpu): # 2B DEC HL
 def INC_2C(cpu): # 2C INC L
     t = (cpu.HL & 0xFF) + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += ((((cpu.HL & 0xFF) & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((((cpu.HL & 0xFF) & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -510,8 +510,8 @@ def INC_2C(cpu): # 2C INC L
 def DEC_2D(cpu): # 2D DEC L
     t = (cpu.HL & 0xFF) - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += ((((cpu.HL & 0xFF) & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((((cpu.HL & 0xFF) & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -578,8 +578,8 @@ def INC_33(cpu): # 33 INC SP
 def INC_34(cpu): # 34 INC (HL)
     t = cpu.mb.getitem(cpu.HL) + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.mb.getitem(cpu.HL) & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.mb.getitem(cpu.HL) & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -593,8 +593,8 @@ def INC_34(cpu): # 34 INC (HL)
 def DEC_35(cpu): # 35 DEC (HL)
     t = cpu.mb.getitem(cpu.HL) - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.mb.getitem(cpu.HL) & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.mb.getitem(cpu.HL) & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -636,8 +636,8 @@ def JR_38(cpu, v): # 38 JR C,r8
 def ADD_39(cpu): # 39 ADD HL,SP
     t = cpu.HL + cpu.SP
     flag = 0b00000000
-    flag += (((cpu.HL & 0xFFF) + (cpu.SP & 0xFFF)) > 0xFFF) << FLAGH
-    flag += (t > 0xFFFF) << FLAGC
+    flag |= (((cpu.HL & 0xFFF) + (cpu.SP & 0xFFF)) > 0xFFF) << FLAGH
+    flag |= (t > 0xFFFF) << FLAGC
     cpu.F &= 0b10000000
     cpu.F |= flag
     t &= 0xFFFF
@@ -669,8 +669,8 @@ def DEC_3B(cpu): # 3B DEC SP
 def INC_3C(cpu): # 3C INC A
     t = cpu.A + 1
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (1 & 0xF)) > 0xF) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -683,8 +683,8 @@ def INC_3C(cpu): # 3C INC A
 def DEC_3D(cpu): # 3D DEC A
     t = cpu.A - 1
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (1 & 0xF)) < 0) << FLAGH
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (1 & 0xF)) < 0) << FLAGH
     cpu.F &= 0b00010000
     cpu.F |= flag
     t &= 0xFF
@@ -1160,9 +1160,9 @@ def LD_7F(cpu): # 7F LD A,A
 def ADD_80(cpu): # 80 ADD A,B
     t = cpu.A + cpu.B
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.B & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.B & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1175,9 +1175,9 @@ def ADD_80(cpu): # 80 ADD A,B
 def ADD_81(cpu): # 81 ADD A,C
     t = cpu.A + cpu.C
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.C & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.C & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1190,9 +1190,9 @@ def ADD_81(cpu): # 81 ADD A,C
 def ADD_82(cpu): # 82 ADD A,D
     t = cpu.A + cpu.D
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.D & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.D & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1205,9 +1205,9 @@ def ADD_82(cpu): # 82 ADD A,D
 def ADD_83(cpu): # 83 ADD A,E
     t = cpu.A + cpu.E
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.E & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.E & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1220,9 +1220,9 @@ def ADD_83(cpu): # 83 ADD A,E
 def ADD_84(cpu): # 84 ADD A,H
     t = cpu.A + (cpu.HL >> 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + ((cpu.HL >> 8) & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + ((cpu.HL >> 8) & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1235,9 +1235,9 @@ def ADD_84(cpu): # 84 ADD A,H
 def ADD_85(cpu): # 85 ADD A,L
     t = cpu.A + (cpu.HL & 0xFF)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + ((cpu.HL & 0xFF) & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + ((cpu.HL & 0xFF) & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1250,9 +1250,9 @@ def ADD_85(cpu): # 85 ADD A,L
 def ADD_86(cpu): # 86 ADD A,(HL)
     t = cpu.A + cpu.mb.getitem(cpu.HL)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.mb.getitem(cpu.HL) & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.mb.getitem(cpu.HL) & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1265,9 +1265,9 @@ def ADD_86(cpu): # 86 ADD A,(HL)
 def ADD_87(cpu): # 87 ADD A,A
     t = cpu.A + cpu.A
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.A & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.A & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1280,9 +1280,9 @@ def ADD_87(cpu): # 87 ADD A,A
 def ADC_88(cpu): # 88 ADC A,B
     t = cpu.A + cpu.B + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.B & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.B & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1295,9 +1295,9 @@ def ADC_88(cpu): # 88 ADC A,B
 def ADC_89(cpu): # 89 ADC A,C
     t = cpu.A + cpu.C + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.C & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.C & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1310,9 +1310,9 @@ def ADC_89(cpu): # 89 ADC A,C
 def ADC_8A(cpu): # 8A ADC A,D
     t = cpu.A + cpu.D + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.D & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.D & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1325,9 +1325,9 @@ def ADC_8A(cpu): # 8A ADC A,D
 def ADC_8B(cpu): # 8B ADC A,E
     t = cpu.A + cpu.E + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.E & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.E & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1340,9 +1340,9 @@ def ADC_8B(cpu): # 8B ADC A,E
 def ADC_8C(cpu): # 8C ADC A,H
     t = cpu.A + (cpu.HL >> 8) + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + ((cpu.HL >> 8) & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + ((cpu.HL >> 8) & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1355,9 +1355,9 @@ def ADC_8C(cpu): # 8C ADC A,H
 def ADC_8D(cpu): # 8D ADC A,L
     t = cpu.A + (cpu.HL & 0xFF) + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + ((cpu.HL & 0xFF) & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + ((cpu.HL & 0xFF) & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1370,9 +1370,9 @@ def ADC_8D(cpu): # 8D ADC A,L
 def ADC_8E(cpu): # 8E ADC A,(HL)
     t = cpu.A + cpu.mb.getitem(cpu.HL) + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.mb.getitem(cpu.HL) & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.mb.getitem(cpu.HL) & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1385,9 +1385,9 @@ def ADC_8E(cpu): # 8E ADC A,(HL)
 def ADC_8F(cpu): # 8F ADC A,A
     t = cpu.A + cpu.A + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (cpu.A & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (cpu.A & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1400,9 +1400,9 @@ def ADC_8F(cpu): # 8F ADC A,A
 def SUB_90(cpu): # 90 SUB B
     t = cpu.A - cpu.B
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.B & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.B & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1415,9 +1415,9 @@ def SUB_90(cpu): # 90 SUB B
 def SUB_91(cpu): # 91 SUB C
     t = cpu.A - cpu.C
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.C & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.C & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1430,9 +1430,9 @@ def SUB_91(cpu): # 91 SUB C
 def SUB_92(cpu): # 92 SUB D
     t = cpu.A - cpu.D
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.D & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.D & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1445,9 +1445,9 @@ def SUB_92(cpu): # 92 SUB D
 def SUB_93(cpu): # 93 SUB E
     t = cpu.A - cpu.E
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.E & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.E & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1460,9 +1460,9 @@ def SUB_93(cpu): # 93 SUB E
 def SUB_94(cpu): # 94 SUB H
     t = cpu.A - (cpu.HL >> 8)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - ((cpu.HL >> 8) & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - ((cpu.HL >> 8) & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1475,9 +1475,9 @@ def SUB_94(cpu): # 94 SUB H
 def SUB_95(cpu): # 95 SUB L
     t = cpu.A - (cpu.HL & 0xFF)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - ((cpu.HL & 0xFF) & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - ((cpu.HL & 0xFF) & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1490,9 +1490,9 @@ def SUB_95(cpu): # 95 SUB L
 def SUB_96(cpu): # 96 SUB (HL)
     t = cpu.A - cpu.mb.getitem(cpu.HL)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.mb.getitem(cpu.HL) & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.mb.getitem(cpu.HL) & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1505,9 +1505,9 @@ def SUB_96(cpu): # 96 SUB (HL)
 def SUB_97(cpu): # 97 SUB A
     t = cpu.A - cpu.A
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.A & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.A & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1520,9 +1520,9 @@ def SUB_97(cpu): # 97 SUB A
 def SBC_98(cpu): # 98 SBC A,B
     t = cpu.A - cpu.B - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.B & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.B & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1535,9 +1535,9 @@ def SBC_98(cpu): # 98 SBC A,B
 def SBC_99(cpu): # 99 SBC A,C
     t = cpu.A - cpu.C - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.C & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.C & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1550,9 +1550,9 @@ def SBC_99(cpu): # 99 SBC A,C
 def SBC_9A(cpu): # 9A SBC A,D
     t = cpu.A - cpu.D - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.D & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.D & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1565,9 +1565,9 @@ def SBC_9A(cpu): # 9A SBC A,D
 def SBC_9B(cpu): # 9B SBC A,E
     t = cpu.A - cpu.E - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.E & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.E & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1580,9 +1580,9 @@ def SBC_9B(cpu): # 9B SBC A,E
 def SBC_9C(cpu): # 9C SBC A,H
     t = cpu.A - (cpu.HL >> 8) - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - ((cpu.HL >> 8) & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - ((cpu.HL >> 8) & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1595,9 +1595,9 @@ def SBC_9C(cpu): # 9C SBC A,H
 def SBC_9D(cpu): # 9D SBC A,L
     t = cpu.A - (cpu.HL & 0xFF) - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - ((cpu.HL & 0xFF) & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - ((cpu.HL & 0xFF) & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1610,9 +1610,9 @@ def SBC_9D(cpu): # 9D SBC A,L
 def SBC_9E(cpu): # 9E SBC A,(HL)
     t = cpu.A - cpu.mb.getitem(cpu.HL) - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.mb.getitem(cpu.HL) & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.mb.getitem(cpu.HL) & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1625,9 +1625,9 @@ def SBC_9E(cpu): # 9E SBC A,(HL)
 def SBC_9F(cpu): # 9F SBC A,A
     t = cpu.A - cpu.A - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.A & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.A & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1640,7 +1640,7 @@ def SBC_9F(cpu): # 9F SBC A,A
 def AND_A0(cpu): # A0 AND B
     t = cpu.A & cpu.B
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1653,7 +1653,7 @@ def AND_A0(cpu): # A0 AND B
 def AND_A1(cpu): # A1 AND C
     t = cpu.A & cpu.C
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1666,7 +1666,7 @@ def AND_A1(cpu): # A1 AND C
 def AND_A2(cpu): # A2 AND D
     t = cpu.A & cpu.D
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1679,7 +1679,7 @@ def AND_A2(cpu): # A2 AND D
 def AND_A3(cpu): # A3 AND E
     t = cpu.A & cpu.E
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1692,7 +1692,7 @@ def AND_A3(cpu): # A3 AND E
 def AND_A4(cpu): # A4 AND H
     t = cpu.A & (cpu.HL >> 8)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1705,7 +1705,7 @@ def AND_A4(cpu): # A4 AND H
 def AND_A5(cpu): # A5 AND L
     t = cpu.A & (cpu.HL & 0xFF)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1718,7 +1718,7 @@ def AND_A5(cpu): # A5 AND L
 def AND_A6(cpu): # A6 AND (HL)
     t = cpu.A & cpu.mb.getitem(cpu.HL)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1731,7 +1731,7 @@ def AND_A6(cpu): # A6 AND (HL)
 def AND_A7(cpu): # A7 AND A
     t = cpu.A & cpu.A
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1744,7 +1744,7 @@ def AND_A7(cpu): # A7 AND A
 def XOR_A8(cpu): # A8 XOR B
     t = cpu.A ^ cpu.B
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1757,7 +1757,7 @@ def XOR_A8(cpu): # A8 XOR B
 def XOR_A9(cpu): # A9 XOR C
     t = cpu.A ^ cpu.C
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1770,7 +1770,7 @@ def XOR_A9(cpu): # A9 XOR C
 def XOR_AA(cpu): # AA XOR D
     t = cpu.A ^ cpu.D
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1783,7 +1783,7 @@ def XOR_AA(cpu): # AA XOR D
 def XOR_AB(cpu): # AB XOR E
     t = cpu.A ^ cpu.E
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1796,7 +1796,7 @@ def XOR_AB(cpu): # AB XOR E
 def XOR_AC(cpu): # AC XOR H
     t = cpu.A ^ (cpu.HL >> 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1809,7 +1809,7 @@ def XOR_AC(cpu): # AC XOR H
 def XOR_AD(cpu): # AD XOR L
     t = cpu.A ^ (cpu.HL & 0xFF)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1822,7 +1822,7 @@ def XOR_AD(cpu): # AD XOR L
 def XOR_AE(cpu): # AE XOR (HL)
     t = cpu.A ^ cpu.mb.getitem(cpu.HL)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1835,7 +1835,7 @@ def XOR_AE(cpu): # AE XOR (HL)
 def XOR_AF(cpu): # AF XOR A
     t = cpu.A ^ cpu.A
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1848,7 +1848,7 @@ def XOR_AF(cpu): # AF XOR A
 def OR_B0(cpu): # B0 OR B
     t = cpu.A | cpu.B
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1861,7 +1861,7 @@ def OR_B0(cpu): # B0 OR B
 def OR_B1(cpu): # B1 OR C
     t = cpu.A | cpu.C
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1874,7 +1874,7 @@ def OR_B1(cpu): # B1 OR C
 def OR_B2(cpu): # B2 OR D
     t = cpu.A | cpu.D
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1887,7 +1887,7 @@ def OR_B2(cpu): # B2 OR D
 def OR_B3(cpu): # B3 OR E
     t = cpu.A | cpu.E
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1900,7 +1900,7 @@ def OR_B3(cpu): # B3 OR E
 def OR_B4(cpu): # B4 OR H
     t = cpu.A | (cpu.HL >> 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1913,7 +1913,7 @@ def OR_B4(cpu): # B4 OR H
 def OR_B5(cpu): # B5 OR L
     t = cpu.A | (cpu.HL & 0xFF)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1926,7 +1926,7 @@ def OR_B5(cpu): # B5 OR L
 def OR_B6(cpu): # B6 OR (HL)
     t = cpu.A | cpu.mb.getitem(cpu.HL)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1939,7 +1939,7 @@ def OR_B6(cpu): # B6 OR (HL)
 def OR_B7(cpu): # B7 OR A
     t = cpu.A | cpu.A
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1952,9 +1952,9 @@ def OR_B7(cpu): # B7 OR A
 def CP_B8(cpu): # B8 CP B
     t = cpu.A - cpu.B
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.B & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.B & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1966,9 +1966,9 @@ def CP_B8(cpu): # B8 CP B
 def CP_B9(cpu): # B9 CP C
     t = cpu.A - cpu.C
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.C & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.C & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1980,9 +1980,9 @@ def CP_B9(cpu): # B9 CP C
 def CP_BA(cpu): # BA CP D
     t = cpu.A - cpu.D
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.D & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.D & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -1994,9 +1994,9 @@ def CP_BA(cpu): # BA CP D
 def CP_BB(cpu): # BB CP E
     t = cpu.A - cpu.E
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.E & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.E & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2008,9 +2008,9 @@ def CP_BB(cpu): # BB CP E
 def CP_BC(cpu): # BC CP H
     t = cpu.A - (cpu.HL >> 8)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - ((cpu.HL >> 8) & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - ((cpu.HL >> 8) & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2022,9 +2022,9 @@ def CP_BC(cpu): # BC CP H
 def CP_BD(cpu): # BD CP L
     t = cpu.A - (cpu.HL & 0xFF)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - ((cpu.HL & 0xFF) & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - ((cpu.HL & 0xFF) & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2036,9 +2036,9 @@ def CP_BD(cpu): # BD CP L
 def CP_BE(cpu): # BE CP (HL)
     t = cpu.A - cpu.mb.getitem(cpu.HL)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.mb.getitem(cpu.HL) & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.mb.getitem(cpu.HL) & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2050,9 +2050,9 @@ def CP_BE(cpu): # BE CP (HL)
 def CP_BF(cpu): # BF CP A
     t = cpu.A - cpu.A
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (cpu.A & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (cpu.A & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2126,9 +2126,9 @@ def PUSH_C5(cpu): # C5 PUSH BC
 def ADD_C6(cpu, v): # C6 ADD A,d8
     t = cpu.A + v
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (v & 0xF)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (v & 0xF)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2215,9 +2215,9 @@ def CALL_CD(cpu, v): # CD CALL a16
 def ADC_CE(cpu, v): # CE ADC A,d8
     t = cpu.A + v + ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) + (v & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) + (v & 0xF) + ((cpu.F & (1 << FLAGC)) != 0)) > 0xF) << FLAGH
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2298,9 +2298,9 @@ def PUSH_D5(cpu): # D5 PUSH DE
 def SUB_D6(cpu, v): # D6 SUB d8
     t = cpu.A - v
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (v & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (v & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2371,9 +2371,9 @@ def CALL_DC(cpu, v): # DC CALL C,a16
 def SBC_DE(cpu, v): # DE SBC A,d8
     t = cpu.A - v - ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (v & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (v & 0xF) - ((cpu.F & (1 << FLAGC)) != 0)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2431,7 +2431,7 @@ def PUSH_E5(cpu): # E5 PUSH HL
 def AND_E6(cpu, v): # E6 AND d8
     t = cpu.A & v
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2455,8 +2455,8 @@ def RST_E7(cpu): # E7 RST 20H
 def ADD_E8(cpu, v): # E8 ADD SP,r8
     t = cpu.SP + ((v ^ 0x80) - 0x80)
     flag = 0b00000000
-    flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
-    flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
+    flag |= (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
+    flag |= (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFFFF
@@ -2482,7 +2482,7 @@ def LD_EA(cpu, v): # EA LD (a16),A
 def XOR_EE(cpu, v): # EE XOR d8
     t = cpu.A ^ v
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2548,7 +2548,7 @@ def PUSH_F5(cpu): # F5 PUSH AF
 def OR_F6(cpu, v): # F6 OR d8
     t = cpu.A | v
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2573,8 +2573,8 @@ def LD_F8(cpu, v): # F8 LD HL,SP+r8
     cpu.HL = cpu.SP + ((v ^ 0x80) - 0x80)
     t = cpu.HL
     flag = 0b00000000
-    flag += (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
-    flag += (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
+    flag |= (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
+    flag |= (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     cpu.HL &= 0xFFFF
@@ -2609,9 +2609,9 @@ def EI_FB(cpu): # FB EI
 def CP_FE(cpu, v): # FE CP d8
     t = cpu.A - v
     flag = 0b01000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (((cpu.A & 0xF) - (v & 0xF)) < 0) << FLAGH
-    flag += (t < 0) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (((cpu.A & 0xF) - (v & 0xF)) < 0) << FLAGH
+    flag |= (t < 0) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2634,8 +2634,8 @@ def RST_FF(cpu): # FF RST 38H
 def RLC_100(cpu): # 100 RLC B
     t = (cpu.B << 1) | (cpu.B >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2648,8 +2648,8 @@ def RLC_100(cpu): # 100 RLC B
 def RLC_101(cpu): # 101 RLC C
     t = (cpu.C << 1) | (cpu.C >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2662,8 +2662,8 @@ def RLC_101(cpu): # 101 RLC C
 def RLC_102(cpu): # 102 RLC D
     t = (cpu.D << 1) | (cpu.D >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2676,8 +2676,8 @@ def RLC_102(cpu): # 102 RLC D
 def RLC_103(cpu): # 103 RLC E
     t = (cpu.E << 1) | (cpu.E >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2690,8 +2690,8 @@ def RLC_103(cpu): # 103 RLC E
 def RLC_104(cpu): # 104 RLC H
     t = ((cpu.HL >> 8) << 1) | ((cpu.HL >> 8) >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2704,8 +2704,8 @@ def RLC_104(cpu): # 104 RLC H
 def RLC_105(cpu): # 105 RLC L
     t = ((cpu.HL & 0xFF) << 1) | ((cpu.HL & 0xFF) >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2719,8 +2719,8 @@ def RLC_106(cpu): # 106 RLC (HL)
     cpu.cycles += 4
     t = (cpu.mb.getitem(cpu.HL) << 1) | (cpu.mb.getitem(cpu.HL) >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2734,8 +2734,8 @@ def RLC_106(cpu): # 106 RLC (HL)
 def RLC_107(cpu): # 107 RLC A
     t = (cpu.A << 1) | (cpu.A >> 7)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2748,8 +2748,8 @@ def RLC_107(cpu): # 107 RLC A
 def RRC_108(cpu): # 108 RRC B
     t = (cpu.B >> 1) | ((cpu.B & 1) << 7) | ((cpu.B & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2762,8 +2762,8 @@ def RRC_108(cpu): # 108 RRC B
 def RRC_109(cpu): # 109 RRC C
     t = (cpu.C >> 1) | ((cpu.C & 1) << 7) | ((cpu.C & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2776,8 +2776,8 @@ def RRC_109(cpu): # 109 RRC C
 def RRC_10A(cpu): # 10A RRC D
     t = (cpu.D >> 1) | ((cpu.D & 1) << 7) | ((cpu.D & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2790,8 +2790,8 @@ def RRC_10A(cpu): # 10A RRC D
 def RRC_10B(cpu): # 10B RRC E
     t = (cpu.E >> 1) | ((cpu.E & 1) << 7) | ((cpu.E & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2804,8 +2804,8 @@ def RRC_10B(cpu): # 10B RRC E
 def RRC_10C(cpu): # 10C RRC H
     t = ((cpu.HL >> 8) >> 1) | (((cpu.HL >> 8) & 1) << 7) | (((cpu.HL >> 8) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2818,8 +2818,8 @@ def RRC_10C(cpu): # 10C RRC H
 def RRC_10D(cpu): # 10D RRC L
     t = ((cpu.HL & 0xFF) >> 1) | (((cpu.HL & 0xFF) & 1) << 7) | (((cpu.HL & 0xFF) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2833,8 +2833,8 @@ def RRC_10E(cpu): # 10E RRC (HL)
     cpu.cycles += 4
     t = (cpu.mb.getitem(cpu.HL) >> 1) | ((cpu.mb.getitem(cpu.HL) & 1) << 7) | ((cpu.mb.getitem(cpu.HL) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2848,8 +2848,8 @@ def RRC_10E(cpu): # 10E RRC (HL)
 def RRC_10F(cpu): # 10F RRC A
     t = (cpu.A >> 1) | ((cpu.A & 1) << 7) | ((cpu.A & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2862,8 +2862,8 @@ def RRC_10F(cpu): # 10F RRC A
 def RL_110(cpu): # 110 RL B
     t = (cpu.B << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2876,8 +2876,8 @@ def RL_110(cpu): # 110 RL B
 def RL_111(cpu): # 111 RL C
     t = (cpu.C << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2890,8 +2890,8 @@ def RL_111(cpu): # 111 RL C
 def RL_112(cpu): # 112 RL D
     t = (cpu.D << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2904,8 +2904,8 @@ def RL_112(cpu): # 112 RL D
 def RL_113(cpu): # 113 RL E
     t = (cpu.E << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2918,8 +2918,8 @@ def RL_113(cpu): # 113 RL E
 def RL_114(cpu): # 114 RL H
     t = ((cpu.HL >> 8) << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2932,8 +2932,8 @@ def RL_114(cpu): # 114 RL H
 def RL_115(cpu): # 115 RL L
     t = ((cpu.HL & 0xFF) << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2947,8 +2947,8 @@ def RL_116(cpu): # 116 RL (HL)
     cpu.cycles += 4
     t = (cpu.mb.getitem(cpu.HL) << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2962,8 +2962,8 @@ def RL_116(cpu): # 116 RL (HL)
 def RL_117(cpu): # 117 RL A
     t = (cpu.A << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2976,8 +2976,8 @@ def RL_117(cpu): # 117 RL A
 def RR_118(cpu): # 118 RR B
     t = (cpu.B >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.B & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -2990,8 +2990,8 @@ def RR_118(cpu): # 118 RR B
 def RR_119(cpu): # 119 RR C
     t = (cpu.C >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.C & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3004,8 +3004,8 @@ def RR_119(cpu): # 119 RR C
 def RR_11A(cpu): # 11A RR D
     t = (cpu.D >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.D & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3018,8 +3018,8 @@ def RR_11A(cpu): # 11A RR D
 def RR_11B(cpu): # 11B RR E
     t = (cpu.E >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.E & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3032,8 +3032,8 @@ def RR_11B(cpu): # 11B RR E
 def RR_11C(cpu): # 11C RR H
     t = ((cpu.HL >> 8) >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | (((cpu.HL >> 8) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3046,8 +3046,8 @@ def RR_11C(cpu): # 11C RR H
 def RR_11D(cpu): # 11D RR L
     t = ((cpu.HL & 0xFF) >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | (((cpu.HL & 0xFF) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3061,8 +3061,8 @@ def RR_11E(cpu): # 11E RR (HL)
     cpu.cycles += 4
     t = (cpu.mb.getitem(cpu.HL) >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.mb.getitem(cpu.HL) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3076,8 +3076,8 @@ def RR_11E(cpu): # 11E RR (HL)
 def RR_11F(cpu): # 11F RR A
     t = (cpu.A >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7) | ((cpu.A & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3090,8 +3090,8 @@ def RR_11F(cpu): # 11F RR A
 def SLA_120(cpu): # 120 SLA B
     t = (cpu.B << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3104,8 +3104,8 @@ def SLA_120(cpu): # 120 SLA B
 def SLA_121(cpu): # 121 SLA C
     t = (cpu.C << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3118,8 +3118,8 @@ def SLA_121(cpu): # 121 SLA C
 def SLA_122(cpu): # 122 SLA D
     t = (cpu.D << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3132,8 +3132,8 @@ def SLA_122(cpu): # 122 SLA D
 def SLA_123(cpu): # 123 SLA E
     t = (cpu.E << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3146,8 +3146,8 @@ def SLA_123(cpu): # 123 SLA E
 def SLA_124(cpu): # 124 SLA H
     t = ((cpu.HL >> 8) << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3160,8 +3160,8 @@ def SLA_124(cpu): # 124 SLA H
 def SLA_125(cpu): # 125 SLA L
     t = ((cpu.HL & 0xFF) << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3175,8 +3175,8 @@ def SLA_126(cpu): # 126 SLA (HL)
     cpu.cycles += 4
     t = (cpu.mb.getitem(cpu.HL) << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3190,8 +3190,8 @@ def SLA_126(cpu): # 126 SLA (HL)
 def SLA_127(cpu): # 127 SLA A
     t = (cpu.A << 1)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3204,8 +3204,8 @@ def SLA_127(cpu): # 127 SLA A
 def SRA_128(cpu): # 128 SRA B
     t = ((cpu.B >> 1) | (cpu.B & 0x80)) | ((cpu.B & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3218,8 +3218,8 @@ def SRA_128(cpu): # 128 SRA B
 def SRA_129(cpu): # 129 SRA C
     t = ((cpu.C >> 1) | (cpu.C & 0x80)) | ((cpu.C & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3232,8 +3232,8 @@ def SRA_129(cpu): # 129 SRA C
 def SRA_12A(cpu): # 12A SRA D
     t = ((cpu.D >> 1) | (cpu.D & 0x80)) | ((cpu.D & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3246,8 +3246,8 @@ def SRA_12A(cpu): # 12A SRA D
 def SRA_12B(cpu): # 12B SRA E
     t = ((cpu.E >> 1) | (cpu.E & 0x80)) | ((cpu.E & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3260,8 +3260,8 @@ def SRA_12B(cpu): # 12B SRA E
 def SRA_12C(cpu): # 12C SRA H
     t = (((cpu.HL >> 8) >> 1) | ((cpu.HL >> 8) & 0x80)) | (((cpu.HL >> 8) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3274,8 +3274,8 @@ def SRA_12C(cpu): # 12C SRA H
 def SRA_12D(cpu): # 12D SRA L
     t = (((cpu.HL & 0xFF) >> 1) | ((cpu.HL & 0xFF) & 0x80)) | (((cpu.HL & 0xFF) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3289,8 +3289,8 @@ def SRA_12E(cpu): # 12E SRA (HL)
     cpu.cycles += 4
     t = ((cpu.mb.getitem(cpu.HL) >> 1) | (cpu.mb.getitem(cpu.HL) & 0x80)) | ((cpu.mb.getitem(cpu.HL) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3304,8 +3304,8 @@ def SRA_12E(cpu): # 12E SRA (HL)
 def SRA_12F(cpu): # 12F SRA A
     t = ((cpu.A >> 1) | (cpu.A & 0x80)) | ((cpu.A & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3318,7 +3318,7 @@ def SRA_12F(cpu): # 12F SRA A
 def SWAP_130(cpu): # 130 SWAP B
     t = ((cpu.B & 0xF0) >> 4) | ((cpu.B & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3331,7 +3331,7 @@ def SWAP_130(cpu): # 130 SWAP B
 def SWAP_131(cpu): # 131 SWAP C
     t = ((cpu.C & 0xF0) >> 4) | ((cpu.C & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3344,7 +3344,7 @@ def SWAP_131(cpu): # 131 SWAP C
 def SWAP_132(cpu): # 132 SWAP D
     t = ((cpu.D & 0xF0) >> 4) | ((cpu.D & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3357,7 +3357,7 @@ def SWAP_132(cpu): # 132 SWAP D
 def SWAP_133(cpu): # 133 SWAP E
     t = ((cpu.E & 0xF0) >> 4) | ((cpu.E & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3370,7 +3370,7 @@ def SWAP_133(cpu): # 133 SWAP E
 def SWAP_134(cpu): # 134 SWAP H
     t = (((cpu.HL >> 8) & 0xF0) >> 4) | (((cpu.HL >> 8) & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3383,7 +3383,7 @@ def SWAP_134(cpu): # 134 SWAP H
 def SWAP_135(cpu): # 135 SWAP L
     t = (((cpu.HL & 0xFF) & 0xF0) >> 4) | (((cpu.HL & 0xFF) & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3397,7 +3397,7 @@ def SWAP_136(cpu): # 136 SWAP (HL)
     cpu.cycles += 4
     t = ((cpu.mb.getitem(cpu.HL) & 0xF0) >> 4) | ((cpu.mb.getitem(cpu.HL) & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3411,7 +3411,7 @@ def SWAP_136(cpu): # 136 SWAP (HL)
 def SWAP_137(cpu): # 137 SWAP A
     t = ((cpu.A & 0xF0) >> 4) | ((cpu.A & 0x0F) << 4)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3424,8 +3424,8 @@ def SWAP_137(cpu): # 137 SWAP A
 def SRL_138(cpu): # 138 SRL B
     t = (cpu.B >> 1) + ((cpu.B & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3438,8 +3438,8 @@ def SRL_138(cpu): # 138 SRL B
 def SRL_139(cpu): # 139 SRL C
     t = (cpu.C >> 1) + ((cpu.C & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3452,8 +3452,8 @@ def SRL_139(cpu): # 139 SRL C
 def SRL_13A(cpu): # 13A SRL D
     t = (cpu.D >> 1) + ((cpu.D & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3466,8 +3466,8 @@ def SRL_13A(cpu): # 13A SRL D
 def SRL_13B(cpu): # 13B SRL E
     t = (cpu.E >> 1) + ((cpu.E & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3480,8 +3480,8 @@ def SRL_13B(cpu): # 13B SRL E
 def SRL_13C(cpu): # 13C SRL H
     t = ((cpu.HL >> 8) >> 1) + (((cpu.HL >> 8) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3494,8 +3494,8 @@ def SRL_13C(cpu): # 13C SRL H
 def SRL_13D(cpu): # 13D SRL L
     t = ((cpu.HL & 0xFF) >> 1) + (((cpu.HL & 0xFF) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3509,8 +3509,8 @@ def SRL_13E(cpu): # 13E SRL (HL)
     cpu.cycles += 4
     t = (cpu.mb.getitem(cpu.HL) >> 1) + ((cpu.mb.getitem(cpu.HL) & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3524,8 +3524,8 @@ def SRL_13E(cpu): # 13E SRL (HL)
 def SRL_13F(cpu): # 13F SRL A
     t = (cpu.A >> 1) + ((cpu.A & 1) << 8)
     flag = 0b00000000
-    flag += ((t & 0xFF) == 0) << FLAGZ
-    flag += (t > 0xFF) << FLAGC
+    flag |= ((t & 0xFF) == 0) << FLAGZ
+    flag |= (t > 0xFF) << FLAGC
     cpu.F &= 0b00000000
     cpu.F |= flag
     t &= 0xFF
@@ -3538,7 +3538,7 @@ def SRL_13F(cpu): # 13F SRL A
 def BIT_140(cpu): # 140 BIT 0,B
     t = cpu.B & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3549,7 +3549,7 @@ def BIT_140(cpu): # 140 BIT 0,B
 def BIT_141(cpu): # 141 BIT 0,C
     t = cpu.C & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3560,7 +3560,7 @@ def BIT_141(cpu): # 141 BIT 0,C
 def BIT_142(cpu): # 142 BIT 0,D
     t = cpu.D & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3571,7 +3571,7 @@ def BIT_142(cpu): # 142 BIT 0,D
 def BIT_143(cpu): # 143 BIT 0,E
     t = cpu.E & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3582,7 +3582,7 @@ def BIT_143(cpu): # 143 BIT 0,E
 def BIT_144(cpu): # 144 BIT 0,H
     t = (cpu.HL >> 8) & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3593,7 +3593,7 @@ def BIT_144(cpu): # 144 BIT 0,H
 def BIT_145(cpu): # 145 BIT 0,L
     t = (cpu.HL & 0xFF) & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3605,7 +3605,7 @@ def BIT_146(cpu): # 146 BIT 0,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3616,7 +3616,7 @@ def BIT_146(cpu): # 146 BIT 0,(HL)
 def BIT_147(cpu): # 147 BIT 0,A
     t = cpu.A & (1 << 0)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3627,7 +3627,7 @@ def BIT_147(cpu): # 147 BIT 0,A
 def BIT_148(cpu): # 148 BIT 1,B
     t = cpu.B & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3638,7 +3638,7 @@ def BIT_148(cpu): # 148 BIT 1,B
 def BIT_149(cpu): # 149 BIT 1,C
     t = cpu.C & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3649,7 +3649,7 @@ def BIT_149(cpu): # 149 BIT 1,C
 def BIT_14A(cpu): # 14A BIT 1,D
     t = cpu.D & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3660,7 +3660,7 @@ def BIT_14A(cpu): # 14A BIT 1,D
 def BIT_14B(cpu): # 14B BIT 1,E
     t = cpu.E & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3671,7 +3671,7 @@ def BIT_14B(cpu): # 14B BIT 1,E
 def BIT_14C(cpu): # 14C BIT 1,H
     t = (cpu.HL >> 8) & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3682,7 +3682,7 @@ def BIT_14C(cpu): # 14C BIT 1,H
 def BIT_14D(cpu): # 14D BIT 1,L
     t = (cpu.HL & 0xFF) & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3694,7 +3694,7 @@ def BIT_14E(cpu): # 14E BIT 1,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3705,7 +3705,7 @@ def BIT_14E(cpu): # 14E BIT 1,(HL)
 def BIT_14F(cpu): # 14F BIT 1,A
     t = cpu.A & (1 << 1)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3716,7 +3716,7 @@ def BIT_14F(cpu): # 14F BIT 1,A
 def BIT_150(cpu): # 150 BIT 2,B
     t = cpu.B & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3727,7 +3727,7 @@ def BIT_150(cpu): # 150 BIT 2,B
 def BIT_151(cpu): # 151 BIT 2,C
     t = cpu.C & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3738,7 +3738,7 @@ def BIT_151(cpu): # 151 BIT 2,C
 def BIT_152(cpu): # 152 BIT 2,D
     t = cpu.D & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3749,7 +3749,7 @@ def BIT_152(cpu): # 152 BIT 2,D
 def BIT_153(cpu): # 153 BIT 2,E
     t = cpu.E & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3760,7 +3760,7 @@ def BIT_153(cpu): # 153 BIT 2,E
 def BIT_154(cpu): # 154 BIT 2,H
     t = (cpu.HL >> 8) & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3771,7 +3771,7 @@ def BIT_154(cpu): # 154 BIT 2,H
 def BIT_155(cpu): # 155 BIT 2,L
     t = (cpu.HL & 0xFF) & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3783,7 +3783,7 @@ def BIT_156(cpu): # 156 BIT 2,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3794,7 +3794,7 @@ def BIT_156(cpu): # 156 BIT 2,(HL)
 def BIT_157(cpu): # 157 BIT 2,A
     t = cpu.A & (1 << 2)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3805,7 +3805,7 @@ def BIT_157(cpu): # 157 BIT 2,A
 def BIT_158(cpu): # 158 BIT 3,B
     t = cpu.B & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3816,7 +3816,7 @@ def BIT_158(cpu): # 158 BIT 3,B
 def BIT_159(cpu): # 159 BIT 3,C
     t = cpu.C & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3827,7 +3827,7 @@ def BIT_159(cpu): # 159 BIT 3,C
 def BIT_15A(cpu): # 15A BIT 3,D
     t = cpu.D & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3838,7 +3838,7 @@ def BIT_15A(cpu): # 15A BIT 3,D
 def BIT_15B(cpu): # 15B BIT 3,E
     t = cpu.E & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3849,7 +3849,7 @@ def BIT_15B(cpu): # 15B BIT 3,E
 def BIT_15C(cpu): # 15C BIT 3,H
     t = (cpu.HL >> 8) & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3860,7 +3860,7 @@ def BIT_15C(cpu): # 15C BIT 3,H
 def BIT_15D(cpu): # 15D BIT 3,L
     t = (cpu.HL & 0xFF) & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3872,7 +3872,7 @@ def BIT_15E(cpu): # 15E BIT 3,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3883,7 +3883,7 @@ def BIT_15E(cpu): # 15E BIT 3,(HL)
 def BIT_15F(cpu): # 15F BIT 3,A
     t = cpu.A & (1 << 3)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3894,7 +3894,7 @@ def BIT_15F(cpu): # 15F BIT 3,A
 def BIT_160(cpu): # 160 BIT 4,B
     t = cpu.B & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3905,7 +3905,7 @@ def BIT_160(cpu): # 160 BIT 4,B
 def BIT_161(cpu): # 161 BIT 4,C
     t = cpu.C & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3916,7 +3916,7 @@ def BIT_161(cpu): # 161 BIT 4,C
 def BIT_162(cpu): # 162 BIT 4,D
     t = cpu.D & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3927,7 +3927,7 @@ def BIT_162(cpu): # 162 BIT 4,D
 def BIT_163(cpu): # 163 BIT 4,E
     t = cpu.E & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3938,7 +3938,7 @@ def BIT_163(cpu): # 163 BIT 4,E
 def BIT_164(cpu): # 164 BIT 4,H
     t = (cpu.HL >> 8) & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3949,7 +3949,7 @@ def BIT_164(cpu): # 164 BIT 4,H
 def BIT_165(cpu): # 165 BIT 4,L
     t = (cpu.HL & 0xFF) & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3961,7 +3961,7 @@ def BIT_166(cpu): # 166 BIT 4,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3972,7 +3972,7 @@ def BIT_166(cpu): # 166 BIT 4,(HL)
 def BIT_167(cpu): # 167 BIT 4,A
     t = cpu.A & (1 << 4)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3983,7 +3983,7 @@ def BIT_167(cpu): # 167 BIT 4,A
 def BIT_168(cpu): # 168 BIT 5,B
     t = cpu.B & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -3994,7 +3994,7 @@ def BIT_168(cpu): # 168 BIT 5,B
 def BIT_169(cpu): # 169 BIT 5,C
     t = cpu.C & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4005,7 +4005,7 @@ def BIT_169(cpu): # 169 BIT 5,C
 def BIT_16A(cpu): # 16A BIT 5,D
     t = cpu.D & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4016,7 +4016,7 @@ def BIT_16A(cpu): # 16A BIT 5,D
 def BIT_16B(cpu): # 16B BIT 5,E
     t = cpu.E & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4027,7 +4027,7 @@ def BIT_16B(cpu): # 16B BIT 5,E
 def BIT_16C(cpu): # 16C BIT 5,H
     t = (cpu.HL >> 8) & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4038,7 +4038,7 @@ def BIT_16C(cpu): # 16C BIT 5,H
 def BIT_16D(cpu): # 16D BIT 5,L
     t = (cpu.HL & 0xFF) & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4050,7 +4050,7 @@ def BIT_16E(cpu): # 16E BIT 5,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4061,7 +4061,7 @@ def BIT_16E(cpu): # 16E BIT 5,(HL)
 def BIT_16F(cpu): # 16F BIT 5,A
     t = cpu.A & (1 << 5)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4072,7 +4072,7 @@ def BIT_16F(cpu): # 16F BIT 5,A
 def BIT_170(cpu): # 170 BIT 6,B
     t = cpu.B & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4083,7 +4083,7 @@ def BIT_170(cpu): # 170 BIT 6,B
 def BIT_171(cpu): # 171 BIT 6,C
     t = cpu.C & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4094,7 +4094,7 @@ def BIT_171(cpu): # 171 BIT 6,C
 def BIT_172(cpu): # 172 BIT 6,D
     t = cpu.D & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4105,7 +4105,7 @@ def BIT_172(cpu): # 172 BIT 6,D
 def BIT_173(cpu): # 173 BIT 6,E
     t = cpu.E & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4116,7 +4116,7 @@ def BIT_173(cpu): # 173 BIT 6,E
 def BIT_174(cpu): # 174 BIT 6,H
     t = (cpu.HL >> 8) & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4127,7 +4127,7 @@ def BIT_174(cpu): # 174 BIT 6,H
 def BIT_175(cpu): # 175 BIT 6,L
     t = (cpu.HL & 0xFF) & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4139,7 +4139,7 @@ def BIT_176(cpu): # 176 BIT 6,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4150,7 +4150,7 @@ def BIT_176(cpu): # 176 BIT 6,(HL)
 def BIT_177(cpu): # 177 BIT 6,A
     t = cpu.A & (1 << 6)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4161,7 +4161,7 @@ def BIT_177(cpu): # 177 BIT 6,A
 def BIT_178(cpu): # 178 BIT 7,B
     t = cpu.B & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4172,7 +4172,7 @@ def BIT_178(cpu): # 178 BIT 7,B
 def BIT_179(cpu): # 179 BIT 7,C
     t = cpu.C & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4183,7 +4183,7 @@ def BIT_179(cpu): # 179 BIT 7,C
 def BIT_17A(cpu): # 17A BIT 7,D
     t = cpu.D & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4194,7 +4194,7 @@ def BIT_17A(cpu): # 17A BIT 7,D
 def BIT_17B(cpu): # 17B BIT 7,E
     t = cpu.E & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4205,7 +4205,7 @@ def BIT_17B(cpu): # 17B BIT 7,E
 def BIT_17C(cpu): # 17C BIT 7,H
     t = (cpu.HL >> 8) & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4216,7 +4216,7 @@ def BIT_17C(cpu): # 17C BIT 7,H
 def BIT_17D(cpu): # 17D BIT 7,L
     t = (cpu.HL & 0xFF) & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4228,7 +4228,7 @@ def BIT_17E(cpu): # 17E BIT 7,(HL)
     cpu.cycles += 4
     t = cpu.mb.getitem(cpu.HL) & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
@@ -4239,7 +4239,7 @@ def BIT_17E(cpu): # 17E BIT 7,(HL)
 def BIT_17F(cpu): # 17F BIT 7,A
     t = cpu.A & (1 << 7)
     flag = 0b00100000
-    flag += ((t & 0xFF) == 0) << FLAGZ
+    flag |= ((t & 0xFF) == 0) << FLAGZ
     cpu.F &= 0b00010000
     cpu.F |= flag
     cpu.PC += 2
