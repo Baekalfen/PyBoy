@@ -35,7 +35,7 @@ def BRK(cpu):
 
 cimports = """
 cimport cython
-from libc.stdint cimport uint8_t, uint16_t, uint32_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, int32_t
 
 from pyboy.logging.logging cimport Logger
 
@@ -280,9 +280,9 @@ class Code:
         ][self.takes_immediate]
 
         if self.opcode == 0x27:
-            pxd = "@cython.locals(v=int, flag=uint8_t, t=int, corr=ushort)\n" + pxd
+            pxd = "@cython.locals(flag=uint8_t, t=int, corr=uint16_t)\n" + pxd
         else:
-            pxd = "@cython.locals(v=int, flag=uint8_t, t=int)\n" + pxd
+            pxd = "@cython.locals(a=int32_t, b=int32_t, c=int32_t, flag=uint8_t, t=int32_t)\n" + pxd
 
         return (pxd, code)
 
@@ -623,10 +623,14 @@ class OpcodeData:
 
         left.assign = False
         right.assign = False
-        calc = " ".join(["t", "=", left.get, op, right.get])
 
+        lines.append(f"a = {left.get}")
+        lines.append(f"b = {right.get}")
+
+        calc = " ".join(["t", "=", "a", op, "b"])
         if carry:
-            calc += " " + op + " ((cpu.F & (1 << FLAGC)) != 0)"
+            lines.append("c = ((cpu.F & (1 << FLAGC)) != 0)")
+            calc += " " + op + " c"
 
         lines.append(calc)
 
@@ -635,10 +639,10 @@ class OpcodeData:
             lines.extend(self.handleflags16bit_E8_F8(left.get, "v", op, carry))
             lines.append("t &= 0xFFFF")
         elif self.is16bit:
-            lines.extend(self.handleflags16bit(left.get, right.get, op, carry))
+            lines.extend(self.handleflags16bit("a", "b", op, carry))
             lines.append("t &= 0xFFFF")
         else:
-            lines.extend(self.handleflags8bit(left.get, right.get, op, carry))
+            lines.extend(self.handleflags8bit("a", "b", op, carry))
             lines.append("t &= 0xFF")
 
         # HAS TO BE THE LAST INSTRUCTION BECAUSE OF CP!
