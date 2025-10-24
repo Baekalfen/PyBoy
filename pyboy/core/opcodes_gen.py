@@ -1141,10 +1141,13 @@ class OpcodeData:
     def rotateleft(self, name, left, throughcarry=False):
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         left.assign = False
+
+        code.addline(("a = %s" % left.get))
+
         if throughcarry:
-            code.addline(("t = (%s << 1)" % left.get) + " | ((cpu.F & (1 << FLAGC)) != 0)")
+            code.addline(("t = (a << 1)") + " | ((cpu.F & (1 << FLAGC)) != 0)")
         else:
-            code.addline("t = (%s << 1) | (%s >> 7)" % (left.get, left.get))
+            code.addline("t = (a << 1) | (a >> 7)")
         code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
         code.addline("t &= 0xFF")
         left.assign = True
@@ -1184,14 +1187,17 @@ class OpcodeData:
     def rotateright(self, name, left, throughcarry=False):
         code = Code(name, self.opcode, self.name, False, self.length, self.cycles)
         left.assign = False
+
+        code.addline(("a = %s" % left.get))
+
         if throughcarry:
             # Trigger "overflow" for carry flag
-            code.addline(("t = (%s >> 1)" % left.get) + " | (((cpu.F & (1 << FLAGC)) != 0) << 7)")
+            code.addline(("t = (a >> 1)") + " | (((cpu.F & (1 << FLAGC)) != 0) << 7)")
         else:
             # Trigger "overflow" for carry flag
-            code.addline("t = (%s >> 1) | ((%s & 1) << 7)" % (left.get, left.get))
+            code.addline("t = (a >> 1) | ((a & 1) << 7)")
 
-        code.addlines(self.handleflagsrotateshift(left.get, None, None, throughcarry))
+        code.addlines(self.handleflagsrotateshift("a", None, None, throughcarry))
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
@@ -1250,9 +1256,11 @@ class OpcodeData:
         # FIX: All documentation tells it should have carry enabled
         self.flag_c = "C"
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
-        # Actual shift / MSB unchanged / Trigger "overflow" for carry flag
-        code.addline("t = ((%s >> 1) | (%s & 0x80)) | ((%s & 1) << 8)" % (left.get, left.get, left.get))
-        code.addlines(self.handleflags8bit(left.get, None, None, False))
+
+        code.addline(("a = %s" % left.get))
+
+        code.addline("t = ((a >> 1) | (a & 0x80)) | ((a & 1) << 8)")
+        code.addlines(self.handleflags8bit(left.get, None, None, False))  # FIX
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
@@ -1269,8 +1277,10 @@ class OpcodeData:
         r0 = self.name.split()[1]
         left = Operand(r0)
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
-        #              Actual shift / Trigger "overflow" for carry flag
-        code.addline("t = (%s >> 1) + ((%s & 1) << 8)" % (left.get, left.get))
+
+        code.addline(("a = %s" % left.get))
+
+        code.addline("t = (a >> 1) + ((a & 1) << 8)")
         code.addlines(self.handleflags8bit(left.get, None, None, False))
         code.addline("t &= 0xFF")
 
@@ -1288,7 +1298,10 @@ class OpcodeData:
         r0 = self.name.split()[1]
         left = Operand(r0)
         code = Code(self.name.split()[0], self.opcode, self.name, False, self.length, self.cycles)
-        code.addline("t = ((%s & 0xF0) >> 4) | ((%s & 0x0F) << 4)" % (left.get, left.get))
+
+        code.addline(("a = %s" % left.get))
+
+        code.addline("t = ((a & 0xF0) >> 4) | ((a & 0x0F) << 4)")
         code.addlines(self.handleflags8bit(left.get, None, None, False))
         code.addline("t &= 0xFF")
 
