@@ -445,6 +445,29 @@ class OpcodeData:
         lines.append("cpu.F |= flag")
         return lines
 
+    def handleflagsrotateshift(self, r0, r1, op, carry=False):
+        flagmask = sum(map(lambda nf: (nf[1] == "-") << (nf[0] + 4), self.flags))
+
+        # Only in case we do a dynamic operation, do we include the
+        # following calculations
+        if flagmask == 0b11110000:
+            return ["# No flag operations"]
+
+        lines = []
+
+        assert all(f != "1" for pos, f in self.flags)  # Assert no unconditional flags set
+        lines.append("flag = 0b00000000")
+
+        if self.flag_z == "Z":
+            lines.append("flag |= ((t & 0xFF) == 0) << FLAGZ")
+        if self.flag_c == "C":
+            lines.append(f"flag |= ({r0} & 1) << FLAGC")
+
+        # Clears all flags affected by the operation
+        lines.append("cpu.F &= " + format(flagmask, "#010b"))
+        lines.append("cpu.F |= flag")
+        return lines
+
     ###################################################################
     #
     # MISC OPERATIONS
@@ -1163,15 +1186,12 @@ class OpcodeData:
         left.assign = False
         if throughcarry:
             # Trigger "overflow" for carry flag
-            code.addline(
-                ("t = (%s >> 1)" % left.get)
-                + " | (((cpu.F & (1 << FLAGC)) != 0) << 7)"
-                + " | ((%s & 1) << 8)" % (left.get)
-            )
+            code.addline(("t = (%s >> 1)" % left.get) + " | (((cpu.F & (1 << FLAGC)) != 0) << 7)")
         else:
             # Trigger "overflow" for carry flag
-            code.addline("t = (%s >> 1) | ((%s & 1) << 7)" % (left.get, left.get) + " | ((%s & 1) << 8)" % (left.get))
-        code.addlines(self.handleflags8bit(left.get, None, None, throughcarry))
+            code.addline("t = (%s >> 1) | ((%s & 1) << 7)" % (left.get, left.get))
+
+        code.addlines(self.handleflagsrotateshift(left.get, None, None, throughcarry))
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
