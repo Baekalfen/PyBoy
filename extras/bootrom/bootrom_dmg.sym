@@ -10,8 +10,8 @@
 00:0087 main.wave_table
 00:0097 main.effect
 00:00a5 main.exit_vblank
-00:00bb main.logo
 00:00bb main.P1
+00:00bb main.logo
 00:00c3 main.P2
 00:00cb main.Y1
 00:00d3 main.B2
