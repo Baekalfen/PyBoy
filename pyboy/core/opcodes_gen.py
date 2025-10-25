@@ -385,7 +385,7 @@ class OpcodeData:
             lines.append("flag |= (((%s & 0xFF) %s (%s & 0xFF)%s) > 0xFF) << FLAGC" % (r0, op, r1, c))
 
         # Clears all flags affected by the operation
-        lines.append("cpu.F &= " + format(flagmask, "#010b"))
+        lines.append("cpu.F = 0b00000000")  # E8 and F8 clears N and Z. The rest are dynamic
         lines.append("cpu.F |= flag")
         return lines
 

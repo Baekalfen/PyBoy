@@ -2675,7 +2675,7 @@ def ADD_E8(cpu, v): # E8 ADD SP,r8
     flag = 0b00000000
     flag |= (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
     flag |= (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
-    cpu.F &= 0b00000000
+    cpu.F = 0b00000000
     cpu.F |= flag
     t &= 0xFFFF
     cpu.SP = t
@@ -2797,7 +2797,7 @@ def LD_F8(cpu, v): # F8 LD HL,SP+r8
     flag = 0b00000000
     flag |= (((cpu.SP & 0xF) + (v & 0xF)) > 0xF) << FLAGH
     flag |= (((cpu.SP & 0xFF) + (v & 0xFF)) > 0xFF) << FLAGC
-    cpu.F &= 0b00000000
+    cpu.F = 0b00000000
     cpu.F |= flag
     cpu.HL &= 0xFFFF
     cpu.PC += 2
