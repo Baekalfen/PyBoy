@@ -13,4 +13,4 @@ cdef Logger logger
 cdef class BootROM:
     cdef uint8_t[:] bootrom
     cdef bint cgb
-    cdef uint8_t getitem(self, uint16_t) noexcept nogil
+    # cdef uint8_t getitem(self, uint16_t) noexcept nogil
