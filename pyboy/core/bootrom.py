@@ -21,5 +21,5 @@ class BootROM:
         self.bootrom = array.array("B", struct.unpack("%iB" % len(rom), rom))
         self.cgb = len(rom) > 0x100
 
-    def getitem(self, addr):
-        return self.bootrom[addr]
+    # def getitem(self, addr):
+    #     return

@@ -361,7 +361,7 @@ class Motherboard:
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
             if self.bootrom_enabled and (i <= 0xFF or (self.bootrom.cgb and 0x200 <= i < 0x900)):
-                return self.bootrom.getitem(i)
+                return self.bootrom.bootrom[i]
             else:
                 return self.cartridge.rombanks[self.cartridge.rombank_selected_low, i]
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
