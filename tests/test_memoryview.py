@@ -6,7 +6,7 @@
 import pytest
 
 from pyboy import PyBoy
-from pyboy.utils import PyBoyInvalidInputException, PyBoyOutOfBoundsException
+from pyboy.utils import PyBoyInvalidInputException, PyBoyOutOfBoundsException, PyBoyInvalidOperationException
 
 
 def test_memoryview(default_rom, boot_rom):
@@ -29,15 +29,25 @@ def test_memoryview(default_rom, boot_rom):
 
     # Requires start and end address
     with pytest.raises(PyBoyInvalidInputException):
-        p.memory[:10] == []
+        p.memory[:10]
     with pytest.raises(PyBoyInvalidInputException):
-        p.memory[20:10] == []
+        p.memory[10:10]
     with pytest.raises(PyBoyInvalidInputException):
-        p.memory[:10:] == []
+        p.memory[-1:10]
     with pytest.raises(PyBoyInvalidInputException):
-        p.memory[0xFF00:] == []
+        p.memory[0:-1]
+    with pytest.raises(PyBoyOutOfBoundsException):
+        p.memory[0:0x10001]
+    with pytest.raises(PyBoyOutOfBoundsException):
+        p.memory[0x10000:0x10001]
     with pytest.raises(PyBoyInvalidInputException):
-        p.memory[0xFF00::] == []
+        p.memory[20:10]
+    with pytest.raises(PyBoyInvalidInputException):
+        p.memory[:10:]
+    with pytest.raises(PyBoyInvalidInputException):
+        p.memory[0xFF00:]
+    with pytest.raises(PyBoyInvalidInputException):
+        p.memory[0xFF00::]
     with pytest.raises(PyBoyInvalidInputException):
         p.memory[:10] = 0
     with pytest.raises(PyBoyInvalidInputException):
@@ -46,6 +56,9 @@ def test_memoryview(default_rom, boot_rom):
         p.memory[0xFF00:] = 0
     with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00::] = 0
+
+    assert len(p.memory[0xFFFF:0x10000]) == 1
+    assert len(p.memory[0xFFFE:0x10000]) == 2
 
     # Attempt write to ROM area
     p.memory[0:10] = 1
@@ -94,6 +107,30 @@ def test_memoryview(default_rom, boot_rom):
     with pytest.raises(PyBoyOutOfBoundsException):
         # Out of bounds
         p.memory[0, 0x00:0x9000]
+
+
+def test_memoryview_iter(default_rom, boot_rom):
+    p = PyBoy(default_rom, window="null", bootrom=boot_rom)
+
+    with pytest.raises(PyBoyInvalidOperationException):
+        for i, _ in enumerate(p.memory):
+            pass
+
+    with pytest.raises(PyBoyInvalidOperationException):
+        list(p.memory)
+
+    with pytest.raises(PyBoyInvalidOperationException):
+        len(p.memory)
+
+    # Extracting slice
+    for i, _ in enumerate(p.memory[0:11]):
+        pass
+    assert i == 10
+
+    # Extracting slice
+    for i, _ in enumerate(p.memory[-1, 0:11]):
+        pass
+    assert i == 10
 
 
 def test_cgb_banks(cgb_acid_file):  # Any CGB file
