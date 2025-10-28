@@ -26,6 +26,7 @@ from pyboy.utils import (
     IntIOWrapper,
     PyBoyException,
     PyBoyInvalidInputException,
+    PyBoyInvalidOperationException,
     PyBoyOutOfBoundsException,
     WindowEvent,
     cython_compiled,
@@ -1631,6 +1632,19 @@ class PyBoyMemoryView:
             step = addr.step
         return start, stop, step
 
+    def __len__(self):
+        raise PyBoyInvalidOperationException(
+            "It's not possible to define the length of the memory space. See instead https://gbdev.io/pandocs/Memory_Map.html"
+        )
+
+    def __iter__(self):
+        """
+        Address space is overlapping, and therefore too complex to return as list or iterator.
+        If you want a snapshot, you should request specific memory ranges and banks.
+        See https://gbdev.io/pandocs/Memory_Map.html
+        """
+        raise PyBoyInvalidOperationException("It's not possible to iterate over the memory space.")
+
     def __getitem__(self, addr):
         is_bank = isinstance(addr, tuple)
         bank = 0
@@ -1641,12 +1655,16 @@ class PyBoyMemoryView:
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            if not (start >= 0 or stop >= 0):
-                raise PyBoyInvalidInputException("Start address has to come before end address")
             if not (start >= 0):
                 raise PyBoyInvalidInputException("Start address required")
             if not (stop >= 0):
                 raise PyBoyInvalidInputException("End address required")
+            if not 0 <= start <= 0xFFFF:
+                raise PyBoyOutOfBoundsException("Start address out of bounds")
+            if not 0 <= stop <= 0x10000:
+                raise PyBoyOutOfBoundsException("End address out of bounds")
+            if not (start < stop):
+                raise PyBoyInvalidInputException("Start address has to come before end address")
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
         else:
             return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
@@ -1772,6 +1790,12 @@ class PyBoyMemoryView:
                 raise PyBoyInvalidInputException("Start address required")
             if not (stop >= 0):
                 raise PyBoyInvalidInputException("End address required")
+            if not 0 <= start <= 0xFFFF:
+                raise PyBoyOutOfBoundsException("Start address out of bounds")
+            if not 0 <= stop <= 0x10000:
+                raise PyBoyOutOfBoundsException("End address out of bounds")
+            if not (start < stop):
+                raise PyBoyInvalidInputException("Start address has to come before end address")
             self.__setitem(start, stop, step, v, bank, is_single, is_bank)
         else:
             self.__setitem(addr, 0, 0, v, bank, is_single, is_bank)

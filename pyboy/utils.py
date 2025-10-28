@@ -81,6 +81,14 @@ class PyBoyInvalidInputException(PyBoyException):
     pass
 
 
+class PyBoyInvalidOperationException(PyBoyException):
+    """
+    Exception raised when the user requests an invalid operation, which cannot be performed.
+    """
+
+    pass
+
+
 class PyBoyDependencyError(PyBoyException):
     """
     Exception raised for errors related to missing dependencies in PyBoy.
