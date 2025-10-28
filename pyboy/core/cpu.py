@@ -178,6 +178,11 @@ class CPU:
         self.SP &= 0xFFFF
 
         self.PC = addr
+
+        # https://gbdev.io/pandocs/Interrupts.html#interrupt-handling
+        # "The entire process lasts 5 M-cycles."
+        self.cycles += 20
+
         self.interrupt_master_enable = False
 
     def fetch_and_execute(self):
