@@ -25,7 +25,7 @@
     "blargg/dmg_sound/rom_singles/11-regs after power.gb": "11-regs after power\n\n\nPowering off should clear NR13\n\nFailed #3\n",
     "blargg/dmg_sound/rom_singles/12-wave write while on.gb": "12-wave write while on\n\n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 A",
     "blargg/instr_timing/instr_timing.gb": "instr_timing\n\n\nPassed\n",
-    "blargg/interrupt_time/interrupt_time.gb": "interrupt time\n\n00 00 00 \n00 08 08 \n00 00 00 \n00 08 08 \n5DDD9187 \nFailed\n",
+    "blargg/interrupt_time/interrupt_time.gb": "interrupt time\n\n00 00 00 \n00 08 0D \n00 00 00 \n00 08 0D \n7F8F4AAF \nFailed\n",
     "blargg/mem_timing/individual/01-read_timing.gb": "01-read_timing\n\n\nPassed\n",
     "blargg/mem_timing/individual/02-write_timing.gb": "02-write_timing\n\n\nPassed\n",
     "blargg/mem_timing/individual/03-modify_timing.gb": "03-modify_timing\n\n\nPassed\n",
