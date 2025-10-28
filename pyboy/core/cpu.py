@@ -186,9 +186,36 @@ class CPU:
         self.interrupt_master_enable = False
 
     def fetch_and_execute(self):
-        opcode = self.mb.getitem(self.PC)
-        if opcode == 0xCB:  # Extension code
-            opcode = self.mb.getitem(self.PC + 1)
-            opcode += 0x100  # Internally shifting look-up table
+        # HACK: Shortcut the mb.getitem() calls
+        if (not self.mb.bootrom_enabled) and self.PC + 2 < 0x4000:
+            pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC]
+            pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC + 1]
+            pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC + 2]
+        elif (not self.mb.bootrom_enabled) and self.PC + 2 < 0x8000:  # 16kB switchable ROM bank
+            pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC - 0x4000]
+            pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 1 - 0x4000]
+            pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 2 - 0x4000]
+        else:
+            pc1 = self.mb.getitem(self.PC)
+            pc2 = self.mb.getitem((self.PC + 1) & 0xFFFF)
+            pc3 = self.mb.getitem((self.PC + 2) & 0xFFFF)
 
-        return opcodes.execute_opcode(self, opcode)
+        v = 0
+        opcode = pc1
+        if opcode == 0xCB:  # Extension code
+            opcode = pc2
+            opcode += 0x100  # Internally shifting look-up table
+        else:
+            # CB opcodes do not have immediates
+            oplen = opcodes.OPCODE_LENGTHS[opcode]
+            if oplen == 2:
+                # 8-bit immediate
+                v = pc2
+            elif oplen == 3:
+                # 16-bit immediate
+                # Flips order of values due to big-endian
+                a = pc3
+                b = pc2
+                v = (a << 8) + b
+
+        return opcodes.execute_opcode(self, opcode, v)

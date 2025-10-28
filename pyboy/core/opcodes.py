@@ -5588,19 +5588,7 @@ def no_opcode(cpu):
 
 
 
-def execute_opcode(cpu, opcode):
-    oplen = OPCODE_LENGTHS[opcode]
-    v = 0
-    pc = cpu.PC
-    if oplen == 2:
-        # 8-bit immediate
-        v = cpu.mb.getitem(pc+1)
-    elif oplen == 3:
-        # 16-bit immediate
-        # Flips order of values due to big-endian
-        a = cpu.mb.getitem(pc+2)
-        b = cpu.mb.getitem(pc+1)
-        v = (a << 8) + b
+def execute_opcode(cpu, opcode, v):
 
     if opcode == 0x00:
         return NOP_00(cpu)

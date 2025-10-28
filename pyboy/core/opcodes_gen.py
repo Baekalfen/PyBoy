@@ -46,8 +46,7 @@ cdef Logger logger
 
 cdef uint16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t[512] OPCODE_LENGTHS
-@cython.locals(v=cython.int, a=cython.int, b=cython.int, pc=cython.ushort)
-cdef int execute_opcode(cpu.CPU, uint16_t) noexcept nogil
+cdef int execute_opcode(cpu.CPU, uint16_t, uint16_t) noexcept nogil
 
 cdef uint8_t no_opcode(cpu.CPU) noexcept nogil
 cdef uint8_t BRK(cpu.CPU) noexcept nogil
@@ -1408,19 +1407,7 @@ def update():
 
         f.write(
             """
-def execute_opcode(cpu, opcode):
-    oplen = OPCODE_LENGTHS[opcode]
-    v = 0
-    pc = cpu.PC
-    if oplen == 2:
-        # 8-bit immediate
-        v = cpu.mb.getitem(pc+1)
-    elif oplen == 3:
-        # 16-bit immediate
-        # Flips order of values due to big-endian
-        a = cpu.mb.getitem(pc+2)
-        b = cpu.mb.getitem(pc+1)
-        v = (a << 8) + b
+def execute_opcode(cpu, opcode, v):
 
 """
         )
