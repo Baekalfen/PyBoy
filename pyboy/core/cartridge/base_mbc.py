@@ -4,7 +4,6 @@
 #
 
 import array
-import os
 
 import pyboy
 from pyboy.utils import IntIOWrapper, PyBoyException, PyBoyInvalidInputException
@@ -15,8 +14,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 
 class BaseMBC:
-    def __init__(self, filename, rombanks, external_ram_count, carttype, sram, battery, rtc_enabled):
-        self.filename = filename + ".ram"
+    def __init__(self, rombanks, ram_file, rtc_file, external_ram_count, carttype, sram, battery, rtc_enabled):
         self.rombanks = rombanks
         self.carttype = carttype
 
@@ -24,7 +22,7 @@ class BaseMBC:
         self.rtc_enabled = rtc_enabled
 
         if self.rtc_enabled:
-            self.rtc = RTC(filename)
+            self.rtc = RTC(rtc_file)
         else:
             self.rtc = None
 
@@ -43,18 +41,17 @@ class BaseMBC:
         self.rombank_selected = 1
         self.rombank_selected_low = 0
 
-        if not os.path.exists(self.filename):
-            logger.debug("No RAM file found. Skipping.")
+        if ram_file is not None and self.battery:
+            self.load_ram(IntIOWrapper(ram_file))
         else:
-            with open(self.filename, "rb") as f:
-                self.load_ram(IntIOWrapper(f))
+            logger.debug("No RAM file found. Skipping.")
 
-    def stop(self):
-        with open(self.filename, "wb") as f:
-            self.save_ram(IntIOWrapper(f))
+    def stop(self, ram_file, rtc_file):
+        if ram_file is not None and self.battery:
+            self.save_ram(IntIOWrapper(ram_file))
 
         if self.rtc_enabled:
-            self.rtc.stop()
+            self.rtc.stop(rtc_file)
 
     def save_state(self, f):
         f.write(self.rombank_selected)
@@ -147,7 +144,6 @@ class BaseMBC:
         return "\n".join(
             [
                 "MBC class: %s" % self.__class__.__name__,
-                "Filename: %s" % self.filename,
                 "Game name: %s" % self.gamename,
                 "GB Color: %s" % str(self.rombanks[0, 0x143] == 0x80),
                 "Cartridge type: %s" % hex(self.carttype),

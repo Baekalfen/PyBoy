@@ -16,7 +16,6 @@ from pyboy.utils cimport IntIOInterface
 cdef Logger logger
 
 cdef class RTC:
-    cdef str filename
     cdef bint latch_enabled
     cdef cython.double timezero
     cdef bint timelock
@@ -28,7 +27,7 @@ cdef class RTC:
     cdef uint64_t day_carry
     cdef uint64_t halt
 
-    cdef void stop(self) noexcept
+    cdef void stop(self, object) noexcept
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
     @cython.locals(days=uint64_t)

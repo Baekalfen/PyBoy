@@ -13,7 +13,6 @@ from pyboy.utils cimport IntIOInterface
 cdef Logger logger
 
 cdef class BaseMBC:
-    cdef str filename
     cdef str gamename
     cdef uint8_t[:, :] rombanks
     cdef uint8_t[:,:] rambanks
@@ -31,6 +30,7 @@ cdef class BaseMBC:
     cdef uint16_t rombank_selected_low
     cdef bint cgb
 
+    cdef void stop(self, object, object) noexcept
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
     cdef int save_ram(self, IntIOInterface) except -1

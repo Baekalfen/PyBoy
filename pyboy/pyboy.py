@@ -10,6 +10,7 @@ import heapq
 import os
 import re
 import time
+from pathlib import Path
 
 import numpy as np
 
@@ -79,6 +80,8 @@ class PyBoy:
         self,
         gamerom,
         *,
+        ram_file=None,
+        rtc_file=None,
         window=defaults["window"],
         scale=defaults["scale"],
         symbols=None,
@@ -106,6 +109,9 @@ class PyBoy:
 
         Only the `gamerom` argument is required.
 
+        If `gamerom` is a filepath and `ram_file` and `rtc_file` are not provided, filepaths will be determined
+        automatically next to the game ROM. If this is not wanted, provide a file-like object as argument.
+
         Example:
         ```python
         >>> pyboy = PyBoy('game_rom.gb')
@@ -117,9 +123,11 @@ class PyBoy:
         ```
 
         Args:
-            gamerom (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
+            gamerom (str or file-like object): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
+            * ram_file (file-like object):
+            * rtc_file (file-like object):
             * window (str): "SDL2", "OpenGL", or "null"
             * scale (int): Window scale factor. Doesn't apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
@@ -175,11 +183,41 @@ class PyBoy:
                 kwargs[k] = v
 
         if gamerom is None:
-            raise FileNotFoundError("None is not a ROM file!")
+            raise FileNotFoundError("No game ROM provided!")
 
-        if not os.path.isfile(gamerom):
-            raise FileNotFoundError(f"ROM file {gamerom} was not found!")
-        self.gamerom = gamerom
+        gamerom_file = None
+        self.gamerom = None
+        gamerom_file_handled = False
+        ram_file_handled = False
+        rtc_file_handled = False
+        if isinstance(gamerom, (str, Path)):
+            self.gamerom = str(gamerom)
+            try:
+                gamerom_file = open(self.gamerom, "rb")
+                gamerom_file_handled = True
+
+                if ram_file is None:
+                    try:
+                        ram_file = open(self.gamerom + ".ram", "rb")
+                        ram_file_handled = True
+                    except FileNotFoundError:
+                        pass
+
+                if rtc_file is None:
+                    try:
+                        rtc_file = open(self.gamerom + ".rtc", "rb")
+                        rtc_file_handled = True
+                    except FileNotFoundError:
+                        pass
+
+            except FileNotFoundError:
+                raise FileNotFoundError(f"ROM file {gamerom} was not found!")
+            except Exception:
+                raise
+        elif hasattr(gamerom, "read"):
+            gamerom_file = gamerom
+        else:
+            raise PyBoyInvalidInputException("Provided game ROM cannot be used. Expected str, Path or file-like object")
 
         self.rom_symbols = {}
         self.rom_symbols_inverse = {}
@@ -201,7 +239,9 @@ class PyBoy:
             raise PyBoyInvalidInputException("Sound volume has to be between 0 and 100.")
 
         self.mb = Motherboard(
-            gamerom,
+            gamerom_file,
+            ram_file,
+            rtc_file,
             bootrom,
             color_palette,
             cgb_color_palette,
@@ -211,6 +251,16 @@ class PyBoy:
             cgb,
             randomize=randomize,
         )
+
+        # Close the files we opened -- i.e. not passed from args
+        if gamerom_file_handled:
+            gamerom_file.close()
+
+        if ram_file_handled:
+            ram_file.close()
+
+        if rtc_file_handled:
+            rtc_file.close()
 
         # Validate all kwargs
         plugin_manager_keywords = []
@@ -580,15 +630,21 @@ class PyBoy:
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.debug("Speed limit: %d", self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
-                with open(self.gamerom + ".state", "wb") as f:
-                    self.mb.save_state(IntIOWrapper(f))
+                if self.gamerom:
+                    with open(self.gamerom + ".state", "wb") as f:
+                        self.mb.save_state(IntIOWrapper(f))
+                else:
+                    logger.error("Failed to save game state. PyBoy is loaded without a filepath.")
             elif event == WindowEvent.STATE_LOAD:
-                state_path = self.gamerom + ".state"
-                if not os.path.isfile(state_path):
-                    logger.error("State file not found: %s", state_path)
-                    continue
-                with open(state_path, "rb") as f:
-                    self.mb.load_state(IntIOWrapper(f))
+                if self.gamerom:
+                    state_path = self.gamerom + ".state"
+                    if not os.path.isfile(state_path):
+                        logger.error("State file not found: %s", state_path)
+                        continue
+                    with open(state_path, "rb") as f:
+                        self.mb.load_state(IntIOWrapper(f))
+                else:
+                    logger.error("Failed to load game state. PyBoy is loaded without a filepath.")
             elif event == WindowEvent.PASS:
                 pass  # Used in place of None in Cython, when key isn't mapped to anything
             elif event == WindowEvent.PAUSE_TOGGLE:
@@ -662,7 +718,7 @@ class PyBoy:
     def __exit__(self, type, value, traceback):
         self.stop()
 
-    def stop(self, save=True):
+    def stop(self, save=True, ram_file=None, rtc_file=None):
         """
         Gently stops the emulator and all sub-modules.
 
@@ -670,19 +726,42 @@ class PyBoy:
         ```python
         >>> pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
         >>> pyboy.stop(False) # Stop emulator and discard game progress (cartridge RAM)
-
+        >>> import io
+        >>> sav = io.BytesIO()
+        >>> pyboy.stop(ram_file=sav) # Stop emulator and save game progress (cartridge RAM)
         ```
 
         Args:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
+            ram_file (file-like object): A bytes buffer to write the RAM (save) data to
+            rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
         """
         if self.initialized and not self.stopped:
             logger.info("###########################")
             logger.info("# Emulator is turning off #")
             logger.info("###########################")
             self._plugin_manager.stop()
-            self.mb.stop(save)
+
+            # Battery implies saving RAM
+            ram_file_handled = False
+            rtc_file_handled = False
+            if save and self.mb.cartridge.battery and ram_file is None:
+                ram_file = open(self.gamerom + ".ram", "w+b")
+                ram_file_handled = True
+
+            if save and self.mb.cartridge.rtc_enabled and rtc_file is None:
+                rtc_file = open(self.gamerom + ".rtc", "w+b")
+                rtc_file_handled = True
+
+            self.mb.stop(save, ram_file, rtc_file)
+
+            if ram_file_handled:
+                ram_file.close()
+
+            if rtc_file_handled:
+                rtc_file.close()
+
             self.stopped = True
 
     ###################################################################
@@ -1117,8 +1196,11 @@ class PyBoy:
         return self.mb.cpu.is_stuck
 
     def _load_symbols(self):
-        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
-        for sym_path in [self.symbols_file, gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]:
+        gamerom_paths = []
+        if self.gamerom:
+            gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
+            gamerom_paths = [gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]
+        for sym_path in [self.symbols_file] + gamerom_paths:
             if sym_path and os.path.isfile(sym_path):
                 logger.info("Loading symbol file: %s", sym_path)
                 with open(sym_path) as f:

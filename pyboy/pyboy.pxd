@@ -78,7 +78,7 @@ cdef class PyBoy:
     cdef int64_t _tick(self, bint, bint) except -1 nogil
     @cython.locals(running=bint, _render=bint, _sound=bint)
     cpdef int64_t tick(self, int count=*, bint render=*, bint sound=*) except -1
-    cpdef void stop(self, save=*) noexcept
+    cpdef void stop(self, save=*, ram_file=*, rtc_file=*) noexcept
     cpdef int save_state(self, object) except -1
     cpdef int load_state(self, object) except -1
 

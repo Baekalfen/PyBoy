@@ -23,7 +23,9 @@ logger = pyboy.logging.get_logger(__name__)
 class Motherboard:
     def __init__(
         self,
-        gamerom,
+        gamerom_file,
+        ram_file,
+        rtc_file,
         bootrom_file,
         color_palette,
         cgb_color_palette,
@@ -36,7 +38,7 @@ class Motherboard:
         if bootrom_file is not None:
             logger.info("Boot-ROM file provided")
 
-        self.cartridge = cartridge.load_cartridge(gamerom)
+        self.cartridge = cartridge.load_cartridge(gamerom_file, ram_file, rtc_file)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))
 
         self.bootrom = bootrom.BootROM(bootrom_file, self.cartridge.cgb)
@@ -226,9 +228,9 @@ class Motherboard:
         if self.interaction.key_event(key):
             self.cpu.set_interruptflag(INTR_HIGHTOLOW)
 
-    def stop(self, save):
+    def stop(self, save, ram_file, rtc_file):
         if save:
-            self.cartridge.stop()
+            self.cartridge.stop(ram_file, rtc_file)
 
     def save_state(self, f):
         logger.debug("Saving state...")

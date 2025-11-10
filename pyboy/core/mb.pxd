@@ -59,7 +59,7 @@ cdef class Motherboard:
     cdef inline void breakpoint_reinject(self) noexcept nogil
 
     cdef void buttonevent(self, WindowEvent) noexcept
-    cdef void stop(self, bint) noexcept
+    cdef void stop(self, bint, object, object) noexcept
     @cython.locals(cycles=int64_t, cycles_target=int64_t, mode0_cycles=int64_t, breakpoint_index=int64_t)
     cdef bint tick(self) noexcept nogil
 
