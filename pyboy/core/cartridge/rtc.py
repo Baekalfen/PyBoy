@@ -2,7 +2,6 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 
-import os
 import struct
 import time
 
@@ -13,19 +12,11 @@ logger = pyboy.logging.get_logger(__name__)
 
 
 class RTC:
-    def __init__(self, filename):
-        self.filename = filename + ".rtc"
-
+    def __init__(self, rtc_file):
         self.timezero = time.time()
         self.timelock = False
         self.day_carry = 0
         self.halt = 0
-
-        if not os.path.exists(self.filename):
-            logger.info("No RTC file found. Skipping.")
-        else:
-            with open(self.filename, "rb") as f:
-                self.load_state(IntIOWrapper(f), STATE_VERSION)
 
         self.latch_enabled = False
         self.sec_latch = 0
@@ -34,9 +25,14 @@ class RTC:
         self.day_latch_low = 0
         self.day_latch_high = 0
 
-    def stop(self):
-        with open(self.filename, "wb") as f:
-            self.save_state(IntIOWrapper(f))
+        if rtc_file is not None:
+            self.load_state(IntIOWrapper(rtc_file), STATE_VERSION)
+        else:
+            logger.info("No RTC file found. Skipping.")
+
+    def stop(self, rtc_file):
+        if rtc_file is not None:
+            self.save_state(IntIOWrapper(rtc_file))
 
     def save_state(self, f):
         for b in struct.pack("d", self.timezero):

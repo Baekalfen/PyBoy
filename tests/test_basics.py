@@ -6,6 +6,9 @@ import base64
 import hashlib
 import os
 import sys
+import io
+import tempfile
+import shutil
 from unittest import mock
 
 import pytest
@@ -20,6 +23,84 @@ try:
     import sdl2
 except ImportError:
     sdl2 = None
+
+
+def patch_cartridge(f, mbc, ram):
+    f.seek(0x0149)  # RAM type
+    f.write(bytes([ram]))
+    f.seek(0x0147)  # Cartridge type
+    f.write(bytes([mbc]))
+
+    # Update checksum
+    x = 0
+    f.seek(0x134)
+    for _ in range(0x134, 0x14D):
+        x = x - ord(f.read(1)) - 1
+        x &= 0xFF
+
+    f.seek(0x14D)  # Checksum written to ROM
+    f.write(bytes([x]))
+
+    f.seek(0, os.SEEK_END)
+
+
+@pytest.mark.parametrize(
+    "patch_types, cart_ram, cart_rtc",
+    [
+        ((0x10, 0x04), True, True),  # MBC3+TIMER+RAM+BATT, 16 RAM banks,
+        ((0x06, 0x02), True, False),  # MBC2+BATTERY, 1 RAM banks,
+        ((0x01, 0x00), False, False),  # MBC1, 0 RAM banks,
+    ],
+)
+def test_gamerom_ram_rtc(any_rom, patch_types, cart_ram, cart_rtc):
+    tmp_path = tempfile.mkdtemp()
+    rom = tmp_path + "/" + "rom.gb"
+    ram = rom + ".ram"
+    rtc = rom + ".rtc"
+    shutil.copyfile(any_rom, rom)
+    with open(rom, "r+b") as f:
+        patch_cartridge(f, *patch_types)
+
+    assert os.path.exists(rom)
+    assert not os.path.exists(ram)
+    assert not os.path.exists(rtc)
+
+    p = PyBoy(rom, window="null")
+    p.tick()
+    p.stop()
+
+    assert os.path.exists(rom)
+    assert os.path.exists(ram) == cart_ram
+    assert os.path.exists(rtc) == cart_rtc
+
+
+@pytest.mark.parametrize(
+    "patch_types, cart_ram, cart_rtc",
+    [
+        ((0x10, 0x04), True, True),  # MBC3+TIMER+RAM+BATT, 16 RAM banks,
+        ((0x06, 0x02), True, False),  # MBC2+BATTERY, 1 RAM banks,
+        ((0x01, 0x00), False, False),  # MBC1, 0 RAM banks,
+    ],
+)
+def test_gamerom_filelike_object(any_rom, patch_types, cart_ram, cart_rtc):
+    rom = io.BytesIO()
+    with open(any_rom, "rb") as f:
+        rom.write(f.read())
+
+    rom.seek(0)
+    patch_cartridge(rom, *patch_types)
+
+    rom.seek(0)
+    p = PyBoy(rom, window="null")
+    p.tick()
+
+    save_ram = io.BytesIO()
+    save_rtc = io.BytesIO()
+    p.stop(True, save_ram, save_rtc)
+
+    # If data written, we assert that the cartridge also has that feature
+    assert (save_ram.tell() > 0) == cart_ram
+    assert (save_rtc.tell() > 0) == cart_rtc
 
 
 def test_log_level_none(default_rom, capsys):

@@ -16,11 +16,11 @@ from .base_mbc cimport BaseMBC
 cdef Logger logger
 
 @cython.locals(carttype=uint8_t, cart_name=basestring, cart_line=basestring)
-cpdef BaseMBC load_cartridge(str)
+cpdef BaseMBC load_cartridge(object, object, object)
 cdef bint validate_checksum(uint8_t[:,:]) noexcept
 
 @cython.locals(romdata=array, banksize=int)
-cdef uint8_t[:, :] load_romfile(str) noexcept
+cdef uint8_t[:, :] load_romfile(object) noexcept
 
 cdef dict CARTRIDGE_TABLE
 cdef dict EXTERNAL_RAM_TABLE

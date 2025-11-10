@@ -17,8 +17,8 @@ from .mbc5 import MBC5
 logger = pyboy.logging.get_logger(__name__)
 
 
-def load_cartridge(filename):
-    rombanks = load_romfile(filename)
+def load_cartridge(gamerom_file, ram_file, rtc_file):
+    rombanks = load_romfile(gamerom_file)
     if not validate_checksum(rombanks):
         raise PyBoyException("Cartridge header checksum mismatch!")
 
@@ -36,7 +36,7 @@ def load_cartridge(filename):
     logger.debug("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB", len(rombanks), external_ram_count)
     cartmeta = CARTRIDGE_TABLE[carttype]
 
-    return cartmeta[0](filename, rombanks, external_ram_count, carttype, *cartmeta[1:])
+    return cartmeta[0](rombanks, ram_file, rtc_file, external_ram_count, carttype, *cartmeta[1:])
 
 
 def validate_checksum(rombanks):
@@ -47,9 +47,8 @@ def validate_checksum(rombanks):
     return rombanks[0, 0x14D] == x
 
 
-def load_romfile(filename):
-    with open(filename, "rb") as romfile:
-        romdata = array("B", romfile.read())
+def load_romfile(gamerom_file):
+    romdata = array("B", gamerom_file.read())
 
     logger.debug("Loading ROM file: %d bytes", len(romdata))
     if len(romdata) == 0:
