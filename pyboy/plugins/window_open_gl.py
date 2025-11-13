@@ -64,7 +64,8 @@ class WindowOpenGL(PyBoyWindowPlugin):
             raise PyBoyException("OpenGL couldn't initialize!")
         glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
         glutInitWindowSize(*self._scaledresolution)
-        glutCreateWindow("PyBoy")
+        if not glutCreateWindow("PyBoy"):
+            raise PyBoyException("OpenGL couldn't open window!")
         glutKeyboardFunc(self._key)
         glutKeyboardUpFunc(self._keyUp)
         glutSpecialFunc(self._spec)
