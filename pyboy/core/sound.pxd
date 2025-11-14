@@ -66,7 +66,6 @@ cdef class Sound:
     cdef uint8_t pcm34(self) noexcept nogil
     cdef void clear_buffer(self) noexcept nogil
     cdef void reset_apu_div(self) noexcept nogil
-    cdef void stop(self) noexcept
 
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
