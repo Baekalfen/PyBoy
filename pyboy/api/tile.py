@@ -120,7 +120,8 @@ class Tile:
             utils.PillowImportError()._raise_import_error()
 
         if utils.cython_compiled:
-            return Image.fromarray(self._image_data().base, mode=self.raw_buffer_format)
+            # Image.fromarray(..., mode=...) is now deprecated. No good alternative.
+            return Image.fromarray(self._image_data().base).convert(self.raw_buffer_format)
         else:
             return Image.frombytes(self.raw_buffer_format, (8, 8), self._image_data())
 
