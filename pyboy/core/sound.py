@@ -400,9 +400,6 @@ class Sound:
             self.wavechannel.load_state(file, state_version)
             self.noisechannel.load_state(file, state_version)
 
-    def stop(self):
-        pass
-
 
 class ToneChannel:
     """Second sound channel--simple square wave, no sweep"""

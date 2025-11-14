@@ -227,7 +227,6 @@ class Motherboard:
             self.cpu.set_interruptflag(INTR_HIGHTOLOW)
 
     def stop(self, save):
-        self.sound.stop()
         if save:
             self.cartridge.stop()
 
