@@ -185,7 +185,7 @@ cdef class Renderer:
         color_code=uint8_t,
         pixel=uint32_t,
         bgmappriority=bint,
-        sprite_cache_no=bint,
+        sprite_cache_no=int,
     )
     cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
     cdef void sort_sprites(self, int) noexcept nogil
