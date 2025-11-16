@@ -48,10 +48,8 @@ class build_ext(_build_ext):
             thread_count = cpu_count()
 
         # Fixing issue with nthreads in Cython
-        if (
-            (3, 8) <= sys.version_info[:2]
-            and sys.platform == "darwin"
-            and multiprocessing.get_start_method() == "spawn"
+        if ((3, 8) <= sys.version_info[:2] and sys.platform == "darwin") or (
+            (3, 14) <= sys.version_info[:2] and sys.platform == "linux"
         ):
             multiprocessing.set_start_method("fork", force=True)
 
