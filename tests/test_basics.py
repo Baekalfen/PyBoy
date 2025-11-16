@@ -197,18 +197,26 @@ def test_record_replay(boot_rom, default_rom, capsys):
     assert keys[0] == WindowEvent.PRESS_ARROW_DOWN, "Check we have the right keypress"
     assert len(base64.b64decode(frame_data)) == 144 * 160 * 3, "Frame does not contain 160x144 of RGB data"
 
+    for e in events:
+        _, _, frame_data = e
+        all(x == 255 for x in base64.b64decode(frame_data))
+
     pyboy.stop(save=False)
 
-    with open(default_rom + ".replay", "rb") as f:
-        m = hashlib.sha256()
-        m.update(f.read())
-        digest = m.digest()
+    if not (sys.version_info >= (3, 14) and sys.platform == "win32"):
+        with open(default_rom + ".replay", "rb") as f:
+            m = hashlib.sha256()
+            m.update(f.read())
+            digest = m.digest()
 
-    os.remove(default_rom + ".replay")
+        os.remove(default_rom + ".replay")
 
-    assert digest == (
-        b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'
-    ), "The replay did not result in the expected output"
+        # CPython messed up zlib, so it no longer produces matching output to the Unix platforms
+        # https://docs.python.org/3/whatsnew/3.14.html#zlib
+        # https://github.com/python/cpython/issues/91349
+        assert digest == (
+            b'r\x80\x19)\x1a\x88\r\xcc\xb9\xab\xa3\xda\xb1&i\xc8"\xc2\xfb\x8a\x01\x9b\xa81@\x92V=5\x92\\5'
+        ), "The replay did not result in the expected output"
 
     # FIXME
     assert "To replay input consistently later, it is recommended to load a state at boot" in capsys.readouterr().out
