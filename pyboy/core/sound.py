@@ -468,7 +468,7 @@ class ToneChannel:
             # NOTE: Power off behavior:
             # Turning the APU off ... makes [registers] read-only until turned back on,
             # except ... the length timers (in NRx1) on monochrome models
-            self.init_length_timer = val & 0x1F
+            self.init_length_timer = val & 0b0011_1111
             self.lengthtimer = 64 - self.init_length_timer
         elif reg == 2:
             # NR12 NR22
