@@ -1,5 +1,5 @@
 <p align="center">
-<img src="extras/README/pyboy.svg" width="480">
+<img src="extras/README/pyboy10.svg" width="800">
 </p>
 
 __If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/wUbag3KNqQ).__
