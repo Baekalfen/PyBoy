@@ -91,6 +91,8 @@ class Sound:
         self.tone_right = 0
         self.sweep_right = 0
 
+        self.NR50 = 0  # Just dummy for read/write, unused
+
     def reset_apu_div(self):
         # self.div_apu_counter = 0
         # self.div_apu = 0
@@ -113,7 +115,7 @@ class Sound:
             elif i == 3:
                 return self.noisechannel.getreg(offset % 5)
         elif offset == 20:  # Control register NR50: Vin enable and volume -- not implemented
-            return 0
+            return self.NR50
         elif offset == 21:  # Control register NR51: Channel stereo enable/panning
             return (
                 self.noise_left
@@ -127,7 +129,7 @@ class Sound:
             )
         elif offset == 22:  # Control register NR52: Sound/channel enable
             return (
-                0b0111_0000
+                0x70
                 | self.poweron
                 | self.noisechannel.enable
                 | self.wavechannel.enable
@@ -147,18 +149,19 @@ class Sound:
 
         # Pan-docs:
         # Read-only until turned back on, except NR52 and the length timers (in NRx1) on monochrome models.
-        if offset < 20 and (self.poweron or (not self.cgb and offset % 5 == 1)):
+        if offset < 20 and (self.poweron or ((not self.cgb) and (offset % 5 == 1))):
             i = offset // 5
             if i == 0:
-                self.sweepchannel.setreg(offset % 5, value)
+                self.sweepchannel.setreg(offset % 5, value, (not self.poweron) and (not self.cgb))
             elif i == 1:
-                self.tonechannel.setreg(offset % 5, value)
+                self.tonechannel.setreg(offset % 5, value, (not self.poweron) and (not self.cgb))
             elif i == 2:
                 self.wavechannel.setreg(offset % 5, value)
             elif i == 3:
                 self.noisechannel.setreg(offset % 5, value)
         elif offset == 20 and self.poweron:  # Control register NR50: Vin enable and volume
             # Not implemented
+            self.NR50 = value
             pass
         elif offset == 21 and self.poweron:  # Control register NR51: Channel stereo enable/panning
             self.noise_left = value & 0b1000_0000
@@ -342,6 +345,8 @@ class Sound:
         file.write(self.tone_right)
         file.write(self.sweep_right)
 
+        file.write(self.NR50)
+
         self.sweepchannel.save_state(file)
         self.tonechannel.save_state(file)
         self.wavechannel.save_state(file)
@@ -395,6 +400,8 @@ class Sound:
             self.tone_right = file.read()
             self.sweep_right = file.read()
 
+            self.NR50 = file.read()
+
             self.sweepchannel.load_state(file, state_version)
             self.tonechannel.load_state(file, state_version)
             self.wavechannel.load_state(file, state_version)
@@ -438,25 +445,29 @@ class ToneChannel:
 
     def getreg(self, reg):
         if reg == 0:
-            return 0
+            return 0xFF  # Not defined
         elif reg == 1:
-            return self.wave_duty << 6  # Other bits are write-only
+            return self.wave_duty << 6 | 0x3F  # Other bits are write-only
         elif reg == 2:
             return self.envelope_volume << 4 | self.envelope_direction << 3 | self.envelope_pace
         elif reg == 3:
-            return 0  # Write-only register?
+            return 0xFF  # Write-only register
         elif reg == 4:
-            return self.length_enable << 6
+            return self.length_enable << 6 | 0xBF
         else:
             logger.error("Attempt to read register %d in ToneChannel", reg)
 
-    def setreg(self, reg, val):
+    def setreg(self, reg, val, force_length_timer):
         if reg == 0:
             # NR20
             pass
         elif reg == 1:
             # NR11 NR21
-            self.wave_duty = (val >> 6) & 0x03
+            if not force_length_timer:
+                self.wave_duty = (val >> 6) & 0x03
+            # NOTE: Power off behavior:
+            # Turning the APU off ... makes [registers] read-only until turned back on,
+            # except ... the length timers (in NRx1) on monochrome models
             self.init_length_timer = val & 0x1F
             self.lengthtimer = 64 - self.init_length_timer
         elif reg == 2:
@@ -587,7 +598,7 @@ class SweepChannel(ToneChannel):
         else:
             return ToneChannel.getreg(self, reg)
 
-    def setreg(self, reg, val):
+    def setreg(self, reg, val, force_length_timer):
         if reg == 0:
             # NR10
             self.sweep_pace = val >> 4 & 0x07
@@ -595,12 +606,12 @@ class SweepChannel(ToneChannel):
 
             # self.sweep_magnitude_latch = val & 0x07
             self.sweep_magnitude = val & 0x07
-            # However, if 0 is written to this field, then iterations are instantly disabled,
+            # TODO: However, if 0 is written to this field, then iterations are instantly disabled,
             # and it will be reloaded as soon as it’s set to something else.
             # if self.sweep_magnitude_latch == 0:
             #     self.sweep_magnitude = 0
         else:
-            ToneChannel.setreg(self, reg, val)
+            ToneChannel.setreg(self, reg, val, force_length_timer)
 
     def tick_sweep(self):
         # Clock sweep timer on 2 and 6
@@ -711,6 +722,7 @@ class WaveChannel:
             if self.dacpow == 0:
                 self.enable = 0
         elif reg == 1:
+            # Force during power-off behavior
             self.init_length_timer = val
             self.lengthtimer = 256 - self.init_length_timer
         elif reg == 2:
@@ -868,6 +880,7 @@ class NoiseChannel:
         if reg == 0:
             return
         elif reg == 1:
+            # Still works during power off
             self.init_length_timer = val & 0x1F
             self.lengthtimer = 64 - self.init_length_timer
         elif reg == 2:
