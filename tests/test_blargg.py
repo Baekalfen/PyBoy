@@ -49,6 +49,8 @@ def run_rom(rom, max_frames):
             char = pyboy.memory[0xA004 + n]
             if char != 0:
                 result += chr(char)
+            else:
+                break
             n += 1
 
             if n > 250:
