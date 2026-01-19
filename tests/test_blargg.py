@@ -17,7 +17,7 @@ blargg_json = "tests/test_results/blargg.json"
 
 
 def run_rom(rom, max_frames):
-    pyboy = PyBoy(str(rom), window="null", cgb="cgb" in rom)
+    pyboy = PyBoy(str(rom), window="null", cgb=("cgb" in rom) or ("interrupt_time.gb" in rom))
     pyboy.set_emulation_speed(0)
     result = ""
     while pyboy.tick(1, False, False):
