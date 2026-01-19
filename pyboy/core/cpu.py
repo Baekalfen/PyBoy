@@ -34,7 +34,6 @@ class CPU:
 
         self.halted = False
         self.stopped = False
-        self.is_stuck = False
         self.cycles = 0
 
     def save_state(self, f):
@@ -136,7 +135,6 @@ class CPU:
 
         self.bail = False
         while self.cycles < _target:
-            # TODO: cpu-stuck check for blargg tests?
             self.fetch_and_execute()
             if self.bail:  # Possible cycles-target changes
                 break
