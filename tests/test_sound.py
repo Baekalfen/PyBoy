@@ -162,3 +162,76 @@ def test_sound_not_emulated_cycles_to_interrupt(default_rom):
     for _ in range(200):
         pyboy.tick(1, False, False)
     assert pyboy.mb.sound._cycles_to_interrupt == MAX_CYCLES
+
+
+# Sound registers
+NR10 = 0xFF10
+NR11 = 0xFF11 - NR10
+NR12 = 0xFF12 - NR10
+NR13 = 0xFF13 - NR10
+NR14 = 0xFF14 - NR10
+
+NR21 = 0xFF16 - NR10
+NR22 = 0xFF17 - NR10
+NR23 = 0xFF18 - NR10
+NR24 = 0xFF19 - NR10
+
+NR30 = 0xFF1A - NR10
+NR31 = 0xFF1B - NR10
+NR32 = 0xFF1C - NR10
+NR33 = 0xFF1D - NR10
+NR34 = 0xFF1E - NR10
+
+NR41 = 0xFF20 - NR10
+NR42 = 0xFF21 - NR10
+NR43 = 0xFF22 - NR10
+NR44 = 0xFF23 - NR10
+
+NR50 = 0xFF24 - NR10
+NR51 = 0xFF25 - NR10
+NR52 = 0xFF26 - NR10
+
+WAVE = 0xFF30 - NR10
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_sound_registers():
+    from pyboy.core.sound import Sound
+
+    # Taken from Blargg's dmg_sound/source/01-registers.s
+    # fmt: off
+    masks = [
+      0x80, 0x3F, 0x00, 0xFF, 0xBF, # NR10-NR15
+      0xFF, 0x3F, 0x00, 0xFF, 0xBF, # NR20-NR25
+      0x7F, 0xFF, 0x9F, 0xFF, 0xBF, # NR30-NR35
+      0xFF, 0xFF, 0x00, 0x00, 0xBF, # NR40-NR45
+      0x00, 0x00, 0x70,             # NR50-NR52
+      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, # Unused
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, # Wave RAM
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ]
+    # fmt: on
+
+    s = Sound(100, True, None, False)
+    # s.set(NR52, 0x80)  # Audio master enable
+    s.set(NR52, 0xFF)  # Sound on
+
+    for n, m in enumerate(masks[:NR52]):
+        s.set(n, 0x00)
+        assert s.get(n) == m
+        s.set(n, 0xFF)
+        assert s.get(n) == 0xFF
+
+    s.set(NR52, 0x00)  # Sound off
+
+    # All cleared when power goes off
+    for n, m in enumerate(masks[:NR52]):
+        assert s.get(n) == m
+
+    # Ignore writes when power is off
+    for n, m in enumerate(masks[:NR52]):
+        s.set(n, 0x00)
+        assert s.get(n) == m
+
+        s.set(n, 0xFF)
+        assert s.get(n) == m  # Still mask because sound is off!
