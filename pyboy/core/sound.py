@@ -533,7 +533,7 @@ class ToneChannel:
         #   will be undone and the channel immediately disabled.
         #   Probably need a new DAC power state/variable.
         # For now:
-        if self.envelope_pace == 0 and self.envelope_volume == 0:
+        if self.envelope_direction == 0 and self.envelope_volume == 0:
             self.enable = 0
 
     def save_state(self, file):
@@ -646,7 +646,7 @@ class SweepChannel(ToneChannel):
         # Pan Docs:
         # If the period value would overflow (i.e. ... more than $7FF), the channel is turned off instead
         if newper >= 0x800:  # NOTE: Pan docs: This occurs even if sweep iterations are disabled by the pace being 0.
-            self.enable = False
+            self.enable = 0
             # Is this "sweep complete?"
             # self.sweep_magnitude = self.sweep_magnitude_latch
             return False
@@ -881,7 +881,7 @@ class NoiseChannel:
             return
         elif reg == 1:
             # Still works during power off
-            self.init_length_timer = val & 0x1F
+            self.init_length_timer = val & 0x3F
             self.lengthtimer = 64 - self.init_length_timer
         elif reg == 2:
             self.envelope_volume = val >> 4 & 0x0F
@@ -900,7 +900,7 @@ class NoiseChannel:
             if val & 0x80:
                 self.trigger()  # Sync is called first in Sound.set so it's okay to trigger immediately
         else:
-            logger.error("Attempt to write register %d in ToneChannel", reg)
+            logger.error("Attempt to write register %d in NoiseChannel", reg)
 
     def tick(self, cycles):
         self.periodtimer -= cycles
@@ -948,7 +948,7 @@ class NoiseChannel:
         self.volume = self.envelope_volume
         self.shiftregister = 0x7FFF
         # TODO: tidy instead of double change variable
-        if self.envelope_pace == 0 and self.envelope_volume == 0:
+        if self.envelope_direction == 0 and self.envelope_volume == 0:
             self.enable = 0
 
     def save_state(self, file):
