@@ -21,17 +21,29 @@ def run_rom(rom, max_frames):
     pyboy.set_emulation_speed(0)
     result = ""
     while pyboy.tick(1, False, False):
+        # Some tests like cpu_instrs.gb only output on serial
         b = pyboy._serial()
         if b != "":
             result += b
 
-        if pyboy._is_cpu_stuck() or pyboy.frame_count > max_frames:
+        assert pyboy.frame_count < max_frames, "We weren't expecting to hit max frames"
+
+        if "Failed" in result or "Passed\n" in result or "Passed all tests\n" in result:
+            break
+
+        status = pyboy.memory[0xA000]
+        if status in [0xFF, 0x80]:
+            # Still running or not started
+            pass
+        else:
+            # Test completed.
             break
 
     pyboy.tick(10, False, False)
     pyboy.stop(save=False)
     result += pyboy._serial()  # Getting the absolute last. Some times the tests says "Failed X tests".
     if result == "":
+        # Some tests like cgb_sound.gb do not output to serial at all
         n = 0
         while True:
             char = pyboy.memory[0xA004 + n]

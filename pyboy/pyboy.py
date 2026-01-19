@@ -1192,9 +1192,6 @@ class PyBoy:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
 
-    def _is_cpu_stuck(self):
-        return self.mb.cpu.is_stuck
-
     def _load_symbols(self):
         gamerom_paths = []
         if self.gamerom:
