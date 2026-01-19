@@ -35,6 +35,8 @@ cdef class Sound:
 
     cdef uint8_t poweron
 
+    cdef uint8_t NR50
+
     cdef readonly uint64_t audiobuffer_head
     cdef uint64_t audiobuffer_length
     cdef uint64_t samples_per_frame
@@ -92,7 +94,7 @@ cdef class ToneChannel:
     cdef int64_t volume # Current volume level, modulated by envelope
 
     cdef uint8_t getreg(self, uint8_t) noexcept nogil
-    cdef void setreg(self, uint8_t, uint8_t) noexcept nogil
+    cdef void setreg(self, uint8_t, uint8_t, bint) noexcept nogil
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void tick_length(self) noexcept nogil
     cdef void tick_envelope(self) noexcept nogil
