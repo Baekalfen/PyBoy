@@ -516,3 +516,35 @@ def bcd_to_dec(value, byte_width=1, byteorder="little"):
         multiplier *= 100
 
     return decimal_value
+
+def fixed_point_to_value(raw_bytes, is_signed=False, fractional_bits=8):
+    """
+    Convert fixed-point bytes to appropriate value
+    
+    Args:
+        raw_bytes: Byte array containing the fixed-point value
+        is_signed: Whether to interpret as signed (two's complement)
+        fractional_bits: Number of bits used for the fractional part
+    
+    Returns:
+        A float value representing the fixed-point number
+    """
+    value = int.from_bytes(raw_bytes, "little")
+    
+    total_bits = len(raw_bytes) * 8
+    
+    # Calculate integer and fractional parts
+    integer_part = value >> fractional_bits
+    fractional_part = value & ((1 << fractional_bits) - 1)
+    
+    # Handle two's complement for signed values
+    if is_signed and (value & (1 << (total_bits - 1))):
+        # It's a negative value in two's complement
+        # Calculate the negative value properly
+        integer_value = value
+        if integer_value & (1 << (total_bits - 1)):
+            integer_value = -((~integer_value + 1) & ((1 << total_bits) - 1))
+        return integer_value / (1 << fractional_bits)
+    
+    # Return the full fixed-point value
+    return integer_part + (fractional_part / (1 << fractional_bits))
