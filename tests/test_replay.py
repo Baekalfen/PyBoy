@@ -98,7 +98,7 @@ def replay(
         randomize=randomize,
         cgb=cgb,
         sound_volume=0,
-        record_input=(RESET_REPLAYS and window in ["SDL2", "null", "OpenGL"]),
+        record_input=(RESET_REPLAYS and window in ["SDL2", "null", "OpenGL", "GLFW"]),
     )
     pyboy.set_emulation_speed(0)
     if state_data is not None:

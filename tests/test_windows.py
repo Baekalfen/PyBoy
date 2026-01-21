@@ -26,3 +26,8 @@ def test_sdl2(default_rom):
 @pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")
 def test_opengl(default_rom):
     replay(default_rom, replay_file, "OpenGL", bootrom_file=None, padding_frames=BOOTROM_FRAMES_UNTIL_LOGO)
+
+
+@pytest.mark.skipif(os.environ.get("TEST_NO_UI"), reason="Skipping test, as there is no UI")
+def test_glfw(default_rom):
+    replay(default_rom, replay_file, "GLFW", bootrom_file=None, padding_frames=BOOTROM_FRAMES_UNTIL_LOGO)
