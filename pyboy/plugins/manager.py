@@ -8,6 +8,7 @@ from pyboy.plugins.base_plugin import PyBoyGameWrapper
 # imports
 from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
 from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
+from pyboy.plugins.window_glfw import WindowGLFW # noqa
 from pyboy.plugins.window_null import WindowNull # noqa
 from pyboy.plugins.debug import Debug # noqa
 from pyboy.plugins.auto_pause import AutoPause # noqa
@@ -28,6 +29,7 @@ def parser_arguments():
     # yield_plugins
     yield WindowSDL2.argv
     yield WindowOpenGL.argv
+    yield WindowGLFW.argv
     yield WindowNull.argv
     yield Debug.argv
     yield AutoPause.argv
@@ -56,6 +58,8 @@ class PluginManager:
         self.window_sdl2_enabled = self.window_sdl2.enabled()
         self.window_open_gl = WindowOpenGL(pyboy, mb, pyboy_argv)
         self.window_open_gl_enabled = self.window_open_gl.enabled()
+        self.window_glfw = WindowGLFW(pyboy, mb, pyboy_argv)
+        self.window_glfw_enabled = self.window_glfw.enabled()
         self.window_null = WindowNull(pyboy, mb, pyboy_argv)
         self.window_null_enabled = self.window_null.enabled()
         self.debug = Debug(pyboy, mb, pyboy_argv)
@@ -101,6 +105,8 @@ class PluginManager:
             events = self.window_sdl2.handle_events(events)
         if self.window_open_gl_enabled:
             events = self.window_open_gl.handle_events(events)
+        if self.window_glfw_enabled:
+            events = self.window_glfw.handle_events(events)
         if self.window_null_enabled:
             events = self.window_null.handle_events(events)
         if self.debug_enabled:
@@ -170,6 +176,8 @@ class PluginManager:
             self.window_sdl2.set_title(self.pyboy.window_title)
         if self.window_open_gl_enabled:
             self.window_open_gl.set_title(self.pyboy.window_title)
+        if self.window_glfw_enabled:
+            self.window_glfw.set_title(self.pyboy.window_title)
         if self.window_null_enabled:
             self.window_null.set_title(self.pyboy.window_title)
         if self.debug_enabled:
@@ -183,6 +191,8 @@ class PluginManager:
             self.window_sdl2.post_tick()
         if self.window_open_gl_enabled:
             self.window_open_gl.post_tick()
+        if self.window_glfw_enabled:
+            self.window_glfw.post_tick()
         if self.window_null_enabled:
             self.window_null.post_tick()
         if self.debug_enabled:
@@ -196,6 +206,8 @@ class PluginManager:
             self.window_sdl2.paused(pause)
         if self.window_open_gl_enabled:
             self.window_open_gl.paused(pause)
+        if self.window_glfw_enabled:
+            self.window_glfw.paused(pause)
         if self.window_null_enabled:
             self.window_null.paused(pause)
         if self.debug_enabled:
@@ -213,6 +225,9 @@ class PluginManager:
         if self.window_open_gl_enabled:
             done = self.window_open_gl.frame_limiter(speed)
             if done: return
+        if self.window_glfw_enabled:
+            done = self.window_glfw.frame_limiter(speed)
+            if done: return
         if self.window_null_enabled:
             done = self.window_null.frame_limiter(speed)
             if done: return
@@ -228,6 +243,8 @@ class PluginManager:
             title += self.window_sdl2.window_title()
         if self.window_open_gl_enabled:
             title += self.window_open_gl.window_title()
+        if self.window_glfw_enabled:
+            title += self.window_glfw.window_title()
         if self.window_null_enabled:
             title += self.window_null.window_title()
         if self.debug_enabled:
@@ -265,6 +282,8 @@ class PluginManager:
             self.window_sdl2.stop()
         if self.window_open_gl_enabled:
             self.window_open_gl.stop()
+        if self.window_glfw_enabled:
+            self.window_glfw.stop()
         if self.window_null_enabled:
             self.window_null.stop()
         if self.debug_enabled:

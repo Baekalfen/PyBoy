@@ -15,6 +15,7 @@ __pdoc__ = {
     "rewind": False,
     "screen_recorder": False,
     "screenshot_recorder": False,
+    "window_glfw": False,
     "window_null": False,
     "window_open_gl": False,
     "window_sdl2": False,

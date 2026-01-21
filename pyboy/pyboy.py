@@ -128,7 +128,7 @@ class PyBoy:
         Kwargs:
             * ram_file (file-like object):
             * rtc_file (file-like object):
-            * window (str): "SDL2", "OpenGL", or "null"
+            * window (str): "SDL2", "OpenGL", "GLFW", or "null"
             * scale (int): Window scale factor. Doesn't apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
             * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
@@ -171,8 +171,8 @@ class PyBoy:
             )
             window = kwargs.pop("window_type")
 
-        if window not in ["SDL2", "OpenGL", "null", "headless", "dummy"]:
-            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", or "null"')
+        if window not in ["SDL2", "OpenGL", "GLFW", "null", "headless", "dummy"]:
+            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", "GLFW", or "null"')
 
         kwargs["window"] = window
         kwargs["scale"] = scale

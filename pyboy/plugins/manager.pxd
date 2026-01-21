@@ -9,6 +9,7 @@ from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 # imports
 from pyboy.plugins.window_sdl2 cimport WindowSDL2
 from pyboy.plugins.window_open_gl cimport WindowOpenGL
+from pyboy.plugins.window_glfw cimport WindowGLFW
 from pyboy.plugins.window_null cimport WindowNull
 from pyboy.plugins.debug cimport Debug
 from pyboy.plugins.auto_pause cimport AutoPause
@@ -33,6 +34,7 @@ cdef class PluginManager:
     # plugin_cdef
     cdef public WindowSDL2 window_sdl2
     cdef public WindowOpenGL window_open_gl
+    cdef public WindowGLFW window_glfw
     cdef public WindowNull window_null
     cdef public Debug debug
     cdef public AutoPause auto_pause
@@ -48,6 +50,7 @@ cdef class PluginManager:
     cdef public GameWrapperPokemonPinball game_wrapper_pokemon_pinball
     cdef bint window_sdl2_enabled
     cdef bint window_open_gl_enabled
+    cdef bint window_glfw_enabled
     cdef bint window_null_enabled
     cdef bint debug_enabled
     cdef bint auto_pause_enabled

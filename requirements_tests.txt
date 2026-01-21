@@ -5,6 +5,7 @@ pytest-benchmark
 pytest-xdist
 pytest-lazy-fixtures
 pyopengl
+glfw
 filelock
 cryptography
 GitPython
