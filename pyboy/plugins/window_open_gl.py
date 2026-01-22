@@ -140,6 +140,8 @@ class WindowOpenGL(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_A))
             elif c == "s":
                 self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_B))
+            elif c == "p":
+                self.events.append(WindowEvent(WindowEvent.PAUSE_TOGGLE))
             elif c == chr(27):
                 self.events.append(WindowEvent(WindowEvent.QUIT))
             elif c == " ":
