@@ -7,7 +7,7 @@ from array import array
 import time
 from ctypes import POINTER, c_ubyte, c_void_p, cast
 
-from pyboy.plugins.base_plugin import PyBoyWindowPlugin
+from pyboy.plugins.base_plugin import PyBoyWindowPlugin, SOUND_PREBUFFER_THRESHOLD
 from pyboy.utils import WindowEvent, WindowEventMouse, cython_compiled, PyBoyAssertException
 
 try:
@@ -24,7 +24,6 @@ logger = pyboy.logging.get_logger(__name__)
 ROWS, COLS = 144, 160
 
 SOUND_DESYNC_THRESHOLD = 4
-SOUND_PREBUFFER_THRESHOLD = 2
 
 # https://wiki.libsdl.org/SDL_Scancode#Related_Enumerations
 # fmt: off
@@ -182,8 +181,6 @@ class WindowSDL2(PyBoyWindowPlugin):
         )
 
         sdl2.SDL_ShowWindow(self._window)
-        self.fullscreen = False
-        self.sound_paused = True
 
         # Helps Cython access mb.sound
         self.init_audio(mb)
@@ -240,17 +237,10 @@ class WindowSDL2(PyBoyWindowPlugin):
                 self.fullscreen ^= True
         return events
 
-    def frame_limiter(self, speed):
-        if self.sound_support and speed == 1:
-            queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
-            frames_buffered = queued_bytes / (self.sound.samples_per_frame * 2.0)
-            if frames_buffered > 2:
-                # logger.debug("%d %f %f", queued_bytes, frames_buffered, (frames_buffered-float(2)) * (1./60.))
-                # Sleep for the excees of the 2 frames of buffer we have
-                time.sleep(min(1 / 60.0, (frames_buffered - float(2)) * (1.0 / 60.0)))
-            return True
-        else:
-            return PyBoyWindowPlugin.frame_limiter(self, speed)
+    def _get_sound_frames_buffered(self):
+        queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
+        frames_buffered = queued_bytes / (self.sound.samples_per_frame * 2.0)
+        return frames_buffered
 
     def post_tick(self):
         sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS * 4)
