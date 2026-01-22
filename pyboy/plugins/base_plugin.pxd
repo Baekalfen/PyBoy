@@ -42,7 +42,10 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
     cdef int[2] _scaledresolution
     cdef bint enable_title
     cdef Sound sound
+    cdef bint fullscreen
+    cdef bint sound_paused
 
+    cdef int _get_sound_frames_buffered(self) noexcept
     cdef int64_t _ftime
     cdef bint frame_limiter(self, int) noexcept
     cdef void set_title(self, str) noexcept

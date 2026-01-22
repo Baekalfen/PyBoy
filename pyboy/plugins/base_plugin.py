@@ -27,6 +27,8 @@ logger = pyboy.logging.get_logger(__name__)
 
 ROWS, COLS = 144, 160
 
+SOUND_PREBUFFER_THRESHOLD = 3
+
 
 class PyBoyPlugin:
     argv = []
@@ -63,6 +65,8 @@ class PyBoyWindowPlugin(PyBoyPlugin):
 
         self._ftime = time.perf_counter_ns()
         self.sound_support = False
+        self.fullscreen = False
+        self.sound_paused = True
 
         if not self.enabled():
             return
@@ -79,15 +83,25 @@ class PyBoyWindowPlugin(PyBoyPlugin):
             self.renderer = mb.lcd.renderer
         self.sound = self.mb.sound
 
+    def _get_sound_frames_buffered(self):
+        return 0
+
     def frame_limiter(self, speed):
-        self._ftime += int((1.0 / (60.0 * speed)) * 1_000_000_000)
-        now = time.perf_counter_ns()
-        if speed > 0 and self._ftime > now:
-            delay = (self._ftime - now) // 1_000_000
-            time.sleep(delay / 1000)
+        if self.sound_support and speed == 1:
+            frames_buffered = self._get_sound_frames_buffered()
+            if frames_buffered > SOUND_PREBUFFER_THRESHOLD:
+                # Sleep for the excees of the prebuffered frames we have
+                time.sleep(min(1 / 60.0, (frames_buffered - float(SOUND_PREBUFFER_THRESHOLD)) * (1.0 / 60.0)))
+            return True
         else:
-            self._ftime = now
-        return True
+            self._ftime += int((1.0 / (60.0 * speed)) * 1_000_000_000)
+            now = time.perf_counter_ns()
+            if speed > 0 and self._ftime > now:
+                delay = (self._ftime - now) // 1_000_000
+                time.sleep(delay / 1000)
+            else:
+                self._ftime = now
+            return True
 
     def paused(self, pause):
         pass

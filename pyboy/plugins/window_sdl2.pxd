@@ -27,8 +27,6 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
 
     cdef dict _key_down
     cdef dict _key_up
-    cdef bint fullscreen
-    cdef bint sound_paused
 
     cdef object _window
     cdef object _sdlrenderer
