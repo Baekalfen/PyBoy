@@ -27,6 +27,7 @@ dependencies = [
 all = [
     "pyopengl",
     "glfw",
+    "PyOpenAL",
     "markdown",
     "pdoc3",
     "gym",
