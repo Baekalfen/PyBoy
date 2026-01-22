@@ -8,14 +8,14 @@ import cython
 cimport cython
 
 from pyboy.logging.logging cimport Logger
-from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
+from pyboy.plugins.window_openal cimport WindowOpenAL
 
 
 cdef Logger logger
 
 cdef int ROWS, COLS
 
-cdef class WindowGLFW(PyBoyWindowPlugin):
+cdef class WindowGLFW(WindowOpenAL):
     cdef list events
     cdef object window
 

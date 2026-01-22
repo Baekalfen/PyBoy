@@ -22,4 +22,5 @@ __pdoc__ = {
     "manager": False,
     "manager_gen": False,
     # docs exclude end
+    "window_openal": False,
 }

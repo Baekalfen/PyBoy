@@ -6,6 +6,7 @@ pytest-xdist
 pytest-lazy-fixtures
 pyopengl
 glfw
+PyOpenAL
 filelock
 cryptography
 GitPython
