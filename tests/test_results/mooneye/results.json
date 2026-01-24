@@ -1,0 +1,332 @@
+{
+  "misc/bits/unused_hwio-C.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/rapid_di_ei.gb": {
+    "text": "Registers\n  A: 00  F: 00\n  B: 01  C: 01\n  D: 01  E: 01\n  H: 00  L: 87\nAssertions\n  B: 00! C: 00!\n  D: OK  E: OK\nTest failed\n"
+  },
+  "acceptance/boot_regs-dmgABC.gb": {
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: B0!\n  B: OK  C: 13!\n  D: OK  E: D8!\n  H: 01! L: 4D!\nTest failed\n"
+  },
+  "acceptance/reti_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/call_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/reti_intr_timing.gb": {
+    "text": "Registers\n  A: 00  F: 00\n  B: 00  C: 00\n  D: 01  E: 01\n  H: 00  L: 87\nAssertions\n  B: 01!\n  D: OK  E: OK\nTest failed\n"
+  },
+  "acceptance/boot_regs-mgb.gb": {
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: FF! F: B0!\n  B: OK  C: 13!\n  D: OK  E: D8!\n  H: 01! L: 4D!\nTest failed\n"
+  },
+  "acceptance/ei_sequence.gb": {
+    "text": "Registers\n  A: 00  F: 80\n  B: 01  C: A1\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  B: OK  C: A2!\nTest failed\n"
+  },
+  "acceptance/jp_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/ei_timing.gb": {
+    "text": "Registers\n  A: 00  F: 00\n  B: 00  C: 00\n  D: 00  E: 01\n  H: 00  L: 87\nAssertions\n  B: 01!\n         E: OK\nTest failed\n"
+  },
+  "acceptance/oam_dma_timing.gb": {
+    "text": "Registers\n  A: 01  F: C0\n  B: 00  C: 01\n  D: 01  E: 08\n  H: FE  L: 00\nAssertions\n         C: FF!\n  D: OK\nTest failed\n"
+  },
+  "acceptance/call_cc_timing2.gb": {
+    "text": "Registers\n  A: 00  F: 90\n  B: FF  C: 9D\n  D: FF  E: B9\n  H: FF  L: D6\nAssertions\n  B: 81! C: 81!\n  D: 81! E: OK\n  H: OK  L: OK\nTest failed\n"
+  },
+  "acceptance/boot_div2-S.gb": {
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: D9! C: DA!\n  D: DA! E: DB!\n  H: DC! L: DE!\nTest failed\n"
+  },
+  "acceptance/halt_ime1_timing.gb": {
+    "text": "Registers\n  A: 05  F: 80\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  B: OK\n"
+  },
+  "acceptance/halt_ime1_timing2-GS.gb": {
+    "text": "Registers\n  A: 12  F: 80\n  B: 11  C: 12\n  D: 11  E: 12\n  H: 02  L: 21\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
+  },
+  "acceptance/timer/tima_reload.gb": {
+    "text": "Registers\n  A: FE  F: 80\n  B: FE  C: FE\n  D: FF  E: FE\n  H: FF  L: FE\nAssertions\n  B: OK  C: OK\n  D: OK  E: 00!\n  H: OK  L: 00!\nTest failed\n"
+  },
+  "acceptance/timer/tma_write_reloading.gb": {
+    "text": "Registers\n  A: FE  F: 80\n  B: FE  C: FE\n  D: FE  E: FE\n  H: 7F  L: FE\nAssertions\n         C: OK\n  D: 7F! E: 7F!\n         L: OK\nTest failed\n"
+  },
+  "acceptance/timer/tim10.gb": {
+    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/timer/tim00.gb": {
+    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/timer/tim11.gb": {
+    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/timer/tim01.gb": {
+    "text": "Registers\n  A: 09  F: 80\n  B: 04  C: 00\n  D: 08  E: 09\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/timer/tima_write_reloading.gb": {
+    "text": "Registers\n  A: 7F  F: 80\n  B: FE  C: 7F\n  D: 80  E: 7F\n  H: 7F  L: 7F\nAssertions\n         C: FE!\n  D: OK  E: OK\n         L: OK\nTest failed\n"
+  },
+  "acceptance/timer/tim11_div_trigger.gb": {
+    "text": "Registers\n  A: 04  F: 80\n  B: 04  C: 00\n  D: 04  E: 04\n  H: 00  L: 87\nAssertions\n  D: OK  E: 05!\nTest failed\n"
+  },
+  "acceptance/timer/div_write.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/timer/tim10_div_trigger.gb": {
+    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: 05! E: 06!\nTest failed\n"
+  },
+  "acceptance/timer/tim00_div_trigger.gb": {
+    "text": "Registers\n  A: 04  F: 80\n  B: 04  C: 00\n  D: 04  E: 04\n  H: 00  L: 87\nAssertions\n  D: OK  E: 05!\nTest failed\n"
+  },
+  "acceptance/timer/rapid_toggle.gb": {
+    "text": "Registers\n  A: 04  F: 00\n  B: FC  C: CE\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  B: FF! C: D9!\nTest failed\n"
+  },
+  "acceptance/timer/tim01_div_trigger.gb": {
+    "text": "Registers\n  A: 06  F: 80\n  B: 04  C: 00\n  D: 05  E: 06\n  H: 00  L: 87\nAssertions\n  D: 0A! E: 0B!\nTest failed\n"
+  },
+  "acceptance/boot_regs-sgb.gb": {
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: OK  C: 14!\n  D: OK  E: 00!\n  H: C0! L: 60!\nTest failed\n"
+  },
+  "acceptance/jp_cc_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/call_timing2.gb": {
+    "text": "Registers\n  A: 00  F: C0\n  B: FF  C: 9D\n  D: FF  E: B9\n  H: FF  L: D6\nAssertions\n  B: 81! C: 81!\n  D: 81! E: OK\n  H: OK  L: OK\nTest failed\n"
+  },
+  "acceptance/ld_hl_sp_e_timing.gb": {
+    "text": "Registers\n  A: 80  F: 10\n  B: D0  C: 41\n  D: D0  E: 3F\n  H: FF  L: BB\nAssertions\n  B: CF! C: FE!\n  D: OK  E: OK\nTest failed\n"
+  },
+  "acceptance/push_timing.gb": {
+    "text": "Registers\n  A: 00  F: C0\n  B: 00  C: 00\n  D: 42  E: 24\n  H: 42  L: 24\nAssertions\n  D: 81! E: OK\n  H: OK  L: OK\nTest failed\n"
+  },
+  "acceptance/boot_hwio-dmg0.gb": {
+    "text": "MISMATCH AT $FF00\nEXPECTED CF\nGOT      00\n"
+  },
+  "acceptance/rst_timing.gb": {
+    "text": "Registers\n  A: 00  F: C0\n  B: FF  C: 9E\n  D: FF  E: BD\n  H: FF  L: BD\nAssertions\n  B: 81! C: OK\n  D: OK  E: OK\nTest failed\n"
+  },
+  "acceptance/boot_hwio-S.gb": {
+    "text": "MISMATCH AT $FF00\nEXPECTED FF\nGOT      00\n"
+  },
+  "acceptance/boot_div-dmgABCmgb.gb": {
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: AC! C: AD!\n  D: AD! E: AE!\n  H: AF! L: B1!\nTest failed\n"
+  },
+  "acceptance/bits/mem_oam.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/bits/reg_f.gb": {
+    "text": "Registers\n  A: 00  F: 00\n  B: 00  C: F0\n  D: 00  E: 00\n  H: 00  L: 87\nAssertions\n         C: OK\n         E: OK\n"
+  },
+  "acceptance/bits/unused_hwio-GS.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/div_timing.gb": {
+    "text": "Registers\n  A: 01  F: 80\n  B: 00  C: 00\n  D: 01  E: 8F\n  H: FF  L: 04\nAssertions\n  B: OK  C: OK\n  D: OK\n"
+  },
+  "acceptance/ret_cc_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/boot_regs-dmg0.gb": {
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: FF! C: 13!\n  D: OK  E: C1!\n  H: 84! L: 03!\nTest failed\n"
+  },
+  "acceptance/interrupts/ie_push.gb": {
+    "text": "R1: not cancelled\n"
+  },
+  "acceptance/boot_hwio-dmgABCmgb.gb": {
+    "text": "MISMATCH AT $FF00\nEXPECTED CF\nGOT      00\n"
+  },
+  "acceptance/pop_timing.gb": {
+    "text": "Registers\n  A: 01  F: F0\n  B: 00  C: 01\n  D: 00  E: 00\n  H: FF  L: 04\nAssertions\n  A: OK\n  B: OK  C: OK\n  D: OK  E: 01!\nTest failed\n"
+  },
+  "acceptance/ret_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/oam_dma_restart.gb": {
+    "text": "Registers\n  A: 01  F: C0\n  B: 00  C: 01\n  D: 01  E: 08\n  H: FE  L: 00\nAssertions\n         C: FF!\n  D: OK\nTest failed\n"
+  },
+  "acceptance/add_sp_e_timing.gb": {
+    "text": "Registers\n  A: 40  F: 00\n  B: 00  C: 40\n  D: 00  E: 40\n  H: FF  L: CA\nAssertions\n  B: FF! C: FD!\n  D: OK  E: OK\nTest failed\n"
+  },
+  "acceptance/oam_dma/sources-GS.gb": {
+    "text": "Fail: $FE00\n"
+  },
+  "acceptance/oam_dma/basic.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/halt_ime0_nointr_timing.gb": {
+    "text": "Registers\n  A: 12  F: 80\n  B: 00  C: 00\n  D: 11  E: 12\n  H: 02  L: 04\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/ppu/vblank_stat_intr-GS.gb": {
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 12  E: 12\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: 01! E: 00!\nTest failed\n"
+  },
+  "acceptance/ppu/intr_2_mode0_timing_sprites.gb": {
+    "text": "TEST #00 FAILED\n"
+  },
+  "acceptance/ppu/stat_irq_blocking.gb": {
+    "text": "FAIL: MODE=1 INTR\n"
+  },
+  "acceptance/ppu/intr_1_2_timing-GS.gb": {
+    "text": "Registers\n  A: 00  F: 00\n  B: 15  C: 00\n  D: 14  E: 15\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/ppu/intr_2_mode0_timing.gb": {
+    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"
+  },
+  "acceptance/ppu/intr_2_0_timing.gb": {
+    "text": "Registers\n  A: 00  F: 00\n  B: 08  C: 00\n  D: 07  E: 08\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/oam_dma/reg_read.gb": {
+    "text": "Fail: r1\n"
+  },
+  "acceptance/ppu/hblank_ly_scx_timing-GS.gb": {
+    "text": "REGISTERS\n  A: 00  F: 70\n  B: 41  C: 00\n  D: 41  E: 42\n  H: FF  L: 44\nTest failed\n"
+  },
+  "acceptance/ppu/stat_lyc_onoff.gb": {
+    "text": "Fail: r1 step 1\n"
+  },
+  "acceptance/ppu/intr_2_mode3_timing.gb": {
+    "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"
+  },
+  "acceptance/ppu/lcdon_timing-GS.gb": {
+    "text": "Test failed:\nLY\nCycle:    $6F\nExpected: $01\nActual:   $00\n"
+  },
+  "acceptance/ppu/intr_2_oam_ok_timing.gb": {
+    "text": "Registers\n  A: 00  F: A0\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FE  L: 00\nAssertions\n  D: OK  E: 02!\nTest failed\n"
+  },
+  "acceptance/call_cc_timing.gb": {
+    "text": "FAIL: ROUND 1\n"
+  },
+  "acceptance/halt_ime0_ei.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/intr_timing.gb": {
+    "text": "Registers\n  A: 01  F: 80\n  B: FF  C: 04\n  D: 00  E: 01\n  H: 02  L: 0E\nAssertions\n  D: OK  E: OK\n"
+  },
+  "acceptance/instr/daa.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/if_ie_registers.gb": {
+    "text": "Registers\n  A: E0  F: 00\n  B: 00  C: E8\n  D: 01  E: E0\n  H: FF  L: 0F\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
+  },
+  "acceptance/di_timing-GS.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/serial/boot_sclk_align-dmgABCmgb.gb": {
+    "text": "Registers\n  A: A6  F: 00\n  B: 24  C: 24\n  D: 24  E: 24\n  H: 24  L: 24\nAssertions\n  A: 12!\n  B: 91! C: 90!\n  D: 90! E: 90!\n  H: 90! L: 90!\nTest failed\n"
+  },
+  "acceptance/boot_regs-sgb2.gb": {
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: FF! F: 00!\n  B: OK  C: 14!\n  D: OK  E: 00!\n  H: C0! L: 60!\nTest failed\n"
+  },
+  "acceptance/boot_div-S.gb": {
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: D9! C: DA!\n  D: DA! E: DB!\n  H: DC! L: DE!\nTest failed\n"
+  },
+  "acceptance/boot_div-dmg0.gb": {
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 19! C: 1A!\n  D: 1A! E: 1B!\n  H: 1C! L: 1E!\nTest failed\n"
+  },
+  "emulator-only/mbc5/rom_64Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_1Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_512kb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_32Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_2Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_4Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_8Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc5/rom_16Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/rom_1Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/bits_bank2.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/bits_ramg.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/rom_512kb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/bits_mode.gb": {
+    "text": "\n"
+  },
+  "emulator-only/mbc1/ram_64kb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/bits_bank1.gb": {
+    "text": "\n"
+  },
+  "emulator-only/mbc1/rom_2Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/ram_256kb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/rom_4Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/multicart_rom_8Mb.gb": {
+    "text": "TEST FAILED\n$4000-$7FFF\nMODE 00\nBANK NUMBER 10\nEXPECTED    00\nACTUAL      10\n"
+  },
+  "emulator-only/mbc1/rom_8Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc1/rom_16Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "acceptance/ppu/lcdon_write_timing-GS.gb": {
+    "text": "Test failed:\nOAM write\nCycle:    $12\nExpected: $00\nActual:   $81\n"
+  },
+  "emulator-only/mbc2/rom_1Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc2/ram.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc2/bits_unused.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc2/bits_ramg.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc2/rom_512kb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc2/bits_romb.gb": {
+    "text": "Test OK\n"
+  },
+  "emulator-only/mbc2/rom_2Mb.gb": {
+    "text": "Test OK\n"
+  },
+  "misc/boot_div-A.gb": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
+  },
+  "misc/boot_div-cgb0.gb": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 29! C: 2A!\n  D: 2A! E: 2B!\n  H: 2C! L: 2E!\nTest failed\n"
+  },
+  "misc/boot_div-cgbABCDE.gb": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
+  },
+  "misc/boot_hwio-C.gb": {
+    "text": "MISMATCH AT $FF00\nEXPECTED FF\nGOT      00\n"
+  },
+  "misc/boot_regs-A.gb": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: 01! C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
+  },
+  "misc/boot_regs-cgb.gb": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 80!\n  B: OK  C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
+  },
+  "misc/ppu/vblank_stat_intr-C.gb": {
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 12  E: 12\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: 01! E: 00!\nTest failed\n"
+  }
+}
