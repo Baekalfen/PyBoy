@@ -148,6 +148,7 @@ def test_samesuite(clean, gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, d
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)
     else:
+        assert png_path.exists(), "Test result doesn't exist"
         # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)

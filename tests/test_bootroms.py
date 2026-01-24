@@ -33,6 +33,7 @@ def test_all_modes(cgb, _bootrom, bootrom_name, frames, rom, any_rom_cgb):
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)
     else:
+        assert png_path.exists(), "Test result doesn't exist"
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
         if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):

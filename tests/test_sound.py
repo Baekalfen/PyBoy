@@ -72,6 +72,7 @@ def test_swoosh(default_rom, sampling):
     else:
         # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
         image = image.convert("RGB")
+        assert png_path.exists(), "Test result doesn't exist"
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = PIL.ImageChops.difference(image, old_image)
         if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
