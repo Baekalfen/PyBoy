@@ -173,6 +173,7 @@ def test_mooneye(clean, cgb, rom, mooneye_dir, default_rom):
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
         image.save(png_path)
     else:
+        assert png_path.exists(), "Test result doesn't exist"
         # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
         old_image = PIL.Image.open(png_path).convert("RGB")
         if "acceptance" in rom:
