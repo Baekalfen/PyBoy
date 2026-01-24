@@ -409,7 +409,6 @@ def test_randomize_ram(default_rom):
     assert not any(pyboy.memory[0xC000:0xE000]), "Internal RAM 0 not zeroed"
     assert not any(pyboy.memory[0xFE00:0xFEA0]), "OAM not zeroed"
     assert not any(pyboy.memory[0xFEA0:0xFF00]), "Non-IO internal RAM 0 not zeroed"
-    assert not any(pyboy.memory[0xFF4C:0xFF80]), "Non-IO internal RAM 1 not zeroed"
     assert not any(pyboy.memory[0xFF80:0xFFFF]), "Internal RAM 1 not zeroed"
     pyboy.stop(save=False)
 
@@ -419,7 +418,6 @@ def test_randomize_ram(default_rom):
     assert any(pyboy.memory[0xC000:0xE000]), "Internal RAM 0 not randomized"
     assert any(pyboy.memory[0xFE00:0xFEA0]), "OAM not randomized"
     assert any(pyboy.memory[0xFEA0:0xFF00]), "Non-IO internal RAM 0 not randomized"
-    assert any(pyboy.memory[0xFF4C:0xFF80]), "Non-IO internal RAM 1 not randomized"
     assert any(pyboy.memory[0xFF80:0xFFFF]), "Internal RAM 1 not randomized"
     pyboy.stop(save=False)
 

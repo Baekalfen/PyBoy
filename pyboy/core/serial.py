@@ -9,7 +9,7 @@ CYCLES_8192HZ = 128
 
 
 class Serial:
-    def __init__(self):
+    def __init__(self, cgb):
         self.SB = 0xFF  # Always 0xFF for a disconnected link cable
         self.SC = 0
         self.transfer_enabled = 0
@@ -18,13 +18,17 @@ class Serial:
         self.last_cycles = 0
         self.clock = 0
         self.clock_target = MAX_CYCLES
+        self.cgb = cgb
 
     def set_SB(self, value):
         # Always 0xFF when cable is disconnected. Connecting is not implemented yet.
         self.SB = 0xFF
 
     def set_SC(self, value):  # cgb, double_speed
-        self.SC = value
+        if self.cgb:
+            self.SC = value | 0b01111100  # Mask out read-only bits
+        else:
+            self.SC = value | 0b01111110  # Mask out read-only bits
         self.transfer_enabled = self.SC & 0x80
         # TODO:
         # if cgb and (self.SC & 0b10): # High speed transfer

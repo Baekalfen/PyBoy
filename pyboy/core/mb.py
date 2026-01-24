@@ -51,7 +51,7 @@ class Motherboard:
             logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
 
         self.timer = timer.Timer()
-        self.serial = serial.Serial()
+        self.serial = serial.Serial(cgb)
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
@@ -73,10 +73,11 @@ class Motherboard:
                 randomize=randomize,
             )
 
-        # breakpoint()
         self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, cgb)
 
         self.key1 = 0
+        self.key0 = 0
+        self.wram_select = 0
         self.double_speed = False
         self.cgb = cgb
         self.cartridge_cgb = self.cartridge.cgb
@@ -246,6 +247,7 @@ class Motherboard:
         self.sound.save_state(f)
         self.lcd.renderer.save_state(f)
         self.ram.save_state(f)
+        f.write(self.wram_select)
         self.timer.save_state(f)
         self.cartridge.save_state(f)
         self.interaction.save_state(f)
@@ -288,6 +290,25 @@ class Motherboard:
         self.lcd.renderer.load_state(f, state_version)
         self.lcd.renderer.clear_cache()
         self.ram.load_state(f, state_version)
+
+        if state_version <= 15:
+            # NON_IO_INTERNAL_RAM1 0x34
+            # self.ram.non_io_internal_ram1[i - 0xFF4C]
+
+            for n in range(0x20):
+                f.read()  # Discard unused registers
+            # FF6C
+            self.lcd.object_priority_mode = f.read()
+            for n in range(0x03):
+                f.read()  # Discard unused registers
+            # FF70
+            self.wram_select = f.read()
+            for n in range(0x0F):
+                f.read()  # Discard unused registers
+        else:
+            # See LCD for object_priority_mode from version 16
+            self.wram_select = f.read()  # FF70
+
         if state_version < 5:
             # Interrupt register moved from RAM to CPU
             self.cpu.interrupts_enabled_register = f.read()
@@ -377,8 +398,8 @@ class Motherboard:
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             bank_offset = 0
             if self.cgb and 0xD000 <= i:
-                # Find which bank to read from at FF70
-                bank = self.ram.non_io_internal_ram1[0xFF70 - 0xFF4C] & 0b111
+                # Find which bank to read from at wram_select
+                bank = self.wram_select
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank - 1) * 0x1000
@@ -402,6 +423,9 @@ class Motherboard:
                     return self.serial.SB
                 elif i == 0xFF02:
                     return self.serial.SC
+            elif i == 0xFF03:
+                # Undocumented register
+                return 0xFF
             elif 0xFF04 <= i <= 0xFF07:
                 if self.timer.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_TIMER)
@@ -413,10 +437,13 @@ class Motherboard:
                 elif i == 0xFF06:
                     return self.timer.TMA
                 elif i == 0xFF07:
-                    return self.timer.TAC
-
+                    # TODO: Move logic to Timer class. Read-only bit mask
+                    return self.timer.TAC | 0b1111_1000
+            elif 0xFF08 <= i <= 0xFF0E:
+                # Undocumented register
+                return 0xFF
             elif i == 0xFF0F:
-                return self.cpu.interrupts_flag_register
+                return self.cpu.interrupts_flag_register | 0b1110_0000
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles)
                 return self.sound.get(i - 0xFF10)
@@ -452,7 +479,9 @@ class Motherboard:
                 return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
             # CGB registers
-            if self.cgb and i == 0xFF4D:
+            if self.cgb and i == 0xFF4C:
+                return self.key0 | 0b11111011
+            elif self.cgb and i == 0xFF4D:
                 return self.key1
             elif self.cgb and i == 0xFF4F:
                 return self.lcd.vbk.get()
@@ -478,13 +507,23 @@ class Motherboard:
                 return 0x00  # Not readable
             elif self.cgb and i == 0xFF55:
                 return self.hdma.hdma5 & 0xFF
+            elif self.cgb and i == 0xFF56:
+                # IR Port
+                return 0xFF
             elif self.cgb and i == 0xFF76:
                 self.sound.tick(self.cpu.cycles)
                 return self.sound.pcm12()
             elif self.cgb and i == 0xFF77:
                 self.sound.tick(self.cpu.cycles)
                 return self.sound.pcm34()
-            return self.ram.non_io_internal_ram1[i - 0xFF4C]
+            elif self.cgb and i == 0xFF6C:
+                # Object Priority Mode
+                return self.lcd.object_priority_mode | 0b1111_1110
+            elif self.cgb and i == 0xFF70:
+                # WRAM Bank select
+                return self.wram_select | 0b1111_1000
+            else:
+                return 0xFF
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
             return self.ram.internal_ram1[i - 0xFF80]
         elif i == 0xFFFF:  # Interrupt Enable Register
@@ -515,9 +554,8 @@ class Motherboard:
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             bank_offset = 0
             if self.cgb and 0xD000 <= i:
-                # Find which bank to read from at FF70
-                bank = self.getitem(0xFF70)
-                bank &= 0b111
+                # Find which bank to read from at wram_select
+                bank = self.wram_select
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank - 1) * 0x1000
@@ -567,7 +605,7 @@ class Motherboard:
                 elif i == 0xFF07:
                     self.timer.TAC = value & 0b111  # TODO: Move logic to Timer class
             elif i == 0xFF0F:
-                self.cpu.interrupts_flag_register = value
+                self.cpu.interrupts_flag_register = value & 0b0001_1111
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles)
                 self.sound.set(i - 0xFF10, value)
@@ -615,6 +653,10 @@ class Motherboard:
                 self.bootrom_enabled = False
                 self.cpu.bail = True
             # CGB registers
+            elif i == 0xFF4C:
+                # Lock FF4C https://gbdev.io/pandocs/CGB_Registers.html#ff4c--key0-cgb-mode-only-cpu-mode-select
+                if self.cgb and self.bootrom_enabled:
+                    self.key0 = value & 0b100
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value
                 self.cpu.bail = True
@@ -631,6 +673,8 @@ class Motherboard:
             elif self.cgb and i == 0xFF55:
                 self.hdma.set_hdma5(value, self)
                 self.cpu.bail = True
+            elif self.cgb and i == 0xFF56:
+                pass  # IR Port
             elif self.cgb and i == 0xFF68:
                 self.lcd.bcps.set(value)
             elif self.cgb and i == 0xFF69:
@@ -643,8 +687,14 @@ class Motherboard:
                 self.lcd.ocpd.set(value)
                 self.lcd.renderer.clear_spritecache(0)
                 self.lcd.renderer.clear_spritecache(1)
+            elif self.cgb and i == 0xFF6C:
+                # Object Priority Mode
+                self.lcd.object_priority_mode = value & 0b0000_0001
+            elif self.cgb and i == 0xFF70:
+                # WRAM Bank select
+                self.wram_select = value & 0b111
             else:
-                self.ram.non_io_internal_ram1[i - 0xFF4C] = value
+                pass  # All other registers are read-only
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
             self.ram.internal_ram1[i - 0xFF80] = value
         elif i == 0xFFFF:  # Interrupt Enable Register

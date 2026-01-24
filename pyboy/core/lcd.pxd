@@ -34,6 +34,7 @@ cdef class LCD:
     cdef uint8_t SCX
     cdef uint8_t WY
     cdef uint8_t WX
+    cdef uint8_t object_priority_mode
     cdef uint8_t next_stat_mode
     cdef bint frame_done
     cdef bint first_frame

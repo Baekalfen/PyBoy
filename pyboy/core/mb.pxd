@@ -45,7 +45,7 @@ cdef class Motherboard:
 
     # CGB
     cdef HDMA hdma
-    cdef uint8_t key1
+    cdef uint8_t key0, key1, wram_select
     cdef bint double_speed
     cdef readonly bint cgb, cartridge_cgb
 

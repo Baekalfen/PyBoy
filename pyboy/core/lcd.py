@@ -58,6 +58,7 @@ class LCD:
         # self.DMA = 0x00
         self.WY = 0x00
         self.WX = 0x00
+        self.object_priority_mode = 0xFF  # TODO: Not implemented
 
         self.cgb = cgb
         self._scanlineparameters = [[0, 0, 0, 0, 0] for _ in range(ROWS)]
@@ -261,6 +262,7 @@ class LCD:
         f.write(self.SCX)
         f.write(self.WY)
         f.write(self.WX)
+        f.write(self.object_priority_mode)
 
         for y in range(ROWS):
             f.write(self._scanlineparameters[y][0])
@@ -310,6 +312,9 @@ class LCD:
         self.SCX = f.read()
         self.WY = f.read()
         self.WX = f.read()
+        if state_version >= 16:
+            # See motherboard before version 16
+            self.object_priority_mode = f.read()
 
         if state_version >= 11:
             for y in range(ROWS):
