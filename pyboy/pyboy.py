@@ -238,29 +238,30 @@ class PyBoy:
         if not (0 <= sound_volume <= 100):
             raise PyBoyInvalidInputException("Sound volume has to be between 0 and 100.")
 
-        self.mb = Motherboard(
-            gamerom_file,
-            ram_file,
-            rtc_file,
-            bootrom,
-            color_palette,
-            cgb_color_palette,
-            sound_volume,
-            sound_emulated,
-            sound_sample_rate,
-            cgb,
-            randomize=randomize,
-        )
+        try:
+            self.mb = Motherboard(
+                gamerom_file,
+                ram_file,
+                rtc_file,
+                bootrom,
+                color_palette,
+                cgb_color_palette,
+                sound_volume,
+                sound_emulated,
+                sound_sample_rate,
+                cgb,
+                randomize=randomize,
+            )
+        finally:
+            # Close the files we opened -- i.e. not passed from args
+            if gamerom_file_handled:
+                gamerom_file.close()
 
-        # Close the files we opened -- i.e. not passed from args
-        if gamerom_file_handled:
-            gamerom_file.close()
+            if ram_file_handled:
+                ram_file.close()
 
-        if ram_file_handled:
-            ram_file.close()
-
-        if rtc_file_handled:
-            rtc_file.close()
+            if rtc_file_handled:
+                rtc_file.close()
 
         # Validate all kwargs
         plugin_manager_keywords = []

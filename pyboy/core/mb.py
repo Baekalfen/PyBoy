@@ -3,11 +3,14 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from array import array
+
 import pyboy
 from pyboy.utils import (
     STATE_VERSION,
     PyBoyException,
     PyBoyOutOfBoundsException,
+    PyBoyInvalidOperationException,
     INTR_TIMER,
     INTR_SERIAL,
     INTR_HIGHTOLOW,
@@ -41,46 +44,53 @@ class Motherboard:
         self.cartridge = cartridge.load_cartridge(gamerom_file, ram_file, rtc_file)
         logger.debug("Cartridge started:\n%s", str(self.cartridge))
 
-        self.bootrom = bootrom.BootROM(bootrom_file, self.cartridge.cgb)
-        if self.bootrom.cgb:
-            logger.debug("Boot ROM type auto-detected to %s", ("CGB" if self.bootrom.cgb else "DMG"))
-            cgb = cgb or True
+        # If the user requested cgb hardware emulation as True or False, it takes
+        # precedence. Otherwise we auto-detect from the cartridge.
+        if cgb is None:  # Probe
+            self.cgb = self.cartridge.cgb
+            self.bootrom = bootrom.BootROM(bootrom_file, self.cgb)
+            if bootrom_file is not None:
+                self.cgb = self.bootrom.cgb
+            logger.debug("Auto-detected emulation mode: %s", ("CGB" if self.cgb else "DMG"))
+        else:
+            self.cgb = cgb
+            self.bootrom = bootrom.BootROM(bootrom_file, self.cgb)
+            if self.bootrom.cgb != self.cgb:
+                raise PyBoyInvalidOperationException("Invalid bootrom for emulation-mode")
 
-        if cgb is None:
-            cgb = self.cartridge.cgb
-            logger.debug("Cartridge type auto-detected to %s", ("CGB" if self.cartridge.cgb else "DMG"))
+        # self.cgb  Controls hw initialization
+        self.cgb_mode = self.cgb and self.cartridge.cgb  # Controls access
 
         self.timer = timer.Timer()
-        self.serial = serial.Serial(cgb)
+        self.serial = serial.Serial(self.cgb_mode)
         self.interaction = interaction.Interaction()
-        self.ram = ram.RAM(cgb, randomize=randomize)
+        self.ram = ram.RAM(self.cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
 
-        if cgb:
+        if self.cgb:
             self.lcd = lcd.CGBLCD(
-                cgb,
-                self.cartridge.cgb or self.bootrom.cgb,
+                self.cgb,
+                self.cgb_mode,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
             )
         else:
             self.lcd = lcd.LCD(
-                cgb,
-                self.cartridge.cgb or self.bootrom.cgb,
+                self.cgb,
+                self.cgb_mode,
                 color_palette,
                 cgb_color_palette,
                 randomize=randomize,
             )
 
-        self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, cgb)
+        self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, self.cgb)
 
         self.key1 = 0
         self.key0 = 0
         self.wram_select = 0
+        self.cgb_undocumented = array("B", [0] * 4)
         self.double_speed = False
-        self.cgb = cgb
-        self.cartridge_cgb = self.cartridge.cgb
 
         if self.cgb:
             self.hdma = HDMA()
@@ -327,7 +337,7 @@ class Motherboard:
 
     def tick(self):
         while not self.lcd.frame_done:
-            if self.cgb and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
+            if self.cgb_mode and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
                 # Fast-forward to next interrupt:
@@ -338,7 +348,7 @@ class Motherboard:
                 # Serial is not implemented, so this isn't a concern
 
                 mode0_cycles = MAX_CYCLES
-                if self.cgb and self.hdma.transfer_active:
+                if self.cgb_mode and self.hdma.transfer_active:
                     mode0_cycles = self.lcd.cycles_to_mode0()
 
                 cycles_target = max(
@@ -479,33 +489,22 @@ class Motherboard:
                 return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
             # CGB registers
-            if self.cgb and i == 0xFF4C:
+            if self.cgb_mode and i == 0xFF4C:
                 return self.key0 | 0b11111011
-            elif self.cgb and i == 0xFF4D:
+            elif self.cgb_mode and i == 0xFF4D:
                 return self.key1
             elif self.cgb and i == 0xFF4F:
                 return self.lcd.vbk.get()
             elif self.cgb and i == 0xFF68:
                 return self.lcd.bcps.get() | 0x40
-            elif self.cgb and i == 0xFF69:
+            elif self.cgb_mode and i == 0xFF69:
                 return self.lcd.bcpd.get()
             elif self.cgb and i == 0xFF6A:
                 return self.lcd.ocps.get() | 0x40
-            elif self.cgb and i == 0xFF6B:
+            elif self.cgb_mode and i == 0xFF6B:
                 return self.lcd.ocpd.get()
-            elif self.cgb and i == 0xFF51:
-                # logger.debug("HDMA1 is not readable")
-                return 0x00  # Not readable
-            elif self.cgb and i == 0xFF52:
-                # logger.debug("HDMA2 is not readable")
-                return 0x00  # Not readable
-            elif self.cgb and i == 0xFF53:
-                # logger.debug("HDMA3 is not readable")
-                return 0x00  # Not readable
-            elif self.cgb and i == 0xFF54:
-                # logger.debug("HDMA4 is not readable")
-                return 0x00  # Not readable
-            elif self.cgb and i == 0xFF55:
+            elif self.cgb_mode and i == 0xFF55:
+                # HDMA1, HDMA2, HDMA3, HDMA4 are read-only and fallsthrough
                 return self.hdma.hdma5 & 0xFF
             elif self.cgb and i == 0xFF56:
                 # IR Port
@@ -516,12 +515,18 @@ class Motherboard:
             elif self.cgb and i == 0xFF77:
                 self.sound.tick(self.cpu.cycles)
                 return self.sound.pcm34()
-            elif self.cgb and i == 0xFF6C:
+            elif self.cgb_mode and i == 0xFF6C:
                 # Object Priority Mode
                 return self.lcd.object_priority_mode | 0b1111_1110
-            elif self.cgb and i == 0xFF70:
+            elif self.cgb_mode and i == 0xFF70:
                 # WRAM Bank select
                 return self.wram_select | 0b1111_1000
+            elif self.cgb and 0xFF72 <= i <= 0xFF73:
+                return self.cgb_undocumented[i - 0xFF72]
+            elif self.cgb_mode and i == 0xFF74:
+                return self.cgb_undocumented[2]
+            elif self.cgb and i == 0xFF75:
+                return self.cgb_undocumented[3]
             else:
                 return 0xFF
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM
@@ -656,21 +661,31 @@ class Motherboard:
             elif i == 0xFF4C:
                 # Lock FF4C https://gbdev.io/pandocs/CGB_Registers.html#ff4c--key0-cgb-mode-only-cpu-mode-select
                 if self.cgb and self.bootrom_enabled:
+                    if value == 0xC0:
+                        logger.debug("key0: Game identified as CGB-only")
+                    elif value == 0x80:
+                        logger.debug("key0: Game identified as CGB-compatible")
+                    elif value == 0x04:
+                        logger.debug("key0: Game identified as DMG-only")
+                    else:
+                        logger.error("key0: Unknown write: %x", value)
                     self.key0 = value & 0b100
+                    self.lcd.switch_cgb(self.key0)  # TODO: save/load state
+
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value
                 self.cpu.bail = True
             elif self.cgb and i == 0xFF4F:
                 self.lcd.vbk.set(value)
-            elif self.cgb and i == 0xFF51:
+            elif self.cgb_mode and i == 0xFF51:
                 self.hdma.hdma1 = value
-            elif self.cgb and i == 0xFF52:
+            elif self.cgb_mode and i == 0xFF52:
                 self.hdma.hdma2 = value  # & 0xF0
-            elif self.cgb and i == 0xFF53:
+            elif self.cgb_mode and i == 0xFF53:
                 self.hdma.hdma3 = value  # & 0x1F
-            elif self.cgb and i == 0xFF54:
+            elif self.cgb_mode and i == 0xFF54:
                 self.hdma.hdma4 = value  # & 0xF0
-            elif self.cgb and i == 0xFF55:
+            elif self.cgb_mode and i == 0xFF55:
                 self.hdma.set_hdma5(value, self)
                 self.cpu.bail = True
             elif self.cgb and i == 0xFF56:
@@ -683,16 +698,22 @@ class Motherboard:
                 self.lcd.renderer.clear_tilecache(1)
             elif self.cgb and i == 0xFF6A:
                 self.lcd.ocps.set(value)
-            elif self.cgb and i == 0xFF6B:
+            elif self.cgb_mode and i == 0xFF6B:
                 self.lcd.ocpd.set(value)
                 self.lcd.renderer.clear_spritecache(0)
                 self.lcd.renderer.clear_spritecache(1)
-            elif self.cgb and i == 0xFF6C:
+            elif self.cgb_mode and i == 0xFF6C:
                 # Object Priority Mode
                 self.lcd.object_priority_mode = value & 0b0000_0001
-            elif self.cgb and i == 0xFF70:
+            elif self.cgb_mode and i == 0xFF70:
                 # WRAM Bank select
                 self.wram_select = value & 0b111
+            elif self.cgb and 0xFF72 <= i <= 0xFF73:
+                self.cgb_undocumented[i - 0xFF72] = value
+            elif self.cgb_mode and i == 0xFF74:
+                self.cgb_undocumented[2] = value
+            elif self.cgb and i == 0xFF75:
+                self.cgb_undocumented[3] = value | 0b1000_1111
             else:
                 pass  # All other registers are read-only
         elif 0xFF80 <= i < 0xFFFF:  # Internal RAM

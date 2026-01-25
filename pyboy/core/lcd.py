@@ -26,7 +26,7 @@ def rgb_to_bgr(color):
 
 
 class LCD:
-    def __init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False):
+    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
         self.disable_renderer = False
@@ -72,19 +72,23 @@ class LCD:
             self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in bg_pal])
             self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj0_pal])
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj1_pal])
-            if cartridge_cgb:
-                logger.debug("Starting CGB renderer")
-                self.renderer = CGBRenderer()
-            else:
-                logger.debug("Starting CGB renderer in DMG-mode")
-                # Running DMG ROM on CGB hardware uses the palettes above
-                self.renderer = Renderer(False)
+            logger.debug("Starting CGB renderer")
+            self.renderer = CGBRenderer(cgb_mode)
         else:
             logger.debug("Starting DMG renderer")
             self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in color_palette])
             self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.renderer = Renderer(False)
+
+    def switch_cgb(self, is_dmg_rom):
+        # Bootrom requests CGB hardware to switch to DMG rendering. This is only
+        # done once, and only downgraded from CGB to DMG at the end of CGB bootrom.
+        if self.cgb and is_dmg_rom:
+            logger.debug("Migrating from CGB renderer to DMG renderer")
+            self.renderer = self.renderer.downgrade_to_dmg()
+        else:
+            logger.debug("Ignoring key0 change")
 
     def set_lcdc(self, value):
         _lcd_enable = self._LCDC.lcd_enable
@@ -463,8 +467,8 @@ BG_PRIORITY_FLAG = 0b10
 
 
 class Renderer:
-    def __init__(self, cgb):
-        self.cgb = cgb
+    def __init__(self, cgb_mode):
+        self.cgb = cgb_mode
         self.color_format = "RGBA"
 
         self.buffer_dims = (ROWS, COLS)
@@ -821,8 +825,8 @@ class Renderer:
 
 
 class CGBLCD(LCD):
-    def __init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False):
-        LCD.__init__(self, cgb, cartridge_cgb, color_palette, cgb_color_palette, randomize=False)
+    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
+        LCD.__init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False)
         self.VRAM1 = array("B", [0] * VIDEO_RAM)
 
         self.vbk = VBKregister()
@@ -833,8 +837,19 @@ class CGBLCD(LCD):
 
 
 class CGBRenderer(Renderer):
-    def __init__(self):
-        Renderer.__init__(self, True)
+    def __init__(self, cgb_mode):
+        Renderer.__init__(self, cgb_mode)
+
+    def downgrade_to_dmg(self):
+        renderer = Renderer(False)
+
+        # Copy all screenbuffer references, to not break window and api/screen.py
+        renderer._screenbuffer_raw = self._screenbuffer_raw
+        renderer._screenbuffer_attributes_raw = self._screenbuffer_attributes_raw
+        renderer._screenbuffer = self._screenbuffer
+        renderer._screenbuffer_attributes = self._screenbuffer_attributes
+        renderer._screenbuffer_ptr = self._screenbuffer_ptr
+        return renderer
 
     def _cgb_get_background_map_attributes(self, lcd, i):
         tile_num = lcd.VRAM1[i]
