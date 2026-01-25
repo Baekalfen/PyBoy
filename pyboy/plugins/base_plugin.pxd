@@ -25,7 +25,6 @@ cdef class PyBoyPlugin:
     cdef Renderer renderer
     cdef bint is_cgb_renderer
     cdef CGBRenderer cgb_renderer
-    cdef LCD lcd
     cdef bint cgb
     cdef dict pyboy_argv
     @cython.locals(event=WindowEvent)

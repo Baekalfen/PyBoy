@@ -4,28 +4,34 @@
 #
 
 from pyboy.utils import MAX_CYCLES
+import pyboy
+
+logger = pyboy.logging.get_logger(__name__)
 
 CYCLES_8192HZ = 128
 
 
 class Serial:
-    def __init__(self, cgb):
+    def __init__(self, cgb_mode):
+        self.cgb_mode = cgb_mode  # Indicates if we are CGB hardware, running in CGB or DMG mode
         self.SB = 0xFF  # Always 0xFF for a disconnected link cable
-        self.SC = 0
+        if self.cgb_mode:
+            self.SC = 0b01111100
+        else:
+            self.SC = 0b01111110
         self.transfer_enabled = 0
         self.internal_clock = 0
         self._cycles_to_interrupt = 0
         self.last_cycles = 0
         self.clock = 0
         self.clock_target = MAX_CYCLES
-        self.cgb = cgb
 
     def set_SB(self, value):
         # Always 0xFF when cable is disconnected. Connecting is not implemented yet.
         self.SB = 0xFF
 
     def set_SC(self, value):  # cgb, double_speed
-        if self.cgb:
+        if self.cgb_mode:
             self.SC = value | 0b01111100  # Mask out read-only bits
         else:
             self.SC = value | 0b01111110  # Mask out read-only bits

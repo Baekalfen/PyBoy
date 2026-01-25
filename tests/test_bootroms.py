@@ -11,6 +11,7 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 from pyboy import PyBoy
+from pyboy.utils import PyBoyInvalidOperationException
 
 OVERWRITE_PNGS = False
 
@@ -22,7 +23,13 @@ OVERWRITE_PNGS = False
 )
 @pytest.mark.parametrize("rom", [lf("any_rom"), lf("any_rom_cgb")])
 def test_all_modes(cgb, _bootrom, bootrom_name, frames, rom, any_rom_cgb):
-    pyboy = PyBoy(rom, window="null", bootrom=_bootrom, cgb=cgb)
+    # if ((not cgb) and (bootrom_name == "cgb") and (rom != any_rom_cgb)) or (cgb and (bootrom_name == "dmg") or ((cgb is False) and (bootrom_name == "cgb"))):
+    if ((cgb is False) and bootrom_name == "cgb") or ((cgb is True) and bootrom_name == "dmg"):
+        with pytest.raises(PyBoyInvalidOperationException):
+            pyboy = PyBoy(rom, window="null", bootrom=_bootrom, cgb=cgb)
+        return
+    else:
+        pyboy = PyBoy(rom, window="null", bootrom=_bootrom, cgb=cgb)
     pyboy.tick(frames, True)
 
     rom_name = "cgbrom" if rom == any_rom_cgb else "dmgrom"

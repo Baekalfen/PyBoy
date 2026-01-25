@@ -17,4 +17,5 @@
 00:00d3 main.B2
 00:00db main.O
 00:00e3 main.Y2
-00:00fc exit
+00:00f0 exit
+00:00f9 _exit

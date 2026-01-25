@@ -52,7 +52,7 @@
     "blargg/cgb_sound/rom_singles/06-overflow on trigger.gb": "06-overflow on trigger\n\n0555 0666 071C 0787 07C1 07E0 07F0 \n0556 0667 071D 0788 07C2 07E1 07F1 \nPassed\n",
     "blargg/cgb_sound/rom_singles/07-len sweep period sync.gb": "07-len sweep period sync\n\n\nPowering up APU MODs next frame time with 8192\n\nFailed #5\n",
     "blargg/cgb_sound/rom_singles/08-len ctr during power.gb": "08-len ctr during power\n\n40 00 40 40 \nPassed\n",
-    "blargg/cgb_sound/rom_singles/09-wave read while on.gb": "09-wave read while on\n\n44 BB 99 33 FF EE AA 22 BB CC BB CC DD EE AA 00 22 44 55 88 AA 99 44 99 EE 55 BB 33 22 55 CC 66 FF 99 00 22 55 00 BB 99 55 11 77 AA BB CC FF FF FF BB 11 33 55 99 DD 11 FF 44 99 11 55 AA 33 66 00 AA 44 CC 88 64660509 \nFailed\n",
+    "blargg/cgb_sound/rom_singles/09-wave read while on.gb": "09-wave read while on\n\n11 99 22 DD BB 99 11 66 CC CC BB DD FF 11 99 00 00 11 00 33 44 FF AA 00 66 AA FF 88 99 FF 77 FF BB 88 11 44 88 33 CC 88 44 22 BB AA 88 55 66 55 44 FF BB EE 00 33 66 BB DD 44 BB 44 77 DD 66 AA 00 BB 77 22 AA A0A04014 \nFailed\n",
     "blargg/cgb_sound/rom_singles/10-wave trigger while on.gb": "10-wave trigger while on\n\n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF \n00 11 22 33 44 55 66 77 88 99",
     "blargg/cgb_sound/rom_singles/11-regs after power.gb": "11-regs after power\n\n\nPassed\n",
     "blargg/cgb_sound/rom_singles/12-wave.gb": "12-wave\n\n\nTimer period or phase resetting is wrong\n\nFailed #2\n"

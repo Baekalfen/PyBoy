@@ -53,6 +53,8 @@ cdef class LCD:
     cdef uint64_t last_cycles
     cdef int64_t _cycles_to_interrupt, _cycles_to_frame
 
+    cdef void switch_cgb(self, bint) noexcept with gil
+
     @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
     cdef uint8_t tick(self, uint64_t) noexcept nogil
 
