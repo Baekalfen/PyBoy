@@ -1201,6 +1201,7 @@ class PyBoy:
         for sym_path in [self.symbols_file] + gamerom_paths:
             if sym_path and os.path.isfile(sym_path):
                 logger.info("Loading symbol file: %s", sym_path)
+                group = "labels"
                 with open(sym_path) as f:
                     for _line in f.readlines():
                         line = _line.strip()
@@ -1210,24 +1211,30 @@ class PyBoy:
                             continue
                         elif line.startswith("["):
                             # Start of key group
+                            group = line.strip()[1:-1]
                             # [labels]
                             # [definitions]
                             continue
 
-                        try:
-                            bank, addr, sym_label = re.split(":| ", line.strip())
-                            bank = int(bank, 16)
-                            addr = int(addr, 16)
-                            if bank not in self.rom_symbols:
-                                self.rom_symbols[bank] = {}
+                        if group == "labels":
+                            try:
+                                bank, addr, sym_label = re.split(":| ", line.strip())
+                                bank = int(bank, 16)
+                                addr = int(addr, 16)
+                                if bank not in self.rom_symbols:
+                                    self.rom_symbols[bank] = {}
 
-                            if addr not in self.rom_symbols[bank]:
-                                self.rom_symbols[bank][addr] = []
+                                if addr not in self.rom_symbols[bank]:
+                                    self.rom_symbols[bank][addr] = []
 
-                            self.rom_symbols[bank][addr].append(sym_label)
-                            self.rom_symbols_inverse[sym_label] = (bank, addr)
-                        except ValueError:
-                            logger.warning("Skipping .sym line: %s", line.strip())
+                                self.rom_symbols[bank][addr].append(sym_label)
+                                self.rom_symbols_inverse[sym_label] = (bank, addr)
+                            except ValueError:
+                                logger.warning("Skipping .sym line: %s", line.strip())
+                        elif group == "definitions":
+                            pass
+                        else:
+                            logger.warning("Invalid group. Skipping .sym line: %s", line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
