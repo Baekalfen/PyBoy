@@ -21,9 +21,9 @@ OVERWRITE_PNGS = False
         "window_y_trigger_wx_offscreen.gb",
     ],
 )
-def test_turtletests(rom, turtletests_dir):
-    pyboy = PyBoy(turtletests_dir + rom, window="null")
-    pyboy.tick(60 + 20, True)
+def test_turtletests(rom, turtletests_dir, boot_rom):
+    pyboy = PyBoy(turtletests_dir + rom, bootrom=boot_rom, window="null")
+    pyboy.tick(60 * 6, True)
 
     png_path = Path(f"tests/test_results/TurtleTest/{rom}.png")
     image = pyboy.screen.image
