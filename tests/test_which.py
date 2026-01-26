@@ -8,20 +8,34 @@ from pathlib import Path
 
 import PIL
 import pytest
+from pytest_lazy_fixtures import lf
 
 from pyboy import PyBoy
 
-OVERWRITE_PNGS = False
+OVERWRITE_PNGS = True
 
 
-@pytest.mark.parametrize("cgb", [False, True])
-def test_which(cgb, which_file):
-    pyboy = PyBoy(which_file, window="null", cgb=cgb)
+@pytest.mark.parametrize(
+    "cgb, bootrom",
+    [
+        (False, None),
+        (True, None),
+        (False, lf("boot_rom")),
+        (True, lf("boot_cgb_rom")),
+    ],
+)
+def test_which(cgb, bootrom, which_file):
+    pyboy = PyBoy(which_file, window="null", cgb=cgb, bootrom=bootrom)
     pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)
 
-    png_path = Path(f"tests/test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(which_file)}.png")
+    if bootrom is not None:
+        pyboy.tick(400, True)
+
+    png_path = Path(
+        f"tests/test_results/which/{'cgb' if cgb else 'dmg'}_{'builtin' if bootrom is None else 'native'}_{os.path.basename(which_file)}.png"
+    )
     image = pyboy.screen.image
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
