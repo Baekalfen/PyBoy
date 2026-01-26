@@ -193,6 +193,10 @@ class LCD:
                     self.clock_target += 80
                     self.next_stat_mode = 3
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    # If this condition is not met in mode 2, at some point in this
+                    # frame, the window will not show.
+                    # FIXME: Strange Cython work-around. I thought I had fixed this.
+                    self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
                 elif self._STAT._mode == 3:
                     self.clock_target += 170
                     self.next_stat_mode = 0
@@ -226,6 +230,7 @@ class LCD:
                     if self.LY == 144:
                         interrupt_flag |= INTR_VBLANK
                         if self.first_frame:
+                            self.renderer.wy_activated_frame = False
                             # Pan Docs: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
@@ -526,6 +531,10 @@ class Renderer:
 
         self.ly_window = 0
 
+        # WY has a strange behavior described at:
+        # https://gbdev.io/pandocs/Scrolling.html#window
+        self.wy_activated_frame = False
+
     def scanline(self, lcd, y):
         if lcd.disable_renderer:
             return
@@ -534,7 +543,7 @@ class Renderer:
         wx, wy = lcd.getwindowpos()
 
         x = 0
-        if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+        if lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
             # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
             self.ly_window += 1
 
@@ -918,8 +927,7 @@ class CGBRenderer(Renderer):
         wx, wy = lcd.getwindowpos()
 
         x = 0
-
-        if lcd._LCDC.window_enable and wy <= y and wx < COLS:
+        if lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
             # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
             self.ly_window += 1
 

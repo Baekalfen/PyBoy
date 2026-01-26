@@ -134,6 +134,7 @@ cdef class Renderer:
 
     cdef int[10] sprites_to_render
     cdef int ly_window
+    cdef bint wy_activated_frame
     cdef void invalidate_tile(self, int, int) noexcept nogil
 
     cdef void blank_screen(self, LCD) noexcept nogil
