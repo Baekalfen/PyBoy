@@ -18,9 +18,9 @@ OVERWRITE_PNGS = False
 def test_whichboot(cgb, whichboot_file, boot_rom, boot_cgb_rom):
     pyboy = PyBoy(whichboot_file, window="null", cgb=cgb, bootrom=boot_cgb_rom if cgb else boot_rom)
     pyboy.set_emulation_speed(0)
-    pyboy.tick(1000, True)
+    pyboy.tick(500, True)
 
-    png_path = Path(f"tests/test_results/{'cgb' if cgb else 'dmg'}_{os.path.basename(whichboot_file)}.png")
+    png_path = Path(f"tests/test_results/whichboot/{'cgb' if cgb else 'dmg'}_{os.path.basename(whichboot_file)}.png")
     image = pyboy.screen.image
     if OVERWRITE_PNGS:
         png_path.parents[0].mkdir(parents=True, exist_ok=True)
