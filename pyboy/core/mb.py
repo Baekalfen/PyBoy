@@ -337,7 +337,12 @@ class Motherboard:
 
     def tick(self):
         while not self.lcd.frame_done:
-            if self.cgb_mode and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 == 0:
+            if (
+                self.cgb_mode
+                and (not self.cpu.halted)
+                and self.hdma.transfer_active
+                and self.lcd._STAT._mode & 0b11 == 0
+            ):
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
             else:
                 # Fast-forward to next interrupt:
