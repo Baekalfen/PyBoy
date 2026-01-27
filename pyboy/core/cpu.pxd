@@ -23,7 +23,7 @@ cdef int16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 
-
+@cython.final
 cdef class CPU:
     cdef bint interrupt_master_enable, interrupt_queued, halted, stopped, bail
 

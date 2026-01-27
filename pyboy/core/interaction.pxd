@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from cython cimport final
 from libc.stdint cimport uint8_t
 
 from pyboy.logging.logging cimport Logger
@@ -16,6 +17,7 @@ cdef uint8_t reset_bit(uint8_t, uint8_t) noexcept
 cdef uint8_t set_bit(uint8_t, uint8_t) noexcept
 
 
+@final
 cdef class Interaction:
     cdef uint8_t directional, standard
     cdef bint key_event(self, WindowEvent) noexcept

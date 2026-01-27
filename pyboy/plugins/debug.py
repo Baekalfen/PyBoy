@@ -637,7 +637,7 @@ class SpriteViewWindow(BaseDebugWindow):
                 self.buf0[y, x] = SPRITE_BACKGROUND
 
         for ly in range(144):
-            self.mb.lcd.renderer.scanline_sprites(self.mb.lcd, ly, self.buf0, self.buf0_attributes, True)
+            self.mb.lcd.renderer.scanline_sprites(ly, self.buf0, self.buf0_attributes, True)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)

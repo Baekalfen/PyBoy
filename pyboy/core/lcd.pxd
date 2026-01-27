@@ -4,6 +4,7 @@
 #
 
 import cython
+from cython cimport final
 
 from cpython.array cimport array
 from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t
@@ -24,6 +25,7 @@ cdef Logger logger
 
 @cython.locals(a=uint32_t, r=uint32_t, g=uint32_t, b=uint32_t)
 cpdef uint32_t rgb_to_bgr(uint32_t) noexcept
+
 
 cdef class LCD:
     cdef bint disable_renderer
@@ -53,19 +55,25 @@ cdef class LCD:
     cdef uint64_t last_cycles
     cdef int64_t _cycles_to_interrupt, _cycles_to_frame
 
+    @final
     cdef void switch_cgb(self, bint) noexcept with gil
 
+    @final
     @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
     cdef uint8_t tick(self, uint64_t) noexcept nogil
 
+    @final
     cdef void set_lcdc(self, uint8_t) noexcept nogil
 
+    @final
     cdef int64_t cycles_to_mode0(self) noexcept nogil
 
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
+    @final
     cdef inline (int, int) getwindowpos(self) noexcept nogil
+    @final
     cdef inline (int, int) getviewport(self) noexcept nogil
 
     # CGB
@@ -78,29 +86,38 @@ cdef class LCD:
     cdef PaletteIndexRegister ocps
     cdef PaletteColorRegister ocpd
 
-
+@final
 cdef class PaletteRegister:
     cdef uint8_t value
     cdef uint32_t[4] lookup
     cdef uint32_t[4] palette_mem_rgb
 
+    @final
     @cython.locals(x=uint16_t)
     cdef bint set(self, uint64_t) noexcept nogil
+    @final
     cdef uint8_t get(self) noexcept nogil
+    @final
     cdef inline uint32_t getcolor(self, uint8_t) noexcept nogil
 
+@final
 cdef class STATRegister:
     cdef uint8_t value
     cdef uint8_t _mode
+    @final
     cdef uint8_t set_mode(self, uint8_t) noexcept nogil
+    @final
     cdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept nogil
+    @final
     cdef void set(self, uint64_t) noexcept nogil
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
+@final
 cdef class LCDCRegister:
     cdef uint8_t value
 
+    @final
     cdef void set(self, uint64_t) noexcept nogil
 
     cdef bint lcd_enable
@@ -117,6 +134,7 @@ cdef class LCDCRegister:
     cdef uint16_t windowmap_offset
 
 cdef class Renderer:
+    cdef LCD lcd
     cdef uint8_t[:] _tilecache_state, _spritecache_state
     cdef str color_format
     cdef tuple buffer_dims
@@ -137,7 +155,7 @@ cdef class Renderer:
     cdef bint wy_activated_frame
     cdef void invalidate_tile(self, int, int) noexcept nogil
 
-    cdef void blank_screen(self, LCD) noexcept nogil
+    cdef void blank_screen(self) noexcept nogil
 
     @cython.locals(
         bx=int,
@@ -156,7 +174,7 @@ cdef class Renderer:
         col0=uint8_t,
         pixel=uint32_t,
     )
-    cdef void scanline(self, LCD, int) noexcept nogil
+    cdef void scanline(self, int) noexcept nogil
 
     @cython.locals(tile_addr=uint64_t, tile=int)
     cdef inline (int, int, uint16_t) _get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
@@ -191,12 +209,13 @@ cdef class Renderer:
         bgmappriority=bint,
         sprite_cache_no=int,
     )
-    cdef void scanline_sprites(self, LCD, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
+    cdef void scanline_sprites(self, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
     cdef void sort_sprites(self, int) noexcept nogil
 
     cdef void clear_cache(self) noexcept nogil
     cdef void clear_tilecache(self, int) noexcept nogil
     cdef void clear_spritecache(self, int) noexcept nogil
+    # @final
     @cython.locals(
         x=int,
         t=int,
@@ -208,6 +227,7 @@ cdef class Renderer:
         colorcode_high=uint64_t,
     )
     cdef void update_tilecache(self, int, LCD, int, int) noexcept nogil
+    # @final
     @cython.locals(
         x=int,
         t=int,
@@ -225,7 +245,6 @@ cdef class Renderer:
 
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
-
 
 cdef class CGBLCD(LCD):
     pass
