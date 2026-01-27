@@ -165,16 +165,17 @@ def mooneye_dir():
     return str(path) + "/"
 
 
+# https://github.com/alloncm/MagenTests
 @pytest.fixture(scope="session")
-def magen_test_file():
-    path = extra_test_rom_dir / Path("magen_test2.gb")
+def magen_dir():
+    path = extra_test_rom_dir / Path("MagenTests")
     with FileLock(path.with_suffix(".lock")):
-        if not os.path.isfile(path):
-            print(url_open("https://pyboy.dk/mirror/LICENSE.magen_test.txt"))
-            magen_test_data = url_open("https://pyboy.dk/mirror/magen_test_bg_oam_priority.gbc")
-            with open(path, "wb") as rom_file:
-                rom_file.write(magen_test_data)
-    return str(path)
+        if not os.path.isdir(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.MagenTests.txt"))
+            turtle_data = io.BytesIO(url_open("https://pyboy.dk/mirror/MagenTests2.zip"))
+            with ZipFile(turtle_data) as _zip:
+                _zip.extractall(path)
+    return str(path) + "/"
 
 
 @pytest.fixture(scope="session")
