@@ -10,10 +10,28 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
+from pyboy.utils import _bcd_to_dec, bcd_to_dec
 
 from .base_plugin import PyBoyGameWrapper
 
 logger = pyboy.logging.get_logger(__name__)
+
+# Set of addresses for information on pokemon
+# Based on the following link: https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map
+ADDR_TITLE_SCREEN = 0x1FC3
+ADDR_NUMBER_OF_POKEMON = 0xD163 # In party
+
+#Item related values
+ADDR_TOTAL_ITEMS = 0xD53A
+ADDR_BADGES = 0xD356 # Currently requires conversion (each bit is an independent switch and represents a badge)
+
+# Game Time
+ADDR_HOURS = 0xDA40
+ADDR_MINUTES = 0xDA42
+ADDR_SECONDS = 0xDA44
+
+# Battle mode - May remove this due to not knowing exactly what it does.
+ADDR_BATTLE = 0xD057
 
 
 class GameWrapperPokemonGen1(PyBoyGameWrapper):
@@ -35,6 +53,22 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def post_tick(self):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
+
+        self.number_of_pokemon = bcd_to_dec(self.pyboy.memory[ADDR_NUMBER_OF_POKEMON])
+        _total_items = bcd_to_dec(self.pyboy.memory[ADDR_TOTAL_ITEMS])
+        self.total_items = _total_items - 1 # This is because the cancel button seems to be counted as an item.
+        # Extract the time in game:
+        _hours = _bcd_to_dec(self.pyboy.memory[ADDR_HOURS: ADDR_HOURS+2])
+        _minutes = _bcd_to_dec(self.pyboy.memory[ADDR_MINUTES: ADDR_MINUTES+2])
+        _seconds = bcd_to_dec(self.pyboy.memory[ADDR_SECONDS])
+        self.game_time = f'{_hours}:{_minutes}:{_seconds}'
+
+        # Check whether the player is in battle mode or out of battle
+        if self.pyboy.memory[ADDR_BATTLE] == 1:
+            self.battle_state = 'In Battle'
+        else:
+            self.battle_state = 'Overworld'
+
 
         scanline_parameters = self.pyboy.screen.tilemap_position_list
         # WX = scanline_parameters[0][2]
@@ -78,4 +112,9 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         return game_area
 
     def __repr__(self):
-        return "Pokemon Gen 1:\n" + super().__repr__()
+        return ("Pokemon Gen 1:\n"
+                + f"Pokemon in Party: {self.number_of_pokemon}\n"
+                + f"Battle State: {self.battle_state}\n"
+                + f"Game Time: {self.game_time}\n"
+                + f"Total items: {self.total_items}\n"
+                + super().__repr__())
