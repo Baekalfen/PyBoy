@@ -9,7 +9,7 @@ import pytest
 
 import numpy as np
 from pyboy import PyBoy
-from pyboy.core.lcd import CGBLCD, LCD, Renderer
+from pyboy.core.lcd import LCD, Renderer
 from pyboy.utils import cython_compiled, INTR_LCDC, FRAME_CYCLES
 
 color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
@@ -306,7 +306,7 @@ class TestLCD:
         # https://forums.nesdev.org/viewtopic.php?f=20&t=18023
 
     def test_frame_cycles_double_speed(self):
-        lcd = CGBLCD(True, True, color_palette, cgb_color_palette)
+        lcd = LCD(True, True, color_palette, cgb_color_palette)
         lcd.set_lcdc(1 << 7)  # Enable LCD
         assert lcd._LCDC.lcd_enable
 

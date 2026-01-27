@@ -8,7 +8,7 @@ cimport numpy as cnp
 from cpython.array cimport array
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t
 
-from pyboy.core.lcd cimport LCD, Renderer, CGBRenderer
+from pyboy.core.lcd cimport Renderer
 from pyboy.core.sound cimport Sound
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
@@ -23,8 +23,6 @@ cdef class PyBoyPlugin:
     cdef object pyboy
     cdef Motherboard mb
     cdef Renderer renderer
-    cdef bint is_cgb_renderer
-    cdef CGBRenderer cgb_renderer
     cdef bint cgb
     cdef dict pyboy_argv
     @cython.locals(event=WindowEvent)

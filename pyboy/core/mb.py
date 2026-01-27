@@ -67,22 +67,13 @@ class Motherboard:
         self.ram = ram.RAM(self.cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
 
-        if self.cgb:
-            self.lcd = lcd.CGBLCD(
-                self.cgb,
-                self.cgb_mode,
-                color_palette,
-                cgb_color_palette,
-                randomize=randomize,
-            )
-        else:
-            self.lcd = lcd.LCD(
-                self.cgb,
-                self.cgb_mode,
-                color_palette,
-                cgb_color_palette,
-                randomize=randomize,
-            )
+        self.lcd = lcd.LCD(
+            self.cgb,
+            self.cgb_mode,
+            color_palette,
+            cgb_color_palette,
+            randomize=randomize,
+        )
 
         self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, self.cgb)
 
@@ -675,7 +666,10 @@ class Motherboard:
                     else:
                         logger.error("key0: Unknown write: %x", value)
                     self.key0 = value & 0b100
-                    self.lcd.switch_cgb(self.key0)  # TODO: save/load state
+
+                    if self.key0 and self.lcd.renderer.cgb:
+                        logger.debug("Migrating from CGB renderer to DMG renderer")
+                        self.lcd.switch_cgb(self.key0)  # TODO: save/load state
 
             elif self.cgb and i == 0xFF4D:
                 self.key1 = value

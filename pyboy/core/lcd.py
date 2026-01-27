@@ -67,26 +67,36 @@ class LCD:
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
 
         if self.cgb:
+            logger.debug("Starting CGB renderer")
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
             bg_pal, obj0_pal, obj1_pal = cgb_color_palette
             self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in bg_pal])
             self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj0_pal])
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj1_pal])
-            logger.debug("Starting CGB renderer")
-            self.renderer = CGBRenderer(self, cgb_mode)
         else:
             logger.debug("Starting DMG renderer")
             self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in color_palette])
             self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
-            self.renderer = Renderer(self, False)
+        self.renderer = Renderer(self, self.cgb)
+
+        # CGB specific
+        if self.cgb:
+            self.VRAM1 = array("B", [0] * VIDEO_RAM)
+
+            self.vbk = VBKregister()
+            self.bcps = PaletteIndexRegister()  # Only stored here for access in mb
+            self.bcpd = PaletteColorRegister(self.bcps)
+            self.ocps = PaletteIndexRegister()  # Only stored here for access in mb
+            self.ocpd = PaletteColorRegister(self.ocps)
 
     def switch_cgb(self, is_dmg_rom):
         # Bootrom requests CGB hardware to switch to DMG rendering. This is only
         # done once, and only downgraded from CGB to DMG at the end of CGB bootrom.
         if self.cgb and is_dmg_rom:
             logger.debug("Migrating from CGB renderer to DMG renderer")
-            self.renderer = self.renderer.downgrade_to_dmg()
+            self.cgb = False
+            self.renderer.cgb = False
         else:
             logger.debug("Ignoring key0 change")
 
@@ -212,7 +222,10 @@ class LCD:
                     self._scanlineparameters[self.LY][3] = wy
                     self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
 
-                    self.renderer.scanline(self.LY)
+                    if self.cgb:
+                        self.renderer.cgb_scanline(self.LY)
+                    else:
+                        self.renderer.scanline(self.LY)
                     self.renderer.scanline_sprites(
                         self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
                     )
@@ -472,9 +485,9 @@ BG_PRIORITY_FLAG = 0b10
 
 
 class Renderer:
-    def __init__(self, lcd, cgb_mode):
+    def __init__(self, lcd, cgb):
         self.lcd = lcd
-        self.cgb = cgb_mode
+        self.cgb = cgb
         self.color_format = "RGBA"
 
         self.buffer_dims = (ROWS, COLS)
@@ -736,6 +749,8 @@ class Renderer:
 
     def clear_cache(self):
         self.clear_tilecache(0)
+        if self.cgb:
+            self.clear_tilecache(1)
         self.clear_spritecache(0)
         self.clear_spritecache(1)
 
@@ -766,8 +781,12 @@ class Renderer:
             return
         # for t in self.tiles_changed0:
         for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = lcd.VRAM0[t * 16 + k]
-            byte2 = lcd.VRAM0[t * 16 + k + 1]
+            if self.cgb and bank:
+                byte1 = lcd.VRAM1[t * 16 + k]
+                byte2 = lcd.VRAM1[t * 16 + k + 1]
+            else:
+                byte1 = lcd.VRAM0[t * 16 + k]
+                byte2 = lcd.VRAM0[t * 16 + k + 1]
             y = (t * 16 + k) // 2
 
             self._tilecache_64[cache_no, y] = self.colorcode(byte1, byte2)
@@ -779,8 +798,12 @@ class Renderer:
             return
         # for t in self.tiles_changed0:
         for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = lcd.VRAM0[t * 16 + k]
-            byte2 = lcd.VRAM0[t * 16 + k + 1]
+            if self.cgb and bank:
+                byte1 = lcd.VRAM1[t * 16 + k]
+                byte2 = lcd.VRAM1[t * 16 + k + 1]
+            else:
+                byte1 = lcd.VRAM0[t * 16 + k]
+                byte2 = lcd.VRAM0[t * 16 + k + 1]
             y = (t * 16 + k) // 2
 
             self._spritecache_64[cache_no, y] = self.colorcode(byte1, byte2)
@@ -825,43 +848,14 @@ class Renderer:
 
         self.clear_cache()
 
-
-####################################
-#
-#  ██████   ██████   ██████
-# ██       ██        ██   ██
-# ██       ██   ███  ██████
-# ██       ██    ██  ██   ██
-#  ██████   ██████   ██████
-#
-
-
-class CGBLCD(LCD):
-    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
-        LCD.__init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False)
-        self.VRAM1 = array("B", [0] * VIDEO_RAM)
-
-        self.vbk = VBKregister()
-        self.bcps = PaletteIndexRegister()
-        self.bcpd = PaletteColorRegister(self.bcps)
-        self.ocps = PaletteIndexRegister()
-        self.ocpd = PaletteColorRegister(self.ocps)
-
-
-class CGBRenderer(Renderer):
-    def __init__(self, lcd, cgb_mode):
-        Renderer.__init__(self, lcd, cgb_mode)
-
-    def downgrade_to_dmg(self):
-        renderer = Renderer(self.lcd, False)
-
-        # Copy all screenbuffer references, to not break window and api/screen.py
-        renderer._screenbuffer_raw = self._screenbuffer_raw
-        renderer._screenbuffer_attributes_raw = self._screenbuffer_attributes_raw
-        renderer._screenbuffer = self._screenbuffer
-        renderer._screenbuffer_attributes = self._screenbuffer_attributes
-        renderer._screenbuffer_ptr = self._screenbuffer_ptr
-        return renderer
+    ####################################
+    #
+    #  ██████   ██████   ██████
+    # ██       ██        ██   ██
+    # ██       ██   ███  ██████
+    # ██       ██    ██  ██   ██
+    #  ██████   ██████   ██████
+    #
 
     def _cgb_get_background_map_attributes(self, lcd, i):
         tile_num = lcd.VRAM1[i]
@@ -873,7 +867,7 @@ class CGBRenderer(Renderer):
 
         return palette, vbank, horiflip, vertflip, bg_priority
 
-    def _get_tile_cgb(self, y, x, offset, lcd):
+    def _cgb_get_tile(self, y, x, offset, lcd):
         tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
 
         palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
@@ -888,12 +882,12 @@ class CGBRenderer(Renderer):
 
         return tile, yy, palette, horiflip, bg_priority_apply, vbank
 
-    def scanline_window(self, y, _x, wx, wy, cols, lcd):
+    def cgb_scanline_window(self, y, _x, wx, wy, cols, lcd):
         bg_priority_apply = 0
         for x in range(_x, _x + cols):
             xx = (x - wx) % 8
             if xx == 0 or x == _x:
-                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
+                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
                     self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
                 )
                 self.update_tilecache(vbank, lcd, wt, vbank)
@@ -905,12 +899,12 @@ class CGBRenderer(Renderer):
             self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
         return cols
 
-    def scanline_background(self, y, _x, bx, by, cols, lcd):
+    def cgb_scanline_background(self, y, _x, bx, by, cols, lcd):
         for x in range(_x, _x + cols):
             # bx mask used for the half tile at the left side when scrolling
             xx = (x + (bx & 0b111)) % 8
             if xx == 0 or x == 0:
-                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._get_tile_cgb(
+                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
                     y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
                 )
                 self.update_tilecache(vbank, lcd, bt, vbank)
@@ -922,7 +916,7 @@ class CGBRenderer(Renderer):
             self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
         return cols
 
-    def scanline(self, y):
+    def cgb_scanline(self, y):
         if self.lcd.disable_renderer:
             return
 
@@ -936,59 +930,17 @@ class CGBRenderer(Renderer):
 
             # Before window
             if wx > x:
-                x += self.scanline_background(y, x, bx, by, wx, self.lcd)
+                x += self.cgb_scanline_background(y, x, bx, by, wx, self.lcd)
 
             # Window hit
-            self.scanline_window(y, x, wx, wy, COLS - x, self.lcd)
+            self.cgb_scanline_window(y, x, wx, wy, COLS - x, self.lcd)
         else:  # background_enable doesn't exist for CGB. It works as master priority instead
             # No window
-            self.scanline_background(y, x, bx, by, COLS, self.lcd)
+            self.cgb_scanline_background(y, x, bx, by, COLS, self.lcd)
 
         if y == 143:
             # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
             self.ly_window = -1
-
-    def clear_cache(self):
-        self.clear_tilecache(0)
-        self.clear_tilecache(1)
-        self.clear_spritecache(0)
-        self.clear_spritecache(1)
-
-    def update_tilecache(self, cache_no, lcd, t, bank):
-        if self._tilecache_state[t + (TILES if cache_no else 0)]:
-            return
-
-        if bank:
-            vram_bank = lcd.VRAM1
-        else:
-            vram_bank = lcd.VRAM0
-
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = vram_bank[t * 16 + k]
-            byte2 = vram_bank[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._tilecache_64[cache_no, y] = self.colorcode(byte1, byte2)
-
-        self._tilecache_state[t + (TILES if cache_no else 0)] = 1
-
-    def update_spritecache(self, cache_no, lcd, t, bank):
-        if self._spritecache_state[t + (TILES if cache_no else 0)]:
-            return
-        if bank:
-            vram_bank = lcd.VRAM1
-        else:
-            vram_bank = lcd.VRAM0
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            byte1 = vram_bank[t * 16 + k]
-            byte2 = vram_bank[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._spritecache_64[cache_no, y] = self.colorcode(byte1, byte2)
-
-        self._spritecache_state[t + (TILES if cache_no else 0)] = 1
 
 
 class VBKregister:

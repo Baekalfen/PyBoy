@@ -11,7 +11,7 @@ cimport pyboy.plugins.window_sdl2
 from pyboy.api.tilemap cimport TileMap
 from pyboy.api.tile cimport Tile
 from pyboy.api.sprite cimport Sprite
-from pyboy.core.lcd cimport Renderer, CGBRenderer
+from pyboy.core.lcd cimport Renderer
 from pyboy.logging.logging cimport Logger
 from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
