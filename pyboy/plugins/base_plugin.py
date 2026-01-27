@@ -20,7 +20,6 @@ import numpy as np
 
 import pyboy
 from pyboy.api.constants import SPRITES, TILES_CGB
-from pyboy.core.lcd import CGBRenderer
 from pyboy import utils
 
 logger = pyboy.logging.get_logger(__name__)
@@ -39,9 +38,6 @@ class PyBoyPlugin:
         self.mb = mb
         self.pyboy_argv = pyboy_argv
         self.renderer = self.mb.lcd.renderer
-        self.is_cgb_renderer = isinstance(self.mb.lcd.renderer, CGBRenderer)
-        if self.is_cgb_renderer:
-            self.cgb_renderer = self.mb.lcd.renderer
 
     def handle_events(self, events):
         return events

@@ -9,7 +9,7 @@ import pytest
 
 import numpy as np
 from pyboy import PyBoy
-from pyboy.core.lcd import CGBLCD, LCD, Renderer
+from pyboy.core.lcd import LCD, Renderer
 from pyboy.utils import cython_compiled, INTR_LCDC, FRAME_CYCLES
 
 color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
@@ -306,7 +306,7 @@ class TestLCD:
         # https://forums.nesdev.org/viewtopic.php?f=20&t=18023
 
     def test_frame_cycles_double_speed(self):
-        lcd = CGBLCD(True, True, color_palette, cgb_color_palette)
+        lcd = LCD(True, True, color_palette, cgb_color_palette)
         lcd.set_lcdc(1 << 7)  # Enable LCD
         assert lcd._LCDC.lcd_enable
 
@@ -380,7 +380,7 @@ class TestLCD:
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 class TestRenderer:
     def test_colorcode_example(self):
-        renderer = Renderer(False)
+        renderer = Renderer(None, False)
 
         # Color of the first pixel is 0b10
         # | Color of the second pixel is 0b01
@@ -408,7 +408,7 @@ class TestRenderer:
             """
             return (((byte2 >> (offset)) & 0b1) << 1) + ((byte1 >> (offset)) & 0b1)
 
-        renderer = Renderer(False)
+        renderer = Renderer(None, False)
 
         for byte1 in range(0x100):
             for byte2 in range(0x100):
