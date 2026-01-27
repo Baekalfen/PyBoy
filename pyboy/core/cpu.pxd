@@ -23,7 +23,7 @@ cdef int16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 
-
+@cython.final
 cdef class CPU:
     cdef bint interrupt_master_enable, interrupt_queued, halted, stopped, bail
 
@@ -32,6 +32,8 @@ cdef class CPU:
     cdef int64_t cycles
 
     cdef inline int check_interrupts(self) noexcept nogil
+
+    @cython.final
     cdef void set_interruptflag(self, int) noexcept nogil
     cdef bint handle_interrupt(self, uint8_t, uint16_t) noexcept nogil
 

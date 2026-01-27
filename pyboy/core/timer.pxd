@@ -3,6 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from cython cimport final
+
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 from pyboy.utils cimport IntIOInterface
@@ -15,6 +17,7 @@ cdef uint64_t MAX_CYCLES
 
 cdef Logger logger
 
+@final
 cdef class Timer:
     cdef uint64_t DIV, TIMA, TMA, TAC
     cdef uint64_t DIV_counter, TIMA_counter

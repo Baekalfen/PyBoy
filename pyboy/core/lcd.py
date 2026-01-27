@@ -73,13 +73,13 @@ class LCD:
             self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj0_pal])
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj1_pal])
             logger.debug("Starting CGB renderer")
-            self.renderer = CGBRenderer(cgb_mode)
+            self.renderer = CGBRenderer(self, cgb_mode)
         else:
             logger.debug("Starting DMG renderer")
             self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in color_palette])
             self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
             self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
-            self.renderer = Renderer(False)
+            self.renderer = Renderer(self, False)
 
     def switch_cgb(self, is_dmg_rom):
         # Bootrom requests CGB hardware to switch to DMG rendering. This is only
@@ -212,9 +212,9 @@ class LCD:
                     self._scanlineparameters[self.LY][3] = wy
                     self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
 
-                    self.renderer.scanline(self, self.LY)
+                    self.renderer.scanline(self.LY)
                     self.renderer.scanline_sprites(
-                        self, self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
+                        self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
                     )
                     if self.LY < 143:
                         self.next_stat_mode = 2
@@ -234,7 +234,7 @@ class LCD:
                             # Pan Docs: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
-                            self.renderer.blank_screen(self)
+                            self.renderer.blank_screen()
                             self.first_frame = False
             else:
                 # See also `self.set_lcdc`
@@ -243,7 +243,7 @@ class LCD:
                 self.clock_target = FRAME_CYCLES
 
                 # Renderer
-                self.renderer.blank_screen(self)
+                self.renderer.blank_screen()
 
         # NOTE: speed_shift because they are using in externally in mb
         self._cycles_to_interrupt = (self.clock_target - self.clock) << self.speed_shift
@@ -472,7 +472,8 @@ BG_PRIORITY_FLAG = 0b10
 
 
 class Renderer:
-    def __init__(self, cgb_mode):
+    def __init__(self, lcd, cgb_mode):
+        self.lcd = lcd
         self.cgb = cgb_mode
         self.color_format = "RGBA"
 
@@ -535,29 +536,29 @@ class Renderer:
         # https://gbdev.io/pandocs/Scrolling.html#window
         self.wy_activated_frame = False
 
-    def scanline(self, lcd, y):
-        if lcd.disable_renderer:
+    def scanline(self, y):
+        if self.lcd.disable_renderer:
             return
 
-        bx, by = lcd.getviewport()
-        wx, wy = lcd.getwindowpos()
+        bx, by = self.lcd.getviewport()
+        wx, wy = self.lcd.getwindowpos()
 
         x = 0
-        if lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
             # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
             self.ly_window += 1
 
             # Before window
             if wx > x:
-                x += self.scanline_background(y, x, bx, by, wx, lcd)
+                x += self.scanline_background(y, x, bx, by, wx, self.lcd)
 
             # Window hit
-            self.scanline_window(y, x, wx, wy, COLS - x, lcd)
-        elif lcd._LCDC.background_enable:
+            self.scanline_window(y, x, wx, wy, COLS - x, self.lcd)
+        elif self.lcd._LCDC.background_enable:
             # No window
-            self.scanline_background(y, x, bx, by, COLS, lcd)
+            self.scanline_background(y, x, bx, by, COLS, self.lcd)
         else:
-            self.scanline_blank(y, x, COLS, lcd)
+            self.scanline_blank(y, x, COLS, self.lcd)
 
         if y == 143:
             # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
@@ -632,17 +633,17 @@ class Renderer:
             # Insert the key into its correct position in the sorted portion
             self.sprites_to_render[j + 1] = key
 
-    def scanline_sprites(self, lcd, ly, buffer, buffer_attributes, ignore_priority):
-        if not lcd._LCDC.sprite_enable or lcd.disable_renderer:
+    def scanline_sprites(self, ly, buffer, buffer_attributes, ignore_priority):
+        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
             return
 
         # Find the first 10 sprites in OAM that appears on this scanline.
         # The lowest X-coordinate has priority, when overlapping
-        spriteheight = 16 if lcd._LCDC.sprite_height else 8
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
         sprite_count = 0
         for n in range(0x00, OBJECT_ATTRIBUTE_MEMORY, 4):
-            y = lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
-            x = lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+            y = self.lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = self.lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
 
             if y <= ly < y + spriteheight:
                 # x is used for sorting for priority
@@ -668,12 +669,12 @@ class Renderer:
             else:
                 n = _n & 0xFF
             # n = self.sprites_to_render_n[_n]
-            y = lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
-            x = lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
-            tileindex = lcd.OAM[n + 2]
+            y = self.lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = self.lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+            tileindex = self.lcd.OAM[n + 2]
             if spriteheight == 16:
                 tileindex &= 0b11111110
-            attributes = lcd.OAM[n + 3]
+            attributes = self.lcd.OAM[n + 3]
             xflip = attributes & 0b00100000
             yflip = attributes & 0b01000000
             spritepriority = (attributes & 0b10000000) and not ignore_priority
@@ -688,9 +689,9 @@ class Renderer:
                 if attributes & 0b10000:
                     sprite_cache_no = 1
 
-            self.update_spritecache(sprite_cache_no, lcd, tileindex, sprite_cache_no if self.cgb else 0)
-            if lcd._LCDC.sprite_height:
-                self.update_spritecache(sprite_cache_no, lcd, tileindex + 1, sprite_cache_no if self.cgb else 0)
+            self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+            if self.lcd._LCDC.sprite_height:
+                self.update_spritecache(sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0)
 
             dy = ly - y
             yy = spriteheight - dy - 1 if yflip else dy
@@ -700,10 +701,12 @@ class Renderer:
                 color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
                 if 0 <= x < COLS and not color_code == 0:  # If pixel is not transparent
                     if self.cgb:
-                        pixel = lcd.ocpd.getcolor(palette, color_code)
+                        pixel = self.lcd.ocpd.getcolor(palette, color_code)
                         bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
 
-                        if lcd._LCDC.cgb_master_priority:  # If 0, sprites are always on top, if 1 follow priorities
+                        if (
+                            self.lcd._LCDC.cgb_master_priority
+                        ):  # If 0, sprites are always on top, if 1 follow priorities
                             if bgmappriority:  # If 0, use spritepriority, if 1 take priority
                                 if buffer_attributes[ly, x] & COL0_FLAG:
                                     buffer[ly, x] = pixel
@@ -719,9 +722,9 @@ class Renderer:
                     else:
                         # TODO: Unify with CGB
                         if attributes & 0b10000:
-                            pixel = lcd.OBP1.getcolor(color_code)
+                            pixel = self.lcd.OBP1.getcolor(color_code)
                         else:
-                            pixel = lcd.OBP0.getcolor(color_code)
+                            pixel = self.lcd.OBP0.getcolor(color_code)
 
                         if spritepriority:  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
                             if buffer_attributes[ly, x] & COL0_FLAG:  # if BG pixel is transparent
@@ -789,11 +792,11 @@ class Renderer:
         colorcode_high = self.colorcode_table[((byte1 >> 4) & 0xF) | (byte2 & 0xF0)]
         return (colorcode_low << 32) | colorcode_high
 
-    def blank_screen(self, lcd):
+    def blank_screen(self):
         # If the screen is off, fill it with a color.
         for y in range(ROWS):
             for x in range(COLS):
-                self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
+                self._screenbuffer[y, x] = self.lcd.BGP.getcolor(0)
                 self._screenbuffer_attributes[y, x] = 0
 
     def save_state(self, f):
@@ -846,11 +849,11 @@ class CGBLCD(LCD):
 
 
 class CGBRenderer(Renderer):
-    def __init__(self, cgb_mode):
-        Renderer.__init__(self, cgb_mode)
+    def __init__(self, lcd, cgb_mode):
+        Renderer.__init__(self, lcd, cgb_mode)
 
     def downgrade_to_dmg(self):
-        renderer = Renderer(False)
+        renderer = Renderer(self.lcd, False)
 
         # Copy all screenbuffer references, to not break window and api/screen.py
         renderer._screenbuffer_raw = self._screenbuffer_raw
@@ -919,27 +922,27 @@ class CGBRenderer(Renderer):
             self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
         return cols
 
-    def scanline(self, lcd, y):
-        if lcd.disable_renderer:
+    def scanline(self, y):
+        if self.lcd.disable_renderer:
             return
 
-        bx, by = lcd.getviewport()
-        wx, wy = lcd.getwindowpos()
+        bx, by = self.lcd.getviewport()
+        wx, wy = self.lcd.getwindowpos()
 
         x = 0
-        if lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
             # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
             self.ly_window += 1
 
             # Before window
             if wx > x:
-                x += self.scanline_background(y, x, bx, by, wx, lcd)
+                x += self.scanline_background(y, x, bx, by, wx, self.lcd)
 
             # Window hit
-            self.scanline_window(y, x, wx, wy, COLS - x, lcd)
+            self.scanline_window(y, x, wx, wy, COLS - x, self.lcd)
         else:  # background_enable doesn't exist for CGB. It works as master priority instead
             # No window
-            self.scanline_background(y, x, bx, by, COLS, lcd)
+            self.scanline_background(y, x, bx, by, COLS, self.lcd)
 
         if y == 143:
             # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment

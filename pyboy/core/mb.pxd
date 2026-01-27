@@ -6,6 +6,7 @@
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 import cython
+from cython cimport final
 
 cimport pyboy.core.bootrom
 cimport pyboy.core.cartridge.base_mbc
@@ -28,7 +29,7 @@ cdef int INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 cdef uint16_t OPCODE_BRK
 cdef int STATE_VERSION
 
-
+@final
 cdef class Motherboard:
     cdef pyboy.core.interaction.Interaction interaction
     cdef pyboy.core.bootrom.BootROM bootrom
@@ -67,6 +68,7 @@ cdef class Motherboard:
     cdef void switch_speed(self) noexcept nogil
 
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
+    @final
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
     cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil
@@ -76,6 +78,7 @@ cdef class Motherboard:
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface) except -1
 
+@final
 cdef class HDMA:
     cdef uint8_t hdma1
     cdef uint8_t hdma2

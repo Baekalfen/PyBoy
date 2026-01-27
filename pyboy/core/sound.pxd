@@ -16,6 +16,7 @@ cdef Logger logger
 
 cdef uint64_t CYCLES_512HZ
 
+@cython.final
 cdef class Sound:
     cdef int64_t volume
     cdef bint emulate, cgb, disable_sampling
@@ -72,6 +73,7 @@ cdef class Sound:
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
+# @cython.final
 cdef class ToneChannel:
     cdef uint8_t[4][8] wavetables
 
@@ -104,6 +106,7 @@ cdef class ToneChannel:
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
+@cython.final
 cdef class SweepChannel(ToneChannel):
     # Register Values
     cdef uint8_t sweep_pace # Register 0 bits 6-4: Sweep period
@@ -117,7 +120,7 @@ cdef class SweepChannel(ToneChannel):
     cdef void tick_sweep(self) noexcept nogil
     cdef bint sweep(self, bint) noexcept nogil
 
-
+@cython.final
 cdef class WaveChannel:
     # Memory for wave sample
     cdef uint8_t[16] wavetable
@@ -152,7 +155,7 @@ cdef class WaveChannel:
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
-
+@cython.final
 cdef class NoiseChannel:
     cdef uint8_t[8] DIVTABLE
 
