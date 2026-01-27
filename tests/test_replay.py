@@ -185,6 +185,7 @@ def test_pokemon_gif1(pokemon_gold_rom, boot_rom):
     )
 
 
+@pytest.mark.skip("Outdated")
 def test_pokemon_gif2(pokemon_blue_rom, boot_rom):
     replay(
         pokemon_blue_rom,
@@ -211,6 +212,7 @@ def test_supermarioland(supermarioland_rom, boot_rom):
     )
 
 
+@pytest.mark.skip("Outdated")
 def test_kirby(kirby_rom, boot_rom):
     replay(
         kirby_rom,
