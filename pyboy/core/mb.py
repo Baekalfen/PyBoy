@@ -636,17 +636,11 @@ class Motherboard:
                 elif i == 0xFF46:
                     self.transfer_DMA(value)
                 elif i == 0xFF47:
-                    if self.lcd.BGP.set(value):
-                        # TODO: Move out of MB
-                        self.lcd.renderer.clear_tilecache(0)
+                    self.lcd.BGP.set(value)
                 elif i == 0xFF48:
-                    if self.lcd.OBP0.set(value):
-                        # TODO: Move out of MB
-                        self.lcd.renderer.clear_spritecache(0)
+                    self.lcd.OBP0.set(value)
                 elif i == 0xFF49:
-                    if self.lcd.OBP1.set(value):
-                        # TODO: Move out of MB
-                        self.lcd.renderer.clear_spritecache(1)
+                    self.lcd.OBP1.set(value)
                 elif i == 0xFF4A:
                     self.lcd.WY = value
                 elif i == 0xFF4B:
@@ -696,14 +690,10 @@ class Motherboard:
                 self.lcd.bcps.set(value)
             elif self.cgb and i == 0xFF69:
                 self.lcd.bcpd.set(value)
-                self.lcd.renderer.clear_tilecache(0)
-                self.lcd.renderer.clear_tilecache(1)
             elif self.cgb and i == 0xFF6A:
                 self.lcd.ocps.set(value)
             elif self.cgb_mode and i == 0xFF6B:
                 self.lcd.ocpd.set(value)
-                self.lcd.renderer.clear_spritecache(0)
-                self.lcd.renderer.clear_spritecache(1)
             elif self.cgb_mode and i == 0xFF6C:
                 # Object Priority Mode
                 self.lcd.object_priority_mode = value & 0b0000_0001
