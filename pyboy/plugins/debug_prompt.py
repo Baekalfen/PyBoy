@@ -59,7 +59,7 @@ class DebugPrompt(PyBoyPlugin):
                 bank = 0
             else:
                 bank = self.mb.cartridge.rombank_selected
-            sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, "")
+            sym_label = self.rom_symbols.get(bank, {}).get(self.mb.cpu.PC, [""])
 
             # Print state
             print(self.mb.cpu.dump_state(sym_label))

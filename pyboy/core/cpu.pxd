@@ -52,4 +52,4 @@ cdef class CPU:
 
     cdef pyboy.core.mb.Motherboard mb
 
-    cdef str dump_state(self, str) with gil
+    cdef str dump_state(self, list) with gil
