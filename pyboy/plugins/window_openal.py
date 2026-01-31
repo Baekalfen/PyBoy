@@ -12,6 +12,12 @@ try:
     openal_enabled = True
 except (ImportError, AttributeError):
     openal_enabled = False
+except Exception as ex:
+    if ex.__class__.__name__ == "ExternalLibraryError":
+        logger.debug("Error loading OpenAL: %s", ex)
+        openal_enabled = False
+    else:
+        raise
 
 
 MAX_SOUND_BUFFERS = 8
@@ -28,6 +34,13 @@ class WindowOpenAL(PyBoyWindowPlugin):
         super().__init__(pyboy, mb, pyboy_argv)
 
         if not self.enabled():
+            return
+
+        if not openal_enabled:
+            logger.error(
+                "OpenAL is not available. Check Python package is installed, and OpenAL is installed on your system"
+            )
+            self.sound_support = False
             return
 
         # Helps Cython access mb.sound
@@ -88,7 +101,6 @@ class WindowOpenAL(PyBoyWindowPlugin):
         if self.sound_support and not self.sound_paused:
             processed = c_int()
             al.alGetSourcei(self.source, al.AL_BUFFERS_PROCESSED, processed)
-            logger.debug("Buffers processed: %s", processed.value)
 
             if processed:
                 free_buffers = (c_uint * MAX_SOUND_BUFFERS)()
@@ -103,7 +115,6 @@ class WindowOpenAL(PyBoyWindowPlugin):
 
             if self.buffers_free:
                 length = min(self.sound.audiobuffer_head, self.sound.audiobuffer_length)
-                logger.debug("Buffer length: %d", length)
                 # al.alBufferData(self.buffer, al.AL_FORMAT_STEREO8, self.mixingbuffer_p,
                 #                 len(self.mixingbuffer), self.sound.sample_rate)
                 queue_buf = self.buffers_free.pop()
@@ -113,12 +124,10 @@ class WindowOpenAL(PyBoyWindowPlugin):
 
             queued = c_int()
             al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, queued)
-            logger.debug("Buffers queued: %s", queued.value)
 
             # Get current source state
             state = c_int()
             al.alGetSourcei(self.source, al.AL_SOURCE_STATE, state)
-            logger.debug("source state %s", state.value)
             if (
                 (state.value == al.AL_STOPPED) or (state.value == al.AL_INITIAL) or (state.value == al.AL_PAUSED)
             ):  # and queued.value > SOUND_PREBUFFER_THRESHOLD:
