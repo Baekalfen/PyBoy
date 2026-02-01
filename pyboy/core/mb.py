@@ -214,7 +214,8 @@ class Motherboard:
             self.breakpoint_waiting = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
             logger.debug("Breakpoint waiting: %08x", self.breakpoint_waiting)
             return (bank, addr, opcode)
-        logger.debug("Invalid breakpoint reached: %04x", self.cpu.PC)
+        if not self.breakpoint_singlestep:
+            logger.debug("Invalid breakpoint reached: %04x", self.cpu.PC)
         return (-1, -1, -1)
 
     def breakpoint_reinject(self):
