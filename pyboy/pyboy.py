@@ -526,7 +526,7 @@ class PyBoy:
             self.mb.sound.disable_sampling = not sound
             self.mb.sound.clear_buffer()
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
-            while self.mb.tick():
+            while self.mb.tick() and (not self.quitting):
                 # Breakpoint reached
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed
                 self.mb.breakpoint_reinject()
@@ -718,6 +718,9 @@ class PyBoy:
 
     def __exit__(self, type, value, traceback):
         self.stop()
+
+    def _quit(self):
+        self.quitting = True
 
     def stop(self, save=True, ram_file=None, rtc_file=None):
         """
