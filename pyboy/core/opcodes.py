@@ -2307,6 +2307,7 @@ def CALL_C4(cpu, v): # C4 CALL NZ,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGZ)) == 0):
+        cpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
@@ -2397,6 +2398,7 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGZ)) != 0):
+        cpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
@@ -2410,6 +2412,7 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
 def CALL_CD(cpu, v): # CD CALL a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
+    cpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
@@ -2484,6 +2487,7 @@ def CALL_D4(cpu, v): # D4 CALL NC,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGC)) == 0):
+        cpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
@@ -2569,6 +2573,7 @@ def CALL_DC(cpu, v): # DC CALL C,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGC)) != 0):
+        cpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2

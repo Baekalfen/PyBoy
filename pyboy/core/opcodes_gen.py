@@ -1022,6 +1022,7 @@ class OpcodeData:
         if left is None:
             code.addlines(
                 [
+                    "cpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)",
                     "cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
                     "cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
                     "cpu.SP -= 2",
@@ -1034,6 +1035,7 @@ class OpcodeData:
             code.addlines(
                 [
                     "if %s:" % l_code,
+                    "\tcpu.mb.callstack_metadata[cpu.SP-1] = cpu.mb.cartridge.rombank_selected | (cpu.mb.cartridge.rombank_selected_low << 16) | (cpu.mb.cartridge.rambank_selected << 24)",
                     "\tcpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High",
                     "\tcpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low",
                     "\tcpu.SP -= 2",

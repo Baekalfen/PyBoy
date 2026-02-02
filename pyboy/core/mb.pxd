@@ -43,6 +43,7 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
+    cdef uint32_t[0xFFFF] callstack_metadata # MBC5 can have 9-bit bank selection
 
     # CGB
     cdef HDMA hdma

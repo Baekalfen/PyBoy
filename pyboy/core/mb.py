@@ -97,6 +97,10 @@ class Motherboard:
         self.breakpoint_singlestep_latch = False
         self.breakpoint_waiting = -1
 
+        # Used to store which ROM-bank a call was issued from, to better resolve
+        # symbols, and give a proper stacktrace.
+        self.callstack_metadata = array("H", [0] * 0xFFFF)
+
     def switch_speed(self):
         if self.key1 & 0b1:
             self.double_speed = not self.double_speed
