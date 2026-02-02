@@ -1197,6 +1197,8 @@ class PyBoy:
         self.target_emulationspeed = target_speed
 
     def _load_symbols(self):
+        if self.rom_symbols:
+            return self.rom_symbols
         gamerom_paths = []
         if self.gamerom:
             gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
