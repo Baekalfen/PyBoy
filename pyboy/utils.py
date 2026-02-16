@@ -359,7 +359,8 @@ class WindowEvent:
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
         FULL_SCREEN_TOGGLE,
-    ) = range(42)
+        CYCLE_PALETTE,
+    ) = range(43)
 
     def __init__(self, event):
         self.__event = event
@@ -418,6 +419,7 @@ class WindowEvent:
             "MOD_SHIFT_ON",
             "MOD_SHIFT_OFF",
             "FULL_SCREEN_TOGGLE",
+            "CYCLE_PALETTE",
         )[self.__event]
 
 

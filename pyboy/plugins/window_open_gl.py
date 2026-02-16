@@ -135,6 +135,8 @@ class WindowOpenGL(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_START))
             elif c == "o":
                 self.events.append(WindowEvent(WindowEvent.SCREENSHOT_RECORD))
+            elif c == "c":
+                self.events.append(WindowEvent(WindowEvent.CYCLE_PALETTE))
         else:
             if c == "a":
                 self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_A))

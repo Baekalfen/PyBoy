@@ -71,14 +71,14 @@ class LCD:
             logger.debug("Starting CGB renderer")
             # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
             bg_pal, obj0_pal, obj1_pal = cgb_color_palette
-            self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in bg_pal])
-            self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj0_pal])
-            self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in obj1_pal])
+            self.BGP = PaletteRegister(0xFC, bg_pal)
+            self.OBP0 = PaletteRegister(0xFF, obj0_pal)
+            self.OBP1 = PaletteRegister(0xFF, obj1_pal)
         else:
             logger.debug("Starting DMG renderer")
-            self.BGP = PaletteRegister(0xFC, [(rgb_to_bgr(c)) for c in color_palette])
-            self.OBP0 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
-            self.OBP1 = PaletteRegister(0xFF, [(rgb_to_bgr(c)) for c in color_palette])
+            self.BGP = PaletteRegister(0xFC, color_palette)
+            self.OBP0 = PaletteRegister(0xFF, color_palette)
+            self.OBP1 = PaletteRegister(0xFF, color_palette)
         self.renderer = Renderer(self, self.cgb)
 
         # CGB specific
@@ -403,7 +403,8 @@ class PaletteRegister:
     def __init__(self, value, palette):
         self.value = 0
         self.lookup = [0] * 4
-        self.palette_mem_rgb = palette
+
+        self.set_palette_colors(palette)
         self.set(value)
 
     def set(self, value):
@@ -412,9 +413,16 @@ class PaletteRegister:
             return False
 
         self.value = value
-        for x in range(4):
-            self.lookup[x] = self.palette_mem_rgb[(value >> x * 2) & 0b11]
+        self._update_lookup()
         return True
+
+    def set_palette_colors(self, palette):
+        self.palette_mem_rgb = [(rgb_to_bgr(c)) for c in palette]
+        self._update_lookup()
+
+    def _update_lookup(self):
+        for x in range(4):
+            self.lookup[x] = self.palette_mem_rgb[(self.value >> x * 2) & 0b11]
 
     def get(self):
         return self.value

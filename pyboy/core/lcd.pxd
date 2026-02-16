@@ -96,6 +96,8 @@ cdef class PaletteRegister:
     @cython.locals(x=uint16_t)
     cdef bint set(self, uint64_t) noexcept nogil
     @final
+    cdef inline void _update_lookup(self) noexcept nogil
+    @final
     cdef uint8_t get(self) noexcept nogil
     @final
     cdef inline uint32_t getcolor(self, uint8_t) noexcept nogil

@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+from itertools import cycle
 
 from pyboy.api.constants import TILES, TILES_CGB
 from pyboy.api.gameshark import GameShark
@@ -62,8 +63,16 @@ logger = get_logger(__name__)
 
 SPF = 1 / 60.0  # inverse FPS (frame-per-second)
 
+DMG_PALETTES = {
+    "SameBoy DMG": (0xC6DE8C, 0x84A563, 0x396139, 0x081810),
+    "Classic Green": (0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F),
+    "Parchment": (0xE0DBCD, 0xA89F94, 0x706B64, 0x2B2B26),
+    "Mossy": (0xC4CFA1, 0x8B956D, 0x4D533C, 0x1F1F1C),
+    "Grey": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
+}
+
 defaults = {
-    "color_palette": (0xFFFFFF, 0x999999, 0x555555, 0x000000),
+    "color_palette": DMG_PALETTES["Grey"],
     "cgb_color_palette": (
         (0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000),
         (0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000),
@@ -262,6 +271,9 @@ class PyBoy:
 
             if rtc_file_handled:
                 rtc_file.close()
+
+        # Active palette detection
+        self._palette_cycle = cycle(DMG_PALETTES.items())
 
         # Validate all kwargs
         plugin_manager_keywords = []
@@ -619,6 +631,16 @@ class PyBoy:
             self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
         return running
 
+    def _cycle_palette(self):
+        """Cycles to the next DMG palette."""
+        palette_name, new_palette = next(self._palette_cycle)
+        try:
+            self.set_color_palette(new_palette)
+        except PyBoyInvalidOperationException as ex:
+            logger.warning("Error cycling palette: %s", ex)
+            return
+        logger.info("Palette: %s", palette_name)
+
     def _handle_events(self, events):
         if not self.no_input:
             # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -659,6 +681,8 @@ class PyBoy:
                 self._unpause()
             elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
                 self._plugin_manager._post_tick_windows()
+            elif event == WindowEvent.CYCLE_PALETTE:
+                self._cycle_palette()
             else:
                 self.mb.buttonevent(event)
 
@@ -1156,6 +1180,21 @@ class PyBoy:
         """
 
         return self.game_wrapper.game_area()
+
+    def set_color_palette(self, palette):
+        """
+        Set the color palette of DMG games.
+
+        Example:
+        ```python
+        >>> pyboy.set_color_palette((0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F))
+        ```
+        """
+        if self.mb.cgb:
+            raise PyBoyInvalidOperationException("Palette change is only available in DMG mode")
+
+        for palette_reg in [self.mb.lcd.BGP, self.mb.lcd.OBP0, self.mb.lcd.OBP1]:
+            palette_reg.set_palette_colors(palette)
 
     def _serial(self):
         """

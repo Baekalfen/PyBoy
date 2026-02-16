@@ -97,6 +97,8 @@ class WindowGLFW(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_B))
             elif key == glfw.KEY_P:
                 self.events.append(WindowEvent(WindowEvent.PAUSE_TOGGLE))
+            elif key == glfw.KEY_C:
+                self.events.append(WindowEvent(WindowEvent.CYCLE_PALETTE))
             elif key == glfw.KEY_SPACE:
                 self.events.append(WindowEvent(WindowEvent.RELEASE_SPEED_UP))
             elif key == glfw.KEY_BACKSPACE:

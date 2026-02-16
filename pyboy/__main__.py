@@ -187,6 +187,7 @@ The other controls for the emulator:
 | X            | Load state              |
 | I            | Toggle screen recording |
 | O            | Save screenshot         |
+| C            | Cycle DMG palette       |
 | ,            | Rewind backwards        |
 | .            | Rewind forward          |
 | J            | Memory Window + 0x100   |
