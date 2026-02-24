@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='WARNING', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), title_status=False, **kwargs)</span>
+<span>(</span><span>gamerom, *, ram_file=None, rtc_file=None, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='WARNING', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), title_status=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -78,6 +78,8 @@ multiple times.</p>
 GitHub, if other methods are needed for your projects. Take a look at the files in <code>examples/</code> for a crude
 "bots", which interact with the game.</p>
 <p>Only the <code>gamerom</code> argument is required.</p>
+<p>If <code>gamerom</code> is a filepath and <code>ram_file</code> and <code>rtc_file</code> are not provided, filepaths will be determined
+automatically next to the game ROM. If this is not wanted, provide a file-like object as argument.</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy('game_rom.gb')
 &gt;&gt;&gt; for _ in range(60): # Use 'while True:' for infinite
@@ -88,12 +90,14 @@ True...
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>gamerom</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>gamerom</code></strong> :&ensp;<code>str</code> or <code>file-like object</code></dt>
 <dd>Filepath to a game-ROM for Game Boy or Game Boy Color.</dd>
 </dl>
 <h2 id="kwargs">Kwargs</h2>
 <ul>
-<li>window (str): "SDL2", "OpenGL", or "null"</li>
+<li>ram_file (file-like object):</li>
+<li>rtc_file (file-like object):</li>
+<li>window (str): "SDL2", "OpenGL", "GLFW", or "null"</li>
 <li>scale (int): Window scale factor. Doesn't apply to API.</li>
 <li>symbols (str): Filepath to a .sym file to use. If unsure, specify <code>None</code>.</li>
 <li>bootrom (str): Filepath to a boot-ROM to use. If unsure, specify <code>None</code>.</li>
@@ -125,6 +129,8 @@ True...
         self,
         gamerom,
         *,
+        ram_file=None,
+        rtc_file=None,
         window=defaults[&#34;window&#34;],
         scale=defaults[&#34;scale&#34;],
         symbols=None,
@@ -152,6 +158,9 @@ True...
 
         Only the `gamerom` argument is required.
 
+        If `gamerom` is a filepath and `ram_file` and `rtc_file` are not provided, filepaths will be determined
+        automatically next to the game ROM. If this is not wanted, provide a file-like object as argument.
+
         Example:
         ```python
         &gt;&gt;&gt; pyboy = PyBoy(&#39;game_rom.gb&#39;)
@@ -163,10 +172,12 @@ True...
         ```
 
         Args:
-            gamerom (str): Filepath to a game-ROM for Game Boy or Game Boy Color.
+            gamerom (str or file-like object): Filepath to a game-ROM for Game Boy or Game Boy Color.
 
         Kwargs:
-            * window (str): &#34;SDL2&#34;, &#34;OpenGL&#34;, or &#34;null&#34;
+            * ram_file (file-like object):
+            * rtc_file (file-like object):
+            * window (str): &#34;SDL2&#34;, &#34;OpenGL&#34;, &#34;GLFW&#34;, or &#34;null&#34;
             * scale (int): Window scale factor. Doesn&#39;t apply to API.
             * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
             * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
@@ -209,8 +220,8 @@ True...
             )
             window = kwargs.pop(&#34;window_type&#34;)
 
-        if window not in [&#34;SDL2&#34;, &#34;OpenGL&#34;, &#34;null&#34;, &#34;headless&#34;, &#34;dummy&#34;]:
-            raise KeyError(f&#39;Unknown window type: {window}. Use &#34;SDL2&#34;, &#34;OpenGL&#34;, or &#34;null&#34;&#39;)
+        if window not in [&#34;SDL2&#34;, &#34;OpenGL&#34;, &#34;GLFW&#34;, &#34;null&#34;, &#34;headless&#34;, &#34;dummy&#34;]:
+            raise KeyError(f&#39;Unknown window type: {window}. Use &#34;SDL2&#34;, &#34;OpenGL&#34;, &#34;GLFW&#34;, or &#34;null&#34;&#39;)
 
         kwargs[&#34;window&#34;] = window
         kwargs[&#34;scale&#34;] = scale
@@ -221,11 +232,41 @@ True...
                 kwargs[k] = v
 
         if gamerom is None:
-            raise FileNotFoundError(&#34;None is not a ROM file!&#34;)
+            raise FileNotFoundError(&#34;No game ROM provided!&#34;)
 
-        if not os.path.isfile(gamerom):
-            raise FileNotFoundError(f&#34;ROM file {gamerom} was not found!&#34;)
-        self.gamerom = gamerom
+        gamerom_file = None
+        self.gamerom = None
+        gamerom_file_handled = False
+        ram_file_handled = False
+        rtc_file_handled = False
+        if isinstance(gamerom, (str, Path)):
+            self.gamerom = str(gamerom)
+            try:
+                gamerom_file = open(self.gamerom, &#34;rb&#34;)
+                gamerom_file_handled = True
+
+                if ram_file is None:
+                    try:
+                        ram_file = open(self.gamerom + &#34;.ram&#34;, &#34;rb&#34;)
+                        ram_file_handled = True
+                    except FileNotFoundError:
+                        pass
+
+                if rtc_file is None:
+                    try:
+                        rtc_file = open(self.gamerom + &#34;.rtc&#34;, &#34;rb&#34;)
+                        rtc_file_handled = True
+                    except FileNotFoundError:
+                        pass
+
+            except FileNotFoundError:
+                raise FileNotFoundError(f&#34;ROM file {gamerom} was not found!&#34;)
+            except Exception:
+                raise
+        elif hasattr(gamerom, &#34;read&#34;):
+            gamerom_file = gamerom
+        else:
+            raise PyBoyInvalidInputException(&#34;Provided game ROM cannot be used. Expected str, Path or file-like object&#34;)
 
         self.rom_symbols = {}
         self.rom_symbols_inverse = {}
@@ -246,17 +287,33 @@ True...
         if not (0 &lt;= sound_volume &lt;= 100):
             raise PyBoyInvalidInputException(&#34;Sound volume has to be between 0 and 100.&#34;)
 
-        self.mb = Motherboard(
-            gamerom,
-            bootrom,
-            color_palette,
-            cgb_color_palette,
-            sound_volume,
-            sound_emulated,
-            sound_sample_rate,
-            cgb,
-            randomize=randomize,
-        )
+        try:
+            self.mb = Motherboard(
+                gamerom_file,
+                ram_file,
+                rtc_file,
+                bootrom,
+                color_palette,
+                cgb_color_palette,
+                sound_volume,
+                sound_emulated,
+                sound_sample_rate,
+                cgb,
+                randomize=randomize,
+            )
+        finally:
+            # Close the files we opened -- i.e. not passed from args
+            if gamerom_file_handled:
+                gamerom_file.close()
+
+            if ram_file_handled:
+                ram_file.close()
+
+            if rtc_file_handled:
+                rtc_file.close()
+
+        # Active palette detection
+        self._palette_cycle = cycle(DMG_PALETTES.items())
 
         # Validate all kwargs
         plugin_manager_keywords = []
@@ -521,7 +578,7 @@ True...
             self.mb.sound.disable_sampling = not sound
             self.mb.sound.clear_buffer()
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
-            while self.mb.tick():
+            while self.mb.tick() and (not self.quitting):
                 # Breakpoint reached
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed
                 self.mb.breakpoint_reinject()
@@ -614,6 +671,16 @@ True...
             self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
         return running
 
+    def _cycle_palette(self):
+        &#34;&#34;&#34;Cycles to the next DMG palette.&#34;&#34;&#34;
+        palette_name, new_palette = next(self._palette_cycle)
+        try:
+            self.set_color_palette(new_palette)
+        except PyBoyInvalidOperationException as ex:
+            logger.warning(&#34;Error cycling palette: %s&#34;, ex)
+            return
+        logger.info(&#34;Palette: %s&#34;, palette_name)
+
     def _handle_events(self, events):
         if not self.no_input:
             # This feeds events into the tick-loop from the window. There might already be events in the list from the API.
@@ -626,15 +693,21 @@ True...
                 self.target_emulationspeed = int(bool(self.target_emulationspeed) ^ True)
                 logger.debug(&#34;Speed limit: %d&#34;, self.target_emulationspeed)
             elif event == WindowEvent.STATE_SAVE:
-                with open(self.gamerom + &#34;.state&#34;, &#34;wb&#34;) as f:
-                    self.mb.save_state(IntIOWrapper(f))
+                if self.gamerom:
+                    with open(self.gamerom + &#34;.state&#34;, &#34;wb&#34;) as f:
+                        self.mb.save_state(IntIOWrapper(f))
+                else:
+                    logger.error(&#34;Failed to save game state. PyBoy is loaded without a filepath.&#34;)
             elif event == WindowEvent.STATE_LOAD:
-                state_path = self.gamerom + &#34;.state&#34;
-                if not os.path.isfile(state_path):
-                    logger.error(&#34;State file not found: %s&#34;, state_path)
-                    continue
-                with open(state_path, &#34;rb&#34;) as f:
-                    self.mb.load_state(IntIOWrapper(f))
+                if self.gamerom:
+                    state_path = self.gamerom + &#34;.state&#34;
+                    if not os.path.isfile(state_path):
+                        logger.error(&#34;State file not found: %s&#34;, state_path)
+                        continue
+                    with open(state_path, &#34;rb&#34;) as f:
+                        self.mb.load_state(IntIOWrapper(f))
+                else:
+                    logger.error(&#34;Failed to load game state. PyBoy is loaded without a filepath.&#34;)
             elif event == WindowEvent.PASS:
                 pass  # Used in place of None in Cython, when key isn&#39;t mapped to anything
             elif event == WindowEvent.PAUSE_TOGGLE:
@@ -648,6 +721,8 @@ True...
                 self._unpause()
             elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
                 self._plugin_manager._post_tick_windows()
+            elif event == WindowEvent.CYCLE_PALETTE:
+                self._cycle_palette()
             else:
                 self.mb.buttonevent(event)
 
@@ -708,7 +783,10 @@ True...
     def __exit__(self, type, value, traceback):
         self.stop()
 
-    def stop(self, save=True):
+    def _quit(self):
+        self.quitting = True
+
+    def stop(self, save=True, ram_file=None, rtc_file=None):
         &#34;&#34;&#34;
         Gently stops the emulator and all sub-modules.
 
@@ -716,19 +794,42 @@ True...
         ```python
         &gt;&gt;&gt; pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
         &gt;&gt;&gt; pyboy.stop(False) # Stop emulator and discard game progress (cartridge RAM)
-
+        &gt;&gt;&gt; import io
+        &gt;&gt;&gt; sav = io.BytesIO()
+        &gt;&gt;&gt; pyboy.stop(ram_file=sav) # Stop emulator and save game progress (cartridge RAM)
         ```
 
         Args:
             save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
                 provided game-ROM.
+            ram_file (file-like object): A bytes buffer to write the RAM (save) data to
+            rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
         &#34;&#34;&#34;
         if self.initialized and not self.stopped:
             logger.info(&#34;###########################&#34;)
             logger.info(&#34;# Emulator is turning off #&#34;)
             logger.info(&#34;###########################&#34;)
             self._plugin_manager.stop()
-            self.mb.stop(save)
+
+            # Battery implies saving RAM
+            ram_file_handled = False
+            rtc_file_handled = False
+            if save and self.mb.cartridge.battery and ram_file is None:
+                ram_file = open(self.gamerom + &#34;.ram&#34;, &#34;w+b&#34;)
+                ram_file_handled = True
+
+            if save and self.mb.cartridge.rtc_enabled and rtc_file is None:
+                rtc_file = open(self.gamerom + &#34;.rtc&#34;, &#34;w+b&#34;)
+                rtc_file_handled = True
+
+            self.mb.stop(save, ram_file, rtc_file)
+
+            if ram_file_handled:
+                ram_file.close()
+
+            if rtc_file_handled:
+                rtc_file.close()
+
             self.stopped = True
 
     ###################################################################
@@ -1120,6 +1221,21 @@ True...
 
         return self.game_wrapper.game_area()
 
+    def set_color_palette(self, palette):
+        &#34;&#34;&#34;
+        Set the color palette of DMG games.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy.set_color_palette((0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F))
+        ```
+        &#34;&#34;&#34;
+        if self.mb.cgb:
+            raise PyBoyInvalidOperationException(&#34;Palette change is only available in DMG mode&#34;)
+
+        for palette_reg in [self.mb.lcd.BGP, self.mb.lcd.OBP0, self.mb.lcd.OBP1]:
+            palette_reg.set_palette_colors(palette)
+
     def _serial(self):
         &#34;&#34;&#34;
         Provides all data that has been sent over the serial port since last call to this function.
@@ -1159,14 +1275,17 @@ True...
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
         self.target_emulationspeed = target_speed
 
-    def _is_cpu_stuck(self):
-        return self.mb.cpu.is_stuck
-
     def _load_symbols(self):
-        gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
-        for sym_path in [self.symbols_file, gamerom_file_no_ext + &#34;.sym&#34;, gamerom_file_no_ext + rom_ext + &#34;.sym&#34;]:
+        if self.rom_symbols:
+            return self.rom_symbols
+        gamerom_paths = []
+        if self.gamerom:
+            gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
+            gamerom_paths = [gamerom_file_no_ext + &#34;.sym&#34;, gamerom_file_no_ext + rom_ext + &#34;.sym&#34;]
+        for sym_path in [self.symbols_file] + gamerom_paths:
             if sym_path and os.path.isfile(sym_path):
                 logger.info(&#34;Loading symbol file: %s&#34;, sym_path)
+                group = &#34;labels&#34;
                 with open(sym_path) as f:
                     for _line in f.readlines():
                         line = _line.strip()
@@ -1176,24 +1295,30 @@ True...
                             continue
                         elif line.startswith(&#34;[&#34;):
                             # Start of key group
+                            group = line.strip()[1:-1]
                             # [labels]
                             # [definitions]
                             continue
 
-                        try:
-                            bank, addr, sym_label = re.split(&#34;:| &#34;, line.strip())
-                            bank = int(bank, 16)
-                            addr = int(addr, 16)
-                            if bank not in self.rom_symbols:
-                                self.rom_symbols[bank] = {}
+                        if group == &#34;labels&#34;:
+                            try:
+                                bank, addr, sym_label = re.split(&#34;:| &#34;, line.strip())
+                                bank = int(bank, 16)
+                                addr = int(addr, 16)
+                                if bank not in self.rom_symbols:
+                                    self.rom_symbols[bank] = {}
 
-                            if addr not in self.rom_symbols[bank]:
-                                self.rom_symbols[bank][addr] = []
+                                if addr not in self.rom_symbols[bank]:
+                                    self.rom_symbols[bank][addr] = []
 
-                            self.rom_symbols[bank][addr].append(sym_label)
-                            self.rom_symbols_inverse[sym_label] = (bank, addr)
-                        except ValueError:
-                            logger.warning(&#34;Skipping .sym line: %s&#34;, line.strip())
+                                self.rom_symbols[bank][addr].append(sym_label)
+                                self.rom_symbols_inverse[sym_label] = (bank, addr)
+                            except ValueError:
+                                logger.warning(&#34;Skipping .sym line: %s&#34;, line.strip())
+                        elif group == &#34;definitions&#34;:
+                            pass
+                        else:
+                            logger.warning(&#34;Invalid group. Skipping .sym line: %s&#34;, line.strip())
         return self.rom_symbols
 
     def _lookup_symbol(self, symbol):
@@ -1729,26 +1854,32 @@ False if emulation has ended otherwise True</p></section>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.stop"><code class="name flex">
-<span>def <span class="ident">stop</span></span>(<span>self, save=True)</span>
+<span>def <span class="ident">stop</span></span>(<span>self, save=True, ram_file=None, rtc_file=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Gently stops the emulator and all sub-modules.</p>
 <p>Example:</p>
 <pre><code class="language-python">&gt;&gt;&gt; pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
 &gt;&gt;&gt; pyboy.stop(False) # Stop emulator and discard game progress (cartridge RAM)
-
+&gt;&gt;&gt; import io
+&gt;&gt;&gt; sav = io.BytesIO()
+&gt;&gt;&gt; pyboy.stop(ram_file=sav) # Stop emulator and save game progress (cartridge RAM)
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>save</code></strong> :&ensp;<code>bool</code></dt>
 <dd>Specify whether to save the game upon stopping. It will always be saved in a file next to the
 provided game-ROM.</dd>
+<dt><strong><code>ram_file</code></strong> :&ensp;<code>file-like object</code></dt>
+<dd>A bytes buffer to write the RAM (save) data to</dd>
+<dt><strong><code>rtc_file</code></strong> :&ensp;<code>file-like object</code></dt>
+<dd>A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge</dd>
 </dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def stop(self, save=True):
+<pre><code class="python">def stop(self, save=True, ram_file=None, rtc_file=None):
     &#34;&#34;&#34;
     Gently stops the emulator and all sub-modules.
 
@@ -1756,19 +1887,42 @@ provided game-ROM.</dd>
     ```python
     &gt;&gt;&gt; pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
     &gt;&gt;&gt; pyboy.stop(False) # Stop emulator and discard game progress (cartridge RAM)
-
+    &gt;&gt;&gt; import io
+    &gt;&gt;&gt; sav = io.BytesIO()
+    &gt;&gt;&gt; pyboy.stop(ram_file=sav) # Stop emulator and save game progress (cartridge RAM)
     ```
 
     Args:
         save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
             provided game-ROM.
+        ram_file (file-like object): A bytes buffer to write the RAM (save) data to
+        rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
     &#34;&#34;&#34;
     if self.initialized and not self.stopped:
         logger.info(&#34;###########################&#34;)
         logger.info(&#34;# Emulator is turning off #&#34;)
         logger.info(&#34;###########################&#34;)
         self._plugin_manager.stop()
-        self.mb.stop(save)
+
+        # Battery implies saving RAM
+        ram_file_handled = False
+        rtc_file_handled = False
+        if save and self.mb.cartridge.battery and ram_file is None:
+            ram_file = open(self.gamerom + &#34;.ram&#34;, &#34;w+b&#34;)
+            ram_file_handled = True
+
+        if save and self.mb.cartridge.rtc_enabled and rtc_file is None:
+            rtc_file = open(self.gamerom + &#34;.rtc&#34;, &#34;w+b&#34;)
+            rtc_file_handled = True
+
+        self.mb.stop(save, ram_file, rtc_file)
+
+        if ram_file_handled:
+            ram_file.close()
+
+        if rtc_file_handled:
+            rtc_file.close()
+
         self.stopped = True</code></pre>
 </details>
 </dd>
@@ -2474,6 +2628,34 @@ that is built-in with the game wrapper plugin for your game. See <code><a title=
     &#34;&#34;&#34;
 
     return self.game_wrapper.game_area()</code></pre>
+</details>
+</dd>
+<dt id="pyboy.PyBoy.set_color_palette"><code class="name flex">
+<span>def <span class="ident">set_color_palette</span></span>(<span>self, palette)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set the color palette of DMG games.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy.set_color_palette((0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F))
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_color_palette(self, palette):
+    &#34;&#34;&#34;
+    Set the color palette of DMG games.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy.set_color_palette((0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F))
+    ```
+    &#34;&#34;&#34;
+    if self.mb.cgb:
+        raise PyBoyInvalidOperationException(&#34;Palette change is only available in DMG mode&#34;)
+
+    for palette_reg in [self.mb.lcd.BGP, self.mb.lcd.OBP0, self.mb.lcd.OBP1]:
+        palette_reg.set_palette_colors(palette)</code></pre>
 </details>
 </dd>
 <dt id="pyboy.PyBoy.set_emulation_speed"><code class="name flex">
@@ -3191,6 +3373,19 @@ used as a source of randomness in games. If you read the value, you'll get a pse
             step = addr.step
         return start, stop, step
 
+    def __len__(self):
+        raise PyBoyInvalidOperationException(
+            &#34;It&#39;s not possible to define the length of the memory space. See instead https://gbdev.io/pandocs/Memory_Map.html&#34;
+        )
+
+    def __iter__(self):
+        &#34;&#34;&#34;
+        Address space is overlapping, and therefore too complex to return as list or iterator.
+        If you want a snapshot, you should request specific memory ranges and banks.
+        See https://gbdev.io/pandocs/Memory_Map.html
+        &#34;&#34;&#34;
+        raise PyBoyInvalidOperationException(&#34;It&#39;s not possible to iterate over the memory space.&#34;)
+
     def __getitem__(self, addr):
         is_bank = isinstance(addr, tuple)
         bank = 0
@@ -3201,12 +3396,16 @@ used as a source of randomness in games. If you read the value, you'll get a pse
         is_single = isinstance(addr, int)
         if not is_single:
             start, stop, step = self._fix_slice(addr)
-            if not (start &gt;= 0 or stop &gt;= 0):
-                raise PyBoyInvalidInputException(&#34;Start address has to come before end address&#34;)
             if not (start &gt;= 0):
                 raise PyBoyInvalidInputException(&#34;Start address required&#34;)
             if not (stop &gt;= 0):
                 raise PyBoyInvalidInputException(&#34;End address required&#34;)
+            if not 0 &lt;= start &lt;= 0xFFFF:
+                raise PyBoyOutOfBoundsException(&#34;Start address out of bounds&#34;)
+            if not 0 &lt;= stop &lt;= 0x10000:
+                raise PyBoyOutOfBoundsException(&#34;End address out of bounds&#34;)
+            if not (start &lt; stop):
+                raise PyBoyInvalidInputException(&#34;Start address has to come before end address&#34;)
             return self.__getitem(start, stop, step, bank, is_single, is_bank)
         else:
             return self.__getitem(addr, 0, 1, bank, is_single, is_bank)
@@ -3332,6 +3531,12 @@ used as a source of randomness in games. If you read the value, you'll get a pse
                 raise PyBoyInvalidInputException(&#34;Start address required&#34;)
             if not (stop &gt;= 0):
                 raise PyBoyInvalidInputException(&#34;End address required&#34;)
+            if not 0 &lt;= start &lt;= 0xFFFF:
+                raise PyBoyOutOfBoundsException(&#34;Start address out of bounds&#34;)
+            if not 0 &lt;= stop &lt;= 0x10000:
+                raise PyBoyOutOfBoundsException(&#34;End address out of bounds&#34;)
+            if not (start &lt; stop):
+                raise PyBoyInvalidInputException(&#34;Start address has to come before end address&#34;)
             self.__setitem(start, stop, step, v, bank, is_single, is_bank)
         else:
             self.__setitem(addr, 0, 0, v, bank, is_single, is_bank)
@@ -3773,6 +3978,7 @@ def PC(self):
 <li><code><a title="pyboy.PyBoy.game_area_collision" href="#pyboy.PyBoy.game_area_collision">game_area_collision</a></code></li>
 <li><code><a title="pyboy.PyBoy.game_area_mapping" href="#pyboy.PyBoy.game_area_mapping">game_area_mapping</a></code></li>
 <li><code><a title="pyboy.PyBoy.game_area" href="#pyboy.PyBoy.game_area">game_area</a></code></li>
+<li><code><a title="pyboy.PyBoy.set_color_palette" href="#pyboy.PyBoy.set_color_palette">set_color_palette</a></code></li>
 <li><code><a title="pyboy.PyBoy.set_emulation_speed" href="#pyboy.PyBoy.set_emulation_speed">set_emulation_speed</a></code></li>
 <li><code><a title="pyboy.PyBoy.symbol_lookup" href="#pyboy.PyBoy.symbol_lookup">symbol_lookup</a></code></li>
 <li><code><a title="pyboy.PyBoy.hook_register" href="#pyboy.PyBoy.hook_register">hook_register</a></code></li>

@@ -47,7 +47,7 @@ __all__ = [
     &#34;SoundEnabledError&#34;,
 ]
 
-STATE_VERSION = 15
+STATE_VERSION = 17
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 &lt;&lt; x for x in range(5)]
 OPCODE_BRK = 0xDB
@@ -103,6 +103,14 @@ class PyBoyNotImplementedException(PyBoyException):
 class PyBoyInvalidInputException(PyBoyException):
     &#34;&#34;&#34;
     Exception is used to indicate that an invalid input has been provided to a PyBoy function or method.
+    &#34;&#34;&#34;
+
+    pass
+
+
+class PyBoyInvalidOperationException(PyBoyException):
+    &#34;&#34;&#34;
+    Exception raised when the user requests an invalid operation, which cannot be performed.
     &#34;&#34;&#34;
 
     pass
@@ -378,7 +386,8 @@ class WindowEvent:
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
         FULL_SCREEN_TOGGLE,
-    ) = range(42)
+        CYCLE_PALETTE,
+    ) = range(43)
 
     def __init__(self, event):
         self.__event = event
@@ -437,6 +446,7 @@ class WindowEvent:
             &#34;MOD_SHIFT_ON&#34;,
             &#34;MOD_SHIFT_OFF&#34;,
             &#34;FULL_SCREEN_TOGGLE&#34;,
+            &#34;CYCLE_PALETTE&#34;,
         )[self.__event]
 
 
@@ -755,7 +765,8 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
         MOD_SHIFT_ON,
         MOD_SHIFT_OFF,
         FULL_SCREEN_TOGGLE,
-    ) = range(42)
+        CYCLE_PALETTE,
+    ) = range(43)
 
     def __init__(self, event):
         self.__event = event
@@ -814,6 +825,7 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
             &#34;MOD_SHIFT_ON&#34;,
             &#34;MOD_SHIFT_OFF&#34;,
             &#34;FULL_SCREEN_TOGGLE&#34;,
+            &#34;CYCLE_PALETTE&#34;,
         )[self.__event]</code></pre>
 </details>
 <h3>Subclasses</h3>
@@ -974,6 +986,10 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
 <dd>
 <section class="desc"></section>
 </dd>
+<dt id="pyboy.utils.WindowEvent.CYCLE_PALETTE"><code class="name">var <span class="ident">CYCLE_PALETTE</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
 </dl>
 </dd>
 <dt id="pyboy.utils.PyBoyException"><code class="flex name class">
@@ -1008,6 +1024,7 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
 <li><a title="pyboy.utils.PyBoyFeatureDisabledError" href="#pyboy.utils.PyBoyFeatureDisabledError">PyBoyFeatureDisabledError</a></li>
 <li><a title="pyboy.utils.PyBoyInternalError" href="#pyboy.utils.PyBoyInternalError">PyBoyInternalError</a></li>
 <li><a title="pyboy.utils.PyBoyInvalidInputException" href="#pyboy.utils.PyBoyInvalidInputException">PyBoyInvalidInputException</a></li>
+<li>pyboy.utils.PyBoyInvalidOperationException</li>
 <li><a title="pyboy.utils.PyBoyNotImplementedException" href="#pyboy.utils.PyBoyNotImplementedException">PyBoyNotImplementedException</a></li>
 <li><a title="pyboy.utils.PyBoyOutOfBoundsException" href="#pyboy.utils.PyBoyOutOfBoundsException">PyBoyOutOfBoundsException</a></li>
 </ul>
@@ -1334,6 +1351,7 @@ it raises a predefined exception. I.e. on missing dependencies etc.</p></section
 <li><code><a title="pyboy.utils.WindowEvent.MOD_SHIFT_ON" href="#pyboy.utils.WindowEvent.MOD_SHIFT_ON">MOD_SHIFT_ON</a></code></li>
 <li><code><a title="pyboy.utils.WindowEvent.MOD_SHIFT_OFF" href="#pyboy.utils.WindowEvent.MOD_SHIFT_OFF">MOD_SHIFT_OFF</a></code></li>
 <li><code><a title="pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE" href="#pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE">FULL_SCREEN_TOGGLE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.CYCLE_PALETTE" href="#pyboy.utils.WindowEvent.CYCLE_PALETTE">CYCLE_PALETTE</a></code></li>
 </ul>
 </li>
 <li>
