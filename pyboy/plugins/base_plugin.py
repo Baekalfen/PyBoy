@@ -83,21 +83,24 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         return 0
 
     def frame_limiter(self, speed):
-        if self.sound_support and speed == 1:
+        frame_time = (1.0 / (60.0 * speed)) * 1_000_000_000
+        if self.sound_support:
             frames_buffered = self._get_sound_frames_buffered()
             if frames_buffered > SOUND_PREBUFFER_THRESHOLD:
-                # Sleep for the excees of the prebuffered frames we have
-                time.sleep(min(1 / 60.0, (frames_buffered - float(SOUND_PREBUFFER_THRESHOLD)) * (1.0 / 60.0)))
-            return True
-        else:
-            self._ftime += int((1.0 / (60.0 * speed)) * 1_000_000_000)
-            now = time.perf_counter_ns()
-            if speed > 0 and self._ftime > now:
-                delay = (self._ftime - now) // 1_000_000
-                time.sleep(delay / 1000)
+                # Sleep only what's necessary to keep our threshold, although not more than a full frame
+                frame_time = min(1.0, frames_buffered - float(SOUND_PREBUFFER_THRESHOLD)) * frame_time
             else:
-                self._ftime = now
-            return True
+                frame_time = 0
+
+        self._ftime += int(frame_time)
+
+        now = time.perf_counter_ns()
+        if speed > 0 and self._ftime > now:
+            delay = (self._ftime - now) // 1_000_000
+            time.sleep(delay / 1000)
+        else:
+            self._ftime = now
+        return True
 
     def paused(self, pause):
         pass

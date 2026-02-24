@@ -77,6 +77,7 @@ class WindowOpenAL(PyBoyWindowPlugin):
                 # logger.debug("Buffer size: %d", buffer_size.value)
 
                 self.buffers_free = [self.buffers[x] for x in range(MAX_SOUND_BUFFERS)]
+                self.bytes_buffered = 0
 
                 if cython_compiled:
                     audiobuffer, _ = self.sound.audiobuffer.base.buffer_info()
@@ -93,9 +94,7 @@ class WindowOpenAL(PyBoyWindowPlugin):
             self.sound_support = False
 
     def _get_sound_frames_buffered(self):
-        frames_buffered = c_int()
-        al.alGetSourcei(self.source, al.AL_BUFFERS_QUEUED, frames_buffered)
-        return frames_buffered.value
+        return float(self.bytes_buffered) / float(self.sound.samples_per_frame * 2.0)
 
     def post_tick(self):
         if self.sound_support and not self.sound_paused:
@@ -108,9 +107,11 @@ class WindowOpenAL(PyBoyWindowPlugin):
                 for i, f in enumerate(free_buffers):
                     if f == 0:
                         break  # FIXME: No buffers with id 0 right now
-                    # if i == processed:
-                    #     break
-                    # logger.debug("Buffer unqueued: %s", f)
+
+                    length = c_int()
+                    al.alGetBufferi(f, al.AL_SIZE, length)
+                    self.bytes_buffered -= length.value
+
                     self.buffers_free.append(f)
 
             if self.buffers_free:
@@ -120,6 +121,7 @@ class WindowOpenAL(PyBoyWindowPlugin):
                 queue_buf = self.buffers_free.pop()
                 al.alBufferData(queue_buf, al.AL_FORMAT_STEREO8, self.audiobuffer_p, length, self.sound.sample_rate)
                 al.alSourceQueueBuffers(self.source, 1, c_uint(queue_buf))
+                self.bytes_buffered += length
                 # logger.debug("Buffer enqueued: %s", queue_buf)
 
             queued = c_int()

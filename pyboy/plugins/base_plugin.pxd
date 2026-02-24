@@ -42,8 +42,9 @@ cdef class PyBoyWindowPlugin(PyBoyPlugin):
     cdef bint fullscreen
     cdef bint sound_paused
 
-    cdef int _get_sound_frames_buffered(self) noexcept
+    cdef cython.double _get_sound_frames_buffered(self) noexcept
     cdef int64_t _ftime
+    @cython.locals(frames_buffered=cython.double, frame_time=cython.double)
     cdef bint frame_limiter(self, int) noexcept
     cdef void set_title(self, str) noexcept
 
