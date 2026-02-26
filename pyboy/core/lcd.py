@@ -442,6 +442,7 @@ class STATRegister:
         self.value |= value  # Combine the two
 
     def update_LYC(self, LYC, LY):
+        # WARNING: Only call when LCD is enabled!
         if LYC == LY:
             self.value |= 0b100  # Sets the LYC flag
             if self.value & 0b0100_0000:  # LYC interrupt enabled flag

@@ -180,7 +180,7 @@
     "text": "REGISTERS\n  A: 00  F: 70\n  B: 41  C: 00\n  D: 41  E: 42\n  H: FF  L: 44\nTest failed\n"
   },
   "acceptance/ppu/stat_lyc_onoff.gb": {
-    "text": "Fail: r1 step 1\n"
+    "text": "Fail: r1 step 3\n"
   },
   "acceptance/ppu/intr_2_mode3_timing.gb": {
     "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"

@@ -630,6 +630,9 @@ class Motherboard:
                     return
                 elif i == 0xFF45:
                     self.lcd.LYC = value
+                    if self.lcd._LCDC.lcd_enable:
+                        if lcdc_interrupt := self.lcd._STAT.update_LYC(self.lcd.LYC, self.lcd.LY):
+                            self.cpu.set_interruptflag(lcdc_interrupt)
                 elif i == 0xFF46:
                     self.transfer_DMA(value)
                 elif i == 0xFF47:
