@@ -678,12 +678,16 @@ class Motherboard:
                 self.lcd.vbk.set(value)
             elif self.cgb_mode and i == 0xFF51:
                 self.hdma.hdma1 = value
+                self.hdma.curr_src = (value << 8) | (self.hdma.curr_src & 0x00FF)
             elif self.cgb_mode and i == 0xFF52:
                 self.hdma.hdma2 = value  # & 0xF0
+                self.hdma.curr_src = (self.hdma.curr_src & 0xFF00) | (value & 0xF0)
             elif self.cgb_mode and i == 0xFF53:
                 self.hdma.hdma3 = value  # & 0x1F
+                self.hdma.curr_dst = ((value & 0x1F) << 8) | (self.hdma.curr_dst & 0x00FF) | 0x8000
             elif self.cgb_mode and i == 0xFF54:
                 self.hdma.hdma4 = value  # & 0xF0
+                self.hdma.curr_dst = (self.hdma.curr_dst & 0xFF00) | (value & 0xF0)
             elif self.cgb_mode and i == 0xFF55:
                 self.hdma.set_hdma5(value, self)
                 self.cpu.bail = True
@@ -773,22 +777,21 @@ class HDMA:
         else:
             self.hdma5 = value & 0xFF
             bytes_to_transfer = ((value & 0x7F) * 16) + 16
-            src = (self.hdma1 << 8) | (self.hdma2 & 0xF0)
-            dst = ((self.hdma3 & 0x1F) << 8) | (self.hdma4 & 0xF0)
-            dst |= 0x8000
 
             transfer_type = value >> 7
             if transfer_type == 0:
                 # General purpose DMA transfer
+                src = self.curr_src
+                dst = self.curr_dst
                 for i in range(bytes_to_transfer):
                     mb.setitem((dst + i) & 0xFFFF, mb.getitem((src + i) & 0xFFFF))
 
-                # Number of blocks of 16-bytes transfered. Set 7th bit for "completed".
-                self.hdma5 = 0xFF  # (value & 0x7F) | 0x80 #0xFF
-                self.hdma4 = 0xFF
-                self.hdma3 = 0xFF
-                self.hdma2 = 0xFF
-                self.hdma1 = 0xFF
+                self.curr_src = (src + bytes_to_transfer) & 0xFFFF
+                self.curr_dst = (dst + bytes_to_transfer) & 0xFFFF
+
+                # Signals transfer complete (Readable via FF55)
+                self.hdma5 = 0xFF
+
                 # TODO: Progress cpu cycles!
                 # https://gist.github.com/drhelius/3394856
                 # cpu is halted during dma transfer
@@ -797,8 +800,6 @@ class HDMA:
                 # set 7th bit to 0
                 self.hdma5 = self.hdma5 & 0x7F
                 self.transfer_active = True
-                self.curr_dst = dst
-                self.curr_src = src
 
     def tick(self, mb):
         # HBLANK HDMA routine
