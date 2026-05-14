@@ -47,7 +47,8 @@ def locate_roms(path=default_rom_path):
     gb_files = map(
         lambda x: path + x,
         filter(
-            lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"), os.listdir(path)
+            lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"),
+            os.listdir(path),
         ),
     )
 
@@ -435,6 +436,15 @@ def pack_secrets():
         f.write(fernet.encrypt(data.getvalue()))
 
     print(key.decode())
+
+
+@pytest.fixture(scope="session")
+def rom_2048():
+    # SHA256: b8b0ab5dc8159dcd83680a2796010ecf9fc8c94c2cfb9cd3ff30c1998d790a
+    path = Path("tests/2048.gb")
+    if not os.path.isfile(path):
+        pytest.skip("2048.gb ROM not found")
+    return str(path)
 
 
 @pytest.fixture(autouse=True, scope="function")

@@ -6,22 +6,28 @@
 from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 # imports
-from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
-from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
-from pyboy.plugins.window_glfw import WindowGLFW # noqa
-from pyboy.plugins.window_null import WindowNull # noqa
-from pyboy.plugins.debug import Debug # noqa
-from pyboy.plugins.auto_pause import AutoPause # noqa
-from pyboy.plugins.record_replay import RecordReplay # noqa
-from pyboy.plugins.rewind import Rewind # noqa
-from pyboy.plugins.screen_recorder import ScreenRecorder # noqa
-from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # noqa
-from pyboy.plugins.debug_prompt import DebugPrompt # noqa
-from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # noqa
-from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
-from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # noqa
-from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
-from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
+from pyboy.plugins.window_sdl2 import WindowSDL2  # noqa
+from pyboy.plugins.window_open_gl import WindowOpenGL  # noqa
+from pyboy.plugins.window_glfw import WindowGLFW  # noqa
+from pyboy.plugins.window_null import WindowNull  # noqa
+from pyboy.plugins.debug import Debug  # noqa
+from pyboy.plugins.auto_pause import AutoPause  # noqa
+from pyboy.plugins.record_replay import RecordReplay  # noqa
+from pyboy.plugins.rewind import Rewind  # noqa
+from pyboy.plugins.screen_recorder import ScreenRecorder  # noqa
+from pyboy.plugins.screenshot_recorder import ScreenshotRecorder  # noqa
+from pyboy.plugins.debug_prompt import DebugPrompt  # noqa
+from pyboy.plugins.game_wrapper_super_mario_land import (
+    GameWrapperSuperMarioLand,
+)  # noqa
+from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris  # noqa
+from pyboy.plugins.game_wrapper_kirby_dream_land import (
+    GameWrapperKirbyDreamLand,
+)  # noqa
+from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1  # noqa
+from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball  # noqa
+from pyboy.plugins.game_wrapper2048 import GameWrapper2048  # noqa
+
 # imports end
 
 
@@ -43,6 +49,7 @@ def parser_arguments():
     yield GameWrapperKirbyDreamLand.argv
     yield GameWrapperPokemonGen1.argv
     yield GameWrapperPokemonPinball.argv
+    yield GameWrapper2048.argv
     # yield_plugins end
     pass
 
@@ -76,25 +83,48 @@ class PluginManager:
         self.screenshot_recorder_enabled = self.screenshot_recorder.enabled()
         self.debug_prompt = DebugPrompt(pyboy, mb, pyboy_argv)
         self.debug_prompt_enabled = self.debug_prompt.enabled()
-        self.game_wrapper_super_mario_land = GameWrapperSuperMarioLand(pyboy, mb, pyboy_argv)
-        self.game_wrapper_super_mario_land_enabled = self.game_wrapper_super_mario_land.enabled()
+        self.game_wrapper_super_mario_land = GameWrapperSuperMarioLand(
+            pyboy, mb, pyboy_argv
+        )
+        self.game_wrapper_super_mario_land_enabled = (
+            self.game_wrapper_super_mario_land.enabled()
+        )
         self.game_wrapper_tetris = GameWrapperTetris(pyboy, mb, pyboy_argv)
         self.game_wrapper_tetris_enabled = self.game_wrapper_tetris.enabled()
-        self.game_wrapper_kirby_dream_land = GameWrapperKirbyDreamLand(pyboy, mb, pyboy_argv)
-        self.game_wrapper_kirby_dream_land_enabled = self.game_wrapper_kirby_dream_land.enabled()
+        self.game_wrapper_kirby_dream_land = GameWrapperKirbyDreamLand(
+            pyboy, mb, pyboy_argv
+        )
+        self.game_wrapper_kirby_dream_land_enabled = (
+            self.game_wrapper_kirby_dream_land.enabled()
+        )
         self.game_wrapper_pokemon_gen1 = GameWrapperPokemonGen1(pyboy, mb, pyboy_argv)
-        self.game_wrapper_pokemon_gen1_enabled = self.game_wrapper_pokemon_gen1.enabled()
-        self.game_wrapper_pokemon_pinball = GameWrapperPokemonPinball(pyboy, mb, pyboy_argv)
-        self.game_wrapper_pokemon_pinball_enabled = self.game_wrapper_pokemon_pinball.enabled()
+        self.game_wrapper_pokemon_gen1_enabled = (
+            self.game_wrapper_pokemon_gen1.enabled()
+        )
+        self.game_wrapper_pokemon_pinball = GameWrapperPokemonPinball(
+            pyboy, mb, pyboy_argv
+        )
+        self.game_wrapper_pokemon_pinball_enabled = (
+            self.game_wrapper_pokemon_pinball.enabled()
+        )
+        self.game_wrapper2048 = GameWrapper2048(pyboy, mb, pyboy_argv)
+        self.game_wrapper2048_enabled = self.game_wrapper2048.enabled()
         # plugins_enabled end
 
     def gamewrapper(self):
         # gamewrapper
-        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
-        if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
-        if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
-        if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
-        if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
+        if self.game_wrapper_super_mario_land_enabled:
+            return self.game_wrapper_super_mario_land
+        if self.game_wrapper_tetris_enabled:
+            return self.game_wrapper_tetris
+        if self.game_wrapper_kirby_dream_land_enabled:
+            return self.game_wrapper_kirby_dream_land
+        if self.game_wrapper_pokemon_gen1_enabled:
+            return self.game_wrapper_pokemon_gen1
+        if self.game_wrapper_pokemon_pinball_enabled:
+            return self.game_wrapper_pokemon_pinball
+        if self.game_wrapper2048_enabled:
+            return self.game_wrapper2048
         # gamewrapper end
         self.generic_game_wrapper_enabled = True
         return self.generic_game_wrapper
@@ -135,6 +165,8 @@ class PluginManager:
             events = self.game_wrapper_pokemon_gen1.handle_events(events)
         if self.game_wrapper_pokemon_pinball_enabled:
             events = self.game_wrapper_pokemon_pinball.handle_events(events)
+        if self.game_wrapper2048_enabled:
+            events = self.game_wrapper2048.handle_events(events)
         # foreach end
         if self.generic_game_wrapper_enabled:
             events = self.generic_game_wrapper.handle_events(events)
@@ -164,6 +196,8 @@ class PluginManager:
             self.game_wrapper_pokemon_gen1.post_tick()
         if self.game_wrapper_pokemon_pinball_enabled:
             self.game_wrapper_pokemon_pinball.post_tick()
+        if self.game_wrapper2048_enabled:
+            self.game_wrapper2048.post_tick()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.post_tick()
@@ -221,19 +255,24 @@ class PluginManager:
         # foreach windows done = [].frame_limiter(speed), if done: return
         if self.window_sdl2_enabled:
             done = self.window_sdl2.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_open_gl_enabled:
             done = self.window_open_gl.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_glfw_enabled:
             done = self.window_glfw.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_null_enabled:
             done = self.window_null.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.debug_enabled:
             done = self.debug.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         # foreach end
 
     def window_title(self):
@@ -273,6 +312,8 @@ class PluginManager:
             title += self.game_wrapper_pokemon_gen1.window_title()
         if self.game_wrapper_pokemon_pinball_enabled:
             title += self.game_wrapper_pokemon_pinball.window_title()
+        if self.game_wrapper2048_enabled:
+            title += self.game_wrapper2048.window_title()
         # foreach end
         return title
 
@@ -312,6 +353,8 @@ class PluginManager:
             self.game_wrapper_pokemon_gen1.stop()
         if self.game_wrapper_pokemon_pinball_enabled:
             self.game_wrapper_pokemon_pinball.stop()
+        if self.game_wrapper2048_enabled:
+            self.game_wrapper2048.stop()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.stop()
