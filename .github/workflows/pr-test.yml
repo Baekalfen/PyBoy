@@ -46,7 +46,11 @@ jobs:
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
         # Install 'timeout' command
-        brew install coreutils
+        brew install coreutils ffmpeg
+    - name: Setup Windows - ffmpeg
+      if: ${{ contains(matrix.os, 'windows-latest') }}
+      run: |
+        choco install ffmpeg -y
     - name: Build PyBoy
       env:
         CC: "ccache gcc"
@@ -57,7 +61,7 @@ jobs:
       if: ${{ contains(matrix.os, 'ubuntu') }}
       run: |
         sudo apt update
-        sudo apt install libopengl0 freeglut3-dev -y
+        sudo apt install libopengl0 freeglut3-dev ffmpeg -y
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -110,14 +114,14 @@ jobs:
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
         # Fix cryptography build: https://github.com/pyca/cryptography/issues/3489
-        brew install openssl
+        brew install openssl ffmpeg
         echo "CPPFLAGS=-I/usr/local/opt/openssl/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L/usr/local/opt/openssl/lib" >> $GITHUB_ENV
     - name: Setup Ubuntu - OpenGL dependencies
       if: ${{ contains(matrix.os, 'ubuntu') }}
       run: |
         sudo apt update
-        sudo apt install libopengl0 freeglut3-dev
+        sudo apt install libopengl0 freeglut3-dev ffmpeg
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -181,9 +185,10 @@ jobs:
           ln -s "/opt/python/${{ matrix.python-version }}/bin/python3" /usr/local/bin/python
 
           if [[ "${{ matrix.manylinux-version }}" == manylinux_2_28* ]]; then
-            dnf install libjpeg-devel ccache -y
+            dnf install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm -y # ffmpeg
+            dnf install libjpeg-devel ccache ffmpeg -y
           else
-            apk add libjpeg jpeg-dev libffi ccache
+            apk add libjpeg jpeg-dev libffi ccache ffmpeg
             python -m ensurepip
           fi
           ccache --set-config=cache_dir=/ccache

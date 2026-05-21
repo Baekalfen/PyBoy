@@ -10,6 +10,7 @@ from pyboy.plugins.base_plugin cimport PyBoyPlugin
 cdef Logger logger
 
 cdef class ScreenRecorder(PyBoyPlugin):
-    cdef bint recording
-    cdef frames
-
+    cdef bint recording_gif
+    cdef bint recording_mp4
+    cdef object ffmpeg_bin
+    cdef object _session

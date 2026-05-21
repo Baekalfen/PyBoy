@@ -150,6 +150,8 @@ class WindowOpenGL(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.PRESS_SPEED_UP))
             elif c == "i":
                 self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE))
+            elif c == "u":
+                self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE_MP4))
             elif c == chr(8):
                 self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_SELECT))
             elif c == chr(13):
