@@ -20,7 +20,7 @@ def enabled(self):
     try:
         with open(self.pyboy.gamerom_file, "rb") as f:
             rom_hash = hashlib.md5(f.read()).hexdigest()
-        return rom_hash == "8e7b426c829ec646ba1d8773fcabda8e"
+        return rom_hash == "6748719720d57a7dce48d07b2f3c5ede"
     except Exception as e:
         logger.error(f"Error occurred while checking ROM hash: {e}")
         return False
