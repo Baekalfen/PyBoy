@@ -47,8 +47,7 @@ def locate_roms(path=default_rom_path):
     gb_files = map(
         lambda x: path + x,
         filter(
-            lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"),
-            os.listdir(path),
+            lambda x: x.lower().endswith(".gb") or x.lower().endswith(".gbc") or x.endswith(".bin"), os.listdir(path)
         ),
     )
 

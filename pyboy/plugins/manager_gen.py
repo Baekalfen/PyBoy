@@ -217,8 +217,7 @@ if __name__ == "__main__":
                 for p in sorted(list(set(plugins) - set(game_wrappers))):
                     p_name = to_snake_case(p)
                     spec = importlib.util.spec_from_file_location(
-                        p_name,
-                        os.path.dirname(os.path.abspath(__file__)) + "/" + p_name + ".py",
+                        p_name, os.path.dirname(os.path.abspath(__file__)) + "/" + p_name + ".py"
                     )
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
