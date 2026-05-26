@@ -6,23 +6,23 @@
 from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 # imports
-from pyboy.plugins.window_sdl2 import WindowSDL2  # noqa
-from pyboy.plugins.window_open_gl import WindowOpenGL  # noqa
-from pyboy.plugins.window_glfw import WindowGLFW  # noqa
-from pyboy.plugins.window_null import WindowNull  # noqa
-from pyboy.plugins.debug import Debug  # noqa
-from pyboy.plugins.auto_pause import AutoPause  # noqa
-from pyboy.plugins.record_replay import RecordReplay  # noqa
-from pyboy.plugins.rewind import Rewind  # noqa
-from pyboy.plugins.screen_recorder import ScreenRecorder  # noqa
-from pyboy.plugins.screenshot_recorder import ScreenshotRecorder  # noqa
-from pyboy.plugins.debug_prompt import DebugPrompt  # noqa
-from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand  # noqa
-from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris  # noqa
+from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
+from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
+from pyboy.plugins.window_glfw import WindowGLFW # noqa
+from pyboy.plugins.window_null import WindowNull # noqa
+from pyboy.plugins.debug import Debug # noqa
+from pyboy.plugins.auto_pause import AutoPause # noqa
+from pyboy.plugins.record_replay import RecordReplay # noqa
+from pyboy.plugins.rewind import Rewind # noqa
+from pyboy.plugins.screen_recorder import ScreenRecorder # noqa
+from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # noqa
+from pyboy.plugins.debug_prompt import DebugPrompt # noqa
+from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # noqa
+from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # noqa
-from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1  # noqa
-from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball  # noqa
-from pyboy.plugins.game_wrapper2048 import GameWrapper2048  # noqa
+from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
+from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
+from pyboy.plugins.game_wrapper2048 import GameWrapper2048 # noqa
 # imports end
 
 
@@ -94,11 +94,12 @@ class PluginManager:
 
     def gamewrapper(self):
         # gamewrapper
-        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land 
+        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
         if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
         if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
         if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
         if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
+        if self.game_wrapper2048_enabled: return self.game_wrapper2048
         # gamewrapper end
         self.generic_game_wrapper_enabled = True
         return self.generic_game_wrapper
