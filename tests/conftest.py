@@ -303,6 +303,19 @@ def whichboot_file():
     return str(path)
 
 
+# https://github.com/wyattferguson/2048-gb
+@pytest.fixture(scope="session")
+def gb2048_file():
+    path = extra_test_rom_dir / Path("gb2048.gb")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.2048.txt"))
+            gb2048_data = url_open("https://pyboy.dk/mirror/2048.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(gb2048_data)
+    return str(path)
+
+
 # https://gitlab.com/BonsaiDen/vectroid.gb
 @pytest.fixture(scope="session")
 def vectroid_file():
@@ -435,15 +448,6 @@ def pack_secrets():
         f.write(fernet.encrypt(data.getvalue()))
 
     print(key.decode())
-
-
-@pytest.fixture(scope="session")
-def rom_2048():
-    # SHA256: b8b0ab5dc8159dcd83680a2796010ecf9fc8c94c2cfb9cd3ff30c1998d790a
-    path = Path("tests/2048.gb")
-    if not os.path.isfile(path):
-        pytest.skip("2048.gb ROM not found")
-    return str(path)
 
 
 @pytest.fixture(autouse=True, scope="function")

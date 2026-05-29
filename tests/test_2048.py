@@ -6,8 +6,8 @@
 from pyboy import PyBoy
 
 
-def test_2048_basics(rom_2048):
-    pyboy = PyBoy(rom_2048, window="null")
+def test_2048_basics(gb2048_file):
+    pyboy = PyBoy(gb2048_file, window="null")
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
@@ -29,8 +29,8 @@ def test_2048_basics(rom_2048):
     pyboy.stop()
 
 
-def test_2048_score_increases(rom_2048):
-    pyboy = PyBoy(rom_2048, window="null")
+def test_2048_score_increases(gb2048_file):
+    pyboy = PyBoy(gb2048_file, window="null")
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
@@ -53,8 +53,8 @@ def test_2048_score_increases(rom_2048):
     pyboy.stop()
 
 
-def test_2048_game_over(rom_2048):
-    pyboy = PyBoy(rom_2048, window="null")
+def test_2048_game_over(gb2048_file):
+    pyboy = PyBoy(gb2048_file, window="null")
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
