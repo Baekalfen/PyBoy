@@ -61,7 +61,7 @@ jobs:
       if: ${{ contains(matrix.os, 'ubuntu') }}
       run: |
         sudo apt update
-        sudo apt install libopengl0 freeglut3-dev ffmpeg -y
+        sudo apt install libopengl0 freeglut3-dev ffmpeg libogg-dev -y
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -121,7 +121,7 @@ jobs:
       if: ${{ contains(matrix.os, 'ubuntu') }}
       run: |
         sudo apt update
-        sudo apt install libopengl0 freeglut3-dev ffmpeg
+        sudo apt install libopengl0 freeglut3-dev ffmpeg libogg-dev -y
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
