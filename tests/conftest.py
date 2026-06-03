@@ -126,6 +126,10 @@ def supermarioland_rom(secrets):
 def kirby_rom(secrets):
     return locate_sha256(b"0f6dba94fae248d419083001c42c02a78be6bd3dff679c895517559e72c98d58")
 
+@pytest.fixture(scope="session")
+def pac_man_rom(secrets):
+    return locate_sha256(b"4a43f491e4c5cef282960b06d23133ff3cb234e228fd21fe1e99958eee8c4971")
+
 
 @pytest.fixture(scope="session")
 def any_rom(secrets, tetris_rom):
