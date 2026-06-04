@@ -26,6 +26,18 @@ def enabled(self):
         return False
 
 
+ADDR_SCORE_LOW = 0xC0E7
+ADDR_SCORE_HIGH = 0xC0E8
+ADDR_WINNER = 0xC0EB
+ADDR_STATE = 0xC0EC
+ADDR_BOARD_START = 0xC0B2
+
+STATE_TITLE = 0
+STATE_PLAYING = 1
+STATE_WINNER = 2
+STATE_GAMEOVER = 3
+
+
 class GameWrapper2048(PyBoyGameWrapper):
     """
     This class wraps 2048 for Game Boy, and provides easy access for AIs.
@@ -51,17 +63,17 @@ class GameWrapper2048(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        low = self.pyboy.memory[0xC0EF]
-        high = self.pyboy.memory[0xC0F0]
+        low = self.pyboy.memory[ADDR_SCORE_LOW]
+        high = self.pyboy.memory[ADDR_SCORE_HIGH]
         self.score = low + (high * 256)
 
-        self.winner = self.pyboy.memory[0xC0F3] == 1
+        self.winner = self.pyboy.memory[ADDR_WINNER] == 1
 
-        state = self.pyboy.memory[0xC0F4]
-        self._game_over = state == 3
+        state = self.pyboy.memory[ADDR_STATE]
+        self._game_over = state == STATE_GAMEOVER
 
         for i in range(25):
-            addr = 0xC0B8 + (i * 2)
+            addr = ADDR_BOARD_START + (i * 2)
             low = self.pyboy.memory[addr]
             high = self.pyboy.memory[addr + 1]
             val = high + (low * 256)

@@ -63,14 +63,20 @@ def test_2048_game_over(gb2048_file):
         pyboy.tick(1, False)
 
     pyboy.button("start")
-    for _ in range(60):
+    for _ in range(200):
         pyboy.tick(1, False)
 
-    for _ in range(5000):
-        pyboy.button("right")
+    for i in range(5000):
+        pyboy.button_press("right")
         pyboy.tick(10, False)
-        pyboy.button("down")
+        pyboy.button_release("right")
+        pyboy.tick(5, False)
+
+        pyboy.button_press("down")
         pyboy.tick(10, False)
+        pyboy.button_release("down")
+        pyboy.tick(5, False)
+
         if wrapper.game_over():
             break
 
