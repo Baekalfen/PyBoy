@@ -59,7 +59,8 @@ if sdl2:
         sdl2.SDLK_x         : WindowEvent.STATE_LOAD,
         sdl2.SDLK_SPACE     : WindowEvent.RELEASE_SPEED_UP,
         sdl2.SDLK_p         : WindowEvent.PAUSE_TOGGLE,
-        sdl2.SDLK_i         : WindowEvent.SCREEN_RECORDING_TOGGLE,
+        sdl2.SDLK_i         : WindowEvent.SCREEN_RECORDING_TOGGLE, # gif recording
+        sdl2.SDLK_u         : WindowEvent.SCREEN_RECORDING_TOGGLE_MP4,
         sdl2.SDLK_o         : WindowEvent.SCREENSHOT_RECORD,
         sdl2.SDLK_ESCAPE    : WindowEvent.QUIT,
         sdl2.SDLK_COMMA     : WindowEvent.RELEASE_REWIND_BACK,

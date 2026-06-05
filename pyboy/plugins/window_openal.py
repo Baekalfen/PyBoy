@@ -16,6 +16,9 @@ except Exception as ex:
     if ex.__class__.__name__ == "ExternalLibraryError":
         logger.debug("Error loading OpenAL: %s", ex)
         openal_enabled = False
+    elif "pyogg" in ex.__class__.__name__.lower():
+        logger.debug("Error loading pyogg: %s", ex)
+        openal_enabled = False
     else:
         raise
 

@@ -72,6 +72,8 @@ class WindowGLFW(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.PRESS_SPEED_UP))
             elif key == glfw.KEY_I:
                 self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE))
+            elif key == glfw.KEY_U:
+                self.events.append(WindowEvent(WindowEvent.SCREEN_RECORDING_TOGGLE_MP4))
             elif key == glfw.KEY_BACKSPACE:
                 self.events.append(WindowEvent(WindowEvent.PRESS_BUTTON_SELECT))
             elif key == glfw.KEY_ENTER:

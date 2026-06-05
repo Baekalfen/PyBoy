@@ -185,7 +185,8 @@ The other controls for the emulator:
 | Space        | Unlimited FPS           |
 | Z            | Save state              |
 | X            | Load state              |
-| I            | Toggle screen recording |
+| I            | GIF screen recording    |
+| U            | MP4 screen recording    |
 | O            | Save screenshot         |
 | C            | Cycle DMG palette       |
 | ,            | Rewind backwards        |
