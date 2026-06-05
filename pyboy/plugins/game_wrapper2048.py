@@ -42,6 +42,8 @@ class GameWrapper2048(PyBoyGameWrapper):
     """
     This class wraps 2048 for Game Boy, and provides easy access for AIs.
 
+    This game wrapper only works with the release of 2048 with MD5 6748719720d57a7dce48d07b2f3c5ede.
+
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
 
