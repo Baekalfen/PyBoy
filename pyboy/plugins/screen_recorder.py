@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import contextlib
 import os
 import shutil
 import subprocess
@@ -87,9 +88,13 @@ class ScreenRecorder(PyBoyPlugin):
         tmpdir = tempfile.mkdtemp(prefix="screenrec-", dir=directory)
         video_raw = os.path.join(tmpdir, "video.rgba")
         audio_raw = os.path.join(tmpdir, "audio.s8")
-        output_path = os.path.join(directory, f"{stamp}.{mode}")
+        try:
+            output_path, reservation_path = self._reserve_output_path(directory, stamp, mode)
+        except Exception:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            raise
 
-        self._session = {
+        session = {
             "mode": mode,
             "tmpdir": tmpdir,
             "video_raw": video_raw if mode == "mp4" else None,
@@ -98,13 +103,53 @@ class ScreenRecorder(PyBoyPlugin):
             "frames": 0,
             "audio_bytes": 0,
             "gif_frames": [] if mode == "gif" else None,
-            "video_fh": open(video_raw, "wb") if mode == "mp4" else None,
-            "audio_fh": open(audio_raw, "wb") if mode == "mp4" else None,
+            "video_fh": None,
+            "audio_fh": None,
+            "reservation_path": reservation_path,
         }
+        try:
+            if mode == "mp4":
+                session["video_fh"] = open(video_raw, "wb")
+                session["audio_fh"] = open(audio_raw, "wb")
+        except Exception:
+            if session["video_fh"] is not None:
+                session["video_fh"].close()
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(output_path)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(reservation_path)
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            raise
+
+        self._session = session
 
         self.recording_gif = mode == "gif"
         self.recording_mp4 = mode == "mp4"
         logger.info("ScreenRecorder started: %s", mode.upper())
+
+    @staticmethod
+    def _reserve_output_path(directory, stamp, mode):
+        suffix = 1
+        output_path = os.path.join(directory, f"{stamp}.{mode}")
+        while True:
+            reservation_path = ScreenRecorder._reservation_path(output_path)
+            if os.path.exists(output_path):
+                output_path = os.path.join(directory, f"{stamp}-{suffix}.{mode}")
+                suffix += 1
+                continue
+            try:
+                fd = os.open(reservation_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+                os.close(fd)
+                return output_path, reservation_path
+            except FileExistsError:
+                pass
+            output_path = os.path.join(directory, f"{stamp}-{suffix}.{mode}")
+            suffix += 1
+
+    @staticmethod
+    def _reservation_path(output_path):
+        directory, filename = os.path.split(output_path)
+        return os.path.join(directory, f".{filename}.lock")
 
     def _stop_recording(self):
         session = self._session
@@ -128,6 +173,9 @@ class ScreenRecorder(PyBoyPlugin):
 
         if success:
             logger.info("Screen recording saved in %s", session["output_path"])
+        else:
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(session["output_path"])
         self._cleanup_session(session)
         self._session = None
         self.recording_gif = False
@@ -225,6 +273,8 @@ class ScreenRecorder(PyBoyPlugin):
     def _cleanup_session(self, session):
         if session.get("gif_frames") is not None:
             session["gif_frames"] = []
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(session["reservation_path"])
         if os.path.exists(session["tmpdir"]):
             shutil.rmtree(session["tmpdir"], ignore_errors=True)
 

@@ -56,8 +56,15 @@ def move_gif(game, dest):
     record_dir = "recordings"
     for _ in range(10):
         try:
-            gif = sorted(filter(lambda x: game in x, os.listdir(record_dir)))[-1]
-            os.replace(record_dir + "/" + gif, dest)
+            gif = max(
+                (
+                    entry.path
+                    for entry in os.scandir(record_dir)
+                    if entry.is_file() and entry.name.endswith(".gif") and game in entry.name
+                ),
+                key=os.path.getmtime,
+            )
+            os.replace(gif, dest)
             break
         except:  # noqa
             time.sleep(1)
@@ -172,6 +179,32 @@ def test_pokemon(pokemon_blue_rom, boot_rom):
         stop_frame=1074,
         bootrom_file=boot_rom,
     )
+
+
+def test_move_gif_prefers_newest_matching_gif(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    record_dir = tmp_path / "recordings"
+    record_dir.mkdir()
+
+    older_gif = record_dir / "SUPERMARIOLAND.gif"
+    newer_gif = record_dir / "SUPERMARIOLAND-1.gif"
+    newer_mp4 = record_dir / "SUPERMARIOLAND.mp4"
+
+    older_gif.write_bytes(b"older-gif")
+    newer_gif.write_bytes(b"newer-gif")
+    newer_mp4.write_bytes(b"newer-mp4")
+
+    os.utime(older_gif, (1, 1))
+    os.utime(newer_gif, (2, 2))
+    os.utime(newer_mp4, (3, 3))
+
+    destination = tmp_path / "moved.gif"
+    move_gif("SUPERMARIOLAND", destination)
+
+    assert destination.read_bytes() == b"newer-gif"
+    assert older_gif.exists()
+    assert not newer_gif.exists()
+    assert newer_mp4.exists()
 
 
 @pytest.mark.skip("Outdated base state")
