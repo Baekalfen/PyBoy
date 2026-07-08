@@ -179,6 +179,34 @@ def test_screen_recorder_removes_partial_output_when_encoding_fails(monkeypatch,
     pyboy.stop(save=False)
 
 
+def test_screen_recorder_mp4_does_not_overwrite_existing_recording(monkeypatch, tmp_path, default_rom):
+    monkeypatch.setattr("pyboy.plugins.screen_recorder.time.strftime", lambda _: "same-timestamp")
+    pyboys = [_make_pyboy(monkeypatch, tmp_path, default_rom, sample_rate=48000) for _ in range(2)]
+
+    def _fake_subprocess_run(cmd, stdout=None, stderr=None, check=None):
+        Path(cmd[-1]).write_bytes(b"mp4")
+        return type("P", (), {"returncode": 0, "stderr": b""})()
+
+    monkeypatch.setattr("pyboy.plugins.screen_recorder.subprocess.run", _fake_subprocess_run)
+
+    for pyboy in pyboys:
+        pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE_MP4)
+        pyboy.tick(1, True, True)
+
+    for pyboy in pyboys:
+        pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE_MP4)
+        pyboy.tick(1, True, True)
+
+    recordings_dir = tmp_path / "recordings"
+    recordings = sorted(path.name for path in recordings_dir.glob("*.mp4"))
+    assert recordings == ["same-timestamp-1.mp4", "same-timestamp.mp4"]
+    assert list(recordings_dir.glob(".*.lock")) == []
+    assert list(recordings_dir.glob("screenrec-*")) == []
+
+    for pyboy in pyboys:
+        pyboy.stop(save=False)
+
+
 def test_screen_recorder_mp4_with_audio(monkeypatch, tmp_path, default_rom):
     _trace("Starting MP4 recorder flow")
     pyboy = _make_pyboy(monkeypatch, tmp_path, default_rom, sample_rate=48000)
