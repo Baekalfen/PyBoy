@@ -136,13 +136,36 @@ def test_screen_recorder_cleans_up_reserved_output_on_start_failure(monkeypatch,
     with pytest.raises(OSError, match="disk full"):
         pyboy.tick(1, True, True)
 
-    assert list((tmp_path / "recordings").glob("*.mp4")) == []
-    assert list((tmp_path / "recordings").glob("screenrec-*")) == []
+    recordings_dir = tmp_path / "recordings"
+    screen_recorder = pyboy._plugin_manager.screen_recorder
+    assert list(recordings_dir.glob("*.mp4")) == []
+    assert list(recordings_dir.glob(".*.lock")) == []
+    assert list(recordings_dir.glob("screenrec-*")) == []
+    assert screen_recorder._session is None
+    assert not screen_recorder.recording_gif
+    assert not screen_recorder.recording_mp4
+
+    def _fake_subprocess_run(cmd, stdout=None, stderr=None, check=None):
+        Path(cmd[-1]).write_bytes(b"mp4")
+        return type("P", (), {"returncode": 0, "stderr": b""})()
+
+    monkeypatch.setattr("builtins.open", real_open)
+    monkeypatch.setattr("pyboy.plugins.screen_recorder.subprocess.run", _fake_subprocess_run)
+
+    pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE_MP4)
+    pyboy.tick(1, True, True)
+    pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE_MP4)
+    pyboy.tick(1, True, True)
+
+    retry_recordings = list(recordings_dir.glob("*.mp4"))
+    assert len(retry_recordings) == 1
+    assert list(recordings_dir.glob(".*.lock")) == []
     pyboy.stop(save=False)
 
 
 def test_screen_recorder_cleans_up_tempdir_on_reservation_failure(monkeypatch, tmp_path, default_rom):
     pyboy = _make_pyboy(monkeypatch, tmp_path, default_rom)
+    real_reserve_output_path = pyboy._plugin_manager.screen_recorder.__class__._reserve_output_path
 
     def _failing_reservation(*args, **kwargs):
         raise OSError("read-only filesystem")
@@ -153,7 +176,26 @@ def test_screen_recorder_cleans_up_tempdir_on_reservation_failure(monkeypatch, t
     with pytest.raises(OSError, match="read-only filesystem"):
         pyboy.tick(1, True, True)
 
-    assert list((tmp_path / "recordings").glob("screenrec-*")) == []
+    recordings_dir = tmp_path / "recordings"
+    screen_recorder = pyboy._plugin_manager.screen_recorder
+    assert list(recordings_dir.glob(".*.lock")) == []
+    assert list(recordings_dir.glob("screenrec-*")) == []
+    assert screen_recorder._session is None
+    assert not screen_recorder.recording_gif
+    assert not screen_recorder.recording_mp4
+
+    monkeypatch.setattr(
+        "pyboy.plugins.screen_recorder.ScreenRecorder._reserve_output_path", staticmethod(real_reserve_output_path)
+    )
+
+    pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
+    pyboy.tick(1, True, True)
+    pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
+    pyboy.tick(1, True, True)
+
+    retry_recordings = list(recordings_dir.glob("*.gif"))
+    assert len(retry_recordings) == 1
+    assert list(recordings_dir.glob(".*.lock")) == []
     pyboy.stop(save=False)
 
 
