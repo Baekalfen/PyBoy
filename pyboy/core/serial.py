@@ -58,7 +58,9 @@ class Serial:
 
         interrupt = False
         if self.transfer_enabled and self.clock >= self.clock_target:
-            self.SC &= 0x80
+            # Clear bit 7 (transfer in progress). Games poll this bit to
+            # detect transfer completion.
+            self.SC &= 0b01111111
             self.transfer_enabled = 0
             # self._cycles_to_interrupt = MAX_CYCLES
             self.clock_target = MAX_CYCLES
