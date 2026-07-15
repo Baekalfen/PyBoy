@@ -14,3 +14,7 @@ cdef Logger logger
 
 cdef class MBC3(BaseMBC):
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
+
+
+cdef class MBC30(MBC3):
+    cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
