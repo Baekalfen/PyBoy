@@ -45,9 +45,32 @@ class MBC3(BaseMBC):
             if self.rambank_enabled:
                 if self.rambank_selected <= 0x03:
                     self.rambanks[self.rambank_selected, address - 0xA000] = value
-                elif 0x08 <= self.rambank_selected <= 0x0C:
+                elif self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                     self.rtc.setregister(self.rambank_selected, value)
                 # else:
                 #     logger.error("Invalid RAM bank selected: 0x%0.2x", self.rambank_selected)
         # else:
         #     logger.error("Invalid writing address: 0x%0.4x", address)
+
+
+class MBC30(MBC3):
+    # MBC30 (Japanese Pokémon Crystal) is an MBC3 variant with an 8-bit ROM
+    # bank register (256 banks) and 8 external RAM banks instead of 4. RTC
+    # register selects (0x08-0x0C) don't collide with the extra RAM banks.
+    def setitem(self, address, value):
+        if 0x2000 <= address < 0x4000:
+            # MBC30 uses the full 8-bit value for the ROM bank register
+            # (256 banks), unlike MBC3 which masks to 7 bits (128 banks).
+            if value == 0:
+                value = 1
+            self.rombank_selected = value % self.external_rom_count
+        elif 0xA000 <= address < 0xC000:
+            if self.rambank_enabled:
+                if self.rambank_selected <= 0x07:
+                    self.rambanks[self.rambank_selected, address - 0xA000] = value
+                elif self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
+                    self.rtc.setregister(self.rambank_selected, value)
+                # else:
+                #     logger.error("Invalid RAM bank selected: 0x%0.2x", self.rambank_selected)
+        else:
+            MBC3.setitem(self, address, value)

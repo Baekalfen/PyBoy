@@ -11,7 +11,7 @@ from pyboy.utils import PyBoyException
 from .base_mbc import ROMOnly
 from .mbc1 import MBC1
 from .mbc2 import MBC2
-from .mbc3 import MBC3
+from .mbc3 import MBC3, MBC30
 from .mbc5 import MBC5
 
 logger = pyboy.logging.get_logger(__name__)
@@ -30,13 +30,19 @@ def load_cartridge(gamerom_file, ram_file, rtc_file):
     if cartinfo is None:
         raise PyBoyException("Catridge type invalid: %s" % carttype)
 
+    mbc_class = cartinfo[0]
+    if mbc_class is MBC3 and (external_ram_count > 4 or len(rombanks) > 128):
+        # MBC30 (e.g. Japanese Pokémon Crystal) shares cartridge type codes
+        # with MBC3, but supports 8 RAM banks and 256 ROM banks. It can only
+        # be told apart by the ROM/RAM sizes in the header.
+        mbc_class = MBC30
+
     cart_line = ", ".join([x for x, y in zip(["SRAM", "Battery", "RTC"], cartinfo[1:]) if y])
-    cart_name = cartinfo[0].__name__
+    cart_name = mbc_class.__name__
     logger.debug("Cartridge type: 0x%0.2x - %s, %s", carttype, cart_name, cart_line)
     logger.debug("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB", len(rombanks), external_ram_count)
-    cartmeta = CARTRIDGE_TABLE[carttype]
 
-    return cartmeta[0](rombanks, ram_file, rtc_file, external_ram_count, carttype, *cartmeta[1:])
+    return mbc_class(rombanks, ram_file, rtc_file, external_ram_count, carttype, *cartinfo[1:])
 
 
 def validate_checksum(rombanks):
