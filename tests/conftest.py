@@ -202,6 +202,19 @@ def blargg_dir():
     return str(path)
 
 
+# https://github.com/ZoomTen/mbc30test (WTFPL license)
+@pytest.fixture(scope="session")
+def mbc30_test_file():
+    path = extra_test_rom_dir / Path("MBC3_Test.gbc")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.MBC3_Test.txt"))
+            mbc30_data = url_open("https://pyboy.dk/mirror/MBC3_Test.gbc")
+            with open(path, "wb") as rom_file:
+                rom_file.write(mbc30_data)
+    return str(path)
+
+
 @pytest.fixture(scope="session")
 def dmg_acid_file():
     path = extra_test_rom_dir / Path("dmg_acid2.gb")
