@@ -10,6 +10,7 @@ __pdoc__ = {
 
 
 import pyboy
+from pyboy.utils import PyBoyException
 from .base_plugin import PyBoyGameWrapper
 
 logger = pyboy.logging.get_logger(__name__)
@@ -19,6 +20,9 @@ STATE_TITLE = 0
 STATE_PLAYING = 1
 STATE_WINNER = 2
 STATE_GAMEOVER = 3
+
+# "PRESS START" tiles on the title screen's window layer (row 5, columns 5-13)
+TITLE_PRESS_START_TILES = [294, 309, 296, 292, 311, 296, 295, 291, 293]
 
 # Valid tile values recognized by the ROM (src/board.c); anything else is an empty cell
 VALID_TILE_VALUES = frozenset({0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048})
@@ -56,6 +60,40 @@ class GameWrapper2048(PyBoyGameWrapper):
         _, self._addr_state = self.pyboy.symbol_lookup("_state")
         self._addrs_loaded = True
 
+    def start_game(self, timer_div=None):
+        """
+        Call this function right after initializing PyBoy. This will navigate through the boot/title screen and
+        start the game at the first playable state.
+
+        The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+        instantly.
+
+        Args:
+            timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
+        """
+
+        if self.game_has_started:
+            raise PyBoyException("Gamewrapper already started! Use 'reset_game' instead.")
+
+        if not self._addrs_loaded:
+            self._load_addresses()
+
+        # Wait for the title screen instead of ticking a fixed number of frames
+        while list(self.tilemap_window[5:14, 5]) != TITLE_PRESS_START_TILES:
+            self.pyboy.tick(1, False)
+
+        self.pyboy.button("start")
+        while self.pyboy.memory[self._addr_state] != STATE_PLAYING:
+            self.pyboy.tick(1, False)
+
+        # Wait for the starting tiles to spawn, plus a short input-ignore period
+        while self._non_zero_tile_count() < 2:
+            self.pyboy.tick(1, False)
+        for _ in range(30):
+            self.pyboy.tick(1, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
     def post_tick(self):
         if not self._addrs_loaded:
             self._load_addresses()
@@ -83,6 +121,14 @@ class GameWrapper2048(PyBoyGameWrapper):
 
     def game_over(self):
         return self._game_over
+
+    def _non_zero_tile_count(self):
+        count = 0
+        for row in self.board:
+            for tile in row:
+                if tile != 0:
+                    count += 1
+        return count
 
     def __repr__(self):
         board_str = ""
