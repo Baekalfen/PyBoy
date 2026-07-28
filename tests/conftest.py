@@ -313,6 +313,9 @@ def gb2048_file():
             gb2048_data = url_open("https://pyboy.dk/mirror/2048.gb")
             with open(path, "wb") as rom_file:
                 rom_file.write(gb2048_data)
+            gb2048_sym = url_open("https://pyboy.dk/mirror/2048.gb.map")
+            with open(str(path) + ".map", "wb") as sym_file:
+                sym_file.write(gb2048_sym)
     return str(path)
 
 

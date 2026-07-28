@@ -17,3 +17,10 @@ cdef class GameWrapper2048(PyBoyGameWrapper):
     cdef readonly bint winner
     cdef readonly bint _game_over
     cdef readonly list board
+    cdef bint _addrs_loaded
+    cdef int _addr_board_start
+    cdef int _addr_score
+    cdef int _addr_winner
+    cdef int _addr_state
+
+    cdef void _load_addresses(self) except *
