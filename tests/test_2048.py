@@ -11,13 +11,7 @@ def test_2048_basics(gb2048_file):
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
-
-    for _ in range(500):
-        pyboy.tick(1, False)
-
-    pyboy.button("start")
-    for _ in range(60):
-        pyboy.tick(1, False)
+    wrapper.start_game()
 
     assert wrapper.score == 0
     assert wrapper.winner == False
@@ -34,13 +28,7 @@ def test_2048_winner(gb2048_file):
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
-
-    for _ in range(500):
-        pyboy.tick(1, False)
-
-    pyboy.button("start")
-    for _ in range(60):
-        pyboy.tick(1, False)
+    wrapper.start_game()
 
     assert wrapper.winner == False
 
@@ -69,13 +57,7 @@ def test_2048_score_increases(gb2048_file):
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
-
-    for _ in range(500):
-        pyboy.tick(1, False)
-
-    pyboy.button("start")
-    for _ in range(60):
-        pyboy.tick(1, False)
+    wrapper.start_game()
 
     for _ in range(10):
         pyboy.button("right")
@@ -93,13 +75,7 @@ def test_2048_game_over(gb2048_file):
     pyboy.set_emulation_speed(0)
 
     wrapper = pyboy.game_wrapper
-
-    for _ in range(500):
-        pyboy.tick(1, False)
-
-    pyboy.button("start")
-    for _ in range(200):
-        pyboy.tick(1, False)
+    wrapper.start_game()
 
     for i in range(5000):
         pyboy.button_press("right")
