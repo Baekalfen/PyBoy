@@ -1235,51 +1235,84 @@ class PyBoy:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
         self.target_emulationspeed = target_speed
 
+    # sdcc/sdld linker map line, e.g.: "00000A00 _board                            G"
+    _MAP_SYMBOL_RE = re.compile(r"^\s*([0-9A-Fa-f]{8})\s+(\S+)\s+\S*\s*$")
+
     def _load_symbols(self):
         if self.rom_symbols:
             return self.rom_symbols
         gamerom_paths = []
         if self.gamerom:
             gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
-            gamerom_paths = [gamerom_file_no_ext + ".sym", gamerom_file_no_ext + rom_ext + ".sym"]
+            gamerom_paths = [
+                gamerom_file_no_ext + ".sym",
+                gamerom_file_no_ext + rom_ext + ".sym",
+                gamerom_file_no_ext + ".map",
+                gamerom_file_no_ext + rom_ext + ".map",
+            ]
         for sym_path in [self.symbols_file] + gamerom_paths:
             if sym_path and os.path.isfile(sym_path):
                 logger.info("Loading symbol file: %s", sym_path)
-                group = "labels"
-                with open(sym_path) as f:
-                    for _line in f.readlines():
-                        line = _line.strip()
-                        if line == "":
-                            continue
-                        elif line.startswith(";"):
-                            continue
-                        elif line.startswith("["):
-                            # Start of key group
-                            group = line.strip()[1:-1]
-                            # [labels]
-                            # [definitions]
-                            continue
-
-                        if group == "labels":
-                            try:
-                                bank, addr, sym_label = re.split(":| ", line.strip())
-                                bank = int(bank, 16)
-                                addr = int(addr, 16)
-                                if bank not in self.rom_symbols:
-                                    self.rom_symbols[bank] = {}
-
-                                if addr not in self.rom_symbols[bank]:
-                                    self.rom_symbols[bank][addr] = []
-
-                                self.rom_symbols[bank][addr].append(sym_label)
-                                self.rom_symbols_inverse[sym_label] = (bank, addr)
-                            except ValueError:
-                                logger.warning("Skipping .sym line: %s", line.strip())
-                        elif group == "definitions":
-                            pass
-                        else:
-                            logger.warning("Invalid group. Skipping .sym line: %s", line.strip())
+                if sym_path.endswith(".map"):
+                    self._load_map_file(sym_path)
+                else:
+                    self._load_sym_file(sym_path)
         return self.rom_symbols
+
+    def _load_sym_file(self, sym_path):
+        group = "labels"
+        with open(sym_path) as f:
+            for _line in f.readlines():
+                line = _line.strip()
+                if line == "":
+                    continue
+                elif line.startswith(";"):
+                    continue
+                elif line.startswith("["):
+                    # Start of key group
+                    group = line.strip()[1:-1]
+                    # [labels]
+                    # [definitions]
+                    continue
+
+                if group == "labels":
+                    try:
+                        bank, addr, sym_label = re.split(":| ", line.strip())
+                        bank = int(bank, 16)
+                        addr = int(addr, 16)
+                        if bank not in self.rom_symbols:
+                            self.rom_symbols[bank] = {}
+
+                        if addr not in self.rom_symbols[bank]:
+                            self.rom_symbols[bank][addr] = []
+
+                        self.rom_symbols[bank][addr].append(sym_label)
+                        self.rom_symbols_inverse[sym_label] = (bank, addr)
+                    except ValueError:
+                        logger.warning("Skipping .sym line: %s", line.strip())
+                elif group == "definitions":
+                    pass
+                else:
+                    logger.warning("Invalid group. Skipping .sym line: %s", line.strip())
+
+    def _load_map_file(self, map_path):
+        # .map files have no bank info, everything goes in bank 0
+        bank = 0
+        with open(map_path) as f:
+            for line in f:
+                match = self._MAP_SYMBOL_RE.match(line)
+                if match is None:
+                    continue
+                addr_str, sym_label = match.groups()
+                addr = int(addr_str, 16)
+                if sym_label in self.rom_symbols_inverse:
+                    continue
+                if bank not in self.rom_symbols:
+                    self.rom_symbols[bank] = {}
+                if addr not in self.rom_symbols[bank]:
+                    self.rom_symbols[bank][addr] = []
+                self.rom_symbols[bank][addr].append(sym_label)
+                self.rom_symbols_inverse[sym_label] = (bank, addr)
 
     def _lookup_symbol(self, symbol):
         bank_addr = self.rom_symbols_inverse.get(symbol)

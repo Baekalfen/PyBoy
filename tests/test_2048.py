@@ -29,6 +29,41 @@ def test_2048_basics(gb2048_file):
     pyboy.stop()
 
 
+def test_2048_winner(gb2048_file):
+    pyboy = PyBoy(gb2048_file, window="null")
+    pyboy.set_emulation_speed(0)
+
+    wrapper = pyboy.game_wrapper
+
+    for _ in range(500):
+        pyboy.tick(1, False)
+
+    pyboy.button("start")
+    for _ in range(60):
+        pyboy.tick(1, False)
+
+    assert wrapper.winner == False
+
+    # force two 1024s next to each other so "right" merges them into 2048
+    ADDR_BOARD_START = 0xC0B3
+
+    def set_cell(i, value):
+        addr = ADDR_BOARD_START + i * 2
+        pyboy.memory[addr] = value & 0xFF
+        pyboy.memory[addr + 1] = (value >> 8) & 0xFF
+
+    for i in range(25):
+        set_cell(i, 0)
+    set_cell(0, 1024)
+    set_cell(1, 1024)
+
+    pyboy.button("right")
+    for _ in range(30):
+        pyboy.tick(1, False)
+
+    assert wrapper.winner == True
+
+
 def test_2048_score_increases(gb2048_file):
     pyboy = PyBoy(gb2048_file, window="null")
     pyboy.set_emulation_speed(0)

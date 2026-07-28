@@ -8,46 +8,33 @@ __pdoc__ = {
     "GameWrapper2048.post_tick": False,
 }
 
+
 import pyboy
 from .base_plugin import PyBoyGameWrapper
 
 logger = pyboy.logging.get_logger(__name__)
 
 
-def enabled(self):
-    import hashlib
-
-    try:
-        with open(self.pyboy.gamerom_file, "rb") as f:
-            rom_hash = hashlib.md5(f.read()).hexdigest()
-        return rom_hash == "6748719720d57a7dce48d07b2f3c5ede"
-    except Exception as e:
-        logger.error(f"Error occurred while checking ROM hash: {e}")
-        return False
-
-
-ADDR_SCORE_LOW = 0xC0E7
-ADDR_SCORE_HIGH = 0xC0E8
-ADDR_WINNER = 0xC0EB
-ADDR_STATE = 0xC0EC
-ADDR_BOARD_START = 0xC0B0
-
 STATE_TITLE = 0
 STATE_PLAYING = 1
 STATE_WINNER = 2
 STATE_GAMEOVER = 3
+
+# Valid tile values recognized by the ROM (src/board.c); anything else is an empty cell
+VALID_TILE_VALUES = frozenset({0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048})
 
 
 class GameWrapper2048(PyBoyGameWrapper):
     """
     This class wraps 2048 for Game Boy, and provides easy access for AIs.
 
-    This game wrapper only works with the release of 2048 with MD5 6748719720d57a7dce48d07b2f3c5ede.
+    This game wrapper only works with the release of 2048 with MD5 1efd562975966b55ada5fb88e7a95f6e. It's required to
+    also have the .map file for the ROM. See PyBoy mirror of open-source ROMs https://pyboy.dk/mirror/
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
     """
 
-    cartridge_title = None
+    cartridge_title = "2048"
 
     def __init__(self, *args, **kwargs):
         self.score = 0
@@ -58,30 +45,41 @@ class GameWrapper2048(PyBoyGameWrapper):
         """True if the game is over"""
         self.board = [[0] * 5 for _ in range(5)]
         """The 5x5 board"""
+        self._addrs_loaded = False
 
         super().__init__(*args, game_area_section=(0, 0, 20, 18), **kwargs)
 
+    def _load_addresses(self):
+        _, self._addr_board_start = self.pyboy.symbol_lookup("_board")
+        _, self._addr_score = self.pyboy.symbol_lookup("_score")
+        _, self._addr_winner = self.pyboy.symbol_lookup("_winner")
+        _, self._addr_state = self.pyboy.symbol_lookup("_state")
+        self._addrs_loaded = True
+
     def post_tick(self):
+        if not self._addrs_loaded:
+            self._load_addresses()
+
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        low = self.pyboy.memory[ADDR_SCORE_LOW]
-        high = self.pyboy.memory[ADDR_SCORE_HIGH]
+        low = self.pyboy.memory[self._addr_score]
+        high = self.pyboy.memory[self._addr_score + 1]
         self.score = low + (high * 256)
 
-        self.winner = self.pyboy.memory[ADDR_WINNER] == 1
+        self.winner = self.pyboy.memory[self._addr_winner] == 1
 
-        state = self.pyboy.memory[ADDR_STATE]
+        state = self.pyboy.memory[self._addr_state]
         self._game_over = state == STATE_GAMEOVER
 
         for i in range(25):
-            addr = ADDR_BOARD_START + (i * 2)
+            addr = self._addr_board_start + (i * 2)
             low = self.pyboy.memory[addr]
             high = self.pyboy.memory[addr + 1]
-            val = high + (low * 256)
+            val = low + (high * 256)
             row = i // 5
             col = i % 5
-            self.board[row][col] = val
+            self.board[row][col] = val if val in VALID_TILE_VALUES else 0
 
     def game_over(self):
         return self._game_over
