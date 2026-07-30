@@ -1,6 +1,6 @@
 -r requirements.txt
 pillow>=9.1.0
-pytest>=6.0.0
+pytest>=6.0.0,!=9.1.*
 pytest-benchmark
 pytest-xdist
 pytest-lazy-fixtures
