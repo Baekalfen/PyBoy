@@ -6,6 +6,7 @@ launch -> breakpoint -> continue -> stop -> step -> registers session, against `
 import json
 import os
 import queue
+import shutil
 import subprocess
 import sys
 import threading
@@ -17,6 +18,7 @@ import pyboy
 import pyboy.plugins.debug_adapter
 
 DEFAULT_ROM = os.path.join(os.path.dirname(pyboy.__file__), "default_rom.gb")
+DEFAULT_ROM_SRC = os.path.join(os.path.dirname(pyboy.__file__), "..", "extras", "default_rom")
 
 
 class DAPClient:
@@ -138,6 +140,9 @@ def test_launch_stop_on_entry_and_registers(dap_client):
     # The true reset vector (bank -1, addr 0) -- not after the boot ROM's first instruction has
     # already executed.
     assert frames[0]["instructionPointerReference"] == pyboy.plugins.debug_adapter._addr_ref(-1, 0)
+    assert frames[0]["source"]["name"] == "bootrom_common.asm"
+    assert frames[0]["source"]["path"].endswith(os.path.join("extras", "bootrom", "bootrom_common.asm"))
+    assert frames[0]["line"] == 4
 
     resp = dap_client.send_request("scopes", {"frameId": 1})
     scope_refs = {s["name"]: s["variablesReference"] for s in resp["body"]["scopes"]}
@@ -147,6 +152,55 @@ def test_launch_stop_on_entry_and_registers(dap_client):
     resp = dap_client.send_request("variables", {"variablesReference": scope_refs["Registers"]})
     reg_names = {v["name"] for v in resp["body"]["variables"]}
     assert reg_names == {"A", "F", "B", "C", "D", "E", "H", "L", "AF", "BC", "DE", "HL", "SP", "PC"}
+
+
+def test_bootrom_source_root_override(dap_client, tmp_path):
+    source = tmp_path / "bootrom.asm"
+    source.write_text('SECTION "bootrom", ROM0[$0000]\nmain:\n    ld SP, $FFFE\n', encoding="utf-8")
+    (tmp_path / "bootrom.sym").write_text("00:0000 main\n", encoding="utf-8")
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    resp = dap_client.send_request("launch", {"stopOnEntry": True, "bootromSourceRoot": str(tmp_path)})
+    assert resp["success"], resp
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+
+    frame = dap_client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+    assert frame["source"]["name"] == "bootrom.asm"
+    assert frame["source"]["path"] == str(source)
+    assert frame["line"] == 3
+
+
+def test_source_breakpoint_and_continue(dap_client):
+    source_path = os.path.join(os.path.abspath(DEFAULT_ROM_SRC), "default_rom.asm")
+    entrypoint_ref = pyboy.plugins.debug_adapter._addr_ref(0, 0x0150)
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    dap_client.send_request(
+        "launch",
+        {"stopOnEntry": True, "sourceRoot": os.path.abspath(DEFAULT_ROM_SRC)},
+    )
+
+    resp = dap_client.send_request(
+        "setBreakpoints",
+        {"source": {"path": source_path}, "breakpoints": [{"line": 32}]},
+    )
+    breakpoint = resp["body"]["breakpoints"][0]
+    assert breakpoint["verified"]
+    assert breakpoint["line"] == 32
+    assert breakpoint["instructionReference"] == entrypoint_ref
+
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+    dap_client.send_request("continue", {"threadId": 1})
+    stopped = dap_client.wait_for_event("stopped")
+    assert stopped["body"]["reason"] == "breakpoint"
+
+    frame = dap_client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+    assert frame["source"]["path"] == source_path
+    assert frame["line"] == 32
 
 
 def test_step_advances_pc(dap_client):
@@ -359,6 +413,71 @@ def test_disassemble_annotates_symbols_for_targets_and_routine_starts(tmp_path):
         instructions = resp["body"]["instructions"]
         assert instructions[0]["instruction"] == "NOP [EntryPoint]"
         assert instructions[0]["symbol"] == "EntryPoint"
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
+        for stream in (proc.stdin, proc.stdout, proc.stderr):
+            if stream is not None:
+                stream.close()
+
+
+@pytest.mark.skipif(
+    any(shutil.which(tool) is None for tool in ("rgbasm", "rgblink", "rgbfix")), reason="RGBDS tools not installed"
+)
+def test_source_root_reports_source_line_in_stack_trace(tmp_path):
+    """When `launch`'s `sourceRoot` points at a matching RGBDS disassembly project checkout,
+    `stackTrace` should report the real `.asm` source file/line for the current PC instead of
+    only the raw disassembly -- letting VSCode step inline in source, falling back to the
+    Disassembly View automatically wherever no mapping exists (e.g. mid-instruction, or over
+    `INCBIN`-only data)."""
+    obj = tmp_path / "default_rom.obj"
+    sym = tmp_path / "default_rom.sym"
+    map_file = tmp_path / "default_rom.map"
+    gb = tmp_path / "default_rom.gb"
+    subprocess.run(["rgbasm", "-o", str(obj), "default_rom.asm"], cwd=DEFAULT_ROM_SRC, check=True, capture_output=True)
+    subprocess.run(
+        ["rgblink", "-m", str(map_file), "-n", str(sym), "-o", str(gb), str(obj)], check=True, capture_output=True
+    )
+    subprocess.run(["rgbfix", "-p0", "-f", "hg", str(gb)], check=True, capture_output=True)
+
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "pyboy", str(gb), "--window", "null", "--no-input", "--debug-adapter"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    client = DAPClient(proc)
+    try:
+        client.send_request("initialize", {"adapterID": "pyboy"})
+        client.wait_for_event("initialized")
+        resp = client.send_request("launch", {"stopOnEntry": True, "sourceRoot": os.path.abspath(DEFAULT_ROM_SRC)})
+        assert resp["success"], resp
+
+        client.send_request("configurationDone")
+        client.wait_for_event("stopped")
+        boot_frame = client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+        assert boot_frame["source"]["name"] == "bootrom_common.asm"
+        assert boot_frame["source"]["path"].endswith(os.path.join("extras", "bootrom", "bootrom_common.asm"))
+        assert boot_frame["line"] == 4
+
+        # Break at $150 (`Main:`, see `extras/default_rom/default_rom.asm`).
+        client.send_request(
+            "setInstructionBreakpoints",
+            {"breakpoints": [{"instructionReference": pyboy.plugins.debug_adapter._addr_ref(0, 0x0150)}]},
+        )
+        client.send_request("continue", {"threadId": 1})
+        stopped = client.wait_for_event("stopped")
+        assert stopped["body"]["reason"] == "instruction breakpoint"
+
+        resp = client.send_request("stackTrace", {"threadId": 1})
+        frame = resp["body"]["stackFrames"][0]
+        assert frame["source"]["name"] == "default_rom.asm"
+        assert frame["source"]["path"] == os.path.join(os.path.abspath(DEFAULT_ROM_SRC), "default_rom.asm")
+        assert frame["line"] == 32  # `nop` right after the `Main:` label
     finally:
         proc.terminate()
         try:

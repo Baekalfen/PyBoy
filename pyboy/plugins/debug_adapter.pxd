@@ -14,7 +14,10 @@ cdef class DebugAdapter(PyBoyPlugin):
     cdef object _seq
     cdef object _seq_lock
     cdef object _breakpoint_refs
+    cdef object _instruction_breakpoint_refs
+    cdef object _source_breakpoint_refs
     cdef object _stop_on_entry
+    cdef object _source_map
     cdef object _resume
     cdef object _pending_action
     cdef object _hooks

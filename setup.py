@@ -99,7 +99,9 @@ class build_ext(_build_ext):
 
 
 def prep_pxd_py_files():
-    ignore_py_files = ["__main__.py", "manager_gen.py", "opcodes_gen.py", "conftest.py"]
+    # The source mapper is a dynamic, line-oriented parser and is intentionally kept as regular
+    # Python; it is only run once at DAP launch and does not belong on the emulator hot path.
+    ignore_py_files = ["__main__.py", "manager_gen.py", "opcodes_gen.py", "conftest.py", "dap_source_map.py"]
     # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
     # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):

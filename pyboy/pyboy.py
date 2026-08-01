@@ -176,6 +176,7 @@ class PyBoy:
                 "Deprecated use of 'bootrom_file'. Use 'bootrom' keyword argument instead. https://github.com/Baekalfen/PyBoy/wiki/Migrating-from-v1.x.x-to-v2.0.0"
             )
             bootrom = kwargs.pop("bootrom_file")
+        self.bootrom_file = bootrom
 
         if "window_type" in kwargs:
             logger.error(
