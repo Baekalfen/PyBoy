@@ -231,7 +231,15 @@ class DebugAdapter(PyBoyPlugin):
         with self._stopped_lock:
             self.is_stopped = False
 
-        self.pyboy.singlestep = self._pending_action == "step"
+        if self._pending_action == "step":
+            self.pyboy.singlestep = True
+        elif self.mb.breakpoint_waiting >= 0:
+            # A breakpoint trap is removed before its callback runs. Keep the CPU's one-shot
+            # single-step flag set while clearing the latch so the restored instruction executes;
+            # PyBoy then reinjects the trap before resuming normal execution.
+            self.mb.breakpoint_singlestep_latch = 0
+        else:
+            self.pyboy.singlestep = False
 
     def _leave_entry_pause(self):
         """Unfreezes execution after the initial handshake, transitioning out of the
