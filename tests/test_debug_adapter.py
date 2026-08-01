@@ -203,6 +203,35 @@ def test_source_breakpoint_and_continue(dap_client):
     assert frame["line"] == 32
 
 
+def test_remove_active_source_breakpoint(dap_client):
+    source_path = os.path.join(os.path.abspath(DEFAULT_ROM_SRC), "default_rom.asm")
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    dap_client.send_request(
+        "launch",
+        {"stopOnEntry": True, "sourceRoot": os.path.abspath(DEFAULT_ROM_SRC)},
+    )
+    dap_client.send_request(
+        "setBreakpoints",
+        {"source": {"path": source_path}, "breakpoints": [{"line": 32}]},
+    )
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+    dap_client.send_request("continue", {"threadId": 1})
+    assert dap_client.wait_for_event("stopped")["body"]["reason"] == "breakpoint"
+
+    # The emulator has already removed the trap byte while its hook callback is paused. Removing
+    # the source breakpoint must still succeed and must not leave a pending reinjection behind.
+    response = dap_client.send_request("setBreakpoints", {"source": {"path": source_path}, "breakpoints": []})
+    assert response["success"], response
+    assert response["body"]["breakpoints"] == []
+
+    dap_client.send_request("continue", {"threadId": 1})
+    dap_client.send_request("pause", {"threadId": 1})
+    assert dap_client.wait_for_event("stopped")["body"]["reason"] == "step"
+
+
 def test_step_advances_pc(dap_client):
     dap_client.send_request("initialize", {"adapterID": "pyboy"})
     dap_client.wait_for_event("initialized")

@@ -1,3 +1,5 @@
+import sys
+
 (
     DEBUG,  # Only for developers
     WARNING,  # Unexpected failure that can be worked around
@@ -7,10 +9,24 @@
 ) = range(5)
 
 _log_level = INFO
+# Where log lines are written. `None` means stdout (looked up fresh on every call, rather than
+# cached at import time, so it still honors stdout being swapped out later -- e.g. by pytest's
+# `capsys` fixture, or a REPL). Some plugins (e.g. `--debug-adapter`) use stdout as a framed
+# protocol stream (DAP, over stdio) where any stray unframed text would corrupt it for the client
+# on the other end -- those redirect this to stderr via `set_log_stream` for as long as they're
+# active.
+_log_stream = None
 
 
 def get_log_level():
     return _log_level
+
+
+def set_log_stream(stream):
+    global _log_stream
+    previous = _log_stream
+    _log_stream = stream
+    return previous
 
 
 def _log(name, pre_msg, level, fmt, args):
@@ -21,7 +37,7 @@ def _log(name, pre_msg, level, fmt, args):
         msg = fmt % tuple(args)
     else:
         msg = fmt
-    print(name.ljust(30) + " " + pre_msg.ljust(8) + " " + msg)
+    print(name.ljust(30) + " " + pre_msg.ljust(8) + " " + msg, file=_log_stream or sys.stdout)
 
 
 try:
