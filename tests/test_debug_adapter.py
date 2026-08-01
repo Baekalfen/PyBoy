@@ -203,6 +203,26 @@ def test_source_breakpoint_and_continue(dap_client):
     assert frame["line"] == 32
 
 
+def test_instruction_breakpoint_repeats_after_continue(dap_client):
+    breakpoint_ref = pyboy.plugins.debug_adapter._addr_ref(0, 0x01AB)
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    dap_client.send_request("launch", {"stopOnEntry": True})
+    response = dap_client.send_request(
+        "setInstructionBreakpoints",
+        {"breakpoints": [{"instructionReference": breakpoint_ref}]},
+    )
+    assert response["body"]["breakpoints"][0]["verified"]
+
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+    for _ in range(2):
+        dap_client.send_request("continue", {"threadId": 1})
+        stopped = dap_client.wait_for_event("stopped", timeout=15)
+        assert stopped["body"]["reason"] == "instruction breakpoint"
+
+
 def test_remove_active_source_breakpoint(dap_client):
     source_path = os.path.join(os.path.abspath(DEFAULT_ROM_SRC), "default_rom.asm")
 
