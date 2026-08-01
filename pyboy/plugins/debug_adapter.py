@@ -28,6 +28,7 @@ import base64
 import os
 import sys
 import threading
+import traceback
 
 import pyboy
 import pyboy.logging
@@ -176,7 +177,7 @@ class DebugAdapter(PyBoyPlugin):
             try:
                 self._dispatch(message)
             except Exception as exc:
-                logger.exception("Error handling DAP message: %s", message)
+                logger.error(f"Error handling DAP message: {message}\n{traceback.format_exc()}")
                 if message.get("type") == "request":
                     self._send_response(message, success=False, message=str(exc))
 
@@ -214,7 +215,7 @@ class DebugAdapter(PyBoyPlugin):
         command = message["command"]
         handler = getattr(self, f"_req_{command}", None)
         if handler is None:
-            logger.warning("Unhandled DAP command: %s", command)
+            logger.warning(f"Unhandled DAP command: {command}")
             self._send_response(message, success=False, message=f"Unsupported command: {command}")
             return
         handler(message)

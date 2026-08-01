@@ -9,6 +9,7 @@ The core module of the emulator
 import heapq
 import os
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from pyboy.api.sound import Sound
 from pyboy.api.tilemap import TileMap
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
+from pyboy.logging import set_log_stream
 from pyboy.plugins.manager import PluginManager, parser_arguments
 from pyboy.utils import (
     IntIOWrapper,
@@ -166,8 +168,17 @@ class PyBoy:
 
         self.initialized = False
         self.no_input = no_input
+        self._redirected_log_stream = bool(kwargs.get("debug_adapter"))
+        self._previous_log_stream = None
 
         _log_level(log_level)
+
+        if self._redirected_log_stream:
+            # `--debug-adapter` uses stdout exclusively as a framed Debug Adapter Protocol (DAP)
+            # stream (see pyboy/plugins/debug_adapter.py); any stray unframed text (e.g. a normal
+            # log line) would corrupt it for the client reading the other end. Must happen this
+            # early, before anything below (ROM/symbols loading, etc.) has a chance to log.
+            self._previous_log_stream = set_log_stream(sys.stderr)
 
         logger.debug("Cython compilation status: %s", cython_compiled)
 
@@ -800,6 +811,9 @@ class PyBoy:
                 rtc_file.close()
 
             self.stopped = True
+            if self._redirected_log_stream:
+                set_log_stream(self._previous_log_stream)
+                self._redirected_log_stream = False
 
     ###################################################################
     # Scripts and bot methods
@@ -1447,6 +1461,23 @@ class PyBoy:
 
         breakpoint_meta = self.mb.breakpoint_find(bank, addr)
         if not breakpoint_meta:
+            # `_tick` removes a breakpoint before invoking its hook callback, then normally
+            # reinjects it on the next emulator iteration. If a debugger removes that hook while
+            # the callback is paused, the underlying breakpoint is already gone; discard the
+            # pending reinjection and the stale hook entry instead of reporting a false failure.
+            stale_keys = [
+                key
+                for key in self._hooks
+                if ((key >> 24) & 0xFF) == (bank & 0xFF) and ((key >> 8) & 0xFFFF) == (addr & 0xFFFF)
+            ]
+            if stale_keys:
+                waiting_bank = (self.mb.breakpoint_waiting >> 24) & 0xFF
+                waiting_addr = (self.mb.breakpoint_waiting >> 8) & 0xFFFF
+                if waiting_bank == (bank & 0xFF) and waiting_addr == (addr & 0xFFFF):
+                    self.mb.breakpoint_waiting = -1
+                for key in stale_keys:
+                    self._hooks.pop(key, None)
+                return 0
             raise ValueError("Breakpoint not found for bank and addr")
         _, _, opcode = breakpoint_meta
 
