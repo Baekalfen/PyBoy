@@ -156,6 +156,7 @@ class PyBoy:
 
         ## Plugin kwargs:
         * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
+        * debug_adapter (bool): Expose a Debug Adapter Protocol (DAP) server over stdio, for IDE debugging (e.g. the PyBoyVSCode extension). Nothing else should write to stdout while this is enabled. [plugin: DebugAdapter]
         * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
         * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
         * rewind (bool): Enable rewind function [plugin: Rewind]

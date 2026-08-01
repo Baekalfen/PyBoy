@@ -10,6 +10,7 @@ __pdoc__ = {
     # docs exclude
     "auto_pause": False,
     "debug": False,
+    "debug_adapter": False,
     "debug_prompt": False,
     "record_replay": False,
     "rewind": False,

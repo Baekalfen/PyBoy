@@ -102,6 +102,12 @@ parser.add_argument(
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
 parser.add_argument("--no-renderer", action="store_true", help="Disable rendering (internal use)")
 parser.add_argument(
+    "--symbols",
+    dest="symbols",
+    type=valid_file_path,
+    help="Path to a .sym file, used to resolve addresses to labels (e.g. for --debug-adapter or --breakpoints)",
+)
+parser.add_argument(
     "--gameshark",
     type=str,
     help="Add GameShark cheats on start-up. Add multiple by comma separation (i.e. '010138CD, 01033CD1')",
@@ -160,8 +166,11 @@ for arguments in parser_arguments():
 def main():
     argv = parser.parse_args()
 
-    print(
-        """
+    # NOTE: When --debug-adapter is enabled, nothing else may write to stdout: it's used
+    # exclusively for the Debug Adapter Protocol (DAP) stream (see pyboy/plugins/debug_adapter.py).
+    if not argv.debug_adapter:
+        print(
+            """
 The Game Boy controls are as follows:
 
 | Keyboard key | GameBoy equivalant |
@@ -198,7 +207,7 @@ The other controls for the emulator:
 
 See "pyboy --help" for how to enable rewind and other awesome features!
 """
-    )
+        )
 
     # Start PyBoy and run loop
     kwargs = copy.deepcopy(vars(argv))
