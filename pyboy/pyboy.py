@@ -482,6 +482,7 @@ class PyBoy:
         """
 
         self._hooks = {}
+        self._singlestep_handlers = []
 
         self._plugin_manager = PluginManager(self, self.mb, kwargs)
         """
@@ -560,6 +561,8 @@ class PyBoy:
                     else:
                         if self.mb.breakpoint_singlestep_latch:
                             if not self._handle_hooks():
+                                for _handler in list(self._singlestep_handlers):
+                                    _handler()
                                 self._plugin_manager.handle_breakpoint()
                         # Keep singlestepping on, if that's what we're doing
                         self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
@@ -1448,6 +1451,92 @@ class PyBoy:
         self.mb.breakpoint_remove(bank, addr)
         bank_addr_opcode = (bank & 0xFF) << 24 | (addr & 0xFFFF) << 8 | (opcode & 0xFF)
         self._hooks.pop(bank_addr_opcode)
+
+    def bank(self, addr):
+        """
+        Returns the currently-selected memory bank for `addr` (see
+        [Pan Docs: Memory Map](https://gbdev.io/pandocs/Memory_Map.html)). This is useful for resolving
+        the `bank` argument of `PyBoy.hook_register` when you only know an address (for example, an
+        address a user selected in an external disassembly view), not which bank is presently mapped there.
+
+        Example:
+        ```python
+        >>> bank = pyboy.bank(0x4000)
+        >>> pyboy.hook_register(bank, 0x4000, lambda x: None, None)
+
+        ```
+
+        Args:
+            addr (int): Address in the Game Boy's address space.
+
+        Returns
+        -------
+        int:
+            The currently-selected bank number for `addr`.
+        """
+        return self.mb.bank(addr)
+
+    def register_singlestep_handler(self, callback):
+        """
+        Registers a callback that is invoked after every single CPU instruction, while single-stepping is
+        enabled (see `PyBoy.singlestep`). This is intended for building external debuggers or IDE integrations
+        that need instruction-level stepping, in addition to the address-based breakpoints from `PyBoy.hook_register`.
+
+        The callback takes no arguments. Inside the callback, it's safe to block (e.g. to wait for a user command),
+        and to read or modify state through `PyBoy.register_file` and `PyBoy.memory`. Set `PyBoy.singlestep = False`
+        from within the callback to resume normal execution instead of continuing to single-step.
+
+        Example:
+        ```python
+        >>> def my_step_handler():
+        ...     print("PC:", hex(pyboy.register_file.PC))
+        ...     pyboy.singlestep = False # Stop single-stepping after this instruction
+        >>> pyboy.register_singlestep_handler(my_step_handler)
+        >>> pyboy.singlestep = True
+        >>> pyboy.tick()
+        PC: ...
+        True
+
+        ```
+
+        Args:
+            callback (func): A function taking no arguments.
+        """
+        self._singlestep_handlers.append(callback)
+
+    def unregister_singlestep_handler(self, callback):
+        """
+        Removes a callback previously registered with `PyBoy.register_singlestep_handler`.
+
+        Args:
+            callback (func): The function instance previously registered.
+        """
+        self._singlestep_handlers.remove(callback)
+
+    @property
+    def singlestep(self):
+        """
+        Enables or disables CPU instruction-level single-stepping. While enabled, execution will pause after every
+        single instruction and call any handlers registered with `PyBoy.register_singlestep_handler`.
+
+        This is a lower-level alternative to `PyBoy.hook_register`, useful when you don't know the address you want
+        to break on ahead of time -- for example when implementing "step" in an external debugger.
+
+        Returns
+        -------
+        bool:
+            Whether single-stepping is currently enabled.
+        """
+        return bool(self.mb.breakpoint_singlestep_latch)
+
+    @singlestep.setter
+    def singlestep(self, value):
+        # Both fields are set, so single-stepping takes effect immediately -- even if the emulator is currently
+        # running freely and not already stopped at a breakpoint. `breakpoint_singlestep_latch` is what keeps
+        # single-stepping enabled across instructions, while `breakpoint_singlestep` is what the CPU core checks
+        # before executing the very next instruction.
+        self.mb.breakpoint_singlestep = 1 if value else 0
+        self.mb.breakpoint_singlestep_latch = 1 if value else 0
 
     def _handle_hooks(self):
         if _handler := self._hooks.get(self.mb.breakpoint_waiting):
