@@ -194,19 +194,29 @@ class Motherboard:
         else:
             raise PyBoyException("Breakpoint not found. If this a mistake, reach out to the developers")
 
+    def bank(self, addr):
+        """
+        Returns the currently-selected memory bank for `addr`, taking into account which memory
+        region `addr` falls in (see https://gbdev.io/pandocs/Memory_Map.html). Useful for resolving
+        the `bank` argument of `breakpoint_add`/`hook_register`-style APIs when only an address is
+        known (e.g. an address the user clicked in a disassembly view), not which bank is presently
+        mapped there.
+        """
+        if addr < 0x100 and self.bootrom_enabled:
+            return -1
+        elif addr < 0x4000:
+            return 0
+        elif 0x4000 <= addr < 0x8000:
+            return self.cartridge.rombank_selected
+        elif 0xA000 <= addr < 0xC000:
+            return self.cartridge.rambank_selected
+        elif 0xC000 <= addr <= 0xFFFF:
+            return 0
+        return None
+
     def breakpoint_reached(self):
         pc = self.cpu.PC
-        bank = None
-        if pc < 0x100 and self.bootrom_enabled:
-            bank = -1
-        elif pc < 0x4000:
-            bank = 0
-        elif 0x4000 <= pc < 0x8000:
-            bank = self.cartridge.rombank_selected
-        elif 0xA000 <= pc < 0xC000:
-            bank = self.cartridge.rambank_selected
-        elif 0xC000 <= pc <= 0xFFFF:
-            bank = 0
+        bank = self.bank(pc)
         opcode = self.breakpoints.get((bank, pc))
         if opcode is not None:
             # Breakpoint hit
