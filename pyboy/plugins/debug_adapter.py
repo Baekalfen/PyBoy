@@ -4,8 +4,9 @@
 #
 
 """Exposes a Debug Adapter Protocol (DAP) server over stdio, so IDEs (e.g. VSCode, via the
-PyBoyVSCode extension: https://github.com/Baekalfen/PyBoyVSCode) can set instruction breakpoints,
-step through Game Boy assembly one instruction at a time, and inspect CPU registers/flags/memory.
+PyBoyVSCode extension: https://github.com/Baekalfen/PyBoyVSCode) can set source and instruction
+breakpoints, step through Game Boy assembly one instruction at a time, and inspect CPU
+registers/flags/memory.
 
 Enable with `pyboy game.gb --debug-adapter`, or `PyBoy("game.gb", debug_adapter=True)`.
 
@@ -14,16 +15,31 @@ stdin/stdout, so nothing else should write to stdout while this plugin is enable
 `--debug-adapter` should always be combined with a non-interactive window backend
 (e.g. `--window null` or `--window SDL2`, but not the interactive splash/help text PyBoy prints
 on start-up when run standalone; the PyBoyVSCode extension takes care of this).
+
+If the DAP `launch` request includes `sourceRoot`, the adapter also performs best-effort
+assembly-source mapping for an RGBDS project. It reports `source` and `line` in `stackTrace` for
+addresses it can prove, and omits them elsewhere so clients can fall back to disassembly.
+`sourceMapFile` optionally selects the linked RGBDS `.map` file; otherwise a `.map` beside the ROM
+is used when present. `bootromSourceRoot` does the same for boot-ROM assembly; when PyBoy uses its
+built-in boot ROM, the bundled `extras/bootrom` source directory is discovered automatically.
 """
 
 import base64
+import os
 import sys
 import threading
 
 import pyboy
+import pyboy.logging
 from pyboy.plugins.base_plugin import PyBoyPlugin
 from pyboy.plugins.dap_disassembler import disassemble_one
 from pyboy.plugins.dap_io import DAPReader, DAPWriter
+from pyboy.plugins.dap_source_map import (
+    build_source_map,
+    find_entry_files,
+    parse_map_file,
+    parse_sym_file,
+)
 from pyboy.utils import WindowEvent
 
 logger = pyboy.logging.get_logger(__name__)
@@ -79,7 +95,16 @@ class DebugAdapter(PyBoyPlugin):
         self._seq = 0
         self._seq_lock = threading.Lock()
         self._breakpoint_refs = set()
+        self._instruction_breakpoint_refs = set()
+        self._source_breakpoint_refs = {}
         self._stop_on_entry = False
+
+        # Best-effort address -> (source file, line number) map, built at launch time from a
+        # user-supplied `sourceRoot` (an RGBDS-style disassembly project, e.g. a "pokered"
+        # checkout). Empty unless/until `_req_launch` successfully builds one; frames simply omit
+        # `source`/fall back to a real `line` number when there's no entry for the current PC, in
+        # which case VSCode falls back to its own Disassembly View automatically.
+        self._source_map = {}
 
         # Coordinates pausing/resuming/stepping the emulator thread, using PyBoy's public
         # `hook_register` (permanent, address-based breakpoints -- fires *before* the triggering
@@ -221,7 +246,14 @@ class DebugAdapter(PyBoyPlugin):
         self.pyboy.send_input(WindowEvent.UNPAUSE)
 
     def _hook_callback(self, _context):
-        self._on_break("instruction breakpoint")
+        pc = self._registers()["PC"]
+        bank = self.pyboy.bank(pc)
+        reason = (
+            "breakpoint"
+            if any((bank, pc) in refs for refs in self._source_breakpoint_refs.values())
+            else "instruction breakpoint"
+        )
+        self._on_break(reason)
 
     def _register_hook(self, bank, addr, callback):
         if (bank, addr) in self._hooks:
@@ -245,6 +277,17 @@ class DebugAdapter(PyBoyPlugin):
 
     def _remove_breakpoint(self, bank, addr):
         self._deregister_hook(bank, addr)
+
+    def _reconcile_breakpoints(self):
+        wanted = set(self._instruction_breakpoint_refs)
+        for refs in self._source_breakpoint_refs.values():
+            wanted.update(refs)
+
+        for bank, addr in self._breakpoint_refs - wanted:
+            self._remove_breakpoint(bank, addr)
+        for bank, addr in wanted - self._breakpoint_refs:
+            self._add_breakpoint(bank, addr)
+        self._breakpoint_refs = wanted
 
     def _request_step_out(self):
         """Best-effort "step out of the current subroutine": peeks the return address off the
@@ -319,6 +362,112 @@ class DebugAdapter(PyBoyPlugin):
         labels = self.pyboy.rom_symbols.get(bank, {}).get(addr)
         return labels[0] if labels else None
 
+    def _build_source_map(self, source_root, source_map_file):
+        """Best-effort: if the client points `sourceRoot` at an RGBDS-style disassembly project
+        checkout (e.g. a "pokered" checkout) matching the running ROM, build an address -> (file,
+        line) map so `_req_stackTrace` can report real source locations instead of only raw
+        disassembly. A missing source directory is treated as an empty map; source projects that
+        contain unsupported constructs simply produce gaps and fall back to the Disassembly View."""
+        self._source_map = {}
+        if not source_root:
+            return
+
+        source_root = os.path.abspath(os.path.expanduser(os.fspath(source_root)))
+        if not os.path.isdir(source_root):
+            logger.warning(f"Source root does not exist or is not a directory: {source_root}")
+            return
+
+        if source_map_file:
+            source_map_file = os.path.abspath(os.path.expanduser(os.fspath(source_map_file)))
+        else:
+            # Auto-discover an RGBDS linker `.map` file next to the ROM, the same way PyBoy
+            # itself already auto-discovers `.sym` files (needed for ROMX section addresses,
+            # which the source only gets to pick after linking).
+            gamerom = getattr(self.pyboy, "gamerom", None)
+            if gamerom:
+                no_ext, ext = os.path.splitext(gamerom)
+                for candidate in (no_ext + ".map", no_ext + ext + ".map"):
+                    if os.path.isfile(candidate):
+                        source_map_file = candidate
+                        break
+
+        sections = parse_map_file(source_map_file) if source_map_file else {}
+        entries = find_entry_files(source_root)
+        self._source_map = build_source_map(
+            source_root,
+            entries,
+            self.pyboy.rom_symbols_inverse,
+            sections,
+            self.pyboy.memory,
+            disassemble_one,
+        )
+        logger.debug(f"Built source map from {source_root!r}: {len(self._source_map)} addresses mapped")
+
+    def _build_bootrom_source_map(self, source_root):
+        """Builds a source map for the active boot ROM. If no explicit root is supplied and
+        PyBoy is using its built-in boot ROM, use the matching source tree from this checkout."""
+        if source_root:
+            source_root = os.path.abspath(os.path.expanduser(os.fspath(source_root)))
+        elif getattr(self.pyboy, "bootrom_file", None) is None:
+            source_root = os.path.abspath(
+                os.path.join(os.path.dirname(os.path.realpath(pyboy.__file__)), "..", "extras", "bootrom")
+            )
+        else:
+            return
+
+        if not os.path.isdir(source_root):
+            logger.warning(f"Boot-ROM source root does not exist or is not a directory: {source_root}")
+            return
+
+        cgb_flag = self.pyboy.memory[0x143]
+        variant = "cgb" if cgb_flag & 0x80 else "dmg"
+        preferred_entry = f"bootrom_{variant}.asm"
+        entries = (
+            [preferred_entry]
+            if os.path.isfile(os.path.join(source_root, preferred_entry))
+            else find_entry_files(source_root)
+        )
+        if not entries:
+            logger.warning(f"No boot-ROM assembly entry file found under: {source_root}")
+            return
+
+        symbols = {}
+        symbol_candidates = [f"{os.path.splitext(entry)[0]}.sym" for entry in entries]
+        symbol_candidates.append(f"bootrom_{variant}.sym")
+        for candidate in symbol_candidates:
+            symbol_path = os.path.join(source_root, candidate)
+            if os.path.isfile(symbol_path):
+                symbols = parse_sym_file(symbol_path, bank_override=-1)
+                break
+
+        bootrom_map = build_source_map(
+            source_root,
+            entries,
+            symbols,
+            {},
+            self.pyboy.memory,
+            disassemble_one,
+        )
+        bootrom_map = {(-1, addr): entry for (_bank, addr), entry in bootrom_map.items()}
+        self._source_map.update(bootrom_map)
+        logger.debug(f"Built boot-ROM source map from {source_root!r}: {len(bootrom_map)} addresses mapped")
+
+    def _source_path_key(self, path):
+        return os.path.normcase(os.path.normpath(os.path.abspath(os.path.expanduser(path))))
+
+    def _source_breakpoint_locations(self, path, requested_line):
+        """Returns `(line, addresses)` for the first executable source line at or after
+        `requested_line`, or None when the source map has no matching location."""
+        path_key = self._source_path_key(path)
+        lines = {}
+        for (bank, addr), (mapped_path, mapped_line) in self._source_map.items():
+            if self._source_path_key(mapped_path) == path_key and mapped_line >= requested_line:
+                lines.setdefault(mapped_line, set()).add((bank, addr))
+        if not lines:
+            return None
+        line = min(lines)
+        return line, sorted(lines[line])
+
     def _annotate_target(self, text, target):
         """If `target` is the absolute address referenced by a `CALL`/`JP`/`JR`/`LD`/`LDH`-style
         operand (as returned by `disassemble_one`) and it has a known symbol label, replaces the
@@ -390,9 +539,11 @@ class DebugAdapter(PyBoyPlugin):
     def _req_launch(self, request):
         # Unlike a typical DAP adapter, the ROM is already loaded -- PyBoy started this plugin
         # from the command line (or from Python), so there's nothing left to configure here
-        # besides `stopOnEntry`.
+        # besides `stopOnEntry` and (optionally) `sourceRoot`.
         args = request.get("arguments", {})
         self._stop_on_entry = bool(args.get("stopOnEntry", False))
+        self._build_source_map(args.get("sourceRoot"), args.get("sourceMapFile"))
+        self._build_bootrom_source_map(args.get("bootromSourceRoot"))
         self._send_response(request)
 
     _req_attach = _req_launch
@@ -432,12 +583,73 @@ class DebugAdapter(PyBoyPlugin):
             wanted_refs.add((bank, addr))
             results.append({"verified": True, "instructionReference": _addr_ref(bank, addr)})
 
-        for bank, addr in self._breakpoint_refs - wanted_refs:
-            self._remove_breakpoint(bank, addr)
-        for bank, addr in wanted_refs - self._breakpoint_refs:
-            self._add_breakpoint(bank, addr)
-        self._breakpoint_refs = wanted_refs
+        self._instruction_breakpoint_refs = wanted_refs
+        self._reconcile_breakpoints()
 
+        self._send_response(request, body={"breakpoints": results})
+
+    def _req_setBreakpoints(self, request):
+        args = request.get("arguments", {})
+        source = args.get("source") or {}
+        source_path = source.get("path")
+        requested = args.get("breakpoints")
+        if requested is None:
+            requested = [{"line": line} for line in args.get("lines", [])]
+
+        if not isinstance(source_path, str):
+            results = [{"verified": False, "message": "Source breakpoint is missing source.path"} for _ in requested]
+            self._send_response(request, body={"breakpoints": results})
+            return
+
+        source_key = self._source_path_key(source_path)
+        source_descriptor = {"name": os.path.basename(source_path), "path": source_path}
+        source_refs = set()
+        results = []
+        for bp in requested:
+            line = bp.get("line")
+            if not isinstance(line, int) or line < 1:
+                results.append({"verified": False, "line": line, "message": "Invalid source line"})
+                continue
+            if bp.get("condition") or bp.get("hitCondition") or bp.get("logMessage"):
+                results.append(
+                    {
+                        "verified": False,
+                        "source": source_descriptor,
+                        "line": line,
+                        "message": "Conditional, hit-count, and log breakpoints are not supported",
+                    }
+                )
+                continue
+
+            locations = self._source_breakpoint_locations(source_path, line)
+            if locations is None:
+                results.append(
+                    {
+                        "verified": False,
+                        "source": source_descriptor,
+                        "line": line,
+                        "message": "No executable instruction is mapped to this source line",
+                    }
+                )
+                continue
+
+            resolved_line, addresses = locations
+            source_refs.update(addresses)
+            result = {
+                "verified": True,
+                "source": source_descriptor,
+                "line": resolved_line,
+                "instructionReference": _addr_ref(*addresses[0]),
+            }
+            if bp.get("column") is not None:
+                result["column"] = bp["column"]
+            results.append(result)
+
+        if source_refs:
+            self._source_breakpoint_refs[source_key] = source_refs
+        else:
+            self._source_breakpoint_refs.pop(source_key, None)
+        self._reconcile_breakpoints()
         self._send_response(request, body={"breakpoints": results})
 
     def _req_threads(self, request):
@@ -455,6 +667,14 @@ class DebugAdapter(PyBoyPlugin):
             "column": 0,
             "instructionPointerReference": _addr_ref(bank, pc),
         }
+        source_entry = self._source_map.get((bank, pc))
+        if source_entry:
+            path, line = source_entry
+            # Presence of `source` makes VSCode show/highlight this real source file instead of
+            # the Disassembly View; omitting it (whenever there's no mapping for this address)
+            # makes VSCode fall back to the Disassembly View automatically.
+            frame["source"] = {"name": os.path.basename(path), "path": path}
+            frame["line"] = line
         self._send_response(request, body={"stackFrames": [frame], "totalFrames": 1})
 
     def _req_scopes(self, request):
