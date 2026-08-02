@@ -91,6 +91,11 @@ class Motherboard:
         self.bootrom_enabled = True
         self.serialbuffer = [0] * 1024
         self.serialbuffer_count = 0
+        self.oam_dma_active = False
+        self.oam_dma_reading = False
+        self.oam_dma_source = 0
+        self.oam_dma_index = 0
+        self.oam_dma_start_cycle = 0
 
         self.breakpoints = {}  # {(0, 0x150): (0x100) (0, 0x0040): 0x200, (0, 0x0048): 0x300, (0, 0x0050): 0x44}
         self.breakpoint_singlestep = False
@@ -245,6 +250,11 @@ class Motherboard:
         if self.cgb:
             self.hdma.save_state(f)
         self.cpu.save_state(f)
+        f.write(self.oam_dma_active)
+        f.write(self.oam_dma_reading)
+        f.write(self.oam_dma_source)
+        f.write(self.oam_dma_index)
+        f.write_64bit(self.oam_dma_start_cycle)
         self.lcd.save_state(f)
         self.sound.save_state(f)
         self.lcd.renderer.save_state(f)
@@ -288,6 +298,18 @@ class Motherboard:
             if self.cgb:
                 self.hdma.load_state(f, state_version)
         self.cpu.load_state(f, state_version)
+        if state_version >= 19:
+            self.oam_dma_active = f.read()
+            self.oam_dma_reading = f.read()
+            self.oam_dma_source = f.read()
+            self.oam_dma_index = f.read()
+            self.oam_dma_start_cycle = f.read_64bit()
+        else:
+            self.oam_dma_active = False
+            self.oam_dma_reading = False
+            self.oam_dma_source = 0
+            self.oam_dma_index = 0
+            self.oam_dma_start_cycle = 0
         self.lcd.load_state(f, state_version)
         if state_version >= 8:
             self.sound.load_state(f, state_version)
@@ -367,6 +389,9 @@ class Motherboard:
                     cycles_target = 4
                 self.cpu.tick(cycles_target)
 
+            if self.oam_dma_active and not self.oam_dma_reading:
+                self.sync_oam_dma(0)
+
             # TODO: Support General Purpose DMA
             # https://gbdev.io/pandocs/CGB_Registers.html#bit-7--0---general-purpose-dma
 
@@ -389,6 +414,25 @@ class Motherboard:
     ###################################################################
     # MemoryManager
     #
+    def sync_oam_dma(self, memory_access_offset):
+        if not self.oam_dma_active or self.oam_dma_reading:
+            return
+
+        elapsed = self.cpu.cycles + memory_access_offset - self.oam_dma_start_cycle
+        if elapsed < 4:
+            return
+
+        target = min(0xA0, elapsed // 4)
+        while self.oam_dma_index < target:
+            self.oam_dma_reading = True
+            value = self.getitem((self.oam_dma_source << 8) | self.oam_dma_index)
+            self.oam_dma_reading = False
+            self.lcd.OAM[self.oam_dma_index] = value
+            self.oam_dma_index += 1
+
+        if self.oam_dma_index == 0xA0:
+            self.oam_dma_active = False
+
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
             if self.bootrom_enabled and (i <= 0xFF or (self.bootrom.cgb and 0x200 <= i < 0x900)):
@@ -417,6 +461,15 @@ class Motherboard:
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
+            if self.oam_dma_active and not self.oam_dma_reading:
+                self.sync_oam_dma(self.cpu.memory_access_offset)
+            memory_access_offset = self.cpu.memory_access_offset
+            dma_started = self.cpu.cycles + memory_access_offset >= self.oam_dma_start_cycle
+            if self.oam_dma_active and not self.oam_dma_reading and dma_started and self.cpu.HL == i:
+                self.sync_oam_dma(max(memory_access_offset, 4))
+                dma_started = self.cpu.cycles + memory_access_offset >= self.oam_dma_start_cycle
+            if self.oam_dma_active and dma_started and not self.oam_dma_reading:
+                return 0xFF
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
@@ -424,6 +477,8 @@ class Motherboard:
             return self.getitem_io_ports(i)
 
     def getitem_io_ports(self, i):
+        if self.oam_dma_active and not self.oam_dma_reading:
+            self.sync_oam_dma(self.cpu.memory_access_offset)
         if 0xFF00 <= i < 0xFF4C:  # I/O ports
             if 0xFF01 <= i <= 0xFF02:
                 if self.serial.tick(self.cpu.cycles):
@@ -473,7 +528,7 @@ class Motherboard:
                 elif i == 0xFF45:
                     return self.lcd.LYC
                 elif i == 0xFF46:
-                    return 0x00  # DMA
+                    return self.oam_dma_source
                 elif i == 0xFF47:
                     return self.lcd.BGP.get()
                 elif i == 0xFF48:
@@ -567,13 +622,18 @@ class Motherboard:
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             self.setitem(i - 0x2000, value)  # Redirect to internal RAM
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
-            self.lcd.OAM[i - 0xFE00] = value
+            if self.oam_dma_active and not self.oam_dma_reading:
+                self.sync_oam_dma(self.cpu.memory_access_offset)
+            if not self.oam_dma_active:
+                self.lcd.OAM[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         else:
             self.setitem_io_ports(i, value)
 
     def setitem_io_ports(self, i, value):
+        if self.oam_dma_active and not self.oam_dma_reading:
+            self.sync_oam_dma(self.cpu.memory_access_offset)
         if 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF00:
                 self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
@@ -722,12 +782,14 @@ class Motherboard:
             self.cpu.bail = True
 
     def transfer_DMA(self, src):
-        # http://problemkaputt.de/pandocs.htm#lcdoamdmatransfers
-        # TODO: Add timing delay of 160µs and disallow access to RAM!
-        dst = 0xFE00
-        offset = src * 0x100
-        for n in range(0xA0):
-            self.setitem(dst + n, self.getitem(n + offset))
+        if self.oam_dma_active and self.oam_dma_index == 0:
+            self.oam_dma_start_cycle = self.cpu.cycles + 8
+        else:
+            self.oam_dma_start_cycle = self.cpu.cycles + 12
+        self.oam_dma_active = True
+        self.oam_dma_reading = False
+        self.oam_dma_source = src
+        self.oam_dma_index = 0
 
 
 class HDMA:

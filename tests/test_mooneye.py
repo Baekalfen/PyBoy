@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import os
 import io
 from pathlib import Path
 
@@ -32,7 +33,7 @@ saved_state = [None, None]
         # (True, False, True, "utils/dump_boot_hwio.gb"),
         (False, False, False, "manual-only/sprite_priority.gb"),
         (True, False, False, "acceptance/rapid_di_ei.gb"),
-        (False, False, False, "acceptance/oam_dma_start.gb"),
+        (True, False, False, "acceptance/oam_dma_start.gb"),
         (True, False, False, "acceptance/boot_regs-dmgABC.gb"),
         (True, False, False, "acceptance/reti_timing.gb"),
         (True, False, False, "acceptance/call_timing.gb"),
@@ -186,7 +187,7 @@ def test_mooneye(text_result, clean, cgb, rom, mooneye_dir, default_rom):
             with open(json_path, "w") as f:
                 json.dump(results, f, indent=2)
         else:
-            assert results[rom]["text"] == text, "Results differ!"
+            assert text == results[rom]["text"], "Results differ!"
     else:
         png_path = Path(f"tests/test_results/mooneye/{rom}.png")
         image = pyboy.screen.image

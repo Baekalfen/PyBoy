@@ -43,6 +43,9 @@ cdef class Motherboard:
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
+    cdef bint oam_dma_active, oam_dma_reading
+    cdef uint8_t oam_dma_source, oam_dma_index
+    cdef int64_t oam_dma_start_cycle
 
     # CGB
     cdef HDMA hdma
@@ -67,12 +70,14 @@ cdef class Motherboard:
 
     cdef void switch_speed(self) noexcept nogil
 
+    @cython.locals(dma_started=cython.bint)
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
+    @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t)
+    cdef void sync_oam_dma(self, uint8_t) noexcept nogil
     @final
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
     cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil
-
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil
     cdef int save_state(self, IntIOInterface) except -1
