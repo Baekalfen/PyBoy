@@ -28,14 +28,45 @@ class Timer:
         self.TMA = 0
         self.TAC = 0
         self.dividers = [10, 4, 6, 8]
+        self.tima_reload_state = 0
         self._cycles_to_interrupt = 0
         self.last_cycles = 0
 
     def reset(self):
-        # TODO: Should probably one be DIV=0, but this makes a bunch of mooneye tests pass
+        timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
+        if self.TAC & 0b100 and self.DIV_counter & timer_bit:
+            self._increase_tima()
         self.DIV_counter = 0
-        self.TIMA_counter = 0
         self.DIV = 0
+
+    def _increase_tima(self):
+        self.TIMA += 1
+        if self.TIMA > 0xFF:
+            self.TIMA = self.TMA
+            self.tima_reload_state = 1
+            self.TIMA_counter = 4
+
+    def write_tima(self, value):
+        if self.tima_reload_state != 2:
+            self.TIMA = value
+
+    def write_tma(self, value):
+        self.TMA = value
+        if self.tima_reload_state != 0:
+            self.TIMA = value
+
+    def write_tac(self, value):
+        old_timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
+        new_timer_bit = 1 << (self.dividers[value & 0b11] - 1)
+        if self.TAC & 0b100 and self.DIV_counter & old_timer_bit:
+            if not value & 0b100 or not self.DIV_counter & new_timer_bit:
+                self._increase_tima()
+        self.TAC = value & 0b111
+
+    def read_tima(self):
+        if self.tima_reload_state == 1:
+            return 0
+        return self.TIMA
 
     def tick(self, _cycles):
         cycles = _cycles - self.last_cycles
@@ -43,28 +74,36 @@ class Timer:
             return False
         self.last_cycles = _cycles
 
-        self.DIV_counter += cycles
-        self.DIV += self.DIV_counter >> 8  # Add overflown bits to DIV
-        self.DIV_counter &= 0xFF  # Remove the overflown bits
-        self.DIV &= 0xFF
-
-        if self.TAC & 0b100 == 0:  # Check if timer is not enabled
-            self._cycles_to_interrupt = MAX_CYCLES
-            return False
-
-        self.TIMA_counter += cycles
-        divider = self.dividers[self.TAC & 0b11]
-
         ret = False
-        while self.TIMA_counter >= (1 << divider):
-            self.TIMA_counter -= 1 << divider  # Keeps possible remainder
-            self.TIMA += 1
+        while cycles:
+            if self.tima_reload_state:
+                self.TIMA_counter -= 1
+                if self.TIMA_counter == 0:
+                    if self.tima_reload_state == 1:
+                        self.tima_reload_state = 2
+                        self.TIMA_counter = 4
+                        ret = True
+                    else:
+                        self.tima_reload_state = 0
 
-            if self.TIMA > 0xFF:
-                self.TIMA = self.TMA
-                self.TIMA &= 0xFF
-                ret = True
-        self._cycles_to_interrupt = ((0x100 - self.TIMA) << divider) - self.TIMA_counter
+            counter = self.DIV_counter
+            new_counter = (counter + 1) & 0xFFFF
+            timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
+            if self.TAC & 0b100 and counter & timer_bit and not new_counter & timer_bit:
+                self._increase_tima()
+
+            self.DIV_counter = new_counter
+            self.DIV = new_counter >> 8
+            cycles -= 1
+
+        if self.TAC & 0b100:
+            timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
+            next_edge = ((self.DIV_counter & ~(timer_bit * 2 - 1)) + timer_bit * 2) - self.DIV_counter
+            self._cycles_to_interrupt = next_edge
+            if self.tima_reload_state:
+                self._cycles_to_interrupt = min(self._cycles_to_interrupt, self.TIMA_counter)
+        else:
+            self._cycles_to_interrupt = MAX_CYCLES
         return ret
 
     def save_state(self, f):
@@ -74,6 +113,7 @@ class Timer:
         f.write_16bit(self.TIMA_counter)
         f.write(self.TMA)
         f.write(self.TAC)
+        f.write(self.tima_reload_state)
         f.write_64bit(self.last_cycles)
         f.write_64bit(self._cycles_to_interrupt)
 
@@ -84,6 +124,10 @@ class Timer:
         self.TIMA_counter = f.read_16bit()
         self.TMA = f.read()
         self.TAC = f.read()
+        if state_version >= 20:
+            self.tima_reload_state = f.read()
+        else:
+            self.tima_reload_state = 0
         if state_version >= 12:
             self.last_cycles = f.read_64bit()
         if state_version >= 13:

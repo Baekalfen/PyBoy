@@ -45,10 +45,10 @@
     "text": "Registers\n  A: 12  F: 80\n  B: 11  C: 12\n  D: 11  E: 12\n  H: 02  L: 21\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
   },
   "acceptance/timer/tima_reload.gb": {
-    "text": "Registers\n  A: FE  F: 80\n  B: FE  C: FE\n  D: FF  E: FE\n  H: FF  L: FE\nAssertions\n  B: OK  C: OK\n  D: OK  E: 00!\n  H: OK  L: 00!\nTest failed\n"
+    "text": "Registers\n  A: FE  F: 80\n  B: FE  C: FE\n  D: FF  E: 00\n  H: FF  L: 00\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n  H: OK  L: OK\n"
   },
   "acceptance/timer/tma_write_reloading.gb": {
-    "text": "Registers\n  A: FE  F: 80\n  B: FE  C: FE\n  D: FE  E: FE\n  H: 7F  L: FE\nAssertions\n         C: OK\n  D: 7F! E: 7F!\n         L: OK\nTest failed\n"
+    "text": "Registers\n  A: FE  F: 80\n  B: FE  C: FE\n  D: 7F  E: 7F\n  H: 7F  L: FE\nAssertions\n         C: OK\n  D: OK  E: OK\n         L: OK\n"
   },
   "acceptance/timer/tim10.gb": {
     "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
@@ -63,25 +63,25 @@
     "text": "Registers\n  A: 09  F: 80\n  B: 04  C: 00\n  D: 08  E: 09\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/timer/tima_write_reloading.gb": {
-    "text": "Registers\n  A: 7F  F: 80\n  B: FE  C: 7F\n  D: 80  E: 7F\n  H: 7F  L: 7F\nAssertions\n         C: FE!\n  D: OK  E: OK\n         L: OK\nTest failed\n"
+    "text": "Registers\n  A: 7F  F: 80\n  B: FE  C: FE\n  D: 80  E: 7F\n  H: 7F  L: 7F\nAssertions\n         C: OK\n  D: OK  E: OK\n         L: OK\n"
   },
   "acceptance/timer/tim11_div_trigger.gb": {
-    "text": "Registers\n  A: 04  F: 80\n  B: 04  C: 00\n  D: 04  E: 04\n  H: 00  L: 87\nAssertions\n  D: OK  E: 05!\nTest failed\n"
+    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/timer/div_write.gb": {
     "text": "Test OK\n"
   },
   "acceptance/timer/tim10_div_trigger.gb": {
-    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: 05! E: 06!\nTest failed\n"
+    "text": "Registers\n  A: 06  F: 80\n  B: 04  C: 00\n  D: 05  E: 06\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/timer/tim00_div_trigger.gb": {
-    "text": "Registers\n  A: 04  F: 80\n  B: 04  C: 00\n  D: 04  E: 04\n  H: 00  L: 87\nAssertions\n  D: OK  E: 05!\nTest failed\n"
+    "text": "Registers\n  A: 05  F: 80\n  B: 04  C: 00\n  D: 04  E: 05\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/timer/rapid_toggle.gb": {
-    "text": "Registers\n  A: 04  F: 00\n  B: FC  C: CE\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  B: FF! C: D9!\nTest failed\n"
+    "text": "Registers\n  A: 00  F: 00\n  B: FF  C: D9\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  B: OK  C: OK\n"
   },
   "acceptance/timer/tim01_div_trigger.gb": {
-    "text": "Registers\n  A: 06  F: 80\n  B: 04  C: 00\n  D: 05  E: 06\n  H: 00  L: 87\nAssertions\n  D: 0A! E: 0B!\nTest failed\n"
+    "text": "Registers\n  A: 0B  F: 80\n  B: 04  C: 00\n  D: 0A  E: 0B\n  H: 00  L: 87\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/boot_regs-sgb.gb": {
     "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: OK  C: 14!\n  D: OK  E: 00!\n  H: C0! L: 60!\nTest failed\n"
