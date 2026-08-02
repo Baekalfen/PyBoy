@@ -159,7 +159,7 @@ def test_mooneye(text_result, clean, cgb, rom, mooneye_dir, default_rom):
         pyboy.load_state(saved_state[cgb])
 
     pyboy.tick(180 if "div_write" in rom or "lcdon_write_timing" in rom or "mbc1" in rom else 40, True)
-    if "mbc1/bits_ramg" in rom or "mbc2" in rom:
+    if "mbc1/bits_ramg" in rom or "mbc2" in rom or "bits_" in rom:
         pyboy.tick(500)
 
     if text_result:
