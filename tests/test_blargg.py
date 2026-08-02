@@ -147,4 +147,4 @@ def test_blarggs(test_rom, max_frames, blargg_dir):
         #         for (rom, _), res in zip(test_roms, old_blargg):
         #             f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))
     else:
-        assert old_blargg[rom] == result, f"Outputs don't match for {rom}"
+        assert result == old_blargg[rom], f"Outputs don't match for {rom}"

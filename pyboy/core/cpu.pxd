@@ -25,12 +25,13 @@ cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
 @cython.final
 cdef class CPU:
-    cdef bint interrupt_master_enable, interrupt_queued, halted, stopped, bail
+    cdef bint interrupt_master_enable, interrupt_queued, halted, halted_during_ei, stopped, bail
+    cdef uint8_t interrupt_enable_delay
+    cdef uint8_t memory_access_offset
 
     cdef uint8_t interrupts_flag, interrupts_enabled, interrupts_flag_register, interrupts_enabled_register
 
     cdef int64_t cycles
-
     cdef inline int check_interrupts(self) noexcept nogil
 
     @cython.final

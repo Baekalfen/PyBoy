@@ -158,7 +158,7 @@ def test_samesuite(gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, default_
             old_samesuite[rom] = result
             json.dump(old_samesuite, f, indent=4)
     else:
-        assert old_samesuite[rom] == result, f"Outputs don't match for {rom}"
+        assert result == old_samesuite[rom], f"Outputs don't match for {rom}"
         if old_samesuite[rom] != result and os.environ.get("TEST_VERBOSE_IMAGES"):
             pyboy.screen.image.show()
 

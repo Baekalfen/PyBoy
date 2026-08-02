@@ -28,11 +28,15 @@ class CPU:
         self.interrupts_flag_register = 0
         self.interrupts_enabled_register = 0
         self.interrupt_master_enable = False
+        self.interrupt_enable_delay = 0
         self.interrupt_queued = False
+        self.halted_during_ei = False
+        self.memory_access_offset = 0
 
         self.mb = mb
 
         self.halted = False
+        self.halted_during_ei = False
         self.stopped = False
         self.cycles = 0
 
@@ -44,6 +48,7 @@ class CPU:
             f.write_16bit(n)
 
         f.write(self.interrupt_master_enable)
+        f.write(self.interrupt_enable_delay)
         f.write(self.halted)
         f.write(self.stopped)
         f.write(self.interrupts_enabled_register)
@@ -58,6 +63,10 @@ class CPU:
         self.PC = f.read_16bit()
 
         self.interrupt_master_enable = f.read()
+        if state_version >= 19:
+            self.interrupt_enable_delay = f.read()
+        else:
+            self.interrupt_enable_delay = 0
         self.halted = f.read()
         self.stopped = f.read()
         if state_version >= 5:
@@ -140,16 +149,17 @@ class CPU:
                 break
 
     def check_interrupts(self):
-        if self.interrupt_queued:
+        if self.interrupt_queued or self.interrupt_enable_delay:
             # Interrupt already queued. This happens only when using a debugger.
             return False
 
         raised_and_enabled = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
         if raised_and_enabled:
             # Clear interrupt flag
-            if self.halted:
+            if self.halted and not self.halted_during_ei:
                 self.PC += 1  # Escape HALT on return
                 self.PC &= 0xFFFF
+            self.halted_during_ei = False
 
             if self.interrupt_master_enable:
                 if raised_and_enabled & INTR_VBLANK:
@@ -194,9 +204,15 @@ class CPU:
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 1 - 0x4000]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 2 - 0x4000]
         else:
+            self.memory_access_offset = 0
             pc1 = self.mb.getitem(self.PC)
-            pc2 = self.mb.getitem((self.PC + 1) & 0xFFFF)
-            pc3 = self.mb.getitem((self.PC + 2) & 0xFFFF)
+            if pc1 == 0xCB or opcodes.OPCODE_LENGTHS[pc1] >= 2:
+                self.memory_access_offset = 4
+                pc2 = self.mb.getitem((self.PC + 1) & 0xFFFF)
+            if opcodes.OPCODE_LENGTHS[pc1] == 3:
+                self.memory_access_offset = 8
+                pc3 = self.mb.getitem((self.PC + 2) & 0xFFFF)
+            self.memory_access_offset = 0
 
         v = 0
         opcode = pc1
@@ -216,4 +232,10 @@ class CPU:
                 b = pc2
                 v = (a << 8) + b
 
-        return opcodes.execute_opcode(self, opcode, v)
+        result = opcodes.execute_opcode(self, opcode, v)
+        if self.interrupt_enable_delay:
+            self.interrupt_enable_delay -= 1
+            if self.interrupt_enable_delay == 0:
+                self.interrupt_master_enable = True
+                self.bail = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
+        return result

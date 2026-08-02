@@ -1150,6 +1150,7 @@ def LD_75(cpu): # 75 LD (HL),L
 
 def HALT_76(cpu): # 76 HALT
     cpu.halted = True
+    cpu.halted_during_ei = cpu.interrupt_enable_delay == 1
     cpu.bail = True
     cpu.cycles += 4
 
@@ -2267,11 +2268,13 @@ def CP_BF(cpu): # BF CP A
 
 def RET_C0(cpu): # C0 RET NZ
     if ((cpu.F & (1 << FLAGZ)) == 0):
-        cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
-        cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 8
+        cpu.PC = cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 4
+        cpu.PC |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
         cpu.SP += 2
         cpu.SP &= 0xFFFF
-        cpu.cycles += 20
+        cpu.cycles += 8
     else:
         cpu.PC += 1
         cpu.PC &= 0xFFFF
@@ -2279,13 +2282,14 @@ def RET_C0(cpu): # C0 RET NZ
 
 
 def POP_C1(cpu): # C1 POP BC
-    cpu.B = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
     cpu.C = cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.B = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
     cpu.SP += 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 12
+    cpu.cycles += 8
 
 
 def JP_C2(cpu, v): # C2 JP NZ,a16
@@ -2307,24 +2311,28 @@ def CALL_C4(cpu, v): # C4 CALL NZ,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGZ)) == 0):
+        cpu.cycles += 16
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+        cpu.cycles += 4
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
-        cpu.cycles += 24
+        cpu.cycles += 4
     else:
         cpu.cycles += 12
 
 
 def PUSH_C5(cpu): # C5 PUSH BC
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.B) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.C) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def ADD_C6(cpu, v): # C6 ADD A,d8
@@ -2347,21 +2355,25 @@ def ADD_C6(cpu, v): # C6 ADD A,d8
 def RST_C7(cpu): # C7 RST 00H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 0
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def RET_C8(cpu): # C8 RET Z
     if ((cpu.F & (1 << FLAGZ)) != 0):
-        cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
-        cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 8
+        cpu.PC = cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 4
+        cpu.PC |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
         cpu.SP += 2
         cpu.SP &= 0xFFFF
-        cpu.cycles += 20
+        cpu.cycles += 8
     else:
         cpu.PC += 1
         cpu.PC &= 0xFFFF
@@ -2369,11 +2381,13 @@ def RET_C8(cpu): # C8 RET Z
 
 
 def RET_C9(cpu): # C9 RET
-    cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
-    cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.PC = cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.PC |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
     cpu.SP += 2
     cpu.SP &= 0xFFFF
-    cpu.cycles += 16
+    cpu.cycles += 8
 
 
 def JP_CA(cpu, v): # CA JP Z,a16
@@ -2397,12 +2411,14 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGZ)) != 0):
+        cpu.cycles += 16
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+        cpu.cycles += 4
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
-        cpu.cycles += 24
+        cpu.cycles += 4
     else:
         cpu.cycles += 12
 
@@ -2410,12 +2426,14 @@ def CALL_CC(cpu, v): # CC CALL Z,a16
 def CALL_CD(cpu, v): # CD CALL a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
+    cpu.cycles += 16
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = v
-    cpu.cycles += 24
+    cpu.cycles += 4
 
 
 def ADC_CE(cpu, v): # CE ADC A,d8
@@ -2439,21 +2457,25 @@ def ADC_CE(cpu, v): # CE ADC A,d8
 def RST_CF(cpu): # CF RST 08H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 8
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def RET_D0(cpu): # D0 RET NC
     if ((cpu.F & (1 << FLAGC)) == 0):
-        cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
-        cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 8
+        cpu.PC = cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 4
+        cpu.PC |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
         cpu.SP += 2
         cpu.SP &= 0xFFFF
-        cpu.cycles += 20
+        cpu.cycles += 8
     else:
         cpu.PC += 1
         cpu.PC &= 0xFFFF
@@ -2461,13 +2483,14 @@ def RET_D0(cpu): # D0 RET NC
 
 
 def POP_D1(cpu): # D1 POP DE
-    cpu.D = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
     cpu.E = cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.D = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
     cpu.SP += 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 12
+    cpu.cycles += 8
 
 
 def JP_D2(cpu, v): # D2 JP NC,a16
@@ -2484,24 +2507,28 @@ def CALL_D4(cpu, v): # D4 CALL NC,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGC)) == 0):
+        cpu.cycles += 16
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+        cpu.cycles += 4
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
-        cpu.cycles += 24
+        cpu.cycles += 4
     else:
         cpu.cycles += 12
 
 
 def PUSH_D5(cpu): # D5 PUSH DE
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.D) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.E) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def SUB_D6(cpu, v): # D6 SUB d8
@@ -2524,21 +2551,25 @@ def SUB_D6(cpu, v): # D6 SUB d8
 def RST_D7(cpu): # D7 RST 10H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 16
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def RET_D8(cpu): # D8 RET C
     if ((cpu.F & (1 << FLAGC)) != 0):
-        cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
-        cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 8
+        cpu.PC = cpu.mb.getitem(cpu.SP) # Low
+        cpu.cycles += 4
+        cpu.PC |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
         cpu.SP += 2
         cpu.SP &= 0xFFFF
-        cpu.cycles += 20
+        cpu.cycles += 8
     else:
         cpu.PC += 1
         cpu.PC &= 0xFFFF
@@ -2547,12 +2578,15 @@ def RET_D8(cpu): # D8 RET C
 
 def RETI_D9(cpu): # D9 RETI
     cpu.interrupt_master_enable = True
+    cpu.interrupt_enable_delay = 0
     cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)
-    cpu.PC = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
-    cpu.PC |= cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.PC = cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.PC |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
     cpu.SP += 2
     cpu.SP &= 0xFFFF
-    cpu.cycles += 16
+    cpu.cycles += 8
 
 
 def JP_DA(cpu, v): # DA JP C,a16
@@ -2569,12 +2603,14 @@ def CALL_DC(cpu, v): # DC CALL C,a16
     cpu.PC += 3
     cpu.PC &= 0xFFFF
     if ((cpu.F & (1 << FLAGC)) != 0):
+        cpu.cycles += 16
         cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+        cpu.cycles += 4
         cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
         cpu.SP -= 2
         cpu.SP &= 0xFFFF
         cpu.PC = v
-        cpu.cycles += 24
+        cpu.cycles += 4
     else:
         cpu.cycles += 12
 
@@ -2600,12 +2636,14 @@ def SBC_DE(cpu, v): # DE SBC A,d8
 def RST_DF(cpu): # DF RST 18H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 24
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def LDH_E0(cpu, v): # E0 LDH (a8),A
@@ -2617,12 +2655,14 @@ def LDH_E0(cpu, v): # E0 LDH (a8),A
 
 
 def POP_E1(cpu): # E1 POP HL
-    cpu.HL = (cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8) + cpu.mb.getitem(cpu.SP) # High
+    cpu.HL = cpu.mb.getitem(cpu.SP) # Low
+    cpu.cycles += 4
+    cpu.HL |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
     cpu.SP += 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 12
+    cpu.cycles += 8
 
 
 def LD_E2(cpu): # E2 LD (C),A
@@ -2633,13 +2673,15 @@ def LD_E2(cpu): # E2 LD (C),A
 
 
 def PUSH_E5(cpu): # E5 PUSH HL
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.HL >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.HL & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def AND_E6(cpu, v): # E6 AND d8
@@ -2660,12 +2702,14 @@ def AND_E6(cpu, v): # E6 AND d8
 def RST_E7(cpu): # E7 RST 20H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 32
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def ADD_E8(cpu, v): # E8 ADD SP,r8
@@ -2715,12 +2759,14 @@ def XOR_EE(cpu, v): # EE XOR d8
 def RST_EF(cpu): # EF RST 28H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 40
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def LDH_F0(cpu, v): # F0 LDH A,(a8)
@@ -2732,13 +2778,14 @@ def LDH_F0(cpu, v): # F0 LDH A,(a8)
 
 
 def POP_F1(cpu): # F1 POP AF
-    cpu.A = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
     cpu.F = cpu.mb.getitem(cpu.SP) & 0xF0 & 0xF0 # Low
+    cpu.cycles += 4
+    cpu.A = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
     cpu.SP += 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 12
+    cpu.cycles += 8
 
 
 def LD_F2(cpu): # F2 LD A,(C)
@@ -2750,19 +2797,22 @@ def LD_F2(cpu): # F2 LD A,(C)
 
 def DI_F3(cpu): # F3 DI
     cpu.interrupt_master_enable = False
+    cpu.interrupt_enable_delay = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 4
 
 
 def PUSH_F5(cpu): # F5 PUSH AF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.A) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.F & 0xF0) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def OR_F6(cpu, v): # F6 OR d8
@@ -2783,12 +2833,14 @@ def OR_F6(cpu, v): # F6 OR d8
 def RST_F7(cpu): # F7 RST 30H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 48
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def LD_F8(cpu, v): # F8 LD HL,SP+r8
@@ -2821,8 +2873,8 @@ def LD_FA(cpu, v): # FA LD A,(a16)
 
 
 def EI_FB(cpu): # FB EI
-    cpu.interrupt_master_enable = True
-    cpu.bail = (cpu.interrupts_flag_register & 0b11111) & (cpu.interrupts_enabled_register & 0b11111)
+    if cpu.interrupt_enable_delay == 0:
+        cpu.interrupt_enable_delay = 2
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 4
@@ -2847,12 +2899,14 @@ def CP_FE(cpu, v): # FE CP d8
 def RST_FF(cpu): # FF RST 38H
     cpu.PC += 1
     cpu.PC &= 0xFFFF
+    cpu.cycles += 8
     cpu.mb.setitem((cpu.SP-1) & 0xFFFF, cpu.PC >> 8) # High
+    cpu.cycles += 4
     cpu.mb.setitem((cpu.SP-2) & 0xFFFF, cpu.PC & 0xFF) # Low
     cpu.SP -= 2
     cpu.SP &= 0xFFFF
     cpu.PC = 56
-    cpu.cycles += 16
+    cpu.cycles += 4
 
 
 def RLC_100(cpu): # 100 RLC B
