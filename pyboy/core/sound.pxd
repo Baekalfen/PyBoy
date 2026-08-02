@@ -15,6 +15,7 @@ cdef uint64_t MAX_CYCLES
 cdef Logger logger
 
 cdef uint64_t CYCLES_512HZ
+cdef int WAVE_ACCESS_CYCLES
 
 @cython.final
 cdef class Sound:
@@ -61,6 +62,25 @@ cdef class Sound:
 
     cdef uint8_t get(self, uint8_t) noexcept nogil
     cdef void set(self, uint8_t, uint8_t) noexcept nogil
+
+    @cython.locals(
+        old_length_enable=bint,
+        old_lengthtimer=int64_t,
+        length_clocked=bint,
+        frame_sequencer_odd=bint,
+    )
+    cdef void _set_channel(self, uint8_t, uint8_t, uint8_t, bint) noexcept nogil
+    cdef void _set_channel_length_enable(self, uint8_t, bint) noexcept nogil
+    cdef void _tick_channel_length(self, uint8_t) noexcept nogil
+
+    @cython.locals(
+        lengthtimer_sweep=int64_t,
+        lengthtimer_tone=int64_t,
+        lengthtimer_wave=int64_t,
+        lengthtimer_noise=int64_t,
+        n=uint8_t,
+    )
+    cdef void _power_off(self) noexcept nogil
 
     @cython.locals(cycles=uint64_t, _cycles=uint64_t)
     cdef void tick(self, uint64_t) noexcept nogil
@@ -115,9 +135,12 @@ cdef class SweepChannel(ToneChannel):
 
     # Internal Values
     cdef int64_t sweeptimer # Sweep timer, counts down to shift pitch
+    cdef int64_t sweepchecktimer
+    cdef bint sweep_negate_used
     cdef bint sweepenable # Internal sweep enable flag
     cdef int64_t shadow # Shadow copy of period register for ignoring writes to sndper
     cdef void tick_sweep(self) noexcept nogil
+    cdef void tick_sweep_check(self) noexcept nogil
     cdef bint sweep(self, bint) noexcept nogil
 
 @cython.final
@@ -141,6 +164,7 @@ cdef class WaveChannel:
     cdef int64_t periodtimer # Period timer, counts down to signal change in wave frame
     cdef int64_t period # Calculated copy of period, 4 * (2048 - sndper)
     cdef int64_t waveframe # Wave frame index into wave table entries
+    cdef bint wave_access
     cdef int64_t volumeshift # Bitshift for volume, set by volreg
 
     cdef uint8_t getreg(self, uint8_t) noexcept nogil
@@ -148,6 +172,7 @@ cdef class WaveChannel:
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void tick_length(self) noexcept nogil
     cdef uint8_t sample(self) noexcept nogil
+    @cython.locals(offset=cython.int, start=cython.int, n=cython.int)
     cdef void trigger(self) noexcept nogil
     cdef uint8_t getwavebyte(self, uint8_t) noexcept nogil
     cdef void setwavebyte(self, uint8_t, uint8_t) noexcept nogil

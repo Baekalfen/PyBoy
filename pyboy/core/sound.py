@@ -21,6 +21,7 @@ if not cython_compiled:
 logger = pyboy.logging.get_logger(__name__)
 
 CYCLES_512HZ = 8192
+WAVE_ACCESS_CYCLES = 1
 
 
 class Sound:
@@ -74,7 +75,7 @@ class Sound:
         self.last_cycles = 0
 
         self.div_apu_counter = 0
-        self.div_apu = 0
+        self.div_apu = 3
         self.poweron = 0
 
         self.sweepchannel = SweepChannel()
@@ -150,15 +151,7 @@ class Sound:
         # Pan-docs:
         # Read-only until turned back on, except NR52 and the length timers (in NRx1) on monochrome models.
         if offset < 20 and (self.poweron or ((not self.cgb) and (offset % 5 == 1))):
-            i = offset // 5
-            if i == 0:
-                self.sweepchannel.setreg(offset % 5, value, (not self.poweron) and (not self.cgb))
-            elif i == 1:
-                self.tonechannel.setreg(offset % 5, value, (not self.poweron) and (not self.cgb))
-            elif i == 2:
-                self.wavechannel.setreg(offset % 5, value)
-            elif i == 3:
-                self.noisechannel.setreg(offset % 5, value)
+            self._set_channel(offset // 5, offset % 5, value, (not self.poweron) and (not self.cgb))
         elif offset == 20 and self.poweron:  # Control register NR50: Vin enable and volume
             # Not implemented
             self.NR50 = value
@@ -175,18 +168,97 @@ class Sound:
             return
         elif offset == 22:  # Control register NR52: Sound on/off
             if value & 0x80 == 0:  # Sound power off
-                for n in range(22):
-                    self.set(n, 0)
+                self._power_off()
                 self.poweron = 0
             else:
+                was_powered_off = not self.poweron
                 self.poweron = 0x80
-                # self.reset_apu_div()
+                if was_powered_off:
+                    # Powering the APU on starts a new frame-sequencer period.
+                    self.div_apu = 0
+                    self.cycles_target_512Hz = self.cycles + CYCLES_512HZ
         elif offset < 32:  # Unused registers, unwritable?
             pass
         elif offset < 48:  # Wave pattern RAM
             self.wavechannel.setwavebyte(offset - 32, value)
         else:
             logger.error("Attempted to write register %d in sound memory", offset)
+
+    def _set_channel(self, channel, reg, value, force_length_timer):
+        old_length_enable = 0
+        old_lengthtimer = 0
+        length_clocked = False
+        frame_sequencer_odd = self.div_apu % 2 == 1
+
+        if channel == 0:
+            old_length_enable = self.sweepchannel.length_enable
+            old_lengthtimer = self.sweepchannel.lengthtimer
+        elif channel == 1:
+            old_length_enable = self.tonechannel.length_enable
+            old_lengthtimer = self.tonechannel.lengthtimer
+        elif channel == 2:
+            old_length_enable = self.wavechannel.length_enable
+            old_lengthtimer = self.wavechannel.lengthtimer
+        else:
+            old_length_enable = self.noisechannel.length_enable
+            old_lengthtimer = self.noisechannel.lengthtimer
+
+        if reg == 4 and frame_sequencer_odd and (value & 0xC0) == 0xC0:
+            if not old_length_enable and old_lengthtimer > 0:
+                self._set_channel_length_enable(channel, True)
+                self._tick_channel_length(channel)
+                self._set_channel_length_enable(channel, old_length_enable)
+                length_clocked = True
+
+        if channel == 0:
+            self.sweepchannel.setreg(reg, value, force_length_timer)
+        elif channel == 1:
+            self.tonechannel.setreg(reg, value, force_length_timer)
+        elif channel == 2:
+            self.wavechannel.setreg(reg, value)
+        else:
+            self.noisechannel.setreg(reg, value)
+
+        if reg == 4 and frame_sequencer_odd:
+            if (value & 0x40) and not length_clocked and (not old_length_enable or old_lengthtimer == 0):
+                self._tick_channel_length(channel)
+            elif length_clocked and old_lengthtimer == 1 and (value & 0x80):
+                self._tick_channel_length(channel)
+
+    def _set_channel_length_enable(self, channel, enabled):
+        if channel == 0:
+            self.sweepchannel.length_enable = enabled
+        elif channel == 1:
+            self.tonechannel.length_enable = enabled
+        elif channel == 2:
+            self.wavechannel.length_enable = enabled
+        else:
+            self.noisechannel.length_enable = enabled
+
+    def _tick_channel_length(self, channel):
+        if channel == 0:
+            self.sweepchannel.tick_length()
+        elif channel == 1:
+            self.tonechannel.tick_length()
+        elif channel == 2:
+            self.wavechannel.tick_length()
+        else:
+            self.noisechannel.tick_length()
+
+    def _power_off(self):
+        lengthtimer_sweep = self.sweepchannel.lengthtimer
+        lengthtimer_tone = self.tonechannel.lengthtimer
+        lengthtimer_wave = self.wavechannel.lengthtimer
+        lengthtimer_noise = self.noisechannel.lengthtimer
+
+        for n in range(22):
+            self.set(n, 0)
+
+        if not self.cgb:
+            self.sweepchannel.lengthtimer = lengthtimer_sweep
+            self.tonechannel.lengthtimer = lengthtimer_tone
+            self.wavechannel.lengthtimer = lengthtimer_wave
+            self.noisechannel.lengthtimer = lengthtimer_noise
 
     def tick(self, _cycles):
         cycles = _cycles - self.last_cycles
@@ -196,21 +268,40 @@ class Sound:
             return
 
         cycles >>= self.speed_shift
+        self.wavechannel.wave_access = False
+        self.sweepchannel.tick_sweep_check()
 
         # Tick channels until point of sample (repeating) or however many cycles we have.
         while cycles > 0:
+            _cycles = cycles
             if not self.disable_sampling:
-                _cycles = max(0, min(double_to_uint64_ceil(self.cycles_target) - self.cycles, cycles))
-            else:
-                _cycles = cycles
+                _cycles = min(_cycles, double_to_uint64_ceil(self.cycles_target) - self.cycles)
+            _cycles = min(_cycles, double_to_uint64_ceil(self.cycles_target_512Hz) - self.cycles)
 
-            # Pan Docs:
-            # Turning the APU off, however, does not affect ... the DIV-APU counter
-            old_div_apu = self.div_apu
-            while self.cycles >= self.cycles_target_512Hz:
-                self.div_apu += 1
-                self.cycles_target_512Hz += CYCLES_512HZ
-            div_tick_count = self.div_apu - old_div_apu
+            if _cycles == 0:
+                # A target was reached at the end of the previous chunk.
+                # Process it before advancing any more channel time.
+                if self.cycles >= self.cycles_target_512Hz:
+                    while self.cycles >= self.cycles_target_512Hz:
+                        self.div_apu += 1
+                        self.cycles_target_512Hz += CYCLES_512HZ
+                        if self.poweron:
+                            if self.div_apu % 2 == 1:
+                                self.sweepchannel.tick_length()
+                                self.tonechannel.tick_length()
+                                self.wavechannel.tick_length()
+                                self.noisechannel.tick_length()
+                            if self.div_apu % 4 == 3:
+                                self.sweepchannel.tick_sweep()
+                            if self.div_apu % 8 == 7:
+                                self.sweepchannel.tick_envelope()
+                                self.tonechannel.tick_envelope()
+                                self.noisechannel.tick_envelope()
+                    while self.cycles >= self.cycles_target:
+                        if not self.disable_sampling:
+                            self.sample()
+                        self.cycles_target += self.cycles_per_sample
+                    continue
 
             if self.poweron:
                 self.sweepchannel.tick(_cycles)
@@ -218,49 +309,43 @@ class Sound:
                 self.wavechannel.tick(_cycles)
                 self.noisechannel.tick(_cycles)
 
-                # Progress the channels by ticks of 512Hz
-                for _ in range(div_tick_count):
-                    # Pan docs:
-                    # A “DIV-APU” counter is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0, therefore
-                    # at a frequency of 512 Hz (regardless of whether double-speed is active). Thus, the counter can be made to
-                    # increase faster by writing to DIV while its relevant bit is set (which clears DIV, and triggers the falling edge).
+            self.cycles += _cycles
+            cycles -= _cycles
 
+            # Pan Docs:
+            # Turning the APU off, however, does not affect ... the DIV-APU counter.
+            # The frame-sequencer edge must be handled after advancing to the edge,
+            # not on the next CPU event.
+            while self.cycles >= self.cycles_target_512Hz:
+                self.div_apu += 1
+                self.cycles_target_512Hz += CYCLES_512HZ
+                if self.poweron:
                     # The following events occur every N DIV-APU ticks:
                     # Event           Rate Frequency3
                     # Envelope sweep  8    64 Hz
                     # Sound length    2    256 Hz
                     # CH1 freq sweep  4    128 Hz
-                    # 3 Indicated values are under normal operation; the frequencies will obviously differ if writing to DIV to
-                    # increase the counter faster.
-
-                    # Progress the channels by 1 tick at 256Hz
-                    if self.div_apu % 2 == 0:
+                    if self.div_apu % 2 == 1:
                         self.sweepchannel.tick_length()
                         self.tonechannel.tick_length()
                         self.wavechannel.tick_length()
                         self.noisechannel.tick_length()
-
-                    # Progress the channels by 1 tick at 128Hz
-                    if self.div_apu % 4 == 0:
+                    if self.div_apu % 4 == 3:
                         self.sweepchannel.tick_sweep()
-
-                    # Progress the channels by 1 tick at 64Hz
-                    if self.div_apu % 8 == 0:
+                    if self.div_apu % 8 == 7:
                         self.sweepchannel.tick_envelope()
                         self.tonechannel.tick_envelope()
                         self.noisechannel.tick_envelope()
 
-            self.cycles += _cycles
             while self.cycles >= self.cycles_target:
                 if not self.disable_sampling:
                     self.sample()
                 self.cycles_target += self.cycles_per_sample
 
-            # NOTE: speed_shift because they are using in externally in mb
-            self._cycles_to_interrupt = (
-                double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz)) << self.speed_shift
-            )
-            cycles -= _cycles
+        # NOTE: speed_shift because they are using in externally in mb
+        self._cycles_to_interrupt = (
+            double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz)) << self.speed_shift
+        )
 
     def pcm12(self):
         # NOTE: Volume can apparantly not exceed 15?
@@ -591,6 +676,8 @@ class SweepChannel(ToneChannel):
         self.sweeptimer = 0  # Sweep timer, counts down to shift pitch
         self.sweepenable = False  # Internal sweep enable flag
         self.shadow = 0  # Shadow copy of period register for ignoring writes to sndper
+        self.sweepchecktimer = 0
+        self.sweep_negate_used = False
 
     def getreg(self, reg):
         if reg == 0:
@@ -601,11 +688,14 @@ class SweepChannel(ToneChannel):
     def setreg(self, reg, val, force_length_timer):
         if reg == 0:
             # NR10
+            old_direction = self.sweep_direction
             self.sweep_pace = val >> 4 & 0x07
             self.sweep_direction = val >> 3 & 0x01
 
             # self.sweep_magnitude_latch = val & 0x07
             self.sweep_magnitude = val & 0x07
+            if old_direction and not self.sweep_direction and self.sweep_negate_used:
+                self.enable = 0
             # TODO: However, if 0 is written to this field, then iterations are instantly disabled,
             # and it will be reloaded as soon as it’s set to something else.
             # if self.sweep_magnitude_latch == 0:
@@ -614,26 +704,37 @@ class SweepChannel(ToneChannel):
             ToneChannel.setreg(self, reg, val, force_length_timer)
 
     def tick_sweep(self):
-        # Clock sweep timer on 2 and 6
-        if self.sweepenable and self.sweep_pace:
+        # Clock sweep timer on frame-sequencer steps 2 and 6. A period of
+        # zero is treated as eight by the sweep timer.
+        if self.sweepenable and self.enable:
             self.sweeptimer -= 1
-            if self.sweeptimer == 0:
-                if self.sweep(True):
-                    self.sweeptimer = self.sweep_pace
+            if self.sweeptimer <= 0:
+                self.sweeptimer = self.sweep_pace or 8
+                if self.sweep_pace and self.sweep(True):
                     self.sweep(False)
+
+    def tick_sweep_check(self):
+        if self.sweepchecktimer:
+            self.sweepchecktimer = 0
+            self.sweep(False)
 
     def trigger(self):
         ToneChannel.trigger(self)
         if self.enable:  # Fixes NR52 enabled read
             self.enable = 0x01
         self.shadow = self.sound_period
-        self.sweeptimer = self.sweep_pace
+        self.sweeptimer = self.sweep_pace or 8
+        self.sweepchecktimer = 0
+        self.sweep_negate_used = False
         # self.sweep_magnitude = self.sweep_magnitude_latch
         self.sweepenable = self.sweep_pace or self.sweep_magnitude
         if self.sweep_magnitude:
             self.sweep(False)
 
     def sweep(self, save):
+        if self.sweep_direction:
+            self.sweep_negate_used = True
+
         if self.sweep_direction == 0:
             newper = self.shadow + (self.shadow >> self.sweep_magnitude)
         else:
@@ -653,7 +754,8 @@ class SweepChannel(ToneChannel):
         elif save and self.sweep_magnitude:
             # Pan Docs:
             # On each sweep iteration, the period in NR13 and NR14 is modified and written back.
-            self.sound_period = self.shadow = newper
+            if newper != 0x7FF:
+                self.sound_period = self.shadow = newper
             self.period = 4 * (0x800 - self.sound_period)  # 2048*4 = 8192 cycles = 512Hz
             return True
 
@@ -663,6 +765,8 @@ class SweepChannel(ToneChannel):
         file.write(self.sweep_direction)
         file.write(self.sweep_magnitude)
         file.write_64bit(self.sweeptimer)
+        file.write_64bit(self.sweepchecktimer)
+        file.write(self.sweep_negate_used)
         file.write(self.sweepenable)
         file.write_64bit(self.shadow)
 
@@ -672,6 +776,8 @@ class SweepChannel(ToneChannel):
         self.sweep_direction = file.read()
         self.sweep_magnitude = file.read()
         self.sweeptimer = file.read_64bit()
+        self.sweepchecktimer = file.read_64bit()
+        self.sweep_negate_used = file.read()
         self.sweepenable = file.read()
         self.shadow = file.read_64bit()
 
@@ -699,6 +805,7 @@ class WaveChannel:
         self.periodtimer = 0  # Period timer, counts down to signal change in wave frame
         self.period = 4  # Calculated copy of period, 4 * (0x800 - sndper)
         self.waveframe = 0  # Wave frame index into wave table entries
+        self.wave_access = False
         self.volumeshift = 0  # Bitshift for volume, set by volreg
 
     def getreg(self, reg):
@@ -750,12 +857,12 @@ class WaveChannel:
         # Wave RAM can be accessed normally even if the DAC is on, as long as the channel is not active.
         if self.enable:
             if self.cgb:
-                return self.wavetable[self.waveframe % 16]
+                return self.wavetable[self.waveframe // 2]
             else:
                 # Pan docs:
                 # On monochrome consoles, wave RAM can only be accessed on the same cycle that CH3 does. Otherwise,
                 # reads return $FF, and writes are ignored.
-                return 0xFF
+                return self.wavetable[self.waveframe // 2] if self.wave_access else 0xFF
         else:
             return self.wavetable[offset]
 
@@ -764,18 +871,24 @@ class WaveChannel:
         # Wave RAM can be accessed normally even if the DAC is on, as long as the channel is not active.
         if self.enable:
             if self.cgb:
-                self.wavetable[self.waveframe % 16] = value
-            else:
-                pass
+                self.wavetable[self.waveframe // 2] = value
+            elif self.wave_access:
+                self.wavetable[self.waveframe // 2] = value
         else:
             self.wavetable[offset] = value
 
     def tick(self, cycles):
+        if not self.enable:
+            return
+        self.wave_access = False
         self.periodtimer -= cycles
         while self.periodtimer <= 0:
             self.periodtimer += self.period
             self.waveframe += 1
             self.waveframe %= 32
+            self.wave_access = True
+        if self.wave_access and self.periodtimer < self.period - WAVE_ACCESS_CYCLES:
+            self.wave_access = False
 
     def tick_length(self):
         if self.length_enable and self.lengthtimer > 0:
@@ -794,10 +907,19 @@ class WaveChannel:
             return 0
 
     def trigger(self):
+        if self.enable and not self.cgb and self.periodtimer == 1:
+            offset = (self.waveframe + 1) // 2 & 0x0F
+            if offset < 4:
+                self.wavetable[0] = self.wavetable[offset]
+            else:
+                start = offset & 0x0C
+                for n in range(4):
+                    self.wavetable[n] = self.wavetable[start + n]
         self.enable = 0x04 if self.dacpow else 0
         self.lengthtimer = self.lengthtimer or 256
-        self.periodtimer = self.period
-        # self.waveframe = 1 # Implement CH3 bug, that first sample is skipped
+        self.periodtimer = self.period + 5
+        self.waveframe = 0
+        self.wave_access = False
 
     def save_state(self, file):
         for n in range(16):
@@ -815,6 +937,7 @@ class WaveChannel:
         file.write_64bit(self.period)
         file.write_64bit(self.waveframe)
         file.write_64bit(self.volumeshift)
+        file.write(self.wave_access)
 
     def load_state(self, file, state_version):
         for n in range(16):
@@ -832,6 +955,7 @@ class WaveChannel:
         self.period = file.read_64bit()
         self.waveframe = file.read_64bit()
         self.volumeshift = file.read_64bit()
+        self.wave_access = file.read()
 
 
 class NoiseChannel:
