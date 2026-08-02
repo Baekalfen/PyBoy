@@ -357,6 +357,7 @@ class Motherboard:
                 self.cgb_mode
                 and (not self.cpu.halted)
                 and self.hdma.transfer_active
+                and self.lcd._LCDC.lcd_enable
                 and self.lcd._STAT._mode & 0b11 == 0
             ):
                 self.cpu.cycles = self.cpu.cycles + self.hdma.tick(self)
@@ -833,7 +834,7 @@ class HDMA:
             if bit7 == 0:
                 # terminate active transfer
                 self.transfer_active = False
-                self.hdma5 = (self.hdma5 & 0x7F) | 0x80
+                self.hdma5 = 0x80
             else:
                 self.hdma5 = value & 0x7F
         else:
@@ -862,6 +863,8 @@ class HDMA:
                 # set 7th bit to 0
                 self.hdma5 = self.hdma5 & 0x7F
                 self.transfer_active = True
+                if not mb.lcd._LCDC.lcd_enable:
+                    self.tick(mb)
 
     def tick(self, mb):
         # HBLANK HDMA routine
@@ -892,4 +895,4 @@ class HDMA:
         else:
             self.hdma5 -= 1
 
-        return 206  # TODO: adjust for double speed
+        return 206  # Advance to the next H-Blank after one block

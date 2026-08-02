@@ -70,9 +70,9 @@
     "apu/channel_2/channel_2_volume_div.gb": "C000: FF FF FF FF FF FF FF FF\nC008: FF FF FF FF FF FF FF FF\nC010: FF FF 00 00 00 00 00 00\nC018: FF FF 00 00 00 00 00 00\nFailed\n",
     "apu/channel_2/channel_2_nrx2_speed_change.gb": "C000: FF FF FF FF FF FF FF FF\nC008: FF FF FF FF FF FF FF FF\nC010: FF FF FF FF FF FF FF FF\nC018: FF FF FF FF FF FF FF FF\nC020: FF FF FF FF FF FF FF FF\nC028: FF FF FF FF FF FF FF FF\nC030: FF FF FF FF FF FF FF FF\nC038: FF FF FF FF FF FF FF FF\nC040: FF FF FF FF FF FF FF FF\nFailed\n",
     "apu/channel_2/channel_2_restart_nrx2_glitch.gb": "C000: FF FF FF FF FF FF FF FF\nC008: FF FF FF FF FF FF FF FF\nFailed\n",
-    "dma/gdma_addr_mask.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 10 C0 12 C0 14 C0 16 C0\n8818: 18 C0 1A C0 1C C0 1E C0\nFailed\n",
-    "dma/hdma_mode0.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 00 00 00 00 00 00 00 00\n8818: 00 00 00 00 00 00 00 00\n8820: 02 82 00 00 00 00 00 00\nFailed\n",
-    "dma/hdma_lcd_off.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 10 C0 12 C0 14 C0 16 C0\n8818: 18 C0 1A C0 1C C0 1E C0\n8820: FF FF 22 C0 24 C0 26 C0\nFailed\n",
+    "dma/gdma_addr_mask.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 00 00 00 00 00 00 00 00\n8818: 00 00 00 00 00 00 00 00\nPassed\n",
+    "dma/hdma_mode0.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 00 00 00 00 00 00 00 00\n8818: 00 00 00 00 00 00 00 00\n8820: 02 80 00 00 00 00 00 00\nPassed\n",
+    "dma/hdma_lcd_off.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 00 00 00 00 00 00 00 00\n8818: 00 00 00 00 00 00 00 00\n8820: 02 80 00 00 00 00 00 00\nPassed\n",
     "dma/gbc_dma_cont.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 10 C0 12 C0 14 C0 16 C0\n8818: 18 C0 1A C0 1C C0 1E C0\n8820: 00 00 00 00 00 00 00 00\n8828: 00 00 00 00 00 00 00 00\nPassed\n",
     "ppu/blocking_bgpi_increase.gb": "C000: FF FF FF FF FF FF FF FF\nFailed\n"
 }
