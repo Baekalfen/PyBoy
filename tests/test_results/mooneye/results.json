@@ -258,13 +258,13 @@
     "text": "Test OK\n"
   },
   "emulator-only/mbc1/bits_mode.gb": {
-    "text": "\n"
+    "text": "Test OK\n"
   },
   "emulator-only/mbc1/ram_64kb.gb": {
     "text": "Test OK\n"
   },
   "emulator-only/mbc1/bits_bank1.gb": {
-    "text": "\n"
+    "text": "Test OK\n"
   },
   "emulator-only/mbc1/rom_2Mb.gb": {
     "text": "Test OK\n"
