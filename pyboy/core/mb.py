@@ -448,6 +448,8 @@ class Motherboard:
             else:
                 return self.lcd.VRAM1[i - 0x8000]
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
+            if self.cartridge.rtc_enabled and 0x08 <= self.cartridge.rambank_selected <= 0x0C:
+                self.cartridge.rtc_tick(self.cpu.cycles)
             return self.cartridge.getitem(i)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             bank_offset = 0
@@ -596,6 +598,8 @@ class Motherboard:
             self.cpu.bail = True
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
             # Doesn't change the data. This is for MBC commands
+            if self.cartridge.rtc_enabled and i >= 0x6000:
+                self.cartridge.rtc_tick(self.cpu.cycles)
             self.cartridge.setitem(i, value)
             self.cpu.bail = True
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
@@ -610,6 +614,8 @@ class Motherboard:
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
+            if self.cartridge.rtc_enabled and 0x08 <= self.cartridge.rambank_selected <= 0x0C:
+                self.cartridge.rtc_tick(self.cpu.cycles)
             self.cartridge.setitem(i, value)
         elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
             bank_offset = 0

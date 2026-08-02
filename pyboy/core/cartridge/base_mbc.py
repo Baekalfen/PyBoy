@@ -71,6 +71,10 @@ class BaseMBC:
         if self.rtc_enabled:
             self.rtc.load_state(f, state_version)
 
+    def rtc_tick(self, cycles):
+        if self.rtc_enabled:
+            self.rtc.tick(cycles)
+
     def save_ram(self, f):
         if not self.rambank_initialized:
             logger.warning("Saving RAM is not supported on %0.2x", self.carttype)
