@@ -3,19 +3,41 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os.path
-from pathlib import Path
-
-import PIL
+import json
 import pytest
 
 from pyboy import PyBoy
 
-OVERWRITE_PNGS = False
+OVERWRITE_JSON = False
+
+rtc3test_json = "tests/test_results/rtc3test.json"
+
+CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz. "
+SPECIAL_CHARACTERS = {
+    0xC0: ">",
+    0xC1: "*",
+    0xC2: ":",
+    0xC3: "/",
+    0xC4: "-",
+    0xFF: " ",
+}
+
+
+def rtc3test_result(pyboy):
+    lines = []
+    for y in range(18):
+        line = ""
+        for x in range(20):
+            tile = pyboy.tilemap_background[x, y]
+            if tile in SPECIAL_CHARACTERS:
+                line += SPECIAL_CHARACTERS[tile]
+            else:
+                line += CHARACTERS[tile & 0x3F]
+        lines.append(line.strip())
+    return "\n".join(lines) + "\n"
 
 
 # https://github.com/aaaaaa123456789/rtc3test
-@pytest.mark.skip("RTC is too unstable")
 @pytest.mark.parametrize("subtest", [0, 1, 2])
 def test_rtc3test(subtest, rtc3test_file):
     pyboy = PyBoy(rtc3test_file, window="null")
@@ -36,20 +58,15 @@ def test_rtc3test(subtest, rtc3test_file):
             break
         pyboy.tick(1, True)
 
-    png_path = Path(f"tests/test_results/{rtc3test_file}_{subtest}.png")
-    image = pyboy.screen.image
-    if OVERWRITE_PNGS:
-        png_path.parents[0].mkdir(parents=True, exist_ok=True)
-        image.save(png_path)
+    result = rtc3test_result(pyboy)
+    with open(rtc3test_json, "r") as f:
+        old_rtc3test = json.load(f)
+
+    if OVERWRITE_JSON:
+        with open(rtc3test_json, "w") as f:
+            old_rtc3test[str(subtest)] = result
+            json.dump(old_rtc3test, f, indent=4)
     else:
-        assert png_path.exists(), "Test result doesn't exist"
-        # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-        old_image = PIL.Image.open(png_path).convert("RGB")
-        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
-        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
-            image.show()
-            old_image.show()
-            diff.show()
-        assert not diff.getbbox(), f"Images are different! {rtc3test_file}_{subtest}"
+        assert result == old_rtc3test[str(subtest)], f"Outputs don't match for rtc3test subtest {subtest}"
 
     pyboy.stop(save=False)
