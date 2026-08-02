@@ -72,6 +72,7 @@ cdef class Sound:
     cdef void _set_channel(self, uint8_t, uint8_t, uint8_t, bint) noexcept nogil
     cdef void _set_channel_length_enable(self, uint8_t, bint) noexcept nogil
     cdef void _tick_channel_length(self, uint8_t) noexcept nogil
+    cdef void _tick_frame_sequencer(self) noexcept nogil
 
     @cython.locals(
         lengthtimer_sweep=int64_t,
@@ -165,6 +166,7 @@ cdef class WaveChannel:
     cdef int64_t period # Calculated copy of period, 4 * (2048 - sndper)
     cdef int64_t waveframe # Wave frame index into wave table entries
     cdef bint wave_access
+    cdef bint sample_suppressed
     cdef int64_t volumeshift # Bitshift for volume, set by volreg
 
     cdef uint8_t getreg(self, uint8_t) noexcept nogil
