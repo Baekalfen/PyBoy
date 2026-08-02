@@ -1,0 +1,5 @@
+{
+    "0": "Basic tests\n\nRTC on          FAIL\nTick             N/A\nRTC off         PASS\nRegister writes:\nFAIL CDHMS\nSeconds increment:\nN/A\nRollovers        N/A\nOverflow         N/A\nOverflow stickiness:\nN/A\n\n\n\n\n* Return\n",
+    "1": "Range tests\n\nAll bits clear  PASS\nAll bits set    FAIL\nValid bits  FAIL HMS\nInvalid value tick:\nN/A\nInvalid rollovers:\nN/A\nHigh minutes    FAIL\nHigh hours      FAIL\n\n\n\n\n\n\n* Return\n",
+    "2": "Sub-second writes\n\nRTCS/500     TIMEOUT\nRTCS/900     TIMEOUT\nRTCM/50      TIMEOUT\nRTCM/600     TIMEOUT\nRTCH/200     TIMEOUT\nRTCDL/800    TIMEOUT\nRTCDH/300    TIMEOUT\nRTC off/400  TIMEOUT\n\n\n\n\n\n\n\n* Return\n"
+}
