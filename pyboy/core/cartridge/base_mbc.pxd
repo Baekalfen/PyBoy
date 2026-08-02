@@ -3,7 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, int64_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
 
 from pyboy.core.cartridge.rtc cimport RTC
 from pyboy.logging.logging cimport Logger
@@ -36,6 +36,7 @@ cdef class BaseMBC:
     cdef int save_ram(self, IntIOInterface) except -1
     cdef int load_ram(self, IntIOInterface) except -1
     cdef void init_rambanks(self, uint8_t) noexcept
+    cdef void rtc_tick(self, uint64_t) noexcept nogil
     cdef str getgamename(self, uint8_t[:,:])
 
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
