@@ -95,9 +95,8 @@ class Sound:
         self.NR50 = 0  # Just dummy for read/write, unused
 
     def reset_apu_div(self):
-        # self.div_apu_counter = 0
-        # self.div_apu = 0
         if self.emulate:
+            self._tick_frame_sequencer()
             self.cycles_target_512Hz = self.cycles + CYCLES_512HZ
         else:
             self.cycles_target_512Hz = MAX_CYCLES
@@ -216,6 +215,8 @@ class Sound:
             self.tonechannel.setreg(reg, value, force_length_timer)
         elif channel == 2:
             self.wavechannel.setreg(reg, value)
+            if reg == 4 and (value & 0x80) and self.speed_shift == 0:
+                self.wavechannel.sample_suppressed = False
         else:
             self.noisechannel.setreg(reg, value)
 
@@ -244,6 +245,22 @@ class Sound:
             self.wavechannel.tick_length()
         else:
             self.noisechannel.tick_length()
+
+    def _tick_frame_sequencer(self):
+        self.div_apu += 1
+        if not self.poweron:
+            return
+        if self.div_apu % 2 == 1:
+            self.sweepchannel.tick_length()
+            self.tonechannel.tick_length()
+            self.wavechannel.tick_length()
+            self.noisechannel.tick_length()
+        if self.div_apu % 4 == 3:
+            self.sweepchannel.tick_sweep()
+        if self.div_apu % 8 == 7:
+            self.sweepchannel.tick_envelope()
+            self.tonechannel.tick_envelope()
+            self.noisechannel.tick_envelope()
 
     def _power_off(self):
         lengthtimer_sweep = self.sweepchannel.lengthtimer
@@ -283,20 +300,8 @@ class Sound:
                 # Process it before advancing any more channel time.
                 if self.cycles >= self.cycles_target_512Hz:
                     while self.cycles >= self.cycles_target_512Hz:
-                        self.div_apu += 1
+                        self._tick_frame_sequencer()
                         self.cycles_target_512Hz += CYCLES_512HZ
-                        if self.poweron:
-                            if self.div_apu % 2 == 1:
-                                self.sweepchannel.tick_length()
-                                self.tonechannel.tick_length()
-                                self.wavechannel.tick_length()
-                                self.noisechannel.tick_length()
-                            if self.div_apu % 4 == 3:
-                                self.sweepchannel.tick_sweep()
-                            if self.div_apu % 8 == 7:
-                                self.sweepchannel.tick_envelope()
-                                self.tonechannel.tick_envelope()
-                                self.noisechannel.tick_envelope()
                     while self.cycles >= self.cycles_target:
                         if not self.disable_sampling:
                             self.sample()
@@ -317,25 +322,8 @@ class Sound:
             # The frame-sequencer edge must be handled after advancing to the edge,
             # not on the next CPU event.
             while self.cycles >= self.cycles_target_512Hz:
-                self.div_apu += 1
+                self._tick_frame_sequencer()
                 self.cycles_target_512Hz += CYCLES_512HZ
-                if self.poweron:
-                    # The following events occur every N DIV-APU ticks:
-                    # Event           Rate Frequency3
-                    # Envelope sweep  8    64 Hz
-                    # Sound length    2    256 Hz
-                    # CH1 freq sweep  4    128 Hz
-                    if self.div_apu % 2 == 1:
-                        self.sweepchannel.tick_length()
-                        self.tonechannel.tick_length()
-                        self.wavechannel.tick_length()
-                        self.noisechannel.tick_length()
-                    if self.div_apu % 4 == 3:
-                        self.sweepchannel.tick_sweep()
-                    if self.div_apu % 8 == 7:
-                        self.sweepchannel.tick_envelope()
-                        self.tonechannel.tick_envelope()
-                        self.noisechannel.tick_envelope()
 
             while self.cycles >= self.cycles_target:
                 if not self.disable_sampling:
@@ -806,6 +794,7 @@ class WaveChannel:
         self.period = 4  # Calculated copy of period, 4 * (0x800 - sndper)
         self.waveframe = 0  # Wave frame index into wave table entries
         self.wave_access = False
+        self.sample_suppressed = False
         self.volumeshift = 0  # Bitshift for volume, set by volreg
 
     def getreg(self, reg):
@@ -884,8 +873,11 @@ class WaveChannel:
         self.periodtimer -= cycles
         while self.periodtimer <= 0:
             self.periodtimer += self.period
-            self.waveframe += 1
-            self.waveframe %= 32
+            if self.sample_suppressed:
+                self.sample_suppressed = False
+            else:
+                self.waveframe += 1
+                self.waveframe %= 32
             self.wave_access = True
         if self.wave_access and self.periodtimer < self.period - WAVE_ACCESS_CYCLES:
             self.wave_access = False
@@ -897,7 +889,7 @@ class WaveChannel:
                 self.enable = 0
 
     def sample(self):
-        if self.enable and self.dacpow:
+        if self.enable and self.dacpow and not self.sample_suppressed:
             sample = self.wavetable[self.waveframe // 2]
             if self.waveframe % 2 == 1:  # Read 4-bit value
                 sample >>= 4
@@ -919,6 +911,7 @@ class WaveChannel:
         self.lengthtimer = self.lengthtimer or 256
         self.periodtimer = self.period + 5
         self.waveframe = 0
+        self.sample_suppressed = True
         self.wave_access = False
 
     def save_state(self, file):
@@ -936,6 +929,7 @@ class WaveChannel:
         file.write_64bit(self.periodtimer)
         file.write_64bit(self.period)
         file.write_64bit(self.waveframe)
+        file.write(self.sample_suppressed)
         file.write_64bit(self.volumeshift)
         file.write(self.wave_access)
 
@@ -954,6 +948,7 @@ class WaveChannel:
         self.periodtimer = file.read_64bit()
         self.period = file.read_64bit()
         self.waveframe = file.read_64bit()
+        self.sample_suppressed = file.read()
         self.volumeshift = file.read_64bit()
         self.wave_access = file.read()
 
