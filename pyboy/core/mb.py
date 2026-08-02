@@ -497,7 +497,7 @@ class Motherboard:
                 if i == 0xFF04:
                     return self.timer.DIV
                 elif i == 0xFF05:
-                    return self.timer.TIMA
+                    return self.timer.read_tima()
                 elif i == 0xFF06:
                     return self.timer.TMA
                 elif i == 0xFF07:
@@ -663,11 +663,11 @@ class Motherboard:
 
                     self.timer.reset()
                 elif i == 0xFF05:
-                    self.timer.TIMA = value
+                    self.timer.write_tima(value)
                 elif i == 0xFF06:
-                    self.timer.TMA = value
+                    self.timer.write_tma(value)
                 elif i == 0xFF07:
-                    self.timer.TAC = value & 0b111  # TODO: Move logic to Timer class
+                    self.timer.write_tac(value)
             elif i == 0xFF0F:
                 self.cpu.interrupts_flag_register = value & 0b0001_1111
             elif 0xFF10 <= i < 0xFF40:

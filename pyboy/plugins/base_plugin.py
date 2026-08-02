@@ -163,9 +163,11 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
     def _set_timer_div(self, timer_div):
         if timer_div is None:
-            self.mb.timer.DIV = random.getrandbits(8)
+            timer_div = random.getrandbits(8)
         else:
-            self.mb.timer.DIV = timer_div & 0xFF
+            timer_div &= 0xFF
+        self.mb.timer.DIV_counter = (timer_div << 8) | (self.mb.timer.DIV_counter & 0xFF)
+        self.mb.timer.DIV = timer_div
 
     def start_game(self, timer_div=None):
         """
