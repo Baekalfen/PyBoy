@@ -3,16 +3,53 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-import os.path
-from pathlib import Path
+import json
 
+import os
 import numpy as np
-import PIL
 import pytest
 
 from pyboy import PyBoy
 
-OVERWRITE_PNGS = False
+OVERWRITE_JSON = False
+
+samesuite_json = "tests/test_results/samesuite.json"
+
+HEX_DIGITS = "0123456789ABCDEF"
+PASS_RESULT = '\x03\x05\x08\r\x15"'
+
+
+def samesuite_result(pyboy):
+    def decode_digit(tile, base):
+        for offset in (0, 0x31):
+            digit = tile - base - offset
+            if 0 <= digit < len(HEX_DIGITS):
+                return HEX_DIGITS[digit]
+        return None
+
+    rows = []
+    for y in range(18):
+        address = "".join(decode_digit(pyboy.tilemap_background[x, y], 0x11) or "" for x in range(4))
+        values = []
+        for x in range(4, 20, 2):
+            high = decode_digit(pyboy.tilemap_background[x, y], 0x21)
+            low = decode_digit(pyboy.tilemap_background[x + 1, y], 0x01)
+            if high is None or low is None:
+                values = []
+                break
+            values.append(high + low)
+
+        if len(address) == 4 and values:
+            rows.append(f"{address}: {' '.join(values)}")
+
+    assert rows, "SameSuite result table not found"
+
+    serial_result = pyboy._serial()
+    if serial_result == PASS_RESULT:
+        rows.append("Passed")
+    elif serial_result:
+        rows.append("Failed")
+    return "\n".join(rows) + "\n"
 
 
 @pytest.mark.parametrize(
@@ -112,21 +149,17 @@ def test_samesuite(gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, default_
         else:
             break
 
-    png_path = Path(f"tests/test_results/SameSuite/{rom}.png")
-    image = pyboy.screen.image
-    if OVERWRITE_PNGS:
-        png_path.parents[0].mkdir(parents=True, exist_ok=True)
-        image.save(png_path)
-    else:
-        assert png_path.exists(), "Test result doesn't exist"
-        # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-        old_image = PIL.Image.open(png_path).convert("RGB")
-        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
+    result = samesuite_result(pyboy)
+    with open(samesuite_json, "r") as f:
+        old_samesuite = json.load(f)
 
-        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
-            image.show()
-            old_image.show()
-            diff.show()
-        assert not diff.getbbox(), f"Images are different! {rom}"
+    if OVERWRITE_JSON:
+        with open(samesuite_json, "w") as f:
+            old_samesuite[rom] = result
+            json.dump(old_samesuite, f, indent=4)
+    else:
+        assert old_samesuite[rom] == result, f"Outputs don't match for {rom}"
+        if old_samesuite[rom] != result and os.environ.get("TEST_VERBOSE_IMAGES"):
+            pyboy.screen.image.show()
 
     pyboy.stop(save=False)
