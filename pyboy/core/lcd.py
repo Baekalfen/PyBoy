@@ -104,7 +104,12 @@ class LCD:
 
     def set_lcdc(self, value):
         _lcd_enable = self._LCDC.lcd_enable
+        _window_enable = self._LCDC.window_enable
         self._LCDC.set(value)
+
+        # On CGB, clearing the window enable bit resets the window Y condition.
+        if self.cgb and _window_enable and not self._LCDC.window_enable:
+            self.renderer.wy_activated_frame = False
 
         if _lcd_enable and (not self._LCDC.lcd_enable):
             # https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/
@@ -182,6 +187,7 @@ class LCD:
 
                 # Change to next mode
                 interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+                self.renderer.wy_activated_frame = self.WY == self.LY
 
                 # self._STAT._mode == 2:  # Searching OAM
                 self.clock_target += 80
@@ -244,8 +250,8 @@ class LCD:
 
                     if self.LY == 144:
                         interrupt_flag |= INTR_VBLANK
+                        self.renderer.wy_activated_frame = False
                         if self.first_frame:
-                            self.renderer.wy_activated_frame = False
                             # Pan Docs: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
@@ -579,7 +585,7 @@ class Renderer:
         wx, wy = self.lcd.getwindowpos()
 
         x = 0
-        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
             # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
             self.ly_window += 1
 
@@ -849,6 +855,7 @@ class Renderer:
             for x in range(COLS):
                 f.write_32bit(self._screenbuffer[y, x])
                 f.write(self._screenbuffer_attributes[y, x])
+        f.write(self.wy_activated_frame)
 
     def load_state(self, f, state_version):
         if 2 <= state_version < 11:
@@ -867,6 +874,9 @@ class Renderer:
                     self._screenbuffer[y, x] = f.read_32bit()
                     if state_version >= 10:
                         self._screenbuffer_attributes[y, x] = f.read()
+
+        if state_version >= 18:
+            self.wy_activated_frame = f.read()
 
         self.clear_cache()
 
@@ -946,7 +956,7 @@ class Renderer:
         wx, wy = self.lcd.getwindowpos()
 
         x = 0
-        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wy <= y and wx < COLS:
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
             # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
             self.ly_window += 1
 
