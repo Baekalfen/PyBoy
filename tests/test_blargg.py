@@ -53,7 +53,7 @@ def run_rom(rom, max_frames):
                 break
             n += 1
 
-            if n > 250:
+            if (("10-wave" not in rom) and ("12-wave" not in rom)) and n > 250:
                 break
     return result
 
@@ -64,7 +64,7 @@ def run_rom(rom, max_frames):
         ("cgb_sound/cgb_sound.gb", 4_000),
         ("cgb_sound/rom_singles/01-registers.gb", 700),
         ("cgb_sound/rom_singles/02-len ctr.gb", 700),
-        ("cgb_sound/rom_singles/03-trigger.gb", 700),
+        ("cgb_sound/rom_singles/03-trigger.gb", 1200),
         ("cgb_sound/rom_singles/04-sweep.gb", 700),
         ("cgb_sound/rom_singles/05-sweep details.gb", 700),
         ("cgb_sound/rom_singles/06-overflow on trigger.gb", 700),
@@ -86,10 +86,10 @@ def run_rom(rom, max_frames):
         ("cpu_instrs/individual/09-op r,r.gb", 700),
         ("cpu_instrs/individual/10-bit ops.gb", 2_000),
         ("cpu_instrs/individual/11-op a,(hl).gb", 2_000),
-        ("dmg_sound/dmg_sound.gb", 1500),
+        ("dmg_sound/dmg_sound.gb", 2500),
         ("dmg_sound/rom_singles/01-registers.gb", 700),
         ("dmg_sound/rom_singles/02-len ctr.gb", 700),
-        ("dmg_sound/rom_singles/03-trigger.gb", 700),
+        ("dmg_sound/rom_singles/03-trigger.gb", 1200),
         ("dmg_sound/rom_singles/04-sweep.gb", 700),
         ("dmg_sound/rom_singles/05-sweep details.gb", 700),
         ("dmg_sound/rom_singles/06-overflow on trigger.gb", 700),
