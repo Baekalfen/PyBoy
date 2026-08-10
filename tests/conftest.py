@@ -123,6 +123,11 @@ def supermarioland_rom(secrets):
 
 
 @pytest.fixture(scope="session")
+def supermariobrosdeluxe_rom(secrets):
+    return locate_sha256(b"db81dd4acbd0c7a3b9004f169ee278450c764c842ae777abd28073fbedf4078b")
+
+
+@pytest.fixture(scope="session")
 def kirby_rom(secrets):
     return locate_sha256(b"0f6dba94fae248d419083001c42c02a78be6bd3dff679c895517559e72c98d58")
 
