@@ -466,7 +466,7 @@ def pack_secrets():
             _secrets_fixture = None
             if rom == default_rom:
                 continue
-            _rom = rom.__pytest_wrapped__.obj(_secrets_fixture)
+            _rom = rom.__wrapped__(_secrets_fixture)
             _zip.write(_rom, os.path.basename(_rom))
 
     from cryptography.fernet import Fernet
