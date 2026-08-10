@@ -20,6 +20,7 @@ from pyboy.plugins.screenshot_recorder cimport ScreenshotRecorder
 from pyboy.plugins.debug_prompt cimport DebugPrompt
 from pyboy.plugins.game_wrapper_super_mario_land cimport GameWrapperSuperMarioLand
 from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
+from pyboy.plugins.game_wrapper_pandoras_blocks cimport GameWrapperPandorasBlocks
 from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLand
 from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 from pyboy.plugins.game_wrapper_pokemon_pinball cimport GameWrapperPokemonPinball
@@ -46,6 +47,7 @@ cdef class PluginManager:
     cdef public DebugPrompt debug_prompt
     cdef public GameWrapperSuperMarioLand game_wrapper_super_mario_land
     cdef public GameWrapperTetris game_wrapper_tetris
+    cdef public GameWrapperPandorasBlocks game_wrapper_pandoras_blocks
     cdef public GameWrapperKirbyDreamLand game_wrapper_kirby_dream_land
     cdef public GameWrapperPokemonGen1 game_wrapper_pokemon_gen1
     cdef public GameWrapperPokemonPinball game_wrapper_pokemon_pinball
@@ -63,6 +65,7 @@ cdef class PluginManager:
     cdef bint debug_prompt_enabled
     cdef bint game_wrapper_super_mario_land_enabled
     cdef bint game_wrapper_tetris_enabled
+    cdef bint game_wrapper_pandoras_blocks_enabled
     cdef bint game_wrapper_kirby_dream_land_enabled
     cdef bint game_wrapper_pokemon_gen1_enabled
     cdef bint game_wrapper_pokemon_pinball_enabled
