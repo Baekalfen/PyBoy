@@ -19,6 +19,7 @@ windows = ["WindowSDL2", "WindowOpenGL", "WindowGLFW", "WindowNull", "Debug"]
 game_wrappers = [
     "GameWrapperSuperMarioLand",
     "GameWrapperTetris",
+    "GameWrapperPandorasBlocks",
     "GameWrapperKirbyDreamLand",
     "GameWrapperPokemonGen1",
     "GameWrapperPokemonPinball",

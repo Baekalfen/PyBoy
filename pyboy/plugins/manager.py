@@ -19,6 +19,7 @@ from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # noqa
 from pyboy.plugins.debug_prompt import DebugPrompt # noqa
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # noqa
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
+from pyboy.plugins.game_wrapper_pandoras_blocks import GameWrapperPandorasBlocks # noqa
 from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # noqa
 from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
 from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
@@ -41,6 +42,7 @@ def parser_arguments():
     yield DebugPrompt.argv
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
+    yield GameWrapperPandorasBlocks.argv
     yield GameWrapperKirbyDreamLand.argv
     yield GameWrapperPokemonGen1.argv
     yield GameWrapperPokemonPinball.argv
@@ -82,6 +84,8 @@ class PluginManager:
         self.game_wrapper_super_mario_land_enabled = self.game_wrapper_super_mario_land.enabled()
         self.game_wrapper_tetris = GameWrapperTetris(pyboy, mb, pyboy_argv)
         self.game_wrapper_tetris_enabled = self.game_wrapper_tetris.enabled()
+        self.game_wrapper_pandoras_blocks = GameWrapperPandorasBlocks(pyboy, mb, pyboy_argv)
+        self.game_wrapper_pandoras_blocks_enabled = self.game_wrapper_pandoras_blocks.enabled()
         self.game_wrapper_kirby_dream_land = GameWrapperKirbyDreamLand(pyboy, mb, pyboy_argv)
         self.game_wrapper_kirby_dream_land_enabled = self.game_wrapper_kirby_dream_land.enabled()
         self.game_wrapper_pokemon_gen1 = GameWrapperPokemonGen1(pyboy, mb, pyboy_argv)
@@ -96,6 +100,7 @@ class PluginManager:
         # gamewrapper
         if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
         if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
+        if self.game_wrapper_pandoras_blocks_enabled: return self.game_wrapper_pandoras_blocks
         if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
         if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
         if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
@@ -134,6 +139,8 @@ class PluginManager:
             events = self.game_wrapper_super_mario_land.handle_events(events)
         if self.game_wrapper_tetris_enabled:
             events = self.game_wrapper_tetris.handle_events(events)
+        if self.game_wrapper_pandoras_blocks_enabled:
+            events = self.game_wrapper_pandoras_blocks.handle_events(events)
         if self.game_wrapper_kirby_dream_land_enabled:
             events = self.game_wrapper_kirby_dream_land.handle_events(events)
         if self.game_wrapper_pokemon_gen1_enabled:
@@ -165,6 +172,8 @@ class PluginManager:
             self.game_wrapper_super_mario_land.post_tick()
         if self.game_wrapper_tetris_enabled:
             self.game_wrapper_tetris.post_tick()
+        if self.game_wrapper_pandoras_blocks_enabled:
+            self.game_wrapper_pandoras_blocks.post_tick()
         if self.game_wrapper_kirby_dream_land_enabled:
             self.game_wrapper_kirby_dream_land.post_tick()
         if self.game_wrapper_pokemon_gen1_enabled:
@@ -276,6 +285,8 @@ class PluginManager:
             title += self.game_wrapper_super_mario_land.window_title()
         if self.game_wrapper_tetris_enabled:
             title += self.game_wrapper_tetris.window_title()
+        if self.game_wrapper_pandoras_blocks_enabled:
+            title += self.game_wrapper_pandoras_blocks.window_title()
         if self.game_wrapper_kirby_dream_land_enabled:
             title += self.game_wrapper_kirby_dream_land.window_title()
         if self.game_wrapper_pokemon_gen1_enabled:
@@ -317,6 +328,8 @@ class PluginManager:
             self.game_wrapper_super_mario_land.stop()
         if self.game_wrapper_tetris_enabled:
             self.game_wrapper_tetris.stop()
+        if self.game_wrapper_pandoras_blocks_enabled:
+            self.game_wrapper_pandoras_blocks.stop()
         if self.game_wrapper_kirby_dream_land_enabled:
             self.game_wrapper_kirby_dream_land.stop()
         if self.game_wrapper_pokemon_gen1_enabled:

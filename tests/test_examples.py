@@ -15,6 +15,7 @@ from pytest_lazy_fixtures import lf
     "gamewrapper, rom",
     [
         ("gamewrapper_tetris.py", lf("tetris_rom")),
+        ("gamewrapper_pandoras_blocks.py", lf("pandorasblocks_file")),
         ("gamewrapper_mario.py", lf("supermarioland_rom")),
         ("gamewrapper_kirby.py", lf("kirby_rom")),
     ],
