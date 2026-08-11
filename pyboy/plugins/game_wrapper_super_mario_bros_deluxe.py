@@ -32,6 +32,17 @@ MODE_FILE_SELECT = 0x17
 MODE_WORLD_MAP = 0x05
 MODE_LEVEL = 0x0B
 
+# The table is in ROM bank 3 at 03:6D16 (Tile16_InteractTypes).
+INTERACTION_TABLE_BANK = 3
+INTERACTION_TABLE_ADDRESS = 0x6D16
+METATILE_MAP_BANK = 6
+METATILE_MAP_ADDRESS = 0xD000
+METATILE_MAP_WIDTH = 256
+METATILE_MAP_HEIGHT = 16
+METATILE_SCREEN_WIDTH = 16
+METATILE_SCREEN_SIZE = 0x100
+DEFAULT_SPRITE_OFFSET = 0x100
+
 mapping_minimal = np.arange(TILES_CGB, dtype=np.uint32)
 mapping_compressed = mapping_minimal
 
@@ -62,6 +73,8 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         self.time_left = 0
         self.level_progress = 0
         super().__init__(*args, game_area_section=(0, 2, 20, 16), game_area_follow_scxy=True, **kwargs)
+        self.metatile_interaction_types = None
+        self.sprite_offset = DEFAULT_SPRITE_OFFSET
 
     def post_tick(self):
         self._tile_cache_invalid = True
@@ -78,6 +91,61 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         self.level_progress = self.pyboy.memory[ADDR_LEVEL_X] + int.from_bytes(
             self.pyboy.memory[ADDR_PLAYER_X : ADDR_PLAYER_X + 2], "little"
         )
+
+    def _game_area_tiles(self):
+        """Return interaction types for the visible 16x16 metatile map."""
+        if self._tile_cache_invalid:
+            if self.metatile_interaction_types is None:
+                self.metatile_interaction_types = np.asarray(
+                    self.pyboy.memory[
+                        INTERACTION_TABLE_BANK, INTERACTION_TABLE_ADDRESS : INTERACTION_TABLE_ADDRESS + 0x100
+                    ],
+                    dtype=np.uint32,
+                )
+            xx, yy, width, height = self.game_area_section
+            tiles = np.zeros((height, width), dtype=np.uint32)
+            for y in range(height):
+                scroll_x, scroll_y = self.pyboy.screen.tilemap_position_list[(yy + y) * 8][:2]
+                for x in range(width):
+                    world_x = scroll_x + (xx + x) * 8
+                    world_y = scroll_y + (yy + y) * 8
+                    metatile_x = world_x // 16
+                    metatile_y = world_y // 16
+                    if not (0 <= metatile_x < METATILE_MAP_WIDTH * 2 and 0 <= metatile_y < METATILE_MAP_HEIGHT):
+                        continue
+                    screen = metatile_x // METATILE_SCREEN_WIDTH
+                    bank = METATILE_MAP_BANK + screen // 16
+                    address = (
+                        METATILE_MAP_ADDRESS
+                        + (screen % 16) * METATILE_SCREEN_SIZE
+                        + metatile_y * METATILE_SCREEN_WIDTH
+                        + metatile_x % METATILE_SCREEN_WIDTH
+                    )
+                    metatile = self.pyboy.memory[bank, address]
+                    tiles[y, x] = self.metatile_interaction_types[metatile]
+            self._cached_game_area_tiles = tiles
+            self._tile_cache_invalid = False
+        return self._cached_game_area_tiles
+
+    def game_area(self):
+        """
+        Return the visible metatile interaction types with sprites overlaid.
+
+        Background values are the stable interaction codes used by the game,
+        rather than graphics-dependent 8x8 VRAM tile IDs. The codes are
+        defined by ``Tile16_InteractTypes`` in the game's ROM.
+        """
+        tiles_matrix = np.asarray(self._game_area_tiles(), dtype=np.uint32)
+        sprites = self._sprites_on_screen()
+        xx, yy, width, height = self.game_area_section
+        for sprite in sprites:
+            x = (sprite.x // 8) - xx
+            y = (sprite.y // 8) - yy
+            if 0 <= x < width and 0 <= y < height:
+                tiles_matrix[y, x] = self.mapping[sprite.tile_identifier] + self.sprite_offset
+            if len(sprite.tiles) == 2 and 0 <= x < width and 0 <= y + 1 < height:
+                tiles_matrix[y + 1, x] = self.mapping[sprite.tile_identifier + 1] + self.sprite_offset
+        return tiles_matrix
 
     def _press(self, button):
         self.pyboy.button_press(button)

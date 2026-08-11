@@ -17,6 +17,7 @@ cdef class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
     cdef readonly int score
     cdef readonly int time_left
     cdef readonly int level_progress
+    cdef object metatile_interaction_types
 
     cpdef int start_game(self, timer_div=*, world_level=*, level=*, level_set=*, unlock_level_select=*) except -1
     cpdef void set_lives_left(self, int) noexcept
