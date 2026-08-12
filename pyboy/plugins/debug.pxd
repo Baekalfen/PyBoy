@@ -80,7 +80,7 @@ cdef class TileViewWindow(BaseDebugWindow):
     cdef uint32_t color
 
     # cdef uint8_t[:,:] tilecache # Fixing Cython locals
-    cdef uint32_t[:] palette_rgb # Fixing Cython locals
+    cdef uint32_t[4] palette_rgb
     @cython.locals(
         mem_offset=uint16_t,
         tile_index=int,
@@ -107,7 +107,7 @@ cdef class TileDataWindow(BaseDebugWindow):
     cdef bint tilecache_select
 
     # cdef uint8_t[:,:] tilecache # Fixing Cython locals
-    cdef uint32_t[:] palette_rgb # Fixing Cython locals
+    cdef uint32_t[4] palette_rgb
     @cython.locals(t=int, xx=int, yy=int)
     cdef void post_tick(self) noexcept
 
@@ -129,7 +129,7 @@ cdef class SpriteWindow(BaseDebugWindow):
     cdef void update_title(self) noexcept
 
     # cdef uint8_t[:,:] spritecache # Fixing Cython locals
-    cdef uint32_t[:] palette_rgb # Fixing Cython locals
+    cdef uint32_t[4] palette_rgb
 
 cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
