@@ -347,7 +347,8 @@ class TileViewWindow(BaseDebugWindow):
                 )
                 self.renderer.update_tilecache(1, self.mb.lcd, tile_index, 1)
                 # self.tilecache = self.renderer._tilecache1 if vbank else self.renderer._tilecache0
-                self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb  # TODO: Select palette by adding offset
+                for color in range(4):
+                    self.palette_rgb[color] = self.mb.lcd.bcpd.getcolor(palette, color)
             else:
                 # Fake palette index
                 self.renderer.update_tilecache(0, self.mb.lcd, tile_index, 0)
@@ -478,7 +479,8 @@ class TileDataWindow(BaseDebugWindow):
             # tilecache = self.renderer._tilecache0
 
         if self.cgb:
-            self.palette_rgb = self.mb.lcd.bcpd.palette_mem_rgb  # TODO: Select palette by adding offset
+            for color in range(4):
+                self.palette_rgb[color] = self.mb.lcd.bcpd.getcolor(0, color)
         else:
             self.palette_rgb = self.mb.lcd.BGP.palette_mem_rgb
 
@@ -550,7 +552,9 @@ class SpriteWindow(BaseDebugWindow):
                         self.renderer.update_spritecache(0, self.mb.lcd, t + 1, 0)
                     # self.spritecache = self.renderer._spritecache0
                     vbank = 0
-                self.palette_rgb = self.mb.lcd.ocpd.palette_mem_rgb  # TODO: Select palette by adding offset
+                palette = attributes & 0b111
+                for color in range(4):
+                    self.palette_rgb[color] = self.mb.lcd.ocpd.getcolor(palette, color)
             else:
                 # Fake palette index
                 if attributes & 0b10000:
