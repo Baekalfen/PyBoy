@@ -42,7 +42,7 @@ class Motherboard:
             logger.info("Boot-ROM file provided")
 
         self.cartridge = cartridge.load_cartridge(gamerom_file, ram_file, rtc_file)
-        logger.debug("Cartridge started:\n%s", str(self.cartridge))
+        logger.debug("Cartridge started:\n%s", self.cartridge)
 
         # If the user requested cgb hardware emulation as True or False, it takes
         # precedence. Otherwise we auto-detect from the cartridge.

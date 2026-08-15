@@ -92,7 +92,7 @@ class WindowOpenAL(PyBoyWindowPlugin):
                 self.sound_paused = False
             except Exception as e:
                 self.sound_support = False
-                logger.warning("OpenAL initialization failed: %s", str(e))
+                logger.warning("OpenAL initialization failed: %s", e)
         else:
             self.sound_support = False
 
