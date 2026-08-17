@@ -177,7 +177,7 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: quay.io/pypa/${{ matrix.manylinux-version }}:latest
-        options: -v ${{ github.workspace }}:/work -v ${{ github.workspace }}/.ccache:/ccache -e GITHUB_REF=${{ github.ref }} --rm
+        options: -v ${{ github.workspace }}:/work -v ${{ github.workspace }}/.ccache:/ccache -e GITHUB_REF=${{ github.ref }} -e GITHUB_ACTIONS=true --rm
         run: |
           set -e
 

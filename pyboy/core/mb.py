@@ -37,6 +37,8 @@ class Motherboard:
         sound_sample_rate,
         cgb,
         randomize=False,
+        serial_shared_memory=None,
+        serial_interrupt_based=False,
     ):
         if bootrom_file is not None:
             logger.debug("Boot-ROM file provided")
@@ -62,10 +64,13 @@ class Motherboard:
         self.cgb_mode = self.cgb and self.cartridge.cgb  # Controls access
 
         self.timer = timer.Timer()
-        self.serial = serial.Serial(self.cgb_mode)
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(self.cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
+        if serial_shared_memory is not None:
+            self.serial = serial.SerialSharedMemory(self.cgb_mode, serial_shared_memory, serial_interrupt_based)
+        else:
+            self.serial = serial.Serial(self.cgb_mode)
 
         self.lcd = lcd.LCD(
             self.cgb,
@@ -236,6 +241,7 @@ class Motherboard:
             self.cpu.set_interruptflag(INTR_HIGHTOLOW)
 
     def stop(self, save, ram_file, rtc_file):
+        self.serial.stop()
         if save:
             self.cartridge.stop(ram_file, rtc_file)
 
