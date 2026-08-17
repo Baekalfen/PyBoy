@@ -105,6 +105,8 @@ class PyBoy:
         color_palette=defaults["color_palette"],
         cgb_color_palette=defaults["cgb_color_palette"],
         title_status=False,
+        serial_shared_memory=None,
+        serial_interrupt_based=False,
         **kwargs,
     ):
         """
@@ -260,6 +262,8 @@ class PyBoy:
                 sound_sample_rate,
                 cgb,
                 randomize=randomize,
+                serial_shared_memory=serial_shared_memory,
+                serial_interrupt_based=serial_interrupt_based,
             )
         finally:
             # Close the files we opened -- i.e. not passed from args
