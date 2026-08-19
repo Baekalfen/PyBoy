@@ -20,7 +20,7 @@ def test_2048_basics(gb2048_file):
     non_zero = sum(1 for row in wrapper.board for tile in row if tile != 0)
     assert non_zero == 2
 
-    pyboy.stop()
+    pyboy.stop(save=False)
 
 
 def test_2048_winner(gb2048_file):
@@ -67,7 +67,7 @@ def test_2048_score_increases(gb2048_file):
 
     assert wrapper.score >= 0
 
-    pyboy.stop()
+    pyboy.stop(save=False)
 
 
 def test_2048_game_over(gb2048_file):
@@ -93,4 +93,4 @@ def test_2048_game_over(gb2048_file):
 
     assert wrapper.game_over() == True
 
-    pyboy.stop()
+    pyboy.stop(save=False)
