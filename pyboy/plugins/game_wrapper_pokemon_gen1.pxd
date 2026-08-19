@@ -12,4 +12,5 @@ from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 cdef Logger logger
 
 cdef class GameWrapperPokemonGen1(PyBoyGameWrapper):
+    cpdef void _skip_dialogue(self, bint) noexcept
     pass
