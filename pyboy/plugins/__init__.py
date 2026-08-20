@@ -11,6 +11,7 @@ __pdoc__ = {
     "auto_pause": False,
     "debug": False,
     "debug_prompt": False,
+    "gdb_server": False,
     "record_replay": False,
     "rewind": False,
     "screen_recorder": False,
