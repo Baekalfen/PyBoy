@@ -176,6 +176,7 @@ class WindowSDL2(PyBoyWindowPlugin):
             sdl2.SDL_WINDOW_RESIZABLE,
         )
 
+        sdl2.SDL_SetHint(sdl2.SDL_HINT_RENDER_VSYNC, b"0")
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
         sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, COLS, ROWS)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(

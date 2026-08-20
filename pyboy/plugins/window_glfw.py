@@ -45,6 +45,7 @@ class WindowGLFW(WindowOpenAL):
             glfw.terminate()
             raise PyBoyException("GLFW couldn't open window!")
         glfw.make_context_current(self.window)
+        glfw.swap_interval(0)
         glfw.set_key_callback(self.window, self._key_callback)
         glfw.set_window_size_callback(self.window, self._window_resize)
         self.events = []
