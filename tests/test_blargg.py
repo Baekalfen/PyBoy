@@ -147,4 +147,7 @@ def test_blarggs(test_rom, max_frames, blargg_dir):
         #         for (rom, _), res in zip(test_roms, old_blargg):
         #             f.write("|%s|%s|\n" % (rom, res.replace("\n", " ").rstrip(":")))
     else:
-        assert result == old_blargg[rom], f"Outputs don't match for {rom}"
+        expected_result = old_blargg[rom]
+        assert result == expected_result, f"Outputs don't match for {rom}"
+        if "Failed" in expected_result:
+            pytest.xfail(f"{rom} has a recorded failure")

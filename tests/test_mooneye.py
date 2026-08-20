@@ -18,6 +18,11 @@ OVERWRITE_RESULTS = False
 saved_state = [None, None]
 
 
+def result_has_failure(text):
+    lowered = text.lower()
+    return "!" in text or any(marker in lowered for marker in ("failed", "fail:", "mismatch", "not cancelled"))
+
+
 @pytest.mark.parametrize(
     "text_result, clean, cgb, rom",
     [
@@ -187,7 +192,11 @@ def test_mooneye(text_result, clean, cgb, rom, mooneye_dir, default_rom):
             with open(json_path, "w") as f:
                 json.dump(results, f, indent=2)
         else:
-            assert text == results[rom]["text"], "Results differ!"
+            expected_text = results[rom]["text"]
+            assert text == expected_text, "Results differ!"
+            if result_has_failure(expected_text):
+                pyboy.stop(save=False)
+                pytest.xfail(f"{rom} has a recorded failure")
     else:
         png_path = Path(f"tests/test_results/mooneye/{rom}.png")
         image = pyboy.screen.image

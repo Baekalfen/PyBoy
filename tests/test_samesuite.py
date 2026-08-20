@@ -159,7 +159,11 @@ def test_samesuite(gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, default_
             old_samesuite[rom] = result
             json.dump(old_samesuite, f, indent=4)
     else:
-        assert result == old_samesuite[rom], f"Outputs don't match for {rom}"
+        expected_result = old_samesuite[rom]
+        assert result == expected_result, f"Outputs don't match for {rom}"
+        if expected_result.rstrip().endswith("Failed"):
+            pyboy.stop(save=False)
+            pytest.xfail(f"{rom} has a recorded failure")
         if old_samesuite[rom] != result and os.environ.get("TEST_VERBOSE_IMAGES"):
             pyboy.screen.image.show()
 
