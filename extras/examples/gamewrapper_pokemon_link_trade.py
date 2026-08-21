@@ -3,8 +3,10 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+import glob
 import multiprocessing
 import os
+import shutil
 import sys
 import time
 
@@ -15,7 +17,7 @@ sys.path.insert(0, file_path + "/../..")
 
 from pyboy import PyBoy  # noqa: E402
 from pyboy.core.serial import SerialSharedMemoryBuffer  # noqa: E402
-from pyboy.utils import PyBoyInvalidOperationException  # noqa: E402
+from pyboy.utils import PyBoyInvalidOperationException, WindowEvent  # noqa: E402
 
 
 RENDER_SCREEN = "--headless" not in sys.argv
@@ -29,6 +31,18 @@ except (ValueError, IndexError):
 def _save_screenshot(pyboy, name):
     if SCREENSHOT_DIR is not None:
         pyboy.screen.image.save(os.path.join(SCREENSHOT_DIR, f"PokemonLinkTrade-{name}.png"))
+
+
+def _copy_recording(pyboy):
+    if SCREENSHOT_DIR is None:
+        return
+
+    recordings = glob.glob(os.path.join("recordings", f"{pyboy.cartridge_title}-*.gif"))
+    if not recordings:
+        raise RuntimeError(f"Couldn't find a recording for cartridge {pyboy.cartridge_title!r}")
+
+    recording = max(recordings, key=os.path.getmtime)
+    shutil.copy2(recording, os.path.join(SCREENSHOT_DIR, "PokemonLinkTrade.gif"))
 
 
 def _tick(pyboy, ticks):
@@ -81,6 +95,7 @@ def _skip_dialogue(pyboy):
 
 def _trade(rom, shared_memory, primary):
     pyboy = None
+    trade_completed = False
     try:
         pyboy, pokemon = _prepare_player(rom, shared_memory)
         pyboy.set_emulation_speed(0)
@@ -148,13 +163,18 @@ def _trade(rom, shared_memory, primary):
             pyboy.button("a", 20)
             _tick(pyboy, 30)
             transfer_ticks += 1
-            if primary and transfer_ticks == 30:
-                _save_screenshot(pyboy, "transferring")
 
+            if primary:
+                if transfer_ticks in (10, 85):
+                    pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
+
+        trade_completed = True
         print(f"Player {1 if primary else 2}: trade completed")
     finally:
         if pyboy is not None:
             pyboy.stop(save=False)
+            if primary and trade_completed:
+                _copy_recording(pyboy)
 
 
 def main():
