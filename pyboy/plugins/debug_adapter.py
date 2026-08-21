@@ -754,7 +754,10 @@ class DebugAdapter(PyBoyPlugin):
     def _req_pause(self, request):
         with self._stopped_lock:
             stopped = self.is_stopped
-        if not stopped:
+        # A continue request releases the breakpoint callback before it clears
+        # `is_stopped`. Preserve a pause arriving during that transition.
+        if not stopped or self._resume.is_set():
+            self._pending_action = "step"
             self.pyboy.singlestep = True
         self._send_response(request)
 
