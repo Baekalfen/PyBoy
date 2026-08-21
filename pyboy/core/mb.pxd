@@ -70,11 +70,16 @@ cdef class Motherboard:
 
     cdef void switch_speed(self) noexcept nogil
 
-    @cython.locals(dma_started=cython.bint)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    @cython.locals(dma_started=cython.bint, bank=uint8_t, bank_offset=uint16_t)
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t)
     cdef void sync_oam_dma(self, uint8_t) noexcept nogil
     @final
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    @cython.locals(bank=uint8_t, bank_offset=uint16_t)
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
     cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil

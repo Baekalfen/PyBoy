@@ -636,6 +636,42 @@ class Renderer:
         return cols
 
     def scanline_background(self, y, _x, bx, by, cols, lcd):
+        if ((_x + bx) & 0b111) == 0:
+            x = _x
+            end = _x + cols
+            while x + 8 <= end:
+                bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                self.update_tilecache(0, lcd, bt, 0)
+
+                self._screenbuffer[y, x] = lcd.BGP.lookup[self._tilecache[0, b_yy, 0]]
+                self._screenbuffer[y, x + 1] = lcd.BGP.lookup[self._tilecache[0, b_yy, 1]]
+                self._screenbuffer[y, x + 2] = lcd.BGP.lookup[self._tilecache[0, b_yy, 2]]
+                self._screenbuffer[y, x + 3] = lcd.BGP.lookup[self._tilecache[0, b_yy, 3]]
+                self._screenbuffer[y, x + 4] = lcd.BGP.lookup[self._tilecache[0, b_yy, 4]]
+                self._screenbuffer[y, x + 5] = lcd.BGP.lookup[self._tilecache[0, b_yy, 5]]
+                self._screenbuffer[y, x + 6] = lcd.BGP.lookup[self._tilecache[0, b_yy, 6]]
+                self._screenbuffer[y, x + 7] = lcd.BGP.lookup[self._tilecache[0, b_yy, 7]]
+
+                self._screenbuffer_attributes[y, x] = self._tilecache[0, b_yy, 0] == 0
+                self._screenbuffer_attributes[y, x + 1] = self._tilecache[0, b_yy, 1] == 0
+                self._screenbuffer_attributes[y, x + 2] = self._tilecache[0, b_yy, 2] == 0
+                self._screenbuffer_attributes[y, x + 3] = self._tilecache[0, b_yy, 3] == 0
+                self._screenbuffer_attributes[y, x + 4] = self._tilecache[0, b_yy, 4] == 0
+                self._screenbuffer_attributes[y, x + 5] = self._tilecache[0, b_yy, 5] == 0
+                self._screenbuffer_attributes[y, x + 6] = self._tilecache[0, b_yy, 6] == 0
+                self._screenbuffer_attributes[y, x + 7] = self._tilecache[0, b_yy, 7] == 0
+                x += 8
+
+            for x in range(x, end):
+                b_xx = (x + (bx & 0b111)) % 8
+                if b_xx == 0 or x == 0:
+                    bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                    self.update_tilecache(0, lcd, bt, 0)
+
+                pixel = lcd.BGP.getcolor(self._tilecache[0, b_yy, b_xx])
+                self._pixel(0, pixel, x, y, b_xx, b_yy, 0)
+            return cols
+
         for x in range(_x, _x + cols):
             # bx mask used for the half tile at the left side when scrolling
             b_xx = (x + (bx & 0b111)) % 8
