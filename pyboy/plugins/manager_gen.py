@@ -32,6 +32,7 @@ plugins = [
     "ScreenRecorder",
     "ScreenshotRecorder",
     "DebugPrompt",
+    "DebugAdapter",
 ] + game_wrappers
 all_plugins = windows + plugins
 
