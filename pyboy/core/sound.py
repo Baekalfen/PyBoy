@@ -96,7 +96,8 @@ class Sound:
 
     def reset_apu_div(self):
         if self.emulate:
-            self._tick_frame_sequencer()
+            if self.poweron or self.apu_poweron_after_div_write:
+                self._tick_frame_sequencer()
             self.cycles_target_512Hz = self.cycles + CYCLES_512HZ
         else:
             self.cycles_target_512Hz = MAX_CYCLES
@@ -169,6 +170,8 @@ class Sound:
             if value & 0x80 == 0:  # Sound power off
                 self._power_off()
                 self.poweron = 0
+                self.div_apu_counter = 0
+                self.last_power_off_cycles = self.cycles
             else:
                 was_powered_off = not self.poweron
                 self.poweron = 0x80
@@ -247,7 +250,13 @@ class Sound:
             self.noisechannel.tick_length()
 
     def _tick_frame_sequencer(self):
-        self.div_apu += 1
+        if self.div_apu_counter in (2, 5):
+            self.div_apu_counter = 1
+            return
+        if self.div_apu_counter == 1:
+            self.div_apu_counter = 3
+        else:
+            self.div_apu += 1
         if not self.poweron:
             return
         if self.div_apu % 2 == 1:
@@ -257,7 +266,9 @@ class Sound:
             self.noisechannel.tick_length()
         if self.div_apu % 4 == 3:
             self.sweepchannel.tick_sweep()
-        if self.div_apu % 8 == 7:
+        if (self.cgb and self.sweepchannel.envelope_pace == 1 and self.div_apu % 8 == 0) or (
+            not (self.cgb and self.sweepchannel.envelope_pace == 1) and self.div_apu % 8 == 7
+        ):
             self.sweepchannel.tick_envelope()
             self.tonechannel.tick_envelope()
             self.noisechannel.tick_envelope()

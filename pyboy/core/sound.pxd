@@ -34,6 +34,9 @@ cdef class Sound:
 
     cdef uint64_t div_apu_counter
     cdef uint64_t div_apu
+    cdef bint apu_poweron_after_div_write
+    cdef uint64_t last_div_write_cycles
+    cdef uint64_t last_power_off_cycles
 
     cdef uint8_t poweron
 

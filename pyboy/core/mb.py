@@ -670,6 +670,9 @@ class Motherboard:
                     # the counter can be made to increase faster by writing to DIV while its relevant bit is set (which
                     # clears DIV, and triggers the falling edge).
                     if self.timer.DIV & (0b1_0000 << self.sound.speed_shift):
+                        if self.sound.cgb:
+                            self.sound.apu_poweron_after_div_write = True
+                            self.sound.last_div_write_cycles = self.sound.cycles
                         self.sound.tick(self.cpu.cycles)  # Process outstanding cycles
                         # TODO: Force a falling edge tick
                         self.sound.reset_apu_div()
@@ -685,7 +688,30 @@ class Motherboard:
                 self.cpu.interrupts_flag_register = value & 0b0001_1111
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles)
+                if i == 0xFF26 and value & 0x80 and not self.sound.poweron:
+                    # Starting the APU while DIV's clock bit is high skips its next edge.
+                    self.sound.apu_poweron_after_div_write = self.sound.cgb and (
+                        self.sound.cycles - self.sound.last_div_write_cycles < 8192
+                    )
+                    if (
+                        self.sound.cgb
+                        and self.sound.cycles - self.sound.last_power_off_cycles < 8192
+                        and self.timer.DIV & (0b1_0000 << self.sound.speed_shift)
+                    ):
+                        self.sound.div_apu_counter = 2
+                    else:
+                        self.sound.div_apu_counter = 0
                 self.sound.set(i - 0xFF10, value)
+                if i == 0xFF14:
+                    self.sound.apu_poweron_after_div_write = False
+                if i == 0xFF26 and value & 0x80:
+                    if self.sound.div_apu_counter:
+                        self.sound.div_apu = 1
+                        div_period = 0x2000 << self.sound.speed_shift
+                        cycles_to_div_edge = div_period - (self.timer.DIV_counter & (div_period - 1))
+                        self.sound.cycles_target_512Hz = self.sound.cycles + (
+                            cycles_to_div_edge >> self.sound.speed_shift
+                        )
             elif 0xFF40 <= i <= 0xFF4B:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(lcd_interrupt)
