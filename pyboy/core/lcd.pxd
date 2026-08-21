@@ -205,18 +205,39 @@ cdef class Renderer:
         vertflip = uint8_t,
         bg_priority = uint8_t,
     )
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef inline (int, int, int, int, int) _cgb_get_background_map_attributes(self, LCD, int) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(tile_addr=uint64_t, tile=int)
     cdef inline (int, int, uint16_t) _get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef inline (int, int, uint8_t, bint, uint32_t, bint) _cgb_get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(col0=uint8_t)
     cdef inline void _pixel(self, int, uint32_t, int, int, int, int, uint32_t) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    @cython.locals(bt=int, b_yy=int, x=int, end=int, b_xx=int, pixel=uint32_t)
     cdef int scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef int scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef int cgb_scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef int cgb_scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef int scanline_blank(self, int, int, int, LCD) noexcept nogil
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(
         spriteheight=int,
         spritecount=int,
@@ -247,6 +268,8 @@ cdef class Renderer:
     cdef void clear_tilecache(self, int) noexcept nogil
     cdef void clear_spritecache(self, int) noexcept nogil
     # @final
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(
         x=int,
         t=int,
@@ -259,6 +282,8 @@ cdef class Renderer:
     )
     cdef void update_tilecache(self, int, LCD, int, int) noexcept nogil
     # @final
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(
         x=int,
         t=int,
