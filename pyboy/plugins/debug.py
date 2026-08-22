@@ -321,6 +321,7 @@ class TileViewWindow(BaseDebugWindow):
         self.scanline_x, self.scanline_y = scanline_x, scanline_y
         self.color = COLOR_WINDOW if window_map else COLOR_BACKGROUND
         self.tilemap = TileMap(self.pyboy, self.mb, "WINDOW" if window_map else "BACKGROUND")
+        self.palette_rgb = [0] * 4
 
     def post_tick(self):
         # Updating screen buffer by copying tiles from cache
@@ -467,6 +468,7 @@ class TileDataWindow(BaseDebugWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tilecache_select = 0 if "0" in kwargs.get("title") else 1
+        self.palette_rgb = [0] * 4
 
     def post_tick(self):
         # TODO: We could select different palettes on CGB
@@ -527,6 +529,10 @@ class TileDataWindow(BaseDebugWindow):
 
 
 class SpriteWindow(BaseDebugWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.palette_rgb = [0] * 4
+
     def post_tick(self):
         # TODO: Could we use scanline_sprites with modified arguments to render all of this?
         sprite_height = 16 if self.mb.lcd._LCDC.sprite_height else 8
