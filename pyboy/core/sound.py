@@ -77,6 +77,9 @@ class Sound:
         self.div_apu_counter = 0
         self.div_apu = 3
         self.poweron = 0
+        self.last_div_write_cycles = 0
+        self.last_power_off_cycles = 0
+        self.apu_poweron_after_div_write = 0
 
         self.sweepchannel = SweepChannel()
         self.tonechannel = ToneChannel()
@@ -417,6 +420,7 @@ class Sound:
 
         file.write_64bit(self.div_apu_counter)
         file.write_64bit(self.div_apu)
+        file.write(self.apu_poweron_after_div_write)
         file.write(self.poweron)
         file.write(self.disable_sampling)
 
@@ -472,6 +476,10 @@ class Sound:
 
             self.div_apu_counter = file.read_64bit()
             self.div_apu = file.read_64bit()
+            if state_version >= 22:
+                self.apu_poweron_after_div_write = file.read()
+            else:
+                self.apu_poweron_after_div_write = False
             self.poweron = file.read()
             self.disable_sampling = file.read()
 
