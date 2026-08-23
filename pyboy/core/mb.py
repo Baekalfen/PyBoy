@@ -457,18 +457,18 @@ class Motherboard:
             if self.cartridge.rtc_enabled and 0x08 <= self.cartridge.rambank_selected <= 0x0C:
                 self.cartridge.rtc_tick(self.cpu.cycles)
             return self.cartridge.getitem(i)
-        elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
+        elif 0xC000 <= i < 0xFE00:  # Internal RAM and its echo
+            if i >= 0xE000:
+                i -= 0x2000
+
             bank_offset = 0
-            if self.cgb and 0xD000 <= i:
+            if self.cgb and i >= 0xD000:
                 # Find which bank to read from at wram_select
                 bank = self.wram_select
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank - 1) * 0x1000
             return self.ram.internal_ram0[i - 0xC000 + bank_offset]
-        elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
-            # Redirect to internal RAM
-            return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
@@ -623,17 +623,18 @@ class Motherboard:
             if self.cartridge.rtc_enabled and 0x08 <= self.cartridge.rambank_selected <= 0x0C:
                 self.cartridge.rtc_tick(self.cpu.cycles)
             self.cartridge.setitem(i, value)
-        elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
+        elif 0xC000 <= i < 0xFE00:  # Internal RAM and its echo
+            if i >= 0xE000:
+                i -= 0x2000
+
             bank_offset = 0
-            if self.cgb and 0xD000 <= i:
+            if self.cgb and i >= 0xD000:
                 # Find which bank to read from at wram_select
                 bank = self.wram_select
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank - 1) * 0x1000
             self.ram.internal_ram0[i - 0xC000 + bank_offset] = value
-        elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
-            self.setitem(i - 0x2000, value)  # Redirect to internal RAM
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
