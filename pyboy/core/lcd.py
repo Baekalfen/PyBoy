@@ -624,7 +624,46 @@ class Renderer:
         # COL0_FLAG is 1
         self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
 
+    def _render_dmg_tile(self, x, y, yy, lcd):
+        self._screenbuffer[y, x] = lcd.BGP.getcolor(self._tilecache[0, yy, 0])
+        self._screenbuffer[y, x + 1] = lcd.BGP.getcolor(self._tilecache[0, yy, 1])
+        self._screenbuffer[y, x + 2] = lcd.BGP.getcolor(self._tilecache[0, yy, 2])
+        self._screenbuffer[y, x + 3] = lcd.BGP.getcolor(self._tilecache[0, yy, 3])
+        self._screenbuffer[y, x + 4] = lcd.BGP.getcolor(self._tilecache[0, yy, 4])
+        self._screenbuffer[y, x + 5] = lcd.BGP.getcolor(self._tilecache[0, yy, 5])
+        self._screenbuffer[y, x + 6] = lcd.BGP.getcolor(self._tilecache[0, yy, 6])
+        self._screenbuffer[y, x + 7] = lcd.BGP.getcolor(self._tilecache[0, yy, 7])
+
+        self._screenbuffer_attributes[y, x] = self._tilecache[0, yy, 0] == 0
+        self._screenbuffer_attributes[y, x + 1] = self._tilecache[0, yy, 1] == 0
+        self._screenbuffer_attributes[y, x + 2] = self._tilecache[0, yy, 2] == 0
+        self._screenbuffer_attributes[y, x + 3] = self._tilecache[0, yy, 3] == 0
+        self._screenbuffer_attributes[y, x + 4] = self._tilecache[0, yy, 4] == 0
+        self._screenbuffer_attributes[y, x + 5] = self._tilecache[0, yy, 5] == 0
+        self._screenbuffer_attributes[y, x + 6] = self._tilecache[0, yy, 6] == 0
+        self._screenbuffer_attributes[y, x + 7] = self._tilecache[0, yy, 7] == 0
+
     def scanline_window(self, y, _x, wx, wy, cols, lcd):
+        # HACK: Performance optimization to unroll loop below in aligned cases
+        if ((_x - wx) & 0b111) == 0:
+            x = _x
+            end = _x + cols
+            while x + 8 <= end:
+                wt, yy, _ = self._get_tile(self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd)
+                self.update_tilecache(0, lcd, wt, 0)
+                self._render_dmg_tile(x, y, yy, lcd)
+                x += 8
+
+            for x in range(x, end):
+                xx = (x - wx) % 8
+                if xx == 0 or x == _x:
+                    wt, yy, _ = self._get_tile(self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd)
+                    self.update_tilecache(0, lcd, wt, 0)
+
+                pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
+                self._pixel(0, pixel, x, y, xx, yy, 0)
+            return cols
+
         for x in range(_x, _x + cols):
             xx = (x - wx) % 8
             if xx == 0 or x == _x:
@@ -636,6 +675,27 @@ class Renderer:
         return cols
 
     def scanline_background(self, y, _x, bx, by, cols, lcd):
+        # HACK: Performance optimization to unroll loop below in aligned cases
+        if ((_x + bx) & 0b111) == 0:
+            x = _x
+            end = _x + cols
+            while x + 8 <= end:
+                bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                self.update_tilecache(0, lcd, bt, 0)
+
+                self._render_dmg_tile(x, y, b_yy, lcd)
+                x += 8
+
+            for x in range(x, end):
+                b_xx = (x + (bx & 0b111)) % 8
+                if b_xx == 0 or x == 0:
+                    bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                    self.update_tilecache(0, lcd, bt, 0)
+
+                pixel = lcd.BGP.getcolor(self._tilecache[0, b_yy, b_xx])
+                self._pixel(0, pixel, x, y, b_xx, b_yy, 0)
+            return cols
+
         for x in range(_x, _x + cols):
             # bx mask used for the half tile at the left side when scrolling
             b_xx = (x + (bx & 0b111)) % 8
@@ -914,7 +974,69 @@ class Renderer:
 
         return tile, yy, palette, horiflip, bg_priority_apply, vbank
 
+    def _render_cgb_tile(self, x, y, yy, palette, vbank, horiflip, bg_priority_apply, lcd):
+        if horiflip:
+            self._screenbuffer[y, x] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 7])
+            self._screenbuffer[y, x + 1] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 6])
+            self._screenbuffer[y, x + 2] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 5])
+            self._screenbuffer[y, x + 3] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 4])
+            self._screenbuffer[y, x + 4] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 3])
+            self._screenbuffer[y, x + 5] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 2])
+            self._screenbuffer[y, x + 6] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 1])
+            self._screenbuffer[y, x + 7] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 0])
+            self._screenbuffer_attributes[y, x] = bg_priority_apply | (self._tilecache[vbank, yy, 7] == 0)
+            self._screenbuffer_attributes[y, x + 1] = bg_priority_apply | (self._tilecache[vbank, yy, 6] == 0)
+            self._screenbuffer_attributes[y, x + 2] = bg_priority_apply | (self._tilecache[vbank, yy, 5] == 0)
+            self._screenbuffer_attributes[y, x + 3] = bg_priority_apply | (self._tilecache[vbank, yy, 4] == 0)
+            self._screenbuffer_attributes[y, x + 4] = bg_priority_apply | (self._tilecache[vbank, yy, 3] == 0)
+            self._screenbuffer_attributes[y, x + 5] = bg_priority_apply | (self._tilecache[vbank, yy, 2] == 0)
+            self._screenbuffer_attributes[y, x + 6] = bg_priority_apply | (self._tilecache[vbank, yy, 1] == 0)
+            self._screenbuffer_attributes[y, x + 7] = bg_priority_apply | (self._tilecache[vbank, yy, 0] == 0)
+        else:
+            self._screenbuffer[y, x] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 0])
+            self._screenbuffer[y, x + 1] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 1])
+            self._screenbuffer[y, x + 2] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 2])
+            self._screenbuffer[y, x + 3] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 3])
+            self._screenbuffer[y, x + 4] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 4])
+            self._screenbuffer[y, x + 5] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 5])
+            self._screenbuffer[y, x + 6] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 6])
+            self._screenbuffer[y, x + 7] = lcd.bcpd.getcolor(palette, self._tilecache[vbank, yy, 7])
+            self._screenbuffer_attributes[y, x] = bg_priority_apply | (self._tilecache[vbank, yy, 0] == 0)
+            self._screenbuffer_attributes[y, x + 1] = bg_priority_apply | (self._tilecache[vbank, yy, 1] == 0)
+            self._screenbuffer_attributes[y, x + 2] = bg_priority_apply | (self._tilecache[vbank, yy, 2] == 0)
+            self._screenbuffer_attributes[y, x + 3] = bg_priority_apply | (self._tilecache[vbank, yy, 3] == 0)
+            self._screenbuffer_attributes[y, x + 4] = bg_priority_apply | (self._tilecache[vbank, yy, 4] == 0)
+            self._screenbuffer_attributes[y, x + 5] = bg_priority_apply | (self._tilecache[vbank, yy, 5] == 0)
+            self._screenbuffer_attributes[y, x + 6] = bg_priority_apply | (self._tilecache[vbank, yy, 6] == 0)
+            self._screenbuffer_attributes[y, x + 7] = bg_priority_apply | (self._tilecache[vbank, yy, 7] == 0)
+
     def cgb_scanline_window(self, y, _x, wx, wy, cols, lcd):
+        if ((_x - wx) & 0b111) == 0:
+            x = _x
+            end = _x + cols
+            while x + 8 <= end:
+                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                    self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
+                )
+                self.update_tilecache(vbank, lcd, wt, vbank)
+                self._render_cgb_tile(x, y, yy, w_palette, vbank, w_horiflip, bg_priority_apply, lcd)
+                x += 8
+
+            for x in range(x, end):
+                xx = (x - wx) % 8
+                if xx == 0 or x == _x:
+                    wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                        self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
+                    )
+                    self.update_tilecache(vbank, lcd, wt, vbank)
+
+                if w_horiflip:
+                    xx = 7 - xx
+
+                pixel = lcd.bcpd.getcolor(w_palette, self._tilecache[vbank, yy, xx])
+                self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
+            return cols
+
         bg_priority_apply = 0
         for x in range(_x, _x + cols):
             xx = (x - wx) % 8
@@ -932,6 +1054,32 @@ class Renderer:
         return cols
 
     def cgb_scanline_background(self, y, _x, bx, by, cols, lcd):
+        if ((_x + bx) & 0b111) == 0:
+            x = _x
+            end = _x + cols
+            while x + 8 <= end:
+                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
+                )
+                self.update_tilecache(vbank, lcd, bt, vbank)
+                self._render_cgb_tile(x, y, yy, b_palette, vbank, b_horiflip, bg_priority_apply, lcd)
+                x += 8
+
+            for x in range(x, end):
+                xx = (x + (bx & 0b111)) % 8
+                if xx == 0 or x == 0:
+                    bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                        y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
+                    )
+                    self.update_tilecache(vbank, lcd, bt, vbank)
+
+                if b_horiflip:
+                    xx = 7 - xx
+
+                pixel = lcd.bcpd.getcolor(b_palette, self._tilecache[vbank, yy, xx])
+                self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
+            return cols
+
         for x in range(_x, _x + cols):
             # bx mask used for the half tile at the left side when scrolling
             xx = (x + (bx & 0b111)) % 8

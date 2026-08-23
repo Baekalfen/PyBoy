@@ -47,6 +47,7 @@ cdef class LCD:
     cdef uint64_t clock_target
     cdef LCDCRegister _LCDC
     cdef STATRegister _STAT
+    @final
     cdef PaletteRegister BGP
     cdef PaletteRegister OBP0
     cdef PaletteRegister OBP1
@@ -89,7 +90,9 @@ cdef class LCD:
 @final
 cdef class PaletteRegister:
     cdef uint8_t value
+    @final
     cdef uint32_t[4] lookup
+    @final
     cdef uint32_t[4] palette_mem_rgb
 
     @final
@@ -100,6 +103,7 @@ cdef class PaletteRegister:
     @final
     cdef uint8_t get(self) noexcept nogil
     @final
+    @inline
     cdef inline uint32_t getcolor(self, uint8_t) noexcept nogil
 
 @final
@@ -211,12 +215,17 @@ cdef class Renderer:
     cdef inline (int, int, uint8_t, bint, uint32_t, bint) _cgb_get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
     @cython.locals(col0=uint8_t)
     cdef inline void _pixel(self, int, uint32_t, int, int, int, int, uint32_t) noexcept nogil
+    cdef inline void _render_dmg_tile(self, int, int, int, LCD) noexcept nogil
+    cdef inline void _render_cgb_tile(self, int, int, int, uint8_t, bint, bint, uint32_t, LCD) noexcept nogil
+    @cython.locals(bt=int, b_yy=int, x=int, end=int, b_xx=int, pixel=uint32_t)
     cdef int scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
     cdef int scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
     cdef int cgb_scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
     cdef int cgb_scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
     cdef int scanline_blank(self, int, int, int, LCD) noexcept nogil
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(
         spriteheight=int,
         spritecount=int,
@@ -247,6 +256,8 @@ cdef class Renderer:
     cdef void clear_tilecache(self, int) noexcept nogil
     cdef void clear_spritecache(self, int) noexcept nogil
     # @final
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(
         x=int,
         t=int,
@@ -259,6 +270,8 @@ cdef class Renderer:
     )
     cdef void update_tilecache(self, int, LCD, int, int) noexcept nogil
     # @final
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.locals(
         x=int,
         t=int,
@@ -308,6 +321,8 @@ cdef class PaletteColorRegister:
     cdef uint32_t cgb_to_rgb(self, uint16_t, uint8_t) noexcept nogil
     cdef void set(self, uint16_t) noexcept nogil
     cdef uint16_t get(self) noexcept nogil
+    @final
+    @inline
     cdef inline uint32_t getcolor(self, uint8_t, uint8_t) noexcept nogil
 
     cdef int save_state(self, IntIOInterface) except -1
