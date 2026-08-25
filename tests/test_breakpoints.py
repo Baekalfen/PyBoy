@@ -57,6 +57,42 @@ def test_register_hooks(default_rom):
     mock.method2.assert_not_called()
 
 
+def test_hook_rewinding_pc_does_not_hang_tick(default_rom):
+    """Issue #332: rewinding PC from a hook must not make a frame's tick loop forever."""
+    symbols = os.path.abspath("extras/default_rom/default_rom.sym")
+    pyboy = PyBoy(default_rom, window="null", symbols=symbols)
+    pyboy.set_emulation_speed(0)
+    callback_calls = []
+
+    try:
+        bank, main_addr = pyboy.symbol_lookup("Main")
+
+        def rewind_pc(_context):
+            callback_calls.append(1)
+            pyboy.register_file.PC = main_addr
+
+        pyboy.hook_register(bank, main_addr + 1, rewind_pc, None)
+        pyboy.tick(100, False, False)
+    finally:
+        pyboy.stop(save=False)
+
+    assert callback_calls
+
+
+def test_deregister_within_hook(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    try:
+
+        def hook(pyboy):
+            pyboy.hook_deregister(-1, 0)
+
+        pyboy.hook_register(-1, 0, hook, pyboy)
+        pyboy.tick(1, False, False)
+    finally:
+        pyboy.stop(save=False)
+
+
 def test_register_hook_context(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
