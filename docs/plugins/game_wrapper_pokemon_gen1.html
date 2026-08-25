@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.11.5" />
+<meta name="generator" content="pdoc 0.11.6" />
 <title>pyboy.plugins.game_wrapper_pokemon_gen1 API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -37,8 +37,52 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
+from pyboy.utils import bcd_to_dec, dec_to_bcd
 
 from .base_plugin import PyBoyGameWrapper
+from .game_wrapper_pokemon_gen1_constants import (
+    BAG_ITEM_CAPACITY,
+    BAG_ITEM_COUNT_ADDRESS,
+    BAG_ITEMS_ADDRESS,
+    BADGES,
+    EVENT_FLAGS,
+    EVENT_FLAGS_ADDRESS,
+    MAPS,
+    POKEMON_MOVES,
+    POKEMON_SPECIES,
+    POKEMON_SPECIES_NAMES,
+    POKEMON_TEXT_DECODING,
+    POKEMON_TEXT_ENCODING,
+    TRAINER_CLASSES,
+    TRAINER_CLASS_NAMES,
+    TRAINER_SET_COUNTS,
+    PARTY_COUNT_ADDRESS,
+    PARTY_SPECIES_ADDRESS,
+    PARTY_MONS_ADDRESS,
+    PARTY_MON_SIZE,
+    PARTY_LENGTH,
+    PARTY_SPECIES_SENTINEL,
+    NAME_LENGTH,
+    TEXT_TERMINATOR,
+    PLAYER_NAME_ADDRESS,
+    PARTY_MON_OT_ADDRESS,
+    PARTY_MON_NICKNAME_ADDRESS,
+    DESTINATION_WARP_ID_ADDRESS,
+    STATUS_FLAGS3_ADDRESS,
+    WARP_DESTINATION_MAP_ADDRESS,
+    BIT_WARP_FROM_CURRENT_SCRIPT,
+    CURRENT_OPPONENT_ADDRESS,
+    BATTLE_TYPE_ADDRESS,
+    TRAINER_NUMBER_ADDRESS,
+    CURRENT_ENEMY_LEVEL_ADDRESS,
+    OPPONENT_ID_OFFSET,
+    OBTAINED_BADGES_ADDRESS,
+    ITEMS,
+    ITEM_QUANTITY_MAX,
+    MAX_MONEY,
+    PLAYER_MONEY_ADDRESS,
+    TRAINER_CLASS_COUNT,
+)
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -48,6 +92,14 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     This class wraps Pokemon Red/Blue, and provides basic access for AIs.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&#34;RATTATA&#34;, level=3)
+    ```
     &#34;&#34;&#34;
 
     cartridge_title = None
@@ -55,6 +107,595 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, game_area_section=(0, 0, 20, 18), game_area_follow_scxy=True, **kwargs)
         self.sprite_offset = 0
+
+    def _skip_dialogue(self, verbose):
+        while self.pyboy.tilemap_window[18, 16] != 238:  # The text dialog &#39;arrow&#39;
+            self.pyboy.tick(10, verbose, False)
+
+        self.pyboy.button(&#34;a&#34;)
+        self.pyboy.tick(60, verbose, False)
+
+    def start_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+        at the first playable state.
+
+        The title-screen state is saved, and using `reset_game`, you can get back to this point instantly.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        ```
+        &#34;&#34;&#34;
+        verbose = False
+
+        self.pyboy.tick(120, verbose, False)
+
+        for _ in range(8000):
+            if self.pyboy.tilemap_window[2, 2] == 141:  # New game
+                break
+            if self.pyboy.tilemap_window[2, 2] == 130:  # Continue
+                raise Exception(&#34;Continue game&#34;)
+            self.pyboy.button(&#34;start&#34;)
+            self.pyboy.tick(10, verbose, False)
+        else:
+            raise Exception(&#34;Didn&#39;t find menu&#34;)
+
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(100, verbose, False)  # Transition to oak talking
+
+        for _ in range(15):
+            self._skip_dialogue(verbose)
+
+        if self.pyboy.tilemap_window[2, 4] != 129:  # &#34;B&#34; in Blue
+            raise Exception(&#34;Not name screen?&#34;)
+
+        # Select &#34;BLUE&#34; name
+        self.pyboy.button(&#34;down&#34;)
+        self.pyboy.tick(10, verbose, False)
+        self.pyboy.button(&#34;a&#34;)
+        self.pyboy.tick(10, verbose, False)
+
+        for _ in range(6):
+            self._skip_dialogue(verbose)
+
+        if self.pyboy.tilemap_window[2, 4] != 145:  # &#34;R&#34; in Red
+            raise Exception(&#34;Not name screen?&#34;)
+
+        # Select &#34;RED&#34; name
+        self.pyboy.button(&#34;down&#34;)
+        self.pyboy.tick(10, verbose, False)
+        self.pyboy.button(&#34;a&#34;)
+        self.pyboy.tick(10, verbose, False)
+
+        for _ in range(8):
+            self._skip_dialogue(verbose)
+
+        # Shrinking transition to Mom&#39;s house
+        self.pyboy.tick(240, verbose, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
+    def _read_u16(self, address):
+        return (self.pyboy.memory[address] &lt;&lt; 8) | self.pyboy.memory[address + 1]
+
+    def _write_u16(self, address, value):
+        self.pyboy.memory[address] = (value &gt;&gt; 8) &amp; 0xFF
+        self.pyboy.memory[address + 1] = value &amp; 0xFF
+
+    def _decode_text(self, encoded, skip_invalid=False):
+        decoded = []
+        for value in encoded:
+            if value == TEXT_TERMINATOR:
+                break
+            elif value in POKEMON_TEXT_DECODING:
+                decoded.append(POKEMON_TEXT_DECODING[value])
+            elif not skip_invalid:
+                raise ValueError(f&#34;Unknown pokered text character: {value:#x}&#34;)
+        return &#34;&#34;.join(decoded)
+
+    def _encode_text(self, text, terminate=False):
+        if isinstance(text, str):
+            encoded = []
+            tokens = sorted(POKEMON_TEXT_ENCODING, key=len, reverse=True)
+            offset = 0
+            while offset &lt; len(text):
+                for token in tokens:
+                    if text.startswith(token, offset):
+                        if token == &#34;@&#34;:
+                            raise ValueError(&#34;Text cannot contain the terminator&#34;)
+                        encoded.append(POKEMON_TEXT_ENCODING[token])
+                        offset += len(token)
+                        break
+                else:
+                    raise ValueError(f&#34;Unsupported pokered text character: {text[offset]!r}&#34;)
+        else:
+            encoded = list(text)
+            if any(not 0 &lt;= value &lt;= 0xFF or value == TEXT_TERMINATOR for value in encoded):
+                raise ValueError(&#34;Text bytes must be valid pokered text characters&#34;)
+        return encoded + ([TEXT_TERMINATOR] if terminate else [])
+
+    def _read_name(self, address):
+        name = []
+        for offset in range(NAME_LENGTH - 1):
+            value = self.pyboy.memory[address + offset]
+            if value == TEXT_TERMINATOR:
+                break
+            name.append(value)
+        return tuple(name)
+
+    def _write_name(self, address, name):
+        if isinstance(name, str):
+            encoded = self._encode_text(name.upper())
+        else:
+            encoded = list(name)
+        if len(encoded) &gt; NAME_LENGTH:
+            raise ValueError(f&#34;Names must contain at most {NAME_LENGTH - 1} characters&#34;)
+        encoded.extend([TEXT_TERMINATOR] * (NAME_LENGTH - len(encoded)))
+        for offset, value in enumerate(encoded):
+            self.pyboy.memory[address + offset] = value
+
+    def _read_party_mon(self, index):
+        address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+        return {
+            &#34;species&#34;: self.pyboy.memory[address],
+            &#34;ot_name&#34;: self._read_name(PARTY_MON_OT_ADDRESS + index * NAME_LENGTH),
+            &#34;nickname&#34;: self._read_name(PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH),
+            &#34;hp&#34;: self._read_u16(address + 1),
+            &#34;level&#34;: self.pyboy.memory[address + 0x21],
+            &#34;status&#34;: self.pyboy.memory[address + 4],
+            &#34;type1&#34;: self.pyboy.memory[address + 5],
+            &#34;type2&#34;: self.pyboy.memory[address + 6],
+            &#34;catch_rate&#34;: self.pyboy.memory[address + 7],
+            &#34;moves&#34;: tuple(self.pyboy.memory[address + 8 + i] for i in range(4)),
+            &#34;ot_id&#34;: self._read_u16(address + 12),
+            &#34;exp&#34;: (
+                self.pyboy.memory[address + 14] &lt;&lt; 16
+                | self.pyboy.memory[address + 15] &lt;&lt; 8
+                | self.pyboy.memory[address + 16]
+            ),
+            &#34;hp_exp&#34;: self._read_u16(address + 17),
+            &#34;attack_exp&#34;: self._read_u16(address + 19),
+            &#34;defense_exp&#34;: self._read_u16(address + 21),
+            &#34;speed_exp&#34;: self._read_u16(address + 23),
+            &#34;special_exp&#34;: self._read_u16(address + 25),
+            &#34;dvs&#34;: self._read_u16(address + 27),
+            &#34;pp&#34;: tuple(self.pyboy.memory[address + 29 + i] for i in range(4)),
+            &#34;max_hp&#34;: self._read_u16(address + 0x22),
+            &#34;attack&#34;: self._read_u16(address + 0x24),
+            &#34;defense&#34;: self._read_u16(address + 0x26),
+            &#34;speed&#34;: self._read_u16(address + 0x28),
+            &#34;special&#34;: self._read_u16(address + 0x2A),
+        }
+
+    def _write_party_mon(self, index, pokemon):
+        address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+        moves = tuple(pokemon.get(&#34;moves&#34;, (0x21, 0, 0, 0)))
+        default_pp = tuple(35 if move else 0 for move in moves)
+        pp = tuple(pokemon.get(&#34;pp&#34;, default_pp))
+        if len(moves) != 4 or len(pp) != 4:
+            raise ValueError(&#34;moves and pp must contain exactly four values&#34;)
+
+        level = pokemon[&#34;level&#34;]
+        self.pyboy.memory[address] = pokemon[&#34;species&#34;]
+        self._write_u16(address + 1, pokemon[&#34;hp&#34;])
+        self.pyboy.memory[address + 3] = level
+        self.pyboy.memory[address + 4] = pokemon.get(&#34;status&#34;, 0)
+        self.pyboy.memory[address + 5] = pokemon.get(&#34;type1&#34;, 0)
+        self.pyboy.memory[address + 6] = pokemon.get(&#34;type2&#34;, 0)
+        self.pyboy.memory[address + 7] = pokemon.get(&#34;catch_rate&#34;, 45)
+        for i, move in enumerate(moves):
+            self.pyboy.memory[address + 8 + i] = move
+        self._write_u16(address + 12, pokemon.get(&#34;ot_id&#34;, 0))
+        exp = pokemon.get(&#34;exp&#34;, level**3)
+        self.pyboy.memory[address + 14] = (exp &gt;&gt; 16) &amp; 0xFF
+        self.pyboy.memory[address + 15] = (exp &gt;&gt; 8) &amp; 0xFF
+        self.pyboy.memory[address + 16] = exp &amp; 0xFF
+        for offset, key in (
+            (17, &#34;hp_exp&#34;),
+            (19, &#34;attack_exp&#34;),
+            (21, &#34;defense_exp&#34;),
+            (23, &#34;speed_exp&#34;),
+            (25, &#34;special_exp&#34;),
+        ):
+            self._write_u16(address + offset, pokemon.get(key, 0))
+        self._write_u16(address + 27, pokemon.get(&#34;dvs&#34;, 0xFFFF))
+        for i, move_pp in enumerate(pp):
+            self.pyboy.memory[address + 29 + i] = move_pp
+        self.pyboy.memory[address + 0x21] = level
+        for offset, key in ((0x22, &#34;max_hp&#34;), (0x24, &#34;attack&#34;), (0x26, &#34;defense&#34;), (0x28, &#34;speed&#34;), (0x2A, &#34;special&#34;)):
+            self._write_u16(address + offset, pokemon[key])
+        self._write_name(
+            PARTY_MON_OT_ADDRESS + index * NAME_LENGTH,
+            pokemon.get(&#34;ot_name&#34;, self._read_name(PLAYER_NAME_ADDRESS)),
+        )
+        self._write_name(
+            PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH,
+            pokemon.get(&#34;nickname&#34;, POKEMON_SPECIES_NAMES.get(pokemon[&#34;species&#34;], &#34;MON&#34;)),
+        )
+
+    @property
+    def party(self):
+        &#34;&#34;&#34;Return the current party as a list of dictionaries.&#34;&#34;&#34;
+
+        count = self.pyboy.memory[PARTY_COUNT_ADDRESS]
+        if count &gt; PARTY_LENGTH:
+            raise ValueError(f&#34;Invalid party count: {count}&#34;)
+        return [self._read_party_mon(index) for index in range(count)]
+
+    @party.setter
+    def party(self, party):
+        self.set_party(party)
+
+    def set_party(self, party):
+        &#34;&#34;&#34;
+        Replace the party with up to six complete Gen I party records.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; from pyboy.plugins.game_wrapper_pokemon_gen1_constants import POKEMON_SPECIES
+        &gt;&gt;&gt; pyboy.game_wrapper.set_party([
+        ...     {&#34;species&#34;: POKEMON_SPECIES[&#34;PIDGEY&#34;], &#34;level&#34;: 5, &#34;hp&#34;: 20, &#34;max_hp&#34;: 20, &#34;attack&#34;: 10, &#34;defense&#34;: 10, &#34;speed&#34;: 10, &#34;special&#34;: 10},
+        ...     {&#34;species&#34;: POKEMON_SPECIES[&#34;MEWTWO&#34;], &#34;level&#34;: 5, &#34;hp&#34;: 20, &#34;max_hp&#34;: 20, &#34;attack&#34;: 10, &#34;defense&#34;: 10, &#34;speed&#34;: 10, &#34;special&#34;: 10},
+        ... ])
+        ```
+        &#34;&#34;&#34;
+
+        party = list(party)
+        if len(party) &gt; PARTY_LENGTH:
+            raise ValueError(&#34;A Pokemon party can contain at most six Pokemon&#34;)
+        for pokemon in party:
+            species = pokemon[&#34;species&#34;]
+            level = pokemon[&#34;level&#34;]
+            if not 1 &lt;= species &lt;= 0xBE:
+                raise ValueError(f&#34;Invalid Pokemon species ID: {species:#x}&#34;)
+            if not 1 &lt;= level &lt;= 100:
+                raise ValueError(f&#34;Invalid Pokemon level: {level}&#34;)
+
+        self.pyboy.memory[PARTY_COUNT_ADDRESS] = len(party)
+        for index in range(PARTY_LENGTH + 1):
+            self.pyboy.memory[PARTY_SPECIES_ADDRESS + index] = (
+                party[index][&#34;species&#34;] if index &lt; len(party) else PARTY_SPECIES_SENTINEL
+            )
+        for index, pokemon in enumerate(party):
+            self._write_party_mon(index, pokemon)
+
+        for index in range(len(party), PARTY_LENGTH):
+            address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+            for offset in range(PARTY_MON_SIZE):
+                self.pyboy.memory[address + offset] = 0
+            self._write_name(PARTY_MON_OT_ADDRESS + index * NAME_LENGTH, ())
+            self._write_name(PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH, ())
+
+    def add_pokemon(self, species, level=2, moves=None, **kwargs):
+        &#34;&#34;&#34;
+        Add a battle-ready Pokemon using a species ID from pokered&#39;s constants.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.party[0][&#34;species&#34;]
+        84
+        ```
+        &#34;&#34;&#34;
+
+        if len(self.party) == PARTY_LENGTH:
+            raise ValueError(&#34;The party is full&#34;)
+        if isinstance(species, str):
+            species = POKEMON_SPECIES[species.upper()]
+        moves = tuple(POKEMON_MOVES[move.upper()] if isinstance(move, str) else move for move in (moves or ()))
+        if len(moves) &gt; 4:
+            raise ValueError(&#34;moves must contain at most four move IDs&#34;)
+        moves += (0,) * (4 - len(moves))
+        default_pp = tuple(35 if move else 0 for move in moves)
+        max_hp = kwargs.pop(&#34;max_hp&#34;, level * 2 + 10)
+        stats = {
+            &#34;attack&#34;: level + 5,
+            &#34;defense&#34;: level + 5,
+            &#34;speed&#34;: level + 5,
+            &#34;special&#34;: level + 5,
+        }
+        stats.update(kwargs.pop(&#34;stats&#34;, {}))
+        pokemon = {
+            &#34;species&#34;: species,
+            &#34;level&#34;: level,
+            &#34;hp&#34;: kwargs.pop(&#34;hp&#34;, max_hp),
+            &#34;max_hp&#34;: max_hp,
+            &#34;moves&#34;: moves,
+            &#34;pp&#34;: kwargs.pop(&#34;pp&#34;, default_pp),
+            **stats,
+            **kwargs,
+        }
+        self.set_party(self.party + [pokemon])
+
+    def remove_pokemon(self, index):
+        &#34;&#34;&#34;
+        Remove a Pokemon from the party by its zero-based index.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.remove_pokemon(0)
+        ```
+        &#34;&#34;&#34;
+
+        party = self.party
+        if not 0 &lt;= index &lt; len(party):
+            raise IndexError(f&#34;Invalid party index: {index} of {len(party)-1}&#34;)
+        del party[index]
+        self.set_party(party)
+
+    @property
+    def money(self):
+        &#34;&#34;&#34;Return the player&#39;s money, from 0 through 999999.&#34;&#34;&#34;
+
+        value = int.from_bytes(self.pyboy.memory[PLAYER_MONEY_ADDRESS : PLAYER_MONEY_ADDRESS + 3], &#34;big&#34;)
+        return bcd_to_dec(value, byte_width=3, byteorder=&#34;big&#34;)
+
+    def set_money(self, amount):
+        &#34;&#34;&#34;
+        Set the player&#39;s money.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_money(999999)
+        ```
+        &#34;&#34;&#34;
+
+        if not isinstance(amount, int) or not 0 &lt;= amount &lt;= MAX_MONEY:
+            raise ValueError(f&#34;Money must be an integer from 0 to {MAX_MONEY}&#34;)
+        value = dec_to_bcd(amount, byte_width=3, byteorder=&#34;big&#34;)
+        self.pyboy.memory[PLAYER_MONEY_ADDRESS : PLAYER_MONEY_ADDRESS + 3] = value.to_bytes(3, &#34;big&#34;)
+
+    def _item_id(self, item):
+        if isinstance(item, str):
+            try:
+                item = ITEMS[item.upper()]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown item: {item}&#34;) from error
+        if not isinstance(item, int) or not 1 &lt;= item &lt;= 0xFE:
+            raise ValueError(f&#34;Invalid item ID: {item}&#34;)
+        return item
+
+    @property
+    def inventory(self):
+        &#34;&#34;&#34;Return the bag contents as a list of item and quantity dictionaries.&#34;&#34;&#34;
+
+        count = self.pyboy.memory[BAG_ITEM_COUNT_ADDRESS]
+        if count &gt; BAG_ITEM_CAPACITY:
+            raise ValueError(f&#34;Invalid bag item count: {count}&#34;)
+        return [
+            {
+                &#34;item&#34;: self.pyboy.memory[BAG_ITEMS_ADDRESS + 2 * index],
+                &#34;quantity&#34;: self.pyboy.memory[BAG_ITEMS_ADDRESS + 2 * index + 1],
+            }
+            for index in range(count)
+        ]
+
+    def set_inventory(self, inventory, force=False):
+        &#34;&#34;&#34;
+        Replace the bag contents with item and quantity pairs.
+
+        Items may be pokered IDs or names from ``ITEMS``. Quantities range
+        from 1 to 99.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_inventory({&#34;POTION&#34;: 20, &#34;MASTER_BALL&#34;: 1})
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(inventory, dict):
+            inventory = inventory.items()
+        entries = []
+        seen = set()
+        for item, quantity in inventory:
+            item = self._item_id(item)
+            if item in seen:
+                raise ValueError(f&#34;Duplicate item: {item:#x}&#34;)
+            if not isinstance(quantity, int) or (not force and (not 0 &lt;= quantity &lt;= ITEM_QUANTITY_MAX)):
+                raise ValueError(f&#34;Item quantity must be an integer from 1 to {ITEM_QUANTITY_MAX}&#34;)
+            seen.add(item)
+            entries.append((item, quantity))
+        if len(entries) &gt; BAG_ITEM_CAPACITY:
+            raise ValueError(f&#34;The bag can contain at most {BAG_ITEM_CAPACITY} item types&#34;)
+
+        self.pyboy.memory[BAG_ITEM_COUNT_ADDRESS] = len(entries)
+        for index in range(BAG_ITEM_CAPACITY):
+            address = BAG_ITEMS_ADDRESS + 2 * index
+            if index &lt; len(entries):
+                self.pyboy.memory[address] = entries[index][0]
+                self.pyboy.memory[address + 1] = entries[index][1]
+            else:
+                self.pyboy.memory[address] = 0xFF
+                self.pyboy.memory[address + 1] = 0
+
+    def set_item(self, item, quantity, force=False):
+        &#34;&#34;&#34;Set one bag item&#39;s quantity, removing it when ``quantity`` is zero.&#34;&#34;&#34;
+
+        item = self._item_id(item)
+        if not isinstance(quantity, int) or (not force and (not 0 &lt;= quantity &lt;= ITEM_QUANTITY_MAX)):
+            raise ValueError(f&#34;Item quantity must be an integer from 0 to {ITEM_QUANTITY_MAX}&#34;)
+        inventory = {entry[&#34;item&#34;]: entry[&#34;quantity&#34;] for entry in self.inventory}
+        if quantity:
+            inventory[item] = quantity
+        else:
+            inventory.pop(item, None)
+        preserve_forced_quantities = any(
+            item_quantity == 0 or item_quantity &gt; ITEM_QUANTITY_MAX for item_quantity in inventory.values()
+        )
+        self.set_inventory(inventory, force=force or preserve_forced_quantities)
+
+    def remove_item(self, item, quantity=1):
+        &#34;&#34;&#34;Remove a quantity of an item from the bag.&#34;&#34;&#34;
+
+        item = self._item_id(item)
+        inventory = {entry[&#34;item&#34;]: entry[&#34;quantity&#34;] for entry in self.inventory}
+        if item not in inventory or not isinstance(quantity, int) or not 1 &lt;= quantity &lt;= inventory[item]:
+            raise ValueError(f&#34;Cannot remove quantity {quantity} of item {item:#x}&#34;)
+        self.set_item(item, inventory[item] - quantity, force=inventory[item] &gt; ITEM_QUANTITY_MAX)
+
+    def start_wild_battle(self, species, level, force=False):
+        &#34;&#34;&#34;
+        Schedule a wild battle against a species at the given level.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.tick(1)
+        True
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(species, str):
+            try:
+                species = POKEMON_SPECIES[species.upper()]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown Pokemon species: {species}&#34;) from error
+        if not force:
+            if not isinstance(species, int) or not 1 &lt;= species &lt;= 0xBE:
+                raise ValueError(f&#34;Invalid Pokemon species ID: {species}&#34;)
+            if not isinstance(level, int) or not 1 &lt;= level &lt;= 100:
+                raise ValueError(f&#34;Invalid Pokemon level: {level}&#34;)
+
+        self.pyboy.memory[CURRENT_OPPONENT_ADDRESS] = species
+        self.pyboy.memory[CURRENT_ENEMY_LEVEL_ADDRESS] = level
+        self.pyboy.memory[BATTLE_TYPE_ADDRESS] = 0
+
+    def start_trainer_battle(self, trainer_class, trainer_set=1, force=False):
+        &#34;&#34;&#34;
+        Schedule a trainer battle by class and party-set IDs.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_trainer_battle(&#34;PROF_OAK&#34;, trainer_set=1)
+        &gt;&gt;&gt; pyboy.tick(1)
+        True
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(trainer_class, str):
+            try:
+                trainer_class = TRAINER_CLASSES[trainer_class.upper()]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown trainer class: {trainer_class}&#34;) from error
+        if not force:
+            if not isinstance(trainer_class, int) or not 1 &lt;= trainer_class &lt;= TRAINER_CLASS_COUNT:
+                raise ValueError(f&#34;Invalid trainer class ID: {trainer_class}&#34;)
+            trainer_class_name = TRAINER_CLASS_NAMES[trainer_class]
+            trainer_set_count = TRAINER_SET_COUNTS[trainer_class_name]
+            if not isinstance(trainer_set, int) or not 1 &lt;= trainer_set &lt;= trainer_set_count:
+                raise ValueError(f&#34;Invalid trainer set ID: {trainer_set}&#34;)
+
+        opponent = OPPONENT_ID_OFFSET + trainer_class
+        self.pyboy.memory[CURRENT_OPPONENT_ADDRESS] = opponent
+        self.pyboy.memory[TRAINER_NUMBER_ADDRESS] = trainer_set
+        self.pyboy.memory[BATTLE_TYPE_ADDRESS] = 0
+
+    def warp(self, destination):
+        &#34;&#34;&#34;
+        Schedule a script warp to a map identified by name or ID.
+
+        The map transition is performed by pokered on the next emulator tick.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.warp(&#34;viridian_pokecenter&#34;)
+        &gt;&gt;&gt; pyboy.tick(1)
+        True
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(destination, str):
+            try:
+                map_id = MAPS[destination]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown map name: {destination}&#34;) from error
+        else:
+            map_id = destination
+        if not 0 &lt;= map_id &lt;= 0xFF:
+            raise ValueError(f&#34;Invalid map ID: {map_id:#x}&#34;)
+        self.pyboy.memory[WARP_DESTINATION_MAP_ADDRESS] = map_id
+        self.pyboy.memory[DESTINATION_WARP_ID_ADDRESS] = 0
+        self.pyboy.memory[STATUS_FLAGS3_ADDRESS] |= 1 &lt;&lt; BIT_WARP_FROM_CURRENT_SCRIPT
+
+    def set_event_flag(self, event):
+        &#34;&#34;&#34;
+        Set a story event flag by name or numeric pokered event ID.
+
+        Gym victory event flags are separate from the badges owned by the
+        player. Use :meth:`set_badge` to grant a badge.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_event_flag(&#34;got_pokedex&#34;)
+        ```
+        &#34;&#34;&#34;
+        event = EVENT_FLAGS.get(event, event)  # Try lookup or default to the original value
+        if not isinstance(event, int):
+            raise ValueError(f&#34;Invalid event flag: {event}&#34;)
+        address = EVENT_FLAGS_ADDRESS + event // 8
+        self.pyboy.memory[address] |= 1 &lt;&lt; (event % 8)
+
+    def reset_event_flag(self, event):
+        &#34;&#34;&#34;
+        Reset a story event flag by name or numeric pokered event ID.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.reset_event_flag(&#34;got_pokedex&#34;)
+        ```
+        &#34;&#34;&#34;
+        event = EVENT_FLAGS.get(event, event)  # Try lookup or default to the original value
+        if not isinstance(event, int):
+            raise ValueError(f&#34;Invalid event flag: {event}&#34;)
+        address = EVENT_FLAGS_ADDRESS + event // 8
+        self.pyboy.memory[address] &amp;= ~(1 &lt;&lt; (event % 8))
+
+    def set_badge(self, badge):
+        &#34;&#34;&#34;
+        Grant a badge by name or numeric bit position.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_badge(&#34;boulder&#34;)
+        ```
+        &#34;&#34;&#34;
+        badge = BADGES.get(badge, badge)
+        if not isinstance(badge, int) or not 0 &lt;= badge &lt; len(BADGES):
+            raise ValueError(f&#34;Invalid badge: {badge}&#34;)
+        self.pyboy.memory[OBTAINED_BADGES_ADDRESS] |= 1 &lt;&lt; badge
+
+    def reset_badge(self, badge):
+        &#34;&#34;&#34;
+        Remove a badge by name or numeric bit position.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.reset_badge(&#34;boulder&#34;)
+        ```
+        &#34;&#34;&#34;
+        badge = BADGES.get(badge, badge)
+        if not isinstance(badge, int) or not 0 &lt;= badge &lt; len(BADGES):
+            raise ValueError(f&#34;Invalid badge: {badge}&#34;)
+        self.pyboy.memory[OBTAINED_BADGES_ADDRESS] &amp;= ~(1 &lt;&lt; badge)
 
     def enabled(self):
         return (self.pyboy.cartridge_title == &#34;POKEMON RED&#34;) or (self.pyboy.cartridge_title == &#34;POKEMON BLUE&#34;)
@@ -123,7 +764,13 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 </code></dt>
 <dd>
 <section class="desc"><p>This class wraps Pokemon Red/Blue, and provides basic access for AIs.</p>
-<p>If you call <code>print</code> on an instance of this object, it will show an overview of everything this object provides.</p></section>
+<p>If you call <code>print</code> on an instance of this object, it will show an overview of everything this object provides.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&quot;PIKACHU&quot;, level=5)
+&gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&quot;RATTATA&quot;, level=3)
+</code></pre></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -133,6 +780,14 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     This class wraps Pokemon Red/Blue, and provides basic access for AIs.
 
     If you call `print` on an instance of this object, it will show an overview of everything this object provides.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&#34;RATTATA&#34;, level=3)
+    ```
     &#34;&#34;&#34;
 
     cartridge_title = None
@@ -140,6 +795,595 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, game_area_section=(0, 0, 20, 18), game_area_follow_scxy=True, **kwargs)
         self.sprite_offset = 0
+
+    def _skip_dialogue(self, verbose):
+        while self.pyboy.tilemap_window[18, 16] != 238:  # The text dialog &#39;arrow&#39;
+            self.pyboy.tick(10, verbose, False)
+
+        self.pyboy.button(&#34;a&#34;)
+        self.pyboy.tick(60, verbose, False)
+
+    def start_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+        at the first playable state.
+
+        The title-screen state is saved, and using `reset_game`, you can get back to this point instantly.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        ```
+        &#34;&#34;&#34;
+        verbose = False
+
+        self.pyboy.tick(120, verbose, False)
+
+        for _ in range(8000):
+            if self.pyboy.tilemap_window[2, 2] == 141:  # New game
+                break
+            if self.pyboy.tilemap_window[2, 2] == 130:  # Continue
+                raise Exception(&#34;Continue game&#34;)
+            self.pyboy.button(&#34;start&#34;)
+            self.pyboy.tick(10, verbose, False)
+        else:
+            raise Exception(&#34;Didn&#39;t find menu&#34;)
+
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(100, verbose, False)  # Transition to oak talking
+
+        for _ in range(15):
+            self._skip_dialogue(verbose)
+
+        if self.pyboy.tilemap_window[2, 4] != 129:  # &#34;B&#34; in Blue
+            raise Exception(&#34;Not name screen?&#34;)
+
+        # Select &#34;BLUE&#34; name
+        self.pyboy.button(&#34;down&#34;)
+        self.pyboy.tick(10, verbose, False)
+        self.pyboy.button(&#34;a&#34;)
+        self.pyboy.tick(10, verbose, False)
+
+        for _ in range(6):
+            self._skip_dialogue(verbose)
+
+        if self.pyboy.tilemap_window[2, 4] != 145:  # &#34;R&#34; in Red
+            raise Exception(&#34;Not name screen?&#34;)
+
+        # Select &#34;RED&#34; name
+        self.pyboy.button(&#34;down&#34;)
+        self.pyboy.tick(10, verbose, False)
+        self.pyboy.button(&#34;a&#34;)
+        self.pyboy.tick(10, verbose, False)
+
+        for _ in range(8):
+            self._skip_dialogue(verbose)
+
+        # Shrinking transition to Mom&#39;s house
+        self.pyboy.tick(240, verbose, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
+    def _read_u16(self, address):
+        return (self.pyboy.memory[address] &lt;&lt; 8) | self.pyboy.memory[address + 1]
+
+    def _write_u16(self, address, value):
+        self.pyboy.memory[address] = (value &gt;&gt; 8) &amp; 0xFF
+        self.pyboy.memory[address + 1] = value &amp; 0xFF
+
+    def _decode_text(self, encoded, skip_invalid=False):
+        decoded = []
+        for value in encoded:
+            if value == TEXT_TERMINATOR:
+                break
+            elif value in POKEMON_TEXT_DECODING:
+                decoded.append(POKEMON_TEXT_DECODING[value])
+            elif not skip_invalid:
+                raise ValueError(f&#34;Unknown pokered text character: {value:#x}&#34;)
+        return &#34;&#34;.join(decoded)
+
+    def _encode_text(self, text, terminate=False):
+        if isinstance(text, str):
+            encoded = []
+            tokens = sorted(POKEMON_TEXT_ENCODING, key=len, reverse=True)
+            offset = 0
+            while offset &lt; len(text):
+                for token in tokens:
+                    if text.startswith(token, offset):
+                        if token == &#34;@&#34;:
+                            raise ValueError(&#34;Text cannot contain the terminator&#34;)
+                        encoded.append(POKEMON_TEXT_ENCODING[token])
+                        offset += len(token)
+                        break
+                else:
+                    raise ValueError(f&#34;Unsupported pokered text character: {text[offset]!r}&#34;)
+        else:
+            encoded = list(text)
+            if any(not 0 &lt;= value &lt;= 0xFF or value == TEXT_TERMINATOR for value in encoded):
+                raise ValueError(&#34;Text bytes must be valid pokered text characters&#34;)
+        return encoded + ([TEXT_TERMINATOR] if terminate else [])
+
+    def _read_name(self, address):
+        name = []
+        for offset in range(NAME_LENGTH - 1):
+            value = self.pyboy.memory[address + offset]
+            if value == TEXT_TERMINATOR:
+                break
+            name.append(value)
+        return tuple(name)
+
+    def _write_name(self, address, name):
+        if isinstance(name, str):
+            encoded = self._encode_text(name.upper())
+        else:
+            encoded = list(name)
+        if len(encoded) &gt; NAME_LENGTH:
+            raise ValueError(f&#34;Names must contain at most {NAME_LENGTH - 1} characters&#34;)
+        encoded.extend([TEXT_TERMINATOR] * (NAME_LENGTH - len(encoded)))
+        for offset, value in enumerate(encoded):
+            self.pyboy.memory[address + offset] = value
+
+    def _read_party_mon(self, index):
+        address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+        return {
+            &#34;species&#34;: self.pyboy.memory[address],
+            &#34;ot_name&#34;: self._read_name(PARTY_MON_OT_ADDRESS + index * NAME_LENGTH),
+            &#34;nickname&#34;: self._read_name(PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH),
+            &#34;hp&#34;: self._read_u16(address + 1),
+            &#34;level&#34;: self.pyboy.memory[address + 0x21],
+            &#34;status&#34;: self.pyboy.memory[address + 4],
+            &#34;type1&#34;: self.pyboy.memory[address + 5],
+            &#34;type2&#34;: self.pyboy.memory[address + 6],
+            &#34;catch_rate&#34;: self.pyboy.memory[address + 7],
+            &#34;moves&#34;: tuple(self.pyboy.memory[address + 8 + i] for i in range(4)),
+            &#34;ot_id&#34;: self._read_u16(address + 12),
+            &#34;exp&#34;: (
+                self.pyboy.memory[address + 14] &lt;&lt; 16
+                | self.pyboy.memory[address + 15] &lt;&lt; 8
+                | self.pyboy.memory[address + 16]
+            ),
+            &#34;hp_exp&#34;: self._read_u16(address + 17),
+            &#34;attack_exp&#34;: self._read_u16(address + 19),
+            &#34;defense_exp&#34;: self._read_u16(address + 21),
+            &#34;speed_exp&#34;: self._read_u16(address + 23),
+            &#34;special_exp&#34;: self._read_u16(address + 25),
+            &#34;dvs&#34;: self._read_u16(address + 27),
+            &#34;pp&#34;: tuple(self.pyboy.memory[address + 29 + i] for i in range(4)),
+            &#34;max_hp&#34;: self._read_u16(address + 0x22),
+            &#34;attack&#34;: self._read_u16(address + 0x24),
+            &#34;defense&#34;: self._read_u16(address + 0x26),
+            &#34;speed&#34;: self._read_u16(address + 0x28),
+            &#34;special&#34;: self._read_u16(address + 0x2A),
+        }
+
+    def _write_party_mon(self, index, pokemon):
+        address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+        moves = tuple(pokemon.get(&#34;moves&#34;, (0x21, 0, 0, 0)))
+        default_pp = tuple(35 if move else 0 for move in moves)
+        pp = tuple(pokemon.get(&#34;pp&#34;, default_pp))
+        if len(moves) != 4 or len(pp) != 4:
+            raise ValueError(&#34;moves and pp must contain exactly four values&#34;)
+
+        level = pokemon[&#34;level&#34;]
+        self.pyboy.memory[address] = pokemon[&#34;species&#34;]
+        self._write_u16(address + 1, pokemon[&#34;hp&#34;])
+        self.pyboy.memory[address + 3] = level
+        self.pyboy.memory[address + 4] = pokemon.get(&#34;status&#34;, 0)
+        self.pyboy.memory[address + 5] = pokemon.get(&#34;type1&#34;, 0)
+        self.pyboy.memory[address + 6] = pokemon.get(&#34;type2&#34;, 0)
+        self.pyboy.memory[address + 7] = pokemon.get(&#34;catch_rate&#34;, 45)
+        for i, move in enumerate(moves):
+            self.pyboy.memory[address + 8 + i] = move
+        self._write_u16(address + 12, pokemon.get(&#34;ot_id&#34;, 0))
+        exp = pokemon.get(&#34;exp&#34;, level**3)
+        self.pyboy.memory[address + 14] = (exp &gt;&gt; 16) &amp; 0xFF
+        self.pyboy.memory[address + 15] = (exp &gt;&gt; 8) &amp; 0xFF
+        self.pyboy.memory[address + 16] = exp &amp; 0xFF
+        for offset, key in (
+            (17, &#34;hp_exp&#34;),
+            (19, &#34;attack_exp&#34;),
+            (21, &#34;defense_exp&#34;),
+            (23, &#34;speed_exp&#34;),
+            (25, &#34;special_exp&#34;),
+        ):
+            self._write_u16(address + offset, pokemon.get(key, 0))
+        self._write_u16(address + 27, pokemon.get(&#34;dvs&#34;, 0xFFFF))
+        for i, move_pp in enumerate(pp):
+            self.pyboy.memory[address + 29 + i] = move_pp
+        self.pyboy.memory[address + 0x21] = level
+        for offset, key in ((0x22, &#34;max_hp&#34;), (0x24, &#34;attack&#34;), (0x26, &#34;defense&#34;), (0x28, &#34;speed&#34;), (0x2A, &#34;special&#34;)):
+            self._write_u16(address + offset, pokemon[key])
+        self._write_name(
+            PARTY_MON_OT_ADDRESS + index * NAME_LENGTH,
+            pokemon.get(&#34;ot_name&#34;, self._read_name(PLAYER_NAME_ADDRESS)),
+        )
+        self._write_name(
+            PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH,
+            pokemon.get(&#34;nickname&#34;, POKEMON_SPECIES_NAMES.get(pokemon[&#34;species&#34;], &#34;MON&#34;)),
+        )
+
+    @property
+    def party(self):
+        &#34;&#34;&#34;Return the current party as a list of dictionaries.&#34;&#34;&#34;
+
+        count = self.pyboy.memory[PARTY_COUNT_ADDRESS]
+        if count &gt; PARTY_LENGTH:
+            raise ValueError(f&#34;Invalid party count: {count}&#34;)
+        return [self._read_party_mon(index) for index in range(count)]
+
+    @party.setter
+    def party(self, party):
+        self.set_party(party)
+
+    def set_party(self, party):
+        &#34;&#34;&#34;
+        Replace the party with up to six complete Gen I party records.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; from pyboy.plugins.game_wrapper_pokemon_gen1_constants import POKEMON_SPECIES
+        &gt;&gt;&gt; pyboy.game_wrapper.set_party([
+        ...     {&#34;species&#34;: POKEMON_SPECIES[&#34;PIDGEY&#34;], &#34;level&#34;: 5, &#34;hp&#34;: 20, &#34;max_hp&#34;: 20, &#34;attack&#34;: 10, &#34;defense&#34;: 10, &#34;speed&#34;: 10, &#34;special&#34;: 10},
+        ...     {&#34;species&#34;: POKEMON_SPECIES[&#34;MEWTWO&#34;], &#34;level&#34;: 5, &#34;hp&#34;: 20, &#34;max_hp&#34;: 20, &#34;attack&#34;: 10, &#34;defense&#34;: 10, &#34;speed&#34;: 10, &#34;special&#34;: 10},
+        ... ])
+        ```
+        &#34;&#34;&#34;
+
+        party = list(party)
+        if len(party) &gt; PARTY_LENGTH:
+            raise ValueError(&#34;A Pokemon party can contain at most six Pokemon&#34;)
+        for pokemon in party:
+            species = pokemon[&#34;species&#34;]
+            level = pokemon[&#34;level&#34;]
+            if not 1 &lt;= species &lt;= 0xBE:
+                raise ValueError(f&#34;Invalid Pokemon species ID: {species:#x}&#34;)
+            if not 1 &lt;= level &lt;= 100:
+                raise ValueError(f&#34;Invalid Pokemon level: {level}&#34;)
+
+        self.pyboy.memory[PARTY_COUNT_ADDRESS] = len(party)
+        for index in range(PARTY_LENGTH + 1):
+            self.pyboy.memory[PARTY_SPECIES_ADDRESS + index] = (
+                party[index][&#34;species&#34;] if index &lt; len(party) else PARTY_SPECIES_SENTINEL
+            )
+        for index, pokemon in enumerate(party):
+            self._write_party_mon(index, pokemon)
+
+        for index in range(len(party), PARTY_LENGTH):
+            address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+            for offset in range(PARTY_MON_SIZE):
+                self.pyboy.memory[address + offset] = 0
+            self._write_name(PARTY_MON_OT_ADDRESS + index * NAME_LENGTH, ())
+            self._write_name(PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH, ())
+
+    def add_pokemon(self, species, level=2, moves=None, **kwargs):
+        &#34;&#34;&#34;
+        Add a battle-ready Pokemon using a species ID from pokered&#39;s constants.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.party[0][&#34;species&#34;]
+        84
+        ```
+        &#34;&#34;&#34;
+
+        if len(self.party) == PARTY_LENGTH:
+            raise ValueError(&#34;The party is full&#34;)
+        if isinstance(species, str):
+            species = POKEMON_SPECIES[species.upper()]
+        moves = tuple(POKEMON_MOVES[move.upper()] if isinstance(move, str) else move for move in (moves or ()))
+        if len(moves) &gt; 4:
+            raise ValueError(&#34;moves must contain at most four move IDs&#34;)
+        moves += (0,) * (4 - len(moves))
+        default_pp = tuple(35 if move else 0 for move in moves)
+        max_hp = kwargs.pop(&#34;max_hp&#34;, level * 2 + 10)
+        stats = {
+            &#34;attack&#34;: level + 5,
+            &#34;defense&#34;: level + 5,
+            &#34;speed&#34;: level + 5,
+            &#34;special&#34;: level + 5,
+        }
+        stats.update(kwargs.pop(&#34;stats&#34;, {}))
+        pokemon = {
+            &#34;species&#34;: species,
+            &#34;level&#34;: level,
+            &#34;hp&#34;: kwargs.pop(&#34;hp&#34;, max_hp),
+            &#34;max_hp&#34;: max_hp,
+            &#34;moves&#34;: moves,
+            &#34;pp&#34;: kwargs.pop(&#34;pp&#34;, default_pp),
+            **stats,
+            **kwargs,
+        }
+        self.set_party(self.party + [pokemon])
+
+    def remove_pokemon(self, index):
+        &#34;&#34;&#34;
+        Remove a Pokemon from the party by its zero-based index.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.remove_pokemon(0)
+        ```
+        &#34;&#34;&#34;
+
+        party = self.party
+        if not 0 &lt;= index &lt; len(party):
+            raise IndexError(f&#34;Invalid party index: {index} of {len(party)-1}&#34;)
+        del party[index]
+        self.set_party(party)
+
+    @property
+    def money(self):
+        &#34;&#34;&#34;Return the player&#39;s money, from 0 through 999999.&#34;&#34;&#34;
+
+        value = int.from_bytes(self.pyboy.memory[PLAYER_MONEY_ADDRESS : PLAYER_MONEY_ADDRESS + 3], &#34;big&#34;)
+        return bcd_to_dec(value, byte_width=3, byteorder=&#34;big&#34;)
+
+    def set_money(self, amount):
+        &#34;&#34;&#34;
+        Set the player&#39;s money.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_money(999999)
+        ```
+        &#34;&#34;&#34;
+
+        if not isinstance(amount, int) or not 0 &lt;= amount &lt;= MAX_MONEY:
+            raise ValueError(f&#34;Money must be an integer from 0 to {MAX_MONEY}&#34;)
+        value = dec_to_bcd(amount, byte_width=3, byteorder=&#34;big&#34;)
+        self.pyboy.memory[PLAYER_MONEY_ADDRESS : PLAYER_MONEY_ADDRESS + 3] = value.to_bytes(3, &#34;big&#34;)
+
+    def _item_id(self, item):
+        if isinstance(item, str):
+            try:
+                item = ITEMS[item.upper()]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown item: {item}&#34;) from error
+        if not isinstance(item, int) or not 1 &lt;= item &lt;= 0xFE:
+            raise ValueError(f&#34;Invalid item ID: {item}&#34;)
+        return item
+
+    @property
+    def inventory(self):
+        &#34;&#34;&#34;Return the bag contents as a list of item and quantity dictionaries.&#34;&#34;&#34;
+
+        count = self.pyboy.memory[BAG_ITEM_COUNT_ADDRESS]
+        if count &gt; BAG_ITEM_CAPACITY:
+            raise ValueError(f&#34;Invalid bag item count: {count}&#34;)
+        return [
+            {
+                &#34;item&#34;: self.pyboy.memory[BAG_ITEMS_ADDRESS + 2 * index],
+                &#34;quantity&#34;: self.pyboy.memory[BAG_ITEMS_ADDRESS + 2 * index + 1],
+            }
+            for index in range(count)
+        ]
+
+    def set_inventory(self, inventory, force=False):
+        &#34;&#34;&#34;
+        Replace the bag contents with item and quantity pairs.
+
+        Items may be pokered IDs or names from ``ITEMS``. Quantities range
+        from 1 to 99.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_inventory({&#34;POTION&#34;: 20, &#34;MASTER_BALL&#34;: 1})
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(inventory, dict):
+            inventory = inventory.items()
+        entries = []
+        seen = set()
+        for item, quantity in inventory:
+            item = self._item_id(item)
+            if item in seen:
+                raise ValueError(f&#34;Duplicate item: {item:#x}&#34;)
+            if not isinstance(quantity, int) or (not force and (not 0 &lt;= quantity &lt;= ITEM_QUANTITY_MAX)):
+                raise ValueError(f&#34;Item quantity must be an integer from 1 to {ITEM_QUANTITY_MAX}&#34;)
+            seen.add(item)
+            entries.append((item, quantity))
+        if len(entries) &gt; BAG_ITEM_CAPACITY:
+            raise ValueError(f&#34;The bag can contain at most {BAG_ITEM_CAPACITY} item types&#34;)
+
+        self.pyboy.memory[BAG_ITEM_COUNT_ADDRESS] = len(entries)
+        for index in range(BAG_ITEM_CAPACITY):
+            address = BAG_ITEMS_ADDRESS + 2 * index
+            if index &lt; len(entries):
+                self.pyboy.memory[address] = entries[index][0]
+                self.pyboy.memory[address + 1] = entries[index][1]
+            else:
+                self.pyboy.memory[address] = 0xFF
+                self.pyboy.memory[address + 1] = 0
+
+    def set_item(self, item, quantity, force=False):
+        &#34;&#34;&#34;Set one bag item&#39;s quantity, removing it when ``quantity`` is zero.&#34;&#34;&#34;
+
+        item = self._item_id(item)
+        if not isinstance(quantity, int) or (not force and (not 0 &lt;= quantity &lt;= ITEM_QUANTITY_MAX)):
+            raise ValueError(f&#34;Item quantity must be an integer from 0 to {ITEM_QUANTITY_MAX}&#34;)
+        inventory = {entry[&#34;item&#34;]: entry[&#34;quantity&#34;] for entry in self.inventory}
+        if quantity:
+            inventory[item] = quantity
+        else:
+            inventory.pop(item, None)
+        preserve_forced_quantities = any(
+            item_quantity == 0 or item_quantity &gt; ITEM_QUANTITY_MAX for item_quantity in inventory.values()
+        )
+        self.set_inventory(inventory, force=force or preserve_forced_quantities)
+
+    def remove_item(self, item, quantity=1):
+        &#34;&#34;&#34;Remove a quantity of an item from the bag.&#34;&#34;&#34;
+
+        item = self._item_id(item)
+        inventory = {entry[&#34;item&#34;]: entry[&#34;quantity&#34;] for entry in self.inventory}
+        if item not in inventory or not isinstance(quantity, int) or not 1 &lt;= quantity &lt;= inventory[item]:
+            raise ValueError(f&#34;Cannot remove quantity {quantity} of item {item:#x}&#34;)
+        self.set_item(item, inventory[item] - quantity, force=inventory[item] &gt; ITEM_QUANTITY_MAX)
+
+    def start_wild_battle(self, species, level, force=False):
+        &#34;&#34;&#34;
+        Schedule a wild battle against a species at the given level.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.tick(1)
+        True
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(species, str):
+            try:
+                species = POKEMON_SPECIES[species.upper()]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown Pokemon species: {species}&#34;) from error
+        if not force:
+            if not isinstance(species, int) or not 1 &lt;= species &lt;= 0xBE:
+                raise ValueError(f&#34;Invalid Pokemon species ID: {species}&#34;)
+            if not isinstance(level, int) or not 1 &lt;= level &lt;= 100:
+                raise ValueError(f&#34;Invalid Pokemon level: {level}&#34;)
+
+        self.pyboy.memory[CURRENT_OPPONENT_ADDRESS] = species
+        self.pyboy.memory[CURRENT_ENEMY_LEVEL_ADDRESS] = level
+        self.pyboy.memory[BATTLE_TYPE_ADDRESS] = 0
+
+    def start_trainer_battle(self, trainer_class, trainer_set=1, force=False):
+        &#34;&#34;&#34;
+        Schedule a trainer battle by class and party-set IDs.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+        &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+        &gt;&gt;&gt; pyboy.game_wrapper.start_trainer_battle(&#34;PROF_OAK&#34;, trainer_set=1)
+        &gt;&gt;&gt; pyboy.tick(1)
+        True
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(trainer_class, str):
+            try:
+                trainer_class = TRAINER_CLASSES[trainer_class.upper()]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown trainer class: {trainer_class}&#34;) from error
+        if not force:
+            if not isinstance(trainer_class, int) or not 1 &lt;= trainer_class &lt;= TRAINER_CLASS_COUNT:
+                raise ValueError(f&#34;Invalid trainer class ID: {trainer_class}&#34;)
+            trainer_class_name = TRAINER_CLASS_NAMES[trainer_class]
+            trainer_set_count = TRAINER_SET_COUNTS[trainer_class_name]
+            if not isinstance(trainer_set, int) or not 1 &lt;= trainer_set &lt;= trainer_set_count:
+                raise ValueError(f&#34;Invalid trainer set ID: {trainer_set}&#34;)
+
+        opponent = OPPONENT_ID_OFFSET + trainer_class
+        self.pyboy.memory[CURRENT_OPPONENT_ADDRESS] = opponent
+        self.pyboy.memory[TRAINER_NUMBER_ADDRESS] = trainer_set
+        self.pyboy.memory[BATTLE_TYPE_ADDRESS] = 0
+
+    def warp(self, destination):
+        &#34;&#34;&#34;
+        Schedule a script warp to a map identified by name or ID.
+
+        The map transition is performed by pokered on the next emulator tick.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.warp(&#34;viridian_pokecenter&#34;)
+        &gt;&gt;&gt; pyboy.tick(1)
+        True
+        ```
+        &#34;&#34;&#34;
+
+        if isinstance(destination, str):
+            try:
+                map_id = MAPS[destination]
+            except KeyError as error:
+                raise ValueError(f&#34;Unknown map name: {destination}&#34;) from error
+        else:
+            map_id = destination
+        if not 0 &lt;= map_id &lt;= 0xFF:
+            raise ValueError(f&#34;Invalid map ID: {map_id:#x}&#34;)
+        self.pyboy.memory[WARP_DESTINATION_MAP_ADDRESS] = map_id
+        self.pyboy.memory[DESTINATION_WARP_ID_ADDRESS] = 0
+        self.pyboy.memory[STATUS_FLAGS3_ADDRESS] |= 1 &lt;&lt; BIT_WARP_FROM_CURRENT_SCRIPT
+
+    def set_event_flag(self, event):
+        &#34;&#34;&#34;
+        Set a story event flag by name or numeric pokered event ID.
+
+        Gym victory event flags are separate from the badges owned by the
+        player. Use :meth:`set_badge` to grant a badge.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_event_flag(&#34;got_pokedex&#34;)
+        ```
+        &#34;&#34;&#34;
+        event = EVENT_FLAGS.get(event, event)  # Try lookup or default to the original value
+        if not isinstance(event, int):
+            raise ValueError(f&#34;Invalid event flag: {event}&#34;)
+        address = EVENT_FLAGS_ADDRESS + event // 8
+        self.pyboy.memory[address] |= 1 &lt;&lt; (event % 8)
+
+    def reset_event_flag(self, event):
+        &#34;&#34;&#34;
+        Reset a story event flag by name or numeric pokered event ID.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.reset_event_flag(&#34;got_pokedex&#34;)
+        ```
+        &#34;&#34;&#34;
+        event = EVENT_FLAGS.get(event, event)  # Try lookup or default to the original value
+        if not isinstance(event, int):
+            raise ValueError(f&#34;Invalid event flag: {event}&#34;)
+        address = EVENT_FLAGS_ADDRESS + event // 8
+        self.pyboy.memory[address] &amp;= ~(1 &lt;&lt; (event % 8))
+
+    def set_badge(self, badge):
+        &#34;&#34;&#34;
+        Grant a badge by name or numeric bit position.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.set_badge(&#34;boulder&#34;)
+        ```
+        &#34;&#34;&#34;
+        badge = BADGES.get(badge, badge)
+        if not isinstance(badge, int) or not 0 &lt;= badge &lt; len(BADGES):
+            raise ValueError(f&#34;Invalid badge: {badge}&#34;)
+        self.pyboy.memory[OBTAINED_BADGES_ADDRESS] |= 1 &lt;&lt; badge
+
+    def reset_badge(self, badge):
+        &#34;&#34;&#34;
+        Remove a badge by name or numeric bit position.
+
+        Example:
+        ```python
+        &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+        &gt;&gt;&gt; pyboy.game_wrapper.reset_badge(&#34;boulder&#34;)
+        ```
+        &#34;&#34;&#34;
+        badge = BADGES.get(badge, badge)
+        if not isinstance(badge, int) or not 0 &lt;= badge &lt; len(BADGES):
+            raise ValueError(f&#34;Invalid badge: {badge}&#34;)
+        self.pyboy.memory[OBTAINED_BADGES_ADDRESS] &amp;= ~(1 &lt;&lt; badge)
 
     def enabled(self):
         return (self.pyboy.cartridge_title == &#34;POKEMON RED&#34;) or (self.pyboy.cartridge_title == &#34;POKEMON BLUE&#34;)
@@ -197,8 +1441,691 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 <li><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></li>
 <li>pyboy.plugins.base_plugin.PyBoyPlugin</li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.party"><code class="name">var <span class="ident">party</span></code></dt>
+<dd>
+<section class="desc"><p>Return the current party as a list of dictionaries.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def party(self):
+    &#34;&#34;&#34;Return the current party as a list of dictionaries.&#34;&#34;&#34;
+
+    count = self.pyboy.memory[PARTY_COUNT_ADDRESS]
+    if count &gt; PARTY_LENGTH:
+        raise ValueError(f&#34;Invalid party count: {count}&#34;)
+    return [self._read_party_mon(index) for index in range(count)]</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.money"><code class="name">var <span class="ident">money</span></code></dt>
+<dd>
+<section class="desc"><p>Return the player's money, from 0 through 999999.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def money(self):
+    &#34;&#34;&#34;Return the player&#39;s money, from 0 through 999999.&#34;&#34;&#34;
+
+    value = int.from_bytes(self.pyboy.memory[PLAYER_MONEY_ADDRESS : PLAYER_MONEY_ADDRESS + 3], &#34;big&#34;)
+    return bcd_to_dec(value, byte_width=3, byteorder=&#34;big&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.inventory"><code class="name">var <span class="ident">inventory</span></code></dt>
+<dd>
+<section class="desc"><p>Return the bag contents as a list of item and quantity dictionaries.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def inventory(self):
+    &#34;&#34;&#34;Return the bag contents as a list of item and quantity dictionaries.&#34;&#34;&#34;
+
+    count = self.pyboy.memory[BAG_ITEM_COUNT_ADDRESS]
+    if count &gt; BAG_ITEM_CAPACITY:
+        raise ValueError(f&#34;Invalid bag item count: {count}&#34;)
+    return [
+        {
+            &#34;item&#34;: self.pyboy.memory[BAG_ITEMS_ADDRESS + 2 * index],
+            &#34;quantity&#34;: self.pyboy.memory[BAG_ITEMS_ADDRESS + 2 * index + 1],
+        }
+        for index in range(count)
+    ]</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_game"><code class="name flex">
+<span>def <span class="ident">start_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+at the first playable state.</p>
+<p>The title-screen state is saved, and using <code>reset_game</code>, you can get back to this point instantly.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+    at the first playable state.
+
+    The title-screen state is saved, and using `reset_game`, you can get back to this point instantly.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    ```
+    &#34;&#34;&#34;
+    verbose = False
+
+    self.pyboy.tick(120, verbose, False)
+
+    for _ in range(8000):
+        if self.pyboy.tilemap_window[2, 2] == 141:  # New game
+            break
+        if self.pyboy.tilemap_window[2, 2] == 130:  # Continue
+            raise Exception(&#34;Continue game&#34;)
+        self.pyboy.button(&#34;start&#34;)
+        self.pyboy.tick(10, verbose, False)
+    else:
+        raise Exception(&#34;Didn&#39;t find menu&#34;)
+
+    self.pyboy.button(&#34;start&#34;)
+    self.pyboy.tick(100, verbose, False)  # Transition to oak talking
+
+    for _ in range(15):
+        self._skip_dialogue(verbose)
+
+    if self.pyboy.tilemap_window[2, 4] != 129:  # &#34;B&#34; in Blue
+        raise Exception(&#34;Not name screen?&#34;)
+
+    # Select &#34;BLUE&#34; name
+    self.pyboy.button(&#34;down&#34;)
+    self.pyboy.tick(10, verbose, False)
+    self.pyboy.button(&#34;a&#34;)
+    self.pyboy.tick(10, verbose, False)
+
+    for _ in range(6):
+        self._skip_dialogue(verbose)
+
+    if self.pyboy.tilemap_window[2, 4] != 145:  # &#34;R&#34; in Red
+        raise Exception(&#34;Not name screen?&#34;)
+
+    # Select &#34;RED&#34; name
+    self.pyboy.button(&#34;down&#34;)
+    self.pyboy.tick(10, verbose, False)
+    self.pyboy.button(&#34;a&#34;)
+    self.pyboy.tick(10, verbose, False)
+
+    for _ in range(8):
+        self._skip_dialogue(verbose)
+
+    # Shrinking transition to Mom&#39;s house
+    self.pyboy.tick(240, verbose, False)
+
+    PyBoyGameWrapper.start_game(self, timer_div=timer_div)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_party"><code class="name flex">
+<span>def <span class="ident">set_party</span></span>(<span>self, party)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Replace the party with up to six complete Gen I party records.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; from pyboy.plugins.game_wrapper_pokemon_gen1_constants import POKEMON_SPECIES
+&gt;&gt;&gt; pyboy.game_wrapper.set_party([
+...     {&quot;species&quot;: POKEMON_SPECIES[&quot;PIDGEY&quot;], &quot;level&quot;: 5, &quot;hp&quot;: 20, &quot;max_hp&quot;: 20, &quot;attack&quot;: 10, &quot;defense&quot;: 10, &quot;speed&quot;: 10, &quot;special&quot;: 10},
+...     {&quot;species&quot;: POKEMON_SPECIES[&quot;MEWTWO&quot;], &quot;level&quot;: 5, &quot;hp&quot;: 20, &quot;max_hp&quot;: 20, &quot;attack&quot;: 10, &quot;defense&quot;: 10, &quot;speed&quot;: 10, &quot;special&quot;: 10},
+... ])
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_party(self, party):
+    &#34;&#34;&#34;
+    Replace the party with up to six complete Gen I party records.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; from pyboy.plugins.game_wrapper_pokemon_gen1_constants import POKEMON_SPECIES
+    &gt;&gt;&gt; pyboy.game_wrapper.set_party([
+    ...     {&#34;species&#34;: POKEMON_SPECIES[&#34;PIDGEY&#34;], &#34;level&#34;: 5, &#34;hp&#34;: 20, &#34;max_hp&#34;: 20, &#34;attack&#34;: 10, &#34;defense&#34;: 10, &#34;speed&#34;: 10, &#34;special&#34;: 10},
+    ...     {&#34;species&#34;: POKEMON_SPECIES[&#34;MEWTWO&#34;], &#34;level&#34;: 5, &#34;hp&#34;: 20, &#34;max_hp&#34;: 20, &#34;attack&#34;: 10, &#34;defense&#34;: 10, &#34;speed&#34;: 10, &#34;special&#34;: 10},
+    ... ])
+    ```
+    &#34;&#34;&#34;
+
+    party = list(party)
+    if len(party) &gt; PARTY_LENGTH:
+        raise ValueError(&#34;A Pokemon party can contain at most six Pokemon&#34;)
+    for pokemon in party:
+        species = pokemon[&#34;species&#34;]
+        level = pokemon[&#34;level&#34;]
+        if not 1 &lt;= species &lt;= 0xBE:
+            raise ValueError(f&#34;Invalid Pokemon species ID: {species:#x}&#34;)
+        if not 1 &lt;= level &lt;= 100:
+            raise ValueError(f&#34;Invalid Pokemon level: {level}&#34;)
+
+    self.pyboy.memory[PARTY_COUNT_ADDRESS] = len(party)
+    for index in range(PARTY_LENGTH + 1):
+        self.pyboy.memory[PARTY_SPECIES_ADDRESS + index] = (
+            party[index][&#34;species&#34;] if index &lt; len(party) else PARTY_SPECIES_SENTINEL
+        )
+    for index, pokemon in enumerate(party):
+        self._write_party_mon(index, pokemon)
+
+    for index in range(len(party), PARTY_LENGTH):
+        address = PARTY_MONS_ADDRESS + index * PARTY_MON_SIZE
+        for offset in range(PARTY_MON_SIZE):
+            self.pyboy.memory[address + offset] = 0
+        self._write_name(PARTY_MON_OT_ADDRESS + index * NAME_LENGTH, ())
+        self._write_name(PARTY_MON_NICKNAME_ADDRESS + index * NAME_LENGTH, ())</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.add_pokemon"><code class="name flex">
+<span>def <span class="ident">add_pokemon</span></span>(<span>self, species, level=2, moves=None, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Add a battle-ready Pokemon using a species ID from pokered's constants.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&quot;PIKACHU&quot;, level=5)
+&gt;&gt;&gt; pyboy.game_wrapper.party[0][&quot;species&quot;]
+84
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_pokemon(self, species, level=2, moves=None, **kwargs):
+    &#34;&#34;&#34;
+    Add a battle-ready Pokemon using a species ID from pokered&#39;s constants.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.game_wrapper.party[0][&#34;species&#34;]
+    84
+    ```
+    &#34;&#34;&#34;
+
+    if len(self.party) == PARTY_LENGTH:
+        raise ValueError(&#34;The party is full&#34;)
+    if isinstance(species, str):
+        species = POKEMON_SPECIES[species.upper()]
+    moves = tuple(POKEMON_MOVES[move.upper()] if isinstance(move, str) else move for move in (moves or ()))
+    if len(moves) &gt; 4:
+        raise ValueError(&#34;moves must contain at most four move IDs&#34;)
+    moves += (0,) * (4 - len(moves))
+    default_pp = tuple(35 if move else 0 for move in moves)
+    max_hp = kwargs.pop(&#34;max_hp&#34;, level * 2 + 10)
+    stats = {
+        &#34;attack&#34;: level + 5,
+        &#34;defense&#34;: level + 5,
+        &#34;speed&#34;: level + 5,
+        &#34;special&#34;: level + 5,
+    }
+    stats.update(kwargs.pop(&#34;stats&#34;, {}))
+    pokemon = {
+        &#34;species&#34;: species,
+        &#34;level&#34;: level,
+        &#34;hp&#34;: kwargs.pop(&#34;hp&#34;, max_hp),
+        &#34;max_hp&#34;: max_hp,
+        &#34;moves&#34;: moves,
+        &#34;pp&#34;: kwargs.pop(&#34;pp&#34;, default_pp),
+        **stats,
+        **kwargs,
+    }
+    self.set_party(self.party + [pokemon])</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.remove_pokemon"><code class="name flex">
+<span>def <span class="ident">remove_pokemon</span></span>(<span>self, index)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Remove a Pokemon from the party by its zero-based index.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&quot;PIKACHU&quot;, level=5)
+&gt;&gt;&gt; pyboy.game_wrapper.remove_pokemon(0)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_pokemon(self, index):
+    &#34;&#34;&#34;
+    Remove a Pokemon from the party by its zero-based index.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.game_wrapper.remove_pokemon(0)
+    ```
+    &#34;&#34;&#34;
+
+    party = self.party
+    if not 0 &lt;= index &lt; len(party):
+        raise IndexError(f&#34;Invalid party index: {index} of {len(party)-1}&#34;)
+    del party[index]
+    self.set_party(party)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_money"><code class="name flex">
+<span>def <span class="ident">set_money</span></span>(<span>self, amount)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set the player's money.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.set_money(999999)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_money(self, amount):
+    &#34;&#34;&#34;
+    Set the player&#39;s money.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.set_money(999999)
+    ```
+    &#34;&#34;&#34;
+
+    if not isinstance(amount, int) or not 0 &lt;= amount &lt;= MAX_MONEY:
+        raise ValueError(f&#34;Money must be an integer from 0 to {MAX_MONEY}&#34;)
+    value = dec_to_bcd(amount, byte_width=3, byteorder=&#34;big&#34;)
+    self.pyboy.memory[PLAYER_MONEY_ADDRESS : PLAYER_MONEY_ADDRESS + 3] = value.to_bytes(3, &#34;big&#34;)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_inventory"><code class="name flex">
+<span>def <span class="ident">set_inventory</span></span>(<span>self, inventory, force=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Replace the bag contents with item and quantity pairs.</p>
+<p>Items may be pokered IDs or names from <code>ITEMS</code>. Quantities range
+from 1 to 99.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.set_inventory({&quot;POTION&quot;: 20, &quot;MASTER_BALL&quot;: 1})
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_inventory(self, inventory, force=False):
+    &#34;&#34;&#34;
+    Replace the bag contents with item and quantity pairs.
+
+    Items may be pokered IDs or names from ``ITEMS``. Quantities range
+    from 1 to 99.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.set_inventory({&#34;POTION&#34;: 20, &#34;MASTER_BALL&#34;: 1})
+    ```
+    &#34;&#34;&#34;
+
+    if isinstance(inventory, dict):
+        inventory = inventory.items()
+    entries = []
+    seen = set()
+    for item, quantity in inventory:
+        item = self._item_id(item)
+        if item in seen:
+            raise ValueError(f&#34;Duplicate item: {item:#x}&#34;)
+        if not isinstance(quantity, int) or (not force and (not 0 &lt;= quantity &lt;= ITEM_QUANTITY_MAX)):
+            raise ValueError(f&#34;Item quantity must be an integer from 1 to {ITEM_QUANTITY_MAX}&#34;)
+        seen.add(item)
+        entries.append((item, quantity))
+    if len(entries) &gt; BAG_ITEM_CAPACITY:
+        raise ValueError(f&#34;The bag can contain at most {BAG_ITEM_CAPACITY} item types&#34;)
+
+    self.pyboy.memory[BAG_ITEM_COUNT_ADDRESS] = len(entries)
+    for index in range(BAG_ITEM_CAPACITY):
+        address = BAG_ITEMS_ADDRESS + 2 * index
+        if index &lt; len(entries):
+            self.pyboy.memory[address] = entries[index][0]
+            self.pyboy.memory[address + 1] = entries[index][1]
+        else:
+            self.pyboy.memory[address] = 0xFF
+            self.pyboy.memory[address + 1] = 0</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_item"><code class="name flex">
+<span>def <span class="ident">set_item</span></span>(<span>self, item, quantity, force=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set one bag item's quantity, removing it when <code>quantity</code> is zero.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_item(self, item, quantity, force=False):
+    &#34;&#34;&#34;Set one bag item&#39;s quantity, removing it when ``quantity`` is zero.&#34;&#34;&#34;
+
+    item = self._item_id(item)
+    if not isinstance(quantity, int) or (not force and (not 0 &lt;= quantity &lt;= ITEM_QUANTITY_MAX)):
+        raise ValueError(f&#34;Item quantity must be an integer from 0 to {ITEM_QUANTITY_MAX}&#34;)
+    inventory = {entry[&#34;item&#34;]: entry[&#34;quantity&#34;] for entry in self.inventory}
+    if quantity:
+        inventory[item] = quantity
+    else:
+        inventory.pop(item, None)
+    preserve_forced_quantities = any(
+        item_quantity == 0 or item_quantity &gt; ITEM_QUANTITY_MAX for item_quantity in inventory.values()
+    )
+    self.set_inventory(inventory, force=force or preserve_forced_quantities)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.remove_item"><code class="name flex">
+<span>def <span class="ident">remove_item</span></span>(<span>self, item, quantity=1)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Remove a quantity of an item from the bag.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_item(self, item, quantity=1):
+    &#34;&#34;&#34;Remove a quantity of an item from the bag.&#34;&#34;&#34;
+
+    item = self._item_id(item)
+    inventory = {entry[&#34;item&#34;]: entry[&#34;quantity&#34;] for entry in self.inventory}
+    if item not in inventory or not isinstance(quantity, int) or not 1 &lt;= quantity &lt;= inventory[item]:
+        raise ValueError(f&#34;Cannot remove quantity {quantity} of item {item:#x}&#34;)
+    self.set_item(item, inventory[item] - quantity, force=inventory[item] &gt; ITEM_QUANTITY_MAX)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_wild_battle"><code class="name flex">
+<span>def <span class="ident">start_wild_battle</span></span>(<span>self, species, level, force=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Schedule a wild battle against a species at the given level.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&quot;PIKACHU&quot;, level=5)
+&gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&quot;PIKACHU&quot;, level=5)
+&gt;&gt;&gt; pyboy.tick(1)
+True
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_wild_battle(self, species, level, force=False):
+    &#34;&#34;&#34;
+    Schedule a wild battle against a species at the given level.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_wild_battle(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.tick(1)
+    True
+    ```
+    &#34;&#34;&#34;
+
+    if isinstance(species, str):
+        try:
+            species = POKEMON_SPECIES[species.upper()]
+        except KeyError as error:
+            raise ValueError(f&#34;Unknown Pokemon species: {species}&#34;) from error
+    if not force:
+        if not isinstance(species, int) or not 1 &lt;= species &lt;= 0xBE:
+            raise ValueError(f&#34;Invalid Pokemon species ID: {species}&#34;)
+        if not isinstance(level, int) or not 1 &lt;= level &lt;= 100:
+            raise ValueError(f&#34;Invalid Pokemon level: {level}&#34;)
+
+    self.pyboy.memory[CURRENT_OPPONENT_ADDRESS] = species
+    self.pyboy.memory[CURRENT_ENEMY_LEVEL_ADDRESS] = level
+    self.pyboy.memory[BATTLE_TYPE_ADDRESS] = 0</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_trainer_battle"><code class="name flex">
+<span>def <span class="ident">start_trainer_battle</span></span>(<span>self, trainer_class, trainer_set=1, force=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Schedule a trainer battle by class and party-set IDs.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.start_game()
+&gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&quot;PIKACHU&quot;, level=5)
+&gt;&gt;&gt; pyboy.game_wrapper.start_trainer_battle(&quot;PROF_OAK&quot;, trainer_set=1)
+&gt;&gt;&gt; pyboy.tick(1)
+True
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_trainer_battle(self, trainer_class, trainer_set=1, force=False):
+    &#34;&#34;&#34;
+    Schedule a trainer battle by class and party-set IDs.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_game()
+    &gt;&gt;&gt; pyboy.game_wrapper.add_pokemon(&#34;PIKACHU&#34;, level=5)
+    &gt;&gt;&gt; pyboy.game_wrapper.start_trainer_battle(&#34;PROF_OAK&#34;, trainer_set=1)
+    &gt;&gt;&gt; pyboy.tick(1)
+    True
+    ```
+    &#34;&#34;&#34;
+
+    if isinstance(trainer_class, str):
+        try:
+            trainer_class = TRAINER_CLASSES[trainer_class.upper()]
+        except KeyError as error:
+            raise ValueError(f&#34;Unknown trainer class: {trainer_class}&#34;) from error
+    if not force:
+        if not isinstance(trainer_class, int) or not 1 &lt;= trainer_class &lt;= TRAINER_CLASS_COUNT:
+            raise ValueError(f&#34;Invalid trainer class ID: {trainer_class}&#34;)
+        trainer_class_name = TRAINER_CLASS_NAMES[trainer_class]
+        trainer_set_count = TRAINER_SET_COUNTS[trainer_class_name]
+        if not isinstance(trainer_set, int) or not 1 &lt;= trainer_set &lt;= trainer_set_count:
+            raise ValueError(f&#34;Invalid trainer set ID: {trainer_set}&#34;)
+
+    opponent = OPPONENT_ID_OFFSET + trainer_class
+    self.pyboy.memory[CURRENT_OPPONENT_ADDRESS] = opponent
+    self.pyboy.memory[TRAINER_NUMBER_ADDRESS] = trainer_set
+    self.pyboy.memory[BATTLE_TYPE_ADDRESS] = 0</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.warp"><code class="name flex">
+<span>def <span class="ident">warp</span></span>(<span>self, destination)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Schedule a script warp to a map identified by name or ID.</p>
+<p>The map transition is performed by pokered on the next emulator tick.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.warp(&quot;viridian_pokecenter&quot;)
+&gt;&gt;&gt; pyboy.tick(1)
+True
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def warp(self, destination):
+    &#34;&#34;&#34;
+    Schedule a script warp to a map identified by name or ID.
+
+    The map transition is performed by pokered on the next emulator tick.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.warp(&#34;viridian_pokecenter&#34;)
+    &gt;&gt;&gt; pyboy.tick(1)
+    True
+    ```
+    &#34;&#34;&#34;
+
+    if isinstance(destination, str):
+        try:
+            map_id = MAPS[destination]
+        except KeyError as error:
+            raise ValueError(f&#34;Unknown map name: {destination}&#34;) from error
+    else:
+        map_id = destination
+    if not 0 &lt;= map_id &lt;= 0xFF:
+        raise ValueError(f&#34;Invalid map ID: {map_id:#x}&#34;)
+    self.pyboy.memory[WARP_DESTINATION_MAP_ADDRESS] = map_id
+    self.pyboy.memory[DESTINATION_WARP_ID_ADDRESS] = 0
+    self.pyboy.memory[STATUS_FLAGS3_ADDRESS] |= 1 &lt;&lt; BIT_WARP_FROM_CURRENT_SCRIPT</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_event_flag"><code class="name flex">
+<span>def <span class="ident">set_event_flag</span></span>(<span>self, event)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set a story event flag by name or numeric pokered event ID.</p>
+<p>Gym victory event flags are separate from the badges owned by the
+player. Use :meth:<code>set_badge</code> to grant a badge.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.set_event_flag(&quot;got_pokedex&quot;)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_event_flag(self, event):
+    &#34;&#34;&#34;
+    Set a story event flag by name or numeric pokered event ID.
+
+    Gym victory event flags are separate from the badges owned by the
+    player. Use :meth:`set_badge` to grant a badge.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.set_event_flag(&#34;got_pokedex&#34;)
+    ```
+    &#34;&#34;&#34;
+    event = EVENT_FLAGS.get(event, event)  # Try lookup or default to the original value
+    if not isinstance(event, int):
+        raise ValueError(f&#34;Invalid event flag: {event}&#34;)
+    address = EVENT_FLAGS_ADDRESS + event // 8
+    self.pyboy.memory[address] |= 1 &lt;&lt; (event % 8)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.reset_event_flag"><code class="name flex">
+<span>def <span class="ident">reset_event_flag</span></span>(<span>self, event)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reset a story event flag by name or numeric pokered event ID.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.reset_event_flag(&quot;got_pokedex&quot;)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_event_flag(self, event):
+    &#34;&#34;&#34;
+    Reset a story event flag by name or numeric pokered event ID.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.reset_event_flag(&#34;got_pokedex&#34;)
+    ```
+    &#34;&#34;&#34;
+    event = EVENT_FLAGS.get(event, event)  # Try lookup or default to the original value
+    if not isinstance(event, int):
+        raise ValueError(f&#34;Invalid event flag: {event}&#34;)
+    address = EVENT_FLAGS_ADDRESS + event // 8
+    self.pyboy.memory[address] &amp;= ~(1 &lt;&lt; (event % 8))</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_badge"><code class="name flex">
+<span>def <span class="ident">set_badge</span></span>(<span>self, badge)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Grant a badge by name or numeric bit position.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.set_badge(&quot;boulder&quot;)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_badge(self, badge):
+    &#34;&#34;&#34;
+    Grant a badge by name or numeric bit position.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.set_badge(&#34;boulder&#34;)
+    ```
+    &#34;&#34;&#34;
+    badge = BADGES.get(badge, badge)
+    if not isinstance(badge, int) or not 0 &lt;= badge &lt; len(BADGES):
+        raise ValueError(f&#34;Invalid badge: {badge}&#34;)
+    self.pyboy.memory[OBTAINED_BADGES_ADDRESS] |= 1 &lt;&lt; badge</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.reset_badge"><code class="name flex">
+<span>def <span class="ident">reset_badge</span></span>(<span>self, badge)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Remove a badge by name or numeric bit position.</p>
+<p>Example:</p>
+<pre><code class="language-python">&gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+&gt;&gt;&gt; pyboy.game_wrapper.reset_badge(&quot;boulder&quot;)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_badge(self, badge):
+    &#34;&#34;&#34;
+    Remove a badge by name or numeric bit position.
+
+    Example:
+    ```python
+    &gt;&gt;&gt; pyboy = PyBoy(pokemon_blue_rom)
+    &gt;&gt;&gt; pyboy.game_wrapper.reset_badge(&#34;boulder&#34;)
+    ```
+    &#34;&#34;&#34;
+    badge = BADGES.get(badge, badge)
+    if not isinstance(badge, int) or not 0 &lt;= badge &lt; len(BADGES):
+        raise ValueError(f&#34;Invalid badge: {badge}&#34;)
+    self.pyboy.memory[OBTAINED_BADGES_ADDRESS] &amp;= ~(1 &lt;&lt; badge)</code></pre>
+</details>
+</dd>
 <dt id="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.enabled"><code class="name flex">
 <span>def <span class="ident">enabled</span></span>(<span>self)</span>
 </code></dt>
@@ -243,7 +2170,6 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one">mapping_one_to_one</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
 <li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.shape" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.shape">shape</a></code></li>
-<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.start_game">start_game</a></code></li>
 </ul>
 </li>
 </ul>
@@ -267,8 +2193,26 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 <li>
 <h4><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1">GameWrapperPokemonGen1</a></code></h4>
 <ul class="">
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_game" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_game">start_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_party" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_party">set_party</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.add_pokemon" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.add_pokemon">add_pokemon</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.remove_pokemon" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.remove_pokemon">remove_pokemon</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_money" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_money">set_money</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_inventory" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_inventory">set_inventory</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_item" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_item">set_item</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.remove_item" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.remove_item">remove_item</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_wild_battle" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_wild_battle">start_wild_battle</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_trainer_battle" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.start_trainer_battle">start_trainer_battle</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.warp" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.warp">warp</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_event_flag" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_event_flag">set_event_flag</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.reset_event_flag" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.reset_event_flag">reset_event_flag</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_badge" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.set_badge">set_badge</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.reset_badge" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.reset_badge">reset_badge</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.enabled" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.enabled">enabled</a></code></li>
 <li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.game_area_collision" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.game_area_collision">game_area_collision</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.party" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.party">party</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.money" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.money">money</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.inventory" href="#pyboy.plugins.game_wrapper_pokemon_gen1.GameWrapperPokemonGen1.inventory">inventory</a></code></li>
 </ul>
 </li>
 </ul>
@@ -277,7 +2221,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

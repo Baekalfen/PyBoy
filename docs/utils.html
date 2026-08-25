@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.11.5" />
+<meta name="generator" content="pdoc 0.11.6" />
 <title>pyboy.utils API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -47,7 +47,7 @@ __all__ = [
     &#34;SoundEnabledError&#34;,
 ]
 
-STATE_VERSION = 17
+STATE_VERSION = 21
 
 INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW = [1 &lt;&lt; x for x in range(5)]
 OPCODE_BRK = 0xDB
@@ -387,7 +387,8 @@ class WindowEvent:
         MOD_SHIFT_OFF,
         FULL_SCREEN_TOGGLE,
         CYCLE_PALETTE,
-    ) = range(43)
+        SCREEN_RECORDING_TOGGLE_MP4,
+    ) = range(44)
 
     def __init__(self, event):
         self.__event = event
@@ -447,6 +448,7 @@ class WindowEvent:
             &#34;MOD_SHIFT_OFF&#34;,
             &#34;FULL_SCREEN_TOGGLE&#34;,
             &#34;CYCLE_PALETTE&#34;,
+            &#34;SCREEN_RECORDING_TOGGLE_MP4&#34;,
         )[self.__event]
 
 
@@ -766,7 +768,8 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
         MOD_SHIFT_OFF,
         FULL_SCREEN_TOGGLE,
         CYCLE_PALETTE,
-    ) = range(43)
+        SCREEN_RECORDING_TOGGLE_MP4,
+    ) = range(44)
 
     def __init__(self, event):
         self.__event = event
@@ -826,6 +829,7 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
             &#34;MOD_SHIFT_OFF&#34;,
             &#34;FULL_SCREEN_TOGGLE&#34;,
             &#34;CYCLE_PALETTE&#34;,
+            &#34;SCREEN_RECORDING_TOGGLE_MP4&#34;,
         )[self.__event]</code></pre>
 </details>
 <h3>Subclasses</h3>
@@ -836,159 +840,163 @@ def bcd_to_dec(value, byte_width=1, byteorder=&#34;little&#34;):
 <dl>
 <dt id="pyboy.utils.WindowEvent.QUIT"><code class="name">var <span class="ident">QUIT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_ARROW_UP"><code class="name">var <span class="ident">PRESS_ARROW_UP</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_ARROW_DOWN"><code class="name">var <span class="ident">PRESS_ARROW_DOWN</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_ARROW_RIGHT"><code class="name">var <span class="ident">PRESS_ARROW_RIGHT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_ARROW_LEFT"><code class="name">var <span class="ident">PRESS_ARROW_LEFT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_A"><code class="name">var <span class="ident">PRESS_BUTTON_A</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_B"><code class="name">var <span class="ident">PRESS_BUTTON_B</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_SELECT"><code class="name">var <span class="ident">PRESS_BUTTON_SELECT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_BUTTON_START"><code class="name">var <span class="ident">PRESS_BUTTON_START</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_UP"><code class="name">var <span class="ident">RELEASE_ARROW_UP</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_DOWN"><code class="name">var <span class="ident">RELEASE_ARROW_DOWN</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_RIGHT"><code class="name">var <span class="ident">RELEASE_ARROW_RIGHT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_ARROW_LEFT"><code class="name">var <span class="ident">RELEASE_ARROW_LEFT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_A"><code class="name">var <span class="ident">RELEASE_BUTTON_A</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_B"><code class="name">var <span class="ident">RELEASE_BUTTON_B</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_SELECT"><code class="name">var <span class="ident">RELEASE_BUTTON_SELECT</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_BUTTON_START"><code class="name">var <span class="ident">RELEASE_BUTTON_START</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_SPEED_UP"><code class="name">var <span class="ident">PRESS_SPEED_UP</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_SPEED_UP"><code class="name">var <span class="ident">RELEASE_SPEED_UP</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.STATE_SAVE"><code class="name">var <span class="ident">STATE_SAVE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.STATE_LOAD"><code class="name">var <span class="ident">STATE_LOAD</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PASS"><code class="name">var <span class="ident">PASS</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE"><code class="name">var <span class="ident">SCREEN_RECORDING_TOGGLE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PAUSE"><code class="name">var <span class="ident">PAUSE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.UNPAUSE"><code class="name">var <span class="ident">UNPAUSE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PAUSE_TOGGLE"><code class="name">var <span class="ident">PAUSE_TOGGLE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_REWIND_BACK"><code class="name">var <span class="ident">PRESS_REWIND_BACK</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.PRESS_REWIND_FORWARD"><code class="name">var <span class="ident">PRESS_REWIND_FORWARD</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_REWIND_BACK"><code class="name">var <span class="ident">RELEASE_REWIND_BACK</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.RELEASE_REWIND_FORWARD"><code class="name">var <span class="ident">RELEASE_REWIND_FORWARD</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.WINDOW_FOCUS"><code class="name">var <span class="ident">WINDOW_FOCUS</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.WINDOW_UNFOCUS"><code class="name">var <span class="ident">WINDOW_UNFOCUS</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.SCREENSHOT_RECORD"><code class="name">var <span class="ident">SCREENSHOT_RECORD</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_DOWN"><code class="name">var <span class="ident">DEBUG_MEMORY_SCROLL_DOWN</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.DEBUG_MEMORY_SCROLL_UP"><code class="name">var <span class="ident">DEBUG_MEMORY_SCROLL_UP</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.MOD_SHIFT_ON"><code class="name">var <span class="ident">MOD_SHIFT_ON</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.MOD_SHIFT_OFF"><code class="name">var <span class="ident">MOD_SHIFT_OFF</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE"><code class="name">var <span class="ident">FULL_SCREEN_TOGGLE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 <dt id="pyboy.utils.WindowEvent.CYCLE_PALETTE"><code class="name">var <span class="ident">CYCLE_PALETTE</span></code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>The type of the None singleton.</p></section>
+</dd>
+<dt id="pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE_MP4"><code class="name">var <span class="ident">SCREEN_RECORDING_TOGGLE_MP4</span></code></dt>
+<dd>
+<section class="desc"><p>The type of the None singleton.</p></section>
 </dd>
 </dl>
 </dd>
@@ -1352,6 +1360,7 @@ it raises a predefined exception. I.e. on missing dependencies etc.</p></section
 <li><code><a title="pyboy.utils.WindowEvent.MOD_SHIFT_OFF" href="#pyboy.utils.WindowEvent.MOD_SHIFT_OFF">MOD_SHIFT_OFF</a></code></li>
 <li><code><a title="pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE" href="#pyboy.utils.WindowEvent.FULL_SCREEN_TOGGLE">FULL_SCREEN_TOGGLE</a></code></li>
 <li><code><a title="pyboy.utils.WindowEvent.CYCLE_PALETTE" href="#pyboy.utils.WindowEvent.CYCLE_PALETTE">CYCLE_PALETTE</a></code></li>
+<li><code><a title="pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE_MP4" href="#pyboy.utils.WindowEvent.SCREEN_RECORDING_TOGGLE_MP4">SCREEN_RECORDING_TOGGLE_MP4</a></code></li>
 </ul>
 </li>
 <li>
@@ -1393,7 +1402,7 @@ it raises a predefined exception. I.e. on missing dependencies etc.</p></section
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

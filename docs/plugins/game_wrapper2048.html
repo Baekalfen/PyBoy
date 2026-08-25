@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.11.6" />
+<title>pyboy.plugins.game_wrapper2048 API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.plugins.game_wrapper2048</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#
+# License: See LICENSE.md file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+__pdoc__ = {
+    &#34;GameWrapper2048.cartridge_title&#34;: False,
+    &#34;GameWrapper2048.post_tick&#34;: False,
+}
+
+
+import pyboy
+from pyboy.utils import PyBoyException
+from .base_plugin import PyBoyGameWrapper
+
+logger = pyboy.logging.get_logger(__name__)
+
+
+STATE_TITLE = 0
+STATE_PLAYING = 1
+STATE_WINNER = 2
+STATE_GAMEOVER = 3
+
+# &#34;PRESS START&#34; tiles on the title screen&#39;s window layer (row 5, columns 5-13)
+TITLE_PRESS_START_TILES = [294, 309, 296, 292, 311, 296, 295, 291, 293]
+
+# Valid tile values recognized by the ROM (src/board.c); anything else is an empty cell
+VALID_TILE_VALUES = frozenset({0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048})
+
+
+class GameWrapper2048(PyBoyGameWrapper):
+    &#34;&#34;&#34;
+    This class wraps 2048 for Game Boy, and provides easy access for AIs.
+
+    This game wrapper only works with the release of 2048 with MD5 1efd562975966b55ada5fb88e7a95f6e. It&#39;s required to
+    also have the .map file for the ROM. See PyBoy mirror of open-source ROMs https://pyboy.dk/mirror/
+
+    If you call `print` on an instance of this object, it will show an overview of everything this object provides.
+    &#34;&#34;&#34;
+
+    cartridge_title = &#34;2048&#34;
+
+    def __init__(self, *args, **kwargs):
+        self.score = 0
+        &#34;&#34;&#34;The current score&#34;&#34;&#34;
+        self.winner = False
+        &#34;&#34;&#34;True if the player has reached 2048&#34;&#34;&#34;
+        self._game_over = False
+        &#34;&#34;&#34;True if the game is over&#34;&#34;&#34;
+        self.board = [[0] * 5 for _ in range(5)]
+        &#34;&#34;&#34;The 5x5 board&#34;&#34;&#34;
+        self._addrs_loaded = False
+
+        super().__init__(*args, game_area_section=(0, 0, 20, 18), **kwargs)
+
+    def _load_addresses(self):
+        _, self._addr_board_start = self.pyboy.symbol_lookup(&#34;_board&#34;)
+        _, self._addr_score = self.pyboy.symbol_lookup(&#34;_score&#34;)
+        _, self._addr_winner = self.pyboy.symbol_lookup(&#34;_winner&#34;)
+        _, self._addr_state = self.pyboy.symbol_lookup(&#34;_state&#34;)
+        self._addrs_loaded = True
+
+    def start_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        Call this function right after initializing PyBoy. This will navigate through the boot/title screen and
+        start the game at the first playable state.
+
+        The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+        instantly.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+        &#34;&#34;&#34;
+
+        if self.game_has_started:
+            raise PyBoyException(&#34;Gamewrapper already started! Use &#39;reset_game&#39; instead.&#34;)
+
+        if not self._addrs_loaded:
+            self._load_addresses()
+
+        # Wait for the title screen instead of ticking a fixed number of frames
+        while list(self.tilemap_window[5:14, 5]) != TITLE_PRESS_START_TILES:
+            self.pyboy.tick(1, False)
+
+        self.pyboy.button(&#34;start&#34;)
+        while self.pyboy.memory[self._addr_state] != STATE_PLAYING:
+            self.pyboy.tick(1, False)
+
+        # Wait for the starting tiles to spawn, plus a short input-ignore period
+        while self._non_zero_tile_count() &lt; 2:
+            self.pyboy.tick(1, False)
+        for _ in range(30):
+            self.pyboy.tick(1, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
+    def post_tick(self):
+        if not self._addrs_loaded:
+            self._load_addresses()
+
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
+        low = self.pyboy.memory[self._addr_score]
+        high = self.pyboy.memory[self._addr_score + 1]
+        self.score = low + (high * 256)
+
+        self.winner = self.pyboy.memory[self._addr_winner] == 1
+
+        state = self.pyboy.memory[self._addr_state]
+        self._game_over = state == STATE_GAMEOVER
+
+        for i in range(25):
+            addr = self._addr_board_start + (i * 2)
+            low = self.pyboy.memory[addr]
+            high = self.pyboy.memory[addr + 1]
+            val = low + (high * 256)
+            row = i // 5
+            col = i % 5
+            self.board[row][col] = val if val in VALID_TILE_VALUES else 0
+
+    def game_over(self):
+        return self._game_over
+
+    def _non_zero_tile_count(self):
+        count = 0
+        for row in self.board:
+            for tile in row:
+                if tile != 0:
+                    count += 1
+        return count
+
+    def __repr__(self):
+        board_str = &#34;&#34;
+        for row in self.board:
+            board_str += &#34;\t&#34; + str(row) + &#34;\n&#34;
+
+        return (
+            &#34;2048:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Winner: {self.winner}\n&#34;
+            + f&#34;Game Over: {self._game_over}\n&#34;
+            + f&#34;Board:\n{board_str}&#34;
+            + super().__repr__()
+        )</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.plugins.game_wrapper2048.GameWrapper2048"><code class="flex name class">
+<span>class <span class="ident">GameWrapper2048</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This class wraps 2048 for Game Boy, and provides easy access for AIs.</p>
+<p>This game wrapper only works with the release of 2048 with MD5 1efd562975966b55ada5fb88e7a95f6e. It's required to
+also have the .map file for the ROM. See PyBoy mirror of open-source ROMs <a href="https://pyboy.dk/mirror/">https://pyboy.dk/mirror/</a></p>
+<p>If you call <code>print</code> on an instance of this object, it will show an overview of everything this object provides.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GameWrapper2048(PyBoyGameWrapper):
+    &#34;&#34;&#34;
+    This class wraps 2048 for Game Boy, and provides easy access for AIs.
+
+    This game wrapper only works with the release of 2048 with MD5 1efd562975966b55ada5fb88e7a95f6e. It&#39;s required to
+    also have the .map file for the ROM. See PyBoy mirror of open-source ROMs https://pyboy.dk/mirror/
+
+    If you call `print` on an instance of this object, it will show an overview of everything this object provides.
+    &#34;&#34;&#34;
+
+    cartridge_title = &#34;2048&#34;
+
+    def __init__(self, *args, **kwargs):
+        self.score = 0
+        &#34;&#34;&#34;The current score&#34;&#34;&#34;
+        self.winner = False
+        &#34;&#34;&#34;True if the player has reached 2048&#34;&#34;&#34;
+        self._game_over = False
+        &#34;&#34;&#34;True if the game is over&#34;&#34;&#34;
+        self.board = [[0] * 5 for _ in range(5)]
+        &#34;&#34;&#34;The 5x5 board&#34;&#34;&#34;
+        self._addrs_loaded = False
+
+        super().__init__(*args, game_area_section=(0, 0, 20, 18), **kwargs)
+
+    def _load_addresses(self):
+        _, self._addr_board_start = self.pyboy.symbol_lookup(&#34;_board&#34;)
+        _, self._addr_score = self.pyboy.symbol_lookup(&#34;_score&#34;)
+        _, self._addr_winner = self.pyboy.symbol_lookup(&#34;_winner&#34;)
+        _, self._addr_state = self.pyboy.symbol_lookup(&#34;_state&#34;)
+        self._addrs_loaded = True
+
+    def start_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        Call this function right after initializing PyBoy. This will navigate through the boot/title screen and
+        start the game at the first playable state.
+
+        The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+        instantly.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+        &#34;&#34;&#34;
+
+        if self.game_has_started:
+            raise PyBoyException(&#34;Gamewrapper already started! Use &#39;reset_game&#39; instead.&#34;)
+
+        if not self._addrs_loaded:
+            self._load_addresses()
+
+        # Wait for the title screen instead of ticking a fixed number of frames
+        while list(self.tilemap_window[5:14, 5]) != TITLE_PRESS_START_TILES:
+            self.pyboy.tick(1, False)
+
+        self.pyboy.button(&#34;start&#34;)
+        while self.pyboy.memory[self._addr_state] != STATE_PLAYING:
+            self.pyboy.tick(1, False)
+
+        # Wait for the starting tiles to spawn, plus a short input-ignore period
+        while self._non_zero_tile_count() &lt; 2:
+            self.pyboy.tick(1, False)
+        for _ in range(30):
+            self.pyboy.tick(1, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+
+    def post_tick(self):
+        if not self._addrs_loaded:
+            self._load_addresses()
+
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
+        low = self.pyboy.memory[self._addr_score]
+        high = self.pyboy.memory[self._addr_score + 1]
+        self.score = low + (high * 256)
+
+        self.winner = self.pyboy.memory[self._addr_winner] == 1
+
+        state = self.pyboy.memory[self._addr_state]
+        self._game_over = state == STATE_GAMEOVER
+
+        for i in range(25):
+            addr = self._addr_board_start + (i * 2)
+            low = self.pyboy.memory[addr]
+            high = self.pyboy.memory[addr + 1]
+            val = low + (high * 256)
+            row = i // 5
+            col = i % 5
+            self.board[row][col] = val if val in VALID_TILE_VALUES else 0
+
+    def game_over(self):
+        return self._game_over
+
+    def _non_zero_tile_count(self):
+        count = 0
+        for row in self.board:
+            for tile in row:
+                if tile != 0:
+                    count += 1
+        return count
+
+    def __repr__(self):
+        board_str = &#34;&#34;
+        for row in self.board:
+            board_str += &#34;\t&#34; + str(row) + &#34;\n&#34;
+
+        return (
+            &#34;2048:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Winner: {self.winner}\n&#34;
+            + f&#34;Game Over: {self._game_over}\n&#34;
+            + f&#34;Board:\n{board_str}&#34;
+            + super().__repr__()
+        )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></li>
+<li>pyboy.plugins.base_plugin.PyBoyPlugin</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper2048.GameWrapper2048.score"><code class="name">var <span class="ident">score</span></code></dt>
+<dd>
+<section class="desc"><p>The current score</p></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper2048.GameWrapper2048.winner"><code class="name">var <span class="ident">winner</span></code></dt>
+<dd>
+<section class="desc"><p>True if the player has reached 2048</p></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper2048.GameWrapper2048.board"><code class="name">var <span class="ident">board</span></code></dt>
+<dd>
+<section class="desc"><p>The 5x5 board</p></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper2048.GameWrapper2048.start_game"><code class="name flex">
+<span>def <span class="ident">start_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Call this function right after initializing PyBoy. This will navigate through the boot/title screen and
+start the game at the first playable state.</p>
+<p>The state of the emulator is saved, and using <code>reset_game</code>, you can get back to this point of the game
+instantly.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value. Use <code>None</code> to randomize.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    Call this function right after initializing PyBoy. This will navigate through the boot/title screen and
+    start the game at the first playable state.
+
+    The state of the emulator is saved, and using `reset_game`, you can get back to this point of the game
+    instantly.
+
+    Args:
+        timer_div (int): Replace timer&#39;s DIV register with this value. Use `None` to randomize.
+    &#34;&#34;&#34;
+
+    if self.game_has_started:
+        raise PyBoyException(&#34;Gamewrapper already started! Use &#39;reset_game&#39; instead.&#34;)
+
+    if not self._addrs_loaded:
+        self._load_addresses()
+
+    # Wait for the title screen instead of ticking a fixed number of frames
+    while list(self.tilemap_window[5:14, 5]) != TITLE_PRESS_START_TILES:
+        self.pyboy.tick(1, False)
+
+    self.pyboy.button(&#34;start&#34;)
+    while self.pyboy.memory[self._addr_state] != STATE_PLAYING:
+        self.pyboy.tick(1, False)
+
+    # Wait for the starting tiles to spawn, plus a short input-ignore period
+    while self._non_zero_tile_count() &lt; 2:
+        self.pyboy.tick(1, False)
+    for _ in range(30):
+        self.pyboy.tick(1, False)
+
+    PyBoyGameWrapper.start_game(self, timer_div=timer_div)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area">game_area</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.game_over">game_over</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one">mapping_one_to_one</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.reset_game">reset_game</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.shape" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.shape">shape</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy.plugins" href="index.html">pyboy.plugins</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.plugins.game_wrapper2048.GameWrapper2048" href="#pyboy.plugins.game_wrapper2048.GameWrapper2048">GameWrapper2048</a></code></h4>
+<ul class="">
+<li><code><a title="pyboy.plugins.game_wrapper2048.GameWrapper2048.start_game" href="#pyboy.plugins.game_wrapper2048.GameWrapper2048.start_game">start_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper2048.GameWrapper2048.score" href="#pyboy.plugins.game_wrapper2048.GameWrapper2048.score">score</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper2048.GameWrapper2048.winner" href="#pyboy.plugins.game_wrapper2048.GameWrapper2048.winner">winner</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper2048.GameWrapper2048.board" href="#pyboy.plugins.game_wrapper2048.GameWrapper2048.board">board</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
