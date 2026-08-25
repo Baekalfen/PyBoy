@@ -10,10 +10,10 @@ cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
     cdef readonly int ball_saver_seconds_left
     cdef readonly int ball_size
     cdef readonly int ball_type
-    cdef readonly int ball_x
-    cdef readonly int ball_x_velocity
-    cdef readonly int ball_y
-    cdef readonly int ball_y_velocity
+    cdef readonly float ball_x
+    cdef readonly float ball_x_velocity
+    cdef readonly float ball_y
+    cdef readonly float ball_y_velocity
     cdef readonly int balls_left
     cdef readonly int current_map
     cdef readonly int current_stage
