@@ -28,7 +28,7 @@ all = [
     "pyopengl",
     "glfw",
     "PyOpenAL",
-    "markdown",
+    "markdown<3.10",
     "pdoc3",
     "gym",
 ]

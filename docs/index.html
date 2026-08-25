@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.11.5" />
+<meta name="generator" content="pdoc 0.11.6" />
 <title>pyboy API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
@@ -68,7 +68,7 @@ from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile</code></pre>
 <dl>
 <dt id="pyboy.PyBoy"><code class="flex name class">
 <span>class <span class="ident">PyBoy</span></span>
-<span>(</span><span>gamerom, *, ram_file=None, rtc_file=None, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='WARNING', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), title_status=False, **kwargs)</span>
+<span>(</span><span>gamerom, *, ram_file=None, rtc_file=None, window='SDL2', scale=3, symbols=None, bootrom=None, sound_volume=100, sound_emulated=True, sound_sample_rate=None, cgb=None, gameshark=None, no_input=False, log_level='WARNING', color_palette=(16777215, 10066329, 5592405, 0), cgb_color_palette=((16777215, 8126257, 25541, 0), (16777215, 16745604, 9714234, 0), (16777215, 16745604, 9714234, 0)), title_status=False, serial_shared_memory=None, serial_interrupt_based=False, **kwargs)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>PyBoy is loadable as an object in Python. This means, it can be initialized from another script, and be
@@ -145,6 +145,8 @@ True...
         color_palette=defaults[&#34;color_palette&#34;],
         cgb_color_palette=defaults[&#34;cgb_color_palette&#34;],
         title_status=False,
+        serial_shared_memory=None,
+        serial_interrupt_based=False,
         **kwargs,
     ):
         &#34;&#34;&#34;
@@ -300,6 +302,8 @@ True...
                 sound_sample_rate,
                 cgb,
                 randomize=randomize,
+                serial_shared_memory=serial_shared_memory,
+                serial_interrupt_based=serial_interrupt_based,
             )
         finally:
             # Close the files we opened -- i.e. not passed from args
@@ -324,7 +328,7 @@ True...
 
         for k, v in kwargs.items():
             if k not in defaults and k not in plugin_manager_keywords:
-                logger.error(&#34;Unknown keyword argument: %s&#34;, k)
+                logger.critical(&#34;Unknown keyword argument: %s&#34;, k)
                 raise KeyError(f&#34;Unknown keyword argument: {k}&#34;)
 
         # Performance measures
@@ -732,7 +736,7 @@ True...
         self.paused = True
         self.save_target_emulationspeed = self.target_emulationspeed
         self.target_emulationspeed = 1
-        logger.info(&#34;Emulation paused!&#34;)
+        logger.debug(&#34;Emulation paused!&#34;)
         self._update_window_title()
         self._plugin_manager.paused(True)
 
@@ -741,7 +745,7 @@ True...
             return
         self.paused = False
         self.target_emulationspeed = self.save_target_emulationspeed
-        logger.info(&#34;Emulation unpaused!&#34;)
+        logger.debug(&#34;Emulation unpaused!&#34;)
         self._update_window_title()
         self._plugin_manager.paused(False)
 
@@ -775,6 +779,8 @@ True...
         self._plugin_manager._set_title()
 
     def __del__(self):
+        if sys is None or sys.is_finalizing():
+            return
         self.stop(save=False)
 
     def __enter__(self):
@@ -806,9 +812,9 @@ True...
             rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
         &#34;&#34;&#34;
         if self.initialized and not self.stopped:
-            logger.info(&#34;###########################&#34;)
-            logger.info(&#34;# Emulator is turning off #&#34;)
-            logger.info(&#34;###########################&#34;)
+            logger.debug(&#34;###########################&#34;)
+            logger.debug(&#34;# Emulator is turning off #&#34;)
+            logger.debug(&#34;###########################&#34;)
             self._plugin_manager.stop()
 
             # Battery implies saving RAM
@@ -1275,51 +1281,84 @@ True...
             logger.warning(&#34;The emulation speed might not be accurate when speed-target is higher than 5&#34;)
         self.target_emulationspeed = target_speed
 
+    # sdcc/sdld linker map line, e.g.: &#34;00000A00 _board                            G&#34;
+    _MAP_SYMBOL_RE = re.compile(r&#34;^\s*([0-9A-Fa-f]{8})\s+(\S+)\s+\S*\s*$&#34;)
+
     def _load_symbols(self):
         if self.rom_symbols:
             return self.rom_symbols
         gamerom_paths = []
         if self.gamerom:
             gamerom_file_no_ext, rom_ext = os.path.splitext(self.gamerom)
-            gamerom_paths = [gamerom_file_no_ext + &#34;.sym&#34;, gamerom_file_no_ext + rom_ext + &#34;.sym&#34;]
+            gamerom_paths = [
+                gamerom_file_no_ext + &#34;.sym&#34;,
+                gamerom_file_no_ext + rom_ext + &#34;.sym&#34;,
+                gamerom_file_no_ext + &#34;.map&#34;,
+                gamerom_file_no_ext + rom_ext + &#34;.map&#34;,
+            ]
         for sym_path in [self.symbols_file] + gamerom_paths:
             if sym_path and os.path.isfile(sym_path):
-                logger.info(&#34;Loading symbol file: %s&#34;, sym_path)
-                group = &#34;labels&#34;
-                with open(sym_path) as f:
-                    for _line in f.readlines():
-                        line = _line.strip()
-                        if line == &#34;&#34;:
-                            continue
-                        elif line.startswith(&#34;;&#34;):
-                            continue
-                        elif line.startswith(&#34;[&#34;):
-                            # Start of key group
-                            group = line.strip()[1:-1]
-                            # [labels]
-                            # [definitions]
-                            continue
-
-                        if group == &#34;labels&#34;:
-                            try:
-                                bank, addr, sym_label = re.split(&#34;:| &#34;, line.strip())
-                                bank = int(bank, 16)
-                                addr = int(addr, 16)
-                                if bank not in self.rom_symbols:
-                                    self.rom_symbols[bank] = {}
-
-                                if addr not in self.rom_symbols[bank]:
-                                    self.rom_symbols[bank][addr] = []
-
-                                self.rom_symbols[bank][addr].append(sym_label)
-                                self.rom_symbols_inverse[sym_label] = (bank, addr)
-                            except ValueError:
-                                logger.warning(&#34;Skipping .sym line: %s&#34;, line.strip())
-                        elif group == &#34;definitions&#34;:
-                            pass
-                        else:
-                            logger.warning(&#34;Invalid group. Skipping .sym line: %s&#34;, line.strip())
+                logger.debug(&#34;Loading symbol file: %s&#34;, sym_path)
+                if sym_path.endswith(&#34;.map&#34;):
+                    self._load_map_file(sym_path)
+                else:
+                    self._load_sym_file(sym_path)
         return self.rom_symbols
+
+    def _load_sym_file(self, sym_path):
+        group = &#34;labels&#34;
+        with open(sym_path) as f:
+            for _line in f.readlines():
+                line = _line.strip()
+                if line == &#34;&#34;:
+                    continue
+                elif line.startswith(&#34;;&#34;):
+                    continue
+                elif line.startswith(&#34;[&#34;):
+                    # Start of key group
+                    group = line.strip()[1:-1]
+                    # [labels]
+                    # [definitions]
+                    continue
+
+                if group == &#34;labels&#34;:
+                    try:
+                        bank, addr, sym_label = re.split(&#34;:| &#34;, line.strip())
+                        bank = int(bank, 16)
+                        addr = int(addr, 16)
+                        if bank not in self.rom_symbols:
+                            self.rom_symbols[bank] = {}
+
+                        if addr not in self.rom_symbols[bank]:
+                            self.rom_symbols[bank][addr] = []
+
+                        self.rom_symbols[bank][addr].append(sym_label)
+                        self.rom_symbols_inverse[sym_label] = (bank, addr)
+                    except ValueError:
+                        logger.debug(&#34;Skipping .sym line: %s&#34;, line.strip())
+                elif group == &#34;definitions&#34;:
+                    pass
+                else:
+                    logger.warning(&#34;Invalid group. Skipping .sym line: %s&#34;, line.strip())
+
+    def _load_map_file(self, map_path):
+        # .map files have no bank info, everything goes in bank 0
+        bank = 0
+        with open(map_path) as f:
+            for line in f:
+                match = self._MAP_SYMBOL_RE.match(line)
+                if match is None:
+                    continue
+                addr_str, sym_label = match.groups()
+                addr = int(addr_str, 16)
+                if sym_label in self.rom_symbols_inverse:
+                    continue
+                if bank not in self.rom_symbols:
+                    self.rom_symbols[bank] = {}
+                if addr not in self.rom_symbols[bank]:
+                    self.rom_symbols[bank][addr] = []
+                self.rom_symbols[bank][addr].append(sym_label)
+                self.rom_symbols_inverse[sym_label] = (bank, addr)
 
     def _lookup_symbol(self, symbol):
         bank_addr = self.rom_symbols_inverse.get(symbol)
@@ -1899,9 +1938,9 @@ provided game-ROM.</dd>
         rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
     &#34;&#34;&#34;
     if self.initialized and not self.stopped:
-        logger.info(&#34;###########################&#34;)
-        logger.info(&#34;# Emulator is turning off #&#34;)
-        logger.info(&#34;###########################&#34;)
+        logger.debug(&#34;###########################&#34;)
+        logger.debug(&#34;# Emulator is turning off #&#34;)
+        logger.debug(&#34;###########################&#34;)
         self._plugin_manager.stop()
 
         # Battery implies saving RAM
@@ -4022,7 +4061,7 @@ def PC(self):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.5</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>

@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.11.6" />
+<title>pyboy.plugins.game_wrapper_pandoras_blocks API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:0.8em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS_CHTML'></script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyboy.plugins.game_wrapper_pandoras_blocks</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#
+# License: See LICENSE.md file
+# GitHub: https://github.com/Baekalfen/PyBoy
+#
+
+__pdoc__ = {
+    &#34;GameWrapperPandorasBlocks.cartridge_title&#34;: False,
+    &#34;GameWrapperPandorasBlocks.post_tick&#34;: False,
+}
+
+
+import numpy as np
+
+import pyboy
+
+from .base_plugin import PyBoyGameWrapper
+from pyboy.api.constants import TILES
+
+logger = pyboy.logging.get_logger(__name__)
+
+PIECE_NAMES = (&#34;I&#34;, &#34;Z&#34;, &#34;S&#34;, &#34;J&#34;, &#34;L&#34;, &#34;O&#34;, &#34;T&#34;)
+piece_table = {name: piece for piece, name in enumerate(PIECE_NAMES)}
+
+FIELD_EMPTY_TILE = 108
+PIECE_TILE_START = 48
+PIECE_TILE_END = 105
+GAME_OVER_TILES = (145, 147, 167, 187)
+TITLE_SCREEN_TILES = [171, 177, 179, 185, 187, 193, 195, 201, 203, 209, 211, 217, 219, 225]
+
+GAME_STATE_ADDR = 0xFFFD
+GAMEPLAY_STATE = 3
+MODE_ADDR = 0xFFDB
+MODE_GAME_OVER = 21
+MODE_PRE_GAME_OVER = 24
+NEXT_BLOCK_ADDR = 0xFFD2
+LEVEL_ADDR = 0xFF90
+SCORE_ADDR = 0xFFB8
+
+mapping_compressed = np.zeros(TILES, dtype=np.uint8)
+mapping_compressed[PIECE_TILE_START:PIECE_TILE_END] = 1
+mapping_compressed[106] = 1  # Clearing line
+mapping_compressed[107] = 1  # Ghost piece
+for tile in GAME_OVER_TILES:
+    mapping_compressed[tile] = 2
+
+mapping_minimal = np.ones(TILES, dtype=np.uint8)
+mapping_minimal[1] = 0
+mapping_minimal[FIELD_EMPTY_TILE] = 0
+for tile in GAME_OVER_TILES:
+    mapping_minimal[tile] = 2
+
+
+class GameWrapperPandorasBlocks(PyBoyGameWrapper):
+    &#34;&#34;&#34;
+    This class wraps Pandora&#39;s Blocks and provides easy access to score, lines and level for AIs.
+
+    Pandora&#39;s Blocks uses its level as the number of lines cleared, so ``lines`` and ``level`` have the same value.
+    If you call ``print`` on an instance of this object, it will show an overview of everything this object provides.
+    &#34;&#34;&#34;
+
+    cartridge_title = &#34;DMGTRIS&#34;
+    mapping_compressed = mapping_compressed
+    &#34;&#34;&#34;
+    Compressed mapping for `pyboy.PyBoy.game_area_mapping`
+    &#34;&#34;&#34;
+    mapping_minimal = mapping_minimal
+    &#34;&#34;&#34;
+    Minimal mapping for `pyboy.PyBoy.game_area_mapping`
+    &#34;&#34;&#34;
+
+    def __init__(self, *args, **kwargs):
+        self.score = 0
+        &#34;&#34;&#34;The score provided by the game&#34;&#34;&#34;
+        self.level = 0
+        &#34;&#34;&#34;The current level&#34;&#34;&#34;
+        self.lines = 0
+        &#34;&#34;&#34;The number of cleared lines&#34;&#34;&#34;
+
+        super().__init__(*args, game_area_section=(2, 0, 10, 18), game_area_follow_scxy=False, **kwargs)
+
+    def _game_area_tiles(self):
+        if self._tile_cache_invalid:
+            self._cached_game_area_tiles = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
+            self._tile_cache_invalid = False
+        return self._cached_game_area_tiles
+
+    def post_tick(self):
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
+        self.score = 0
+        for digit in self.pyboy.memory[SCORE_ADDR : SCORE_ADDR + 8]:
+            self.score = self.score * 10 + digit
+
+        self.level = 0
+        for digit in self.pyboy.memory[LEVEL_ADDR : LEVEL_ADDR + 4]:
+            self.level = self.level * 10 + digit
+        self.lines = self.level
+
+    def _enter_gameplay(self):
+        while self.pyboy.memory[GAME_STATE_ADDR] != GAMEPLAY_STATE:
+            self.pyboy.button(&#34;start&#34;)
+            for _ in range(8):
+                self.pyboy.tick(1, False, False)
+                if self.pyboy.memory[GAME_STATE_ADDR] == GAMEPLAY_STATE:
+                    return
+
+    def start_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+        at the first playable state.
+
+        The title-screen state is saved, and using `reset_game`, you can get back to this point instantly.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value.
+        &#34;&#34;&#34;
+        while self.tilemap_background[3:17, 2] != TITLE_SCREEN_TILES:
+            self.pyboy.tick(1, False, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+        self._enter_gameplay()
+
+    def reset_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to reset the game.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value.
+        &#34;&#34;&#34;
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+        self._enter_gameplay()
+
+    def game_area(self):
+        &#34;&#34;&#34;
+        Return the 10 by 18 playfield as a matrix of tile identifiers.
+
+        The score, lines cleared, and level are available as attributes of this class.
+        &#34;&#34;&#34;
+        return PyBoyGameWrapper.game_area(self)
+
+    def next_block(self):
+        &#34;&#34;&#34;
+        Return the next block to drop.
+
+        Returns
+        -------
+        shape:
+            ``str`` identifying the block: ``&#34;I&#34;``, ``&#34;Z&#34;``, ``&#34;S&#34;``, ``&#34;J&#34;``, ``&#34;L&#34;``, ``&#34;O&#34;`` or ``&#34;T&#34;``.
+        &#34;&#34;&#34;
+        return PIECE_NAMES[self.pyboy.memory[NEXT_BLOCK_ADDR]]
+
+    def set_block(self, shape):
+        &#34;&#34;&#34;
+        Set the next block to drop.
+
+        Args:
+            shape (str): One of ``&#34;I&#34;``, ``&#34;Z&#34;``, ``&#34;S&#34;``, ``&#34;J&#34;``, ``&#34;L&#34;``, ``&#34;O&#34;`` or ``&#34;T&#34;``.
+        &#34;&#34;&#34;
+        if shape not in piece_table:
+            raise KeyError(&#34;Invalid block shape!&#34;)
+        self.pyboy.memory[NEXT_BLOCK_ADDR] = piece_table[shape]
+
+    def game_over(self):
+        &#34;&#34;&#34;
+        Return whether the current game has reached a game-over state.
+        &#34;&#34;&#34;
+        return self.pyboy.memory[MODE_ADDR] in (MODE_GAME_OVER, MODE_PRE_GAME_OVER)
+
+    def __repr__(self):
+        return (
+            &#34;Pandora&#39;s Blocks:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Level: {self.level}\n&#34;
+            + f&#34;Lines: {self.lines}\n&#34;
+            + super().__repr__()
+        )</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks"><code class="flex name class">
+<span>class <span class="ident">GameWrapperPandorasBlocks</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This class wraps Pandora's Blocks and provides easy access to score, lines and level for AIs.</p>
+<p>Pandora's Blocks uses its level as the number of lines cleared, so <code>lines</code> and <code>level</code> have the same value.
+If you call <code>print</code> on an instance of this object, it will show an overview of everything this object provides.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GameWrapperPandorasBlocks(PyBoyGameWrapper):
+    &#34;&#34;&#34;
+    This class wraps Pandora&#39;s Blocks and provides easy access to score, lines and level for AIs.
+
+    Pandora&#39;s Blocks uses its level as the number of lines cleared, so ``lines`` and ``level`` have the same value.
+    If you call ``print`` on an instance of this object, it will show an overview of everything this object provides.
+    &#34;&#34;&#34;
+
+    cartridge_title = &#34;DMGTRIS&#34;
+    mapping_compressed = mapping_compressed
+    &#34;&#34;&#34;
+    Compressed mapping for `pyboy.PyBoy.game_area_mapping`
+    &#34;&#34;&#34;
+    mapping_minimal = mapping_minimal
+    &#34;&#34;&#34;
+    Minimal mapping for `pyboy.PyBoy.game_area_mapping`
+    &#34;&#34;&#34;
+
+    def __init__(self, *args, **kwargs):
+        self.score = 0
+        &#34;&#34;&#34;The score provided by the game&#34;&#34;&#34;
+        self.level = 0
+        &#34;&#34;&#34;The current level&#34;&#34;&#34;
+        self.lines = 0
+        &#34;&#34;&#34;The number of cleared lines&#34;&#34;&#34;
+
+        super().__init__(*args, game_area_section=(2, 0, 10, 18), game_area_follow_scxy=False, **kwargs)
+
+    def _game_area_tiles(self):
+        if self._tile_cache_invalid:
+            self._cached_game_area_tiles = np.asarray(self.tilemap_background[2:12, :18], dtype=np.uint32)
+            self._tile_cache_invalid = False
+        return self._cached_game_area_tiles
+
+    def post_tick(self):
+        self._tile_cache_invalid = True
+        self._sprite_cache_invalid = True
+
+        self.score = 0
+        for digit in self.pyboy.memory[SCORE_ADDR : SCORE_ADDR + 8]:
+            self.score = self.score * 10 + digit
+
+        self.level = 0
+        for digit in self.pyboy.memory[LEVEL_ADDR : LEVEL_ADDR + 4]:
+            self.level = self.level * 10 + digit
+        self.lines = self.level
+
+    def _enter_gameplay(self):
+        while self.pyboy.memory[GAME_STATE_ADDR] != GAMEPLAY_STATE:
+            self.pyboy.button(&#34;start&#34;)
+            for _ in range(8):
+                self.pyboy.tick(1, False, False)
+                if self.pyboy.memory[GAME_STATE_ADDR] == GAMEPLAY_STATE:
+                    return
+
+    def start_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+        at the first playable state.
+
+        The title-screen state is saved, and using `reset_game`, you can get back to this point instantly.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value.
+        &#34;&#34;&#34;
+        while self.tilemap_background[3:17, 2] != TITLE_SCREEN_TILES:
+            self.pyboy.tick(1, False, False)
+
+        PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+        self._enter_gameplay()
+
+    def reset_game(self, timer_div=None):
+        &#34;&#34;&#34;
+        After calling `start_game`, you can call this method at any time to reset the game.
+
+        Args:
+            timer_div (int): Replace timer&#39;s DIV register with this value.
+        &#34;&#34;&#34;
+        PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+        self._enter_gameplay()
+
+    def game_area(self):
+        &#34;&#34;&#34;
+        Return the 10 by 18 playfield as a matrix of tile identifiers.
+
+        The score, lines cleared, and level are available as attributes of this class.
+        &#34;&#34;&#34;
+        return PyBoyGameWrapper.game_area(self)
+
+    def next_block(self):
+        &#34;&#34;&#34;
+        Return the next block to drop.
+
+        Returns
+        -------
+        shape:
+            ``str`` identifying the block: ``&#34;I&#34;``, ``&#34;Z&#34;``, ``&#34;S&#34;``, ``&#34;J&#34;``, ``&#34;L&#34;``, ``&#34;O&#34;`` or ``&#34;T&#34;``.
+        &#34;&#34;&#34;
+        return PIECE_NAMES[self.pyboy.memory[NEXT_BLOCK_ADDR]]
+
+    def set_block(self, shape):
+        &#34;&#34;&#34;
+        Set the next block to drop.
+
+        Args:
+            shape (str): One of ``&#34;I&#34;``, ``&#34;Z&#34;``, ``&#34;S&#34;``, ``&#34;J&#34;``, ``&#34;L&#34;``, ``&#34;O&#34;`` or ``&#34;T&#34;``.
+        &#34;&#34;&#34;
+        if shape not in piece_table:
+            raise KeyError(&#34;Invalid block shape!&#34;)
+        self.pyboy.memory[NEXT_BLOCK_ADDR] = piece_table[shape]
+
+    def game_over(self):
+        &#34;&#34;&#34;
+        Return whether the current game has reached a game-over state.
+        &#34;&#34;&#34;
+        return self.pyboy.memory[MODE_ADDR] in (MODE_GAME_OVER, MODE_PRE_GAME_OVER)
+
+    def __repr__(self):
+        return (
+            &#34;Pandora&#39;s Blocks:\n&#34;
+            + f&#34;Score: {self.score}\n&#34;
+            + f&#34;Level: {self.level}\n&#34;
+            + f&#34;Lines: {self.lines}\n&#34;
+            + super().__repr__()
+        )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></li>
+<li>pyboy.plugins.base_plugin.PyBoyPlugin</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.mapping_compressed"><code class="name">var <span class="ident">mapping_compressed</span></code></dt>
+<dd>
+<section class="desc"><p>Compressed mapping for <code><a title="pyboy.PyBoy.game_area_mapping" href="../index.html#pyboy.PyBoy.game_area_mapping">PyBoy.game_area_mapping()</a></code></p></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.mapping_minimal"><code class="name">var <span class="ident">mapping_minimal</span></code></dt>
+<dd>
+<section class="desc"><p>Minimal mapping for <code><a title="pyboy.PyBoy.game_area_mapping" href="../index.html#pyboy.PyBoy.game_area_mapping">PyBoy.game_area_mapping()</a></code></p></section>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.score"><code class="name">var <span class="ident">score</span></code></dt>
+<dd>
+<section class="desc"><p>The score provided by the game</p></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.level"><code class="name">var <span class="ident">level</span></code></dt>
+<dd>
+<section class="desc"><p>The current level</p></section>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.lines"><code class="name">var <span class="ident">lines</span></code></dt>
+<dd>
+<section class="desc"><p>The number of cleared lines</p></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.start_game"><code class="name flex">
+<span>def <span class="ident">start_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+at the first playable state.</p>
+<p>The title-screen state is saved, and using <code>reset_game</code>, you can get back to this point instantly.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    Call this function right after initializing PyBoy. This navigates through the intro and menu to start the game
+    at the first playable state.
+
+    The title-screen state is saved, and using `reset_game`, you can get back to this point instantly.
+
+    Args:
+        timer_div (int): Replace timer&#39;s DIV register with this value.
+    &#34;&#34;&#34;
+    while self.tilemap_background[3:17, 2] != TITLE_SCREEN_TILES:
+        self.pyboy.tick(1, False, False)
+
+    PyBoyGameWrapper.start_game(self, timer_div=timer_div)
+    self._enter_gameplay()</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.reset_game"><code class="name flex">
+<span>def <span class="ident">reset_game</span></span>(<span>self, timer_div=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>After calling <code>start_game</code>, you can call this method at any time to reset the game.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>timer_div</code></strong> :&ensp;<code>int</code></dt>
+<dd>Replace timer's DIV register with this value.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_game(self, timer_div=None):
+    &#34;&#34;&#34;
+    After calling `start_game`, you can call this method at any time to reset the game.
+
+    Args:
+        timer_div (int): Replace timer&#39;s DIV register with this value.
+    &#34;&#34;&#34;
+    PyBoyGameWrapper.reset_game(self, timer_div=timer_div)
+    self._enter_gameplay()</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.game_area"><code class="name flex">
+<span>def <span class="ident">game_area</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Return the 10 by 18 playfield as a matrix of tile identifiers.</p>
+<p>The score, lines cleared, and level are available as attributes of this class.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def game_area(self):
+    &#34;&#34;&#34;
+    Return the 10 by 18 playfield as a matrix of tile identifiers.
+
+    The score, lines cleared, and level are available as attributes of this class.
+    &#34;&#34;&#34;
+    return PyBoyGameWrapper.game_area(self)</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.next_block"><code class="name flex">
+<span>def <span class="ident">next_block</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Return the next block to drop.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>shape:</code></dt>
+<dd><code>str</code> identifying the block: <code>"I"</code>, <code>"Z"</code>, <code>"S"</code>, <code>"J"</code>, <code>"L"</code>, <code>"O"</code> or <code>"T"</code>.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def next_block(self):
+    &#34;&#34;&#34;
+    Return the next block to drop.
+
+    Returns
+    -------
+    shape:
+        ``str`` identifying the block: ``&#34;I&#34;``, ``&#34;Z&#34;``, ``&#34;S&#34;``, ``&#34;J&#34;``, ``&#34;L&#34;``, ``&#34;O&#34;`` or ``&#34;T&#34;``.
+    &#34;&#34;&#34;
+    return PIECE_NAMES[self.pyboy.memory[NEXT_BLOCK_ADDR]]</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.set_block"><code class="name flex">
+<span>def <span class="ident">set_block</span></span>(<span>self, shape)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set the next block to drop.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>shape</code></strong> :&ensp;<code>str</code></dt>
+<dd>One of <code>"I"</code>, <code>"Z"</code>, <code>"S"</code>, <code>"J"</code>, <code>"L"</code>, <code>"O"</code> or <code>"T"</code>.</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_block(self, shape):
+    &#34;&#34;&#34;
+    Set the next block to drop.
+
+    Args:
+        shape (str): One of ``&#34;I&#34;``, ``&#34;Z&#34;``, ``&#34;S&#34;``, ``&#34;J&#34;``, ``&#34;L&#34;``, ``&#34;O&#34;`` or ``&#34;T&#34;``.
+    &#34;&#34;&#34;
+    if shape not in piece_table:
+        raise KeyError(&#34;Invalid block shape!&#34;)
+    self.pyboy.memory[NEXT_BLOCK_ADDR] = piece_table[shape]</code></pre>
+</details>
+</dd>
+<dt id="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.game_over"><code class="name flex">
+<span>def <span class="ident">game_over</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Return whether the current game has reached a game-over state.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def game_over(self):
+    &#34;&#34;&#34;
+    Return whether the current game has reached a game-over state.
+    &#34;&#34;&#34;
+    return self.pyboy.memory[MODE_ADDR] in (MODE_GAME_OVER, MODE_PRE_GAME_OVER)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper">PyBoyGameWrapper</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.mapping_one_to_one">mapping_one_to_one</a></code></li>
+<li><code><a title="pyboy.plugins.base_plugin.PyBoyGameWrapper.shape" href="base_plugin.html#pyboy.plugins.base_plugin.PyBoyGameWrapper.shape">shape</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyboy.plugins" href="index.html">pyboy.plugins</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks">GameWrapperPandorasBlocks</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.start_game" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.start_game">start_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.reset_game" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.reset_game">reset_game</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.game_area" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.game_area">game_area</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.next_block" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.next_block">next_block</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.set_block" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.set_block">set_block</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.game_over" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.game_over">game_over</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.score" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.score">score</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.level" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.level">level</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.lines" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.lines">lines</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.mapping_compressed" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.mapping_compressed">mapping_compressed</a></code></li>
+<li><code><a title="pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.mapping_minimal" href="#pyboy.plugins.game_wrapper_pandoras_blocks.GameWrapperPandorasBlocks.mapping_minimal">mapping_minimal</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
