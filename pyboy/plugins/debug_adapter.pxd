@@ -18,6 +18,11 @@ cdef class DebugAdapter(PyBoyPlugin):
     cdef object _source_breakpoint_refs
     cdef object _stop_on_entry
     cdef object _source_map
+    cdef object _source_step
+    cdef object _source_step_into
+    cdef object _source_step_entry
+    cdef object _source_step_seen
+    cdef object _stopped_source_entry
     cdef object _resume
     cdef object _pending_action
     cdef object _hooks

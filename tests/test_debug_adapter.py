@@ -274,6 +274,94 @@ def test_step_advances_pc(dap_client):
     assert pc1 != pc2
 
 
+def test_source_step_in_reaches_next_mapped_source_location(dap_client, tmp_path):
+    source = tmp_path / "source.c"
+    source.write_text("void caller(void) {}\nvoid callee(void) {}\n", encoding="utf-8")
+    map_file = tmp_path / "default_rom.gb.map"
+    map_file.write_text(
+        "\n".join(
+            [
+                "_CODE                               00000200    00000100 =         256. bytes (REL,CON)",
+                "",
+                "      00000170  C$source.c$10$0_0$1              source",
+                "      00000171  C$source.c$10$0_0$1              source",
+                "      00000172  C$source.c$10$0_0$1              source",
+                "      00000173  C$source.c$10$0_0$1              source",
+                "      00000174  C$source.c$10$0_0$1              source",
+                "      00000155  C$source.c$20$0_0$1              source",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    dap_client.send_request(
+        "launch",
+        {"stopOnEntry": True, "sourceRoot": str(tmp_path), "sourceMapFile": str(map_file)},
+    )
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+    dap_client.send_request(
+        "setVariable",
+        {"variablesReference": 1, "name": "PC", "value": "0x170"},
+    )
+
+    dap_client.send_request("stepIn", {"threadId": 1})
+    dap_client.wait_for_event("stopped")
+
+    frame = dap_client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+    assert frame["instructionPointerReference"] == pyboy.plugins.debug_adapter._addr_ref(0, 0x155)
+    assert frame["source"]["path"] == str(source)
+    assert frame["line"] == 20
+
+
+def test_source_step_preserves_last_source_location_for_unmapped_pc(dap_client, tmp_path):
+    source = tmp_path / "bootrom_dmg.asm"
+    source.write_text('SECTION "bootrom", ROM0[$0000]\n    ld SP, $FFFE\n', encoding="utf-8")
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    dap_client.send_request(
+        "launch",
+        {"stopOnEntry": True, "bootromSourceRoot": str(tmp_path)},
+    )
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+
+    frame = dap_client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+    assert frame["source"]["path"] == str(source)
+    assert frame["line"] == 2
+
+    dap_client.send_request("next", {"threadId": 1})
+    dap_client.wait_for_event("stopped")
+
+    frame = dap_client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+    assert frame["instructionPointerReference"] == pyboy.plugins.debug_adapter._addr_ref(-1, 3)
+    assert frame["source"]["path"] == str(source)
+    assert frame["line"] == 2
+
+
+def test_instruction_step_does_not_preserve_unmapped_source_location(dap_client, tmp_path):
+    source = tmp_path / "bootrom_dmg.asm"
+    source.write_text('SECTION "bootrom", ROM0[$0000]\n    ld SP, $FFFE\n', encoding="utf-8")
+
+    dap_client.send_request("initialize", {"adapterID": "pyboy"})
+    dap_client.wait_for_event("initialized")
+    dap_client.send_request(
+        "launch",
+        {"stopOnEntry": True, "bootromSourceRoot": str(tmp_path)},
+    )
+    dap_client.send_request("configurationDone")
+    dap_client.wait_for_event("stopped")
+
+    dap_client.send_request("next", {"threadId": 1, "granularity": "instruction"})
+    dap_client.wait_for_event("stopped")
+
+    frame = dap_client.send_request("stackTrace", {"threadId": 1})["body"]["stackFrames"][0]
+    assert "source" not in frame
+
+
 def test_instruction_breakpoint_and_continue(dap_client):
     dap_client.send_request("initialize", {"adapterID": "pyboy"})
     dap_client.wait_for_event("initialized")

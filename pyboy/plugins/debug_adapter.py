@@ -17,11 +17,13 @@ stdin/stdout, so nothing else should write to stdout while this plugin is enable
 on start-up when run standalone; the PyBoyVSCode extension takes care of this).
 
 If the DAP `launch` request includes `sourceRoot`, the adapter also performs best-effort
-assembly-source mapping for an RGBDS project. It reports `source` and `line` in `stackTrace` for
-addresses it can prove, and omits them elsewhere so clients can fall back to disassembly.
-`sourceMapFile` optionally selects the linked RGBDS `.map` file; otherwise a `.map` beside the ROM
-is used when present. `bootromSourceRoot` does the same for boot-ROM assembly; when PyBoy uses its
-built-in boot ROM, the bundled `extras/bootrom` source directory is discovered automatically.
+source mapping for RGBDS assembly or SDCC/GBDK C projects. It reports `source` and `line` in
+`stackTrace` for addresses it can prove. During source-oriented stepping, it retains the last
+mapped source location across unmapped generated instructions; instruction-oriented stepping
+still omits unmapped locations so clients can use disassembly. `sourceMapFile` optionally selects
+the linked `.map` file; otherwise a `.map` beside the ROM is used when present.
+`bootromSourceRoot` does the same for boot-ROM assembly; when PyBoy uses its built-in boot ROM,
+the bundled `extras/bootrom` source directory is discovered automatically.
 """
 
 import base64
@@ -39,6 +41,7 @@ from pyboy.plugins.dap_source_map import (
     build_source_map,
     find_entry_files,
     parse_map_file,
+    parse_sdcc_map_file,
     parse_sym_file,
 )
 from pyboy.utils import WindowEvent
@@ -101,11 +104,20 @@ class DebugAdapter(PyBoyPlugin):
         self._stop_on_entry = False
 
         # Best-effort address -> (source file, line number) map, built at launch time from a
-        # user-supplied `sourceRoot` (an RGBDS-style disassembly project, e.g. a "pokered"
-        # checkout). Empty unless/until `_req_launch` successfully builds one; frames simply omit
-        # `source`/fall back to a real `line` number when there's no entry for the current PC, in
-        # which case VSCode falls back to its own Disassembly View automatically.
+        # user-supplied RGBDS assembly or SDCC/GBDK C source root. Empty unless/until `_req_launch`
+        # successfully builds one; frames omit `source`/fall back to a real `line` number when
+        # there is no entry for the current PC and no source-step context, in which case VSCode
+        # falls back to its own Disassembly View automatically.
         self._source_map = {}
+        # A linker map can omit generated instructions between source locations. During
+        # source-oriented stepping, retain the last source location for those gaps so the client
+        # can keep the source editor focused. Instruction-oriented stepping never uses this
+        # fallback.
+        self._source_step = False
+        self._source_step_into = False
+        self._source_step_entry = None
+        self._source_step_seen = set()
+        self._stopped_source_entry = None
 
         # Coordinates pausing/resuming/stepping the emulator thread, using PyBoy's public
         # `hook_register` (permanent, address-based breakpoints -- fires *before* the triggering
@@ -223,6 +235,24 @@ class DebugAdapter(PyBoyPlugin):
     # -- Breakpoint/stepping coordination (called from the emulator thread) -------------------
 
     def _on_break(self, reason="step"):
+        self._stopped_source_entry = None
+        if reason == "step" and self._source_step:
+            pc = self._registers()["PC"]
+            source_entry = self._source_map.get((self.pyboy.bank(pc), pc))
+            if (
+                self._source_step_into
+                and self._source_step_entry is not None
+                and source_entry == self._source_step_entry
+                and pc not in self._source_step_seen
+            ):
+                # A source line can contain several generated instructions before a CALL. Keep
+                # single-stepping internally until the source location changes so Step Into
+                # reaches the callee instead of appearing to remain on the caller line.
+                self._source_step_seen.add(pc)
+                self.pyboy.singlestep = True
+                return
+            self._stopped_source_entry = source_entry or self._source_step_entry
+
         with self._stopped_lock:
             self.is_stopped = True
         self._resume.clear()
@@ -372,11 +402,7 @@ class DebugAdapter(PyBoyPlugin):
         return labels[0] if labels else None
 
     def _build_source_map(self, source_root, source_map_file):
-        """Best-effort: if the client points `sourceRoot` at an RGBDS-style disassembly project
-        checkout (e.g. a "pokered" checkout) matching the running ROM, build an address -> (file,
-        line) map so `_req_stackTrace` can report real source locations instead of only raw
-        disassembly. A missing source directory is treated as an empty map; source projects that
-        contain unsupported constructs simply produce gaps and fall back to the Disassembly View."""
+        """Best-effort: build an address -> (file, line) map for an RGBDS or SDCC source tree."""
         self._source_map = {}
         if not source_root:
             return
@@ -389,7 +415,7 @@ class DebugAdapter(PyBoyPlugin):
         if source_map_file:
             source_map_file = os.path.abspath(os.path.expanduser(os.fspath(source_map_file)))
         else:
-            # Auto-discover an RGBDS linker `.map` file next to the ROM, the same way PyBoy
+            # Auto-discover a linker `.map` file next to the ROM, the same way PyBoy
             # itself already auto-discovers `.sym` files (needed for ROMX section addresses,
             # which the source only gets to pick after linking).
             gamerom = getattr(self.pyboy, "gamerom", None)
@@ -410,6 +436,8 @@ class DebugAdapter(PyBoyPlugin):
             self.pyboy.memory,
             disassemble_one,
         )
+        if source_map_file:
+            self._source_map.update(parse_sdcc_map_file(source_map_file, source_root))
         logger.debug(f"Built source map from {source_root!r}: {len(self._source_map)} addresses mapped")
 
     def _build_bootrom_source_map(self, source_root):
@@ -677,11 +705,13 @@ class DebugAdapter(PyBoyPlugin):
             "instructionPointerReference": _addr_ref(bank, pc),
         }
         source_entry = self._source_map.get((bank, pc))
+        if source_entry is None:
+            source_entry = self._stopped_source_entry
         if source_entry:
             path, line = source_entry
             # Presence of `source` makes VSCode show/highlight this real source file instead of
-            # the Disassembly View; omitting it (whenever there's no mapping for this address)
-            # makes VSCode fall back to the Disassembly View automatically.
+            # the Disassembly View; omitting it when there is no source-step context makes VSCode
+            # fall back to the Disassembly View automatically.
             frame["source"] = {"name": os.path.basename(path), "path": path}
             frame["line"] = line
         self._send_response(request, body={"stackFrames": [frame], "totalFrames": 1})
@@ -728,6 +758,11 @@ class DebugAdapter(PyBoyPlugin):
             self._send_response(request, success=False, message="Variable is read-only")
 
     def _req_continue(self, request):
+        self._source_step = False
+        self._source_step_into = False
+        self._source_step_entry = None
+        self._source_step_seen = set()
+        self._stopped_source_entry = None
         self._pending_action = "continue"
         if self._entry_paused:
             self.pyboy.singlestep = False
@@ -737,6 +772,16 @@ class DebugAdapter(PyBoyPlugin):
         self._send_response(request, body={"allThreadsContinued": True})
 
     def _req_next(self, request):
+        granularity = request.get("arguments", {}).get("granularity")
+        self._source_step = granularity != "instruction"
+        self._source_step_into = False
+        if self._source_step:
+            pc = self._registers()["PC"]
+            bank = self.pyboy.bank(pc)
+            self._source_step_entry = self._source_map.get((bank, pc)) or self._stopped_source_entry
+        else:
+            self._source_step_entry = None
+        self._source_step_seen = set()
         self._pending_action = "step"
         if self._entry_paused:
             self.pyboy.singlestep = True
@@ -745,9 +790,37 @@ class DebugAdapter(PyBoyPlugin):
             self._resume.set()
         self._send_response(request)
 
-    _req_stepIn = _req_next
+    def _req_stepIn(self, request):
+        granularity = request.get("arguments", {}).get("granularity")
+        self._source_step = granularity != "instruction"
+        self._source_step_into = self._source_step
+        if self._source_step:
+            pc = self._registers()["PC"]
+            bank = self.pyboy.bank(pc)
+            self._source_step_entry = self._source_map.get((bank, pc)) or self._stopped_source_entry
+            self._source_step_seen = {pc}
+        else:
+            self._source_step_entry = None
+            self._source_step_seen = set()
+        self._pending_action = "step"
+        if self._entry_paused:
+            self.pyboy.singlestep = True
+            self._leave_entry_pause()
+        else:
+            self._resume.set()
+        self._send_response(request)
 
     def _req_stepOut(self, request):
+        granularity = request.get("arguments", {}).get("granularity")
+        self._source_step = granularity != "instruction"
+        self._source_step_into = False
+        if self._source_step:
+            pc = self._registers()["PC"]
+            bank = self.pyboy.bank(pc)
+            self._source_step_entry = self._source_map.get((bank, pc)) or self._stopped_source_entry
+        else:
+            self._source_step_entry = None
+        self._source_step_seen = set()
         self._request_step_out()
         self._send_response(request)
 
@@ -757,6 +830,11 @@ class DebugAdapter(PyBoyPlugin):
         # A continue request releases the breakpoint callback before it clears
         # `is_stopped`. Preserve a pause arriving during that transition.
         if not stopped or self._resume.is_set():
+            self._source_step = False
+            self._source_step_into = False
+            self._source_step_entry = None
+            self._source_step_seen = set()
+            self._stopped_source_entry = None
             self._pending_action = "step"
             self.pyboy.singlestep = True
         self._send_response(request)

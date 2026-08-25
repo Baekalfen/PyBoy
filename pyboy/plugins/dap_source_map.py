@@ -3,8 +3,8 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-"""Best-effort mapping between ROM addresses and lines in an RGBDS-style assembly disassembly
-project (e.g. https://github.com/pret/pokered), so the Debug Adapter can report a source
+"""Best-effort mapping between ROM addresses and source lines in RGBDS assembly or SDCC/GBDK C
+projects (e.g. https://github.com/pret/pokered), so the Debug Adapter can report a source
 location for the current PC and VSCode can step *inline in the original source* -- falling back
 to the Disassembly View for any address this can't confidently resolve (e.g. inside data tables,
 macro invocations, or conditionally-assembled code for a different game version).
@@ -66,6 +66,9 @@ _DEF_RE = re.compile(r"(?:!\s*)?DEF\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)", re.IG
 _SYM_LABEL_RE = re.compile(r"^([0-9a-fA-F]+):([0-9a-fA-F]+)\s+(\S+)$")
 _MAP_BANK_RE = re.compile(r"^(ROM0|ROMX) bank #(\d+):")
 _MAP_SECTION_RE = re.compile(r'^\tSECTION:\s*\$([0-9a-fA-F]+)(?:-\$[0-9a-fA-F]+)?\s.*\["(.*)"\]\s*$')
+_SDCC_AREA_RE = re.compile(r"^(\S+)\s+([0-9A-Fa-f]{8})\s+[0-9A-Fa-f]{8}\s+=")
+_SDCC_SOURCE_LINE_RE = re.compile(r"^\s*([0-9A-Fa-f]+)\s+C\$(.+?)\$(\d+)\$[^\s]+(?:\s+(\S+))?\s*$")
+_SDCC_ASM_SYMBOL_RE = re.compile(r"^\s*([0-9A-Fa-f]+)\s+A\$([^$\s]+)\$[^\s]+\s+(\S+)\s*$")
 
 _DATA_LENGTHS = {"db": 1, "dw": 2, "dl": 4}
 
@@ -89,6 +92,101 @@ def parse_map_file(path):
     except OSError:
         logger.warning(f"Could not read map file: {path}")
     return sections
+
+
+def _sdcc_source_path(source_root, source_name):
+    """Resolves an SDCC source name against a configured source root."""
+    source_name = source_name.replace("\\", os.sep)
+    if os.path.isabs(source_name) and os.path.isfile(source_name):
+        return os.path.normpath(source_name)
+
+    source_root = os.path.abspath(source_root)
+    candidates = [os.path.normpath(os.path.join(source_root, source_name))]
+    # Some linkers record paths relative to the project root while the debugger is configured
+    # with the source directory itself (e.g. `src/utils.c` and `/project/src`).
+    candidates.append(os.path.normpath(os.path.join(os.path.dirname(source_root), source_name)))
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return candidate
+
+    basename = os.path.basename(source_name)
+    matches = []
+    for dirpath, _dirnames, filenames in os.walk(source_root):
+        if basename in filenames:
+            matches.append(os.path.normpath(os.path.join(dirpath, basename)))
+    if len(matches) == 1:
+        return matches[0]
+    return None
+
+
+def _sdcc_bank(area, address):
+    """Returns the debugger bank and CPU address for an ASxxxx area address."""
+    bank_match = re.match(r"^_(?:CODE|HOME)_(\d+)$", area or "", re.IGNORECASE)
+    if bank_match:
+        bank = int(bank_match.group(1))
+    elif address > 0xFFFF:
+        bank = address >> 16
+    else:
+        bank = 0
+    return bank, address & 0xFFFF
+
+
+def parse_sdcc_map_file(path, source_root):
+    """Parses SDCC/ASxxxx `C$source.c$line$...` symbols into a source map.
+
+    The ASxxxx map format stores source-line symbols in the global symbol table rather than in
+    the RGBDS section records. ROM areas use bank zero by default; numbered `_CODE_N`/`_HOME_N`
+    areas identify banked ROM, and a wider-than-16-bit address is treated as a bank-qualified
+    address when no area suffix is available.
+    """
+    mapping = {}
+    unresolved = set()
+    source_entries = []
+    asm_entries = []
+    area = None
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for raw_line in f:
+                area_match = _SDCC_AREA_RE.match(raw_line)
+                if area_match:
+                    area = area_match.group(1)
+                    continue
+
+                source_match = _SDCC_SOURCE_LINE_RE.match(raw_line)
+                if source_match:
+                    source_path = _sdcc_source_path(source_root, source_match.group(2))
+                    if source_path is None:
+                        unresolved.add(source_match.group(2))
+                        continue
+
+                    bank, address = _sdcc_bank(area, int(source_match.group(1), 16))
+                    line = int(source_match.group(3))
+                    mapping.setdefault((bank, address), (source_path, line))
+                    if source_match.group(4):
+                        source_entries.append((bank, address, source_path, line, source_match.group(4)))
+                    continue
+
+                asm_match = _SDCC_ASM_SYMBOL_RE.match(raw_line)
+                if asm_match:
+                    bank, address = _sdcc_bank(area, int(asm_match.group(1), 16))
+                    asm_entries.append((bank, address, asm_match.group(3)))
+    except OSError:
+        logger.warning(f"Could not read map file: {path}")
+
+    source_by_module = {}
+    for bank, address, source_path, line, module in source_entries:
+        source_by_module.setdefault((bank, module), []).append((address, source_path, line))
+    for bank, address, module in asm_entries:
+        candidates = source_by_module.get((bank, module))
+        if not candidates:
+            continue
+        source_entry = max((entry for entry in candidates if entry[0] <= address), default=None)
+        if source_entry is not None:
+            mapping.setdefault((bank, address), (source_entry[1], source_entry[2]))
+
+    for source_name in sorted(unresolved):
+        logger.warning(f"Could not resolve SDCC source file {source_name!r} under {source_root}")
+    return mapping
 
 
 def parse_sym_file(path, bank_override=None):
