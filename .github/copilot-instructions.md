@@ -3,6 +3,7 @@ Make type-annotations only in .pxd files. Keep the .py files free of Cython depe
 Prefer array.array and memoryview over NumPy when possible. NumPy can be used for user-facing API code.
 Watch out for the hotpaths in CPU.tick, Motherboard.tick, Motherboard.getitem and Motherboard.setitem
 The tests are run with 'python3 -m pytest tests/ -v' after compilation. There are also tests in 'python3 -m pytest pyboy/ -v' but these require PyBoy to *not* be compiled. Use these sparingly, as they take much longer time, and often don't proof much. But can be used as a final test.
+Always run tests with TEST_VERBOSE_IMAGES=0 when run in the background and with TEST_NO_UI=1 when not specifically UI related.
 Whenever the given task completes, rerun the entire testsuite. Both tests/ and pyboy/ tests.
 The SameBoy repo is an excellent source of a really precise Game Boy emulator https://github.com/LIJI32/SameBoy
 The Gambatte repo can also be a good source https://github.com/gb-archive/gambatte/tree/master
