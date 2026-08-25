@@ -8,7 +8,15 @@ import io
 import pytest
 
 from pyboy import PyBoy
-from pyboy.utils import IntIOWrapper, cython_compiled
+from pyboy.utils import IntIOWrapper, cython_compiled, PyBoyException
+
+
+def test_load_state_raises(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    empty_state = io.BytesIO()
+    with pytest.raises(PyBoyException):
+        pyboy.load_state(empty_state)
+    pyboy.stop(save=False)
 
 
 def copy_attrs(obj, allowed_types=("int", "str", "float", "array", "dict", "list", "bool")):
