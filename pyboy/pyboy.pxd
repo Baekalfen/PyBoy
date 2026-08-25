@@ -43,6 +43,7 @@ cdef class PyBoy:
     cdef readonly PluginManager _plugin_manager
     cdef readonly uint64_t frame_count
     cdef readonly str gamerom
+    cdef readonly object bootrom_file
     cdef readonly bint paused
 
     cdef double avg_tick
@@ -56,6 +57,8 @@ cdef class PyBoy:
     cdef bint no_input
     cdef readonly str window_title
     cdef readonly bint title_status
+    cdef object _previous_log_stream
+    cdef bint _redirected_log_stream
     cdef readonly PyBoyMemoryView memory
     cdef readonly PyBoyRegisterFile register_file
     cdef readonly Screen screen
@@ -99,6 +102,8 @@ cdef class PyBoy:
     cpdef bint _handle_hooks(self) noexcept
     cpdef int hook_register(self, uint16_t, uint16_t, object, object) except -1
     cpdef int hook_deregister(self, uint16_t, uint16_t) except -1
+
+    cdef public list _singlestep_handlers
 
     cpdef object get_sprite(self, int)
     cpdef list get_sprite_by_tile_identifier(self, list, on_screen=*)

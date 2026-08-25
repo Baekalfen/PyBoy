@@ -57,6 +57,42 @@ def test_register_hooks(default_rom):
     mock.method2.assert_not_called()
 
 
+def test_hook_rewinding_pc_does_not_hang_tick(default_rom):
+    """Issue #332: rewinding PC from a hook must not make a frame's tick loop forever."""
+    symbols = os.path.abspath("extras/default_rom/default_rom.sym")
+    pyboy = PyBoy(default_rom, window="null", symbols=symbols)
+    pyboy.set_emulation_speed(0)
+    callback_calls = []
+
+    try:
+        bank, main_addr = pyboy.symbol_lookup("Main")
+
+        def rewind_pc(_context):
+            callback_calls.append(1)
+            pyboy.register_file.PC = main_addr
+
+        pyboy.hook_register(bank, main_addr + 1, rewind_pc, None)
+        pyboy.tick(100, False, False)
+    finally:
+        pyboy.stop(save=False)
+
+    assert callback_calls
+
+
+def test_deregister_within_hook(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    try:
+
+        def hook(pyboy):
+            pyboy.hook_deregister(-1, 0)
+
+        pyboy.hook_register(-1, 0, hook, pyboy)
+        pyboy.tick(1, False, False)
+    finally:
+        pyboy.stop(save=False)
+
+
 def test_register_hook_context(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     pyboy.set_emulation_speed(0)
@@ -230,6 +266,90 @@ def test_deregister_hooks2(default_rom):
     pyboy.hook_register(0, 0x101, mock.method1, None)
     pyboy.hook_deregister(0, 0x101)
     pyboy.hook_deregister(0, 0x100)
+
+
+def test_singlestep(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    pcs = []
+
+    def _on_step():
+        pcs.append(pyboy.register_file.PC)
+        if len(pcs) >= 5:
+            pyboy.singlestep = False
+
+    pyboy.register_singlestep_handler(_on_step)
+    assert pyboy.singlestep is False
+
+    pyboy.singlestep = True
+    assert pyboy.singlestep is True
+    pyboy.tick(1, False)
+
+    # Single-stepping should have stopped execution after exactly one instruction each time,
+    # and should have been turned back off by the handler after 5 steps.
+    assert len(pcs) == 5
+    assert len(set(pcs)) == len(pcs), "Expected a distinct PC for every single-stepped instruction"
+    assert pyboy.singlestep is False
+
+    # Normal ticking should proceed unaffected, now that single-stepping is disabled
+    pcs.clear()
+    pyboy.tick(2, False)
+    assert pcs == []
+
+
+def test_singlestep_resume(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    pcs = []
+
+    def _on_step():
+        pcs.append(pyboy.register_file.PC)
+        pyboy.singlestep = False  # Only step exactly one instruction, then resume normal execution
+
+    pyboy.register_singlestep_handler(_on_step)
+
+    # Run a few frames normally first
+    pyboy.tick(2, False)
+    assert pcs == []
+
+    # Now step exactly one instruction and let the frame complete normally afterwards
+    pyboy.singlestep = True
+    pyboy.tick(1, False)
+    assert len(pcs) == 1
+
+
+def test_unregister_singlestep_handler(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    mock = Mock()
+    pyboy.register_singlestep_handler(mock.method1)
+    pyboy.unregister_singlestep_handler(mock.method1)
+
+    # Register a second handler, only to turn single-stepping back off after one instruction,
+    # so the `tick()` call below can return.
+    pyboy.register_singlestep_handler(lambda: setattr(pyboy, "singlestep", False))
+
+    pyboy.singlestep = True
+    pyboy.tick(1, False)
+
+    mock.method1.assert_not_called()
+
+
+def test_bank(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    # Boot ROM
+    assert pyboy.bank(0x00) == -1
+    # ROM bank 0 (fixed)
+    assert pyboy.bank(0x2000) == 0
+    # Switchable ROM bank (default_rom doesn't switch banks, so this is bank 1)
+    assert pyboy.bank(0x4000) == 1
+    # WRAM
+    assert pyboy.bank(0xC000) == 0
 
 
 def test_data_hooking_failure(default_rom):
