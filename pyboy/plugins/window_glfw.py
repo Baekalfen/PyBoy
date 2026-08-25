@@ -17,6 +17,7 @@ try:
         glDrawPixels,
         glFlush,
         glPixelZoom,
+        glWindowPos2f,
     )
 
     glfw_enabled = True
@@ -29,6 +30,8 @@ ROWS, COLS = 144, 160
 class WindowGLFW(WindowOpenAL):
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
+        self._windowed_position = None
+        self._windowed_size = None
 
         if not self.enabled():
             return
@@ -50,7 +53,7 @@ class WindowGLFW(WindowOpenAL):
         glfw.set_window_size_callback(self.window, self._window_resize)
         self.events = []
 
-        glPixelZoom(self.scale, self.scale)
+        self._window_resize(self.window, *self._scaledresolution)
 
     def set_title(self, title):
         glfw.set_window_title(self.window, title)
@@ -58,6 +61,26 @@ class WindowGLFW(WindowOpenAL):
     def handle_events(self, events):
         events += self.events
         self.events = []
+
+        for event in events:
+            if event != WindowEvent.FULL_SCREEN_TOGGLE:
+                continue
+
+            if self.fullscreen:
+                x, y = self._windowed_position
+                width, height = self._windowed_size
+                glfw.set_window_monitor(self.window, None, x, y, width, height, glfw.DONT_CARE)
+                self.fullscreen = False
+            else:
+                self._windowed_position = glfw.get_window_pos(self.window)
+                self._windowed_size = glfw.get_window_size(self.window)
+                monitor = glfw.get_primary_monitor()
+                mode = glfw.get_video_mode(monitor)
+                glfw.set_window_monitor(
+                    self.window, monitor, 0, 0, mode.size.width, mode.size.height, mode.refresh_rate
+                )
+                self.fullscreen = True
+
         return events
 
     def _key_callback(self, window, key, scancode, action, mods):
@@ -93,6 +116,16 @@ class WindowGLFW(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.STATE_LOAD))
             elif key == glfw.KEY_O:
                 self.events.append(WindowEvent(WindowEvent.SCREENSHOT_RECORD))
+            elif key == glfw.KEY_COMMA:
+                self.events.append(WindowEvent(WindowEvent.PRESS_REWIND_BACK))
+            elif key == glfw.KEY_PERIOD:
+                self.events.append(WindowEvent(WindowEvent.PRESS_REWIND_FORWARD))
+            elif key == glfw.KEY_J:
+                self.events.append(WindowEvent(WindowEvent.DEBUG_MEMORY_SCROLL_DOWN))
+            elif key == glfw.KEY_K:
+                self.events.append(WindowEvent(WindowEvent.DEBUG_MEMORY_SCROLL_UP))
+            elif key in (glfw.KEY_LEFT_SHIFT, glfw.KEY_RIGHT_SHIFT):
+                self.events.append(WindowEvent(WindowEvent.MOD_SHIFT_ON))
         elif action == glfw.RELEASE:
             if key == glfw.KEY_A:
                 self.events.append(WindowEvent(WindowEvent.RELEASE_BUTTON_A))
@@ -116,11 +149,20 @@ class WindowGLFW(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_LEFT))
             elif key == glfw.KEY_RIGHT:
                 self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
+            elif key == glfw.KEY_COMMA:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_REWIND_BACK))
+            elif key == glfw.KEY_PERIOD:
+                self.events.append(WindowEvent(WindowEvent.RELEASE_REWIND_FORWARD))
+            elif key == glfw.KEY_F11:
+                self.events.append(WindowEvent(WindowEvent.FULL_SCREEN_TOGGLE))
+            elif key in (glfw.KEY_LEFT_SHIFT, glfw.KEY_RIGHT_SHIFT):
+                self.events.append(WindowEvent(WindowEvent.MOD_SHIFT_OFF))
 
     def _window_resize(self, window, width, height):
         scale = max(min(height / ROWS, width / COLS), 1)
         self._scaledresolution = (round(scale * COLS), round(scale * ROWS))
         glPixelZoom(scale, scale)
+        glWindowPos2f((width - COLS * scale) / 2, (height - ROWS * scale) / 2)
 
     def _gldraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

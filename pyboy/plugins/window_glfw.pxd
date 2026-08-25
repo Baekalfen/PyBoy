@@ -18,6 +18,8 @@ cdef int ROWS, COLS
 cdef class WindowGLFW(WindowOpenAL):
     cdef list events
     cdef object window
+    cdef object _windowed_position
+    cdef object _windowed_size
 
     cdef void _key_callback(self, object, int, int, int, int) noexcept
 
