@@ -147,6 +147,18 @@ class Debug(PyBoyWindowPlugin):
         )
         window_pos += 8 * 60
 
+        self.gamearea = GameAreaWindow(
+            pyboy,
+            mb,
+            pyboy_argv,
+            scale=2,
+            title="Game Area",
+            width=COLS,
+            height=ROWS,
+            pos_x=window_pos,
+            pos_y=0,
+        )
+
         window_pos = 0
         tile_data_width = 16 * 8  # Change the 16 to however wide you want the tile window
         tile_data_height = ((TILES * 8) // tile_data_width) * 8
@@ -184,6 +196,7 @@ class Debug(PyBoyWindowPlugin):
         self.sprite.post_tick()
         self.spriteview.post_tick()
         self.memory.post_tick()
+        self.gamearea.post_tick()
 
     def handle_events(self, events):
         if self.sdl2_event_pump:
@@ -196,6 +209,7 @@ class Debug(PyBoyWindowPlugin):
         events = self.sprite.handle_events(events)
         events = self.spriteview.handle_events(events)
         events = self.memory.handle_events(events)
+        events = self.gamearea.handle_events(events)
         return events
 
     def stop(self):
@@ -207,6 +221,7 @@ class Debug(PyBoyWindowPlugin):
         self.sprite.stop()
         self.spriteview.stop()
         self.memory.stop()
+        self.gamearea.stop()
         if self.sdl2_event_pump:
             for _ in range(3):  # At least 2 to close
                 get_events()
@@ -257,6 +272,19 @@ class BaseDebugWindow(PyBoyWindowPlugin):
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
         )
 
+    def resize(self, width, height):
+        if self.width == width and self.height == height:
+            return
+        sdl2.SDL_DestroyTexture(self._sdltexturebuffer)
+        self.width, self.height = width, height
+        self.buf0, self.buf_p = make_buffer(width, height)
+        self.buf0_attributes, _ = make_buffer(width, height, 1)
+        sdl2.SDL_SetWindowSize(self._window, width * self.scale, height * self.scale)
+        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, width, height)
+        self._sdltexturebuffer = sdl2.SDL_CreateTexture(
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, width, height
+        )
+
     def handle_events(self, events):
         # Feed events into the loop
         for event in events:
@@ -290,7 +318,8 @@ class BaseDebugWindow(PyBoyWindowPlugin):
             _y = 7 - y if vflip else y
             for x in range(8):
                 _x = 7 - x if hflip else x
-                to_buffer[yy + y, xx + x] = palette[from_buffer[vbank, _y + t * 8, _x]]
+                if 0 <= yy + y < self.height and 0 <= xx + x < self.width:
+                    to_buffer[yy + y, xx + x] = palette[from_buffer[vbank, _y + t * 8, _x]]
 
     def mark_tile(self, x, y, color, height, width, grid):
         tw = width  # Tile width
@@ -810,4 +839,146 @@ class MemoryWindow(BaseDebugWindow):
                 if event.window_id == self.window_id and event.mouse_x == -1 and event.mouse_y == -1:
                     self._scroll_view(event.mouse_scroll_y * -0x100)
 
+        return events
+
+
+GAME_AREA_DIGITS = (
+    ("111", "101", "101", "101", "111"),
+    ("010", "110", "010", "010", "111"),
+    ("110", "001", "010", "100", "111"),
+    ("110", "001", "010", "001", "110"),
+    ("101", "101", "111", "001", "001"),
+    ("111", "100", "110", "001", "110"),
+    ("011", "100", "111", "101", "111"),
+    ("111", "001", "010", "010", "010"),
+    ("111", "101", "111", "101", "111"),
+    ("111", "101", "111", "001", "110"),
+)
+
+
+class GameAreaWindow(BaseDebugWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tilemap = TileMap(self.pyboy, self.mb, "BACKGROUND")
+        self.display_mode = 0
+        self.screen_x = 0
+        self.screen_y = 0
+        self.area_x = 0
+        self.area_y = 0
+        self.palette_rgb = [0] * 4
+
+    def _layout(self, section, shape, scy, follow_scrolling):
+        area_x, area_y = section[:2]
+        area_width, area_height = shape[0] * 8, shape[1] * 8
+        area_left = area_x * 8
+        # Screen-relative game areas already include the current scroll in their
+        # mapping. Do not expose the stale tilemap outside the visible screen.
+        area_top = area_y * 8 - (0 if follow_scrolling else scy)
+        left = min(0, area_left)
+        top = min(0, area_top)
+        right = max(COLS, area_left + area_width)
+        bottom = max(ROWS, area_top + area_height)
+        width, height = right - left, bottom - top
+        return -left, -top, width, height
+
+    def _render_background(self, area_width, area_height, area_x, area_y, scx):
+        self.tilemap._refresh_lcdc()
+        for tile_row in range(area_height // 8):
+            map_row = (self.pyboy.game_wrapper.game_area_section[1] + tile_row) % 32
+            first_column = (scx - area_x) // 8 - 1
+            last_column = (scx - area_x + self.width) // 8 + 1
+            for tile_column in range(first_column, last_column):
+                map_column = (self.pyboy.game_wrapper.game_area_section[0] + tile_column) % 32
+                n = self.tilemap.map_offset - VRAM_OFFSET + map_row * 32 + map_column
+                tile_index = self.mb.lcd.VRAM0[n]
+                if self.mb.lcd._LCDC.tiledata_select == 0:
+                    tile_index = (tile_index ^ 0x80) + 128
+
+                if self.renderer.cgb:
+                    palette, vbank, horiflip, vertflip, bg_priority = self.renderer._cgb_get_background_map_attributes(
+                        self.mb.lcd, n
+                    )
+                    self.renderer.update_tilecache(1, self.mb.lcd, tile_index, 1)
+                    for color in range(4):
+                        self.palette_rgb[color] = self.mb.lcd.bcpd.getcolor(palette, color)
+                else:
+                    vbank = 0
+                    horiflip, vertflip = False, False
+                    self.renderer.update_tilecache(0, self.mb.lcd, tile_index, 0)
+                    self.palette_rgb = self.mb.lcd.BGP.palette_mem_rgb
+
+                self.copy_tile(
+                    self.renderer._tilecache,
+                    vbank,
+                    tile_index,
+                    area_x + tile_column * 8 - scx,
+                    area_y + tile_row * 8,
+                    self.buf0,
+                    horiflip,
+                    vertflip,
+                    self.palette_rgb,
+                )
+
+        for y in range(self.height):
+            for x in range(self.width):
+                self.buf0[y, x] = ((self.buf0[y, x] & 0x00FEFEFE) >> 1) | 0xFF000000
+
+    def _render_screen(self, screen_x, screen_y):
+        for y in range(ROWS):
+            for x in range(COLS):
+                self.buf0[screen_y + y, screen_x + x] = self.renderer._screenbuffer[y, x]
+
+    def _draw_number(self, x, y, value):
+        text = str(value)
+        if len(text) > 3:
+            text = text[-3:]
+        start_x = x + (8 - (len(text) * 3 + len(text) - 1)) // 2
+        for offset, character in enumerate(text):
+            digit = GAME_AREA_DIGITS[ord(character) - ord("0")]
+            for yy, row in enumerate(digit):
+                for xx, pixel in enumerate(row):
+                    if pixel == "1":
+                        px = start_x + offset * 4 + xx
+                        py = y + yy + 1
+                        if 0 <= px < self.width and 0 <= py < self.height:
+                            self.buf0[py, px] = 0xFFFFFFFF
+
+    def _render_mapping(self, mapping):
+        for y, row in enumerate(mapping):
+            for x, value in enumerate(row):
+                value = int(value)
+                if value != 0:
+                    self._draw_number(self.area_x + x * 8, self.area_y + y * 8, value)
+
+    def update_title(self):
+        title = self.base_title + (" [Mapping]", " [Screen]", " [Text]")[self.display_mode]
+        sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
+
+    def post_tick(self):
+        wrapper = self.pyboy.game_wrapper
+        scanline_parameters = self.mb.lcd._scanlineparameters
+        scanline = min(wrapper.game_area_section[1] * 8, ROWS - 1)
+        scx, scy = scanline_parameters[scanline][0], scanline_parameters[scanline][1]
+        self.screen_x, self.screen_y, width, height = self._layout(
+            wrapper.game_area_section, wrapper.shape, scy, wrapper.game_area_follow_scxy
+        )
+        self.area_x = self.screen_x + wrapper.game_area_section[0] * 8
+        self.area_y = self.screen_y + wrapper.game_area_section[1] * 8 - (0 if wrapper.game_area_follow_scxy else scy)
+        self.resize(width, height)
+
+        for y in range(self.height):
+            for x in range(self.width):
+                self.buf0[y, x] = 0xFF000000
+        if self.display_mode != 2:
+            self._render_background(wrapper.shape[0] * 8, wrapper.shape[1] * 8, self.area_x, self.area_y, scx)
+            self._render_screen(self.screen_x, self.screen_y)
+        if self.display_mode != 1:
+            self._render_mapping(wrapper.game_area())
+        BaseDebugWindow.post_tick(self)
+
+    def handle_events(self, events):
+        events = BaseDebugWindow.handle_events(self, events)
+        for event in events:
+            if event == WindowEvent.DEBUG_GAME_AREA_TOGGLE:
+                self.display_mode = (self.display_mode + 1) % 3
         return events

@@ -64,8 +64,8 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     @cython.locals(xx=int, yy=int, width=int, height=int, SCX=int, SCY=int, _x=int, _y=int)
     cdef cnp.ndarray[cnp.uint32_t, ndim=2] _game_area_tiles(self)
 
-    cdef bint game_area_follow_scxy
-    cdef tuple game_area_section
+    cdef readonly bint game_area_follow_scxy
+    cdef readonly tuple game_area_section
     @cython.locals(tiles_matrix=cnp.ndarray, sprites=list, xx=int, yy=int, width=int, height=int, _x=int, _y=int)
     cpdef cnp.ndarray[cnp.uint32_t, ndim=2] game_area(self)
 

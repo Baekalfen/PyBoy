@@ -45,6 +45,7 @@ cdef class Debug(PyBoyWindowPlugin):
     cdef TileDataWindow tiledata0
     cdef TileDataWindow tiledata1
     cdef MemoryWindow memory
+    cdef GameAreaWindow gamearea
     cdef bint sdl2_event_pump
 
 
@@ -169,3 +170,44 @@ cdef class MemoryWindow(BaseDebugWindow):
     @cython.locals(i=int, c=uint8_t)
     cdef void draw_text(self, int, int, uint8_t[:]) noexcept
     cdef void _scroll_view(self, int)
+
+
+cdef class GameAreaWindow(BaseDebugWindow):
+    cdef TileMap tilemap
+    cdef int display_mode
+    cdef int screen_x
+    cdef int screen_y
+    cdef int area_x
+    cdef int area_y
+    cdef uint32_t[4] palette_rgb
+
+    @cython.locals(area_width=int, area_height=int, area_left=int, area_top=int, left=int, top=int, right=int, bottom=int)
+    cdef tuple _layout(self, tuple, tuple, int, bint)
+
+    @cython.locals(
+        tile_index=int,
+        tile_column=int,
+        tile_row=int,
+        palette=uint8_t,
+        vbank=uint8_t,
+        horiflip=uint8_t,
+        vertflip=uint8_t,
+        bg_priority=uint8_t,
+        color=int,
+    )
+    cdef void _render_background(self, int, int, int, int, int) noexcept
+
+    @cython.locals(x=int, y=int, value=int)
+    cdef void _render_mapping(self, object) noexcept
+
+    @cython.locals(x=int, y=int, digit=object, offset=int)
+    cdef void _draw_number(self, int, int, int) noexcept
+
+    @cython.locals(y=int, x=int)
+    cdef void _render_screen(self, int, int) noexcept
+
+    @cython.locals(title=str)
+    cdef void update_title(self) noexcept
+
+    cdef list handle_events(self, list)
+    cdef void post_tick(self) noexcept
