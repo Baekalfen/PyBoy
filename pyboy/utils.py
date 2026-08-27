@@ -361,7 +361,8 @@ class WindowEvent:
         FULL_SCREEN_TOGGLE,
         CYCLE_PALETTE,
         SCREEN_RECORDING_TOGGLE_MP4,
-    ) = range(44)
+        DEBUG_GAME_AREA_TOGGLE,
+    ) = range(45)
 
     def __init__(self, event):
         self.__event = event
@@ -422,6 +423,7 @@ class WindowEvent:
             "FULL_SCREEN_TOGGLE",
             "CYCLE_PALETTE",
             "SCREEN_RECORDING_TOGGLE_MP4",
+            "DEBUG_GAME_AREA_TOGGLE",
         )[self.__event]
 
 
