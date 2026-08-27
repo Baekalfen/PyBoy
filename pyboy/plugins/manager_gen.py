@@ -17,6 +17,7 @@ sys.path.insert(0, file_path + "/../..")
 # E.g. DisableInput first
 windows = ["WindowSDL2", "WindowOpenGL", "WindowGLFW", "WindowNull", "Debug"]
 game_wrappers = [
+    "GameWrapperSuperMarioBrosDeluxe",
     "GameWrapperSuperMarioLand",
     "GameWrapperTetris",
     "GameWrapperPandorasBlocks",
