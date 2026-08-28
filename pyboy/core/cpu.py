@@ -179,8 +179,30 @@ class CPU:
         return False
 
     def handle_interrupt(self, flag, addr):
-        self.interrupts_flag_register ^= flag  # Remove flag
+        # The first stack write happens before the interrupt controller commits
+        # the dispatch. IE can be the destination of that write.
         self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8)  # High
+
+        raised_and_enabled = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
+        if raised_and_enabled:
+            if raised_and_enabled & INTR_VBLANK:
+                flag, addr = INTR_VBLANK, 0x0040
+            elif raised_and_enabled & INTR_LCDC:
+                flag, addr = INTR_LCDC, 0x0048
+            elif raised_and_enabled & INTR_TIMER:
+                flag, addr = INTR_TIMER, 0x0050
+            elif raised_and_enabled & INTR_SERIAL:
+                flag, addr = INTR_SERIAL, 0x0058
+            else:
+                flag, addr = INTR_HIGHTOLOW, 0x0060
+        else:
+            # An IE write during the upper push cancels dispatch. The CPU
+            # resumes through address zero, where the test hardware vectors.
+            self.PC = 0
+            self.interrupt_master_enable = False
+            return False
+
+        self.interrupts_flag_register ^= flag  # Remove flag
         self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF)  # Low
         self.SP -= 2
         self.SP &= 0xFFFF
@@ -192,6 +214,7 @@ class CPU:
         self.cycles += 20
 
         self.interrupt_master_enable = False
+        return True
 
     def fetch_and_execute(self):
         # HACK: Shortcut the mb.getitem() calls
