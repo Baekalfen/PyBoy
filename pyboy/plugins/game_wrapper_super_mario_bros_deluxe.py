@@ -55,25 +55,27 @@ METATILE_SCREEN_SIZE = 0x100
 DEFAULT_SPRITE_OFFSET = 0
 
 mapping_minimal = np.arange(TILES_CGB, dtype=np.uint32)
-mapping_minimal[
-    [2, 3, 4, 5, *range(68, 74), *range(84, 92), *range(96, 100), 138, 139, *range(176, 184), *range(186, 190)]
-] = 0
-# TODO: Mapping depends on level type. We could make a lookup table of levels to
-# mappings (should be many reused mappings) or hash the tile data to find table.
-# Otherwise we could hash every tile data independently and make a lookup table to ID it. In case they move. This is scanned at the beginning of each world-level.
-#
-#
-# The following is only a mapping for 1-1 until validated elsewhere
+mapping_minimal[[*range(68, 74), *range(84, 92), *range(96, 100), 138, 139, *range(176, 184), *range(186, 190)]] = 0
+mapping_minimal[[132, 133, 168, 169, 170, 171]] = 0  # Castle
+
+mapping_minimal[[*range(0, 8), *range(16, 24), *range(384, 392)]] = 1  # Mario
 mapping_minimal[[128, 129, 130, 131, 136, 137]] = 8  # Brick
-mapping_minimal[[132, 133, *range(168, 172)]] = 0  # Castle
-mapping_minimal[[*range(28, 34), *range(92, 96)]] = 12  # Fireball
-mapping_minimal[[48, 49, *range(80, 84)]] = 15  # Flag
-mapping_minimal[[46, 47, *range(114, 118)]] = 11  # Flower
-mapping_minimal[[52, 53, 54, 55]] = 7  # Goomba
-mapping_minimal[[*range(0, 8), *range(16, 24)]] = 1  # Mario
-mapping_minimal[[42, 43, 44, 45]] = 9  # Mushroom #Also platforms with bowser ???
+mapping_minimal[[*range(52, 56)]] = 7  # Goomba
 mapping_minimal[[100, 101]] = 14  # Star
+mapping_minimal[[48, 49, *range(80, 84)]] = 15  # End of game flag
+mapping_minimal[[*range(28, 34), *range(92, 96)]] = 12  # Fireball
+mapping_minimal[[46, 47, *range(114, 118)]] = 11  # Flower
 mapping_minimal[[*range(56, 68)]] = 13  # Turtle
+mapping_minimal[[42, 43, 44, 45]] = 9  # Mushroom
+mapping_minimal[[34, 35, 124, 125, 126, 127]] = 10  # Plant
+mapping_minimal[[474, 475, 476, 477, 478, 479, 480, 481]] = 17  # Flying turtle
+mapping_minimal[[92, 93, 94, 95, *range(194, 198)]] = 18  # Rotating flames
+mapping_minimal[[*range(56, 68)]] = 9  # Turtle
+mapping_minimal[[414, 415, 416, 417, 418, 419, 482, 483]] = 16  # Trampoline
+mapping_minimal[[*range(108, 114)]] = 27  # Bowser flame
+mapping_minimal[[428, 429]] = 28  # Platform
+mapping_minimal[[*range(496, 512), *range(400, 410)]] = 29  # Bowser
+
 mapping_compressed = mapping_minimal
 
 CUSTOM_LEVEL_SEQUENCE = (
@@ -153,6 +155,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
 
         self.level = self.pyboy.memory[ADDR_LEVEL]
         self.world = (int(self.level // 4 + 1), int(self.level % 4 + 1)) if self.level < 0x20 else (0, int(self.level))
+        self.mapping = mapping_minimal
         self.coins = self.pyboy.memory[ADDR_COINS]
         self.lives_left = self.pyboy.memory[ADDR_LIVES_LEFT]
         self.score = bcd_to_dec(int.from_bytes(self.pyboy.memory[ADDR_SCORE : ADDR_SCORE + 3], "little"), byte_width=3)
@@ -243,12 +246,13 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         for sprite in sprites:
             x = ((sprite.x + 4) // 8) - xx
             y = ((sprite.y + camera_y + 4) // 8) - yy
-            sprite_value = self.mapping[sprite.tile_identifier] + self.sprite_offset
-            if 0 <= x < width and 0 <= y < height and self.mapping[sprite.tile_identifier] != 0:
+            tile_identifier = sprite.tile_identifier
+            sprite_value = self.mapping[tile_identifier] + self.sprite_offset
+            if 0 <= x < width and 0 <= y < height and self.mapping[tile_identifier] != 0:
                 tiles_matrix[y, x] = sprite_value
             if len(sprite.tiles) == 2 and 0 <= x < width and 0 <= y + 1 < height:
-                if self.mapping[sprite.tile_identifier + 1] != 0:
-                    tiles_matrix[y + 1, x] = self.mapping[sprite.tile_identifier + 1] + self.sprite_offset
+                if self.mapping[tile_identifier + 1] != 0:
+                    tiles_matrix[y + 1, x] = self.mapping[tile_identifier + 1] + self.sprite_offset
         return tiles_matrix
 
     def game_area_background(self):
