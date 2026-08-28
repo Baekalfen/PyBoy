@@ -219,6 +219,13 @@ def test_tiles_cgb(any_rom_cgb):
     with pytest.raises(PyBoyException):
         pyboy.get_tile(TILES_CGB)
 
+    pyboy.memory[0xFE02] = 92
+    pyboy.memory[0xFE03] = 0x08
+    sprite = pyboy.get_sprite(0)
+    assert sprite.attr_cgb_bank_number
+    assert sprite.tile_identifier == TILES + 92
+    assert sprite.tiles[0].tile_identifier == TILES + 92
+
     pyboy.stop(save=False)
 
 

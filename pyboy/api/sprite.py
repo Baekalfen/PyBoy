@@ -9,7 +9,7 @@ This class presents an interface to the sprites held in the OAM data on the Game
 from pyboy.core.lcd import LCDCRegister
 from pyboy.utils import PyBoyOutOfBoundsException
 
-from .constants import LCDC_OFFSET, OAM_OFFSET, SPRITES
+from .constants import LCDC_OFFSET, OAM_OFFSET, SPRITES, TILES
 from .tile import Tile
 
 
@@ -69,7 +69,6 @@ class Sprite:
             X-coordinate
         """
 
-        # Sprites can only use unsigned tile indexes in the lower tile data.
         self.tile_identifier = self.mb.getitem(OAM_OFFSET + self._offset + 2)
         """
         The identifier of the tile the sprite uses. To get a better representation, see the method
@@ -81,7 +80,7 @@ class Sprite:
         Returns
         -------
         int:
-            unsigned tile index
+            unified tile index, including the CGB VRAM bank
         """
 
         attr = self.mb.getitem(OAM_OFFSET + self._offset + 3)
@@ -145,6 +144,9 @@ class Sprite:
             self.attr_cgb_bank_number = _bit(attr, 3)
         else:
             self.attr_palette_number = _bit(attr, 4)
+
+        if self.attr_cgb_bank_number:
+            self.tile_identifier += TILES
 
         LCDC = LCDCRegister(self.mb.getitem(LCDC_OFFSET))
         sprite_height = 16 if LCDC.sprite_height else 8
