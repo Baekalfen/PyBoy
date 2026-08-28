@@ -74,5 +74,5 @@
     "dma/hdma_mode0.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 00 00 00 00 00 00 00 00\n8818: 00 00 00 00 00 00 00 00\n8820: 02 80 00 00 00 00 00 00\nPassed\n",
     "dma/hdma_lcd_off.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 00 00 00 00 00 00 00 00\n8818: 00 00 00 00 00 00 00 00\n8820: 02 80 00 00 00 00 00 00\nPassed\n",
     "dma/gbc_dma_cont.gb": "8800: 00 C0 02 C0 04 C0 06 C0\n8808: 08 C0 0A C0 0C C0 0E C0\n8810: 10 C0 12 C0 14 C0 16 C0\n8818: 18 C0 1A C0 1C C0 1E C0\n8820: 00 00 00 00 00 00 00 00\n8828: 00 00 00 00 00 00 00 00\nPassed\n",
-    "ppu/blocking_bgpi_increase.gb": "C000: FF FF FF FF FF FF FF FF\nFailed\n"
+    "ppu/blocking_bgpi_increase.gb": "C000: C4 C5 C4 C5 C4 C5 C4 C5\nPassed\n"
 }

@@ -130,7 +130,7 @@ def samesuite_result(pyboy):
         ("cgb", "dma/hdma_mode0.gb"),
         ("cgb", "dma/hdma_lcd_off.gb"),
         ("cgb", "dma/gbc_dma_cont.gb"),
-        ("dmg", "ppu/blocking_bgpi_increase.gb"),
+        ("cgb", "ppu/blocking_bgpi_increase.gb"),
     ],
 )
 def test_samesuite(gb_type, rom, samesuite_dir, boot_cgb_rom, boot_rom, default_rom):

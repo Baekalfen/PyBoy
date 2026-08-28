@@ -129,7 +129,7 @@
     "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: FF! C: 13!\n  D: OK  E: C1!\n  H: 84! L: 03!\nTest failed\n"
   },
   "acceptance/interrupts/ie_push.gb": {
-    "text": "R1: not cancelled\n"
+    "text": "Test OK\n"
   },
   "acceptance/boot_hwio-dmgABCmgb.gb": {
     "text": "MISMATCH AT $FF00\nEXPECTED CF\nGOT      00\n"
