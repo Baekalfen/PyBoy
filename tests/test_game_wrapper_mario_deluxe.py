@@ -3,7 +3,18 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
+from types import SimpleNamespace
+
 from pyboy import PyBoy
+from pyboy.plugins.game_wrapper_super_mario_bros_deluxe import (
+    ADDR_SPRITE_ID,
+    ADDR_SPRITE_STATUS,
+    ADDR_SPRITE_X_HIGH,
+    ADDR_SPRITE_X_LOW,
+    ADDR_SPRITE_Y_HIGH,
+    ADDR_SPRITE_Y_LOW,
+    SPRITE_WRAM_BANK,
+)
 
 
 def test_mario_deluxe_basics(supermariobrosdeluxe_rom):
@@ -210,3 +221,40 @@ def test_mario_deluxe_custom_level_sequence(supermariobrosdeluxe_rom):
         assert pyboy.memory[0xC163] == expected_level
         pyboy.memory[0xFFB5] = 0x0B
         mario.post_tick()
+
+
+def test_mario_deluxe_object_slots_distinguish_fireballs(supermariobrosdeluxe_rom):
+    pyboy = PyBoy(supermariobrosdeluxe_rom, window="null")
+    pyboy.set_emulation_speed(0)
+
+    try:
+        mario = pyboy.game_wrapper
+        mario.start_game(world_level=(1, 4))
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_STATUS] = 1
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_ID] = 0x0D
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_X_LOW] = 100
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_X_HIGH] = 0
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_Y_LOW] = 50
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_Y_HIGH] = 0
+
+        objects = mario.object_slots()
+        assert objects[0]["id"] == 0x0D
+        assert objects[0]["mapped_id"] == 12
+        assert objects[0]["game_area_x"] == ((100 - mario._camera_x() + 4) // 8) - mario.game_area_section[0]
+        assert objects[0]["game_area_y"] == ((50 - mario._camera_y() + 4) // 8) - mario.game_area_section[1]
+        assert len(objects[0]) >= 50
+        assert objects[0]["d0d2"] == pyboy.memory[SPRITE_WRAM_BANK, 0xD0D2]
+        assert objects[0]["d2d0"] == pyboy.memory[SPRITE_WRAM_BANK, 0xD2D0]
+        sprite = SimpleNamespace(
+            tile_identifier=92,
+            x=100 - mario._camera_x(),
+            y=50 - mario._camera_y(),
+        )
+        assert mario._fireball_mapping(sprite, objects) == 12
+
+        pyboy.memory[SPRITE_WRAM_BANK, ADDR_SPRITE_ID] = 0x0F
+        objects = mario.object_slots()
+        assert objects[0]["mapped_id"] == 18
+        assert mario._fireball_mapping(sprite, objects) == 18
+    finally:
+        pyboy.stop(save=False)
