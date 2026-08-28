@@ -30,6 +30,72 @@ ADDR_CAMERA_X_LOW = 0xFFB8
 ADDR_CAMERA_X_HIGH = 0xFFB9
 ADDR_CAMERA_Y = 0xFFBA
 ADDR_MODE = 0xFFB5
+SPRITE_SLOT_COUNT = 0x0F
+SPRITE_WRAM_BANK = 1
+ADDR_SPRITE_STATUS = 0xD000
+ADDR_SPRITE_ID = 0xD00F
+ADDR_SPRITE_X_LOW = 0xD01E
+ADDR_SPRITE_X_HIGH = 0xD02D
+ADDR_SPRITE_Y_LOW = 0xD03C
+ADDR_SPRITE_Y_HIGH = 0xD04B
+ADDR_SPRITE_X_SPEED = 0xD05A
+ADDR_SPRITE_Y_SPEED = 0xD069
+ADDR_SPRITE_SUBSTATE = 0xD186
+SPRITE_SLOT_FIELDS = (
+    ("status", ADDR_SPRITE_STATUS),
+    ("id", ADDR_SPRITE_ID),
+    ("x_low", ADDR_SPRITE_X_LOW),
+    ("x_high", ADDR_SPRITE_X_HIGH),
+    ("y_low", ADDR_SPRITE_Y_LOW),
+    ("y_high", ADDR_SPRITE_Y_HIGH),
+    ("x_speed_raw", ADDR_SPRITE_X_SPEED),
+    ("y_speed_raw", ADDR_SPRITE_Y_SPEED),
+    ("d078", 0xD078),
+    ("d087", 0xD087),
+    ("d096", 0xD096),
+    ("d0a5", 0xD0A5),
+    ("d0b4", 0xD0B4),
+    ("d0c3", 0xD0C3),
+    ("d0d2", 0xD0D2),
+    ("d0e1", 0xD0E1),
+    ("d0f0", 0xD0F0),
+    ("d0ff", 0xD0FF),
+    ("d10e", 0xD10E),
+    ("d11d", 0xD11D),
+    ("d12c", 0xD12C),
+    ("d13b", 0xD13B),
+    ("d14a", 0xD14A),
+    ("d159", 0xD159),
+    ("d168", 0xD168),
+    ("d177", 0xD177),
+    ("substate", ADDR_SPRITE_SUBSTATE),
+    ("d195", 0xD195),
+    ("d1a4", 0xD1A4),
+    ("d1b3", 0xD1B3),
+    ("d1c2", 0xD1C2),
+    ("d1d1", 0xD1D1),
+    ("d1e0", 0xD1E0),
+    ("d1ef", 0xD1EF),
+    ("d1fe", 0xD1FE),
+    ("d20d", 0xD20D),
+    ("d21c", 0xD21C),
+    ("d22b", 0xD22B),
+    ("d23a", 0xD23A),
+    ("d249", 0xD249),
+    ("d258", 0xD258),
+    ("d267", 0xD267),
+    ("d276", 0xD276),
+    ("d285", 0xD285),
+    ("d294", 0xD294),
+    ("d2a3", 0xD2A3),
+    ("d2b2", 0xD2B2),
+    ("d2c1", 0xD2C1),
+    ("d2d0", 0xD2D0),
+)
+
+MARIO_FIREBALL_ID = 0x0D
+FIREBAR_ID_MIN = 0x0F
+FIREBAR_ID_MAX = 0x16
 
 MODE_TITLE_SCREEN = 0x03
 MODE_MAIN_MENU = 0x19
@@ -55,7 +121,9 @@ METATILE_SCREEN_SIZE = 0x100
 DEFAULT_SPRITE_OFFSET = 0
 
 mapping_minimal = np.arange(TILES_CGB, dtype=np.uint32)
-mapping_minimal[[*range(68, 74), *range(84, 92), *range(96, 100), 138, 139, *range(176, 184), *range(186, 190)]] = 0
+mapping_minimal[
+    [38, 39, *range(68, 74), *range(84, 92), *range(96, 100), 138, 139, *range(176, 184), *range(186, 190)]
+] = 0
 mapping_minimal[[132, 133, 168, 169, 170, 171]] = 0  # Castle
 
 mapping_minimal[[*range(0, 8), *range(16, 24), *range(384, 392)]] = 1  # Mario
@@ -63,18 +131,123 @@ mapping_minimal[[128, 129, 130, 131, 136, 137]] = 8  # Brick
 mapping_minimal[[*range(52, 56)]] = 7  # Goomba
 mapping_minimal[[100, 101]] = 14  # Star
 mapping_minimal[[48, 49, *range(80, 84)]] = 15  # End of game flag
-mapping_minimal[[*range(28, 34), *range(92, 96)]] = 12  # Fireball
+mapping_minimal[[*range(92, 96)]] = 12  # Mario fireball (and Rotating flames!!!)
+mapping_minimal[[*range(194, 198)]] = 18  # Rotating flames
 mapping_minimal[[46, 47, *range(114, 118)]] = 11  # Flower
 mapping_minimal[[*range(56, 68)]] = 13  # Turtle
 mapping_minimal[[42, 43, 44, 45]] = 9  # Mushroom
 mapping_minimal[[34, 35, 124, 125, 126, 127]] = 10  # Plant
-mapping_minimal[[474, 475, 476, 477, 478, 479, 480, 481]] = 17  # Flying turtle
-mapping_minimal[[92, 93, 94, 95, *range(194, 198)]] = 18  # Rotating flames
-mapping_minimal[[*range(56, 68)]] = 9  # Turtle
 mapping_minimal[[414, 415, 416, 417, 418, 419, 482, 483]] = 16  # Trampoline
-mapping_minimal[[*range(108, 114)]] = 27  # Bowser flame
-mapping_minimal[[428, 429]] = 28  # Platform
-mapping_minimal[[*range(496, 512), *range(400, 410)]] = 29  # Bowser
+mapping_minimal[[474, 475, 476, 477, 478, 479, 480, 481]] = 17  # Flying turtle
+
+mapping_minimal[[*range(28, 34)]] = 0  # Mario fireball explosion
+mapping_minimal[[*range(56, 68)]] = 19  # Turtle
+mapping_minimal[[*range(108, 114)]] = 20  # Bowser flame
+mapping_minimal[[428, 429]] = 21  # Platform
+mapping_minimal[[*range(496, 512), *range(400, 410)]] = 22  # Bowser
+mapping_minimal[[422, 423, 424, 425, 426, 427]] = 23  # Squid
+mapping_minimal[[74, 75, 76, 77, 78, 79]] = 24  # Fish
+mapping_minimal[[26, 27]] = 25  # Lava fireball (also 28, but it conflicts)
+
+mapping_minimal[
+    [144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 160, 161, 162, 163, 164, 165, 166, 167]
+] = 26  # Hammer guy
+mapping_minimal[[*range(102, 108)]] = 27  # hammers
+
+mapping_minimal[[438, 439, 440, 441, 442, 443, 444, 445]] = 28  # Beetle
+
+mapping_minimal[[*range(456, 464)]] = 28  # Red spiky thing
+mapping_minimal[[*range(464, 468)]] = 29  # Falling red spiky thing
+mapping_minimal[[*range(448, 456)]] = 30  # Man in cloud
+mapping_minimal[[*range(470, 474)]] = 31  # Bullet
+
+object_id_mapping = np.zeros(0x65, dtype=np.uint32)
+object_id_mapping[0] = 0  # Inactive
+object_id_mapping[0x01] = 0  # BounceSpr01
+object_id_mapping[[0x02, 0x03, 0x31]] = 19  # KoopaBuzzy
+object_id_mapping[0x04] = 7  # Goomba
+object_id_mapping[[*range(0x05, 0x09)]] = 24  # CheepCheepSwimming
+object_id_mapping[0x09] = 15  # FlagpoleSpr
+object_id_mapping[0x0A] = 0  # CastleFlag
+object_id_mapping[0x0B] = 0  # CoinFromBlock
+object_id_mapping[0x0C] = 0  # ItemFromBlock
+object_id_mapping[0x0D] = 12  # MarioFireball
+object_id_mapping[0x0E] = 8  # BrokenBrick
+object_id_mapping[[*range(0x0F, 0x17)]] = 18  # Firebar
+object_id_mapping[0x17] = 26  # HammerBro
+object_id_mapping[0x18] = 27  # Hammer
+object_id_mapping[0x19] = 10  # PiranhaUp
+object_id_mapping[0x1A] = 22  # Bowser
+object_id_mapping[0x1B] = 20  # BowserFire
+object_id_mapping[0x1C] = 0  # ToadPeach
+object_id_mapping[0x1D] = 0  # Spr1D
+object_id_mapping[0x1E] = 0  # Spr1E
+object_id_mapping[0x1F] = 25  # Podoboo
+object_id_mapping[0x20] = 0  # VineSpr
+object_id_mapping[0x21] = 0  # Firework
+object_id_mapping[0x22] = 0  # Spr22
+object_id_mapping[0x23] = 0  # Spr23
+object_id_mapping[0x24] = 0  # BulletBillShooter
+object_id_mapping[0x25] = 31  # BulletBill
+object_id_mapping[[*range(0x26, 0x2C)]] = 17  # Paratroopa
+object_id_mapping[0x2C] = 23  # Blooper
+object_id_mapping[0x2D] = 16  # Trampoline
+object_id_mapping[0x2E] = 30  # Lakitu
+object_id_mapping[0x2F] = 28  # SpinyEgg
+object_id_mapping[0x30] = 28  # SPiny
+object_id_mapping[0x32] = 0  # BowserFireGen
+object_id_mapping[0x33] = 0  # Spr33
+object_id_mapping[0x34] = 0  # Spr34
+object_id_mapping[0x35] = 0  # Spr35
+object_id_mapping[0x36] = 0  # BulletBillGen
+object_id_mapping[0x37] = 0  # Spr37
+object_id_mapping[0x38] = 0  # Spr38
+object_id_mapping[[*range(0x39, 0x3C)]] = 0  # ScrollCmd
+object_id_mapping[0x3C] = 0  # Spr3C
+object_id_mapping[0x3D] = 0  # Return027A75
+object_id_mapping[0x3E] = 0  # Spr3E
+object_id_mapping[0x3F] = 0  # Spr3F
+object_id_mapping[0x40] = 0  # Empty06658E
+object_id_mapping[0x41] = 0  # Spr41
+object_id_mapping[0x42] = 0  # RaceCountdown
+object_id_mapping[0x43] = 0  # Spr43
+object_id_mapping[0x44] = 0  # Spr44
+object_id_mapping[0x45] = 0  # CloudBonusPerfect
+object_id_mapping[0x46] = 0  # Boo
+object_id_mapping[0x47] = 10  # PiranhaDown
+object_id_mapping[0x48] = 0  # Spr48
+object_id_mapping[[*range(0x49, 0x4D)]] = 0  # MultiKoopaGoomba
+object_id_mapping[0x4D] = 16  # TrampolineGreen
+object_id_mapping[[0x4E, 0x4F]] = 0  # MultiParatroopa
+object_id_mapping[[*range(0x50, 0x56)]] = 0  # ElevatorGen
+object_id_mapping[[*range(0x56, 0x60)]] = 21  # MovingPlatform
+object_id_mapping[[*range(0x60, 0x64)]] = 21  # ScaleLift
+object_id_mapping[0x64] = 21  # MovingPlatform
+
+
+# mapping_minimal  has 527 unmapped indexes (entries still mapping to themselves):
+# 1,
+# 8–15,
+# 24–25,
+# 36–37,
+# 40–41,
+# 50–51,
+# 118–123,
+# 134–135,
+# 140–143,
+# 156–159,
+# 172–175,
+# 184–185,
+# 190–193,
+# 198–383,
+# 392–399,
+# 410–413,
+# 420–421,
+# 430–437,
+# 446–447,
+# 468–473,
+# 484–495,
+# 512–767
 
 mapping_compressed = mapping_minimal
 
@@ -102,6 +275,7 @@ background_mapping_minimal[2] = 2
 background_mapping_minimal[[5, 9, 10]] = 4
 background_mapping_minimal[[4, 11, 19]] = 5
 background_mapping_minimal[[6, 20, 22]] = 6
+# background_mapping_minimal[[*range(334,342)]] = 7 # Canon
 
 
 class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
@@ -117,6 +291,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
     cartridge_title = "MARIO DELUXAHY"
     mapping_minimal = mapping_minimal
     mapping_compressed = mapping_compressed
+    object_id_mapping = object_id_mapping
 
     def __init__(self, *args, **kwargs):
         self.world = (0, 0)
@@ -196,6 +371,55 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         self._stuck_last_progress = self.level_progress
         self._stuck_in_level = self.pyboy.memory[ADDR_MODE] == MODE_LEVEL
 
+    def object_slots(self):
+        """Return active game objects with WRAM data and game-area coordinates."""
+        objects = []
+        section_x, section_y, _, _ = self.game_area_section
+        camera_x = self._camera_x()
+        camera_y = self._camera_y()
+        for slot in range(SPRITE_SLOT_COUNT):
+            values = {name: self.pyboy.memory[SPRITE_WRAM_BANK, address + slot] for name, address in SPRITE_SLOT_FIELDS}
+            if values["status"] == 0:
+                continue
+            x = values["x_low"] | values["x_high"] << 8
+            y = values["y_low"] | values["y_high"] << 8
+            x_speed = values["x_speed_raw"]
+            y_speed = values["y_speed_raw"]
+            game_area_x = ((x - camera_x + 4) // 8) - section_x
+            game_area_y = ((y - camera_y + 4) // 8) - section_y
+            values.update(
+                {
+                    "slot": slot,
+                    "mapped_id": int(object_id_mapping[values["id"]]),
+                    "x": x,
+                    "y": y,
+                    "game_area_x": game_area_x,
+                    "game_area_y": game_area_y,
+                    "x_signed": x - 0x10000 if x & 0x8000 else x,
+                    "y_signed": y - 0x10000 if y & 0x8000 else y,
+                    "x_speed": x_speed - 0x100 if x_speed & 0x80 else x_speed,
+                    "y_speed": y_speed - 0x100 if y_speed & 0x80 else y_speed,
+                }
+            )
+            objects.append(values)
+        return objects
+
+    def _fireball_mapping(self, sprite, objects):
+        if not 92 <= sprite.tile_identifier < 96:
+            return 0
+
+        world_x = sprite.x + self._camera_x()
+        world_y = sprite.y + self._camera_y()
+        for obj in objects:
+            if obj["id"] != MARIO_FIREBALL_ID:
+                continue
+            if abs(world_x - obj["x"]) <= 8 and abs(world_y - obj["y"]) <= 8:
+                return 12
+
+        if any(FIREBAR_ID_MIN <= obj["id"] <= FIREBAR_ID_MAX for obj in objects):
+            return 18
+        return 0
+
     def _game_area_tiles(self):
         """Return interaction types for the camera-relative background map."""
         if self._tile_cache_invalid:
@@ -241,18 +465,23 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         """
         tiles_matrix = self.game_area_background()
         sprites = self._sprites_on_screen()
+        ambiguous_sprites = [sprite for sprite in sprites if 92 <= sprite.tile_identifier < 96]
+        objects = self.object_slots() if ambiguous_sprites else ()
         xx, yy, width, height = self.game_area_section
         camera_y = self._camera_y()
         for sprite in sprites:
             x = ((sprite.x + 4) // 8) - xx
             y = ((sprite.y + camera_y + 4) // 8) - yy
             tile_identifier = sprite.tile_identifier
-            sprite_value = self.mapping[tile_identifier] + self.sprite_offset
+            fireball_mapping = self._fireball_mapping(sprite, objects)
+            sprite_mapping = fireball_mapping or self.mapping[tile_identifier]
+            sprite_value = sprite_mapping + self.sprite_offset
             if 0 <= x < width and 0 <= y < height and self.mapping[tile_identifier] != 0:
                 tiles_matrix[y, x] = sprite_value
             if len(sprite.tiles) == 2 and 0 <= x < width and 0 <= y + 1 < height:
-                if self.mapping[tile_identifier + 1] != 0:
-                    tiles_matrix[y + 1, x] = self.mapping[tile_identifier + 1] + self.sprite_offset
+                second_mapping = fireball_mapping or self.mapping[tile_identifier + 1]
+                if second_mapping != 0:
+                    tiles_matrix[y + 1, x] = second_mapping + self.sprite_offset
         return tiles_matrix
 
     def game_area_background(self):
