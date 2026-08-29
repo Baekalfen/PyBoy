@@ -15,6 +15,12 @@ class MBC1(BaseMBC):
         super().__init__(*args, **kwargs)
         self.bank_select_register1 = 1
         self.bank_select_register2 = 0
+        # MBC1 multicarts repeat the Nintendo logo in every 16 KiB bank.
+        self.multicart = self.external_rom_count == 64 and all(
+            self.rombanks[bank, address] == self.rombanks[0, address]
+            for bank in range(1, self.external_rom_count)
+            for address in range(0x0104, 0x0134)
+        )
 
     def setitem(self, address, value):
         if 0x0000 <= address < 0x2000:
@@ -37,12 +43,19 @@ class MBC1(BaseMBC):
         # else:
         #     logger.error("Invalid writing address: %0.4x", address)
         if self.memorymodel == 1:
-            self.rombank_selected_low = (self.bank_select_register2 << 5) % self.external_rom_count
+            bank_shift = 4 if self.multicart else 5
+            self.rombank_selected_low = (self.bank_select_register2 << bank_shift) % self.external_rom_count
         else:
             self.rombank_selected_low = 0
-        self.rombank_selected = (
-            (self.bank_select_register2 << 5) | self.bank_select_register1
-        ) % self.external_rom_count
+        if self.multicart:
+            self.rombank_selected = (self.bank_select_register2 << 4) | (self.bank_select_register1 & 0x0F)
+            if self.bank_select_register1 & 0x0F == 0 and not self.bank_select_register1 & 0x10:
+                self.rombank_selected |= 1
+            self.rombank_selected %= self.external_rom_count
+        else:
+            self.rombank_selected = (
+                (self.bank_select_register2 << 5) | self.bank_select_register1
+            ) % self.external_rom_count
 
     def getitem(self, address):
         if 0xA000 <= address < 0xC000:

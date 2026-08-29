@@ -276,7 +276,7 @@
     "text": "Test OK\n"
   },
   "emulator-only/mbc1/multicart_rom_8Mb.gb": {
-    "text": "TEST FAILED\n$4000-$7FFF\nMODE 00\nBANK NUMBER 10\nEXPECTED    00\nACTUAL      10\n"
+    "text": "Test OK\n"
   },
   "emulator-only/mbc1/rom_8Mb.gb": {
     "text": "Test OK\n"
