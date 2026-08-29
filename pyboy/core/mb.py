@@ -722,7 +722,8 @@ class Motherboard:
                 if i == 0xFF40:
                     self.lcd.set_lcdc(value)
                 elif i == 0xFF41:
-                    self.lcd._STAT.set(value)
+                    if lcd_interrupt := self.lcd._STAT.set(value):
+                        self.cpu.set_interruptflag(lcd_interrupt)
                 elif i == 0xFF42:
                     self.lcd.SCY = value
                 elif i == 0xFF43:

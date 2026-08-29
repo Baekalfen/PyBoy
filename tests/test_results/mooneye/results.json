@@ -162,7 +162,7 @@
     "text": "TEST #00 FAILED\n"
   },
   "acceptance/ppu/stat_irq_blocking.gb": {
-    "text": "FAIL: MODE=1 INTR\n"
+    "text": "Test OK\n"
   },
   "acceptance/ppu/intr_1_2_timing-GS.gb": {
     "text": "Registers\n  A: 00  F: 00\n  B: 15  C: 00\n  D: 14  E: 15\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
