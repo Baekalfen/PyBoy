@@ -156,7 +156,7 @@
     "text": "Registers\n  A: 12  F: 80\n  B: 00  C: 00\n  D: 11  E: 12\n  H: 02  L: 04\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/vblank_stat_intr-GS.gb": {
-    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 12  E: 12\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: 01! E: 00!\nTest failed\n"
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 00\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/intr_2_mode0_timing_sprites.gb": {
     "text": "TEST #00 FAILED\n"
@@ -327,7 +327,7 @@
     "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 80!\n  B: OK  C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
   },
   "misc/ppu/vblank_stat_intr-C.gb": {
-    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 12  E: 12\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: 01! E: 00!\nTest failed\n"
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: 00!\nTest failed\n"
   },
   "acceptance/oam_dma_start.gb": {
     "text": "Registers\n  A: 01  F: C0\n  B: D7  C: 01\n  D: D7  E: 00\n  H: 02  L: 38\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"

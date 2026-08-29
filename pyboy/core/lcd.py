@@ -259,6 +259,8 @@ class LCD:
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
                     if self.LY == 144:
+                        if self._STAT.value & 0x20 and not self._STAT._irq_line:
+                            interrupt_flag |= INTR_LCDC
                         interrupt_flag |= INTR_VBLANK
                         self.renderer.wy_activated_frame = False
                         if self.first_frame:
