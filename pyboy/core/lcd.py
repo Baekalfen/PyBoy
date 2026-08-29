@@ -441,22 +441,22 @@ class STATRegister:
     def __init__(self):
         self.value = 0b1000_0000
         self._mode = 0
+        self._irq_line = False
 
     def set(self, value):
         value &= 0b0111_1000  # Bit 7 is always set, and bit 0-2 are read-only
         self.value &= 0b1000_0111  # Preserve read-only bits and clear the rest
         self.value |= value  # Combine the two
+        return self._update_irq_line()
 
     def update_LYC(self, LYC, LY):
         # WARNING: Only call when LCD is enabled!
         if LYC == LY:
             self.value |= 0b100  # Sets the LYC flag
-            if self.value & 0b0100_0000:  # LYC interrupt enabled flag
-                return INTR_LCDC
         else:
             # Clear LYC flag
             self.value &= 0b1111_1011
-        return 0
+        return self._update_irq_line()
 
     def set_mode(self, mode):
         if self._mode == mode:
@@ -466,12 +466,15 @@ class STATRegister:
         self._mode = mode
         self.value &= 0b11111100  # Clearing 2 LSB
         self.value |= mode  # Apply mode to LSB
+        return self._update_irq_line()
 
-        # Check if interrupt is enabled for this mode
-        # Mode "3" is not interruptable
-        if mode != 3 and self.value & (1 << (mode + 3)):
-            return INTR_LCDC
-        return 0
+    def _update_irq_line(self):
+        mode_irq = self._mode != 3 and self.value & (1 << (self._mode + 3))
+        lyc_irq = self.value & 0x44 == 0x44
+        irq_line = mode_irq or lyc_irq
+        interrupt = INTR_LCDC if irq_line and not self._irq_line else 0
+        self._irq_line = irq_line
+        return interrupt
 
     def save_state(self, f):
         f.write(self.value)
@@ -480,6 +483,8 @@ class STATRegister:
         value = f.read()
         self.value = value
         self._mode = value & 0b11
+        self._irq_line = False
+        self._update_irq_line()
 
 
 class LCDCRegister:

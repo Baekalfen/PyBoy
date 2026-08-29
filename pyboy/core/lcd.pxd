@@ -106,12 +106,16 @@ cdef class PaletteRegister:
 cdef class STATRegister:
     cdef uint8_t value
     cdef uint8_t _mode
+    cdef bint _irq_line
     @final
     cdef uint8_t set_mode(self, uint8_t) noexcept nogil
     @final
     cdef uint8_t update_LYC(self, uint8_t, uint8_t) noexcept nogil
     @final
-    cdef void set(self, uint64_t) noexcept nogil
+    cdef uint8_t set(self, uint64_t) noexcept nogil
+    @final
+    @cython.locals(mode_irq=bint, lyc_irq=bint, irq_line=bint, interrupt=uint8_t)
+    cdef uint8_t _update_irq_line(self) noexcept nogil
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 

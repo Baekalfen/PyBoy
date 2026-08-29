@@ -205,7 +205,7 @@ class TestLCD:
         lcd._STAT.set(0b0100_0000)  # Enable LYC==LY interrupt
         assert not (lcd._STAT.value & 0b100)  # LYC flag not set
         assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC  # Trigger on seting LYC flag
-        assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == INTR_LCDC  # Also trigger on second call
+        assert lcd._STAT.update_LYC(lcd.LYC, lcd.LY) == 0  # The interrupt line is already asserted
         assert lcd._STAT.value & 0b100  # LYC flag set
 
     def test_frame_cycles_disabled(self):
