@@ -147,7 +147,7 @@
     "text": "Registers\n  A: 40  F: 00\n  B: FF  C: FD\n  D: 00  E: 40\n  H: FF  L: CA\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
   },
   "acceptance/oam_dma/sources-GS.gb": {
-    "text": "Fail: $FE00\n"
+    "text": "Test OK\n"
   },
   "acceptance/oam_dma/basic.gb": {
     "text": "Test OK\n"

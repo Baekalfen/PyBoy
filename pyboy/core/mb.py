@@ -432,7 +432,10 @@ class Motherboard:
         target = min(0xA0, elapsed // 4)
         while self.oam_dma_index < target:
             self.oam_dma_reading = True
-            value = self.getitem((self.oam_dma_source << 8) | self.oam_dma_index)
+            source = self.oam_dma_source
+            if not self.cgb and source >= 0xFE:
+                source -= 0x20
+            value = self.getitem((source << 8) | self.oam_dma_index)
             self.oam_dma_reading = False
             self.lcd.OAM[self.oam_dma_index] = value
             self.oam_dma_index += 1
