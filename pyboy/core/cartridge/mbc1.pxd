@@ -16,3 +16,4 @@ cdef class MBC1(BaseMBC):
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t bank_select_register1
     cdef uint8_t bank_select_register2
+    cdef bint multicart
