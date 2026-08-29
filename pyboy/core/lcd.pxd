@@ -41,6 +41,8 @@ cdef class LCD:
     cdef bint frame_done
     cdef bint first_frame
     cdef bint reset
+    cdef bint stat_mode_override
+    cdef bint lyc_changed_while_disabled
     cdef uint8_t LY
     cdef uint8_t LYC
     cdef uint64_t clock
@@ -63,7 +65,7 @@ cdef class LCD:
     cdef uint8_t tick(self, uint64_t) noexcept nogil
 
     @final
-    cdef void set_lcdc(self, uint8_t) noexcept nogil
+    cdef uint8_t set_lcdc(self, uint8_t) noexcept nogil
 
     @final
     cdef int64_t cycles_to_mode0(self) noexcept nogil

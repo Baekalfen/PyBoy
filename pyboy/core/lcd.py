@@ -46,6 +46,8 @@ class LCD:
         self.frame_done = False
         self.first_frame = False
         self.reset = False
+        self.stat_mode_override = False
+        self.lyc_changed_while_disabled = False
         self._cycles_to_interrupt = 0
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         self.next_stat_mode = 2
@@ -135,6 +137,14 @@ class LCD:
             # Will schedule a full reset on next call to LCD.tick. This will happen immediately, as CPU.tick returns
             # because of CPU.bail and MB.tick proceeds to call LCD.tick.
             self.reset = True
+            if self.lyc_changed_while_disabled:
+                if not self.cgb:
+                    self.stat_mode_override = True
+                self.lyc_changed_while_disabled = False
+            if self._STAT.value & 0x40:
+                return self._STAT.update_LYC(self.LYC, self.LY)
+
+        return 0
 
     def cycles_to_mode0(self):
         mode2 = 80
