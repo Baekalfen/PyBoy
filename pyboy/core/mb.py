@@ -530,7 +530,11 @@ class Motherboard:
                 if i == 0xFF40:
                     return self.lcd._LCDC.value
                 elif i == 0xFF41:
-                    return self.lcd._STAT.value
+                    value = self.lcd._STAT.value
+                    if self.lcd.stat_mode_override:
+                        self.lcd.stat_mode_override = False
+                        value &= 0b1111_1100
+                    return value
                 elif i == 0xFF42:
                     return self.lcd.SCY
                 elif i == 0xFF43:
@@ -720,7 +724,8 @@ class Motherboard:
                     self.cpu.set_interruptflag(lcd_interrupt)
 
                 if i == 0xFF40:
-                    self.lcd.set_lcdc(value)
+                    if lcd_interrupt := self.lcd.set_lcdc(value):
+                        self.cpu.set_interruptflag(lcd_interrupt)
                 elif i == 0xFF41:
                     if lcd_interrupt := self.lcd._STAT.set(value):
                         self.cpu.set_interruptflag(lcd_interrupt)
@@ -736,6 +741,8 @@ class Motherboard:
                     if self.lcd._LCDC.lcd_enable:
                         if lcdc_interrupt := self.lcd._STAT.update_LYC(self.lcd.LYC, self.lcd.LY):
                             self.cpu.set_interruptflag(lcdc_interrupt)
+                    else:
+                        self.lcd.lyc_changed_while_disabled = True
                 elif i == 0xFF46:
                     self.transfer_DMA(value)
                 elif i == 0xFF47:
