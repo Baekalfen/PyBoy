@@ -1,6 +1,6 @@
 {
   "misc/bits/unused_hwio-C.gb": {
-    "text": "Test OK\n"
+    "text": "TEST FAILED\n$FF72       76543210\nWROTE       00000000\nEXPECTED    00000000\nGOT         00008421\n"
   },
   "acceptance/rapid_di_ei.gb": {
     "text": "Registers\n  A: 00  F: 00\n  B: 00  C: 00\n  D: 01  E: 01\n  H: 00  L: 87\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
@@ -309,27 +309,84 @@
     "text": "Test OK\n"
   },
   "misc/boot_div-A.gb": {
-    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
   },
   "misc/boot_div-cgb0.gb": {
-    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 29! C: 2A!\n  D: 2A! E: 2B!\n  H: 2C! L: 2E!\nTest failed\n"
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 29! C: 2A!\n  D: 2A! E: 2B!\n  H: 2C! L: 2E!\nTest failed\n"
   },
   "misc/boot_div-cgbABCDE.gb": {
-    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
+    "text": "Registers\n  A: C7  F: D0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
   },
   "misc/boot_hwio-C.gb": {
     "text": "MISMATCH AT $FF00\nEXPECTED FF\nGOT      00\n"
   },
   "misc/boot_regs-A.gb": {
-    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: 01! C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: 11! F: 00!\n  B: 01! C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
   },
   "misc/boot_regs-cgb.gb": {
-    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 80!\n  B: OK  C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
+    "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: 11! F: 80!\n  B: OK  C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
   },
   "misc/ppu/vblank_stat_intr-C.gb": {
     "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: 00!\nTest failed\n"
   },
+  "misc/bits/unused_hwio-C.gb [CGB]": {
+    "text": "Test OK\n"
+  },
+  "misc/boot_div-A.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
+  },
+  "misc/boot_div-cgb0.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 29! C: 2A!\n  D: 2A! E: 2B!\n  H: 2C! L: 2E!\nTest failed\n"
+  },
+  "misc/boot_div-cgbABCDE.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 27! C: 28!\n  D: 28! E: 29!\n  H: 2A! L: 2C!\nTest failed\n"
+  },
+  "misc/boot_hwio-C.gb [CGB]": {
+    "text": "MISMATCH AT $FF00\nEXPECTED FF\nGOT      00\n"
+  },
+  "misc/boot_regs-A.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 00!\n  B: 01! C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
+  },
+  "misc/boot_regs-cgb.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 80!\n  B: OK  C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
+  },
+  "misc/ppu/vblank_stat_intr-C.gb [CGB]": {
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: 00!\nTest failed\n"
+  },
   "acceptance/oam_dma_start.gb": {
     "text": "Registers\n  A: 01  F: C0\n  B: D7  C: 01\n  D: D7  E: 00\n  H: 02  L: 38\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
+  },
+  "acceptance/boot_regs-dmgABC.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: 01! F: OK\n  B: OK  C: 13!\n  D: OK  E: D8!\n  H: 01! L: 4D!\nTest failed\n"
+  },
+  "acceptance/boot_regs-mgb.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: FF! F: OK\n  B: OK  C: 13!\n  D: OK  E: D8!\n  H: 01! L: 4D!\nTest failed\n"
+  },
+  "acceptance/boot_div2-S.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: D9! C: DA!\n  D: DA! E: DB!\n  H: DC! L: DE!\nTest failed\n"
+  },
+  "acceptance/boot_regs-sgb.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: 01! F: 00!\n  B: OK  C: 14!\n  D: OK  E: 00!\n  H: C0! L: 60!\nTest failed\n"
+  },
+  "acceptance/boot_div-dmgABCmgb.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: AC! C: AD!\n  D: AD! E: AE!\n  H: AF! L: B1!\nTest failed\n"
+  },
+  "acceptance/bits/unused_hwio-GS.gb [CGB]": {
+    "text": "TEST FAILED\n$FF4F       76543210\nWROTE       00000000\nEXPECTED    11111111\nGOT         00008420\n"
+  },
+  "acceptance/boot_regs-dmg0.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: 01! F: 00!\n  B: FF! C: 13!\n  D: OK  E: C1!\n  H: 84! L: 03!\nTest failed\n"
+  },
+  "acceptance/oam_dma/sources-GS.gb [CGB]": {
+    "text": "Fail: $FE00\n"
+  },
+  "acceptance/boot_regs-sgb2.gb [CGB]": {
+    "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: FF! F: 00!\n  B: OK  C: 14!\n  D: OK  E: 00!\n  H: C0! L: 60!\nTest failed\n"
+  },
+  "acceptance/boot_div-S.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: D9! C: DA!\n  D: DA! E: DB!\n  H: DC! L: DE!\nTest failed\n"
+  },
+  "acceptance/boot_div-dmg0.gb [CGB]": {
+    "text": "Registers\n  A: C7  F: B0\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 19! C: 1A!\n  D: 1A! E: 1B!\n  H: 1C! L: 1E!\nTest failed\n"
   }
 }
