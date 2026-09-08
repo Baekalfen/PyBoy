@@ -113,6 +113,11 @@ def pokemon_pinball_rom(secrets):
 
 
 @pytest.fixture(scope="session")
+def mbc5_rom(secrets, pokemon_pinball_rom):
+    return pokemon_pinball_rom
+
+
+@pytest.fixture(scope="session")
 def tetris_rom(secrets):
     return locate_sha256(b"7fde11dd4e594a6905deccd57943d2909ecb37665a030741c42155aeb346323b")
 

@@ -26,19 +26,33 @@ def test_pokemon_pinball_advanced(pokemon_pinball_rom):
     pyboy.set_emulation_speed(0)
     assert pyboy.cartridge_title == "POKEPINBALLVPH"
 
+    # Sneaking a rumble API test in
+    assert pyboy.rumble.supported
+    rumble_active = False
+
     pokemon_pinball = pyboy.game_wrapper
     pokemon_pinball.start_game(stage=Stage.BLUE_BOTTOM, timer_div=0x00)
     pyboy.button_press("a")
     pyboy.button_press("left")
-    pyboy.tick(500)
+    for _ in range(500):
+        pyboy.tick(1, False, False)
+        rumble_active |= pyboy.rumble.enabled
     pyboy.button_release("left")
     pyboy.button_release("a")
-    pyboy.tick(26)
+    for _ in range(26):
+        pyboy.tick(1, False, False)
+        rumble_active |= pyboy.rumble.enabled
     pyboy.button_press("left")
     pyboy.button_press("a")
-    pyboy.tick(700)
+    for _ in range(700):
+        pyboy.tick(1, False, False)
+        rumble_active |= pyboy.rumble.enabled
     pyboy.button_release("left")
     pyboy.button_release("a")
+
+    # Sneaking a rumble API test in
+    # Any rumble at all is a passed test
+    assert rumble_active
 
     assert pokemon_pinball.score == 100300
     assert pokemon_pinball.special_mode == SpecialMode.CATCH.value
@@ -99,6 +113,6 @@ def test_pokemon_pinball_game_over(pokemon_pinball_rom):
 
     for _ in range(62):
         pyboy.button("a")
-        pyboy.tick(100, render=False)
+        pyboy.tick(100, False, False)
 
     assert pokemon_pinball.game_over

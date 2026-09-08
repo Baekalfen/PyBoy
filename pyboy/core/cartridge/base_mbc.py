@@ -41,6 +41,10 @@ class BaseMBC:
         self.rombank_selected = 1
         self.rombank_selected_low = 0
 
+        # Rumble pack support (initialized to False for non-MBC5 cartridges)
+        self.rumble_supported = False
+        self.rumble_enabled = False
+
         if ram_file is not None and self.battery:
             self.load_ram(IntIOWrapper(ram_file))
         else:

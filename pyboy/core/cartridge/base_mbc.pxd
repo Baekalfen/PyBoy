@@ -29,6 +29,8 @@ cdef class BaseMBC:
     cdef uint16_t rombank_selected
     cdef uint16_t rombank_selected_low
     cdef bint cgb
+    cdef public bint rumble_supported
+    cdef public bint rumble_enabled
 
     cdef void stop(self, object, object) noexcept
     cdef int save_state(self, IntIOInterface) except -1

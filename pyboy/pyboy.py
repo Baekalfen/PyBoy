@@ -21,6 +21,7 @@ from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
 from pyboy.api.sound import Sound
 from pyboy.api.tilemap import TileMap
+from pyboy.api.rumble import Rumble
 from pyboy.logging import get_logger
 from pyboy.logging import log_level as _log_level
 from pyboy.plugins.manager import PluginManager, parser_arguments
@@ -355,6 +356,11 @@ class PyBoy:
         -------
         `pyboy.api.sound.Sound`:
             A Sound object with helper functions for accessing the sound buffer.
+        """
+
+        self.rumble = Rumble(self.mb)
+        """
+        Use this method to get a `pyboy.api.rumble.Rumble` object. This can be used to get the current rumble pack state.
         """
         self.memory = PyBoyMemoryView(self.mb)
         """
