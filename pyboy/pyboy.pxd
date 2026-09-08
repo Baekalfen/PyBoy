@@ -13,6 +13,7 @@ from pyboy.api.memory_scanner cimport MemoryScanner
 from pyboy.api.screen cimport Screen
 from pyboy.api.sound cimport Sound
 from pyboy.api.tilemap cimport TileMap
+from pyboy.api.rumble cimport Rumble
 from pyboy.core.cpu cimport CPU
 from pyboy.core.mb cimport Motherboard
 from pyboy.logging.logging cimport Logger
@@ -62,6 +63,7 @@ cdef class PyBoy:
     cdef readonly Sound sound
     cdef readonly TileMap tilemap_background
     cdef readonly TileMap tilemap_window
+    cdef readonly Rumble rumble
     cdef readonly object game_wrapper
     cdef readonly MemoryScanner memory_scanner
     cdef readonly GameShark gameshark
