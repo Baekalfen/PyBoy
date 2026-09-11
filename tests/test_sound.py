@@ -195,6 +195,18 @@ NR52 = 0xFF26 - NR10
 WAVE = 0xFF30 - NR10
 
 
+def test_wave_channel_sample_order(default_rom):
+    pyboy = PyBoy(default_rom, window="null", sound_emulated=True, cgb=True)
+    pyboy.memory[NR10 + NR52] = 0x80  # Enable APU
+    pyboy.memory[NR10 + WAVE] = 0xAB
+    pyboy.memory[NR10 + NR30] = 0x80  # Enable channel 3 DAC
+    pyboy.memory[NR10 + NR32] = 0x20  # Full volume
+    pyboy.memory[NR10 + NR34] = 0x80  # Trigger channel 3
+
+    assert pyboy.memory[0xFF77] & 0x0F == 0x0A  # PCM34 channel 3 sample
+    pyboy.stop(save=False)
+
+
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 def test_sound_registers():
     from pyboy.core.sound import Sound
