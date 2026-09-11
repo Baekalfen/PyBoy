@@ -907,7 +907,7 @@ class WaveChannel:
     def sample(self):
         if self.enable and self.dacpow and not self.sample_suppressed:
             sample = self.wavetable[self.waveframe // 2]
-            if self.waveframe % 2 == 1:  # Read 4-bit value
+            if self.waveframe % 2 == 0:  # Read upper nibble first
                 sample >>= 4
             sample &= 0x0F
             return sample >> self.volumeshift
