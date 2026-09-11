@@ -44,7 +44,7 @@ class Motherboard:
             logger.debug("Boot-ROM file provided")
 
         self.cartridge = cartridge.load_cartridge(gamerom_file, ram_file, rtc_file)
-        logger.debug("Cartridge started:\n%s", self.cartridge)
+        logger.debug(f"Cartridge started:\n{self.cartridge}")
 
         # If the user requested cgb hardware emulation as True or False, it takes
         # precedence. Otherwise we auto-detect from the cartridge.
@@ -53,7 +53,7 @@ class Motherboard:
             self.bootrom = bootrom.BootROM(bootrom_file, self.cgb)
             if bootrom_file is not None:
                 self.cgb = self.bootrom.cgb
-            logger.debug("Auto-detected emulation mode: %s", ("CGB" if self.cgb else "DMG"))
+            logger.debug(f"Auto-detected emulation mode: {'CGB' if self.cgb else 'DMG'}")
         else:
             self.cgb = cgb
             self.bootrom = bootrom.BootROM(bootrom_file, self.cgb)

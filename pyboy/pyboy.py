@@ -169,7 +169,7 @@ class PyBoy:
 
         _log_level(log_level)
 
-        logger.debug("Cython compilation status: %s", cython_compiled)
+        logger.debug(f"Cython compilation status: {cython_compiled}")
 
         if "bootrom_file" in kwargs:
             logger.error(
