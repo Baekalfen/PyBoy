@@ -39,8 +39,8 @@ def load_cartridge(gamerom_file, ram_file, rtc_file):
 
     cart_line = ", ".join([x for x, y in zip(["SRAM", "Battery", "RTC"], cartinfo[1:]) if y])
     cart_name = mbc_class.__name__
-    logger.debug("Cartridge type: 0x%0.2x - %s, %s", carttype, cart_name, cart_line)
-    logger.debug("Cartridge size: %d ROM banks of 16KB, %s RAM banks of 8KB", len(rombanks), external_ram_count)
+    logger.debug(f"Cartridge type: 0x{carttype:02x} - {cart_name}, {cart_line}")
+    logger.debug(f"Cartridge size: {len(rombanks)} ROM banks of 16KB, {external_ram_count} RAM banks of 8KB")
 
     return mbc_class(rombanks, ram_file, rtc_file, external_ram_count, carttype, *cartinfo[1:])
 

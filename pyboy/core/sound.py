@@ -30,10 +30,7 @@ class Sound:
         self.disable_sampling = False
         self.emulate = emulate  # Just emulate registers etc.
         logger.debug(
-            "Sound emulated: %d, sound volume: %d, sound disable sampling: %d",
-            self.emulate,
-            self.volume,
-            self.disable_sampling,
+            f"Sound emulated: {self.emulate}, sound volume: {self.volume}, sound disable sampling: {self.disable_sampling}"
         )
         self.cgb = cgb
 

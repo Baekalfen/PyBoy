@@ -288,12 +288,18 @@ def test_serial_trade(pokemon_blue_rom, interrupt):
     )
     process1.start()
 
-    # Wait for first emulator to come online
-    while shared_memory.read(0) == 0:
-        time.sleep(0.1)
-
     deadline = time.monotonic() + SERIAL_TEST_TIMEOUT_TOTAL
     try:
+        # Wait for first emulator to come online, but do not wait forever if
+        # the worker exits before initializing its serial connection.
+        while shared_memory.read(0) == 0:
+            if not process1.is_alive():
+                process1.join()
+                raise AssertionError(f"Serial trade worker exited before connecting (exit code {process1.exitcode})")
+            if time.monotonic() >= deadline:
+                raise AssertionError("Serial trade worker did not connect before the startup timeout")
+            time.sleep(0.1)
+
         pokemon_trade(pokemon_blue_rom, False, interrupt, shared_memory)
     finally:
         process1.join(max(0, deadline - time.monotonic()))
