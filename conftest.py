@@ -467,6 +467,14 @@ def daid_dir():
     return str(path) + "/"
 
 
+# https://github.com/mmuszkow/gbprinter/tree/master
+@pytest.fixture(scope="session")
+def print_file():
+    path = extra_test_rom_dir / Path("print.gb")
+    download_file(path, "https://pyboy.dk/mirror/LICENSE.print.txt", "https://pyboy.dk/mirror/print.gb")
+    return str(path)
+
+
 @pytest.fixture(autouse=True, scope="function")
 def check_stderr_empty(request):
     capsys = request.getfixturevalue("capsys")
