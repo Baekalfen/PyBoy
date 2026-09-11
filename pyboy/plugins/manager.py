@@ -16,6 +16,7 @@ from pyboy.plugins.record_replay import RecordReplay # noqa
 from pyboy.plugins.rewind import Rewind # noqa
 from pyboy.plugins.screen_recorder import ScreenRecorder # noqa
 from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # noqa
+from pyboy.plugins.game_boy_printer import GameBoyPrinter # noqa
 from pyboy.plugins.debug_prompt import DebugPrompt # noqa
 from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # noqa
 from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
@@ -39,6 +40,7 @@ def parser_arguments():
     yield Rewind.argv
     yield ScreenRecorder.argv
     yield ScreenshotRecorder.argv
+    yield GameBoyPrinter.argv
     yield DebugPrompt.argv
     yield GameWrapperSuperMarioLand.argv
     yield GameWrapperTetris.argv
@@ -78,6 +80,8 @@ class PluginManager:
         self.screen_recorder_enabled = self.screen_recorder.enabled()
         self.screenshot_recorder = ScreenshotRecorder(pyboy, mb, pyboy_argv)
         self.screenshot_recorder_enabled = self.screenshot_recorder.enabled()
+        self.game_boy_printer = GameBoyPrinter(pyboy, mb, pyboy_argv)
+        self.game_boy_printer_enabled = self.game_boy_printer.enabled()
         self.debug_prompt = DebugPrompt(pyboy, mb, pyboy_argv)
         self.debug_prompt_enabled = self.debug_prompt.enabled()
         self.game_wrapper_super_mario_land = GameWrapperSuperMarioLand(pyboy, mb, pyboy_argv)
@@ -133,6 +137,8 @@ class PluginManager:
             events = self.screen_recorder.handle_events(events)
         if self.screenshot_recorder_enabled:
             events = self.screenshot_recorder.handle_events(events)
+        if self.game_boy_printer_enabled:
+            events = self.game_boy_printer.handle_events(events)
         if self.debug_prompt_enabled:
             events = self.debug_prompt.handle_events(events)
         if self.game_wrapper_super_mario_land_enabled:
@@ -166,6 +172,8 @@ class PluginManager:
             self.screen_recorder.post_tick()
         if self.screenshot_recorder_enabled:
             self.screenshot_recorder.post_tick()
+        if self.game_boy_printer_enabled:
+            self.game_boy_printer.post_tick()
         if self.debug_prompt_enabled:
             self.debug_prompt.post_tick()
         if self.game_wrapper_super_mario_land_enabled:
@@ -279,6 +287,8 @@ class PluginManager:
             title += self.screen_recorder.window_title()
         if self.screenshot_recorder_enabled:
             title += self.screenshot_recorder.window_title()
+        if self.game_boy_printer_enabled:
+            title += self.game_boy_printer.window_title()
         if self.debug_prompt_enabled:
             title += self.debug_prompt.window_title()
         if self.game_wrapper_super_mario_land_enabled:
@@ -322,6 +332,8 @@ class PluginManager:
             self.screen_recorder.stop()
         if self.screenshot_recorder_enabled:
             self.screenshot_recorder.stop()
+        if self.game_boy_printer_enabled:
+            self.game_boy_printer.stop()
         if self.debug_prompt_enabled:
             self.debug_prompt.stop()
         if self.game_wrapper_super_mario_land_enabled:

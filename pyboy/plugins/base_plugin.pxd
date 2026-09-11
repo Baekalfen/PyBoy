@@ -29,7 +29,7 @@ cdef class PyBoyPlugin:
     cdef list handle_events(self, list)
     cdef void post_tick(self) noexcept
     cdef str window_title(self)
-    cdef void stop(self) noexcept
+    cpdef void stop(self) except *
     cpdef object enabled(self) # object for actual Python bool and exceptions
 
 

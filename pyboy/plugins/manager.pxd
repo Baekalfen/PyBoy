@@ -17,6 +17,7 @@ from pyboy.plugins.record_replay cimport RecordReplay
 from pyboy.plugins.rewind cimport Rewind
 from pyboy.plugins.screen_recorder cimport ScreenRecorder
 from pyboy.plugins.screenshot_recorder cimport ScreenshotRecorder
+from pyboy.plugins.game_boy_printer cimport GameBoyPrinter
 from pyboy.plugins.debug_prompt cimport DebugPrompt
 from pyboy.plugins.game_wrapper_super_mario_land cimport GameWrapperSuperMarioLand
 from pyboy.plugins.game_wrapper_tetris cimport GameWrapperTetris
@@ -44,6 +45,7 @@ cdef class PluginManager:
     cdef public Rewind rewind
     cdef public ScreenRecorder screen_recorder
     cdef public ScreenshotRecorder screenshot_recorder
+    cdef public GameBoyPrinter game_boy_printer
     cdef public DebugPrompt debug_prompt
     cdef public GameWrapperSuperMarioLand game_wrapper_super_mario_land
     cdef public GameWrapperTetris game_wrapper_tetris
@@ -62,6 +64,7 @@ cdef class PluginManager:
     cdef bint rewind_enabled
     cdef bint screen_recorder_enabled
     cdef bint screenshot_recorder_enabled
+    cdef bint game_boy_printer_enabled
     cdef bint debug_prompt_enabled
     cdef bint game_wrapper_super_mario_land_enabled
     cdef bint game_wrapper_tetris_enabled

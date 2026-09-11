@@ -31,6 +31,7 @@ plugins = [
     "Rewind",
     "ScreenRecorder",
     "ScreenshotRecorder",
+    "GameBoyPrinter",
     "DebugPrompt",
 ] + game_wrappers
 all_plugins = windows + plugins
