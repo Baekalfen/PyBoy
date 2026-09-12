@@ -891,9 +891,8 @@ class WaveChannel:
             self.periodtimer += self.period
             if self.sample_suppressed:
                 self.sample_suppressed = False
-            else:
-                self.waveframe += 1
-                self.waveframe %= 32
+            self.waveframe += 1
+            self.waveframe %= 32
             self.wave_access = True
         if self.wave_access and self.periodtimer < self.period - WAVE_ACCESS_CYCLES:
             self.wave_access = False
