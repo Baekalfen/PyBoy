@@ -12,6 +12,7 @@ try:
         GL_COLOR_BUFFER_BIT,
         GL_DEPTH_BUFFER_BIT,
         GL_RGBA,
+        GL_UNSIGNED_BYTE,
         GL_UNSIGNED_INT_8_8_8_8_REV,
         glClear,
         glDrawPixels,
@@ -27,15 +28,32 @@ ROWS, COLS = 144, 160
 
 
 class WindowGLFW(WindowOpenAL):
+    argv = [
+        ("--sgb-border", {"action": "store_true", "help": "Enable SGB border rendering (requires SDL2 or GLFW window)"})
+    ]
+
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
+
+        self.sgb_border_enabled = pyboy_argv.get("sgb_border", False)
 
         if not self.enabled():
             return
 
         if not glfw.init():
             raise PyBoyException("GLFW couldn't initialize!")
-        self._scaledresolution = (COLS * self.scale, ROWS * self.scale)
+
+        # Determine window dimensions based on SGB border enabled state
+        if self.sgb_border_enabled:
+            # SGB mode: 256x224 screen dimensions
+            window_width = 256 * self.scale
+            window_height = 224 * self.scale
+            self._scaledresolution = (window_width, window_height)
+        else:
+            # Normal GB mode: 160x144
+            window_width = COLS * self.scale
+            window_height = ROWS * self.scale
+            self._scaledresolution = (window_width, window_height)
 
         # Fix scaling on macOS Retina displays. Call before 'glfw.create_window'!
         glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE)
@@ -118,14 +136,38 @@ class WindowGLFW(WindowOpenAL):
                 self.events.append(WindowEvent(WindowEvent.RELEASE_ARROW_RIGHT))
 
     def _window_resize(self, window, width, height):
-        scale = max(min(height / ROWS, width / COLS), 1)
-        self._scaledresolution = (round(scale * COLS), round(scale * ROWS))
+        if self.sgb_border_enabled:
+            # SGB mode: 256x224 base dimensions
+            scale = max(min(height / 224, width / 256), 1)
+            self._scaledresolution = (round(scale * 256), round(scale * 224))
+        else:
+            # Normal GB mode: 160x144
+            scale = max(min(height / ROWS, width / COLS), 1)
+            self._scaledresolution = (round(scale * COLS), round(scale * ROWS))
         glPixelZoom(scale, scale)
 
     def _gldraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
-        glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, buf)
+
+        # Use direct access to Cython attributes - when compiled, we have direct access to self.mb and self.renderer
+        if self.sgb_border_enabled and self.mb.sgb.enabled and self.renderer:
+            try:
+                frame = self.mb.sgb_border.get_composited_frame(self.renderer._screenbuffer_raw)
+                if frame and len(frame) > 0:
+                    buf = np.asarray(frame, dtype=np.uint8).reshape(224, 256, 4)
+                    glDrawPixels(256, 224, GL_RGBA, GL_UNSIGNED_BYTE, buf[::-1, :, :])
+                else:
+                    buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
+                    glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, buf)
+            except Exception as e:
+                logger.debug(f"Error rendering SGB border: {e}")
+                buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
+                glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, buf)
+        else:
+            # Normal GB rendering (160x144)
+            buf = np.asarray(self.renderer._screenbuffer)[::-1, :]
+            glDrawPixels(COLS, ROWS, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, buf)
+
         glFlush()
         glfw.swap_buffers(self.window)
 

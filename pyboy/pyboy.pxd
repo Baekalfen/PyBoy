@@ -56,6 +56,8 @@ cdef class PyBoy:
     cdef bint no_input
     cdef readonly str window_title
     cdef readonly bint title_status
+    cdef readonly bint sgb_border
+    cdef readonly object sgb
     cdef readonly PyBoyMemoryView memory
     cdef readonly PyBoyRegisterFile register_file
     cdef readonly Screen screen

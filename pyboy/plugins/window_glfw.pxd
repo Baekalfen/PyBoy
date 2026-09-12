@@ -18,6 +18,7 @@ cdef int ROWS, COLS
 cdef class WindowGLFW(WindowOpenAL):
     cdef list events
     cdef object window
+    cdef readonly bint sgb_border_enabled
 
     cdef void _key_callback(self, object, int, int, int, int) noexcept
 

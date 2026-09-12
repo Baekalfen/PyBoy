@@ -14,6 +14,8 @@ cimport pyboy.core.cpu
 cimport pyboy.core.interaction
 cimport pyboy.core.lcd
 cimport pyboy.core.ram
+cimport pyboy.core.sgb
+cimport pyboy.core.sgb_border
 cimport pyboy.core.serial
 cimport pyboy.core.sound
 cimport pyboy.core.timer
@@ -40,6 +42,11 @@ cdef class Motherboard:
     cdef pyboy.core.serial.Serial serial
     cdef pyboy.core.sound.Sound sound
     cdef pyboy.core.cartridge.base_mbc.BaseMBC cartridge
+    cdef readonly pyboy.core.sgb.SGB sgb
+    cdef readonly pyboy.core.sgb_border.SGBBorderRenderer sgb_border
+    cdef bint sgb_capable
+    cdef bint sgb_active_transfer
+    cdef bint sgb_multiplayer
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
@@ -78,6 +85,7 @@ cdef class Motherboard:
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
     cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil
+
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil
     cdef int save_state(self, IntIOInterface) except -1
