@@ -20,6 +20,7 @@ from pyboy.api.constants import TILES, TILES_CGB
 from pyboy.api.gameshark import GameShark
 from pyboy.api.memory_scanner import MemoryScanner
 from pyboy.api.screen import Screen
+from pyboy.api.sgb import SGB
 from pyboy.api.sound import Sound
 from pyboy.api.tilemap import TileMap
 from pyboy.api.rumble import Rumble
@@ -109,6 +110,7 @@ class PyBoy:
         title_status=False,
         serial_shared_memory=None,
         serial_interrupt_based=False,
+        sgb_border=False,
         **kwargs,
     ):
         """
@@ -159,6 +161,8 @@ class PyBoy:
             cgb_color_palette (sequence[sequence[int]]): Three palettes of four 24-bit RGB colors, in background,
                 object palette 0, and object palette 1 order.
             title_status (bool): Show performance status in the window title.
+            sgb_border (bool): Enable SGB processing and border rendering. The border is drawn by the
+                SDL2 and GLFW windows; other windows get SGB processing without border display.
             serial_shared_memory (object or None): Shared-memory link buffer used to connect two emulators. The
                 object must provide `read`, `write`, and `synchronize` methods.
             serial_interrupt_based (bool): Use interrupt-based serial transfer when `serial_shared_memory` is set.
@@ -197,6 +201,7 @@ class PyBoy:
 
         kwargs["window"] = window
         kwargs["scale"] = scale
+        kwargs["sgb_border"] = sgb_border
         randomize = kwargs.pop("randomize", False)  # Undocumented feature
 
         for k, v in defaults.items():
@@ -316,10 +321,26 @@ class PyBoy:
         self.stopped = False
         self.window_title = ""
         self.title_status = title_status
+        self.sgb_border = sgb_border
+
+        # If SGB border is enabled, activate SGB processing
+        if self.sgb_border:
+            try:
+                sgb_module = self.mb.sgb
+                if self.mb.sgb_capable:
+                    sgb_module.enabled = True
+                    sgb_module.state.sgb_detected = True
+                    sgb_module.state.border_enabled = True
+                    logger.debug("SGB border forced enabled via --sgb-border flag")
+                else:
+                    logger.warning("SGB border requested but cartridge is not SGB-compatible")
+            except Exception as e:
+                logger.debug(f"Could not enable SGB border: {e}")
 
         ###################
         # API attributes
         self.screen = Screen(self.mb)
+        self.sgb = SGB(self.mb)
         """
         This attribute provides a `pyboy.api.screen.Screen` object for reading the screen buffer in
         a variety of formats.
@@ -738,6 +759,10 @@ class PyBoy:
         self._plugin_manager.paused(False)
 
     def _post_tick(self):
+        # Process SGB VRAM transfer countdown (3-frame delay before reading screen buffer)
+        if self.mb.sgb.enabled:
+            self.mb.sgb.tick_frame()
+
         # Fix buggy PIL. They will copy our image buffer and destroy the
         # reference on some user operations like .save().
         if self.screen.image and not self.screen.image.readonly:

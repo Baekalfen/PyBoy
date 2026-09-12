@@ -37,6 +37,7 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
     cdef int8_t[:] mixingbuffer
     cdef object mixingbuffer_p
     cdef object spec_want, spec_have
+    cdef readonly bint sgb_border_enabled
 
     cdef void init_audio(self, Motherboard) noexcept
 

@@ -20,6 +20,7 @@ cdef class WindowGLFW(WindowOpenAL):
     cdef object window
     cdef object _windowed_position
     cdef object _windowed_size
+    cdef readonly bint sgb_border_enabled
 
     cdef void _key_callback(self, object, int, int, int, int) noexcept
 
