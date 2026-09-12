@@ -51,7 +51,7 @@ def check_image(image, path):
 
 
 def test_pokemon_basics(pokemon_blue_rom):
-    pyboy = PyBoy(pokemon_blue_rom, window="null")
+    pyboy = PyBoy(pokemon_blue_rom, window="null", sgb_border=True)
     pyboy.set_emulation_speed(0)
     pyboy.game_wrapper.start_game()
 
