@@ -208,6 +208,39 @@ def test_wave_channel_sample_order(default_rom):
 
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_wave_channel_nibble_order():
+    from pyboy.core.sound import WaveChannel
+
+    channel = WaveChannel(False)
+    channel.wavetable[0] = 0xDE
+    channel.enable = True
+    channel.dacpow = True
+
+    assert channel.sample() == 0xD
+    channel.waveframe = 1
+    assert channel.sample() == 0xE
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_wave_channel_skips_phantom_sample():
+    from pyboy.core.sound import WaveChannel
+
+    channel = WaveChannel(False)
+    channel.wavetable[0] = 0xDE
+    channel.enable = True
+    channel.dacpow = True
+    channel.period = 4
+    channel.periodtimer = 1
+    channel.sample_suppressed = True
+
+    channel.tick(1)
+
+    assert not channel.sample_suppressed
+    assert channel.waveframe == 1
+    assert channel.sample() == 0xE
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 def test_sound_registers():
     from pyboy.core.sound import Sound
 
