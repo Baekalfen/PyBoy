@@ -143,12 +143,11 @@ DMG_HARDWARE_FAILURES = {
 
 @pytest.mark.parametrize("rom", SAMESUITE_ROMS)
 @pytest.mark.parametrize("cgb", [False, True], ids=["DMG", "CGB"])
-def test_samesuite(rom, cgb, samesuite_dir, boot_cgb_rom, boot_rom, default_rom):
+def test_samesuite(rom, cgb, samesuite_dir, default_rom):
     pyboy = PyBoy(
         samesuite_dir + rom,
         window="null",
         cgb=cgb,
-        bootrom=boot_cgb_rom if cgb else boot_rom,
     )
     pyboy.set_emulation_speed(0)
     pyboy.tick(180 if cgb else 350, True)
