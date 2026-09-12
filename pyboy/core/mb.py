@@ -690,23 +690,21 @@ class Motherboard:
                     # Detect P15 rising edge (0->1) for multiplayer player cycling.
                     old_p15 = (self.ram.io_ports[0] >> 5) & 1
                     if not old_p15 and p15:
-                        if self.sgb.state.multiplayer_enabled and (self.sgb.state.multiplayer_players & 1) == 0:
-                            self.sgb.state.current_joypad = (
-                                self.sgb.state.current_joypad + 1
-                            ) % self.sgb.state.multiplayer_players
+                        if self.sgb.multiplayer_enabled and (self.sgb.multiplayer_players & 1) == 0:
+                            self.sgb.current_joypad = (self.sgb.current_joypad + 1) % self.sgb.multiplayer_players
 
                     # Process SGB command packet bits (handles start/data/stop/finish)
                     self.sgb.process_p1_write(value)
-                    self.sgb_active_transfer = self.sgb.state.receiving_packet
-                    self.sgb_multiplayer = self.sgb.state.multiplayer_enabled
+                    self.sgb_active_transfer = self.sgb.receiving_packet
+                    self.sgb_multiplayer = self.sgb.multiplayer_enabled
 
                     # Normal joypad read through interaction.pull
                     processed_value = self.interaction.pull(value)
 
                     # Multiplayer: when both P14 and P15 are high (deselected),
                     # override bits 0-1 with the current player ID
-                    if self.sgb.state.multiplayer_enabled and p14 and p15:
-                        processed_value = (processed_value & 0xFC) | (self.sgb.state.current_joypad & 0x03)
+                    if self.sgb.multiplayer_enabled and p14 and p15:
+                        processed_value = (processed_value & 0xFC) | (self.sgb.current_joypad & 0x03)
 
                     self.ram.io_ports[0] = processed_value
                 else:

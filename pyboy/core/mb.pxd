@@ -77,13 +77,17 @@ cdef class Motherboard:
 
     cdef void switch_speed(self) noexcept nogil
 
-    @cython.locals(dma_started=cython.bint)
+    @cython.locals(bank_offset=cython.int, bank=cython.int, memory_access_offset=cython.int, dma_started=cython.bint)
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t)
     cdef void sync_oam_dma(self, uint8_t) noexcept nogil
     @final
+    @cython.locals(bank_offset=cython.int, bank=cython.int)
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
+    @cython.locals(p14=uint8_t, p15=uint8_t, old_p15=uint8_t,
+                   processed_value=uint8_t, div_period=cython.int,
+                   cycles_to_div_edge=cython.int)
     cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil
 
     @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
@@ -104,7 +108,10 @@ cdef class HDMA:
     cdef uint16_t curr_src
     cdef uint16_t curr_dst
 
+    @cython.locals(bytes_to_transfer=cython.int, transfer_type=cython.int,
+                   src=uint16_t, dst=uint16_t, i=cython.int)
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
+    @cython.locals(src=uint16_t, dst=uint16_t, i=cython.int)
     cdef int tick(self, Motherboard) noexcept nogil
 
     cdef int save_state(self, IntIOInterface) except -1
