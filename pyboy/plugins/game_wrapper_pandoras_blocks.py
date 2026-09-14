@@ -30,6 +30,10 @@ TITLE_SCREEN_TILES = [171, 177, 179, 185, 187, 193, 195, 201, 203, 209, 211, 217
 GAME_STATE_ADDR = 0xFFFD
 GAMEPLAY_STATE = 3
 MODE_ADDR = 0xFFDB
+MODE_PREFETCHED_PIECE = 9
+MODE_SPAWN_PIECE = 12
+MODE_PIECE_IN_MOTION = 15
+MODE_DELAY = 18
 MODE_GAME_OVER = 21
 MODE_PRE_GAME_OVER = 24
 NEXT_BLOCK_ADDR = 0xFFD2
@@ -166,6 +170,18 @@ class GameWrapperPandorasBlocks(PyBoyGameWrapper):
         Return whether the current game has reached a game-over state.
         """
         return self.pyboy.memory[MODE_ADDR] in (MODE_GAME_OVER, MODE_PRE_GAME_OVER)
+
+    def piece_in_motion(self):
+        """
+        Return whether a block is currently falling.
+        """
+        return self.pyboy.memory[MODE_ADDR] == MODE_PIECE_IN_MOTION
+
+    def block_dropped(self):
+        """
+        Return whether the falling block has locked and the next block is being prepared.
+        """
+        return self.pyboy.memory[MODE_ADDR] in (MODE_DELAY, MODE_PREFETCHED_PIECE, MODE_SPAWN_PIECE)
 
     def __repr__(self):
         return (
