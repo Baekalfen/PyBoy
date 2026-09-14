@@ -181,7 +181,24 @@ def test_mario_deluxe_game_area_uses_metatile_interactions(supermariobrosdeluxe_
     pyboy.set_emulation_speed(0)
 
     mario = pyboy.game_wrapper
-    mario.start_game()
+    mario.start_game(
+        custom_level_sequence=(
+            (1, 1),
+            (1, 2),
+            (1, 3),
+            (2, 1),
+            (2, 3),
+            (3, 1),
+            (3, 2),
+            (3, 3),
+            (4, 1),
+            (4, 2),
+            (4, 3),
+            (5, 1),
+            (5, 2),
+            (5, 3),
+        )
+    )
     pyboy.tick(1000, False)
 
     area = mario.game_area()
@@ -213,7 +230,24 @@ def test_mario_deluxe_custom_level_sequence(supermariobrosdeluxe_rom):
     pyboy.set_emulation_speed(0)
 
     mario = pyboy.game_wrapper
-    mario.start_game()
+    mario.start_game(
+        custom_level_sequence=(
+            (1, 1),
+            (1, 2),
+            (1, 3),
+            (2, 1),
+            (2, 3),
+            (3, 1),
+            (3, 2),
+            (3, 3),
+            (4, 1),
+            (4, 2),
+            (4, 3),
+            (5, 1),
+            (5, 2),
+            (5, 3),
+        )
+    )
 
     for expected_level in (1, 2, 4):
         pyboy.memory[0xFFB5] = 0x04
