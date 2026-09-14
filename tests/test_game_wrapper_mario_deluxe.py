@@ -241,7 +241,16 @@ def test_mario_deluxe_object_slots_distinguish_fireballs(supermariobrosdeluxe_ro
         assert objects[0]["id"] == 0x0D
         assert objects[0]["mapped_id"] == 12
         assert objects[0]["game_area_x"] == ((100 - mario._camera_x() + 4) // 8) - mario.game_area_section[0]
-        assert objects[0]["game_area_y"] == ((50 - mario._camera_y() + 4) // 8) - mario.game_area_section[1]
+        assert objects[0]["game_area_y"] == ((50 + 4) // 8) - mario.game_area_section[1]
+        assert objects[0]["screen_x"] == 100 - mario._camera_x()
+        assert objects[0]["screen_y"] == 50 - mario._camera_y()
+        annotations = mario.game_area_annotations()
+        assert annotations[0] == (
+            objects[0]["screen_x"],
+            objects[0]["screen_y"],
+            "s0 i0D m12",
+        )
+        assert annotations[-1][2] == "MARIO m1"
         assert len(objects[0]) >= 50
         assert objects[0]["d0d2"] == pyboy.memory[SPRITE_WRAM_BANK, 0xD0D2]
         assert objects[0]["d2d0"] == pyboy.memory[SPRITE_WRAM_BANK, 0xD2D0]

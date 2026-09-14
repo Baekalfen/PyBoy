@@ -43,6 +43,28 @@ MARK = array("I", [0xFF000000, 0xFFC00000, 0xFFFC0000, 0x00FFFF00, 0xFF00FF00])
 SPRITE_BACKGROUND = COLOR_BACKGROUND
 
 
+def make_buffer(w, h, depth=4):
+    buf = array("B", [0x55] * (w * h * depth))
+    if depth == 4:
+        buf0 = memoryview(buf).cast("I", shape=(h, w))
+    else:
+        buf0 = memoryview(buf).cast("B", shape=(h, w))
+    buf_p = c_void_p(buf.buffer_info()[0])
+    return buf0, buf_p
+
+
+font_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "font.txt")
+with open(font_path) as font_file:
+    font_lines = font_file.readlines()
+font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n") + 1 :])
+FONT_BYTES = zlib.decompress(b64decode(font_blob.encode()))
+
+FONT_BUFFER, FONT_BUFFER_P = make_buffer(8, 16 * 256)
+for y, font_byte in enumerate(FONT_BYTES):
+    for x in range(8):
+        FONT_BUFFER[y, x] = 0xFFFFFFFF if font_byte & (0x80 >> x) else 0
+
+
 class MarkedTile:
     def __init__(
         self,
@@ -151,7 +173,7 @@ class Debug(PyBoyWindowPlugin):
             pyboy,
             mb,
             pyboy_argv,
-            scale=2,
+            scale=3,
             title="Game Area",
             width=COLS,
             height=ROWS,
@@ -237,16 +259,6 @@ class Debug(PyBoyWindowPlugin):
                 return True
         else:
             return False
-
-
-def make_buffer(w, h, depth=4):
-    buf = array("B", [0x55] * (w * h * depth))
-    if depth == 4:
-        buf0 = memoryview(buf).cast("I", shape=(h, w))
-    else:
-        buf0 = memoryview(buf).cast("B", shape=(h, w))
-    buf_p = c_void_p(buf.buffer_info()[0])
-    return buf0, buf_p
 
 
 class BaseDebugWindow(PyBoyWindowPlugin):
@@ -712,16 +724,8 @@ class MemoryWindow(BaseDebugWindow):
         self.write_border()
         self.write_addresses()
 
-        font_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "font.txt")
-        with open(font_path) as font_file:
-            font_lines = font_file.readlines()
-        font_blob = "".join(line.strip() for line in font_lines[font_lines.index("BASE64DATA:\n") + 1 :])
-        font_bytes = zlib.decompress(b64decode(font_blob.encode()))
-
-        self.fbuf0, self.fbuf_p = make_buffer(8, 16 * 256)
-        for y, b in enumerate(font_bytes):
-            for x in range(8):
-                self.fbuf0[y, x] = 0xFFFFFFFF if ((0x80 >> x) & b) else 0x00000000
+        self.fbuf0 = FONT_BUFFER
+        self.fbuf_p = FONT_BUFFER_P
 
         self.font_texture = sdl2.SDL_CreateTexture(
             self._sdlrenderer, sdl2.SDL_PIXELFORMAT_RGBA32, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
@@ -866,6 +870,15 @@ class GameAreaWindow(BaseDebugWindow):
         self.area_x = 0
         self.area_y = 0
         self.palette_rgb = [0] * 4
+        self.font_buffer = FONT_BUFFER
+        self.font_buffer_p = FONT_BUFFER_P
+        self.font_texture = sdl2.SDL_CreateTexture(
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, 8, 16 * 256
+        )
+        sdl2.SDL_UpdateTexture(self.font_texture, None, self.font_buffer_p, 8 * 4)
+        sdl2.SDL_SetTextureBlendMode(self.font_texture, sdl2.SDL_BLENDMODE_BLEND)
+        self.font_src = sdl2.SDL_Rect(0, 0, 8, 16)
+        self.font_dst = sdl2.SDL_Rect(0, 0, 8, 16)
 
     def _layout(self, section, shape, scy, follow_scrolling):
         area_x, area_y = section[:2]
@@ -928,27 +941,36 @@ class GameAreaWindow(BaseDebugWindow):
             for x in range(COLS):
                 self.buf0[screen_y + y, screen_x + x] = self.renderer._screenbuffer[y, x]
 
-    def _draw_number(self, x, y, value):
-        text = str(value)
-        if len(text) > 3:
-            text = text[-3:]
-        start_x = x + (8 - (len(text) * 3 + len(text) - 1)) // 2
-        for offset, character in enumerate(text):
-            digit = GAME_AREA_DIGITS[ord(character) - ord("0")]
-            for yy, row in enumerate(digit):
-                for xx, pixel in enumerate(row):
-                    if pixel == "1":
-                        px = start_x + offset * 4 + xx
-                        py = y + yy + 1
-                        if 0 <= px < self.width and 0 <= py < self.height:
-                            self.buf0[py, px] = 0xFFFFFFFF
+    def _render_text(self, x, y, text):
+        for character_index, character in enumerate(text):
+            character_code = ord(character)
+            if character_code >= 256:
+                continue
+            self.font_src.y = character_code * 16
+            self.font_dst.x = x + character_index * 8
+            self.font_dst.y = y
+            sdl2.SDL_RenderCopy(self._sdlrenderer, self.font_texture, self.font_src, self.font_dst)
 
     def _render_mapping(self, mapping):
         for y, row in enumerate(mapping):
             for x, value in enumerate(row):
                 value = int(value)
                 if value != 0:
-                    self._draw_number(self.area_x + x * 8, self.area_y + y * 8, value)
+                    text = str(value)
+                    if len(text) > 3:
+                        text = text[-3:]
+                    tile_x = (self.area_x + x * 8) * self.scale
+                    tile_y = (self.area_y + y * 8) * self.scale
+                    text_x = tile_x + (8 * self.scale - len(text) * 8) // 2
+                    text_y = tile_y + (8 * self.scale - 16) // 2
+                    self._render_text(text_x, text_y, text)
+
+    def _render_annotations(self, annotations):
+        for x, y, text in annotations:
+            text = str(text)
+            text_x = self.screen_x * self.scale + int(x) * self.scale - len(text) * 4
+            text_y = max(0, self.screen_y * self.scale + int(y) * self.scale - 8)
+            self._render_text(text_x, text_y, text)
 
     def update_title(self):
         title = self.base_title + (" [Mapping]", " [Screen]", " [Text]")[self.display_mode]
@@ -969,12 +991,23 @@ class GameAreaWindow(BaseDebugWindow):
         for y in range(self.height):
             for x in range(self.width):
                 self.buf0[y, x] = 0xFF000000
+        mapping = None
         if self.display_mode != 2:
             self._render_background(wrapper.shape[0] * 8, wrapper.shape[1] * 8, self.area_x, self.area_y, scx)
             self._render_screen(self.screen_x, self.screen_y)
         if self.display_mode != 1:
-            self._render_mapping(wrapper.game_area())
-        BaseDebugWindow.post_tick(self)
+            mapping = wrapper.game_area()
+
+        self.update_title()
+        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.buf_p, self.width * 4)
+        sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
+        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, 0, 0)
+        if mapping is not None:
+            self._render_mapping(mapping)
+        self._render_annotations(wrapper.game_area_annotations())
+        sdl2.SDL_RenderPresent(self._sdlrenderer)
+        sdl2.SDL_RenderClear(self._sdlrenderer)
+        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, self.width, self.height)
 
     def handle_events(self, events):
         events = BaseDebugWindow.handle_events(self, events)
