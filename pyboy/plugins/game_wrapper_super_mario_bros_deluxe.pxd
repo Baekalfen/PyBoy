@@ -24,6 +24,7 @@ cdef class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
     cdef bint custom_next_level_prepared
     cdef int _stuck_last_progress
     cdef bint _stuck_in_level
+    cdef object custom_level_sequence
 
     cpdef int start_game(
         self,
@@ -33,5 +34,6 @@ cdef class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         super_player_levels=*,
         challenge=*,
         unlock_level_select=*,
+        custom_level_sequence=*,
     ) except -1
     cpdef void set_lives_left(self, int) noexcept

@@ -251,24 +251,6 @@ object_id_mapping[0x64] = 21  # MovingPlatform
 
 mapping_compressed = mapping_minimal
 
-CUSTOM_LEVEL_SEQUENCE = (
-    (1, 1),
-    (1, 2),
-    (1, 3),
-    (2, 1),
-    (2, 3),
-    (3, 1),
-    (3, 2),
-    (3, 3),
-    (4, 1),
-    (4, 2),
-    (4, 3),
-    (5, 1),
-    (5, 2),
-    (5, 3),
-)
-
-
 background_mapping_minimal = np.full(0x17, 3, dtype=np.uint32)
 background_mapping_minimal[0] = 0
 background_mapping_minimal[2] = 2
@@ -308,6 +290,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         self.stuck_frames = 0
         self._stuck_last_progress = 0
         self._stuck_in_level = False
+        self.custom_level_sequence = None
         self.custom_level_sequence_index = -1
         self.custom_next_level_prepared = False
         super().__init__(*args, game_area_section=(0, 6, 20, 26), game_area_follow_scxy=False, **kwargs)
@@ -318,9 +301,13 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         self._tile_cache_invalid = True
         self._sprite_cache_invalid = True
 
-        if self.pyboy.memory[ADDR_MODE] == MODE_OVERWORLD_INIT and not self.custom_next_level_prepared:
-            if 0 <= self.custom_level_sequence_index < len(CUSTOM_LEVEL_SEQUENCE) - 1:
-                next_world, next_level = CUSTOM_LEVEL_SEQUENCE[self.custom_level_sequence_index + 1]
+        if (
+            self.custom_level_sequence is not None
+            and self.pyboy.memory[ADDR_MODE] == MODE_OVERWORLD_INIT
+            and not self.custom_next_level_prepared
+        ):
+            if 0 <= self.custom_level_sequence_index < len(self.custom_level_sequence) - 1:
+                next_world, next_level = self.custom_level_sequence[self.custom_level_sequence_index + 1]
                 next_level_id = (next_world - 1) * 4 + next_level - 1
                 self.pyboy.memory[ADDR_LEVEL_SET] = 0
                 self.pyboy.memory[ADDR_SUBLEVEL] = next_level_id
@@ -585,6 +572,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         super_player_levels=False,
         challenge=False,
         unlock_level_select=False,
+        custom_level_sequence=None,
     ):
         """
         Start a game from the title screen.
@@ -595,11 +583,37 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         uses the game's Challenge selector.
         ``unlock_level_select=True`` is retained as an alias for entering the
         Challenge selector without launching a level.
+        ``custom_level_sequence`` optionally overrides the normal level order
+        with a sequence of one-based ``(world, level)`` tuples.
         """
         if self.game_has_started:
             raise PyBoyException("Gamewrapper already started! Use 'reset' instead.")
         if world_level is not None and level is not None:
             raise PyBoyInvalidInputException("Specify either world_level or level, not both.")
+        if custom_level_sequence is not None:
+            normalized_sequence = []
+            for sequence_world_level in custom_level_sequence:
+                normalized_sequence.append(tuple(sequence_world_level))
+            custom_level_sequence = tuple(normalized_sequence)
+            if not custom_level_sequence:
+                raise PyBoyInvalidInputException("custom_level_sequence must not be empty.")
+            for sequence_world_level in custom_level_sequence:
+                if len(sequence_world_level) != 2:
+                    raise PyBoyInvalidInputException("custom_level_sequence entries must be (world, level) tuples.")
+                sequence_world, sequence_level = sequence_world_level
+                if not 1 <= sequence_world <= 13:
+                    raise PyBoyInvalidInputException(
+                        f"{sequence_world} is out of bounds. Only worlds 1 through 13 are allowed."
+                    )
+                if not 1 <= sequence_level <= 4:
+                    raise PyBoyInvalidInputException(
+                        f"{sequence_level} is out of bounds. Only levels 1 through 4 are allowed."
+                    )
+                if not super_player_levels and sequence_world > 8:
+                    raise PyBoyInvalidInputException(
+                        "Worlds 9 through 13 are only available in the For Super Players set."
+                    )
+        self.custom_level_sequence = custom_level_sequence
         challenge = challenge or unlock_level_select
         if world_level is not None:
             self.set_world_level(*world_level, super_player_levels=super_player_levels)
@@ -638,13 +652,13 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
 
         PyBoyGameWrapper.start_game(self, timer_div=timer_div)
         self.custom_level_sequence_index = -1
-        if not challenge and not super_player_levels:
+        if self.custom_level_sequence is not None and not challenge and not super_player_levels:
             current_world_level = (
                 int(self.pyboy.memory[ADDR_LEVEL] // 4 + 1),
                 int(self.pyboy.memory[ADDR_LEVEL] % 4 + 1),
             )
-            if current_world_level in CUSTOM_LEVEL_SEQUENCE:
-                self.custom_level_sequence_index = CUSTOM_LEVEL_SEQUENCE.index(current_world_level)
+            if current_world_level in self.custom_level_sequence:
+                self.custom_level_sequence_index = self.custom_level_sequence.index(current_world_level)
         self.custom_next_level_prepared = False
 
     def game_over(self):
