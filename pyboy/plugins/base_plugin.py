@@ -280,6 +280,10 @@ class PyBoyGameWrapper(PyBoyPlugin):
         self.mapping = np.asarray(mapping, dtype=np.uint32)
         self.sprite_offset = sprite_offest
 
+    def game_area_annotations(self):
+        """Return ``(x, y, text)`` annotations in native screen-pixel coordinates."""
+        return []
+
     def _set_dimensions(self, x, y, width, height, follow_scrolling=True):
         self.shape = (width, height)
         self.game_area_section = (x, y, width, height)

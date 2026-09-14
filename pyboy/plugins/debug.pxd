@@ -17,6 +17,9 @@ from pyboy.plugins.base_plugin cimport PyBoyWindowPlugin
 from pyboy.utils cimport WindowEvent
 
 cdef uint64_t COLS, ROWS, TILES, VRAM_OFFSET, HIGH_TILEMAP, SPRITES
+cdef bytes FONT_BYTES
+cdef uint32_t[:,:] FONT_BUFFER
+cdef object FONT_BUFFER_P
 cdef uint32_t COLOR, COLOR_BACKGROUND, SPRITE_BACKGROUND, COLOR_WINDOW
 
 cdef Logger logger
@@ -179,6 +182,11 @@ cdef class GameAreaWindow(BaseDebugWindow):
     cdef int screen_y
     cdef int area_x
     cdef int area_y
+    cdef uint32_t[:,:] font_buffer
+    cdef object font_buffer_p
+    cdef object font_texture
+    cdef object font_src
+    cdef object font_dst
     cdef uint32_t[4] palette_rgb
 
     @cython.locals(area_width=int, area_height=int, area_left=int, area_top=int, left=int, top=int, right=int, bottom=int)
@@ -200,8 +208,14 @@ cdef class GameAreaWindow(BaseDebugWindow):
     @cython.locals(x=int, y=int, value=int)
     cdef void _render_mapping(self, object) noexcept
 
-    @cython.locals(x=int, y=int, digit=object, offset=int)
-    cdef void _draw_number(self, int, int, int) noexcept
+    @cython.locals(
+        x=int,
+        y=int,
+        text=str,
+    )
+    cdef void _render_text(self, int, int, str) noexcept
+
+    cdef void _render_annotations(self, object) noexcept
 
     @cython.locals(y=int, x=int)
     cdef void _render_screen(self, int, int) noexcept

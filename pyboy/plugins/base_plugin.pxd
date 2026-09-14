@@ -68,6 +68,7 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
     cdef readonly tuple game_area_section
     @cython.locals(tiles_matrix=cnp.ndarray, sprites=list, xx=int, yy=int, width=int, height=int, _x=int, _y=int)
     cpdef cnp.ndarray[cnp.uint32_t, ndim=2] game_area(self)
+    cpdef list game_area_annotations(self)
 
     cdef bint _sprite_cache_invalid
     cdef list _cached_sprites_on_screen

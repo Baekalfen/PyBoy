@@ -386,7 +386,9 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
             x_speed = values["x_speed_raw"]
             y_speed = values["y_speed_raw"]
             game_area_x = ((x - camera_x + 4) // 8) - section_x
-            game_area_y = ((y - camera_y + 4) // 8) - section_y
+            game_area_y = ((y + 4) // 8) - section_y
+            screen_x = x - camera_x
+            screen_y = y - camera_y
             values.update(
                 {
                     "slot": slot,
@@ -395,6 +397,8 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
                     "y": y,
                     "game_area_x": game_area_x,
                     "game_area_y": game_area_y,
+                    "screen_x": screen_x,
+                    "screen_y": screen_y,
                     "x_signed": x - 0x10000 if x & 0x8000 else x,
                     "y_signed": y - 0x10000 if y & 0x8000 else y,
                     "x_speed": x_speed - 0x100 if x_speed & 0x80 else x_speed,
@@ -403,6 +407,26 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
             )
             objects.append(values)
         return objects
+
+    def game_area_annotations(self):
+        annotations = [
+            (
+                obj["screen_x"],
+                obj["screen_y"],
+                f"s{obj['slot']} i{obj['id']:02X} m{obj['mapped_id']}",
+            )
+            for obj in self.object_slots()
+        ]
+        player_x = int.from_bytes(self.pyboy.memory[ADDR_PLAYER_X : ADDR_PLAYER_X + 2], "little")
+        player_y = self.pyboy.memory[ADDR_PLAYER_Y]
+        annotations.append(
+            (
+                player_x - self._camera_x(),
+                player_y - self._camera_y(),
+                "MARIO m1",
+            )
+        )
+        return annotations
 
     def _fireball_mapping(self, sprite, objects):
         if not 92 <= sprite.tile_identifier < 96:
