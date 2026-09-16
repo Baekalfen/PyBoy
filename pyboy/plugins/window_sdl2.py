@@ -159,8 +159,14 @@ def sdl2_event_pump(events):
 
 
 class WindowSDL2(PyBoyWindowPlugin):
+    argv = [
+        ("--sgb-border", {"action": "store_true", "help": "Enable SGB border rendering (requires SDL2 or GLFW window)"})
+    ]
+
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
+
+        self.sgb_border_enabled = pyboy_argv.get("sgb_border", False)
 
         if not self.enabled():
             return
@@ -168,20 +174,36 @@ class WindowSDL2(PyBoyWindowPlugin):
         if sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER) < 0:
             raise PyBoyAssertException("SDL_InitSubSystem video failed: %s", sdl2.SDL_GetError().decode())
 
+        # Determine window dimensions based on SGB border enabled state
+        if self.sgb_border_enabled:
+            # SGB mode: 256x224 screen dimensions
+            window_width = 256 * self.scale
+            window_height = 224 * self.scale
+            render_width = 256
+            render_height = 224
+            self._scaledresolution = (window_width, window_height)
+        else:
+            # Normal GB mode: 160x144
+            window_width = COLS * self.scale
+            window_height = ROWS * self.scale
+            render_width = COLS
+            render_height = ROWS
+
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy",
             sdl2.SDL_WINDOWPOS_CENTERED,
             sdl2.SDL_WINDOWPOS_CENTERED,
-            self._scaledresolution[0],
-            self._scaledresolution[1],
+            window_width,
+            window_height,
             sdl2.SDL_WINDOW_RESIZABLE,
         )
 
         sdl2.SDL_SetHint(sdl2.SDL_HINT_RENDER_VSYNC, b"0")
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
-        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, COLS, ROWS)
+
+        sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, render_width, render_height)
         self._sdltexturebuffer = sdl2.SDL_CreateTexture(
-            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, COLS, ROWS
+            self._sdlrenderer, sdl2.SDL_PIXELFORMAT_ABGR8888, sdl2.SDL_TEXTUREACCESS_STATIC, render_width, render_height
         )
 
         sdl2.SDL_ShowWindow(self._window)
@@ -247,7 +269,20 @@ class WindowSDL2(PyBoyWindowPlugin):
         return frames_buffered
 
     def post_tick(self):
-        sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS * 4)
+        if self.sgb_border_enabled and self.mb.sgb.enabled and self.renderer:
+            try:
+                frame = self.mb.sgb_border.get_composited_frame(self.renderer._screenbuffer_raw)
+                if frame and len(frame) > 0:
+                    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, frame.tobytes(), 256 * 4)
+                else:
+                    sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS * 4)
+            except Exception as e:
+                logger.debug(f"Error updating SGB border frame: {e}")
+                sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS * 4)
+        else:
+            # Normal GB rendering (160x144)
+            sdl2.SDL_UpdateTexture(self._sdltexturebuffer, None, self.renderer._screenbuffer_ptr, COLS * 4)
+
         sdl2.SDL_RenderCopy(self._sdlrenderer, self._sdltexturebuffer, None, None)
         sdl2.SDL_RenderPresent(self._sdlrenderer)
         sdl2.SDL_RenderClear(self._sdlrenderer)

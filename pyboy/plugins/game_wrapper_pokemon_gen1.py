@@ -118,7 +118,9 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.button("start")
         self.pyboy.tick(100, verbose, False)  # Transition to oak talking
 
-        for _ in range(15):
+        sgb = self.pyboy.sgb.enabled
+        num_skips = 17 if sgb else 15
+        for _ in range(num_skips):
             self._skip_dialogue(verbose)
 
         if self.pyboy.tilemap_window[2, 4] != 129:  # "B" in Blue
@@ -130,7 +132,8 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.button("a")
         self.pyboy.tick(10, verbose, False)
 
-        for _ in range(6):
+        num_skips = 7 if sgb else 6
+        for _ in range(num_skips):
             self._skip_dialogue(verbose)
 
         if self.pyboy.tilemap_window[2, 4] != 145:  # "R" in Red

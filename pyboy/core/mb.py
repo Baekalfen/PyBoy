@@ -18,7 +18,7 @@ from pyboy.utils import (
     MAX_CYCLES,
 )
 
-from . import bootrom, cartridge, cpu, interaction, lcd, ram, serial, sound, timer
+from . import bootrom, cartridge, cpu, interaction, lcd, ram, sgb, sgb_border, serial, sound, timer
 
 logger = pyboy.logging.get_logger(__name__)
 
@@ -71,6 +71,29 @@ class Motherboard:
             self.serial = serial.SerialSharedMemory(self.cgb_mode, serial_shared_memory, serial_interrupt_based)
         else:
             self.serial = serial.Serial(self.cgb_mode)
+
+        # Initialize SGB support
+        self.sgb = sgb.SGB(self)
+        self.sgb_active_transfer = False
+        self.sgb_multiplayer = False
+
+        # Check SGB support using direct ROM bank access
+        try:
+            sgb_flag = self.cartridge.rombanks[0, 0x146]
+            old_licensee = self.cartridge.rombanks[0, 0x14B]
+            self.sgb_capable = (sgb_flag == 0x03) and (old_licensee == 0x33)
+            if self.sgb_capable:
+                logger.debug(
+                    "SGB-compatible cartridge detected (SGB flag: 0x%02X, Licensee: 0x%02X)" % (sgb_flag, old_licensee)
+                )
+            else:
+                logger.debug("Non-SGB cartridge (SGB flag: 0x%02X, Licensee: 0x%02X)" % (sgb_flag, old_licensee))
+        except Exception as e:
+            logger.warning("Error checking SGB support in motherboard: %s" % e)
+            self.sgb_capable = False
+
+        # Initialize SGB border renderer
+        self.sgb_border = sgb_border.SGBBorderRenderer(self.sgb)
 
         self.lcd = lcd.LCD(
             self.cgb,
@@ -242,6 +265,8 @@ class Motherboard:
 
     def stop(self, save, ram_file, rtc_file):
         self.serial.stop()
+        self.sgb.stop()
+        self.sgb_border.stop() if hasattr(self.sgb_border, "stop") else None
         if save:
             self.cartridge.stop(ram_file, rtc_file)
 
@@ -270,6 +295,7 @@ class Motherboard:
         self.cartridge.save_state(f)
         self.interaction.save_state(f)
         self.serial.save_state(f)
+        self.sgb.save_state(f)
         f.flush()
         logger.debug("State saved.")
 
@@ -350,6 +376,7 @@ class Motherboard:
         self.interaction.load_state(f, state_version)
         if state_version >= 15:
             self.serial.load_state(f, state_version)
+        self.sgb.load_state(f, state_version)
         f.flush()
         logger.debug("State loaded.")
 
@@ -555,6 +582,10 @@ class Motherboard:
                     return self.lcd.WY
                 elif i == 0xFF4B:
                     return self.lcd.WX
+            elif i == 0xFF00:
+                # P1/JOYP: value is computed during write (including SGB multiplayer ID).
+                # Just return the stored io_ports value.
+                return self.ram.io_ports[0]
             else:
                 return self.ram.io_ports[i - 0xFF00]
         elif 0xFF4C <= i < 0xFF80:  # Empty but unusable for I/O
@@ -656,7 +687,36 @@ class Motherboard:
             self.sync_oam_dma(self.cpu.memory_access_offset)
         if 0xFF00 <= i < 0xFF4C:  # I/O ports
             if i == 0xFF00:
-                self.ram.io_ports[i - 0xFF00] = self.interaction.pull(value)
+                # P1/JOYP register - joypad selection and SGB command packets
+                p14 = (value >> 4) & 1
+                p15 = (value >> 5) & 1
+
+                if self.sgb.enabled:
+                    # SGB active: all P1 writes need processing for packet bits
+                    # and multiplayer player ID cycling
+                    # Detect P15 rising edge (0->1) for multiplayer player cycling.
+                    old_p15 = (self.ram.io_ports[0] >> 5) & 1
+                    if not old_p15 and p15:
+                        if self.sgb.multiplayer_enabled and (self.sgb.multiplayer_players & 1) == 0:
+                            self.sgb.current_joypad = (self.sgb.current_joypad + 1) % self.sgb.multiplayer_players
+
+                    # Process SGB command packet bits (handles start/data/stop/finish)
+                    self.sgb.process_p1_write(value)
+                    self.sgb_active_transfer = self.sgb.receiving_packet
+                    self.sgb_multiplayer = self.sgb.multiplayer_enabled
+
+                    # Normal joypad read through interaction.pull
+                    processed_value = self.interaction.pull(value)
+
+                    # Multiplayer: when both P14 and P15 are high (deselected),
+                    # override bits 0-1 with the current player ID
+                    if self.sgb.multiplayer_enabled and p14 and p15:
+                        processed_value = (processed_value & 0xFC) | (self.sgb.current_joypad & 0x03)
+
+                    self.ram.io_ports[0] = processed_value
+                else:
+                    # Non-SGB: normal joypad handling
+                    self.ram.io_ports[0] = self.interaction.pull(value)
             elif 0xFF01 <= i <= 0xFF02:
                 if self.serial.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_SERIAL)
