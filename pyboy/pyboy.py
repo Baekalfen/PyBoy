@@ -154,10 +154,11 @@ class PyBoy:
             * color_palette (tuple): Specify the color palette to use for rendering.
             * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
             * title_status (bool): Enable performance status in window title
-
         ## Plugin kwargs:
         * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
         * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
+        * printer (bool): Enable Game Boy Printer emulation [plugin: GameBoyPrinter]
+        * printer_output (str): Output directory for printed images (default: current directory) [plugin: GameBoyPrinter]
         * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
         * rewind (bool): Enable rewind function [plugin: Rewind]
 
@@ -1216,6 +1217,19 @@ class PyBoy:
             Buffer data
         """
         return self.mb.getserial()
+
+    def printer_image(self):
+        """
+        Returns the last image printed by the Game Boy Printer, if printer emulation is enabled.
+
+        Returns
+        -------
+        PIL.Image.Image or None :
+            The last printed image as a PIL Image, or None if no image has been printed or the printer is not enabled.
+        """
+        if self._plugin_manager.game_boy_printer_enabled:
+            return self._plugin_manager.game_boy_printer.get_image()
+        return None
 
     def set_emulation_speed(self, target_speed):
         """

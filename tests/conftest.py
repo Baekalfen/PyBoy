@@ -326,6 +326,19 @@ def whichboot_file():
     return str(path)
 
 
+# https://github.com/mmuszkow/gbprinter/tree/master
+@pytest.fixture(scope="session")
+def print_file():
+    path = extra_test_rom_dir / Path("print.gb")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.print.txt"))
+            print_data = url_open("https://pyboy.dk/mirror/print.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(print_data)
+    return str(path)
+
+
 # https://github.com/wyattferguson/2048-gb
 @pytest.fixture(scope="session")
 def gb2048_file():
