@@ -25,6 +25,10 @@ game_wrappers = [
     "GameWrapperPokemonGen1",
     "GameWrapperPokemonPinball",
     "GameWrapper2048",
+    "GameWrapperPuzznic",
+    "GameWrapperFlipull",
+    "GameWrapperAmazingTater",
+    "GameWrapperAdventuresOfLolo",
 ]
 plugins = [
     "AutoPause",

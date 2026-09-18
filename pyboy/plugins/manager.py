@@ -25,6 +25,10 @@ from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLan
 from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
 from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
 from pyboy.plugins.game_wrapper2048 import GameWrapper2048 # noqa
+from pyboy.plugins.game_wrapper_puzznic import GameWrapperPuzznic # noqa
+from pyboy.plugins.game_wrapper_flipull import GameWrapperFlipull # noqa
+from pyboy.plugins.game_wrapper_amazing_tater import GameWrapperAmazingTater # noqa
+from pyboy.plugins.game_wrapper_adventures_of_lolo import GameWrapperAdventuresOfLolo # noqa
 # imports end
 
 
@@ -49,6 +53,10 @@ def parser_arguments():
     yield GameWrapperPokemonGen1.argv
     yield GameWrapperPokemonPinball.argv
     yield GameWrapper2048.argv
+    yield GameWrapperPuzznic.argv
+    yield GameWrapperFlipull.argv
+    yield GameWrapperAmazingTater.argv
+    yield GameWrapperAdventuresOfLolo.argv
     # yield_plugins end
     pass
 
@@ -98,6 +106,14 @@ class PluginManager:
         self.game_wrapper_pokemon_pinball_enabled = self.game_wrapper_pokemon_pinball.enabled()
         self.game_wrapper2048 = GameWrapper2048(pyboy, mb, pyboy_argv)
         self.game_wrapper2048_enabled = self.game_wrapper2048.enabled()
+        self.game_wrapper_puzznic = GameWrapperPuzznic(pyboy, mb, pyboy_argv)
+        self.game_wrapper_puzznic_enabled = self.game_wrapper_puzznic.enabled()
+        self.game_wrapper_flipull = GameWrapperFlipull(pyboy, mb, pyboy_argv)
+        self.game_wrapper_flipull_enabled = self.game_wrapper_flipull.enabled()
+        self.game_wrapper_amazing_tater = GameWrapperAmazingTater(pyboy, mb, pyboy_argv)
+        self.game_wrapper_amazing_tater_enabled = self.game_wrapper_amazing_tater.enabled()
+        self.game_wrapper_adventures_of_lolo = GameWrapperAdventuresOfLolo(pyboy, mb, pyboy_argv)
+        self.game_wrapper_adventures_of_lolo_enabled = self.game_wrapper_adventures_of_lolo.enabled()
         # plugins_enabled end
 
     def gamewrapper(self):
@@ -110,6 +126,10 @@ class PluginManager:
         if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
         if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
         if self.game_wrapper2048_enabled: return self.game_wrapper2048
+        if self.game_wrapper_puzznic_enabled: return self.game_wrapper_puzznic
+        if self.game_wrapper_flipull_enabled: return self.game_wrapper_flipull
+        if self.game_wrapper_amazing_tater_enabled: return self.game_wrapper_amazing_tater
+        if self.game_wrapper_adventures_of_lolo_enabled: return self.game_wrapper_adventures_of_lolo
         # gamewrapper end
         self.generic_game_wrapper_enabled = True
         return self.generic_game_wrapper
@@ -156,6 +176,14 @@ class PluginManager:
             events = self.game_wrapper_pokemon_pinball.handle_events(events)
         if self.game_wrapper2048_enabled:
             events = self.game_wrapper2048.handle_events(events)
+        if self.game_wrapper_puzznic_enabled:
+            events = self.game_wrapper_puzznic.handle_events(events)
+        if self.game_wrapper_flipull_enabled:
+            events = self.game_wrapper_flipull.handle_events(events)
+        if self.game_wrapper_amazing_tater_enabled:
+            events = self.game_wrapper_amazing_tater.handle_events(events)
+        if self.game_wrapper_adventures_of_lolo_enabled:
+            events = self.game_wrapper_adventures_of_lolo.handle_events(events)
         # foreach end
         if self.generic_game_wrapper_enabled:
             events = self.generic_game_wrapper.handle_events(events)
@@ -191,6 +219,14 @@ class PluginManager:
             self.game_wrapper_pokemon_pinball.post_tick()
         if self.game_wrapper2048_enabled:
             self.game_wrapper2048.post_tick()
+        if self.game_wrapper_puzznic_enabled:
+            self.game_wrapper_puzznic.post_tick()
+        if self.game_wrapper_flipull_enabled:
+            self.game_wrapper_flipull.post_tick()
+        if self.game_wrapper_amazing_tater_enabled:
+            self.game_wrapper_amazing_tater.post_tick()
+        if self.game_wrapper_adventures_of_lolo_enabled:
+            self.game_wrapper_adventures_of_lolo.post_tick()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.post_tick()
@@ -306,6 +342,14 @@ class PluginManager:
             title += self.game_wrapper_pokemon_pinball.window_title()
         if self.game_wrapper2048_enabled:
             title += self.game_wrapper2048.window_title()
+        if self.game_wrapper_puzznic_enabled:
+            title += self.game_wrapper_puzznic.window_title()
+        if self.game_wrapper_flipull_enabled:
+            title += self.game_wrapper_flipull.window_title()
+        if self.game_wrapper_amazing_tater_enabled:
+            title += self.game_wrapper_amazing_tater.window_title()
+        if self.game_wrapper_adventures_of_lolo_enabled:
+            title += self.game_wrapper_adventures_of_lolo.window_title()
         # foreach end
         return title
 
@@ -351,6 +395,14 @@ class PluginManager:
             self.game_wrapper_pokemon_pinball.stop()
         if self.game_wrapper2048_enabled:
             self.game_wrapper2048.stop()
+        if self.game_wrapper_puzznic_enabled:
+            self.game_wrapper_puzznic.stop()
+        if self.game_wrapper_flipull_enabled:
+            self.game_wrapper_flipull.stop()
+        if self.game_wrapper_amazing_tater_enabled:
+            self.game_wrapper_amazing_tater.stop()
+        if self.game_wrapper_adventures_of_lolo_enabled:
+            self.game_wrapper_adventures_of_lolo.stop()
         # foreach end
         if self.generic_game_wrapper_enabled:
             self.generic_game_wrapper.stop()

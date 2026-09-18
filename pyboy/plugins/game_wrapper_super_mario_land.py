@@ -154,6 +154,44 @@ ADDR_LIVES_LEFT_DISPLAY = 0x9806
 ADDR_WORLD_LEVEL = 0xFFB4
 ADDR_WIN_COUNT = 0xFF9A
 
+# Mario's own state struct at 0xC200-0xC21F. The positions are *screen* coordinates: X stops
+# at 0x51 once he reaches the scroll trigger and the camera takes over, so it says where he is
+# on the display and never how far through the level he is. Use `level_progress` for that.
+ADDR_MARIO_STRUCT = 0xC200
+MARIO_STRUCT_BYTES = 0x10
+MARIO_Y = 0x01
+MARIO_X = 0x02
+MARIO_ANIMATION = 0x03  # 0x00 still, cycles 0x01-0x04 moving
+MARIO_FACING = 0x05  # 0x00 right, 0x20 left
+MARIO_JUMP_PHASE = 0x07  # 0x00 grounded, 0x01 -> 0x02 through a jump
+MARIO_ON_GROUND = 0x0A  # 0x01 grounded, 0x00 airborne
+MARIO_SPEED = 0x0C  # 0x00 still, 0x06 walking, 0x19-0x27 airborne
+MARIO_DIRECTION = 0x0D  # 0x00 still, 0x10 right, 0x20 left
+MARIO_MOVING = 0x0F  # 0x00 still, 0x01 moving or airborne
+
+FACING_LEFT = 0x20
+MARIO_DIRECTIONS = {0x00: "still", 0x10: "right", 0x20: "left"}
+MARIO_X_SATURATES_AT = 0x51  # Mario's X stops here and the camera scrolls instead
+
+# The object array at 0xD100: ten slots of 0x10 bytes. A slot goes live when an object scrolls
+# into range and reverts to 0xFF when it leaves or dies, so this is what is on screen rather
+# than everything in the level. The base, the stride, the empty marker and +2/+3 as Y and X
+# are verified; everything from +4 on comes from a single ground-walking enemy in 1-1 and will
+# not generalise to flying, shelled or boss objects.
+ADDR_OBJECTS = 0xD100
+OBJECT_SLOTS = 10
+OBJECT_STRIDE = 0x10
+OBJECT_EMPTY = 0xFF
+OBJECT_TYPE = 1
+OBJECT_Y = 2
+OBJECT_X = 3
+OBJECT_ANIMATION = 4
+
+# Hardware scroll. Every byte of work RAM was searched for a mirror of the scroll value and
+# none was found, so the camera is only readable from the registers themselves.
+ADDR_SCY = 0xFF42
+ADDR_SCX = 0xFF43
+
 
 def _bcm_to_dec(value):
     return (value >> 4) * 10 + (value & 0x0F)
@@ -345,6 +383,36 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         251
         ```
         """
+        self.mario_position = (0, 0)
+        """
+        Mario's position on the screen, as a tuple of ``(x, y)``.
+
+        These are screen coordinates and not level ones: X saturates once Mario reaches the
+        scroll trigger and the camera takes over from there, so it never measures how far
+        through the level he is. `GameWrapperSuperMarioLand.level_progress` does that.
+        """
+        self.mario_facing = "right"
+        """Which way Mario is pointing: ``"left"`` or ``"right"``"""
+        self.mario_on_ground = False
+        """Whether Mario is standing on something, as opposed to jumping or falling"""
+        self.mario_speed = 0
+        """
+        How fast Mario is moving, as a magnitude rather than a vector: 0 still, 6 walking, and
+        0x19-0x27 airborne. `GameWrapperSuperMarioLand.mario_direction` carries the sign.
+        """
+        self.mario_direction = "still"
+        """Which way Mario is moving: ``"still"``, ``"left"`` or ``"right"``"""
+        self.mario_jump_phase = 0
+        """Where Mario is in a jump: 0 grounded, then 1 and 2 on the way through one"""
+        self.camera = (0, 0)
+        """
+        Where the camera is, as a tuple of ``(x, y)``, read from the scroll registers.
+
+        Nothing in work RAM mirrors these, so they are only readable from the hardware. Note
+        that the HUD splits the screen, so the register holds whatever the split left behind;
+        `GameWrapperSuperMarioLand.level_progress` takes the playfield's own scroll from
+        scanline 16 instead.
+        """
 
         super().__init__(*args, game_area_section=(0, 2, 20, 16), game_area_follow_scxy=True, **kwargs)
 
@@ -362,10 +430,62 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
         _time_left = _bcd_to_dec(self.pyboy.memory[ADDR_TIME_LEFT : ADDR_TIME_LEFT + 2])
         self.time_left = _time_left[0] + _time_left[1] * 100
 
+        mario = self.pyboy.memory[ADDR_MARIO_STRUCT : ADDR_MARIO_STRUCT + MARIO_STRUCT_BYTES]
+        self.mario_position = (mario[MARIO_X], mario[MARIO_Y])
+        self.mario_facing = "left" if mario[MARIO_FACING] == FACING_LEFT else "right"
+        self.mario_on_ground = mario[MARIO_ON_GROUND] == 0x01
+        self.mario_speed = mario[MARIO_SPEED]
+        self.mario_direction = MARIO_DIRECTIONS.get(mario[MARIO_DIRECTION], "unknown")
+        self.mario_jump_phase = mario[MARIO_JUMP_PHASE]
+        self.camera = (self.pyboy.memory[ADDR_SCX], self.pyboy.memory[ADDR_SCY])
+
         level_block = self.pyboy.memory[0xC0AB]
-        mario_x = self.pyboy.memory[0xC202]
+        mario_x = mario[MARIO_X]
         scx = self.pyboy.screen.tilemap_position_list[16][0]
         self.level_progress = level_block * 16 + (scx - 7) % 16 + mario_x
+
+    def object_slots(self):
+        """
+        Return the objects on screen, as a list of dicts, read from the array at 0xD100.
+
+        Ten slots are kept, and a slot goes live when an object scrolls into range and reverts
+        to empty when it leaves or dies, so this is what is on screen rather than everything in
+        the level. Each entry carries its `slot`, its `type`, its `x` and `y` in screen
+        coordinates -- directly comparable with `GameWrapperSuperMarioLand.mario_position`,
+        because both are read on the same frame -- and its `animation` frame.
+
+        The base, the stride, the empty marker and the two coordinates are verified against the
+        cartridge. The animation frame comes from watching a single ground-walking enemy in
+        world 1-1, so treat it as a hint rather than as a fact about flying, shelled or boss
+        objects.
+
+        Returns
+        -------
+        list:
+            One dict per live object, with the keys ``slot``, ``type``, ``x``, ``y`` and
+            ``animation``
+        """
+        raw = self.pyboy.memory[ADDR_OBJECTS : ADDR_OBJECTS + OBJECT_SLOTS * OBJECT_STRIDE]
+        objects = []
+        for slot in range(OBJECT_SLOTS):
+            fields = raw[slot * OBJECT_STRIDE : (slot + 1) * OBJECT_STRIDE]
+            if fields[0] == OBJECT_EMPTY:
+                continue
+            objects.append(
+                {
+                    "slot": slot,
+                    "type": fields[OBJECT_TYPE],
+                    "x": fields[OBJECT_X],
+                    "y": fields[OBJECT_Y],
+                    "animation": fields[OBJECT_ANIMATION],
+                }
+            )
+        return objects
+
+    def game_area_annotations(self):
+        annotations = [(obj["x"], obj["y"], f"s{obj['slot']} t{obj['type']:02X}") for obj in self.object_slots()]
+        annotations.append((self.mario_position[0], self.mario_position[1], "MARIO"))
+        return annotations
 
     def set_time_left(self, time):
         """

@@ -26,6 +26,10 @@ from pyboy.plugins.game_wrapper_kirby_dream_land cimport GameWrapperKirbyDreamLa
 from pyboy.plugins.game_wrapper_pokemon_gen1 cimport GameWrapperPokemonGen1
 from pyboy.plugins.game_wrapper_pokemon_pinball cimport GameWrapperPokemonPinball
 from pyboy.plugins.game_wrapper2048 cimport GameWrapper2048
+from pyboy.plugins.game_wrapper_puzznic cimport GameWrapperPuzznic
+from pyboy.plugins.game_wrapper_flipull cimport GameWrapperFlipull
+from pyboy.plugins.game_wrapper_amazing_tater cimport GameWrapperAmazingTater
+from pyboy.plugins.game_wrapper_adventures_of_lolo cimport GameWrapperAdventuresOfLolo
 # imports end
 
 
@@ -54,6 +58,10 @@ cdef class PluginManager:
     cdef public GameWrapperPokemonGen1 game_wrapper_pokemon_gen1
     cdef public GameWrapperPokemonPinball game_wrapper_pokemon_pinball
     cdef public GameWrapper2048 game_wrapper2048
+    cdef public GameWrapperPuzznic game_wrapper_puzznic
+    cdef public GameWrapperFlipull game_wrapper_flipull
+    cdef public GameWrapperAmazingTater game_wrapper_amazing_tater
+    cdef public GameWrapperAdventuresOfLolo game_wrapper_adventures_of_lolo
     cdef bint window_sdl2_enabled
     cdef bint window_open_gl_enabled
     cdef bint window_glfw_enabled
@@ -73,6 +81,10 @@ cdef class PluginManager:
     cdef bint game_wrapper_pokemon_gen1_enabled
     cdef bint game_wrapper_pokemon_pinball_enabled
     cdef bint game_wrapper2048_enabled
+    cdef bint game_wrapper_puzznic_enabled
+    cdef bint game_wrapper_flipull_enabled
+    cdef bint game_wrapper_amazing_tater_enabled
+    cdef bint game_wrapper_adventures_of_lolo_enabled
     # plugin_cdef end
 
     cdef list handle_events(self, list)
