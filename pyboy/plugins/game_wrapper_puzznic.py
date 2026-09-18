@@ -384,7 +384,9 @@ class GameWrapperPuzznic(PyBoyGameWrapper):
 
         Rather than hard-code the delay, this presses a direction from a save state at
         increasing offsets until the cursor answers, then rewinds and replays only the
-        waiting, so the cursor is left exactly where the loader put it.
+        waiting, so the cursor is left exactly where the loader put it. If the wait alone
+        never works it tries again having pressed start first, because start is the pause
+        button once a round is running and the boot taps it.
         """
         start = io.BytesIO()
         self.pyboy.save_state(start)
@@ -392,22 +394,26 @@ class GameWrapperPuzznic(PyBoyGameWrapper):
         def cursor():
             return (self.pyboy.memory[CURSOR_ROW_ADDR], self.pyboy.memory[CURSOR_COL_ADDR])
 
-        def rewind(waited):
+        def rewind(waited, unpause):
             start.seek(0)
             self.pyboy.load_state(start)
+            if unpause:
+                self.pyboy.button("start", INTRO_PRESS_TICKS)
+                self.pyboy.tick(INTRO_PRESS_TICKS + 2, False, False)
             if waited:
                 self.pyboy.tick(waited, False, False)
 
-        for waited in range(0, INTRO_MAX_TICKS, INTRO_STEP_TICKS):
-            for direction in ("right", "left", "down", "up"):
-                rewind(waited)
-                before = cursor()
-                self.pyboy.button(direction, INTRO_PRESS_TICKS)
-                self.pyboy.tick(INTRO_PRESS_TICKS + 12, False, False)
-                if cursor() != before:
-                    rewind(waited)
-                    return waited
-        rewind(0)
+        for unpause in (False, True):
+            for waited in range(0, INTRO_MAX_TICKS, INTRO_STEP_TICKS):
+                for direction in ("right", "left", "down", "up"):
+                    rewind(waited, unpause)
+                    before = cursor()
+                    self.pyboy.button(direction, INTRO_PRESS_TICKS)
+                    self.pyboy.tick(INTRO_PRESS_TICKS + 12, False, False)
+                    if cursor() != before:
+                        rewind(waited, unpause)
+                        return waited
+        rewind(0, False)
         return None
 
     def settle(self, max_ticks=SETTLE_MAX_TICKS, stable_ticks=SETTLE_STABLE_TICKS):
@@ -510,6 +516,8 @@ class GameWrapperPuzznic(PyBoyGameWrapper):
         elif title:
             if not self._select_menu_entry("1player"):
                 raise PyBoyException("Couldn't select 1PLAYER on the title menu")
+        elif password is not None:
+            logger.warning("No title menu came up, so the password couldn't be typed. Taking round one instead.")
 
         for frame in range(0, BOOT_MAX_TICKS, BOOT_PRESS_EVERY):
             if not title:

@@ -542,6 +542,10 @@ class GameWrapperAmazingTater(PyBoyGameWrapper):
         The state of the emulator is saved, and using `reset_game`, you can get back to this
         point of the game instantly.
 
+        Which room is asked for also decides which entry of SELECT MODE the boot walks to,
+        because the two sets live behind different modes. With no room asked for, the boot
+        takes PUZZLE MODE and plays whichever room it opens with.
+
         Kwargs:
             * timer_div (int): Replace timer's DIV register with this value. Use `None` to randomize.
             * level (int): Room to load, zero-based over set A and then set C
