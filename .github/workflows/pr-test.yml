@@ -36,12 +36,6 @@ jobs:
         pip install --upgrade wheel setuptools
         pip install --prefer-binary -r requirements.txt
         pip install --prefer-binary -r requirements_tests.txt
-    - name: Doctest
-      if: ${{ !contains(matrix.os, 'windows') }}
-      env:
-        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
-      run: |
-        python -m pytest pyboy/ -v
     - name: Setup macOS
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
@@ -62,6 +56,12 @@ jobs:
       run: |
         sudo apt update
         sudo apt install libopengl0 freeglut3-dev ffmpeg libogg-dev -y
+    - name: Run Doctest
+      if: ${{ !contains(matrix.os, 'windows') }}
+      env:
+        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
+      run: |
+        python -m pytest pyboy/ -v
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
@@ -121,8 +121,7 @@ jobs:
       if: ${{ contains(matrix.os, 'ubuntu') }}
       run: |
         sudo apt update
-        sudo apt install libopengl0 freeglut3-dev ffmpeg libogg-dev -y
-
+        sudo apt install libjpeg-dev libopengl0 freeglut3-dev ffmpeg libogg-dev -y
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -207,11 +206,11 @@ jobs:
           python -m pip install --prefer-binary -r requirements.txt
           python -m pip install --prefer-binary -r requirements_tests.txt
 
-          echo "Starting Doctests"
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ -v
-
           echo "Building PyBoy"
           python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
+
+          echo "Starting Doctests"
+          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ -v
 
           echo "Starting pytests"
           PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n auto -v --benchmark-disable
