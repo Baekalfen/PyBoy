@@ -2,11 +2,6 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-__pdoc__ = {
-    "GameWrapperKirbyDreamLand.cartridge_title": False,
-    "GameWrapperKirbyDreamLand.post_tick": False,
-}
-
 import pyboy
 from pyboy.utils import PyBoyException
 

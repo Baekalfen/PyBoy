@@ -3,12 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__pdoc__ = {
-    "GameWrapper2048.cartridge_title": False,
-    "GameWrapper2048.post_tick": False,
-}
-
-
 import pyboy
 from pyboy.utils import PyBoyException
 from .base_plugin import PyBoyGameWrapper

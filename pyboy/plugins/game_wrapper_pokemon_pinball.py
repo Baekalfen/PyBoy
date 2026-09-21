@@ -2,13 +2,6 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-__pdoc__ = {
-    "GameWrapperPokemonPinball.cartridge_title": False,
-    "GameWrapperPokemonPinball.post_tick": False,
-    "GameWrapperPokemonPinball._set_stage": False,
-    "GameWrapperPokemonPinball.ball_size": False,
-}
-
 import logging
 from enum import Enum
 
@@ -1173,12 +1166,7 @@ RedStageMapWildMons = {
         Pokemon.GOLDEEN: 0.125,
         Pokemon.MAGIKARP: 0.125,
     },
-    Maps.SAFARI_ZONE: {
-        Pokemon.NIDORAN_M: 0.25,
-        Pokemon.PARAS: 0.25, 
-        Pokemon.DODUO: 0.25,
-        Pokemon.RHYHORN: 0.25
-    },
+    Maps.SAFARI_ZONE: {Pokemon.NIDORAN_M: 0.25, Pokemon.PARAS: 0.25, Pokemon.DODUO: 0.25, Pokemon.RHYHORN: 0.25},
     Maps.SEAFOAM_ISLANDS: {
         Pokemon.ZUBAT: 0.0625,
         Pokemon.PSYDUCK: 0.0625,
@@ -1292,12 +1280,7 @@ RedStageMapWildMonsRare = {
         Pokemon.TAUROS: 0.125,
         Pokemon.DRATINI: 0.125,
     },
-    Maps.SEAFOAM_ISLANDS: {
-        Pokemon.SEEL: 0.3125,
-        Pokemon.GOLDEEN: 0.25,
-        Pokemon.STARYU: 0.25,
-        Pokemon.ARTICUNO: 0.1875
-    },
+    Maps.SEAFOAM_ISLANDS: {Pokemon.SEEL: 0.3125, Pokemon.GOLDEEN: 0.25, Pokemon.STARYU: 0.25, Pokemon.ARTICUNO: 0.1875},
     Maps.CINNABAR_ISLAND: {
         Pokemon.GROWLITHE: 0.125,
         Pokemon.PONYTA: 0.125,
@@ -1400,12 +1383,7 @@ BlueStageMapWildMons = {
         Pokemon.GOLDEEN: 0.1875,
         Pokemon.MAGIKARP: 0.25,
     },
-    Maps.SAFARI_ZONE: {
-        Pokemon.NIDORAN_F: 0.25,
-        Pokemon.PARAS: 0.25,
-        Pokemon.DODUO: 0.25,
-        Pokemon.RHYHORN: 0.25
-    },
+    Maps.SAFARI_ZONE: {Pokemon.NIDORAN_F: 0.25, Pokemon.PARAS: 0.25, Pokemon.DODUO: 0.25, Pokemon.RHYHORN: 0.25},
     Maps.SAFFRON_CITY: {
         Pokemon.PIDGEY: 0.125,
         Pokemon.EKANS: 0.1875,

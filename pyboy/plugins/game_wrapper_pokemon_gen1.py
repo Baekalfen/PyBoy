@@ -2,11 +2,6 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-__pdoc__ = {
-    "GameWrapperPokemonGen1.cartridge_title": False,
-    "GameWrapperPokemonGen1.post_tick": False,
-}
-
 import numpy as np
 
 import pyboy

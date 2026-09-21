@@ -29,8 +29,12 @@ all = [
     "glfw",
     "PyOpenAL",
     "markdown<3.10",
-    "pdoc3",
     "gym",
+]
+docs = [
+    "sphinx>=8",
+    "furo",
+    "myst-parser",
 ]
 
 [project.urls]
@@ -65,7 +69,7 @@ packages = ["pyboy", "pyboy.api", "pyboy.core", "pyboy.core.cartridge", "pyboy.l
 ]
 
 [tool.pytest.ini_options]
-addopts = "--benchmark-disable"
+addopts = "--benchmark-disable --junitxml=tests/test_results/pytest.xml"
 testpaths = [
     "tests",
     "pyboy",
