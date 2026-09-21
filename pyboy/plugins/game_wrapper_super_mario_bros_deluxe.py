@@ -531,7 +531,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
             raise PyBoyInvalidInputException(f"{time} is out of bounds. Only values between 0 and 999 allowed.")
         self.pyboy.memory[ADDR_TIME_LEFT : ADDR_TIME_LEFT + 2] = time.to_bytes(2, "little")
 
-    def set_level(self, level, super_player_levels=False):
+    def _set_level(self, level, super_player_levels=False):
         """
         Select a level for the game's debug level selector.
 
@@ -562,7 +562,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
             raise PyBoyInvalidInputException(f"{level} is out of bounds. Only levels 1 through 4 are allowed.")
         if not super_player_levels and world > 8:
             raise PyBoyInvalidInputException("Worlds 9 through 13 are only available in the For Super Players set.")
-        self.set_level((world - 1) * 4 + level - 1, super_player_levels)
+        self._set_level((world - 1) * 4 + level - 1, super_player_levels)
 
     def start_game(
         self,
@@ -618,7 +618,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
         if world_level is not None:
             self.set_world_level(*world_level, super_player_levels=super_player_levels)
         elif level is not None:
-            self.set_level(level, super_player_levels)
+            self._set_level(level, super_player_levels)
 
         self._wait_for_mode(MODE_TITLE_SCREEN, spam_start=True)
         self._wait_for_mode(MODE_MAIN_MENU, spam_start=True)
@@ -630,7 +630,7 @@ class GameWrapperSuperMarioBrosDeluxe(PyBoyGameWrapper):
             self.pyboy.memory[ADDR_CHALLENGE_UNLOCK] = 1
 
             if self.level_selected and not unlock_level_select:
-                self.set_level(self.selected_level, self.selected_super_player_levels)
+                self._set_level(self.selected_level, self.selected_super_player_levels)
                 self._press("a")
                 self._wait_for_mode(MODE_WORLD_MAP)
                 self._press("start")
