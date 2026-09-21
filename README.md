@@ -14,7 +14,7 @@ Generate GIF with the layout and captions
     <tr>
       <td colspan=2 align="center"><a href=https://github.com/PWhiddy/PokemonRedExperiments>Train RL agents to play Pokemon Red</a>
       </td>
-      <td align="center"><a href=https://github.com/Baekalfen/PyBoy/wiki/Experimental-and-optional-features#rewind-time>Rewind any game</a><br>
+      <td align="center"><a href=https://docs.pyboy.dk/wiki/experimental-and-optional-features.html#rewind-time>Rewind any game</a><br>
       </td>
     </tr>
     <tr>
@@ -62,7 +62,7 @@ The instructions are simple:
 $ pip install pyboy
 ```
 
-For details, see [installation instructions](https://github.com/Baekalfen/PyBoy/wiki/Installation).
+For details, see [installation instructions](https://docs.pyboy.dk/wiki/installation.html).
 
 Now you're ready! Either use PyBoy directly from the terminal
 ```sh
@@ -91,17 +91,17 @@ The API
 =======
 
 If you are looking to make a bot or AI, then these resources are a good place to start:
- * [PyBoy API Documentation](https://baekalfen.github.io/PyBoy/index.html)
- * [Wiki Pages](https://github.com/Baekalfen/PyBoy/wiki/)
-   * [Using PyBoy with Gym](https://github.com/Baekalfen/PyBoy/wiki/Using-PyBoy-with-Gym)
-   * [Example: Kirby](https://github.com/Baekalfen/PyBoy/wiki/Example-Kirby)
-   * [Example: Tetris](https://github.com/Baekalfen/PyBoy/wiki/Example-Tetris)
-   * [Example: Super Mario Land](https://github.com/Baekalfen/PyBoy/wiki/Example-Super-Mario-Land)
+ * [PyBoy API Documentation](https://docs.pyboy.dk/api/index.html)
+ * [Wiki Pages](https://docs.pyboy.dk/wiki/index.html)
+   * [Using PyBoy with Gym](https://docs.pyboy.dk/wiki/using-pyboy-with-gym.html)
+   * [Example: Kirby](https://docs.pyboy.dk/wiki/examples/kirby.html)
+   * [Example: Tetris](https://docs.pyboy.dk/wiki/examples/tetris.html)
+   * [Example: Super Mario Land](https://docs.pyboy.dk/wiki/examples/super-mario-land.html)
    * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples)
  * [Discord](https://discord.gg/wUbag3KNqQ)
 
 
-When the emulator is running, you can easily access [PyBoy's API](https://baekalfen.github.io/PyBoy/index.html):
+When the emulator is running, you can easily access [PyBoy's API](https://docs.pyboy.dk/api/index.html):
 ```python
 pyboy.set_emulation_speed(0) # No speed limit
 pyboy.button('down')
@@ -113,7 +113,7 @@ pil_image = pyboy.screen.image
 pil_image.save('screenshot.png')
 ```
 
-The [Wiki](https://github.com/Baekalfen/PyBoy/wiki) shows how to interface with PyBoy from your own project.
+The [documentation wiki](https://docs.pyboy.dk/wiki/index.html) shows how to interface with PyBoy from your own project.
 
 Performance
 ===========
@@ -190,11 +190,4 @@ Any contribution is appreciated. The currently known problems are tracked in [th
 
 [![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/wUbag3KNqQ)
 
-For the more major features, there are the following that you can give a try. They are also described in more detail in the [project list in the Wiki](https://github.com/Baekalfen/PyBoy/wiki/Student-Projects):
-* Hacking games
-* Link Cable
-* Debugger (VSCode, GDB, terminal or otherwise)
-* AI - [use the `api`](https://baekalfen.github.io/PyBoy/index.html) or game wrappers to train a neural network
-* Game Wrappers - make wrappers for popular games
-
-If you want to implement something which is not on the list, feel free to do so anyway. If you want to merge it into our repo, then just send a pull request and we will have a look at it.
+If you want to implement something new, feel free to do so. If you want to merge it into our repo, send a pull request and we will have a look at it.

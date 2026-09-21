@@ -2,12 +2,6 @@
 # License: See LICENSE.md file
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
-__pdoc__ = {
-    "GameWrapperTetris.cartridge_title": False,
-    "GameWrapperTetris.post_tick": False,
-}
-
-
 import numpy as np
 
 import pyboy

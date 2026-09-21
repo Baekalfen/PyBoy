@@ -106,7 +106,7 @@ class PyBoyFeatureDisabledError(PyBoyException):
     pass
 
 
-class AccessError:
+class AccessError(PyBoyException):
     """
     Base class that replaces an optional feature. Whenever this object is accessed,
     it raises a predefined exception. I.e. on missing dependencies etc.
@@ -133,7 +133,7 @@ class AccessError:
         raise self._exception_type(self._exception_message)
 
 
-class PillowImportError(AccessError):
+class PillowImportError(AccessError, PyBoyDependencyError):
     """
     Exception raised when the Pillow library is not found.
     """
@@ -142,7 +142,7 @@ class PillowImportError(AccessError):
     _exception_message = "Missing depencency Pillow!"
 
 
-class SoundEnabledError(AccessError):
+class SoundEnabledError(AccessError, PyBoyFeatureDisabledError):
     """
     Exception raised when the user requests a feature in the sound module that has been disabled.
     """
@@ -313,6 +313,9 @@ class WindowEvent:
 
     Just for button presses, it might be easier to use: `pyboy.PyBoy.button`,
     `pyboy.PyBoy.button_press` and `pyboy.PyBoy.button_release`.
+
+    See :ref:`WindowEvent options <window-event-options>` for the complete list
+    of supported events.
     """
 
     # ONLY ADD NEW EVENTS AT THE END OF THE LIST!

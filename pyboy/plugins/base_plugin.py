@@ -3,14 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__pdoc__ = {
-    "PyBoyPlugin": False,
-    "PyBoyWindowPlugin": False,
-    "PyBoyGameWrapper.post_tick": False,
-    "PyBoyGameWrapper.enabled": False,
-    "PyBoyGameWrapper.argv": False,
-}
-
 import io
 import random
 import time

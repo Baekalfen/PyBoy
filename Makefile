@@ -1,5 +1,5 @@
 
-.PHONY: build clean run install test benchmark docs
+.PHONY: build clean run install test benchmark docs generate-test-results
 
 all: build
 
@@ -86,13 +86,13 @@ test_all: test
 benchmark:
 	${PY} -m pytest -m benchmark tests/test_benchmark.py --benchmark-enable --benchmark-min-rounds=10
 
-docs: clean
-	find ./docs -type f ! -path "./docs/templates/*" ! -path "./docs/CNAME" ! -name "*.png" -exec rm -rf {} +
-	mkdir -p ${ROOT_DIR}/docs/templates
+generate-test-results:
+	${PY} ${ROOT_DIR}/docs/generate_test_results.py
+
+docs: clean generate-test-results
 	cd ${ROOT_DIR}/pyboy/plugins && ${PY} manager_gen.py
-	pdoc --html --force -c latex_math=True -c sort_identifiers=False -c show_type_annotations=True --template-dir docs/templates pyboy
-	cp -r html/pyboy/ ${ROOT_DIR}/docs/
-	rm -rf html
+	${PY} -m sphinx -E -W --keep-going -b html ${ROOT_DIR}/docs ${ROOT_DIR}/docs/_build/html
+	${PY} -m sphinx -E -W --keep-going -b linkcheck ${ROOT_DIR}/docs ${ROOT_DIR}/docs/_build/linkcheck
 
 repackage_secrets:
 	python3 -c 'from tests.conftest import pack_secrets; pack_secrets()'

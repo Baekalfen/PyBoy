@@ -8,10 +8,6 @@ from pyboy.utils import PyBoyInvalidInputException
 
 logger = get_logger(__name__)
 
-__pdoc__ = {
-    "GameShark.tick": False,
-}
-
 
 class GameShark:
     def __init__(self, memory):

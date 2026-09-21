@@ -3,12 +3,6 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 
-__pdoc__ = {
-    "GameWrapperPandorasBlocks.cartridge_title": False,
-    "GameWrapperPandorasBlocks.post_tick": False,
-}
-
-
 import numpy as np
 
 import pyboy

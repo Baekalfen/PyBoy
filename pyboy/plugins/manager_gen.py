@@ -36,10 +36,30 @@ plugins = [
 ] + game_wrappers
 all_plugins = windows + plugins
 
+wrapper_titles = {
+    "GameWrapperSuperMarioBrosDeluxe": "Super Mario Bros. Deluxe wrapper",
+    "GameWrapperSuperMarioLand": "Super Mario Land wrapper",
+    "GameWrapperTetris": "Tetris wrapper",
+    "GameWrapperPandorasBlocks": "Pandora's Blocks wrapper",
+    "GameWrapperKirbyDreamLand": "Kirby's Dream Land wrapper",
+    "GameWrapperPokemonGen1": "Pokemon generation 1 wrapper",
+    "GameWrapperPokemonPinball": "Pokemon Pinball wrapper",
+    "GameWrapper2048": "2048 wrapper",
+}
+
 
 def to_snake_case(s):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", s)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def wrapper_title(wrapper):
+    title = wrapper_titles.get(wrapper)
+    if title is None:
+        name = wrapper.removeprefix("GameWrapper")
+        name = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", name)
+        title = f"{name} wrapper"
+    return title
 
 
 def skip_lines(iterator, stop):
@@ -47,6 +67,50 @@ def skip_lines(iterator, stop):
     while True:
         if next(line_iter).strip().startswith(stop):
             break
+
+
+def generate_plugin_docs():
+    """Generate the plugin index and one API page for every game wrapper."""
+    docs_path = os.path.join(file_path, "../../docs/plugins")
+    wrapper_pages = []
+
+    for wrapper in game_wrappers:
+        module_name = to_snake_case(wrapper)
+        title = wrapper_title(wrapper)
+        wrapper_pages.append(module_name)
+
+        with open(os.path.join(docs_path, f"{module_name}.rst"), "w") as f:
+            f.write(
+                f"{title}\n"
+                f"{'=' * len(title)}\n\n"
+                f".. automodule:: pyboy.plugins.{module_name}\n"
+                "   :members:\n"
+                "   :show-inheritance:\n"
+            )
+
+    with open(os.path.join(docs_path, "index.md"), "w") as f:
+        f.write(
+            "(plugins-reference)=\n"
+            "# Plugins and game wrappers\n\n"
+            "PyBoy selects a game wrapper from the cartridge title when one is "
+            "available; otherwise it uses the generic wrapper. Access the "
+            "selected wrapper through {attr}`pyboy.game_wrapper "
+            "<pyboy.PyBoy.game_wrapper>`.\n\n"
+            "The wrappers expose game-specific state and controls in addition "
+            "to the common game-area API. The Super Mario Bros. Deluxe wrapper "
+            "supports world and level selection, Challenge mode, custom level "
+            "sequences, CGB-aware tile mappings, and active-object data for "
+            "automation and analysis.\n\n"
+            "The game-area debug view is enabled with `pyboy -d game_rom.gb`. "
+            "Press **L** in the SDL2 window to cycle between the screen, mapped "
+            "game-area, and text views. Wrappers can provide "
+            "{meth}`game_area_annotations() "
+            "<pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area_annotations>` "
+            "so object positions and other metadata are shown in the debug view.\n\n"
+            "```{toctree}\n"
+            ":maxdepth: 2\n\n"
+            "base_plugin\n" + "\n".join(wrapper_pages) + "\n```\n"
+        )
 
 
 if __name__ == "__main__":
@@ -252,3 +316,5 @@ if __name__ == "__main__":
 
     with open("../pyboy.py", "w") as f:
         f.writelines(out_lines)
+
+    generate_plugin_docs()

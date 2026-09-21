@@ -37,6 +37,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+_build/
 
 # PyBuilder
 target/
@@ -97,4 +98,7 @@ test.replay
 /blargg/
 /GB Tests/
 /SameSuite/
+/tests/test_results/pytest.xml
+/docs/wiki/test-results.md
+docs/wiki/assets/test-results/
 .vscode/

@@ -382,7 +382,7 @@ class PyBoy:
         """
         Provides a `pyboy.PyBoyRegisterFile` object for reading and writing the CPU registers of the Game Boy.
 
-        The register file is best used inside the callback of a hook, as `PyBoy.tick` doesn't return at a specific point.
+        The register file is best used inside the callback registered with `PyBoy.hook_register`, as `PyBoy.tick` doesn't return at a specific point.
 
         For a more comprehensive description, see the `pyboy.PyBoyRegisterFile` class.
 
@@ -1591,8 +1591,8 @@ class PyBoyRegisterFile:
     """
     This class cannot be used directly, but is accessed through `PyBoy.register_file`.
 
-    This class serves the purpose of reading and writing to the CPU registers. It's best used inside the callback of a
-    hook, as `PyBoy.tick` doesn't return at a specific point.
+    This class serves the purpose of reading and writing to the CPU registers. It's best used inside the callback
+    registered with `PyBoy.hook_register`, as `PyBoy.tick` doesn't return at a specific point.
 
     See the [Pan Docs: CPU registers and flags](https://gbdev.io/pandocs/CPU_Registers_and_Flags.html) for a great overview.
 
