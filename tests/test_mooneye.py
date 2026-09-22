@@ -8,6 +8,7 @@ import io
 from pathlib import Path
 
 import PIL
+from PIL import ImageChops
 import pytest
 
 from pyboy import PyBoy
@@ -16,6 +17,7 @@ import json
 OVERWRITE_RESULTS = False
 
 saved_state = [None, None]
+SPRITE_PRIORITY_REFERENCE = Path("tests/references/mooneye/sprite_priority-expected.png")
 
 # These classifications follow the "Verified results" tables in the upstream
 # Mooneye sources: https://github.com/Gekkio/mooneye-test-suite
@@ -67,6 +69,19 @@ DMG_HARDWARE_FAILURES = {
 def result_has_failure(text):
     lowered = text.lower()
     return "!" in text or any(marker in lowered for marker in ("failed", "fail:", "mismatch", "not cancelled"))
+
+
+def sprite_priority_classes(image):
+    classes = bytearray()
+    pixels = image.convert("RGB").tobytes()
+    for red, green, blue in zip(pixels[0::3], pixels[1::3], pixels[2::3]):
+        if red > 245 and green > 245 and blue > 245:
+            classes.append(0)
+        elif red < 10 and green < 10 and blue < 10:
+            classes.append(1)
+        else:
+            classes.append(2)
+    return PIL.Image.frombytes("L", image.size, bytes(classes))
 
 
 MOONEYE_CASES = [
@@ -263,21 +278,31 @@ def test_mooneye(clean, cgb, rom, mooneye_dir, default_rom):
                 pytest.xfail(f"{rom} has a recorded failure")
     else:
         result_key = f"{rom} [CGB]" if cgb else rom
-        png_path = Path(f"tests/test_results/mooneye/{result_key}.png")
         image = pyboy.screen.image
+        diff = None
 
-        if OVERWRITE_RESULTS:
-            png_path.parents[0].mkdir(parents=True, exist_ok=True)
-            image.save(png_path)
+        if rom == "manual-only/sprite_priority.gb":
+            assert SPRITE_PRIORITY_REFERENCE.exists(), "Reference image doesn't exist"
+            reference_image = PIL.Image.open(SPRITE_PRIORITY_REFERENCE)
+            diff = ImageChops.difference(sprite_priority_classes(image), sprite_priority_classes(reference_image))
         else:
-            assert png_path.exists(), "Test result doesn't exist"
-            # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-            old_image = PIL.Image.open(png_path).convert("RGB")
-            diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
+            png_path = Path(f"tests/test_results/mooneye/{result_key}.png")
+            if OVERWRITE_RESULTS:
+                png_path.parents[0].mkdir(parents=True, exist_ok=True)
+                image.save(png_path)
+            else:
+                assert png_path.exists(), "Test result doesn't exist"
+                # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
+                old_image = PIL.Image.open(png_path).convert("RGB")
+                diff = ImageChops.difference(image.convert("RGB"), old_image)
 
+        if diff is not None:
             if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
                 image.show()
-                old_image.show()
+                if rom == "manual-only/sprite_priority.gb":
+                    reference_image.show()
+                else:
+                    old_image.show()
                 diff.show()
             assert not diff.getbbox(), f"Images are different! {rom}"
 
