@@ -104,26 +104,30 @@ def test_gamerom_filelike_object(any_rom, patch_types, cart_ram, cart_rtc):
 
 
 def test_log_level_none(default_rom, capsys):
-    PyBoy(default_rom, window="null")
+    pyboy = PyBoy(default_rom, window="null")
     captured = capsys.readouterr()
+    pyboy.stop(save=False)
     assert captured.out == ""
 
 
 def test_log_level_default(default_rom, capsys):
-    PyBoy(default_rom, window="dummy")
+    pyboy = PyBoy(default_rom, window="dummy")
     captured = capsys.readouterr()
+    pyboy.stop(save=False)
     assert "pyboy.plugins.window_null      ERROR" in captured.out
 
 
 def test_log_level_error(default_rom, capsys):
-    PyBoy(default_rom, window="dummy", log_level="ERROR")
+    pyboy = PyBoy(default_rom, window="dummy", log_level="ERROR")
     captured = capsys.readouterr()
+    pyboy.stop(save=False)
     assert "pyboy.plugins.window_null      ERROR" in captured.out
 
 
 def test_log_level_critical(default_rom, capsys):
-    PyBoy(default_rom, window="dummy", log_level="CRITICAL")
+    pyboy = PyBoy(default_rom, window="dummy", log_level="CRITICAL")
     captured = capsys.readouterr()
+    pyboy.stop(save=False)
     assert captured.out == ""
 
 
@@ -472,3 +476,4 @@ def test_debug(rom_fixture):
     pyboy = PyBoy(rom_fixture, window="null", debug=True)
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, True, True)
+    pyboy.stop(save=False)
