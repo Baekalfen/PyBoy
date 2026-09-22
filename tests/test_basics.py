@@ -182,7 +182,7 @@ def test_register_file(default_rom):
     for _ in range(120):
         pyboy.tick()
 
-    assert registers == [0x1, 208, 0, 0, 0, 143, 135, 0xFF00, 0x100]
+    assert registers == [0x1, 208, 0, 0x13, 0, 143, 135, 0xFF00, 0x100]
 
 
 def test_record_replay(boot_rom, default_rom, capsys):
