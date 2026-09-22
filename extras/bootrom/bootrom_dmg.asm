@@ -2,8 +2,7 @@ INCLUDE "bootrom_common.asm"
 
 SECTION "epilog", ROM0[$00FC]
 exit:
-    ; A is the register that matters
-    ; Games check a for $01 and $11, for DMG and CGB respectively
-    ld A, $01
+    ; A is already $01 after the final frame-count iteration.
+    ; Preserve the DMG boot ROM's C register value used by hardware probes.
+    ld C, $13
     ldh [$FF00+$50], A
-
