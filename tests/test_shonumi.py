@@ -11,8 +11,6 @@ import pytest
 
 from pyboy import PyBoy
 
-OVERWRITE_PNGS = False
-
 
 @pytest.mark.parametrize(
     "rom",
@@ -31,23 +29,17 @@ def test_shonumi(rom, shonumi_dir):
     # 48 Progress to screenshot
     pyboy.tick(60 + 23 + 48, True)
 
-    png_path = Path(f"tests/test_results/GB Tests/{rom}.png")
-    png_path.parents[0].mkdir(parents=True, exist_ok=True)
+    reference_path = Path(f"tests/references/GB Tests/{rom.removesuffix('.gb')}.png")
     image = pyboy.screen.image
-    if OVERWRITE_PNGS:
-        png_path.parents[0].mkdir(parents=True, exist_ok=True)
-        image.save(png_path)
-    else:
-        assert png_path.exists(), "Test result doesn't exist"
-        # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-        old_image = PIL.Image.open(png_path).convert("RGB")
-        old_image = old_image.resize(image.size, resample=PIL.Image.Dither.NONE)
-        diff = PIL.ImageChops.difference(image.convert("RGB"), old_image)
+    assert reference_path.exists(), "Reference image doesn't exist"
+    reference_image = PIL.Image.open(reference_path).convert("RGB")
+    reference_image = reference_image.resize(image.size, resample=PIL.Image.Dither.NONE)
+    diff = PIL.ImageChops.difference(image.convert("RGB"), reference_image)
 
-        if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
-            image.show()
-            old_image.show()
-            diff.show()
-        assert not diff.getbbox(), f"Images are different! {rom}"
+    if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
+        image.show()
+        reference_image.show()
+        diff.show()
+    assert not diff.getbbox(), f"Image differs from reference! {rom}"
 
     pyboy.stop(save=False)
