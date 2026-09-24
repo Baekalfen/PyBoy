@@ -473,6 +473,11 @@ class Motherboard:
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
+            if self.cpu.memory_access_offset and not self.oam_dma_reading:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+                if self.lcd._LCDC.lcd_enable and self.lcd._STAT._mode in (2, 3):
+                    return 0xFF
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
             memory_access_offset = self.cpu.memory_access_offset
@@ -524,7 +529,7 @@ class Motherboard:
                 self.sound.tick(self.cpu.cycles)
                 return self.sound.get(i - 0xFF10)
             elif 0xFF40 <= i <= 0xFF4B:
-                if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
 
                 if i == 0xFF40:

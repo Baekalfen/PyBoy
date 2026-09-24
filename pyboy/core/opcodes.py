@@ -1205,7 +1205,10 @@ def LD_7D(cpu): # 7D LD A,L
 
 
 def LD_7E(cpu): # 7E LD A,(HL)
+    # The data read is on the second M-cycle.
+    cpu.memory_access_offset = 4
     cpu.A = cpu.mb.getitem(cpu.HL)
+    cpu.memory_access_offset = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 8

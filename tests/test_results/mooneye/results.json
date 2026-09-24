@@ -168,7 +168,7 @@
     "text": "Registers\n  A: 00  F: 00\n  B: 15  C: 00\n  D: 14  E: 15\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/intr_2_mode0_timing.gb": {
-    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"
+    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/intr_2_0_timing.gb": {
     "text": "Registers\n  A: 00  F: 00\n  B: 08  C: 00\n  D: 07  E: 08\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
@@ -183,13 +183,13 @@
     "text": "Test OK\n"
   },
   "acceptance/ppu/intr_2_mode3_timing.gb": {
-    "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"
+    "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/lcdon_timing-GS.gb": {
     "text": "Test failed:\nLY\nCycle:    $6F\nExpected: $01\nActual:   $00\n"
   },
   "acceptance/ppu/intr_2_oam_ok_timing.gb": {
-    "text": "Registers\n  A: 00  F: A0\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FE  L: 00\nAssertions\n  D: OK  E: 02!\nTest failed\n"
+    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FE  L: 00\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/call_cc_timing.gb": {
     "text": "Test OK\n"
