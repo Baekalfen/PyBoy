@@ -6,11 +6,11 @@ import struct
 import time
 
 import pyboy
-from pyboy.utils import STATE_VERSION, IntIOWrapper
+from pyboy.utils import CLOCK_RATE, STATE_VERSION, IntIOWrapper
 
 logger = pyboy.logging.get_logger(__name__)
 
-RTC_CYCLES_PER_SECOND = 4_194_304
+RTC_CYCLES_PER_SECOND = CLOCK_RATE
 
 
 class RTC:

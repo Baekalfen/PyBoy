@@ -612,6 +612,13 @@ class OpcodeData:
             code.addline("cpu.cycles += 8")
             code.cycles = (str(int(code.cycles[0]) - 8),)
 
+        # These single-byte DE and HL transfers access memory in their second M-cycle.
+        bus_access_offset = self.opcode in (0x12, 0x1A, 0x7E)
+        if bus_access_offset:
+            if self.opcode == 0x7E:
+                code.addline("# The data read is on the second M-cycle.")
+            code.addline("cpu.memory_access_offset = 4")
+
         if self.is16bit and left.immediate and left.pointer:
             code.addline(left.set % ("%s & 0xFF" % right.get))
             a, b = left.set.split(",")
@@ -623,6 +630,9 @@ class OpcodeData:
                 code.addline(left.set % (right.get, right.get))
             else:
                 code.addline(left.set % right.get)
+
+        if bus_access_offset:
+            code.addline("cpu.memory_access_offset = 0")
 
         # Special HL-only operations
         if left.postoperation is not None:
