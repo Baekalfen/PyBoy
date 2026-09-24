@@ -9,7 +9,7 @@ import numpy as np
 import PIL
 import pytest
 
-from pyboy.utils import cython_compiled, MAX_CYCLES, PyBoyFeatureDisabledError
+from pyboy.utils import CLOCK_RATE, FRAME_CYCLES, cython_compiled, MAX_CYCLES, PyBoyFeatureDisabledError
 from pyboy import PyBoy
 
 from PIL import Image, ImageDraw
@@ -25,7 +25,8 @@ def test_swoosh(default_rom, sampling):
 
     frames = 60
     pointer = 0
-    buffers = np.zeros((sample_rate // 60 * frames, 2))
+    samples_per_frame = (sample_rate * FRAME_CYCLES + CLOCK_RATE - 1) // CLOCK_RATE
+    buffers = np.zeros((samples_per_frame * frames, 2))
     # array("b", [0] * (sample_rate) * 2 * (frames//60))
 
     for n in range(frames):
@@ -80,7 +81,6 @@ def test_swoosh(default_rom, sampling):
             old_image.show()
             diff.show()
 
-        if diff.getbbox():
             time = np.linspace(0, len(left_channel) / sample_rate, num=len(left_channel))
 
             try:
@@ -139,15 +139,17 @@ def test_api_sound_disabled(default_rom):
         assert all(x == 0 for x in pyboy.sound.raw_buffer)  # Always defined, but empty
 
 
-@pytest.mark.parametrize("sample_rate", [3000, 6000, 12000, 24000, 44100, 48000, 88200, 96000])
+@pytest.mark.parametrize("sample_rate", [3000, 6000, 12000, 24000, 44100, 44101, 48000, 88200, 96000])
 def test_buffer_overrun(default_rom, capsys, sample_rate):
-    pyboy = PyBoy(default_rom, window="null", sound_sample_rate=sample_rate)
+    pyboy = PyBoy(default_rom, window="null", sound_sample_rate=sample_rate, log_level="WARNING")
+    samples_per_frame = (sample_rate * FRAME_CYCLES + CLOCK_RATE - 1) // CLOCK_RATE
+    assert pyboy.sound.raw_buffer_length == (samples_per_frame + 1) * 2
     for _ in range(200):
         pyboy.tick(1, False, True)
 
     # Watch out for critical "Buffer overrun" log from sound
     captured = capsys.readouterr()
-    assert captured.out == ""
+    assert "Buffer overrun!" not in captured.out
 
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")

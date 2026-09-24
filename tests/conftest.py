@@ -17,6 +17,10 @@ from filelock import FileLock
 
 import numpy as np
 
+# Tests use this environment variable as a truthy flag; normalize explicit false values.
+if os.environ.get("TEST_VERBOSE_IMAGES", "").strip().lower() in {"0", "false", "no", "off"}:
+    os.environ.pop("TEST_VERBOSE_IMAGES", None)
+
 np.set_printoptions(threshold=2**32)
 np.set_printoptions(linewidth=np.inf)
 

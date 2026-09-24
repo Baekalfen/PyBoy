@@ -20,12 +20,11 @@ class Sound:
     methods to make it possible to read this buffer out.
 
     When the game enables/disables the LCD, the timing will be shorter than 70224 emulated cycles. Therefore the sound
-    buffer will also be shorter than 16.667ms (60 FPS).
+    buffer will also be shorter than a normal 16.74ms frame.
 
-    Because the number of samples and the timing of frames don't match exactly, you can expect a little fluctuation in
-    the number of samples per frame. Normally at a sample rate of 24,000Hz, it'll be 400 samples/second. But some times,
-    it might become 401. As described above, when the LCD enables/disables, it might be even less -- maybe 30, 143,
-    or 200 samples. This timespan represent what the real hardware would have shown.
+    Because a Game Boy frame is about 59.73Hz, the number of samples per frame fluctuates with the configured sample
+    rate. At 24,000Hz, a normal frame contains about 402 samples. When the LCD enables or disables, a frame can be
+    shorter, with perhaps 30, 143, or 200 samples. This timespan represents what the real hardware would have shown.
 
     If you're working with encoding the screen and sound in a video stream, you could drop these shorter frames, if they
     cause problems. They usually only happen in transitions from menu to game or similar.
@@ -38,18 +37,17 @@ class Sound:
         """
         Read-only. Changing this, will not change the sample rate. See `PyBoy` constructor instead.
 
-        The sample rate is reported per second, while the frame rate of the Game Boy is ~60 frame per second.
-        So expect the sound buffer to have 1/60 of this value in the buffer after every frame. Although it will
-        fluctuate. See top of the page.
+        The sample rate is reported per second, while a Game Boy frame is about 59.73Hz. The sample count per frame
+        fluctuates; see the explanation above.
 
         ```python
         >>> pyboy.sound.sample_rate # in Hz
         48000
-        >>> pyboy.sound.sample_rate // 60 # Expected samples per frame
-        800
-        >>> (800+1) * 2 # Minimum buffer size for you to prepare (2 channels, +1 for fluctuating lengths)
-        1602
-        >>> 1602 == pyboy.sound.raw_buffer_length # This is how the length is calculated at the moment
+        >>> (pyboy.sound.sample_rate * 70224 + 4194304 - 1) // 4194304
+        804
+        >>> (804+1) * 2 # Stereo buffer capacity, including one extra sample
+        1610
+        >>> 1610 == pyboy.sound.raw_buffer_length
         True
         ```
 
@@ -149,8 +147,8 @@ class Sound:
 
         Example:
         ```python
-        >>> pyboy.sound.ndarray.shape # 401 samples, 2 channels (stereo)
-        (801, 2)
+        >>> pyboy.sound.ndarray.shape[1] # Number of stereo channels
+        2
         >>> pyboy.sound.ndarray
         array([[0, 0],
                [0, 0],
