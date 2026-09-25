@@ -620,6 +620,9 @@ class PyBoy:
             False if emulation has ended otherwise True
         """
 
+        if self.stopped:
+            raise PyBoyInvalidOperationException("Emulator is stopped")
+
         _count = count
         running = False
         t_start = time.perf_counter_ns()
