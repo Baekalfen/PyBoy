@@ -22,6 +22,7 @@ logger = pyboy.logging.get_logger(__name__)
 
 CYCLES_512HZ = 8192
 WAVE_ACCESS_CYCLES = 1
+ENVELOPE_EXTRA_TICK = 0x08
 
 
 class Sound:
@@ -94,9 +95,9 @@ class Sound:
 
         self.NR50 = 0  # Just dummy for read/write, unused
 
-    def reset_apu_div(self):
+    def reset_apu_div(self, edge_triggered):
         if self.emulate:
-            if self.poweron or self.apu_poweron_after_div_write:
+            if edge_triggered and (self.poweron or self.apu_poweron_after_div_write):
                 self._tick_frame_sequencer()
             self.cycles_target_512Hz = self.cycles + CYCLES_512HZ
         else:
@@ -213,15 +214,63 @@ class Sound:
                 length_clocked = True
 
         if channel == 0:
-            self.sweepchannel.setreg(reg, value, force_length_timer)
+            was_active = self.sweepchannel.enable
+            old_wave_duty = self.sweepchannel.wave_duty
+            sweep_check_pending = self.sweepchannel.sweepchecktimer
+            if self.cgb and reg == 2:
+                self.sweepchannel.nrx2_glitch(value)
+            if self.cgb and reg == 4 and value & 0x80 and self.sweepchannel.enable:
+                self.sweepchannel.setreg(reg, value, force_length_timer)
+                if self.sweepchannel.sweepenable:
+                    # Sweep-active retriggers use the longer CGB channel 1 delay.
+                    self.sweepchannel.periodtimer += 2 if sweep_check_pending else 6
+                else:
+                    self.sweepchannel.periodtimer += 2
+            else:
+                self.sweepchannel.setreg(reg, value, force_length_timer)
+                if self.cgb and reg == 4 and value & 0x80:
+                    # Fresh CGB channel 1 triggers delay the first timer edge.
+                    self.sweepchannel.sample_suppressed = True
+                    self.sweepchannel.periodtimer += 8
+            if self.cgb and reg == 1:
+                if was_active:
+                    self.sweepchannel.pending_wave_duty = self.sweepchannel.wave_duty
+                    self.sweepchannel.duty_update_pending = True
+                    self.sweepchannel.wave_duty = old_wave_duty
+                else:
+                    self.sweepchannel.duty_update_pending = False
         elif channel == 1:
+            was_active = self.tonechannel.enable
+            old_wave_duty = self.tonechannel.wave_duty
+            if self.cgb and reg == 2:
+                self.tonechannel.nrx2_glitch(value)
             self.tonechannel.setreg(reg, value, force_length_timer)
+            if self.cgb and reg == 1:
+                if was_active:
+                    self.tonechannel.pending_wave_duty = self.tonechannel.wave_duty
+                    self.tonechannel.duty_update_pending = True
+                    self.tonechannel.wave_duty = old_wave_duty
+                else:
+                    self.tonechannel.duty_update_pending = False
+            if self.cgb and reg == 4 and value & 0x80:
+                if not was_active:
+                    self.tonechannel.sample_suppressed = True
+                self.tonechannel.periodtimer += 2 if was_active else 6 + (3 if self.speed_shift else 0)
         elif channel == 2:
             self.wavechannel.setreg(reg, value)
-            if reg == 4 and (value & 0x80) and self.speed_shift == 0:
+            if reg == 4 and (value & 0x80) and self.speed_shift == 0 and not self.cgb:
                 self.wavechannel.sample_suppressed = False
         else:
+            was_noise_active = self.noisechannel.enable
+            old_noise_regwid = self.noisechannel.regwid
+            if self.cgb and reg == 2:
+                self.noisechannel.nrx2_glitch(value)
             self.noisechannel.setreg(reg, value)
+            if self.cgb and reg == 4 and value & 0x80 and was_noise_active:
+                self.noisechannel.periodtimer += self.noisechannel.period
+            if self.cgb and reg == 3 and self.noisechannel.enable and old_noise_regwid and not self.noisechannel.regwid:
+                # CGB 7-to-15-bit writes delay the next LFSR step by one sample.
+                self.noisechannel.periodtimer += 2
 
         if reg == 4 and frame_sequencer_odd:
             if (value & 0x40) and not length_clocked and (not old_length_enable or old_lengthtimer == 0):
@@ -259,6 +308,10 @@ class Sound:
             self.div_apu += 1
         if not self.poweron:
             return
+        if self.cgb and self.div_apu % 2 == 0:
+            self.sweepchannel.tick_envelope_extra()
+            self.tonechannel.tick_envelope_extra()
+            self.noisechannel.tick_envelope_extra()
         if self.div_apu % 2 == 1:
             self.sweepchannel.tick_length()
             self.tonechannel.tick_length()
@@ -266,9 +319,7 @@ class Sound:
             self.noisechannel.tick_length()
         if self.div_apu % 4 == 3:
             self.sweepchannel.tick_sweep()
-        if (self.cgb and self.sweepchannel.envelope_pace == 1 and self.div_apu % 8 == 0) or (
-            not (self.cgb and self.sweepchannel.envelope_pace == 1) and self.div_apu % 8 == 7
-        ):
+        if (self.cgb and self.div_apu % 8 == 0) or (not self.cgb and self.div_apu % 8 == 7):
             self.sweepchannel.tick_envelope()
             self.tonechannel.tick_envelope()
             self.noisechannel.tick_envelope()
@@ -288,6 +339,17 @@ class Sound:
             self.wavechannel.lengthtimer = lengthtimer_wave
             self.noisechannel.lengthtimer = lengthtimer_noise
 
+        if self.cgb:
+            self.sweepchannel.waveframe = 0
+            self.sweepchannel.wave_duty = 0
+            self.sweepchannel.duty_update_pending = False
+            self.sweepchannel.sample_suppressed = False
+            self.tonechannel.waveframe = 0
+            self.tonechannel.wave_duty = 0
+            self.tonechannel.duty_update_pending = False
+            self.tonechannel.sample_suppressed = False
+        self.sweepchannel.sweepchecktimer = 0
+
     def tick(self, _cycles):
         cycles = _cycles - self.last_cycles
         self.last_cycles = _cycles
@@ -297,7 +359,6 @@ class Sound:
 
         cycles >>= self.speed_shift
         self.wavechannel.wave_access = False
-        self.sweepchannel.tick_sweep_check()
 
         # Tick channels until point of sample (repeating) or however many cycles we have.
         while cycles > 0:
@@ -305,7 +366,6 @@ class Sound:
             if not self.disable_sampling:
                 _cycles = min(_cycles, double_to_uint64_ceil(self.cycles_target) - self.cycles)
             _cycles = min(_cycles, double_to_uint64_ceil(self.cycles_target_512Hz) - self.cycles)
-
             if _cycles == 0:
                 # A target was reached at the end of the previous chunk.
                 # Process it before advancing any more channel time.
@@ -320,8 +380,11 @@ class Sound:
                     continue
 
             if self.poweron:
-                self.sweepchannel.tick(_cycles)
-                self.tonechannel.tick(_cycles)
+                if not self.cgb or self.sweepchannel.enable:
+                    self.sweepchannel.tick(_cycles)
+                    self.sweepchannel.tick_sweep_check(_cycles)
+                if not self.cgb or self.tonechannel.enable:
+                    self.tonechannel.tick(_cycles)
                 self.wavechannel.tick(_cycles)
                 self.noisechannel.tick(_cycles)
 
@@ -531,12 +594,15 @@ class ToneChannel:
         self.period = 4  # Calculated copy of period, 4 * (2048 - sound_period)
         self.waveframe = 0  # Wave frame index into wave table entries
         self.volume = 0  # Current volume level, modulated by envelope
+        self.sample_suppressed = False
+        self.pending_wave_duty = 0
+        self.duty_update_pending = False
 
     def getreg(self, reg):
         if reg == 0:
             return 0xFF  # Not defined
         elif reg == 1:
-            return self.wave_duty << 6 | 0x3F  # Other bits are write-only
+            return (self.pending_wave_duty if self.duty_update_pending else self.wave_duty) << 6 | 0x3F
         elif reg == 2:
             return self.envelope_volume << 4 | self.envelope_direction << 3 | self.envelope_pace
         elif reg == 3:
@@ -587,6 +653,10 @@ class ToneChannel:
         while self.periodtimer <= 0:
             self.periodtimer += self.period
             self.waveframe = (self.waveframe + 1) % 8
+            if self.duty_update_pending:
+                self.wave_duty = self.pending_wave_duty
+                self.duty_update_pending = False
+            self.sample_suppressed = False
 
     def tick_length(self):
         if self.length_enable and self.lengthtimer > 0:
@@ -606,8 +676,45 @@ class ToneChannel:
                     self.volume = newvolume
                 # Note that setting envelopetimer to 0 disables it
 
+    def tick_envelope_extra(self):
+        if self.envelopetimer & ENVELOPE_EXTRA_TICK:
+            self.envelopetimer &= 0x07
+            newvolume = self.volume + (self.envelope_direction or -1)
+            if 0 <= newvolume <= 15:
+                self.volume = newvolume
+
+    def nrx2_glitch(self, value):
+        if not self.enable or not (value & 0xF8):
+            return
+
+        old_value = self.envelope_volume << 4 | self.envelope_direction << 3 | self.envelope_pace
+        should_tick = bool(value & 7 and not old_value & 7)
+        should_invert = bool((value & 8) ^ (old_value & 8))
+
+        if value & 0xF == 8 and old_value & 0xF == 8:
+            should_tick = True
+
+        if should_invert:
+            if value & 8:
+                if not old_value & 7:
+                    self.volume ^= 0xF
+                else:
+                    self.volume = (0xE - self.volume) & 0xF
+                should_tick = False
+            else:
+                self.volume = (0x10 - self.volume) & 0xF
+
+        if should_tick:
+            self.volume += 1 if value & 8 else -1
+            self.volume &= 0xF
+
+        if not value & 7:
+            self.envelopetimer = 0
+        elif not old_value & 7:
+            self.envelopetimer = (value & 7) | ENVELOPE_EXTRA_TICK
+
     def sample(self):
-        if self.enable:
+        if self.enable and not self.sample_suppressed:
             return self.volume * self.wavetables[self.wave_duty][self.waveframe]
         else:
             return 0
@@ -643,6 +750,9 @@ class ToneChannel:
         file.write_64bit(self.period)
         file.write_64bit(self.waveframe)
         file.write_64bit(self.volume)
+        file.write(self.sample_suppressed)
+        file.write(self.pending_wave_duty)
+        file.write(self.duty_update_pending)
 
     def load_state(self, file, state_version):
         self.wave_duty = file.read()
@@ -662,6 +772,9 @@ class ToneChannel:
         self.period = file.read_64bit()
         self.waveframe = file.read_64bit()
         self.volume = file.read_64bit()
+        self.sample_suppressed = file.read() if state_version >= 23 else False
+        self.pending_wave_duty = file.read() if state_version >= 23 else self.wave_duty
+        self.duty_update_pending = file.read() if state_version >= 23 else False
 
 
 class SweepChannel(ToneChannel):
@@ -715,24 +828,30 @@ class SweepChannel(ToneChannel):
             if self.sweeptimer <= 0:
                 self.sweeptimer = self.sweep_pace or 8
                 if self.sweep_pace and self.sweep(True):
+                    if not self.sweepchecktimer:
+                        self.sweep(False)
+
+    def tick_sweep_check(self, cycles):
+        if self.sweepchecktimer:
+            self.sweepchecktimer -= cycles
+            if self.sweepchecktimer <= 0:
+                self.sweepchecktimer = 0
+                if self.sweep_magnitude:
                     self.sweep(False)
 
-    def tick_sweep_check(self):
-        if self.sweepchecktimer:
-            self.sweepchecktimer = 0
-            self.sweep(False)
-
     def trigger(self):
+        pending_sweep_check = self.sweepchecktimer
         ToneChannel.trigger(self)
         if self.enable:  # Fixes NR52 enabled read
             self.enable = 0x01
         self.shadow = self.sound_period
         self.sweeptimer = self.sweep_pace or 8
-        self.sweepchecktimer = 0
+        # An active retrigger takes two machine cycles before the pending overflow check resumes.
+        self.sweepchecktimer = pending_sweep_check + (8 if pending_sweep_check else 0)
         self.sweep_negate_used = False
         # self.sweep_magnitude = self.sweep_magnitude_latch
         self.sweepenable = self.sweep_pace or self.sweep_magnitude
-        if self.sweep_magnitude:
+        if self.sweep_magnitude and not pending_sweep_check:
             self.sweep(False)
 
     def sweep(self, save):
@@ -758,8 +877,11 @@ class SweepChannel(ToneChannel):
         elif save and self.sweep_magnitude:
             # Pan Docs:
             # On each sweep iteration, the period in NR13 and NR14 is modified and written back.
-            if newper != 0x7FF:
-                self.sound_period = self.shadow = newper
+            self.shadow = newper
+            self.sound_period = newper
+            if newper == 0x7FF:
+                # The second overflow check runs eight machine cycles after reaching 0x7FF.
+                self.sweepchecktimer = 8 * 4
             self.period = 4 * (0x800 - self.sound_period)  # 2048*4 = 8192 cycles = 512Hz
             return True
 
@@ -809,8 +931,10 @@ class WaveChannel:
         self.periodtimer = 0  # Period timer, counts down to signal change in wave frame
         self.period = 4  # Calculated copy of period, 4 * (0x800 - sndper)
         self.waveframe = 0  # Wave frame index into wave table entries
+        self.sampleframe = 0
         self.wave_access = False
         self.sample_suppressed = False
+        self.restart_pending = False
         self.volumeshift = 0  # Bitshift for volume, set by volreg
 
     def getreg(self, reg):
@@ -833,6 +957,7 @@ class WaveChannel:
             self.dacpow = val >> 7 & 0x01
             if self.dacpow == 0:
                 self.enable = 0
+                self.restart_pending = False
         elif reg == 1:
             # Force during power-off behavior
             self.init_length_timer = val
@@ -891,8 +1016,15 @@ class WaveChannel:
             self.periodtimer += self.period
             if self.sample_suppressed:
                 self.sample_suppressed = False
-            self.waveframe += 1
+            if self.restart_pending:
+                self.waveframe = 1
+                self.sampleframe = 1
+                self.restart_pending = False
+            else:
+                self.waveframe += 1
+                self.sampleframe = self.waveframe
             self.waveframe %= 32
+            self.sampleframe %= 32
             self.wave_access = True
         if self.wave_access and self.periodtimer < self.period - WAVE_ACCESS_CYCLES:
             self.wave_access = False
@@ -905,8 +1037,8 @@ class WaveChannel:
 
     def sample(self):
         if self.enable and self.dacpow and not self.sample_suppressed:
-            sample = self.wavetable[self.waveframe // 2]
-            if self.waveframe % 2 == 0:  # Read upper nibble first
+            sample = self.wavetable[self.sampleframe // 2]
+            if self.sampleframe % 2 == 0:  # Read upper nibble first
                 sample >>= 4
             sample &= 0x0F
             return sample >> self.volumeshift
@@ -914,6 +1046,7 @@ class WaveChannel:
             return 0
 
     def trigger(self):
+        was_active = self.enable
         if self.enable and not self.cgb and self.periodtimer == 1:
             offset = (self.waveframe + 1) // 2 & 0x0F
             if offset < 4:
@@ -925,8 +1058,15 @@ class WaveChannel:
         self.enable = 0x04 if self.dacpow else 0
         self.lengthtimer = self.lengthtimer or 256
         self.periodtimer = self.period + 5
-        self.waveframe = 0
-        self.sample_suppressed = True
+        if self.cgb and was_active:
+            self.sampleframe = self.waveframe
+            self.waveframe = 0
+            self.restart_pending = True
+        else:
+            self.waveframe = 0
+            self.sampleframe = 0
+            self.sample_suppressed = True
+            self.restart_pending = False
         self.wave_access = False
 
     def save_state(self, file):
@@ -947,6 +1087,8 @@ class WaveChannel:
         file.write(self.sample_suppressed)
         file.write_64bit(self.volumeshift)
         file.write(self.wave_access)
+        file.write(self.restart_pending)
+        file.write_64bit(self.sampleframe)
 
     def load_state(self, file, state_version):
         for n in range(16):
@@ -966,6 +1108,13 @@ class WaveChannel:
         self.sample_suppressed = file.read()
         self.volumeshift = file.read_64bit()
         self.wave_access = file.read()
+        self.restart_pending = file.read() if state_version >= 24 else False
+        if state_version >= 25:
+            self.sampleframe = file.read_64bit()
+        else:
+            self.sampleframe = self.waveframe
+            if self.restart_pending:
+                self.waveframe = 0
 
 
 class NoiseChannel:
@@ -1067,6 +1216,43 @@ class NoiseChannel:
                     self.envelopetimer = self.envelope_pace
                     self.volume = newvolume
                 # Note that setting envelopetimer to 0 disables it
+
+    def tick_envelope_extra(self):
+        if self.envelopetimer & ENVELOPE_EXTRA_TICK:
+            self.envelopetimer &= 0x07
+            newvolume = self.volume + (self.envelope_direction or -1)
+            if 0 <= newvolume <= 15:
+                self.volume = newvolume
+
+    def nrx2_glitch(self, value):
+        if not self.enable or not (value & 0xF8):
+            return
+
+        old_value = self.envelope_volume << 4 | self.envelope_direction << 3 | self.envelope_pace
+        should_tick = bool(value & 7 and not old_value & 7)
+        should_invert = bool((value & 8) ^ (old_value & 8))
+
+        if value & 0xF == 8 and old_value & 0xF == 8:
+            should_tick = True
+
+        if should_invert:
+            if value & 8:
+                if not old_value & 7:
+                    self.volume ^= 0xF
+                else:
+                    self.volume = (0xE - self.volume) & 0xF
+                should_tick = False
+            else:
+                self.volume = (0x10 - self.volume) & 0xF
+
+        if should_tick:
+            self.volume += 1 if value & 8 else -1
+            self.volume &= 0xF
+
+        if not value & 7:
+            self.envelopetimer = 0
+        elif not old_value & 7:
+            self.envelopetimer = (value & 7) | ENVELOPE_EXTRA_TICK
 
     def sample(self):
         if self.enable:

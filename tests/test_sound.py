@@ -201,9 +201,12 @@ def test_wave_channel_sample_order(default_rom):
     pyboy.memory[NR10 + WAVE] = 0xAB
     pyboy.memory[NR10 + NR30] = 0x80  # Enable channel 3 DAC
     pyboy.memory[NR10 + NR32] = 0x20  # Full volume
-    pyboy.memory[NR10 + NR34] = 0x80  # Trigger channel 3
+    pyboy.memory[NR10 + NR33] = 0xE6
+    pyboy.memory[NR10 + NR34] = 0x83  # Trigger channel 3
 
-    assert pyboy.memory[0xFF77] & 0x0F == 0x0A  # PCM34 channel 3 sample
+    assert pyboy.memory[0xFF77] & 0x0F == 0
+    pyboy.tick(1, True)
+    assert pyboy.memory[0xFF77] & 0x0F == 0x0B  # Second sample is the lower nibble
     pyboy.stop(save=False)
 
 
@@ -217,7 +220,7 @@ def test_wave_channel_nibble_order():
     channel.dacpow = True
 
     assert channel.sample() == 0xD
-    channel.waveframe = 1
+    channel.sampleframe = 1
     assert channel.sample() == 0xE
 
 
