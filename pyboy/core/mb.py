@@ -676,12 +676,12 @@ class Motherboard:
                     # “DIV-APU” ... is increased every time DIV’s bit 4 (5 in double-speed mode) goes from 1 to 0 ...
                     # the counter can be made to increase faster by writing to DIV while its relevant bit is set (which
                     # clears DIV, and triggers the falling edge).
-                    if self.timer.DIV & (0b1_0000 << self.sound.speed_shift):
+                    apu_div_edge = self.timer.DIV & (0b1_0000 << self.sound.speed_shift)
+                    self.sound.tick(self.cpu.cycles)  # Process outstanding cycles
+                    if apu_div_edge:
                         self.sound.apu_poweron_after_div_write = True
                         self.sound.last_div_write_cycles = self.sound.cycles
-                        self.sound.tick(self.cpu.cycles)  # Process outstanding cycles
-                        # TODO: Force a falling edge tick
-                        self.sound.reset_apu_div()
+                    self.sound.reset_apu_div(apu_div_edge)
 
                     self.timer.reset()
                 elif i == 0xFF05:

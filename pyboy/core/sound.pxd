@@ -16,6 +16,7 @@ cdef Logger logger
 
 cdef uint64_t CYCLES_512HZ
 cdef int WAVE_ACCESS_CYCLES
+cdef uint8_t ENVELOPE_EXTRA_TICK
 
 @cython.final
 cdef class Sound:
@@ -92,7 +93,7 @@ cdef class Sound:
     cdef uint8_t pcm12(self) noexcept nogil
     cdef uint8_t pcm34(self) noexcept nogil
     cdef void clear_buffer(self) noexcept nogil
-    cdef void reset_apu_div(self) noexcept nogil
+    cdef void reset_apu_div(self, bint) noexcept nogil
 
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
@@ -118,12 +119,18 @@ cdef class ToneChannel:
     cdef int64_t period # Calculated copy of period, 4 * (2048 - sndper)
     cdef int64_t waveframe # Wave frame index into wave table entries
     cdef int64_t volume # Current volume level, modulated by envelope
+    cdef uint8_t sample_suppressed
+    cdef uint8_t pending_wave_duty
+    cdef uint8_t duty_update_pending
 
     cdef uint8_t getreg(self, uint8_t) noexcept nogil
     cdef void setreg(self, uint8_t, uint8_t, bint) noexcept nogil
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void tick_length(self) noexcept nogil
     cdef void tick_envelope(self) noexcept nogil
+    cdef void tick_envelope_extra(self) noexcept nogil
+    @cython.locals(old_value=uint8_t, should_tick=cython.bint, should_invert=cython.bint)
+    cdef void nrx2_glitch(self, uint8_t) noexcept nogil
     cdef uint8_t sample(self) noexcept nogil
     cdef void trigger(self) noexcept nogil
 
@@ -144,7 +151,7 @@ cdef class SweepChannel(ToneChannel):
     cdef bint sweepenable # Internal sweep enable flag
     cdef int64_t shadow # Shadow copy of period register for ignoring writes to sndper
     cdef void tick_sweep(self) noexcept nogil
-    cdef void tick_sweep_check(self) noexcept nogil
+    cdef void tick_sweep_check(self, uint64_t) noexcept nogil
     cdef bint sweep(self, bint) noexcept nogil
 
 @cython.final
@@ -168,8 +175,10 @@ cdef class WaveChannel:
     cdef int64_t periodtimer # Period timer, counts down to signal change in wave frame
     cdef int64_t period # Calculated copy of period, 4 * (2048 - sndper)
     cdef int64_t waveframe # Wave frame index into wave table entries
+    cdef int64_t sampleframe # Wave frame currently driving the channel output
     cdef bint wave_access
     cdef bint sample_suppressed
+    cdef bint restart_pending
     cdef int64_t volumeshift # Bitshift for volume, set by volreg
 
     cdef uint8_t getreg(self, uint8_t) noexcept nogil
@@ -177,7 +186,7 @@ cdef class WaveChannel:
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void tick_length(self) noexcept nogil
     cdef uint8_t sample(self) noexcept nogil
-    @cython.locals(offset=cython.int, start=cython.int, n=cython.int)
+    @cython.locals(offset=cython.int, start=cython.int, n=cython.int, was_active=cython.bint)
     cdef void trigger(self) noexcept nogil
     cdef uint8_t getwavebyte(self, uint8_t) noexcept nogil
     cdef void setwavebyte(self, uint8_t, uint8_t) noexcept nogil
@@ -216,6 +225,9 @@ cdef class NoiseChannel:
     cdef void tick(self, uint64_t) noexcept nogil
     cdef void tick_length(self) noexcept nogil
     cdef void tick_envelope(self) noexcept nogil
+    cdef void tick_envelope_extra(self) noexcept nogil
+    @cython.locals(old_value=uint8_t, should_tick=cython.bint, should_invert=cython.bint)
+    cdef void nrx2_glitch(self, uint8_t) noexcept nogil
     cdef uint8_t sample(self) noexcept nogil
     cdef void trigger(self) noexcept nogil
 
