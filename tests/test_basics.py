@@ -16,7 +16,7 @@ import pytest
 from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
-from pyboy.utils import WindowEvent, cython_compiled
+from pyboy.utils import PyBoyInvalidOperationException, WindowEvent, cython_compiled
 from pytest_lazy_fixtures import lf
 
 try:
@@ -131,6 +131,14 @@ def test_tick_zero(default_rom):
     pyboy = PyBoy(default_rom, window="null")
     # Not permitted, but shouldn't crash the emulator either
     pyboy.tick(0)
+
+
+def test_tick_after_stop(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.tick(1)
+    pyboy.stop(save=False)
+    with pytest.raises(PyBoyInvalidOperationException):
+        pyboy.tick(1)
 
 
 def test_memoryviewslice_type(default_rom):
