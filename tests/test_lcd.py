@@ -43,7 +43,7 @@ def test_cycles_when_enabling_lcd(default_rom):
     # When disabling LCD, we still do the write to set_lcdc before accounting for the 8-cycle opcode.
     # These 8 cycles are placed on the closing frame and we start on a clean slate.
     assert pyboy.mb.lcd.clock == 0
-    assert pyboy.mb.lcd.clock_target == 80
+    assert pyboy.mb.lcd.clock_target == 76
 
     # Because the LCD should never render the first frame after enabling LCDC
     # We should always see a white (disabled) screen.
@@ -243,9 +243,9 @@ class TestLCD:
         assert lcd.first_frame
 
         lcd.tick(FRAME_CYCLES - 1000 + 1)  # Tick 1 cycles to update stat mode, clock target, _cycles_to_...
-        assert lcd._STAT._mode == 2  # First STAT mode for scanline
-        assert lcd.clock_target == 80  # Assumed from stat mode 2
-        assert lcd._cycles_to_interrupt == 80 - 1
+        assert lcd._STAT._mode == 0  # LCD startup begins in mode 0
+        assert lcd.clock_target == 76
+        assert lcd._cycles_to_interrupt == 76 - 1
         assert lcd._cycles_to_frame == FRAME_CYCLES - 1
 
     def test_frame_cycles_enabled(self):
@@ -257,8 +257,8 @@ class TestLCD:
         lcd.tick(pre_ticks)  # Need to tick to update registers
 
         assert lcd.clock == 0
-        assert lcd.clock_target == 80  # STAT mode 2
-        assert lcd._cycles_to_interrupt == 80
+        assert lcd.clock_target == 76  # LCD startup mode 0
+        assert lcd._cycles_to_interrupt == 76
         assert lcd._cycles_to_frame == FRAME_CYCLES
         assert lcd.frame_done  # When initially enable the LCD, we flush the frame
         lcd.frame_done = False  # frame_done is reset from MB
@@ -317,9 +317,9 @@ class TestLCD:
 
         assert lcd.clock == 0
         # NOTE: CGB double speed: clock_target is internal and shows normal timings
-        assert lcd.clock_target == 80  # STAT mode 2
+        assert lcd.clock_target == 76  # LCD startup mode 0
         # NOTE: CGB double speed: _cycles_to_interrupt is external and shows double timings
-        assert lcd._cycles_to_interrupt == 80 * 2
+        assert lcd._cycles_to_interrupt == 76 * 2
         assert lcd._cycles_to_frame == FRAME_CYCLES * 2
         assert lcd.frame_done  # When initially enable the LCD, we flush the frame
         lcd.frame_done = False  # frame_done is reset from MB
@@ -350,7 +350,15 @@ class TestLCD:
         lcd.tick(pre_ticks)  # Need to tick to update registers
         lcd.frame_done = False  # frame_done is reset from MB
 
-        for i, cycle in enumerate(range(pre_ticks, FRAME_CYCLES - 1 + pre_ticks)):
+        for cycle in range(pre_ticks + 1, FRAME_CYCLES + pre_ticks + 1):
+            lcd.tick(cycle)
+        assert lcd.frame_done
+
+        # Check steady-state mode timing after the startup frame.
+        lcd.frame_done = False
+        start = FRAME_CYCLES + pre_ticks
+
+        for i, cycle in enumerate(range(start, start + FRAME_CYCLES - 1)):
             lcd.tick(cycle)  # Progresses cycles to new absolute cycles. NOT RELATIVE!
             assert lcd.clock == i
             assert lcd._cycles_to_frame == FRAME_CYCLES - i

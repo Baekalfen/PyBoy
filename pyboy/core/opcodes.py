@@ -219,7 +219,9 @@ def LD_11(cpu, v): # 11 LD DE,d16
 
 
 def LD_12(cpu): # 12 LD (DE),A
+    cpu.memory_access_offset = 4
     cpu.mb.setitem(((cpu.D << 8) + cpu.E), cpu.A)
+    cpu.memory_access_offset = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 8
@@ -314,7 +316,9 @@ def ADD_19(cpu): # 19 ADD HL,DE
 
 
 def LD_1A(cpu): # 1A LD A,(DE)
+    cpu.memory_access_offset = 4
     cpu.A = cpu.mb.getitem(((cpu.D << 8) + cpu.E))
+    cpu.memory_access_offset = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
     cpu.cycles += 8

@@ -28,7 +28,7 @@ cdef class Sound:
     cdef cython.double cycles_target
     cdef cython.double cycles_target_512Hz
     cdef uint64_t last_cycles
-    cdef uint64_t _cycles_to_interrupt
+    cdef int64_t _cycles_to_interrupt
 
     cdef uint8_t speed_shift
 

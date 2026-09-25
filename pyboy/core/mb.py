@@ -452,6 +452,18 @@ class Motherboard:
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
             return self.cartridge.rombanks[self.cartridge.rombank_selected, i - 0x4000]
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+            if self.cpu.memory_access_offset:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+                if self.lcd._LCDC.lcd_enable and (
+                    self.lcd._STAT._mode == 3
+                    or (
+                        self.lcd._STAT._mode == 2
+                        and self.lcd.clock <= self.lcd.clock_target
+                        and self.lcd.clock_target - self.lcd.clock <= 4
+                    )
+                ):
+                    return 0xFF
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 return self.lcd.VRAM0[i - 0x8000]
             else:
@@ -476,7 +488,10 @@ class Motherboard:
             if self.cpu.memory_access_offset and not self.oam_dma_reading:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
-                if self.lcd._LCDC.lcd_enable and self.lcd._STAT._mode in (2, 3):
+                if self.lcd._LCDC.lcd_enable and (
+                    self.lcd._STAT._mode in (2, 3) or (self.lcd.first_frame and self.lcd.next_stat_mode == 4)
+                ):
+                    # OAM locks when LY advances, before startup mode 2 begins.
                     return 0xFF
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
@@ -621,6 +636,11 @@ class Motherboard:
             self.cartridge.setitem(i, value)
             self.cpu.bail = True
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
+            if self.cpu.memory_access_offset:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+                if self.lcd._LCDC.lcd_enable and self.lcd._STAT._mode == 3:
+                    return
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 self.lcd.VRAM0[i - 0x8000] = value
                 if i < 0x9800:  # Is within tile data -- not tile maps
@@ -647,6 +667,22 @@ class Motherboard:
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             self.setitem(i - 0x2000, value)  # Redirect to internal RAM
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
+            if self.cpu.memory_access_offset:
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+                if self.lcd._LCDC.lcd_enable and (
+                    self.lcd._STAT._mode == 3
+                    or (
+                        self.lcd._STAT._mode == 2
+                        and not (
+                            # OAM briefly opens during the final four startup cycles of mode 2.
+                            self.lcd.first_frame
+                            and self.lcd.clock <= self.lcd.clock_target
+                            and self.lcd.clock_target - self.lcd.clock <= 4
+                        )
+                    )
+                ):
+                    return
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
             if not self.oam_dma_active:

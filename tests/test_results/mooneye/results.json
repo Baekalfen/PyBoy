@@ -186,7 +186,7 @@
     "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/lcdon_timing-GS.gb": {
-    "text": "Test failed:\nLY\nCycle:    $6F\nExpected: $01\nActual:   $00\n"
+    "text": "Test OK\n"
   },
   "acceptance/ppu/intr_2_oam_ok_timing.gb": {
     "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FE  L: 00\nAssertions\n  D: OK  E: OK\n"
@@ -285,7 +285,7 @@
     "text": "Test OK\n"
   },
   "acceptance/ppu/lcdon_write_timing-GS.gb": {
-    "text": "Test failed:\nOAM write\nCycle:    $12\nExpected: $00\nActual:   $81\n"
+    "text": "Test OK\n"
   },
   "emulator-only/mbc2/rom_1Mb.gb": {
     "text": "Test OK\n"

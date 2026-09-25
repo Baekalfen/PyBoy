@@ -148,7 +148,7 @@ class LCD:
 
     def cycles_to_mode0(self):
         mode2 = 80
-        mode3 = 170
+        mode3 = 172 if self.first_frame else 170
         mode1 = 456
 
         mode = self._STAT._mode
@@ -164,7 +164,7 @@ class LCD:
             return 0
         elif mode == 1:
             remaining_ly = 153 - self.LY
-            return remainder + mode1 * remaining_ly + mode2 + mode3
+            return remainder + mode1 * remaining_ly + mode2 + 170
         # else:
         #     logger.critical("Unsupported STAT mode: %d", mode)
         #     return 0
@@ -179,30 +179,49 @@ class LCD:
         self.clock += cycles >> self.speed_shift
 
         if self.clock >= self.clock_target:
-            if self._LCDC.lcd_enable and (self.LY == 153 or self.reset):
-                if self.reset:
-                    # RESET
-                    self.clock = 0
-                    self.clock_target = 0
-                    self._STAT.set_mode(0)  # Side-effects?
-                    self.reset = False
-
+            if self._LCDC.lcd_enable and self.reset:
+                self.reset = False
                 self.frame_done = True
 
-                # Reset to new frame and start from mode 2
                 self.LY = 0
-                self.clock %= FRAME_CYCLES
-                self.clock_target = 0
-                self.next_stat_mode = 2
-
-                # Change to next mode
-                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+                self.clock = 0
+                # LCD startup begins in mode 0 and skips the initial mode 2.
+                self.clock_target = 76
+                self.next_stat_mode = 3
+                interrupt_flag |= self._STAT.set_mode(0)
                 self.renderer.wy_activated_frame = self.WY == self.LY
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
-                # self._STAT._mode == 2:  # Searching OAM
+            elif self._LCDC.lcd_enable and self.LY == 153:
+                if self.first_frame and self.clock_target < FRAME_CYCLES:
+                    # The startup line is eight cycles short; keep the frame period unchanged.
+                    self.clock_target = FRAME_CYCLES
+                else:
+                    self.frame_done = True
+                    self.LY = 0
+                    self.clock %= FRAME_CYCLES
+                    self.first_frame = False
+                    self.clock_target = 80
+                    self.next_stat_mode = 3
+                    interrupt_flag |= self._STAT.set_mode(2)
+                    self.renderer.wy_activated_frame = self.WY == self.LY
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            # 4 marks a deferred mode-2 transition; STAT modes are 0 through 3.
+            elif self._LCDC.lcd_enable and self.next_stat_mode == 4:
+                interrupt_flag |= self._STAT.set_mode(2)
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
                 self.clock_target += 80
                 self.next_stat_mode = 3
-                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            elif self._LCDC.lcd_enable and self.next_stat_mode == 2 and self.first_frame:
+                self.LY += 1
+                # Clear coincidence now, then compare again when mode 2 starts.
+                self._STAT.value &= 0xFB
+                interrupt_flag |= self._STAT._update_irq_line()
+                self.clock_target += 4
+                self.next_stat_mode = 4
+                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
 
             elif self._LCDC.lcd_enable:
                 # Change to next mode
@@ -226,10 +245,16 @@ class LCD:
                     # FIXME: Strange Cython work-around. I thought I had fixed this.
                     self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
                 elif self._STAT._mode == 3:
-                    self.clock_target += 170
+                    if self.first_frame:
+                        self.clock_target += 172
+                    else:
+                        self.clock_target += 170
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0:  # HBLANK
-                    self.clock_target += 206
+                    if self.first_frame:
+                        self.clock_target += 200
+                    else:
+                        self.clock_target += 206
 
                     # Recorded for API
                     bx, by = self.getviewport()
@@ -268,7 +293,6 @@ class LCD:
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
                             self.renderer.blank_screen()
-                            self.first_frame = False
             else:
                 # See also `self.set_lcdc`
                 self.frame_done = True
