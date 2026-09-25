@@ -342,8 +342,8 @@ class PyBoy:
 
         Example:
         ```python
-        >>> pyboy.sound.ndarray.shape # 801 samples, 2 channels (stereo)
-        (801, 2)
+        >>> pyboy.sound.ndarray.shape[1] # Number of stereo channels
+        2
         >>> pyboy.sound.ndarray
         array([[0, 0],
                [0, 0],

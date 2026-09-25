@@ -365,16 +365,17 @@ class TestLCD:
             assert not lcd.frame_done
 
             ly = lcd.clock // 456
-            assert lcd.LY == ly
+            expected_ly = ly + int(ly < 143 and lcd.clock % 456 >= 452)
+            assert lcd.LY == expected_ly
             if ly < 144:
                 ly_remainder = lcd.clock % 456
                 if ly_remainder < 80:
                     assert lcd._STAT._mode == 2
-                    assert lcd.cycles_to_mode0() == 456 - 206 - ly_remainder
-                elif ly_remainder < 80 + 170:
+                    assert lcd.cycles_to_mode0() == 456 - 204 - ly_remainder
+                elif ly_remainder < 80 + 172:
                     assert lcd._STAT._mode == 3
-                    assert lcd.cycles_to_mode0() == 456 - 206 - ly_remainder
-                elif ly_remainder < 80 + 170 + 206:
+                    assert lcd.cycles_to_mode0() == 456 - 204 - ly_remainder
+                elif ly_remainder < 80 + 172 + 204:
                     assert lcd._STAT._mode == 0  # HBLANK
                     assert lcd.cycles_to_mode0() == 0
                 else:
@@ -382,7 +383,34 @@ class TestLCD:
             else:
                 ly_remainder = lcd.clock % 456
                 assert lcd._STAT._mode == 1  # VBLANK
-                assert lcd.cycles_to_mode0() == 456 * (153 - lcd.LY + 1) + (456 - 206 - ly_remainder)
+                assert lcd.cycles_to_mode0() == 456 * (153 - lcd.LY + 1) + (456 - 204 - ly_remainder)
+
+    def test_cycles_to_mode0_skips_sprite_scan_when_result_is_fixed(self, monkeypatch):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+
+        def unexpected_sprite_scan(_ly):
+            pytest.fail("Mode 0 and mode 3 deadlines do not depend on sprite timing")
+
+        monkeypatch.setattr(lcd, "_mode3_timing_adjustment", unexpected_sprite_scan)
+        lcd._STAT.set_mode(0)
+        assert lcd.cycles_to_mode0() == 0
+        lcd._STAT.set_mode(3)
+        assert lcd.cycles_to_mode0() == FRAME_CYCLES
+
+    def test_mode3_sprite_penalty_does_not_mutate_render_list(self):
+        lcd = LCD(False, False, color_palette, cgb_color_palette)
+        lcd._LCDC.sprite_enable = True
+        for offset, x in ((0, 8), (4, 8), (8, 9)):
+            lcd.OAM[offset] = 16
+            lcd.OAM[offset + 1] = x
+
+        sprites_to_render = lcd.renderer.sprites_to_render
+        for index in range(len(sprites_to_render)):
+            sprites_to_render[index] = 100 + index
+        original_sprites = tuple(sprites_to_render)
+
+        assert lcd._mode3_sprite_penalty(0) == 20
+        assert tuple(sprites_to_render) == original_sprites
 
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")

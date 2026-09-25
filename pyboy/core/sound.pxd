@@ -10,6 +10,7 @@ from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, double_to_uint64_ceil
 
 cdef int FRAME_CYCLES
+cdef uint64_t CLOCK_RATE
 cdef uint64_t MAX_CYCLES
 
 cdef Logger logger

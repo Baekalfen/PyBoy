@@ -45,6 +45,7 @@ cdef class LCD:
     cdef bint lyc_changed_while_disabled
     cdef uint8_t LY
     cdef uint8_t LYC
+    cdef int16_t mode3_adjustment
     cdef uint64_t clock
     cdef uint64_t clock_target
     cdef LCDCRegister _LCDC
@@ -61,7 +62,15 @@ cdef class LCD:
     cdef void switch_cgb(self, bint) noexcept with gil
 
     @final
-    @cython.locals(interrupt_flag=uint8_t,bx=int,by=int,wx=int,wy=int)
+    @cython.locals(
+        interrupt_flag=uint8_t,
+        bx=int,
+        by=int,
+        wx=int,
+        wy=int,
+        vblank_stat_pretriggered=bint,
+        cycles_to_interrupt=int64_t,
+    )
     cdef uint8_t tick(self, uint64_t) noexcept nogil
 
     @final
@@ -69,6 +78,30 @@ cdef class LCD:
 
     @final
     cdef int64_t cycles_to_mode0(self) noexcept nogil
+    @final
+    cdef inline bint _is_cgb_hardware(self) noexcept nogil
+    @final
+    cdef inline bint _should_pretrigger_vblank_stat(self) noexcept nogil
+    @final
+    @cython.locals(
+        index=int,
+        y=int,
+        x=int,
+        spriteheight=int,
+        spritecount=int,
+        penalty=int,
+        group_count=int,
+        duplicate=bint,
+        alignment=int,
+        seen_x0=uint64_t,
+        seen_x1=uint64_t,
+        seen_x2=uint64_t,
+        x_mask=uint64_t,
+    )
+    cdef int _mode3_sprite_penalty(self, int) noexcept nogil
+    @final
+    @cython.locals(penalty=int)
+    cdef inline int _mode3_timing_adjustment(self, int) noexcept nogil
 
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
