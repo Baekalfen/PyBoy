@@ -210,9 +210,19 @@ def test_mooneye(clean, cgb, rom, mooneye_dir, default_rom):
     else:
         pyboy.load_state(saved_state[cgb])
 
-    pyboy.tick(
-        180 if "div_write" in rom or "lcdon_write_timing" in rom or "mbc1" in rom or "sources-GS" in rom else 40, True
+    # LCD-on tests need extra frames before their result is written to the tilemap.
+    result_frames = (
+        360
+        if "intr_2_mode0_timing_sprites" in rom
+        else 180
+        if "div_write" in rom
+        or "lcdon_timing" in rom
+        or "lcdon_write_timing" in rom
+        or "mbc1" in rom
+        or "sources-GS" in rom
+        else 40
     )
+    pyboy.tick(result_frames, True)
     if "mbc1/bits_ramg" in rom or "mbc2" in rom or "bits_" in rom:
         pyboy.tick(500)
 

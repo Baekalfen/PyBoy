@@ -342,8 +342,8 @@ class PyBoy:
 
         Example:
         ```python
-        >>> pyboy.sound.ndarray.shape # 801 samples, 2 channels (stereo)
-        (801, 2)
+        >>> pyboy.sound.ndarray.shape[1] # Number of stereo channels
+        2
         >>> pyboy.sound.ndarray
         array([[0, 0],
                [0, 0],
@@ -619,6 +619,9 @@ class PyBoy:
         (True or False):
             False if emulation has ended otherwise True
         """
+
+        if self.stopped:
+            raise PyBoyInvalidOperationException("Emulator is stopped")
 
         _count = count
         running = False

@@ -12,7 +12,7 @@ from array import array
 
 import pyboy
 from pyboy.utils import PyBoyAssertException, cython_compiled
-from pyboy.utils import FRAME_CYCLES, MAX_CYCLES
+from pyboy.utils import CLOCK_RATE, FRAME_CYCLES, MAX_CYCLES
 
 if not cython_compiled:
     # Hide it from Cython in 'exec' statement
@@ -40,12 +40,13 @@ class Sound:
             # self.sample_rate = 24000  # Hz
         else:
             self.sample_rate = sample_rate
-        assert self.sample_rate % 60 == 0, "We do not want a sample rate that doesn't divide the frame rate"
+        if self.sample_rate <= 0:
+            raise ValueError("Sound sample rate must be positive")
         self.audiobuffer_head = 0
-        self.samples_per_frame = self.sample_rate // 60
-        self.cycles_per_sample = float(FRAME_CYCLES) / self.samples_per_frame  # Notice use of float
+        self.samples_per_frame = (self.sample_rate * FRAME_CYCLES + CLOCK_RATE - 1) // CLOCK_RATE
+        self.cycles_per_sample = float(CLOCK_RATE) / self.sample_rate
         self.buffer_format = "b"
-        # Buffer for 1 frame of stereo 8-bit sound. +1 for rounding error
+        # One extra sample covers fractional frame/sample alignment.
         self.audiobuffer_length = (self.samples_per_frame + 1) * 2
         self.audiobuffer = array(self.buffer_format, [0] * self.audiobuffer_length)
 
@@ -449,20 +450,24 @@ class Sound:
         elif state_version >= 14:
             self.audiobuffer_head = file.read_64bit()
             _samples_per_frame = file.read_64bit()
-            if not _samples_per_frame == self.samples_per_frame:
+            legacy_samples_per_frame = self.sample_rate // 60
+            if _samples_per_frame not in (self.samples_per_frame, legacy_samples_per_frame):
                 raise PyBoyAssertException(
                     "'Samples per frame' of saved state (%d) does not match current configuration (%d)",
                     _samples_per_frame,
                     self.samples_per_frame,
                 )
-            # self.samples_per_frame = _samples_per_frame
-            self.cycles_per_sample = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
+            saved_cycles_per_sample = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
 
-            for n in range(self.audiobuffer_length):
-                self.audiobuffer[n] = file.read()
+            saved_buffer_length = (_samples_per_frame + 1) * 2
+            for n in range(saved_buffer_length):
+                sample = file.read()
+                if n < self.audiobuffer_length:
+                    self.audiobuffer[n] = sample
 
             self.speed_shift = file.read()
             self.cycles_target = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
+            saved_cycles_target = self.cycles_target
             self.cycles_target_512Hz = float(struct.unpack("d", bytes([file.read() for _ in range(8)]))[0])
             self._cycles_to_interrupt = (
                 file.read_64bit()
@@ -495,6 +500,19 @@ class Sound:
             self.tonechannel.load_state(file, state_version)
             self.wavechannel.load_state(file, state_version)
             self.noisechannel.load_state(file, state_version)
+
+            if _samples_per_frame != self.samples_per_frame:
+                self.cycles_per_sample = float(CLOCK_RATE) / self.sample_rate
+                if saved_cycles_target >= MAX_CYCLES:
+                    self.cycles_target = MAX_CYCLES
+                else:
+                    cycles_to_sample = max(0.0, saved_cycles_target - self.cycles)
+                    self.cycles_target = (
+                        self.cycles + cycles_to_sample * self.cycles_per_sample / saved_cycles_per_sample
+                    )
+                self._cycles_to_interrupt = (
+                    double_to_uint64_ceil(min(self.cycles_target, self.cycles_target_512Hz)) << self.speed_shift
+                )
 
 
 class ToneChannel:

@@ -52,6 +52,7 @@ class LCD:
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         self.next_stat_mode = 2
         self.LY = 0x00
+        self.mode3_adjustment = 0
         self._STAT.set_mode(0)
 
         self.SCY = 0x00
@@ -146,25 +147,101 @@ class LCD:
 
         return 0
 
-    def cycles_to_mode0(self):
-        mode2 = 80
-        mode3 = 170
-        mode1 = 456
+    def _is_cgb_hardware(self):
+        return self.cgb or self._downgraded_to_dmg
 
-        mode = self._STAT._mode
-        # Remaining cycles for this already active mode
+    def _should_pretrigger_vblank_stat(self):
+        return (
+            self._is_cgb_hardware()
+            and self._LCDC.lcd_enable
+            and self.LY == 143
+            and self._STAT._mode == 0
+            and self.next_stat_mode == 1
+            and self._STAT.value & 0x20
+            and not self._STAT._irq_line
+        )
+
+    def _mode3_sprite_penalty(self, ly):
+        if not self._LCDC.sprite_enable:
+            return 0
+
+        spriteheight = 16 if self._LCDC.sprite_height else 8
+        spritecount = 0
+        group_count = 0
+        penalty = 0
+        seen_x0 = 0
+        seen_x1 = 0
+        seen_x2 = 0
+        for index in range(0, OBJECT_ATTRIBUTE_MEMORY, 4):
+            y = self.OAM[index] - 16
+            if y <= ly < y + spriteheight:
+                x = self.OAM[index + 1]
+                if x < 168:
+                    penalty += 6
+                    # Keep X-group bookkeeping local; the renderer's sprite list is live state.
+                    x_mask = 1
+                    if x < 64:
+                        x_mask <<= x
+                        duplicate = (seen_x0 & x_mask) != 0
+                        seen_x0 |= x_mask
+                    elif x < 128:
+                        x_mask <<= x - 64
+                        duplicate = (seen_x1 & x_mask) != 0
+                        seen_x1 |= x_mask
+                    else:
+                        x_mask <<= x - 128
+                        duplicate = (seen_x2 & x_mask) != 0
+                        seen_x2 |= x_mask
+
+                    if not duplicate:
+                        group_count += 1
+                        alignment = 5 - ((x + self.SCX - 8) & 7)
+                        if alignment > 0:
+                            penalty += alignment
+
+                spritecount += 1
+                if spritecount == 10:
+                    break
+
+        if spritecount and not group_count:
+            # A line with only off-screen objects skips one machine cycle of mode-3 startup.
+            return -4
+        if not spritecount:
+            return 0
+
+        # The first seven dots of object fetching overlap the fixed mode-3 startup.
+        penalty = max(0, penalty - 7)
+        if self._is_cgb_hardware():
+            penalty = (penalty + 3) // 4 * 4
+        return penalty
+
+    def _mode3_timing_adjustment(self, ly):
+        penalty = self._mode3_sprite_penalty(ly)
+        if not self.first_frame and not self._is_cgb_hardware():
+            penalty += ((self.SCX & 7) + 3) // 4 * 4
+        return penalty
+
+    def cycles_to_mode0(self):
+        mode = self._STAT._mode & 0b11
         remainder = self.clock_target - self.clock
 
-        mode &= 0b11
-        if mode == 2:
-            return remainder + mode3
+        if mode == 0:
+            return 0
         elif mode == 3:
             return remainder
-        elif mode == 0:
-            return 0
+
+        mode2 = 80
+        cgb_hardware = self._is_cgb_hardware()
+        sprite_line = 0 if mode == 1 else self.LY
+        mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
+        normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
+
+        if mode == 2:
+            mode3 = 172 + mode3_adjustment if self.first_frame else normal_mode3
+            return remainder + mode3
         elif mode == 1:
             remaining_ly = 153 - self.LY
-            return remainder + mode1 * remaining_ly + mode2 + mode3
+            return remainder + 456 * remaining_ly + mode2 + normal_mode3
         # else:
         #     logger.critical("Unsupported STAT mode: %d", mode)
         #     return 0
@@ -177,35 +254,78 @@ class LCD:
 
         interrupt_flag = 0
         self.clock += cycles >> self.speed_shift
+        vblank_stat_pretriggered = False
+
+        if self._should_pretrigger_vblank_stat() and self.clock >= self.clock_target - 4:
+            # CGB hardware keeps this timing after switching to DMG compatibility mode.
+            self.next_stat_mode = 5
+            interrupt_flag |= INTR_LCDC
 
         if self.clock >= self.clock_target:
-            if self._LCDC.lcd_enable and (self.LY == 153 or self.reset):
-                if self.reset:
-                    # RESET
-                    self.clock = 0
-                    self.clock_target = 0
-                    self._STAT.set_mode(0)  # Side-effects?
-                    self.reset = False
-
+            if self._LCDC.lcd_enable and self.reset:
+                self.reset = False
                 self.frame_done = True
 
-                # Reset to new frame and start from mode 2
                 self.LY = 0
-                self.clock %= FRAME_CYCLES
-                self.clock_target = 0
-                self.next_stat_mode = 2
-
-                # Change to next mode
-                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
-                self.renderer.wy_activated_frame = self.WY == self.LY
-
-                # self._STAT._mode == 2:  # Searching OAM
-                self.clock_target += 80
+                self.clock = 0
+                # LCD startup begins in mode 0 and skips the initial mode 2.
+                self.clock_target = 76
                 self.next_stat_mode = 3
+                interrupt_flag |= self._STAT.set_mode(0)
+                self.renderer.wy_activated_frame = self.WY == self.LY
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            elif self._LCDC.lcd_enable and self.LY == 153:
+                if self.first_frame and self.clock_target < FRAME_CYCLES:
+                    # The startup line is eight cycles short; keep the frame period unchanged.
+                    self.clock_target = FRAME_CYCLES
+                else:
+                    self.frame_done = True
+                    self.LY = 0
+                    self.clock %= FRAME_CYCLES
+                    self.first_frame = False
+                    self.clock_target = self.clock_target % FRAME_CYCLES + 80
+                    self.next_stat_mode = 3
+                    interrupt_flag |= self._STAT.set_mode(2)
+                    self.renderer.wy_activated_frame = self.WY == self.LY
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            # 4 marks deferred mode 2; 5 pretriggers CGB VBlank STAT.
+            # 6 skips the mode-2 LY increment after it was advanced in HBlank.
+            elif self._LCDC.lcd_enable and self.next_stat_mode == 7:
+                self.LY += 1
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.clock_target += 4
+                self.next_stat_mode = 8
+
+            elif self._LCDC.lcd_enable and self.next_stat_mode == 8:
+                interrupt_flag |= self._STAT.set_mode(2)
+                self.clock_target += 80
+                self.next_stat_mode = 6
+                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+
+            elif self._LCDC.lcd_enable and self.next_stat_mode == 4:
+                interrupt_flag |= self._STAT.set_mode(2)
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.clock_target += 80
+                self.next_stat_mode = 6
+
+            elif self._LCDC.lcd_enable and self.next_stat_mode == 2 and self.first_frame:
+                self.LY += 1
+                # Clear coincidence now, then compare again when mode 2 starts.
+                self._STAT.value &= 0xFB
+                interrupt_flag |= self._STAT._update_irq_line()
+                self.clock_target += 4
+                self.next_stat_mode = 4
+                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
 
             elif self._LCDC.lcd_enable:
                 # Change to next mode
+                if self.next_stat_mode == 5:
+                    self.next_stat_mode = 1
+                    vblank_stat_pretriggered = True
+                elif self.next_stat_mode == 6:
+                    self.next_stat_mode = 3
                 interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
 
                 # Pan Docs:
@@ -226,10 +346,27 @@ class LCD:
                     # FIXME: Strange Cython work-around. I thought I had fixed this.
                     self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
                 elif self._STAT._mode == 3:
-                    self.clock_target += 170
+                    self.mode3_adjustment = self._mode3_timing_adjustment(self.LY)
+                    if self.first_frame:
+                        self.clock_target += 172 + self.mode3_adjustment
+                    elif self._is_cgb_hardware():
+                        self.clock_target += 170 + self.mode3_adjustment
+                    else:
+                        self.clock_target += 172 + self.mode3_adjustment
                     self.next_stat_mode = 0
                 elif self._STAT._mode == 0:  # HBLANK
-                    self.clock_target += 206
+                    if self.first_frame:
+                        self.clock_target += 200 - self.mode3_adjustment
+                        self.next_stat_mode = 2 if self.LY < 143 else 1
+                    elif self._is_cgb_hardware():
+                        self.clock_target += 206 - self.mode3_adjustment
+                        self.next_stat_mode = 2 if self.LY < 143 else 1
+                    elif self.LY < 143:
+                        self.clock_target += 200 - self.mode3_adjustment
+                        self.next_stat_mode = 7
+                    else:
+                        self.clock_target += 204 - self.mode3_adjustment
+                        self.next_stat_mode = 1
 
                     # Recorded for API
                     bx, by = self.getviewport()
@@ -247,10 +384,6 @@ class LCD:
                     self.renderer.scanline_sprites(
                         self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
                     )
-                    if self.LY < 143:
-                        self.next_stat_mode = 2
-                    else:
-                        self.next_stat_mode = 1
                 elif self._STAT._mode == 1:  # VBLANK
                     self.clock_target += 456
                     self.next_stat_mode = 1
@@ -259,7 +392,7 @@ class LCD:
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
                     if self.LY == 144:
-                        if self._STAT.value & 0x20 and not self._STAT._irq_line:
+                        if self._STAT.value & 0x20 and not self._STAT._irq_line and not vblank_stat_pretriggered:
                             interrupt_flag |= INTR_LCDC
                         interrupt_flag |= INTR_VBLANK
                         self.renderer.wy_activated_frame = False
@@ -268,7 +401,6 @@ class LCD:
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
                             self.renderer.blank_screen()
-                            self.first_frame = False
             else:
                 # See also `self.set_lcdc`
                 self.frame_done = True
@@ -279,7 +411,10 @@ class LCD:
                 self.renderer.blank_screen()
 
         # NOTE: speed_shift because they are using in externally in mb
-        self._cycles_to_interrupt = (self.clock_target - self.clock) << self.speed_shift
+        cycles_to_interrupt = self.clock_target - self.clock
+        if self._should_pretrigger_vblank_stat():
+            cycles_to_interrupt -= 4
+        self._cycles_to_interrupt = cycles_to_interrupt << self.speed_shift
         # TODO: STAT Cycles to interrupts
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         return interrupt_flag
@@ -400,6 +535,14 @@ class LCD:
             self._cycles_to_interrupt = (self.clock_target - self.clock) << self.speed_shift
             self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
             self.next_stat_mode = f.read()
+            if self._STAT._mode == 3:
+                self.mode3_adjustment = self._mode3_timing_adjustment(self.LY)
+            if (
+                self._should_pretrigger_vblank_stat()
+                and self.clock <= self.clock_target
+                and self.clock_target - self.clock >= 4
+            ):
+                self._cycles_to_interrupt -= 4 << self.speed_shift
 
             if self.cgb:
                 for n in range(VIDEO_RAM):

@@ -158,8 +158,11 @@
   "acceptance/ppu/vblank_stat_intr-GS.gb": {
     "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 00\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
   },
+  "acceptance/ppu/vblank_stat_intr-GS.gb [CGB]": {
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 00  E: 00\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: 01! E: OK\nTest failed\n"
+  },
   "acceptance/ppu/intr_2_mode0_timing_sprites.gb": {
-    "text": "TEST #00 FAILED\n"
+    "text": "Test OK\n"
   },
   "acceptance/ppu/stat_irq_blocking.gb": {
     "text": "Test OK\n"
@@ -168,7 +171,7 @@
     "text": "Registers\n  A: 00  F: 00\n  B: 15  C: 00\n  D: 14  E: 15\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/intr_2_mode0_timing.gb": {
-    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"
+    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/intr_2_0_timing.gb": {
     "text": "Registers\n  A: 00  F: 00\n  B: 08  C: 00\n  D: 07  E: 08\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
@@ -177,19 +180,22 @@
     "text": "Test OK\n"
   },
   "acceptance/ppu/hblank_ly_scx_timing-GS.gb": {
+    "text": "a a\n        bcdec\n         f  f\n"
+  },
+  "acceptance/ppu/hblank_ly_scx_timing-GS.gb [CGB]": {
     "text": "REGISTERS\n  A: 00  F: 70\n  B: 41  C: 00\n  D: 41  E: 42\n  H: FF  L: 44\nTest failed\n"
   },
   "acceptance/ppu/stat_lyc_onoff.gb": {
     "text": "Test OK\n"
   },
   "acceptance/ppu/intr_2_mode3_timing.gb": {
-    "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 02  E: 02\n  H: FF  L: 41\nAssertions\n  D: 01! E: OK\nTest failed\n"
+    "text": "Registers\n  A: 03  F: C0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FF  L: 41\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/ppu/lcdon_timing-GS.gb": {
-    "text": "Test failed:\nLY\nCycle:    $6F\nExpected: $01\nActual:   $00\n"
+    "text": "Test OK\n"
   },
   "acceptance/ppu/intr_2_oam_ok_timing.gb": {
-    "text": "Registers\n  A: 00  F: A0\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FE  L: 00\nAssertions\n  D: OK  E: 02!\nTest failed\n"
+    "text": "Registers\n  A: 00  F: A0\n  B: 02  C: 00\n  D: 01  E: 02\n  H: FE  L: 00\nAssertions\n  D: OK  E: OK\n"
   },
   "acceptance/call_cc_timing.gb": {
     "text": "Test OK\n"
@@ -285,7 +291,7 @@
     "text": "Test OK\n"
   },
   "acceptance/ppu/lcdon_write_timing-GS.gb": {
-    "text": "Test failed:\nOAM write\nCycle:    $12\nExpected: $00\nActual:   $81\n"
+    "text": "Test OK\n"
   },
   "emulator-only/mbc2/rom_1Mb.gb": {
     "text": "Test OK\n"
@@ -351,7 +357,7 @@
     "text": "Registers\n  A: 11  F: B0\n  B: 00  C: 00\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: OK  F: 80!\n  B: OK  C: OK\n  D: OK  E: 08!\n  H: OK  L: 7C!\nTest failed\n"
   },
   "misc/ppu/vblank_stat_intr-C.gb [CGB]": {
-    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 01\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: 00!\nTest failed\n"
+    "text": "Registers\n  A: 01  F: 80\n  B: 01  C: 00\n  D: 01  E: 00\n  H: FF  L: 96\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
   },
   "acceptance/oam_dma_start.gb": {
     "text": "Registers\n  A: 01  F: C0\n  B: D7  C: 01\n  D: D7  E: 00\n  H: 02  L: 38\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"

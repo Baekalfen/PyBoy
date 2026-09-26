@@ -10,6 +10,7 @@ from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface, double_to_uint64_ceil
 
 cdef int FRAME_CYCLES
+cdef uint64_t CLOCK_RATE
 cdef uint64_t MAX_CYCLES
 
 cdef Logger logger
@@ -28,7 +29,7 @@ cdef class Sound:
     cdef cython.double cycles_target
     cdef cython.double cycles_target_512Hz
     cdef uint64_t last_cycles
-    cdef uint64_t _cycles_to_interrupt
+    cdef int64_t _cycles_to_interrupt
 
     cdef uint8_t speed_shift
 

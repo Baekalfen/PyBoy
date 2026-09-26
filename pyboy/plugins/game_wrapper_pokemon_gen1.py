@@ -10,7 +10,7 @@ __pdoc__ = {
 import numpy as np
 
 import pyboy
-from pyboy.utils import bcd_to_dec, dec_to_bcd
+from pyboy.utils import PyBoyException, bcd_to_dec, dec_to_bcd
 
 from .base_plugin import PyBoyGameWrapper
 from .game_wrapper_pokemon_gen1_constants import (
@@ -82,10 +82,14 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.sprite_offset = 0
 
     def _skip_dialogue(self, verbose):
+        deadline = self.pyboy.frame_count + 60 * 60  # 1 emulated minute
         while self.pyboy.tilemap_window[18, 16] != 238:  # The text dialog 'arrow'
-            self.pyboy.tick(10, verbose, False)
+            if self.pyboy.frame_count > deadline:
+                raise PyBoyException("Dialogue skip timeout")
+            self.pyboy.tick(30, verbose, False)
 
-        self.pyboy.button("a")
+        self.pyboy.tick(30, verbose, False)
+        self.pyboy.button("a", 10)
         self.pyboy.tick(60, verbose, False)
 
     def start_game(self, timer_div=None):
@@ -118,7 +122,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.button("start")
         self.pyboy.tick(100, verbose, False)  # Transition to oak talking
 
-        for _ in range(15):
+        for _ in range(13):
             self._skip_dialogue(verbose)
 
         if self.pyboy.tilemap_window[2, 4] != 129:  # "B" in Blue
@@ -130,7 +134,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.button("a")
         self.pyboy.tick(10, verbose, False)
 
-        for _ in range(6):
+        for _ in range(5):
             self._skip_dialogue(verbose)
 
         if self.pyboy.tilemap_window[2, 4] != 145:  # "R" in Red
@@ -142,7 +146,7 @@ class GameWrapperPokemonGen1(PyBoyGameWrapper):
         self.pyboy.button("a")
         self.pyboy.tick(10, verbose, False)
 
-        for _ in range(8):
+        for _ in range(7):
             self._skip_dialogue(verbose)
 
         # Shrinking transition to Mom's house
