@@ -1,7 +1,7 @@
 # Wiki
 
 This section contains the former PyBoy Wiki content, now published with the
-main documentation site. The original wiki repository remains unchanged.
+main documentation site.
 
 ```{toctree}
 :hidden:

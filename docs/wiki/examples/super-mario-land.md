@@ -15,20 +15,16 @@ For Game Boy documentation in general, have a look at the [Pan Docs](https://gbd
 >>> pyboy = PyBoy(supermarioland_rom)
 >>> pyboy.set_emulation_speed(0)
 >>> assert pyboy.cartridge_title == "SUPER MARIOLAND"
->>> pass
 >>> mario = pyboy.game_wrapper
 >>> mario.game_area_mapping(mario.mapping_compressed, 0)
 >>> mario.start_game()
-0
->>> pass
 >>> assert mario.score == 0
 >>> assert mario.lives_left == 2
 >>> assert mario.time_left == 400
 >>> assert mario.world == (1, 1)
 >>> last_time = mario.time_left
->>> pass
 >>> pyboy.tick() # To render screen after `.start_game`
-1
+True
 >>> pyboy.screen.image.save("SuperMarioLand1.png")
 >>> print(mario)
 Super Mario Land: World 1-1
@@ -61,15 +57,14 @@ ________________________________________________________________________________
 13 |   0  14  14   0   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 14 |  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10
 15 |  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10
->>> pass
 >>> from pyboy.utils import WindowEvent
->>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)  # doctest: +SKIP
+>>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
 >>> pyboy.button_press('right')
 >>> for n in range(1000):
 ...     assert mario.time_left <= mario.time_left
 ...     last_time = mario.time_left
 ...
-...     pyboy.tick(1, True)
+...     assert pyboy.tick(1, True)
 ...     if n == 120:
 ...         # Standing right next to the Goomba
 ...         pyboy.screen.image.save("SuperMarioLand2.png")
@@ -79,7 +74,7 @@ ________________________________________________________________________________
 ... else:
 ...     print("Mario didn't die?")
 ...     assert False
-1...
+pyboy.plugins.screen_recorder  INFO     ScreenRecorder started: GIF
 Super Mario Land: World 1-1
 Coins: 0
 lives_left: 2
@@ -111,14 +106,12 @@ ________________________________________________________________________________
 13 |   0   0   0   0   0   0   0   0   1   1  15   0   0   0   0   0   0  14  14   0
 14 |  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10
 15 |  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10  10
-1...
->>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)  # doctest: +SKIP
+>>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
 >>> pyboy.tick(1, False)
-1
->>> pass
+pyboy.plugins.screen_recorder  INFO     ScreenRecorder saving...
+pyboy.plugins.screen_recorder  INFO     Screen recording saved in ./recordings/SUPER MARIOLAND-...
+True
 >>> mario.reset_game()
-0
 >>> assert mario.lives_left == 2
->>> pass
 >>> pyboy.stop()
 ```

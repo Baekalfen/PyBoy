@@ -15,31 +15,25 @@ For Game Boy documentation in general, have a look at the [Pan Docs](https://gbd
 >>> pyboy = PyBoy(kirby_rom)
 >>> pyboy.set_emulation_speed(0)
 >>> assert pyboy.cartridge_title == "KIRBY DREAM LAN"
->>> pass
 >>> kirby = pyboy.game_wrapper
 >>> kirby.start_game()
-0
 >>> pyboy.tick(5) # To render Kirby after `.start_game`
-1
+True
 >>> pyboy.screen.image.save("Kirby1.png")
->>> pass
 >>> from pyboy.utils import WindowEvent
->>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)  # doctest: +SKIP
->>> pass
+>>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
 >>> assert kirby.score == 0
 >>> assert kirby.lives_left == 4
 >>> assert kirby.health == 6
->>> pass
 >>> pyboy.button_press("right")
 >>> for _ in range(280): # Walk for 280 ticks
 ...     # We tick one frame at a time to still render the screen for every step
 ...     pyboy.tick(1, True)
-1...
->>> pass
+pyboy.plugins.screen_recorder  INFO     ScreenRecorder started: GIF
+True...
 >>> assert kirby.score == 800
 >>> assert kirby.health == 5
->>> pass
->>> print(kirby)  # doctest: +SKIP
+>>> print(kirby)
 Kirby Dream Land:
 Score: 800
 Health: 5
@@ -58,27 +52,26 @@ ________________________________________________________________________________
 1  | 383 383 383 383 300 294 295 296 383 383 383 383 300 294 295 296 383 383 299 383
 2  | 311 318 319 320 383 383 383 383 383 383 383 383 383 383 383 383 383 301 383 383
 3  | 383 383 383 321 322 383 383 383 383 383 383 198 204 383 383 383 383 383 300 294
-4  | 383 383 383 383 323 290 291 383 383 383 313 312 311 318 319 320 383 290 291 383
+4  | 383 383 383 383 323 290 291 383 383 383 313 199 205 318 319 320 383 290 291 383
 5  | 383 383 383 383 324 383 383 383 383 315 314 383 383 383 383 321 322 383 383 383
 6  | 383 383 383 383 324 293 292 383 383 316 383 383 383 383 383 383 323 383 383 383
 7  | 383 383 383 383 324 383 383 298 383 317 383 383 383 383 383 383 324 383 383 383
 8  | 319 320 383 383 324 383 383 297 383 317 383 383 383 383 140 152 324 383 383 307
-9  | 383 321 322 383 324 294 295 296 383 325 383 383 383 383 383 383 326 272 274 309
+9  | 383 321 322 383 324 294 295 296 383 325 383 383 383 383 141 153 326 272 274 309
 10 | 383 383 323 383 326 383 383 383   2  18 383 330 331 331 331 331 331 331 331 331
-11 | 274 383 324 272 274 272 274 272 274 272 274 334 328 328 328 328 328 328 328 328
+11 | 274 383 324 272 274 272 274 272   3  19 274 334 328 328 328 328 328 328 328 328
 12 | 331 331 331 331 331 331 331 331 331 331 331 328 328 328 328 328 328 328 328 328
 13 | 328 328 328 277 278 328 328 328 328 328 328 328 328 277 278 328 328 277 278 277
 14 | 328 277 278 279 281 277 278 328 328 277 278 277 278 279 281 277 278 279 281 279
 15 | 278 279 281 280 282 279 281 277 278 279 281 279 281 280 282 279 281 280 282 280
 >>> pyboy.screen.image.save("Kirby2.png")
->>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)  # doctest: +SKIP
+>>> pyboy.send_input(WindowEvent.SCREEN_RECORDING_TOGGLE)
 >>> pyboy.tick()
-1
->>> pass
+pyboy.plugins.screen_recorder  INFO     ScreenRecorder saving...
+pyboy.plugins.screen_recorder  INFO     Screen recording saved in ./recordings/KIRBY DREAM LAN-...
+True
 >>> kirby.reset_game()
-0
 >>> assert kirby.score == 0
 >>> assert kirby.health == 6
->>> pass
 >>> pyboy.stop()
 ```
