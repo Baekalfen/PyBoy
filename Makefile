@@ -1,5 +1,5 @@
 
-.PHONY: build clean run install test benchmark docs generate-test-results
+.PHONY: build clean run install test benchmark docs docs_linkcheck generate-test-results
 
 all: build
 
@@ -92,6 +92,9 @@ generate-test-results:
 docs: clean generate-test-results
 	cd ${ROOT_DIR}/pyboy/plugins && ${PY} manager_gen.py
 	${PY} -m sphinx -E -W --keep-going -b html ${ROOT_DIR}/docs ${ROOT_DIR}/docs/_build/html
+
+docs_linkcheck: generate-test-results
+	cd ${ROOT_DIR}/pyboy/plugins && ${PY} manager_gen.py
 	${PY} -m sphinx -E -W --keep-going -b linkcheck ${ROOT_DIR}/docs ${ROOT_DIR}/docs/_build/linkcheck
 
 repackage_secrets:
