@@ -48,14 +48,18 @@ Run the API and documentation doctests against the compiled extension:
 
 ```sh
 make build
-python3 -m pytest pyboy/ docs/ -v
+python3 -m pytest pyboy/ docs/ -n auto --dist=loadscope -v
 ```
+
+The `loadscope` distribution keeps doctest items from the same source file on
+one worker, preventing parallel tests from racing on shared files such as
+`state_file.state`.
 
 When changing documentation, build it locally and check generated links:
 
 ```sh
 make docs
-make docs-linkcheck
+make docs_linkcheck
 ```
 
 Docstrings contain pytest-managed examples. Keep those examples executable

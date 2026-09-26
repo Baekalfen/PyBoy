@@ -10,25 +10,25 @@ The newest documentation can always be found at the [documentation home](../inde
 
 * A lot of general fixes
 * Improved documentation with examples
-* {meth}`pyboy.PyBoy.tick` returns **`True`** on success.
+* {meth}`pyboy.PyBoy.tick` returns **[`True`](https://docs.python.org/3/library/constants.html#True)** on success.
 * {meth}`pyboy.PyBoy.tick` now takes two optional parameters:
     * `n` number of frames to progress
     * `render` whether to render the screen on the last processed frame
-* `pyboy.screen_image()` moved to `pyboy.screen.image`
+* {attr}`pyboy.screen_image() <pyboy.api.screen.Screen.image>` moved to {attr}`pyboy.screen.image <pyboy.api.screen.Screen.image>`
 * The "botsupport" module has been removed, and most of API is moved to the PyBoy object
 * {meth}`pyboy.PyBoy.button` can be used to send input, and will automatically release after 1 frame
 * {meth}`pyboy.PyBoy.button_press` allows for manual control of input
 * {meth}`pyboy.PyBoy.button_release` allows for manual control of input
-* `pyboy.memory[0x100:0x150] = 123` replaces all three `pyboy.get/set/override_memory_value` and extends it with an option to specify bank
+* {attr}`pyboy.memory[0x100:0x150] = 123 <pyboy.PyBoy.memory>` replaces all three {class}`pyboy.get/set/override_memory_value <pyboy.PyBoyMemoryView>` and extends it with an option to specify bank
 * {meth}`pyboy.PyBoy.hook_register` registers a callback at a specific point in your game. Used for fine-grained tracking of events and control of the game
 * {meth}`pyboy.PyBoy.symbol_lookup` looks up an address for a symbol to use with memory read/write
-* “dummy” and “headless” windows have been merged into “null” window because of the new `pyboy.tick`
-* Game wrappers are now automatically loaded and accessible through the `pyboy.game_wrapper` property; see the [plugin and wrapper reference](../plugins/index)
+* “dummy” and “headless” windows have been merged into “null” window because of the new {meth}`pyboy.PyBoy.tick`
+* Game wrappers are now automatically loaded and accessible through the {attr}`pyboy.game_wrapper <pyboy.PyBoy.game_wrapper>` property; see the [plugin and wrapper reference](../plugins/index)
 * Remove fitness scores from game wrappers
-* `pyboy.game_area()` is a shortcut for `pyboy.game_wrapper.game_area()`
-* `pyboy.game_area_collision()` is a shortcut for `pyboy.game_wrapper.game_area_collision()`
-* `pyboy.game_area_dimensions(…)` can be used to configure game_area
-* `pyboy.game_area_mapping(…)` can apply a mapping to all game area tiles. I.e. simplify the tiles, or zero-out uninteresting tiles
+* {meth}`pyboy.game_area() <pyboy.PyBoy.game_area>` is a shortcut for {meth}`pyboy.game_wrapper.game_area() <pyboy.plugins.base_plugin.PyBoyGameWrapper.game_area>`
+* {meth}`pyboy.game_area_collision() <pyboy.PyBoy.game_area_collision>` is a shortcut for {meth}`pyboy.game_wrapper.game_area_collision() <pyboy.PyBoy.game_area_collision>`
+* {meth}`pyboy.game_area_dimensions(…) <pyboy.PyBoy.game_area_dimensions>` can be used to configure game_area
+* {meth}`pyboy.game_area_mapping(…) <pyboy.PyBoy.game_area_mapping>` can apply a mapping to all game area tiles. I.e. simplify the tiles, or zero-out uninteresting tiles
 * OpenAI Gym/Gymnasium has been removed from PyBoy. It has been [replaced by an example](using-pyboy-with-gym) instead
 * The [memory scanner API](../api/memory_scanner) allows you to isolate memory addresses of interest
 * Support for 768 CGB tiles vs. 384 in DMG mode
@@ -39,11 +39,11 @@ The newest documentation can always be found at the [documentation home](../inde
 
 ### Inverted pyboy.tick()
 
-`pyboy.tick()` now returns `True` until the emulation stops. This used to be inverted!
+{meth}`pyboy.PyBoy.tick` now returns [`True`](https://docs.python.org/3/library/constants.html#True) until the emulation stops. This used to be inverted!
 
 ```python
 >>> pyboy.tick()
-1
+True
 ```
 
 ### No attribute 'readonly'
@@ -168,7 +168,7 @@ AttributeError: ...PyBoy... object has no attribute 'botsupport_manager'
 
 ```
 
-`botsupport_manager` has been removed. You can now find the API calls directly on the PyBoy object. And in case of `tilemap_background`, `tilemap_window` and `screen`, they are all properties instead of functions:
+[`botsupport_manager`](../api/index) has been removed. You can now find the API calls directly on the PyBoy object. And in case of {attr}`tilemap_background <pyboy.PyBoy.tilemap_background>`, {attr}`tilemap_window <pyboy.PyBoy.tilemap_window>` and {attr}`screen <pyboy.PyBoy.screen>`, they are all properties instead of functions:
 ```python
 >>> type(pyboy.tilemap_background)
 <class 'pyboy.api.tilemap.TileMap'>

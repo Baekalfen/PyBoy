@@ -7,6 +7,8 @@ DOCUMENTATION_IMAGES = (
     "PokemonGen1-1.png",
     "PokemonGen1-2.png",
     "PokemonGen1-3.png",
+    "PandorasBlocks.png",
+    "SuperMarioBrosDeluxe.png",
     "SuperMarioLand1.png",
     "SuperMarioLand2.png",
     "Tetris1.png",

@@ -40,7 +40,8 @@ for additional runtime options.
 
 ## Core architecture
 
-The public `PyBoy` class drives the emulator, while the motherboard (`MB`) is
+The public {class}`PyBoy <pyboy.PyBoy>` class drives the emulator, while the motherboard
+([`MB`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/core/mb.py)) is
 the center of the emulated hardware:
 
 ```text
@@ -80,7 +81,7 @@ The main responsibilities of the core components are:
 
 ## The tick-based execution model
 
-PyBoy advances emulation through `PyBoy.tick()`. The motherboard performs the
+PyBoy advances emulation through {meth}`PyBoy.tick() <pyboy.PyBoy.tick>`. The motherboard performs the
 lower-level emulation step, and the CPU runs until the required cycle target is
 reached. Time-dependent hardware is then advanced through `tick(...)` methods
 using the CPU cycle count.
@@ -106,25 +107,25 @@ functions use the shared emulated time to stay synchronized. Components that
 are primarily memory-mapped, such as cartridge banking and RAM, participate
 through motherboard reads and writes as the CPU accesses them.
 
-When debugging timing behavior, start at `MB.tick()` and then follow the
+When debugging timing behavior, start at [`MB.tick()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/core/mb.py) and then follow the
 component tick method involved in the behavior being investigated.
 
 ## Plugin structure
 
 Plugins live under `pyboy/plugins/`. The common interfaces are defined in
-`base_plugin.py`, and `PluginManager` is responsible for creating enabled
+`base_plugin.py`, and [`PluginManager`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/manager.py) is responsible for creating enabled
 plugins and dispatching their lifecycle methods.
 
-Every plugin receives references to the `PyBoy` instance, the motherboard, and
+Every plugin receives references to the {class}`PyBoy <pyboy.PyBoy>` instance, the motherboard, and
 the parsed command-line arguments. The base lifecycle methods are:
 
 | Method | Purpose |
 | --- | --- |
-| `enabled()` | Determines whether the plugin is active |
-| `handle_events(events)` | Consumes or transforms input and window events |
-| `post_tick()` | Runs after the core has advanced |
-| `window_title()` | Adds status text to the window title |
-| `stop()` | Releases plugin resources |
+| [`enabled()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py) | Determines whether the plugin is active |
+| [`handle_events(events)`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py) | Consumes or transforms input and window events |
+| [`post_tick()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py) | Runs after the core has advanced |
+| [`window_title()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py) | Adds status text to the window title |
+| [`stop()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py) | Releases plugin resources |
 
 The main plugin categories are:
 
@@ -152,7 +153,9 @@ class ExamplePlugin(PyBoyPlugin):
 To add a real plugin:
 
 1. Add the plugin module under `pyboy/plugins/`.
-2. Define its configuration and `enabled()` behavior.
+2. Define its configuration and
+   [`enabled()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py)
+   behavior.
 3. Register it through the plugin manager's registration points.
 4. Add the required event and lifecycle dispatches.
 5. Rebuild and test both enabled and disabled configurations.
@@ -160,8 +163,9 @@ To add a real plugin:
 Keep emulator hardware behavior in `pyboy/core/`. Use a plugin for optional
 features, user interaction, rendering, recording, or game-specific behavior.
 When investigating ordering issues, remember that plugins can process events
-before emulation and receive `post_tick()` callbacks after the motherboard has
-advanced.
+before emulation and receive
+[`post_tick()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py)
+callbacks after the motherboard has advanced.
 
 ## Running the test suites
 
@@ -191,15 +195,18 @@ together against the compiled extension:
 
 ```sh
 make build
-python3 -m pytest pyboy/ docs/ -n auto -v
+python3 -m pytest pyboy/ docs/ -n auto --dist=loadscope -v
 ```
+
+`--dist=loadscope` keeps doctest items from the same source file on one worker
+to avoid races on shared files such as `state_file.state`.
 
 The full local test workflow runs these doctests after building, followed by
 the compiled emulator tests:
 
 ```text
 make build
-python3 -m pytest pyboy/ docs/ -n auto -v
+python3 -m pytest pyboy/ docs/ -n auto --dist=loadscope -v
 python3 -m pytest tests/ -n auto -v
 ```
 
@@ -211,5 +218,5 @@ Run the examples after building PyBoy:
 
 ```sh
 make build
-python3 -m pytest docs/ -v
+python3 -m pytest docs/ -n auto --dist=loadscope -v
 ```

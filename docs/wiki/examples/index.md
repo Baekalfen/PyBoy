@@ -10,6 +10,8 @@ game-specific state, and connect emulator instances.
 kirby
 pokemon-gen-1
 pokemon-link-trade
+pandoras-blocks
+super-mario-bros-deluxe
 super-mario-land
 tetris
 ```

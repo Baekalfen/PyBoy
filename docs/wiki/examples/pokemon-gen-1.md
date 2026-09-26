@@ -27,25 +27,24 @@ The script is available in the [PyBoy repository](https://github.com/Baekalfen/P
 >>> pyboy = PyBoy(pokemon_blue_rom, window="null")
 >>> pokemon = pyboy.game_wrapper
 >>> pokemon.start_game()
-0
 >>> pyboy.tick()  # Render the first frame after `.start_game`
-1
+True
 >>> pyboy.screen.image.save("PokemonGen1-1.png")
 >>> pokemon.add_pokemon("CHARIZARD", level=10, moves=("WATERFALL",))
 >>> pokemon.add_pokemon("MEW", level=10)
->>> _ = pokemon.party
->>> pass  # Set up the game state for trading and grant all badges.
->>> pokemon.set_event_flag("got_pokedex")
+>>> pokemon.party
+[{'species': ...
+>>> pokemon.set_event_flag("got_pokedex") # Set up the game state for trading and grant all badges.
 >>> for badge in ("boulder", "cascade", "thunder", "rainbow", "soul", "marsh", "volcano", "earth"):
 ...     pokemon.set_badge(badge)
 >>> pokemon.set_money(999999)
 >>> pokemon.set_item("MASTER_BALL", 255, force=True)
 >>> pokemon.warp("viridian_pokecenter")
 >>> pyboy.tick(20, True, False)  # Capture the fade during the transition
-1
+True
 >>> pyboy.screen.image.save("PokemonGen1-2.png")
 >>> pyboy.tick(30, True, False)  # Finish the transition
-1
+True
 >>> pyboy.screen.image.save("PokemonGen1-3.png")
 ```
 
