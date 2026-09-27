@@ -39,3 +39,9 @@ cdef class SerialSharedMemory(Serial):
     cdef uint8_t shared_slot
     cdef uint8_t bits_transferred
     cdef bint interrupt_based
+
+
+cdef class SerialPrinter(Serial):
+    cdef object printer
+    cdef uint8_t _outgoing_byte
+    cdef uint8_t _pending_response

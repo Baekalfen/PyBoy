@@ -11,6 +11,7 @@ __pdoc__ = {
     "auto_pause": False,
     "debug": False,
     "debug_prompt": False,
+    "game_boy_printer": False,
     "record_replay": False,
     "rewind": False,
     "screen_recorder": False,
