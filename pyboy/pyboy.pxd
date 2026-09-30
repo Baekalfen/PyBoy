@@ -78,9 +78,9 @@ cdef class PyBoy:
     cdef object _palette_cycle
 
     @cython.locals(t_start=int64_t, t_pre=int64_t, t_tick=int64_t, t_post=int64_t, nsecs=int64_t)
-    cdef int64_t _tick(self, bint, bint) except -1 nogil
+    cdef bint _tick(self, bint, bint) except -1 nogil
     @cython.locals(running=bint, _render=bint, _sound=bint)
-    cpdef int64_t tick(self, int count=*, bint render=*, bint sound=*) except -1
+    cpdef bint tick(self, int count=*, bint render=*, bint sound=*) except -1
     cpdef _quit(self)
     cpdef void stop(self, save=*, ram_file=*, rtc_file=*) noexcept
     cpdef int save_state(self, object) except -1
