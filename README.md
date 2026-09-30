@@ -2,9 +2,12 @@
 <img src="extras/README/pyboy10.svg" width="800">
 </p>
 
-__If you have any questions, or just want to chat, [join us on Discord](https://discord.gg/wUbag3KNqQ).__
+<p align="center"><strong>If you have any questions, or just want to chat, <a href="https://discord.gg/wUbag3KNqQ">join us on Discord</a>.</strong></p>
 
-[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/wUbag3KNqQ)
+<p align="center">
+<a href="https://trendshift.io/repositories/3811?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-3811" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/3811" alt="Baekalfen%2FPyBoy | Trendshift" width="250" height="55"/></a>
+</p>
+
 
 <!---
 Generate GIF with the layout and captions
