@@ -187,7 +187,7 @@ def doctest_fixtures(
             return value
 
         def tick(self, *args, **kwargs):
-            return bool(self._pyboy.tick(*args, **kwargs))
+            return self._pyboy.tick(*args, **kwargs)
 
         def get_sprite_by_tile_identifier(self, tile_identifiers, on_screen=True):
             return [[0, 2, 4], []]

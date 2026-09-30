@@ -57,4 +57,4 @@ cdef class GameWrapperPokemonPinball(PyBoyGameWrapper):
 
     cdef bint _unlimited_saver
 
-    cpdef int start_game(self, timer_div=*, stage=*) except -1
+    cpdef void start_game(self, timer_div=*, stage=*) except *

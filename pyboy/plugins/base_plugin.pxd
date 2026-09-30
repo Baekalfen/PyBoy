@@ -78,5 +78,5 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
 
     cpdef void post_tick(self) noexcept
 
-    cpdef int start_game(self, timer_div=*) except -1
-    cpdef int reset_game(self, timer_div=*) except -1
+    cpdef void start_game(self, timer_div=*) except *
+    cpdef void reset_game(self, timer_div=*) except *
