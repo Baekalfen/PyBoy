@@ -1,11 +1,13 @@
 # Contributing
 
-Contributions are welcome. Please review the open issues and discuss larger
-changes with the community before starting work. If you have a question or
-want to discuss an idea, join the [PyBoy Discord](https://discord.gg/wUbag3KNqQ).
+Contributions are welcome. Before starting a substantial change, check the
+[open issues](https://github.com/Baekalfen/PyBoy/issues) and discuss the
+approach with the community. Questions and proposals can also be discussed on
+the [PyBoy Discord](https://discord.gg/wUbag3KNqQ).
 
-For build requirements and compiling PyBoy, see [Getting
-started](getting-started). For the emulator structure and test commands, see
+For test dependencies, see [Getting started](getting-started); for source
+build requirements, see [Install and build](installation).
+For emulator architecture and the canonical test commands, see
 [Development](development).
 
 ## Pre-commit
@@ -29,38 +31,27 @@ Ruff for linting and formatting, and enables Ruff's automatic fixes. Generated
 files such as `opcodes.py`, `manager.py`, and `manager.pxd` are excluded from
 the hooks.
 
-## Make changes easy to review
+## Prepare changes for review
 
-Keep each change focused and explain the behavior it changes. Add a regression
-test when fixing a bug or changing a public behavior. Prefer small, targeted
-tests while developing, then run the complete relevant suite before requesting
+Keep each change focused and describe the behavior it changes. Add or update
+regression tests when fixing a bug or changing public behavior. Run the
+appropriate test suites from [Development](development) before requesting
 review.
 
-For changes to the compiled core or Cython-backed code, rebuild before testing:
-
-```sh
-make clean
-make
-python3 -m pytest tests/ -v
-```
-
-Run the API and documentation doctests against the compiled extension:
-
-```sh
-make build
-python3 -m pytest pyboy/ docs/ -n auto --dist=loadscope -v
-```
-
-The `loadscope` distribution keeps doctest items from the same source file on
-one worker, preventing parallel tests from racing on shared files such as
-`state_file.state`.
-
-When changing documentation, build it locally and check generated links:
+For Cython-backed changes, rebuild before testing as described in
+[Install and build](installation). Keep docstring and Wiki examples
+executable when changing public APIs. For documentation changes, build the site
+and check generated links:
 
 ```sh
 make docs
 make docs_linkcheck
 ```
 
-Docstrings contain pytest-managed examples. Keep those examples executable
-when changing public APIs.
+## Pull requests
+
+Use a separate branch for each contribution. In the pull request description,
+explain the problem and solution, link related issues, and list the checks you
+ran. Include screenshots for user-visible changes when they help reviewers.
+Contributions are distributed under the project's LGPL license; do not include
+commercial game ROMs or other files you do not have permission to redistribute.

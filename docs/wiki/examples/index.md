@@ -7,11 +7,12 @@ game-specific state, and connect emulator instances.
 :hidden:
 :maxdepth: 1
 
-kirby
-pokemon-gen-1
-pokemon-link-trade
-pandoras-blocks
-super-mario-bros-deluxe
-super-mario-land
-tetris
+Kirby <kirby>
+Pokemon Gen 1 <pokemon-gen-1>
+Pokemon Gen 1 Link Trade (Experimental) <pokemon-link-trade>
+Pandora's Blocks <pandoras-blocks>
+Super Mario Bros. Deluxe <super-mario-bros-deluxe>
+Super Mario Land <super-mario-land>
+Tetris <tetris>
+Using PyBoy with Gymnasium <../using-pyboy-with-gym>
 ```

@@ -1,53 +1,74 @@
 # Getting started
 
-This page covers the Python and native build requirements for developing
-PyBoy, followed by compiling the project from source. For the emulator
-architecture and test suites, see [Development](development).
+This page covers setting up the Python environment for developing and testing
+PyBoy. For platform-specific installation, see
+[Install and build](installation) for the per-platform install and source-build
+instructions.
 
 ## Prerequisites
 
-You need Python 3, a C/C++ compiler for Cython, and
-[RGBDS](https://rgbds.gbdev.io/install) to build the custom boot ROM and example
-ROM. A virtual environment is recommended.
+You need Python 3. Use a virtual environment to keep project dependencies
+separate from system Python. The compiler and RGBDS requirements for source
+builds are listed in [Install and build](installation).
 
-Clone the repository, activate the virtual environment, and install the
-development dependencies:
-
-```sh
-python3 -m pip install -r requirements.txt
-```
-
-## Building from source
-
-Build PyBoy and the ROM artifacts from the root of the repository:
+Clone the repository, create and activate a virtual environment using the
+instructions for your platform, then install the development and test
+dependencies from the repository root:
 
 ```sh
-make build
+python -m pip install -r requirements_tests.txt
 ```
 
-This compiles the Cython extensions and builds the custom ROMs. Run `make build`
-again after changing code backed by Cython. If old generated or compiled files
-cause unexpected behavior, clean the repository first:
+This file includes the base requirements from `requirements.txt` as well as
+pytest and the project's test dependencies. To build the Sphinx documentation,
+also install its optional dependencies:
 
 ```sh
-make clean
-make build
+python -m pip install ".[docs]"
 ```
 
-To install the current source tree as a package, use:
+## Build PyBoy
+
+Follow the source-build instructions for your platform in
+[Install and build](installation) to compile the Cython extensions and ROM
+artifacts.
+
+## Running PyBoy
+
+Point PyBoy at a ROM file you are entitled to use. For example:
 
 ```sh
-python3 -m pip install .
+python -m pyboy path/to/rom.gb
 ```
 
-When testing an installed package, run PyBoy from a directory outside the
-source tree. Otherwise Python may choose the uncompiled `pyboy/` directory in
-the repository instead of the compiled package.
-
-## Verify the build
-
-Run a ROM directly from the source tree to verify the build:
+If PyBoy is installed as a package, you can run it from any directory:
 
 ```sh
-python3 -m pyboy path/to/rom.gb
+pyboy path/to/rom.gb
 ```
+
+Use `python -m pyboy --help` to see the available options. For example,
+`python -m pyboy -w SDL2 path/to/rom.gb` selects the SDL2 window. See
+[Plugins and game wrappers](../../plugins/index)
+for more options.
+
+| Keyboard key | Game Boy control |
+| --- | --- |
+| Up, Down, Left, Right | Directional pad |
+| A | A |
+| S | B |
+| Return | Start |
+| Backspace | Select |
+
+| Keyboard key | Emulator function |
+| --- | --- |
+| Escape | Quit |
+| D | Debug |
+| Space | Unlimited FPS |
+| Z | Save state |
+| X | Load state |
+| I | Toggle screen recording |
+| , | Rewind backwards |
+| . | Rewind forwards |
+
+To enable rewind, see [Plugins and game wrappers](../../plugins/index).

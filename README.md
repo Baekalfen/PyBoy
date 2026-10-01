@@ -17,7 +17,7 @@ Generate GIF with the layout and captions
     <tr>
       <td colspan=2 align="center"><a href=https://github.com/PWhiddy/PokemonRedExperiments>Train RL agents to play Pokemon Red</a>
       </td>
-      <td align="center"><a href=https://docs.pyboy.dk/wiki/experimental-and-optional-features.html#rewind-time>Rewind any game</a><br>
+      <td align="center"><a href=https://docs.pyboy.dk/plugins/index.html#rewind-time>Rewind any game</a><br>
       </td>
     </tr>
     <tr>
@@ -65,7 +65,8 @@ The instructions are simple:
 $ pip install pyboy
 ```
 
-For details, see [installation instructions](https://docs.pyboy.dk/wiki/installation.html).
+For platform-specific instructions, see the
+[installation guide](https://docs.pyboy.dk/wiki/development/index.html).
 
 Now you're ready! Either use PyBoy directly from the terminal
 ```sh
@@ -95,12 +96,11 @@ The API
 
 If you are looking to make a bot or AI, then these resources are a good place to start:
  * [PyBoy API Documentation](https://docs.pyboy.dk/api/index.html)
- * [Wiki Pages](https://docs.pyboy.dk/wiki/index.html)
-   * [Using PyBoy with Gym](https://docs.pyboy.dk/wiki/using-pyboy-with-gym.html)
-   * [Example: Kirby](https://docs.pyboy.dk/wiki/examples/kirby.html)
-   * [Example: Tetris](https://docs.pyboy.dk/wiki/examples/tetris.html)
-   * [Example: Super Mario Land](https://docs.pyboy.dk/wiki/examples/super-mario-land.html)
-   * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples)
+ * [Using PyBoy with Gym](https://docs.pyboy.dk/wiki/using-pyboy-with-gym.html)
+ * [Example: Kirby](https://docs.pyboy.dk/wiki/examples/kirby.html)
+ * [Example: Tetris](https://docs.pyboy.dk/wiki/examples/tetris.html)
+ * [Example: Super Mario Land](https://docs.pyboy.dk/wiki/examples/super-mario-land.html)
+ * [Code Examples](https://github.com/Baekalfen/PyBoy/tree/master/extras/examples)
  * [Discord](https://discord.gg/wUbag3KNqQ)
 
 
@@ -116,7 +116,7 @@ pil_image = pyboy.screen.image
 pil_image.save('screenshot.png')
 ```
 
-The [documentation wiki](https://docs.pyboy.dk/wiki/index.html) shows how to interface with PyBoy from your own project.
+The [documentation homepage](https://docs.pyboy.dk/) shows how to interface with PyBoy from your own project.
 
 Performance
 ===========
@@ -189,8 +189,7 @@ do 3160 hours of gameplay in 1 hour.
 
 Contributing
 ============
-Any contribution is appreciated. The currently known problems are tracked in [the Issues tab](https://github.com/Baekalfen/PyBoy/issues). Feel free to take a swing at any one of them. If you have something original in mind, come and [discuss it on on Discord](https://discord.gg/wUbag3KNqQ).
-
-[![Discord](https://img.shields.io/discord/584149554132418570?style=for-the-badge&logo=Discord&label=PyBoy)](https://discord.gg/wUbag3KNqQ)
-
-If you want to implement something new, feel free to do so. If you want to merge it into our repo, send a pull request and we will have a look at it.
+For development setup, testing, and pull request guidance, see the
+[Contributing guide](https://docs.pyboy.dk/wiki/development/contributing.html).
+You can browse [open issues](https://github.com/Baekalfen/PyBoy/issues) or
+discuss larger proposals on the [PyBoy Discord](https://discord.gg/wUbag3KNqQ).

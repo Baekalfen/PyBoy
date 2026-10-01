@@ -213,7 +213,8 @@ def _markdown_docstring_to_rst(app, what, name, obj, options, lines):  # pylint:
         line = re.sub(r"__NOTE(?::)?__[:]?", "**NOTE:**", line)
         line = re.sub(r"(?<!`)``([^`\n]+)``(?!`)", _convert_inline_code, line)
         line = re.sub(r"(?<![:`])`([^`\n]+)`(?!`)", _convert_inline_code, line)
-        line = re.sub(r"(``[^`\n]+``)(?=\w)", r"\1 ", line)
+        # Add spacing only after a complete literal, not across adjacent delimiters.
+        line = re.sub(r"(?<!\w)(``[^`\n]+``)(?=\w)", r"\1 ", line)
         line = re.sub(r"\[([^]]+)\]\(([^)]+)\)", r"`\1 <\2>`_", line)
         converted.append(line)
 

@@ -17,5 +17,4 @@ entry into coordinates, attributes, visibility, and its associated
 
 .. autoclass:: pyboy.api.sprite.Sprite
    :members:
-   :special-members: __init__
    :show-inheritance:
