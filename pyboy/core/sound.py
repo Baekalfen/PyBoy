@@ -80,10 +80,10 @@ class Sound:
         self.last_power_off_cycles = 0
         self.apu_poweron_after_div_write = 0
 
-        self.sweepchannel = SweepChannel()
+        self.sweepchannel = SweepChannel(self.cgb)
         self.tonechannel = ToneChannel()
         self.wavechannel = WaveChannel(self.cgb)
-        self.noisechannel = NoiseChannel()
+        self.noisechannel = NoiseChannel(self.cgb)
 
         self.noise_left = 0
         self.wave_left = 0
@@ -173,6 +173,10 @@ class Sound:
                 self._power_off()
                 self.poweron = 0
                 self.div_apu_counter = 0
+                self.noisechannel.counter = 0
+                self.noisechannel.counter_countdown = 0
+                self.noisechannel.alignment = 0
+                self.noisechannel.counter_running = False
                 self.last_power_off_cycles = self.cycles
             else:
                 was_powered_off = not self.poweron
@@ -257,7 +261,13 @@ class Sound:
             if self.cgb and reg == 4 and value & 0x80:
                 if not was_active:
                     self.tonechannel.sample_suppressed = True
-                self.tonechannel.periodtimer += 2 if was_active else 6 + (3 if self.speed_shift else 0)
+                trigger_delay = 6 + (3 if self.speed_shift else 0)
+                self.tonechannel.periodtimer += 2 if was_active else trigger_delay
+                if not was_active and self.speed_shift and self.tonechannel.period == 4:
+                    # Align the shortest pulse period's first edge to the CGB 1 MHz divider phase.
+                    timer_epoch = double_to_uint64_ceil(self.cycles_target_512Hz - CYCLES_512HZ)
+                    timer_phase = (self.cycles - timer_epoch) % 4
+                    self.tonechannel.periodtimer += timer_phase - 2
         elif channel == 2:
             self.wavechannel.setreg(reg, value)
             if reg == 4 and (value & 0x80) and self.speed_shift == 0 and not self.cgb:
@@ -351,6 +361,7 @@ class Sound:
             self.sweepchannel.wave_duty = 0
             self.sweepchannel.duty_update_pending = False
             self.sweepchannel.sample_suppressed = False
+            self.sweepchannel.sweep_restart_hold = 0
             self.tonechannel.waveframe = 0
             self.tonechannel.wave_duty = 0
             self.tonechannel.duty_update_pending = False
@@ -802,8 +813,9 @@ class ToneChannel:
 
 
 class SweepChannel(ToneChannel):
-    def __init__(self):
+    def __init__(self, cgb=False):
         ToneChannel.__init__(self)
+        self.cgb = cgb
         # Register Values
         self.sweep_pace = 0  # Register 0 bits 6-4: Sweep pace
         self.sweep_direction = 0  # Register 0 bit 3: Sweep direction (0: increase)
@@ -818,6 +830,8 @@ class SweepChannel(ToneChannel):
         self.sweepenable = False  # Internal sweep enable flag
         self.shadow = 0  # Shadow copy of period register for ignoring writes to sndper
         self.sweepchecktimer = 0
+        self.sweepcalctimer = 0
+        self.sweep_restart_hold = 0
         self.sweep_negate_used = False
 
     def getreg(self, reg):
@@ -847,16 +861,33 @@ class SweepChannel(ToneChannel):
     def tick_sweep(self):
         # Clock sweep timer on frame-sequencer steps 2 and 6. A period of
         # zero is treated as eight by the sweep timer.
+        if self.sweep_restart_hold:
+            return
         if self.sweepenable and self.enable:
             self.sweeptimer -= 1
             if self.sweeptimer <= 0:
                 self.sweeptimer = self.sweep_pace or 8
-                if self.sweep_pace and self.sweep(True):
-                    if not self.sweepchecktimer:
-                        self.sweep(False)
+                if self.sweep_pace:
+                    if self.cgb and self.sweep_magnitude == 0:
+                        # The CGB sweep calculation follows the frame-sequencer edge by one 1 MHz tick.
+                        self.sweepcalctimer = 4
+                    elif self.sweep(True):
+                        if not self.sweepchecktimer:
+                            self.sweep(False)
 
     def tick_sweep_check(self, cycles):
-        if self.sweepchecktimer:
+        if self.sweep_restart_hold:
+            self.sweep_restart_hold -= cycles
+            if self.sweep_restart_hold < 0:
+                self.sweep_restart_hold = 0
+
+        if self.sweepcalctimer:
+            self.sweepcalctimer -= cycles
+            if self.sweepcalctimer <= 0:
+                self.sweepcalctimer = 0
+                if self.sweep_pace and self.sweep(True) and not self.sweepchecktimer:
+                    self.sweep(False)
+        elif self.sweepchecktimer:
             self.sweepchecktimer -= cycles
             if self.sweepchecktimer <= 0:
                 self.sweepchecktimer = 0
@@ -864,12 +895,16 @@ class SweepChannel(ToneChannel):
                     self.sweep(False)
 
     def trigger(self):
+        was_active = self.enable
         pending_sweep_check = self.sweepchecktimer
         ToneChannel.trigger(self)
         if self.enable:  # Fixes NR52 enabled read
             self.enable = 0x01
         self.shadow = self.sound_period
         self.sweeptimer = self.sweep_pace or 8
+        self.sweepcalctimer = 0
+        # Hold the next CGB sweep clock across an active channel-1 restart.
+        self.sweep_restart_hold = 9 if self.cgb and was_active and self.sweep_magnitude == 0 else 0
         # An active retrigger takes two machine cycles before the pending overflow check resumes.
         self.sweepchecktimer = pending_sweep_check + (8 if pending_sweep_check else 0)
         self.sweep_negate_used = False
@@ -916,6 +951,8 @@ class SweepChannel(ToneChannel):
         file.write(self.sweep_magnitude)
         file.write_64bit(self.sweeptimer)
         file.write_64bit(self.sweepchecktimer)
+        file.write_64bit(self.sweepcalctimer)
+        file.write_64bit(self.sweep_restart_hold)
         file.write(self.sweep_negate_used)
         file.write(self.sweepenable)
         file.write_64bit(self.shadow)
@@ -927,6 +964,8 @@ class SweepChannel(ToneChannel):
         self.sweep_magnitude = file.read()
         self.sweeptimer = file.read_64bit()
         self.sweepchecktimer = file.read_64bit()
+        self.sweepcalctimer = file.read_64bit() if state_version >= 27 else 0
+        self.sweep_restart_hold = file.read_64bit() if state_version >= 28 else 0
         self.sweep_negate_used = file.read()
         self.sweepenable = file.read()
         self.shadow = file.read_64bit()
@@ -1144,8 +1183,9 @@ class WaveChannel:
 class NoiseChannel:
     """Fourth sound channel--white noise generator"""
 
-    def __init__(self):
+    def __init__(self, cgb):
         self.DIVTABLE = (8, 16, 32, 48, 64, 80, 96, 112)
+        self.cgb = cgb
 
         # Register values (abbreviated to keep track of what's external)
         # Register 0 is unused in the noise channel
@@ -1168,6 +1208,10 @@ class NoiseChannel:
         self.shiftregister = 1  # Internal shift register value
         self.lfsrfeed = 0x4000  # Bit mask for inserting feedback in shift register
         self.volume = 0  # Current volume level, modulated by envelope
+        self.counter = 0
+        self.counter_countdown = 0
+        self.alignment = 0
+        self.counter_running = False
 
     def getreg(self, reg):
         if reg == 0:
@@ -1197,11 +1241,29 @@ class NoiseChannel:
             if self.envelope_volume == 0 and self.envelope_direction == 0:
                 self.enable = 0
         elif reg == 3:
+            old_clkdiv = self.clkdiv
+            old_bit = self.counter >> self.clkpow & 1
+            old_counter_countdown = self.counter_countdown
             self.clkpow = val >> 4 & 0x0F
             self.regwid = val >> 3 & 0x01
             self.clkdiv = val & 0x07
             self.period = self.DIVTABLE[self.clkdiv] << self.clkpow
             self.lfsrfeed = 0x4040 if self.regwid else 0x4000
+            if self.cgb and self.counter_running and old_clkdiv != self.clkdiv:
+                self.counter_countdown = self.DIVTABLE[self.clkdiv] >> 1
+                if self.clkdiv == 2 and self.clkpow == 1 and self.alignment == 0:
+                    if old_clkdiv == 0:
+                        self.counter_countdown += 2
+                    elif old_clkdiv == 1:
+                        self.counter_countdown = old_counter_countdown
+            if self.cgb and self.enable and not old_bit and self.counter >> self.clkpow & 1:
+                tap = self.shiftregister
+                self.shiftregister >>= 1
+                tap ^= self.shiftregister
+                if tap & 0x01:
+                    self.shiftregister |= self.lfsrfeed
+                else:
+                    self.shiftregister &= ~self.lfsrfeed
         elif reg == 4:
             self.length_enable = val >> 6 & 0x01
             if val & 0x80:
@@ -1210,6 +1272,30 @@ class NoiseChannel:
             logger.error("Attempt to write register %d in NoiseChannel", reg)
 
     def tick(self, cycles):
+        if self.cgb:
+            self.alignment = (self.alignment + (cycles >> 1)) & 0x03
+            if not self.counter_running:
+                return
+            counter_period = self.DIVTABLE[self.clkdiv] >> 1
+            counter_countdown = self.counter_countdown or counter_period
+            while cycles >= counter_countdown:
+                cycles -= counter_countdown
+                counter_countdown = counter_period
+                old_counter = self.counter
+                self.counter = (self.counter + 1) & 0x3FFF
+                mask = 1 << self.clkpow
+                if self.enable and not old_counter & mask and self.counter & mask:
+                    tap = self.shiftregister
+                    self.shiftregister >>= 1
+                    tap ^= self.shiftregister
+                    if tap & 0x01:
+                        self.shiftregister |= self.lfsrfeed
+                    else:
+                        self.shiftregister &= ~self.lfsrfeed
+            counter_countdown -= cycles
+            self.counter_countdown = counter_countdown
+            return
+
         self.periodtimer -= cycles
         while self.periodtimer <= 0:
             self.periodtimer += self.period
@@ -1285,12 +1371,28 @@ class NoiseChannel:
             return 0
 
     def trigger(self):
+        was_active = self.enable
         self.enable = 0x08
         self.lengthtimer = self.lengthtimer or 64
         self.periodtimer = self.period
         self.envelopetimer = self.envelope_pace
         self.volume = self.envelope_volume
         self.shiftregister = 0x7FFF
+        if self.cgb:
+            if not was_active:
+                self.counter = 0
+                self.counter_running = True
+                self.counter_countdown = self.clkdiv * 4 + 6
+                if self.alignment & 1:
+                    self.counter_countdown += 1 if self.clkdiv == 0 else -1
+                    if self.clkdiv and self.alignment & 2:
+                        self.counter_countdown -= 2
+                elif self.clkdiv:
+                    self.counter_countdown -= 2 if self.alignment & 2 else (4 if self.clkdiv > 1 else 0)
+                self.counter_countdown *= 2
+            else:
+                # The divider keeps running while an active trigger restarts the LFSR.
+                self.counter_countdown += (self.DIVTABLE[self.clkdiv] >> 1) + 2
         # TODO: tidy instead of double change variable
         if self.envelope_direction == 0 and self.envelope_volume == 0:
             self.enable = 0
@@ -1313,6 +1415,10 @@ class NoiseChannel:
         file.write_64bit(self.shiftregister)
         file.write_64bit(self.lfsrfeed)
         file.write_64bit(self.volume)
+        file.write_64bit(self.counter)
+        file.write_64bit(self.counter_countdown)
+        file.write_64bit(self.alignment)
+        file.write(self.counter_running)
 
     def load_state(self, file, state_version):
         self.init_length_timer = file.read()
@@ -1332,3 +1438,13 @@ class NoiseChannel:
         self.shiftregister = file.read_64bit()
         self.lfsrfeed = file.read_64bit()
         self.volume = file.read_64bit()
+        if state_version >= 26:
+            self.counter = file.read_64bit()
+            self.counter_countdown = file.read_64bit()
+            self.alignment = file.read_64bit()
+            self.counter_running = file.read()
+        else:
+            self.counter = 0
+            self.counter_countdown = self.DIVTABLE[self.clkdiv] >> 1
+            self.alignment = 0
+            self.counter_running = bool(self.enable)
