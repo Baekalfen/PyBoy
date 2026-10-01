@@ -18,6 +18,8 @@ cdef uint64_t SENDING, RECEIVING, PASSIVE
 cdef uint64_t TRANSPORT_MASTER, HANDSHAKE_COMPLETE, CLOCK_MASTER, HANDSHAKE_STARTED
 
 cdef class Serial:
+    cdef bint linked
+    cdef uint64_t link_epoch
     cdef uint64_t SB, SC
     cdef bint cgb_mode
     cdef int64_t _cycles_to_interrupt

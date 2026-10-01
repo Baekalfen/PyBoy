@@ -34,6 +34,7 @@ from pyboy.utils import (
     WindowEvent,
     cython_compiled,
     OPCODE_BRK,
+    MAX_CYCLES,
 )
 
 try:
@@ -59,6 +60,7 @@ class cython:
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
+from .core.serial import Serial
 
 logger = get_logger(__name__)
 
@@ -165,6 +167,8 @@ class PyBoy:
         """
 
         self.initialized = False
+        self._link_owner = None
+        self._link_frame_started = False
         self.no_input = no_input
 
         _log_level(log_level)
@@ -623,6 +627,9 @@ class PyBoy:
         if self.stopped:
             raise PyBoyInvalidOperationException("Emulator is stopped")
 
+        if self._link_owner is not None:
+            raise PyBoyInvalidOperationException("Use LinkCable.tick while attached to a cable")
+
         _count = count
         running = False
         t_start = time.perf_counter_ns()
@@ -643,6 +650,122 @@ class PyBoy:
             nsecs = t_post - t_start
             self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
         return running
+
+    # Internal endpoint interface. LinkCable is the public owner of these operations.
+    def _link_validate(self, attaching=False):
+        if attaching and self._link_owner is not None:
+            raise PyBoyInvalidOperationException("Endpoint already belongs to a LinkCable")
+        if self.stopped or self.paused or self.quitting:
+            raise PyBoyInvalidOperationException("Cable endpoint is stopped or paused")
+        if not self.no_input:
+            raise PyBoyInvalidOperationException("LinkCable requires no_input=True; use the button API for input")
+        if self._hooks or self.mb.breakpoints or self.mb.breakpoint_singlestep:
+            raise PyBoyInvalidOperationException("Hooks and debugger stepping are unsupported with LinkCable")
+        if type(self.mb.serial) is not Serial:
+            raise PyBoyInvalidOperationException("Endpoint already uses another serial transport")
+        for event in self.events:
+            self._link_validate_event(event)
+        for _, event in self.queued_input:
+            self._link_validate_event(event)
+
+    def _link_validate_event(self, event):
+        if not WindowEvent.PRESS_ARROW_UP <= int(event) <= WindowEvent.RELEASE_BUTTON_START:
+            raise PyBoyInvalidOperationException("Only joypad events are supported while attached to a cable")
+
+    def _link_attach(self, owner):
+        self._link_validate()
+        if self._link_owner is not None:
+            raise PyBoyInvalidOperationException("Endpoint already belongs to a LinkCable")
+        self._link_owner = owner
+        self._link_frame_started = False
+        self.mb.serial.linked = True
+        self.mb.serial.link_epoch = 0
+        self.mb.serial.set_SC(self.mb.serial.SC)
+
+    def _link_detach(self, owner):
+        if self._link_owner is not owner:
+            raise PyBoyInvalidOperationException("Wrong cable owner")
+        self.mb.serial.linked = False
+        self.mb.serial.set_SC(self.mb.serial.SC & 0x7F)
+        self.mb.serial.set_SB(0xFF)
+        self.mb.serial.clock_target = MAX_CYCLES
+        self.mb.serial._cycles_to_interrupt = MAX_CYCLES
+        self._link_owner = None
+        self._link_frame_started = False
+
+    def _link_identity(self):
+        import hashlib
+
+        return (hashlib.sha256(bytes(self.mb.cartridge.rombanks)).hexdigest(), self.mb.cgb, self.mb.cgb_mode)
+
+    def _link_step(self, owner, render, sound):
+        if self._link_owner is not owner or self.stopped or self.paused or self.quitting:
+            raise PyBoyInvalidOperationException("Cable endpoint is not runnable")
+        if self.events:
+            for event in self.events:
+                self._link_validate_event(event)
+            self._handle_events(self.events)
+            self.events = []
+        if not self._link_frame_started:
+            self.mb.lcd.frame_done = False
+            self.mb.lcd.disable_renderer = not render
+            self.mb.sound.disable_sampling = not sound
+            self.mb.sound.clear_buffer()
+            self.gameshark.tick()
+            self._link_frame_started = True
+        before = self.mb.cpu.cycles
+        speed = 2 if self.mb.double_speed else 1
+        with cython.nogil:
+            self.mb.tick(True)
+        if self.mb.lcd.frame_done:
+            self.frame_count += 1
+            self._post_handle_events()
+            self._post_tick()
+            self._link_frame_started = False
+        return (self.mb.cpu.cycles - before) // speed
+
+    def _link_port(self):
+        return (self.mb.serial.SB, self.mb.serial.SC, self.mb.serial.link_epoch, self.mb.double_speed, self.mb.cgb_mode)
+
+    def _link_edge(self, owner, incoming, complete):
+        if self._link_owner is not owner:
+            raise PyBoyInvalidOperationException("Wrong cable owner")
+        self.mb.serial.SB = ((self.mb.serial.SB << 1) | incoming) & 0xFF
+        if complete:
+            self.mb.serial.SC &= 0x7F
+            self.mb.serial.transfer_enabled = 0
+            self.mb.cpu.set_interruptflag(8)
+
+    def _link_snapshot(self, owner):
+        import io
+
+        if self._link_owner is not owner:
+            raise PyBoyInvalidOperationException("Wrong cable owner")
+        stream = io.BytesIO()
+        self.mb.save_state(IntIOWrapper(stream))
+        runtime = {
+            "frame_count": self.frame_count,
+            "frame_started": self._link_frame_started,
+            "events": [int(event) for event in self.events],
+            "queued_input": [(frame, int(event)) for frame, event in self.queued_input],
+            "epoch": self.mb.serial.link_epoch,
+        }
+        return stream.getvalue(), runtime
+
+    def _link_restore(self, owner, state, runtime):
+        import io
+
+        if self._link_owner is not owner:
+            raise PyBoyInvalidOperationException("Wrong cable owner")
+        self.mb.load_state(IntIOWrapper(io.BytesIO(state)))
+        self.frame_count = runtime["frame_count"]
+        self._link_frame_started = runtime["frame_started"]
+        self.events = [WindowEvent(event) for event in runtime["events"]]
+        self.queued_input = [(frame, event) for frame, event in runtime["queued_input"]]
+        heapq.heapify(self.queued_input)
+        self.mb.serial.link_epoch = runtime["epoch"]
+        self.mb.serial.linked = True
+        self._plugin_manager.post_tick()
 
     def _cycle_palette(self):
         """Cycles to the next DMG palette."""
@@ -988,6 +1111,8 @@ class PyBoy:
             delay (int): 0 for immediately, number of frames to delay the input
         """
 
+        if self._link_owner is not None:
+            self._link_validate_event(event)
         if delay:
             if not (delay > 0):
                 raise PyBoyInvalidInputException("Only positive integers allowed")
@@ -1029,6 +1154,8 @@ class PyBoy:
         if file_like_object.__class__.__name__ == "TextIOWrapper":
             raise PyBoyInvalidInputException("Text file not allowed. Did you specify open(..., 'wb')?")
 
+        if self._link_owner is not None:
+            raise PyBoyInvalidOperationException("Use LinkCable.save_state to preserve both endpoints")
         self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
@@ -1059,6 +1186,8 @@ class PyBoy:
         if file_like_object.__class__.__name__ == "TextIOWrapper":
             raise PyBoyInvalidInputException("Text file not allowed. Did you specify open(..., 'rb')?")
 
+        if self._link_owner is not None:
+            raise PyBoyInvalidOperationException("Use LinkCable.load_state to restore both endpoints")
         self.mb.load_state(IntIOWrapper(file_like_object))
 
     def game_area_dimensions(self, x, y, width, height, follow_scrolling=True):
@@ -1411,6 +1540,8 @@ class PyBoy:
         if bank is None and isinstance(addr, str):
             bank, addr = self._lookup_symbol(addr)
 
+        if self._link_owner is not None:
+            raise PyBoyInvalidOperationException("Hooks are unsupported while attached to a cable")
         opcode = self.memory[bank, addr]
         if opcode == OPCODE_BRK:
             raise ValueError("Hook already registered for this bank and address.")

@@ -10,6 +10,8 @@ __pdoc__ = {
     "conftest": False,
 }
 
-__all__ = ["PyBoy", "PyBoyMemoryView", "PyBoyRegisterFile"]
+__all__ = ["LinkCable", "PyBoy", "PyBoyMemoryView", "PyBoyRegisterFile"]
 
 from .pyboy import PyBoy, PyBoyMemoryView, PyBoyRegisterFile
+
+from .link import LinkCable

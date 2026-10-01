@@ -41,6 +41,8 @@ cdef class PyBoyMemoryView:
 
 cdef class PyBoy:
     cdef Motherboard mb
+    cdef object _link_owner
+    cdef bint _link_frame_started
     cdef readonly PluginManager _plugin_manager
     cdef readonly uint64_t frame_count
     cdef readonly str gamerom

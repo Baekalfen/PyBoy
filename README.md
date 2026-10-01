@@ -115,6 +115,51 @@ pil_image.save('screenshot.png')
 
 The [Wiki](https://github.com/Baekalfen/PyBoy/wiki) shows how to interface with PyBoy from your own project.
 
+Experimental same-process link cable
+====================================
+
+`LinkCable` coordinates two headless instances and saves/restores both machines,
+partial serial transfers and pending button events together. See the
+[executable example](extras/examples/link_cable.py).
+
+```python
+import io
+from pyboy import LinkCable, PyBoy
+
+left = PyBoy("left.gb", window="null", no_input=True)
+right = PyBoy("right.gb", window="null", no_input=True)
+left.set_emulation_speed(0)
+right.set_emulation_speed(0)
+try:
+    with LinkCable(left, right) as cable:
+        left.button("a")
+        cable.tick()  # Both endpoints advance under one owner.
+        state = io.BytesIO()
+        cable.save_state(state)
+        cable.tick(60)
+        state.seek(0)
+        cable.load_state(state)
+finally:
+    left.stop(save=False)
+    right.stop(save=False)
+```
+
+Call the cable's `tick`, `save_state` and `load_state` while attached; the
+corresponding individual operations are rejected. `halt()` can interrupt
+execution from another thread; `resume()` releases the hold. Other operations,
+including direct endpoint reads and input, belong to one caller. `disconnect()`
+unplugs the wire while retaining joint ownership. `close()` abandons an active
+transfer and returns the endpoints to ordinary standalone operation.
+
+This experimental API supports normal serial, including CPU double speed. It
+services cable edges between instructions; fast CGB serial and debugger hooks
+are unsupported. It does not use or change the shared-memory serial transport.
+Pair states require matching ordered ROMs, hardware modes and state versions;
+they do not replace application-level atomic file publication or agent memory.
+RTC follows the emulator's existing policy. Rendering/audio use each endpoint's
+ordinary buffers; collect them once per frame. The API does not provide a viewer
+or automatically initiate any game interaction.
+
 Performance
 ===========
 

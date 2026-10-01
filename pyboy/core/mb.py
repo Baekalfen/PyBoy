@@ -357,7 +357,7 @@ class Motherboard:
     # Coordinator
     #
 
-    def tick(self):
+    def tick(self, single_step=False):
         while not self.lcd.frame_done:
             if (
                 self.cgb_mode
@@ -392,7 +392,7 @@ class Motherboard:
                         mode0_cycles,
                     ),
                 )
-                if self.breakpoint_singlestep:
+                if self.breakpoint_singlestep or single_step:
                     cycles_target = 4
                 self.cpu.tick(cycles_target)
 
@@ -413,7 +413,7 @@ class Motherboard:
             if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
 
-            if self.breakpoint_singlestep:
+            if self.breakpoint_singlestep or single_step:
                 break
 
         return self.breakpoint_singlestep

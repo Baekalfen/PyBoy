@@ -38,6 +38,8 @@ CYCLES_8192HZ = 128
 
 class Serial:
     def __init__(self, cgb_mode):
+        self.linked = False
+        self.link_epoch = 0
         self.cgb_mode = cgb_mode  # Indicates if we are CGB hardware, running in CGB or DMG mode
         self.SB = 0xFF  # Always 0xFF for a disconnected link cable
         if self.cgb_mode:
@@ -52,8 +54,7 @@ class Serial:
         self.clock_target = MAX_CYCLES
 
     def set_SB(self, value):
-        # Always 0xFF when cable is disconnected. Connecting is not implemented yet.
-        self.SB = 0xFF
+        self.SB = value if self.linked else 0xFF
 
     def set_SC(self, value):  # cgb, double_speed
         if self.cgb_mode:
@@ -61,6 +62,12 @@ class Serial:
         else:
             self.SC = value | 0b01111110  # Mask out read-only bits
         self.transfer_enabled = self.SC & 0x80
+        if self.linked:
+            self.link_epoch += 1
+            self.internal_clock = self.SC & 1
+            self.clock_target = MAX_CYCLES
+            self._cycles_to_interrupt = MAX_CYCLES
+            return
         # TODO:
         # if cgb and (self.SC & 0b10): # High speed transfer
         #     self.double_speed = ...
@@ -82,7 +89,7 @@ class Serial:
         self.clock += cycles
 
         interrupt = False
-        if self.transfer_enabled and self.clock >= self.clock_target:
+        if not self.linked and self.transfer_enabled and self.clock >= self.clock_target:
             # Clear bit 7 (transfer in progress). Games poll this bit to
             # detect transfer completion.
             self.SC &= 0b01111111

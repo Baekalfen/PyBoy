@@ -71,7 +71,7 @@ cdef class Motherboard:
         mode0_cycles=int64_t,
         breakpoint_index=int64_t,
     )
-    cdef bint tick(self) noexcept nogil
+    cdef bint tick(self, bint single_step=*) noexcept nogil
 
     cdef void switch_speed(self) noexcept nogil
 
