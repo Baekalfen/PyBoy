@@ -193,6 +193,7 @@ class Sound:
         old_lengthtimer = 0
         length_clocked = False
         frame_sequencer_odd = self.div_apu % 2 == 1
+        timer_epoch = 0
 
         if channel == 0:
             old_length_enable = self.sweepchannel.length_enable
@@ -278,6 +279,11 @@ class Sound:
                 self._tick_channel_length(channel)
             elif length_clocked and old_lengthtimer == 1 and (value & 0x80):
                 self._tick_channel_length(channel)
+
+        if self.cgb and channel == 0 and reg == 4 and value & 0x80:
+            timer_epoch = double_to_uint64_ceil(self.cycles_target_512Hz - CYCLES_512HZ)
+            timer_phase = (self.cycles + self.sweepchannel.periodtimer - timer_epoch) % 4
+            self.sweepchannel.periodtimer += (4 - timer_phase) % 4
 
     def _set_channel_length_enable(self, channel, enabled):
         if channel == 0:

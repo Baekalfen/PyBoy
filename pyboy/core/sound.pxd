@@ -73,6 +73,8 @@ cdef class Sound:
         old_lengthtimer=int64_t,
         length_clocked=bint,
         frame_sequencer_odd=bint,
+        timer_epoch=int64_t,
+        timer_phase=int64_t,
     )
     cdef void _set_channel(self, uint8_t, uint8_t, uint8_t, bint) noexcept nogil
     cdef void _set_channel_length_enable(self, uint8_t, bint) noexcept nogil
