@@ -142,6 +142,8 @@ cdef class ToneChannel:
 
 @cython.final
 cdef class SweepChannel(ToneChannel):
+    cdef bint cgb
+
     # Register Values
     cdef uint8_t sweep_pace # Register 0 bits 6-4: Sweep period
     cdef uint8_t sweep_direction # Register 0 bit 3: Sweep direction (0: increase)
@@ -150,6 +152,8 @@ cdef class SweepChannel(ToneChannel):
     # Internal Values
     cdef int64_t sweeptimer # Sweep timer, counts down to shift pitch
     cdef int64_t sweepchecktimer
+    cdef int64_t sweepcalctimer
+    cdef int64_t sweep_restart_hold
     cdef bint sweep_negate_used
     cdef bint sweepenable # Internal sweep enable flag
     cdef int64_t shadow # Shadow copy of period register for ignoring writes to sndper
@@ -200,6 +204,7 @@ cdef class WaveChannel:
 @cython.final
 cdef class NoiseChannel:
     cdef uint8_t[8] DIVTABLE
+    cdef bint cgb
 
     # Register values (abbreviated to keep track of what's external)
     # Register 0 is unused in the noise channel
@@ -222,6 +227,10 @@ cdef class NoiseChannel:
     cdef int64_t shiftregister # Internal shift register value
     cdef int64_t lfsrfeed # Bit mask for inserting feedback in shift register
     cdef int64_t volume # Current volume level, modulated by envelope
+    cdef int64_t counter
+    cdef int64_t counter_countdown
+    cdef int64_t alignment
+    cdef bint counter_running
 
     cdef uint8_t getreg(self, uint8_t) noexcept nogil
     cdef void setreg(self, uint8_t, uint8_t) noexcept nogil
