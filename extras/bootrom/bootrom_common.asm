@@ -92,7 +92,10 @@ main:
 
     xor A
     ld D, A         ; Reset D
+; Preserve DMG boot timing; the CGB path has already cleared B in .four_range.
+IF !DEF(BOOTROM_CGB)
     ld B, A         ; Reset B
+ENDC
 .wait_vblank
     ; Test vblank
     ldh A, [$FF00+$44]
