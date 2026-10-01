@@ -30,4 +30,5 @@ tile
 tilemap
 constants
 utils
+../wiki/migrating-from-v1-to-v2
 ```

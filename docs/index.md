@@ -11,16 +11,20 @@ testing, and AI experiments.
 api/index
 plugins/index
 wiki/development/index
-wiki/index
+wiki/examples/index
+wiki/test-results
 ```
 
 ## Installation
 
-Install PyBoy from PyPI:
+Install PyBoy from PyPI with:
 
 ```sh
 pip install pyboy
 ```
+
+See the [platform-specific installation instructions](wiki/development/index)
+for macOS, Linux, and Windows.
 
 ## Command line
 
@@ -72,6 +76,5 @@ Use the [API reference](api/index) for the supported Python interface.
 ## Further resources
 
 - [PyBoy on GitHub](https://github.com/Baekalfen/PyBoy)
-- [Project wiki](wiki/index)
 - [Community Discord](https://discord.gg/wUbag3KNqQ)
 - [Pan Docs](https://gbdev.io/pandocs/)

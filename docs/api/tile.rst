@@ -18,5 +18,4 @@ emulated memory and can change after each :meth:`tick <pyboy.PyBoy.tick>`.
 
 .. autoclass:: pyboy.api.tile.Tile
    :members:
-   :special-members: __init__
    :show-inheritance:

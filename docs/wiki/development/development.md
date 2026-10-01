@@ -1,9 +1,9 @@
 # Development
 
 This page describes PyBoy's core structure, execution flow, plugins, and test
-suites. For installing the build requirements, see [Getting
-started](getting-started). For preparing a contribution, see
-[Contributing](contributing).
+suites. For development dependencies, see [Getting started](getting-started);
+for source-build instructions, see [Install and build](installation).
+For preparing a contribution, see [Contributing](contributing).
 
 ## Running PyBoy during development
 
@@ -22,6 +22,8 @@ python3 -m pyboy path/to/rom.gb --debug
 Debug mode opens diagnostic views for inspecting emulator state and graphics.
 Breakpoints can also be supplied at startup with the `--breakpoints` option.
 
+![Debug view example](../assets/DebugExample2.png)
+
 Debug mode and debug logging are separate features. To enable verbose logging,
 use:
 
@@ -35,8 +37,12 @@ A typical development loop is:
 change code -> make build -> run a ROM -> inspect the debugger or logs
 ```
 
-See [Experimental and optional features](../experimental-and-optional-features)
-for additional runtime options.
+For changes to Cython declarations, or if generated files may be stale, use
+`make clean && make` to force a fresh build. See
+[Install and build](installation) for platform-specific build requirements.
+
+See [Plugins and game wrappers](../../plugins/index) for optional windows,
+screen recording, and rewind features.
 
 ## Core architecture
 
@@ -92,13 +98,12 @@ The simplified flow is:
 PyBoy.tick()
   -> process input and plugin events
   -> MB.tick()
-      -> CPU.tick(...)
-      -> timer.tick(...)
-      -> LCD.tick(...)
-      -> sound.tick(...)
+      -> cycles = CPU.tick(target)
+      -> timer.tick(cycles)
+      -> LCD.tick(cycles)
+      -> sound.tick(cycles)
       -> handle interrupts and DMA
   -> run plugin post_tick() hooks
-  -> render and limit the frame
 ```
 
 The motherboard is the synchronization point. The CPU, timer, LCD, sound, and
@@ -167,10 +172,71 @@ before emulation and receive
 [`post_tick()`](https://github.com/Baekalfen/PyBoy/blob/master/pyboy/plugins/base_plugin.py)
 callbacks after the motherboard has advanced.
 
+## Code generators
+
+Some parts of PyBoy are generated from a compact source description rather
+than maintained line by line. Change the generator inputs and logic, then
+regenerate the outputs; do not hand-edit generated sections.
+
+### CPU opcode generator
+
+`pyboy/core/opcodes_gen.py` parses the Game Boy opcode table published by
+[Pastraiser](http://pastraiser.com/cpu/gameboy/gameboy_opcodes.html) and
+generates the opcode handlers and Cython declarations used by the CPU:
+`pyboy/core/opcodes.py` and `pyboy/core/opcodes.pxd`. The generated files
+include the opcode dispatch function, instruction lengths, and command names.
+The generator also contains PyBoy's code-generation logic for instruction
+semantics and timing.
+
+Run it from the directory where its output files belong:
+
+```sh
+cd pyboy/core
+python3 opcodes_gen.py
+```
+
+The generator downloads the opcode table, so it needs network access. Review
+both generated files after running it; changes to instruction behavior belong
+in `opcodes_gen.py`, not in the generated files.
+
+### Plugin manager generator
+
+`pyboy/plugins/manager_gen.py` builds the plugin manager's repeated
+registrations from the plugin lists in that file. It fills marked sections in
+`manager.py`, `manager.pxd`, `plugins/__init__.py`, and `pyboy.py`, and
+generates the plugin reference index and game-wrapper API pages under
+`docs/plugins/`.
+
+Run it from the plugin directory so its relative input and output paths
+resolve correctly:
+
+```sh
+cd pyboy/plugins
+python3 manager_gen.py
+```
+
+When adding a plugin or game wrapper, update the appropriate list in
+`manager_gen.py` and regenerate the outputs. Add an entry to `wrapper_titles`
+when a game wrapper needs a display name that differs from the generator's
+default. Plugin command-line options are documented from each plugin's
+`argv` metadata, so give options helpful descriptions there.
+
+The `make docs` target runs `manager_gen.py` before building Sphinx pages.
+It does not run `opcodes_gen.py`; regenerate opcode files explicitly when
+changing the opcode generator.
+
+### After regeneration
+
+Review and include the generated-file changes alongside the source changes.
+If regenerated Cython declarations or sources changed, rebuild with
+`make clean && make`, then run the relevant tests. Run `make docs` to verify
+the documentation output.
+
 ## Running the test suites
 
 PyBoy has separate tests for the compiled core and for the pure-Python source.
-Run commands from the root of the repository.
+Install the test dependencies and run these commands from the repository root;
+see [Getting started](getting-started) for setup instructions.
 
 ### Compiled core tests: `tests/`
 
@@ -210,13 +276,21 @@ python3 -m pytest pyboy/ docs/ -n auto --dist=loadscope -v
 python3 -m pytest tests/ -n auto -v
 ```
 
+CI also tests the pure-Python implementation on PyPy. If PyPy is available,
+run the doctests and emulator tests there as well:
+
+```sh
+pypy3 -m pytest pyboy/ docs/ -v
+pypy3 -m pytest tests/ -n auto -v
+```
+
 ### Wiki Markdown examples
 
 The test collector in `docs/conftest.py` collects Python examples from Wiki
 Markdown pages under `docs/wiki/`. RST pages are not collected by this hook.
-Run the examples after building PyBoy:
+The combined `pyboy/ docs/` command above includes these examples. To run only
+the Wiki examples while iterating:
 
 ```sh
-make build
-python3 -m pytest docs/ -n auto --dist=loadscope -v
+python3 -m pytest docs/wiki/examples/ -n auto --dist=loadscope -v
 ```

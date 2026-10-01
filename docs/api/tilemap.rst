@@ -18,5 +18,4 @@ map, or enable tile objects when the corresponding
 
 .. autoclass:: pyboy.api.tilemap.TileMap
    :members:
-   :special-members: __init__
    :show-inheritance:
