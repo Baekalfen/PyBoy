@@ -622,10 +622,19 @@ class PyBoy:
         -------
         bool:
             False if emulation has ended; otherwise True.
+        Raises:
+            PyBoyInvalidInputException: If `count` is not a non-negative integer.
         """
 
         if self.stopped:
             raise PyBoyInvalidOperationException("Emulator is stopped")
+
+        try:
+            count = index(count)
+        except TypeError:
+            raise PyBoyInvalidInputException("count must be a non-negative integer") from None
+        if count < 0:
+            raise PyBoyInvalidInputException("count must be a non-negative integer")
 
         _count = count
         running = False
