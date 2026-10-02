@@ -16,7 +16,7 @@ import pytest
 from pyboy import PyBoy
 from pyboy import __main__ as main
 from pyboy.api.tile import Tile
-from pyboy.utils import PyBoyInvalidOperationException, WindowEvent, cython_compiled
+from pyboy.utils import PyBoyInvalidOperationException, WindowEvent, cython_compiled, PyBoyInvalidInputException
 from pytest_lazy_fixtures import lf
 
 try:
@@ -42,6 +42,25 @@ def patch_cartridge(f, mbc, ram):
     f.write(bytes([x]))
 
     f.seek(0, os.SEEK_END)
+
+
+def test_tick_rejects_negative_count(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    with pytest.raises(PyBoyInvalidInputException, match="non-negative integer"):
+        pyboy.tick(-1)
+
+    pyboy.stop(save=False)
+
+
+def test_game_area_dimensions_honors_follow_scrolling(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.game_area_dimensions(2, 2, 10, 18, follow_scrolling=False)
+
+    assert pyboy.game_wrapper.shape == (10, 18)
+    assert pyboy.game_wrapper.game_area_follow_scxy is False
+
+    pyboy.stop(save=False)
 
 
 @pytest.mark.parametrize(
