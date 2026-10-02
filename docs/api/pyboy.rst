@@ -69,4 +69,5 @@ API.
 
 .. autoclass:: pyboy.PyBoy
    :members:
+   :special-members: __init__
    :show-inheritance:

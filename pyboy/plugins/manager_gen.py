@@ -273,12 +273,12 @@ if __name__ == "__main__":
             if line is None:
                 break
 
-            # Find place to inject
-            if line.strip().startswith("## Plugin kwargs:"):
-                lines = [line.strip() + "\n"]
-                indentation = " " * line.index("## Plugin kwargs:")
-
-                skip_lines(line_iter, "Other keyword arguments may exist")
+            # Find place to inject plugin options in the constructor Args section.
+            if " [plugin: " in line:
+                continue
+            if line.strip().startswith(".. plugin kwargs end"):
+                indentation = " " * (line.index(".. plugin kwargs end") + 4)
+                lines = []
 
                 for p in sorted(list(set(plugins) - set(game_wrappers))):
                     p_name = to_snake_case(p)
@@ -303,14 +303,11 @@ if __name__ == "__main__":
                                 if not _help:
                                     print("Missing documentation", p_name, argv)
                                     continue
-                                lines.append(f"* {name} ({_type}): {_help} [plugin: {p}]\n")
+                                lines.append(f"{name} ({_type}): {_help} [plugin: {p}]\n")
                     del spec, module
 
-                lines.append(
-                    "Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.\n"
-                )
                 out_lines.extend([indentation + l for l in lines])
-                out_lines.insert(-1, "\n")  # Avoids whitespace
+                out_lines.append(line)
             else:
                 out_lines.append(line)
 

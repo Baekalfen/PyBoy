@@ -136,33 +136,39 @@ class PyBoy:
         ```
 
         Args:
-            gamerom (str or file-like object): Filepath to a game-ROM for Game Boy or Game Boy Color.
+            gamerom (str, os.PathLike, or binary file-like object): Path to a Game Boy or Game Boy Color ROM, or an
+                already-open binary file.
+            ram_file (binary file-like object or None): Existing cartridge RAM data to load. When omitted for a
+                path-based ROM, PyBoy looks for `<gamerom>.ram`; pass a destination to `stop` to save to a stream.
+            rtc_file (binary file-like object or None): Existing cartridge RTC data to load. When omitted for a
+                path-based ROM, PyBoy looks for `<gamerom>.rtc`; pass a destination to `stop` to save to a stream.
+            window (str): Window backend: "SDL2", "OpenGL", "GLFW", or "null". "headless" and "dummy" are aliases
+                for "null".
+            scale (int): Window scale factor; it does not affect API image dimensions.
+            symbols (str or os.PathLike or None): Path to a `.sym` or `.map` symbol file.
+            bootrom (str or os.PathLike or None): Path to a boot ROM to use instead of the built-in boot ROM.
+            sound_volume (int): Sound volume from 0 to 100. Defaults to 100.
+            sound_emulated (bool): Whether to emulate sound. Disabling it also disables sound sampling.
+            sound_sample_rate (int or None): Positive sound sample rate in Hz. Defaults to 48,000 Hz.
+            cgb (bool or None): Force Game Boy Color mode (`True`) or original Game Boy mode (`False`); `None`
+                auto-detects the mode from the ROM and boot ROM.
+            gameshark (str or None): Comma-separated GameShark codes to apply at startup.
+            no_input (bool): Disable user input, mainly for autonomous use.
+            log_level (str): One of "CRITICAL", "ERROR", "WARNING", "INFO", or "DEBUG".
+            color_palette (sequence[int]): Four 24-bit RGB colors for the DMG palette.
+            cgb_color_palette (sequence[sequence[int]]): Three palettes of four 24-bit RGB colors, in background,
+                object palette 0, and object palette 1 order.
+            title_status (bool): Show performance status in the window title.
+            serial_shared_memory (object or None): Shared-memory link buffer used to connect two emulators. The
+                object must provide `read`, `write`, and `synchronize` methods.
+            serial_interrupt_based (bool): Use interrupt-based serial transfer when `serial_shared_memory` is set.
+            autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
+            breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
+            record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
+            rewind (bool): Enable rewind function [plugin: Rewind]
+        .. plugin kwargs end
 
-        Kwargs:
-            * ram_file (file-like object):
-            * rtc_file (file-like object):
-            * window (str): "SDL2", "OpenGL", "GLFW", or "null"
-            * scale (int): Window scale factor. Doesn't apply to API.
-            * symbols (str): Filepath to a .sym file to use. If unsure, specify `None`.
-            * bootrom (str): Filepath to a boot-ROM to use. If unsure, specify `None`.
-            * sound_volume (int): Set sound volume in percent (0-100).
-            * sound_emulated (bool): Disables sound emulation (not just muted!).
-            * sound_sample_rate (int): Set sound sample rate. Has to be divisible in 60.
-            * cgb (bool): Forcing Game Boy Color mode.
-            * gameshark (str): GameShark codes to apply.
-            * no_input (bool): Disable all user-input (mostly for autonomous testing)
-            * log_level (str): "CRITICAL", "ERROR", "WARNING", "INFO" or "DEBUG"
-            * color_palette (tuple): Specify the color palette to use for rendering.
-            * cgb_color_palette (list of tuple): Specify the color palette to use for rendering in CGB-mode for non-color games.
-            * title_status (bool): Enable performance status in window title
-
-        ## Plugin kwargs:
-        * autopause (bool): Enable auto-pausing when window looses focus [plugin: AutoPause]
-        * breakpoints (str): Add breakpoints on start-up (internal use) [plugin: DebugPrompt]
-        * record_input (bool): Record user input and save to a file (internal use) [plugin: RecordReplay]
-        * rewind (bool): Enable rewind function [plugin: Rewind]
-
-        Other keyword arguments may exist for plugins that are not listed here. They can be viewed by running `pyboy --help` in the terminal.
+        Plugin-specific options are listed here and can be shown with `pyboy --help`.
         """
 
         self.initialized = False
