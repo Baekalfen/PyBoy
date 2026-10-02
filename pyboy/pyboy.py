@@ -10,6 +10,7 @@ import heapq
 import os
 import re
 import time
+from operator import index
 from pathlib import Path
 
 import numpy as np
@@ -121,8 +122,8 @@ class PyBoy:
 
         Only the `gamerom` argument is required.
 
-        If `gamerom` is a filepath and `ram_file` and `rtc_file` are not provided, filepaths will be determined
-        automatically next to the game ROM. If this is not wanted, provide a file-like object as argument.
+        If `gamerom` is a filepath and `ram_file` or `rtc_file` is not provided, PyBoy looks for matching `.ram` and
+        `.rtc` files next to the game ROM. If this is not wanted, provide file-like objects explicitly.
 
         Example:
         ```python
@@ -312,7 +313,7 @@ class PyBoy:
         # API attributes
         self.screen = Screen(self.mb)
         """
-        Use this method to get a `pyboy.api.screen.Screen` object. This can be used to get the screen buffer in
+        This attribute provides a `pyboy.api.screen.Screen` object for reading the screen buffer in
         a variety of formats.
 
         It's also here you can find the screen position (SCX, SCY, WX, WY) for each scan line in the screen buffer. See
@@ -337,7 +338,7 @@ class PyBoy:
         """
         self.sound = Sound(self.mb)
         """
-        Use this method to get a `pyboy.api.sound.Sound` object. This can be used to get the sound buffer of the
+        This attribute provides a `pyboy.api.sound.Sound` object for reading the sound buffer of the
         latest screen frame (see `PyBoy.screen`).
 
         Example:
@@ -360,7 +361,12 @@ class PyBoy:
 
         self.rumble = Rumble(self.mb)
         """
-        Use this method to get a `pyboy.api.rumble.Rumble` object. This can be used to get the current rumble pack state.
+        This attribute provides a `pyboy.api.rumble.Rumble` object for reading the current cartridge rumble state.
+
+        Returns
+        -------
+        `pyboy.api.rumble.Rumble`:
+            Object exposing cartridge rumble support and state.
         """
         self.memory = PyBoyMemoryView(self.mb)
         """
@@ -423,8 +429,8 @@ class PyBoy:
 
         self.tilemap_background = TileMap(self, self.mb, "BACKGROUND")
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _background_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This attribute provides the
+        background tile map. The game chooses whether it uses the low or the high tile map.
 
         Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
 
@@ -447,8 +453,8 @@ class PyBoy:
 
         self.tilemap_window = TileMap(self, self.mb, "WINDOW")
         """
-        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This method will provide one
-        for the _window_ tiles. The game chooses whether it wants to use the low or the high tilemap.
+        The Game Boy uses two tile maps at the same time to draw graphics on the screen. This attribute provides the
+        window tile map. The game chooses whether it uses the low or the high tile map.
 
         Read more details about it, in the [Pan Docs](https://gbdev.io/pandocs/Tile_Maps.html).
 
@@ -471,8 +477,8 @@ class PyBoy:
 
         self.cartridge_title = self.mb.cartridge.gamename
         """
-        The title stored on the currently loaded cartridge ROM. The title is all upper-case ASCII and may
-        have been truncated to 11 characters.
+        The title bytes read from the cartridge header up to the first NUL. The header field overlaps other metadata;
+        PyBoy reads up to 14 bytes for CGB-compatible cartridges or 15 bytes otherwise.
 
         Example:
         ```python
@@ -579,9 +585,8 @@ class PyBoy:
         """
         Progresses the emulator ahead by `count` frame(s).
 
-        To run the emulator in real-time, it will need to process 60 frames a second (for example in a while-loop).
-        This function will block for roughly 16,67ms per frame, to not run faster than real-time, unless you specify
-        otherwise with the `PyBoy.set_emulation_speed` method.
+        To run the emulator in real time, it needs to process about 60 frames per second. This function blocks for
+        roughly 16.7 ms per frame unless you change the limit with `PyBoy.set_emulation_speed`.
 
         If you need finer control than 1 frame, have a look at `PyBoy.hook_register` to inject code at a specific point
         in the game.
@@ -589,11 +594,12 @@ class PyBoy:
         Setting `render` to `True` will make PyBoy render the screen for *the last frame* of this tick. This can be seen
         as a type of "frameskipping" optimization.
 
-        For AI training, it's adviced to use as high a count as practical, as it will otherwise reduce performance
+        For AI training, it is advisable to use as high a count as practical, as it will otherwise reduce performance
         substantially. While setting `render` to `False`, you can still access the `PyBoy.game_area` to get a simpler
         representation of the game.
 
         If `render` was enabled, use `pyboy.api.screen.Screen` to get a NumPy buffer or raw memory buffer.
+        Set `sound` to `False` to skip sampling audio for the final frame in this call.
 
         Example:
         ```python
@@ -612,12 +618,13 @@ class PyBoy:
         ```
 
         Args:
-            count (int): Number of ticks to process
-            render (bool): Whether to render an image for this tick
+            count (int): Non-negative number of frames to process. Defaults to 1.
+            render (bool): Whether to render the final frame. Defaults to True.
+            sound (bool): Whether to sample audio for the final frame. Defaults to True.
         Returns
         -------
-        (True or False):
-            False if emulation has ended otherwise True
+        bool:
+            False if emulation has ended; otherwise True.
         """
 
         if self.stopped:
@@ -763,6 +770,10 @@ class PyBoy:
         """
         Gently stops the emulator and all sub-modules.
 
+        If `save` is True, battery-backed cartridge RAM and RTC data are written to the supplied file-like objects, or
+        to `.ram` and `.rtc` files next to a path-based ROM when no objects are supplied.
+        For a ROM opened from a file-like object, provide `ram_file` and `rtc_file` destinations as needed.
+
         Example:
         ```python
         >>> pyboy.stop() # Stop emulator and save game progress (cartridge RAM)
@@ -773,10 +784,9 @@ class PyBoy:
         ```
 
         Args:
-            save (bool): Specify whether to save the game upon stopping. It will always be saved in a file next to the
-                provided game-ROM.
-            ram_file (file-like object): A bytes buffer to write the RAM (save) data to
-            rtc_file (file-like object): A bytes buffer to write the RTC (real-time clock) data to, if present on cartridge
+            save (bool): Whether to save battery-backed cartridge data while stopping. Defaults to True.
+            ram_file (binary file-like object or None): Destination for cartridge RAM data.
+            rtc_file (binary file-like object or None): Destination for RTC data, if the cartridge has an RTC.
         """
         if self.initialized and not self.stopped:
             logger.debug("###########################")
@@ -984,8 +994,8 @@ class PyBoy:
         ```
 
         Args:
-            event (pyboy.WindowEvent): The event to send
-            delay (int): 0 for immediately, number of frames to delay the input
+            event (int): An event constant from `pyboy.utils.WindowEvent`.
+            delay (int): 0 to queue the event immediately, or a positive number of frames to delay it. Defaults to 0.
         """
 
         if delay:
@@ -1076,13 +1086,13 @@ class PyBoy:
         ```
 
         Args:
-            x (int): Offset from top-left corner of the screen
-            y (int): Offset from top-left corner of the screen
-            width (int): Width of game area
-            height (int): Height of game area
-            follow_scrolling (bool): Whether to follow the scrolling of [SCX and SCY](https://gbdev.io/pandocs/Scrolling.html)
+            x (int): Left column of the game area in tile-map coordinates.
+            y (int): Top row of the game area in tile-map coordinates.
+            width (int): Width of the game area in tiles.
+            height (int): Height of the game area in tiles.
+            follow_scrolling (bool): Whether to adjust the area for SCX/SCY scrolling.
         """
-        self.game_wrapper._set_dimensions(x, y, width, height, follow_scrolling=True)
+        self.game_wrapper._set_dimensions(x, y, width, height, follow_scrolling)
 
     def game_area_collision(self):
         """
@@ -1109,8 +1119,10 @@ class PyBoy:
 
         Returns
         -------
-        memoryview:
-            Simplified 2-dimensional memoryview of the collision map
+        numpy.ndarray:
+            A two-dimensional collision map. Only game wrappers that implement collision data support this method.
+        Raises:
+            AttributeError: If the active game wrapper does not implement collision data.
         """
         return self.game_wrapper.game_area_collision()
 
@@ -1138,8 +1150,9 @@ class PyBoy:
         ```
 
         Args:
-            mapping (list or ndarray): list of 384 (DMG) or 768 (CGB) tile mappings. Use `None` to reset to a 1:1 mapping.
-            sprite_offest (int): Optional offset add to tile id for sprites
+            mapping (list, ndarray, or None): A mapping with 384 (DMG) or 768 (CGB) entries. `None` resets to an
+                identity mapping.
+            sprite_offset (int): Value added to mapped tile IDs used for sprites. Defaults to 0.
         """
 
         if mapping is None:
@@ -1188,8 +1201,9 @@ class PyBoy:
 
         Returns
         -------
-        memoryview:
-            Simplified 2-dimensional memoryview of the screen
+        numpy.ndarray:
+            Two-dimensional array of mapped tile identifiers with dtype `numpy.uint32` and shape
+            `(game_wrapper.shape[1], game_wrapper.shape[0])`, i.e. `(height, width)`.
         """
 
         return self.game_wrapper.game_area()
@@ -1202,6 +1216,11 @@ class PyBoy:
         ```python
         >>> pyboy.set_color_palette((0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F))
         ```
+
+        Args:
+            palette (sequence[int]): Four 24-bit RGB colors, ordered from lightest to darkest.
+        Raises:
+            PyBoyInvalidOperationException: If PyBoy is running in CGB mode.
         """
         if self.mb.cgb:
             raise PyBoyInvalidOperationException("Palette change is only available in DMG mode")
@@ -1222,8 +1241,7 @@ class PyBoy:
 
     def set_emulation_speed(self, target_speed):
         """
-        Set the target emulation speed. It might loose accuracy of keeping the exact speed, when using a high
-        `target_speed`.
+        Set the target emulation speed. Timing may become less accurate at high target speeds.
 
         The speed is defined as a multiple of real-time. I.e `target_speed=2` is double speed.
 
@@ -1242,7 +1260,8 @@ class PyBoy:
         ```
 
         Args:
-            target_speed (int): Target emulation speed as multiplier of real-time.
+            target_speed (int): Target speed as a multiple of real time. Use 0 for unlimited speed, or a positive
+                integer for a real-time multiple.
         """
         if target_speed > 5:
             logger.warning("The emulation speed might not be accurate when speed-target is higher than 5")
@@ -1335,7 +1354,7 @@ class PyBoy:
 
     def symbol_lookup(self, symbol):
         """
-        Look up a specific symbol from provided symbols file.
+        Look up a symbol from the loaded `.sym` or `.map` file.
 
         This can be useful in combination with `PyBoy.memory` or even `PyBoy.hook_register`.
 
@@ -1354,10 +1373,14 @@ class PyBoy:
         [0, 0, 0, 0, 0, 0, 102, 102, 102, 102]
 
         ```
+        Args:
+            symbol (str): Symbol name to look up.
         Returns
         -------
-        (int, int):
-            ROM/RAM bank, address
+        tuple[int, int]:
+            ROM/RAM bank and address.
+        Raises:
+            ValueError: If the symbol is not found in the loaded symbol files.
         """
         return self._lookup_symbol(symbol)
 
@@ -1470,8 +1493,7 @@ class PyBoy:
         Provides a `pyboy.api.sprite.Sprite` object, which makes the OAM data more presentable. The given index
         corresponds to index of the sprite in the "Object Attribute Memory" (OAM).
 
-        The Game Boy supports 40 sprites in total. Read more details about it, in the [Pan
-        Docs](http://bgb.bircd.org/pandocs.htm).
+        The Game Boy supports 40 sprites in total. Read more in the [Pan Docs: OAM](https://gbdev.io/pandocs/OAM.html).
 
         ```python
         >>> s = pyboy.get_sprite(12)
@@ -1485,11 +1507,13 @@ class PyBoy:
         ```
 
         Args:
-            index (int): Sprite index from 0 to 39.
+            sprite_index (int): Sprite index from 0 to 39.
         Returns
         -------
         `pyboy.api.sprite.Sprite`:
             Sprite corresponding to the given index.
+        Raises:
+            PyBoyOutOfBoundsException: If `sprite_index` is outside 0 to 39.
         """
         return Sprite(self.mb, sprite_index)
 
@@ -1510,13 +1534,13 @@ class PyBoy:
         `123` was not found anywhere.
 
         Args:
-            identifiers (list): List of tile identifiers (int)
+            tile_identifiers (list[int]): Tile identifiers to search for.
             on_screen (bool): Require that the matched sprite is on screen
 
         Returns
         -------
-        list:
-            list of sprite matches for every tile identifier in the input
+        list[list[int]]:
+            Sprite indices grouped by the corresponding input tile identifier.
         """
 
         matches = []
@@ -1548,10 +1572,14 @@ class PyBoy:
 
         ```
 
+        Args:
+            identifier (int): Tile identifier from 0 to 383 on DMG or 0 to 767 on CGB.
         Returns
         -------
         `pyboy.api.tile.Tile`:
             A Tile object for the given identifier.
+        Raises:
+            PyBoyOutOfBoundsException: If `identifier` is outside the available tile range.
         """
         return Tile(self.mb, identifier=identifier)
 
@@ -1597,7 +1625,8 @@ class PyBoyRegisterFile:
     See the [Pan Docs: CPU registers and flags](https://gbdev.io/pandocs/CPU_Registers_and_Flags.html) for a great overview.
 
     Registers are accessed with the following names: `A, F, B, C, D, E, HL, SP, PC` where the last three are 16-bit and
-    the others are 8-bit. Trying to write a number larger than 8 or 16 bits will truncate it.
+    the others are 8-bit. Reads return integers. Assignments accept integers and mask them to the register width; `F`
+    keeps only its upper four flag bits.
 
     Example:
     ```python
@@ -1745,7 +1774,7 @@ class PyBoyMemoryView:
     >>> pyboy.memory[0x1000] = 123 # Not writing 123 at address 0x1000! This sends a command to the cartridge's MBC.
     >>> pyboy.memory[2, 0xA000] = 123 # Write to external RAM on cartridge (if any) for bank 2 at address 0xA000
     >>> # Game Boy Color (CGB) only:
-    >>> pyboy_cgb.memory[1, 0x8000] = 25 # Write to VRAM bank 1 at address 0xD000 when in CGB mode
+    >>> pyboy_cgb.memory[1, 0x8000] = 25 # Write to VRAM bank 1 at address 0x8000 when in CGB mode
     >>> pyboy_cgb.memory[6, 0xD000] = 25 # Write to WRAM bank 6 at address 0xD000 when in CGB mode
     ```
 
@@ -1803,10 +1832,14 @@ class PyBoyMemoryView:
         stop = addr.stop
         if start > stop:
             return (-1, -1, 0)
-        if addr.step is None:
-            step = 1
-        else:
-            step = addr.step
+        try:
+            start = index(start)
+            stop = index(stop)
+            step = 1 if addr.step is None else index(addr.step)
+        except TypeError:
+            raise PyBoyInvalidInputException("Slice bounds and step must be integers") from None
+        if step <= 0:
+            raise PyBoyInvalidInputException("Slice step must be a positive integer")
         return start, stop, step
 
     def __len__(self):

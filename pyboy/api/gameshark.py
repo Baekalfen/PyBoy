@@ -88,6 +88,10 @@ class GameShark:
         """
         Add a GameShark cheat to the emulator.
 
+        Codes use the eight-hex-digit format `ttvvaaaa`: `tt` is the code type,
+        `vv` the byte to write, and `aaaa` the address in low-byte-first order.
+        Currently, only type `01` (write one byte) is supported.
+
         Example:
         ```python
         >>> pyboy.gameshark.add("01FF16D0")
@@ -95,6 +99,9 @@ class GameShark:
 
         Args:
             code (str): GameShark code to add
+        Raises:
+            ValueError: If the code is malformed, has an unsupported type, or targets an invalid address.
+            PyBoyInvalidInputException: If this code is already active.
         """
         self.enabled = True
         _type, value, address = self._convert_cheat(code)
@@ -115,7 +122,9 @@ class GameShark:
 
         Args:
             code (str): GameShark code to remove
-            restore_value (bool): True to restore original value at address, otherwise don't restore
+            restore_value (bool): Restore the original byte at the code's address. Defaults to True.
+        Raises:
+            ValueError: If the code is not active.
         """
 
         if code not in self.cheats:
@@ -138,7 +147,7 @@ class GameShark:
         ```
 
         Args:
-            restore_value (bool): Restore the original values of the memory addresses that were modified by the cheats.
+            restore_value (bool): Restore original bytes at modified addresses. Defaults to True.
         """
         # NOTE: Create a list so we don't remove from the iterator we are going through
         for code in list(self.cheats.keys()):

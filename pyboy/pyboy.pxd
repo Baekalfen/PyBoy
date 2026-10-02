@@ -33,7 +33,7 @@ cdef class PyBoyMemoryView:
     cdef Motherboard mb
 
     @cython.locals(start=int,stop=int,step=int)
-    cpdef (int,int,int) _fix_slice(self, slice) noexcept
+    cpdef (int,int,int) _fix_slice(self, slice) except *
     @cython.locals(start=int,stop=int,step=int)
     cdef object __getitem(self, int, int, int, int, bint, bint)
     @cython.locals(start=int,stop=int,step=int,x=int, bank=int)

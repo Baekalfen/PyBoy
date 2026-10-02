@@ -13,6 +13,7 @@ __all__ = [
     "PyBoyOutOfBoundsException",
     "PyBoyNotImplementedException",
     "PyBoyInvalidInputException",
+    "PyBoyInvalidOperationException",
     "PyBoyDependencyError",
     "PyBoyFeatureDisabledError",
     "AccessError",
@@ -139,12 +140,13 @@ class PillowImportError(AccessError, PyBoyDependencyError):
     """
 
     _exception_type = PyBoyDependencyError
-    _exception_message = "Missing depencency Pillow!"
+    _exception_message = "Missing dependency Pillow!"
 
 
 class SoundEnabledError(AccessError, PyBoyFeatureDisabledError):
     """
-    Exception raised when the user requests a feature in the sound module that has been disabled.
+    Compatibility exception for disabled sound access. Current sound accessors raise
+    `PyBoyFeatureDisabledError`.
     """
 
     _exception_type = PyBoyFeatureDisabledError
@@ -301,9 +303,9 @@ def free(buffer):
 
 class WindowEvent:
     """
-    All supported events can be found in the class description below.
+    Namespace of integer constants representing supported input and emulator events.
 
-    It can be used as follows:
+    Pass one of these constants to `PyBoy.send_input`:
 
     ```python
     >>> from pyboy.utils import WindowEvent

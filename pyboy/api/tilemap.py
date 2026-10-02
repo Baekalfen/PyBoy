@@ -25,6 +25,8 @@ class TileMap:
 
         This object defines `__getitem__`, which means it can be accessed with the square brackets to get a tile
         identifier at a given coordinate.
+        Indexing uses `(column, row)` order. An integer coordinate returns one identifier; slices return a list or
+        nested list. After calling `use_tile_objects(True)`, indexing returns `Tile` objects instead.
 
         Example:
         ```
@@ -89,16 +91,15 @@ class TileMap:
 
         ```
 
-        Meaning, that tile identifier `43` is found at the positions: (0,0), (2,4), and (8,7), while tile identifier
-        `123`was not found anywhere.
+        Results are grouped in the same order as `identifiers`. Each match is a `[row, column]` pair.
 
         Args:
-            identifiers (list): List of tile identifiers (int)
+            identifiers (iterable[int]): Tile identifiers to search for.
 
         Returns
         -------
-        list:
-            list of matches for every tile identifier in the input
+        list[list[list[int]]]:
+            Matches grouped by input identifier; each match is a `[row, column]` pair.
         """
         # TODO: Crude implementation
         tilemap_identifiers = np.asarray(self[:, :], dtype=np.uint32)

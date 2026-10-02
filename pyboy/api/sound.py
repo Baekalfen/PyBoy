@@ -59,7 +59,7 @@ class Sound:
 
         self.raw_buffer_format = self.mb.sound.buffer_format
         """
-        Returns the color format of the raw sound buffer. **This format is subject to change.**
+        Returns the sample format of the raw sound buffer. **This format is subject to change.**
 
         See how to interpret the format on: https://docs.python.org/3/library/struct.html#format-characters
 
@@ -94,12 +94,13 @@ class Sound:
         """
         Provides a raw, unfiltered `memoryview` object with the data from sound buffer. Check
         `Sound.raw_buffer_format` to see which dataformat is used. **The returned type and dataformat are
-        subject to change.** The sound buffer is in stereo format, so the odd indexes are the left channel,
-        and even indexes are the right channel.
+        subject to change.**
+
+        The sound buffer is interleaved stereo: Even indexes are the left channel and odd indexes are the right channel.
 
         Use this, only if you need to bypass the overhead of `Sound.ndarray`.
 
-        Be aware to use the `Sound.raw_buffer_head`, as not all 'frames' are of equal length.
+        Use `Sound.raw_buffer_head` as not all frames have the same number of samples.
 
         Example:
         ```python
@@ -127,23 +128,28 @@ class Sound:
     @property
     def raw_buffer_head(self):
         """
-        This returns the
+        Number of valid interleaved channel values in `raw_buffer`. There are two values per stereo sample frame.
 
-        See the explanation at the top of the page.
+        Use this as the stop index when slicing `raw_buffer`.
+
+        Returns
+        -------
+        int:
+            Number of valid channel values in the raw buffer.
         """
         return self.mb.sound.audiobuffer_head
 
     @property
     def ndarray(self):
         """
-        References the sound data in NumPy format. **Remember to copy this object** if you intend to store it.
+        References the valid sound data in NumPy format. **Remember to copy this object** if you intend to store it.
         The backing buffer will update, but it will be the same `ndarray` object.
 
         The format is given by `pyboy.api.sound.Sound.raw_buffer_format`. The sound buffer is in stereo format,
-        so the first index is the left channel, and the second index is the right channel.
+        so the first column is the left channel and the second column is the right channel.
 
-        This property returns an `ndarray` that is already accounting for the changing length of the sound buffer.
-        See the explanation at the top of the page.
+        The first dimension contains only the sample frames generated since the last call to `PyBoy.tick`. If sound
+        emulation is disabled, accessing this property raises `PyBoyFeatureDisabledError`.
 
         Example:
         ```python
@@ -161,9 +167,9 @@ class Sound:
         Returns
         -------
         numpy.ndarray:
-            Sound data in `ndarray` of bytes with shape given by sample rate
+            Signed 8-bit samples with shape `(valid_sample_frames, 2)`.
         """
         if self.mb.sound.emulate:
-            return self.raw_ndarray[: self.mb.sound.audiobuffer_head]
+            return self.raw_ndarray[: self.mb.sound.audiobuffer_head // 2]
         else:
             raise utils.PyBoyFeatureDisabledError("Sound is not enabled!")

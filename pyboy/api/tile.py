@@ -64,6 +64,14 @@ class Tile:
             self.vram_bank = 0
         else:
             self.vram_bank = 1
+        """
+        CGB video-memory bank containing the tile. This is 0 for DMG tiles.
+
+        Returns
+        -------
+        int:
+            VRAM bank number, 0 or 1.
+        """
 
         self.tile_identifier = identifier
         """
@@ -99,7 +107,8 @@ class Tile:
 
     def image(self):
         """
-        Use this function to get an `PIL.Image` object of the tile. The image is 8x8 pixels. The format or "mode" might change at any time.
+        Use this function to get a `PIL.Image.Image` object of the tile. The image is 8x8 pixels. The mode may change
+        between versions, and Pillow must be installed.
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
@@ -169,15 +178,14 @@ class Tile:
 
     def _image_data(self):
         """
-        Use this function to get the raw tile data. The data is a `memoryview` corresponding to 8x8 pixels in RGBA
-        colors.
+        Return the internal packed color data for the tile.
 
         Be aware, that the graphics for this tile can change between each call to `pyboy.PyBoy.tick`.
 
         Returns
         -------
-        memoryview :
-            Image data of tile in 8x8 pixels and RGB colors.
+        numpy.ndarray:
+            Packed pixel values with shape `(8, 8)` and dtype `numpy.uint32`.
         """
         self.data = np.zeros((8, 8), dtype=np.uint32)
         for k in range(0, 16, 2):  # 2 bytes for each line
