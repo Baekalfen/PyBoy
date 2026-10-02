@@ -14,7 +14,7 @@ class StandardComparisonType(Enum):
 
 
 class DynamicComparisonType(Enum):
-    """Enumeration for defining types of comparisons that require a previous value."""
+    """Comparisons between values found in the previous and current scans."""
 
     UNCHANGED = 1
     CHANGED = 2
@@ -24,7 +24,7 @@ class DynamicComparisonType(Enum):
 
 
 class ScanMode(Enum):
-    """Enumeration for defining scanning modes."""
+    """Interpret scanned bytes as an unsigned integer or binary-coded decimal."""
 
     INT = 1
     BCD = 2
@@ -37,6 +37,8 @@ class MemoryScanner:
         self.pyboy = pyboy
         self._memory_cache = {}
         self._memory_cache_byte_width = 1
+        self._memory_cache_value_type = ScanMode.INT
+        self._memory_cache_byteorder = "little"
 
     def scan_memory(
         self,
@@ -49,30 +51,38 @@ class MemoryScanner:
         byteorder="little",
     ):
         """
-        This function scans a specified range of memory for a target value from the `start_addr` to the `end_addr` (both included).
+        Scan the inclusive address range from `start_addr` to `end_addr` for a target value.
 
         Example:
         ```python
-        >>> current_score = 4 # You write current score in game
-        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
-        []
+        >>> pyboy.memory[0xC000] = 4
+        >>> pyboy.memory_scanner.scan_memory(4, start_addr=0xC000, end_addr=0xC000)
+        [49152]
 
         ```
 
         Args:
-            start_addr (int): The starting address for the scan.
-            end_addr (int): The ending address for the scan.
-            target_value (int or None): The value to search for. If None, any value is considered a match.
-            standard_comparison_type (StandardComparisonType): The type of comparison to use.
-            value_type (ValueType): The type of value (INT or BCD) to consider.
-            byte_width (int): The number of bytes to consider for each value.
-            byteorder (str): The endian type to use. This is only used for 16-bit values and higher. See [int.from_bytes](https://docs.python.org/3/library/stdtypes.html#int.from_bytes) for more details.
+            target_value (int or None): Value to search for. If None, every value matches.
+            start_addr (int): First address to scan. Defaults to 0.
+            end_addr (int): Last address to scan, inclusive. Defaults to 65535.
+            standard_comparison_type (StandardComparisonType): Comparison to apply. Defaults to EXACT.
+            value_type (ScanMode): Interpret values as INT or BCD. Defaults to INT.
+            byte_width (int): Positive number of bytes per value. Defaults to 1.
+            byteorder (str): "little" or "big" byte order for multi-byte values. Defaults to "little".
 
         Returns:
-            list of int: A list of addresses where the target value is found.
+            list[int]: Addresses where the target value is found.
+
+        Raises:
+            ValueError: If `byte_width` is not positive.
         """
+        if byte_width <= 0:
+            raise ValueError("byte_width must be positive")
+
         self._memory_cache = {}
         self._memory_cache_byte_width = byte_width
+        self._memory_cache_value_type = value_type
+        self._memory_cache_byteorder = byteorder
         for addr in range(
             start_addr, end_addr - (byte_width - 1) + 1
         ):  # Adjust the loop to prevent reading past end_addr
@@ -88,39 +98,41 @@ class MemoryScanner:
 
         return list(self._memory_cache.keys())
 
-    def rescan_memory(
-        self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, byteorder="little"
-    ):
+    def rescan_memory(self, new_value=None, dynamic_comparison_type=DynamicComparisonType.UNCHANGED, byteorder=None):
         """
-        Rescans the memory and updates the memory cache based on a dynamic comparison type.
+        Filter cached addresses using values read in the current scan.
 
         Example:
         ```python
-        >>> current_score = 4 # You write current score in game
-        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
-        []
-        >>> for _ in range(175):
-        ...     pyboy.tick(1, True) # Progress the game to change score
-        True...
-        >>> current_score = 8 # You write the new score in game
+        >>> pyboy.memory[0xC000] = 4
+        >>> pyboy.memory_scanner.scan_memory(4, start_addr=0xC000, end_addr=0xC000)
+        [49152]
+        >>> pyboy.memory[0xC000] = 8
         >>> from pyboy.api.memory_scanner import DynamicComparisonType
-        >>> addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
-        >>> print(addresses) # If repeated enough, only one address will remain
-        []
+        >>> addresses = pyboy.memory_scanner.rescan_memory(8, DynamicComparisonType.MATCH)
+        >>> print(addresses)
+        [49152]
 
         ```
 
         Args:
-            new_value (int, optional): The new value for comparison. If not provided, the current value in memory is used.
-            dynamic_comparison_type (DynamicComparisonType): The type of comparison to use. Defaults to UNCHANGED.
+            new_value (int or None): Target value used by MATCH; required for MATCH and ignored by other comparisons.
+            dynamic_comparison_type (DynamicComparisonType): Comparison to apply. Defaults to UNCHANGED.
+            byteorder (str or None): Byte order for reading values. If None, reuse the byte order from the previous
+                `scan_memory` call.
 
         Returns:
-            list of int: A list of addresses remaining in the memory cache after the rescan.
+            list[int]: Addresses remaining in the cache after filtering.
         """
+        if byteorder is None:
+            byteorder = self._memory_cache_byteorder
+
         for addr, value in self._memory_cache.copy().items():
             current_value = int.from_bytes(
                 self.pyboy.memory[addr : addr + self._memory_cache_byte_width], byteorder=byteorder
             )
+            if self._memory_cache_value_type == ScanMode.BCD:
+                current_value = bcd_to_dec(current_value, self._memory_cache_byte_width, byteorder)
             if dynamic_comparison_type == DynamicComparisonType.UNCHANGED:
                 if value != current_value:
                     self._memory_cache.pop(addr)

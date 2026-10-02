@@ -1,5 +1,7 @@
+import pytest
+
 from pyboy import PyBoy
-from pyboy.api.memory_scanner import DynamicComparisonType
+from pyboy.api.memory_scanner import DynamicComparisonType, ScanMode
 from pyboy.utils import bcd_to_dec, dec_to_bcd
 
 
@@ -68,6 +70,40 @@ def test_memoryscanner_boundary(default_rom):
     pyboy.memory[0xC0FF] = 1
     addresses = pyboy.memory_scanner.scan_memory(0, start_addr=0xC000, end_addr=0xC0FF, byte_width=2)
     assert len(addresses) == 0x100 - 1 - 1  # Where one value is now not 0, and we cannot get n+1
+
+
+def test_memoryscanner_rescan_uses_initial_byteorder(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.memory[0xC000:0xC002] = [0x12, 0x34]
+
+    addresses = pyboy.memory_scanner.scan_memory(
+        0x1234, start_addr=0xC000, end_addr=0xC001, byte_width=2, byteorder="big"
+    )
+    assert addresses == [0xC000]
+
+    pyboy.memory[0xC000:0xC002] = [0x12, 0x35]
+    assert pyboy.memory_scanner.rescan_memory(None, DynamicComparisonType.INCREASED) == [0xC000]
+
+
+def test_memoryscanner_rescan_bcd(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    pyboy.memory[0xC000:0xC002] = [0x34, 0x12]
+
+    addresses = pyboy.memory_scanner.scan_memory(
+        1234, start_addr=0xC000, end_addr=0xC001, value_type=ScanMode.BCD, byte_width=2
+    )
+    assert addresses == [0xC000]
+    assert pyboy.memory_scanner.rescan_memory(None, DynamicComparisonType.UNCHANGED) == [0xC000]
+
+    pyboy.memory[0xC000:0xC002] = [0x35, 0x12]
+    assert pyboy.memory_scanner.rescan_memory(None, DynamicComparisonType.INCREASED) == [0xC000]
+
+
+def test_memoryscanner_requires_positive_byte_width(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+
+    with pytest.raises(ValueError, match="byte_width must be positive"):
+        pyboy.memory_scanner.scan_memory(byte_width=0)
 
 
 SCORE_100 = 0xD072

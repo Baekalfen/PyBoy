@@ -412,17 +412,14 @@ class PyBoy:
 
         Example:
         ```python
-        >>> current_score = 4 # You write current score in game
-        >>> pyboy.memory_scanner.scan_memory(current_score, start_addr=0xC000, end_addr=0xDFFF)
-        []
-        >>> for _ in range(175):
-        ...     pyboy.tick(1, True) # Progress the game to change score
-        True...
-        >>> current_score = 8 # You write the new score in game
+        >>> pyboy.memory[0xC000] = 4
+        >>> pyboy.memory_scanner.scan_memory(4, start_addr=0xC000, end_addr=0xC000)
+        [49152]
+        >>> pyboy.memory[0xC000] = 8
         >>> from pyboy.api.memory_scanner import DynamicComparisonType
-        >>> addresses = pyboy.memory_scanner.rescan_memory(current_score, DynamicComparisonType.MATCH)
-        >>> print(addresses) # If repeated enough, only one address will remain
-        []
+        >>> addresses = pyboy.memory_scanner.rescan_memory(8, DynamicComparisonType.MATCH)
+        >>> print(addresses)
+        [49152]
 
         ```
         """
