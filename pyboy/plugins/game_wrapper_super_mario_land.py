@@ -567,8 +567,8 @@ class GameWrapperSuperMarioLand(PyBoyGameWrapper):
 
         Returns
         -------
-        memoryview:
-            Simplified 2-dimensional memoryview of the screen
+        numpy.ndarray:
+            Simplified two-dimensional array of mapped tile identifiers with dtype `numpy.uint32`.
         """
         return PyBoyGameWrapper.game_area(self)
 

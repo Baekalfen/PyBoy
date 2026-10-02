@@ -29,7 +29,7 @@ class Sprite:
         call to `pyboy.PyBoy.tick`, so make sure to verify the `Sprite.tile_identifier` hasn't changed.
 
         By knowing the tile identifiers of players, enemies, power-ups and so on, you'll be able to search for them
-        using `pyboy.sprite_by_tile_identifier` and feed it to your bot or AI.
+        using `pyboy.PyBoy.get_sprite_by_tile_identifier` and feed it to your bot or AI.
         """
         if not (0 <= sprite_index < SPRITES):
             raise PyBoyOutOfBoundsException(f"Sprite index of {sprite_index} is out of range (0-{SPRITES})")
@@ -44,7 +44,7 @@ class Sprite:
         Returns
         -------
         int:
-            unsigned tile index
+            Sprite's OAM index, from 0 to 39.
         """
 
         # Documentation states the y coordinate needs to be subtracted by 16
@@ -86,8 +86,8 @@ class Sprite:
         attr = self.mb.getitem(OAM_OFFSET + self._offset + 3)
         self.attr_obj_bg_priority = _bit(attr, 7)
         """
-        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](https://gbdev.io/pandocs/OAM.html).
+        OAM bit 7. On DMG, 1 places the sprite behind nonzero background/window pixels. On CGB, this flag combines with
+        the tile-map priority attribute to determine whether the sprite is drawn above the background.
 
         Returns
         -------
@@ -97,8 +97,7 @@ class Sprite:
 
         self.attr_y_flip = _bit(attr, 6)
         """
-        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](https://gbdev.io/pandocs/OAM.html).
+        OAM bit 6. A value of 1 flips the sprite vertically.
 
         Returns
         -------
@@ -108,8 +107,7 @@ class Sprite:
 
         self.attr_x_flip = _bit(attr, 5)
         """
-        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](https://gbdev.io/pandocs/OAM.html).
+        OAM bit 5. A value of 1 flips the sprite horizontally.
 
         Returns
         -------
@@ -119,24 +117,22 @@ class Sprite:
 
         self.attr_palette_number = 0
         """
-        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](https://gbdev.io/pandocs/OAM.html).
+        DMG palette selector (0 or 1), or CGB object palette number (0 to 7).
 
         Returns
         -------
         int:
-            The state of the bit(s) in the attributes lookup.
+            Palette number.
         """
 
         self.attr_cgb_bank_number = 0
         """
-        To better understand this values, look in the [Pan Docs: VRAM Sprite Attribute Table
-        (OAM)](https://gbdev.io/pandocs/OAM.html).
+        CGB VRAM bank selected by OAM attribute bit 3. This is always 0 on DMG.
 
         Returns
         -------
-        bool:
-            The state of the bit in the attributes lookup.
+        int:
+            VRAM bank number, 0 or 1.
         """
 
         if self.mb.cgb:

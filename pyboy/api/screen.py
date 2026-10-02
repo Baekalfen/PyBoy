@@ -100,6 +100,7 @@ class Screen:
         """
         Reference to a PIL Image from the screen buffer. **Remember to copy, resize or convert this object** if you
         intend to store it. The backing buffer will update, but it will be the same `PIL.Image` object.
+        Accessing this property requires Pillow; if Pillow is unavailable, access raises `PyBoyDependencyError`.
 
         Convenient for screen captures, but might be a bottleneck, if you use it to train a neural network. In which
         case, read up on the `pyboy.api` features, [Pan Docs](https://gbdev.io/pandocs/) on tiles/sprites,
@@ -116,8 +117,8 @@ class Screen:
 
         Returns
         -------
-        PIL.Image:
-            RGB image of (160, 144) pixels
+        PIL.Image.Image:
+            RGBA image of (160, 144) pixels. Access requires Pillow to be installed.
         """
         if not Image:
             logger.warning('Cannot generate screen image. Missing dependency "Pillow".')
@@ -174,7 +175,7 @@ class Screen:
     @property
     def tilemap_position_list(self):
         """
-        This function provides the screen (SCX, SCY) and window (WX, WY) position for each horizontal line in the
+        This property provides the screen (SCX, SCY) and window (WX - 7, WY) position for each horizontal line in the
         screen buffer. These parameters are often used for visual effects, and some games will reset the registers at
         the end of each call to `pyboy.PyBoy.tick()`.
 
@@ -203,7 +204,7 @@ class Screen:
         Returns
         -------
         list:
-            Nested list of SCX, SCY, WX and WY for each scanline (144x4). Returns (0, 0, 0, 0) when LCD is off.
+            A list of 144 `[SCX, SCY, WX - 7, WY]` lists. Returns `[0, 0, 0, 0]` for each line when the LCD is off.
         """
 
         if self.mb.lcd._LCDC.lcd_enable:
@@ -213,10 +214,8 @@ class Screen:
 
     def get_tilemap_position(self):
         """
-        These coordinates define the offset in the tile map from where the top-left corner of the screen is place. Note
-        that the tile map defines 256x256 pixels, but the screen can only show 160x144 pixels. When the offset is closer
-        to the right or bottom edge than 160x144 pixels, the screen will wrap around and render from the opposite site
-        of the tile map.
+        These coordinates define the tile-map offsets for the top-left corner of the screen and window. The tile map is
+        256x256 pixels, while the screen shows 160x144 pixels; scrolling past an edge wraps around to the other side.
 
         For more details, see "7.4 Viewport" in the [report](https://github.com/Baekalfen/PyBoy/raw/master/extras/PyBoy.pdf),
         or the Pan Docs under [LCD Position and Scrolling](https://gbdev.io/pandocs/Scrolling.html).
@@ -231,6 +230,6 @@ class Screen:
         Returns
         -------
         tuple:
-            Returns the tuple of registers ((SCX, SCY), (WX - 7, WY))
+            `((SCX, SCY), (WX - 7, WY))`.
         """
         return (self.mb.lcd.getviewport(), self.mb.lcd.getwindowpos())

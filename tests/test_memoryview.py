@@ -43,6 +43,10 @@ def test_memoryview(default_rom, boot_rom):
     with pytest.raises(PyBoyInvalidInputException):
         p.memory[20:10]
     with pytest.raises(PyBoyInvalidInputException):
+        p.memory[0:10:0]
+    with pytest.raises(PyBoyInvalidInputException):
+        p.memory[0:10:-1]
+    with pytest.raises(PyBoyInvalidInputException):
         p.memory[:10:]
     with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00:]
@@ -56,6 +60,8 @@ def test_memoryview(default_rom, boot_rom):
         p.memory[0xFF00:] = 0
     with pytest.raises(PyBoyInvalidInputException):
         p.memory[0xFF00::] = 0
+    with pytest.raises(PyBoyInvalidInputException):
+        p.memory[0:10:0] = 0
 
     assert len(p.memory[0xFFFF:0x10000]) == 1
     assert len(p.memory[0xFFFE:0x10000]) == 2

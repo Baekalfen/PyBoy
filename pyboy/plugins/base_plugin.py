@@ -250,8 +250,8 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         Returns
         -------
-        memoryview:
-            Simplified 2-dimensional memoryview of the screen
+        numpy.ndarray:
+            Simplified two-dimensional array of mapped tile identifiers with dtype `numpy.uint32`.
         """
         tiles_matrix = self.mapping[self._game_area_tiles()]
         sprites = self._sprites_on_screen()
@@ -268,9 +268,9 @@ class PyBoyGameWrapper(PyBoyPlugin):
 
         return tiles_matrix
 
-    def game_area_mapping(self, mapping, sprite_offest):
+    def game_area_mapping(self, mapping, sprite_offset):
         self.mapping = np.asarray(mapping, dtype=np.uint32)
-        self.sprite_offset = sprite_offest
+        self.sprite_offset = sprite_offset
 
     def game_area_annotations(self):
         """Return ``(x, y, text)`` annotations in native screen-pixel coordinates."""
