@@ -16,8 +16,6 @@ import json
 
 OVERWRITE_RESULTS = False
 
-saved_state = [None, None]
-SPRITE_PRIORITY_REFERENCE = Path("tests/references/mooneye/sprite_priority-expected.png")
 
 # These classifications follow the "Verified results" tables in the upstream
 # Mooneye sources: https://github.com/Gekkio/mooneye-test-suite
@@ -66,24 +64,6 @@ DMG_HARDWARE_FAILURES = {
 }
 
 
-def result_has_failure(text):
-    lowered = text.lower()
-    return "!" in text or any(marker in lowered for marker in ("failed", "fail:", "mismatch", "not cancelled"))
-
-
-def sprite_priority_classes(image):
-    classes = bytearray()
-    pixels = image.convert("RGB").tobytes()
-    for red, green, blue in zip(pixels[0::3], pixels[1::3], pixels[2::3]):
-        if red > 245 and green > 245 and blue > 245:
-            classes.append(0)
-        elif red < 10 and green < 10 and blue < 10:
-            classes.append(1)
-        else:
-            classes.append(2)
-    return PIL.Image.frombytes("L", image.size, bytes(classes))
-
-
 MOONEYE_CASES = [
     (False, "misc/boot_div-A.gb"),
     (False, "misc/boot_div-cgb0.gb"),
@@ -95,7 +75,6 @@ MOONEYE_CASES = [
     (False, "misc/bits/unused_hwio-C.gb"),  # Should fail on 0xFF72 for DMG
     # (False, "utils/bootrom_dumper.gb"),
     # (False, "utils/dump_boot_hwio.gb"),
-    (False, "manual-only/sprite_priority.gb"),
     (False, "acceptance/rapid_di_ei.gb"),
     (False, "acceptance/oam_dma_start.gb"),
     (False, "acceptance/boot_regs-dmgABC.gb"),
@@ -200,6 +179,45 @@ MOONEYE_CASES = [
     (True, "emulator-only/mbc1/rom_8Mb.gb"),
     (True, "emulator-only/mbc1/rom_16Mb.gb"),
 ]
+saved_state = [None, None]
+
+
+MOONEYE_PASS_SERIAL = "\x03\x05\x08\r\x15\x22"
+MOONEYE_FAIL_SERIAL = "\x42" * 6
+MOONEYE_PASS_REGISTERS = (3, 5, 8, 13, 21, 34)
+MOONEYE_FAIL_REGISTERS = (0x42,) * 6
+MOONEYE_RESULT_TIMEOUT = 1_000
+
+
+def mooneye_register_values(register_file):
+    hl = register_file.HL
+    return register_file.B, register_file.C, register_file.D, register_file.E, hl >> 8, hl & 0xFF
+
+
+def mooneye_result(register_values, serial_output):
+    if MOONEYE_PASS_SERIAL in serial_output:
+        return "passed"
+    if MOONEYE_FAIL_SERIAL in serial_output:
+        return "failed"
+    if tuple(register_values) == MOONEYE_PASS_REGISTERS:
+        return "passed"
+    if tuple(register_values) == MOONEYE_FAIL_REGISTERS:
+        return "failed"
+    return None
+
+
+def run_until_mooneye_result(pyboy):
+    serial_output = ""
+    for _ in range(MOONEYE_RESULT_TIMEOUT):
+        pyboy.tick(1, False, False)
+        serial_output += pyboy._serial()
+        register_values = mooneye_register_values(pyboy.register_file)
+        result = mooneye_result(register_values, serial_output)
+        if result is not None:
+            pyboy.tick(1, True, False)
+            serial_output += pyboy._serial()
+            return result, serial_output
+    return None, serial_output
 
 
 @pytest.mark.parametrize("clean, rom", MOONEYE_CASES)
@@ -225,85 +243,88 @@ def test_mooneye(clean, cgb, rom, mooneye_dir, default_rom):
     else:
         pyboy.load_state(saved_state[cgb])
 
-    # LCD-on tests need extra frames before their result is written to the tilemap.
-    result_frames = (
-        360
-        if "intr_2_mode0_timing_sprites" in rom
-        else 180
-        if "div_write" in rom
-        or "lcdon_timing" in rom
-        or "lcdon_write_timing" in rom
-        or "mbc1" in rom
-        or "sources-GS" in rom
-        or "timing-GS" in rom
-        else 40
-    )
-    pyboy.tick(result_frames, True)
-    if "mbc1/bits_ramg" in rom or "mbc2" in rom or "bits_" in rom:
-        pyboy.tick(500)
+    result, serial_output = run_until_mooneye_result(pyboy)
+    if result is None:
+        register_values = mooneye_register_values(pyboy.register_file)
+        pyboy.stop(save=False)
+        pytest.fail(
+            f"{rom} did not report a pass/fail result within {MOONEYE_RESULT_TIMEOUT} frames; "
+            f"registers={register_values}, serial={serial_output!r}"
+        )
+    register_values = mooneye_register_values(pyboy.register_file)
 
-    if rom != "manual-only/sprite_priority.gb":
-        table = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ abcdefghijklmnopqrstuvwxyz{|}~ "
-        text = ""
-        for y in range(18):
-            for x in range(20):
-                try:
-                    text += table[pyboy.tilemap_background[x, y] - 32]
-                except IndexError:
-                    text += " "
-            text = text.strip()
-            text += "\n"
+    table = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ abcdefghijklmnopqrstuvwxyz{|}~ "
+    text = ""
+    for y in range(18):
+        for x in range(20):
+            try:
+                text += table[pyboy.tilemap_background[x, y] - 32]
+            except IndexError:
+                text += " "
+        text = text.strip()
+        text += "\n"
 
-        json_path = Path("tests/test_results/mooneye/results.json")
+    # Keep screen text for optional report refreshes; ROM revisions may change diagnostic wording.
+    json_path = Path("tests/test_results/mooneye/results.json")
+    result_key = f"{rom} [CGB]" if cgb else rom
+    if OVERWRITE_RESULTS:
         json_path.parents[0].mkdir(parents=True, exist_ok=True)
         if json_path.exists():
             with open(json_path, "r") as f:
                 results = json.load(f)
         else:
             results = {}
-
-        result_key = f"{rom} [CGB]" if cgb else rom
-        if OVERWRITE_RESULTS:
-            results[result_key] = {"text": text}
-            with open(json_path, "w") as f:
-                json.dump(results, f, indent=2)
-        else:
-            expected_text = results.get(result_key, results[rom])["text"]
-            assert text == expected_text, "Results differ!"
-            if result_has_failure(expected_text):
-                if (cgb and rom in CGB_HARDWARE_FAILURES) or (not cgb and rom in DMG_HARDWARE_FAILURES):
-                    pyboy.stop(save=False)
-                    return
-                pyboy.stop(save=False)
-                pytest.xfail(f"{rom} has a recorded failure")
+        results[result_key] = {"text": text}
+        with open(json_path, "w") as f:
+            json.dump(results, f, indent=2)
     else:
-        result_key = f"{rom} [CGB]" if cgb else rom
-        image = pyboy.screen.image
-        diff = None
+        assert json_path.exists(), f"Test results doesn't exist: {json_path}"
+        with open(json_path, "r") as f:
+            results = json.load(f)
+        assert result_key in results, f"No stored result for {result_key}"
+        assert results[result_key]["text"] == text, f"Screen text differs for {result_key}"
+    if result == "failed":
+        if (cgb and rom in CGB_HARDWARE_FAILURES) or (not cgb and rom in DMG_HARDWARE_FAILURES):
+            pyboy.stop(save=False)
+            return
+        pyboy.stop(save=False)
+        pytest.xfail(f"{rom} reported failure; registers={register_values}, serial={serial_output!r}")
 
-        if rom == "manual-only/sprite_priority.gb":
-            assert SPRITE_PRIORITY_REFERENCE.exists(), "Reference image doesn't exist"
-            reference_image = PIL.Image.open(SPRITE_PRIORITY_REFERENCE)
-            diff = ImageChops.difference(sprite_priority_classes(image), sprite_priority_classes(reference_image))
+    pyboy.stop(save=False)
+
+
+def sprite_priority_classes(image):
+    classes = bytearray()
+    pixels = image.convert("RGB").tobytes()
+    for red, green, blue in zip(pixels[0::3], pixels[1::3], pixels[2::3]):
+        if red > 245 and green > 245 and blue > 245:
+            classes.append(0)
+        elif red < 10 and green < 10 and blue < 10:
+            classes.append(1)
         else:
-            png_path = Path(f"tests/test_results/mooneye/{result_key}.png")
-            if OVERWRITE_RESULTS:
-                png_path.parents[0].mkdir(parents=True, exist_ok=True)
-                image.save(png_path)
-            else:
-                assert png_path.exists(), "Test result doesn't exist"
-                # Converting to RGB as ImageChops.difference cannot handle Alpha: https://github.com/python-pillow/Pillow/issues/4849
-                old_image = PIL.Image.open(png_path).convert("RGB")
-                diff = ImageChops.difference(image.convert("RGB"), old_image)
+            classes.append(2)
+    return PIL.Image.frombytes("L", image.size, bytes(classes))
 
-        if diff is not None:
-            if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
-                image.show()
-                if rom == "manual-only/sprite_priority.gb":
-                    reference_image.show()
-                else:
-                    old_image.show()
-                diff.show()
-            assert not diff.getbbox(), f"Images are different! {rom}"
+
+SPRITE_PRIORITY_REFERENCE = Path("tests/references/mooneye/sprite_priority-expected.png")
+
+
+@pytest.mark.parametrize("cgb", [False, True], ids=["DMG", "CGB"])
+def test_mooneye_sprite(cgb, mooneye_dir):
+    rom = "manual-only/sprite_priority.gb"
+    pyboy = PyBoy(mooneye_dir + rom, window="null", cgb=cgb)
+    pyboy.set_emulation_speed(0)
+    pyboy.tick(59, True)
+    pyboy.tick(40, True, False)
+
+    image = pyboy.screen.image
+    assert SPRITE_PRIORITY_REFERENCE.exists(), "Reference image doesn't exist"
+    reference_image = PIL.Image.open(SPRITE_PRIORITY_REFERENCE)
+    diff = ImageChops.difference(sprite_priority_classes(image), sprite_priority_classes(reference_image))
+    if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
+        image.show()
+        reference_image.show()
+        diff.show()
+    assert not diff.getbbox(), f"Images are different! {rom}"
 
     pyboy.stop(save=False)
