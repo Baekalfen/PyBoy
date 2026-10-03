@@ -624,10 +624,8 @@ class PyBoy:
             count (int): Non-negative number of frames to process. Defaults to 1.
             render (bool): Whether to render the final frame. Defaults to True.
             sound (bool): Whether to sample audio for the final frame. Defaults to True.
-        Returns
-        -------
-        bool:
-            False if emulation has ended; otherwise True.
+        Returns:
+            bool: False if emulation has ended; otherwise True.
         Raises:
             PyBoyInvalidInputException: If `count` is not a non-negative integer.
         """
@@ -1129,10 +1127,9 @@ class PyBoy:
 
         ```
 
-        Returns
-        -------
-        numpy.ndarray:
-            A two-dimensional collision map. Only game wrappers that implement collision data support this method.
+        Returns:
+            numpy.ndarray: A two-dimensional collision map. Only game wrappers that implement collision data support
+                this method.
         Raises:
             AttributeError: If the active game wrapper does not implement collision data.
         """
@@ -1387,10 +1384,8 @@ class PyBoy:
         ```
         Args:
             symbol (str): Symbol name to look up.
-        Returns
-        -------
-        tuple[int, int]:
-            ROM/RAM bank and address.
+        Returns:
+            tuple[int, int]: ROM/RAM bank and address.
         Raises:
             ValueError: If the symbol is not found in the loaded symbol files.
         """
@@ -1520,10 +1515,8 @@ class PyBoy:
 
         Args:
             sprite_index (int): Sprite index from 0 to 39.
-        Returns
-        -------
-        `pyboy.api.sprite.Sprite`:
-            Sprite corresponding to the given index.
+        Returns:
+            `pyboy.api.sprite.Sprite`: Sprite corresponding to the given index.
         Raises:
             PyBoyOutOfBoundsException: If `sprite_index` is outside 0 to 39.
         """
@@ -1586,10 +1579,8 @@ class PyBoy:
 
         Args:
             identifier (int): Tile identifier from 0 to 383 on DMG or 0 to 767 on CGB.
-        Returns
-        -------
-        `pyboy.api.tile.Tile`:
-            A Tile object for the given identifier.
+        Returns:
+            `pyboy.api.tile.Tile`: A Tile object for the given identifier.
         Raises:
             PyBoyOutOfBoundsException: If `identifier` is outside the available tile range.
         """
