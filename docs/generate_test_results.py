@@ -110,6 +110,11 @@ def image_suite_name(path):
             "pokemon_blue": "Pokemon Blue",
             "which": "which",
             "whichboot": "whichboot",
+            "bully": "BullyGB",
+            "strikethrough": "Strikethrough",
+            "cpp": "CasualPokePlayer",
+            "daid": "Daid",
+            "cgb-acid-hell": "CGB Acid Hell",
         }.get(relative.parts[0], relative.parts[0])
     if "acid2" in path.name:
         return "Acid2"
@@ -143,6 +148,18 @@ def image_test_status(path, suite_name, statuses):
             return junit_status(statuses, "tests.test_acid_cgb", "test_cgb_acid")
         cgb = path.name.startswith("cgb_")
         return junit_status(statuses, "tests.test_acid_dmg", f"test_dmg_acid[{cgb}]")
+    if suite_name == "BullyGB":
+        return junit_status(statuses, "tests.test_bully", "test_bully")
+    if suite_name == "Strikethrough":
+        return junit_status(statuses, "tests.test_strikethrough", "test_strikethrough")
+    if suite_name == "CGB Acid Hell":
+        return junit_status(statuses, "tests.test_acid_hell", "test_cgb_acid_hell")
+    if suite_name == "CasualPokePlayer":
+        return junit_status_prefix(statuses, "tests.test_cpp", f"test_cpp[{path.stem}-")
+    if suite_name == "Daid":
+        is_cgb = path.name.endswith(".cgb.png")
+        rom = path.name.removesuffix(".cgb.png" if is_cgb else ".dmg.png")
+        return junit_status_prefix(statuses, "tests.test_daid", f"test_daid_image[{rom}-{is_cgb}-")
     return "Not run"
 
 
