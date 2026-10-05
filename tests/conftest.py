@@ -179,6 +179,19 @@ def mooneye_dir():
     return str(path) + "/"
 
 
+# https://github.com/mattcurrie/mealybug-tearoom-tests
+@pytest.fixture(scope="session")
+def mealybug_dir():
+    path = extra_test_rom_dir / Path("mealybug")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isdir(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.mealybug.txt"))
+            mealybug_data = io.BytesIO(url_open("https://pyboy.dk/mirror/mealybug-tearoom-tests.zip"))
+            with ZipFile(mealybug_data) as _zip:
+                _zip.extractall(path)
+    return str(path) + "/"
+
+
 # https://github.com/alloncm/MagenTests
 @pytest.fixture(scope="session")
 def magen_dir():
