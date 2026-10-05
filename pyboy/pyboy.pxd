@@ -40,6 +40,8 @@ cdef class PyBoyMemoryView:
     cdef int __setitem(self, int, int, int, object, int, bint, bint) except -1
 
 cdef class PyBoy:
+    cdef readonly object _serial_shared_memory
+    cdef object _serial_rom_hash
     cdef Motherboard mb
     cdef readonly PluginManager _plugin_manager
     cdef readonly uint64_t frame_count
@@ -83,6 +85,7 @@ cdef class PyBoy:
     cpdef bint tick(self, int count=*, bint render=*, bint sound=*) except -1
     cpdef _quit(self)
     cpdef void stop(self, save=*, ram_file=*, rtc_file=*) noexcept
+    cpdef object _serial_checkpoint(self, object state=*)
     cpdef int save_state(self, object) except -1
     cpdef int load_state(self, object) except -1
 

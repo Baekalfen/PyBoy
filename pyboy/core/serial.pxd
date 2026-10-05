@@ -25,6 +25,7 @@ cdef class Serial:
     cdef bint transfer_enabled, double_speed, internal_clock
 
     cdef bint tick(self, uint64_t) noexcept nogil
+    cpdef object _checkpoint_state(self, object state=*)
     cdef void stop(self) noexcept
 
     cdef void set_SB(self, uint8_t) noexcept nogil
