@@ -167,6 +167,11 @@ class BaseMBC:
 
 
 class ROMOnly(BaseMBC):
+    def __init__(self, rombanks, ram_file, rtc_file, external_ram_count, carttype, sram, battery, rtc_enabled):
+        super().__init__(rombanks, ram_file, rtc_file, external_ram_count, carttype, sram, battery, rtc_enabled)
+        # ROMOnly has no bank switching, so SRAM (if present) is always available
+        self.rambank_enabled = sram
+
     def setitem(self, address, value):
         if 0x2000 <= address < 0x4000:
             if value == 0:
