@@ -1,5 +1,5 @@
 
-.PHONY: build clean run install test benchmark docs docs_linkcheck generate-test-results
+.PHONY: build clean run install test benchmark docs docs_linkcheck generate-test-results docs-images
 
 all: build
 
@@ -88,6 +88,9 @@ benchmark:
 
 generate-test-results:
 	${PY} ${ROOT_DIR}/docs/generate_test_results.py
+
+docs-images:
+	${PY} -m pytest ${ROOT_DIR}/docs ${ROOT_DIR}/pyboy ${ROOT_DIR}/tests/test_replay.py ${PYTEST_ARGS}
 
 docs: clean generate-test-results
 	cd ${ROOT_DIR}/pyboy/plugins && ${PY} manager_gen.py
