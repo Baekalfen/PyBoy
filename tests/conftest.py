@@ -372,6 +372,71 @@ def pandorasblocks_file():
     return str(path)
 
 
+# https://github.com/mattcurrie/cgb-acid-hell
+@pytest.fixture(scope="session")
+def cgb_acid_hell_file():
+    path = extra_test_rom_dir / Path("cgb-acid-hell.gbc")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.cgb-acid-hell.txt"))
+            cgb_acid_hell_data = url_open("https://pyboy.dk/mirror/cgb-acid-hell.gbc")
+            with open(path, "wb") as rom_file:
+                rom_file.write(cgb_acid_hell_data)
+    return str(path)
+
+
+# https://github.com/Ashiepaws/BullyGB
+@pytest.fixture(scope="session")
+def bully_file():
+    path = extra_test_rom_dir / Path("bully.gb")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.BullyGB.txt"))
+            bully_data = url_open("https://pyboy.dk/mirror/bully.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(bully_data)
+    return str(path)
+
+
+# https://github.com/Ashiepaws/strikethrough.gb
+@pytest.fixture(scope="session")
+def strikethrough_file():
+    path = extra_test_rom_dir / Path("strikethrough.gb")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isfile(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.strikethrough.txt"))
+            strikethrough_data = url_open("https://pyboy.dk/mirror/strikethrough.gb")
+            with open(path, "wb") as rom_file:
+                rom_file.write(strikethrough_data)
+    return str(path)
+
+
+# https://github.com/CasualPokePlayer/test-roms
+@pytest.fixture(scope="session")
+def cpp_dir():
+    path = extra_test_rom_dir / Path("cpp")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isdir(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.CasualPokePlayerTestRoms.txt"))
+            cpp_data = io.BytesIO(url_open("https://pyboy.dk/mirror/CasualPokePlayerTestRoms.zip"))
+            with ZipFile(cpp_data) as _zip:
+                _zip.extractall(path)
+    return str(path) + "/"
+
+
+# https://github.com/gbdev/GBEmulatorShootout/tree/main/testroms/daid
+@pytest.fixture(scope="session")
+def daid_dir():
+    path = extra_test_rom_dir / Path("daid")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isdir(path):
+            print(url_open("https://pyboy.dk/mirror/LICENSE.daid-testroms.txt"))
+            daid_data = io.BytesIO(url_open("https://pyboy.dk/mirror/daid-testroms.zip"))
+            with ZipFile(daid_data) as _zip:
+                _zip.extractall(path)
+    return str(path) + "/"
+
+
 @pytest.fixture(scope="session")
 def git_tetris_ai():
     if os.path.isfile("extras/README/7.gif") or platform.system() == "Windows":
