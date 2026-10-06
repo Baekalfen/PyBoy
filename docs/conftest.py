@@ -6,11 +6,13 @@
 # This collector applies only to Markdown Wiki pages.
 import doctest
 import hashlib
+import io
 import os
 import re
 import sys
 from pathlib import Path
 from urllib.request import urlopen
+from zipfile import ZipFile
 
 import numpy as np
 import pytest
@@ -39,6 +41,27 @@ def locate_secret_rom(digest):
     return None
 
 
+def decrypt_secrets():
+    # The wiki doctests are skipped at collection time, if the secret ROMs are
+    # missing. Decrypt them here, so the documentation images are generated in CI.
+    if SECRET_ROM_DIR.is_dir():
+        return
+    key = os.environ.get("PYTEST_SECRETS_KEY")
+    if not key:
+        return
+    from cryptography.fernet import Fernet
+
+    with FileLock(SECRET_ROM_DIR.with_suffix(".lock")):
+        if SECRET_ROM_DIR.is_dir():
+            return
+        fernet = Fernet(key.encode())
+        encrypted = urlopen("https://pyboy.dk/mirror/test_data.encrypted", timeout=60).read()
+        data = io.BytesIO(fernet.decrypt(encrypted))
+        with ZipFile(data, "r") as zip_file:
+            zip_file.extractall(SECRET_ROM_DIR)
+
+
+decrypt_secrets()
 WIKI_ROM_PATHS = {name: locate_secret_rom(digest) for name, digest in WIKI_ROM_HASHES.items()}
 sys.path.insert(0, str(REPO_ROOT))
 
