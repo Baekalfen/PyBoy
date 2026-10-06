@@ -65,7 +65,10 @@ for _ in range(target):
     pyboy.tick()
 
 # Render only the last of 'target' frames
-pyboy.tick(target, False)
+pyboy.tick(target)
+
+# Don't render screen, don't produce sound
+pyboy.tick(target, False, False)
 ```
 
 Skipping rendering and running multiple emulator instances in parallel can
