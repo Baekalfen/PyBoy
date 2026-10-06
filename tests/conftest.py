@@ -33,29 +33,6 @@ def references_dir():
 
 
 @pytest.fixture(scope="session")
-def git_pyboy_rl():
-    if os.path.isfile("extras/README/6.gif") or platform.system() == "Windows":
-        return None
-
-    import venv
-
-    path = Path("PyBoy-RL")
-    with FileLock(path.with_suffix(".lock")):
-        if not os.path.isdir(path):
-            # NOTE: No affiliation
-            repo = git.Repo.clone_from("https://github.com/lixado/PyBoy-RL.git", path)
-            repo.head.reset("03034a2d72c19c8cdc96d95b50e446a0ab83b421")
-        _venv = venv.EnvBuilder(with_pip=True)
-        _venv_path = Path(".venv")
-        _venv.create(path / _venv_path)
-        # _venv_context = _venv.ensure_directories(path / Path('.venv'))
-        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install -r requirements.txt') == 0
-        # Overwrite PyBoy with local version
-        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
-    return str(path)
-
-
-@pytest.fixture(scope="session")
 def git_pokemon_red_experiments():
     if os.path.isfile("README/8.gif") or platform.system() == "Windows":
         return None
