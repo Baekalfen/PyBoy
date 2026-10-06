@@ -11,7 +11,6 @@ import os
 import sys
 import time
 import zlib
-import pytest
 
 import numpy as np
 
@@ -174,28 +173,6 @@ def test_pokemon(pokemon_blue_rom, boot_rom):
     )
 
 
-@pytest.mark.skip("Outdated base state")
-def test_pokemon_gif1(pokemon_gold_rom, boot_rom):
-    replay(
-        pokemon_gold_rom,
-        "tests/replays/pokemon_gold_gif.replay",
-        record_gif=(1, 2714),
-        gif_destination="extras/README/1.gif",
-        bootrom_file=boot_rom,
-    )
-
-
-@pytest.mark.skip("Outdated")
-def test_pokemon_gif2(pokemon_blue_rom, boot_rom):
-    replay(
-        pokemon_blue_rom,
-        "tests/replays/pokemon_blue_gif2.replay",
-        record_gif=(0, 180),
-        gif_destination="extras/README/2.gif",
-        bootrom_file=boot_rom,
-    )
-
-
 def test_tetris(tetris_rom, boot_rom):
     replay(
         tetris_rom,
@@ -212,23 +189,11 @@ def test_supermarioland(supermarioland_rom, boot_rom):
     )
 
 
-@pytest.mark.skip("Outdated")
-def test_kirby(kirby_rom, boot_rom):
-    replay(
-        kirby_rom,
-        "tests/replays/kirby_gif.replay",
-        record_gif=(0, 360),
-        gif_destination="extras/README/4.gif",
-        bootrom_file=boot_rom,
-    )
-
-
-def test_rewind(supermarioland_rom, boot_rom):
+def test_rewind(supermarioland_rom):
     replay(
         supermarioland_rom,
         "tests/replays/supermarioland_rewind.replay",
         record_gif=(130, 544),
         gif_destination="extras/README/5.gif",
         rewind=True,
-        bootrom_file=None,
     )
