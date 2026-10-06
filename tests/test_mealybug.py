@@ -19,8 +19,6 @@ import pytest
 
 from pyboy import PyBoy
 
-REFERENCE_DIR = Path("tests/references/mealybug")
-
 MEALYBUG_ROMS = [
     "m2_win_en_toggle.gb",
     "m3_bgp_change.gb",
@@ -184,8 +182,8 @@ def apply_boot_logo_state(pyboy):
 
 @pytest.mark.parametrize("cgb", [False, True], ids=["DMG", "CGB"])
 @pytest.mark.parametrize("rom", MEALYBUG_ROMS)
-def test_mealybug(cgb, rom, mealybug_dir):
-    reference = REFERENCE_DIR / ("cgb" if cgb else "dmg") / (rom[:-3] + ".png")
+def test_mealybug(cgb, rom, mealybug_dir, references_dir):
+    reference = Path(f"{references_dir}mealybug/{'cgb' if cgb else 'dmg'}/{rom[:-3]}.png")
     if not reference.exists():
         pytest.skip(f"No expected image for {rom} on {'CGB' if cgb else 'DMG'}")
 

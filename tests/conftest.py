@@ -7,7 +7,9 @@ import hashlib
 import io
 import os
 import platform
+import re
 import time
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from zipfile import ZipFile
@@ -34,13 +36,36 @@ default_rom_path = "test_roms/secrets/"
 def url_open(url):
     # https://stackoverflow.com/questions/62684468/pythons-requests-triggers-cloudflares-security-while-urllib-does-not
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0"}
+    last_error = None
     for _ in range(5):
         try:
             request = urllib.request.Request(url, headers=headers)
             return urllib.request.urlopen(request).read()
-        except urllib.error.HTTPError as ex:
-            print("HTTPError in url_open", ex)
+        except urllib.error.URLError as ex:
+            print("Error in url_open", url, ex)
+            last_error = ex
             time.sleep(3)
+    raise ConnectionError(f"Failed to download '{url}' after 5 attempts") from last_error
+
+
+def url_download_dir(url, path):
+    # Recursively mirrors a directory served by nginx with autoindex enabled
+    # into path. The url must end with a slash. The href attributes in the
+    # listing are URL-encoded, so they are requested as-is and decoded for the
+    # local file names. Existing files are skipped, so an interrupted download
+    # resumes where it left off. The directory is only created after the
+    # listing is fetched, so a failed download leaves nothing behind.
+    listing = url_open(url).decode("ascii")
+    path.mkdir(parents=True, exist_ok=True)
+    for href in re.findall(r'href="([^"]+)"', listing):
+        if href.startswith(("../", "/", "?")):
+            continue
+        if href.endswith("/"):
+            url_download_dir(url + href, path / urllib.parse.unquote(href))
+        else:
+            file_path = path / urllib.parse.unquote(href)
+            if not os.path.isfile(file_path):
+                file_path.write_bytes(url_open(url + href))
 
 
 def locate_roms(path=default_rom_path):
@@ -447,6 +472,16 @@ def daid_dir():
             daid_data = io.BytesIO(url_open("https://pyboy.dk/mirror/daid-testroms.zip"))
             with ZipFile(daid_data) as _zip:
                 _zip.extractall(path)
+    return str(path) + "/"
+
+
+# Reference images for the image comparison tests
+@pytest.fixture(scope="session")
+def references_dir():
+    path = extra_test_rom_dir / Path("references")
+    with FileLock(path.with_suffix(".lock")):
+        if not os.path.isdir(path):
+            url_download_dir("https://pyboy.dk/mirror/references/", path)
     return str(path) + "/"
 
 

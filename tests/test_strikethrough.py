@@ -15,7 +15,7 @@ from pyboy import PyBoy
 
 # https://github.com/Ashiepaws/strikethrough.gb
 @pytest.mark.xfail(reason="OAM DMA mid-scanline corrupts a different sprite than on hardware")
-def test_strikethrough(strikethrough_file):
+def test_strikethrough(strikethrough_file, references_dir):
     pyboy = PyBoy(strikethrough_file, window="null", cgb=False)
     pyboy.set_emulation_speed(0)
     pyboy.tick(120, True)
@@ -23,7 +23,7 @@ def test_strikethrough(strikethrough_file):
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
 
-    png_path = Path("tests/references/strikethrough/strikethrough.png")
+    png_path = Path(f"{references_dir}strikethrough/strikethrough.png")
     assert png_path.exists(), "Reference image doesn't exist"
     old_image = PIL.Image.open(png_path).convert("RGB")
     diff = ImageChops.difference(image, old_image)

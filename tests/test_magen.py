@@ -12,8 +12,6 @@ import pytest
 
 from pyboy import PyBoy
 
-REFERENCE_DIR = Path("tests/references/magen")
-
 
 # https://github.com/alloncm/MagenTests
 @pytest.mark.parametrize(
@@ -29,14 +27,14 @@ REFERENCE_DIR = Path("tests/references/magen")
         ("ppu_disabled_state.gbc", "expected_green_screen.png"),
     ],
 )
-def test_magen_test(rom, reference, magen_dir):
+def test_magen_test(rom, reference, magen_dir, references_dir):
     pyboy = PyBoy(magen_dir + "/" + rom, window="null")
     pyboy.set_emulation_speed(0)
     pyboy.tick(59, True)
     pyboy.tick(25, True)
 
     image = pyboy.screen.image
-    reference_image = PIL.Image.open(REFERENCE_DIR / reference).convert("RGB")
+    reference_image = PIL.Image.open(Path(f"{references_dir}magen/{reference}")).convert("RGB")
     if reference == "hardware_screenshot.jpg":
         reference_image = reference_image.crop((160, 32, 800, 608))
     elif reference == "oam_internal_priority.png":

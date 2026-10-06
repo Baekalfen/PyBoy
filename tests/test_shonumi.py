@@ -19,7 +19,7 @@ from pyboy import PyBoy
         "sprite_suite.gb",
     ],
 )
-def test_shonumi(rom, shonumi_dir):
+def test_shonumi(rom, shonumi_dir, references_dir):
     pyboy = PyBoy(shonumi_dir + rom, window="null", color_palette=(0xFFFFFF, 0x999999, 0x606060, 0x000000))
     pyboy.set_emulation_speed(0)
 
@@ -29,7 +29,7 @@ def test_shonumi(rom, shonumi_dir):
     # 48 Progress to screenshot
     pyboy.tick(60 + 23 + 48, True)
 
-    reference_path = Path(f"tests/references/GB Tests/{rom.removesuffix('.gb')}.png")
+    reference_path = Path(f"{references_dir}GB Tests/{rom.removesuffix('.gb')}.png")
     image = pyboy.screen.image
     assert reference_path.exists(), "Reference image doesn't exist"
     reference_image = PIL.Image.open(reference_path).convert("RGB")

@@ -76,7 +76,7 @@ DAID_IMAGE_CASES = [
 
 
 @pytest.mark.parametrize("rom, cgb, frames, references", DAID_IMAGE_CASES)
-def test_daid_image(rom, cgb, frames, references, daid_dir):
+def test_daid_image(rom, cgb, frames, references, daid_dir, references_dir):
     pyboy = PyBoy(daid_dir + rom, window="null", cgb=cgb)
     pyboy.set_emulation_speed(0)
     pyboy.tick(frames, True)
@@ -87,7 +87,7 @@ def test_daid_image(rom, cgb, frames, references, daid_dir):
     best_diff = None
     best_diff_pixels = None
     for reference in references:
-        png_path = Path(f"tests/references/daid/{reference}")
+        png_path = Path(f"{references_dir}daid/{reference}")
         assert png_path.exists(), "Reference image doesn't exist"
         old_image = PIL.Image.open(png_path).convert("RGB")
         diff = ImageChops.difference(image, old_image)

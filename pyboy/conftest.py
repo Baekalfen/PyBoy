@@ -31,13 +31,16 @@ os.makedirs(extra_test_rom_dir, exist_ok=True)
 def url_open(url):
     # https://stackoverflow.com/questions/62684468/pythons-requests-triggers-cloudflares-security-while-urllib-does-not
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0"}
+    last_error = None
     for _ in range(5):
         try:
             request = urllib.request.Request(url, headers=headers)
             return urllib.request.urlopen(request).read()
-        except urllib.error.HTTPError as ex:
-            print("HTTPError in url_open", ex)
+        except urllib.error.URLError as ex:
+            print("Error in url_open", url, ex)
+            last_error = ex
             time.sleep(3)
+    raise ConnectionError(f"Failed to download '{url}' after 5 attempts") from last_error
 
 
 def locate_roms(path=default_rom_path):
