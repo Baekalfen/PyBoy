@@ -179,6 +179,9 @@ class CPU:
         return False
 
     def handle_interrupt(self, flag, addr):
+        # The dispatch sequence is five M-cycles in total. The PC is pushed
+        # in the third and fourth M-cycles (mooneye intr_timing).
+        self.cycles += 8
         # The first stack write happens before the interrupt controller commits
         # the dispatch. IE can be the destination of that write.
         self.mb.setitem((self.SP - 1) & 0xFFFF, self.PC >> 8)  # High
@@ -203,15 +206,17 @@ class CPU:
             return False
 
         self.interrupts_flag_register ^= flag  # Remove flag
+        self.cycles += 4
         self.mb.setitem((self.SP - 2) & 0xFFFF, self.PC & 0xFF)  # Low
         self.SP -= 2
         self.SP &= 0xFFFF
 
         self.PC = addr
 
+        # The fifth M-cycle fetches the first opcode of the handler.
         # https://gbdev.io/pandocs/Interrupts.html#interrupt-handling
         # "The entire process lasts 5 M-cycles."
-        self.cycles += 20
+        self.cycles += 8
 
         self.interrupt_master_enable = False
         return True

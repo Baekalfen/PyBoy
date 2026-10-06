@@ -32,10 +32,11 @@ def LD_01(cpu, v): # 01 LD BC,d16
 
 
 def LD_02(cpu): # 02 LD (BC),A
+    cpu.cycles += 4
     cpu.mb.setitem(((cpu.B << 8) + cpu.C), cpu.A)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def INC_03(cpu): # 03 INC BC
@@ -105,11 +106,13 @@ def RLCA_07(cpu): # 07 RLCA
 
 
 def LD_08(cpu, v): # 08 LD (a16),SP
+    cpu.cycles += 12
     cpu.mb.setitem(v, cpu.SP & 0xFF)
+    cpu.cycles += 4
     cpu.mb.setitem(v+1, cpu.SP >> 8)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
-    cpu.cycles += 20
+    cpu.cycles += 4
 
 
 def ADD_09(cpu): # 09 ADD HL,BC
@@ -129,10 +132,11 @@ def ADD_09(cpu): # 09 ADD HL,BC
 
 
 def LD_0A(cpu): # 0A LD A,(BC)
+    cpu.cycles += 4
     cpu.A = cpu.mb.getitem(((cpu.B << 8) + cpu.C))
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def DEC_0B(cpu): # 0B DEC BC
@@ -219,12 +223,11 @@ def LD_11(cpu, v): # 11 LD DE,d16
 
 
 def LD_12(cpu): # 12 LD (DE),A
-    cpu.memory_access_offset = 4
+    cpu.cycles += 4
     cpu.mb.setitem(((cpu.D << 8) + cpu.E), cpu.A)
-    cpu.memory_access_offset = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def INC_13(cpu): # 13 INC DE
@@ -316,12 +319,11 @@ def ADD_19(cpu): # 19 ADD HL,DE
 
 
 def LD_1A(cpu): # 1A LD A,(DE)
-    cpu.memory_access_offset = 4
+    cpu.cycles += 4
     cpu.A = cpu.mb.getitem(((cpu.D << 8) + cpu.E))
-    cpu.memory_access_offset = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def DEC_1B(cpu): # 1B DEC DE
@@ -409,12 +411,13 @@ def LD_21(cpu, v): # 21 LD HL,d16
 
 
 def LD_22(cpu): # 22 LD (HL+),A
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.A)
     cpu.HL += 1
     cpu.HL &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def INC_23(cpu): # 23 INC HL
@@ -519,12 +522,13 @@ def ADD_29(cpu): # 29 ADD HL,HL
 
 
 def LD_2A(cpu): # 2A LD A,(HL+)
+    cpu.cycles += 4
     cpu.A = cpu.mb.getitem(cpu.HL)
     cpu.HL += 1
     cpu.HL &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def DEC_2B(cpu): # 2B DEC HL
@@ -607,12 +611,13 @@ def LD_31(cpu, v): # 31 LD SP,d16
 
 
 def LD_32(cpu): # 32 LD (HL-),A
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.A)
     cpu.HL -= 1
     cpu.HL &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def INC_33(cpu): # 33 INC SP
@@ -628,6 +633,7 @@ def INC_33(cpu): # 33 INC SP
 
 
 def INC_34(cpu): # 34 INC (HL)
+    cpu.cycles += 4
     a = cpu.mb.getitem(cpu.HL)
     b = 1
     t = a + b
@@ -641,10 +647,11 @@ def INC_34(cpu): # 34 INC (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def DEC_35(cpu): # 35 DEC (HL)
+    cpu.cycles += 4
     a = cpu.mb.getitem(cpu.HL)
     b = 1
     t = a - b
@@ -658,15 +665,15 @@ def DEC_35(cpu): # 35 DEC (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_36(cpu, v): # 36 LD (HL),d8
-    cpu.cycles += 4
+    cpu.cycles += 8
     cpu.mb.setitem(cpu.HL, v)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SCF_37(cpu): # 37 SCF
@@ -706,12 +713,13 @@ def ADD_39(cpu): # 39 ADD HL,SP
 
 
 def LD_3A(cpu): # 3A LD A,(HL-)
+    cpu.cycles += 4
     cpu.A = cpu.mb.getitem(cpu.HL)
     cpu.HL -= 1
     cpu.HL &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def DEC_3B(cpu): # 3B DEC SP
@@ -817,10 +825,11 @@ def LD_45(cpu): # 45 LD B,L
 
 
 def LD_46(cpu): # 46 LD B,(HL)
+    cpu.cycles += 4
     cpu.B = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_47(cpu): # 47 LD B,A
@@ -873,10 +882,11 @@ def LD_4D(cpu): # 4D LD C,L
 
 
 def LD_4E(cpu): # 4E LD C,(HL)
+    cpu.cycles += 4
     cpu.C = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_4F(cpu): # 4F LD C,A
@@ -929,10 +939,11 @@ def LD_55(cpu): # 55 LD D,L
 
 
 def LD_56(cpu): # 56 LD D,(HL)
+    cpu.cycles += 4
     cpu.D = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_57(cpu): # 57 LD D,A
@@ -985,10 +996,11 @@ def LD_5D(cpu): # 5D LD E,L
 
 
 def LD_5E(cpu): # 5E LD E,(HL)
+    cpu.cycles += 4
     cpu.E = cpu.mb.getitem(cpu.HL)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_5F(cpu): # 5F LD E,A
@@ -1041,10 +1053,11 @@ def LD_65(cpu): # 65 LD H,L
 
 
 def LD_66(cpu): # 66 LD H,(HL)
+    cpu.cycles += 4
     cpu.HL = (cpu.HL & 0x00FF) | (cpu.mb.getitem(cpu.HL) << 8)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_67(cpu): # 67 LD H,A
@@ -1097,10 +1110,11 @@ def LD_6D(cpu): # 6D LD L,L
 
 
 def LD_6E(cpu): # 6E LD L,(HL)
+    cpu.cycles += 4
     cpu.HL = (cpu.HL & 0xFF00) | (cpu.mb.getitem(cpu.HL) & 0xFF)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_6F(cpu): # 6F LD L,A
@@ -1111,45 +1125,51 @@ def LD_6F(cpu): # 6F LD L,A
 
 
 def LD_70(cpu): # 70 LD (HL),B
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.B)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_71(cpu): # 71 LD (HL),C
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.C)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_72(cpu): # 72 LD (HL),D
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.D)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_73(cpu): # 73 LD (HL),E
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.E)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_74(cpu): # 74 LD (HL),H
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, (cpu.HL >> 8))
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_75(cpu): # 75 LD (HL),L
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, (cpu.HL & 0xFF))
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def HALT_76(cpu): # 76 HALT
@@ -1160,10 +1180,11 @@ def HALT_76(cpu): # 76 HALT
 
 
 def LD_77(cpu): # 77 LD (HL),A
+    cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, cpu.A)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_78(cpu): # 78 LD A,B
@@ -1209,13 +1230,11 @@ def LD_7D(cpu): # 7D LD A,L
 
 
 def LD_7E(cpu): # 7E LD A,(HL)
-    # The data read is on the second M-cycle.
-    cpu.memory_access_offset = 4
+    cpu.cycles += 4
     cpu.A = cpu.mb.getitem(cpu.HL)
-    cpu.memory_access_offset = 0
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_7F(cpu): # 7F LD A,A
@@ -1329,6 +1348,7 @@ def ADD_85(cpu): # 85 ADD A,L
 
 def ADD_86(cpu): # 86 ADD A,(HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     t = a + b
     flag = 0b00000000
@@ -1341,7 +1361,7 @@ def ADD_86(cpu): # 86 ADD A,(HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def ADD_87(cpu): # 87 ADD A,A
@@ -1471,6 +1491,7 @@ def ADC_8D(cpu): # 8D ADC A,L
 
 def ADC_8E(cpu): # 8E ADC A,(HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     c = ((cpu.F & (1 << FLAGC)) != 0)
     t = a + b + c
@@ -1484,7 +1505,7 @@ def ADC_8E(cpu): # 8E ADC A,(HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def ADC_8F(cpu): # 8F ADC A,A
@@ -1609,6 +1630,7 @@ def SUB_95(cpu): # 95 SUB L
 
 def SUB_96(cpu): # 96 SUB (HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     t = a - b
     flag = 0b01000000
@@ -1621,7 +1643,7 @@ def SUB_96(cpu): # 96 SUB (HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SUB_97(cpu): # 97 SUB A
@@ -1751,6 +1773,7 @@ def SBC_9D(cpu): # 9D SBC A,L
 
 def SBC_9E(cpu): # 9E SBC A,(HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     c = ((cpu.F & (1 << FLAGC)) != 0)
     t = a - b - c
@@ -1764,7 +1787,7 @@ def SBC_9E(cpu): # 9E SBC A,(HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SBC_9F(cpu): # 9F SBC A,A
@@ -1877,6 +1900,7 @@ def AND_A5(cpu): # A5 AND L
 
 def AND_A6(cpu): # A6 AND (HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     t = a & b
     flag = 0b00100000
@@ -1887,7 +1911,7 @@ def AND_A6(cpu): # A6 AND (HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def AND_A7(cpu): # A7 AND A
@@ -1997,6 +2021,7 @@ def XOR_AD(cpu): # AD XOR L
 
 def XOR_AE(cpu): # AE XOR (HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     t = a ^ b
     flag = 0b00000000
@@ -2007,7 +2032,7 @@ def XOR_AE(cpu): # AE XOR (HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def XOR_AF(cpu): # AF XOR A
@@ -2117,6 +2142,7 @@ def OR_B5(cpu): # B5 OR L
 
 def OR_B6(cpu): # B6 OR (HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     t = a | b
     flag = 0b00000000
@@ -2127,7 +2153,7 @@ def OR_B6(cpu): # B6 OR (HL)
     cpu.A = t
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def OR_B7(cpu): # B7 OR A
@@ -2243,6 +2269,7 @@ def CP_BD(cpu): # BD CP L
 
 def CP_BE(cpu): # BE CP (HL)
     a = cpu.A
+    cpu.cycles += 4
     b = cpu.mb.getitem(cpu.HL)
     t = a - b
     flag = 0b01000000
@@ -2254,7 +2281,7 @@ def CP_BE(cpu): # BE CP (HL)
     t &= 0xFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def CP_BF(cpu): # BF CP A
@@ -2289,6 +2316,7 @@ def RET_C0(cpu): # C0 RET NZ
 
 
 def POP_C1(cpu): # C1 POP BC
+    cpu.cycles += 4
     cpu.C = cpu.mb.getitem(cpu.SP) # Low
     cpu.cycles += 4
     cpu.B = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
@@ -2296,7 +2324,7 @@ def POP_C1(cpu): # C1 POP BC
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def JP_C2(cpu, v): # C2 JP NZ,a16
@@ -2490,6 +2518,7 @@ def RET_D0(cpu): # D0 RET NC
 
 
 def POP_D1(cpu): # D1 POP DE
+    cpu.cycles += 4
     cpu.E = cpu.mb.getitem(cpu.SP) # Low
     cpu.cycles += 4
     cpu.D = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
@@ -2497,7 +2526,7 @@ def POP_D1(cpu): # D1 POP DE
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def JP_D2(cpu, v): # D2 JP NC,a16
@@ -2654,14 +2683,15 @@ def RST_DF(cpu): # DF RST 18H
 
 
 def LDH_E0(cpu, v): # E0 LDH (a8),A
-    cpu.cycles += 4
+    cpu.cycles += 8
     cpu.mb.setitem_io_ports(v | 0xFF00, cpu.A)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def POP_E1(cpu): # E1 POP HL
+    cpu.cycles += 4
     cpu.HL = cpu.mb.getitem(cpu.SP) # Low
     cpu.cycles += 4
     cpu.HL |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High
@@ -2669,14 +2699,15 @@ def POP_E1(cpu): # E1 POP HL
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_E2(cpu): # E2 LD (C),A
+    cpu.cycles += 4
     cpu.mb.setitem_io_ports(0xFF00 | cpu.C, cpu.A)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def PUSH_E5(cpu): # E5 PUSH HL
@@ -2741,11 +2772,11 @@ def JP_E9(cpu): # E9 JP (HL)
 
 
 def LD_EA(cpu, v): # EA LD (a16),A
-    cpu.cycles += 8
+    cpu.cycles += 12
     cpu.mb.setitem(v, cpu.A)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def XOR_EE(cpu, v): # EE XOR d8
@@ -2777,14 +2808,15 @@ def RST_EF(cpu): # EF RST 28H
 
 
 def LDH_F0(cpu, v): # F0 LDH A,(a8)
-    cpu.cycles += 4
+    cpu.cycles += 8
     cpu.A = cpu.mb.getitem_io_ports(v | 0xFF00)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def POP_F1(cpu): # F1 POP AF
+    cpu.cycles += 4
     cpu.F = cpu.mb.getitem(cpu.SP) & 0xF0 & 0xF0 # Low
     cpu.cycles += 4
     cpu.A = cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) # High
@@ -2792,14 +2824,15 @@ def POP_F1(cpu): # F1 POP AF
     cpu.SP &= 0xFFFF
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def LD_F2(cpu): # F2 LD A,(C)
+    cpu.cycles += 4
     cpu.A = cpu.mb.getitem_io_ports(0xFF00 | cpu.C)
     cpu.PC += 1
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def DI_F3(cpu): # F3 DI
@@ -2872,11 +2905,11 @@ def LD_F9(cpu): # F9 LD SP,HL
 
 
 def LD_FA(cpu, v): # FA LD A,(a16)
-    cpu.cycles += 8
+    cpu.cycles += 12
     cpu.A = cpu.mb.getitem(v)
     cpu.PC += 3
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def EI_FB(cpu): # FB EI
@@ -3007,7 +3040,7 @@ def RLC_105(cpu): # 105 RLC L
 
 
 def RLC_106(cpu): # 106 RLC (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = (a << 1) | (a >> 7)
     flag = 0b00000000
@@ -3020,7 +3053,7 @@ def RLC_106(cpu): # 106 RLC (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RLC_107(cpu): # 107 RLC A
@@ -3129,7 +3162,7 @@ def RRC_10D(cpu): # 10D RRC L
 
 
 def RRC_10E(cpu): # 10E RRC (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = (a >> 1) | ((a & 1) << 7)
     flag = 0b00000000
@@ -3142,7 +3175,7 @@ def RRC_10E(cpu): # 10E RRC (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RRC_10F(cpu): # 10F RRC A
@@ -3251,7 +3284,7 @@ def RL_115(cpu): # 115 RL L
 
 
 def RL_116(cpu): # 116 RL (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = (a << 1) | ((cpu.F & (1 << FLAGC)) != 0)
     flag = 0b00000000
@@ -3264,7 +3297,7 @@ def RL_116(cpu): # 116 RL (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RL_117(cpu): # 117 RL A
@@ -3373,7 +3406,7 @@ def RR_11D(cpu): # 11D RR L
 
 
 def RR_11E(cpu): # 11E RR (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = (a >> 1) | (((cpu.F & (1 << FLAGC)) != 0) << 7)
     flag = 0b00000000
@@ -3386,7 +3419,7 @@ def RR_11E(cpu): # 11E RR (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RR_11F(cpu): # 11F RR A
@@ -3489,7 +3522,7 @@ def SLA_125(cpu): # 125 SLA L
 
 
 def SLA_126(cpu): # 126 SLA (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = (cpu.mb.getitem(cpu.HL) << 1)
     flag = 0b00000000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -3501,7 +3534,7 @@ def SLA_126(cpu): # 126 SLA (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SLA_127(cpu): # 127 SLA A
@@ -3609,7 +3642,7 @@ def SRA_12D(cpu): # 12D SRA L
 
 
 def SRA_12E(cpu): # 12E SRA (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = ((a >> 1) | (a & 0x80)) | ((a & 1) << 8)
     flag = 0b00000000
@@ -3622,7 +3655,7 @@ def SRA_12E(cpu): # 12E SRA (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SRA_12F(cpu): # 12F SRA A
@@ -3725,7 +3758,7 @@ def SWAP_135(cpu): # 135 SWAP L
 
 
 def SWAP_136(cpu): # 136 SWAP (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = ((a & 0xF0) >> 4) | ((a & 0x0F) << 4)
     flag = 0b00000000
@@ -3737,7 +3770,7 @@ def SWAP_136(cpu): # 136 SWAP (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SWAP_137(cpu): # 137 SWAP A
@@ -3845,7 +3878,7 @@ def SRL_13D(cpu): # 13D SRL L
 
 
 def SRL_13E(cpu): # 13E SRL (HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     a = cpu.mb.getitem(cpu.HL)
     t = (a >> 1) + ((a & 1) << 8)
     flag = 0b00000000
@@ -3858,7 +3891,7 @@ def SRL_13E(cpu): # 13E SRL (HL)
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SRL_13F(cpu): # 13F SRL A
@@ -3943,7 +3976,7 @@ def BIT_145(cpu): # 145 BIT 0,L
 
 
 def BIT_146(cpu): # 146 BIT 0,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 0)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -3951,7 +3984,7 @@ def BIT_146(cpu): # 146 BIT 0,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_147(cpu): # 147 BIT 0,A
@@ -4032,7 +4065,7 @@ def BIT_14D(cpu): # 14D BIT 1,L
 
 
 def BIT_14E(cpu): # 14E BIT 1,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 1)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4040,7 +4073,7 @@ def BIT_14E(cpu): # 14E BIT 1,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_14F(cpu): # 14F BIT 1,A
@@ -4121,7 +4154,7 @@ def BIT_155(cpu): # 155 BIT 2,L
 
 
 def BIT_156(cpu): # 156 BIT 2,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 2)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4129,7 +4162,7 @@ def BIT_156(cpu): # 156 BIT 2,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_157(cpu): # 157 BIT 2,A
@@ -4210,7 +4243,7 @@ def BIT_15D(cpu): # 15D BIT 3,L
 
 
 def BIT_15E(cpu): # 15E BIT 3,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 3)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4218,7 +4251,7 @@ def BIT_15E(cpu): # 15E BIT 3,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_15F(cpu): # 15F BIT 3,A
@@ -4299,7 +4332,7 @@ def BIT_165(cpu): # 165 BIT 4,L
 
 
 def BIT_166(cpu): # 166 BIT 4,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 4)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4307,7 +4340,7 @@ def BIT_166(cpu): # 166 BIT 4,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_167(cpu): # 167 BIT 4,A
@@ -4388,7 +4421,7 @@ def BIT_16D(cpu): # 16D BIT 5,L
 
 
 def BIT_16E(cpu): # 16E BIT 5,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 5)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4396,7 +4429,7 @@ def BIT_16E(cpu): # 16E BIT 5,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_16F(cpu): # 16F BIT 5,A
@@ -4477,7 +4510,7 @@ def BIT_175(cpu): # 175 BIT 6,L
 
 
 def BIT_176(cpu): # 176 BIT 6,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 6)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4485,7 +4518,7 @@ def BIT_176(cpu): # 176 BIT 6,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_177(cpu): # 177 BIT 6,A
@@ -4566,7 +4599,7 @@ def BIT_17D(cpu): # 17D BIT 7,L
 
 
 def BIT_17E(cpu): # 17E BIT 7,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & (1 << 7)
     flag = 0b00100000
     flag |= ((t & 0xFF) == 0) << FLAGZ
@@ -4574,7 +4607,7 @@ def BIT_17E(cpu): # 17E BIT 7,(HL)
     cpu.F |= flag
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def BIT_17F(cpu): # 17F BIT 7,A
@@ -4637,13 +4670,13 @@ def RES_185(cpu): # 185 RES 0,L
 
 
 def RES_186(cpu): # 186 RES 0,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 0)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_187(cpu): # 187 RES 0,A
@@ -4703,13 +4736,13 @@ def RES_18D(cpu): # 18D RES 1,L
 
 
 def RES_18E(cpu): # 18E RES 1,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 1)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_18F(cpu): # 18F RES 1,A
@@ -4769,13 +4802,13 @@ def RES_195(cpu): # 195 RES 2,L
 
 
 def RES_196(cpu): # 196 RES 2,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 2)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_197(cpu): # 197 RES 2,A
@@ -4835,13 +4868,13 @@ def RES_19D(cpu): # 19D RES 3,L
 
 
 def RES_19E(cpu): # 19E RES 3,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 3)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_19F(cpu): # 19F RES 3,A
@@ -4901,13 +4934,13 @@ def RES_1A5(cpu): # 1A5 RES 4,L
 
 
 def RES_1A6(cpu): # 1A6 RES 4,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 4)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_1A7(cpu): # 1A7 RES 4,A
@@ -4967,13 +5000,13 @@ def RES_1AD(cpu): # 1AD RES 5,L
 
 
 def RES_1AE(cpu): # 1AE RES 5,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 5)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_1AF(cpu): # 1AF RES 5,A
@@ -5033,13 +5066,13 @@ def RES_1B5(cpu): # 1B5 RES 6,L
 
 
 def RES_1B6(cpu): # 1B6 RES 6,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 6)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_1B7(cpu): # 1B7 RES 6,A
@@ -5099,13 +5132,13 @@ def RES_1BD(cpu): # 1BD RES 7,L
 
 
 def RES_1BE(cpu): # 1BE RES 7,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) & ~(1 << 7)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def RES_1BF(cpu): # 1BF RES 7,A
@@ -5165,13 +5198,13 @@ def SET_1C5(cpu): # 1C5 SET 0,L
 
 
 def SET_1C6(cpu): # 1C6 SET 0,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 0)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1C7(cpu): # 1C7 SET 0,A
@@ -5231,13 +5264,13 @@ def SET_1CD(cpu): # 1CD SET 1,L
 
 
 def SET_1CE(cpu): # 1CE SET 1,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 1)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1CF(cpu): # 1CF SET 1,A
@@ -5297,13 +5330,13 @@ def SET_1D5(cpu): # 1D5 SET 2,L
 
 
 def SET_1D6(cpu): # 1D6 SET 2,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 2)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1D7(cpu): # 1D7 SET 2,A
@@ -5363,13 +5396,13 @@ def SET_1DD(cpu): # 1DD SET 3,L
 
 
 def SET_1DE(cpu): # 1DE SET 3,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 3)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1DF(cpu): # 1DF SET 3,A
@@ -5429,13 +5462,13 @@ def SET_1E5(cpu): # 1E5 SET 4,L
 
 
 def SET_1E6(cpu): # 1E6 SET 4,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 4)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1E7(cpu): # 1E7 SET 4,A
@@ -5495,13 +5528,13 @@ def SET_1ED(cpu): # 1ED SET 5,L
 
 
 def SET_1EE(cpu): # 1EE SET 5,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 5)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1EF(cpu): # 1EF SET 5,A
@@ -5561,13 +5594,13 @@ def SET_1F5(cpu): # 1F5 SET 6,L
 
 
 def SET_1F6(cpu): # 1F6 SET 6,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 6)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1F7(cpu): # 1F7 SET 6,A
@@ -5627,13 +5660,13 @@ def SET_1FD(cpu): # 1FD SET 7,L
 
 
 def SET_1FE(cpu): # 1FE SET 7,(HL)
-    cpu.cycles += 4
+    cpu.cycles += 8
     t = cpu.mb.getitem(cpu.HL) | (1 << 7)
     cpu.cycles += 4
     cpu.mb.setitem(cpu.HL, t)
     cpu.PC += 2
     cpu.PC &= 0xFFFF
-    cpu.cycles += 8
+    cpu.cycles += 4
 
 
 def SET_1FF(cpu): # 1FF SET 7,A
