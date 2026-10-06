@@ -13,8 +13,8 @@ from pyboy.plugins.game_wrapper_pandoras_blocks import GameWrapperPandorasBlocks
 
 
 @pytest.fixture(params=[False, True])
-def pandorasblocks(pandorasblocks_file, request):
-    pyboy = PyBoy(pandorasblocks_file, window="null", cgb=request.param)
+def pandorasblocks(pandorasblocks_rom, request):
+    pyboy = PyBoy(pandorasblocks_rom, window="null", cgb=request.param)
     try:
         yield pyboy
     finally:
@@ -28,8 +28,8 @@ def started_pandorasblocks(pandorasblocks):
 
 
 @pytest.mark.parametrize("cgb", [False, True])
-def test_pandorasblocks_startup(cgb, pandorasblocks_file):
-    pyboy = PyBoy(pandorasblocks_file, window="null", cgb=cgb)
+def test_pandorasblocks_startup(cgb, pandorasblocks_rom):
+    pyboy = PyBoy(pandorasblocks_rom, window="null", cgb=cgb)
     try:
         wrapper = pyboy.game_wrapper
         assert isinstance(wrapper, GameWrapperPandorasBlocks)
