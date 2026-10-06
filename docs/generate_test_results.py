@@ -14,10 +14,29 @@ RESULTS_DIR = PROJECT_ROOT / "tests" / "test_results"
 OUTPUT = DOCS_DIR / "wiki" / "test-results.md"
 IMAGE_OUTPUT = DOCS_DIR / "wiki" / "assets" / "test-results"
 JUNIT_XML = RESULTS_DIR / "pytest.xml"
-EXCLUDED_IMAGE_SUITES = {"Boot ROM modes", "Pokemon Blue", "Sound swoosh", "which", "whichboot"}
+EXCLUDED_IMAGE_SUITES = {"Boot ROM modes", "Pokemon Blue", "Sound swoosh", "which", "whichboot", "rtc3test"}
 GITHUB_RESULTS_BASE = "https://github.com/Baekalfen/PyBoy/blob/master/"
 GITHUB_RESULTS_TREE_BASE = "https://github.com/Baekalfen/PyBoy/tree/master/"
 RESULT_COLORS = {"Passed": "#1a7f37", "Failed": "#cf222e"}
+SUITE_TEST_FILES = {
+    "Blargg": ("tests/test_blargg.py",),
+    "SameSuite": ("tests/test_samesuite.py",),
+    "Mooneye": ("tests/test_mooneye.py",),
+    "RTC3Test": ("tests/test_rtc3test.py",),
+    "which": ("tests/test_which.py",),
+    "GB Tests": ("tests/test_shonumi.py",),
+    "TurtleTest": ("tests/test_turtle.py",),
+    "Magen": ("tests/test_magen.py",),
+    "MBC30": ("tests/test_mbc30.py",),
+    "Mooneye image results": ("tests/test_mooneye.py",),
+    "Acid2": ("tests/test_acid_dmg.py", "tests/test_acid_cgb.py"),
+    "BullyGB": ("tests/test_bully.py",),
+    "Strikethrough": ("tests/test_strikethrough.py",),
+    "CGB Acid Hell": ("tests/test_acid_hell.py",),
+    "CasualPokePlayer": ("tests/test_cpp.py",),
+    "Daid": ("tests/test_daid.py",),
+    "Mealybug": ("tests/test_mealybug.py",),
+}
 
 
 def github_result_url(path):
@@ -28,6 +47,19 @@ def github_result_url(path):
 def github_results_directory_url(path):
     relative = path.relative_to(PROJECT_ROOT).as_posix()
     return GITHUB_RESULTS_TREE_BASE + quote(relative, safe="/")
+
+
+def github_file_url(relative):
+    return GITHUB_RESULTS_BASE + quote(relative, safe="/")
+
+
+def github_links_line(suite):
+    line = f"[Results on GitHub]({suite['url']})"
+    test_files = SUITE_TEST_FILES.get(suite["name"], ())
+    if test_files:
+        pytest_links = ", ".join(f"[{Path(f).name}]({github_file_url(f)})" for f in test_files)
+        line += f" · Pytest: {pytest_links}"
+    return line
 
 
 def load_junit_statuses(path):
@@ -60,9 +92,20 @@ def junit_status_prefix(statuses, classname, prefix):
     return matches[0] if len(matches) == 1 else "Not run"
 
 
-def load_json_suite(name, path, statuses, test_name_for):
+def load_json_suite(name, path, statuses, test_name_for, image_for=None):
     data = json.loads(path.read_text())
-    results = [(key, test_name_for(statuses, key)) for key in sorted(data)]
+    results = []
+    for key in sorted(data):
+        status = test_name_for(statuses, key)
+        image = None
+        if image_for is not None:
+            source = image_for(key)
+            if source is not None and source.exists():
+                target = IMAGE_OUTPUT / safe_image_name(source)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+                image = target.name
+        results.append((key, image, status))
     return {"name": name, "results": results, "url": github_result_url(path)}
 
 
@@ -80,13 +123,10 @@ def samesuite_test_status(statuses, case):
 def mooneye_test_status(statuses, case):
     is_cgb = case.endswith(" [CGB]")
     rom = case.removesuffix(" [CGB]")
-    if is_cgb:
-        mode = "CGB-False"
-    elif rom.startswith("emulator-only/"):
-        mode = "CGB-True"
-    else:
-        mode = "DMG-False"
-    return junit_status(statuses, "tests.test_mooneye", f"test_mooneye[{mode}-{rom}]")
+    # The emulator-only ROMs are parametrized with clean=True
+    clean = rom.startswith("emulator-only/")
+    mode = "CGB" if is_cgb else "DMG"
+    return junit_status(statuses, "tests.test_mooneye", f"test_mooneye[{mode}-{clean}-{rom}]")
 
 
 def rtc3test_status(statuses, case):
@@ -115,6 +155,7 @@ def image_suite_name(path):
             "cpp": "CasualPokePlayer",
             "daid": "Daid",
             "cgb-acid-hell": "CGB Acid Hell",
+            "mealybug": "Mealybug",
         }.get(relative.parts[0], relative.parts[0])
     if "acid2" in path.name:
         return "Acid2"
@@ -141,8 +182,13 @@ def image_test_status(path, suite_name, statuses):
         case = path.relative_to(RESULTS_DIR / "mooneye").with_suffix("").as_posix()
         is_cgb = case.endswith(" [CGB]")
         rom = case.removesuffix(" [CGB]")
-        mode = "CGB-False" if is_cgb else "DMG-False"
-        return junit_status(statuses, "tests.test_mooneye", f"test_mooneye[{mode}-{rom}]")
+        if rom.startswith("manual-only/"):
+            # The manual-only ROMs are covered by a dedicated test, not the
+            # parametrized test_mooneye cases
+            return junit_status(statuses, "tests.test_mooneye", f"test_mooneye_sprite[{'CGB' if is_cgb else 'DMG'}]")
+        clean = rom.startswith("emulator-only/")
+        mode = "CGB" if is_cgb else "DMG"
+        return junit_status(statuses, "tests.test_mooneye", f"test_mooneye[{mode}-{clean}-{rom}]")
     if suite_name == "Acid2":
         if path.name == "cgb_acid2.gbc.png":
             return junit_status(statuses, "tests.test_acid_cgb", "test_cgb_acid")
@@ -160,6 +206,10 @@ def image_test_status(path, suite_name, statuses):
         is_cgb = path.name.endswith(".cgb.png")
         rom = path.name.removesuffix(".cgb.png" if is_cgb else ".dmg.png")
         return junit_status_prefix(statuses, "tests.test_daid", f"test_daid_image[{rom}-{is_cgb}-")
+    if suite_name == "Mealybug":
+        is_cgb = path.name.endswith(".cgb.png")
+        rom = path.name.removesuffix(".cgb.png" if is_cgb else ".dmg.png")
+        return junit_status(statuses, "tests.test_mealybug", f"test_mealybug[{rom}-{'CGB' if is_cgb else 'DMG'}]")
     return "Not run"
 
 
@@ -193,6 +243,10 @@ def suite_counts(suite):
     return len(suite["results"]), passed, failed, skipped, not_run
 
 
+def suite_anchor(name):
+    return "suite-" + re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
 def render_result(text, status):
     color = RESULT_COLORS.get(status)
     if color is None:
@@ -201,24 +255,36 @@ def render_result(text, status):
 
 
 def render_json_suite(suite):
+    if any(image for _, image, _ in suite["results"]):
+        return render_image_suite(suite)
     lines = [
-        "<details>",
+        f'<details id="{suite_anchor(suite["name"])}">',
         f"<summary>{suite['name']} cases</summary>",
+        "",
+        github_links_line(suite),
         "",
         "| Case | Result |",
         "| --- | --- |",
     ]
-    lines.extend(f"| `{case}` | {render_result(status, status)} |" for case, status in suite["results"])
+    lines.extend(f"| `{case}` | {render_result(status, status)} |" for case, _, status in suite["results"])
     lines.extend(("</details>", ""))
     return lines
 
 
 def render_image_suite(suite):
-    lines = [f"## {suite['name']}", ""]
+    lines = [
+        f'<details id="{suite_anchor(suite["name"])}">',
+        f"<summary>{suite['name']}</summary>",
+        "",
+        github_links_line(suite),
+        "",
+    ]
     for case, target, status in suite["results"]:
         lines.extend(
             (
-                f"### `{case}`",
+                # Headings are avoided here: they would raise the MyST
+                # non-consecutive header level warning inside the details block
+                f"**`{case}`**",
                 "",
                 f"**Result:** {render_result(status, status)}",
                 "",
@@ -229,6 +295,7 @@ def render_image_suite(suite):
                 "",
             )
         )
+    lines.extend(("</details>", ""))
     return lines
 
 
@@ -238,8 +305,20 @@ def main():
         load_json_suite("Blargg", RESULTS_DIR / "blargg.json", statuses, blargg_test_status),
         load_json_suite("SameSuite", RESULTS_DIR / "samesuite.json", statuses, samesuite_test_status),
         load_json_suite("Mooneye", RESULTS_DIR / "mooneye" / "results.json", statuses, mooneye_test_status),
-        load_json_suite("RTC3Test", RESULTS_DIR / "rtc3test.json", statuses, rtc3test_status),
-        load_json_suite("which", RESULTS_DIR / "which.json", statuses, which_test_status),
+        load_json_suite(
+            "RTC3Test",
+            RESULTS_DIR / "rtc3test.json",
+            statuses,
+            rtc3test_status,
+            image_for=lambda case: RESULTS_DIR / "rtc3test" / f"subtest_{case}.png",
+        ),
+        load_json_suite(
+            "which",
+            RESULTS_DIR / "which.json",
+            statuses,
+            which_test_status,
+            image_for=lambda case: RESULTS_DIR / "which" / f"{case}.png",
+        ),
     ]
     image_suites = load_image_suites(statuses)
     suites = json_suites + image_suites
@@ -251,7 +330,9 @@ def main():
         "`tests/test_results/` and the latest pytest JUnit XML output. "
         "It is regenerated as part of `make docs`.",
         "",
-        "Suite names in the overview table link to the corresponding result " "files or directories on GitHub.",
+        "Suite names in the overview table jump to the matching section "
+        "below, which links to the corresponding result files or directories "
+        "and the pytest module on GitHub.",
         "",
         "| Test suite | Cases | Passed | Failed |",
         "| --- | ---: | ---: | ---: |",
@@ -259,7 +340,9 @@ def main():
     for suite in suites:
         total, passed, failed, _, _ = suite_counts(suite)
         lines.append(
-            f"| [{suite['name']}]({suite['url']}) | {total} | "
+            # Raw HTML anchor: a Markdown link to #suite-... would be treated as a
+            # MyST cross-reference and fail the docs build with myst.xref_missing
+            f"| <a href=\"#{suite_anchor(suite['name'])}\">{suite['name']}</a> | {total} | "
             f"{render_result(passed, 'Passed')} | {render_result(failed, 'Failed')} |"
         )
     lines.extend(
@@ -268,6 +351,19 @@ def main():
             "Statuses come directly from the latest pytest JUnit XML. "
             "Expected failures are shown as failed, while skipped and missing "
             "cases remain distinguishable.",
+            "",
+            "<script>",
+            'document.addEventListener("DOMContentLoaded", function () {',
+            "    function openAnchorTarget() {",
+            "        var element = document.getElementById(window.location.hash.slice(1));",
+            '        if (element && element.tagName === "DETAILS") {',
+            "            element.open = true;",
+            "        }",
+            "    }",
+            '    window.addEventListener("hashchange", openAnchorTarget);',
+            "    openAnchorTarget();",
+            "});",
+            "</script>",
             "",
         )
     )
