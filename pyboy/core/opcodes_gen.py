@@ -595,34 +595,57 @@ class OpcodeData:
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
 
-        # These opcodes can be observed reading mid-cycle
-        if self.opcode == 0x36:
+        # These opcodes can be observed reading mid-cycle. The bus access
+        # happens in a later M-cycle than the opcode fetch, so the cycles
+        # for the preceding M-cycles are added before the access. Total
+        # cycle counts follow the Pan Docs instruction reference.
+        if self.opcode in (0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x77):
+            # LD (HL),r: 8 cycles in total, write in the second M-cycle
             code.addline("cpu.cycles += 4")
-            code.cycles = (str(int(code.cycles[0]) - 4),)
+            code.cycles = ("4",)
+        elif self.opcode == 0x36:
+            # LD (HL),d8: write in the third M-cycle
+            code.addline("cpu.cycles += 8")
+            code.cycles = (str(int(code.cycles[0]) - 8),)
         elif self.opcode == 0xE0:
-            code.addline("cpu.cycles += 4")
-            code.cycles = (str(int(code.cycles[0]) - 4),)
+            # LDH (a8),A: write in the third M-cycle
+            code.addline("cpu.cycles += 8")
+            code.cycles = (str(int(code.cycles[0]) - 8),)
         elif self.opcode == 0xEA:
-            code.addline("cpu.cycles += 8")
-            code.cycles = (str(int(code.cycles[0]) - 8),)
+            # LD (a16),A: write in the fourth M-cycle
+            code.addline("cpu.cycles += 12")
+            code.cycles = (str(int(code.cycles[0]) - 12),)
         elif self.opcode == 0xF0:
-            code.addline("cpu.cycles += 4")
-            code.cycles = (str(int(code.cycles[0]) - 4),)
-        elif self.opcode == 0xFA:
+            # LDH A,(a8): read in the third M-cycle
             code.addline("cpu.cycles += 8")
             code.cycles = (str(int(code.cycles[0]) - 8),)
-
-        # These single-byte DE and HL transfers access memory in their second M-cycle.
-        bus_access_offset = self.opcode in (0x12, 0x1A, 0x7E)
-        if bus_access_offset:
-            if self.opcode == 0x7E:
-                code.addline("# The data read is on the second M-cycle.")
-            code.addline("cpu.memory_access_offset = 4")
+        elif self.opcode == 0xFA:
+            # LD A,(a16): read in the fourth M-cycle
+            code.addline("cpu.cycles += 12")
+            code.cycles = (str(int(code.cycles[0]) - 12),)
+        elif self.opcode in (0x02, 0x12, 0x22, 0x32, 0xE2):
+            # LD (BC),A / LD (DE),A / LD (HL+),A / LD (HL-),A / LD (C),A:
+            # 8 cycles in total, write in the second M-cycle
+            code.addline("cpu.cycles += 4")
+            code.cycles = ("4",)
+        elif self.opcode in (0x0A, 0x1A, 0x2A, 0x3A, 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E, 0xF2):
+            # LD A,(BC) / LD A,(DE) / LD A,(HL+) / LD A,(HL-) / LD r,(HL) /
+            # LD A,(C): 8 cycles in total, read in the second M-cycle
+            code.addline("cpu.cycles += 4")
+            code.cycles = ("4",)
 
         if self.is16bit and left.immediate and left.pointer:
+            if self.opcode == 0x08:
+                # LD (a16),SP: 20 cycles in total, writes in the fourth
+                # and fifth M-cycles
+                code.addline("cpu.cycles += 12")
             code.addline(left.set % ("%s & 0xFF" % right.get))
             a, b = left.set.split(",")
+            if self.opcode == 0x08:
+                code.addline("cpu.cycles += 4")
             code.addline((a + "+1," + b) % ("%s >> 8" % right.get))
+            if self.opcode == 0x08:
+                code.cycles = (str(int(code.cycles[0]) - 16),)
         else:
             # Special handling of AF, BC, DE
             # print(left.set, right.get, hex(self.opcode))
@@ -630,9 +653,6 @@ class OpcodeData:
                 code.addline(left.set % (right.get, right.get))
             else:
                 code.addline(left.set % right.get)
-
-        if bus_access_offset:
-            code.addline("cpu.memory_access_offset = 0")
 
         # Special HL-only operations
         if left.postoperation is not None:
@@ -656,13 +676,19 @@ class OpcodeData:
     #
     # ALU OPERATIONS
     #
-    def ALU(self, left, right, op, carry=False):
+    def ALU(self, left, right, op, carry=False, code=None):
         lines = []
 
         left.assign = False
         right.assign = False
 
         lines.append(f"a = {left.get}")
+        if "mb.getitem" in right.get:
+            # ALU operations on (HL): 8 cycles in total, read in the
+            # second M-cycle
+            lines.append("cpu.cycles += 4")
+            if code is not None:
+                code.cycles = ("4",)
         lines.append(f"b = {right.get}")
 
         calc = " ".join(["t", "=", "a", op, "b"])
@@ -703,7 +729,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "+"))
+        code.addlines(self.ALU(left, right, "+", code=code))
         return code.getcode()
 
     def SUB(self):
@@ -719,7 +745,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "-"))
+        code.addlines(self.ALU(left, right, "-", code=code))
         return code.getcode()
 
     def INC(self):
@@ -733,10 +759,11 @@ class OpcodeData:
         code.addlines(self.ALU(left, right, "+"))
 
         if self.opcode == 0x34:
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(-1, "cpu.cycles += 4")  # Inject before read
-            code.cycles = ("8",)  # 12 - 4
+            # INC (HL): 12 cycles in total, read in the second M-cycle,
+            # write in the third
+            code.lines.insert(0, "cpu.cycles += 4")  # Before read
+            code.lines.insert(-1, "cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         return code.getcode()
 
@@ -751,10 +778,11 @@ class OpcodeData:
         code.addlines(self.ALU(left, right, "-"))
 
         if self.opcode == 0x35:
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(-1, "cpu.cycles += 4")  # Inject before write
-            code.cycles = ("8",)  # 12 - 4
+            # DEC (HL): 12 cycles in total, read in the second M-cycle,
+            # write in the third
+            code.lines.insert(0, "cpu.cycles += 4")  # Before read
+            code.lines.insert(-1, "cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         return code.getcode()
 
@@ -771,7 +799,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "+", carry=True))
+        code.addlines(self.ALU(left, right, "+", carry=True, code=code))
         return code.getcode()
 
     def SBC(self):
@@ -787,7 +815,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "-", carry=True))
+        code.addlines(self.ALU(left, right, "-", carry=True, code=code))
         return code.getcode()
 
     def AND(self):
@@ -803,7 +831,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "&"))
+        code.addlines(self.ALU(left, right, "&", code=code))
         return code.getcode()
 
     def OR(self):
@@ -819,7 +847,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "|"))
+        code.addlines(self.ALU(left, right, "|", code=code))
         return code.getcode()
 
     def XOR(self):
@@ -835,7 +863,7 @@ class OpcodeData:
         code = Code(
             self.name.split()[0], self.opcode, self.name, left.immediate or right.immediate, self.length, self.cycles
         )
-        code.addlines(self.ALU(left, right, "^"))
+        code.addlines(self.ALU(left, right, "^", code=code))
         return code.getcode()
 
     def CP(self):
@@ -848,7 +876,7 @@ class OpcodeData:
         )
         # CP is equal to SUB, but without saving the result.
         # Therefore; we discard the last instruction.
-        code.addlines(self.ALU(left, right, "-")[:-1])
+        code.addlines(self.ALU(left, right, "-", code=code)[:-1])
         return code.getcode()
 
     ###################################################################
@@ -896,6 +924,7 @@ class OpcodeData:
         if "HL" in left.get:
             code.addlines(
                 [
+                    "cpu.cycles += 4",
                     "cpu.HL = cpu.mb.getitem(cpu.SP) # Low",
                     "cpu.cycles += 4",
                     "cpu.HL |= cpu.mb.getitem((cpu.SP + 1) & 0xFFFF) << 8 # High",
@@ -908,6 +937,8 @@ class OpcodeData:
                 fmask = " & 0xF0"
             else:
                 fmask = ""
+            # POP reads in the second and third M-cycles
+            code.addline("cpu.cycles += 4")
             # See comment from PUSH
             if left.operand == "AF":
                 code.addline("cpu.%s = cpu.mb.getitem(cpu.SP)%s & 0xF0 # Low" % (left.operand[-1], fmask))
@@ -918,7 +949,7 @@ class OpcodeData:
             code.addline("cpu.SP += 2")
             code.addline("cpu.SP &= 0xFFFF")
 
-        code.cycles = ("8",)
+        code.cycles = ("4",)
         return code.getcode()
 
     ###################################################################
@@ -1107,6 +1138,7 @@ class OpcodeData:
             code.addlines(
                 [
                     "if %s:" % l_code,
+                    # The stack reads happen in the third and fourth M-cycles
                     "\tcpu.cycles += 8",
                     "\tcpu.PC = cpu.mb.getitem(cpu.SP) # Low",
                     "\tcpu.cycles += 4",
@@ -1190,11 +1222,11 @@ class OpcodeData:
         left.assign = True
 
         if left.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(left.set % "t")
         return code
@@ -1238,11 +1270,11 @@ class OpcodeData:
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(left.set % "t")
         return code
@@ -1278,11 +1310,11 @@ class OpcodeData:
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(left.set % "t")
         return code.getcode()
@@ -1301,11 +1333,11 @@ class OpcodeData:
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(left.set % "t")
         return code.getcode()
@@ -1322,11 +1354,11 @@ class OpcodeData:
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(left.set % "t")
         return code.getcode()
@@ -1343,11 +1375,11 @@ class OpcodeData:
         code.addline("t &= 0xFF")
 
         if left.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(left.set % "t")
         return code.getcode()
@@ -1364,10 +1396,9 @@ class OpcodeData:
 
         # FIX: Correct cycle count is 12, not 16!
         if right.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 12 - 4
+            # BIT (HL): 12 cycles in total, read in the third M-cycle
+            code.addline("cpu.cycles += 8")
+            code.cycles = ("4",)
 
         code.addline("t = %s & (1 << %s)" % (right.get, left.get))
         code.addlines(self.handleflags8bit(left.get, right.get, None, False))
@@ -1383,11 +1414,11 @@ class OpcodeData:
         code.addline("t = %s & ~(1 << %s)" % (right.get, left.get))
 
         if right.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(right.set % "t")
         return code.getcode()
@@ -1400,11 +1431,11 @@ class OpcodeData:
         code.addline("t = %s | (1 << %s)" % (right.get, left.get))
 
         if right.operand == "(HL)":
-            # HACK: Offset the timing by 4 cycles
-            # TODO: Probably should be generalized
-            code.lines.insert(0, "cpu.cycles += 4")  # Inject before read
-            code.addline("cpu.cycles += 4")
-            code.cycles = ("8",)  # 16 - 4 - 4
+            # CB operations on (HL): 16 cycles in total, read in the
+            # third M-cycle, write in the fourth
+            code.lines.insert(0, "cpu.cycles += 8")  # Before read
+            code.addline("cpu.cycles += 4")  # Before write
+            code.cycles = ("4",)
 
         code.addline(right.set % "t")
         return code.getcode()

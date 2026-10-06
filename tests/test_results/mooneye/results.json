@@ -216,7 +216,7 @@
     "text": "Test OK\n"
   },
   "acceptance/serial/boot_sclk_align-dmgABCmgb.gb": {
-    "text": "Registers\n  A: A6  F: 00\n  B: 24  C: 24\n  D: 24  E: 24\n  H: 24  L: 24\nAssertions\n  A: 12!\n  B: 91! C: 90!\n  D: 90! E: 90!\n  H: 90! L: 90!\nTest failed\n"
+    "text": "Registers\n  A: A6  F: 00\n  B: 25  C: 24\n  D: 24  E: 24\n  H: 24  L: 24\nAssertions\n  A: 12!\n  B: 91! C: 90!\n  D: 90! E: 90!\n  H: 90! L: 90!\nTest failed\n"
   },
   "acceptance/boot_regs-sgb2.gb": {
     "text": "Registers\n  A: 01  F: D0\n  B: 00  C: 13\n  D: 00  E: 8F\n  H: 00  L: 87\nAssertions\n  A: FF! F: 00!\n  B: OK  C: 14!\n  D: OK  E: 00!\n  H: C0! L: 60!\nTest failed\n"
@@ -579,7 +579,7 @@
     "text": "Test OK\n"
   },
   "acceptance/serial/boot_sclk_align-dmgABCmgb.gb [CGB]": {
-    "text": "Registers\n  A: A6  F: 00\n  B: 24  C: 24\n  D: 24  E: 24\n  H: 24  L: 24\nAssertions\n  A: 12!\n  B: 91! C: 90!\n  D: 90! E: 90!\n  H: 90! L: 90!\nTest failed\n"
+    "text": "Registers\n  A: A6  F: 00\n  B: 25  C: 24\n  D: 24  E: 24\n  H: 24  L: 24\nAssertions\n  A: 12!\n  B: 91! C: 90!\n  D: 90! E: 90!\n  H: 90! L: 90!\nTest failed\n"
   },
   "emulator-only/mbc5/rom_64Mb.gb [CGB]": {
     "text": "Test OK\n"
