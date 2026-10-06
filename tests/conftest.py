@@ -33,34 +33,6 @@ def references_dir():
 
 
 @pytest.fixture(scope="session")
-def git_tetris_ai():
-    if os.path.isfile("extras/README/7.gif") or platform.system() == "Windows":
-        return None
-
-    import venv
-
-    path = Path("tetris")
-    with FileLock(path.with_suffix(".lock")):
-        if not os.path.isdir(path):
-            # NOTE: No affiliation
-            repo = git.Repo.clone_from("https://github.com/uiucanh/tetris.git", path)
-            repo.head.reset("a098ba8c328d8e7c406787edf61fcb0130cb4c26")
-        _venv = venv.EnvBuilder(with_pip=True)
-        _venv_path = Path(".venv")
-        _venv.create(path / _venv_path)
-        # _venv_context = _venv.ensure_directories(path / Path('.venv'))
-        assert (
-            os.system(
-                f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install numpy torch matplotlib graphviz'
-            )
-            == 0
-        )
-        # Overwrite PyBoy with local version
-        assert os.system(f'cd {path} && . {_venv_path / "bin" / "activate"} && pip install ../') == 0
-    return str(path)
-
-
-@pytest.fixture(scope="session")
 def git_pyboy_rl():
     if os.path.isfile("extras/README/6.gif") or platform.system() == "Windows":
         return None
