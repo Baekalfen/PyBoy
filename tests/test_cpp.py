@@ -26,7 +26,7 @@ CPP_CASES = [
 
 
 @pytest.mark.parametrize("rom, frames", CPP_CASES)
-def test_cpp(rom, frames, cpp_dir):
+def test_cpp(rom, frames, cpp_dir, references_dir):
     pyboy = PyBoy(cpp_dir + rom, window="null", cgb=False)
     pyboy.set_emulation_speed(0)
     pyboy.tick(frames, True)
@@ -34,7 +34,7 @@ def test_cpp(rom, frames, cpp_dir):
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
 
-    png_path = Path(f"tests/references/cpp/{rom[:-3]}.png")
+    png_path = Path(f"{references_dir}cpp/{rom[:-3]}.png")
     assert png_path.exists(), "Reference image doesn't exist"
     old_image = PIL.Image.open(png_path).convert("RGB")
     diff = ImageChops.difference(image, old_image)

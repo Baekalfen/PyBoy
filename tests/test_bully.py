@@ -26,7 +26,7 @@ def decode_text(pyboy):
 
 # https://github.com/Ashiepaws/BullyGB
 @pytest.mark.xfail(reason="BullyGB reports 'Invalid initial DIV'")
-def test_bully(bully_file):
+def test_bully(bully_file, references_dir):
     pyboy = PyBoy(bully_file, window="null", cgb=False)
     pyboy.set_emulation_speed(0)
     pyboy.tick(120, True)
@@ -37,7 +37,7 @@ def test_bully(bully_file):
 
     assert "Passed" in text, f"BullyGB reported a failure:\n{text}"
 
-    png_path = Path("tests/references/bully/bully.png")
+    png_path = Path(f"{references_dir}bully/bully.png")
     assert png_path.exists(), "Reference image doesn't exist"
     old_image = PIL.Image.open(png_path).convert("RGB")
     diff = ImageChops.difference(image, old_image)

@@ -306,11 +306,8 @@ def sprite_priority_classes(image):
     return PIL.Image.frombytes("L", image.size, bytes(classes))
 
 
-SPRITE_PRIORITY_REFERENCE = Path("tests/references/mooneye/sprite_priority-expected.png")
-
-
 @pytest.mark.parametrize("cgb", [False, True], ids=["DMG", "CGB"])
-def test_mooneye_sprite(cgb, mooneye_dir):
+def test_mooneye_sprite(cgb, mooneye_dir, references_dir):
     rom = "manual-only/sprite_priority.gb"
     pyboy = PyBoy(mooneye_dir + rom, window="null", cgb=cgb)
     pyboy.set_emulation_speed(0)
@@ -318,8 +315,9 @@ def test_mooneye_sprite(cgb, mooneye_dir):
     pyboy.tick(40, True, False)
 
     image = pyboy.screen.image
-    assert SPRITE_PRIORITY_REFERENCE.exists(), "Reference image doesn't exist"
-    reference_image = PIL.Image.open(SPRITE_PRIORITY_REFERENCE)
+    sprite_priority_reference = Path(f"{references_dir}mooneye/sprite_priority-expected.png")
+    assert sprite_priority_reference.exists(), "Reference image doesn't exist"
+    reference_image = PIL.Image.open(sprite_priority_reference)
     diff = ImageChops.difference(sprite_priority_classes(image), sprite_priority_classes(reference_image))
     if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
         image.show()
