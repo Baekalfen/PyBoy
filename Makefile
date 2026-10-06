@@ -101,4 +101,4 @@ docs_linkcheck: generate-test-results
 	${PY} -m sphinx -E -W --keep-going -b linkcheck ${ROOT_DIR}/docs ${ROOT_DIR}/docs/_build/linkcheck
 
 repackage_secrets:
-	python3 -c 'from tests.conftest import pack_secrets; pack_secrets()'
+	python3 -c 'from conftest import pack_secrets; pack_secrets()'
