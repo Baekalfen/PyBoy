@@ -102,65 +102,46 @@ ENDC
     cp $90
     jr Z, .exit_vblank
 
+    ld B, A         ; Save LY in B for the line-sync wait
     ld E, A         ; Save LY in E
 
-    ; Invert frame counter to 1-60 instead of 60-1
+    ; The wave band is LY in [96-C, 111-C], that is (C + LY) in [96, 111].
+    ; The band edges read 0 from the wave table, so SCX is 0 outside as well.
     ld A, C
-    cpl
-    sub ($ff-16*7)  ; Start X lines down. Do it in multiple of 16 to fit wave
-
-    ; Cut out one wave
-    ; Is A larger than LY? Then we want the effect
-    cp E
+    add A, E
+    cp 96
     jr C, .no_effect
-    ; Is LY no more than 16 lines larger than A?
-    sub A, 16
-    cp E
-    jr C, .effect
-    ; Fall through to no effect
-.no_effect
-    xor A
-    ldh [$FF00+$43], A
-    jr .wait_vblank
+    cp 112
+    jr NC, .no_effect
 
-.play_sound
-    ; Adjust frequency sweep
-    ld A, %0010011
-    ldh [$FF00+$10], A ; NR10
-
-    ld A, $48
-    ldh [$FF00+$13], A ; NR13
-
-    ; Trigger
-    ld A, $81
-    ldh [$FF00+$14], A ; NR14
-    ret
-
-.adj_sound
-    ; Adjust frequency sweep
-    ld A, %0011001
-    ldh [$FF00+$10], A ; NR10
-
-    ; Trigger
-    ld A, $81
-    ldh [$FF00+$14], A ; NR14
-    ret
-
-
-.wave_table
-    DB 0, 0, 1, 2, 2, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0, 0
-
-.effect
-    ld A, C        ; Load frame counter for "time"
-    add A, E         ; add LY from E
-    and $0F         ; Clamp LY value to lookup table length
-    ld E, A         ; Save LY in E
+    ; Wave value for the next scanline: look up (C + LY + 1) & $0F
+    inc A
+    and $0F
+    ld E, A         ; Save table index in E
     ld HL, .wave_table
     add HL, DE      ; look up in wave table
     ld A, [HL]
+    jr .write_scx
 
+.no_effect
+    xor A
+
+.write_scx
+    ; Wait for the next scanline to start, and write SCX immediately.
+    ; Writing SCX mid-scanline corrupts the line being fetched (a
+    ; decreasing SCX duplicates a tile column on CGB), so the write is
+    ; synced to land in mode 2 before the fetcher starts.
+    push AF
+.wait_line
+    ldh A, [$FF00+$44]
+    cp B
+    jr Z, .wait_line
+    pop AF
     ldh [$FF00+$43], A
     jr .wait_vblank
+
+.wave_table
+    DB 0, 0, 1, 2, 2, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0, 0
 
 .exit_vblank
     ldh A, [$FF00+$44]
@@ -169,11 +150,26 @@ ENDC
     ld A, c
 
     cp 27
-    call z, .play_sound
+    jr NZ, .check_adj
+    ; Adjust frequency sweep
+    ld A, %0010011
+    ldh [$FF00+$10], A ; NR10
 
+    ld A, $48
+    ldh [$FF00+$13], A ; NR13
+
+    jr .trigger
+.check_adj
     cp 31
-    call z, .adj_sound
-
+    jr NZ, .no_trigger
+    ; Adjust frequency sweep
+    ld A, %0011001
+    ldh [$FF00+$10], A ; NR10
+.trigger
+    ; Trigger
+    ld A, $81
+    ldh [$FF00+$14], A ; NR14
+.no_trigger
     ; One frame has passed, decrement counter
     dec C
     jr NZ, .wait_vblank
