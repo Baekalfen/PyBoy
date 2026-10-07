@@ -124,6 +124,10 @@ class Motherboard:
         self.oam_dma_source = 0
         self.oam_dma_index = 0
         self.oam_dma_start_cycle = 0
+        self.oam_dma_block_cycle = 0
+        # Initialized here so memory accesses before the first tick work
+        # when running uncompiled
+        self.in_tick = False
 
         self.breakpoints = {}  # {(0, 0x150): (0x100) (0, 0x0040): 0x200, (0, 0x0048): 0x300, (0, 0x0050): 0x44}
         self.breakpoint_singlestep = False
@@ -342,6 +346,10 @@ class Motherboard:
             self.oam_dma_source = 0
             self.oam_dma_index = 0
             self.oam_dma_start_cycle = 0
+        # The block cycle only differs from the start cycle in the few cycles
+        # between restarting a running transfer and the new transfer start,
+        # which cannot straddle a state save.
+        self.oam_dma_block_cycle = self.oam_dma_start_cycle
         self.lcd.load_state(f, state_version)
         if state_version >= 8:
             self.sound.load_state(f, state_version)
@@ -385,11 +393,20 @@ class Motherboard:
     #
 
     def tick(self):
+        # While the CPU bus is running, memory accesses observe the PPU locks
+        # (VRAM/OAM blocked during modes 2 and 3). Accesses from the external
+        # API (PyBoy.memory, sprites, game wrappers) happen between ticks and
+        # read the raw state instead.
+        self.in_tick = True
         while not self.lcd.frame_done:
+            if self.cgb_mode and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 != 0:
+                # The PPU left HBlank, so a new block may be copied in the next one
+                self.hdma.block_done = False
             if (
                 self.cgb_mode
                 and (not self.cpu.halted)
                 and self.hdma.transfer_active
+                and not self.hdma.block_done
                 and self.lcd._LCDC.lcd_enable
                 and self.lcd._STAT._mode & 0b11 == 0
             ):
@@ -404,7 +421,13 @@ class Motherboard:
 
                 mode0_cycles = MAX_CYCLES
                 if self.cgb_mode and self.hdma.transfer_active:
-                    mode0_cycles = self.lcd.cycles_to_mode0()
+                    if self.hdma.block_done and self.lcd._STAT._mode & 0b11 == 0:
+                        # A block was already copied in this HBlank. Run the CPU
+                        # normally until the mode ends (capped by
+                        # lcd._cycles_to_interrupt).
+                        pass
+                    else:
+                        mode0_cycles = self.lcd.cycles_to_mode0()
 
                 cycles_target = max(
                     4,
@@ -443,6 +466,7 @@ class Motherboard:
             if self.breakpoint_singlestep:
                 break
 
+        self.in_tick = False
         return self.breakpoint_singlestep
 
     ###################################################################
@@ -479,7 +503,7 @@ class Motherboard:
         elif 0x4000 <= i < 0x8000:  # 16kB switchable ROM bank
             return self.cartridge.rombanks[self.cartridge.rombank_selected, i - 0x4000]
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
-            if self.cpu.memory_access_offset:
+            if self.in_tick:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
                 if self.lcd._LCDC.lcd_enable and (
@@ -512,7 +536,7 @@ class Motherboard:
             # Redirect to internal RAM
             return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
-            if self.cpu.memory_access_offset and not self.oam_dma_reading:
+            if self.in_tick and not self.oam_dma_reading:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
                 if self.lcd._LCDC.lcd_enable and (self.lcd._STAT._mode in (2, 3) or self.lcd._is_startup_mode2_delay()):
@@ -520,11 +544,7 @@ class Motherboard:
                     return 0xFF
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
-            memory_access_offset = self.cpu.memory_access_offset
-            dma_started = self.cpu.cycles + memory_access_offset >= self.oam_dma_start_cycle
-            if self.oam_dma_active and not self.oam_dma_reading and dma_started and self.cpu.HL == i:
-                self.sync_oam_dma(max(memory_access_offset, 4))
-                dma_started = self.cpu.cycles + memory_access_offset >= self.oam_dma_start_cycle
+            dma_started = self.cpu.cycles + self.cpu.memory_access_offset >= self.oam_dma_block_cycle
             if self.oam_dma_active and dma_started and not self.oam_dma_reading:
                 return 0xFF
             return self.lcd.OAM[i - 0xFE00]
@@ -564,6 +584,17 @@ class Motherboard:
                 # Undocumented register
                 return 0xFF
             elif i == 0xFF0F:
+                # The timer, LCD and serial units raise interrupt flags
+                # continuously. An IF read must observe every event up to the
+                # access cycle, including events landing inside the reading
+                # instruction, so the units are synced to the access cycle
+                # before the flags are returned.
+                if self.timer.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_TIMER)
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+                if self.serial.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_SERIAL)
                 return self.cpu.interrupts_flag_register | 0b1110_0000
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles)
@@ -665,7 +696,7 @@ class Motherboard:
             self.cartridge.setitem(i, value)
             self.cpu.bail = True
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
-            if self.cpu.memory_access_offset:
+            if self.in_tick:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
                 if self.lcd._LCDC.lcd_enable and self.lcd._STAT._mode == 3:
@@ -696,7 +727,7 @@ class Motherboard:
         elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
             self.setitem(i - 0x2000, value)  # Redirect to internal RAM
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
-            if self.cpu.memory_access_offset:
+            if self.in_tick and not self.oam_dma_reading:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
                 if self.lcd._LCDC.lcd_enable and (
@@ -790,6 +821,15 @@ class Motherboard:
                 elif i == 0xFF07:
                     self.timer.write_tac(value)
             elif i == 0xFF0F:
+                # Sync the interrupt sources to the access cycle before the
+                # write replaces the flags, so events raised before the write
+                # are cleared by it, exactly as on hardware.
+                if self.timer.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_TIMER)
+                if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                    self.cpu.set_interruptflag(lcd_interrupt)
+                if self.serial.tick(self.cpu.cycles):
+                    self.cpu.set_interruptflag(INTR_SERIAL)
                 self.cpu.interrupts_flag_register = value & 0b0001_1111
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles)
@@ -823,7 +863,7 @@ class Motherboard:
                     self.cpu.set_interruptflag(lcd_interrupt)
 
                 if i == 0xFF40:
-                    if lcd_interrupt := self.lcd.set_lcdc(value):
+                    if lcd_interrupt := self.lcd.write_lcdc(value):
                         self.cpu.set_interruptflag(lcd_interrupt)
                 elif i == 0xFF41:
                     if lcd_interrupt := self.lcd._STAT.set(value):
@@ -845,15 +885,15 @@ class Motherboard:
                 elif i == 0xFF46:
                     self.transfer_DMA(value)
                 elif i == 0xFF47:
-                    self.lcd.BGP.set(value)
+                    self.lcd.write_bgp(value)
                 elif i == 0xFF48:
-                    self.lcd.OBP0.set(value)
+                    self.lcd.write_obp(0, value)
                 elif i == 0xFF49:
-                    self.lcd.OBP1.set(value)
+                    self.lcd.write_obp(1, value)
                 elif i == 0xFF4A:
-                    self.lcd.WY = value
+                    self.lcd.write_wy(value)
                 elif i == 0xFF4B:
-                    self.lcd.WX = value
+                    self.lcd.write_wx(value)
             else:
                 self.ram.io_ports[i - 0xFF00] = value
             self.cpu.bail = True
@@ -931,10 +971,14 @@ class Motherboard:
             self.cpu.bail = True
 
     def transfer_DMA(self, src):
-        if self.oam_dma_active and self.oam_dma_index == 0:
-            self.oam_dma_start_cycle = self.cpu.cycles + 8
-        else:
-            self.oam_dma_start_cycle = self.cpu.cycles + 12
+        # The OAM DMA is started by a write to FF46. The transfer begins
+        # two M-cycles after the write is observed on the bus. Restarting
+        # the transfer while one is already running starts a new transfer,
+        # but does not lift the OAM lock of the previous one (mooneye
+        # oam_dma_start).
+        if not self.oam_dma_active:
+            self.oam_dma_block_cycle = self.cpu.cycles + 8
+        self.oam_dma_start_cycle = self.cpu.cycles + 8
         self.oam_dma_active = True
         self.oam_dma_reading = False
         self.oam_dma_source = src
@@ -952,6 +996,7 @@ class HDMA:
         self.transfer_active = False
         self.curr_src = 0
         self.curr_dst = 0
+        self.block_done = False
 
     def save_state(self, f):
         f.write(self.hdma1)
@@ -962,6 +1007,7 @@ class HDMA:
         f.write(self.transfer_active)
         f.write_16bit(self.curr_src)
         f.write_16bit(self.curr_dst)
+        f.write(self.block_done)
 
     def load_state(self, f, state_version):
         self.hdma1 = f.read()
@@ -975,6 +1021,8 @@ class HDMA:
         self.transfer_active = f.read()
         self.curr_src = f.read_16bit()
         self.curr_dst = f.read_16bit()
+        if state_version >= 29:
+            self.block_done = f.read()
 
     def set_hdma5(self, value, mb):
         if self.transfer_active:
@@ -988,6 +1036,8 @@ class HDMA:
         else:
             self.hdma5 = value & 0xFF
             bytes_to_transfer = ((value & 0x7F) * 16) + 16
+            # A new transfer may copy a block in the HBlank it is started in
+            self.block_done = False
 
             transfer_type = value >> 7
             if transfer_type == 0:
@@ -1043,4 +1093,8 @@ class HDMA:
         else:
             self.hdma5 -= 1
 
-        return 206  # Advance to the next H-Blank after one block
+        # The CPU is halted while the block is copied. The copy takes the same
+        # time regardless of the CPU speed, so it costs twice as many CPU
+        # cycles in double speed mode.
+        self.block_done = True
+        return 68 if mb.lcd.speed_shift else 36
