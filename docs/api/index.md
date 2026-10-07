@@ -23,6 +23,7 @@ register_file
 memory_scanner
 gameshark
 rumble
+sgb
 screen
 sound
 sprite

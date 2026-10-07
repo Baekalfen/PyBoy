@@ -340,7 +340,6 @@ class PyBoy:
         ###################
         # API attributes
         self.screen = Screen(self.mb)
-        self.sgb = SGB(self.mb)
         """
         This attribute provides a `pyboy.api.screen.Screen` object for reading the screen buffer in
         a variety of formats.
@@ -364,6 +363,16 @@ class PyBoy:
         -------
         `pyboy.api.screen.Screen`:
             A Screen object with helper functions for reading the screen buffer.
+        """
+        self.sgb = SGB(self.mb)
+        """
+        This attribute provides a `pyboy.api.sgb.SGB` object for accessing Super Game Boy features,
+        such as SGB detection status and border control.
+
+        Returns
+        -------
+        `pyboy.api.sgb.SGB`:
+            An SGB object with helper functions for accessing Super Game Boy features.
         """
         self.sound = Sound(self.mb)
         """
