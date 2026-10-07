@@ -24,6 +24,8 @@ jobs:
           python -m pip install --prefer-binary -r requirements.txt
           python -m pip install --prefer-binary -r requirements_tests.txt
           python -m pip install --prefer-binary ".[docs]"
+      - name: Build PyBoy
+        run: python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
       - name: Setup Ubuntu - OpenGL and ffmpeg dependencies
         run: |
           sudo apt update
