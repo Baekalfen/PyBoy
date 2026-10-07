@@ -24,19 +24,29 @@ jobs:
           python -m pip install --prefer-binary -r requirements.txt
           python -m pip install --prefer-binary -r requirements_tests.txt
           python -m pip install --prefer-binary ".[docs]"
+      - name: Setup Ubuntu - OpenGL and ffmpeg dependencies
+        run: |
+          sudo apt update
+          sudo apt install libopengl0 freeglut3-dev ffmpeg libogg-dev -y
       - name: Generate documentation images
         env:
           PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
         run: make docs-images
+      - name: Run test suite
+        env:
+          PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
+          TEST_VERBOSE_IMAGES: 0
+          TEST_NO_UI: 1
+        run: timeout 5m python -m pytest tests/ -n auto -v --benchmark-disable
       - name: Build documentation
         run: make docs
       - uses: actions/upload-pages-artifact@v3
-        if: ${{ github.event_name == 'release' }}
+        if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         with:
           path: docs/_build/html
 
   deploy:
-    if: ${{ github.event_name == 'release' }}
+    if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
     needs: build
     runs-on: ubuntu-latest
     permissions:
