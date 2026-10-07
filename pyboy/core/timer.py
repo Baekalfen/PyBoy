@@ -74,6 +74,41 @@ class Timer:
             return False
         self.last_cycles = _cycles
 
+        timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
+
+        # Fast path: no TIMA reload in progress. The DIV counter and TIMA
+        # can then be advanced arithmetically, unless TIMA overflows within
+        # this tick. A falling edge of timer_bit happens when the counter
+        # goes from having the bit set to having it cleared, which is at
+        # counter values congruent to (2*timer_bit - 1) modulo 2*timer_bit.
+        # All timer periods (16, 64, 256, 1024) divide 2**16, so the
+        # congruence is unaffected by the counter wrapping at 0xFFFF.
+        if self.tima_reload_state == 0:
+            if self.TAC & 0b100:
+                period = timer_bit * 2
+                mask = period - 1
+                start = self.DIV_counter
+                end = start + cycles
+                # One period is added to both terms to keep the divisions
+                # on non-negative numbers only.
+                tima_increases = (end - 1 - mask + period) // period - (start - 1 - mask + period) // period
+                if self.TIMA + tima_increases <= 0xFF:
+                    self.TIMA += tima_increases
+                    self.DIV_counter = end & 0xFFFF
+                    self.DIV = self.DIV_counter >> 8
+                    next_edge = ((self.DIV_counter & ~(period - 1)) + period) - self.DIV_counter
+                    # The CPU only needs to wake for the TIMA overflow
+                    # interrupt, not for every TIMA increment.
+                    self._cycles_to_interrupt = next_edge + (0xFF - self.TIMA) * period
+                    return False
+            else:
+                self.DIV_counter = (self.DIV_counter + cycles) & 0xFFFF
+                self.DIV = self.DIV_counter >> 8
+                self._cycles_to_interrupt = MAX_CYCLES
+                return False
+
+        # Slow path: a TIMA reload is in progress, or TIMA overflows within
+        # this tick. Advance one cycle at a time as on hardware.
         ret = False
         while cycles:
             if self.tima_reload_state:
@@ -88,7 +123,6 @@ class Timer:
 
             counter = self.DIV_counter
             new_counter = (counter + 1) & 0xFFFF
-            timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
             if self.TAC & 0b100 and counter & timer_bit and not new_counter & timer_bit:
                 self._increase_tima()
 
@@ -97,10 +131,14 @@ class Timer:
             cycles -= 1
 
         if self.TAC & 0b100:
-            timer_bit = 1 << (self.dividers[self.TAC & 0b11] - 1)
-            next_edge = ((self.DIV_counter & ~(timer_bit * 2 - 1)) + timer_bit * 2) - self.DIV_counter
-            self._cycles_to_interrupt = next_edge
-            if self.tima_reload_state:
+            period = timer_bit * 2
+            next_edge = ((self.DIV_counter & ~(period - 1)) + period) - self.DIV_counter
+            # The CPU only needs to wake for the TIMA overflow interrupt,
+            # not for every TIMA increment. While a reload is pending in
+            # state 1, the interrupt flag is raised when TIMA_counter
+            # expires.
+            self._cycles_to_interrupt = next_edge + (0xFF - self.TIMA) * period
+            if self.tima_reload_state == 1:
                 self._cycles_to_interrupt = min(self._cycles_to_interrupt, self.TIMA_counter)
         else:
             self._cycles_to_interrupt = MAX_CYCLES

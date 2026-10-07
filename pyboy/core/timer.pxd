@@ -34,7 +34,18 @@ cdef class Timer:
     @cython.locals(old_timer_bit=uint16_t, new_timer_bit=uint16_t)
     cdef void write_tac(self, uint8_t) noexcept nogil
     cdef uint8_t read_tima(self) noexcept nogil
-    @cython.locals(cycles=uint64_t, counter=uint16_t, new_counter=uint16_t, timer_bit=uint16_t)
+    @cython.locals(
+        cycles=uint64_t,
+        counter=uint16_t,
+        new_counter=uint16_t,
+        timer_bit=uint16_t,
+        period=uint32_t,
+        mask=uint32_t,
+        start=uint64_t,
+        end=uint64_t,
+        tima_increases=uint64_t,
+        next_edge=uint64_t,
+    )
     cdef bint tick(self, uint64_t) noexcept nogil
 
     cdef int save_state(self, IntIOInterface) except -1

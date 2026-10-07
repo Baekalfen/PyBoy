@@ -67,11 +67,15 @@ class Serial:
         self.internal_clock = self.SC & 1  # 0: external, 1: internal
         if self.internal_clock:
             self.clock_target = self.clock + 8 * CYCLES_8192HZ
+            self._cycles_to_interrupt = self.clock_target - self.clock
         else:
             # Will never complete, as there is no connection
             self.transfer_enabled = 0  # Technically it is enabled, but no reason to track it.
             self.clock_target = MAX_CYCLES
-        self._cycles_to_interrupt = self.clock_target - self.clock
+            # The clock keeps counting, so the distance to the MAX_CYCLES
+            # sentinel would eventually go negative and stall the
+            # coordinator loop at the minimum cycle target.
+            self._cycles_to_interrupt = MAX_CYCLES
 
     def tick(self, _cycles):
         cycles = _cycles - self.last_cycles
@@ -91,7 +95,13 @@ class Serial:
             self.clock_target = MAX_CYCLES
             interrupt = True
 
-        self._cycles_to_interrupt = self.clock_target - self.clock
+        if self.transfer_enabled:
+            self._cycles_to_interrupt = self.clock_target - self.clock
+        else:
+            # The clock keeps counting, so the distance to the MAX_CYCLES
+            # sentinel would eventually go negative and stall the
+            # coordinator loop at the minimum cycle target.
+            self._cycles_to_interrupt = MAX_CYCLES
         return interrupt
 
     def save_state(self, f):
@@ -153,9 +163,13 @@ class SerialSharedMemory(Serial):
                 self.clock_target = self.clock + CYCLES_8192HZ * 8
             else:
                 self.clock_target = self.clock + CYCLES_8192HZ
+            self._cycles_to_interrupt = self.clock_target - self.clock
         else:
             self.clock_target = MAX_CYCLES
-        self._cycles_to_interrupt = self.clock_target - self.clock
+            # The clock keeps counting, so the distance to the MAX_CYCLES
+            # sentinel would eventually go negative and stall the
+            # coordinator loop at the minimum cycle target.
+            self._cycles_to_interrupt = MAX_CYCLES
 
     def tick(self, _cycles):
         cycles = _cycles - self.last_cycles
@@ -194,7 +208,13 @@ class SerialSharedMemory(Serial):
                 else:
                     self.clock_target = self.clock + CYCLES_8192HZ
 
-        self._cycles_to_interrupt = self.clock_target - self.clock
+        if self.transfer_enabled:
+            self._cycles_to_interrupt = self.clock_target - self.clock
+        else:
+            # The clock keeps counting, so the distance to the MAX_CYCLES
+            # sentinel would eventually go negative and stall the
+            # coordinator loop at the minimum cycle target.
+            self._cycles_to_interrupt = MAX_CYCLES
         return interrupt
 
     def stop(self):
