@@ -1,5 +1,5 @@
 <p align="center">
-<img src="extras/README/pyboy10.svg" width="800">
+<img src="https://raw.githubusercontent.com/Baekalfen/PyBoy/master/extras/README/pyboy10.svg" width="800">
 </p>
 
 <p align="center"><strong>If you have any questions, or just want to chat, <a href="https://discord.gg/wUbag3KNqQ">join us on Discord</a>.</strong></p>
@@ -24,7 +24,7 @@ Generate GIF with the layout and captions
       <td colspan=2 align="center">
         <div align="center">
         <a href="http://www.youtube.com/watch?feature=player_embedded&v=DcYLT37ImBY" target="_blank">
-        <img src="http://img.youtube.com/vi/DcYLT37ImBY/maxresdefault.jpg" alt="Watch the video" width="500" border="10" />
+        <img src="https://img.youtube.com/vi/DcYLT37ImBY/maxresdefault.jpg" alt="Watch the video" width="500" border="10" />
         <!-- <img src="http://img.youtube.com/vi/DcYLT37ImBY/hqdefault.jpg" alt="Watch the video" width="500" border="10" /> -->
         </a>
         <!-- https://www.youtube.com/watch?v=DcYLT37ImBY -->
@@ -32,7 +32,7 @@ Generate GIF with the layout and captions
         </div>
       </td>
       <td align="center">
-        <img src="extras/README/5.gif" width="250">
+        <img src="https://raw.githubusercontent.com/Baekalfen/PyBoy/master/extras/README/5.gif" width="250">
       </td>
     </tr>
     <tr>
@@ -45,13 +45,13 @@ Generate GIF with the layout and captions
     </tr>
     <tr>
       <td align="center">
-        <img src="extras/README/1.gif" width="250">
+        <img src="https://raw.githubusercontent.com/Baekalfen/PyBoy/master/extras/README/1.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/pinball.gif" width="250">
+        <img src="https://raw.githubusercontent.com/Baekalfen/PyBoy/master/extras/README/pinball.gif" width="250">
       </td>
       <td align="center">
-        <img src="extras/README/pybrosai.gif" width="250">
+        <img src="https://raw.githubusercontent.com/Baekalfen/PyBoy/master/extras/README/pybrosai.gif" width="250">
       </td>
     </tr>
   </tbody>

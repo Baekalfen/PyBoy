@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import platform
+import re
 import sys
 from multiprocessing import cpu_count
 import numpy as np
@@ -11,8 +12,24 @@ CYTHON = platform.python_implementation() == "CPython"
 ROOT_DIR = "pyboy"
 DEBUG = bool(os.getenv("GITHUB_ACTIONS"))
 
+
+def versioned_long_description():
+    # The README refers to images on the 'master' branch, which would follow unreleased
+    # changes on PyPI. Rewrite them to the tag of the version being released.
+    with open("pyproject.toml") as f:
+        version = re.search(r'^version = "(.+)"', f.read(), re.MULTILINE).group(1)
+    with open("README.md") as f:
+        return f.read().replace(
+            "https://raw.githubusercontent.com/Baekalfen/PyBoy/master/",
+            f"https://raw.githubusercontent.com/Baekalfen/PyBoy/v{version}/",
+        )
+
+
 if not CYTHON:
-    setup()
+    setup(
+        long_description=versioned_long_description(),
+        long_description_content_type="text/markdown",
+    )
     exit(0)
 
 from Cython.Build import cythonize  # noqa
@@ -118,4 +135,6 @@ setup(
         "build_ext": build_ext,
     },
     ext_modules=[Extension("", [""])],  # Added to trigger a binary wheel
+    long_description=versioned_long_description(),
+    long_description_content_type="text/markdown",
 )
