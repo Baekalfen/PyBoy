@@ -22,6 +22,14 @@ STAT_TRANSITION_ADVANCE_LY = 1
 STAT_TRANSITION_START_MODE2 = 2
 STAT_TRANSITION_VBLANK_PRETRIGGERED = 3
 
+# The dot-accurate renderer lags the STAT mode 3 signal by this many dots. The
+# pixel pipeline first runs a discarded fetch and then the first real fetch,
+# so hardware colors the first background pixel 15 dots into mode 3 (kevtris:
+# pixel output occupies the last 159 cycles of the 173.5-cycle mode 3). The
+# renderer pipeline produces it at its own dot 9, so the renderer clock starts
+# 6 dots after the mode change.
+DOT_MODE3_RENDER_DELAY = 6
+
 
 def rgb_to_bgr(color):
     a = 0xFF
@@ -58,8 +66,11 @@ class LCD:
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         self.next_stat_mode = 2
         self.stat_transition = STAT_TRANSITION_NONE
+        self.stat_irq_delayed = False
+        self.stat_irq_delivery_clock = 0
         self.LY = 0x00
-        self.mode3_adjustment = 0
+        self.mode3_extension = 0
+        self.mode3_start_clock = 0
         self._STAT.set_mode(0)
 
         self.SCY = 0x00
@@ -79,7 +90,7 @@ class LCD:
 
         if self.cgb:
             logger.debug("Starting CGB renderer")
-            # Setting for both modes, even though CGB is ignoring them. BGP[0] used in scanline_blank.
+            # Setting for both modes, even though CGB is ignoring them.
             bg_pal, obj0_pal, obj1_pal = cgb_color_palette
             self.BGP = PaletteRegister(0xFC, bg_pal)
             self.OBP0 = PaletteRegister(0xFF, obj0_pal)
@@ -121,6 +132,13 @@ class LCD:
         if self.cgb and _window_enable and not self._LCDC.window_enable:
             self.renderer.wy_activated_frame = False
 
+        # The WY==LY window condition is re-evaluated when LCDC is written,
+        # at the next PPU clock edge (SameBoy schedules a wy_check on every
+        # LCDC write). This catches a window enabled mid-mode-2, after the
+        # mode-2-start comparison already ran with the window off.
+        if self._LCDC.lcd_enable and self._LCDC.window_enable and self.WY == self.LY:
+            self.renderer.wy_activated_frame = True
+
         if _lcd_enable and (not self._LCDC.lcd_enable):
             # https://www.reddit.com/r/Gameboy/comments/a1c8h0/what_happens_when_a_gameboy_screen_is_disabled/
             # 1. LY (current rendering line) resets to zero. A few games rely on this behavior, namely Mr. Do! When LY
@@ -130,7 +148,9 @@ class LCD:
             self.clock = 0
             self.clock_target = 0
             self._cycles_to_frame = 0
+            self.stat_irq_delayed = False
             self._STAT.set_mode(0)
+            self.renderer.dot_ly = -1
             if self.LY < 144:
                 logger.debug("LCD disabled outside of VBLANK!")
             self.LY = 0
@@ -153,6 +173,150 @@ class LCD:
                 return self._STAT.update_LYC(self.LYC, self.LY)
 
         return 0
+
+    def write_lcdc(self, value):
+        old_lcdc = self._LCDC.value
+        lcd_interrupt = self.set_lcdc(value)
+        # DMG: disabling sprites while a fetch session is in
+        # progress aborts the fetch, and the pixel mixer resumes
+        # on the write dot
+        if (
+            not self.cgb
+            and old_lcdc & 0b10
+            and not value & 0b10
+            and self._STAT._mode == 3
+            and self.renderer.dot_ly == self.LY
+            and self.renderer.dot_sprite_session_dots > 0
+        ):
+            self.renderer.dot_abort_sprite_session()
+        # An OBJ size change landing exactly on the sprite
+        # fetcher's bitplane read dots is observed by those reads
+        if (value ^ old_lcdc) & 0b100:
+            if (self._STAT._mode == 3 or self._STAT._mode == 0) and self.renderer.dot_ly == self.LY:
+                self.renderer.dot_relatch_sprite_size()
+        # Latch mid-scanline LCDC write effects for the dot renderer
+        if self._LCDC.lcd_enable and self._STAT._mode == 3 and self.renderer.dot_ly == self.LY:
+            if self._is_cgb_hardware():
+                if self.speed_shift:
+                    # CGB double speed: any tile data select toggle glitches the fetcher for 2 dots
+                    if (value ^ old_lcdc) & 0b1_0000:
+                        self.renderer.dot_tiledata_glitch_dots = 2
+                elif ~value & old_lcdc & 0b1_0000:
+                    # CGB single speed: clearing tile data select glitches the fetcher for 1 dot
+                    self.renderer.dot_tiledata_glitch_dots = 1
+            elif old_lcdc & 0b10_0000 and not value & 0b10_0000 and self.renderer.dot_fetching_window:
+                # DMG: disabling the window mid-fetch stops pixel insertion for the current fetch
+                self.renderer.dot_win_glitch_blocked = True
+        # DMG: clearing the BG enable bit blanks the pixel output on
+        # the exact dot of the write, but only for a pixel colored
+        # in a later phase of its dot: the first pixel of the line
+        # (the mixer is stalled at line start and outputs as soon as
+        # the fetcher delivers, after the write lands) and the first
+        # pixel after a mid-line FIFO stall. Normal dots color the
+        # pixel before the write lands, keeping the old value.
+        # Setting the bit does not restore the current dot's pixel.
+        # The final pixels of the line are colored a few dots into
+        # HBlank, so the write can also land in mode 0.
+        if (
+            not self.cgb
+            and old_lcdc & 0b1
+            and not value & 0b1
+            and (self._STAT._mode == 3 or self._STAT._mode == 0)
+            and self.renderer.dot_ly == self.LY
+            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and (self.renderer.dot_last_pixel_x == 0 or self.renderer.dot_last_pixel_stalled_recovery)
+            and self.renderer.dot_last_pixel_raw >= 0
+            and self.renderer.dot_last_pixel_sprite_raw < 0
+        ):
+            self.renderer._screenbuffer[self.LY, self.renderer.dot_last_pixel_x] = self.BGP.getcolor(0)
+            self.renderer._screenbuffer_attributes[self.LY, self.renderer.dot_last_pixel_x] |= 0b01  # COL0_FLAG
+            self.renderer.dot_last_pixel_raw = 0
+        # DMG: clearing the OBJ enable bit suppresses a sprite pixel
+        # mixed into the output on the exact dot of the write, under
+        # the same first-pixel-of-line / post-stall condition as the
+        # BG enable case above.
+        if (
+            not self.cgb
+            and old_lcdc & 0b10
+            and not value & 0b10
+            and (self._STAT._mode == 3 or self._STAT._mode == 0)
+            and self.renderer.dot_ly == self.LY
+            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and (self.renderer.dot_last_pixel_x == 0 or self.renderer.dot_last_pixel_stalled_recovery)
+            and self.renderer.dot_last_pixel_sprite_raw >= 0
+        ):
+            _raw = self.renderer.dot_last_pixel_raw
+            self.renderer._screenbuffer[self.LY, self.renderer.dot_last_pixel_x] = self.BGP.getcolor(_raw)
+            self.renderer._screenbuffer_attributes[self.LY, self.renderer.dot_last_pixel_x] = (
+                0b01 if _raw == 0 else 0  # COL0_FLAG
+            )
+            self.renderer.dot_last_pixel_sprite_raw = -1
+        return lcd_interrupt
+
+    def write_bgp(self, value):
+        old_bgp = self.BGP.get()
+        self.BGP.set(value)
+        # DMG write glitch: a mid-scanline BGP write recolors the
+        # pixel colored on the exact dot of the write with the
+        # bitwise OR of the old and new palette shades. The final
+        # pixels of the line are colored a few dots into HBlank,
+        # so the write can also land while STAT already reads
+        # mode 0.
+        if (
+            not self.cgb
+            and (self._STAT._mode == 3 or self._STAT._mode == 0)
+            and self.renderer.dot_ly == self.LY
+            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and self.renderer.dot_last_pixel_raw >= 0
+            and self.renderer.dot_last_pixel_sprite_raw < 0
+        ):
+            raw = self.renderer.dot_last_pixel_raw
+            # The glitch ORs the old and new 2-bit color values
+            shade = ((old_bgp >> (raw << 1)) & 3) | ((value >> (raw << 1)) & 3)
+            self.renderer._screenbuffer[self.LY, self.renderer.dot_last_pixel_x] = self.BGP.palette_mem_rgb[shade]
+
+    def write_obp(self, index, value):
+        if index == 0:
+            self.OBP0.set(value)
+        else:
+            self.OBP1.set(value)
+        # The pixel mixer reads the palette at output time, so a
+        # sprite pixel output on the exact dot of an OBP write
+        # must observe the new palette. The write lands after the
+        # LCD tick that rendered that dot, so recolor it here.
+        if (
+            not self.cgb
+            and (self._STAT._mode == 3 or self._STAT._mode == 0)
+            and self.renderer.dot_ly == self.LY
+            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and self.renderer.dot_last_pixel_sprite_palette == index
+        ):
+            if index == 0:
+                self.renderer._screenbuffer[self.LY, self.renderer.dot_last_pixel_x] = self.OBP0.getcolor(
+                    self.renderer.dot_last_pixel_sprite_raw
+                )
+            else:
+                self.renderer._screenbuffer[self.LY, self.renderer.dot_last_pixel_x] = self.OBP1.getcolor(
+                    self.renderer.dot_last_pixel_sprite_raw
+                )
+
+    def write_wy(self, value):
+        self.WY = value
+        # The WY==LY window condition is re-evaluated when WY is
+        # written (SameBoy schedules a wy_check on every WY write)
+        if self._LCDC.lcd_enable and self._LCDC.window_enable and self.WY == self.LY:
+            self.renderer.wy_activated_frame = True
+
+    def write_wx(self, value):
+        self.WX = value
+        if (
+            not self._is_cgb_hardware()
+            and self._LCDC.lcd_enable
+            and self._STAT._mode == 3
+            and self.renderer.dot_ly == self.LY
+        ):
+            # DMG: a WX write takes effect for one dot, even mid-fetch
+            self.renderer.dot_wx_changed_dots = 1
 
     def _is_cgb_hardware(self):
         return self.cgb or self._downgraded_to_dmg
@@ -264,6 +428,46 @@ class LCD:
 
         interrupt_flag = 0
         self.clock += cycles >> self.speed_shift
+
+        # Feed the dot-accurate renderer with the dots that have elapsed on the
+        # current mode 3 line. Register writes land between LCD ticks, so the
+        # dots processed here observe the current register values.
+        if self._LCDC.lcd_enable and self._STAT._mode == 3 and self.renderer.dot_ly == self.LY:
+            self.renderer.advance_dots(self.clock - self.mode3_start_clock - DOT_MODE3_RENDER_DELAY)
+
+        if self._LCDC.lcd_enable and self._STAT._mode == 0 and self.renderer.dot_ly == self.LY:
+            # The pixel pipeline pushes the last pixels of the line a few dots
+            # after the STAT mode-0 signal. Keep feeding it during early
+            # HBlank so register writes land dot-synchronously on those pops,
+            # exactly as they do in mode 3.
+            self.renderer.advance_dots(self.clock - self.mode3_start_clock - DOT_MODE3_RENDER_DELAY)
+            if self.renderer.dot_x_counter == 160:
+                # The pipeline reached its natural end; present the line
+                self.renderer.dot_finish_line()
+                self.renderer.dot_ly = -1
+
+        if (
+            self._LCDC.lcd_enable
+            and self._STAT._mode == 3
+            and self.next_stat_mode == 0
+            and self.renderer.dot_ly == self.LY
+            and not self.renderer.dot_mode0_fetcher_based
+            and self.renderer.dot_mode0_elapsed >= 0
+            and self.renderer.dot_mode0_elapsed != self.renderer.dot_mode0_corrected
+        ):
+            # The pixel pipeline just popped the pixel at screen column 157,
+            # where hardware lowers the STAT mode-0 signal. The mode-3 target
+            # was only an analytic estimate until now; correct it to the exact
+            # dot so STAT reads observe the transition dot-accurately instead
+            # of on the 4-dot extension grid. The correction is applied once
+            # per popped value; a mode-3 extension may have already pushed the
+            # target past a stale estimate, which must not snap it back.
+            exact_target = self.mode3_start_clock + self.renderer.dot_mode0_elapsed + DOT_MODE3_RENDER_DELAY
+            if exact_target != self.clock_target:
+                self.mode3_extension += exact_target - self.clock_target
+                self.clock_target = exact_target
+            self.renderer.dot_mode0_corrected = self.renderer.dot_mode0_elapsed
+
         vblank_stat_pretriggered = False
 
         if self._should_pretrigger_vblank_stat() and self.clock >= self.clock_target - 4:
@@ -283,10 +487,19 @@ class LCD:
                 self.next_stat_mode = 3
                 self.stat_transition = STAT_TRANSITION_NONE
                 interrupt_flag |= self._STAT.set_mode(0)
-                self.renderer.wy_activated_frame = self.WY == self.LY
+                # The window activation latch only sets when the window is
+                # enabled at the WY==LY comparison (SameBoy wy_check)
+                self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
             elif self._LCDC.lcd_enable and self.LY == 153:
+                # The dot renderer's pipeline state is dead once the frame
+                # wraps; neutralize it so a state saved here loads into a
+                # fresh renderer identically. The mode-3 anchors are dead
+                # too; the next mode 3 recomputes them.
+                self.renderer.reset_dot_pipeline()
+                self.mode3_start_clock = 0
+                self.mode3_extension = 0
                 if self.first_frame and self.clock_target < FRAME_CYCLES:
                     # The startup line is eight cycles short; keep the frame period unchanged.
                     self.clock_target = FRAME_CYCLES
@@ -298,8 +511,22 @@ class LCD:
                     self.clock_target = self.clock_target % FRAME_CYCLES + 80
                     self.next_stat_mode = 3
                     self.stat_transition = STAT_TRANSITION_NONE
-                    interrupt_flag |= self._STAT.set_mode(2)
-                    self.renderer.wy_activated_frame = self.WY == self.LY
+                    # The OAM STAT interrupt source triggers one dot before STAT
+                    # changes to mode 2 on every line except line 0, which skips
+                    # the early trigger and fires at the mode change (frame dot 0)
+                    # instead. A CPU M-cycle boundary landing exactly on the
+                    # trigger does not observe the interrupt, so the dispatch to
+                    # the CPU is quantized to the next boundary. The clock was
+                    # wrapped to the CPU overshoot above, so a delivery clock of
+                    # 1 delivers within the same tick when the boundary is
+                    # already past the trigger, and on the next boundary otherwise.
+                    stat_irq = self._STAT.set_mode(2)
+                    if stat_irq & INTR_LCDC:
+                        self.stat_irq_delayed = True
+                        self.stat_irq_delivery_clock = 1
+                    else:
+                        interrupt_flag |= stat_irq
+                    self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
             elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_ADVANCE_LY:
@@ -320,14 +547,56 @@ class LCD:
                 self.clock_target += 80
                 self.next_stat_mode = 3
                 self.stat_transition = STAT_TRANSITION_NONE
-                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (
+                    self._LCDC.window_enable and self.WY == self.LY
+                )
+
+            elif (
+                self._LCDC.lcd_enable
+                and self.next_stat_mode == 0
+                and not self.renderer.dot_mode0_fetcher_based
+                and self.renderer.dot_ly == self.LY
+                and self.renderer.dot_x_counter != 160
+                and self.mode3_extension < 116
+                and (
+                    self.renderer.dot_mode0_elapsed < 0
+                    or self.renderer.dot_sprite_session_dots > 0
+                    or self.renderer.dot_during_sprite_fetch
+                    or (
+                        self.renderer.dot_n_sprites > 0
+                        and (self._LCDC.sprite_enable or self._is_cgb_hardware())
+                        and self.renderer.dot_sprite_x[self.renderer.dot_n_sprites - 1] <= 167
+                    )
+                )
+            ):
+                # The dot renderer's pixel pipeline is still emitting this
+                # line's pixels, or a sprite fetch session is still pending.
+                # Hardware remains in mode 3 until the last pixel is pushed,
+                # so extend mode 3 to the renderer's natural end and shorten
+                # HBlank by the same amount. The extension is capped so a
+                # stalled pipeline cannot lock up the LCD. Sprites at X >= 168
+                # never enter the fetch pipeline and must not extend mode 3.
+                self.mode3_extension += 4
+                self.clock_target += 4
 
             elif self._LCDC.lcd_enable:
                 # Change to next mode
                 if self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED:
                     self.stat_transition = STAT_TRANSITION_NONE
                     vblank_stat_pretriggered = True
-                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+                stat_irq = self._STAT.set_mode(self.next_stat_mode)
+                if self.next_stat_mode == 1 and stat_irq & INTR_LCDC:
+                    # The mode 1 STAT interrupt triggers at the STAT change
+                    # itself, with no early trigger like mode 2 has on lines
+                    # 1-152. A CPU M-cycle boundary coinciding with the
+                    # trigger therefore does not observe it, so the dispatch
+                    # is quantized to the next boundary: a boundary already
+                    # past the trigger delivers on the current tick, and an
+                    # exact hit delivers on the next tick.
+                    self.stat_irq_delayed = True
+                    self.stat_irq_delivery_clock = self.clock_target + 1
+                else:
+                    interrupt_flag |= stat_irq
 
                 # Pan Docs:
                 # The following are typical when the display is enabled:
@@ -346,20 +615,49 @@ class LCD:
                     # If this condition is not met in mode 2, at some point in this
                     # frame, the window will not show.
                     # FIXME: Strange Cython work-around. I thought I had fixed this.
-                    self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+                    self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (
+                        self._LCDC.window_enable and self.WY == self.LY
+                    )
                 elif self._STAT._mode == 3:
-                    self.mode3_adjustment = self._mode3_timing_adjustment(self.LY)
+                    self.mode3_start_clock = self.clock_target
+                    # The dot renderer's pipeline produces the sprite and
+                    # SCX mode-3 penalties naturally. The analytic estimate
+                    # could overshoot the pipeline's natural finish and cut
+                    # mode 3 short, so start from the unadjusted base
+                    # length and let the pipeline extend it.
+                    self.mode3_extension = 0
                     if self.first_frame:
-                        self.clock_target += 172 + self.mode3_adjustment
+                        self.clock_target += 172
                     elif self._is_cgb_hardware():
-                        self.clock_target += 170 + self.mode3_adjustment
+                        self.clock_target += 170
                     else:
-                        self.clock_target += 172 + self.mode3_adjustment
+                        self.clock_target += 172
                     self.next_stat_mode = 0
                     self.stat_transition = STAT_TRANSITION_NONE
+                    self.renderer.start_dot_line(self.LY)
+                    if self.renderer.dot_mode0_fetcher_based:
+                        # The fetcher-based mode-0 dot is exact, so apply it
+                        # directly and shorten HBlank by the same amount. The
+                        # pixel pipeline may still be emitting this line's
+                        # pixels when mode 0 arrives; it keeps running into
+                        # HBlank exactly as it does on hardware.
+                        # The mode-0 dot is the plain-line dot plus every
+                        # sprite fetch session dot, minus the session dots
+                        # that overlap the fixed mode-3 startup. CGB mode 3
+                        # starts two dots further into the fetcher's work, so
+                        # two fewer session dots overlap it. The STAT mode-0
+                        # signal itself lags the last fetcher dot by one,
+                        # which is folded into the overlap.
+                        if not self.first_frame and self._is_cgb_hardware():
+                            startup_overlap = 1
+                        else:
+                            startup_overlap = 3
+                        penalty = self.renderer.dot_sprite_mode0_penalty(startup_overlap)
+                        self.mode3_extension = penalty
+                        self.clock_target += penalty
                 elif self._STAT._mode == 0:  # HBLANK
                     if self.first_frame:
-                        self.clock_target += 200 - self.mode3_adjustment
+                        self.clock_target += 200 - self.mode3_extension
                         if self.LY < 143:
                             self.next_stat_mode = 2
                             self.stat_transition = STAT_TRANSITION_ADVANCE_LY
@@ -367,15 +665,15 @@ class LCD:
                             self.next_stat_mode = 1
                             self.stat_transition = STAT_TRANSITION_NONE
                     elif self._is_cgb_hardware():
-                        self.clock_target += 206 - self.mode3_adjustment
+                        self.clock_target += 206 - self.mode3_extension
                         self.next_stat_mode = 2 if self.LY < 143 else 1
                         self.stat_transition = STAT_TRANSITION_NONE
                     elif self.LY < 143:
-                        self.clock_target += 200 - self.mode3_adjustment
+                        self.clock_target += 200 - self.mode3_extension
                         self.next_stat_mode = 2
                         self.stat_transition = STAT_TRANSITION_ADVANCE_LY
                     else:
-                        self.clock_target += 204 - self.mode3_adjustment
+                        self.clock_target += 204 - self.mode3_extension
                         self.next_stat_mode = 1
                         self.stat_transition = STAT_TRANSITION_NONE
 
@@ -388,13 +686,11 @@ class LCD:
                     self._scanlineparameters[self.LY][3] = wy
                     self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
 
-                    if self.cgb:
-                        self.renderer.cgb_scanline(self.LY)
-                    else:
-                        self.renderer.scanline(self.LY)
-                    self.renderer.scanline_sprites(
-                        self.LY, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
-                    )
+                    # The dot renderer's pixel pipeline is still pushing
+                    # the last pixels of this line. It completes during
+                    # early HBlank in tick(), dot-synchronously with the
+                    # CPU, so that register writes on the final pop dots
+                    # are observed at the exact dots as on hardware.
                 elif self._STAT._mode == 1:  # VBLANK
                     self.clock_target += 456
                     self.next_stat_mode = 1
@@ -422,10 +718,16 @@ class LCD:
                 # Renderer
                 self.renderer.blank_screen()
 
+        if self.stat_irq_delayed and self.clock >= self.stat_irq_delivery_clock:
+            self.stat_irq_delayed = False
+            interrupt_flag |= INTR_LCDC
+
         # NOTE: speed_shift because they are using in externally in mb
         cycles_to_interrupt = self.clock_target - self.clock
         if self._should_pretrigger_vblank_stat():
             cycles_to_interrupt -= 4
+        if self.stat_irq_delayed:
+            cycles_to_interrupt = min(cycles_to_interrupt, self.stat_irq_delivery_clock - self.clock)
         self._cycles_to_interrupt = cycles_to_interrupt << self.speed_shift
         # TODO: STAT Cycles to interrupts
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
@@ -549,8 +851,6 @@ class LCD:
             self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
             self.next_stat_mode = f.read()
             self.stat_transition = f.read()
-            if self._STAT._mode == 3:
-                self.mode3_adjustment = self._mode3_timing_adjustment(self.LY)
             if (
                 self._should_pretrigger_vblank_stat()
                 and self.clock <= self.clock_target
@@ -566,6 +866,9 @@ class LCD:
                 self.bcpd.load_state(f, state_version)
                 self.ocps.load_state(f, state_version)
                 self.ocpd.load_state(f, state_version)
+
+        # The dot-accurate renderer cannot resume a partially rendered line
+        self.renderer.dot_ly = -1
 
     def getwindowpos(self):
         return (self.WX - 7, self.WY)
@@ -745,91 +1048,76 @@ class Renderer:
 
         self._screenbuffer_ptr = c_void_p(self._screenbuffer_raw.buffer_info()[0])
 
-        self.ly_window = 0
-
         # WY has a strange behavior described at:
         # https://gbdev.io/pandocs/Scrolling.html#window
         self.wy_activated_frame = False
 
-    def scanline(self, y):
-        if self.lcd.disable_renderer:
-            return
-
-        bx, by = self.lcd.getviewport()
-        wx, wy = self.lcd.getwindowpos()
-
-        x = 0
-        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
-            # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
-            self.ly_window += 1
-
-            # Before window
-            if wx > x:
-                x += self.scanline_background(y, x, bx, by, wx, self.lcd)
-
-            # Window hit
-            self.scanline_window(y, x, wx, wy, COLS - x, self.lcd)
-        elif self.lcd._LCDC.background_enable:
-            # No window
-            self.scanline_background(y, x, bx, by, COLS, self.lcd)
-        else:
-            self.scanline_blank(y, x, COLS, self.lcd)
-
-        if y == 143:
-            # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
-            self.ly_window = -1
-
-    def _get_tile(self, y, x, offset, lcd):
-        tile_addr = offset + y // 8 * 32 % 0x400 + x // 8 % 32
-        tile = lcd.VRAM0[tile_addr]
-
-        # If using signed tile indices, modify index
-        if not lcd._LCDC.tiledata_select:
-            # (x ^ 0x80 - 128) to convert to signed, then
-            # add 256 for offset (reduces to + 128)
-            tile = (tile ^ 0x80) + 128
-
-        yy = 8 * tile + y % 8
-        return tile, yy, tile_addr
-
-    def _pixel(self, cache_index, pixel, x, y, xx, yy, bg_priority_apply):
-        col0 = (self._tilecache[cache_index, yy, xx] == 0) & 1
-        self._screenbuffer[y, x] = pixel
-        # COL0_FLAG is 1
-        self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
-
-    def scanline_window(self, y, _x, wx, wy, cols, lcd):
-        for x in range(_x, _x + cols):
-            xx = (x - wx) % 8
-            if xx == 0 or x == _x:
-                wt, yy, _ = self._get_tile(self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd)
-                self.update_tilecache(0, lcd, wt, 0)
-
-            pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
-            self._pixel(0, pixel, x, y, xx, yy, 0)
-        return cols
-
-    def scanline_background(self, y, _x, bx, by, cols, lcd):
-        for x in range(_x, _x + cols):
-            # bx mask used for the half tile at the left side when scrolling
-            b_xx = (x + (bx & 0b111)) % 8
-            if b_xx == 0 or x == 0:
-                bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
-                self.update_tilecache(0, lcd, bt, 0)
-
-            xx = b_xx
-            yy = b_yy
-
-            pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
-            self._pixel(0, pixel, x, y, xx, yy, 0)
-        return cols
-
-    def scanline_blank(self, y, _x, cols, lcd):
-        # If background is disabled, it becomes white
-        for x in range(_x, _x + cols):
-            self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
-            self._screenbuffer_attributes[y, x] = 0
-        return cols
+        # State for the dot-accurate renderer
+        self.dot_ly = -1
+        self.dot_dots_elapsed = 0
+        self.dot_mode0_elapsed = -1
+        self.dot_mode0_corrected = -1
+        self.dot_mode0_fetcher_based = False
+        self.dot_x_counter = 240
+        self.dot_screen_x = 0
+        self.dot_fetch_phase = 0
+        self.dot_tile_index = 0
+        self.dot_tile_attrs = 0
+        self.dot_tile_data_low = 0
+        self.dot_tile_data_high = 0
+        self.dot_tilemap_addr = 0
+        self.dot_tiledata_addr = 0
+        self.dot_window_triggered = False
+        self.dot_fetching_window = False
+        self.dot_window_column = 0
+        self.dot_window_line = 0
+        self.dot_x_counter_fractional = False
+        self.dot_bg_insert_pending = False
+        self.dot_win_glitch_blocked = False
+        self.dot_last_pixel_dot = -1
+        self.dot_last_pixel_x = 0
+        self.dot_last_pixel_raw = -1
+        self.dot_last_pixel_sprite_raw = -1
+        self.dot_last_pixel_sprite_palette = -1
+        self.dot_mixer_stalled = False
+        self.dot_last_pixel_stalled_recovery = False
+        self.dot_bg_fifo_pixel = array("B", [0] * 8)
+        self.dot_bg_fifo_palette = array("B", [0] * 8)
+        self.dot_bg_fifo_priority = array("B", [0] * 8)
+        self.dot_bg_fifo_count = 0
+        self.dot_bg_fifo_read = 0
+        self.dot_obj_fifo_pixel = array("B", [0] * 8)
+        self.dot_obj_fifo_palette = array("B", [0] * 8)
+        self.dot_obj_fifo_priority = array("B", [0] * 8)
+        self.dot_obj_fifo_bg_priority = array("B", [0] * 8)
+        self.dot_obj_fifo_count = 0
+        self.dot_obj_fifo_read = 0
+        self.dot_sprite_x = array("B", [0] * 10)
+        self.dot_sprite_y = array("B", [0] * 10)
+        self.dot_sprite_index = array("i", [0] * 10)
+        self.dot_n_sprites = 0
+        self.dot_sprite_fetch_tile = 0
+        self.dot_sprite_fetch_flags = 0
+        self.dot_sprite_fetch_data_low = 0
+        self.dot_sprite_fetch_data_high = 0
+        self.dot_sprite_fetch_row_addr = 0
+        self.dot_sprite_merge_pending = False
+        self.dot_sprite_merge_priority = 0
+        self.dot_sprite_merge_y = 0
+        self.dot_sprite_low_read_dot = -1
+        self.dot_sprite_high_read_dot = -1
+        self.dot_during_sprite_fetch = False
+        self.dot_sprite_session_dots = 0
+        self.dot_sprite_session_count = 0
+        self.dot_sprite_session_low = 0
+        self.dot_sprite_session_high = 0
+        self.dot_session_overlap_dots = 3
+        self.dot_glitch_data = 0
+        self.dot_latched_tiledata_select = False
+        self.dot_tiledata_glitch_dots = 0
+        self.dot_cgb_window_glitch = False
+        self.dot_wx_changed_dots = 0
+        self.dot_window_extra_dot_pending = False
 
     def sort_sprites(self, sprite_count):
         # Use insertion sort, as it has O(n) on already sorted arrays. This
@@ -1054,6 +1342,879 @@ class Renderer:
 
         self.clear_cache()
 
+    def reset_dot_pipeline(self):
+        # Neutralize the dot renderer between frames. Everything below is
+        # either reset again at the start of the next line or only read
+        # while a line is being rendered, so a running renderer and a
+        # freshly constructed one hold the same state here. A state file
+        # saved at a frame boundary therefore loads into a renderer that
+        # continues identically.
+        self.dot_ly = -1
+        self.dot_dots_elapsed = 0
+        self.dot_mode0_elapsed = -1
+        self.dot_mode0_corrected = -1
+        self.dot_mode0_fetcher_based = False
+        self.dot_x_counter = 240
+        self.dot_screen_x = 0
+        self.dot_fetch_phase = 0
+        self.dot_tile_index = 0
+        self.dot_tile_attrs = 0
+        self.dot_tile_data_low = 0
+        self.dot_tile_data_high = 0
+        self.dot_tilemap_addr = 0
+        self.dot_tiledata_addr = 0
+        self.dot_window_triggered = False
+        self.dot_fetching_window = False
+        self.dot_window_column = 0
+        self.dot_window_line = 0
+        self.dot_x_counter_fractional = False
+        self.dot_bg_insert_pending = False
+        self.dot_win_glitch_blocked = False
+        self.dot_last_pixel_dot = -1
+        self.dot_last_pixel_x = 0
+        self.dot_last_pixel_raw = -1
+        self.dot_last_pixel_sprite_raw = -1
+        self.dot_last_pixel_sprite_palette = -1
+        self.dot_mixer_stalled = False
+        self.dot_last_pixel_stalled_recovery = False
+        self.dot_bg_fifo_count = 0
+        self.dot_bg_fifo_read = 0
+        self.dot_obj_fifo_count = 0
+        self.dot_obj_fifo_read = 0
+        for i in range(8):
+            self.dot_bg_fifo_pixel[i] = 0
+            self.dot_bg_fifo_palette[i] = 0
+            self.dot_bg_fifo_priority[i] = 0
+            self.dot_obj_fifo_pixel[i] = 0
+            self.dot_obj_fifo_palette[i] = 0
+            self.dot_obj_fifo_priority[i] = 0
+            self.dot_obj_fifo_bg_priority[i] = 0
+        self.dot_n_sprites = 0
+        for i in range(10):
+            self.dot_sprite_x[i] = 0
+            self.dot_sprite_y[i] = 0
+            self.dot_sprite_index[i] = 0
+        self.dot_sprite_fetch_tile = 0
+        self.dot_sprite_fetch_flags = 0
+        self.dot_sprite_fetch_data_low = 0
+        self.dot_sprite_fetch_data_high = 0
+        self.dot_sprite_fetch_row_addr = 0
+        self.dot_sprite_merge_pending = False
+        self.dot_sprite_merge_priority = 0
+        self.dot_sprite_merge_y = 0
+        self.dot_sprite_low_read_dot = -1
+        self.dot_sprite_high_read_dot = -1
+        self.dot_during_sprite_fetch = False
+        self.dot_sprite_session_dots = 0
+        self.dot_sprite_session_count = 0
+        self.dot_sprite_session_low = 0
+        self.dot_sprite_session_high = 0
+        self.dot_session_overlap_dots = 3
+        self.dot_glitch_data = 0
+        self.dot_latched_tiledata_select = False
+        self.dot_tiledata_glitch_dots = 0
+        self.dot_cgb_window_glitch = False
+        self.dot_wx_changed_dots = 0
+        self.dot_window_extra_dot_pending = False
+
+    ####################################
+    #
+    #  Dot-accurate renderer
+    #
+    #  Renders a scanline one dot at a time through a fetcher pipeline and two
+    #  pixel FIFOs, so that PPU register writes landing mid-scanline produce
+    #  the same pixels as hardware. The pipeline follows the documented PPU
+    #  design: a background/window fetcher producing rows of 8 pixels, a
+    #  sprite fetcher overlaying up to 10 sprites per line, and the SCX/WX
+    #  window and scrolling edge cases described in Pan Docs and exercised by
+    #  the mealybug tearoom tests.
+    #
+
+    def start_dot_line(self, ly):
+        if self.dot_ly != -1 and self.dot_ly != ly:
+            # Safety net: the previous line's pipeline never reached its
+            # natural end (a permanently stalled fetcher). Force it to
+            # complete so its pixels are not lost.
+            self.advance_dots(456)
+            self.dot_finish_line()
+            self.dot_ly = -1
+        self.dot_ly = ly
+        self.dot_dots_elapsed = 0
+        self.dot_mode0_elapsed = -1
+        self.dot_mode0_corrected = -1
+        self.dot_mode0_fetcher_based = False
+        self.dot_win_glitch_blocked = False
+        self.dot_bg_fifo_count = 0
+        self.dot_bg_fifo_read = 0
+        self.dot_obj_fifo_count = 0
+        self.dot_obj_fifo_read = 0
+        # Prime the background FIFO with a blank row. Hardware starts the line
+        # with a full FIFO of junk that is discarded off-screen anyway.
+        self.dot_fill_bg_fifo(0, 0, 0, False, False)
+        self.dot_screen_x = 0
+        self.dot_fetch_phase = 0
+        self.dot_x_counter = 240
+        self.dot_x_counter_fractional = False
+        self.dot_bg_insert_pending = False
+        self.dot_fetching_window = False
+        self.dot_during_sprite_fetch = False
+        self.dot_sprite_session_dots = 0
+        self.dot_sprite_session_count = 0
+        self.dot_sprite_session_low = 0
+        self.dot_sprite_session_high = 0
+        self.dot_session_overlap_dots = 3
+        self.dot_sprite_merge_pending = False
+        self.dot_sprite_low_read_dot = -1
+        self.dot_sprite_high_read_dot = -1
+        self.dot_window_extra_dot_pending = False
+        self.dot_tiledata_glitch_dots = 0
+        self.dot_wx_changed_dots = 0
+        self.dot_last_pixel_dot = -1
+        self.dot_last_pixel_sprite_raw = -1
+        self.dot_last_pixel_sprite_palette = -1
+        self.dot_mixer_stalled = False
+        self.dot_last_pixel_stalled_recovery = False
+        self.dot_cgb_window_glitch = False
+        if ly == 0:
+            self.dot_window_line = 255
+            self.dot_window_triggered = False
+        if not self.lcd._is_cgb_hardware():
+            self.dot_tile_attrs = 0
+        # OAM scan. Hardware interleaves this with mode 2; doing it up front is
+        # an accepted approximation for the dot renderer.
+        self.dot_scan_sprites()
+
+        # On a line with sprites to fetch, the STAT mode-0 signal follows the
+        # object fetcher's dot counter rather than the pixel pipeline. The
+        # fetcher-based mode-0 dot is then known in full from the scan results,
+        # so the mode-0 target is computed from them when mode 3 starts, and
+        # neither the pixel-pipeline correction nor the mode-3 extension loop
+        # may move it afterwards.
+        self.dot_mode0_fetcher_based = self.dot_n_sprites > 0 and self.lcd._LCDC.sprite_enable
+
+    def advance_dots(self, target):
+        if self.dot_ly < 0 or self.dot_x_counter == 160:
+            return
+        while self.dot_dots_elapsed < target:
+            if self.dot_sprite_merge_pending:
+                self._dot_sprite_flush_merge()
+            if self.dot_window_extra_dot_pending:
+                # Resume right after the extra dot a WX==0 activation costs
+                self.dot_window_extra_dot_pending = False
+                self.dot_dots_elapsed += 1
+                self._dot_decay_glitch_counters()
+                self.dot_window_triggered = True
+                self.dot_fetch_phase = 0
+                self.dot_fetching_window = True
+            elif self.dot_sprite_session_dots > 0:
+                # Sprite fetch session dot: the pixel mixer and the background
+                # fetcher are frozen while the sprite fetcher runs
+                self.dot_dots_elapsed += 1
+                self._dot_decay_glitch_counters()
+                if self.dot_session_overlap_dots > 0:
+                    # The line's first sprite session opens with a fetcher
+                    # startup: the sprite fetcher's first VRAM read happens
+                    # later in the session, and the background fetcher keeps
+                    # the bus for the first three dots. The pixel mixer is
+                    # frozen for the whole session including the overlap, so
+                    # the fetched row still lands at the sprite's x position;
+                    # mode 3 is only extended by the session length minus the
+                    # overlap because the mixer is stalled for the mode-3
+                    # startup dots anyway. Every later session of the line
+                    # stalls the pipeline for its full length.
+                    self.dot_session_overlap_dots -= 1
+                    self.dot_step_fetcher()
+                self.dot_sprite_session_dots -= 1
+                if self.dot_sprite_session_count > 0:
+                    self.dot_sprite_session_low -= 1
+                    if self.dot_sprite_session_low == 0:
+                        self._dot_sprite_session_low_read()
+                    self.dot_sprite_session_high -= 1
+                    if self.dot_sprite_session_high == 0:
+                        self._dot_sprite_session_high_read()
+                if self.dot_sprite_session_dots == 0:
+                    self.dot_during_sprite_fetch = False
+                    self._dot_sprite_session_end()
+                # The pixel mixer and fetcher are frozen for every session
+                # dot, including the last one
+                continue
+            else:
+                # Fresh dot: pay the dot, then run the per-dot line work
+                self.dot_dots_elapsed += 1
+
+                # Drop sprites that have scrolled out of fetch range
+                x_match = self.dot_sprite_fetch_x()
+                while self.dot_n_sprites != 0 and self.dot_sprite_x[self.dot_n_sprites - 1] < x_match:
+                    self.dot_n_sprites -= 1
+
+                # A sprite fetch session starts when the fetcher's x position
+                # reaches the smallest un-fetched sprite on the line
+                if (
+                    self.dot_n_sprites != 0
+                    and (self.lcd._LCDC.sprite_enable or self.lcd._is_cgb_hardware())
+                    and self.dot_sprite_x[self.dot_n_sprites - 1] == x_match
+                ):
+                    self._dot_sprite_session_start(x_match)
+                    continue
+
+                # Window activation. The x counter counts modulo 256, so the
+                # values 240-255 denote the pre-line dots -16 to -1.
+                if not self.dot_window_triggered and self.wy_activated_frame and self.lcd._LCDC.window_enable:
+                    win_activation = False
+                    if self.lcd.WX == 0:
+                        if self.dot_x_counter == 249:  # -7
+                            win_activation = True
+                        elif self.dot_x_counter == 240 and (self.lcd.SCX & 7):  # -16
+                            win_activation = True
+                        elif 241 <= self.dot_x_counter <= 248:  # -15 to -8
+                            win_activation = True
+                    elif self.lcd.WX < 166 + self.lcd._is_cgb_hardware():
+                        if self.lcd.WX == (self.dot_x_counter + 7) & 0xFF:
+                            win_activation = True
+                        elif (
+                            not self.lcd._is_cgb_hardware()
+                            and self.lcd.WX == (self.dot_x_counter + 6) & 0xFF
+                            and not self.dot_wx_changed_dots
+                        ):
+                            win_activation = True
+                            # LCD-PPU horizontal desync (DMG only)
+                            if self.dot_screen_x > 0:
+                                self.dot_screen_x -= 1
+
+                    if win_activation:
+                        self.dot_window_line = (self.dot_window_line + 1) & 0xFF
+                        self.dot_window_column = 0
+                        self.dot_bg_fifo_count = 0
+                        self.dot_bg_fifo_read = 0
+                        if self.lcd.WX == 0 and (self.lcd.SCX & 7) and not self.lcd._is_cgb_hardware():
+                            # Window activation costs an extra dot
+                            if self.dot_dots_elapsed >= target:
+                                self.dot_window_extra_dot_pending = True
+                                return
+                            self.dot_dots_elapsed += 1
+                            self._dot_decay_glitch_counters()
+                        self.dot_window_triggered = True
+                        self.dot_fetch_phase = 0
+                        self.dot_fetching_window = True
+                    elif (
+                        not self.lcd._is_cgb_hardware()
+                        and self.lcd.WX == 166
+                        and self.lcd.WX == (self.dot_x_counter + 7) & 0xFF
+                    ):
+                        self.dot_window_line = (self.dot_window_line + 1) & 0xFF
+
+                # Queue a pixel insertion at the FIFO's end
+                if (
+                    self.lcd.WX == (self.dot_x_counter + 7) & 0xFF
+                    and (not self.lcd._is_cgb_hardware() or self.lcd.WX == 0)
+                    and self.dot_window_triggered
+                    and not self.dot_fetching_window
+                    and self.dot_fetch_phase == 0
+                    and self.dot_bg_fifo_count == 8
+                ):
+                    self.dot_bg_insert_pending = True
+
+            self.dot_render_pixel()
+            self.dot_step_fetcher()
+            self._dot_decay_glitch_counters()
+            if self.dot_x_counter == 160:
+                break
+
+    def _dot_sprite_session_start(self, x_match):
+        # All sprites sharing the fetcher's x position are fetched in one
+        # session. The session length depends on the SCX alignment (idx) and
+        # on the number of sprites in the session. After the last fetch the
+        # fetcher pays a fixed restart delay that depends only on the
+        # alignment, whether or not further sprites follow on the line:
+        # 11,10,9,8,7,6,6,6 dots in total for idx 0..7.
+        count = 0
+        while count < self.dot_n_sprites and self.dot_sprite_x[self.dot_n_sprites - 1 - count] <= x_match:
+            count += 1
+        idx = (x_match + self.lcd.SCX) & 7
+        if idx < 2:
+            startup = 8
+        elif idx < 4:
+            startup = 6
+        elif idx < 7:
+            startup = 4
+        else:
+            # The background fetcher is a single dot away from completing its
+            # fetch, so the sprite fetcher overlaps it almost entirely and
+            # the session is one dot shorter than for the other alignments
+            startup = 3
+        session_length = startup + 6 * (count - 1)
+        if idx == 0 or idx == 2 or idx == 4 or idx == 7:
+            session_length += 3
+        else:
+            session_length += 2
+        # The trigger dot has already been paid by the caller
+        self.dot_sprite_session_dots = session_length - 1
+        self.dot_sprite_session_count = count
+        first_fetch_end = session_length - 6 * (count - 1)
+        self.dot_sprite_session_low = max(1, first_fetch_end - 3)
+        self.dot_sprite_session_high = first_fetch_end - 1
+        self.dot_during_sprite_fetch = True
+
+    def dot_sprite_mode0_penalty(self, startup_overlap):
+        # On a line whose OAM scan found sprites, the STAT mode-0 signal
+        # follows the object fetcher's dot counter rather than the pixel
+        # pipeline. Every sprite fetch session holds the fetcher for its
+        # full length, so the mode-0 dot is the plain-line dot plus the
+        # sum of the session lengths, minus the `startup_overlap` dots of
+        # the line's first session that overlap the fixed mode-3 startup.
+        # The session lengths follow the same alignment model as
+        # _dot_sprite_session_start. Sprites at x >= 168 are never
+        # reached by the fetcher and add nothing, but a scan that found
+        # any sprite at all still pays the startup overlap.
+        penalty = (self.lcd.SCX & 7) - startup_overlap
+        i = self.dot_n_sprites - 1
+        while i >= 0:
+            x = self.dot_sprite_x[i]
+            if x >= 168:
+                # The list is sorted by descending x, so every remaining
+                # sprite is also out of the fetcher's reach
+                break
+            count = 1
+            while i - count >= 0 and self.dot_sprite_x[i - count] == x:
+                count += 1
+            i -= count
+            idx = (x + self.lcd.SCX) & 7
+            if idx < 2:
+                startup = 8
+            elif idx < 4:
+                startup = 6
+            elif idx < 7:
+                startup = 4
+            else:
+                startup = 3
+            session_length = startup + 6 * (count - 1)
+            if idx == 0 or idx == 2 or idx == 4 or idx == 7:
+                session_length += 3
+            else:
+                session_length += 2
+            penalty += session_length
+        return penalty
+
+    def _dot_sprite_session_low_read(self):
+        self.dot_sprite_low_read_dot = self.dot_dots_elapsed
+        # Latch the tile number and attributes from OAM and read the low
+        # bitplane of the sprite row
+        sprite = self.dot_sprite_index[self.dot_n_sprites - 1]
+        self.dot_sprite_fetch_tile = self.lcd.OAM[sprite * 4 + 2]
+        self.dot_sprite_fetch_flags = self.lcd.OAM[sprite * 4 + 3]
+        row_addr = self.dot_sprite_row_addr(
+            self.dot_sprite_y[self.dot_n_sprites - 1], self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
+        )
+        self.dot_sprite_fetch_row_addr = row_addr
+        self.dot_sprite_fetch_data_low = self.dot_read_vram(row_addr)
+
+    def _dot_sprite_session_high_read(self):
+        self.dot_sprite_high_read_dot = self.dot_dots_elapsed
+        # The high bitplane address is re-derived at read time, so a register
+        # write landing between the two reads (for example an OBJ size
+        # change) is observed here even though the low bitplane address was
+        # derived before it
+        self.dot_sprite_merge_y = self.dot_sprite_y[self.dot_n_sprites - 1]
+        row_addr = self.dot_sprite_row_addr(
+            self.dot_sprite_merge_y, self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
+        )
+        self.dot_sprite_fetch_row_addr = row_addr
+        self.dot_sprite_fetch_data_high = self.dot_read_vram(row_addr + 1)
+        self.dot_glitch_data = self.dot_read_vram(row_addr + 1)
+        # On CGB, the sprite with the lower OAM index wins when sprites
+        # overlap. The merge overwrites a pixel when the already-merged
+        # sprite has a higher priority value, so the OAM index is captured
+        # here and passed to the deferred merge. On DMG the priority is the
+        # x coordinate, which the fetch order (ascending x) already accounts
+        # for: the first sprite merged wins, and a tie never overwrites.
+        self.dot_sprite_merge_priority = self.dot_sprite_index[self.dot_n_sprites - 1] if self.lcd.cgb else 0
+        self.dot_n_sprites -= 1
+        self.dot_sprite_session_count -= 1
+        if self.dot_sprite_session_count > 0:
+            self.dot_sprite_session_low = 4
+            self.dot_sprite_session_high = 6
+        # The merge into the object FIFO is deferred to the start of the next
+        # dot: hardware commits a register write landing on this read dot
+        # mid-dot, before the fetcher's address phase, so the relatch below
+        # can still update the fetched data before the merge consumes it
+        self.dot_sprite_merge_pending = True
+
+    def _dot_sprite_flush_merge(self):
+        # Overlay the sprite row (costs no dots)
+        if self.lcd.cgb:
+            palette = self.dot_sprite_fetch_flags & 0b111
+            priority = self.dot_sprite_merge_priority
+        else:
+            palette = 1 if (self.dot_sprite_fetch_flags & 0x10) else 0
+            priority = 0
+        self.dot_merge_sprite_row(
+            self.dot_sprite_fetch_data_low,
+            self.dot_sprite_fetch_data_high,
+            palette,
+            (self.dot_sprite_fetch_flags & 0x80) != 0,
+            priority,
+            (self.dot_sprite_fetch_flags & 0x20) != 0,
+        )
+        self.dot_sprite_merge_pending = False
+
+    def dot_relatch_sprite_size(self):
+        # A mid-scanline LCDC size write landing exactly on the fetcher's
+        # low or high bitplane read dot is committed by hardware mid-dot,
+        # before the fetcher's address phase, so the read observes the new
+        # size even though the dot has already been processed. Redo the
+        # address derivation and the read with the new size bit. The merge
+        # is deferred, so the high read redo only has to refresh the fetched
+        # data.
+        if self.dot_sprite_low_read_dot == self.dot_dots_elapsed:
+            self._dot_sprite_session_low_read()
+        if self.dot_sprite_high_read_dot == self.dot_dots_elapsed and self.dot_sprite_merge_pending:
+            row_addr = self.dot_sprite_row_addr(
+                self.dot_sprite_merge_y, self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
+            )
+            self.dot_sprite_fetch_row_addr = row_addr
+            self.dot_sprite_fetch_data_high = self.dot_read_vram(row_addr + 1)
+            self.dot_glitch_data = self.dot_read_vram(row_addr + 1)
+
+    def _dot_sprite_session_end(self):
+        # The background fetcher restarts for free when a sprite fetch
+        # session ends: if it was mid-fetch with an empty FIFO it catches up
+        # without charging further dots, as the session length already
+        # includes the fetcher restart
+        if self.dot_bg_fifo_count == 0 and self.dot_fetch_phase < 6:
+            while self.dot_bg_fifo_count == 0:
+                self.dot_step_fetcher()
+
+    def dot_abort_sprite_session(self):
+        # DMG: clearing the OBJ enable bit while a sprite fetch session is
+        # in progress aborts the in-flight fetch. The fetch is discarded
+        # without merging into the object FIFO, and the pixel mixer resumes
+        # on the write dot itself. The write lands after the LCD tick already
+        # ran the current dot as a frozen session dot, so refund it and let
+        # it re-run as a normal rendering dot. The un-fetched sprite stays
+        # in the fetch list; it is dropped once the fetcher's x position
+        # passes it, or fetched by a fresh session if sprites are re-enabled
+        # while it is still in range.
+        self.dot_sprite_session_dots = 0
+        self.dot_sprite_session_count = 0
+        self.dot_sprite_session_low = 0
+        self.dot_sprite_session_high = 0
+        self.dot_session_overlap_dots = 0
+        self.dot_during_sprite_fetch = False
+        self.dot_dots_elapsed -= 1
+
+    def dot_finish_line(self):
+        self.dot_x_counter = 240
+        self.dot_x_counter_fractional = False
+        if self.dot_fetch_phase == 4 or self.dot_fetch_phase == 5:
+            # Keep the high bitplane byte holding the last tile data read
+            self.dot_tile_data_high = self.dot_tile_data_low
+        if self.dot_screen_x != 160 and not self.lcd.disable_renderer:
+            # The PPU and LCD desynced; fill the rest of the line with the last color
+            if self.dot_screen_x == 0:
+                color = self.lcd.bcpd.getcolor(0, 0) if self.lcd.cgb else self.lcd.BGP.getcolor(0)
+            for x in range(self.dot_screen_x, 160):
+                if self.dot_screen_x == 0:
+                    self._screenbuffer[self.dot_ly, x] = color
+                else:
+                    self._screenbuffer[self.dot_ly, x] = self._screenbuffer[self.dot_ly, x - 1]
+                self._screenbuffer_attributes[self.dot_ly, x] = 0
+        if self.dot_ly == 143:
+            self.dot_window_line = 255
+        if (
+            not self.lcd._is_cgb_hardware()
+            and self.wy_activated_frame
+            and self.lcd._LCDC.window_enable
+            and self.lcd.WX == 166
+        ):
+            # WX=166 activates the window during HBlank on DMG
+            self.dot_window_triggered = True
+            self.dot_window_column = 1
+            self.dot_window_line = (self.dot_window_line + 1) & 0xFF
+        else:
+            self.dot_window_triggered = False
+
+    def dot_scan_sprites(self):
+        height = 16 if self.lcd._LCDC.sprite_height else 8
+        self.dot_n_sprites = 0
+        for index in range(40):
+            sprite_y = self.lcd.OAM[index * 4]
+            sprite_x = self.lcd.OAM[index * 4 + 1]
+            if self.dot_n_sprites == 10:
+                return
+            dy = sprite_y - 16
+            if dy <= self.lcd.LY < dy + height:
+                # Sort the visible sprites by descending x (and priority)
+                j = 0
+                while j < self.dot_n_sprites:
+                    if self.dot_sprite_x[j] <= sprite_x:
+                        break
+                    j += 1
+                for k in range(self.dot_n_sprites, j, -1):
+                    self.dot_sprite_x[k] = self.dot_sprite_x[k - 1]
+                    self.dot_sprite_y[k] = self.dot_sprite_y[k - 1]
+                    self.dot_sprite_index[k] = self.dot_sprite_index[k - 1]
+                self.dot_sprite_index[j] = index
+                self.dot_sprite_x[j] = sprite_x
+                self.dot_sprite_y[j] = sprite_y
+                self.dot_n_sprites += 1
+
+    def dot_step_fetcher(self):
+        # The background/window fetcher pipeline. Each phase completes in one
+        # call (one dot):
+        #   0: compute the tile map address
+        #   1: read the tile map entry (index and, on CGB, attributes)
+        #   2: compute the tile data address for the low bitplane
+        #   3: read the low bitplane byte
+        #   4: compute the tile data address for the high bitplane
+        #   5: read the high bitplane byte and push the row to the FIFO
+        #   6: push stalled because the FIFO is full
+        if self.dot_fetch_phase == 0:
+            self.dot_update_window_glitch()
+            map_addr = 0x1800
+            if not self.lcd._LCDC.window_enable:
+                self.dot_window_triggered = False
+            if self.lcd._LCDC.backgroundmap_select and not self.dot_window_triggered:
+                map_addr = 0x1C00
+            elif self.lcd._LCDC.windowmap_select and self.dot_window_triggered:
+                map_addr = 0x1C00
+            if self.dot_window_triggered:
+                row = self.dot_window_line
+            else:
+                row = (self.lcd.LY + self.lcd.SCY) & 0xFF
+            if self.dot_window_triggered:
+                column = self.dot_window_column
+            elif ((self.dot_x_counter + 16) & 0xFF) < 8:
+                column = self.lcd.SCX >> 3
+            else:
+                column = (
+                    self.lcd.SCX
+                    + self.dot_x_counter
+                    + 8
+                    - (1 if self.lcd._is_cgb_hardware() and not self.dot_during_sprite_fetch else 0)
+                ) // 8 & 0b11111
+            self.dot_tilemap_addr = map_addr + column + (row // 8) * 32
+            self.dot_fetch_phase = 1
+        elif self.dot_fetch_phase == 1:
+            if self.dot_cgb_window_glitch:
+                self.dot_fetch_phase = 2
+            else:
+                self.dot_tile_index = self.dot_read_vram(self.dot_tilemap_addr)
+                # The CGB tile attributes are only honored in CGB mode. A
+                # DMG game running on CGB hardware ignores the attribute map
+                # entirely (VRAM bank 0, no flips, no BG priority), which is
+                # what keeps the attribute bytes left behind by the boot ROM
+                # logo from leaking into its rendering
+                if self.lcd.cgb:
+                    self.dot_tile_attrs = self.dot_read_vram(self.dot_tilemap_addr + 0x2000)
+                else:
+                    self.dot_tile_attrs = 0
+                self.dot_fetch_phase = 2
+        elif self.dot_fetch_phase == 2:
+            self.dot_update_window_glitch()
+            self.dot_tiledata_addr = self._dot_tiledat_addr(0)
+            self.dot_fetch_phase = 3
+        elif self.dot_fetch_phase == 3:
+            if self.dot_cgb_window_glitch:
+                self.dot_tile_data_low = self.dot_tile_data_high
+                self.dot_fetch_phase = 4
+            else:
+                stale_replay = False
+                if self.dot_tiledata_glitch_dots:
+                    # CGB tile data select conflict: the fetcher may replay
+                    # stale data instead of reading VRAM
+                    if self.dot_latched_tiledata_select:
+                        stale_replay = not (self.dot_tile_index & 0x80)
+                    else:
+                        stale_replay = True
+                if not stale_replay:
+                    self.dot_tile_data_low = self.dot_read_vram(self.dot_tiledata_addr)
+                if self.dot_latched_tiledata_select and self.dot_tiledata_glitch_dots:
+                    self.dot_glitch_data = self.dot_read_vram(self.dot_tiledata_addr)
+                self.dot_fetch_phase = 4
+        elif self.dot_fetch_phase == 4:
+            self.dot_update_window_glitch()
+            self.dot_tiledata_addr = self._dot_tiledat_addr(1)
+            self.dot_fetch_phase = 5
+        elif self.dot_fetch_phase == 5:
+            if self.dot_cgb_window_glitch:
+                self.dot_tile_data_high = self.dot_tile_data_low
+                self.dot_fetch_phase = 6
+                if self.dot_window_triggered:
+                    self.dot_window_column = (self.dot_window_column + 1) & 0b11111
+            else:
+                stale_replay = False
+                if self.dot_tiledata_glitch_dots:
+                    if self.dot_latched_tiledata_select:
+                        stale_replay = not (self.dot_tile_index & 0x80)
+                    else:
+                        stale_replay = True
+                if not stale_replay:
+                    self.dot_tile_data_high = self.dot_read_vram(self.dot_tiledata_addr)
+                    self.dot_glitch_data = self.dot_tile_data_high
+                if self.dot_latched_tiledata_select and self.dot_tiledata_glitch_dots:
+                    self.dot_glitch_data = self.dot_read_vram(self.dot_tiledata_addr)
+                self.dot_fetch_phase = 6
+                if self.dot_window_triggered:
+                    self.dot_window_column = (self.dot_window_column + 1) & 0b11111
+                # Fall through to the push
+                self.dot_fetcher_push()
+        elif self.dot_fetch_phase == 6:
+            self.dot_fetcher_push()
+
+    def _dot_tiledat_addr(self, byte_offset):
+        # Latch the tile data addressing mode and compute the VRAM address of
+        # one bitplane byte for the tile being fetched.
+        self.dot_latched_tiledata_select = self.lcd._LCDC.tiledata_select
+        if self.dot_latched_tiledata_select:
+            tile_addr = self.dot_tile_index * 0x10
+        else:
+            tile_addr = (
+                self.dot_tile_index - 256 if self.dot_tile_index >= 128 else self.dot_tile_index
+            ) * 0x10 + 0x1000
+        if self.dot_tile_attrs & 0b1000:  # CGB VRAM bank
+            tile_addr += 0x2000
+        y_flip = 0b111 if (self.dot_tile_attrs & 0b1000000) else 0  # Vertical flip
+        if self.dot_window_triggered:
+            row = self.dot_window_line
+        else:
+            row = (self.lcd.LY + self.lcd.SCY) & 0xFF
+        return tile_addr + ((row & 7) ^ y_flip) * 2 + byte_offset
+
+    def dot_fetcher_push(self):
+        self.dot_fetch_phase = 6
+        if self.dot_bg_fifo_count > 0:
+            return
+        if (
+            self.wy_activated_frame
+            and not self.lcd._LCDC.window_enable
+            and not self.lcd._is_cgb_hardware()
+            and not self.dot_win_glitch_blocked
+        ):
+            # DMG window pixel insertion glitch: with the window disabled after
+            # WY matched, a lone pixel is inserted when WX lines up with the
+            # fetcher position offset by the pipeline delay. Past the right
+            # screen edge the comparator reads 0, matching WX=0
+            if self.lcd.WX == (self.dot_x_counter + 7 if self.dot_x_counter <= 160 else 0):
+                self.dot_bg_fifo_read = (self.dot_bg_fifo_read - 1) & 7
+                self.dot_bg_fifo_pixel[self.dot_bg_fifo_read] = 0
+                self.dot_bg_fifo_palette[self.dot_bg_fifo_read] = 0
+                self.dot_bg_fifo_priority[self.dot_bg_fifo_read] = 0
+                self.dot_bg_fifo_count = 1
+                return
+        self.dot_fill_bg_fifo(
+            self.dot_tile_data_low,
+            self.dot_tile_data_high,
+            self.dot_tile_attrs & 0b111,
+            (self.dot_tile_attrs & 0x80) != 0,
+            (self.dot_tile_attrs & 0b100000) != 0,
+        )
+        self.dot_fetch_phase = 0
+
+    def dot_render_pixel(self):
+        # Rendering stalls while a sprite at x=0 is still pending. Pixels
+        # the x counter places off-screen are discarded anyway, so the stall
+        # only applies to pixels that would land on the screen.
+        if (
+            self.dot_n_sprites != 0
+            and self.dot_x_counter < 160
+            and (self.lcd._LCDC.sprite_enable or self.lcd._is_cgb_hardware())
+            and self.dot_sprite_x[self.dot_n_sprites - 1] == 0
+        ):
+            self.dot_mixer_stalled = True
+            return
+        if self.dot_bg_fifo_count == 0:
+            self.dot_mixer_stalled = True
+            return
+
+        if self.dot_bg_insert_pending:
+            self.dot_bg_insert_pending = False
+            # Consume an empty FIFO slot without popping a pixel
+            pixel = 0
+            palette = 0
+            bg_priority = False
+        else:
+            pixel = self.dot_bg_fifo_pixel[self.dot_bg_fifo_read]
+            palette = self.dot_bg_fifo_palette[self.dot_bg_fifo_read]
+            bg_priority = self.dot_bg_fifo_priority[self.dot_bg_fifo_read] != 0
+            self.dot_bg_fifo_read = (self.dot_bg_fifo_read + 1) & 7
+            self.dot_bg_fifo_count -= 1
+
+        draw_sprite = False
+        sprite_pixel = 0
+        sprite_palette = 0
+        if self.dot_obj_fifo_count > 0:
+            sprite_pixel = self.dot_obj_fifo_pixel[self.dot_obj_fifo_read]
+            sprite_palette = self.dot_obj_fifo_palette[self.dot_obj_fifo_read]
+            sprite_bg_priority = self.dot_obj_fifo_bg_priority[self.dot_obj_fifo_read] != 0
+            self.dot_obj_fifo_read = (self.dot_obj_fifo_read + 1) & 7
+            self.dot_obj_fifo_count -= 1
+            if sprite_pixel and self.lcd._LCDC.sprite_enable:
+                draw_sprite = True
+                bg_priority = bg_priority or sprite_bg_priority
+
+        # SCX adjustment of the x counter (values 240-255 are the pre-line
+        # dots -16 to -1)
+        if ((self.dot_x_counter + 16) & 0xFF) < 8:
+            if self.dot_x_counter == 239:  # -17
+                self.dot_x_counter = 240
+            elif (self.dot_x_counter & 7) == (self.lcd.SCX & 7):
+                self.dot_x_counter = 248
+            elif self.dot_fetching_window and (self.dot_x_counter & 7) == 6 and (self.lcd.SCX & 7) == 7:
+                self.dot_x_counter = 248
+            elif self.dot_x_counter == 247:  # -9
+                self.dot_x_counter = 240
+                self.dot_mixer_stalled = False
+                return
+            else:
+                self.dot_x_counter_fractional = True
+        self.dot_fetching_window = False
+
+        # Discard pixels that fall outside the screen
+        if self.dot_x_counter >= 160:
+            self.dot_x_counter = (self.dot_x_counter + 1) & 0xFF
+            self.dot_mixer_stalled = False
+            return
+
+        # Pixel mixing. The pipeline state advances identically whether or
+        # not the screen is being rendered: STAT timing depends on it, and
+        # hardware has no notion of a disabled framebuffer. Only the
+        # screenbuffer writes are skipped when rendering is disabled.
+        bg_enabled = True
+        if not self.lcd._LCDC.background_enable:
+            if self.lcd.cgb:
+                bg_priority = False
+            else:
+                bg_enabled = False
+        raw_pixel = pixel if bg_enabled else 0
+        if raw_pixel and bg_priority:
+            draw_sprite = False
+
+        if self.lcd.cgb:
+            color = self.lcd.bcpd.getcolor(palette, raw_pixel)
+        else:
+            color = self.lcd.BGP.getcolor(raw_pixel)
+        if not self.lcd.disable_renderer:
+            self._screenbuffer[self.dot_ly, self.dot_screen_x] = color
+        attributes = 0
+        if bg_priority:
+            attributes |= BG_PRIORITY_FLAG
+        if raw_pixel == 0:
+            attributes |= COL0_FLAG
+        if not self.lcd.disable_renderer:
+            self._screenbuffer_attributes[self.dot_ly, self.dot_screen_x] = attributes
+
+        if draw_sprite:
+            if self.lcd.cgb:
+                color = self.lcd.ocpd.getcolor(sprite_palette, sprite_pixel)
+            else:
+                if sprite_palette:
+                    color = self.lcd.OBP1.getcolor(sprite_pixel)
+                else:
+                    color = self.lcd.OBP0.getcolor(sprite_pixel)
+            if not self.lcd.disable_renderer:
+                self._screenbuffer[self.dot_ly, self.dot_screen_x] = color
+
+        self.dot_last_pixel_dot = self.dot_dots_elapsed
+        self.dot_last_pixel_x = self.dot_screen_x
+        if self.dot_screen_x == 157:
+            # Hardware lowers the STAT mode-0 signal when this pixel is
+            # popped, two dots before the pipeline pushes the line's last
+            # pixel
+            self.dot_mode0_elapsed = self.dot_dots_elapsed
+        self.dot_last_pixel_raw = raw_pixel
+        self.dot_last_pixel_sprite_raw = sprite_pixel if draw_sprite else -1
+        self.dot_last_pixel_sprite_palette = sprite_palette if draw_sprite else -1
+        self.dot_last_pixel_stalled_recovery = self.dot_mixer_stalled
+        self.dot_mixer_stalled = False
+        self.dot_x_counter = (self.dot_x_counter + 1) & 0xFF
+        self.dot_screen_x += 1
+
+    def dot_fill_bg_fifo(self, lower, upper, palette, bg_priority, flip_x):
+        self.dot_bg_fifo_count = 8
+        if not flip_x:
+            for i in range(8):
+                self.dot_bg_fifo_pixel[i] = (lower >> 7) | ((upper >> 7) << 1)
+                self.dot_bg_fifo_palette[i] = palette
+                self.dot_bg_fifo_priority[i] = 1 if bg_priority else 0
+                lower = (lower << 1) & 0xFF
+                upper = (upper << 1) & 0xFF
+        else:
+            for i in range(8):
+                self.dot_bg_fifo_pixel[i] = (lower & 1) | ((upper & 1) << 1)
+                self.dot_bg_fifo_palette[i] = palette
+                self.dot_bg_fifo_priority[i] = 1 if bg_priority else 0
+                lower >>= 1
+                upper >>= 1
+
+    def dot_merge_sprite_row(self, lower, upper, palette, bg_priority, priority, flip_x):
+        # Pad the sprite FIFO to a full row before merging
+        while self.dot_obj_fifo_count < 8:
+            index = (self.dot_obj_fifo_read + self.dot_obj_fifo_count) & 7
+            self.dot_obj_fifo_pixel[index] = 0
+            self.dot_obj_fifo_palette[index] = 0
+            self.dot_obj_fifo_priority[index] = 0
+            self.dot_obj_fifo_bg_priority[index] = 0
+            self.dot_obj_fifo_count += 1
+        for i in range(7, -1, -1):
+            pixel = (lower >> 7) | ((upper >> 7) << 1)
+            # An X-flipped sprite scans its bitplane row in reverse order
+            row_bit = i if flip_x else 7 - i
+            target = (self.dot_obj_fifo_read + row_bit) & 7
+            if pixel != 0 and (self.dot_obj_fifo_pixel[target] == 0 or self.dot_obj_fifo_priority[target] > priority):
+                self.dot_obj_fifo_pixel[target] = pixel
+                self.dot_obj_fifo_palette[target] = palette
+                self.dot_obj_fifo_bg_priority[target] = 1 if bg_priority else 0
+                self.dot_obj_fifo_priority[target] = priority
+            lower = (lower << 1) & 0xFF
+            upper = (upper << 1) & 0xFF
+
+    def dot_sprite_row_addr(self, sprite_y, tile, flags):
+        mask = 0b1111 if self.lcd._LCDC.sprite_height else 0b111
+        tile_y = (self.lcd.LY - sprite_y) & mask
+        if flags & 0b1000000:  # Y flip
+            tile_y ^= mask
+        addr = ((tile & 0b11111110) if self.lcd._LCDC.sprite_height else tile) * 0x10 + tile_y * 2
+        if self.lcd.cgb and (flags & 0b1000):  # CGB VRAM bank
+            addr += 0x2000
+        return addr
+
+    def dot_sprite_fetch_x(self):
+        # The x position where the next sprite fetch is due, in the wrapped
+        # x counter domain
+        ret = (self.dot_x_counter + 8) & 0xFF
+        if ret > 240:
+            return 0
+        return ret
+
+    def dot_read_vram(self, addr):
+        if addr & 0x2000:
+            return self.lcd.VRAM1[addr & 0x1FFF]
+        return self.lcd.VRAM0[addr]
+
+    def dot_update_window_glitch(self):
+        # CGB: a window trigger arriving while a fetch is in progress makes
+        # the fetcher replay its previous data instead of reading VRAM
+        if not self.lcd._is_cgb_hardware():
+            self.dot_cgb_window_glitch = False
+        elif (not self.lcd._LCDC.window_enable) or not self.wy_activated_frame:
+            self.dot_cgb_window_glitch = False
+        elif self.lcd.WX == 0:
+            # The x counter counts modulo 256; (x + 16) & 0xFF <= 8 covers the
+            # pre-line dots down to -8
+            self.dot_cgb_window_glitch = ((self.dot_x_counter + 16) & 0xFF) <= 8 or (
+                self.dot_x_counter == 249 and self.dot_x_counter_fractional
+            )
+        else:
+            self.dot_cgb_window_glitch = (self.dot_x_counter + 7 + self.dot_fetching_window) & 0xFF == self.lcd.WX
+
+    def _dot_decay_glitch_counters(self):
+        # Register write conflicts last exactly one dot (two in CGB double
+        # speed for the tile data select conflict)
+        if self.dot_wx_changed_dots > 0:
+            self.dot_wx_changed_dots -= 1
+        if self.dot_tiledata_glitch_dots > 0:
+            self.dot_tiledata_glitch_dots -= 1
+
     ####################################
     #
     #  ██████   ██████   ██████
@@ -1064,7 +2225,7 @@ class Renderer:
     #
 
     def _cgb_get_background_map_attributes(self, lcd, i):
-        tile_num = lcd.VRAM1[i]
+        tile_num = self.lcd.VRAM1[i]
         palette = tile_num & 0b111
         vbank = (tile_num >> 3) & 1
         horiflip = (tile_num >> 5) & 1
@@ -1072,81 +2233,6 @@ class Renderer:
         bg_priority = (tile_num >> 7) & 1
 
         return palette, vbank, horiflip, vertflip, bg_priority
-
-    def _cgb_get_tile(self, y, x, offset, lcd):
-        tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
-
-        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
-
-        bg_priority_apply = 0
-        if bg_priority:
-            # We hide extra rendering information in the lower 8 bits (A) of the 32-bit RGBA format
-            bg_priority_apply = BG_PRIORITY_FLAG
-
-        if vertflip:
-            yy = 8 * tile + (7 - (y) % 8)
-
-        return tile, yy, palette, horiflip, bg_priority_apply, vbank
-
-    def cgb_scanline_window(self, y, _x, wx, wy, cols, lcd):
-        bg_priority_apply = 0
-        for x in range(_x, _x + cols):
-            xx = (x - wx) % 8
-            if xx == 0 or x == _x:
-                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
-                    self.ly_window, x - wx, lcd._LCDC.windowmap_offset, lcd
-                )
-                self.update_tilecache(vbank, lcd, wt, vbank)
-
-            if w_horiflip:
-                xx = 7 - xx
-
-            pixel = lcd.bcpd.getcolor(w_palette, self._tilecache[vbank, yy, xx])
-            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
-        return cols
-
-    def cgb_scanline_background(self, y, _x, bx, by, cols, lcd):
-        for x in range(_x, _x + cols):
-            # bx mask used for the half tile at the left side when scrolling
-            xx = (x + (bx & 0b111)) % 8
-            if xx == 0 or x == 0:
-                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
-                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
-                )
-                self.update_tilecache(vbank, lcd, bt, vbank)
-
-            if b_horiflip:
-                xx = 7 - xx
-
-            pixel = lcd.bcpd.getcolor(b_palette, self._tilecache[vbank, yy, xx])
-            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
-        return cols
-
-    def cgb_scanline(self, y):
-        if self.lcd.disable_renderer:
-            return
-
-        bx, by = self.lcd.getviewport()
-        wx, wy = self.lcd.getwindowpos()
-
-        x = 0
-        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
-            # Window has it's own internal line counter. It's only incremented whenever the window is drawing something on the screen.
-            self.ly_window += 1
-
-            # Before window
-            if wx > x:
-                x += self.cgb_scanline_background(y, x, bx, by, wx, self.lcd)
-
-            # Window hit
-            self.cgb_scanline_window(y, x, wx, wy, COLS - x, self.lcd)
-        else:  # background_enable doesn't exist for CGB. It works as master priority instead
-            # No window
-            self.cgb_scanline_background(y, x, bx, by, COLS, self.lcd)
-
-        if y == 143:
-            # Reset at the end of a frame. We set it to -1, so it will be 0 after the first increment
-            self.ly_window = -1
 
 
 class VBKregister:

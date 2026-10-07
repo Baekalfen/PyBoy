@@ -51,8 +51,10 @@ cdef class Motherboard:
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
     cdef bint oam_dma_active, oam_dma_reading
+    cdef bint in_tick
     cdef uint8_t oam_dma_source, oam_dma_index
     cdef int64_t oam_dma_start_cycle
+    cdef int64_t oam_dma_block_cycle
 
     # CGB
     cdef HDMA hdma
@@ -112,6 +114,7 @@ cdef class HDMA:
     cdef bint transfer_active
     cdef uint16_t curr_src
     cdef uint16_t curr_dst
+    cdef bint block_done
 
     @cython.locals(bytes_to_transfer=cython.int, transfer_type=cython.int,
                    src=uint16_t, dst=uint16_t, i=cython.int)

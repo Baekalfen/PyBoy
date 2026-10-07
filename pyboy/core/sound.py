@@ -1050,14 +1050,15 @@ class WaveChannel:
         # Wave RAM can be accessed normally even if the DAC is on, as long as the channel is not active.
         if self.enable:
             if self.cgb:
-                return self.wavetable[self.waveframe // 2]
+                ret = self.wavetable[self.waveframe // 2]
             else:
                 # Pan docs:
                 # On monochrome consoles, wave RAM can only be accessed on the same cycle that CH3 does. Otherwise,
                 # reads return $FF, and writes are ignored.
-                return self.wavetable[self.waveframe // 2] if self.wave_access else 0xFF
+                ret = self.wavetable[self.waveframe // 2] if self.wave_access else 0xFF
         else:
-            return self.wavetable[offset]
+            ret = self.wavetable[offset]
+        return ret
 
     def setwavebyte(self, offset, value):
         # Pan docs:
@@ -1120,16 +1121,26 @@ class WaveChannel:
                     self.wavetable[n] = self.wavetable[start + n]
         self.enable = 0x04 if self.dacpow else 0
         self.lengthtimer = self.lengthtimer or 256
-        self.periodtimer = self.period + 5
         if self.cgb and was_active:
             self.sampleframe = self.waveframe
             self.waveframe = 0
             self.restart_pending = True
+            self.periodtimer = self.period + 5
         else:
             self.waveframe = 0
             self.sampleframe = 0
             self.sample_suppressed = True
             self.restart_pending = False
+            # After a trigger, the first wave RAM fetch lands 5 cycles past the
+            # first sample period (blargg dmg_sound 09/12). On DMG the fetch unit
+            # is not ready that early at the highest wave frequency, so the first
+            # fetch never happens less than 9 cycles after the trigger, and wave
+            # RAM writes before it are ignored (samesuite
+            # apu/channel_3/channel_3_wave_ram_locked_write).
+            if self.cgb or self.period > 2:
+                self.periodtimer = self.period + 5
+            else:
+                self.periodtimer = 9
         self.wave_access = False
 
     def save_state(self, file):
