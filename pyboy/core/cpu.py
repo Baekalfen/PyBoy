@@ -222,7 +222,9 @@ class CPU:
             pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC]
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC + 1]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC + 2]
-        elif (not self.mb.bootrom_enabled) and self.PC + 2 < 0x8000:  # 16kB switchable ROM bank
+        elif (
+            (not self.mb.bootrom_enabled) and (0x4000 <= self.PC) and (self.PC + 2 < 0x8000)
+        ):  # 16kB switchable ROM bank
             pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC - 0x4000]
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 1 - 0x4000]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 2 - 0x4000]
