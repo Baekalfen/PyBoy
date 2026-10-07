@@ -5,6 +5,7 @@ SECTION "registers", ROM0[$00EB]
 exit:
     ld E, 8
     ld L, $7C
+    ld B, C ; C is 0 here. Restore B clobbered by the line-sync wait
 
 SECTION "epilog", ROM0[$00F0]
     ld A, [0x0143] ; Cartridge compatibilty flag

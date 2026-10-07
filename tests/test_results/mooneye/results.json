@@ -393,7 +393,7 @@
     "text": "Registers\n  A: C7  F: 80\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: D9! C: DA!\n  D: DA! E: DB!\n  H: DC! L: DE!\nTest failed\n"
   },
   "acceptance/boot_div-dmg0.gb [CGB]": {
-    "text": "Registers\n  A: C7  F: 80\n  B: C7  C: C8\n  D: C9  E: CA\n  H: CB  L: CC\nAssertions\n  B: 19! C: 1A!\n  D: 1A! E: 1B!\n  H: 1C! L: 1E!\nTest failed\n"
+    "text": "Registers\n  A: C8  F: 80\n  B: C8  C: C9\n  D: CA  E: CB\n  H: CC  L: CD\nAssertions\n  B: 19! C: 1A!\n  D: 1A! E: 1B!\n  H: 1C! L: 1E!\nTest failed\n"
   },
   "acceptance/rapid_di_ei.gb [CGB]": {
     "text": "Registers\n  A: 00  F: 00\n  B: 00  C: 00\n  D: 01  E: 01\n  H: 00  L: 7C\nAssertions\n  B: OK  C: OK\n  D: OK  E: OK\n"
