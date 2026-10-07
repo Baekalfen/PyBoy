@@ -69,6 +69,7 @@ packages = ["pyboy", "pyboy.api", "pyboy.core", "pyboy.core.cartridge", "pyboy.l
 ]
 
 [tool.pytest.ini_options]
+xfail_strict = true
 addopts = "--benchmark-disable --junitxml=tests/test_results/pytest.xml"
 testpaths = [
     "tests",

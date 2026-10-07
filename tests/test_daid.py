@@ -102,7 +102,6 @@ def test_daid_image(rom, cgb, frames, references, daid_dir, references_dir):
     assert not best_diff.getbbox(), f"Images are different! {rom}"
 
 
-@pytest.mark.xfail(reason="Not expected to pass yet")
 def test_daid_rom_and_ram(daid_dir):
     pyboy = PyBoy(daid_dir + "rom_and_ram.gb", window="null", cgb=False)
     pyboy.set_emulation_speed(0)

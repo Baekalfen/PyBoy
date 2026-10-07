@@ -479,9 +479,10 @@ def test_not_cgb(pokemon_crystal_rom, boot_rom):
     pyboy.stop(save=False)
 
 
-@pytest.mark.xfail
-def test_debug1():
+@pytest.mark.xfail(reason="stderr is not cleared")
+def test_debug1(capsys):
     sys.stderr.write("NO1!\n")
+    assert capsys.readouterr().err == ""
 
 
 def test_debug2(capsys):

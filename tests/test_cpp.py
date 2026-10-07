@@ -14,7 +14,7 @@ from pyboy import PyBoy
 
 # https://github.com/CasualPokePlayer/test-roms
 CPP_CASES = [
-    pytest.param("ramg-mbc3-test.gb", 120, marks=pytest.mark.xfail(reason="Not expected to pass yet")),
+    pytest.param("ramg-mbc3-test.gb", 120),
     pytest.param("latch-rtc-test.gb", 120, marks=pytest.mark.xfail(reason="RTC latch behavior differs from hardware")),
     pytest.param(
         "rtc-invalid-banks-test.gb",
