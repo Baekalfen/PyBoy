@@ -15,7 +15,7 @@ PYPY ?= pypy3
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 GITHUB_REF ?= "refs/tags/v0.0.0"
 PYBOY_VERSION ?= $(shell echo ${GITHUB_REF} | cut -d'/' -f3)
-PYTEST_ARGS ?= -n auto -v
+PYTEST_ARGS ?= -n auto -v --dist loadscope
 
 dist: clean build
 	${PY} setup.py sdist bdist_wheel
