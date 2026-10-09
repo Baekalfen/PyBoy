@@ -9,10 +9,18 @@ DOCS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = DOCS_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# The PyBoy version is read from pyproject.toml, so the documentation always
+# matches the package metadata.
+_pyproject_text = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+_pyboy_version_match = re.search(r'^version\s*=\s*"([^"]+)"', _pyproject_text, re.MULTILINE)
+if _pyboy_version_match is None:
+    raise RuntimeError("pyproject.toml does not declare a version")
+PYBOY_VERSION = _pyboy_version_match.group(1)
+
 project = "PyBoy"
 copyright = "2026, Mads Ynddal"
 author = "Mads Ynddal"
-release = "2.7.1"
+release = PYBOY_VERSION
 
 extensions = [
     "myst_parser",
@@ -230,7 +238,12 @@ intersphinx_mapping = {
 myst_enable_extensions = [
     "colon_fence",
     "deflist",
+    "substitution",
 ]
+
+myst_substitutions = {
+    "pyboy_version": PYBOY_VERSION,
+}
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "docs"]

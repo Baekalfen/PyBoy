@@ -1,0 +1,20 @@
+{% extends "!page.html" %}
+
+{# Embed the PyBoy version from pyproject.toml in the footer of every page. #}
+{% block footer %}
+{{ super() }}
+<div class="bottom-of-page">
+  <div class="left-details">
+    <div class="pyboy-version">{{ project }} v{{ release }}</div>
+  </div>
+</div>
+{% endblock footer %}
+
+{# Embed the PyBoy version from pyproject.toml in the title of the index page. #}
+{% block htmltitle %}
+{% if pagename == master_doc %}
+<title>{{ project }} v{{ release }} docs</title>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock htmltitle %}
