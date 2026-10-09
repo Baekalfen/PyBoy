@@ -1,4 +1,4 @@
-# PyBoy
+# PyBoy v{{ pyboy_version }}
 
 PyBoy is a Game Boy emulator written in Python and Cython. It can be used
 directly from the command line or embedded in Python programs for automation,
