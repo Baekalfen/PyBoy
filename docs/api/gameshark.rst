@@ -19,5 +19,4 @@ present before the cheats were added.
 
 .. autoclass:: pyboy.api.gameshark.GameShark
    :members:
-   :special-members: __init__
    :show-inheritance:

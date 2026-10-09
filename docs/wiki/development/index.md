@@ -13,8 +13,6 @@ when upgrading between releases. For help, join the
 Open the [Install and build](installation) submenu for platform-specific
 installation and source-build instructions.
 
-## Development
-
 ```{toctree}
 :hidden:
 :maxdepth: 2
