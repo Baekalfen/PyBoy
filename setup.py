@@ -3,8 +3,8 @@ import os
 import platform
 import sys
 from multiprocessing import cpu_count
-import numpy as np
 
+import numpy as np
 from setuptools import Extension, setup
 
 CYTHON = platform.python_implementation() == "CPython"
@@ -15,9 +15,9 @@ if not CYTHON:
     setup()
     exit(0)
 
-from Cython.Build import cythonize  # noqa
-from Cython.Compiler import DebugFlags, Errors  # noqa
-from Cython.Distutils import build_ext as _build_ext  # noqa
+from Cython.Build import cythonize
+from Cython.Compiler import DebugFlags, Errors
+from Cython.Distutils import build_ext as _build_ext
 
 
 def patched_error(position, message):

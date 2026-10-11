@@ -14,24 +14,15 @@ from .base_plugin import PyBoyGameWrapper
 
 logger = pyboy.logging.get_logger(__name__)
 
-def enabled(self):
-    import hashlib
-
-    try:
-        with open(self.pyboy.gamerom_file, "rb") as f:
-            rom_hash = hashlib.md5(f.read()).hexdigest()
-        return rom_hash == "cd9027e147f4605f26ee261c537441b3"
-    except Exception as e:
-        logger.error(f"Error occurred while checking ROM hash: {e}")
-        return False
-
-
-ADDR_SCORE_LO  = 0xD637   # tens + ones
-ADDR_SCORE_MID = 0xD638   # thousands + hundreds
-ADDR_SCORE_HI  = 0xD639   # hundred-thousands + ten-thousands
+ADDR_SCORE_LO = 0xD637  # tens + ones
+ADDR_SCORE_MID = 0xD638  # thousands + hundreds
+ADDR_SCORE_HI = 0xD639  # hundred-thousands + ten-thousands
 
 ADDR_LIVES = 0xD641
 ADDR_LEVEL = 0xD643
+
+ADDR_POSITION = 0xD634
+ADDR_Y_LEVEL = 0xD635
 
 
 def _bcd_score(lo, mid, hi):
@@ -43,8 +34,6 @@ def _bcd_score(lo, mid, hi):
 
 
 class GameWrapperPacMan(PyBoyGameWrapper):
-
-
     cartridge_title = "PAC-MAN"
 
     def __init__(self, *args, **kwargs):
@@ -52,9 +41,10 @@ class GameWrapperPacMan(PyBoyGameWrapper):
         self.lives_left = 0
         self.level = 0
         self._game_over = False
+        self.pacman_x = 0
+        self.pacman_y = 0
 
         super().__init__(*args, game_area_section=(0, 2, 20, 16), game_area_follow_scxy=True, **kwargs)
-
 
     def post_tick(self):
         self._tile_cache_invalid = True
@@ -66,9 +56,17 @@ class GameWrapperPacMan(PyBoyGameWrapper):
             self.pyboy.memory[ADDR_SCORE_HI],
         )
 
+        position = self.pyboy.memory[ADDR_POSITION]
+        self.pacman_x = position % 32
+
+        offsets = {152: 0, 153: 8, 154: 16}
+        y_level = self.pyboy.memory[ADDR_Y_LEVEL]
+        y = position // 32 + offsets.get(y_level, 32)
+        self.pacman_y = y
+
         prev_lives = self.lives_left
         self.lives_left = self.pyboy.memory[ADDR_LIVES]
-        #Calculating game over based on the previous lives
+        # Calculating game over based on the previous lives
         if prev_lives > 0 and self.lives_left == 0:
             self._game_over = True
 
