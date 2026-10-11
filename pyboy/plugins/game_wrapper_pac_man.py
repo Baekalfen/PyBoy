@@ -8,7 +8,7 @@ __pdoc__ = {
 }
 
 import pyboy
-from pyboy.utils import PyBoyException
+from pyboy.utils import PyBoyException, bcd_to_dec
 
 from .base_plugin import PyBoyGameWrapper
 
@@ -26,11 +26,7 @@ ADDR_Y_LEVEL = 0xD635
 
 
 def _bcd_score(lo, mid, hi):
-
-    def bcd(b):
-        return (b >> 4) * 10 + (b & 0x0F)
-
-    return bcd(hi) * 10_000 + bcd(mid) * 100 + bcd(lo)
+    return bcd_to_dec(hi) * 10_000 + bcd_to_dec(mid) * 100 + bcd_to_dec(lo)
 
 
 class GameWrapperPacMan(PyBoyGameWrapper):

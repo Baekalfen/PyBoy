@@ -5,6 +5,7 @@
 
 import pytest
 from pyboy import PyBoy
+from pyboy.utils import bcd_to_dec
 
 
 # ---------------------------------------------------------------------------
@@ -25,12 +26,10 @@ def _boot(rom):
 
 
 def _read_score(pyboy):
-    def bcd(b):
-        return (b >> 4) * 10 + (b & 0xF)
     return (
-        bcd(pyboy.memory[0xD639]) * 10_000 +
-        bcd(pyboy.memory[0xD638]) *    100 +
-        bcd(pyboy.memory[0xD637])
+        bcd_to_dec(pyboy.memory[0xD639]) * 10_000 +
+        bcd_to_dec(pyboy.memory[0xD638]) *    100 +
+        bcd_to_dec(pyboy.memory[0xD637])
     )
 
 
