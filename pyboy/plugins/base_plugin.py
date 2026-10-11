@@ -75,7 +75,7 @@ class PyBoyWindowPlugin(PyBoyPlugin):
         return 0
 
     def frame_limiter(self, speed):
-        frame_time = (1.0 / (60.0 * speed)) * 1_000_000_000
+        frame_time = (utils.FRAME_CYCLES / (utils.CLOCK_RATE * speed)) * 1_000_000_000
         if self.sound_support:
             frames_buffered = self._get_sound_frames_buffered()
             if frames_buffered > SOUND_PREBUFFER_THRESHOLD:
