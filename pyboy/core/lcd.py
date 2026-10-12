@@ -1714,7 +1714,6 @@ class Renderer:
                 # Queue a pixel insertion at the FIFO's end
                 if (
                     self.lcd.WX == (self.dot_x_counter + 7) & 0xFF
-                    and (not self.lcd._is_cgb_hardware() or self.lcd.WX == 0)
                     and self.dot_window_triggered
                     and not self.dot_fetching_window
                     and self.dot_fetch_phase == 0
