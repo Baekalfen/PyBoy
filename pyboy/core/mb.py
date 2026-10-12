@@ -861,8 +861,14 @@ class Motherboard:
             elif 0xFF40 <= i <= 0xFF4B:
                 # An LCDC win-enable write lands on its own cycle: the LCD
                 # sync inside the write stops one dot short, so the write's
-                # cycle observes the new value
-                self.lcd.renderer._sync_minus1 = (i == 0xFF40) & (((value ^ self.lcd._LCDC.value) & 0x20) != 0)
+                # cycle observes the new value. On DMG the same happens for
+                # tile data select writes (SameBoy's DMG LCDC access
+                # conflict), so the dot such a write lands on observes the
+                # new tile data select as well
+                self.lcd.renderer._sync_minus1 = i == 0xFF40 and (
+                    ((value ^ self.lcd._LCDC.value) & 0x20) != 0
+                    or (not self.lcd._is_cgb_hardware() and ((value ^ self.lcd._LCDC.value) & 0b1_0000) != 0)
+                )
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(lcd_interrupt)
                 self.lcd.renderer._sync_minus1 = False
