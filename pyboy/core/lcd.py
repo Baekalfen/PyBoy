@@ -218,7 +218,7 @@ class LCD:
         # The final pixels of the line are colored a few dots into
         # HBlank, so the write can also land in mode 0.
         if (
-            not self.cgb
+            not self._is_cgb_hardware()
             and old_lcdc & 0b1
             and not value & 0b1
             and (self._STAT._mode == 3 or self._STAT._mode == 0)
@@ -236,7 +236,7 @@ class LCD:
         # the same first-pixel-of-line / post-stall condition as the
         # BG enable case above.
         if (
-            not self.cgb
+            not self._is_cgb_hardware()
             and old_lcdc & 0b10
             and not value & 0b10
             and (self._STAT._mode == 3 or self._STAT._mode == 0)
