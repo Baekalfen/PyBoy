@@ -7,6 +7,7 @@ The core module of the emulator
 """
 
 import heapq
+import hashlib
 import os
 import re
 import time
@@ -61,6 +62,7 @@ class cython:
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
+from .core.serial import SerialSharedMemoryBuffer
 
 logger = get_logger(__name__)
 
@@ -311,6 +313,12 @@ class PyBoy:
         self.avg_emu = 0
 
         # Absolute frame count of the emulation
+        self._serial_shared_memory = (
+            serial_shared_memory if isinstance(serial_shared_memory, SerialSharedMemoryBuffer) else None
+        )
+        self._serial_rom_hash = None
+        if self._serial_shared_memory is not None:
+            self._serial_rom_hash = hashlib.sha256(bytes(self.mb.cartridge.rombanks)).hexdigest()
         self.frame_count = 0
 
         self.set_emulation_speed(1)
@@ -672,26 +680,32 @@ class PyBoy:
         if count < 0:
             raise PyBoyInvalidInputException("count must be a non-negative integer")
 
-        _count = count
-        running = False
-        t_start = time.perf_counter_ns()
-        with cython.nogil:
-            while count != 0:
-                # Only render screen and sample sound on last tick to improve performance
-                _render = render and count == 1
-                _sound = sound and count == 1
-                running = self._tick(_render, _sound)
-                count -= 1
-        t_tick = time.perf_counter_ns()
-        self._post_tick()
-        t_post = time.perf_counter_ns()
+        if self._serial_shared_memory is not None:
+            self._serial_shared_memory._enter_tick()
+        try:
+            _count = count
+            running = False
+            t_start = time.perf_counter_ns()
+            with cython.nogil:
+                while count != 0:
+                    # Only render screen and sample sound on last tick to improve performance
+                    _render = render and count == 1
+                    _sound = sound and count == 1
+                    running = self._tick(_render, _sound)
+                    count -= 1
+            t_tick = time.perf_counter_ns()
+            self._post_tick()
+            t_post = time.perf_counter_ns()
 
-        if _count > 0:
-            nsecs = t_tick - t_start
-            self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1 * nsecs / 1_000_000_000)
-            nsecs = t_post - t_start
-            self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
-        return running
+            if _count > 0:
+                nsecs = t_tick - t_start
+                self.avg_tick = 0.9 * (self.avg_tick / _count) + (0.1 * nsecs / 1_000_000_000)
+                nsecs = t_post - t_start
+                self.avg_emu = 0.9 * (self.avg_emu / _count) + (0.1 * nsecs / 1_000_000_000)
+            return running
+        finally:
+            if self._serial_shared_memory is not None:
+                self._serial_shared_memory._leave_tick()
 
     def _cycle_palette(self):
         """Cycles to the next DMG palette."""
@@ -792,7 +806,7 @@ class PyBoy:
     def _update_window_title(self):
         if self.title_status:
             self.window_title = f"CPU/frame: {(self.avg_tick) / SPF * 100:0.2f}%"
-            self.window_title += f' Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu > 0 else "INF")}'
+            self.window_title += f" Emulation: x{(round(SPF / self.avg_emu) if self.avg_emu > 0 else 'INF')}"
         else:
             self.window_title = "PyBoy"
         if self.paused:
@@ -1054,7 +1068,8 @@ class PyBoy:
     def save_state(self, file_like_object):
         """
         Saves the complete state of the emulator. It can be called at any time, and enable you to revert any progress in
-        a game.
+        a game. Shared-memory serial connections require the buffer's paired `save_state(left, right)` operation,
+        with both tick workers stopped. Individual state operations cannot resume a serial exchange.
 
         You can either save it to a file, or in-memory. The following two examples will provide the file handle in each
         case. Remember to `seek` the in-memory buffer to the beginning before calling `PyBoy.load_state`:
@@ -1085,12 +1100,15 @@ class PyBoy:
         if file_like_object.__class__.__name__ == "TextIOWrapper":
             raise PyBoyInvalidInputException("Text file not allowed. Did you specify open(..., 'wb')?")
 
+        if self._serial_shared_memory is not None:
+            self._serial_shared_memory._check_state_operation()
         self.mb.save_state(IntIOWrapper(file_like_object))
 
     def load_state(self, file_like_object):
         """
         Restores the complete state of the emulator. It can be called at any time, and enable you to revert any progress
-        in a game.
+        in a game. Shared-memory serial connections require the buffer's paired `load_state(left, right, checkpoint)`
+        operation, with both tick workers stopped.
 
         You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you
         can load it here.
@@ -1115,7 +1133,28 @@ class PyBoy:
         if file_like_object.__class__.__name__ == "TextIOWrapper":
             raise PyBoyInvalidInputException("Text file not allowed. Did you specify open(..., 'rb')?")
 
+        if self._serial_shared_memory is not None:
+            self._serial_shared_memory._check_state_operation()
         self.mb.load_state(IntIOWrapper(file_like_object))
+
+    def _serial_checkpoint(self, state=None):
+        if self.stopped or self.paused or self.quitting:
+            raise PyBoyInvalidOperationException("Serial checkpoint needs runnable peers")
+        serial = self.mb.serial._checkpoint_state(state)
+        if serial is None:
+            raise PyBoyInvalidOperationException("No shared serial transport")
+        if state is not None:
+            self.frame_count = state["frame"]
+            self.events = [WindowEvent(event) for event in state["events"]]
+            self.queued_input = [(frame, event) for frame, event in state["input"]]
+            heapq.heapify(self.queued_input)
+        return {
+            **serial,
+            "rom": self._serial_rom_hash,
+            "frame": self.frame_count,
+            "events": [int(event) for event in self.events],
+            "input": [[frame, int(event)] for frame, event in self.queued_input],
+        }
 
     def game_area_dimensions(self, x, y, width, height, follow_scrolling=True):
         """
