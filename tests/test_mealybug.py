@@ -60,12 +60,7 @@ DMG_KNOWN_FAILURES = {
     "m3_wx_6_change.gb",
 }
 
-CGB_KNOWN_FAILURES = {
-    "m3_wx_4_change.gb",
-    "m3_wx_4_change_sprites.gb",
-    "m3_wx_5_change.gb",
-    "m3_wx_6_change.gb",
-}
+CGB_KNOWN_FAILURES = set()
 
 # The expected images for these were captured on one specific CGB revision,
 # and their remaining differences come from TILE_SEL write conflicts whose
