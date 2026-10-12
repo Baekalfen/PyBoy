@@ -57,7 +57,6 @@ MEALYBUG_ROMS = [
 # what these tests target. They are xfailed until the PPU is improved, and
 # will show as XPASS once they start matching the expected images.
 DMG_KNOWN_FAILURES = {
-    "m3_lcdc_tile_sel_win_change.gb",
     "m3_wx_6_change.gb",
 }
 

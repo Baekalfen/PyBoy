@@ -313,6 +313,11 @@ cdef class Renderer:
     # observes LCDC size writes two dots after the write dot
     cdef bint dot_objsize_prev
     cdef bint dot_objsize_reg
+    # The LCDC tile data select as sampled one dot ago. While a sprite fetch
+    # session owns the fetch unit, the fetcher observes the tile data select
+    # as of one dot ago; on normal dots it observes it live
+    cdef bint dot_tdsel_prev
+    cdef bint dot_tdsel_reg
     # The x-based part of the map column latched at fetch phase 0; -1 marks
     # the first-fetch special case that uses SCX>>3
     cdef int dot_col_x

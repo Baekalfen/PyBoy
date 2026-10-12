@@ -1136,6 +1136,8 @@ class Renderer:
         self.dot_scy_reg = 0
         self.dot_objsize_prev = False
         self.dot_objsize_reg = False
+        self.dot_tdsel_prev = False
+        self.dot_tdsel_reg = False
         self.dot_col_x = 0
         self.dot_latched_bgmap = False
         self.dot_latched_winmap = False
@@ -1447,6 +1449,8 @@ class Renderer:
         self.dot_scy_reg = 0
         self.dot_objsize_prev = False
         self.dot_objsize_reg = False
+        self.dot_tdsel_prev = False
+        self.dot_tdsel_reg = False
         self.dot_col_x = 0
         self.dot_latched_bgmap = False
         self.dot_latched_winmap = False
@@ -1554,6 +1558,11 @@ class Renderer:
             # still uses the old size
             self.dot_objsize_reg = self.dot_objsize_prev
             self.dot_objsize_prev = self.lcd._LCDC.sprite_height
+            # Tile data select as of one dot ago: while a sprite fetch
+            # session owns the fetch unit, the fetcher only observes an LCDC
+            # tile data select write one dot later than on normal dots
+            self.dot_tdsel_reg = self.dot_tdsel_prev
+            self.dot_tdsel_prev = self.lcd._LCDC.tiledata_select
             if self.dot_sprite_merge_pending:
                 self._dot_sprite_flush_merge()
 
@@ -2093,8 +2102,13 @@ class Renderer:
 
     def _dot_tiledat_addr(self, byte_offset):
         # Latch the tile data addressing mode and compute the VRAM address of
-        # one bitplane byte for the tile being fetched.
-        self.dot_latched_tiledata_select = self.lcd._LCDC.tiledata_select
+        # one bitplane byte for the tile being fetched. While a sprite fetch
+        # session owns the fetch unit, the tile data select is observed as of
+        # one dot ago; on normal dots it is observed live.
+        if self.dot_sprite_session_dots > 0:
+            self.dot_latched_tiledata_select = self.dot_tdsel_reg
+        else:
+            self.dot_latched_tiledata_select = self.lcd._LCDC.tiledata_select
         if self.dot_latched_tiledata_select:
             tile_addr = self.dot_tile_index * 0x10
         else:
