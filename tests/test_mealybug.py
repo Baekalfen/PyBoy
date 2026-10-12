@@ -56,9 +56,7 @@ MEALYBUG_ROMS = [
 # PyBoy does not yet implement all mid-scanline PPU register changes, which is
 # what these tests target. They are xfailed until the PPU is improved, and
 # will show as XPASS once they start matching the expected images.
-DMG_KNOWN_FAILURES = {
-    "m3_wx_6_change.gb",
-}
+DMG_KNOWN_FAILURES = set()
 
 CGB_KNOWN_FAILURES = set()
 

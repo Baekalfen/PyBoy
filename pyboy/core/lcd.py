@@ -1156,6 +1156,7 @@ class Renderer:
         self.dot_tiledata_glitch_index = False
         self.dot_cgb_window_glitch = False
         self.dot_wx_changed_dots = 0
+        self.dot_win_match_pending = False
         self.dot_window_extra_dot_pending = False
 
     def sort_sprites(self, sprite_count):
@@ -1470,6 +1471,7 @@ class Renderer:
         self.dot_cgb_window_glitch = False
         self.dot_wx_changed_dots = 0
         self.dot_window_extra_dot_pending = False
+        self.dot_win_match_pending = False
 
     ####################################
     #
@@ -1524,6 +1526,7 @@ class Renderer:
         self.dot_window_extra_dot_pending = False
         self.dot_tiledata_glitch_dots = 0
         self.dot_wx_changed_dots = 0
+        self.dot_win_match_pending = False
         self.dot_last_pixel_dot = -1
         self.dot_last_pixel_sprite_raw = -1
         self.dot_last_pixel_sprite_palette = -1
@@ -1599,6 +1602,9 @@ class Renderer:
             # checked on every dot, including sprite session dots: on DMG,
             # the window activation comparator and the sprite fetcher trigger
             # are independent, and both can fire on the same dot.
+            win_match = (
+                wx_reg != 0 and wx_reg < 166 + self.lcd._is_cgb_hardware() and wx_reg == (self.dot_x_counter + 7) & 0xFF
+            )
             if not self.dot_window_triggered and self.wy_activated_frame and wen_reg:
                 win_activation = False
                 if wx_reg == 0:
@@ -1608,15 +1614,17 @@ class Renderer:
                         win_activation = True
                     elif 241 <= self.dot_x_counter <= 248:  # -15 to -8
                         win_activation = True
-                elif wx_reg < 166 + self.lcd._is_cgb_hardware():
-                    if wx_reg == (self.dot_x_counter + 7) & 0xFF:
-                        win_activation = True
-                    elif (
-                        not self.lcd._is_cgb_hardware()
-                        and wx_reg == (self.dot_x_counter + 6) & 0xFF
-                        and not self.dot_wx_changed_dots
-                    ):
-                        win_activation = True
+                elif win_match:
+                    win_activation = True
+                elif not self.lcd._is_cgb_hardware() and self.dot_win_match_pending and not self.dot_wx_changed_dots:
+                    # The comparator's match pulse is held for one dot, so a
+                    # match that arrived while the win-enable synchronizer had
+                    # not yet let the enable through still activates the
+                    # window on the next dot. The pending flag is the previous
+                    # dot's match, evaluated with the WX and x counter values
+                    # observed on that dot; a WX write in between therefore
+                    # cannot fabricate a match.
+                    win_activation = True
 
                 if win_activation:
                     self.dot_window_line = (self.dot_window_line + 1) & 0xFF
@@ -1635,6 +1643,8 @@ class Renderer:
                     self.dot_fetching_window = True
                 elif not self.lcd._is_cgb_hardware() and wx_reg == 166 and wx_reg == (self.dot_x_counter + 7) & 0xFF:
                     self.dot_window_line = (self.dot_window_line + 1) & 0xFF
+
+            self.dot_win_match_pending = win_match
 
             if self.dot_window_extra_dot_pending:
                 # Resume right after the extra dot a WX==0 activation costs

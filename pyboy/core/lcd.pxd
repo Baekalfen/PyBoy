@@ -296,6 +296,7 @@ cdef class Renderer:
     cdef bint dot_tiledata_glitch_index
     cdef bint dot_cgb_window_glitch
     cdef int dot_wx_changed_dots
+    cdef bint dot_win_match_pending
     cdef bint dot_window_extra_dot_pending
     # Set around the LCD sync of an LCDC write that changes the win-enable
     # bit: the sync stops one dot short so the write lands on its own cycle
@@ -361,6 +362,7 @@ cdef class Renderer:
         column=int,
         scx=int,
     )
+    @cython.locals(win_match=bint)
     cdef void advance_dots(self, int64_t) noexcept nogil
     @cython.locals(color=uint32_t)
     cdef void dot_finish_line(self) noexcept nogil
