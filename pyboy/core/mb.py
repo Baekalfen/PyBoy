@@ -865,13 +865,21 @@ class Motherboard:
                 # tile data select writes (SameBoy's DMG LCDC access
                 # conflict), so the dot such a write lands on observes the
                 # new tile data select as well
-                self.lcd.renderer._sync_minus1 = i == 0xFF40 and (
-                    ((value ^ self.lcd._LCDC.value) & 0x20) != 0
-                    or (not self.lcd._is_cgb_hardware() and ((value ^ self.lcd._LCDC.value) & 0b1_0000) != 0)
-                )
+                if self.lcd._is_cgb_hardware() and i == 0xFF47:
+                    # A CGB-hardware BGP write lands on its own write cycle:
+                    # the pixel popped on the write's cycle already shades
+                    # with the new palette, while the pixel popped on the
+                    # cycle before keeps the old one
+                    # (daid/ppu_scanline_bgp, mealybug/m3_bgp_change)
+                    self.lcd.renderer._sync_minus = 1
+                else:
+                    self.lcd.renderer._sync_minus = i == 0xFF40 and (
+                        ((value ^ self.lcd._LCDC.value) & 0x20) != 0
+                        or (not self.lcd._is_cgb_hardware() and ((value ^ self.lcd._LCDC.value) & 0b1_0000) != 0)
+                    )
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(lcd_interrupt)
-                self.lcd.renderer._sync_minus1 = False
+                self.lcd.renderer._sync_minus = 0
 
                 if i == 0xFF40:
                     if lcd_interrupt := self.lcd.write_lcdc(value):

@@ -297,7 +297,7 @@ cdef class Renderer:
     cdef bint dot_window_extra_dot_pending
     # Set around the LCD sync of an LCDC write that changes the win-enable
     # bit: the sync stops one dot short so the write lands on its own cycle
-    cdef bint _sync_minus1
+    cdef int _sync_minus
     # The WX register and win-enable signal as sampled one dot ago, for the
     # window activation comparator (WX) and the fetch-type decision (win-en)
     cdef int dot_wx_prev
