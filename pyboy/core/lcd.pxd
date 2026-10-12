@@ -308,6 +308,10 @@ cdef class Renderer:
     # new value from two dots after the write dot).
     cdef int dot_scy_prev
     cdef int dot_scy_reg
+    # The OBJ size bit as sampled one dot ago. On CGB the sprite fetcher
+    # observes LCDC size writes two dots after the write dot
+    cdef bint dot_objsize_prev
+    cdef bint dot_objsize_reg
     # The x-based part of the map column latched at fetch phase 0; -1 marks
     # the first-fetch special case that uses SCX>>3
     cdef int dot_col_x

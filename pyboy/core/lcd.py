@@ -194,8 +194,16 @@ class LCD:
             self.renderer.dot_abort_sprite_session()
         # An OBJ size change landing exactly on the sprite
         # fetcher's bitplane read dots is observed by those reads
+        # on the DMG: the write is committed mid-dot, before the
+        # fetcher's address phase. The CGB pixel pipeline runs
+        # one dot ahead of the CPU, so the write misses the read
+        # dot there and only affects later reads
         if (value ^ old_lcdc) & 0b100:
-            if (self._STAT._mode == 3 or self._STAT._mode == 0) and self.renderer.dot_ly == self.LY:
+            if (
+                not self._is_cgb_hardware()
+                and (self._STAT._mode == 3 or self._STAT._mode == 0)
+                and self.renderer.dot_ly == self.LY
+            ):
                 self.renderer.dot_relatch_sprite_size()
         # Latch mid-scanline LCDC write effects for the dot renderer
         if self._LCDC.lcd_enable and self._STAT._mode == 3 and self.renderer.dot_ly == self.LY:
@@ -1125,6 +1133,8 @@ class Renderer:
         self.dot_wen_cur = False
         self.dot_scy_prev = 0
         self.dot_scy_reg = 0
+        self.dot_objsize_prev = False
+        self.dot_objsize_reg = False
         self.dot_col_x = 0
         self.dot_latched_bgmap = False
         self.dot_latched_winmap = False
@@ -1433,6 +1443,8 @@ class Renderer:
         self.dot_wen_cur = False
         self.dot_scy_prev = 0
         self.dot_scy_reg = 0
+        self.dot_objsize_prev = False
+        self.dot_objsize_reg = False
         self.dot_col_x = 0
         self.dot_latched_bgmap = False
         self.dot_latched_winmap = False
@@ -1533,6 +1545,12 @@ class Renderer:
             # landing during a sprite fetch are observed by the fetcher.
             self.dot_scy_reg = self.dot_scy_prev
             self.dot_scy_prev = self.lcd.SCY
+            # OBJ size as of one dot ago, for the CGB access delay: the
+            # sprite fetcher observes an LCDC size write two dots after the
+            # write dot, so a read landing on the dot right after the write
+            # still uses the old size
+            self.dot_objsize_reg = self.dot_objsize_prev
+            self.dot_objsize_prev = self.lcd._LCDC.sprite_height
             if self.dot_sprite_merge_pending:
                 self._dot_sprite_flush_merge()
 
@@ -2260,11 +2278,15 @@ class Renderer:
             upper = (upper << 1) & 0xFF
 
     def dot_sprite_row_addr(self, sprite_y, tile, flags):
-        mask = 0b1111 if self.lcd._LCDC.sprite_height else 0b111
+        # On CGB the size bit is observed with the access delay; on DMG it is
+        # read live (a write landing on the read dot itself is committed
+        # mid-dot via the relatch in the write handler)
+        sprite_height = self.dot_objsize_reg if self.lcd._is_cgb_hardware() else self.lcd._LCDC.sprite_height
+        mask = 0b1111 if sprite_height else 0b111
         tile_y = (self.lcd.LY - sprite_y) & mask
         if flags & 0b1000000:  # Y flip
             tile_y ^= mask
-        addr = ((tile & 0b11111110) if self.lcd._LCDC.sprite_height else tile) * 0x10 + tile_y * 2
+        addr = ((tile & 0b11111110) if sprite_height else tile) * 0x10 + tile_y * 2
         if self.lcd.cgb and (flags & 0b1000):  # CGB VRAM bank
             addr += 0x2000
         return addr
