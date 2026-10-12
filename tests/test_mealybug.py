@@ -64,7 +64,6 @@ DMG_KNOWN_FAILURES = {
 }
 
 CGB_KNOWN_FAILURES = {
-    "m3_lcdc_obj_en_change_variant.gb",
     "m3_lcdc_obj_size_change.gb",
     "m3_lcdc_obj_size_change_scx.gb",
     "m3_lcdc_tile_sel_change.gb",

@@ -179,9 +179,12 @@ class LCD:
         lcd_interrupt = self.set_lcdc(value)
         # DMG: disabling sprites while a fetch session is in
         # progress aborts the fetch, and the pixel mixer resumes
-        # on the write dot
+        # on the write dot. CGB instead checks the OBJ enable bit
+        # when the pixel is popped from the FIFO, so the fetch
+        # session runs to completion there, also for a DMG-style
+        # ROM in downgraded mode.
         if (
-            not self.cgb
+            not self._is_cgb_hardware()
             and old_lcdc & 0b10
             and not value & 0b10
             and self._STAT._mode == 3
