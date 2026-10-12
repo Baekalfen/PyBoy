@@ -261,9 +261,11 @@ class LCD:
         # bitwise OR of the old and new palette shades. The final
         # pixels of the line are colored a few dots into HBlank,
         # so the write can also land while STAT already reads
-        # mode 0.
+        # mode 0. On CGB the write instead lands one cycle early
+        # (handled through the write bus sync in the motherboard),
+        # and the write's dot observes the new palette with no glitch.
         if (
-            not self.cgb
+            not self._is_cgb_hardware()
             and (self._STAT._mode == 3 or self._STAT._mode == 0)
             and self.renderer.dot_ly == self.LY
             and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
@@ -1124,7 +1126,7 @@ class Renderer:
         self.dot_latched_bgmap = False
         self.dot_latched_winmap = False
         self.dot_scx_latched = 0
-        self._sync_minus1 = False
+        self._sync_minus = 0
         self.dot_glitch_data = 0
         self.dot_latched_tiledata_select = False
         self.dot_tiledata_glitch_dots = 0
@@ -1515,11 +1517,11 @@ class Renderer:
         self.dot_mode0_fetcher_based = self.dot_n_sprites > 0 and self.lcd._LCDC.sprite_enable
 
     def advance_dots(self, target):
-        if self._sync_minus1:
-            # An LCDC win-enable write lands on its own cycle: the LCD sync
-            # inside the write stops one dot short, so the write's cycle
-            # observes the new value
-            target -= 1
+        if self._sync_minus:
+            # An LCDC win-enable or CGB BGP write lands on its own cycle: the
+            # LCD sync inside the write stops one dot short, so the pixel
+            # popped on the write's cycle already observes the new value
+            target -= self._sync_minus
         if self.dot_ly < 0 or self.dot_x_counter == 160:
             return
         while self.dot_dots_elapsed < target:
