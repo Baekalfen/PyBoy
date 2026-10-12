@@ -212,9 +212,16 @@ class LCD:
                     # CGB double speed: any tile data select toggle glitches the fetcher for 2 dots
                     if (value ^ old_lcdc) & 0b1_0000:
                         self.renderer.dot_tiledata_glitch_dots = 2
-                elif ~value & old_lcdc & 0b1_0000:
-                    # CGB single speed: clearing tile data select glitches the fetcher for 1 dot
+                        self.renderer.dot_tiledata_glitch_index = not (value & 0b1_0000)
+                elif (value ^ old_lcdc) & 0b1_0000:
+                    # CGB single speed: a tile data select change landing on
+                    # the same T-cycle as a bitplane read substitutes the
+                    # fetch's tile index for that bitplane, for both the
+                    # setting and the clearing case. Reference captures from
+                    # CPU CGB C replay stale data for the setting case
+                    # instead, so the modeled revision is the later one
                     self.renderer.dot_tiledata_glitch_dots = 1
+                    self.renderer.dot_tiledata_glitch_index = True
             elif old_lcdc & 0b10_0000 and not value & 0b10_0000 and self.renderer.dot_fetching_window:
                 # DMG: disabling the window mid-fetch stops pixel insertion for the current fetch
                 self.renderer.dot_win_glitch_blocked = True
@@ -1146,6 +1153,7 @@ class Renderer:
         self.dot_glitch_data = 0
         self.dot_latched_tiledata_select = False
         self.dot_tiledata_glitch_dots = 0
+        self.dot_tiledata_glitch_index = False
         self.dot_cgb_window_glitch = False
         self.dot_wx_changed_dots = 0
         self.dot_window_extra_dot_pending = False
@@ -1458,6 +1466,7 @@ class Renderer:
         self.dot_glitch_data = 0
         self.dot_latched_tiledata_select = False
         self.dot_tiledata_glitch_dots = 0
+        self.dot_tiledata_glitch_index = False
         self.dot_cgb_window_glitch = False
         self.dot_wx_changed_dots = 0
         self.dot_window_extra_dot_pending = False
@@ -1642,7 +1651,6 @@ class Renderer:
                 # sprite bitplane reads own the dots they fall on, while the
                 # fetch unit prefetches the next background tile on the rest
                 self.dot_dots_elapsed += 1
-                self._dot_decay_glitch_counters()
                 if self.dot_session_bg_steps > 0:
                     self.dot_session_bg_steps -= 1
                     self.dot_step_fetcher()
@@ -1669,7 +1677,10 @@ class Renderer:
                     self.dot_during_sprite_fetch = False
                     self._dot_sprite_session_end()
                 # The pixel mixer and fetcher are frozen for every session
-                # dot, including the last one
+                # dot, including the last one. The glitch counters decay
+                # after the fetcher step, like on normal dots, so a write
+                # landing between dots still collides with this dot's read
+                self._dot_decay_glitch_counters()
                 continue
             else:
                 # Fresh dot: pay the dot, then run the per-dot line work
@@ -2058,9 +2069,14 @@ class Renderer:
             else:
                 stale_replay = False
                 if self.dot_tiledata_glitch_dots:
-                    # CGB tile data select conflict: the fetcher may replay
-                    # stale data instead of reading VRAM
-                    if self.dot_latched_tiledata_select:
+                    # CGB tile data select conflict: a write toggling the
+                    # select on the same T-cycle as the read substitutes
+                    # the tile index for that bitplane's data. In double
+                    # speed the fetcher may instead replay stale data
+                    if self.dot_tiledata_glitch_index:
+                        self.dot_tile_data_low = self.dot_tile_index
+                        stale_replay = True
+                    elif self.dot_latched_tiledata_select:
                         stale_replay = not (self.dot_tile_index & 0x80)
                     else:
                         stale_replay = True
@@ -2083,7 +2099,14 @@ class Renderer:
             else:
                 stale_replay = False
                 if self.dot_tiledata_glitch_dots:
-                    if self.dot_latched_tiledata_select:
+                    # A write toggling the tile data select on the same
+                    # T-cycle as this read substitutes the tile index for
+                    # that bitplane's data. In double speed the fetcher may
+                    # instead replay stale data
+                    if self.dot_tiledata_glitch_index:
+                        self.dot_tile_data_high = self.dot_tile_index
+                        stale_replay = True
+                    elif self.dot_latched_tiledata_select:
                         stale_replay = not (self.dot_tile_index & 0x80)
                     else:
                         stale_replay = True
@@ -2370,6 +2393,8 @@ class Renderer:
             self.dot_wx_changed_dots -= 1
         if self.dot_tiledata_glitch_dots > 0:
             self.dot_tiledata_glitch_dots -= 1
+            if self.dot_tiledata_glitch_dots == 0:
+                self.dot_tiledata_glitch_index = False
 
     ####################################
     #

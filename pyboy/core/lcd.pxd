@@ -293,6 +293,7 @@ cdef class Renderer:
     cdef uint8_t dot_glitch_data
     cdef bint dot_latched_tiledata_select
     cdef int dot_tiledata_glitch_dots
+    cdef bint dot_tiledata_glitch_index
     cdef bint dot_cgb_window_glitch
     cdef int dot_wx_changed_dots
     cdef bint dot_window_extra_dot_pending
