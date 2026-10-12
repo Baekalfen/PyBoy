@@ -889,6 +889,18 @@ class Motherboard:
                         self.cpu.set_interruptflag(lcd_interrupt)
                 elif i == 0xFF42:
                     self.lcd.SCY = value
+                    # A SCY write landing exactly on the fetcher's tile data
+                    # address dot is observed by that address computation on
+                    # the DMG: the write is committed mid-dot, before the
+                    # fetcher's address phase. On CGB the pixel pipeline runs
+                    # ahead of the CPU and SCY writes have a two-dot access
+                    # delay, so the write misses the address phase there
+                    if (
+                        not self.lcd._is_cgb_hardware()
+                        and (self.lcd._STAT._mode == 3 or self.lcd._STAT._mode == 0)
+                        and self.lcd.renderer.dot_ly == self.lcd.LY
+                    ):
+                        self.lcd.renderer.dot_relatch_scy()
                 elif i == 0xFF43:
                     self.lcd.SCX = value
                 elif i == 0xFF44:
