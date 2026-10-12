@@ -285,17 +285,42 @@ cdef class Renderer:
     cdef int dot_sprite_session_count
     cdef int dot_sprite_session_low
     cdef int dot_sprite_session_high
-    # Dots remaining of the fetcher-startup overlap of the line's first
-    # sprite session. The background fetcher and pixel mixer keep running
-    # for these dots at the start of the session, so the pipeline advances
-    # and mode 3 is only extended by the session length minus this overlap.
-    cdef int dot_session_overlap_dots
+    # Background-fetcher steps still owed during a sprite fetch session: the
+    # fetcher completes its in-flight fetch during the session's startup
+    # before the sprite fetcher takes over the bus.
+    cdef int dot_session_bg_steps
     cdef uint8_t dot_glitch_data
     cdef bint dot_latched_tiledata_select
     cdef int dot_tiledata_glitch_dots
     cdef bint dot_cgb_window_glitch
     cdef int dot_wx_changed_dots
     cdef bint dot_window_extra_dot_pending
+    # Set around the LCD sync of an LCDC write that changes the win-enable
+    # bit: the sync stops one dot short so the write lands on its own cycle
+    cdef bint _sync_minus1
+    # The WX register and win-enable signal as sampled one dot ago, for the
+    # window activation comparator (WX) and the fetch-type decision (win-en)
+    cdef int dot_wx_prev
+    cdef bint dot_wen_prev
+    cdef bint dot_wen_cur
+    # SCY as sampled one dot ago. On CGB, SCY writes take effect two dots
+    # later (the write lands between LCD ticks, so the fetcher observes the
+    # new value from two dots after the write dot).
+    cdef int dot_scy_prev
+    cdef int dot_scy_reg
+    # The x-based part of the map column latched at fetch phase 0; -1 marks
+    # the first-fetch special case that uses SCX>>3
+    cdef int dot_col_x
+    # The LCDC map-select bits latched at fetch phase 0 (the address phase).
+    # The map read at phase 1 uses the latched values: on CGB a write landing
+    # between the two phases is committed after the address phase, so the map
+    # read keeps the old map.
+    cdef bint dot_latched_bgmap
+    cdef bint dot_latched_winmap
+    # SCX latched at fetch phase 0 (the start of each tile fetch). The map
+    # read at phase 1 uses the latched value: on CGB a write landing between
+    # the two phases keeps the old SCX for the current fetch.
+    cdef int dot_scx_latched
     # The most recently colored pixel of the current line, tracked so that a
     # mid-scanline palette write can apply the DMG write glitch to the pixel
     # colored on the exact dot of the write. dot_last_pixel_raw always holds
@@ -314,7 +339,17 @@ cdef class Renderer:
     cdef bint dot_last_pixel_stalled_recovery
     @cython.locals(i=int)
     cdef void start_dot_line(self, int) noexcept nogil
-    @cython.locals(x_match=uint8_t)
+    @cython.locals(
+        x_match=uint8_t,
+        wx_reg=int,
+        wen_reg=bint,
+        win_activation=bint,
+        bgmap=bint,
+        winmap=bint,
+        row=int,
+        column=int,
+        scx=int,
+    )
     cdef void advance_dots(self, int64_t) noexcept nogil
     @cython.locals(color=uint32_t)
     cdef void dot_finish_line(self) noexcept nogil
@@ -324,6 +359,9 @@ cdef class Renderer:
         column=int,
         stale_replay=bint,
         glitch_data=uint8_t,
+        bgmap=bint,
+        winmap=bint,
+        scx=int,
     )
     cdef void dot_step_fetcher(self) noexcept nogil
     @cython.locals(
@@ -377,6 +415,7 @@ cdef class Renderer:
     cdef inline uint8_t dot_read_vram(self, int) noexcept nogil
     cdef inline void dot_update_window_glitch(self) noexcept nogil
     cdef inline void _dot_decay_glitch_counters(self) noexcept nogil
+    cdef inline int _dot_scy_sample(self) noexcept nogil
     cdef void dot_fetcher_push(self) noexcept nogil
     @cython.locals(i=int, pixel=uint8_t)
     cdef void dot_fill_bg_fifo(self, uint8_t, uint8_t, uint8_t, bint, bint) noexcept nogil
