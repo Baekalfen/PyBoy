@@ -1608,12 +1608,24 @@ class Renderer:
             elif self.dot_sprite_session_dots > 0:
                 # Sprite fetch session dot: the pixel mixer is frozen while
                 # the sprite fetcher runs. The background fetcher keeps the
-                # bus until its in-flight fetch completes, then the sprite
-                # fetcher takes over.
+                # bus until its in-flight fetch completes; after that the
+                # sprite bitplane reads own the dots they fall on, while the
+                # fetch unit prefetches the next background tile on the rest
                 self.dot_dots_elapsed += 1
                 self._dot_decay_glitch_counters()
                 if self.dot_session_bg_steps > 0:
                     self.dot_session_bg_steps -= 1
+                    self.dot_step_fetcher()
+                elif self.dot_fetch_phase < 5 and not (
+                    self.dot_sprite_session_count > 0
+                    and (self.dot_sprite_session_low == 1 or self.dot_sprite_session_high == 1)
+                ):
+                    # Once the in-flight fetch has completed, the fetch unit
+                    # is not halted for the rest of the session: on the dots
+                    # not consumed by the sprite bitplane reads it keeps
+                    # prefetching the next background tile, stopping just
+                    # short of the high bitplane read. The push waits for the
+                    # pixel FIFO to drain after the session ends
                     self.dot_step_fetcher()
                 self.dot_sprite_session_dots -= 1
                 if self.dot_sprite_session_count > 0:

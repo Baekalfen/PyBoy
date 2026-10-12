@@ -58,7 +58,6 @@ MEALYBUG_ROMS = [
 # will show as XPASS once they start matching the expected images.
 DMG_KNOWN_FAILURES = {
     "m3_lcdc_tile_sel_win_change.gb",
-    "m3_lcdc_win_map_change.gb",
     "m3_scy_change.gb",
     "m3_wx_6_change.gb",
 }
@@ -70,7 +69,6 @@ CGB_KNOWN_FAILURES = {
     "m3_lcdc_tile_sel_change2.gb",
     "m3_lcdc_tile_sel_win_change.gb",
     "m3_lcdc_tile_sel_win_change2.gb",
-    "m3_lcdc_win_map_change.gb",
     "m3_wx_4_change.gb",
     "m3_wx_4_change_sprites.gb",
     "m3_wx_5_change.gb",
