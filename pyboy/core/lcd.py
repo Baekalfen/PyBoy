@@ -1083,6 +1083,7 @@ class Renderer:
         self.dot_tile_data_high = 0
         self.dot_tilemap_addr = 0
         self.dot_tiledata_addr = 0
+        self.dot_tileaddr_dot = -1
         self.dot_window_triggered = False
         self.dot_fetching_window = False
         self.dot_window_column = 0
@@ -1391,6 +1392,7 @@ class Renderer:
         self.dot_tile_data_high = 0
         self.dot_tilemap_addr = 0
         self.dot_tiledata_addr = 0
+        self.dot_tileaddr_dot = -1
         self.dot_window_triggered = False
         self.dot_fetching_window = False
         self.dot_window_column = 0
@@ -1492,6 +1494,7 @@ class Renderer:
         self.dot_fill_bg_fifo(0, 0, 0, False, False)
         self.dot_screen_x = 0
         self.dot_fetch_phase = 0
+        self.dot_tileaddr_dot = -1
         self.dot_x_counter = 240
         self.dot_x_counter_fractional = False
         self.dot_bg_insert_pending = False
@@ -1860,6 +1863,22 @@ class Renderer:
             self.dot_sprite_fetch_data_high = self.dot_read_vram(row_addr + 1)
             self.dot_glitch_data = self.dot_read_vram(row_addr + 1)
 
+    def dot_relatch_scy(self):
+        # A mid-scanline SCY write landing exactly on the fetcher's tile
+        # data address dot is committed by hardware mid-dot, before the
+        # fetcher's address phase, so the bitplane read observes the new
+        # row even though the dot has already been processed. Redo the
+        # address derivation with the new SCY. The read happens on a
+        # later dot, so only the address needs refreshing. The address dot
+        # is tracked explicitly: the fetcher can hold at the high address
+        # phase across several sprite fetch session dots, and a write
+        # landing there must not re-derive the already latched address.
+        if self.dot_tileaddr_dot == self.dot_dots_elapsed:
+            if self.dot_fetch_phase == 3:
+                self.dot_tiledata_addr = self._dot_tiledat_addr(0)
+            elif self.dot_fetch_phase == 5:
+                self.dot_tiledata_addr = self._dot_tiledat_addr(1)
+
     def _dot_sprite_session_end(self):
         # The background fetcher restarts for free when a sprite fetch
         # session ends: if it was mid-fetch with an empty FIFO it catches up
@@ -2021,6 +2040,7 @@ class Renderer:
         elif self.dot_fetch_phase == 2:
             self.dot_update_window_glitch()
             self.dot_tiledata_addr = self._dot_tiledat_addr(0)
+            self.dot_tileaddr_dot = self.dot_dots_elapsed
             self.dot_fetch_phase = 3
         elif self.dot_fetch_phase == 3:
             if self.dot_cgb_window_glitch:
@@ -2043,6 +2063,7 @@ class Renderer:
         elif self.dot_fetch_phase == 4:
             self.dot_update_window_glitch()
             self.dot_tiledata_addr = self._dot_tiledat_addr(1)
+            self.dot_tileaddr_dot = self.dot_dots_elapsed
             self.dot_fetch_phase = 5
         elif self.dot_fetch_phase == 5:
             if self.dot_cgb_window_glitch:

@@ -240,6 +240,7 @@ cdef class Renderer:
     cdef uint8_t dot_tile_data_high
     cdef int dot_tilemap_addr
     cdef int dot_tiledata_addr
+    cdef int dot_tileaddr_dot
     cdef bint dot_window_triggered
     cdef bint dot_fetching_window
     cdef int dot_window_column
@@ -414,6 +415,7 @@ cdef class Renderer:
     cdef void _dot_sprite_session_high_read(self) noexcept nogil
     cdef void _dot_sprite_flush_merge(self) noexcept nogil
     cdef void dot_relatch_sprite_size(self) noexcept nogil
+    cdef void dot_relatch_scy(self) noexcept nogil
     cdef void _dot_sprite_session_end(self) noexcept nogil
     cdef void dot_abort_sprite_session(self) noexcept nogil
     cdef inline uint8_t dot_read_vram(self, int) noexcept nogil
