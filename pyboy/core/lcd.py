@@ -432,15 +432,18 @@ class LCD:
         # Feed the dot-accurate renderer with the dots that have elapsed on the
         # current mode 3 line. Register writes land between LCD ticks, so the
         # dots processed here observe the current register values.
+        # The CGB pixel pipeline runs one dot ahead of the DMG pipeline
+        # relative to the CPU, so its dots are fed one dot earlier.
+        render_delay = DOT_MODE3_RENDER_DELAY - (1 if self._is_cgb_hardware() else 0)
         if self._LCDC.lcd_enable and self._STAT._mode == 3 and self.renderer.dot_ly == self.LY:
-            self.renderer.advance_dots(self.clock - self.mode3_start_clock - DOT_MODE3_RENDER_DELAY)
+            self.renderer.advance_dots(self.clock - self.mode3_start_clock - render_delay)
 
         if self._LCDC.lcd_enable and self._STAT._mode == 0 and self.renderer.dot_ly == self.LY:
             # The pixel pipeline pushes the last pixels of the line a few dots
             # after the STAT mode-0 signal. Keep feeding it during early
             # HBlank so register writes land dot-synchronously on those pops,
             # exactly as they do in mode 3.
-            self.renderer.advance_dots(self.clock - self.mode3_start_clock - DOT_MODE3_RENDER_DELAY)
+            self.renderer.advance_dots(self.clock - self.mode3_start_clock - render_delay)
             if self.renderer.dot_x_counter == 160:
                 # The pipeline reached its natural end; present the line
                 self.renderer.dot_finish_line()
@@ -462,7 +465,7 @@ class LCD:
             # of on the 4-dot extension grid. The correction is applied once
             # per popped value; a mode-3 extension may have already pushed the
             # target past a stale estimate, which must not snap it back.
-            exact_target = self.mode3_start_clock + self.renderer.dot_mode0_elapsed + DOT_MODE3_RENDER_DELAY
+            exact_target = self.mode3_start_clock + self.renderer.dot_mode0_elapsed + render_delay
             if exact_target != self.clock_target:
                 self.mode3_extension += exact_target - self.clock_target
                 self.clock_target = exact_target
@@ -1111,7 +1114,17 @@ class Renderer:
         self.dot_sprite_session_count = 0
         self.dot_sprite_session_low = 0
         self.dot_sprite_session_high = 0
-        self.dot_session_overlap_dots = 3
+        self.dot_session_bg_steps = 0
+        self.dot_wx_prev = 0
+        self.dot_wen_prev = False
+        self.dot_wen_cur = False
+        self.dot_scy_prev = 0
+        self.dot_scy_reg = 0
+        self.dot_col_x = 0
+        self.dot_latched_bgmap = False
+        self.dot_latched_winmap = False
+        self.dot_scx_latched = 0
+        self._sync_minus1 = False
         self.dot_glitch_data = 0
         self.dot_latched_tiledata_select = False
         self.dot_tiledata_glitch_dots = 0
@@ -1409,7 +1422,16 @@ class Renderer:
         self.dot_sprite_session_count = 0
         self.dot_sprite_session_low = 0
         self.dot_sprite_session_high = 0
-        self.dot_session_overlap_dots = 3
+        self.dot_session_bg_steps = 0
+        self.dot_wx_prev = 0
+        self.dot_wen_prev = False
+        self.dot_wen_cur = False
+        self.dot_scy_prev = 0
+        self.dot_scy_reg = 0
+        self.dot_col_x = 0
+        self.dot_latched_bgmap = False
+        self.dot_latched_winmap = False
+        self.dot_scx_latched = 0
         self.dot_glitch_data = 0
         self.dot_latched_tiledata_select = False
         self.dot_tiledata_glitch_dots = 0
@@ -1462,7 +1484,7 @@ class Renderer:
         self.dot_sprite_session_count = 0
         self.dot_sprite_session_low = 0
         self.dot_sprite_session_high = 0
-        self.dot_session_overlap_dots = 3
+        self.dot_session_bg_steps = 0
         self.dot_sprite_merge_pending = False
         self.dot_sprite_low_read_dot = -1
         self.dot_sprite_high_read_dot = -1
@@ -1493,11 +1515,83 @@ class Renderer:
         self.dot_mode0_fetcher_based = self.dot_n_sprites > 0 and self.lcd._LCDC.sprite_enable
 
     def advance_dots(self, target):
+        if self._sync_minus1:
+            # An LCDC win-enable write lands on its own cycle: the LCD sync
+            # inside the write stops one dot short, so the write's cycle
+            # observes the new value
+            target -= 1
         if self.dot_ly < 0 or self.dot_x_counter == 160:
             return
         while self.dot_dots_elapsed < target:
+            # SCY as of one dot ago, for the CGB write delay. This must update
+            # on every dot, including sprite session dots, so that SCY writes
+            # landing during a sprite fetch are observed by the fetcher.
+            self.dot_scy_reg = self.dot_scy_prev
+            self.dot_scy_prev = self.lcd.SCY
             if self.dot_sprite_merge_pending:
                 self._dot_sprite_flush_merge()
+
+            # The window comparator sees WX as of one dot ago. The win-enable
+            # signal goes through a two-input AND synchronizer: a disable is
+            # visible immediately, an enable only once it has been stable for
+            # two dots. The fetch-type decision samples the win-enable as of
+            # one dot ago. These samples update on every dot, including
+            # sprite session dots.
+            if self.dot_dots_elapsed == 0:
+                # Register writes that landed during mode 2 are visible from
+                # the line's first renderer dot; the previous dot's samples
+                # must not carry the previous line's values across the mode-2
+                # gap
+                self.dot_wx_prev = self.lcd.WX
+                self.dot_wen_cur = self.lcd._LCDC.window_enable
+            wx_reg = self.dot_wx_prev
+            self.dot_wx_prev = self.lcd.WX
+            self.dot_wen_prev = self.dot_wen_cur
+            self.dot_wen_cur = self.lcd._LCDC.window_enable
+            wen_reg = self.dot_wen_prev and self.lcd._LCDC.window_enable
+
+            # Window activation. The x counter counts modulo 256, so the
+            # values 240-255 denote the pre-line dots -16 to -1. This is
+            # checked on every dot, including sprite session dots: on DMG,
+            # the window activation comparator and the sprite fetcher trigger
+            # are independent, and both can fire on the same dot.
+            if not self.dot_window_triggered and self.wy_activated_frame and wen_reg:
+                win_activation = False
+                if wx_reg == 0:
+                    if self.dot_x_counter == 249:  # -7
+                        win_activation = True
+                    elif self.dot_x_counter == 240 and (self.lcd.SCX & 7):  # -16
+                        win_activation = True
+                    elif 241 <= self.dot_x_counter <= 248:  # -15 to -8
+                        win_activation = True
+                elif wx_reg < 166 + self.lcd._is_cgb_hardware():
+                    if wx_reg == (self.dot_x_counter + 7) & 0xFF:
+                        win_activation = True
+                    elif (
+                        not self.lcd._is_cgb_hardware()
+                        and wx_reg == (self.dot_x_counter + 6) & 0xFF
+                        and not self.dot_wx_changed_dots
+                    ):
+                        win_activation = True
+
+                if win_activation:
+                    self.dot_window_line = (self.dot_window_line + 1) & 0xFF
+                    self.dot_window_column = 0
+                    self.dot_bg_fifo_count = 0
+                    self.dot_bg_fifo_read = 0
+                    if wx_reg == 0 and (self.lcd.SCX & 7) and not self.lcd._is_cgb_hardware():
+                        # Window activation costs an extra dot
+                        if self.dot_dots_elapsed >= target:
+                            self.dot_window_extra_dot_pending = True
+                            return
+                        self.dot_dots_elapsed += 1
+                        self._dot_decay_glitch_counters()
+                    self.dot_window_triggered = True
+                    self.dot_fetch_phase = 0
+                    self.dot_fetching_window = True
+                elif not self.lcd._is_cgb_hardware() and wx_reg == 166 and wx_reg == (self.dot_x_counter + 7) & 0xFF:
+                    self.dot_window_line = (self.dot_window_line + 1) & 0xFF
+
             if self.dot_window_extra_dot_pending:
                 # Resume right after the extra dot a WX==0 activation costs
                 self.dot_window_extra_dot_pending = False
@@ -1507,22 +1601,14 @@ class Renderer:
                 self.dot_fetch_phase = 0
                 self.dot_fetching_window = True
             elif self.dot_sprite_session_dots > 0:
-                # Sprite fetch session dot: the pixel mixer and the background
-                # fetcher are frozen while the sprite fetcher runs
+                # Sprite fetch session dot: the pixel mixer is frozen while
+                # the sprite fetcher runs. The background fetcher keeps the
+                # bus until its in-flight fetch completes, then the sprite
+                # fetcher takes over.
                 self.dot_dots_elapsed += 1
                 self._dot_decay_glitch_counters()
-                if self.dot_session_overlap_dots > 0:
-                    # The line's first sprite session opens with a fetcher
-                    # startup: the sprite fetcher's first VRAM read happens
-                    # later in the session, and the background fetcher keeps
-                    # the bus for the first three dots. The pixel mixer is
-                    # frozen for the whole session including the overlap, so
-                    # the fetched row still lands at the sprite's x position;
-                    # mode 3 is only extended by the session length minus the
-                    # overlap because the mixer is stalled for the mode-3
-                    # startup dots anyway. Every later session of the line
-                    # stalls the pipeline for its full length.
-                    self.dot_session_overlap_dots -= 1
+                if self.dot_session_bg_steps > 0:
+                    self.dot_session_bg_steps -= 1
                     self.dot_step_fetcher()
                 self.dot_sprite_session_dots -= 1
                 if self.dot_sprite_session_count > 0:
@@ -1555,53 +1641,17 @@ class Renderer:
                     and self.dot_sprite_x[self.dot_n_sprites - 1] == x_match
                 ):
                     self._dot_sprite_session_start(x_match)
+                    # The background fetcher completes its in-flight fetch
+                    # during the session's startup; only then does the sprite
+                    # fetcher take over. Steps still owed after the trigger
+                    # dot:
+                    if self.dot_fetch_phase < 6:
+                        self.dot_session_bg_steps = 5 - self.dot_fetch_phase
+                    else:
+                        self.dot_session_bg_steps = 0
+                    # The fetcher still steps on the session trigger dot
+                    self.dot_step_fetcher()
                     continue
-
-                # Window activation. The x counter counts modulo 256, so the
-                # values 240-255 denote the pre-line dots -16 to -1.
-                if not self.dot_window_triggered and self.wy_activated_frame and self.lcd._LCDC.window_enable:
-                    win_activation = False
-                    if self.lcd.WX == 0:
-                        if self.dot_x_counter == 249:  # -7
-                            win_activation = True
-                        elif self.dot_x_counter == 240 and (self.lcd.SCX & 7):  # -16
-                            win_activation = True
-                        elif 241 <= self.dot_x_counter <= 248:  # -15 to -8
-                            win_activation = True
-                    elif self.lcd.WX < 166 + self.lcd._is_cgb_hardware():
-                        if self.lcd.WX == (self.dot_x_counter + 7) & 0xFF:
-                            win_activation = True
-                        elif (
-                            not self.lcd._is_cgb_hardware()
-                            and self.lcd.WX == (self.dot_x_counter + 6) & 0xFF
-                            and not self.dot_wx_changed_dots
-                        ):
-                            win_activation = True
-                            # LCD-PPU horizontal desync (DMG only)
-                            if self.dot_screen_x > 0:
-                                self.dot_screen_x -= 1
-
-                    if win_activation:
-                        self.dot_window_line = (self.dot_window_line + 1) & 0xFF
-                        self.dot_window_column = 0
-                        self.dot_bg_fifo_count = 0
-                        self.dot_bg_fifo_read = 0
-                        if self.lcd.WX == 0 and (self.lcd.SCX & 7) and not self.lcd._is_cgb_hardware():
-                            # Window activation costs an extra dot
-                            if self.dot_dots_elapsed >= target:
-                                self.dot_window_extra_dot_pending = True
-                                return
-                            self.dot_dots_elapsed += 1
-                            self._dot_decay_glitch_counters()
-                        self.dot_window_triggered = True
-                        self.dot_fetch_phase = 0
-                        self.dot_fetching_window = True
-                    elif (
-                        not self.lcd._is_cgb_hardware()
-                        and self.lcd.WX == 166
-                        and self.lcd.WX == (self.dot_x_counter + 7) & 0xFF
-                    ):
-                        self.dot_window_line = (self.dot_window_line + 1) & 0xFF
 
                 # Queue a pixel insertion at the FIFO's end
                 if (
@@ -1798,7 +1848,7 @@ class Renderer:
         self.dot_sprite_session_count = 0
         self.dot_sprite_session_low = 0
         self.dot_sprite_session_high = 0
-        self.dot_session_overlap_dots = 0
+        self.dot_session_bg_steps = 0
         self.dot_during_sprite_fetch = False
         self.dot_dots_elapsed -= 1
 
@@ -1870,31 +1920,55 @@ class Renderer:
         #   6: push stalled because the FIFO is full
         if self.dot_fetch_phase == 0:
             self.dot_update_window_glitch()
-            map_addr = 0x1800
-            if not self.lcd._LCDC.window_enable:
+            # The x-based part of the map column is latched here. On CGB the
+            # map-select bits and SCX are latched here too: hardware reads
+            # them at the start of each tile fetch, so the map read at phase 1
+            # uses the latched values, and a write landing between the two
+            # phases keeps the old values (the CGB render delay shifts the
+            # write one dot later, past the address phase).
+            if self.lcd._is_cgb_hardware():
+                self.dot_scx_latched = self.lcd.SCX
+                self.dot_latched_bgmap = self.lcd._LCDC.backgroundmap_select
+                self.dot_latched_winmap = self.lcd._LCDC.windowmap_select
+            if ((self.dot_x_counter + 16) & 0xFF) < 8:
+                self.dot_col_x = -1  # first-fetch special case
+            else:
+                self.dot_col_x = (
+                    self.dot_x_counter
+                    + 8
+                    - (1 if self.lcd._is_cgb_hardware() and not self.dot_during_sprite_fetch else 0)
+                )
+            self.dot_fetch_phase = 1
+        elif self.dot_fetch_phase == 1:
+            # The fetch type is decided here, at the map-read dot, using the
+            # win-enable signal as of the previous dot
+            if not self.dot_wen_prev:
                 self.dot_window_triggered = False
-            if self.lcd._LCDC.backgroundmap_select and not self.dot_window_triggered:
+            map_addr = 0x1800
+            if self.lcd._is_cgb_hardware():
+                bgmap = self.dot_latched_bgmap
+                winmap = self.dot_latched_winmap
+            else:
+                bgmap = self.lcd._LCDC.backgroundmap_select
+                winmap = self.lcd._LCDC.windowmap_select
+            if bgmap and not self.dot_window_triggered:
                 map_addr = 0x1C00
-            elif self.lcd._LCDC.windowmap_select and self.dot_window_triggered:
+            elif winmap and self.dot_window_triggered:
                 map_addr = 0x1C00
             if self.dot_window_triggered:
                 row = self.dot_window_line
-            else:
-                row = (self.lcd.LY + self.lcd.SCY) & 0xFF
-            if self.dot_window_triggered:
                 column = self.dot_window_column
-            elif ((self.dot_x_counter + 16) & 0xFF) < 8:
-                column = self.lcd.SCX >> 3
             else:
-                column = (
-                    self.lcd.SCX
-                    + self.dot_x_counter
-                    + 8
-                    - (1 if self.lcd._is_cgb_hardware() and not self.dot_during_sprite_fetch else 0)
-                ) // 8 & 0b11111
+                row = (self.lcd.LY + self._dot_scy_sample()) & 0xFF
+                if self.lcd._is_cgb_hardware():
+                    scx = self.dot_scx_latched
+                else:
+                    scx = self.lcd.SCX
+                if self.dot_col_x == -1:
+                    column = scx >> 3
+                else:
+                    column = (scx + self.dot_col_x) // 8 & 0b11111
             self.dot_tilemap_addr = map_addr + column + (row // 8) * 32
-            self.dot_fetch_phase = 1
-        elif self.dot_fetch_phase == 1:
             if self.dot_cgb_window_glitch:
                 self.dot_fetch_phase = 2
             else:
@@ -2185,6 +2259,14 @@ class Renderer:
         if ret > 240:
             return 0
         return ret
+
+    def _dot_scy_sample(self):
+        # On CGB, SCY writes take effect two dots later, so the fetcher
+        # observes the value from one dot ago. On DMG, writes take effect
+        # immediately.
+        if self.lcd._is_cgb_hardware():
+            return self.dot_scy_reg
+        return self.lcd.SCY
 
     def dot_read_vram(self, addr):
         if addr & 0x2000:

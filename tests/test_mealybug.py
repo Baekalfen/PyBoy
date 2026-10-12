@@ -57,28 +57,10 @@ MEALYBUG_ROMS = [
 # what these tests target. They are xfailed until the PPU is improved, and
 # will show as XPASS once they start matching the expected images.
 DMG_KNOWN_FAILURES = {
-    "m3_bgp_change.gb",
-    "m3_bgp_change_sprites.gb",
-    "m3_lcdc_bg_en_change.gb",
-    "m3_lcdc_bg_map_change.gb",
-    "m3_lcdc_obj_en_change.gb",
-    "m3_lcdc_obj_en_change_variant.gb",
-    "m3_lcdc_obj_size_change.gb",
-    "m3_lcdc_obj_size_change_scx.gb",
     "m3_lcdc_tile_sel_change.gb",
     "m3_lcdc_tile_sel_win_change.gb",
-    "m3_lcdc_win_en_change_multiple.gb",
-    "m3_lcdc_win_en_change_multiple_wx.gb",
     "m3_lcdc_win_map_change.gb",
-    "m3_obp0_change.gb",
-    "m3_scx_high_5_bits.gb",
-    "m3_scx_low_3_bits.gb",
     "m3_scy_change.gb",
-    "m3_window_timing.gb",
-    "m3_window_timing_wx_0.gb",
-    "m3_wx_4_change.gb",
-    "m3_wx_4_change_sprites.gb",
-    "m3_wx_5_change.gb",
     "m3_wx_6_change.gb",
 }
 
@@ -86,9 +68,6 @@ CGB_KNOWN_FAILURES = {
     "m3_bgp_change.gb",
     "m3_bgp_change_sprites.gb",
     "m3_lcdc_bg_en_change.gb",
-    "m3_lcdc_bg_en_change2.gb",
-    "m3_lcdc_bg_map_change.gb",
-    "m3_lcdc_bg_map_change2.gb",
     "m3_lcdc_obj_en_change.gb",
     "m3_lcdc_obj_en_change_variant.gb",
     "m3_lcdc_obj_size_change.gb",
@@ -97,18 +76,7 @@ CGB_KNOWN_FAILURES = {
     "m3_lcdc_tile_sel_change2.gb",
     "m3_lcdc_tile_sel_win_change.gb",
     "m3_lcdc_tile_sel_win_change2.gb",
-    "m3_lcdc_win_en_change_multiple.gb",
-    "m3_lcdc_win_en_change_multiple_wx.gb",
     "m3_lcdc_win_map_change.gb",
-    "m3_lcdc_win_map_change2.gb",
-    "m3_obp0_change.gb",
-    "m3_scx_high_5_bits.gb",
-    "m3_scx_high_5_bits_change2.gb",
-    "m3_scx_low_3_bits.gb",
-    "m3_scy_change.gb",
-    "m3_scy_change2.gb",
-    "m3_window_timing.gb",
-    "m3_window_timing_wx_0.gb",
     "m3_wx_4_change.gb",
     "m3_wx_4_change_sprites.gb",
     "m3_wx_5_change.gb",
@@ -180,21 +148,31 @@ def apply_boot_logo_state(pyboy):
     pyboy.memory[0x994C] = 0
 
 
+# Reference images shipped with the repository take precedence over the
+# downloaded mirror. The upstream mealybug repository contains corrupt CGB
+# captures for m3_wx_4_change, m3_wx_5_change, m3_wx_6_change and
+# m3_lcdc_win_en_change_multiple_wx (all four files are identical), so
+# corrected references are vendored here instead.
+VENDORED_REFERENCES = Path(__file__).parent / "references"
+
+
 @pytest.mark.parametrize("cgb", [False, True], ids=["DMG", "CGB"])
 @pytest.mark.parametrize("rom", MEALYBUG_ROMS)
 def test_mealybug(cgb, rom, mealybug_dir, references_dir):
-    reference = Path(f"{references_dir}mealybug/{'cgb' if cgb else 'dmg'}/{rom[:-3]}.png")
+    mode = "cgb" if cgb else "dmg"
+    reference = VENDORED_REFERENCES / "mealybug" / mode / f"{rom[:-3]}.png"
+    if not reference.exists():
+        reference = Path(f"{references_dir}mealybug/{mode}/{rom[:-3]}.png")
     if not reference.exists():
         pytest.skip(f"No expected image for {rom} on {'CGB' if cgb else 'DMG'}")
 
     pyboy = PyBoy(mealybug_dir + rom, window="null", cgb=cgb)
     pyboy.set_emulation_speed(0)
     pyboy.tick(1, True)
-    if not cgb:
-        # The bundled boot ROM has finished its VRAM setup at this point, and
-        # the cartridge has not started yet. The real boot ROM would leave the
-        # Nintendo logo in VRAM here.
-        apply_boot_logo_state(pyboy)
+    # The bundled boot ROM has finished its VRAM setup at this point, and the
+    # cartridge has not started yet. The real boot ROM would leave the
+    # Nintendo logo in VRAM here, on both DMG and CGB hardware.
+    apply_boot_logo_state(pyboy)
     pyboy.tick(58, True)
     pyboy.tick(20, True)
     image = pyboy.screen.image
