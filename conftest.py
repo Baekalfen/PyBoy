@@ -46,6 +46,7 @@ DOCUMENTATION_IMAGES = (
 TEST_ARTIFACTS = (
     "frame.png",
     "state_file.state",
+    "state_file2.state",
     "tile_1.png",
 )
 
@@ -57,8 +58,10 @@ def url_open(url):
     for _ in range(5):
         try:
             request = urllib.request.Request(url, headers=headers)
-            return urllib.request.urlopen(request).read()
-        except urllib.error.URLError as ex:
+            # Without a timeout, a stalled connection blocks forever and
+            # hangs the test suite instead of failing it.
+            return urllib.request.urlopen(request, timeout=30).read()
+        except (urllib.error.URLError, TimeoutError) as ex:
             print("Error in url_open", url, ex)
             last_error = ex
             time.sleep(3)
