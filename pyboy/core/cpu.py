@@ -160,7 +160,6 @@ class CPU:
 
         if self.check_interrupts():
             self.halted = False
-            # TODO: Cycles it took to handle the interrupt
 
         if self.halted and self.interrupt_queued:
             # GBCPUman.pdf page 20
@@ -170,7 +169,7 @@ class CPU:
             self.PC += 1
             self.PC &= 0xFFFF
         elif self.halted:
-            self.cycles += cycles_target  # TODO: Number of cycles for a HALT in effect?
+            self.cycles += cycles_target
         self.interrupt_queued = False
 
         self.bail = False
