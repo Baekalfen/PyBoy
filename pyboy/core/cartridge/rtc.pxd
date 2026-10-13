@@ -32,6 +32,8 @@ cdef class RTC:
     cdef uint8_t hour_latch
     cdef uint8_t day_latch_low
     cdef uint8_t day_latch_high
+    cdef uint8_t halt_latch
+    cdef uint8_t day_carry_latch
     cdef uint64_t rtc_cycles
     cdef uint64_t last_cycles
 
