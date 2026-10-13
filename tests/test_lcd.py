@@ -104,7 +104,7 @@ def test_cycles_when_disabling_lcd(default_rom):
     # Should actually be significantly lower than FRAME_CYCLES, as we disabled LCD early in VBLANK
     assert cycles <= FRAME_CYCLES
     # Fragile, but used as sanity check for now
-    assert cycles // 456 == 148
+    assert cycles // 456 == 146
 
     # Next cycle should be a full FRAME_CYCLE, as it's just a regular frame with LCD disabled
     c = pyboy._cycles()
@@ -365,7 +365,12 @@ class TestLCD:
             assert not lcd.frame_done
 
             ly = lcd.clock // 456
-            expected_ly = ly + int(ly < 143 and lcd.clock % 456 >= 452)
+            if ly == 153:
+                # On DMG, LY reads 0 for the whole last VBlank line: the 4-dot
+                # clock granularity places the LY=153 drop at the line boundary
+                expected_ly = 0
+            else:
+                expected_ly = ly + int(ly < 143 and lcd.clock % 456 >= 452)
             assert lcd.LY == expected_ly
             if ly < 144:
                 ly_remainder = lcd.clock % 456

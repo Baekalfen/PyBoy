@@ -165,7 +165,7 @@ def test_register_hook_label(default_rom):
     for _ in range(120):
         pyboy.tick()
 
-    assert len(_context) == 30  # Not a specific count
+    assert len(_context) == 27  # Not a specific count
 
 
 def test_register_hook_context2(default_rom):

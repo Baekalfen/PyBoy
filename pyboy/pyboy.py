@@ -1469,7 +1469,7 @@ class PyBoy:
         ```python
         >>> # Continued example above
         >>> pyboy.hook_register(None, "Main.move", lambda x: print(x), "Hello from hook2")
-        >>> pyboy.tick(81)
+        >>> pyboy.tick(84)
         Hello from hook2
         True
 

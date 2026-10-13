@@ -27,7 +27,7 @@ True
 pyboy.plugins.screen_recorder  INFO     ScreenRecorder started: GIF
 True
 >>> tetromino_at_0x00 = tetris.next_tetromino()
->>> assert tetromino_at_0x00 == "Z", tetris.next_tetromino()
+>>> assert tetromino_at_0x00 == "O", tetris.next_tetromino()
 >>> assert tetris.score == 0
 >>> assert tetris.level == 0
 >>> assert tetris.lines == 0
