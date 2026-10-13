@@ -322,6 +322,13 @@ def main():
     ]
     image_suites = load_image_suites(statuses)
     suites = json_suites + image_suites
+    # Show Mealybug as the fourth suite, right after Mooneye, instead of its
+    # alphabetical position among the image suites
+    mooneye_index = next((i for i, s in enumerate(suites) if s["name"] == "Mooneye"), None)
+    mealybug = next((s for s in suites if s["name"] == "Mealybug"), None)
+    if mealybug is not None and mooneye_index is not None:
+        suites.remove(mealybug)
+        suites.insert(mooneye_index + 1, mealybug)
 
     lines = [
         "# Test results",
@@ -367,10 +374,12 @@ def main():
             "",
         )
     )
-    for suite in json_suites:
-        lines.extend(render_json_suite(suite))
-    for suite in image_suites:
-        lines.extend(render_image_suite(suite))
+    json_suite_names = {suite["name"] for suite in json_suites}
+    for suite in suites:
+        if suite["name"] in json_suite_names:
+            lines.extend(render_json_suite(suite))
+        else:
+            lines.extend(render_image_suite(suite))
 
     OUTPUT.write_text("\n".join(lines) + "\n")
 
