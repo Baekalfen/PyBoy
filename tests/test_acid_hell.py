@@ -14,7 +14,6 @@ from pyboy import PyBoy
 
 
 # https://github.com/mattcurrie/cgb-acid-hell
-@pytest.mark.xfail(reason="PPU timing differs from hardware")
 def test_cgb_acid_hell(cgb_acid_hell_file, references_dir):
     pyboy = PyBoy(cgb_acid_hell_file, window="null")
     pyboy.set_emulation_speed(0)
@@ -31,4 +30,5 @@ def test_cgb_acid_hell(cgb_acid_hell_file, references_dir):
         image.show()
         old_image.show()
         diff.show()
-    assert not diff.getbbox(), f"Images are different! {cgb_acid_hell_file}"
+    if diff.getbbox():
+        pytest.xfail("PPU timing differs from hardware")
