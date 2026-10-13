@@ -70,6 +70,8 @@ class LCD:
         self.stat_transition = STAT_TRANSITION_NONE
         self.stat_irq_delayed = False
         self.stat_irq_delivery_clock = 0
+        self.stat_mode_lag_bits = 0
+        self.stat_mode_lag_until = 0
         self.LY = 0x00
         self.mode3_extension = 0
         self.mode3_start_clock = 0
@@ -442,6 +444,9 @@ class LCD:
         cgb_hardware = self._is_cgb_hardware()
         sprite_line = 0 if mode == 1 else self.LY
         mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
+        # The STAT mode-3 and mode-0 lengths are the same in double speed as
+        # in normal speed; the mode bits readable from STAT lag the internal
+        # mode change instead [daid/speed_switch_timing_stat, tests/test_daid.py]
         normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
 
         if mode == 2:
@@ -554,6 +559,10 @@ class LCD:
                     self.frame_done = True
                     self.LY = 0
                     self.clock %= FRAME_CYCLES
+                    # The clock wrapped; the double-speed STAT mode-bit lag
+                    # book-keeping from the previous frame no longer compares
+                    # against it
+                    self.stat_mode_lag_until = 0
                     self.first_frame = False
                     self.clock_target = self.clock_target % FRAME_CYCLES + 80
                     self.next_stat_mode = 3
@@ -623,11 +632,20 @@ class LCD:
                 # HBlank by the same amount. The extension is capped so a
                 # stalled pipeline cannot lock up the LCD. Sprites at X >= 168
                 # never enter the fetch pipeline and must not extend mode 3.
+                # The mode-3 length is the same in double speed
+                # [daid/speed_switch_timing_stat, tests/test_daid.py].
                 self.mode3_extension += 4
                 self.clock_target += 4
 
             elif self._LCDC.lcd_enable:
                 # Change to next mode
+                if self.speed_shift:
+                    # In double speed, the mode bits read from STAT lag the
+                    # internal mode change by a few dots, while LY updates at
+                    # the mode change itself [daid/speed_switch_timing_stat,
+                    # tests/test_daid.py]
+                    self.stat_mode_lag_bits = self._STAT._mode & 0b11
+                    self.stat_mode_lag_until = self.clock_target + 2
                 if self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED:
                     self.stat_transition = STAT_TRANSITION_NONE
                     vblank_stat_pretriggered = True
@@ -709,6 +727,15 @@ class LCD:
                             self.next_stat_mode = 2
                             self.stat_transition = STAT_TRANSITION_ADVANCE_LY
                         else:
+                            # On CGB hardware the first frame is a full
+                            # 456*154 dots long, unlike the DMG startup line
+                            # that is eight dots short. The vblank begins
+                            # eight dots later than the frame's internal
+                            # line structure suggests, keeping the line grid
+                            # 456-aligned from the LCD-on instant
+                            # [daid/speed_switch_timing_ly/stat, tests/test_daid.py]
+                            if self._is_cgb_hardware():
+                                self.clock_target += 8
                             self.next_stat_mode = 1
                             self.stat_transition = STAT_TRANSITION_NONE
                     elif self._is_cgb_hardware():
@@ -798,6 +825,18 @@ class LCD:
         cycles_to_interrupt = self.clock_target - self.clock
         if self._should_pretrigger_vblank_stat():
             cycles_to_interrupt -= 4
+        elif (
+            self._LCDC.lcd_enable
+            and self._is_cgb_hardware()
+            and self._STAT._mode == 0
+            and self.LY == 143
+            and self.next_stat_mode == 1
+        ):
+            # The VBlank interrupt is requested at the LY 144 mode-1
+            # transition, but the interrupt dispatch and a HALT wake land on
+            # a CPU machine cycle boundary a few dots later; four dots in
+            # this window [daid/speed_switch_timing_ly/stat, tests/test_daid.py]
+            cycles_to_interrupt += 4
         if self.stat_irq_delayed:
             cycles_to_interrupt = min(cycles_to_interrupt, self.stat_irq_delivery_clock - self.clock)
         self._cycles_to_interrupt = cycles_to_interrupt << self.speed_shift
@@ -929,6 +968,17 @@ class LCD:
                 and self.clock_target - self.clock >= 4
             ):
                 self._cycles_to_interrupt -= 4 << self.speed_shift
+            elif (
+                self._LCDC.lcd_enable
+                and self._is_cgb_hardware()
+                and self._STAT._mode == 0
+                and self.LY == 143
+                and self.next_stat_mode == 1
+            ):
+                # The VBlank interrupt dispatch lands four dots after the
+                # LY 144 mode-1 transition [daid/speed_switch_timing_ly/stat,
+                # tests/test_daid.py]
+                self._cycles_to_interrupt += 4 << self.speed_shift
 
             if self.cgb:
                 for n in range(VIDEO_RAM):

@@ -627,6 +627,11 @@ class Motherboard:
                     return self.lcd._LCDC.value
                 elif i == 0xFF41:
                     value = self.lcd._STAT.value
+                    if self.lcd.stat_mode_lag_until > self.lcd.clock:
+                        # In double speed, the mode bits lag the internal
+                        # mode change by 4 dots
+                        # [daid/speed_switch_timing_stat, tests/test_daid.py]
+                        value = (value & ~0b11) | self.lcd.stat_mode_lag_bits
                     if self.lcd.stat_mode_override:
                         self.lcd.stat_mode_override = False
                         value &= 0b1111_1100
