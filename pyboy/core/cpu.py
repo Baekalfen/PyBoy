@@ -39,6 +39,7 @@ class CPU:
         self.halted_during_ei = False
         self.stopped = False
         self.cycles = 0
+        self.speed_switch_halt = 0
 
     def save_state(self, f):
         for n in [self.A, self.F, self.B, self.C, self.D, self.E]:
@@ -55,6 +56,7 @@ class CPU:
         f.write(self.interrupt_queued)
         f.write(self.interrupts_flag_register)
         f.write_64bit(self.cycles)
+        f.write_64bit(self.speed_switch_halt)
 
     def load_state(self, f, state_version):
         self.A, self.F, self.B, self.C, self.D, self.E = [f.read() for _ in range(6)]
@@ -77,6 +79,10 @@ class CPU:
             self.interrupts_flag_register = f.read()
         if state_version >= 12:
             self.cycles = f.read_64bit()
+        if state_version >= 30:
+            self.speed_switch_halt = f.read_64bit()
+        else:
+            self.speed_switch_halt = 0
         logger.debug("State loaded: %s", self.dump_state([""]))
 
     def dump_state(self, sym_labels):
@@ -134,6 +140,23 @@ class CPU:
             self.bail = False
             self.cycles += cycles_target
             return 0
+
+        if self.speed_switch_halt:
+            # A CGB speed switch halts the CPU for a fixed number of cycles
+            # while the timer, PPU, APU and DMA keep running. An interrupt
+            # ends the pause early. The STOP that started the pause may have
+            # consumed cycles of the current window already, so only the
+            # window's remainder is available to the pause.
+            if self.check_interrupts():
+                self.speed_switch_halt = 0
+                self.halted = False
+            else:
+                advance = min(_target - self.cycles, self.speed_switch_halt)
+                self.cycles += advance
+                self.speed_switch_halt -= advance
+                if self.speed_switch_halt:
+                    return 0
+                # The pause ended mid-window; execute the rest of it below
 
         if self.check_interrupts():
             self.halted = False

@@ -24,29 +24,37 @@ def dmg_shade_classes(image):
     return PIL.Image.frombytes("L", image.size, bytes(classes))
 
 
+def cgb_color_classes(image):
+    # The CGB palette RAM stores 5 bits per channel. The hardware capture
+    # expands them to 8 bits with a different scale than PyBoy, so compare
+    # the underlying 5-bit values instead of the exact RGB values
+    pixels = image.convert("RGB").tobytes()
+    return PIL.Image.frombytes("RGB", image.size, bytes(value >> 3 for value in pixels))
+
+
 # https://github.com/gbdev/GBEmulatorShootout/tree/main/testroms/daid
-# (rom, cgb, frames, reference images, real boot ROM, shade-class comparison,
-#  expected-failure reason. A case that produces a different image xfails with
-#  its reason instead of failing, so the test keeps exercising the emulator)
+# (rom, cgb, frames, reference images, comparison mode, expected-failure
+#  reason. A case that produces a different image xfails with its reason
+#  instead of failing, so the test keeps exercising the emulator)
 DAID_IMAGE_CASES = [
     pytest.param(
         "ppu_scanline_bgp.gb",
         False,
+        # The real boot ROM alone takes over a hundred frames before the game
+        # reaches its main loop
         360,
         # The reference differs between hardware revisions (DMG, MGB, CGB in DMG mode); match any
         ["ppu_scanline_bgp_0.dmg.png", "ppu_scanline_bgp_1.dmg.png", "ppu_scanline_bgp_2.dmg.png"],
-        True,
-        True,
+        "dmg-shades",
         None,
         id="ppu_scanline_bgp-DMG",
     ),
     pytest.param(
         "ppu_scanline_bgp.gb",
         True,
-        120,
+        360,
         ["ppu_scanline_bgp.gbc.png"],
-        False,
-        False,
+        "exact",
         # The write grid phase and the loop's data-row mapping now match the
         # capture; every shade transition still renders one dot late, but
         # the write landing is pinned to its current dot by the mealybug
@@ -57,103 +65,92 @@ DAID_IMAGE_CASES = [
     pytest.param(
         "speed_switch_timing_div.gbc",
         True,
-        120,
+        360,
         ["speed_switch_timing_div.png"],
-        False,
-        False,
-        "DIV behavior on speed switch differs from hardware",
+        "cgb-colors",
+        None,
         id="speed_switch_timing_div",
     ),
     pytest.param(
         "speed_switch_timing_ly.gbc",
         True,
-        120,
+        360,
         ["speed_switch_timing_ly.png"],
-        False,
-        False,
-        "LY behavior on speed switch differs from hardware",
+        "cgb-colors",
+        None,
         id="speed_switch_timing_ly",
     ),
     pytest.param(
         "speed_switch_timing_stat.gbc",
         True,
-        120,
+        360,
         ["speed_switch_timing_stat.png"],
-        False,
-        False,
-        "STAT behavior on speed switch differs from hardware",
+        "cgb-colors",
+        None,
         id="speed_switch_timing_stat",
     ),
     pytest.param(
         "stop_instr.gb",
         False,
-        # The DMG boot ROM alone takes over a hundred frames before the game
-        # reaches its STOP
         360,
         ["stop_instr.dmg.png"],
-        True,
-        True,
+        "dmg-shades",
         None,
         id="stop_instr-DMG",
     ),
     pytest.param(
         "stop_instr.gb",
         True,
-        120,
+        360,
         ["stop_instr.gbc.png"],
-        False,
-        False,
+        "exact",
         None,
         id="stop_instr-CGB",
     ),
     pytest.param(
         "stop_instr_gbc_mode3.gb",
         True,
-        120,
+        360,
         ["stop_instr_gbc_mode3.png"],
-        False,
-        False,
+        "exact",
         # The STOP behavior matches the capture: the CPU stays stopped and the
-        # PPU keeps displaying the last state. The reference was captured with
-        # a clean tilemap, while PyBoy's internal boot ROM leaves its
-        # synthetic logo tiles in the rows the game does not overwrite.
-        "Internal CGB boot ROM logo tiles remain in the tilemap; hardware capture has a clean tilemap",
+        # PPU keeps displaying the last state. The boot ROM's logo tiles remain
+        # in the tilemap rows the game does not overwrite, while the capture
+        # rig skipped the logo.
+        "Boot ROM logo tiles remain in the tilemap; the hardware capture has a clean tilemap",
         id="stop_instr_gbc_mode3",
     ),
 ]
 
 
-@pytest.fixture(scope="session")
-def dmg_boot_rom(secrets):
-    # The daid image tests that reflect DMG hardware captures need the real
-    # boot ROM; the bundled one does not run the PPU in the same way
-    path = Path(secrets) / "DMG_ROM.bin"
-    if not path.exists():
-        pytest.skip("DMG boot ROM not available")
-    return str(path)
-
-
-@pytest.mark.parametrize(
-    "rom, cgb, frames, references, use_bootrom, shade_class_compare, xfail_reason", DAID_IMAGE_CASES
-)
+@pytest.mark.parametrize("rom, cgb, frames, references, compare_mode, xfail_reason", DAID_IMAGE_CASES)
 def test_daid_image(
-    rom, cgb, frames, references, use_bootrom, shade_class_compare, xfail_reason, daid_dir, references_dir, dmg_boot_rom
+    rom, cgb, frames, references, compare_mode, xfail_reason, daid_dir, references_dir, boot_rom, boot_cgb_rom
 ):
-    # The CGB references were captured on a CGB in DMG compatibility mode, with
-    # its green monochrome palette. The darkest shade reads 0x0063C6 on the
-    # capture, one bit off PyBoy's default 0x0063C5.
+    # The DMG-compat references were captured on a CGB in DMG compatibility
+    # mode, with its green monochrome palette. The darkest shade reads 0x0063C6
+    # on the capture, one bit off PyBoy's default 0x0063C5. In CGB mode the
+    # palette comes from the color palette RAM that the boot ROM initializes.
     cgb_palette = {"cgb_color_palette": ((0xFFFFFF, 0x7BFF31, 0x0063C6, 0x000000),) * 3} if cgb else {}
-    pyboy = PyBoy(daid_dir + rom, window="null", cgb=cgb, bootrom=dmg_boot_rom if use_bootrom else None, **cgb_palette)
+    pyboy = PyBoy(
+        daid_dir + rom,
+        window="null",
+        cgb=cgb,
+        bootrom=boot_cgb_rom if cgb else boot_rom,
+        **cgb_palette,
+    )
     pyboy.set_emulation_speed(0)
     pyboy.tick(frames, True)
 
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
 
-    if shade_class_compare:
-        # The references are captured from hardware with its own shade
-        # mapping, so compare shade classes instead of exact RGB values
+    # The class comparison is not idempotent, so reduce the render to shade
+    # classes once and each reference separately
+    if compare_mode == "dmg-shades":
         image = dmg_shade_classes(image)
+    elif compare_mode == "cgb-colors":
+        image = cgb_color_classes(image)
 
     best_diff = None
     best_diff_pixels = None
@@ -161,8 +158,10 @@ def test_daid_image(
         png_path = Path(f"{references_dir}daid/{reference}")
         assert png_path.exists(), "Reference image doesn't exist"
         old_image = PIL.Image.open(png_path).convert("RGB")
-        if shade_class_compare:
+        if compare_mode == "dmg-shades":
             old_image = dmg_shade_classes(old_image)
+        elif compare_mode == "cgb-colors":
+            old_image = cgb_color_classes(old_image)
         diff = ImageChops.difference(image, old_image)
         diff_pixels = sum(1 for value in diff.tobytes() if value)
         if best_diff_pixels is None or diff_pixels < best_diff_pixels:

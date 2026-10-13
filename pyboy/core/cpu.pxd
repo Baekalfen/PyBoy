@@ -32,6 +32,7 @@ cdef class CPU:
     cdef uint8_t interrupts_flag, interrupts_enabled, interrupts_flag_register, interrupts_enabled_register
 
     cdef int64_t cycles
+    cdef int64_t speed_switch_halt
     cdef inline int check_interrupts(self) noexcept nogil
 
     @cython.final

@@ -515,7 +515,10 @@ class OpcodeData:
         return code.getcode()
 
     def STOP(self):
-        code = Code(self.name.split()[0], self.opcode, self.name, True, self.length, self.cycles)
+        # STOP charges its own cycles per branch: 16 for the CGB speed switch,
+        # 4 otherwise, so the default cycle line is suppressed like for the
+        # branch operations
+        code = Code(self.name.split()[0], self.opcode, self.name, True, self.length, self.cycles, branch_op=True)
         code.addlines(
             [
                 "if cpu.mb.cgb:",
@@ -526,15 +529,33 @@ class OpcodeData:
                 "    # accessing VRAM, so the screen keeps displaying the last state;",
                 "    # otherwise the PPU loses its VRAM access and renders black",
                 "    # [daid/stop_instr, daid/stop_instr_gbc_mode3].",
+                "    # Charges the STOP's own cycles: 16 for the speed switch, 4 otherwise",
                 "    if cpu.mb.key1 & 0b1:",
+                "        # STOP reads the byte after it as its second M-cycle, and DIV",
+                "        # resets at the end of the next M-cycle, where the speed switch",
+                "        # also takes effect [Age/spsw-stop-prefetch, Age/spsw-div]. The",
+                "        # switch then completes over the following machine cycle at the",
+                "        # new speed. The CPU is halted for $8000 machine cycles at the",
+                "        # new speed while the timer, PPU, APU and DMA keep running",
+                "        # [Age/spsw-div]. That is $20000 DIV counts, so DIV is back at 0",
+                "        # when the CPU resumes. An interrupt ends the halt early.",
+                "        cpu.cycles += 12",
                 "        cpu.mb.switch_speed()",
                 "        cpu.mb.setitem(0xFF04, 0)",
+                "        # The switch completes over the following machine cycle at the",
+                "        # new speed",
+                "        cpu.cycles += 4",
+                "        cpu.speed_switch_halt = 0x20000",
+                "        # End the instruction window here so the halt takes effect from",
+                "        # the STOP itself",
+                "        cpu.bail = True",
                 "    else:",
                 "        cpu.stopped = True",
                 "        cpu.bail = True",
                 "        if cpu.mb.lcd._STAT._mode != 3:",
                 "            cpu.mb.lcd.renderer.stop_vram_blocked = True",
                 "            cpu.mb.lcd.renderer.blank_screen_color(cpu.mb.lcd.bcpd.cgb_to_rgb(0, 0))",
+                "        cpu.cycles += 4",
                 "else:",
                 "    # STOP on DMG halts the system clock: the CPU stays stopped until a",
                 "    # joypad button press, DIV is reset (the divider only resumes when",
@@ -543,6 +564,9 @@ class OpcodeData:
                 "    cpu.stopped = True",
                 "    cpu.mb.setitem(0xFF04, 0)",
                 "    cpu.bail = True",
+                "    cpu.cycles += 4",
+                "cpu.PC += 2",
+                "cpu.PC &= 0xFFFF",
             ]
         )
         return code.getcode()

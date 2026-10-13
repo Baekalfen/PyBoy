@@ -44,6 +44,8 @@ cdef class LCD:
     cdef uint8_t stat_transition
     cdef bint stat_irq_delayed
     cdef uint64_t stat_irq_delivery_clock
+    cdef uint8_t stat_mode_lag_bits
+    cdef uint64_t stat_mode_lag_until
     cdef bint frame_done
     cdef bint first_frame
     cdef bint reset
