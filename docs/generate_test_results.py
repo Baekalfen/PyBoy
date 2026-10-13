@@ -35,6 +35,7 @@ SUITE_TEST_FILES = {
     "CGB Acid Hell": ("tests/test_acid_hell.py",),
     "CasualPokePlayer": ("tests/test_cpp.py",),
     "Daid": ("tests/test_daid.py",),
+    "GB Printer": ("tests/test_printer.py",),
     "Mealybug": ("tests/test_mealybug.py",),
 }
 
@@ -159,6 +160,8 @@ def image_suite_name(path):
         }.get(relative.parts[0], relative.parts[0])
     if "acid2" in path.name:
         return "Acid2"
+    if path.name == "print_gbprinter.png":
+        return "GB Printer"
     if path.name.startswith("sound_swoosh_"):
         return "Sound swoosh"
     return "Image results"
@@ -203,9 +206,20 @@ def image_test_status(path, suite_name, statuses):
     if suite_name == "CasualPokePlayer":
         return junit_status_prefix(statuses, "tests.test_cpp", f"test_cpp[{path.stem}-")
     if suite_name == "Daid":
-        is_cgb = path.name.endswith(".cgb.png")
-        rom = path.name.removesuffix(".cgb.png" if is_cgb else ".dmg.png")
-        return junit_status_prefix(statuses, "tests.test_daid", f"test_daid_image[{rom}-{is_cgb}-")
+        # The daid cases use the custom parametrized ids from tests/test_daid.py
+        daid_ids = {
+            "ppu_scanline_bgp.gb.dmg.png": "ppu_scanline_bgp-DMG",
+            "ppu_scanline_bgp.gb.cgb.png": "ppu_scanline_bgp-CGB",
+            "speed_switch_timing_div.gbc.cgb.png": "speed_switch_timing_div",
+            "speed_switch_timing_ly.gbc.cgb.png": "speed_switch_timing_ly",
+            "speed_switch_timing_stat.gbc.cgb.png": "speed_switch_timing_stat",
+            "stop_instr.gb.dmg.png": "stop_instr-DMG",
+            "stop_instr.gb.cgb.png": "stop_instr-CGB",
+            "stop_instr_gbc_mode3.gb.cgb.png": "stop_instr_gbc_mode3",
+        }
+        return junit_status(statuses, "tests.test_daid", f"test_daid_image[{daid_ids.get(path.name)}]")
+    if suite_name == "GB Printer":
+        return junit_status(statuses, "tests.test_printer", "test_printer_rom")
     if suite_name == "Mealybug":
         is_cgb = path.name.endswith(".cgb.png")
         rom = path.name.removesuffix(".cgb.png" if is_cgb else ".dmg.png")
