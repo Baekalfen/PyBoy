@@ -47,7 +47,11 @@ DAID_IMAGE_CASES = [
         ["ppu_scanline_bgp.gbc.png"],
         False,
         False,
-        "CGB BGP change lands 16 dots early on the LYC-STAT halted dispatch path",
+        # The write grid phase and the loop's data-row mapping now match the
+        # capture; every shade transition still renders one dot late, but
+        # the write landing is pinned to its current dot by the mealybug
+        # CGB captures, so the remaining dot needs finer modeling.
+        "Every shade transition renders one dot late; the write landing is pinned by the mealybug CGB captures",
         id="ppu_scanline_bgp-CGB",
     ),
     pytest.param(
