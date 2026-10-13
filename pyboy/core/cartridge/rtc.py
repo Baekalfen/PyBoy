@@ -33,6 +33,8 @@ class RTC:
         self.hour_latch = 0
         self.day_latch_low = 0
         self.day_latch_high = 0
+        self.halt_latch = 0
+        self.day_carry_latch = 0
 
         if rtc_file is not None:
             self.load_state(IntIOWrapper(rtc_file), STATE_VERSION)
@@ -176,6 +178,8 @@ class RTC:
             self.hour_latch = 0
             self.day_latch_low = 0
             self.day_latch_high = 0
+            self.halt_latch = 0
+            self.day_carry_latch = 0
             return
 
         self.sec_latch = self.seconds & 0x3F
@@ -183,6 +187,8 @@ class RTC:
         self.hour_latch = self.hours & 0x1F
         self.day_latch_low = self.day_low
         self.day_latch_high = self.day_high & 1
+        self.halt_latch = self.halt & 1
+        self.day_carry_latch = self.day_carry & 1
 
     def tick(self, cycles):
         now = time.time()
@@ -206,14 +212,10 @@ class RTC:
         self._advance_seconds(elapsed_seconds)
 
     def writecommand(self, value):
-        if value == 0x00:
-            self.latch_enabled = False
-        elif value == 0x01:
-            if not self.latch_enabled:
-                self.latch_rtc()
-            self.latch_enabled = True
-        else:
-            logger.debug("Invalid RTC command: %0.2x", value)
+        # The MBC3 latches the RTC registers on any write to $6000,
+        # regardless of the written value.
+        self.latch_rtc()
+        self.latch_enabled = True
 
     def getregister(self, register):
         if not self.latch_enabled:
@@ -229,8 +231,8 @@ class RTC:
             return self.day_latch_low
         elif register == 0x0C:
             day_high = self.day_latch_high & 0b1
-            halt = self.halt << 6
-            day_carry = self.day_carry << 7
+            halt = self.halt_latch << 6
+            day_carry = self.day_carry_latch << 7
             return day_high + halt + day_carry
         else:
             logger.debug("Invalid RTC register: %0.4x", register)

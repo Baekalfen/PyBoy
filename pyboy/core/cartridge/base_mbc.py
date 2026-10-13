@@ -143,6 +143,9 @@ class BaseMBC:
 
             if self.rtc_enabled and 0x08 <= self.rambank_selected <= 0x0C:
                 return self.rtc.getregister(self.rambank_selected)
+            elif self.rambank_selected >= self.external_ram_count:
+                # Bank values beyond the cartridge's RAM size read open bus
+                return 0xFF
             else:
                 return self.rambanks[self.rambank_selected, address - 0xA000]
         # else:

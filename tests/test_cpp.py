@@ -15,13 +15,9 @@ from pyboy import PyBoy
 # https://github.com/CasualPokePlayer/test-roms
 CPP_CASES = [
     pytest.param("ramg-mbc3-test.gb", 120),
-    pytest.param("latch-rtc-test.gb", 120, marks=pytest.mark.xfail(reason="RTC latch behavior differs from hardware")),
-    pytest.param(
-        "rtc-invalid-banks-test.gb",
-        120,
-        marks=pytest.mark.xfail(reason="RTC invalid bank handling differs from hardware"),
-    ),
-    pytest.param("sgb-ext-test.gb", 600, marks=pytest.mark.xfail(reason="SGB features are not emulated")),
+    pytest.param("latch-rtc-test.gb", 120),
+    pytest.param("rtc-invalid-banks-test.gb", 120),
+    pytest.param("sgb-ext-test.gb", 600, marks=pytest.mark.skip(reason="SGB features are not emulated")),
 ]
 
 
