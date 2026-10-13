@@ -80,11 +80,12 @@ DAID_IMAGE_CASES = [
     pytest.param(
         "stop_instr.gb",
         False,
-        120,
+        # The DMG boot ROM alone takes over a hundred frames before the game
+        # reaches its STOP
+        360,
         ["stop_instr.dmg.png"],
-        False,
-        False,
-        marks=pytest.mark.xfail(reason="STOP does not stop the PPU as on DMG hardware"),
+        True,
+        True,
         id="stop_instr-DMG",
     ),
     pytest.param(
@@ -94,7 +95,6 @@ DAID_IMAGE_CASES = [
         ["stop_instr.gbc.png"],
         False,
         False,
-        marks=pytest.mark.xfail(reason="STOP does not behave as on CGB hardware"),
         id="stop_instr-CGB",
     ),
     pytest.param(
@@ -104,7 +104,13 @@ DAID_IMAGE_CASES = [
         ["stop_instr_gbc_mode3.png"],
         False,
         False,
-        marks=pytest.mark.xfail(reason="STOP during mode 3 does not behave as on CGB hardware"),
+        # The STOP behavior matches the capture: the CPU stays stopped and the
+        # PPU keeps displaying the last state. The reference was captured with
+        # a clean tilemap, while PyBoy's internal boot ROM leaves its
+        # synthetic logo tiles in the rows the game does not overwrite.
+        marks=pytest.mark.xfail(
+            reason="Internal CGB boot ROM logo tiles remain in the tilemap; hardware capture has a clean tilemap"
+        ),
         id="stop_instr_gbc_mode3",
     ),
 ]

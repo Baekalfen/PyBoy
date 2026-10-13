@@ -322,6 +322,10 @@ cdef class Renderer:
     cdef bint dot_bgp_mode3_write
     cdef uint8_t dot_bgp_mode3_old
     cdef uint8_t dot_bgp_mode3_new
+    # STOP on CGB halts the CPU while the PPU keeps running, but the PPU
+    # cannot access VRAM, so the renderer stays frozen at its blanked
+    # black screen
+    cdef bint stop_vram_blocked
     # The OBJ size bit as sampled one dot ago. On CGB the sprite fetcher
     # observes LCDC size writes two dots after the write dot
     cdef bint dot_objsize_prev
@@ -465,6 +469,8 @@ cdef class Renderer:
     cdef void invalidate_tile(self, int, int) noexcept nogil
 
     cdef void blank_screen(self) noexcept nogil
+
+    cdef void blank_screen_color(self, uint32_t color) noexcept nogil
 
 
     @cython.locals(

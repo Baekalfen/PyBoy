@@ -207,8 +207,30 @@ def RRCA_0F(cpu): # 0F RRCA
 
 def STOP_10(cpu, v): # 10 STOP 0
     if cpu.mb.cgb:
-        cpu.mb.switch_speed()
+        # On CGB, STOP with a speed switch requested performs the switch and
+        # continues. Without one, the CPU stays stopped until a joypad button
+        # press while the system clock keeps running. A STOP landing while
+        # the PPU is fetching in mode 3 halts the CPU with the PPU still
+        # accessing VRAM, so the screen keeps displaying the last state;
+        # otherwise the PPU loses its VRAM access and renders black
+        # [daid/stop_instr, daid/stop_instr_gbc_mode3].
+        if cpu.mb.key1 & 0b1:
+            cpu.mb.switch_speed()
+            cpu.mb.setitem(0xFF04, 0)
+        else:
+            cpu.stopped = True
+            cpu.bail = True
+            if cpu.mb.lcd._STAT._mode != 3:
+                cpu.mb.lcd.renderer.stop_vram_blocked = True
+                cpu.mb.lcd.renderer.blank_screen_color(cpu.mb.lcd.bcpd.cgb_to_rgb(0, 0))
+    else:
+        # STOP on DMG halts the system clock: the CPU stays stopped until a
+        # joypad button press, DIV is reset (the divider only resumes when
+        # STOP mode ends), and the unpowered LCD shows its undriven shade-0
+        # state.
+        cpu.stopped = True
         cpu.mb.setitem(0xFF04, 0)
+        cpu.bail = True
     cpu.PC += 2
     cpu.PC &= 0xFFFF
     cpu.cycles += 4
