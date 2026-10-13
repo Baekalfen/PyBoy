@@ -22,7 +22,7 @@ cdef int DOT_MODE3_RENDER_DELAY
 cdef uint32_t COL0_FLAG, BG_PRIORITY_FLAG
 cdef uint8_t CGB_NUM_PALETTES
 cdef uint8_t STAT_TRANSITION_NONE, STAT_TRANSITION_ADVANCE_LY, STAT_TRANSITION_START_MODE2
-cdef uint8_t STAT_TRANSITION_VBLANK_PRETRIGGERED
+cdef uint8_t STAT_TRANSITION_VBLANK_PRETRIGGERED, STAT_TRANSITION_LY153_WRAP
 
 cdef Logger logger
 
@@ -86,7 +86,7 @@ cdef class LCD:
     @final
     cdef uint8_t write_lcdc(self, uint8_t) noexcept nogil
     @final
-    cdef void write_bgp(self, uint8_t) noexcept nogil
+    cdef void write_bgp(self, uint8_t, int64_t) noexcept nogil
     @final
     cdef void write_obp(self, uint8_t, uint8_t) noexcept nogil
     @final
@@ -311,6 +311,17 @@ cdef class Renderer:
     # new value from two dots after the write dot).
     cdef int dot_scy_prev
     cdef int dot_scy_reg
+    # DMG: the pixel mixer shades each pixel with the BGP value sampled 12
+    # dots before the pixel's pop dot, so a mid-scanline BGP write first
+    # becomes visible 13 dots after the write dot. The ring stores one
+    # sample per renderer dot, indexed modulo 32; each sample ORs in the
+    # previous dot's value, so the pixel whose fetch coincides with the
+    # write dot shades with the old and new palettes ORed.
+    cdef uint8_t dot_bgp_ring[32]
+    cdef uint8_t dot_bgp_prev
+    cdef bint dot_bgp_mode3_write
+    cdef uint8_t dot_bgp_mode3_old
+    cdef uint8_t dot_bgp_mode3_new
     # The OBJ size bit as sampled one dot ago. On CGB the sprite fetcher
     # observes LCDC size writes two dots after the write dot
     cdef bint dot_objsize_prev

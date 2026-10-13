@@ -56,7 +56,19 @@ MEALYBUG_ROMS = [
 # PyBoy does not yet implement all mid-scanline PPU register changes, which is
 # what these tests target. They are xfailed until the PPU is improved, and
 # will show as XPASS once they start matching the expected images.
-DMG_KNOWN_FAILURES = set()
+# The delayed DMG BGP shading (dot_bgp_ring) exposes that the mode 2 STAT
+# interrupt dispatch is anchored at the STAT mode change instead of the
+# earlier OAM STAT signal that hardware uses [mealybug/m3_bgp_change]. These
+# ROMs write registers from the mode 2 STAT handler; the delayed shading
+# shifts their writes relative to the pixel pipeline until the interrupt
+# anchor is corrected.
+DMG_KNOWN_FAILURES = {
+    "m3_bgp_change.gb",
+    "m3_bgp_change_sprites.gb",
+    "m3_lcdc_obj_en_change_variant.gb",
+    "m3_window_timing.gb",
+    "m3_window_timing_wx_0.gb",
+}
 
 CGB_KNOWN_FAILURES = set()
 

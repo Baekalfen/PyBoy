@@ -11,8 +11,7 @@ You're allowed to run limited tests without compiling for increased visibility.
 Always add a timeout of 2-5 minutes when running pytests. It can easily get stuck during development.
 Always run tests with TEST_VERBOSE_IMAGES=0 when run in the background and with TEST_NO_UI=1 when not specifically UI related.
 Whenever the given task completes, rerun the entire testsuite.
-The SameBoy repo is an excellent source of a really precise Game Boy emulator. But DO NOT COPY ITS CODE, only use it as reference https://github.com/LIJI32/SameBoy
-The Gambatte repo can also be a good source. But DO NOT COPY ITS CODE, only use it as reference https://github.com/gb-archive/gambatte/tree/master
+The SameBoy, Gambatte and docboy repos are an excellent source of really precise Game Boy emulators. But DO NOT COPY THEIR CODE, only use it as reference https://github.com/LIJI32/SameBoy, https://github.com/gb-archive/gambatte/tree/master, https://github.com/Docheinstein/docboy
 The Pan Docs are really good for a detailed source of information as well, although not as thorough https://gbdev.io/pandocs/
 Additional resources can also be found here: https://gbdev.io/resources.html
 Use the internet to find disassemblies or the source code of ROMs when applicable.

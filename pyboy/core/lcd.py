@@ -21,6 +21,7 @@ STAT_TRANSITION_NONE = 0
 STAT_TRANSITION_ADVANCE_LY = 1
 STAT_TRANSITION_START_MODE2 = 2
 STAT_TRANSITION_VBLANK_PRETRIGGERED = 3
+STAT_TRANSITION_LY153_WRAP = 4
 
 # The dot-accurate renderer lags the STAT mode 3 signal by this many dots. The
 # pixel pipeline first runs a discarded fetch and then the first real fetch,
@@ -271,29 +272,41 @@ class LCD:
             self.renderer.dot_last_pixel_sprite_raw = -1
         return lcd_interrupt
 
-    def write_bgp(self, value):
+    def write_bgp(self, value, cpu_cycles):
         old_bgp = self.BGP.get()
         self.BGP.set(value)
-        # DMG write glitch: a mid-scanline BGP write recolors the
-        # pixel colored on the exact dot of the write with the
-        # bitwise OR of the old and new palette shades. The final
-        # pixels of the line are colored a few dots into HBlank,
-        # so the write can also land while STAT already reads
-        # mode 0. On CGB the write instead lands one cycle early
-        # (handled through the write bus sync in the motherboard),
-        # and the write's dot observes the new palette with no glitch.
         if (
             not self._is_cgb_hardware()
-            and (self._STAT._mode == 3 or self._STAT._mode == 0)
-            and self.renderer.dot_ly == self.LY
-            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
-            and self.renderer.dot_last_pixel_raw >= 0
-            and self.renderer.dot_last_pixel_sprite_raw < 0
+            and self._LCDC.lcd_enable
+            and (
+                (
+                    self._STAT._mode == 2
+                    and self.clock + (cpu_cycles - self.last_cycles) == self.clock_target
+                )
+                or (
+                    self._STAT._mode == 3
+                    and self.renderer.dot_ly == self.LY
+                    and self.renderer.dot_dots_elapsed == 0
+                )
+            )
         ):
-            raw = self.renderer.dot_last_pixel_raw
-            # The glitch ORs the old and new 2-bit color values
-            shade = ((old_bgp >> (raw << 1)) & 3) | ((value >> (raw << 1)) & 3)
-            self.renderer._screenbuffer[self.LY, self.renderer.dot_last_pixel_x] = self.BGP.palette_mem_rgb[shade]
+            # A BGP write landing on or just before the line's
+            # first renderer dot hits the pre-line samples that
+            # the first pixels of the line read (ring slots
+            # 29-31): on hardware it is visible as the write-dot
+            # OR at the second pixel. Record it for the ring
+            # seeding instead of letting it absorb into the base.
+            self.renderer.dot_bgp_mode3_write = True
+            self.renderer.dot_bgp_mode3_old = old_bgp
+            self.renderer.dot_bgp_mode3_new = value
+        # On DMG the pixel mixer shades each pixel with the BGP
+        # sampled 12 dots before the pop dot (see dot_bgp_ring),
+        # so a mid-scanline write first becomes visible 13 dots
+        # after the write dot, and the write dot's pixel shades
+        # with the old and new palettes ORed. On CGB the write
+        # lands one cycle early (handled through the write bus
+        # sync in the motherboard) and the write's dot observes
+        # the new palette.
 
     def write_obp(self, index, value):
         if index == 0:
@@ -515,7 +528,7 @@ class LCD:
                 self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
-            elif self._LCDC.lcd_enable and self.LY == 153:
+            elif self._LCDC.lcd_enable and (self.LY == 153 or self.stat_transition == STAT_TRANSITION_LY153_WRAP):
                 # The dot renderer's pipeline state is dead once the frame
                 # wraps; neutralize it so a state saved here loads into a
                 # fresh renderer identically. The mode-3 anchors are dead
@@ -732,6 +745,20 @@ class LCD:
                             # When re-enabling the LCD, the PPU will immediately start drawing again, but the screen
                             # will stay blank during the first frame.
                             self.renderer.blank_screen()
+                    elif self.LY == 153 and not self.first_frame and not self._is_cgb_hardware():
+                        # On DMG, LY reads 0 already from dot 2 of the last
+                        # VBlank line, and the LYC=LY comparison is inhibited
+                        # until dot 7. A LYC=0 STAT interrupt therefore
+                        # fires during line 153, one scanline before line 0
+                        # [daid/ppu_scanline_bgp, mooneye/lcdon_timing]. The
+                        # 4-dot clock granularity places the event at the
+                        # line boundary, and the LYC=LY flag is recomputed
+                        # with LY=0 for the rest of the line.
+                        self.LY = 0
+                        interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                        # Mark the last VBlank line; the frame wrap below
+                        # must still trigger although LY already reads 0.
+                        self.stat_transition = STAT_TRANSITION_LY153_WRAP
             else:
                 # See also `self.set_lcdc`
                 self.frame_done = True
@@ -1141,6 +1168,11 @@ class Renderer:
         self.dot_wen_cur = False
         self.dot_scy_prev = 0
         self.dot_scy_reg = 0
+        self.dot_bgp_ring = array("B", [0] * 32)
+        self.dot_bgp_prev = 0
+        self.dot_bgp_mode3_write = False
+        self.dot_bgp_mode3_old = 0
+        self.dot_bgp_mode3_new = 0
         self.dot_objsize_prev = False
         self.dot_objsize_reg = False
         self.dot_tdsel_prev = False
@@ -1456,6 +1488,10 @@ class Renderer:
         self.dot_wen_cur = False
         self.dot_scy_prev = 0
         self.dot_scy_reg = 0
+        self.dot_bgp_prev = 0
+        self.dot_bgp_mode3_write = False
+        self.dot_bgp_mode3_old = 0
+        self.dot_bgp_mode3_new = 0
         self.dot_objsize_prev = False
         self.dot_objsize_reg = False
         self.dot_tdsel_prev = False
@@ -1470,8 +1506,10 @@ class Renderer:
         self.dot_tiledata_glitch_index = False
         self.dot_cgb_window_glitch = False
         self.dot_wx_changed_dots = 0
-        self.dot_window_extra_dot_pending = False
         self.dot_win_match_pending = False
+        self.dot_window_extra_dot_pending = False
+        for i in range(32):
+            self.dot_bgp_ring[i] = 0
 
     ####################################
     #
@@ -1564,6 +1602,14 @@ class Renderer:
             # landing during a sprite fetch are observed by the fetcher.
             self.dot_scy_reg = self.dot_scy_prev
             self.dot_scy_prev = self.lcd.SCY
+            # DMG: sample the BGP for the delayed pixel shading (see
+            # dot_bgp_ring). The sample ORs in the previous dot's value: on
+            # the write dot the pixel mixer sees the old palette ORed with
+            # the new one [mealybug/m3_bgp_change]. Must update on every
+            # dot, including sprite session dots
+            _bgp = self.lcd.BGP.get()
+            self.dot_bgp_ring[self.dot_dots_elapsed & 31] = _bgp | self.dot_bgp_prev
+            self.dot_bgp_prev = _bgp
             # OBJ size as of one dot ago, for the CGB access delay: the
             # sprite fetcher observes an LCDC size write two dots after the
             # write dot, so a read landing on the dot right after the write
@@ -1591,6 +1637,27 @@ class Renderer:
                 # gap
                 self.dot_wx_prev = self.lcd.WX
                 self.dot_wen_cur = self.lcd._LCDC.window_enable
+                # Pixels popping before renderer dot 12 shade with samples
+                # from before the line's first renderer dot. Only the three
+                # pre-line samples (elapsed -3..-1, slots 29-31) are ever read
+                # before being rewritten; they carry the BGP history across
+                # the mode-2 gap: the value in effect before a write landing
+                # exactly on the mode-3 start dot (elapsed -2), that write's
+                # old-OR-new sample, and the value after it
+                # [mealybug/m3_bgp_change]. The remaining slots are
+                # rewritten before any pixel reads them.
+                _bgp = self.lcd.BGP.get()
+                self.dot_bgp_prev = _bgp
+                if self.dot_bgp_mode3_write:
+                    self.dot_bgp_ring[29] = self.dot_bgp_mode3_old
+                    self.dot_bgp_ring[30] = self.dot_bgp_mode3_new | self.dot_bgp_mode3_old
+                else:
+                    self.dot_bgp_ring[29] = _bgp
+                    self.dot_bgp_ring[30] = _bgp
+                self.dot_bgp_ring[31] = _bgp
+                for j in range(29):
+                    self.dot_bgp_ring[j] = _bgp
+                self.dot_bgp_mode3_write = False
             wx_reg = self.dot_wx_prev
             self.dot_wx_prev = self.lcd.WX
             self.dot_wen_prev = self.dot_wen_cur
@@ -1657,9 +1724,8 @@ class Renderer:
             elif self.dot_sprite_session_dots > 0:
                 # Sprite fetch session dot: the pixel mixer is frozen while
                 # the sprite fetcher runs. The background fetcher keeps the
-                # bus until its in-flight fetch completes; after that the
-                # sprite bitplane reads own the dots they fall on, while the
-                # fetch unit prefetches the next background tile on the rest
+                # bus until its in-flight fetch completes, then the sprite
+                # fetcher takes over.
                 self.dot_dots_elapsed += 1
                 if self.dot_session_bg_steps > 0:
                     self.dot_session_bg_steps -= 1
@@ -2267,8 +2333,21 @@ class Renderer:
 
         if self.lcd.cgb:
             color = self.lcd.bcpd.getcolor(palette, raw_pixel)
-        else:
+        elif self.lcd._is_cgb_hardware():
+            # CGB hardware in DMG mode shades with the live BGP; the write
+            # becomes visible on its own write cycle (see the LCD sync in
+            # the 0xFF47 write handler) and the delayed DMG sampling does
+            # not apply
             color = self.lcd.BGP.getcolor(raw_pixel)
+        else:
+            # DMG: shade with the BGP sampled 12 dots before the pop dot
+            # (see dot_bgp_ring). The pixel fetching on the write dot of a
+            # mid-scanline BGP change shades with the old and new palettes
+            # ORed, and the first fully-new pixel pops 13 dots after the
+            # write dot
+            bgp = self.dot_bgp_ring[(self.dot_dots_elapsed - 12) & 31]
+            shade = (bgp >> (raw_pixel << 1)) & 3
+            color = self.lcd.BGP.palette_mem_rgb[shade]
         if not self.lcd.disable_renderer:
             self._screenbuffer[self.dot_ly, self.dot_screen_x] = color
         attributes = 0
