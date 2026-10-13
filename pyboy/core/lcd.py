@@ -22,6 +22,7 @@ STAT_TRANSITION_ADVANCE_LY = 1
 STAT_TRANSITION_START_MODE2 = 2
 STAT_TRANSITION_VBLANK_PRETRIGGERED = 3
 STAT_TRANSITION_LY153_WRAP = 4
+STAT_TRANSITION_LY153_CGB = 5
 
 # The dot-accurate renderer lags the STAT mode 3 signal by this many dots. The
 # pixel pipeline first runs a discarded fetch and then the first real fetch,
@@ -528,6 +529,16 @@ class LCD:
                 self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                 interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
 
+            elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_LY153_CGB:
+                # The CGB LY=0 window event at dot 15 of the last VBlank
+                # line (see the mode 1 branch). LY reads 0 for the rest of
+                # the line, and a LYC=0 STAT interrupt dispatches from here,
+                # one scanline before line 0.
+                self.LY = 0
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.stat_transition = STAT_TRANSITION_LY153_WRAP
+                self.clock_target += 441
+
             elif self._LCDC.lcd_enable and (self.LY == 153 or self.stat_transition == STAT_TRANSITION_LY153_WRAP):
                 # The dot renderer's pipeline state is dead once the frame
                 # wraps; neutralize it so a state saved here loads into a
@@ -759,6 +770,17 @@ class LCD:
                         # Mark the last VBlank line; the frame wrap below
                         # must still trigger although LY already reads 0.
                         self.stat_transition = STAT_TRANSITION_LY153_WRAP
+                    elif self.LY == 153 and not self.first_frame:
+                        # On CGB hardware LY also reads 0 during the last
+                        # VBlank line, but the LYC=0 coincidence is observed
+                        # by the CPU about 24 dots into the line, later than
+                        # on DMG. PyBoy's dispatch-to-write chain is eight
+                        # dots longer than hardware's, which the DMG anchor
+                        # above compensates by firing at the line boundary;
+                        # the equivalent CGB event lands at dot 15
+                        # [daid/ppu_scanline_bgp].
+                        self.clock_target -= 441
+                        self.stat_transition = STAT_TRANSITION_LY153_CGB
             else:
                 # See also `self.set_lcdc`
                 self.frame_done = True
