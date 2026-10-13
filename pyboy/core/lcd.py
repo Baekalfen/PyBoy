@@ -1171,6 +1171,7 @@ class Renderer:
         self.dot_bgp_ring = array("B", [0] * 32)
         self.dot_bgp_prev = 0
         self.dot_bgp_mode3_write = False
+        self.stop_vram_blocked = False
         self.dot_bgp_mode3_old = 0
         self.dot_bgp_mode3_new = 0
         self.dot_objsize_prev = False
@@ -1379,9 +1380,12 @@ class Renderer:
 
     def blank_screen(self):
         # If the screen is off, fill it with a color.
+        self.blank_screen_color(self.lcd.BGP.getcolor(0))
+
+    def blank_screen_color(self, color):
         for y in range(ROWS):
             for x in range(COLS):
-                self._screenbuffer[y, x] = self.lcd.BGP.getcolor(0)
+                self._screenbuffer[y, x] = color
                 self._screenbuffer_attributes[y, x] = 0
 
     def save_state(self, f):
@@ -1589,6 +1593,10 @@ class Renderer:
         self.dot_mode0_fetcher_based = self.dot_n_sprites > 0 and self.lcd._LCDC.sprite_enable
 
     def advance_dots(self, target):
+        if self.stop_vram_blocked:
+            # STOP on CGB halts the CPU, but the PPU keeps running without
+            # access to VRAM, so no new pixels can be fetched
+            return
         if self._sync_minus:
             # An LCDC win-enable or CGB BGP write lands on its own cycle: the
             # LCD sync inside the write stops one dot short, so the pixel

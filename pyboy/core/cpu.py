@@ -127,6 +127,14 @@ class CPU:
         _cycles0 = self.cycles
         _target = _cycles0 + cycles_target
 
+        if self.stopped:
+            # STOP keeps the CPU stopped until a joypad button press. On CGB
+            # the rest of the system keeps running; on DMG Motherboard.tick
+            # freezes the whole system clock instead of calling this.
+            self.bail = False
+            self.cycles += cycles_target
+            return 0
+
         if self.check_interrupts():
             self.halted = False
             # TODO: Cycles it took to handle the interrupt

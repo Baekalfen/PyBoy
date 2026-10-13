@@ -265,6 +265,10 @@ class Motherboard:
 
     def buttonevent(self, key):
         if self.interaction.key_event(key):
+            if self.cpu.stopped:
+                # A joypad button press wakes the CPU from STOP
+                self.cpu.stopped = False
+                self.lcd.renderer.stop_vram_blocked = False
             self.cpu.set_interruptflag(INTR_HIGHTOLOW)
 
     def stop(self, save, ram_file, rtc_file):
@@ -399,6 +403,11 @@ class Motherboard:
         # read the raw state instead.
         self.in_tick = True
         while not self.lcd.frame_done:
+            if self.cpu.stopped and not self.cgb:
+                # STOP froze the system clock; nothing can progress until
+                # a joypad button press wakes the CPU. On CGB the clock keeps
+                # running and only the CPU is stopped.
+                break
             if self.cgb_mode and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 != 0:
                 # The PPU left HBlank, so a new block may be copied in the next one
                 self.hdma.block_done = False
@@ -463,9 +472,20 @@ class Motherboard:
             if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
                 self.cpu.set_interruptflag(lcd_interrupt)
 
+            if self.cpu.stopped and not self.cgb:
+                # STOP froze the system clock mid-frame. The peripherals
+                # above have synced up to the STOP instant; the unpowered
+                # LCD shows its undriven state (shade 0) until then.
+                self.lcd.renderer.blank_screen_color(self.lcd.BGP.palette_mem_rgb[0])
+                break
+
             if self.breakpoint_singlestep:
                 break
 
+        if self.cpu.stopped and not self.cgb:
+            # Nothing changes while the clock is frozen; end the frame for
+            # the outer tick loop
+            self.lcd.frame_done = True
         self.in_tick = False
         return self.breakpoint_singlestep
 

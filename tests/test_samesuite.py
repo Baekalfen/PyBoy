@@ -19,7 +19,7 @@ HEX_DIGITS = "0123456789ABCDEF"
 PASS_RESULT = '\x03\x05\x08\r\x15"'
 
 
-def samesuite_result(pyboy):
+def samesuite_rows(pyboy):
     def decode_digit(tile, base):
         for offset in (0, 0x31):
             digit = tile - base - offset
@@ -41,7 +41,11 @@ def samesuite_result(pyboy):
 
         if len(address) == 4 and values:
             rows.append(f"{address}: {' '.join(values)}")
+    return rows
 
+
+def samesuite_result(pyboy):
+    rows = samesuite_rows(pyboy)
     assert rows, "SameSuite result table not found"
 
     serial_result = pyboy._serial()
@@ -157,6 +161,19 @@ def test_samesuite(rom, cgb, samesuite_dir, default_rom):
             pyboy.tick(20, True)
         else:
             break
+
+    if not cgb:
+        for _ in range(10):
+            if samesuite_rows(pyboy):
+                break
+            # The apu test ROMs begin with a CGB speed switch (KEY1 write and
+            # a STOP), and some switch again mid-test. On DMG each STOP halts
+            # the system clock until a joypad button press, so the ROM never
+            # prints its results on its own. Wake it as the hardware test rig
+            # does, and let it run to completion.
+            pyboy.button_press("a")
+            pyboy.button_release("a")
+            pyboy.tick(200, True)
 
     result = samesuite_result(pyboy)
     with open(samesuite_json, "r") as f:
