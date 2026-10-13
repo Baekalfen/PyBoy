@@ -25,7 +25,9 @@ def dmg_shade_classes(image):
 
 
 # https://github.com/gbdev/GBEmulatorShootout/tree/main/testroms/daid
-# (rom, cgb, frames, reference images, real boot ROM, shade-class comparison)
+# (rom, cgb, frames, reference images, real boot ROM, shade-class comparison,
+#  expected-failure reason. A case that produces a different image xfails with
+#  its reason instead of failing, so the test keeps exercising the emulator)
 DAID_IMAGE_CASES = [
     pytest.param(
         "ppu_scanline_bgp.gb",
@@ -35,6 +37,7 @@ DAID_IMAGE_CASES = [
         ["ppu_scanline_bgp_0.dmg.png", "ppu_scanline_bgp_1.dmg.png", "ppu_scanline_bgp_2.dmg.png"],
         True,
         True,
+        None,
         id="ppu_scanline_bgp-DMG",
     ),
     pytest.param(
@@ -44,7 +47,7 @@ DAID_IMAGE_CASES = [
         ["ppu_scanline_bgp.gbc.png"],
         False,
         False,
-        marks=pytest.mark.xfail(reason="BGP change mid-scanline timing differs from hardware"),
+        "CGB BGP change lands 16 dots early on the LYC-STAT halted dispatch path",
         id="ppu_scanline_bgp-CGB",
     ),
     pytest.param(
@@ -54,7 +57,7 @@ DAID_IMAGE_CASES = [
         ["speed_switch_timing_div.png"],
         False,
         False,
-        marks=pytest.mark.xfail(reason="DIV behavior on speed switch differs from hardware"),
+        "DIV behavior on speed switch differs from hardware",
         id="speed_switch_timing_div",
     ),
     pytest.param(
@@ -64,7 +67,7 @@ DAID_IMAGE_CASES = [
         ["speed_switch_timing_ly.png"],
         False,
         False,
-        marks=pytest.mark.xfail(reason="LY behavior on speed switch differs from hardware"),
+        "LY behavior on speed switch differs from hardware",
         id="speed_switch_timing_ly",
     ),
     pytest.param(
@@ -74,7 +77,7 @@ DAID_IMAGE_CASES = [
         ["speed_switch_timing_stat.png"],
         False,
         False,
-        marks=pytest.mark.xfail(reason="STAT behavior on speed switch differs from hardware"),
+        "STAT behavior on speed switch differs from hardware",
         id="speed_switch_timing_stat",
     ),
     pytest.param(
@@ -86,6 +89,7 @@ DAID_IMAGE_CASES = [
         ["stop_instr.dmg.png"],
         True,
         True,
+        None,
         id="stop_instr-DMG",
     ),
     pytest.param(
@@ -95,6 +99,7 @@ DAID_IMAGE_CASES = [
         ["stop_instr.gbc.png"],
         False,
         False,
+        None,
         id="stop_instr-CGB",
     ),
     pytest.param(
@@ -108,9 +113,7 @@ DAID_IMAGE_CASES = [
         # PPU keeps displaying the last state. The reference was captured with
         # a clean tilemap, while PyBoy's internal boot ROM leaves its
         # synthetic logo tiles in the rows the game does not overwrite.
-        marks=pytest.mark.xfail(
-            reason="Internal CGB boot ROM logo tiles remain in the tilemap; hardware capture has a clean tilemap"
-        ),
+        "Internal CGB boot ROM logo tiles remain in the tilemap; hardware capture has a clean tilemap",
         id="stop_instr_gbc_mode3",
     ),
 ]
@@ -126,11 +129,17 @@ def dmg_boot_rom(secrets):
     return str(path)
 
 
-@pytest.mark.parametrize("rom, cgb, frames, references, use_bootrom, shade_class_compare", DAID_IMAGE_CASES)
+@pytest.mark.parametrize(
+    "rom, cgb, frames, references, use_bootrom, shade_class_compare, xfail_reason", DAID_IMAGE_CASES
+)
 def test_daid_image(
-    rom, cgb, frames, references, use_bootrom, shade_class_compare, daid_dir, references_dir, dmg_boot_rom
+    rom, cgb, frames, references, use_bootrom, shade_class_compare, xfail_reason, daid_dir, references_dir, dmg_boot_rom
 ):
-    pyboy = PyBoy(daid_dir + rom, window="null", cgb=cgb, bootrom=dmg_boot_rom if use_bootrom else None)
+    # The CGB references were captured on a CGB in DMG compatibility mode, with
+    # its green monochrome palette. The darkest shade reads 0x0063C6 on the
+    # capture, one bit off PyBoy's default 0x0063C5.
+    cgb_palette = {"cgb_color_palette": ((0xFFFFFF, 0x7BFF31, 0x0063C6, 0x000000),) * 3} if cgb else {}
+    pyboy = PyBoy(daid_dir + rom, window="null", cgb=cgb, bootrom=dmg_boot_rom if use_bootrom else None, **cgb_palette)
     pyboy.set_emulation_speed(0)
     pyboy.tick(frames, True)
 
@@ -159,7 +168,10 @@ def test_daid_image(
     if best_diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
         image.show()
         best_diff.show()
-    assert not best_diff.getbbox(), f"Images are different! {rom}"
+    if best_diff.getbbox():
+        if xfail_reason:
+            pytest.xfail(xfail_reason)
+        raise AssertionError(f"Images are different! {rom}")
 
 
 def test_daid_rom_and_ram(daid_dir):
